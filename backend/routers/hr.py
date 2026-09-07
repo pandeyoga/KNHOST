@@ -17,6 +17,7 @@ from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from schemas import GenericPatch
 from schemas_hr import HrOrgUnitCreate, HrEmployeeCreate, HrSettingsUpdate
 from services import hr_service
+from services.text_normalize import nama_orang
 
 router = APIRouter(prefix="/api")
 
@@ -264,7 +265,7 @@ async def create_employee(payload: HrEmployeeCreate, request: Request) -> Dict[s
     doc = {
         "id": new_id("emp"),
         "code": code,
-        "name": payload.name.strip(),
+        "name": nama_orang(payload.name),   # K-1 — EYD otomatis (satu pintu)
         "nik": payload.nik.strip(),
         "user_id": payload.user_id or "",
         "dob": payload.dob or "",

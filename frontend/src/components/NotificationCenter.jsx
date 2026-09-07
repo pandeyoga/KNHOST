@@ -38,6 +38,8 @@ const TYPE_LABEL = {
   internal_request_decided: "Permintaan internal diputuskan",
   // 2026-08-30 — alarm gate MERAH bersirine (sirenAlarm.js)
   rfid_gate_alarm: "Alarm gate MERAH",
+  // 2026-09 — giliran Anda: dokumen berpindah tahap → peran berikutnya diberi tahu
+  turn: "Giliran Anda",
 };
 const typeLabel = (t) => TYPE_LABEL[t] || (t || "lainnya").replace(/_/g, " ");
 

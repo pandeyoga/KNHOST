@@ -114,3 +114,14 @@ Verifikasi "PERINTAH CEK" §7: K-1..K-8 memang **belum** (TERBUKTI), K-9 SELESAI
 | U-1/U-2 | Notifikasi "giliran Anda" & meja kerja 6 peran | Belum disentuh (fitur besar; di luar urutan saran auditor). |
 
 Bukti: `smoke_feedback_klien_2026_09.py` ALL PASS, testing agent iteration_9 semua PASS (BE + UI checkout langkah 1–3, tim sales, termin), guard FE hijau, nav map PASS, validate_compliance 0 FAIL. Catatan: `test_f0b_entity_scoping::test_cash_kas_besar_visible_in_all_contexts` gagal sebelum & sesudah (data seed) — bukan regresi.
+
+## 2026-09-07 (sesi 3) — K-8 entitas · Giliran Anda · Kebersihan Data
+Keputusan pemilik: Kanda Fabric & Sukacita Textile = PENGGANTI nama entitas lama; CV Cipta Sandang Textile = BARU (PKP), detail lain diedit di sistem. Notifikasi giliran: SO+PO+Retur+Sampel, dalam aplikasi saja. Normalisasi data lama: otomatis saat boot + layar Kebersihan Data dengan riwayat & kembalikan per-record.
+| Fitur | Implementasi |
+|---|---|
+| K-8 | `bootstrap.apply_entity_rebrand_2026_09` (sekali jalan, flag `migrations`): ent_ksc→"Sukacita Textile", ent_kanda→"Kanda Fabric" (id & doc_prefix dipertahankan); CV Cipta Sandang Textile dibuat via `entity_provisioning_service.provision_entity` (CoA/penomoran/PKP; prefix CST; NPWP placeholder 00.000.000.0-000.000 — pemilik melengkapi di Badan Usaha & Akses). Pemasok entitas grup ikut berganti nama via sync E-7. |
+| Giliran Anda | `services/turn_notification_service.py`: TURN_MAP (koleksi×status → peran/owner, judul, tautan); hook fire-and-forget di `dependencies.audit()`; job scheduler `turn_scan` tiap 5 menit (jaring pengaman untuk transisi tanpa audit; dokumen >7 hari ditandai diam-diam); `turn_marks` mencegah pengiriman ganda; tahap sebelumnya ditutup via `resolve_action("turn", ...)`. FE: label tipe "Giliran Anda" di lonceng. `GET /api/turn-notifications/map`. |
+| Kebersihan Data | `services/data_hygiene_service.py` (RULES customers/suppliers/users/employees/makloons; run/revert/unlock/summary/preview), dijalankan saat boot (`run_bootstrap`, setelah sync pemasok grup) + `routers/data_hygiene.py`; FE tab "Kebersihan Data" di Pusat Pengaturan (`DataHygienePanel.jsx`): headline, filter koleksi, rincian sebelum→sesudah per baris alamat/kontak, Pratinjau, Rapikan sekarang (admin), Kembalikan per-record (kunci), Buka kunci. Satu pintu penulisan baru juga untuk users & karyawan HR. |
+
+Bukti: `smoke_turn_hygiene_entities.py` ALL PASS; testing agent iteration_10 semua PASS (BE+UI); guard to_list/atomic hijau; validate_compliance 0 FAIL.
+Backlog: U-2 meja kerja 6 peran; NPWP/alamat/gudang CV Cipta Sandang Textile menunggu pemilik; kanal WhatsApp untuk giliran (bila diinginkan nanti).

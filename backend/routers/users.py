@@ -121,7 +121,8 @@ async def get_user(user_id: str, request: Request) -> Dict[str, Any]:
 @router.post("/users")
 async def create_user(payload: UserCreate, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "user", "create")
-    user, info = await svc.create_user(payload.model_dump())
+    from services.text_normalize import nama_orang
+    user, info = await svc.create_user({**payload.model_dump(), "name": nama_orang(payload.name)})   # K-1
     await audit(actor["name"], "user_created", "user", user["id"],
                 {**user, "home_from_hr": info.get("home_from_hr", False)},
                 scope_entity_id=user.get("home_entity_id", ""))

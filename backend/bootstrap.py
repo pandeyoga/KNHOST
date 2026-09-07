@@ -236,6 +236,41 @@ PRIMARY_ENTITY_ID = "ent_ksc"
 ENTITY_SCOPED_COLLECTIONS = ["sales_orders", "invoices", "purchase_orders", "customers"]
 
 
+ENTITY_REBRAND_2026_09 = {
+    # K-8 (keputusan pemilik 2026-09): dua entitas lama BERGANTI NAMA (bukan entitas baru),
+    # kode dokumen & id dipertahankan agar nomor dokumen lama tetap sah.
+    "ent_ksc":   {"legal_name": "Sukacita Textile", "short_name": "Sukacita"},
+    "ent_kanda": {"legal_name": "Kanda Fabric", "short_name": "Kanda Fabric"},
+}
+NEW_ENTITY_CST = {
+    "legal_name": "CV Cipta Sandang Textile", "short_name": "Cipta Sandang", "type": "CV",
+    # NPWP placeholder — pemilik akan melengkapi di Pengaturan → Badan Usaha & Akses.
+    "npwp": "00.000.000.0-000.000", "address": "", "city": "",
+    "default_tax_mode": "ppn", "doc_prefix": "CST", "phone": "", "email": "",
+}
+
+
+async def apply_entity_rebrand_2026_09() -> None:
+    """Sekali jalan (ditandai di `migrations`): ganti nama 2 entitas lama + buat CV Cipta Sandang Textile
+    lewat jalur provisioning resmi (CoA, penomoran, PKP) — bukan insert mentah."""
+    flag = "entity_rebrand_2026_09"
+    if await db.migrations.find_one({"id": flag}):
+        return
+    for eid, patch in ENTITY_REBRAND_2026_09.items():
+        await db.business_entities.update_one({"id": eid}, {"$set": {**patch, "updated_at": now_iso()}})
+    created_id = ""
+    if not await db.business_entities.find_one({"doc_prefix": NEW_ENTITY_CST["doc_prefix"]}, {"_id": 1}):
+        from services import entity_provisioning_service as _prov
+        res = await _prov.provision_entity(dict(NEW_ENTITY_CST), "sistem (migrasi 2026-09)")
+        created_id = res["entity"]["id"]
+        # Akun admin & manajer boleh mengoperasikan entitas baru (agar bisa langsung dilengkapi).
+        await db.users.update_many({"role": {"$in": ["admin", "manager"]}, "allowed_entity_ids": {"$exists": True, "$ne": []}},
+                                   {"$addToSet": {"allowed_entity_ids": created_id}})
+    await db.migrations.insert_one({"id": flag, "applied_at": now_iso(), "renamed": list(ENTITY_REBRAND_2026_09),
+                                    "created_entity_id": created_id})
+
+
+
 async def seed_entities() -> None:
     """Seed entitas legal grup Kain Nusantara (idempotent)."""
     if await db.business_entities.count_documents({}) == 0:
@@ -1480,6 +1515,12 @@ async def run_bootstrap() -> None:
     from services.entity_context_service import ensure_entity_defaults, ensure_user_entities
     await ensure_entity_defaults()
     await ensure_user_entities()
+    # K-8 (2026-09) — ganti nama Sukacita Textile / Kanda Fabric + CV Cipta Sandang Textile (sekali jalan).
+    try:
+        await apply_entity_rebrand_2026_09()
+    except Exception as exc:  # noqa: BLE001 — jangan gagalkan startup
+        import logging
+        logging.getLogger("bootstrap").warning("[entity] rebrand 2026-09 dilewati: %s", exc)
     await sync_permission_modules()
     await sync_permission_revocations()
     await sync_uom_factors()
@@ -1630,6 +1671,17 @@ async def run_bootstrap() -> None:
             print(f"[bootstrap] E-7 alias pair_id/qty_total retur antar-PT: {_n} dokumen")
     except Exception as exc:  # noqa: BLE001
         print(f"[bootstrap] backfill_pair_aliases skip: {exc}")
+    # K-1/K-2 otomatis (2026-09) — Kebersihan Data: EYD nama & nomor telepon pada data lama,
+    # dicatat per-record di `data_hygiene_log` (bisa dikembalikan dari Pusat Pengaturan).
+    # Dijalankan SETELAH sync pemasok entitas grup agar nama entitas yang baru diganti ikut rapi.
+    try:
+        from services import data_hygiene_service as _hyg
+        _hres = await _hyg.run(trigger="boot", actor="sistem (boot)")
+        if _hres.get("changed"):
+            print(f"[bootstrap] kebersihan data: {_hres['changed']} record dirapikan {_hres['per_collection']}")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[bootstrap] data_hygiene skip: {exc}")
+
 
 
 async def ensure_indexes() -> None:

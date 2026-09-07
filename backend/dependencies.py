@@ -166,3 +166,9 @@ async def audit(
             "timestamp": now_iso(),
         }
     )
+    # Notifikasi "giliran Anda" (2026-09): fire-and-forget; tidak pernah menggagalkan aksi bisnis.
+    try:
+        from services.turn_notification_service import after_audit
+        after_audit(entity_type, entity_id)
+    except Exception:  # noqa: BLE001
+        pass

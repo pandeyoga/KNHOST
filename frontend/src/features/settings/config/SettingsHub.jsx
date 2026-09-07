@@ -20,7 +20,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Search, SlidersHorizontal, ShieldCheck, History, Wand2, Loader2, RefreshCw,
-  CheckCircle2, AlertTriangle, X, Building2, ChevronRight, Globe2, Lock,
+  CheckCircle2, AlertTriangle, X, Building2, ChevronRight, Globe2, Lock, Sparkles,
 } from "lucide-react";
 import ErrorNotice from "../../../components/ErrorNotice";
 import KNSelect from "../../../components/KNSelect";
@@ -28,6 +28,7 @@ import SettingCard from "./SettingCard";
 import ImpactPicker from "./ImpactPicker";
 import ConfigHealthPanel from "./ConfigHealthPanel";
 import SagaLocksPanel from "./SagaLocksPanel";
+import DataHygienePanel from "./DataHygienePanel";
 import {
   WhyThisValueDrawer, SimulatorPanel, ChangeHistoryDrawer, ChangeHistoryInline,
 } from "./ConfigDrawers";
@@ -41,6 +42,7 @@ const TABS = [
   { k: "history", label: "Riwayat Perubahan", icon: History },
   { k: "impact", label: "Koreksi Harga & Daftar Dampak", icon: Wand2 },
   { k: "saga", label: "Kunci Saga", icon: Lock, adminOnly: true },
+  { k: "hygiene", label: "Kebersihan Data", icon: Sparkles },
 ];
 
 /**
@@ -478,6 +480,7 @@ export default function SettingsHub({
       ) : null}
 
       {tab === "saga" && isAdmin ? <SagaLocksPanel /> : null}
+      {tab === "hygiene" ? <DataHygienePanel isAdmin={isAdmin} /> : null}
 
       {tab === "history" ? (
         <section className="cfg-history-tab" data-testid="cfg-history-tab">

@@ -164,6 +164,8 @@ from routers import customer_feedback  # noqa: E402  — feedback/komplain pelan
 app.include_router(customer_feedback.router)
 from routers import saga_locks  # noqa: E402  — T-01 Opsi B: kunci saga menggantung (admin)
 app.include_router(saga_locks.router)
+from routers import data_hygiene  # noqa: E402  — Kebersihan Data (EYD/telepon otomatis) + peta giliran (2026-09)
+app.include_router(data_hygiene.router)
 from routers import sample_sales  # noqa: E402  — §3-C Jual Sampel (2026-09)
 app.include_router(sample_sales.router)
 app.include_router(makloons.router)
