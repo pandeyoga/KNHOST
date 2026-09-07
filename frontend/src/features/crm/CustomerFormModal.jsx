@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { namaOrang, namaUsaha } from "../../utils/text";
 import MoneyInput from "@/components/MoneyInput";
 import axios, { API } from "../../services/apiClient";
 import { X, UserPlus, Edit3 } from "lucide-react";
@@ -130,7 +131,7 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
         <div className="p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <Field label="Nama Pelanggan" req>
-              <input data-testid="customer-name" value={f.name} onChange={(e) => set("name", e.target.value)} className="field" placeholder="PT / Toko ..." />
+              <input data-testid="customer-name" value={f.name} onChange={(e) => set("name", e.target.value)} onBlur={(e) => set("name", namaUsaha(e.target.value))} className="field" placeholder="PT / Toko ..." />
             </Field>
             <Field label="Segment">
               <KNSelect value={f.segment} onValueChange={(v) => set("segment", v)} className="field"
@@ -143,7 +144,7 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
               {isEdit && <p className="text-[10px] text-[#9A9BA3] mt-0.5">Ubah sales via tombol Reassign di detail.</p>}
             </Field>
             <Field label="Kontak (PIC)">
-              <input data-testid="customer-pic" value={f.pic_name} onChange={(e) => set("pic_name", e.target.value)} className="field" placeholder="Nama PIC" />
+              <input data-testid="customer-pic" value={f.pic_name} onChange={(e) => set("pic_name", e.target.value)} onBlur={(e) => set("pic_name", namaOrang(e.target.value))} className="field" placeholder="Nama PIC" />
             </Field>
             <Field label="Telepon">
               <input data-testid="customer-phone" value={f.phone} onChange={(e) => set("phone", e.target.value)} className="field" placeholder="08..." />

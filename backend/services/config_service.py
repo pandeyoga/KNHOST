@@ -142,6 +142,10 @@ DEFAULT_PAYMENT_TERMS: List[Dict[str, Any]] = [
     {"code": "NET30", "name": "Kredit NET 30 Hari",   "type": "credit",      "net_days": 30, "dp_percent": 0,  "installment_count": 0, "sort": 4},
     {"code": "DP50",  "name": "DP 50% + Pelunasan",   "type": "dp",          "net_days": 14, "dp_percent": 50, "installment_count": 0, "sort": 5},
     {"code": "INST3", "name": "Bertahap 3x",          "type": "installment", "net_days": 30, "dp_percent": 0,  "installment_count": 3, "sort": 6},
+    # K-4 (feedback klien 2026-09) — termin yang dipakai klien: CBD & tempo 2/3 bulan.
+    {"code": "CBD",   "name": "CBD — Bayar Sebelum Kirim", "type": "cash",     "net_days": 0,  "dp_percent": 100, "installment_count": 0, "sort": 7},
+    {"code": "NET60", "name": "Tempo 2 Bulan (NET 60)",  "type": "credit",      "net_days": 60, "dp_percent": 0,  "installment_count": 0, "sort": 8},
+    {"code": "NET90", "name": "Tempo 3 Bulan (NET 90)",  "type": "credit",      "net_days": 90, "dp_percent": 0,  "installment_count": 0, "sort": 9},
 ]
 
 DEFAULT_APPROVAL_RULES: List[Dict[str, Any]] = [
@@ -177,6 +181,15 @@ async def seed_config_defaults() -> Dict[str, int]:
              "created_at": now_iso(), "updated_at": now_iso()} for t in DEFAULT_PAYMENT_TERMS
         ])
         created["payment_terms"] = len(DEFAULT_PAYMENT_TERMS)
+    else:
+        # K-4 — basis data lama: tambahkan termin bawaan yang belum ada (idempoten, tidak menimpa).
+        have = {t["code"] for t in await db.payment_terms.find({"entity_id": "all"}, {"_id": 0, "code": 1}).to_list(200)}
+        missing = [t for t in DEFAULT_PAYMENT_TERMS if t["code"] not in have]
+        if missing:
+            await db.payment_terms.insert_many([
+                {"id": new_id("pterm"), "entity_id": "all", **t, "active": True,
+                 "created_at": now_iso(), "updated_at": now_iso()} for t in missing])
+            created["payment_terms"] = len(missing)
     if await db.approval_rules.count_documents({}) == 0:
         await db.approval_rules.insert_many([
             {"id": new_id("aprule"), "is_percent": r.get("is_percent", False), "active": True,

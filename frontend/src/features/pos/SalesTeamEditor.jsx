@@ -3,10 +3,19 @@ import { Users, Plus, Trash2, Crown } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 
+/** K-5 — group sales maksimal 2 orang; split dibagi rata otomatis (50-50). */
+export const MAX_GROUP_SALES = 2;
+export const equalSplit = (team) => {
+  const n = team.length; if (!n) return team;
+  const share = Math.round((100 / n) * 100) / 100;
+  return team.map((m, i) => ({ ...m, split_pct: i === n - 1 ? Math.round((100 - share * (n - 1)) * 100) / 100 : share }));
+};
+
 /** F-4c — Validasi sales_team di FE (mirror aturan backend). "" = valid (tidak dipakai). */
 export function salesTeamError(team) {
   const t = team || [];
   if (t.length === 0) return "";
+  if (t.length > MAX_GROUP_SALES) return `Group sales maksimal ${MAX_GROUP_SALES} orang (1 PIC + 1 co-sales).`;
   if (t.some((m) => !m.sales_id)) return "Pilih sales untuk setiap baris tim.";
   if (new Set(t.map((m) => m.sales_id)).size !== t.length) return "Sales tim tidak boleh duplikat.";
   if (t.some((m) => Number(m.split_pct) <= 0)) return "Setiap anggota harus punya split > 0%.";
@@ -62,8 +71,8 @@ export function SalesTeamEditor({ value = [], onChange }) {
     emit(next);
   };
   const setRep = (i, sid) => { const r = reps.find((x) => x.id === sid); update(i, { sales_id: sid, name: r?.name || "" }); };
-  const addMember = () => emit([...members, { sales_id: "", name: "", role: "co", split_pct: 0 }]);
-  const removeMember = (i) => emit(members.filter((_, idx) => idx !== i));
+  const addMember = () => { if (members.length >= MAX_GROUP_SALES) return; emit(equalSplit([...members, { sales_id: "", name: "", role: "co", split_pct: 0 }])); };
+  const removeMember = (i) => emit(equalSplit(members.filter((_, idx) => idx !== i)));
 
   const repOptions = reps.map((r) => ({ value: r.id, label: r.name }));
 
@@ -110,9 +119,13 @@ export function SalesTeamEditor({ value = [], onChange }) {
               <button type="button" data-testid={`sales-team-remove-${i}`} onClick={() => removeMember(i)} className="icon-button px-1.5 text-[#C0392B]" aria-label="Hapus anggota"><Trash2 size={13} /></button>
             </div>
           ))}
-          <button type="button" data-testid="sales-team-add" onClick={addMember} className="secondary-button w-full justify-center py-1.5 text-[11.5px]">
-            <Plus size={12} /> Tambah Co-Sales
-          </button>
+          {members.length < MAX_GROUP_SALES ? (
+            <button type="button" data-testid="sales-team-add" onClick={addMember} className="secondary-button w-full justify-center py-1.5 text-[11.5px]">
+              <Plus size={12} /> Tambah Co-Sales (split otomatis 50-50)
+            </button>
+          ) : (
+            <p data-testid="sales-team-max-note" className="text-[10.5px] text-[#8E8E93]">Maksimal {MAX_GROUP_SALES} orang per group sales. Split dibagi rata 50-50; ubah angka bila perlu.</p>
+          )}
           <div className="flex items-center justify-between text-[11.5px]">
             <span className="text-[#6B6B73]">Total split</span>
             <span data-testid="sales-team-total" className={`font-bold tabular-nums ${err ? "text-[#C0392B]" : "text-[#126E2C]"}`}>

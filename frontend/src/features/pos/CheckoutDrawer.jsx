@@ -245,7 +245,8 @@ export default function CheckoutDrawer({
                       <label className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]"><MapPin size={11} /> Alamat Pengiriman</label>
                       <KNSelect className="field w-full" value={selectedAddress || ""} onValueChange={setSelectedAddress}
                         placeholder="-- Pilih alamat --"
-                        options={[{ value: "", label: "-- Pilih alamat --" }, ...addresses.map((a) => ({ value: a.id, label: `${a.label} — ${a.city}` }))]} />
+                        options={[{ value: "", label: "-- Pilih alamat --" }, ...addresses.map((a) => ({ value: a.id, label: `${a.label} — ${a.address ? `${a.address}, ` : ""}${a.city}` }))]} />
+                      {selectedAddress && (() => { const a = addresses.find((x) => x.id === selectedAddress); return a ? <p data-testid="checkout-address-detail" className="mt-1 text-[11px] leading-snug text-[#6B6B73]">{a.recipient_name ? `${a.recipient_name} · ` : ""}{a.address}{a.city ? `, ${a.city}` : ""}{a.phone ? ` · ${a.phone}` : ""}</p> : null; })()}
                     </div>
                   )}
                 </div>
@@ -391,7 +392,7 @@ export default function CheckoutDrawer({
               fulfillmentMethod={fulfillmentMethod} setFulfillmentMethod={setFulfillmentMethod}
               pickupDate={pickupDate} setPickupDate={setPickupDate}
               selectedCustomer={selectedCustomer} addresses={addresses} selectedAddress={selectedAddress}
-              p={p} cart={cart} paymentTerm={paymentTerm}
+              p={p} cart={cart} pricedCart={cartPriced} paymentTerm={paymentTerm}
               needsTaxInvoice={needsTaxInvoice} setNeedsTaxInvoice={setNeedsTaxInvoice}
               credit={credit} creditBlocked={creditBlocked}
               hasBackorderLine={hasBackorderLine} allowBackorder={allowBackorder}

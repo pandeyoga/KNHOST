@@ -16,12 +16,12 @@ const MENU = [
   { id: "stock", label: "Status Stok", desc: "Tersedia vs dipesan per gudang (hanya-lihat)", icon: Boxes },
   { id: "leads", label: "Prospek (Lead)", desc: "Catat calon pelanggan, geser tahap, jadikan pelanggan", icon: Target },
   { id: "crm", label: "Pelanggan (CRM)", desc: "Kelola pelanggan & insentif", icon: Users },
-  { id: "returns", label: "Retur Jual", desc: "Pengajuan & status retur", icon: RotateCcw },
+  { id: "returns", label: "Retur Penjualan", desc: "Pengajuan & status retur", icon: RotateCcw },
   { id: "special", label: "Pesanan Khusus (OD)", desc: "Pesanan khusus / dibuat sesuai pesanan", icon: FileStack },
   { id: "pricelist", label: "Daftar Harga", desc: "Lihat harga per entitas", icon: Tags },
 ];
 
-const TITLES = { leads: "Prospek (Lead)", crm: "Pelanggan (CRM)", returns: "Retur Jual", special: "Special Order", pricelist: "Daftar Harga" };
+const TITLES = { leads: "Prospek (Lead)", crm: "Pelanggan (CRM)", returns: "Retur Penjualan", special: "Special Order", pricelist: "Daftar Harga" };
 
 export default function MobileMore({ user, token, selectedEntity, entities, onLogout, onForceDesktop }) {
   const [sub, setSub] = useState(null);

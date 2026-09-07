@@ -38,6 +38,8 @@ def normalize_sales_team(raw: List[Any]) -> List[Dict[str, Any]]:
         })
     if not members:
         return []
+    from services.customer_service import apply_group_sales_rule
+    apply_group_sales_rule(members)   # K-5 — maks 2 orang, split rata otomatis bila kosong
     ids = [m["sales_id"] for m in members]
     if len(set(ids)) != len(ids):
         raise HTTPException(status_code=400, detail="Anggota sales tim tidak boleh duplikat.")

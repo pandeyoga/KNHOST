@@ -20,7 +20,7 @@ const tone = (s) => STATUS_TONE[(s || "").toLowerCase()] || "muted";
 const TABS = [
   { key: "po", label: "PO", icon: ClipboardList },
   { key: "bills", label: "Tagihan", icon: Receipt },
-  { key: "returns", label: "Retur Beli", icon: Undo2 },
+  { key: "returns", label: "Retur Pembelian", icon: Undo2 },
   { key: "prices", label: "Daftar Harga", icon: Tag },
   { key: "documents", label: "Dokumen", icon: FileText },
   { key: "scorecard", label: "Scorecard", icon: BarChart3 },

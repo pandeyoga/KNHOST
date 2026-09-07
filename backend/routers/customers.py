@@ -13,6 +13,7 @@ from services.customer_service import (
 from entity_scope import entity_ctx, resolve_list_scope
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope, paginate_list
 from request_context import active_entity_or
+from services.text_normalize import nama_orang, nama_usaha, phone_id
 
 router = APIRouter(prefix="/api")
 
@@ -98,8 +99,8 @@ async def create_customer(payload: CustomerCreate, request: Request) -> Dict[str
     customer = {
         "id": new_id("cust"),
         "code": cust_code,
-        "name": payload.name,
-        "pic_name": payload.pic_name,
+        "name": nama_usaha(payload.name),          # K-1 — EYD otomatis (dokumen baru)
+        "pic_name": nama_orang(payload.pic_name),
         "phone": payload.phone,
         "email": payload.email,
         "type": payload.type,
@@ -154,6 +155,16 @@ async def update_customer(customer_id: str, payload: GenericPatch, request: Requ
                # SALES REVAMP V2 — tim sales (split insentif)
                "sales_team"]
     data = {k: v for k, v in payload.data.items() if k in allowed}
+    # K-1/K-2 — EYD otomatis & validasi nomor WhatsApp pada suntingan baru.
+    if "name" in data:
+        data["name"] = nama_usaha(str(data["name"] or ""))
+    if "pic_name" in data:
+        data["pic_name"] = nama_orang(str(data["pic_name"] or ""))
+    if "phone" in data:
+        try:
+            data["phone"] = phone_id(str(data["phone"] or ""))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
     # SALES REVAMP V2 — validasi tim sales; PIC tetap = pemilik (ubah owner via Reassign).
     if "sales_team" in data:
         aid = existing.get("assigned_sales_id", "")
@@ -189,6 +200,7 @@ async def update_customer(customer_id: str, payload: GenericPatch, request: Requ
 async def add_customer_address(customer_id: str, payload: CustomerAddress, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "customer", "update")
     address = payload.model_dump()
+    address["recipient_name"] = nama_orang(address.get("recipient_name") or "")
     customer = await db.customers.find_one_and_update(
         {"id": customer_id},
         {"$push": {"addresses": address}, "$set": {"updated_at": now_iso()}},

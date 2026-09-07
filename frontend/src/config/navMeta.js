@@ -86,7 +86,7 @@ export const PAGE_META = {
   "md-warehouses":        { kicker: "Gudang",         title: "Gudang (Master) \u00b7 Lokasi & Bin" },
   "purchase-approval":    { kicker: "Persetujuan",      title: "Persetujuan Pembelian" },
   "cash-management":      { kicker: "Keuangan",       title: "Transaksi Kas" },
-  "purchase-returns":     { kicker: "Pembelian",      title: "Retur Beli (Nota Debit)" },
+  "purchase-returns":     { kicker: "Pembelian",      title: "Retur Pembelian (Nota Debit)" },
   "vendor-bills":         { kicker: "Pembelian",      title: "Tagihan Supplier · 3-Way Matching" },
   "landed-cost":          { kicker: "Pembelian",      title: "Landed Cost · Alokasi HPP Roll" },
   "input-tax":            { kicker: "Keuangan \u00b7 Pajak", title: "Faktur Pajak Masukan · PPN Masukan & Rekap" },

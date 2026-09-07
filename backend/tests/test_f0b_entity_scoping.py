@@ -258,7 +258,7 @@ def test_create_supplier_stamping(tokens):
     payload = {
         "name": "TEST_F0B Supplier Stamping",
         "contact_person": "Tester",
-        "phone": "0800",
+        "phone": "081200000800",
         "email": "f0b@test.local",
         "goods_type": "kain",
     }

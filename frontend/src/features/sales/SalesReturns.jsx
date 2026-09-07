@@ -290,7 +290,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
         data-testid="return-map-strip">
         <Map size={13} className="shrink-0 text-[#0058CC]" />
         <span><b>Layar ini = Retur JUAL</b> (barang kembali dari pelanggan → muaranya Nota Kredit).</span>
-        <MapLink view="purchase-returns" label="Retur Beli ke supplier" role={currentUser?.role} onNavigate={onNavigate} />
+        <MapLink view="purchase-returns" label="Retur Pembelian ke Pemasok" role={currentUser?.role} onNavigate={onNavigate} />
         <MapLink view="interco-transactions" label="Retur antar-PT" role={currentUser?.role} onNavigate={onNavigate} />
         <MapLink view="return-policies" label="Kebijakan / jendela retur" role={currentUser?.role} onNavigate={onNavigate} />
       </div>

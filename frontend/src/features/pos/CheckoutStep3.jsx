@@ -8,7 +8,7 @@ import { Row } from "./CheckoutItemCard";
 export default function CheckoutStep3({
   fulfillmentMethod, setFulfillmentMethod, pickupDate, setPickupDate,
   deliveryDate, setDeliveryDate,
-  selectedCustomer, addresses, selectedAddress, p, cart, paymentTerm,
+  selectedCustomer, addresses, selectedAddress, p, cart, pricedCart, paymentTerm,
   needsTaxInvoice, setNeedsTaxInvoice, credit, creditBlocked,
   hasBackorderLine, allowBackorder, requiresLotConfirmation, mixedLotLines,
 }) {
@@ -42,7 +42,12 @@ export default function CheckoutStep3({
         <div className="rounded-md border border-[#EFF0F2] bg-white p-3">
           <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Kirim ke</p>
           <p className="text-[13px] font-semibold">{selectedCustomer?.name}</p>
-          <p className="text-[11.5px] text-[#6B6B73]">{(addresses.find((a) => a.id === selectedAddress) || {}).label} — {(addresses.find((a) => a.id === selectedAddress) || {}).city}</p>
+          {(() => { const a = addresses.find((x) => x.id === selectedAddress) || {}; return (
+            <div data-testid="checkout-review-address" className="text-[11.5px] text-[#6B6B73]">
+              <p className="font-semibold text-[#3C3C43]">{a.label || "—"}{a.recipient_name ? ` · ${a.recipient_name}` : ""}</p>
+              <p className="leading-snug">{a.address || "Alamat belum diisi"}{a.city ? `, ${a.city}` : ""}</p>
+              {a.phone && <p>{a.phone}</p>}
+            </div>); })()}
           <div className="mt-2.5 border-t border-[#F2F3F5] pt-2.5">
             <label className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Tanggal Pengiriman (opsional)</label>
             <KNDatePicker data-testid="delivery-date-input" min={today}
@@ -59,7 +64,23 @@ export default function CheckoutStep3({
       )}
       <div className="rounded-md bg-black p-3 text-white">
         <div className="flex items-center gap-1.5"><Receipt size={12} className="text-white/70" /><p className="text-[10.5px] font-bold uppercase tracking-wide text-white/70">Ringkasan ({cart.length} item)</p></div>
-        <div className="mt-1.5 space-y-1 text-[11.5px]">
+        <ul data-testid="checkout-review-lines" className="mt-1.5 divide-y divide-white/10 text-[11.5px]">
+          {(pricedCart || cart).map((it) => {
+            const unit = it.unit || it.product?.base_unit || "";
+            const price = Number(it.product?.price || 0);
+            const disc = Number(it.discount_percent || 0);
+            return (
+              <li key={it.product?.id} data-testid={`checkout-review-line-${it.product?.id}`} className="flex items-start justify-between gap-2 py-1">
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold">{it.product?.name}</span>
+                  <span className="block text-[10.5px] text-white/60 tabular-nums">{it.quantity} {unit} × {formatCurrency(price)}{disc > 0 ? ` · disc ${disc}%` : ""}</span>
+                </span>
+                <span className="shrink-0 tabular-nums">{formatCurrency(price * Number(it.quantity || 0) * (1 - disc / 100))}</span>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="mt-1.5 space-y-1 border-t border-white/15 pt-1.5 text-[11.5px]">
           <Row label="Subtotal (bruto)" value={formatCurrency(p.gross)} />
           {p.discountTotal > 0 && <Row label="Diskon" value={`- ${formatCurrency(p.discountTotal)}`} />}
           {p.ppn > 0 && <Row label={`PPN ${p.ppnRate}%${p.dppNilaiLain ? " (DPP 11/12)" : ""}`} value={formatCurrency(p.ppn)} />}

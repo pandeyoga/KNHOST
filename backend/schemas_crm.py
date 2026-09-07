@@ -5,13 +5,14 @@ schemas.py agar `from schemas import ContactInfo, ...` tetap berfungsi.
 """
 from typing import List
 from pydantic import BaseModel, Field
+from services.text_normalize import PhoneStr
 
 
 class ContactInfo(BaseModel):
     """Multi-PIC kontak customer (KN_17 §2)."""
     name: str
     role: str = ""
-    phone: str = ""
+    phone: PhoneStr = ""
     email: str = ""
     is_primary: bool = False
 

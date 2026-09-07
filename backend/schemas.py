@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
+from services.text_normalize import PhoneStr
 from core_utils import MoneyDecimal, OptMoneyDecimal, OptQtyDecimal, QtyDecimal, new_id
 from schemas_crm import (  # noqa: F401 — re-export CRM schemas (KN_17)
     ContactInfo, PaymentProfile, CustomerReassign, SalesTargetCreate, IncentiveTier,
@@ -70,7 +71,7 @@ class CustomerAddress(BaseModel):
     id: str = Field(default_factory=lambda: new_id("addr"))
     label: str = "Alamat Utama"
     recipient_name: str
-    phone: str = ""
+    phone: PhoneStr = ""
     city: str
     address: str
     is_primary: bool = False
@@ -79,7 +80,7 @@ class CustomerAddress(BaseModel):
 class CustomerCreate(BaseModel):
     name: str
     pic_name: str
-    phone: str
+    phone: PhoneStr
     email: str = ""
     type: str = "Retail"
     city: str
@@ -108,7 +109,7 @@ class BusinessEntityCreate(BaseModel):
     npwp: str = ""                # WAJIB bila default_tax_mode="ppn" (PKP) — divalidasi service
     address: str = ""
     city: str = ""
-    phone: str = ""
+    phone: PhoneStr = ""
     email: str = ""
     owner_name: str = ""          # E1.1 — wajib untuk jenis Perorangan/UD
     business_label: str = ""      # E1.1 — nama dagang usaha perorangan
@@ -140,7 +141,7 @@ class UserCreate(BaseModel):
     email: str
     role: str
     password: str = "demo12345"
-    phone: str = ""                       # R6.5 — nomor WhatsApp untuk alert (08xx / 62xx)
+    phone: PhoneStr = ""                  # R6.5 — nomor WhatsApp untuk alert (08xx / 62xx) — K-2 divalidasi
     home_entity_id: str = ""              # F6 — badan usaha kerja/payroll (diabaikan bila employee_id terisi)
     allowed_entity_ids: List[str] = []    # F6 — badan usaha yang boleh dioperasikan (multi-entitas)
     employee_id: str = ""                 # E2.1 — tautan HR; badan usaha DIAMBIL dari data karyawan

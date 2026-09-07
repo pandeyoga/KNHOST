@@ -97,3 +97,20 @@ Hasil verifikasi temuan (semua "PERINTAH CEK" dijalankan di kode aktual):
 Regresi: gate `--quick` 4 guard yang merah kini hijau; `smoke_variant_axes_base_fabric` ALL PASS; `smoke_audit_2026_09_07.py` (baru) ALL PASS; `test_f2_stock_buckets` 20 passed; `test_iter316/317` 22 passed; testing agent iteration_8 semua PASS (BE + UI lightbox + navigasi).
 
 Backlog tersisa dari laporan: `validate_compliance` masih perlu dijalankan penuh setelah pemulihan memory/ (uji: `bash scripts/gate.sh`), dan riwayat git perlu dipulihkan dari repo asal `snakissb/KN`.
+
+## 2026-09-07 (sesi 2) — §7 Sembilan keluhan klien: verifikasi + implementasi
+Verifikasi "PERINTAH CEK" §7: K-1..K-8 memang **belum** (TERBUKTI), K-9 SELESAI. Dikerjakan (urutan saran auditor):
+| # | Keluhan | Implementasi |
+|---|---|---|
+| K-1 | EYD otomatis | `services/text_normalize.py` (`nama_orang`, `nama_usaha`) dipakai di create/update pelanggan, pemasok, alamat; FE `utils/text.js` + onBlur di CustomerFormModal. Hanya dokumen/suntingan baru. |
+| K-2 | Validasi nomor WA | `PhoneStr` (Pydantic BeforeValidator) di semua kolom telepon schemas (customer, alamat, kontak, entitas, user, supplier, makloon); normal ke `62xxxxxxxxxx`; PATCH → 400 dengan pesan menuntun. |
+| K-3 | Alamat di checkout | Dropdown + `checkout-address-detail` (langkah 1) dan `checkout-review-address` (langkah 3) tampil alamat lengkap + penerima + telepon. |
+| K-4 | Termin CBD / Tempo 2 & 3 bulan | `DEFAULT_PAYMENT_TERMS` + CBD, NET60, NET90; backfill idempoten untuk DB lama saat boot. |
+| K-5 | Group sales maks 2 + 50-50 | `apply_group_sales_rule` (BE, dipakai customer & SO) + `SalesTeamEditor` (tombol tambah hilang di 2 orang, split rata otomatis, tetap bisa diubah). |
+| K-6 | Harga satuan di ringkasan | `checkout-review-line-{id}`: qty × harga efektif (harga khusus pelanggan dihormati) + subtotal baris. |
+| K-7 | Dye lot & umur roll | RollPicker: badge `roll-dye-lot-{id}` & `roll-age-{id}` (>180 hari disorot). |
+| U-4 | Label retur seragam | 18 varian → "Retur Penjualan" / "Retur Pembelian" (+ varian "(Nota Debit)", "(dari pelanggan)", "(ke pemasok)"); nav map PASS. |
+| K-8 | 3 badan usaha | **MENUNGGU PEMILIK** — butuh nama legal, NPWP, gudang awal (Kanda Fabric, Sukacita Textile, Cipta Sandang Textile). Tidak dikerjakan. |
+| U-1/U-2 | Notifikasi "giliran Anda" & meja kerja 6 peran | Belum disentuh (fitur besar; di luar urutan saran auditor). |
+
+Bukti: `smoke_feedback_klien_2026_09.py` ALL PASS, testing agent iteration_9 semua PASS (BE + UI checkout langkah 1–3, tim sales, termin), guard FE hijau, nav map PASS, validate_compliance 0 FAIL. Catatan: `test_f0b_entity_scoping::test_cash_kas_besar_visible_in_all_contexts` gagal sebelum & sesudah (data seed) — bukan regresi.

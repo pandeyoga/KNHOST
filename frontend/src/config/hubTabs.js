@@ -75,7 +75,7 @@ export const HUB_TABS = {
     // tetap lewat mereka) & menandai ship/receive.
     { view: "interco-transactions", label: "Antar Entitas (Jual-Beli)", roles: ["admin", "manager", "warehouse"] },
     { view: "landed-cost",       label: "Landed Cost (HPP)",     roles: ["admin", "manager"] },
-    { view: "purchase-returns",  label: "Retur Beli (Nota Debit)", roles: ["admin", "manager", "warehouse"] },
+    { view: "purchase-returns",  label: "Retur Pembelian (Nota Debit)", roles: ["admin", "manager", "warehouse"] },
   ],
   // FASE F — R&D: hulu rantai (spesifikasi → labdip/proofing → kontrak).
   // warehouse ikut melihat karena dialah yang mengeluarkan bahan sample (PS-19).

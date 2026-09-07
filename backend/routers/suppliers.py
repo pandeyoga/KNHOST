@@ -13,6 +13,7 @@ from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope
 from schemas import SupplierCreate, SupplierPriceListCreate, GenericPatch
 from services.supplier_service import resolve_price, compute_scorecard, supplier_360
+from services.text_normalize import nama_orang, nama_usaha, phone_id
 from services.return_policy_service import (
     normalize_supplier_policy, resolve_supplier_return_policy, ORIGIN_TYPES,
 )
@@ -92,9 +93,9 @@ async def create_supplier(payload: SupplierCreate, request: Request) -> Dict[str
     doc = {
         "id": new_id("sup"),
         "code": code,
-        "name": payload.name.strip(),
+        "name": nama_usaha(payload.name),          # K-1 — EYD otomatis (dokumen baru)
         "npwp": payload.npwp.strip(),
-        "pic_name": payload.pic_name.strip(),
+        "pic_name": nama_orang(payload.pic_name),
         "phone": payload.phone.strip(),
         "email": payload.email.strip(),
         "address": payload.address.strip(),
@@ -150,6 +151,15 @@ async def update_supplier(supplier_id: str, payload: GenericPatch, request: Requ
                "goods_type", "payment_term_code", "lead_time_days", "entity_id", "notes", "status",
                "origin_type", "country", "return_policy", "bank"}
     updates = {k: v for k, v in (payload.data or {}).items() if k in allowed}
+    if "name" in updates:
+        updates["name"] = nama_usaha(str(updates["name"] or ""))
+    if "pic_name" in updates:
+        updates["pic_name"] = nama_orang(str(updates["pic_name"] or ""))
+    if "phone" in updates:
+        try:
+            updates["phone"] = phone_id(str(updates["phone"] or ""))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
     if "bank" in updates:
         updates["bank"] = _clean_bank(updates["bank"])
     if not updates:

@@ -4,6 +4,7 @@ Di-re-export dari schemas.py. Patch memakai GenericPatch (data dict) seperti sup
 """
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
+from services.text_normalize import PhoneStr
 from core_utils import MoneyDecimal, OptQtyDecimal, QtyDecimal
 from domain_registry import values_of
 
@@ -16,7 +17,7 @@ class MakloonCreate(BaseModel):
     name: str
     npwp: str = ""
     pic_name: str = ""
-    phone: str = ""
+    phone: PhoneStr = ""
     email: str = ""
     address: str = ""
     city: str = ""

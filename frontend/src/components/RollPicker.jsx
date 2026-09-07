@@ -3,6 +3,9 @@ import axios, { API } from "../services/apiClient";
 import { Layers, ChevronLeft, ChevronRight, Check, Loader2, Building2, AlertTriangle } from "lucide-react";
 import { formatCurrency, formatQty } from "../utils/formatters";
 
+/** K-7 — umur roll (hari) sejak diterima; null bila tanggal tidak ada. */
+const rollAgeDays = (iso) => { if (!iso) return null; const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); return Number.isFinite(d) && d >= 0 ? d : null; };
+
 const PAGE_SIZE = 8;
 
 /**
@@ -89,6 +92,15 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
                       <div className="flex items-center gap-1.5">
                         <span className="text-[12px] font-semibold text-[#1C1C1E]">{r.roll_no || r.id}</span>
                         <span className="text-[10px] text-[#8E8E93]">· Lot {r.lot || "—"}</span>
+                        {r.dye_lot && r.dye_lot !== r.lot && (
+                          <span data-testid={`roll-dye-lot-${r.id}`} className="inline-flex items-center rounded-full bg-[#F3E8FF] px-1.5 py-0.5 text-[9px] font-bold text-[#6B219A]" title="Dye lot (celupan)">Dye {r.dye_lot}</span>
+                        )}
+                        {r.dye_lot && r.dye_lot === r.lot && (
+                          <span data-testid={`roll-dye-lot-${r.id}`} className="text-[9px] text-[#6B219A]" title="Dye lot sama dengan lot">· dye = lot</span>
+                        )}
+                        {rollAgeDays(r.created_at) != null && (
+                          <span data-testid={`roll-age-${r.id}`} className={`text-[9px] tabular-nums ${rollAgeDays(r.created_at) > 180 ? "font-bold text-[#B45309]" : "text-[#8E8E93]"}`} title="Umur roll sejak diterima">· {rollAgeDays(r.created_at)} hari</span>
+                        )}
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1">
                         <span className="text-[10.5px] text-[#6B6B73]">{r.warehouse_name}</span>

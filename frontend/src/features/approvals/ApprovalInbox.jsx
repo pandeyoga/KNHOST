@@ -41,8 +41,8 @@ const KIND_META = {
   so_special_price: { label: "SO · Harga Khusus", icon: Tag,            fg: "#B45309", bg: "#FEF3C7", group: "sales_order" },
   po:              { label: "PO Pembelian",  icon: ShoppingCart,   fg: "#0058CC", bg: "#EFF4FF", group: "po" },
   price:           { label: "Harga Khusus",  icon: Tag,            fg: "#6D28D9", bg: "#F3EEFF", group: "price" },
-  sales_return:    { label: "Retur Jual",    icon: RotateCcw,      fg: "#B45309", bg: "#FEF3C7", group: "returns" },
-  purchase_return: { label: "Retur Beli",    icon: RotateCcw,      fg: "#0E7490", bg: "#E0F2FE", group: "returns" },
+  sales_return:    { label: "Retur Penjualan",    icon: RotateCcw,      fg: "#B45309", bg: "#FEF3C7", group: "returns" },
+  purchase_return: { label: "Retur Pembelian",    icon: RotateCcw,      fg: "#0E7490", bg: "#E0F2FE", group: "returns" },
   cycle:           { label: "Stock Opname",   icon: ClipboardCheck, fg: "#15803D", bg: "#DCFCE7", group: "cycle" },
   // FASE G-1 — koreksi angka dokumen keuangan (amandemen ber-alasan & ber-dampak).
   amendment:       { label: "Amandemen Dokumen", icon: FileEdit,   fg: "#7A2CA0", bg: "#F3E9FA", group: "amendment" },
@@ -116,8 +116,8 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
         grab("Pesanan Penjualan", axios.get(`${API}/approvals/queue`)),
         grab("Pembelian (PO)", axios.get(`${API}/purchase-orders`)),
         grab("Harga Khusus", axios.get(`${API}/price-approvals`, { params: { status: "pending" } })),
-        grab("Retur Jual", axios.get(`${API}/sales-returns`, { params: { status: "pending_approval" } })),
-        grab("Retur Beli", axios.get(`${API}/purchase-returns`)),
+        grab("Retur Penjualan", axios.get(`${API}/sales-returns`, { params: { status: "pending_approval" } })),
+        grab("Retur Pembelian", axios.get(`${API}/purchase-returns`)),
         grab("Stock Opname", axios.get(`${API}/cycle-count/sessions`)),
         grab("Amandemen", axios.get(`${API}/amendments`, { params: { status: "pending_approval" } })),
         // FASE F-6 — `?oldest=15` sekalian membawa DOKUMEN paling lama menunggu dari

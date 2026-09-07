@@ -7,6 +7,7 @@ Landed Cost, Input Tax (Faktur Masukan), RFQ, QC 4-point, Purchase Return,
 Goods Receipt (GR/roll). Kontrak field TIDAK berubah (kode menang)."""
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
+from services.text_normalize import PhoneStr
 from core_utils import MoneyDecimal, OptQtyDecimal, QtyDecimal
 
 
@@ -163,7 +164,7 @@ class SupplierCreate(BaseModel):
     name: str
     npwp: str = ""
     pic_name: str = ""
-    phone: str = ""
+    phone: PhoneStr = ""
     email: str = ""
     address: str = ""
     city: str = ""

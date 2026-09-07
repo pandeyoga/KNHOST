@@ -17,6 +17,21 @@ DEAD_STATUSES = {"cancelled", "draft", "expired", "rejected"}
 
 
 # ─── SALES REVAMP V2 — Sales team (PIC + co-sales + split) di level CUSTOMER ───
+MAX_GROUP_SALES = 2
+
+
+def apply_group_sales_rule(members: List[Dict[str, Any]]) -> None:
+    """K-5 (feedback klien 2026-09) — group sales maksimal 2 orang; bila split tidak diisi
+    (semua 0) dibagi rata otomatis (2 orang → 50-50, 1 orang → 100)."""
+    if len(members) > MAX_GROUP_SALES:
+        raise HTTPException(status_code=400, detail=f"Group sales maksimal {MAX_GROUP_SALES} orang (1 PIC + 1 co-sales).")
+    if members and all(m["split_pct"] <= 0 for m in members):
+        share = round(100.0 / len(members), 2)
+        for m in members:
+            m["split_pct"] = share
+        members[-1]["split_pct"] = round(100.0 - share * (len(members) - 1), 2)
+
+
 def normalize_sales_team(raw: Any, assigned_sales_id: str = "", assigned_sales_name: str = "") -> List[Dict[str, Any]]:
     """Validasi + normalisasi tim sales customer/order (join/group sales).
 
@@ -40,6 +55,7 @@ def normalize_sales_team(raw: Any, assigned_sales_id: str = "", assigned_sales_n
         if assigned_sales_id:
             return [{"sales_id": assigned_sales_id, "name": assigned_sales_name or "", "role": "pic", "split_pct": 100.0}]
         return []
+    apply_group_sales_rule(members)
     ids = [m["sales_id"] for m in members]
     if len(set(ids)) != len(ids):
         raise HTTPException(status_code=400, detail="Anggota sales tim tidak boleh duplikat.")

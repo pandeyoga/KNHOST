@@ -47,8 +47,8 @@ export const INS_KIND_LABEL = {
 export const INS_KIND_SHORT = {
   po_receipt: "Penerimaan PO",
   makloon_output: "Hasil Makloon",
-  return_customer: "Retur Pelanggan",
-  return_supplier: "Retur ke Supplier",
+  return_customer: "Retur Penjualan (dari pelanggan)",
+  return_supplier: "Retur Pembelian (ke pemasok)",
   replacement: "Barang Pengganti",
 };
 
