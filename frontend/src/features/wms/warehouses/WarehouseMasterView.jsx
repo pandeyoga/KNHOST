@@ -25,6 +25,9 @@ import {
 } from "lucide-react";
 
 import ErrorNotice from "../../../components/ErrorNotice";
+import LocationFields, { locationIncomplete } from "../../../components/LocationFields";
+const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
+const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
 import FormModal from "../../../components/FormModal";
 import WarehouseModeBadge from "../../../components/WarehouseModeBadge";
 import WarehouseStructure from "../inventory/WarehouseStructure";
@@ -119,10 +122,12 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
     if (!form.code.trim() || !form.name.trim()) {
       setError("Kode dan nama gudang wajib diisi."); return;
     }
+    const locErr = locationIncomplete(pickLoc(form));
+    if (locErr) { setError(`Alamat gudang: ${locErr}`); return; }
     setSaving(true);
     try {
       const payload = {
-        code: form.code.trim(), name: form.name.trim(), city: form.city.trim(),
+        code: form.code.trim(), name: form.name.trim(), ...pickLoc(form),
         bin_code: form.bin_code || "A1-01",
         bin_capacity: Number(form.bin_capacity) || 0,
         lat: form.lat === "" ? null : Number(form.lat),
@@ -166,7 +171,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
     setSiteError("");
     if (!newSite.name.trim()) { setSiteError("Nama lokasi wajib diisi."); return; }
     try {
-      await createSite({ name: newSite.name.trim(), city: newSite.city.trim() });
+      await createSite({ name: newSite.name.trim(), ...pickLoc(newSite) });
       setNewSite({ name: "", city: "" }); setShowSiteForm(false);
       setNotice("Lokasi ditambahkan."); load();
     } catch (e) { setSiteError(errText(e, "Gagal menambah lokasi.")); }
@@ -276,7 +281,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
             <div className="mb-3 rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-3" data-testid="wh-create-form">
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Gudang baru</p>
               <div className="grid gap-2 md:grid-cols-2">
-                {[["code", "Kode gudang (mis. WH-SMG)"], ["name", "Nama gudang"], ["city", "Kota"],
+                {[["code", "Kode gudang (mis. WH-SMG)"], ["name", "Nama gudang"],
                   ["bin_code", "Kode bin pertama"]].map(([key, ph]) => (
                   <input key={key} data-testid={`wh-form-${key}`} className="field" placeholder={ph}
                     value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
@@ -284,6 +289,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                 <input data-testid="wh-form-bin_capacity" className="field" type="number"
                   placeholder="Kapasitas bin" value={form.bin_capacity}
                   onChange={(e) => setForm({ ...form, bin_capacity: e.target.value })} />
+                <LocationFields testId="wh-form-loc" compact value={pickLoc(form)} onChange={(p) => setForm((f) => ({ ...f, ...p }))} />
                 <div className="grid grid-cols-2 gap-2">
                   <input data-testid="wh-form-lat" className="field" type="number" step="0.0001"
                     placeholder="Latitude (opsional)" value={form.lat}
@@ -455,11 +461,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
             <input data-testid="wh-site-name" className="field" placeholder="mis. Kawasan Industri Cikarang"
               value={newSite.name} onChange={(e) => setNewSite({ ...newSite, name: e.target.value })} />
           </label>
-          <label className="block">
-            <span className="field-label">Kota</span>
-            <input data-testid="wh-site-city" className="field" placeholder="Kota"
-              value={newSite.city} onChange={(e) => setNewSite({ ...newSite, city: e.target.value })} />
-          </label>
+          <LocationFields testId="wh-site-loc" compact value={pickLoc(newSite)} onChange={(p) => setNewSite((s) => ({ ...s, ...p }))} />
         </div>
       </FormModal>
 

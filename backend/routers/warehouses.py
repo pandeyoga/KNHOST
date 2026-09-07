@@ -16,6 +16,7 @@ Yang berubah di sini:
   · `GET /warehouses/{id}/occupancy` — isi gudang per badan usaha (dipakai layar
     master untuk menjelaskan kenapa sebuah perubahan ditolak).
 """
+from services.wilayah_service import normalize_location, LOCATION_KEYS
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -131,6 +132,7 @@ async def create_warehouse(payload: WarehousePayload, request: Request) -> Dict[
         "code": payload.code,
         "name": payload.name,
         "city": payload.city,
+        **normalize_location(payload.model_dump()),
         "lat": payload.lat,
         "lng": payload.lng,
         "sharing_mode": mode,
@@ -153,11 +155,13 @@ async def update_warehouse(warehouse_id: str, payload: GenericPatch, request: Re
     current = await db.warehouses.find_one({"id": warehouse_id}, {"_id": 0})
     if not current:
         raise HTTPException(status_code=404, detail="Gudang tidak ditemukan")
-    allowed = ["code", "name", "city", "zones", "active", "lat", "lng",
+    allowed = ["code", "name", "city", *LOCATION_KEYS, "zones", "active", "lat", "lng",
                "sharing_mode", "entity_ids",
                # FASE R0 — profil gudang (site, peran, rules, gate)
                "site_id", "roles", "storage_rules", "gate_config"]
     data = {k: v for k, v in payload.data.items() if k in allowed}
+    if any(k in data for k in LOCATION_KEYS):
+        data.update(normalize_location({**{k: current.get(k, "") for k in LOCATION_KEYS}, **{k: v for k, v in data.items() if k in LOCATION_KEYS}}))
     # FASE R0 — validasi & normalisasi profil
     from services import warehouse_profile_service as whp
     profile_keys = {"site_id", "roles", "storage_rules", "gate_config"} & set(data.keys())

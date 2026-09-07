@@ -29,6 +29,7 @@ import ImpactPicker from "./ImpactPicker";
 import ConfigHealthPanel from "./ConfigHealthPanel";
 import SagaLocksPanel from "./SagaLocksPanel";
 import DataHygienePanel from "./DataHygienePanel";
+import LocationBacklogPanel from "./LocationBacklogPanel";
 import {
   WhyThisValueDrawer, SimulatorPanel, ChangeHistoryDrawer, ChangeHistoryInline,
 } from "./ConfigDrawers";
@@ -480,7 +481,7 @@ export default function SettingsHub({
       ) : null}
 
       {tab === "saga" && isAdmin ? <SagaLocksPanel /> : null}
-      {tab === "hygiene" ? <DataHygienePanel isAdmin={isAdmin} /> : null}
+      {tab === "hygiene" ? <><DataHygienePanel isAdmin={isAdmin} /><LocationBacklogPanel canEdit /></> : null}
 
       {tab === "history" ? (
         <section className="cfg-history-tab" data-testid="cfg-history-tab">

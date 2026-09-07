@@ -1,5 +1,8 @@
 import KNDatePicker from "@/components/KNDatePicker";
 import { useEffect, useState } from "react";
+import LocationFields from "@/components/LocationFields";
+const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
+const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
 import MoneyInput from "@/components/MoneyInput";
 import axios, { API } from "../../services/apiClient";
 import { Plus, Trash2, Save } from "lucide-react";
@@ -13,7 +16,7 @@ const GENDER_OPTIONS = [{ value: "", label: "— pilih —" }, { value: "L", lab
 const STATUS_OPTIONS = [{ value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }, { value: "resigned", label: "Resigned" }];
 
 const EMPTY = {
-  name: "", nik: "", user_id: "", dob: "", gender: "", phone: "", email: "", address: "",
+  name: "", nik: "", user_id: "", dob: "", gender: "", phone: "", email: "", address: "", ...pickLoc(),
   department_id: "", position_id: "", shift_id: "", device_user_id: "",
   employment_type: "tetap", join_date: "", status: "active",
   npwp: "", ptkp_status: "TK0", bpjs_kes_enabled: false, bpjs_kes_no: "",
@@ -133,6 +136,7 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
                   <textarea data-testid="employee-address-input" value={form.address} onChange={(e) => set("address", e.target.value)} className="field" rows="2" placeholder="Alamat domisili" />
                 </Field>
               </div>
+              <LocationFields testId="employee-loc" compact required={false} value={pickLoc(form)} onChange={(p) => setForm((f) => ({ ...f, ...p }))} />
             </div>
           </Section>
 

@@ -62,7 +62,7 @@ def _db() -> Dict[str, Any]:
         bare = _key(re.sub(r"^(Kota|Kabupaten|Kab\.)\s+", "", r["name"], flags=re.I))
         reg_by_name.setdefault(bare, []).append(r["code"])
     prov_by_name = {_key(p["name"]): p["code"] for p in raw["provinces"]}
-    prov_by_name["jakarta"] = prov_by_name.get("dki jakarta", "31")
+    prov_by_name["jakarta"] = prov_by_name["dki jakarta"] = "31"   # alias umum
     return {"prov": prov, "reg": reg, "dist": dist, "reg_pos": reg_pos, "pos_index": pos_index,
             "reg_by_name": reg_by_name, "prov_by_name": prov_by_name, "raw": raw}
 

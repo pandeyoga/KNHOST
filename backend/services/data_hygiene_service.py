@@ -19,10 +19,10 @@ RULES: Dict[str, Dict[str, str]] = {
                   "contacts.name": "orang", "contacts.phone": "phone"},
     "suppliers": {"name": "usaha", "pic_name": "orang", "phone": "phone"},
     "users":     {"name": "orang", "phone": "phone"},
-    "employees": {"name": "orang", "full_name": "orang", "phone": "phone"},
+    "hr_employees": {"name": "orang", "full_name": "orang", "phone": "phone"},
     "makloons":  {"name": "usaha", "pic_name": "orang", "phone": "phone"},
 }
-LABEL = {"customers": "Pelanggan", "suppliers": "Pemasok", "users": "Pengguna", "employees": "Karyawan", "makloons": "Mitra makloon"}
+LABEL = {"customers": "Pelanggan", "suppliers": "Pemasok", "users": "Pengguna", "hr_employees": "Karyawan", "makloons": "Mitra makloon"}
 
 
 def _norm(kind: str, value: Any) -> Any:
@@ -139,3 +139,66 @@ async def preview(collections: Optional[List[str]] = None, limit: int = 200) -> 
                 if len(rows) >= limit:
                     return rows
     return rows
+
+
+# ── Alamat belum terverifikasi (2026-09) ─────────────────────────────────────
+LOCATION_COLLECTIONS = {
+    "customers": "Pelanggan", "suppliers": "Pemasok", "makloons": "Mitra makloon",
+    "warehouses": "Gudang", "warehouse_sites": "Lokasi gudang", "business_entities": "Badan usaha", "hr_employees": "Karyawan",
+}
+
+
+def _loc_status(doc: Dict[str, Any]) -> str:
+    """Status lokasi: pakai yang tersimpan; data lama tanpa status dinilai leniently (tanpa menulis)."""
+    from services.wilayah_service import normalize_location
+    st = doc.get("location_status")
+    if st == "foreign" or (st == "verified" and doc.get("postal_code")):
+        return st
+    try:
+        return normalize_location({k: doc.get(k, "") for k in ("country", "country_code", "province", "province_code", "city",
+                                                                "city_code", "district", "district_code", "postal_code")}).get("location_status", "unverified")
+    except Exception:  # noqa: BLE001 — nilai lama yang tidak konsisten
+        return "unverified"
+
+
+async def unverified_locations(collection: Optional[str] = None, limit: int = 300) -> Dict[str, Any]:
+    rows: List[Dict[str, Any]] = []
+    counts: Dict[str, int] = {}
+    for coll, label in LOCATION_COLLECTIONS.items():
+        if collection and coll != collection:
+            continue
+        n = 0
+        async for doc in db[coll].find({"location_status": {"$nin": ["verified", "foreign"]}}, {"_id": 0}):
+            st = _loc_status(doc)
+            if st in ("verified", "foreign"):
+                continue
+            n += 1
+            if len(rows) < limit:
+                rows.append({"collection": coll, "label": label, "doc_id": doc["id"],
+                             "doc_label": doc.get("name") or doc.get("legal_name") or doc.get("full_name") or doc["id"],
+                             "entity_id": doc.get("entity_id"), "status": st, "address": doc.get("address", ""),
+                             **{k: doc.get(k, "") for k in ("country", "country_code", "province", "province_code", "city",
+                                                            "city_code", "district", "district_code", "postal_code")}})
+        counts[coll] = n
+    return {"items": rows, "counts": counts, "total": sum(counts.values()), "labels": LOCATION_COLLECTIONS}
+
+
+async def fix_location(collection: str, doc_id: str, data: Dict[str, Any], actor: str) -> Dict[str, Any]:
+    """Lengkapi lokasi satu record dari layar Kebersihan Data (wajib lengkap & konsisten)."""
+    from services.wilayah_service import normalize_location
+    if collection not in LOCATION_COLLECTIONS:
+        raise HTTPException(status_code=404, detail="Koleksi tidak dikenal.")
+    doc = await db[collection].find_one({"id": doc_id}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Dokumen tidak ditemukan.")
+    loc = normalize_location(data, require=True)
+    await db[collection].update_one({"id": doc_id}, {"$set": {**loc, "updated_at": now_iso()}})
+    if collection == "customers" and isinstance(doc.get("addresses"), list) and data.get("apply_to_primary", True):
+        addrs = [{**a, **loc} if a.get("is_primary") and (not a.get("postal_code") or _loc_status(a) not in ("verified", "foreign")) else a
+                 for a in doc["addresses"]]
+        await db.customers.update_one({"id": doc_id}, {"$set": {"addresses": addrs}})
+    await db.data_hygiene_log.insert_one({
+        "id": new_id("hyg"), "collection": collection, "doc_id": doc_id, "doc_label": doc.get("name") or doc.get("legal_name") or doc_id,
+        "entity_id": doc.get("entity_id"), "trigger": "location_fix", "actor": actor, "applied_at": now_iso(), "reverted": False,
+        "changes": [{"field": k, "before": doc.get(k, ""), "after": v} for k, v in loc.items() if doc.get(k, "") != v]})
+    return {"collection": collection, "doc_id": doc_id, **loc}

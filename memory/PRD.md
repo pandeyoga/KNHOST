@@ -132,4 +132,10 @@ Sumber data: Kepmendagri 300.2.2-2138/2025 (cahyadsn/wilayah + wilayah_kodepos, 
 - Frontend `components/LocationFields.jsx` (dropdown bertingkat searchable + "isi cepat dari kode pos" + mode luar negeri) dipakai di CustomerFormModal, CustomerPanel & CreateCustomerModal (POS), SuppliersView, MakloonFormModal, EntityWizard (tidak wajib). Validasi sisi klien `locationIncomplete()` sebelum simpan.
 - Schema: `CustomerCreate.city` kini opsional (boleh diisi dari kode); field lokasi baru opsional (kompatibel klien lama).
 Bukti: `smoke_wilayah.py` ALL PASS; testing agent iteration_11 semua PASS (BE+UI). Data lama tidak diubah — hanya ditandai `location_status` saat disentuh berikutnya.
-Backlog lokasi: backfill `location_status` untuk data lama + daftar "alamat belum terverifikasi" di layar Kebersihan Data; gudang (warehouses) & karyawan belum memakai LocationFields.
+Backlog lokasi: ~~backfill/daftar alamat belum terverifikasi~~ dan ~~gudang & karyawan~~ — SELESAI sesi 5 (lihat bawah).
+
+## 2026-09-07 (sesi 5) — Lokasi gudang/karyawan + backlog "Alamat belum terverifikasi"
+- LocationFields dipasang di form Gudang baru (`wh-form-loc-*`), Lokasi/site gudang (`wh-site-loc-*`), Karyawan HR (`employee-loc-*`, tidak wajib). Backend: `WarehousePayload`/`SitePayload`/`EmployeeCreate` + field lokasi; create & PATCH memakai `normalize_location` dengan merge lokasi tersimpan (PATCH kode pos saja tetap dicek terhadap kota yang sudah ada). Koleksi karyawan = `hr_employees` (RULES hygiene diperbaiki).
+- `data_hygiene_service.unverified_locations()` (customers/suppliers/makloons/warehouses/warehouse_sites/business_entities/hr_employees; data lama tanpa `location_status` dinilai lenient tanpa menulis) + `fix_location()` (wajib lengkap; alamat utama pelanggan ikut dilengkapi bila belum berkode pos; dicatat di `data_hygiene_log` trigger `location_fix`). Endpoint: GET `/api/data-hygiene/unverified-locations`, POST `/api/data-hygiene/location/{collection}/{doc_id}`.
+- FE `LocationBacklogPanel.jsx` di tab Kebersihan Data: filter jenis data, tabel, tombol Lengkapi → LocationFields inline → Simpan.
+Bukti: `smoke_wilayah.py` ALL PASS + ALL PASS (sesi 5); testing agent iteration_12 semua PASS (1 temuan alamat utama seed berstatus 'verified' tanpa kode pos → diperbaiki: status tersimpan hanya dipercaya bila kode pos ada).

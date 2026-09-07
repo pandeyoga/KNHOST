@@ -33,6 +33,16 @@ class HrEmployeeCreate(BaseModel):
     phone: str = ""
     email: str = ""
     address: str = ""
+    city: str = ""
+    # Lokasi tervalidasi (2026-09)
+    country: str = ""
+    country_code: str = ""
+    province: str = ""
+    province_code: str = ""
+    city_code: str = ""
+    district: str = ""
+    district_code: str = ""
+    postal_code: str = ""
     department_id: str = ""            # FK hr_org_units (unit_type=department)
     position_id: str = ""              # FK hr_org_units (unit_type=position)
     shift_id: str = ""                 # FK hr_shifts (H1; kosong → shift default entitas)

@@ -66,3 +66,17 @@ async def hygiene_unlock(collection: str, doc_id: str, request: Request) -> Dict
 async def turn_map(request: Request) -> List[Dict[str, Any]]:
     await require_role(request, ROLES)
     return turn_map_public()
+
+
+@router.get("/data-hygiene/unverified-locations")
+async def unverified_locations(request: Request, collection: Optional[str] = None) -> Dict[str, Any]:
+    await require_role(request, ROLES)
+    return await svc.unverified_locations(collection)
+
+
+@router.post("/data-hygiene/location/{collection}/{doc_id}")
+async def fix_location(collection: str, doc_id: str, body: Dict[str, Any], request: Request) -> Dict[str, Any]:
+    actor = await require_role(request, ROLES)
+    res = await svc.fix_location(collection, doc_id, body or {}, actor["name"])
+    await audit(actor["name"], "location_fixed", collection, doc_id, res)
+    return res

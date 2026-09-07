@@ -81,20 +81,21 @@ async def list_sites() -> List[Dict[str, Any]]:
     return [safe_doc(s) for s in sites]
 
 
-async def create_site(name: str, city: str, actor_name: str) -> Dict[str, Any]:
+async def create_site(name: str, city: str, actor_name: str, location: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     name = (name or "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Nama lokasi wajib diisi")
     if await db.warehouse_sites.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}}):
         raise HTTPException(status_code=409, detail="Nama lokasi sudah ada")
-    site = {"id": new_id("site"), "name": name, "city": (city or "").strip(),
+    site = {"id": new_id("site"), "name": name, "city": (city or "").strip(), **(location or {}),
             "created_at": now_iso(), "created_by": actor_name}
     await db.warehouse_sites.insert_one(dict(site))
     return safe_doc(site)
 
 
 async def update_site(site_id: str, patch: Dict[str, Any]) -> Dict[str, Any]:
-    data = {k: str(v).strip() for k, v in patch.items() if k in {"name", "city"} and v is not None}
+    _keys = {"name", "city", "country", "country_code", "province", "province_code", "city_code", "district", "district_code", "postal_code", "location_status"}
+    data = {k: str(v).strip() for k, v in patch.items() if k in _keys and v is not None}
     if not data:
         raise HTTPException(status_code=400, detail="Tidak ada perubahan")
     data["updated_at"] = now_iso()

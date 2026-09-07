@@ -329,7 +329,16 @@ class StockWipIn(BaseModel):
 class WarehousePayload(BaseModel):
     code: str
     name: str
-    city: str
+    city: str = ""
+    # Lokasi tervalidasi (2026-09)
+    country: str = ""
+    country_code: str = ""
+    province: str = ""
+    province_code: str = ""
+    city_code: str = ""
+    district: str = ""
+    district_code: str = ""
+    postal_code: str = ""
     bin_code: str = "A1-01"
     bin_capacity: float = Field(1000, ge=0)
     lat: Optional[float] = None

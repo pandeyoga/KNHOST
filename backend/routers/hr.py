@@ -18,11 +18,13 @@ from schemas import GenericPatch
 from schemas_hr import HrOrgUnitCreate, HrEmployeeCreate, HrSettingsUpdate
 from services import hr_service
 from services.text_normalize import nama_orang
+from services.wilayah_service import normalize_location, LOCATION_KEYS
 
 router = APIRouter(prefix="/api")
 
 EMP_UPDATE_FIELDS = {
-    "name", "nik", "user_id", "dob", "gender", "phone", "email", "address",
+    "name", "nik", "user_id", "dob", "gender", "phone", "email", "address", "city",
+    "country", "country_code", "province", "province_code", "city_code", "district", "district_code", "postal_code",
     "department_id", "position_id", "shift_id", "device_user_id",
     "employment_type", "join_date", "status",
     "npwp", "ptkp_status", "bpjs_kes_enabled", "bpjs_kes_no", "bpjs_tk_enabled",
@@ -273,6 +275,8 @@ async def create_employee(payload: HrEmployeeCreate, request: Request) -> Dict[s
         "phone": payload.phone or "",
         "email": payload.email or "",
         "address": payload.address or "",
+        "city": payload.city or "",
+        **normalize_location(payload.model_dump()),
         "department_id": payload.department_id or "",
         "position_id": payload.position_id or "",
         "shift_id": payload.shift_id or "",
@@ -399,6 +403,8 @@ async def update_employee(employee_id: str, payload: GenericPatch, request: Requ
         raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan")
     assert_entity_access(emp, "hr_employees", ctx)
     updates = {k: v for k, v in (payload.data or {}).items() if k in EMP_UPDATE_FIELDS}
+    if any(k in updates for k in LOCATION_KEYS):
+        updates.update(normalize_location({**{k: emp.get(k, "") for k in LOCATION_KEYS}, **{k: v for k, v in updates.items() if k in LOCATION_KEYS}}))
     if not updates:
         raise HTTPException(status_code=400, detail="Tidak ada field valid untuk diupdate")
     if "user_id" in updates and updates["user_id"]:
