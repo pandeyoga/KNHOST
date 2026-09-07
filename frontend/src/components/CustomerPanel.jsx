@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import LocationFields from "./LocationFields";
 import { Users, UserPlus } from "lucide-react";
 import KNSelect from "./KNSelect";
 
@@ -23,7 +24,7 @@ export function CustomerPanel({
     name: "", 
     pic_name: "", 
     phone: "", 
-    city: "Jakarta", 
+    city: "", 
     address: "",
     enforce_single_dye_lot: false,
     lot_policy: "",
@@ -137,13 +138,7 @@ export function CustomerPanel({
               onChange={(e) => setForm({ ...form, phone: e.target.value })} 
             />
             <div className="grid gap-2 sm:grid-cols-2">
-              <input 
-                data-testid="new-customer-city-input" 
-                className="field" 
-                placeholder="Kota" 
-                value={form.city} 
-                onChange={(e) => setForm({ ...form, city: e.target.value })} 
-              />
+              <LocationFields testId="new-customer-loc" compact value={form} onChange={(patch) => setForm((p) => ({ ...p, ...patch }))} />
               <input 
                 data-testid="new-customer-address-input" 
                 className="field" 

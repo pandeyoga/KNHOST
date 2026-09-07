@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import LocationFields, { locationIncomplete } from "../../components/LocationFields";
+const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
+const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
 import axios, { API } from "../../services/apiClient";
 import { Truck, Plus, Search, Pencil, Power, X, BarChart3, Clock, Globe } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
@@ -40,7 +43,8 @@ const DEFAULT_RETURN_POLICY = {
 };
 const EMPTY_FORM = {
   name: "", npwp: "", pic_name: "", phone: "", email: "",
-  address: "", city: "", goods_type: "", payment_term_code: "", lead_time_days: "",
+  address: "", city: "", country_code: "", province: "", province_code: "", city_code: "", district: "", district_code: "", postal_code: "",
+  goods_type: "", payment_term_code: "", lead_time_days: "",
   entity_id: "", notes: "",
   origin_type: "local", country: "", return_policy: { ...DEFAULT_RETURN_POLICY },
   bank: {},
@@ -98,7 +102,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
     setEditId(s.id);
     setForm({
       name: s.name || "", npwp: s.npwp || "", pic_name: s.pic_name || "", phone: s.phone || "",
-      email: s.email || "", address: s.address || "", city: s.city || "",
+      email: s.email || "", address: s.address || "", ...pickLoc(s),
       goods_type: s.goods_type || "", payment_term_code: s.payment_term_code || "",
       lead_time_days: s.lead_time_days != null ? String(s.lead_time_days) : "",
       entity_id: s.entity_id || "", notes: s.notes || "",
@@ -111,6 +115,8 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
 
   async function handleSubmit() {
     if (!form.name.trim()) { setError("Nama supplier wajib diisi."); return; }
+    const locErr = locationIncomplete(pickLoc(form));
+    if (locErr) { setError(`Alamat: ${locErr}`); return; }
     const payload = { ...form, lead_time_days: parseInt(form.lead_time_days, 10) || 0 };
     try {
       if (editId) {
@@ -224,10 +230,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
                 <input data-testid="supplier-email-input" value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })} className="field" placeholder="sales@pemasok.co.id" />
               </Field>
-              <Field label="Kota">
-                <input data-testid="supplier-city-input" value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })} className="field" placeholder="Bandung" />
-              </Field>
+              <LocationFields testId="supplier-loc" value={pickLoc(form)} onChange={(patch) => setForm((p) => ({ ...p, ...patch }))} />
               <Field label="Jenis Barang">
                 <input data-testid="supplier-goods-input" value={form.goods_type}
                   onChange={(e) => setForm({ ...form, goods_type: e.target.value })} className="field" placeholder="Benang / Kain / Bahan Printing" />

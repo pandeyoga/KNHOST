@@ -14,6 +14,7 @@ from entity_scope import entity_ctx, resolve_list_scope
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope, paginate_list
 from request_context import active_entity_or
 from services.text_normalize import nama_orang, nama_usaha, phone_id
+from services.wilayah_service import normalize_location, LOCATION_KEYS
 
 router = APIRouter(prefix="/api")
 
@@ -105,6 +106,7 @@ async def create_customer(payload: CustomerCreate, request: Request) -> Dict[str
         "email": payload.email,
         "type": payload.type,
         "city": payload.city,
+        **normalize_location(payload.model_dump()),
         "npwp": payload.npwp,
         "credit_limit": payload.credit_limit,
         "sales_pic": assigned_name or payload.sales_pic,
@@ -128,10 +130,10 @@ async def create_customer(payload: CustomerCreate, request: Request) -> Dict[str
         "created_by": actor["name"],
         "created_at": now_iso(),
         "addresses": [
-            CustomerAddress(
+            {**CustomerAddress(
                 recipient_name=payload.pic_name, phone=payload.phone,
                 city=payload.city, address=payload.address, is_primary=True
-            ).model_dump()
+            ).model_dump(), **normalize_location(payload.model_dump())}
         ],
     }
     await db.customers.insert_one(customer)
@@ -147,7 +149,7 @@ async def update_customer(customer_id: str, payload: GenericPatch, request: Requ
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
     if not await can_access_customer(actor, existing):
         raise HTTPException(status_code=403, detail="Customer ini bukan milik Anda")
-    allowed = ["name", "pic_name", "phone", "email", "type", "city", "status", "addresses",
+    allowed = ["name", "pic_name", "phone", "email", "type", "city", "status", "addresses", *LOCATION_KEYS,
                "npwp", "credit_limit", "sales_pic", "entity_id",
                "enforce_single_dye_lot", "lot_policy", "allocation_policy",
                # CRM-lite
@@ -165,6 +167,10 @@ async def update_customer(customer_id: str, payload: GenericPatch, request: Requ
             data["phone"] = phone_id(str(data["phone"] or ""))
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
+    if any(k in data for k in LOCATION_KEYS):
+        data.update(normalize_location({**{k: existing.get(k, "") for k in LOCATION_KEYS}, **{k: v for k, v in data.items() if k in LOCATION_KEYS}}))
+    if isinstance(data.get("addresses"), list):
+        data["addresses"] = [{**a, **normalize_location(a)} if isinstance(a, dict) else a for a in data["addresses"]]
     # SALES REVAMP V2 — validasi tim sales; PIC tetap = pemilik (ubah owner via Reassign).
     if "sales_team" in data:
         aid = existing.get("assigned_sales_id", "")
@@ -201,6 +207,7 @@ async def add_customer_address(customer_id: str, payload: CustomerAddress, reque
     actor = await require_permission(request, "customer", "update")
     address = payload.model_dump()
     address["recipient_name"] = nama_orang(address.get("recipient_name") or "")
+    address.update(normalize_location(address))
     customer = await db.customers.find_one_and_update(
         {"id": customer_id},
         {"$push": {"addresses": address}, "$set": {"updated_at": now_iso()}},

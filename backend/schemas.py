@@ -75,6 +75,15 @@ class CustomerAddress(BaseModel):
     city: str
     address: str
     is_primary: bool = False
+    # Lokasi tervalidasi (2026-09) — negara → provinsi → kota/kab → kecamatan → kode pos (services/wilayah_service)
+    country: str = ""
+    country_code: str = ""
+    province: str = ""
+    province_code: str = ""
+    city_code: str = ""
+    district: str = ""
+    district_code: str = ""
+    postal_code: str = ""
 
 
 class CustomerCreate(BaseModel):
@@ -83,8 +92,17 @@ class CustomerCreate(BaseModel):
     phone: PhoneStr
     email: str = ""
     type: str = "Retail"
-    city: str
+    city: str = ""            # boleh kosong bila city_code/postal_code dikirim (lokasi tervalidasi 2026-09)
     address: str
+    # Lokasi tervalidasi (2026-09) — negara → provinsi → kota/kab → kecamatan → kode pos (services/wilayah_service)
+    country: str = ""
+    country_code: str = ""
+    province: str = ""
+    province_code: str = ""
+    city_code: str = ""
+    district: str = ""
+    district_code: str = ""
+    postal_code: str = ""
     npwp: str = ""
     credit_limit: float = Field(0, ge=0)
     sales_pic: str = ""
@@ -109,6 +127,15 @@ class BusinessEntityCreate(BaseModel):
     npwp: str = ""                # WAJIB bila default_tax_mode="ppn" (PKP) — divalidasi service
     address: str = ""
     city: str = ""
+    # Lokasi tervalidasi (2026-09) — negara → provinsi → kota/kab → kecamatan → kode pos (services/wilayah_service)
+    country: str = ""
+    country_code: str = ""
+    province: str = ""
+    province_code: str = ""
+    city_code: str = ""
+    district: str = ""
+    district_code: str = ""
+    postal_code: str = ""
     phone: PhoneStr = ""
     email: str = ""
     owner_name: str = ""          # E1.1 — wajib untuk jenis Perorangan/UD

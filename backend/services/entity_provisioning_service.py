@@ -144,6 +144,8 @@ async def provision_entity(payload: Dict[str, Any], actor_name: str) -> Dict[str
     entity: Dict[str, Any] = dict(ENTITY_DEFAULTS)
     entity.update(data)
     entity.update(clean)
+    from services.wilayah_service import apply_location
+    apply_location(entity)   # lokasi badan usaha tervalidasi (2026-09)
     entity.update({
         "id": new_id("ent"),
         "status": lifecycle.STATUS_ACTIVE,

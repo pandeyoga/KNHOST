@@ -14,6 +14,7 @@ from pagination import is_paged, get_page_params, build_search, merge_query, fet
 from schemas import SupplierCreate, SupplierPriceListCreate, GenericPatch
 from services.supplier_service import resolve_price, compute_scorecard, supplier_360
 from services.text_normalize import nama_orang, nama_usaha, phone_id
+from services.wilayah_service import normalize_location, LOCATION_KEYS
 from services.return_policy_service import (
     normalize_supplier_policy, resolve_supplier_return_policy, ORIGIN_TYPES,
 )
@@ -109,6 +110,7 @@ async def create_supplier(payload: SupplierCreate, request: Request) -> Dict[str
         # ── R0 — Origin + Return Policy ──
         "origin_type": origin_type,
         "country": (payload.country or "").strip(),
+        **normalize_location(payload.model_dump()),
         "return_policy": return_policy,
         "bank": _clean_bank(payload.bank),
         "created_by": payload.created_by,
@@ -149,7 +151,7 @@ async def update_supplier(supplier_id: str, payload: GenericPatch, request: Requ
         raise HTTPException(status_code=404, detail="Supplier tidak ditemukan")
     allowed = {"name", "npwp", "pic_name", "phone", "email", "address", "city",
                "goods_type", "payment_term_code", "lead_time_days", "entity_id", "notes", "status",
-               "origin_type", "country", "return_policy", "bank"}
+               "origin_type", "country", "return_policy", "bank", *LOCATION_KEYS}
     updates = {k: v for k, v in (payload.data or {}).items() if k in allowed}
     if "name" in updates:
         updates["name"] = nama_usaha(str(updates["name"] or ""))
@@ -162,6 +164,9 @@ async def update_supplier(supplier_id: str, payload: GenericPatch, request: Requ
             raise HTTPException(status_code=400, detail=str(exc))
     if "bank" in updates:
         updates["bank"] = _clean_bank(updates["bank"])
+    if any(k in updates for k in LOCATION_KEYS):
+        _ex = await db.suppliers.find_one({"id": supplier_id}, {"_id": 0, **{k: 1 for k in LOCATION_KEYS}}) or {}
+        updates.update(normalize_location({**{k: _ex.get(k, "") for k in LOCATION_KEYS}, **{k: v for k, v in updates.items() if k in LOCATION_KEYS}}))
     if not updates:
         raise HTTPException(status_code=400, detail="Tidak ada field valid untuk diupdate")
     if "lead_time_days" in updates:

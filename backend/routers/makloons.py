@@ -13,6 +13,7 @@ from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from schemas import MakloonCreate, GenericPatch
+from services.wilayah_service import normalize_location
 from services.makloon_service import makloon_360, compute_makloon_scorecard
 
 router = APIRouter(prefix="/api")
@@ -64,6 +65,7 @@ async def create_makloon(payload: MakloonCreate, request: Request) -> Dict[str, 
         "email": payload.email.strip(),
         "address": payload.address.strip(),
         "city": payload.city.strip(),
+        **normalize_location(payload.model_dump()),
         "process_types": [p.strip() for p in (payload.process_types or []) if p.strip()],
         "capacity_note": payload.capacity_note.strip(),
         "capacity_per_month": float(payload.capacity_per_month or 0),

@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { X, UserPlus } from "lucide-react";
+import LocationFields, { locationIncomplete } from "../../components/LocationFields";
 
 /** EPIC5 — Buat Customer sebagai MODAL (dipanggil dari checkout step 1).
  * SALES REVAMP V2 — Kebijakan lot DIPINDAH ke Manajemen Pelanggan (CustomerFormModal).
  * Quick-add POS hanya data dasar; lot policy diatur di Manajemen Pelanggan. */
 export default function CreateCustomerModal({ open, onClose, onCreateCustomer }) {
   const [form, setForm] = useState({
-    name: "", pic_name: "", phone: "", city: "Jakarta", address: "",
+    name: "", pic_name: "", phone: "", city: "", address: "",
   });
   const [busy, setBusy] = useState(false);
   if (!open) return null;
 
-  const valid = form.name && form.pic_name && form.phone && form.city && form.address;
+  const valid = form.name && form.pic_name && form.phone && form.city && form.address && !locationIncomplete(form);
 
   async function submit() {
     if (!valid) return;
@@ -39,7 +40,7 @@ export default function CreateCustomerModal({ open, onClose, onCreateCustomer })
           <input data-testid="new-customer-pic-input" className="field" placeholder="Nama PIC" value={form.pic_name} onChange={(e) => setForm({ ...form, pic_name: e.target.value })} />
           <input data-testid="new-customer-phone-input" className="field" placeholder="No. WhatsApp" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           <div className="grid gap-2 sm:grid-cols-2">
-            <input data-testid="new-customer-city-input" className="field" placeholder="Kota" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+            <LocationFields testId="new-customer-loc" compact value={form} onChange={(patch) => setForm((p) => ({ ...p, ...patch }))} />
             <input data-testid="new-customer-address-input" className="field" placeholder="Alamat" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           </div>
           <p data-testid="new-customer-lot-note" className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-2 text-[10.5px] text-[#6B6B73]">

@@ -273,6 +273,10 @@ export function useAppActions(state) {
       setNotice("Lengkapi data customer baru terlebih dahulu.");
       return;
     }
+    if ((form.country_code || "ID") === "ID" && (!form.province_code || !form.city_code || !form.postal_code)) {
+      setNotice("Alamat belum lengkap: pilih provinsi, kota/kabupaten, dan kode pos yang valid.");
+      return;
+    }
     try {
       const response = await axios.post(`${API}/customers`, { ...form, entity_id: entityValue });
       setSelectedCustomer(response.data);

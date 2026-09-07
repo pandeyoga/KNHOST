@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import LocationFields, { locationIncomplete } from "../../components/LocationFields";
+const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
+const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
 import { namaOrang, namaUsaha } from "../../utils/text";
 import MoneyInput from "@/components/MoneyInput";
 import axios, { API } from "../../services/apiClient";
@@ -40,7 +43,7 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
       setF({
         name: editTarget.name || "", segment: editTarget.segment || "Retail",
         assigned_sales_id: editTarget.assigned_sales_id || "", pic_name: editTarget.pic_name || "",
-        phone: editTarget.phone || "", email: editTarget.email || "", city: editTarget.city || "",
+        phone: editTarget.phone || "", email: editTarget.email || "", city: editTarget.city || "", ...pickLoc(editTarget),
         address: (editTarget.addresses?.[0]?.address) || "", npwp: editTarget.npwp || "",
         credit_limit: editTarget.credit_limit || "", tags: (editTarget.tags || []).join(", "),
         status: editTarget.status || "active",
@@ -86,12 +89,14 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
       dp_percent: Number(f.dp_percent) || 0, installment_count: 0, installment_interval_days: 30,
     };
     const tags = f.tags.split(",").map((t) => t.trim()).filter(Boolean);
+    const locErr = locationIncomplete(pickLoc(f));
+    if (locErr) { onError?.(`Alamat: ${locErr}`); return; }
     setBusy(true);
     try {
       if (isEdit) {
         const body = { data: {
           name: f.name, segment: f.segment, pic_name: f.pic_name, phone: f.phone, email: f.email,
-          city: f.city, npwp: f.npwp, credit_limit: Number(f.credit_limit) || 0, tags,
+          ...pickLoc(f), npwp: f.npwp, credit_limit: Number(f.credit_limit) || 0, tags,
           payment_profile, status: f.status,
           enforce_single_dye_lot: !!f.enforce_single_dye_lot, lot_policy: f.lot_policy || "",
           sales_team: salesTeam,
@@ -101,7 +106,7 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
       } else {
         const body = {
           name: f.name, pic_name: f.pic_name || f.name, phone: f.phone, email: f.email,
-          type: f.segment, segment: f.segment, city: f.city || "-", address: f.address || "-",
+          type: f.segment, segment: f.segment, ...pickLoc(f), address: f.address || "-",
           npwp: f.npwp, credit_limit: Number(f.credit_limit) || 0,
           assigned_sales_id: f.assigned_sales_id, tags, payment_profile,
           enforce_single_dye_lot: !!f.enforce_single_dye_lot, lot_policy: f.lot_policy || "",
@@ -152,9 +157,7 @@ export default function CustomerFormModal({ open, editTarget, currentUser, sales
             <Field label="Email">
               <input data-testid="customer-email" value={f.email} onChange={(e) => set("email", e.target.value)} className="field" placeholder="email@..." />
             </Field>
-            <Field label="Kota">
-              <input data-testid="customer-city" value={f.city} onChange={(e) => set("city", e.target.value)} className="field" placeholder="Kota" />
-            </Field>
+            <LocationFields testId="customer-loc" value={pickLoc(f)} onChange={(patch) => setF((p) => ({ ...p, ...patch }))} />
             <Field label="NPWP">
               <input data-testid="customer-npwp" value={f.npwp} onChange={(e) => set("npwp", e.target.value)} className="field" placeholder="NPWP (opsional)" />
             </Field>

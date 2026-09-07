@@ -21,6 +21,15 @@ class MakloonCreate(BaseModel):
     email: str = ""
     address: str = ""
     city: str = ""
+    # Lokasi tervalidasi (2026-09) — negara → provinsi → kota/kab → kecamatan → kode pos (services/wilayah_service)
+    country: str = ""
+    country_code: str = ""
+    province: str = ""
+    province_code: str = ""
+    city_code: str = ""
+    district: str = ""
+    district_code: str = ""
+    postal_code: str = ""
     process_types: List[str] = Field(default_factory=list)   # tenun|celup|finishing|...
     capacity_note: str = ""
     capacity_per_month: float = Field(0, ge=0)               # kapasitas (unit output/bln)

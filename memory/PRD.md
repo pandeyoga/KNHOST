@@ -125,3 +125,11 @@ Keputusan pemilik: Kanda Fabric & Sukacita Textile = PENGGANTI nama entitas lama
 
 Bukti: `smoke_turn_hygiene_entities.py` ALL PASS; testing agent iteration_10 semua PASS (BE+UI); guard to_list/atomic hijau; validate_compliance 0 FAIL.
 Backlog: U-2 meja kerja 6 peran; NPWP/alamat/gudang CV Cipta Sandang Textile menunggu pemilik; kanal WhatsApp untuk giliran (bila diinginkan nanti).
+
+## 2026-09-07 (sesi 4) — Lokasi tervalidasi ala e-commerce (semua data beralamat)
+Sumber data: Kepmendagri 300.2.2-2138/2025 (cahyadsn/wilayah + wilayah_kodepos, MIT) → `backend/data/wilayah_id.json` (38 provinsi · 514 kab/kota · 7.265 kecamatan · 83.345 kelurahan berkode pos, 5,6 MB, dimuat lazy).
+- Backend `services/wilayah_service.py`: `normalize_location()` — negara → provinsi → kota/kab → kecamatan → kode pos wajib konsisten; kode pos harus milik kecamatan/kota terpilih; kode pos saja → isi otomatis. Mode STRICT (payload bawa province/postal_code/kode → 400 menuntun) vs LENIENT (klien lama hanya `city` → alias Solo→Kota Surakarta dst., `location_status` verified/partial/unverified/foreign; tidak menolak data lama). Dipasang di customers (create/PATCH/alamat), suppliers, makloons, entity provisioning. `routers/wilayah.py`: /api/wilayah/{countries,provinces,regencies,districts,villages,postal-code/{code},search,validate}.
+- Frontend `components/LocationFields.jsx` (dropdown bertingkat searchable + "isi cepat dari kode pos" + mode luar negeri) dipakai di CustomerFormModal, CustomerPanel & CreateCustomerModal (POS), SuppliersView, MakloonFormModal, EntityWizard (tidak wajib). Validasi sisi klien `locationIncomplete()` sebelum simpan.
+- Schema: `CustomerCreate.city` kini opsional (boleh diisi dari kode); field lokasi baru opsional (kompatibel klien lama).
+Bukti: `smoke_wilayah.py` ALL PASS; testing agent iteration_11 semua PASS (BE+UI). Data lama tidak diubah — hanya ditandai `location_status` saat disentuh berikutnya.
+Backlog lokasi: backfill `location_status` untuk data lama + daftar "alamat belum terverifikasi" di layar Kebersihan Data; gudang (warehouses) & karyawan belum memakai LocationFields.

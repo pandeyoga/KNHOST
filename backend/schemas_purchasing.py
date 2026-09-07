@@ -168,6 +168,14 @@ class SupplierCreate(BaseModel):
     email: str = ""
     address: str = ""
     city: str = ""
+    # Lokasi tervalidasi (2026-09) — negara → provinsi → kota/kab → kecamatan → kode pos (services/wilayah_service)
+    country_code: str = ""
+    province: str = ""
+    province_code: str = ""
+    city_code: str = ""
+    district: str = ""
+    district_code: str = ""
+    postal_code: str = ""
     goods_type: str = ""              # jenis barang yang dipasok (benang/kain/bahan printing)
     payment_term_code: str = ""
     lead_time_days: int = Field(0, ge=0)           # Depth #3 — estimasi lead time default supplier (hari)

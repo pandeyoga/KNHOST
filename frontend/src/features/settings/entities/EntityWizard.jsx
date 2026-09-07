@@ -9,6 +9,9 @@
  * pratinjau nomor langsung dan peringatan bahwa kode akan terkunci.
  */
 import { useEffect, useMemo, useState } from "react";
+import LocationFields from "../../../components/LocationFields";
+const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
+const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
 import { Building2, Loader2, X, ArrowLeft, ArrowRight, Save, ShieldCheck,
   Hash, ClipboardCheck, AlertTriangle } from "lucide-react";
 
@@ -229,10 +232,7 @@ export default function EntityWizard({ entities = [], onClose, onCreated }) {
                        onChange={(e) => set({ short_name: e.target.value })} />
               </Field>
               <div className="grid gap-2.5 sm:grid-cols-2">
-                <Field label="Kota" testId="entity-wizard-city">
-                  <input className="field" data-testid="entity-wizard-city-input"
-                         value={form.city} onChange={(e) => set({ city: e.target.value })} />
-                </Field>
+                <LocationFields testId="entity-wizard-loc" compact required={false} value={pickLoc(form)} onChange={(patch) => set(patch)} />
                 <Field label="Telepon" testId="entity-wizard-phone">
                   <input className="field" data-testid="entity-wizard-phone-input"
                          value={form.phone} onChange={(e) => set({ phone: e.target.value })} />

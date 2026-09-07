@@ -3,6 +3,9 @@
  * POST /makloons | PATCH /makloons/{id} (via {data}).
  */
 import { useState } from "react";
+import LocationFields, { locationIncomplete } from "../../components/LocationFields";
+const LOC_KEYS = ["country", "country_code", "province", "province_code", "city", "city_code", "district", "district_code", "postal_code"];
+const pickLoc = (o = {}) => Object.fromEntries(LOC_KEYS.map((k) => [k, o[k] || ""]));
 import MoneyInput from "@/components/MoneyInput";
 import { Factory, X, Save } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
@@ -33,7 +36,7 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
   });
   const [form, setForm] = useState(() => ({
     name: editTarget?.name || "", npwp: editTarget?.npwp || "", pic_name: editTarget?.pic_name || "",
-    phone: editTarget?.phone || "", email: editTarget?.email || "", city: editTarget?.city || "",
+    phone: editTarget?.phone || "", email: editTarget?.email || "", city: editTarget?.city || "", ...pickLoc(editTarget || {}),
     address: editTarget?.address || "", process_types: editTarget?.process_types || [],
     capacity_per_month: editTarget?.capacity_per_month ? String(editTarget.capacity_per_month) : "",
     capacity_unit: editTarget?.capacity_unit || "yard",
@@ -51,6 +54,8 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
 
   const save = async () => {
     if (!form.name.trim()) { onError?.("Nama makloon wajib diisi."); return; }
+    const locErr = locationIncomplete(pickLoc(form));
+    if (locErr) { onError?.(`Alamat: ${locErr}`); return; }
     setSaving(true);
     const payload = {
       ...form,
@@ -79,7 +84,7 @@ export default function MakloonFormModal({ open, editTarget, entities = [], term
             <Field label="Nama PIC"><input data-testid="makloon-pic-input" className="field" value={form.pic_name} onChange={set("pic_name")} placeholder="Nama kontak" /></Field>
             <Field label="Telepon"><input data-testid="makloon-phone-input" className="field" value={form.phone} onChange={set("phone")} placeholder="0812xxxx" /></Field>
             <Field label="Email"><input data-testid="makloon-email-input" className="field" value={form.email} onChange={set("email")} placeholder="pic@makloon.co.id" /></Field>
-            <Field label="Kota"><input data-testid="makloon-city-input" className="field" value={form.city} onChange={set("city")} placeholder="Majalaya" /></Field>
+            <LocationFields testId="makloon-loc" value={pickLoc(form)} onChange={(patch) => setForm((p) => ({ ...p, ...patch }))} />
           </div>
           <Field label="Jenis Proses (Kemampuan)">
             <div className="flex flex-wrap gap-1.5" data-testid="makloon-process-types">
