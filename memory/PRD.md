@@ -139,3 +139,27 @@ Backlog lokasi: ~~backfill/daftar alamat belum terverifikasi~~ dan ~~gudang & ka
 - `data_hygiene_service.unverified_locations()` (customers/suppliers/makloons/warehouses/warehouse_sites/business_entities/hr_employees; data lama tanpa `location_status` dinilai lenient tanpa menulis) + `fix_location()` (wajib lengkap; alamat utama pelanggan ikut dilengkapi bila belum berkode pos; dicatat di `data_hygiene_log` trigger `location_fix`). Endpoint: GET `/api/data-hygiene/unverified-locations`, POST `/api/data-hygiene/location/{collection}/{doc_id}`.
 - FE `LocationBacklogPanel.jsx` di tab Kebersihan Data: filter jenis data, tabel, tombol Lengkapi → LocationFields inline → Simpan.
 Bukti: `smoke_wilayah.py` ALL PASS + ALL PASS (sesi 5); testing agent iteration_12 semua PASS (1 temuan alamat utama seed berstatus 'verified' tanpa kode pos → diperbaiki: status tersimpan hanya dipercaya bila kode pos ada).
+
+## 2026-09-07 (sesi 6) — Sisa temuan laporan: U-2 · T-11 · T-07 · T-03 (sebagian)
+| Temuan | Status | Implementasi |
+|---|---|---|
+| U-2 Meja 6 peran | SELESAI | `services/role_desk_service.py` + `GET /api/desks/me` (peran dari sesi login; sales_admin/finance/md/warehouse_admin → 404, pakai meja khusus). Antrean "Giliran saya" (notifikasi turn belum dibaca) + antrean peran: manager (SO/PO/retur ACC, harga khusus), sales (SO saya menunggu/konfirmasi/ditolak, sampel saya), warehouse (tugas WMS, PO terima, sampel potong), designer (desain saya/belum ditugaskan), driver (kiriman), admin (gabungan). FE: `RoleDesk` desk `me`, nav standalone `my-desk` "Meja Saya" (6 peran), PAGE_META. |
+| T-11 approve_order 409 | SUDAH idempoten (kode lama), skrip audit salah baca multi-baris → penanda `already_approved` ditambah; audit kini GUGUR | `routers/sales_orders_extra.py` |
+| T-07 CODEBASE_MAP | diregenerasi (`scripts/gen_codebase_map.py`, 127 router/1167 endpoint/205 service), `verify_codebase_map` PASS. Skrip auditor tetap TERBUKTI karena aturan tetapnya `router > 60` — tidak bisa hijau tanpa mengubah skrip auditor. |
+| T-03 to_list besar | sebagian: `production_service._available_qty` → `$group`; pengambilan roll FEFO diurut di DB (`to_list(5000)`); allowlist ratchet dikurangi. Sisa 100 pemanggilan `to_list(≥10000)` (roll/lot/gl/bank_recon) → bertahap. |
+| T-04 N+1, T-01 transaksi, T-06 git | BELUM (arsitektural / di luar jangkauan pod) |
+Bukti: testing agent iteration_13 semua PASS (10/10 pytest U-2 + UI Meja Saya manager/sales/warehouse/admin; finance tidak melihat menu); guard nav map, codebase map, to_list PASS; smoke turn/hygiene ALL PASS setelah pembersihan log hygiene yang dokumennya sudah dihapus (artefak data uji).
+
+## 2026-09-07 (sesi 7) — Audit aturan Gudang & RFID (laporan pengguna: form transfer cacat)
+Aturan (dari KN_18 + arahan pemilik): (1) tidak ada ketik manual nilai yang sudah ada di master (qty/satuan/lot/batch/bin/lokasi); (2) barang = ROLL berpanjang → picker gudang memakai logika Sales: pilih roll + dua satuan (m ≈ yd); (3) nama/kode barang versi supplier tampil di gudang & MD.
+Audit & tindakan:
+| Layar | Pelanggaran | Tindakan |
+|---|---|---|
+| Transfer antar gudang (`TransferCreateForm`) | Qty & Unit diketik manual; tidak berbasis roll | **DIPERBAIKI**: pilih produk → `RollPicker` roll gudang asal (filter `warehouse_id`), qty = Σ panjang roll, unit dari master (`base_unit`), dua satuan, chip supplier refs. Backend `TransferItem.roll_ids` + `reserve_rolls_for_wh_transfer(roll_ids)` (409 bila roll sudah diambil, 400 bila bukan gudang asal); manual `unit` diabaikan. |
+| Outbound scan-pick (`OutboundScanInterface`) | Jml Diambil/Batch/Lot/Roll ID/Bin diketik manual | **DIPERBAIKI**: hanya input kode roll (scan/ketik) → `resolveRoll` mengisi qty/lot/batch/bin/roll_id dari master roll; kartu info dua satuan; kirim tanpa roll ditolak. (UI belum diverifikasi agent karena tidak ada tugas picking aktif; backend contract PASS.) |
+| Perangkat RFID (`RfidDevicesView`) | Lokasi teks bebas | **DIPERBAIKI**: KNSelect dari master zona/rak/bin gudang terpilih (+ area dock/gate). |
+| `RollPicker` (Sales & Gudang) | satu satuan, tanpa nama supplier | **DIPERBAIKI**: `dualLen()` per baris & subtotal; `roll-picker-supplier-refs` (nama, kode supplier, kode barang, kode warna). API `rolls/available` kini mengembalikan `base_unit` + `supplier_refs`. |
+| Penerimaan (`ReceiveUomPanel`, `GRCatchWeightModal`) | qty/panjang/berat diketik | DIBIARKAN — ini pengukuran fisik aktual saat barang datang (bukan nilai master); UoM dibatasi dari master. |
+| QC inspeksi accept/reject qty, Stok awal (`InitialStockForm`) | qty diketik | DIBIARKAN (pengukuran fisik / pembukaan saldo) — kandidat lanjutan: QC per roll. |
+| Dashboard approval | label "Retur jual/beli menunggu ACC" | diseragamkan (approval_backlog_service). |
+Bukti: testing agent iteration_14 semua PASS (9 pytest baru `test_iter14_wh_transfer_rolls.py` + F2 20/20 + UI transfer/picker/RFID).

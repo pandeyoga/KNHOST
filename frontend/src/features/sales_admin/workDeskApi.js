@@ -24,6 +24,10 @@ export const salesAdminDesk = (params = {}) =>
 export const financeDesk = (params = {}) =>
   axios.get(`${API}/finance/desk`, { params }).then((r) => r.data);
 
+/** U-2 (2026-09) — Meja Saya: peran admin/manager/sales/warehouse/designer/driver. */
+export const myDesk = (params = {}) =>
+  axios.get(`${API}/desks/me`, { params }).then((r) => r.data);
+
 /** Daftar periksa kelengkapan (read-only) — dibaca SEBELUM menekan Verifikasi. */
 export const verificationPreview = (orderId) =>
   axios.get(`${API}/sales-orders/${orderId}/verification`).then((r) => r.data);
@@ -180,6 +184,9 @@ export const FINANCE_QUEUE_TARGET = {
 /** Sesi #087 — tujuan baris Meja MD & Meja Admin Gudang (per ref_type). */
 export const ROLE_DESK_TARGET = {
   design_request:     { view: "design-requests",       nav_id: "designer-hub",   focus_type: "design_request" },
+  sample_request:     { view: "sample-sales",          nav_id: "sample-sales",   focus_type: "sample_request" },
+  price_approval:     { view: "approvals",             nav_id: "approvals",      focus_type: "price_approval" },
+  purchase_return:    { view: "purchase-returns",      nav_id: "purchase-returns", focus_type: "purchase_return" },
   md_sample:          { view: "rnd-samples",           nav_id: "rnd-hub",        focus_type: "md_sample" },
   purchase_requisition: { view: "purchase-requisitions", nav_id: "sourcing",     focus_type: "purchase_requisition" },
   inspection:         { view: "inspections",           nav_id: "wms-operations", focus_type: "inspection" },

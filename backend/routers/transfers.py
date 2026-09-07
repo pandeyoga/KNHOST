@@ -198,12 +198,17 @@ async def create_transfer(payload: TransferCreate, request: Request) -> Dict[str
             prod = await db.products.find_one({"id": item.product_id}, {"_id": 0})
             if not prod:
                 raise HTTPException(status_code=404, detail=f"Product {item.product_id} tidak ditemukan")
-            if item.qty <= 0:
-                raise HTTPException(status_code=400, detail="Qty harus lebih dari 0")
+            if item.qty <= 0 and not item.roll_ids:
+                raise HTTPException(status_code=400, detail="Pilih roll yang akan dipindah.")
             owner = await resolve_stock_owner(item.product_id, payload.source_warehouse_id, prefer_owner)
             reserved = await reserve_rolls_for_wh_transfer(
-                item.product_id, payload.source_warehouse_id, owner, item.qty, transfer_id
+                item.product_id, payload.source_warehouse_id, owner, float(item.qty), transfer_id,
+                roll_ids=list(item.roll_ids or []),
             )
+            # Satuan SELALU dari master produk (aturan gudang: tidak ada ketik manual satuan).
+            item.unit = prod.get("base_unit") or prod.get("unit") or "meter"
+            if item.roll_ids:
+                item.qty = round(sum(float(r.get("length_remaining", 0) or 0) for r in reserved), 2)
             roll_refs = [{
                 "roll_id": r["id"], "roll_no": r.get("roll_no"), "lot": r.get("lot"),
                 "length": float(r.get("length_remaining", 0) or 0),

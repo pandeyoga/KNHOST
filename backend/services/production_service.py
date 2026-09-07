@@ -164,11 +164,13 @@ async def delete_bom(bom_id: str, scope: Optional[Dict[str, Any]] = None) -> boo
 
 # ═══ Ketersediaan & rencana bahan ════════════════════════════════════════════
 async def _available_qty(product_id: str, warehouse_id: str, owner_entity_id: str) -> float:
-    rolls = await db.inventory_rolls.find(
-        {"product_id": product_id, "warehouse_id": warehouse_id, "owner_entity_id": owner_entity_id,
-         "status": "available", "length_remaining": {"$gt": 0}},
-        {"_id": 0, "length_remaining": 1}).to_list(100000)
-    return _r(sum(float(r.get("length_remaining", 0) or 0) for r in rolls))
+    # T-03 (audit 2026-09) — jumlahkan di database, bukan tarik semua roll ke memori.
+    agg = await db.inventory_rolls.aggregate([
+        {"$match": {"product_id": product_id, "warehouse_id": warehouse_id, "owner_entity_id": owner_entity_id,
+                    "status": "available", "length_remaining": {"$gt": 0}}},
+        {"$group": {"_id": None, "total": {"$sum": "$length_remaining"}}},
+    ]).to_list(1)
+    return _r(float(agg[0]["total"]) if agg else 0.0)
 
 
 async def _material_plan(bom: Dict[str, Any], planned_qty: float,
@@ -312,13 +314,14 @@ async def _consume_material(product_id: str, warehouse_id: str, owner_entity_id:
     need = _r(need)
     if need <= EPS:
         return 0.0, 0.0, []
-    rolls = await db.inventory_rolls.find(
-        {"product_id": product_id, "warehouse_id": warehouse_id, "owner_entity_id": owner_entity_id,
-         "status": "available", "length_remaining": {"$gt": 0}}, {"_id": 0}).to_list(100000)
-    rolls.sort(key=lambda r: (r.get("created_at", ""), -float(r.get("length_remaining", 0) or 0)))
-    total_avail = _r(sum(float(r.get("length_remaining", 0) or 0) for r in rolls))
+    # T-03 — cek total di database dulu; hanya bila cukup, tarik roll secara FEFO (urut DB) untuk dipakai.
+    total_avail = await _available_qty(product_id, warehouse_id, owner_entity_id)
     if total_avail + EPS < need:
         raise ValueError(f"Stok bahan {product_id} tidak cukup: butuh {need:g}, tersedia {total_avail:g}.")
+    rolls = await db.inventory_rolls.find(
+        {"product_id": product_id, "warehouse_id": warehouse_id, "owner_entity_id": owner_entity_id,
+         "status": "available", "length_remaining": {"$gt": 0}}, {"_id": 0}
+    ).sort([("created_at", 1), ("length_remaining", -1)]).to_list(5000)
     consumed_qty = 0.0
     value = 0.0
     lot_ids: List[str] = []

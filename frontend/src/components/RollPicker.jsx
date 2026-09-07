@@ -13,7 +13,16 @@ const PAGE_SIZE = 8;
  * Daftar roll available (FEFO + paginasi), multi-pilih unik (roll utuh),
  * badge entitas (pembeda) + tanda lintas-entitas. Memanggil onConfirm(rollLines, snapshot, totalQty).
  */
-export default function RollPicker({ productId, entityId, unitPrice = 0, baseUnit = "meter", onConfirm }) {
+/** Dua satuan (aturan sales & gudang): panjang selalu ditampilkan meter ↔ yard. */
+export const dualLen = (qty, unit = "meter") => {
+  const n = Number(qty) || 0;
+  const isYd = /^y(ar)?d/i.test(unit || "");
+  const m = isYd ? n * 0.9144 : n;
+  const yd = isYd ? n : n / 0.9144;
+  return `${formatQty(m)} m ≈ ${formatQty(yd)} yd`;
+};
+
+export default function RollPicker({ productId, entityId, unitPrice = 0, baseUnit = "meter", onConfirm, warehouseId = "", confirmLabel = "" }) {
   const [page, setPage] = useState(0);
   const [data, setData] = useState({ items: [], total: 0 });
   const [loading, setLoading] = useState(false);
@@ -25,7 +34,7 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
     const effEntity = entityId && entityId !== "all" ? entityId : "";
     try {
       const res = await axios.get(`${API}/inventory/rolls/available`, {
-        params: { product_id: productId, entity_id: effEntity, all_entities: true,
+        params: { product_id: productId, entity_id: effEntity, all_entities: true, warehouse_id: warehouseId || undefined,
                   sort: "fefo", skip: p * PAGE_SIZE, limit: PAGE_SIZE },
       });
       setData(res.data || { items: [], total: 0 });
@@ -54,16 +63,26 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
   const confirm = () => {
     if (!selList.length) return;
     const rollLines = selList.map((r) => ({ roll_id: r.id, take_qty: Number(r.length_remaining) }));
+    const _unit = data.base_unit || baseUnit;
     const snapshot = selList.map((r) => ({
       roll_id: r.id, roll_no: r.roll_no, length: Number(r.length_remaining), lot: r.lot,
       owner_entity_name: r.owner_entity_name, owner_entity_id: r.owner_entity_id,
       is_cross_entity: !!r.is_cross_entity, warehouse_name: r.warehouse_name,
     }));
-    onConfirm?.(rollLines, snapshot, Math.round(totalQty * 100) / 100);
+    onConfirm?.(rollLines, snapshot, Math.round(totalQty * 100) / 100, { unit: _unit, dual: dualLen(totalQty, _unit) });
   };
 
   return (
     <div data-testid="roll-picker" className="rounded-md border border-[#E5E5EA] bg-white">
+      {!!(data.supplier_refs || []).length && (
+        <div data-testid="roll-picker-supplier-refs" className="mb-1.5 flex flex-wrap gap-1">
+          {data.supplier_refs.map((sr, i) => (
+            <span key={i} className="inline-flex items-center gap-1 rounded-full bg-[#EEF4FF] px-2 py-0.5 text-[9.5px] font-semibold text-[#0058CC]" title="Nama & kode barang versi supplier">
+              {sr.supplier_name}{sr.supplier_code ? ` (${sr.supplier_code})` : ""} · {sr.supplier_item_name || "—"} · {sr.supplier_sku}{sr.supplier_color_code ? ` · warna ${sr.supplier_color_code}` : ""}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="flex items-center gap-2 border-b border-[#EFF0F2] px-3 py-2">
         <Layers size={14} className="text-[#0058CC]" />
         <span className="text-[11.5px] font-bold text-[#1C1C1E]">Pilih Roll (FEFO — tertua dulu)</span>
@@ -117,7 +136,7 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
                     </div>
                     <span className="shrink-0 text-right">
                       <span className="block text-[12.5px] font-bold tabular-nums text-[#1C1C1E]">{formatQty(r.length_remaining)}</span>
-                      <span className="block text-[9px] text-[#8E8E93]">{baseUnit}</span>
+                      <span className="block text-[9px] text-[#8E8E93]" data-testid={`roll-dual-${r.id}`}>{dualLen(r.length_remaining, data.base_unit || baseUnit)}</span>
                     </span>
                   </button>
                 </li>
@@ -150,11 +169,11 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
             <span data-testid="roll-picker-count" className="font-semibold text-[#1C1C1E]">{selList.length}</span> roll dipilih ·{" "}
             <span data-testid="roll-picker-total-qty" className="font-semibold tabular-nums text-[#1C1C1E]">{formatQty(Math.round(totalQty * 100) / 100)} {baseUnit}</span>
           </div>
-          <div className="text-right text-[12px] font-bold tabular-nums text-[#0058CC]" data-testid="roll-picker-subtotal">{formatCurrency(subtotal)}</div>
+          <div className="text-right text-[12px] font-bold tabular-nums text-[#0058CC]" data-testid="roll-picker-subtotal">{unitPrice ? formatCurrency(subtotal) : dualLen(totalQty, data.base_unit || baseUnit)}</div>
         </div>
         <button type="button" data-testid="roll-picker-confirm" disabled={!selList.length} onClick={confirm}
           className="primary-button mt-2 w-full justify-center py-2 text-[12px] disabled:opacity-50">
-          <Check size={14} /> Tambah {selList.length || ""} Roll ke Keranjang
+          <Check size={14} /> {confirmLabel || `Tambah ${selList.length || ""} Roll ke Keranjang`}
         </button>
       </div>
     </div>

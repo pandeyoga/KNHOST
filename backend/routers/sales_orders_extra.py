@@ -428,7 +428,7 @@ async def approve_order(order_id: str, request: Request) -> Dict[str, Any]:
         # (so_approvals.py saat approval kredit/harga terakhir diputuskan). Pesanan sudah
         # disetujui → hasil tercapai → idempoten 200, bukan 409 INVALID_TRANSITION.
         kini = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
-        if kini and kini.get("status") == "approved":
+        if kini and kini.get("status") == "approved":   # already_approved → idempoten (T-11)
             return kini
         result = await _transition(order_id, ["reserved", "waiting_approval"], "approved",
                                    actor["name"], "order_approved", {"approved_by": actor["name"]})

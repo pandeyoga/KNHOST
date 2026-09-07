@@ -61,9 +61,9 @@ ok(any(t["collection"] == "sales_orders" and t["status"] == "waiting_approval" a
 # ── Kebersihan Data ──────────────────────────────────────────────────────────
 s = admin.get(f"{API}/data-hygiene/summary").json()
 ok(s["total"] >= 1 and "customers" in s["rules"], f"ringkasan kebersihan data: total={s['total']} aktif={s['active']}")
-log = admin.get(f"{API}/data-hygiene/log", params={"collection": "customers", "limit": 5}).json()
+log = admin.get(f"{API}/data-hygiene/log", params={"collection": "customers", "limit": 50}).json()
 ok(log["total"] >= 1 and all(l["collection"] == "customers" for l in log["items"]), f"log pelanggan: {log['total']} catatan")
-entry = next((l for l in log["items"] if not l["reverted"]), None)
+entry = next((l for l in log["items"] if not l["reverted"] and l.get("trigger") != "location_fix"), None)
 ok(entry is not None, "ada catatan yang bisa dikembalikan")
 from pymongo import MongoClient
 _db = MongoClient("mongodb://localhost:27017")["test_database"]

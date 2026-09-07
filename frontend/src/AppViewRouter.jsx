@@ -326,6 +326,7 @@ export default function AppViewRouter(props) {
       )}
       {/* Sesi #087 — Meja MD & Meja Admin Gudang */}
       {activeView === "md-desk" && <RoleDesk desk="md" selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
+      {activeView === "my-desk" && <RoleDesk desk="me" selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {activeView === "warehouse-admin-desk" && <RoleDesk desk="warehouse_admin" selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {activeView === "returns" && (
         <SalesReturns currentUser={user}

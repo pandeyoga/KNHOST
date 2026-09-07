@@ -23,6 +23,21 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
   const [msg, setMsg] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ code: "", name: "", type: "gate", direction: "out", warehouse_id: "", location: "" });
+  // Aturan gudang: lokasi perangkat mengikuti master zona/rak/bin gudang — bukan ketik bebas.
+  const locOpts = (() => {
+    const wh = (warehouses || []).find((w) => w.id === form.warehouse_id);
+    const out = [{ value: "", label: "— Pilih lokasi —" }];
+    const DOCKS = ["Dock Terima", "Dock Kirim", "Gate Utama"];
+    DOCKS.forEach((d) => out.push({ value: d, label: `${d} (area)` }));
+    (wh?.zones || []).forEach((z) => {
+      out.push({ value: z.name || z.id, label: `Zona ${z.name || z.id}` });
+      (z.racks || []).forEach((r) => {
+        const bins = (r.bins || []).concat(...(r.levels || []).map((lv) => lv.bins || []));
+        bins.forEach((b) => { const code = b.code || b.id; out.push({ value: code, label: `${z.name || z.id} › ${r.name || r.code || r.id} › ${code}` }); });
+      });
+    });
+    return out;
+  })();
   const isAdmin = currentUser?.role === "admin";
 
   const load = async () => {
@@ -128,9 +143,10 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
             )}
             <div><label className="text-[11px] text-[#6B6B73]">Gudang</label>
               <KNSelect data-testid="rfid-form-wh" value={form.warehouse_id} onValueChange={(v) => setForm({ ...form, warehouse_id: v })} options={whFormOpts} className="field mt-1 text-[12px]" placeholder="Pilih gudang" /></div>
-            <div><label className="text-[11px] text-[#6B6B73]">Lokasi</label>
-              <input data-testid="rfid-form-loc" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })}
-                className="w-full mt-1 rounded-lg border border-[#E5E5EA] px-2 py-1.5 text-[12px] outline-none focus:border-[#0058CC]" placeholder="Dock Kirim" /></div>
+            <div><label className="text-[11px] text-[#6B6B73]">Lokasi (dari master zona/bin gudang)</label>
+              <KNSelect data-testid="rfid-form-loc" value={form.location} onValueChange={(v) => setForm({ ...form, location: v })}
+                options={locOpts} searchable disabled={!form.warehouse_id} className="field mt-1 text-[12px]"
+                placeholder={form.warehouse_id ? "Pilih zona / bin" : "Pilih gudang dahulu"} /></div>
           </div>
           <div className="flex gap-2 mt-3">
             <button data-testid="rfid-form-submit" disabled={busy} onClick={submit}

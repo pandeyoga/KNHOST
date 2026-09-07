@@ -1269,11 +1269,29 @@ async def resolve_stock_owner(product_id: str, warehouse_id: str, prefer_owner: 
 
 async def reserve_rolls_for_wh_transfer(
     product_id: str, source_warehouse_id: str, owner_entity_id: str,
-    quantity: float, transfer_id: str,
+    quantity: float, transfer_id: str, roll_ids: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
     """Reservasi roll milik `owner` di gudang SUMBER untuk transfer antar-gudang (FEFO, split).
     available→reserved, reserved_ref={type:'wh_transfer', id}. Raise 409 bila stok kurang."""
     ref = {"type": "wh_transfer", "id": transfer_id}
+    if roll_ids:
+        # Operator memilih roll eksplisit (picker): pindahkan roll utuh, tanpa FEFO/split.
+        chosen = await db.inventory_rolls.find(
+            {"id": {"$in": list(roll_ids)}, "product_id": product_id, "status": "available"}, {"_id": 0}).to_list(len(roll_ids))
+        if len(chosen) != len(set(roll_ids)):
+            raise HTTPException(status_code=409, detail="Sebagian roll yang dipilih sudah tidak tersedia. Muat ulang daftar roll.")
+        wrong = [r["roll_no"] for r in chosen if r.get("warehouse_id") != source_warehouse_id]
+        if wrong:
+            raise HTTPException(status_code=400, detail=f"Roll {', '.join(map(str, wrong))} tidak berada di gudang asal.")
+        out: List[Dict[str, Any]] = []
+        for r in chosen:
+            res = await db.inventory_rolls.update_one(
+                {"id": r["id"], "status": "available"},
+                {"$set": {"status": "reserved", "reserved_ref": ref, "updated_at": now_iso()}})
+            if not res.matched_count:
+                raise HTTPException(status_code=409, detail=f"Roll {r.get('roll_no')} baru saja diambil proses lain.")
+            out.append(r)
+        return out
     rolls = await db.inventory_rolls.find(
         {"product_id": product_id, "warehouse_id": source_warehouse_id,
          "owner_entity_id": owner_entity_id, "status": "available",
@@ -1570,14 +1588,36 @@ async def apply_cycle_count_adjustment(
 
 # ─── SALES REVAMP V2 — Reservasi roll EKSPLISIT (Beli per Roll + Rekonsiliasi) ───
 
+async def supplier_refs_for_products(product_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
+    """Nama/kode barang versi supplier per produk (KN_18 A-09) — dipakai picker gudang & katalog MD."""
+    ids = [p for p in set(product_ids) if p]
+    if not ids:
+        return {}
+    rows = await db.supplier_items.find({"product_id": {"$in": ids}, "active": {"$ne": False}},
+                                        {"_id": 0, "product_id": 1, "supplier_id": 1, "supplier_sku": 1,
+                                         "supplier_item_name": 1, "supplier_color_code": 1, "supplier_uom": 1}).to_list(len(ids) * 20)
+    sup = {s["id"]: s for s in await db.suppliers.find({"id": {"$in": list({r["supplier_id"] for r in rows})}},
+                                                       {"_id": 0, "id": 1, "name": 1, "code": 1}).to_list(len(rows) or 1)}
+    out: Dict[str, List[Dict[str, Any]]] = {}
+    for r in rows:
+        s = sup.get(r["supplier_id"], {})
+        out.setdefault(r["product_id"], []).append({
+            "supplier_id": r["supplier_id"], "supplier_name": s.get("name", ""), "supplier_code": s.get("code", ""),
+            "supplier_sku": r.get("supplier_sku", ""), "supplier_item_name": r.get("supplier_item_name", ""),
+            "supplier_color_code": r.get("supplier_color_code", ""), "supplier_uom": r.get("supplier_uom", "")})
+    return out
+
+
 async def list_available_rolls(product_id: str, owner_entity_id: str = "",
                                all_entities: bool = False, sort: str = "fefo",
-                               skip: int = 0, limit: int = 0) -> Dict[str, Any]:
+                               skip: int = 0, limit: int = 0, warehouse_id: str = "") -> Dict[str, Any]:
     """Daftar roll available untuk PICKER (paginasi + FEFO). all_entities=True → lintas-entitas.
     Mengembalikan {items, total} (objek, bukan array telanjang) — khusus picker."""
     q: Dict[str, Any] = {"product_id": product_id, "status": "available", "length_remaining": {"$gt": 0}}
     if not all_entities and owner_entity_id:
         q["owner_entity_id"] = owner_entity_id
+    if warehouse_id:
+        q["warehouse_id"] = warehouse_id          # picker transfer/outbound: hanya roll di gudang sumber
     rolls = await db.inventory_rolls.find(q, {"_id": 0}).to_list(20000)
     # singkirkan roll yang di-earmark untuk demand lain (tetap tampil bila tak di-earmark)
     rolls = [r for r in rolls if not (isinstance(r.get("earmarked_for"), dict) and r["earmarked_for"].get("id"))]
@@ -1608,8 +1648,12 @@ async def list_available_rolls(product_id: str, owner_entity_id: str = "",
             "owner_entity_name": ename,
             "owner_entity_code": e.get("code", ""),
             "created_at": r.get("created_at", ""),
+            "supplier_roll_no": r.get("supplier_roll_no", ""),
         })
-    return {"items": items, "total": total}
+    prod = await db.products.find_one({"id": product_id}, {"_id": 0, "base_unit": 1, "unit": 1, "name": 1, "sku": 1})
+    return {"items": items, "total": total,
+            "base_unit": (prod or {}).get("base_unit") or (prod or {}).get("unit") or "meter",
+            "supplier_refs": (await supplier_refs_for_products([product_id])).get(product_id, [])}
 
 
 async def reserve_specific_rolls(roll_lines: List[Dict[str, Any]], ref: Dict[str, Any],

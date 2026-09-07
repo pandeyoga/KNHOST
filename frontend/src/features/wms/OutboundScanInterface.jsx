@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { dualLen } from "../../components/RollPicker";
 import {
   Scan, Truck, CheckCircle, AlertTriangle,
   Camera, CameraOff, FileText, Send, X, ChevronRight,
@@ -25,6 +26,23 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
   const [cameraActive, setCameraActive] = useState(false);
   const [scanValue, setScanValue] = useState("");
   const [scanData, setScanData] = useState({ actual_qty: 0, batch: "", lot: "", roll_id: "", bin_id: "" });
+  const [rollCode, setRollCode] = useState("");
+  const [rollInfo, setRollInfo] = useState(null);
+
+  /** Cari roll fisik dari kode scan → jumlah/lot/batch/bin diturunkan dari master roll (tidak diketik). */
+  const resolveRoll = async (code) => {
+    const q = String(code || "").trim();
+    if (!q) return;
+    try {
+      const res = await axios.get(`${API}/inventory/rolls`, { params: { q, status: "available", limit: 5, ...(selectedTask?.product_id ? { product_id: selectedTask.product_id } : {}) } });
+      const list = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+      const roll = list.find(r => String(r.roll_no || "").toLowerCase() === q.toLowerCase() || r.id === q) || list[0];
+      if (!roll) { setRollInfo(null); setError(`Roll "${q}" tidak ditemukan / tidak tersedia untuk produk tugas ini.`); return; }
+      setRollInfo(roll);
+      setScanData({ actual_qty: Number(roll.length_remaining) || 0, batch: roll.batch || "", lot: roll.lot || "", roll_id: roll.id, bin_id: roll.bin_id || roll.location_code || "" });
+      setError("");
+    } catch (e) { setError(apiErrorText(e, "Gagal mencari roll.")); }
+  };
 
   const [showEscalateModal, setShowEscalateModal] = useState(false);
   const [escalationReason, setEscalationReason] = useState("");
@@ -66,7 +84,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
       const el = document.getElementById("outbound-video-compact");
       if (!el) return;
       await reader.decodeFromVideoDevice(null, el, (result) => {
-        if (result) { setScanValue(result.getText()); stopCamera(); }
+        if (result) { setScanValue(result.getText()); setRollCode(result.getText()); resolveRoll(result.getText()); stopCamera(); }
       });
       setCameraActive(true);
     } catch { setError("Gagal membuka kamera. Beri izin kamera pada peramban, atau ketik kode roll secara manual."); }
@@ -79,8 +97,8 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
   };
 
   const handleScanPick = async () => {
-    if (!selectedTask || scanData.actual_qty <= 0) {
-      setError("Masukkan jumlah yang diambil (lebih besar dari 0) sebelum mengirim pengambilan.");
+    if (!selectedTask || !scanData.roll_id || scanData.actual_qty <= 0) {
+      setError("Scan roll terlebih dahulu — jumlah diambil mengikuti panjang roll, tidak diketik manual.");
       return;
     }
     setSubmitting(true);
@@ -89,7 +107,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
       setTasks(prev => prev.map(t => t.id === selectedTask.id ? res.data : t));
       setSelectedTask(res.data);
       setScanData({ actual_qty: 0, batch: "", lot: "", roll_id: "", bin_id: "" });
-      setScanValue("");
+      setScanValue(""); setRollCode(""); setRollInfo(null);
       setError("");
       notifySuccess("Pengambilan tercatat",
         `Terkumpul ${formatQty(res.data?.picked_qty || 0)} dari ${formatQty(res.data?.quantity || 0)} ${res.data?.unit || ""}.`);
@@ -323,37 +341,31 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                     className={`w-full rounded-lg border border-[#FF9500]/30 ${cameraActive ? 'block' : 'hidden'}`}
                     style={{ maxHeight: '160px' }} />
 
+                  {/* Aturan gudang: TIDAK ada ketik manual jumlah/lot/batch — semua diturunkan dari ROLL yang di-scan. */}
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="col-span-1">
-                      <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Jml Diambil *</label>
-                      <input type="number" value={scanData.actual_qty}
-                        onChange={e => setScanData({ ...scanData, actual_qty: parseFloat(e.target.value) || 0 })}
-                        className="w-full border border-[#E5E5EA] rounded-lg px-2 py-1.5 text-sm" placeholder="0" />
+                    <div className="col-span-3">
+                      <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Kode roll (scan / ketik lalu Enter)</label>
+                      <input type="text" data-testid="outbound-roll-code" value={rollCode}
+                        onChange={e => setRollCode(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") resolveRoll(rollCode); }}
+                        onBlur={() => rollCode && resolveRoll(rollCode)}
+                        className="w-full border border-[#E5E5EA] rounded-lg px-2 py-1.5 text-sm" placeholder="Scan QR/RFID atau ketik nomor roll" />
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Batch</label>
-                      <input type="text" value={scanData.batch}
-                        onChange={e => setScanData({ ...scanData, batch: e.target.value })}
-                        className="w-full border border-[#E5E5EA] rounded-lg px-2 py-1.5 text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Lot</label>
-                      <input type="text" value={scanData.lot}
-                        onChange={e => setScanData({ ...scanData, lot: e.target.value })}
-                        className="w-full border border-[#E5E5EA] rounded-lg px-2 py-1.5 text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Roll ID</label>
-                      <input type="text" value={scanData.roll_id}
-                        onChange={e => setScanData({ ...scanData, roll_id: e.target.value })}
-                        className="w-full border border-[#E5E5EA] rounded-lg px-2 py-1.5 text-sm" />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Bin Location</label>
-                      <input type="text" value={scanData.bin_id}
-                        onChange={e => setScanData({ ...scanData, bin_id: e.target.value })}
-                        className="w-full border border-[#E5E5EA] rounded-lg px-2 py-1.5 text-sm" />
-                    </div>
+                    {rollInfo ? (
+                      <div className="col-span-3 rounded-lg border border-[#34C759]/40 bg-[#F0FFF4] p-2 text-[11px]" data-testid="outbound-roll-info">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="font-bold text-[#1C1C1E]">Roll {rollInfo.roll_no}</span>
+                          <span data-testid="outbound-roll-dual" className="tabular-nums font-semibold text-[#0058CC]">{dualLen(rollInfo.length_remaining, selectedTask?.unit || "meter")}</span>
+                          <span>Lot {rollInfo.lot || "—"}</span>
+                          {rollInfo.dye_lot && rollInfo.dye_lot !== rollInfo.lot && <span>Dye {rollInfo.dye_lot}</span>}
+                          <span>Bin {rollInfo.bin_id || rollInfo.location_code || "—"}</span>
+                          {rollInfo.grade && <span>Grade {rollInfo.grade}</span>}
+                        </div>
+                        <p className="mt-1 text-[#6B6B73]">Jumlah diambil = panjang roll (SSOT roll). Untuk ambil sebagian, potong roll di modul potong terlebih dahulu.</p>
+                      </div>
+                    ) : (
+                      <p className="col-span-3 text-[10.5px] text-[#8E8E93]" data-testid="outbound-roll-hint">Scan roll untuk mengisi jumlah, lot, batch, dan bin secara otomatis.</p>
+                    )}
                   </div>
 
                   <div className="flex gap-2">

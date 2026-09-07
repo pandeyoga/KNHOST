@@ -5,11 +5,11 @@
  * aksi `create_delivery` (Admin Gudang) membuka Logistik dengan SJ terpilih — jembatan WMS→Logistik.
  */
 import { useCallback, useEffect, useState } from "react";
-import { Inbox, Palette, RefreshCw, ShieldAlert, Warehouse, Layers } from "lucide-react";
+import { Inbox, Palette, RefreshCw, ShieldAlert, Warehouse, Layers, BellRing } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
-import { mdDesk, warehouseAdminDesk, rowLink } from "../sales_admin/workDeskApi";
+import { mdDesk, warehouseAdminDesk, myDesk, rowLink } from "../sales_admin/workDeskApi";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 
 const DESKS = {
@@ -20,6 +20,11 @@ const DESKS = {
   warehouse_admin: {
     icon: Warehouse, kicker: "Admin Gudang", title: "Meja Admin Gudang", load: warehouseAdminDesk, testPrefix: "wh-desk",
     intro: <>Memimpin operasi gudang: <b>SJ yang sudah diberangkatkan tetapi belum diangkut logistik</b>, tugas outbound, PO menunggu penerimaan, SPK belum ditugaskan, persetujuan opname/transfer, dan pengiriman gagal/belum ditutup.</>,
+  },
+  // U-2 (2026-09) — satu meja untuk 6 peran tersisa; judul diambil dari server sesuai peran.
+  me: {
+    icon: BellRing, kicker: "Kerja saya", title: "Meja Saya", load: myDesk, testPrefix: "my-desk",
+    intro: <>Semua yang menunggu tindakan Anda hari ini: <b>Giliran saya</b> (dokumen yang baru berpindah tahap ke Anda) dan antrean khas peran Anda. Buka baris untuk melompat ke layar penanganannya.</>,
   },
 };
 
@@ -59,6 +64,10 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
       onOpenDocument?.({ view: "logistics", nav_id: "logistics" });
       return;
     }
+    if (queue?.id === "giliran_saya" && row.extra?.link) {
+      onOpenDocument?.({ view: row.extra.link, nav_id: row.extra.link, focus_id: row.ref_id, focus_type: row.ref_type });
+      return;
+    }
     onOpenDocument?.(rowLink(row, queue?.id, desk));
   }
 
@@ -75,7 +84,7 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
           <div className="flex min-w-0 items-center gap-2">
             <Icon size={15} className="text-[#0058CC]" />
             <span className="kicker">{cfg.kicker}</span>
-            <h2 data-testid={`${p}-title`}>{cfg.title}</h2>
+            <h2 data-testid={`${p}-title`}>{data?.title || cfg.title}</h2>
           </div>
           <button data-testid={`${p}-refresh`} className="icon-button" onClick={load} aria-label="Muat ulang meja">
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />

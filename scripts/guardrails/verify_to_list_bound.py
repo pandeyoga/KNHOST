@@ -35,7 +35,6 @@ ALLOWLIST: dict[tuple[str, int], tuple[int, str]] = {
     ("services/lot_migration.py", 100000): (3, "migrasi lot satu-kali (dipicu admin), bukan jalur request harian — hutang T-03 Lapis 4"),
     ("services/roll_service.py", 100000): (2, "rebuild inventory_balances dari rolls (seed/migrasi), proyeksi 3 field — hutang T-03"),
     ("services/so_status.py", 100000): (1, "migrasi status SO massal (proyeksi sempit), bukan endpoint daftar — hutang T-03"),
-    ("services/production_service.py", 100000): (2, "roll available per produk+gudang+pemilik (sudah tersaring 4 field) — hutang T-03"),
     ("services/stock_analytics_service.py", 100000): (1, "roll fisik ber-sisa (length_remaining>0) per scope untuk aging — hutang T-03 agregasi"),
     ("services/profitability_service.py", 50000): (1, "laporan profitabilitas: SO dalam rentang tanggal (filter created_at) — hutang T-03 paginasi"),
     ("services/cashflow_forecast_service.py", 50000): (1, "proyeksi arus kas: proyeksi 12 field SO terbuka — hutang T-03"),

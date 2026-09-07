@@ -31,6 +31,7 @@ export const PAGE_META = {
   "sales-admin-desk":     { kicker: "Admin Sales",    title: "Meja Admin Sales \u00b7 Antrean Alur Pesanan" },
   "finance-desk":         { kicker: "Finance",        title: "Meja Finance \u00b7 Uang Masuk & Pajak Keluaran" },
   "md-desk":              { kicker: "MD",             title: "Meja MD \u00b7 Desain, Sample & Bahan" },
+  "my-desk":              { kicker: "Kerja saya",     title: "Meja Saya \u00b7 Giliran & Antrean Peran" },
   "warehouse-admin-desk": { kicker: "Admin Gudang",   title: "Meja Admin Gudang \u00b7 Operasi Gudang & Logistik" },
   amendments:             { kicker: "Keuangan \u00b7 Kendali", title: "Pusat Amandemen \u00b7 Koreksi Ber-alasan & Ber-jejak" },
   "tax-invoices":         { kicker: "Keuangan \u00b7 Pajak", title: "Faktur Pajak Keluaran" },

@@ -46,9 +46,9 @@ QUEUES: List[tuple] = [
                                    {"so_id": {"$exists": False}}]}),
     ("purchase_requisition", "Permintaan pembelian (PR) menunggu ACC",
      "purchase-requisitions", "purchase_requisitions", {"status": "pending_approval"}),
-    ("sales_return", "Retur jual menunggu ACC", "returns", "sales_returns",
+    ("sales_return", "Retur penjualan menunggu ACC", "returns", "sales_returns",
      {"status": "pending_approval"}),
-    ("purchase_return", "Retur beli menunggu ACC", "purchase-returns", "purchase_returns",
+    ("purchase_return", "Retur pembelian menunggu ACC", "purchase-returns", "purchase_returns",
      {"status": "pending_approval"}),
     ("amendment", "Koreksi & amandemen menunggu ACC", "amendments", "doc_amendments",
      # Koleksinya `doc_amendments` (bukan `amendments` — itu nama ROUTE-nya). Versi

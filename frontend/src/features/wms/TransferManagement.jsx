@@ -102,7 +102,8 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
     setFormError("");
     setSaving(true);
     try {
-      const res = await axios.post(`${API}/transfers`, { ...formData, requested_by: user?.name || "User" });
+      const items = formData.items.map(({ rolls, ...it }) => it);   // snapshot roll hanya untuk tampilan
+      const res = await axios.post(`${API}/transfers`, { ...formData, items, requested_by: user?.name || "User" });
       notifySuccess("Transfer dibuat",
         res.data?.code ? `${res.data.code} menunggu persetujuan manajer.` : "Menunggu persetujuan manajer.");
       setShowCreateForm(false);
@@ -115,13 +116,13 @@ export default function TransferManagement({ user, focusTransferId = "", onFocus
     }
   };
 
-  const handleAddItem = () => {
-    if (!newItem.product_id || newItem.qty <= 0) {
-      setFormError("Pilih produk dan masukkan jumlah yang lebih besar dari 0.");
+  const handleAddItem = (picked) => {
+    if (!picked?.product_id || !(picked.roll_ids || []).length) {
+      setFormError("Pilih produk lalu pilih roll yang akan dipindah.");
       return;
     }
     setFormError("");
-    setFormData({ ...formData, items: [...formData.items, { ...newItem }] });
+    setFormData({ ...formData, items: [...formData.items, picked] });
     setNewItem({ product_id: "", qty: 0, unit: "meter" });
   };
 

@@ -1,7 +1,7 @@
 /** TransferCreateForm — create a new inter-warehouse transfer (warehouses + items + notes). */
 import { Plus, XCircle } from "lucide-react";
-import { formatQty } from "../../../utils/formatters";
 import KNSelect from "../../../components/KNSelect";
+import RollPicker, { dualLen } from "../../../components/RollPicker";
 
 export default function TransferCreateForm({
   formData, setFormData, newItem, setNewItem,
@@ -48,45 +48,44 @@ export default function TransferCreateForm({
         </div>
       </div>
 
-      {/* Add Item */}
+      {/* Tambah Item — aturan gudang: TIDAK ada ketik manual qty/satuan. Operator memilih ROLL
+          fisik di gudang asal (picker yang sama dengan Sales); satuan ikut master produk, tampil dua satuan. */}
       <div className="bg-[#F2F2F7] rounded-xl p-4 mb-4">
-        <h4 className="text-sm font-semibold mb-3">Tambah Item</h4>
-        <div className="grid grid-cols-[1fr_100px_100px_auto] gap-2">
-          <KNSelect
-            data-testid="item-product-select"
-            value={newItem.product_id}
-            onValueChange={v => setNewItem({ ...newItem, product_id: v })}
-            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm"
-            placeholder="Pilih Produk"
-            options={[
-              { value: "", label: "Pilih Produk" },
-              ...products.map(p => ({ value: p.id, label: `${p.sku} - ${p.name}` })),
-            ]}
-          />
-          <input
-            data-testid="item-qty-input"
-            type="number"
-            placeholder="Qty"
-            value={newItem.qty}
-            onChange={(e) => setNewItem({ ...newItem, qty: parseFloat(e.target.value) || 0 })}
-            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm tabular-nums"
-          />
-          <input
-            data-testid="item-unit-input"
-            type="text"
-            placeholder="Unit"
-            value={newItem.unit}
-            onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
-            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm"
-          />
-          <button
-            data-testid="add-item-button"
-            onClick={onAddItem}
-            className="bg-[#007AFF] hover:bg-[#0056B3] text-white rounded-lg px-4 py-2 text-sm font-medium"
-          >
-            <Plus size={16} />
-          </button>
-        </div>
+        <h4 className="text-sm font-semibold mb-3">Tambah Item — pilih roll di gudang asal</h4>
+        <KNSelect
+          data-testid="item-product-select"
+          value={newItem.product_id}
+          onValueChange={v => setNewItem({ ...newItem, product_id: v })}
+          className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          placeholder="Pilih Produk"
+          searchable
+          options={[
+            { value: "", label: "Pilih Produk" },
+            ...products.map(p => ({ value: p.id, label: `${p.sku} - ${p.name}${(p.supplier_codes || []).length ? ` · ${p.supplier_codes.map(c => `${c.supplier_name}: ${c.supplier_item_name || c.supplier_sku}`).join(" / ")}` : ""}` })),
+          ]}
+        />
+        {!formData.source_warehouse_id && (
+          <p data-testid="item-picker-need-source" className="mt-2 text-[11.5px] text-[#B45309]">Pilih gudang asal dahulu untuk melihat roll yang tersedia.</p>
+        )}
+        {formData.source_warehouse_id && newItem.product_id && (
+          <div className="mt-3" data-testid="transfer-roll-picker">
+            <RollPicker
+              key={`${newItem.product_id}-${formData.source_warehouse_id}`}
+              productId={newItem.product_id}
+              warehouseId={formData.source_warehouse_id}
+              entityId="all"
+              baseUnit={(products.find(p => p.id === newItem.product_id) || {}).base_unit || "meter"}
+              confirmLabel="Tambahkan roll terpilih ke transfer"
+              onConfirm={(lines, snapshot, totalQty, meta) => onAddItem({
+                product_id: newItem.product_id,
+                roll_ids: lines.map(l => l.roll_id),
+                rolls: snapshot,
+                qty: totalQty,
+                unit: meta?.unit || "meter",
+              })}
+            />
+          </div>
+        )}
       </div>
 
       {/* Items List */}
@@ -98,9 +97,11 @@ export default function TransferCreateForm({
               const product = products.find((p) => p.id === item.product_id);
               return (
                 <div key={index} data-testid={`item-row-${index}`} className="flex items-center justify-between bg-white rounded-lg p-2 border border-[#E5E5EA]">
-                  <span className="text-sm">{product?.sku} - {product?.name}</span>
+                  <span className="text-sm">{product?.sku} - {product?.name}
+                    <span className="block text-[11px] text-[#6B6B73]" data-testid={`item-rolls-${index}`}>{(item.rolls || []).length} roll · {(item.rolls || []).map(r => r.roll_no).join(", ")}</span>
+                  </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold tabular-nums">{formatQty(item.qty)} {item.unit}</span>
+                    <span className="text-sm font-semibold tabular-nums" data-testid={`item-dual-${index}`}>{dualLen(item.qty, item.unit)}</span>
                     <button
                       data-testid={`remove-item-${index}`}
                       onClick={() => onRemoveItem(index)}

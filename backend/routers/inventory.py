@@ -229,6 +229,7 @@ async def list_rolls_available(
     sort: str = "fefo",
     skip: int = 0,
     limit: int = 50,
+    warehouse_id: Optional[str] = None,   # hanya roll di gudang ini (transfer/outbound)
 ) -> Dict[str, Any]:
     """SALES REVAMP V2 — Picker 'Beli per Roll': daftar roll available (paginasi + FEFO).
     all_entities=True → lintas-entitas (tiap roll diberi badge entitas + flag is_cross_entity).
@@ -239,7 +240,7 @@ async def list_rolls_available(
     owner_scope = "" if all_entities else (selling_entity or "")
     data = await roll_service.list_available_rolls(
         product_id=product_id, owner_entity_id=owner_scope, all_entities=all_entities,
-        sort=sort, skip=max(0, skip), limit=max(0, limit),
+        sort=sort, skip=max(0, skip), limit=max(0, limit), warehouse_id=(warehouse_id or "").strip(),
     )
     for it in data["items"]:
         it["is_cross_entity"] = bool(selling_entity and it.get("owner_entity_id") != selling_entity)

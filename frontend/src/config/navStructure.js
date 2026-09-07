@@ -46,6 +46,7 @@ import {
   ReceiptText,
   FolderTree,
   Unlock,
+  BellRing,
 } from "lucide-react";
 
 // HUB TABS (tab per hub) dipindah ke `hubTabs.js` — re-export agar impor lama tetap jalan.
@@ -80,6 +81,15 @@ export const NAV_STRUCTURE = [
   // bukan terkubur di dalam grup: ia layar pertama yang dibuka tiap pagi.
   // `roles: ["admin"]` saja — dua peran baru mendapatkannya lewat overlay
   // `ROLE_NAV` di `config/roles.js` (lihat alasannya di berkas itu).
+  // U-2 (2026-09) — Meja Saya untuk admin, manager, sales, warehouse, designer, driver.
+  {
+    type: "standalone",
+    id:    "my-desk",
+    label: "Meja Saya",
+    icon:  BellRing,
+    roles: ["admin", "manager", "sales", "warehouse", "designer", "driver"],
+    view:  "my-desk",
+  },
   {
     type: "standalone",
     id:    "sales-admin-desk",

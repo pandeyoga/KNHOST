@@ -564,10 +564,11 @@ WAREHOUSE_PRIORITY = {
 class TransferItem(BaseModel):
     product_id: str
     qty: QtyDecimal = Field(..., ge=0)            # PS-15/R5 — desimal koma didukung
-    unit: str = "meter"
+    unit: str = ""                                # diisi dari master produk (base_unit) — bukan ketik manual
     batch: str = ""
     lot: str = ""
     roll_id: str = ""
+    roll_ids: List[str] = []                      # roll yang dipilih operator (picker) — SSOT roll
     # FASE U — DUA SATUAN: jumlah gulungan (roll) di samping ukuran (`quantity`+`unit`).
     # `None` = dokumen/baris ini tidak menyebut jumlah roll (dokumen LAMA tampil "—",
     # BUKAN "0 roll" yang menyesatkan). Diisi manual saat memesan (rencana), atau
