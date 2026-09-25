@@ -19,7 +19,7 @@ export const STEPS = ["draft", "review", "counting", "reconcile", "closed"];
 export const KIND_LABEL = {
   match: "Cocok", short_vs_dn: "Kurang dari SJ", over_vs_dn: "Lebih dari SJ", rolls_mismatch: "Jumlah roll beda",
   weight_mismatch: "Berat beda", over_remaining: "Melebihi sisa PO", not_arrived: "Tidak datang",
-  not_on_dn: "Tidak ada di SJ", non_stock: "Non-stok", rejected: "Ditolak",
+  not_on_dn: "Tidak ada di SJ", non_stock: "Non-stok", rejected: "Ditolak", packing_list_mismatch: "Packing list beda",
 };
 
 export const ACTION_LABEL = {
@@ -50,6 +50,8 @@ export const grnApi = {
   variance: (since) => axios.get(`${GRN}/supplier-variance`, { params: { since } }).then((r) => r.data),
   profiles: () => axios.get(`${GRN}/dn-profiles`).then((r) => r.data),
   patchProfile: (partnerId, body) => axios.patch(`${GRN}/dn-profiles/${partnerId}`, body).then((r) => r.data),
+  docVariance: (params) => axios.get(`${GRN}/doc-variance`, { params }).then((r) => r.data),
+  saveCatalog: (id, lineNo, body) => axios.post(`${GRN}/${id}/lines/${lineNo}/save-catalog`, body).then((r) => r.data),
   usage: (month) => axios.get(`${GRN}/usage`, { params: { month } }).then((r) => r.data),
   create: (body) => axios.post(GRN, body).then((r) => r.data),
   upload: (id, file, v) => {

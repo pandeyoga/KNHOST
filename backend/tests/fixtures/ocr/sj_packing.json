@@ -1,0 +1,122 @@
+{
+ "is_delivery_document": true,
+ "doc_kind": "surat_jalan_dan_packing_list",
+ "packing_list": [
+  {
+   "group_label": "BATIK MEGA MENDUNG",
+   "item_hint": "BATIK MEGA MENDUNG PREMIUM",
+   "lot": "PL-77",
+   "grade": "A",
+   "rolls": [
+    {
+     "seq": 1,
+     "length_text": "85,00",
+     "length": 85,
+     "length_unit": "yd",
+     "weight_text": null,
+     "weight_kg": null
+    },
+    {
+     "seq": 2,
+     "length_text": "83,00",
+     "length": 83,
+     "length_unit": "yd",
+     "weight_text": null,
+     "weight_kg": null
+    },
+    {
+     "seq": 3,
+     "length_text": "82,00",
+     "length": 82,
+     "length_unit": "yd",
+     "weight_text": null,
+     "weight_kg": null
+    }
+   ],
+   "subtotal_text": "250,00 Yard"
+  },
+  {
+   "group_label": "HANGER",
+   "item_hint": "XYZ LAIN",
+   "lot": null,
+   "grade": null,
+   "rolls": [
+    {
+     "seq": 1,
+     "length_text": "1",
+     "length": 1,
+     "length_unit": null,
+     "weight_text": null,
+     "weight_kg": null
+    }
+   ],
+   "subtotal_text": null
+  }
+ ],
+ "annotations": [],
+ "warnings": [],
+ "header": {
+  "supplier_name_printed": "CV. CIREBON CRAFT",
+  "dn_number": "SJ-MOCK-PACK",
+  "dn_date_text": "10 Juni 2026",
+  "dn_date": "2026-06-10",
+  "recipient_name": "PT. SUKACITA",
+  "po_refs": [
+   "KSC/PO-00014"
+  ],
+  "other_refs": [
+   {
+    "label": "No SO",
+    "value": "SO-778"
+   }
+  ],
+  "vehicle_plate": "B 1234 CD"
+ },
+ "lines": [
+  {
+   "line_no": 1,
+   "page": 1,
+   "row_text": "BATIK MEGA MENDUNG PREMIUM",
+   "item_code": null,
+   "description": "BATIK MEGA MENDUNG PREMIUM",
+   "color": null,
+   "design_code": null,
+   "lot": null,
+   "grade": null,
+   "po_ref": "KSC/PO-00014",
+   "quantities": [
+    {
+     "qty_text": "3",
+     "qty": 3,
+     "unit_text": "pcs",
+     "unit": "pcs",
+     "column_header": null,
+     "role": "delivered_count",
+     "weight_basis": null
+    },
+    {
+     "qty_text": "250,00",
+     "qty": 250,
+     "unit_text": "yd",
+     "unit": "yd",
+     "column_header": null,
+     "role": "delivered_length",
+     "weight_basis": null
+    },
+    {
+     "qty_text": "1.657,00",
+     "qty": 1657,
+     "unit_text": "m",
+     "unit": "m",
+     "column_header": "Asal Greige",
+     "role": "greige_length",
+     "weight_basis": null
+    }
+   ],
+   "is_non_stock": false,
+   "legibility": "clear",
+   "handwritten_correction": false
+  }
+ ],
+ "totals": []
+}

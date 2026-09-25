@@ -5,6 +5,7 @@ import axios, { API } from "../../services/apiClient";
 import { X, Scale, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
+import GrnDocVariance from "./GrnDocVariance";
 import POReceiptVariancePanel from "../admin/po/POReceiptVariancePanel";
 
 /**
@@ -177,6 +178,7 @@ export default function VendorBillCreateModal({ open, pos, selectedEntity, onClo
             <>
               {/* FASE SL — catatan selisih penerimaan dari gudang: finance membacanya SEBELUM menagih */}
               <POReceiptVariancePanel variances={ctx.receipt_variances} testId="vb-receipt-variances" />
+              <GrnDocVariance poId={poId} testId="vb-create-grn-variance" />
               <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
                 <div className="grid grid-cols-[26px_1.6fr_82px_82px_92px_104px_120px_84px] px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
                   <span></span><span>Produk</span><span className="text-right">Dipesan</span>

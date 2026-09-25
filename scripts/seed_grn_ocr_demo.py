@@ -47,6 +47,8 @@ def main() -> None:
     po = db.purchase_orders.find_one({"id": t["po_id"]}, {"_id": 0, "supplier_id": 1})
     demos = [("SJ-MOCK-DOUBT", "mock-sj_doubt", {"partner_type": "supplier", "partner_id": po["supplier_id"],
                                                  "warehouse_id": t["warehouse_id"], "po_ids": [t["po_id"]]}),
+             ("SJ-MOCK-PACK", "mock-sj_packing", {"partner_type": "supplier", "partner_id": po["supplier_id"],
+                                                  "warehouse_id": t["warehouse_id"], "po_ids": [t["po_id"]]}),
              ("SJ-MKL-0139", "mock-sj_makloon", {"partner_type": "makloon", "partner_id": "mak_seed_tenun",
                                                  "warehouse_id": "wh_surabaya", "mko_ids": [MKO]})]
     try:
@@ -58,7 +60,8 @@ def main() -> None:
                 print("MKO-00002 langkah 1 tidak issued — lewati demo makloon.")
                 continue
             cfg(s, {"receiving.ocr_enabled": True, "receiving.ocr_model_primary": model,
-                    "receiving.ocr_model_second": "mock-sj_doubt_second"})
+                    "receiving.ocr_model_second": "mock-sj_doubt_second",
+                    "receiving.ocr_extract_packing_list": model == "mock-sj_packing"})
             g = s.post(f"{BASE}/goods-receipts", json=body).json()
             g = s.post(f"{BASE}/goods-receipts/{g['id']}/files", files={"file": ("sj.jpg", photo(), "image/jpeg")},
                        data={"expected_version": str(g["version"])}).json()["grn"]
@@ -66,7 +69,7 @@ def main() -> None:
             print(f"{g['number']} ({dn}) → {g['status']} · baris {len(g['lines'])} · runs {len(g['extraction']['runs'])}")
     finally:
         cfg(s, {"receiving.ocr_enabled": False, "receiving.ocr_model_primary": "gpt-6-sol",
-                "receiving.ocr_model_second": "gpt-5.6-sol"})
+                "receiving.ocr_model_second": "gpt-5.6-sol", "receiving.ocr_extract_packing_list": False})
 
 
 if __name__ == "__main__":

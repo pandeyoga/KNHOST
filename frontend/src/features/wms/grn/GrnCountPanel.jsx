@@ -4,15 +4,17 @@ import { KNSelect } from "../../../components/KNSelect";
 import useDomainEnums from "../../../hooks/useDomainEnums";
 import { ErrorBox, inputCls } from "./GrnBits";
 import { errText, grnApi } from "./grnApi";
+import PackingChecklist from "./GrnPackingChecklist";
 
 function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
   const [raw, setRaw] = useState("");
   const [m, setM] = useState({ length: "", weight_kg: "", lot: "", grade: "A" });
+  const [seq, setSeq] = useState(null);
   const t = ln.target || {};
   const scan = async () => { if (raw.trim() && await run(() => grnApi.post(grn.id, `lines/${ln.line_no}/scan-label`, { raw: raw.trim() }))) setRaw(""); };
   const add = async () => {
-    const ok = await run(() => grnApi.post(grn.id, `lines/${ln.line_no}/rolls`, { length: Number(m.length || 0), weight_kg: Number(m.weight_kg || 0), lot: m.lot, grade: m.grade }));
-    if (ok) setM((x) => ({ ...x, length: "", weight_kg: "" }));
+    const ok = await run(() => grnApi.post(grn.id, `lines/${ln.line_no}/rolls`, { length: Number(m.length || 0), weight_kg: Number(m.weight_kg || 0), lot: m.lot, grade: m.grade, expected_seq: seq }));
+    if (ok) { setM((x) => ({ ...x, length: "", weight_kg: "" })); setSeq(null); }
   };
   const editable = canCount && grn.status === "counting";
   const sisa = ln.role === "byproduct";
@@ -27,6 +29,10 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
           {ln.counted?.rolls || 0} roll<span className="block text-[10.5px] font-semibold text-[#0058CC]">{ln.counted?.qty || 0} {t.unit}</span>
         </p>
       </div>
+      {(ln.expected_rolls || []).length > 0 && (
+        <PackingChecklist ln={ln} unit={t.unit} picked={seq} editable={editable}
+          onPick={(r) => { setSeq(r ? r.seq : null); if (r) setM((x) => ({ ...x, lot: r.lot || x.lot, grade: r.grade || x.grade })); }} />
+      )}
       {editable && (<>
         {t.type === "po_task" && (
           <div className="flex gap-2">
@@ -40,7 +46,7 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
           <input data-testid={`grn-count-kg-${ln.line_no}`} type="number" className={inputCls} placeholder="Kg" value={m.weight_kg} onChange={(e) => setM({ ...m, weight_kg: e.target.value })} />
           <input data-testid={`grn-count-lot-${ln.line_no}`} className={inputCls} placeholder={sisa ? "Lot (opsional)" : "Lot"} value={m.lot} onChange={(e) => setM({ ...m, lot: e.target.value })} />
           <KNSelect data-testid={`grn-count-grade-${ln.line_no}`} value={m.grade} onValueChange={(v) => setM({ ...m, grade: v })} options={gradeOptions} searchable={false} />
-          <button data-testid={`grn-count-add-${ln.line_no}`} className="secondary-button justify-center" onClick={add}><Plus size={13} /> Roll manual</button>
+          <button data-testid={`grn-count-add-${ln.line_no}`} className="secondary-button justify-center" onClick={add}><Plus size={13} /> {seq ? `Ukur roll #${seq}` : "Roll manual"}</button>
         </div>
       </>)}
       <ul className="divide-y divide-[#EFF0F2] text-[11px]">

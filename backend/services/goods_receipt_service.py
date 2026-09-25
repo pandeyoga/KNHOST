@@ -92,6 +92,11 @@ async def public_view(grn: Dict[str, Any], user: Dict[str, Any]) -> Dict[str, An
     out["ocr_enabled"] = bool(await value_of("receiving.ocr_enabled", {"entity_id": grn.get("entity_id") or ""}))
     if out["blind"]:
         out["lines"] = [{k: v for k, v in ln.items() if k not in HIDDEN_LINE} for ln in out.get("lines") or []]
+        for ln in out["lines"]:   # Fase 6: angka per roll packing list baru tampil setelah roll itu diukur
+            ln["expected_rolls"] = [r if r.get("status") == "counted" else
+                                    {k: r.get(k) for k in ("seq", "lot", "grade", "group", "status")}
+                                    for r in ln.get("expected_rolls") or []]
+            ln.pop("roll_check", None)
         out["dn"] = {"number": (out.get("dn") or {}).get("number", "")}
         for k in ("files", "discrepancies", "extraction"):
             out.pop(k, None)
@@ -354,12 +359,13 @@ def _default_decision(line: Dict[str, Any]) -> str:
     return "accept" if (line.get("is_non_stock") or line.get("target")) else "pending"
 
 
-async def _finish_line(line: Dict[str, Any]) -> Dict[str, Any]:
+async def _finish_line(line: Dict[str, Any], keep_match: bool = False) -> Dict[str, Any]:
     if line["declared"].get("grade"):
         import domain_registry as _dr
         line["declared"]["grade"] = _dr.normalize_grade(line["declared"]["grade"])["value"] or line["declared"]["grade"]
-    line["match"] = ({"status": "manual", "method": "manual", "score": 1.0, "candidates": []} if line.get("target")
-                     else {"status": "none", "method": "", "score": 0.0, "candidates": []})
+    if not (keep_match and line.get("match")):
+        line["match"] = ({"status": "manual", "method": "manual", "score": 1.0, "candidates": []} if line.get("target")
+                         else {"status": "none", "method": "", "score": 0.0, "candidates": []})
     await _convert(line)
     return line
 
@@ -415,6 +421,9 @@ async def patch_line(grn_id: str, line_no: int, body: Any, actor: Dict[str, Any]
         line["checks"].pop("role_question", None)
     if body.is_non_stock is not None:
         line["is_non_stock"] = body.is_non_stock
+    if body.expected_rolls is not None:
+        line["expected_rolls"] = [{"seq": i, **r.model_dump(), "length_text": "", "group": "manual"}
+                                  for i, r in enumerate(body.expected_rolls, 1)]
     for k in ("item_code", "description", "po_ref"):
         if getattr(body, k) is not None:
             line["read"][k] = getattr(body, k)
@@ -429,7 +438,7 @@ async def patch_line(grn_id: str, line_no: int, body: Any, actor: Dict[str, Any]
     line["verified"] = body.verified if body.verified is not None else True   # disentuh manusia = sudah dicek
     if line["verified"]:
         line["verified_by"], line["verified_at"] = actor["name"], now_iso()
-    await _finish_line(line)
+    await _finish_line(line, keep_match=body.target is None and not body.clear_target)
     doc = await cas(grn, ["review"], body.expected_version, {"lines": lines})
     await audit(actor["name"], "grn_line_updated", "goods_receipt", grn_id, {"line_no": line_no, **{
         k: v for k, v in fields.items() if k != "declared"}}, scope_entity_id=grn["entity_id"])
@@ -606,8 +615,52 @@ async def refresh_counted(grn: Dict[str, Any], actor_name: str, expected_version
             n, wt, ids = len(mine), sum(float(r.get("weight_kg") or 0) for r in mine), [r["id"] for r in mine]
         ln["counted"] = {"qty": round(qty, 2), "rolls": n, "weight_kg": round(wt, 3), "roll_ids": ids,
                          "makloon_rolls": mk}
+        if ln.get("expected_rolls"):
+            measured = mk if (ln.get("target") or {}).get("type") == "mko_step" else [
+                {"id": r["id"], "expected_seq": r.get("grn_expected_seq"), "weight_kg": r.get("weight_kg"),
+                 "length": float(r["actual_task_qty"] if r.get("actual_task_qty") is not None
+                                 else r.get("declared_task_qty") or 0)}
+                for r in rolls if r.get("grn_line_no") == ln["line_no"]]
+            ln["expected_rolls"], ln["roll_check"] = roll_check(ln["expected_rolls"], measured,
+                                                                (ln.get("target") or {}).get("unit", ""))
     return await cas(grn, statuses or ["counting"], expected_version, {"lines": lines},
                      extra={"$addToSet": {"counted_by": actor_name}})
+
+
+def _to_unit(length: Optional[float], unit: str, target_unit: str) -> Optional[float]:
+    if length is None:
+        return None
+    u, t = norm_unit(unit), norm_unit(target_unit)
+    if u == t or not u:
+        return float(length)
+    if (u, t) == ("meter", "yard"):
+        return round(float(length) / 0.9144, 2)
+    if (u, t) == ("yard", "meter"):
+        return round(float(length) * 0.9144, 2)
+    return None
+
+
+def roll_check(expected: List[Dict[str, Any]], measured: List[Dict[str, Any]], unit: str):
+    """Fase 6 — bandingkan roll packing list (diharapkan) dengan roll yang diukur (tertaut lewat `expected_seq`)."""
+    by_seq = {m.get("expected_seq"): m for m in measured if m.get("expected_seq")}
+    out, diffs, missing = [], [], []
+    for r in expected:
+        m = by_seq.get(r["seq"])
+        exp_len = _to_unit(r.get("length"), r.get("length_unit") or "", unit)
+        row = {**{k: v for k, v in r.items() if k not in ("status", "roll_id", "measured", "diff")},
+               "status": "counted" if m else "open", "roll_id": (m or {}).get("id", "")}
+        if m:
+            row["measured"] = round(float(m.get("length") or 0), 2)
+            if exp_len is not None:
+                row["diff"] = round(row["measured"] - exp_len, 2)
+                if abs(row["diff"]) > max(0.5, exp_len * 0.01):
+                    diffs.append({"seq": r["seq"], "expected": exp_len, "measured": row["measured"], "diff": row["diff"]})
+        else:
+            missing.append(r["seq"])
+        out.append(row)
+    extra = len([m for m in measured if not m.get("expected_seq")])
+    return out, {"expected": len(expected), "counted": len(expected) - len(missing), "missing": missing,
+                 "extra": extra, "diffs": diffs, "unit": unit}
 
 
 def _check_version(grn: Dict[str, Any], expected_version: Optional[int]) -> None:
@@ -645,6 +698,12 @@ async def add_counted_roll(grn_id: str, line_no: int, body: Any, actor: Dict[str
     grade = grade_or_400(body.grade or "A", "A")
     if body.length <= 0 and body.weight_kg <= 0:
         raise HTTPException(status_code=400, detail="Isi panjang atau berat roll yang dihitung.")
+    if body.expected_seq is not None:
+        er = next((r for r in ln.get("expected_rolls") or [] if r["seq"] == body.expected_seq), None)
+        if not er:
+            raise HTTPException(status_code=400, detail=f"Roll packing list #{body.expected_seq} tidak ada di baris {line_no}.")
+        if er.get("status") == "counted":
+            raise HTTPException(status_code=409, detail=f"Roll packing list #{body.expected_seq} sudah diukur.")
     if ln["target"]["type"] == "mko_step":
         lot = body.lot.strip()
         if ln.get("role") == "byproduct":
@@ -655,7 +714,7 @@ async def add_counted_roll(grn_id: str, line_no: int, body: Any, actor: Dict[str
             raise HTTPException(status_code=400, detail="Roll makloon wajib punya LOT dan panjang.")
         roll = {"id": new_id("mkr"), "lot": lot, "length": round(body.length, 2),
                 "weight_kg": round(body.weight_kg, 3), "grade": grade, "dye_lot": lot,
-                "by": actor["name"], "at": now_iso()}
+                "expected_seq": body.expected_seq, "by": actor["name"], "at": now_iso()}
 
         def _push(lines: List[Dict[str, Any]]) -> None:
             tgt = next(x for x in lines if x["line_no"] == line_no)
@@ -669,7 +728,7 @@ async def add_counted_roll(grn_id: str, line_no: int, body: Any, actor: Dict[str
         task=task, product=product, owner_entity_id=po.get("entity_id") or task.get("entity_id"), actor=actor,
         length=body.length, weight_kg=body.weight_kg, lot=body.lot.strip(), grade=grade,
         supplier_id=po.get("supplier_id", ""), supplier_name=po.get("supplier_name", ""),
-        extra={"grn_id": grn_id, "grn_line_no": line_no})
+        extra={"grn_id": grn_id, "grn_line_no": line_no, "grn_expected_seq": body.expected_seq})
     try:
         doc = await refresh_counted(grn, actor["name"])
     except HTTPException:
@@ -789,3 +848,31 @@ async def supplier_variance(ctx: EntityContext, since: str = "") -> List[Dict[st
     for r in rows:
         r["issue_rate_pct"] = round(r["grn_with_issue"] / r["grn_count"] * 100, 1) if r["grn_count"] else 0.0
     return sorted(rows, key=lambda r: (-r["issue_rate_pct"], -r["short_qty"]))
+
+
+async def save_line_to_catalog(grn_id: str, line_no: int, body: Any, actor: Dict[str, Any], ctx: EntityContext):
+    """Tawaran (bukan otomatis): simpan nama barang VERSI SUPPLIER di baris SJ ke Katalog Supplier (`supplier_items`)
+    agar SJ berikutnya dikenali lewat kode/nama supplier. Warna supplier tetap disinkron lewat ACC R&D/Pustaka Warna."""
+    from services import supplier_item_service as sis
+    grn = await load(grn_id, ctx)
+    ln = _find_line(grn, line_no)
+    t = ln.get("target") or {}
+    if grn["partner_type"] != "supplier" or t.get("type") != "po_task":
+        raise HTTPException(status_code=400, detail="Hanya baris supplier yang sudah punya target tugas PO.")
+    sku = body.supplier_sku.strip()
+    dup = await db.supplier_items.find_one({"supplier_id": grn["partner_id"], "supplier_sku": sku}, {"_id": 0})
+    if dup and dup.get("product_id") == t["product_id"]:
+        return {"ok": True, "existing": True, "item": dup}
+    color = (ln.get("read") or {}).get("color") or ""
+    try:
+        item = await sis.create_item({
+            "supplier_id": grn["partner_id"], "product_id": t["product_id"], "supplier_sku": sku,
+            "supplier_item_name": body.supplier_item_name.strip() or (ln.get("read") or {}).get("description") or "",
+            "notes": f"Dari surat jalan {(grn.get('dn') or {}).get('number', '')} ({grn['number']})"
+                     + (f" · warna supplier: {color}" if color else "")},
+            entity_id=grn["entity_id"], actor=actor["name"])
+    except sis.SupplierItemError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    await audit(actor["name"], "grn_line_saved_to_catalog", "goods_receipt", grn_id,
+                {"line_no": line_no, "supplier_sku": sku, "product_id": t["product_id"]}, scope_entity_id=grn["entity_id"])
+    return {"ok": True, "existing": False, "item": safe_doc(item)}

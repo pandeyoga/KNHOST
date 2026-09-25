@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, Pencil, Trash2 } from "lucide-react";
+import { BookPlus, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { KNSelect } from "../../../components/KNSelect";
 import { LineDoubtRow, writtenQty } from "./GrnOcrBits";
 import { grnApi } from "./grnApi";
@@ -12,6 +12,10 @@ export const tgtBody = (k) => {
 };
 export const ROLE_OPTIONS = [{ value: "output", label: "Output" }, { value: "byproduct", label: "Barang sisa" }];
 const num = (v) => (v === "" || v == null ? null : Number(v));
+const VIA = { profile: "riwayat SJ mitra", supplier_sku: "kode barang supplier", supplier_name: "nama barang supplier",
+  internal_name: "nama internal KN (cadangan)", supplier_color: "warna supplier", supplier_color_code: "kode warna supplier", internal_color: "warna internal" };
+const parseRolls = (text, unit, lot) => text.split(/[\n;,]+/).map((x) => x.trim()).filter(Boolean)
+  .map((x) => ({ length: Number(x.replace(",", ".")), length_unit: unit, lot })).filter((r) => r.length > 0);
 const COLS = 14;
 
 function lineState(ln) {
@@ -27,16 +31,61 @@ function lineState(ln) {
   return [ln.is_non_stock ? "Non-stok" : "Siap", "bg-[#E7F6F3] text-[#0F766E]"];
 }
 
+/** Nama & warna di SJ = VERSI SUPPLIER; tampilkan jembatan ke produk KN dan dasar pencocokannya. */
+function MappingCaption({ ln }) {
+  const v = ln.match?.via || {};
+  const how = [VIA[v.name_via], VIA[v.color_via]].filter(Boolean).join(" + ");
+  const sup = [ln.read?.description, ln.read?.color].filter(Boolean).join(" · ");
+  return (
+    <span data-testid={`grn-line-mapping-${ln.line_no}`} className="mt-0.5 block text-[10px] leading-snug text-[#6B6B73]">
+      SJ: <span className="font-mono">{sup || "-"}</span> → KN: <b className="text-[#1C1C1E]">{ln.target.product_name}</b>
+      {ln.match?.method === "manual" ? " · dipilih manual" : how ? ` · via ${how}` : ln.match?.method === "single_line" ? " · satu-satunya baris PO" : ""}
+    </span>
+  );
+}
+
+function CatalogRow({ grn, ln, onDone }) {
+  const [sku, setSku] = useState(ln.read?.item_code || "");
+  const [name, setName] = useState(ln.read?.description || "");
+  const [msg, setMsg] = useState("");
+  const inp = "rounded border border-[#E5E5EA] px-1.5 py-1 text-[11px] focus:border-[#0058CC] focus:outline-none";
+  const save = async () => {
+    try {
+      const r = await grnApi.saveCatalog(grn.id, ln.line_no, { expected_version: grn.version, supplier_sku: sku.trim(), supplier_item_name: name.trim() });
+      setMsg(r.existing ? "Sudah ada di Katalog Supplier." : "Tersimpan ke Katalog Supplier — SJ berikutnya dikenali lewat kode/nama ini.");
+      setTimeout(onDone, 1500);
+    } catch (e) { const dt = e?.response?.data?.detail; setMsg(typeof dt === "string" ? dt : dt?.message || "Gagal menyimpan."); }
+  };
+  return (
+    <tr data-testid={`grn-line-catalog-form-${ln.line_no}`} className="bg-[#F6F3FD] text-[11px]">
+      <td />
+      <td colSpan={COLS - 1} className="px-2 py-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-semibold">Simpan ke Katalog Supplier untuk {ln.target.product_name}:</span>
+          <input data-testid={`grn-catalog-sku-${ln.line_no}`} className={`${inp} w-40 font-mono`} placeholder="Kode barang supplier" value={sku} onChange={(e) => setSku(e.target.value)} />
+          <input data-testid={`grn-catalog-name-${ln.line_no}`} className={`${inp} w-64`} placeholder="Nama barang versi supplier" value={name} onChange={(e) => setName(e.target.value)} />
+          <button data-testid={`grn-catalog-save-${ln.line_no}`} disabled={!sku.trim()} className="primary-button !py-1 disabled:opacity-40" onClick={save}>Simpan</button>
+          <button className="text-[#6B6B73]" onClick={onDone}>Batal</button>
+          {msg && <span data-testid={`grn-catalog-msg-${ln.line_no}`} className="text-[10.5px] text-[#6B4FBB]">{msg}</span>}
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 /** Ubah hasil baca per baris: OCR hanya usulan — semua isian bisa dikoreksi manusia. */
 function LineEditRow({ ln, gradeOptions, onSave, onCancel }) {
   const d = ln.declared || {};
   const [f, setF] = useState({ item_code: ln.read?.item_code || "", description: ln.read?.description || "", po_ref: ln.read?.po_ref || "",
-    qty: d.qty ?? "", unit: d.unit || "", rolls: d.rolls ?? "", weight_kg: d.weight_kg ?? "", grade: d.grade || "", lot: d.lot || "", is_non_stock: !!ln.is_non_stock });
+    qty: d.qty ?? "", unit: d.unit || "", rolls: d.rolls ?? "", weight_kg: d.weight_kg ?? "", grade: d.grade || "", lot: d.lot || "", is_non_stock: !!ln.is_non_stock,
+    pl: (ln.expected_rolls || []).map((r) => r.length ?? "").join("\n"), pl_unit: (ln.expected_rolls || [])[0]?.length_unit || "" });
+  const plBefore = (ln.expected_rolls || []).map((r) => r.length ?? "").join("\n");
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e?.target ? (e.target.type === "checkbox" ? e.target.checked : e.target.value) : e }));
   const inp = "w-full rounded border border-[#E5E5EA] px-1.5 py-1 text-[11px] focus:border-[#0058CC] focus:outline-none";
   const n = ln.line_no;
   const save = () => onSave({ item_code: f.item_code, description: f.description, po_ref: f.po_ref, is_non_stock: f.is_non_stock,
-    declared: { qty: num(f.qty), unit: f.unit, rolls: num(f.rolls), weight_kg: num(f.weight_kg), weight_basis: d.weight_basis || null, grade: f.grade, lot: f.lot } });
+    declared: { qty: num(f.qty), unit: f.unit, rolls: num(f.rolls), weight_kg: num(f.weight_kg), weight_basis: d.weight_basis || null, grade: f.grade, lot: f.lot },
+    ...(f.pl !== plBefore ? { expected_rolls: parseRolls(f.pl, f.pl_unit, f.lot) } : {}) });
   return (
     <tr data-testid={`grn-line-edit-form-${n}`} className="bg-[#F4F8FF] text-[11px]">
       <td className="px-2 py-2 align-top font-semibold">{n}</td>
@@ -52,7 +101,11 @@ function LineEditRow({ ln, gradeOptions, onSave, onCancel }) {
           <KNSelect data-testid={`grn-edit-grade-${n}`} value={f.grade} onValueChange={set("grade")} options={gradeOptions} placeholder="Grade" searchable={false} />
           <input data-testid={`grn-edit-lot-${n}`} className={inp} placeholder="Lot" value={f.lot} onChange={set("lot")} />
           <label className="flex items-center gap-1 font-semibold"><input data-testid={`grn-edit-nonstock-${n}`} type="checkbox" checked={f.is_non_stock} onChange={set("is_non_stock")} /> Non-stok</label>
-          <div className="flex items-center justify-end gap-2">
+          <div className="col-span-4 flex gap-2">
+            <textarea data-testid={`grn-edit-pl-${n}`} rows={2} className={`${inp} font-mono`} placeholder="Packing list: panjang per roll (pisahkan koma / baris baru)" value={f.pl} onChange={set("pl")} />
+            <input data-testid={`grn-edit-pl-unit-${n}`} className={`${inp} !w-20`} placeholder="yd / m" value={f.pl_unit} onChange={set("pl_unit")} />
+          </div>
+          <div className="col-span-2 flex items-center justify-end gap-2">
             <button data-testid={`grn-edit-cancel-${n}`} className="text-[11px] font-semibold text-[#6B6B73]" onClick={onCancel}>Batal</button>
             <button data-testid={`grn-edit-save-${n}`} className="primary-button !py-1" onClick={save}>Simpan & tandai dicek</button>
           </div>
@@ -65,6 +118,7 @@ function LineEditRow({ ln, gradeOptions, onSave, onCancel }) {
 
 export default function GrnLineRow({ grn, ln, targets, gradeOptions, run }) {
   const [edit, setEdit] = useState(false);
+  const [cat, setCat] = useState(false);
   const d = ln.declared || {};
   const [status, tone] = lineState(ln);
   const patch = (body) => run(() => grnApi.patch(grn.id, `lines/${ln.line_no}`, { expected_version: grn.version, ...body }));
@@ -93,6 +147,12 @@ export default function GrnLineRow({ grn, ln, targets, gradeOptions, run }) {
             <KNSelect data-testid={`grn-line-role-${n}`} value={ln.role || ""} onValueChange={(v) => patch({ role: v })} options={ROLE_OPTIONS} placeholder="Output atau barang sisa?" searchable={false} />
           </div>
         )}
+        {ocr && ln.target && <MappingCaption ln={ln} />}
+        {(ln.expected_rolls || []).length > 0 && (
+          <span data-testid={`grn-line-pl-${n}`} className="mt-0.5 block text-[10px] font-semibold text-[#0058CC]">
+            Packing list: {ln.expected_rolls.length} roll · {Math.round(ln.expected_rolls.reduce((a, r) => a + (r.length || 0), 0) * 100) / 100} {ln.expected_rolls[0]?.length_unit || ""}
+          </span>
+        )}
         {ln.checks?.role_question && ln.role === "" && <span data-testid={`grn-line-role-question-${n}`} className="block text-[10px] text-[#B26A00]">{ln.checks.role_question}</span>}
         {ln.converted && <span className="text-[10px] text-[#6B6B73]">= {ln.converted.qty} {ln.converted.unit}</span>}
         {ln.checks?.uom_message && <span className="block text-[10px] text-[#B4231F]">{ln.checks.uom_message}</span>}
@@ -106,6 +166,9 @@ export default function GrnLineRow({ grn, ln, targets, gradeOptions, run }) {
           <button data-testid={`grn-line-verify-${n}`} className="mr-2 inline-flex items-center gap-0.5 text-[10.5px] font-semibold text-[#0F766E]" onClick={() => patch({ verified: true })}><CheckCircle2 size={12} /> Sesuai foto</button>
         )}
         <button data-testid={`grn-line-edit-${n}`} className="mr-2" aria-label="Ubah baris" onClick={() => setEdit(true)}><Pencil size={12} className="text-[#0058CC]" /></button>
+        {grn.partner_type === "supplier" && ocr && ln.target?.type === "po_task" && !["supplier_sku", "profile"].includes(ln.match?.via?.name_via) && (
+          <button data-testid={`grn-line-catalog-${n}`} className="mr-2" aria-label="Simpan ke Katalog Supplier" title="Simpan nama barang versi supplier ke Katalog Supplier" onClick={() => setCat((x) => !x)}><BookPlus size={12} className="text-[#6B4FBB]" /></button>
+        )}
         <button data-testid={`grn-line-toggle-${n}`} className="text-[10.5px] font-semibold text-[#0058CC]"
           onClick={() => patch({ decision: ln.decision === "reject_line" ? "accept" : "reject_line" })}>
           {ln.decision === "reject_line" ? "Terima" : "Tolak"}
@@ -115,6 +178,7 @@ export default function GrnLineRow({ grn, ln, targets, gradeOptions, run }) {
       </td>
     </tr>
     <LineDoubtRow ln={ln} colSpan={COLS - 1} onPick={(declared) => patch({ declared })} />
+    {cat && <CatalogRow grn={grn} ln={ln} onDone={() => setCat(false)} />}
   </>);
 }
 

@@ -163,7 +163,8 @@ async def _context(grn: Dict[str, Any]) -> Dict[str, Any]:
                                          "status": {"$in": ["waiting_goods", "receiving", "qc_check", "put_away"]}},
                                         {"_id": 0}).to_list(500)
         items = await db.supplier_items.find({"supplier_id": grn["partner_id"], "status": "active"},
-                                             {"_id": 0, "product_id": 1, "supplier_sku": 1}).to_list(2000)
+                                             {"_id": 0, "product_id": 1, "supplier_sku": 1, "supplier_item_name": 1}).to_list(2000)
+        await _enrich_supplier_names(tasks, items, grn["partner_id"])
     else:
         ids = [m["id"] for m in await open_mkos(grn["entity_id"], grn["partner_id"])]
         orders = await db.makloon_orders.find({"id": {"$in": ids}}, {"_id": 0}).to_list(500)
@@ -181,6 +182,21 @@ async def _context(grn: Dict[str, Any]) -> Dict[str, Any]:
     ent = (await db.entities.find_one({"id": grn["entity_id"]}, {"_id": 0}) or
            await db.business_entities.find_one({"id": grn["entity_id"]}, {"_id": 0}) or {})
     return {"pos": docs, "tasks": tasks, "items": items, "profile": prof, "entity": ent}
+
+
+async def _enrich_supplier_names(tasks: List[Dict[str, Any]], items: List[Dict[str, Any]], supplier_id: str) -> None:
+    """Nama & warna di SJ adalah VERSI SUPPLIER. Tempelkan ke tiap tugas: nama barang supplier (`supplier_items`),
+    warna supplier yang tersinkron ke produk (`products.supplier_colors`, dari ACC R&D), dan warna internal KN."""
+    pids = list({t["product_id"] for t in tasks})
+    prods = {p["id"]: p for p in await db.products.find(
+        {"id": {"$in": pids}}, {"_id": 0, "id": 1, "color": 1, "color_name": 1, "supplier_colors": 1}).to_list(len(pids) + 1)}
+    for t in tasks:
+        p = prods.get(t["product_id"]) or {}
+        t["supplier_names"] = [i["supplier_item_name"] for i in items if i["product_id"] == t["product_id"]
+                               and i.get("supplier_item_name")]
+        t["supplier_colors"] = [v for v in p.get("supplier_colors") or [] if not v.get("supplier_id")
+                                or v.get("supplier_id") == supplier_id]
+        t["internal_color"] = p.get("color_name") or p.get("color") or ""
 
 
 def _target_ref(grn: Dict[str, Any], task_id: str) -> Any:
@@ -263,6 +279,7 @@ async def map_extraction(grn: Dict[str, Any], data: Dict[str, Any], cfg: Dict[st
                 "status": "ambiguous" if pm["candidates"] else "none", "method": f"po_{pm['status']}", "score": 0.0,
                 "task_id": "", "candidates": pm["candidates"]}
             line["match"] = {k: m[k] for k in ("status", "method", "score", "candidates")}
+            line["match"]["via"] = m.get("via") or {}
             line["match"]["po_match"] = pm["status"]
             if m.get("task_id"):
                 try:
@@ -289,6 +306,15 @@ async def map_extraction(grn: Dict[str, Any], data: Dict[str, Any], cfg: Dict[st
         line["decision"] = "accept" if (line["is_non_stock"] or line["target"]) else "pending"
         await _convert(line)
         lines.append(line)
+    groups = data.get("packing_list") or []
+    if groups:
+        buckets, lost = R.assign_packing_groups(lines, groups)
+        for ln in lines:
+            ln["expected_rolls"] = buckets.get(ln["line_no"], [])
+        for gi in lost:
+            g = groups[gi]
+            warnings.append(f"Packing list '{g.get('group_label') or g.get('item_hint') or gi + 1}' "
+                            f"({len(g.get('rolls') or [])} roll) tidak bisa dipasangkan ke baris SJ — isi manual.")
     used = {"number_locale": locale, "confirmed_count": int(prof.get("confirmed_count") or 0),
             "aliases": len(prof.get("aliases") or []),
             "item_map_hits": sum(1 for ln in lines if ln["match"].get("method") == "profile")}

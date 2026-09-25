@@ -5,7 +5,7 @@ Semua fungsi di sini MURNI (tanpa DB/IO) supaya bisa diuji unit dengan JSON `rea
 import itertools
 import re
 from difflib import SequenceMatcher
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 UNIT_OF = {"m": "meter", "yd": "yard", "kg": "kg", "roll": "roll", "pcs": "pcs", "bal": "bal"}
 COUNT_UNITS = {"roll", "pcs", "bal"}
@@ -164,34 +164,102 @@ def infer_locale(qty_text: Optional[str]) -> str:
     return ""
 
 
+def _norm_code(s: Optional[str]) -> str:
+    return re.sub(r"[^A-Z0-9]", "", str(s or "").upper())
+
+
+def _color_score(color: str, t: Dict[str, Any]) -> Tuple[Optional[float], str]:
+    """Warna di SJ = warna VERSI SUPPLIER; dibandingkan dengan nama/kode warna supplier yang tersinkron ke produk KN,
+    lalu nama warna internal sebagai cadangan. None = tidak ada data warna untuk dibandingkan."""
+    cands = [(v.get("supplier_color_code"), "supplier_color_code") for v in t.get("supplier_colors") or []]
+    cands += [(v.get("supplier_color_name"), "supplier_color") for v in t.get("supplier_colors") or []]
+    cands += [(t.get("internal_color"), "internal_color")]
+    cands = [(c, k) for c, k in cands if c]
+    if not color or not cands:
+        return None, ""
+    for c, k in cands:
+        if k == "supplier_color_code" and _norm_code(c) and _norm_code(c) in _norm_code(color):
+            return 1.0, k
+    best = max(((similarity(color, c), k) for c, k in cands), key=lambda x: x[0])
+    return best
+
+
+def _line_score(read: Dict[str, Any], t: Dict[str, Any]) -> Tuple[float, Dict[str, Any]]:
+    desc, color = str(read.get("description") or ""), str(read.get("color") or "")
+    names = [(n, "supplier_name") for n in t.get("supplier_names") or [] if n] + [(t.get("product_name"), "internal_name")]
+    full = f"{desc} {color}".strip()
+    name_best = max(((max(similarity(desc, n), similarity(full, n)), k, n) for n, k in names if n),
+                    key=lambda x: x[0], default=(0.0, "", ""))
+    cs, ck = _color_score(color, t)
+    score = name_best[0] if cs is None else 0.6 * name_best[0] + 0.4 * cs
+    return score, {"name_via": name_best[1], "name": name_best[2], "color_via": ck, "color_score": cs}
+
+
 def match_line(read: Dict[str, Any], tasks: Sequence[Dict[str, Any]], supplier_items: Sequence[Dict[str, Any]],
                item_map: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Baris → tugas: pemetaan profil supplier (dipelajari dari SJ yang dikonfirmasi) → item_code (supplier_items) →
-    kemiripan deskripsi ≥ 0,85 & unggul ≥ 0,10 → satu-satunya baris PO."""
+    """Baris SJ (nama & warna VERSI SUPPLIER) → tugas PO (produk KN). Urutan: pemetaan profil (riwayat SJ yang dicek)
+    → kode supplier (`supplier_items.supplier_sku`) → kode warna supplier (unik) → kemiripan nama barang supplier
+    (`supplier_item_name`) + warna supplier (`products.supplier_colors`), nama/warna internal hanya cadangan
+    → satu-satunya baris PO. Skor ≥ 0,85 & unggul ≥ 0,10 = probable; selain itu ambiguous (manusia memilih)."""
     learned = (item_map or {}).get(desc_key(read)) or {}
     if learned.get("product_id"):
         hits = [t for t in tasks if t.get("product_id") == learned["product_id"]]
         if len(hits) == 1:
             return {"status": "exact", "method": "profile", "score": 1.0, "task_id": hits[0]["id"],
-                    "candidates": [hits[0]["id"]]}
-    code = str(read.get("item_code") or "").strip().upper()
+                    "candidates": [hits[0]["id"]], "via": {"name_via": "profile"}}
+    code = _norm_code(read.get("item_code"))
     if code:
-        prods = {s["product_id"] for s in supplier_items if str(s.get("supplier_sku") or "").upper() == code}
+        prods = {s["product_id"] for s in supplier_items if _norm_code(s.get("supplier_sku")) == code}
         hits = [t for t in tasks if t["product_id"] in prods]
         if len(hits) == 1:
-            return {"status": "exact", "method": "item_code", "score": 1.0, "task_id": hits[0]["id"], "candidates": [hits[0]["id"]]}
-    text = " ".join(str(read.get(k) or "") for k in ("description", "color"))
-    scored = sorted(((max(similarity(text, t.get("product_name")), similarity(text, t.get("supplier_item_name")),
-                          similarity(read.get("description"), t.get("product_name"))), t) for t in tasks),
-                    key=lambda x: -x[0])
+            sname = next((s.get("supplier_item_name") for s in supplier_items if _norm_code(s.get("supplier_sku")) == code
+                          and s["product_id"] == hits[0]["product_id"]), "")
+            return {"status": "exact", "method": "item_code", "score": 1.0, "task_id": hits[0]["id"],
+                    "candidates": [hits[0]["id"]], "via": {"name_via": "supplier_sku", "name": sname}}
+        hits = [t for t in tasks if any(_norm_code(v.get("supplier_color_code")) == code
+                                        for v in t.get("supplier_colors") or [] if v.get("supplier_color_code"))]
+        if len(hits) == 1:
+            return {"status": "exact", "method": "supplier_color_code", "score": 1.0, "task_id": hits[0]["id"],
+                    "candidates": [hits[0]["id"]], "via": {"color_via": "supplier_color_code"}}
+    scored = sorted(((*_line_score(read, t), t) for t in tasks), key=lambda x: -x[0])
     if scored and scored[0][0] >= 0.85 and (len(scored) == 1 or scored[0][0] - scored[1][0] >= 0.10):
-        return {"status": "probable", "method": "similarity", "score": round(scored[0][0], 3),
-                "task_id": scored[0][1]["id"], "candidates": [t["id"] for _, t in scored[:3]]}
+        return {"status": "probable", "method": "similarity", "score": round(scored[0][0], 3), "via": scored[0][1],
+                "task_id": scored[0][2]["id"], "candidates": [t["id"] for _, _, t in scored[:3]]}
     if len(tasks) == 1:
         return {"status": "probable", "method": "single_line", "score": round(scored[0][0], 3) if scored else 0.0,
-                "task_id": tasks[0]["id"], "candidates": [tasks[0]["id"]]}
+                "task_id": tasks[0]["id"], "candidates": [tasks[0]["id"]], "via": scored[0][1] if scored else {}}
     return {"status": "ambiguous" if tasks else "none", "method": "", "score": round(scored[0][0], 3) if scored else 0.0,
-            "task_id": "", "candidates": [t["id"] for _, t in scored[:3]]}
+            "task_id": "", "candidates": [t["id"] for _, _, t in scored[:3]], "via": {}}
+
+
+def assign_packing_groups(lines: Sequence[Dict[str, Any]], groups: Sequence[Dict[str, Any]]) -> Tuple[Dict[int, List[Dict[str, Any]]], List[int]]:
+    """Fase 6 — kelompok packing list → baris SJ (stok). Lot sama → kemiripan item_hint ≥ 0,6 & unggul → (tanpa
+    item_hint) satu-satunya baris stok / urutan bila jumlah kelompok = jumlah baris. Return ({line_no: [roll...]}, [indeks kelompok tak terpetakan])."""
+    stock = [ln for ln in lines if not ln.get("is_non_stock")]
+    out: Dict[int, List[Dict[str, Any]]] = {}
+    lost: List[int] = []
+    for gi, g in enumerate(groups):
+        target = None
+        if g.get("lot"):
+            hit = [ln for ln in stock if str((ln.get("read") or {}).get("lot") or "").strip().upper() == str(g["lot"]).strip().upper()]
+            target = hit[0] if len(hit) == 1 else None
+        if target is None and g.get("item_hint"):
+            sc = sorted(((similarity(g["item_hint"], " ".join(str((ln.get("read") or {}).get(k) or "")
+                                                              for k in ("description", "color"))), ln) for ln in stock),
+                        key=lambda x: -x[0])
+            if sc and sc[0][0] >= 0.6 and (len(sc) == 1 or sc[0][0] - sc[1][0] >= 0.1):
+                target = sc[0][1]
+        elif target is None and stock:   # tanpa petunjuk barang: satu-satunya baris / urutan bila jumlah sama
+            target = stock[0] if len(stock) == 1 else (stock[gi] if len(groups) == len(stock) else None)
+        if target is None:
+            lost.append(gi)
+            continue
+        bucket = out.setdefault(target["line_no"], [])
+        for r in g.get("rolls") or []:
+            bucket.append({"seq": len(bucket) + 1, "length": r.get("length"), "length_unit": r.get("length_unit") or "",
+                           "length_text": r.get("length_text") or "", "weight_kg": r.get("weight_kg"),
+                           "lot": g.get("lot") or "", "grade": g.get("grade") or "", "group": g.get("group_label") or ""})
+    return out, lost
 
 
 def check_totals(lines: Sequence[Dict[str, Any]], totals: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:

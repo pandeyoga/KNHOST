@@ -62,6 +62,14 @@ class GRNLineIn(GRNVersionIn):
     role: Literal["output", "byproduct"] = "output"
 
 
+class GRNExpectedRoll(BaseModel):
+    length: Optional[float] = Field(None, ge=0)
+    length_unit: str = ""
+    weight_kg: Optional[float] = Field(None, ge=0)
+    lot: str = ""
+    grade: str = ""
+
+
 class GRNLinePatch(GRNVersionIn):
     declared: Optional[GRNDeclared] = None
     is_non_stock: Optional[bool] = None
@@ -73,6 +81,12 @@ class GRNLinePatch(GRNVersionIn):
     po_ref: Optional[str] = None
     role: Optional[Literal["output", "byproduct"]] = None
     verified: Optional[bool] = None          # hasil OCR = usulan; manusia mencentang "sudah dicek"
+    expected_rolls: Optional[List[GRNExpectedRoll]] = None   # Fase 6 — daftar roll packing list (bisa dikoreksi)
+
+
+class GRNCatalogIn(GRNVersionIn):
+    supplier_sku: str = Field(..., min_length=1)
+    supplier_item_name: str = ""
 
 
 class GRNProfilePatch(BaseModel):
@@ -93,6 +107,7 @@ class GRNCountRollIn(BaseModel):
     weight_kg: float = Field(0, ge=0)
     lot: str = ""
     grade: str = "A"
+    expected_seq: Optional[int] = None       # Fase 6 — roll packing list yang sedang diukur
     expected_version: Optional[int] = None
 
 

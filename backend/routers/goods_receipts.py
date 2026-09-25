@@ -7,8 +7,8 @@ from fastapi.responses import Response
 from db import db
 from dependencies import audit, require_any_permission, require_permission
 from entity_scope import entity_ctx
-from schemas_goods_receipt import (GRNCountRollIn, GRNCreateIn, GRNDnPatch, GRNLineIn, GRNLinePatch, GRNProfilePatch,
-                                   GRNReasonIn, GRNResolveIn, GRNScanIn, GRNVersionIn)
+from schemas_goods_receipt import (GRNCatalogIn, GRNCountRollIn, GRNCreateIn, GRNDnPatch, GRNLineIn, GRNLinePatch,
+                                   GRNProfilePatch, GRNReasonIn, GRNResolveIn, GRNScanIn, GRNVersionIn)
 from services import goods_receipt_close_service as gc
 from services import goods_receipt_ocr_service as go
 from services import goods_receipt_service as gs
@@ -71,6 +71,20 @@ async def grn_supplier_variance(request: Request, since: str = "") -> List[Dict[
 async def grn_ocr_usage(request: Request, month: str = "") -> Dict[str, Any]:
     _, ctx = await _act(request, "approve")
     return await go.usage_summary(month, ctx)
+
+
+@router.get("/goods-receipts/doc-variance")
+async def grn_doc_variance(request: Request, po_id: str = "", mko_id: str = "",
+                           step_seq: Optional[int] = None) -> Dict[str, Any]:
+    """Layar pencocokan tagihan supplier/makloon: qty SJ vs hitung fisik (baca-saja)."""
+    await require_any_permission(request, [(M, "view"), ("vendor_bill", "view")])
+    return await gc.doc_variance(await entity_ctx(request), po_id, mko_id, step_seq)
+
+
+@router.post("/goods-receipts/{grn_id}/lines/{line_no}/save-catalog")
+async def grn_save_catalog(grn_id: str, line_no: int, body: GRNCatalogIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    return await gs.save_line_to_catalog(grn_id, line_no, body, actor, ctx)
 
 
 @router.get("/goods-receipts/dn-profiles")

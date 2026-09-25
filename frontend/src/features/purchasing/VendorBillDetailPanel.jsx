@@ -6,6 +6,7 @@ import { formatCurrency, formatQty } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import DocRefsPanel from "../documents/trace/DocRefsPanel";
+import GrnDocVariance from "./GrnDocVariance";
 
 /**
  * VendorBillDetailPanel (Fase 5.2) — detail bill: 3-way match, keuangan, aksi.
@@ -116,6 +117,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
             </div>
           )}
 
+          <GrnDocVariance poId={bill.po_id || ""} mkoId={bill.po_id ? "" : bill.makloon_order_id || ""} stepSeq={bill.step_seq ?? null} testId="vb-grn-variance" />
           {/* Items table */}
           <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
             <div className="grid grid-cols-[1.6fr_78px_78px_82px_84px_110px_110px] px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">

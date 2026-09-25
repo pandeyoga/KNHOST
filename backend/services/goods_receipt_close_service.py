@@ -86,6 +86,15 @@ async def compute_recon(grn: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List
         if d_wt > 0 and c_wt > 0 and (ln.get("declared") or {}).get("weight_basis") == "net" \
                 and abs(c_wt - d_wt) > max(0.5, d_wt * pct / 100):
             cls.append(("weight_mismatch", f"Berat netto dihitung {c_wt:g} kg, surat jalan {d_wt:g} kg."))
+        rc = ln.get("roll_check") or {}
+        if rc.get("missing") or rc.get("diffs"):
+            parts = []
+            if rc.get("missing"):
+                parts.append(f"{len(rc['missing'])} roll belum diukur (#{', #'.join(str(x) for x in rc['missing'])})")
+            if rc.get("diffs"):
+                parts.append(f"{len(rc['diffs'])} roll beda panjang (" + ", ".join(
+                    f"#{d['seq']} {d['measured']:g} vs {d['expected']:g}" for d in rc["diffs"][:5]) + ")")
+            cls.append(("packing_list_mismatch", "Packing list: " + "; ".join(parts) + "."))
         tid = (ln.get("target") or {}).get("task_id")
         vs_rem = None
         if tid:
@@ -383,3 +392,56 @@ async def cancel_grn(grn_id: str, body: Any, actor: Dict[str, Any], ctx: EntityC
     await audit(actor["name"], "grn_cancelled", "goods_receipt", grn_id, {}, reason=body.reason,
                 scope_entity_id=grn["entity_id"])
     return safe_doc(doc)
+
+
+async def doc_variance(ctx: EntityContext, po_id: str = "", mko_id: str = "", step_seq: Optional[int] = None) -> Dict[str, Any]:
+    """Pencocokan tagihan (baca-saja): qty surat jalan vs hitung fisik per baris PO / langkah MKO dari kedatangan
+    yang sudah DITUTUP (stok & GL sudah terposting)."""
+    if not po_id and not mko_id:
+        raise HTTPException(status_code=400, detail="Isi po_id atau mko_id.")
+    key = {"lines.target.po_id": po_id} if po_id else {"lines.target.mko_id": mko_id}
+    flt = {"status": "closed", **key,
+           "entity_id": {"$in": ctx.allowed_entity_ids} if ctx.view_all else ctx.active_entity_id}
+    rows: List[Dict[str, Any]] = []
+    for g in await db.goods_receipts.find(flt, {"_id": 0}).sort("closed_at", 1).to_list(500):
+        res = {}
+        for d in g.get("discrepancies") or []:
+            if d.get("resolution"):
+                res.setdefault(d["line_no"], []).append(d["resolution"].get("action"))
+        for ln in g.get("lines") or []:
+            t = ln.get("target") or {}
+            if ln.get("is_non_stock") or ln.get("decision") == "reject_line":
+                continue
+            if (po_id and t.get("po_id") != po_id) or (mko_id and (t.get("mko_id") != mko_id or (
+                    step_seq is not None and t.get("step_seq") != step_seq))):
+                continue
+            rc = ln.get("recon") or {}
+            decl = (ln.get("converted") or {}).get("qty")
+            cnt = float((ln.get("counted") or {}).get("qty") or 0)
+            rows.append({"grn_id": g["id"], "grn_number": g["number"], "dn_number": (g.get("dn") or {}).get("number", ""),
+                         "dn_date": (g.get("dn") or {}).get("date", ""), "closed_at": g.get("closed_at", ""),
+                         "line_no": ln["line_no"], "product_id": t.get("product_id", ""),
+                         "product_name": t.get("product_name", ""), "sku": t.get("sku", ""),
+                         "unit": t.get("unit", "") if ln.get("role") != "byproduct" else (ln.get("converted") or {}).get("unit", ""),
+                         "role": ln.get("role") or "output", "step_seq": t.get("step_seq"),
+                         "supplier_text": " ".join(x for x in [(ln.get("read") or {}).get("description"),
+                                                               (ln.get("read") or {}).get("color")] if x),
+                         "declared_qty": decl, "counted_qty": round(cnt, 2),
+                         "diff_qty": round(cnt - float(decl), 2) if decl is not None else None,
+                         "diff_pct": rc.get("diff_pct"),
+                         "declared_rolls": (ln.get("declared") or {}).get("rolls"),
+                         "counted_rolls": (ln.get("counted") or {}).get("rolls"),
+                         "classes": rc.get("classes") or [], "resolutions": res.get(ln["line_no"], [])})
+    summary: Dict[str, Dict[str, Any]] = {}
+    for r in rows:
+        k = f"{r['product_id']}|{r['role']}"
+        s = summary.setdefault(k, {"product_id": r["product_id"], "product_name": r["product_name"], "sku": r["sku"],
+                                   "unit": r["unit"], "role": r["role"], "declared_qty": 0.0, "counted_qty": 0.0,
+                                   "grn_count": 0})
+        s["declared_qty"] = round(s["declared_qty"] + float(r["declared_qty"] or 0), 2)
+        s["counted_qty"] = round(s["counted_qty"] + r["counted_qty"], 2)
+        s["grn_count"] += 1
+    for s in summary.values():
+        s["diff_qty"] = round(s["counted_qty"] - s["declared_qty"], 2)
+    return {"rows": rows, "summary": list(summary.values()),
+            "claims": sum(1 for r in rows if any(a in ("claim_supplier", "claim_makloon") for a in r["resolutions"]))}
