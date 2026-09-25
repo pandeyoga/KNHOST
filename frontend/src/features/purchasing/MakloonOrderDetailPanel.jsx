@@ -22,6 +22,7 @@ import { MKO_STATUS } from "./mkoStatus";
 import { overlayDismiss } from "@/utils/overlayDismiss";
 import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
 import { uomSelectOptions } from "../../utils/uomCatalog";   // FASE U — satuan dari master
+import useReceivingMode from "../../hooks/useReceivingMode";
 import useUomConversions from "../../hooks/useUomConversions";
 
 const STEP_STATUS = {
@@ -47,6 +48,7 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
   const [busy, setBusy] = useState(false);
   const [issueStep, setIssueStep] = useState(null);
   const [receiveStep, setReceiveStep] = useState(null);
+  const { isGrn } = useReceivingMode();
   const [serviceStep, setServiceStep] = useState(null);   // FASE T — Catat Jasa
   const [showCancel, setShowCancel] = useState(false);
   const { labelOf: processLabel } = useProcessTypes();
@@ -346,7 +348,7 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
                   )}
                   {canAct && s.status === "issued" && (
                     <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <button data-testid={`receive-step-${s.seq}`} onClick={() => setReceiveStep(s)} className="primary-button !py-1.5 text-[11.5px]"><PackageCheck size={12} /> Terima Hasil</button>
+                      {!isGrn(data.entity_id) && <button data-testid={`receive-step-${s.seq}`} onClick={() => setReceiveStep(s)} className="primary-button !py-1.5 text-[11.5px]"><PackageCheck size={12} /> Terima Hasil</button>}
                       <a data-testid={`receive-step-grn-${s.seq}`} className="secondary-button !py-1.5 text-[11.5px]"
                         href={`?view=goods-receipts&mko=${data.id}&makloon=${s.makloon_id || ""}&wh=${s.from_warehouse_id || data.target_warehouse_id || ""}&entity=${data.entity_id || ""}`}>
                         <PackageCheck size={12} /> Terima lewat Kedatangan (SJ)

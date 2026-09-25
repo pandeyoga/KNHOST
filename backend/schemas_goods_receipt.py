@@ -89,6 +89,12 @@ class GRNCatalogIn(GRNVersionIn):
     supplier_item_name: str = ""
 
 
+class GRNModeIn(BaseModel):
+    entity_id: str = Field(..., min_length=1)
+    mode: Literal["legacy", "grn"]
+    reason: str = Field(..., min_length=5)
+
+
 class GRNProfilePatch(BaseModel):
     number_locale: Optional[Literal["id", "en", "unknown"]] = None
     add_alias: Optional[str] = None

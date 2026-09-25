@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Loader2, Printer } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { printSampleLabel, printInboundRollLabels, reprintRollLabel } from "../../utils/rollLabels";
+import useReceivingMode from "../../hooks/useReceivingMode";
 import { offlinePost } from "../../utils/offlineQueue";
 
 export { printSampleLabel, printInboundRollLabels, reprintRollLabel };
@@ -23,6 +24,7 @@ export function ReprintRollButton({ task }) {
 /** Aksi tugas gudang di mobile (Tahap 2): satu tombol besar per langkah, hasil = ikon + teks. */
 
 export function InboundActions({ task, onDone, onCompleted }) {
+  const { isGrn } = useReceivingMode();
   // GRN Fase 0.5 — kotak qty KOSONG: petugas wajib menghitung, bukan menekan Terima dengan qty PO penuh.
   const [qty, setQty] = useState("");
   const [lot, setLot] = useState(""); const [dye, setDye] = useState("");
@@ -38,6 +40,13 @@ export function InboundActions({ task, onDone, onCompleted }) {
       onCompleted?.({ task, rolls: r.data.created_rolls || [] });
     } catch (e) { setMsg({ ok: false, text: errText(e, "Gagal.") }); } finally { setBusy(false); }
   };
+  if (isGrn(task.entity_id) && !task.legacy_in_flight) {
+    return (
+      <a data-testid={`mw-inbound-grn-${task.id}`} href="?view=goods-receipts" className="mt-2 block rounded-lg border border-[#BFE5DC] bg-[#F0FAF7] p-3 text-[12px] font-semibold text-[#0F766E]">
+        Penerimaan memakai Kedatangan Barang — buka layar Kedatangan untuk foto surat jalan & hitung fisik.
+      </a>
+    );
+  }
   return (
     <div className="mt-2 space-y-2" data-testid={`mw-inbound-actions-${task.id}`}>
       {["waiting_goods", "pending", "receiving", "in_progress"].includes(task.status) && (

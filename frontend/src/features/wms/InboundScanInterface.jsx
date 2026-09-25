@@ -14,6 +14,7 @@ import RollLabelActions from "../../components/RollLabelActions";
 import { kgPerBaseUnit } from "../../utils/uom";
 import ScanLabelStatsCard from "./inbound/ScanLabelStatsCard";
 import { askReason } from "../../services/confirmService";
+import useReceivingMode from "../../hooks/useReceivingMode";
 import { can } from "../../config/roles";
 
 function MiniBar({ pct, status }) {
@@ -29,7 +30,10 @@ const EMPTY_SCAN = { doc_uom: "", doc_qty: "", batch: "", lot: "", dye_lot: "",
                      grade: "A", roll_id: "", bin_id: "" };
 
 export default function InboundScanInterface({ user, focusPoId = "", onFocusConsumed, onOpenPO }) {
+  const { isGrn, data: modeData } = useReceivingMode();
+  const grnEntities = (modeData?.entities || []).filter((e) => e.mode === "grn");
   const [tasks, setTasks] = useState([]);
+  const shownTasks = tasks.filter((t) => !isGrn(t.entity_id) || t.legacy_in_flight);   // GRN Fase 7
   const canOverride = can(user?.permissions, "wms", "approve");
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState(false);
@@ -75,12 +79,12 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
   // yang masih terbuka (bila semua selesai, tugas terbaru) lalu gulir ke barisnya.
   useEffect(() => {
     if (!focusPoId || loading || !fetched) return;
-    const mine = tasks.filter((x) => x.po_id === focusPoId);
+    const mine = shownTasks.filter((x) => x.po_id === focusPoId);
     const t = mine.find((x) => !["completed", "put_away"].includes(x.status)) || mine[0];
     if (t) {
       selectTask(t);
       setTimeout(() => document.querySelector(`[data-testid="inbound-task-${t.id}"]`)?.scrollIntoView({ block: "center" }), 50);
-    } else if (tasks.length) {
+    } else if (shownTasks.length) {
       setError("Belum ada tugas penerimaan untuk PO ini — PO mungkin belum disetujui.");
     }
     onFocusConsumed?.();
@@ -318,6 +322,12 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
           </div>
         </div>
       )}
+      {grnEntities.length > 0 && (
+        <div data-testid="inbound-grn-mode-banner" className="flex items-center justify-between gap-3 rounded-xl border border-[#BFE5DC] bg-[#F0FAF7] px-3 py-2 text-[11.5px] text-[#0F766E]">
+          <span><b>{grnEntities.map((e) => e.entity_name).join(", ")}</b> memakai Kedatangan Barang. Tugas baru diterima lewat layar Kedatangan (surat jalan → hitung fisik); di sini hanya tugas lama yang sudah berjalan.</span>
+          <a data-testid="inbound-grn-open" href="?view=goods-receipts" className="primary-button whitespace-nowrap !py-1">Buka Kedatangan Barang</a>
+        </div>
+      )}
       {/* Filter strip */}
       <div className="flex items-center gap-1.5 overflow-x-auto">
         {FILTERS.map(s => (
@@ -328,7 +338,7 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
             {FILTER_LABELS[s]}
           </button>
         ))}
-        <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap">{tasks.length} tugas</span>
+        <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap">{shownTasks.length} tugas</span>
       </div>
 
       {/* 2-panel layout */}
@@ -342,14 +352,14 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
           </div>
           {loading ? (
             <div className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
-          ) : tasks.length === 0 ? (
+          ) : shownTasks.length === 0 ? (
             <div className="py-8 text-center text-[12px] text-[#6B6B73]">
               <Package size={28} className="mx-auto mb-2 text-gray-300" />
               <p>Tidak ada tugas barang masuk</p>
             </div>
           ) : (
             <div className="divide-y divide-[#EFF0F2] overflow-y-auto max-h-[520px]">
-              {tasks.map(task => {
+              {shownTasks.map(task => {
                 const pct = task.expected_qty ? Math.min((task.received_qty || 0) / task.expected_qty * 100, 100) : 0;
                 const isSelected = selectedTask?.id === task.id;
                 return (

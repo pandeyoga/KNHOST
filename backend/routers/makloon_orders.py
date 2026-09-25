@@ -159,6 +159,8 @@ async def receive_order_step(mko_id: str, payload: MakloonReceiveIn, request: Re
     actor = await require_permission(request, "makloon_order", "receive")
     ctx = await entity_ctx(request)
     await _assert_access(mko_id, ctx)
+    from services.receiving_mode_service import guard_makloon_receive
+    await guard_makloon_receive(await db.makloon_orders.find_one({"id": mko_id}, {"_id": 0, "entity_id": 1}) or {})
     data = payload.model_dump()
     import domain_registry as _dr
     try:  # GRN Fase 0.4 — grade roll makloon mengikuti SSOT (A+→A, C→BS; tak dikenal → 400)

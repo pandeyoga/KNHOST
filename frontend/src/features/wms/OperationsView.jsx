@@ -7,6 +7,7 @@ import TransferManagement from "./TransferManagement";
 import CycleCount from "../inventory/CycleCount";
 import WmsHealthDashboard from "./WmsHealthDashboard";
 import WaitingBoardsStrip from "../../components/WaitingBoardsStrip";
+import useReceivingMode from "../../hooks/useReceivingMode";
 import { can } from "../../config/roles";
 
 export default function OperationsView({
@@ -56,10 +57,12 @@ export default function OperationsView({
   // yang disaring adalah apa yang DIRENDER.
   const perms = user?.permissions || {};
   const TAB_PERMISSION = { cycle: ["inventory", "cycle_count"] };
+  const { isGrn, entityOf } = useReceivingMode();
+  const grnOnly = selectedEntity !== "all" && isGrn(selectedEntity) && !(entityOf(selectedEntity)?.legacy_in_flight || []).length;
   const visibleTabs = WMS_TABS.filter((t) => {
     const need = TAB_PERMISSION[t.id];
-    return !need || can(perms, need[0], need[1]);
-  });
+    return (!need || can(perms, need[0], need[1])) && !(t.id === "inbound" && grnOnly);   // GRN Fase 7
+  }).map((t) => (t.id === "inbound" && selectedEntity !== "all" && isGrn(selectedEntity) ? { ...t, label: "Barang Masuk (sisa lama)" } : t));
   const activeTab = visibleTabs.some((t) => t.id === wmsTab)
     ? wmsTab
     : (visibleTabs[0]?.id || "stok");

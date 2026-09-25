@@ -1,17 +1,18 @@
 """GRN Fase 2 — `/api/goods-receipts` (Kedatangan Barang). Pembungkus tipis atas layanan GRN."""
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 
 from db import db
 from dependencies import audit, require_any_permission, require_permission
 from entity_scope import entity_ctx
 from schemas_goods_receipt import (GRNCatalogIn, GRNCountRollIn, GRNCreateIn, GRNDnPatch, GRNLineIn, GRNLinePatch,
-                                   GRNProfilePatch, GRNReasonIn, GRNResolveIn, GRNScanIn, GRNVersionIn)
+                                   GRNModeIn, GRNProfilePatch, GRNReasonIn, GRNResolveIn, GRNScanIn, GRNVersionIn)
 from services import goods_receipt_close_service as gc
 from services import goods_receipt_ocr_service as go
 from services import goods_receipt_service as gs
+from services import receiving_mode_service as rms
 from services import supplier_dn_profile_service as sdp
 
 router = APIRouter(prefix="/api")
@@ -71,6 +72,21 @@ async def grn_supplier_variance(request: Request, since: str = "") -> List[Dict[
 async def grn_ocr_usage(request: Request, month: str = "") -> Dict[str, Any]:
     _, ctx = await _act(request, "approve")
     return await go.usage_summary(month, ctx)
+
+
+@router.get("/goods-receipts/mode")
+async def grn_mode_status(request: Request) -> Dict[str, Any]:
+    """Fase 7 — mode penerimaan per badan usaha (dibaca layar lama untuk menyembunyikan tombol terima)."""
+    await require_any_permission(request, [(M, "view"), ("purchase_order", "view"), ("makloon_order", "view")])
+    return await rms.status(await entity_ctx(request))
+
+
+@router.put("/goods-receipts/mode")
+async def grn_mode_switch(body: GRNModeIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "approve")
+    if actor.get("role") not in ("admin", "manager"):
+        raise HTTPException(status_code=403, detail="Hanya admin/manajer yang boleh mengganti mode penerimaan.")
+    return await rms.switch(body.entity_id, body.mode, body.reason, actor, ctx)
 
 
 @router.get("/goods-receipts/doc-variance")

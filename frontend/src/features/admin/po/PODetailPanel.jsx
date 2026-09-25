@@ -13,6 +13,7 @@ import DocumentActionsBar from "../../documents/DocumentActionsBar";
 import RelatedDocsPanel from "../../documents/RelatedDocsPanel";
 import QtyDual from "../../../components/QtyDual";      // FASE U — dua satuan
 import axios, { API } from "../../../services/apiClient";
+import useReceivingMode from "../../../hooks/useReceivingMode";
 import { printRollLabelsBulk } from "../../../utils/rollLabels";
 
 /** Cetak massal label QR semua roll yang lahir dari PO ini (popup) atau kirim ke antrean printer gudang. */
@@ -66,6 +67,7 @@ function PrintPoLabelsButton({ po, tp }) {
  * Props: po, currentUser, onClose, onApprove, onCancel, onCloseShort, onAmend
  */
 export default function PODetailPanel({ po, currentUser, onClose, onApprove, onCancel, onCloseShort, onAmend, onOpenDocument, embedded = false }) {
+  const { isGrn } = useReceivingMode();
   if (!po) {
     return (
       <div className="section-card flex items-center justify-center min-h-[200px] border-dashed">
@@ -336,11 +338,13 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
               onClick={() => onOpenDocument({ view: "goods-receipts", nav_id: "goods-receipts", focus_type: "purchase_order", focus_id: po.id })}>
               <PackageCheck size={13} /> Terima Barang di Gudang
             </button>
+            {!isGrn(po.entity_id) && (
             <button data-testid={`${tp}receive-goods-legacy-button`} className="secondary-button justify-center"
               title="Layar lama: Operasi Gudang → Barang Masuk"
               onClick={() => onOpenDocument({ view: "operations", nav_id: "wms-operations", tab: "inbound", focus_type: "purchase_order", focus_id: po.id })}>
               Barang Masuk (lama)
             </button>
+            )}
             </>
           )}
           {amendable && canManage && (

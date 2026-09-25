@@ -9,10 +9,12 @@ import { FileText, CheckCircle, XCircle, AlertCircle, Ban, FileEdit, Maximize2, 
 import { formatCurrency } from "../../../utils/formatters";
 import { can } from "../../../config/roles";
 import { getStatusBadge, lateState } from "./poUtils";
+import useReceivingMode from "../../../hooks/useReceivingMode";
 import POReceiptVariancePanel from "./POReceiptVariancePanel";
 
 export default function POCompactPanel({ po, currentUser, onClose, onOpenFull,
   onApprove, onCancel, onCloseShort, onAmend, onOpenDocument }) {
+  const { isGrn } = useReceivingMode();
   if (!po) {
     return (
       <div className="section-card flex items-center justify-center min-h-[200px] border-dashed">
@@ -125,11 +127,13 @@ export default function POCompactPanel({ po, currentUser, onClose, onOpenFull,
               onClick={() => onOpenDocument({ view: "goods-receipts", nav_id: "goods-receipts", focus_type: "purchase_order", focus_id: po.id })}>
               <PackageCheck size={13} /> Terima Barang di Gudang
             </button>
+            {!isGrn(po.entity_id) && (
             <button data-testid="receive-goods-legacy-button" className="secondary-button justify-center"
               title="Layar lama: Operasi Gudang → Barang Masuk"
               onClick={() => onOpenDocument({ view: "operations", nav_id: "wms-operations", tab: "inbound", focus_type: "purchase_order", focus_id: po.id })}>
               Barang Masuk (lama)
             </button>
+            )}
             </>
           )}
           {po.status === "waiting_approval" && canManage && (
