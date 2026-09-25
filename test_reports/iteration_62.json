@@ -1,0 +1,25 @@
+{
+  "summary": "Iter 62 — audit tab baru 'Warna Pelanggan' di Pustaka Warna. Backend: 11/11 pytest lulus. GET /api/color-library/customer-colors (X-Entity-Id ent_ksc admin) mengembalikan grup cust_butik_bali (KN-GRN-03 owned=false products=[SGK-BLI-TSK-01] general_products_count=0; KN-PUR-01 owned=false products=[SGK-BLI-UNG-01] general_products_count>=1) & cust_toko_kain (KN-SJT-01 owned=true products=[]). Dengan X-Entity-Id ent_kanda pelanggan tidak terlihat (grup cust_butik_bali/cust_toko_kain tak muncul). ?customer_id=cust_butik_bali hanya grup itu. Finance 403. GET /api/color-library?scope=internal → tidak memuat KN-GRN-03 & KN-SJT-01 tetapi memuat KN-PUR-01; ?scope=customer → tepat KN-GRN-03 & KN-SJT-01. Tanpa scope: tiap baris memiliki is_customer_color boolean. POST + exclusive_customer_id valid → warna tersimpan dengan exclusive_customer_name terisi; id tak ada → 400 'Pelanggan tidak ditemukan'. PATCH kosong-string melepas kepemilikan; PATCH ke cust_toko_kain memindahkan grup. Frontend admin (?view=color-library, ent_ksc): color-kpi-total=27, color-kpi-customer=2, sub-tab color-subtab-customer menampilkan customer-colors-tab dengan customer-color-group-cust_butik_bali & customer-color-group-cust_toko_kain, 3 customer-color-card-*, lencana customer-color-owned-col_bb4efc23969b (KN-SJT-01) & customer-color-shared-col_kn_pur_01, 2 baris customer-color-product-*, 3 tombol customer-color-links-* membuka color-links-modal. Filter customer-color-customer-filter & pencarian customer-color-search hadir. Warna Internal tidak menampilkan KN-GRN-03/KN-SJT-01, hanya KN-PUR-01. Form Tambah Warna memiliki KNSelect color-form-customer. PantoneFinder (via dsr-color-picker di modul Design Requests) memperlihatkan pantone-customer-badge-col_kn_grn_03 ('Warna pelanggan') & pantone-customer-badge-col_bb4efc23969b ('Eksklusif Toko Kain Sejahtera').",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter62_customer_colors.py",
+    "/app/test_reports/pytest/iter62.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "color_service.list_customer_colors: `async for` iter + dict-comprehension `{c[\"id\"]: c async for c in ...}` untuk memuat *seluruh* koleksi color_library ke memori setiap panggilan. OK untuk skala saat ini (30-an warna) tetapi bisa dibatasi ke koleksi warna relevan (yang di-own ATAU dipakai produk eksklusif) via query lebih ketat kalau data tumbuh besar. Tidak blocking.",
+    "color_service.is_customer_color: 'hanya dipakai produk eksklusif' menghitung berdasarkan seluruh riwayat produk, termasuk produk lifecycle=inactive. Bila warna dulunya di produk umum lalu produk itu dinonaktifkan (masih ada di DB dengan lifecycle apapun kecuali dihapus), warna tetap dianggap 'umum' — konsisten dengan spec ('produk umum mana pun'). Catatan saja.",
+    "Router customer-colors: audit tidak dicatat (endpoint read-only, wajar). POST/PATCH exclusive_customer_id sudah dicatat via audit color_updated/color_created — bagus."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter62_customer_colors.py (new)"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (semua testid & flow terverifikasi)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (dan akun demo standar lain di /app/memory/test_credentials.md)",
+  "seed_data_creation": "Menjalankan `python /app/scripts/seed_customer_colors_demo.py` untuk memastikan KN-GRN-03/KN-SJT-01/KN-PUR-01 & produk eksklusif SGK-BLI-* tersedia (idempoten). Tes membuat 2 warna TEST-CC-* (create/patch/move) dan menghapusnya lewat DELETE endpoint + hard-delete regex di test_zzz_cleanup.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Regresi Warna Pelanggan ada di test_iter62_customer_colors.py — jalankan `cd /app/backend && pytest tests/test_iter62_customer_colors.py -o addopts='' -v`. Warna KN-SJT-01 = col_bb4efc23969b (owned Toko Kain Sejahtera). Data demo dipulihkan dari script seed. Tidak menyentuh data permanen KN-* / SGK-BLI-* di luar konteks tes.",
+  "rca of the issue": "Tidak ada bug. Semua spec fitur terpenuhi: (1) endpoint /customer-colors mengelompokkan warna per pelanggan dengan owned flag, general_products_count, dan produk eksklusif; (2) entity scoping via X-Entity-Id bekerja (ent_kanda tak melihat pelanggan ent_ksc); (3) filter ?customer_id bekerja; (4) izin color.view (finance 403); (5) scope=internal/customer memisahkan warna dengan benar; (6) is_customer_color boolean menyertai setiap warna; (7) POST/PATCH exclusive_customer_id valid & error handling 400; (8) UI menampilkan KPI, sub-tab, group per pelanggan, kartu, badge owned/shared, produk, tombol Buat Labdip/Modal, filter/search; (9) form color-form-customer hadir di modal Tambah/Edit; (10) PantoneFinder menampilkan pantone-customer-badge-<id> pada warna pelanggan dengan label 'Eksklusif <nama>' untuk owned dan 'Warna pelanggan' untuk shared."
+}

@@ -1,0 +1,151 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["is_delivery_document", "doc_kind", "header", "lines", "totals", "packing_list", "annotations", "warnings"],
+  "properties": {
+    "is_delivery_document": {"type": "boolean"},
+    "doc_kind": {
+      "type": "string",
+      "enum": ["surat_jalan", "surat_jalan_dan_packing_list", "packing_list", "delivery_order", "lainnya"]
+    },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supplier_name_printed", "dn_number", "dn_date_text", "dn_date", "recipient_name",
+                   "po_refs", "other_refs", "vehicle_plate"],
+      "properties": {
+        "supplier_name_printed": {"type": ["string", "null"], "description": "Nama pengirim persis seperti tercetak di kop/cap. null bila tidak ada."},
+        "dn_number": {"type": ["string", "null"], "description": "Nomor surat jalan / delivery order persis seperti tertulis."},
+        "dn_date_text": {"type": ["string", "null"], "description": "Tanggal kirim persis seperti tertulis."},
+        "dn_date": {"type": ["string", "null"], "description": "YYYY-MM-DD hanya bila yakin; selain itu null."},
+        "recipient_name": {"type": ["string", "null"], "description": "Nama penerima (Kepada Yth / Customer / Ship To)."},
+        "po_refs": {
+          "type": "array",
+          "description": "SEMUA teks yang berlabel PO / No PO / Order / No Order di kepala dokumen, disalin persis.",
+          "items": {"type": "string"}
+        },
+        "other_refs": {
+          "type": "array",
+          "description": "Nomor lain: SO, DO, PL, invoice, EX SJ, SJ greige, kontrak.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label", "value"],
+            "properties": {
+              "label": {"type": "string", "description": "Label persis seperti tercetak, mis. 'No SO', 'INV', 'No. EX SJ'."},
+              "value": {"type": "string"}
+            }
+          }
+        },
+        "vehicle_plate": {"type": ["string", "null"]}
+      }
+    },
+    "lines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["line_no", "page", "row_text", "item_code", "description", "color", "design_code",
+                     "lot", "grade", "po_ref", "quantities", "is_non_stock", "legibility",
+                     "handwritten_correction"],
+        "properties": {
+          "line_no": {"type": "integer"},
+          "page": {"type": "integer"},
+          "row_text": {"type": "string", "description": "Isi baris (termasuk baris lanjutannya) disalin ringkas apa adanya."},
+          "item_code": {"type": ["string", "null"], "description": "Kode barang/KP/artikel dari supplier."},
+          "description": {"type": ["string", "null"]},
+          "color": {"type": ["string", "null"]},
+          "design_code": {"type": ["string", "null"]},
+          "lot": {"type": ["string", "null"], "description": "Lot / batch / dye lot."},
+          "grade": {"type": ["string", "null"], "description": "Grade persis seperti tertulis (A, A2, B, BS, ...). null bila tidak ada."},
+          "po_ref": {"type": ["string", "null"], "description": "Nomor PO yang tertulis DI BARIS INI, disalin persis."},
+          "quantities": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["qty_text", "qty", "unit_text", "unit", "column_header", "role", "weight_basis"],
+              "properties": {
+                "qty_text": {"type": "string", "description": "Angka persis seperti tertulis, termasuk titik/koma."},
+                "qty": {"type": ["number", "null"]},
+                "unit_text": {"type": ["string", "null"]},
+                "unit": {"type": ["string", "null"], "enum": ["m", "yd", "kg", "roll", "pcs", "bal", "other", null]},
+                "column_header": {"type": ["string", "null"], "description": "Judul kolom tempat angka ini berada, persis."},
+                "role": {
+                  "type": "string",
+                  "enum": ["delivered_length", "delivered_weight", "delivered_count", "greige_length",
+                           "greige_weight", "unclear"]
+                },
+                "weight_basis": {"type": ["string", "null"], "enum": ["gross", "net", "unknown", null]}
+              }
+            }
+          },
+          "is_non_stock": {"type": "boolean", "description": "true untuk sampel, amplop, hanger, dll."},
+          "legibility": {"type": "string", "enum": ["clear", "partial", "illegible"]},
+          "handwritten_correction": {"type": "boolean"}
+        }
+      }
+    },
+    "totals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["qty_text", "qty", "unit_text", "unit", "column_header"],
+        "properties": {
+          "qty_text": {"type": "string"},
+          "qty": {"type": ["number", "null"]},
+          "unit_text": {"type": ["string", "null"]},
+          "unit": {"type": ["string", "null"], "enum": ["m", "yd", "kg", "roll", "pcs", "bal", "other", null]},
+          "column_header": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "packing_list": {
+      "type": "array",
+      "description": "Kosongkan kecuali instruksi pengguna berisi EXTRACT_PACKING_LIST=true.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["group_label", "item_hint", "lot", "grade", "rolls", "subtotal_text"],
+        "properties": {
+          "group_label": {"type": ["string", "null"]},
+          "item_hint": {"type": ["string", "null"]},
+          "lot": {"type": ["string", "null"]},
+          "grade": {"type": ["string", "null"]},
+          "rolls": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["seq", "length_text", "length", "length_unit", "weight_text", "weight_kg"],
+              "properties": {
+                "seq": {"type": "integer"},
+                "length_text": {"type": ["string", "null"]},
+                "length": {"type": ["number", "null"]},
+                "length_unit": {"type": ["string", "null"], "enum": ["m", "yd", null]},
+                "weight_text": {"type": ["string", "null"]},
+                "weight_kg": {"type": ["number", "null"]}
+              }
+            }
+          },
+          "subtotal_text": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "kind", "page"],
+        "properties": {
+          "text": {"type": "string"},
+          "kind": {"type": "string", "enum": ["catatan_tangan", "cap", "coretan_koreksi", "keterangan_cetak", "lainnya"]},
+          "page": {"type": "integer"}
+        }
+      }
+    },
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  }
+}

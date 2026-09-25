@@ -1,0 +1,36 @@
+{
+  "summary": "GRN Fase 0 (prasyarat penerimaan) tested end-to-end. Ran /app/backend/tests/test_grn_phase0.py → 12/12 PASS covering: (0.1) POST /wms/tasks/{id}/advance rejects inbound with 409 USE_RECEIVING_FLOW for qc_check and put_away, non-inbound unchanged; (0.2) receiving.block_over_remaining toggled via PUT /config/values changes scan-label OVER_PO behaviour; (0.3) receiving.line_qty_tolerance_pct exposed via uom-options and enforced in complete() (pct=2 and pct=5); (0.4) domain_registry.require_grade maps A+→A, C→BS, blank falls back, unknown raises; scan-receive rejects 'Z' with 'Grade Z tidak dikenal' and maps A+→A stored; (0.6) over-receipt override — warehouse still 400, admin without reason 400, admin with reason 200 and over_override_reason stored; (0.7) uq_supplier_sku index present and duplicate insert raises DuplicateKeyError, lookup filters status=active; (0.8) po_line_guard.duplicate_line_message + POST /purchase-orders/{id}/amend rejects duplicate product line with 'lebih dari satu baris PO'. Manual: scripts/check_supplier_item_duplicates.py returns 'OK — tidak ada duplikat', exit 0 (when env vars sourced). Frontend smoke: login admin → ?view=operations&entity=ent_ksc renders WMS Operations with Barang Masuk tab visible; no page errors. Code review confirmed in-scope grade dropdowns use useDomainEnums (InboundScanForm scan-grade-select, ScannedRollRow, GRCatchWeightModal, MakloonOrderDetailPanel mko-recv-roll-grade-*, SupplierItemFormModal), GRCatchWeightModal receives tolPct from uom.options.line_qty_tolerance_pct, ScannerTaskPanel disables advance-wms-task-button for flow_type=='inbound', MobileTaskActions qty starts empty with placeholder 'Hitung fisik (unit)' and 'waiting_goods' included in eligible statuses, InboundTaskPanel exposes scan-task-override-{taskId} + askReason retry, inbound_scan_label reads block_over_remaining/label_variance_tolerance_percent/auto_rfid_on_scan via services.config_resolver.value_of. Regression suites test_fase_sl_* fail across the board because they hardcode task wms_e2e3d9059660 / KSC/PO-00014 that no longer exists in current seed (explicitly flagged as non-regression in the review request); makloon partial-queue suite: all 6 SKIPPED (seed missing).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "scripts/check_supplier_item_duplicates.py", "issue": "Script reads os.environ['MONGO_URL'] directly without load_dotenv → fails with KeyError unless the shell sources /app/backend/.env first. Add `from dotenv import load_dotenv; load_dotenv('/app/backend/.env')` so admins can run it plainly per its own docstring."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_grn_phase0.py",
+    "/app/test_reports/pytest/grn_phase0.xml",
+    "/app/test_reports/pytest/grn_phase0_regression.xml"
+  ],
+  "action_items": [
+    "(Optional, out of Fase 0 scope) Two frontend files still hardcode grade lists but were NOT in the spec: /app/frontend/src/features/wms/warehouses/WarehouseProfileDrawer.jsx (const GRADES = ['A','B','C','BS']) and /app/frontend/src/features/purchasing/ReturnDetailPanel.jsx (const GRADES = ['A','B','C']). Consider migrating both to useDomainEnums in a follow-up so the SSOT is truly the only source (KN-A1 style).",
+    "(Optional) Add load_dotenv to scripts/check_supplier_item_duplicates.py so it works standalone as its docstring advertises."
+  ],
+  "critical_code_review_comments": [
+    "Grade SSOT enforcement is correct for the phase-0 code paths (scan-receive, complete, confirm-measure, makloon receive rolls). Two out-of-scope UIs (WarehouseProfileDrawer, ReturnDetailPanel) still hardcode grades; they don't affect receiving flows but are drift risk for future phases.",
+    "advance-wms-task-button disable relies solely on selectedTask?.flow_type === 'inbound'. Server-side USE_RECEIVING_FLOW guard is the source of truth (tested), so the UI is fine, but any future flow_type value alias (e.g. 'inbound_makloon') would silently bypass the disable — consider a helper isInboundFlow(task) shared with backend router.",
+    "receiving.line_qty_tolerance_pct is fetched via GET /inbound/tasks/{id}/uom-options and used both server-side (complete roll-sum) and client-side (GRCatchWeightModal tolPct). Good symmetry; consider caching in a React hook to avoid re-request per open."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (12/12 phase-0 tests)", "frontend": "smoke pass (login + inbound tab render)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, warehouse@kainnusantara.id / demo12345, manager@kainnusantara.id / demo12345 · header X-Entity-Id: ent_ksc",
+  "seed_data_creation": "None. Test file uses ephemeral synth wms_tasks (wms_grn0_*) that are cleaned up in fixture teardown; supplier_items test inserts a temp inactive row and deletes it in finally. No real completes executed → no rolls/lots/journal side effects.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Phase 0 is green. When Phase 1+ starts, note that the legacy test_fase_sl_scan_label.py / test_fase_sl_item_label_pattern.py / test_fase_sl_receipt_variance.py / test_fase_sl_rfid_alias.py suites all reference hardcoded task wms_e2e3d9059660 + KSC/PO-00014 that no longer exists in current seed; they will keep failing until either the seed pins that task or the tests are rewritten to discover a live inbound task. Grade SSOT migration is only partial in the FE — WarehouseProfileDrawer + ReturnDetailPanel still hardcode grades.",
+  "rca of the issue": "N/A — no bugs found in phase-0 scope."
+}

@@ -1,0 +1,26 @@
+{
+  "summary": "Post-restore smoke checks (read-only) all pass. Backend login + 4 data checks and frontend admin login flow all green.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/backend_smoke_restore.py",
+    "/app/test_reports/pytest/smoke_restore.xml"
+  ],
+  "checks_executed": [
+    "POST /api/auth/login (admin@kainnusantara.id/demo12345) → 200 with access_token",
+    "GET /api/ → 200",
+    "GET /api/interco/settlements with X-Entity-Id=ent_kanda → ≥1 settlement with method='transfer' AND status='posted' (F-08 rule)",
+    "GET /api/design-gallery (X-Entity-Id=ent_ksc) → 'Parang Modern Monokrom' present with status='approved'",
+    "GET /api/interco/transactions → ≥4 tx, statuses include 'draft' and 'confirmed'",
+    "Frontend: login page loads, login-email-input/login-password-input/login-submit-button works, lands at ?view=admin-home showing 'Control Tower' with zero console errors"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": ["/app/backend/tests/backend_smoke_restore.py"],
+  "success_rate": {"backend": "100% (5/5)", "frontend": "100% (1/1)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (entity ent_ksc)",
+  "seed_data_creation": "None — read-only smoke run per request",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Auth header pattern: Authorization: Bearer <access_token> + X-Entity-Id: <entity>. Login response key is 'access_token'. For interco settlements, header entity is buyer (ent_kanda) per seed helper H(). Test file at /app/backend/tests/backend_smoke_restore.py — reusable for regression. Frontend is prebuilt static bundle (rebuild via bash /app/scripts/rebuild_frontend.sh)."
+}

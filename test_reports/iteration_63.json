@@ -1,0 +1,27 @@
+{
+  "summary": "Tested new Warna Pelanggan feature suite (customer-colors API, exclusive lock, use-request workflow, PDF card, CRM 360 section, frontend UI). Backend: 18/18 pytest cases pass. Frontend: manager flow (Warna Pelanggan tab with badges Terkunci/Otomatis, Kartu Warna PDF download, minta izin modal → notice → panel → approve → grants marker, CRM Customer 360 warna eksklusif section with tiles + PDF) all verified. One frontend gap: sales user CANNOT reach the Pustaka Warna → Warna Pelanggan screen (redirected to sales-home; no menu entry) even though the backend allows sales to create use-requests (color.view perm).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Routing/Sidebar for role=sales", "issue": "Sales role cannot access ?view=color-library (redirected to ?view=sales-home) and there is no sidebar entry to Pustaka Warna. Review request states sales should be able to see the Warna Pelanggan tab and submit izin requests. Backend permission is fine (POST /use-requests works as sales), so this is a frontend route/menu whitelisting gap.", "selector": "sidebar / route guard", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_customer_colors.py", "/app/test_reports/pytest/customer_colors.xml"],
+  "action_items": [
+    "Allow role=sales to access the Pustaka Warna (Warna Pelanggan) view via URL and sidebar so they can submit izin requests as intended (approve/reject buttons should remain hidden for sales — already correct on backend via color.approve)."
+  ],
+  "critical_code_review_comments": [
+    "color_lock_service.assert_can_use looks correct; PATCH product body wrapper `{data: {...}}` is consistent with other endpoints. Lock message is in Indonesian and includes owner name + Ajukan izin hint (verified).",
+    "DELETE /api/products is a soft-delete (sets status inactive) but color_service.customer-colors general_products_count counts inactive too — creating stale counts if soft-deleted general products remain. Consider filtering by status='active' in the count logic to avoid confusing UI numbers after cleanup (not blocking, but noted)."
+  ],
+  "updated_files": ["/app/backend/tests/test_customer_colors.py"],
+  "success_rate": {"backend": "100% (18/18)", "frontend": "~90% (sales access gap)"},
+  "test_credentials": "manager@kainnusantara.id / demo12345 (approve), admin@kainnusantara.id / demo12345 (product create), sales@kainnusantara.id / demo12345 (create request). Header X-Entity-Id: ent_ksc.",
+  "seed_data_creation": "Ran scripts/seed_customer_colors_demo.py (idempotent). Cleaned up test artifacts: cleared use_requests on KN-SJT-01 & KN-BLI-EMS-01, hard-deleted TST-* products.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend pytest is at /app/backend/tests/test_customer_colors.py — reuse for regression. Frontend testids exercised: customer-color-card-pdf-<cid>, customer-color-locked-<colId>, customer-color-auto-<colId>, customer-color-ask-<colId>, color-use-request-modal, color-use-requests-panel, color-use-request-approve-<reqId>, customer-color-grants-<colId>, customer-360-colors, customer-360-color-<colId>, customer-360-color-card-pdf.",
+  "rca of the issue": "Sales access gap: role-based route guard / sidebar registry for `color-library` view in the frontend does not include the `sales` role — hence direct URL navigation gets redirected to sales-home and no menu link appears. Backend perm matrix already includes sales in color.view. Fix in frontend routing config (allowed roles for the color-library route)."
+}

@@ -1,0 +1,106 @@
+{
+ "is_delivery_document": true,
+ "doc_kind": "surat_jalan",
+ "packing_list": [],
+ "annotations": [],
+ "warnings": [],
+ "header": {
+  "supplier_name_printed": "CV. CIREBON CRAFT",
+  "dn_number": "SJ-MOCK-CLEAR",
+  "dn_date_text": "10 Juni 2026",
+  "dn_date": "2026-06-10",
+  "recipient_name": "PT. SUKACITA",
+  "po_refs": [
+   "KSC/PO-00014"
+  ],
+  "other_refs": [
+   {
+    "label": "No SO",
+    "value": "SO-778"
+   }
+  ],
+  "vehicle_plate": "B 1234 CD"
+ },
+ "lines": [
+  {
+   "line_no": 1,
+   "page": 1,
+   "row_text": "BATIK MEGA MENDUNG PREMIUM",
+   "item_code": null,
+   "description": "BATIK MEGA MENDUNG PREMIUM",
+   "color": null,
+   "design_code": null,
+   "lot": null,
+   "grade": null,
+   "po_ref": "KSC/PO-00014",
+   "quantities": [
+    {
+     "qty_text": "2",
+     "qty": 2,
+     "unit_text": "pcs",
+     "unit": "pcs",
+     "column_header": null,
+     "role": "delivered_count",
+     "weight_basis": null
+    },
+    {
+     "qty_text": "250,00",
+     "qty": 250,
+     "unit_text": "yd",
+     "unit": "yd",
+     "column_header": null,
+     "role": "delivered_length",
+     "weight_basis": null
+    },
+    {
+     "qty_text": "1.657,00",
+     "qty": 1657,
+     "unit_text": "m",
+     "unit": "m",
+     "column_header": "Asal Greige",
+     "role": "greige_length",
+     "weight_basis": null
+    }
+   ],
+   "is_non_stock": false,
+   "legibility": "clear",
+   "handwritten_correction": false
+  },
+  {
+   "line_no": 2,
+   "page": 1,
+   "row_text": "Sample 3 bks (catatan tangan)",
+   "item_code": null,
+   "description": "Sample 3 bks (catatan tangan)",
+   "color": null,
+   "design_code": null,
+   "lot": null,
+   "grade": null,
+   "po_ref": null,
+   "quantities": [],
+   "is_non_stock": true,
+   "legibility": "clear",
+   "handwritten_correction": false
+  }
+ ],
+ "totals": [
+  {
+   "qty_text": "2",
+   "qty": 2,
+   "unit_text": "pcs",
+   "unit": "pcs",
+   "column_header": null,
+   "role": null,
+   "weight_basis": null
+  },
+  {
+   "qty_text": "250,00",
+   "qty": 250,
+   "unit_text": "yd",
+   "unit": "yd",
+   "column_header": null,
+   "role": null,
+   "weight_basis": null
+  }
+ ]
+}
