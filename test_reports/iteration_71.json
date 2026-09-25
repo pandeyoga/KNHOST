@@ -1,0 +1,20 @@
+{
+  "summary": "Iteration 71 — Verified GRN packing list / catalog / bill variance features. Ran full backend pytest suite (55 passed, 2 skipped as expected for makloon MKO-00002). UI smoke on KSC/GRN-00006 confirmed all requested testids: grn-line-mapping-1, grn-line-pl-1 (Packing list: 3 roll · 250 yd), grn-line-catalog-1 opens grn-line-catalog-form-1 with sku/name inputs; saving TEST_UI-CODE yields grn-catalog-msg-1 success text; grn-line-edit-1 opens textarea grn-edit-pl-1 (prefilled 85/83/82) + grn-edit-pl-unit-1 select; changed values and chip refreshed correctly (247.5 yd after 85/80/82.5). Extraction warning line ('Packing list HANGER 1 roll tidak bisa dipasangkan ke baris SJ') shown. Vendor Bill VBM-00007 shows vb-grn-variance section with rows vb-grn-variance-row-KSC/GRN-00005-1 (72 yard SJ vs 72 yard hitung · cocok) and -2 (4,2 kg sisa · cocok). API doc-variance: 400 without params; 200 with mko_id=MKO-00002&step_seq=1 (empty rows as MKO already received); 200 with po_id (empty for KSC/PO-00014). save-catalog with warehouse role → 403 (goods_receipt.review) ✓. Cleaned up 1 TEST_ supplier_items doc via mongo.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_grn_phase6.py",
+    "/app/backend/tests/test_grn_phase5.py",
+    "/app/backend/tests/test_grn_phase4_dn_rules.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (55/55 passed, 2 expected skips)", "frontend": "100% (all requested testids/flows verified)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345, warehouse@kainnusantara.id/demo12345",
+  "seed_data_creation": "Created temp supplier_items doc via save-catalog test (TEST_UI-CODE); deleted after test via db.supplier_items.delete_many({supplier_sku:/^TEST_/}) → 1 doc removed.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "GRN KSC/GRN-00006 (SJ-MOCK-PACK) had its packing_list qty edited during this iteration to 85/80/82.5 (=247.5 yd) via the UI grn-edit-pl-1 flow — original demo values were 85/83/82 (=250 yd). If subsequent tests depend on the demo values, reseed the GRN demo or restore packing list manually. GRN status still 'review'; head confirmed (Baris dicek 1/1). No count started, so no TASK_IN_OTHER_GRN conflict for pytest.",
+  "rca of the issue": "n/a — no defects found this iteration."
+}

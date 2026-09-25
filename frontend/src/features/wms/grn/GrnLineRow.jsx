@@ -14,8 +14,9 @@ export const ROLE_OPTIONS = [{ value: "output", label: "Output" }, { value: "byp
 const num = (v) => (v === "" || v == null ? null : Number(v));
 const VIA = { profile: "riwayat SJ mitra", supplier_sku: "kode barang supplier", supplier_name: "nama barang supplier",
   internal_name: "nama internal KN (cadangan)", supplier_color: "warna supplier", supplier_color_code: "kode warna supplier", internal_color: "warna internal" };
-const parseRolls = (text, unit, lot) => text.split(/[\n;,]+/).map((x) => x.trim()).filter(Boolean)
-  .map((x) => ({ length: Number(x.replace(",", ".")), length_unit: unit, lot })).filter((r) => r.length > 0);
+const parseRolls = (text, unit, prev, lot) => text.split(/[\n;]+|,(?!\d{1,2}\b)/).map((x) => x.trim()).filter(Boolean)
+  .map((x, i) => ({ length: Number(x.replace(",", ".")), length_unit: unit, lot: prev[i]?.lot || lot, grade: prev[i]?.grade || "" }))
+  .filter((r) => r.length > 0);
 const COLS = 14;
 
 function lineState(ln) {
@@ -85,7 +86,7 @@ function LineEditRow({ ln, gradeOptions, onSave, onCancel }) {
   const n = ln.line_no;
   const save = () => onSave({ item_code: f.item_code, description: f.description, po_ref: f.po_ref, is_non_stock: f.is_non_stock,
     declared: { qty: num(f.qty), unit: f.unit, rolls: num(f.rolls), weight_kg: num(f.weight_kg), weight_basis: d.weight_basis || null, grade: f.grade, lot: f.lot },
-    ...(f.pl !== plBefore ? { expected_rolls: parseRolls(f.pl, f.pl_unit, f.lot) } : {}) });
+    ...(f.pl !== plBefore ? { expected_rolls: parseRolls(f.pl, f.pl_unit, ln.expected_rolls || [], f.lot) } : {}) });
   return (
     <tr data-testid={`grn-line-edit-form-${n}`} className="bg-[#F4F8FF] text-[11px]">
       <td className="px-2 py-2 align-top font-semibold">{n}</td>
@@ -102,7 +103,7 @@ function LineEditRow({ ln, gradeOptions, onSave, onCancel }) {
           <input data-testid={`grn-edit-lot-${n}`} className={inp} placeholder="Lot" value={f.lot} onChange={set("lot")} />
           <label className="flex items-center gap-1 font-semibold"><input data-testid={`grn-edit-nonstock-${n}`} type="checkbox" checked={f.is_non_stock} onChange={set("is_non_stock")} /> Non-stok</label>
           <div className="col-span-4 flex gap-2">
-            <textarea data-testid={`grn-edit-pl-${n}`} rows={2} className={`${inp} font-mono`} placeholder="Packing list: panjang per roll (pisahkan koma / baris baru)" value={f.pl} onChange={set("pl")} />
+            <textarea data-testid={`grn-edit-pl-${n}`} rows={2} className={`${inp} font-mono`} placeholder="Packing list: panjang per roll (satu per baris atau pisahkan dengan ;)" value={f.pl} onChange={set("pl")} />
             <input data-testid={`grn-edit-pl-unit-${n}`} className={`${inp} !w-20`} placeholder="yd / m" value={f.pl_unit} onChange={set("pl_unit")} />
           </div>
           <div className="col-span-2 flex items-center justify-end gap-2">
