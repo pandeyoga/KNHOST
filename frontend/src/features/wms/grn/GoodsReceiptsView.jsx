@@ -5,12 +5,17 @@ import { ErrorBox, GrnStatusBadge, inputCls } from "./GrnBits";
 import GrnCreateWizard from "./GrnCreateWizard";
 import GrnDetail from "./GrnDetail";
 import GrnOcrUsagePanel from "./GrnOcrUsagePanel";
+import GrnProfilesPanel from "./GrnProfilesPanel";
 import SupplierVariancePanel from "./SupplierVariancePanel";
 import { STATUS, errText, grnApi } from "./grnApi";
 
 const FILTERS = [["", "Semua"], ["draft,review", "Tinjau SJ"], ["counting", "Hitung"], ["reconcile,closing", "Rekonsiliasi"], ["closed", "Ditutup"], ["rejected,cancelled", "Batal/Tolak"]];
 const CREATE_ROLES = ["admin", "warehouse", "warehouse_admin"];
 const USAGE_ROLES = ["admin", "manager", "warehouse_admin"];
+const mkoPreset = () => {
+  const q = new URLSearchParams(window.location.search);
+  return q.get("mko") ? { partner_type: "makloon", partner_id: q.get("makloon") || "", warehouse_id: q.get("wh") || "", po_ids: [q.get("mko")] } : null;
+};
 
 /** Gudang → Kedatangan Barang (GRN): satu surat jalan · satu mitra · hitung fisik · rekonsiliasi. */
 export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
@@ -19,7 +24,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get("grn") || "");
-  const [wizard, setWizard] = useState(null);
+  const [wizard, setWizard] = useState(mkoPreset);
   const [err, setErr] = useState("");
   const load = useCallback(() => grnApi.list({ status, q }).then(setRows).catch((e) => setErr(errText(e))), [status, q]);
   useEffect(() => { if (!openId) load(); }, [load, openId, selectedEntity]);
@@ -39,7 +44,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
     <div className="space-y-3 p-4" data-testid="goods-receipts-view">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-1 rounded-lg bg-[#F2F2F7] p-0.5 text-[11px] font-semibold">
-          {[["list", "Kedatangan"], ["variance", "Selisih Supplier"], ...(USAGE_ROLES.includes(currentUser?.role) ? [["usage", "Biaya OCR"]] : [])].map(([k, l]) => (
+          {[["list", "Kedatangan"], ["variance", "Selisih Supplier"], ...(USAGE_ROLES.includes(currentUser?.role) ? [["profiles", "Profil SJ"], ["usage", "Biaya OCR"]] : [])].map(([k, l]) => (
             <button key={k} data-testid={`grn-view-tab-${k}`} onClick={() => setTab(k)} className={`rounded-md px-3 py-1.5 ${tab === k ? "bg-white text-[#0058CC] shadow-sm" : "text-[#6B6B73]"}`}>{l}</button>
           ))}
         </div>
@@ -48,7 +53,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
         )}
       </div>
       <ErrorBox text={err} />
-      {tab === "usage" ? <GrnOcrUsagePanel /> : tab === "variance" ? <SupplierVariancePanel onOpenGrn={setOpenId} /> : (<>
+      {tab === "profiles" ? <GrnProfilesPanel /> : tab === "usage" ? <GrnOcrUsagePanel /> : tab === "variance" ? <SupplierVariancePanel onOpenGrn={setOpenId} /> : (<>
         <div className="flex flex-wrap items-center gap-2">
           {FILTERS.map(([v, l]) => (
             <button key={l} data-testid={`grn-filter-${v || "all"}`} onClick={() => setStatus(v)}

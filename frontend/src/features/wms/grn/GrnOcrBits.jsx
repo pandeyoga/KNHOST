@@ -5,6 +5,7 @@ import { grnApi } from "./grnApi";
 const PHASES = ["Menyiapkan foto…", "Membaca surat jalan…", "Mencocokkan baris dengan PO…", "Memeriksa angka & total…"];
 const FIELD_LABEL = { dn_number: "Nomor SJ", dn_date: "Tanggal", po_refs: "Nomor PO" };
 const UNIT = { yd: "yard", m: "meter", mtr: "meter" };
+export const LOCALE_LABEL = { id: "Indonesia (1.250,00)", en: "Inggris (1,250.00)", unknown: "belum diketahui" };
 const fmt = (v) => (Array.isArray(v) ? v.join(", ") : v == null || v === "" ? "—" : String(v));
 
 export function ReadingProgress({ testId = "grn-ocr-progress" }) {
@@ -77,6 +78,12 @@ export function GrnExtractionNotice({ grn }) {
             <p key={d.field} data-testid={`grn-ocr-header-diff-${d.field}`}>{FIELD_LABEL[d.field] || d.field}: <span className="font-mono">{fmt(d.primary)}</span> vs <span className="font-mono">{fmt(d.second)}</span></p>
           ))}
         </div>
+      )}
+      {!x.read_failed && x.profile_used && (
+        <p data-testid="grn-ocr-profile" className="text-[10.5px] text-[#3C3C43]">
+          Profil SJ mitra: format angka <b>{LOCALE_LABEL[x.profile_used.number_locale] || "belum diketahui"}</b> · {x.profile_used.confirmed_count} SJ terkonfirmasi
+          {x.profile_used.item_map_hits ? ` · ${x.profile_used.item_map_hits} baris dikenali dari riwayat` : ""}
+        </p>
       )}
       {!x.read_failed && runs.length > 0 && (
         <p data-testid="grn-ocr-runs" className="text-[10px] text-[#8E8E93]">

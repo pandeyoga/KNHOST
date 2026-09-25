@@ -277,14 +277,21 @@ async def _post_task(grn: Dict[str, Any], task_id: str, lines: List[Dict[str, An
 async def _post_mko(grn: Dict[str, Any], mko_id: str, seq: int, lines: List[Dict[str, Any]],
                     actor: Dict[str, Any]) -> None:
     from services.makloon_order_service import receive_step
-    rolls = [{"lot": r["lot"], "length": r["length"], "grade": r["grade"], "dye_lot": r.get("dye_lot", "")}
-             for ln in lines for r in (ln.get("counted") or {}).get("makloon_rolls") or []]
-    decl = lines[0].get("declared") or {}
+    out_lines = [ln for ln in lines if ln.get("role") != "byproduct"]
+    by_lines = [ln for ln in lines if ln.get("role") == "byproduct"]
+    if not out_lines:
+        raise HTTPException(status_code=400, detail="Barang sisa hanya bisa diterima bersama output langkah yang sama.")
+    rolls = [{"lot": r["lot"], "length": r["length"], "grade": r["grade"], "dye_lot": r.get("dye_lot", ""),
+              "weight_kg": r.get("weight_kg") or None}
+             for ln in out_lines for r in (ln.get("counted") or {}).get("makloon_rolls") or []]
+    by_rolls = [r for ln in by_lines for r in (ln.get("counted") or {}).get("makloon_rolls") or []]
     await receive_step(mko_id, seq, {
-        "step_seq": seq, "actual_output_qty": round(sum(float(ln["counted"]["qty"]) for ln in lines), 2),
-        "output_uom": decl.get("unit") or "", "output_doc_qty": sum(float((x.get("declared") or {}).get("qty") or 0)
-                                                                    for x in lines),
-        "rolls": rolls, "supplier_invoice_no": ""}, actor_name=actor["name"])
+        "step_seq": seq, "actual_output_qty": round(sum(float(ln["counted"]["qty"]) for ln in out_lines), 2),
+        "actual_byproduct_qty": round(sum(float(r["length"]) for r in by_rolls), 2),
+        "byproduct_lot": by_rolls[0]["lot"] if by_rolls else "",
+        "output_uom": "", "output_doc_qty": 0,
+        "rolls": rolls, "supplier_invoice_no": "", "supplier_dn": (grn.get("dn") or {}).get("number", "")},
+        actor_name=actor["name"])
 
 
 async def close_grn(grn_id: str, expected_version: int, actor: Dict[str, Any], ctx: EntityContext):
@@ -349,12 +356,8 @@ async def close_grn(grn_id: str, expected_version: int, actor: Dict[str, Any], c
 
 
 async def _learn_profile(grn: Dict[str, Any]) -> None:
-    alias = ((grn.get("dn") or {}).get("supplier_name_printed") or "").strip()
-    await db.supplier_dn_profiles.update_one(
-        {"entity_id": grn["entity_id"], "partner_id": grn["partner_id"]},
-        {"$setOnInsert": {"id": new_id("sdp"), "number_locale": "unknown"},
-         "$inc": {"confirmed_count": 1}, "$set": {"updated_at": now_iso()},
-         **({"$addToSet": {"aliases": alias}} if alias else {})}, upsert=True)
+    from services.supplier_dn_profile_service import learn_from_grn
+    await learn_from_grn(grn)
 
 
 # ── tolak / batal ─────────────────────────────────────────────────────────────

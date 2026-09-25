@@ -24,7 +24,7 @@ ACTIVE_TASK = ["waiting_goods", "receiving", "qc_check", "put_away"]
 OPEN_GRN = ["draft", "reading", "review", "counting", "reconcile", "closing"]
 _UNIT = {"m": "meter", "mtr": "meter", "meter": "meter", "yd": "yard", "yds": "yard", "yard": "yard",
          "kg": "kg", "kgs": "kg"}
-HIDDEN_LINE = ("declared", "read", "converted", "recon", "checks")
+HIDDEN_LINE = ("declared", "read", "converted", "recon", "checks", "ocr_declared")
 
 
 def norm_unit(u: Optional[str]) -> str:
@@ -272,8 +272,13 @@ async def patch_dn(grn_id: str, body: Any, actor: Dict[str, Any], ctx: EntityCon
     set_ = {f"dn.{k}": (v.strip() if isinstance(v, str) else v) for k, v in fields.items()}
     if "number" in fields:
         set_["dn.number_norm"] = norm_dn(fields["number"])
-    doc = await cas(grn, ["draft", "review"], body.expected_version, set_,
-                    extra={"$addToSet": {"dn.edited_fields": {"$each": list(fields)}}})
+    ocr = (grn.get("dn") or {}).get("ocr") or {}
+    corrected = [k for k, v in fields.items() if k in ocr and (v.strip() if isinstance(v, str) else v) != ocr[k]]
+    set_.update({"dn.verified": True, "dn.verified_by": actor["name"], "dn.verified_at": now_iso()})
+    add = {"dn.edited_fields": {"$each": list(fields)}}
+    if corrected:
+        add["dn.corrected_fields"] = {"$each": corrected}
+    doc = await cas(grn, ["draft", "review"], body.expected_version, set_, extra={"$addToSet": add})
     await audit(actor["name"], "grn_dn_updated", "goods_receipt", grn_id, fields, scope_entity_id=grn["entity_id"])
     return doc
 
@@ -320,6 +325,9 @@ async def _convert(line: Dict[str, Any]) -> None:
     if not d.get("qty") or not tgt:
         line["checks"]["uom"] = "empty"
         return
+    if line.get("role") == "byproduct":   # Fase 5 — barang sisa memakai satuannya sendiri (mis. kg benang)
+        line["converted"], line["checks"]["uom"] = {"qty": d["qty"], "unit": norm_unit(d.get("unit")), "trail": None}, "ok"
+        return
     unit, tunit = norm_unit(d.get("unit")), norm_unit(tgt.get("unit"))
     if unit and unit == tunit:
         line["converted"], line["checks"]["uom"] = {"qty": d["qty"], "unit": tgt["unit"], "trail": None}, "ok"
@@ -349,7 +357,7 @@ def _default_decision(line: Dict[str, Any]) -> str:
 async def _finish_line(line: Dict[str, Any]) -> Dict[str, Any]:
     if line["declared"].get("grade"):
         import domain_registry as _dr
-        line["declared"]["grade"] = _dr.normalize_grade(line["declared"]["grade"]) or line["declared"]["grade"]
+        line["declared"]["grade"] = _dr.normalize_grade(line["declared"]["grade"])["value"] or line["declared"]["grade"]
     line["match"] = ({"status": "manual", "method": "manual", "score": 1.0, "candidates": []} if line.get("target")
                      else {"status": "none", "method": "", "score": 0.0, "candidates": []})
     await _convert(line)
@@ -370,6 +378,7 @@ async def add_line(grn_id: str, body: Any, actor: Dict[str, Any], ctx: EntityCon
         "target": await resolve_target(grn, body.target) if body.target else None,
         "counted": {"qty": 0, "rolls": 0, "weight_kg": 0, "roll_ids": [], "makloon_rolls": []},
         "recon": None, "posted": {"status": "pending", "at": "", "error": "", "result_ref": ""},
+        "role": body.role, "verified": True, "verified_by": actor["name"],
     }
     line["decision"] = body.decision or _default_decision(line)
     lines.append(await _finish_line(line))
@@ -392,9 +401,18 @@ async def patch_line(grn_id: str, line_no: int, body: Any, actor: Dict[str, Any]
     lines = list(grn.get("lines") or [])
     line = _find_line(grn, line_no)
     fields = body.model_dump(exclude_unset=True, exclude={"expected_version"})
+    prev_pid = (line.get("target") or {}).get("product_id")
     if body.declared is not None:
         line["declared"] = {**body.declared.model_dump(), "source": "manual"}
         line["checks"]["qty_parse"] = "ok"   # dicentang manusia
+        ocr = line.get("ocr_declared") or {}
+        diff = [k for k in ("qty", "unit", "rolls", "weight_kg", "grade", "lot") if k in ocr and ocr[k] not in (None, "")
+                and line["declared"].get(k) != ocr[k]]
+        if diff:
+            line["corrected"], line["corrected_fields"] = True, sorted(set(line.get("corrected_fields", []) + diff))
+    if body.role is not None:
+        line["role"] = body.role
+        line["checks"].pop("role_question", None)
     if body.is_non_stock is not None:
         line["is_non_stock"] = body.is_non_stock
     for k in ("item_code", "description", "po_ref"):
@@ -405,6 +423,12 @@ async def patch_line(grn_id: str, line_no: int, body: Any, actor: Dict[str, Any]
     elif body.target is not None:
         line["target"] = await resolve_target(grn, body.target)
     line["decision"] = body.decision or (line["decision"] if line["decision"] != "pending" else _default_decision(line))
+    if (line.get("read") or {}).get("source") == "ocr" and prev_pid and (line.get("target") or {}).get("product_id") != prev_pid:
+        line["corrected"] = True
+        line["corrected_fields"] = sorted(set(line.get("corrected_fields", []) + ["target"]))
+    line["verified"] = body.verified if body.verified is not None else True   # disentuh manusia = sudah dicek
+    if line["verified"]:
+        line["verified_by"], line["verified_at"] = actor["name"], now_iso()
     await _finish_line(line)
     doc = await cas(grn, ["review"], body.expected_version, {"lines": lines})
     await audit(actor["name"], "grn_line_updated", "goods_receipt", grn_id, {"line_no": line_no, **{
@@ -458,6 +482,27 @@ async def release_tasks(grn_id: str) -> None:
                                    {"$unset": {"grn_active_id": "", "grn_active_number": ""}})
 
 
+def verification_errors(grn: Dict[str, Any]) -> List[str]:
+    """OCR hanya USULAN: kepala SJ & tiap baris hasil baca wajib dicek manusia; peran baris BS makloon wajib diputuskan."""
+    errs: List[str] = []
+    dn = grn.get("dn") or {}
+    if dn.get("source") == "ocr" and not dn.get("verified"):
+        errs.append("Kepala SJ hasil baca otomatis belum dikonfirmasi — cocokkan dengan foto lalu simpan.")
+    live = [ln for ln in grn.get("lines") or [] if ln.get("decision") != "reject_line"]
+    for ln in live:
+        if (ln.get("read") or {}).get("source") == "ocr" and not ln.get("verified"):
+            errs.append(f"Baris {ln['line_no']}: hasil baca otomatis belum dicek.")
+        if (ln.get("target") or {}).get("type") == "mko_step" and not ln.get("is_non_stock"):
+            if ln.get("role") == "":
+                errs.append(f"Baris {ln['line_no']}: tentukan output grade BS atau barang sisa.")
+            if ln.get("role") == "byproduct" and not any(
+                    x.get("role", "output") == "output" and not x.get("is_non_stock")
+                    and (x.get("target") or {}).get("mko_id") == ln["target"]["mko_id"]
+                    and (x.get("target") or {}).get("step_seq") == ln["target"]["step_seq"] for x in live):
+                errs.append(f"Baris {ln['line_no']}: barang sisa butuh baris output dari langkah MKO yang sama.")
+    return errs
+
+
 async def start_count(grn_id: str, expected_version: int, actor: Dict[str, Any], ctx: EntityContext):
     grn = await load(grn_id, ctx)
     require_status(grn, ["review"], "Mulai hitung")
@@ -481,6 +526,7 @@ async def start_count(grn_id: str, expected_version: int, actor: Dict[str, Any],
                           f"{ln['checks'].get('uom_message') or 'perbaiki satuan'}.")
         if ln["target"]["type"] == "po_task" and ln["target"]["task_id"] not in task_ids:
             task_ids.append(ln["target"]["task_id"])
+    errors += verification_errors(grn)
     for tid in task_ids:
         t = await db.wms_tasks.find_one({"id": tid}, {"_id": 0}) or {}
         if t.get("status") not in ACTIVE_TASK:
@@ -600,10 +646,15 @@ async def add_counted_roll(grn_id: str, line_no: int, body: Any, actor: Dict[str
     if body.length <= 0 and body.weight_kg <= 0:
         raise HTTPException(status_code=400, detail="Isi panjang atau berat roll yang dihitung.")
     if ln["target"]["type"] == "mko_step":
-        if not body.lot.strip() or body.length <= 0:
+        lot = body.lot.strip()
+        if ln.get("role") == "byproduct":
+            lot = lot or f"SISA-{ln['target'].get('mko_number', '')}-{ln['target']['step_seq']}"
+            if body.length <= 0:
+                raise HTTPException(status_code=400, detail="Isi jumlah barang sisa (kolom panjang/qty).")
+        elif not lot or body.length <= 0:
             raise HTTPException(status_code=400, detail="Roll makloon wajib punya LOT dan panjang.")
-        roll = {"id": new_id("mkr"), "lot": body.lot.strip(), "length": round(body.length, 2),
-                "weight_kg": round(body.weight_kg, 3), "grade": grade, "dye_lot": body.lot.strip(),
+        roll = {"id": new_id("mkr"), "lot": lot, "length": round(body.length, 2),
+                "weight_kg": round(body.weight_kg, 3), "grade": grade, "dye_lot": lot,
                 "by": actor["name"], "at": now_iso()}
 
         def _push(lines: List[Dict[str, Any]]) -> None:

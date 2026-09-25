@@ -345,7 +345,13 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
                     <p className="mt-2 text-[10.5px] text-[#9A9BA3]">Menunggu langkah sebelumnya diterima.</p>
                   )}
                   {canAct && s.status === "issued" && (
-                    <button data-testid={`receive-step-${s.seq}`} onClick={() => setReceiveStep(s)} className="primary-button mt-2 !py-1.5 text-[11.5px]"><PackageCheck size={12} /> Terima Hasil</button>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <button data-testid={`receive-step-${s.seq}`} onClick={() => setReceiveStep(s)} className="primary-button !py-1.5 text-[11.5px]"><PackageCheck size={12} /> Terima Hasil</button>
+                      <a data-testid={`receive-step-grn-${s.seq}`} className="secondary-button !py-1.5 text-[11.5px]"
+                        href={`?view=goods-receipts&mko=${data.id}&makloon=${s.makloon_id || ""}&wh=${s.from_warehouse_id || data.target_warehouse_id || ""}&entity=${data.entity_id || ""}`}>
+                        <PackageCheck size={12} /> Terima lewat Kedatangan (SJ)
+                      </a>
+                    </div>
                   )}
                 </div>
               );

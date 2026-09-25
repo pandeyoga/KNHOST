@@ -1026,9 +1026,14 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
             lot_source="makloon", lot_source_ref=_mko_ref,
             parent_lot_ids=_input_lot_ids,
             dye_lot=(r.get("dye_lot") or "").strip())
+        wkg = round(float(r.get("weight_kg") or 0), 3)
+        if wkg > 0:
+            await db.inventory_rolls.update_one({"id": roll["id"]}, {"$set": {
+                "weight_kg": wkg, "weight_unit": "kg", "secondary_measures": {"kg": wkg}}})
         created_lots.append({"roll_id": roll["id"], "lot": roll["lot"],
                              "lot_id": roll.get("lot_id", ""),
-                             "length": roll["length_remaining"], "unit": roll["unit"]})
+                             "length": roll["length_remaining"], "unit": roll["unit"],
+                             **({"weight_kg": wkg} if wkg > 0 else {})})
 
     # Barang sisa → roll available (is_remnant). Satuan roll = base_unit produk sisa (kg/yard).
     byproduct_lot = ""
@@ -1063,6 +1068,7 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
         "output_lot_ids": sorted({l["lot_id"] for l in created_lots if l.get("lot_id")}),
         "output_lot_id": (created_lots[0].get("lot_id") if created_lots else ""),
         "supplier_invoice_no": data.get("supplier_invoice_no") or "",
+        "supplier_dn": (data.get("supplier_dn") or "").strip(),
         # FASE T — jejak penyerapan jasa "jasa murni" ke HPP kain ini.
         "absorbed_service_value": absorbed,
         "absorbed_service_steps": absorbed_from,

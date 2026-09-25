@@ -48,6 +48,8 @@ export const grnApi = {
   rolls: (id) => axios.get(`${GRN}/${id}/rolls`).then((r) => r.data),
   partners: (partner_type) => axios.get(`${GRN}/partners`, { params: { partner_type } }).then((r) => r.data),
   variance: (since) => axios.get(`${GRN}/supplier-variance`, { params: { since } }).then((r) => r.data),
+  profiles: () => axios.get(`${GRN}/dn-profiles`).then((r) => r.data),
+  patchProfile: (partnerId, body) => axios.patch(`${GRN}/dn-profiles/${partnerId}`, body).then((r) => r.data),
   usage: (month) => axios.get(`${GRN}/usage`, { params: { month } }).then((r) => r.data),
   create: (body) => axios.post(GRN, body).then((r) => r.data),
   upload: (id, file, v) => {

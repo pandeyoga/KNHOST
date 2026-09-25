@@ -94,7 +94,13 @@ def test_read_doubtful_calls_second_reader_and_blocks_ambiguous(admin, mdb, env,
     # manusia memperbaiki qty → centang, lalu boleh mulai hitung
     g = _ok(admin.patch(f"{BASE}/goods-receipts/{g['id']}/lines/1", json={
         "expected_version": g["version"], "declared": {"qty": 1250, "unit": "yard", "rolls": 2}}))
-    assert g["lines"][0]["checks"]["qty_parse"] == "ok"
+    assert g["lines"][0]["checks"]["qty_parse"] == "ok" and g["lines"][0]["verified"] is True
+    assert not g["lines"][0].get("corrected")   # memilih angka ragu bukan koreksi
+    # kepala SJ hasil OCR wajib dikonfirmasi manusia sebelum hitung
+    r = admin.post(f"{BASE}/goods-receipts/{g['id']}/start-count", json={"expected_version": g["version"]})
+    assert r.status_code == 400 and "Kepala SJ" in r.json()["detail"]["message"]
+    g = _ok(admin.patch(f"{BASE}/goods-receipts/{g['id']}/dn", json={"expected_version": g["version"], "number": "SJ-MOCK-DOUBT"}))
+    assert g["dn"]["verified"] is True and g["dn"].get("corrected_fields") in (None, [])
     g = _ok(admin.post(f"{BASE}/goods-receipts/{g['id']}/start-count", json={"expected_version": g["version"]}))
     _ok(admin.post(f"{BASE}/goods-receipts/{g['id']}/cancel", json={"expected_version": g["version"], "reason": "TEST_ batal"}))
 

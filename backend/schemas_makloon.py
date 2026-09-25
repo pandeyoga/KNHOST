@@ -155,6 +155,7 @@ class MakloonReceiveRoll(BaseModel):
     length: QtyDecimal = Field(..., gt=0)             # PS-15/R5
     grade: str = "A"                                  # PS-09/D-01 — enum A|A1|A2|B|BS
     dye_lot: str = ""                                 # Fase C — batch warna (shade)
+    weight_kg: Optional[float] = Field(None, ge=0)    # GRN Fase 5 — berat roll hasil timbang (opsional)
 
 
 class MakloonReceiveIn(BaseModel):
@@ -167,6 +168,7 @@ class MakloonReceiveIn(BaseModel):
     output_warehouse_id: str = ""
     byproduct_lot: str = ""
     supplier_invoice_no: str = ""
+    supplier_dn: str = ""                             # GRN Fase 5 — nomor surat jalan mitra makloon
     # FASE D — laporan mitra dalam satuan sendiri (kg/bale/roll) → konversi + jejak
     output_uom: str = ""
     output_doc_qty: QtyDecimal = Field(0, ge=0)

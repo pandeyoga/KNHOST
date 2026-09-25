@@ -153,27 +153,68 @@ def _parse_quantities(raw_lines: List[Dict[str, Any]], totals: List[Dict[str, An
 
 
 async def _context(grn: Dict[str, Any]) -> Dict[str, Any]:
-    pos = await open_pos(grn["entity_id"], grn["partner_id"]) if grn["partner_type"] == "supplier" else []
-    full = await db.purchase_orders.find({"id": {"$in": [p["id"] for p in pos]}},
-                                         {"_id": 0, "id": 1, "po_number": 1, "legacy_number": 1}).to_list(500)
-    tasks = await db.wms_tasks.find({"po_id": {"$in": [p["id"] for p in pos]}, "flow_type": "inbound",
-                                     "status": {"$in": ["waiting_goods", "receiving", "qc_check", "put_away"]}},
-                                    {"_id": 0}).to_list(500)
-    items = await db.supplier_items.find({"supplier_id": grn["partner_id"], "status": "active"},
-                                         {"_id": 0, "product_id": 1, "supplier_sku": 1}).to_list(2000)
+    """Dokumen terbuka milik mitra: PO+tugas (supplier) atau MKO+langkah `issued` (makloon, Fase 5)."""
+    from services.goods_receipt_service import open_mkos
+    if grn["partner_type"] == "supplier":
+        pos = await open_pos(grn["entity_id"], grn["partner_id"])
+        docs = await db.purchase_orders.find({"id": {"$in": [p["id"] for p in pos]}},
+                                             {"_id": 0, "id": 1, "po_number": 1, "legacy_number": 1}).to_list(500)
+        tasks = await db.wms_tasks.find({"po_id": {"$in": [p["id"] for p in pos]}, "flow_type": "inbound",
+                                         "status": {"$in": ["waiting_goods", "receiving", "qc_check", "put_away"]}},
+                                        {"_id": 0}).to_list(500)
+        items = await db.supplier_items.find({"supplier_id": grn["partner_id"], "status": "active"},
+                                             {"_id": 0, "product_id": 1, "supplier_sku": 1}).to_list(2000)
+    else:
+        ids = [m["id"] for m in await open_mkos(grn["entity_id"], grn["partner_id"])]
+        orders = await db.makloon_orders.find({"id": {"$in": ids}}, {"_id": 0}).to_list(500)
+        # nomor MKO persis → nomor lama / PO klien yang tercatat di MKO → inti pola PO klien
+        docs = [{"id": o["id"], "po_number": o.get("mko_number"), "legacy_number": o.get("legacy_number") or o.get("po_number")}
+                for o in orders]
+        tasks = [{"id": f"{o['id']}:{st['seq']}", "po_id": o["id"], "product_id": st.get("output_product_id"),
+                  "product_name": st.get("output_name", ""), "mko_id": o["id"], "step_seq": st["seq"],
+                  "has_byproduct": bool(st.get("byproduct_product_id"))}
+                 for o in orders for st in o.get("steps") or []
+                 if st.get("makloon_id") == grn["partner_id"] and st.get("status") == "issued"]
+        items = []
     prof = await db.supplier_dn_profiles.find_one({"entity_id": grn["entity_id"], "partner_id": grn["partner_id"]},
                                                   {"_id": 0}) or {}
     ent = (await db.entities.find_one({"id": grn["entity_id"]}, {"_id": 0}) or
            await db.business_entities.find_one({"id": grn["entity_id"]}, {"_id": 0}) or {})
-    return {"pos": full, "tasks": tasks, "items": items, "profile": prof, "entity": ent}
+    return {"pos": docs, "tasks": tasks, "items": items, "profile": prof, "entity": ent}
+
+
+def _target_ref(grn: Dict[str, Any], task_id: str) -> Any:
+    """Bentuk minimal GRNTargetIn; id langkah makloon = `mko_id:seq`."""
+    from types import SimpleNamespace
+    if grn["partner_type"] == "makloon":
+        mko_id, seq = task_id.rsplit(":", 1)
+        return SimpleNamespace(type="mko_step", task_id="", mko_id=mko_id, step_seq=int(seq))
+    return SimpleNamespace(type="po_task", task_id=task_id, mko_id="", step_seq=None)
+
+
+def _byproduct_role(line: Dict[str, Any], tasks: List[Dict[str, Any]]) -> None:
+    """Fase 5: baris BS di SJ makloon → barang sisa HANYA bila langkah itu menghasilkan sisa; selain itu TANYA."""
+    tgt = line.get("target") or {}
+    line["role"] = "output"
+    if tgt.get("type") != "mko_step" or line["declared"].get("grade") != "BS":
+        return
+    step = next((t for t in tasks if t["id"] == f"{tgt['mko_id']}:{tgt['step_seq']}"), {})
+    if step.get("has_byproduct"):
+        line["role"] = "byproduct"
+    else:
+        line["role"] = ""
+        line["checks"]["role_question"] = ("Baris BS: langkah ini tidak punya produk sisa. Tentukan: output grade BS "
+                                           "atau barang sisa?")
 
 
 async def map_extraction(grn: Dict[str, Any], data: Dict[str, Any], cfg: Dict[str, Any]) -> Dict[str, Any]:
-    """JSON `sj-v2` → {dn, lines, warnings, totals_bad}. Tidak pernah memilih target bila kandidat > 1."""
+    """JSON `sj-v2` → {dn, lines, warnings, totals_bad, profile_used}. Hasil = USULAN: setiap baris & kepala SJ
+    berstatus `verified: False` sampai dicek manusia. Tidak pernah memilih target bila kandidat > 1."""
+    from services import supplier_dn_profile_service as P
     from services.goods_receipt_service import resolve_target
     ctx = await _context(grn)
     prof = ctx["profile"]
-    locale = prof.get("number_locale", "unknown") if int(prof.get("confirmed_count") or 0) >= 3 else "unknown"
+    locale = P.active_locale(prof)
     h = data.get("header") or {}
     raw_lines = [dict(x) for x in data.get("lines") or []]
     _parse_quantities(raw_lines, data.get("totals") or [], locale)
@@ -187,7 +228,8 @@ async def map_extraction(grn: Dict[str, Any], data: Dict[str, Any], cfg: Dict[st
           "date_text": h.get("dn_date_text") or "", "supplier_name_printed": h.get("supplier_name_printed") or "",
           "recipient_name": h.get("recipient_name") or "", "po_refs": h.get("po_refs") or [],
           "other_refs": h.get("other_refs") or [], "vehicle_plate": h.get("vehicle_plate") or "",
-          "annotations": data.get("annotations") or [], "source": "ocr", "edited_fields": []}
+          "annotations": data.get("annotations") or [], "source": "ocr", "edited_fields": [], "verified": False}
+    dn["ocr"] = {k: dn[k] for k in ("number", "date", "supplier_name_printed", "recipient_name", "po_refs")}
     warnings: List[str] = list(data.get("warnings") or [])
     if not data.get("is_delivery_document", True) or data.get("doc_kind") in ("packing_list", "lainnya"):
         warnings.append(f"Dokumen terbaca sebagai '{data.get('doc_kind')}', bukan surat jalan — periksa foto.")
@@ -199,7 +241,10 @@ async def map_extraction(grn: Dict[str, Any], data: Dict[str, Any], cfg: Dict[st
     for tb in totals_bad:
         warnings.append(f"Jumlah baris {tb['sum']:g} {tb['unit']} ≠ total tercetak {tb['printed']:g} {tb['unit']}.")
     lines: List[Dict[str, Any]] = []
+    item_map = prof.get("item_map") or {}
     head_po = R.match_po([*dn["po_refs"], *[a.get("text") for a in dn["annotations"]]], ctx["pos"], cfg["client_po_patterns"])
+    if head_po["status"] == "none" and len(ctx["pos"]) == 1 and grn["partner_type"] == "makloon":
+        head_po = {"status": "single_doc", "po_id": ctx["pos"][0]["id"], "candidates": [ctx["pos"][0]["id"]]}
     for i, rl in enumerate(raw_lines, 1):
         read = {k: rl.get(k) for k in ("item_code", "description", "color", "design_code", "lot", "grade", "po_ref",
                                        "row_text", "legibility", "handwritten_correction")}
@@ -208,39 +253,46 @@ async def map_extraction(grn: Dict[str, Any], data: Dict[str, Any], cfg: Dict[st
                 "target": None, "counted": {"qty": 0, "rolls": 0, "weight_kg": 0, "roll_ids": [], "makloon_rolls": []},
                 "recon": None, "posted": {"status": "pending", "at": "", "error": "", "result_ref": ""},
                 "checks": {"qty_parse": "ok", "totals_ok": not totals_bad, "second_reader_diff": []},
-                "match": {"status": "none", "method": "", "score": 0.0, "candidates": []}}
+                "match": {"status": "none", "method": "", "score": 0.0, "candidates": []}, "verified": False}
         if not line["is_non_stock"]:
             pm = R.match_po([rl.get("po_ref")], ctx["pos"], cfg["client_po_patterns"]) if rl.get("po_ref") else head_po
             if pm["status"] == "none" and rl.get("po_ref"):
                 pm = head_po
             po_tasks = [t for t in ctx["tasks"] if t.get("po_id") == pm["po_id"]] if pm["po_id"] else []
-            m = R.match_line(read, po_tasks, ctx["items"]) if po_tasks else {
+            m = R.match_line(read, po_tasks, ctx["items"], item_map) if po_tasks else {
                 "status": "ambiguous" if pm["candidates"] else "none", "method": f"po_{pm['status']}", "score": 0.0,
                 "task_id": "", "candidates": pm["candidates"]}
             line["match"] = {k: m[k] for k in ("status", "method", "score", "candidates")}
             line["match"]["po_match"] = pm["status"]
             if m.get("task_id"):
-                class _T:  # noqa: N801 — bentuk minimal GRNTargetIn
-                    type, task_id, mko_id, step_seq = "po_task", m["task_id"], "", None
                 try:
-                    line["target"] = await resolve_target(grn, _T)
+                    line["target"] = await resolve_target(grn, _target_ref(grn, m["task_id"]))
                 except HTTPException as exc:
                     line["match"]["status"], line["match"]["error"] = "ambiguous", str(exc.detail)
         tunit = (line["target"] or {}).get("unit", "")
         d = R.pick_declared(read["quantities"], tunit)
         import domain_registry as _dr
         grade = (rl.get("grade") or "").strip()
-        norm_grade = _dr.normalize_grade(grade) if grade else ""
+        norm_grade = _dr.normalize_grade(grade)["value"] if grade else ""
         if grade and not norm_grade:
             warnings.append(f"Baris {i}: grade '{grade}' tidak dikenal — isi manual.")
         line["declared"] = {"qty": d["qty"], "unit": d["unit"], "rolls": d["rolls"], "weight_kg": d["weight_kg"],
                             "weight_basis": d["weight_basis"], "grade": norm_grade or "", "lot": rl.get("lot") or "",
                             "source": "ocr", "alt_lengths": d["alt_lengths"]}
+        line["ocr_declared"] = {k: line["declared"][k] for k in ("qty", "unit", "rolls", "weight_kg", "grade", "lot")}
         line["checks"]["qty_parse"] = d["qty_parse"]
+        _byproduct_role(line, ctx["tasks"])
+        if line["role"] == "byproduct" and line["declared"]["qty"] is None:
+            d2 = R.pick_declared(read["quantities"], "")
+            line["declared"].update({"qty": d2["qty"], "unit": d2["unit"]})
+            line["ocr_declared"].update({"qty": d2["qty"], "unit": d2["unit"]})
         line["decision"] = "accept" if (line["is_non_stock"] or line["target"]) else "pending"
         await _convert(line)
         lines.append(line)
-    return {"dn": dn, "lines": lines, "warnings": warnings, "totals_bad": totals_bad}
+    used = {"number_locale": locale, "confirmed_count": int(prof.get("confirmed_count") or 0),
+            "aliases": len(prof.get("aliases") or []),
+            "item_map_hits": sum(1 for ln in lines if ln["match"].get("method") == "profile")}
+    return {"dn": dn, "lines": lines, "warnings": warnings, "totals_bad": totals_bad, "profile_used": used}
 
 
 def second_reader_diff(a: Dict[str, Any], b: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], Dict[int, List[Dict[str, Any]]]]:
@@ -311,7 +363,8 @@ async def read_grn(grn_id: str, expected_version: int, actor: Dict[str, Any], ct
                 "extraction": {"read_failed": False, "error_code": "", "error_message": "", "text_layer_used": text_used,
                                "prompt_version": PROMPT_VERSION, "warnings": mapped["warnings"], "header_diff": head_diff,
                                "doc_kind": r1["data"].get("doc_kind"), "totals": r1["data"].get("totals") or [],
-                               "raw": r1["data"], "runs": (grn.get("extraction") or {}).get("runs", []) + runs}}
+                               "raw": r1["data"], "profile_used": mapped["profile_used"],
+                               "runs": (grn.get("extraction") or {}).get("runs", []) + runs}}
     except OcrError as e:
         set_ = {"extraction": {**(grn.get("extraction") or {}), "read_failed": True, "error_code": e.code,
                                "error_message": e.message, "prompt_version": PROMPT_VERSION,

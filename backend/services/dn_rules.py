@@ -142,8 +142,38 @@ def similarity(a: Optional[str], b: Optional[str]) -> float:
     return SequenceMatcher(None, na, nb).ratio()
 
 
-def match_line(read: Dict[str, Any], tasks: Sequence[Dict[str, Any]], supplier_items: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
-    """Baris → tugas: item_code (supplier_items) → kemiripan deskripsi ≥ 0,85 & unggul ≥ 0,10 → satu-satunya baris PO."""
+def desc_key(read: Dict[str, Any]) -> str:
+    """Kunci pemetaan profil: kode barang, atau deskripsi+warna yang dinormalkan."""
+    code = re.sub(r"[.$]", "_", str(read.get("item_code") or "").strip().upper())
+    if code:
+        return f"code:{code}"
+    text = " ".join(re.sub(r"[^a-z0-9 ]", " ", " ".join(str(read.get(k) or "") for k in ("description", "color")).lower()).split())
+    return f"desc:{text}" if text else ""
+
+
+def infer_locale(qty_text: Optional[str]) -> str:
+    """Format angka yang TERBUKTI dari satu teks: id (1.250,00 · 19,00) | en (2,186.00 · 12.5) | '' (tak bisa ditentukan)."""
+    s = re.sub(r"[^\d.,]", "", str(qty_text or ""))
+    if "." in s and "," in s:
+        return "id" if s.rfind(",") > s.rfind(".") else "en"
+    for sep, loc in ((",", "id"), (".", "en")):
+        if s.count(sep) == 1:
+            tail = s.split(sep)[1]
+            if 1 <= len(tail) <= 2:
+                return loc
+    return ""
+
+
+def match_line(read: Dict[str, Any], tasks: Sequence[Dict[str, Any]], supplier_items: Sequence[Dict[str, Any]],
+               item_map: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Baris → tugas: pemetaan profil supplier (dipelajari dari SJ yang dikonfirmasi) → item_code (supplier_items) →
+    kemiripan deskripsi ≥ 0,85 & unggul ≥ 0,10 → satu-satunya baris PO."""
+    learned = (item_map or {}).get(desc_key(read)) or {}
+    if learned.get("product_id"):
+        hits = [t for t in tasks if t.get("product_id") == learned["product_id"]]
+        if len(hits) == 1:
+            return {"status": "exact", "method": "profile", "score": 1.0, "task_id": hits[0]["id"],
+                    "candidates": [hits[0]["id"]]}
     code = str(read.get("item_code") or "").strip().upper()
     if code:
         prods = {s["product_id"] for s in supplier_items if str(s.get("supplier_sku") or "").upper() == code}

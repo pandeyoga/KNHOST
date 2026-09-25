@@ -59,6 +59,7 @@ class GRNLineIn(GRNVersionIn):
     item_code: str = ""
     description: str = ""
     po_ref: str = ""
+    role: Literal["output", "byproduct"] = "output"
 
 
 class GRNLinePatch(GRNVersionIn):
@@ -70,6 +71,15 @@ class GRNLinePatch(GRNVersionIn):
     item_code: Optional[str] = None
     description: Optional[str] = None
     po_ref: Optional[str] = None
+    role: Optional[Literal["output", "byproduct"]] = None
+    verified: Optional[bool] = None          # hasil OCR = usulan; manusia mencentang "sudah dicek"
+
+
+class GRNProfilePatch(BaseModel):
+    number_locale: Optional[Literal["id", "en", "unknown"]] = None
+    add_alias: Optional[str] = None
+    remove_alias: Optional[str] = None
+    remove_item_key: Optional[str] = None
 
 
 class GRNScanIn(BaseModel):

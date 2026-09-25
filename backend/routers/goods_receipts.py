@@ -5,13 +5,14 @@ from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import Response
 
 from db import db
-from dependencies import require_any_permission, require_permission
+from dependencies import audit, require_any_permission, require_permission
 from entity_scope import entity_ctx
-from schemas_goods_receipt import (GRNCountRollIn, GRNCreateIn, GRNDnPatch, GRNLineIn, GRNLinePatch, GRNReasonIn,
-                                   GRNResolveIn, GRNScanIn, GRNVersionIn)
+from schemas_goods_receipt import (GRNCountRollIn, GRNCreateIn, GRNDnPatch, GRNLineIn, GRNLinePatch, GRNProfilePatch,
+                                   GRNReasonIn, GRNResolveIn, GRNScanIn, GRNVersionIn)
 from services import goods_receipt_close_service as gc
 from services import goods_receipt_ocr_service as go
 from services import goods_receipt_service as gs
+from services import supplier_dn_profile_service as sdp
 
 router = APIRouter(prefix="/api")
 M = "goods_receipt"
@@ -70,6 +71,27 @@ async def grn_supplier_variance(request: Request, since: str = "") -> List[Dict[
 async def grn_ocr_usage(request: Request, month: str = "") -> Dict[str, Any]:
     _, ctx = await _act(request, "approve")
     return await go.usage_summary(month, ctx)
+
+
+@router.get("/goods-receipts/dn-profiles")
+async def grn_dn_profiles(request: Request) -> List[Dict[str, Any]]:
+    _, ctx = await _act(request, "view")
+    return await sdp.list_profiles(ctx.active_entity_id or "")
+
+
+@router.get("/goods-receipts/dn-profiles/{partner_id}")
+async def grn_dn_profile(partner_id: str, request: Request) -> Dict[str, Any]:
+    _, ctx = await _act(request, "view")
+    return await sdp.get_profile(ctx.active_entity_id or "", partner_id) or {}
+
+
+@router.patch("/goods-receipts/dn-profiles/{partner_id}")
+async def grn_dn_profile_patch(partner_id: str, body: GRNProfilePatch, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    res = await sdp.patch_profile(ctx.active_entity_id or "", partner_id, body)
+    await audit(actor["name"], "supplier_dn_profile_updated", "supplier_dn_profile", partner_id,
+                body.model_dump(exclude_none=True), scope_entity_id=ctx.active_entity_id)
+    return res
 
 
 @router.get("/goods-receipts/{grn_id}/rolls")
