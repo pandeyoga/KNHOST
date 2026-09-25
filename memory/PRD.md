@@ -400,4 +400,13 @@ Keputusan user: Fase 0 dulu · kunci OpenAI menyusul (Fase 4) · keputusan klien
 - Endpoint baru: `GET /goods-receipts/partners`, `/{id}/rolls`, `/supplier-variance`.
 - Uji: iteration_67 (backend 28/28 + UI dasar), iteration_68 (alur hitung→rekon→tutup→selisih, hitung buta, banner). Perbaikan: isian kepala SJ tidak lagi tertimpa/409 setelah "Isi manual".
 - Data demo: KSC/GRN-00003 ditutup (100 yd PO-00014, klaim supplier) + tugas sisa 150 yd.
-### Berikutnya: pilot manual 1–2 minggu → Fase 4 OCR OpenAI (butuh kunci API + persetujuan kirim foto SJ ke OpenAI) → Fase 5 makloon di GRN.
+
+## GRN Fase 4 selesai — OCR OpenAI (2026-09-25, kode siap; kunci OpenAI belum ada)
+- Backend: `services/ocr_openai_client.py` (satu-satunya import `openai`, Responses API + schema strict, store=False, kode galat OCR_*), `ocr_sj_v2.py` (PROMPT/SCHEMA sj-v2), `dn_rules.py` (parser angka, pilih declared, pola PO, cocok baris, cek total), `goods_receipt_ocr_service.py` (klaim CAS draft→reading, pembaca kedua on_doubt, `ai_usage_log` + biaya, rem anggaran + notifikasi ambang, penyapu malas >5 mnt, `pages_from_bytes`). Endpoint `POST /goods-receipts/{id}/read`, `GET /goods-receipts/usage?month=` (hak approve). Detail GRN kini memuat `ocr_enabled`.
+- Integrasi: blok `openai` di integrations (`openai_api_key`/`openai_clear_key`, `POST /admin/integrations/openai/test`) + panel UI `OpenAiIntegrationPanel` (Admin → Master Data & Audit → Integrasi AI).
+- UI GRN: draf → "Baca otomatis" + "Isi manual saja" (`grn-ocr-read`, `grn-manual-entry`), progres `grn-ocr-progress` (polling saat status reading), kotak hasil `grn-extraction` (gagal `grn-ocr-failed`, peringatan nama supplier/penerima `grn-ocr-warnings`, beda pembaca kedua `grn-ocr-header-diff` + sorotan emas di isian kepala SJ), kolom Tertulis (qty_text) + Qty, status "Angka ragu", baris ragu `grn-line-doubt-<n>` dengan pilihan kandidat/isi lain, beda per baris `grn-line-diff-<n>`. Tab "Biaya OCR" (`grn-view-tab-usage`, admin/manager/warehouse_admin).
+- Skrip evaluasi `backend/tools/ocr_eval.py` (env `OCR_GOLDSET_DIR`, laporan akurasi per field, baris salah tak ditandai, biaya/lembar, gerbang §5).
+- Mode tiruan: backend/.env `OCR_ALLOW_MOCK="1"` + model `mock-<fixture>` (tests/fixtures/ocr). Demo: `cd /app/backend && python ../scripts/seed_grn_ocr_demo.py` (KSC/PO-00014, angka ragu).
+- Uji: GRN total 42/42 (iteration_69). Kegagalan je_debit sesi lalu = DB tercemar; dengan seed segar lulus.
+- Bawaan tetap `receiving.ocr_enabled=false`. Untuk LIVE: isi kunci OpenAI, uji koneksi, nyalakan per entitas, pastikan nama model `receiving.ocr_model_*` valid di akun OpenAI.
+### Berikutnya: kunci OpenAI + set emas ≥100 SJ (gerbang ocr_eval) → Fase 5 makloon di GRN → Fase 6 packing list → Fase 7 beralih penuh.

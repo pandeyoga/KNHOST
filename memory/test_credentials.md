@@ -203,3 +203,5 @@ Hitung: `grn-count-line-<n>`, `grn-count-scan-<n>` (Enter), `grn-count-length|kg
 Rekonsiliasi: `grn-recon-row-<n>`, `grn-disc-<key>-<action>` (key mis. L1:short_vs_dn), `grn-close`, `grn-reopen-count`, `grn-close-results`.
 Selisih Supplier: `grn-variance-panel`, `grn-variance-range-90|180|365|all`, `grn-variance-row-<partnerId>`, `grn-variance-open-<grnId>`.
 PO: tombol `receive-goods-button` → buka wizard GRN terisi supplier+PO; `receive-goods-legacy-button` → Barang Masuk lama. Panel tugas lama: `inbound-grn-banner`, `inbound-grn-open`.
+
+GRN OCR (Fase 4, 2026-09-25): layar `?view=goods-receipts&entity=ent_ksc`. OCR bawaan MATI; uji pakai model tiruan (backend/.env OCR_ALLOW_MOCK="1"): PUT /api/config/values receiving.ocr_enabled=true, receiving.ocr_model_primary=mock-sj_clear|mock-sj_doubt, receiving.ocr_model_second=mock-sj_doubt_second — kembalikan ke false / gpt-6-sol / gpt-5.6-sol sesudahnya. Kunci OpenAI: Admin → Master Data & Audit → Integrasi AI (`openai-apikey`).

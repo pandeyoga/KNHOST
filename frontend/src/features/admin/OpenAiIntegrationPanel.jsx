@@ -11,13 +11,13 @@ export default function OpenAiIntegrationPanel() {
   const [err, setErr] = useState("");
   const load = () => axios.get(`${API}/admin/integrations`).then((r) => setCfg(r.data?.openai || {})).catch((e) => setErr(e.response?.data?.detail || "Gagal memuat konfigurasi."));
   useEffect(() => { load(); }, []);
-  const act = async (fn, ok) => {
+  const act = async (fn) => {
     setBusy(true); setErr(""); setMsg("");
-    try { const m = await fn(); setMsg(m || ok); setApiKey(""); } catch (e) { setErr(e.response?.data?.detail || "Aksi gagal."); } finally { setBusy(false); load(); }
+    try { setMsg(await fn()); setApiKey(""); } catch (e) { const d = e?.response?.data?.detail; setErr(typeof d === "string" ? d : d?.message || "Aksi gagal."); } finally { setBusy(false); load(); }
   };
-  const save = () => act(() => axios.put(`${API}/admin/integrations`, { openai_api_key: apiKey.trim() }), "Kunci tersimpan — jalankan \"Uji koneksi\".");
-  const clear = () => act(() => axios.put(`${API}/admin/integrations`, { openai_clear_key: true }), "Kunci OpenAI dihapus.");
-  const test = () => act(async () => { const r = await axios.post(`${API}/admin/integrations/openai/test`); return `Uji koneksi LULUS — ${r.data?.models_seen ?? 0} model terlihat.`; });
+  const save = () => act(() => axios.put(`${API}/admin/integrations`, { openai_api_key: apiKey.trim() }).then(() => "Kunci tersimpan — jalankan \"Uji koneksi\"."));
+  const clear = () => act(() => axios.put(`${API}/admin/integrations`, { openai_clear_key: true }).then(() => "Kunci OpenAI dihapus."));
+  const test = () => act(() => axios.post(`${API}/admin/integrations/openai/test`).then((r) => `Uji koneksi LULUS — ${r.data?.models_seen ?? 0} model terlihat.`));
   const has = !!cfg?.has_key, verified = !!cfg?.verified_at;
   return (
     <section className="section-card" data-testid="openai-integration-panel">
