@@ -1,0 +1,20 @@
+FAIL [WM-07] item binA expected = 40 (bukan 100 seluruh gudang) :: 0.0
+FAIL [WM-07] count key duplikat → 409 :: 200
+FAIL [WM-07] campur level gudang + bin untuk produk sama → 409 :: 200
+FAIL [WM-07] actual negatif ditolak (400/422) :: 200
+FAIL [WM-07] actual NaN ditolak :: 200
+FAIL [WM-07] binB 60/60 → tidak ada selisih binB :: None
+FAIL [WM-07] approve dua bin: binA 40→30, binB tetap 60 (tanpa double reduction) :: (400, 40.0, 60.0, '{"detail":"Session belum disubmit"}')
+FAIL [FN-14] kurang 10 @100 → jurnal Dr 5-9500 1.000 / Cr 1-1300 1.000 :: None
+FAIL [FN-14] approve ulang ditolak & jurnal tidak dobel :: (400, 0)
+FAIL [FN-14] surplus 5 → roll baru ber-HPP WAC (80), bukan 0 :: (200, None, '{"id":"cc_892883dab812","entity_id":"ent_ksc","warehouse_id":"wh_jakarta","warehouse_name":"Gudang Jakarta Utara","warehouse_city":"Jakarta","name":"a')
+FAIL [FN-14] surplus → jurnal Dr 1-1300 400 / Cr pendapatan lain :: None
+FAIL [FN-14] surplus tanpa biaya acuan & tanpa alasan → 409, tidak ada roll dibuat :: (200, 1)
+FAIL [FN-14] 409 melepas kunci saga (sesi tetap submitted) :: {'status': 'approved'}
+FAIL [FN-14] dengan zero_cost_reason → approved, alasan tersimpan :: (400, {})
+FAIL [WM-08] expected mencakup picked (40) :: 0.0
+FAIL [WM-08] kurang 40 diterapkan penuh (applied == requested) termasuk roll picked :: (200, {}, 40.0)
+FAIL [WM-08] detail requested/applied/unresolved per baris tersimpan :: 
+FAIL [WM-08] stok eligible tak cukup → 409 tanpa approve palsu & tanpa mutasi :: (200, 20.0, {'status': 'approved'})
+FAIL [RF-17] bagian RF-17 crash :: HTTPException(status_code=400, detail='Roll tidak dalam kondisi fisik untuk di-tag')
+{"pass": 0, "fail": 19}

@@ -1,0 +1,70 @@
+# 2026-10-02-P02-wm02-reservation/repro_wm02.py (1s)
+[
+ {
+  "id": "WM-02",
+  "invariant": "reserve 30 dari roll 100 TIDAK membuat roll baru",
+  "pass": true,
+  "detail": "{'rolls': 1}"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "induk tetap 100 fisik, 30 dipesan, tag induk tetap",
+  "pass": true,
+  "detail": "{'length_remaining': 100.0, 'length_reserved': 30.0, 'rfid_tag_id': 'tag_audit_wm02_81c7ce', 'status': 'available'}"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "saldo: available 70 + reserved 30, on_hand 100",
+  "pass": true,
+  "detail": "{'available_qty': 70.0, 'reserved_qty': 30.0, 'on_hand_qty': 100.0}"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "alokasi menandai pending_cut + reservation_id",
+  "pass": true,
+  "detail": "{'roll_id': 'audit_wm02_81c7ce_r0', 'roll_no': 'R-audit_wm02_81c7ce-0', 'reservation_id': 'rsv_d1c82a19b23d', 'pending_cut': True, 'lot': 'L1', 'dye_lot': 'L1', 'length': 30}"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "reservasi panjang bersamaan tidak melebihi panjang bebas",
+  "pass": true,
+  "detail": "{'ok': 1, 'reserved': 80.0}"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "release reservasi panjang mengembalikan panjang bebas tanpa fragmen roll",
+  "pass": true,
+  "detail": "30.0"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "loading check ditolak sebelum potong",
+  "pass": true,
+  "detail": "1 reservasi potong belum dikonfirmasi (roll induk R-audit_wm02_81c7ce-0). Potong fisik & konfirmasi dulu."
+ },
+ {
+  "id": "WM-02",
+  "invariant": "potong 100 → induk 70 + anak 29.5 + waste 0.5 (konservasi)",
+  "pass": true,
+  "detail": "{'parent': 70.0, 'child': 29.5, 'reserved': 0}"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "anak lahir reserved utk SO, tanpa tag, parent langsung benar",
+  "pass": true,
+  "detail": "{'status': 'reserved', 'rfid_tag_id': None, 'parent_roll_id': 'audit_wm02_81c7ce_r0', 'roll_no': 'R-audit_wm02_81c7ce-0-1'}"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "potong ulang reservasi sama ditolak",
+  "pass": true,
+  "detail": "Reservasi potong tidak ditemukan / sudah dipotong"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "dispatch dengan reservasi belum dipotong ditolak (kebijakan 2026-10-03)",
+  "pass": true,
+  "detail": "1 reservasi potong belum dikonfirmasi (roll induk R-audit_wm02_81c7ce-0). Potong fisik & konfirmasi dulu."
+ }
+]
+pass=11 fail=0

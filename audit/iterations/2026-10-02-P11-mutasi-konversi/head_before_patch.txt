@@ -1,0 +1,93 @@
+[
+ {
+  "id": "GN-06",
+  "invariant": "draft tidak bisa langsung complete",
+  "pass": false,
+  "detail": "lolos"
+ },
+ {
+  "id": "GN-06",
+  "invariant": "bagian GN-06 crash",
+  "pass": false,
+  "detail": "ValueError(\"Work Order status 'completed' tidak bisa dirilis.\")"
+ },
+ {
+  "id": "GN-05",
+  "invariant": "GL A gagal + B sukses → panjang 80",
+  "pass": false,
+  "detail": "RndError: Pengambilan bahan dibatalkan: jurnal beban sample gagal dibuat (GL A gagal). Stok tidak diubah. len=100.0"
+ },
+ {
+  "id": "GN-07",
+  "invariant": "roll beda pemilik ditolak",
+  "pass": false,
+  "detail": "lolos"
+ },
+ {
+  "id": "GN-07",
+  "invariant": "finalisasi bersamaan → konsumsi sekali",
+  "pass": false,
+  "detail": "len=40.0 kids=0 res=['ok', 'ok']"
+ },
+ {
+  "id": "GN-07",
+  "invariant": "parent 70 & child retur 30 beridentitas sendiri",
+  "pass": false,
+  "detail": "{'roll_no': None, 'status': None, 'length_remaining': None}"
+ },
+ {
+  "id": "GN-07",
+  "invariant": "movement return_out menunjuk potongan retur",
+  "pass": false,
+  "detail": "audit_p11_521c3e_r20"
+ },
+ {
+  "id": "GN-07",
+  "invariant": "mixed UOM dikonversi (10 yd → 9,14 m)",
+  "pass": false,
+  "detail": "30.0"
+ },
+ {
+  "id": "GN-07",
+  "invariant": "bagian GN-07 crash",
+  "pass": false,
+  "detail": "KeyError('id')"
+ },
+ {
+  "id": "GN-08",
+  "invariant": "convert paralel → satu pasangan",
+  "pass": false,
+  "detail": "ict=6 status=converted res=['ok', 'ok', 'ok']"
+ },
+ {
+  "id": "GN-08",
+  "invariant": "cancel sesudah convert ditolak",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-08",
+  "invariant": "retry sesudah fault melanjutkan pasangan yang sama",
+  "pass": false,
+  "detail": "4"
+ },
+ {
+  "id": "CX-13",
+  "invariant": "receive bersamaan → satu output, satu tagihan, lainnya 409",
+  "pass": true,
+  "detail": "ok=1 out=1 bill=1 errs=[409, 409]"
+ },
+ {
+  "id": "CX-13",
+  "invariant": "kunci dilepas & step received tanpa receive_progress",
+  "pass": true,
+  "detail": "None"
+ },
+ {
+  "id": "CX-13",
+  "invariant": "input 0 tanpa receipt sah ditolak",
+  "pass": false,
+  "detail": "lolos"
+ }
+]
+pass=3 fail=12

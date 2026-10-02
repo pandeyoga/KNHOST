@@ -1,0 +1,82 @@
+# 2026-10-05-P05-coa-reports-close/repro_followup3.py (2s)
+[
+ {
+  "id": "FN-02",
+  "invariant": "produk B tidak tertukar dgn produk A berlini sama (sisa = qty baris B)",
+  "pass": true,
+  "detail": "('matched', {'qty_status': 'ok', 'price_status': 'ok', 'qty_remaining': 20.0, 'price_variance_pct': 0.0, 'messages': []})"
+ },
+ {
+  "id": "FN-02",
+  "invariant": "konteks tagihan memberi id baris unik per baris PO",
+  "pass": true,
+  "detail": "['L1', 'L2', 'L3', 'L4']"
+ },
+ {
+  "id": "FN-02",
+  "invariant": "produk ganda ditandai same_product_lines=2",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "FN-02",
+  "invariant": "line_id tersimpan permanen di PO",
+  "pass": true,
+  "detail": "{'items': [{'line_id': 'L1'}, {'line_id': 'L2'}, {'line_id': 'L3'}, {'line_id': 'L4'}]}"
+ },
+ {
+  "id": "FN-02",
+  "invariant": "tagihan dgn pilihan baris PO diterima & cocok",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"vbill_19c63ff47a80\",\"bill_number\":\"VB-00010\",\"supplier_invoice_no\":\"\",\"po_id\":\"audit_f3_1184e0_po\",\"po_number\":\"PO-audit_f3_1184e0\",\"supplier_id\":\"sup_9d5660d76ca2\",\"supplier_name\":\"Cirebon Cra')"
+ },
+ {
+  "id": "FN-02",
+  "invariant": "sisa tagih per baris: A 0, B 20 (tidak ikut berkurang), C1 5, C2 0",
+  "pass": true,
+  "detail": "{'L1': 0.0, 'L2': 20.0, 'L3': 5.0, 'L4': 0.0}"
+ },
+ {
+  "id": "FN-02",
+  "invariant": "produk di >1 baris tanpa po_line_id → 400",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "FN-02",
+  "invariant": "tagih ulang baris C2 yang sudah penuh → over-billed",
+  "pass": true,
+  "detail": "(200, 'blocked')"
+ },
+ {
+  "id": "LABEL",
+  "invariant": "roll anak memuat nama produk & no. roll induk untuk label",
+  "pass": true,
+  "detail": "{'id': 'audit_f3_1184e0_kid', 'roll_no': 'R-audit_f3_1184e0-1', 'product_id': 'prod_batik_mega', 'warehouse_id': 'wh_jakarta', 'length_remaining': 10.0, 'unit': 'meter', 'parent_roll_id': 'audit_f3_1184e0_par', 'cut': {}, 'rfid_tag_id': None, 'product_name': 'Batik Mega Mendung Premium', 'sku': 'BTK"
+ },
+ {
+  "id": "REIMB",
+  "invariant": "hanya hutang terbuka dihitung (yang dibayar tidak)",
+  "pass": true,
+  "detail": "{'audit_f3_1184e0 Sari': {'employee': 'audit_f3_1184e0 Sari', 'outstanding': 70.0, 'count': 1, 'oldest_days': 45, 'aging': {'0-7': 0.0, '8-14': 0.0, '15-30': 0.0, '>30': 70.0}}, 'audit_f3_1184e0 Andi': {'employee': 'audit_f3_1184e0 Andi', 'outstanding': 150.0, 'count': 2, 'oldest_days': 20, 'aging':"
+ },
+ {
+  "id": "REIMB",
+  "invariant": "umur 0-7 / 15-30 per karyawan",
+  "pass": true,
+  "detail": "{'employee': 'audit_f3_1184e0 Andi', 'outstanding': 150.0, 'count': 2, 'oldest_days': 20, 'aging': {'0-7': 100.0, '8-14': 0.0, '15-30': 50.0, '>30': 0.0}}"
+ },
+ {
+  "id": "REIMB",
+  "invariant": "hutang terlama (>30) Sari 45 hari",
+  "pass": true,
+  "detail": "{'employee': 'audit_f3_1184e0 Sari', 'outstanding': 70.0, 'count': 1, 'oldest_days': 45, 'aging': {'0-7': 0.0, '8-14': 0.0, '15-30': 0.0, '>30': 70.0}}"
+ },
+ {
+  "id": "REIMB",
+  "invariant": "role gudang tidak boleh melihat laporan (403)",
+  "pass": true,
+  "detail": "403"
+ }
+]
+pass=13 fail=0

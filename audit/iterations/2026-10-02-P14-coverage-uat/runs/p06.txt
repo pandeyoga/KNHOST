@@ -1,0 +1,76 @@
+# 2026-10-02-P06-receiving/repro_p06.py (1s)
+[
+ {
+  "id": "AX-08",
+  "invariant": "roll quarantine bertag terverifikasi ditolak PA",
+  "pass": true,
+  "detail": "(400, 'Roll R-audit_p06_30226e-9 berstatus quarantine — putaway hanya untuk roll available (lolos QC, tidak dipesan)')"
+ },
+ {
+  "id": "WM-05",
+  "invariant": "dua PA serentak satu roll: tepat satu menang",
+  "pass": true,
+  "detail": "['PA00001', (409, 'Roll R-audit_p06_30226e-0 baru saja diambil proses lain (PA/reservasi/QC). Muat ulang layar.')]"
+ },
+ {
+  "id": "WM-04",
+  "invariant": "dispatch: roll in_transit_transfer, ATP asal turun, owned tetap",
+  "pass": true,
+  "detail": "{'status': 'in_transit_transfer', 'available_qty': 30.0, 'in_transit_transfer_qty': 10.0, 'owned_qty': 50.0}"
+ },
+ {
+  "id": "WM-03",
+  "invariant": "tanpa scan & tanpa override → 400",
+  "pass": true,
+  "detail": "(400, 'Kirim hasil scan EPC, atau pilih konfirmasi manual (semua tiba) dengan alasan.')"
+ },
+ {
+  "id": "WM-03",
+  "invariant": "override manual tanpa alasan cukup → 400",
+  "pass": true,
+  "detail": "(400, 'Konfirmasi manual tanpa scan wajib beralasan (minimal 10 huruf).')"
+ },
+ {
+  "id": "WM-03",
+  "invariant": "scanned_epcs=[] → nol roll pindah, semua exception",
+  "pass": true,
+  "detail": "{'arrived': 0, 'wh': 'audit_p06_30226e_whA'}"
+ },
+ {
+  "id": "WM-09",
+  "invariant": "accept exception: tepat satu pasangan out/in + roll di tujuan available",
+  "pass": true,
+  "detail": "['putaway_transfer_out', 'putaway_transfer_in']"
+ },
+ {
+  "id": "WM-09",
+  "invariant": "retry accept tidak menggandakan mutasi",
+  "pass": true,
+  "detail": "2"
+ },
+ {
+  "id": "WM-05",
+  "invariant": "dispatch ditolak bila roll PA berubah status (kompensasi all-or-none)",
+  "pass": true,
+  "detail": "{'err': (409, 'Roll R-audit_p06_30226e-3 tidak lagi available untuk PA ini (dipesan/QC/berpindah). Keluarkan roll itu atau buat PA baru.'), 'r1': 'available'}"
+ },
+ {
+  "id": "WM-03",
+  "invariant": "subset scan memindahkan subset saja",
+  "pass": true,
+  "detail": "{'arrived': 1, 'exc': 2}"
+ },
+ {
+  "id": "WM-05",
+  "invariant": "roll yang berubah status tidak ditimpa lokasinya",
+  "pass": true,
+  "detail": "{'wh': 'audit_p06_30226e_whA', 'status': 'reserved'}"
+ },
+ {
+  "id": "IX-09",
+  "invariant": "reopen inspeksi mengosongkan inspect_done_at retur (riwayat disimpan)",
+  "pass": true,
+  "detail": "{'id': 'audit_p06_30226e_ret', 'inspect_done_at': '', 'inspect_reopen_history': [{'previous_done_at': '2026-10-01T10:00:00+00:00', 'reason': 'Salah input grade, perlu periksa ulang barang', 'at': '2026-10-02T18:36:37.012289+00:00'}], 'updated_at': '2026-10-02T18:36:37.012278+00:00'}"
+ }
+]
+pass=12 fail=0

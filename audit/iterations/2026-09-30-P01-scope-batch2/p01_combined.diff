@@ -1,0 +1,1402 @@
+diff --git a/backend/bootstrap.py b/backend/bootstrap.py
+index 6028f4b..fb64d6a 100644
+--- a/backend/bootstrap.py
++++ b/backend/bootstrap.py
+@@ -1555,6 +1555,15 @@ async def run_bootstrap() -> None:
+     await ensure_inventory_rolls()
+     await backfill_roll_dye_lot()
+     await ensure_config_defaults()
++    # RF-12 — API key device plaintext lama → hash + wajib rotasi (idempotent)
++    from services.rfid_ingest_service import migrate_plaintext_keys
++    await migrate_plaintext_keys()
++    from services.cycle_count_service import backfill_scope as _cc_backfill  # RF-08
++    await _cc_backfill()
++    # GN-16 — notifikasi laporan AI pribadi lama yang tersiar (recipient_role≠"") → pribadi
++    await db.notifications.update_many(
++        {"type": "ai_report", "recipient_user": {"$nin": [None, ""]}, "recipient_role": {"$ne": ""}},
++        {"$set": {"recipient_role": ""}})
+     # FASE B (D-06/D-07) — registry konversi satuan GLOBAL + kebijakan toleransi (idempoten)
+     try:
+         from services import uom_rules_service as _uomr
+diff --git a/backend/entity_scope.py b/backend/entity_scope.py
+index 3dabf2a..b4a02cd 100644
+--- a/backend/entity_scope.py
++++ b/backend/entity_scope.py
+@@ -333,6 +333,22 @@ class EntityContext:
+         return entity_id in self.allowed_entity_ids
+ 
+ 
++async def allowed_entities_for(user: Dict[str, Any]) -> List[str]:
++    """Daftar badan usaha yang boleh dioperasikan user (satu sumber untuk HTTP & WebSocket)."""
++    home = user.get("home_entity_id") or PRIMARY_ENTITY_ID
++    role = user.get("role", "")
++    if role in CROSS_ENTITY_ROLES:
++        # admin/manager: akses dinamis ke SEMUA entitas aktif (termasuk yang baru dibuat).
++        return resolve_allowed_entities(role, home, await all_active_entity_ids())
++    # FASE E-1 (E1.5) — buang badan usaha terarsip dari daftar yang boleh dioperasikan.
++    stored = user.get("allowed_entity_ids") or [home]
++    from services.entity_lifecycle_service import entity_status_map, WRITE_LOCKED_STATUSES
++    smap = await entity_status_map()
++    allowed = [e for e in stored
++               if smap.get(e, {}).get("status", "active") not in WRITE_LOCKED_STATUSES]
++    return allowed or [home]
++
++
+ async def entity_ctx(request: Request) -> EntityContext:
+     """FastAPI dependency: resolve badan usaha aktif untuk request.
+ 
+@@ -345,21 +361,7 @@ async def entity_ctx(request: Request) -> EntityContext:
+     """
+     user = await current_user(request)
+     home = user.get("home_entity_id") or PRIMARY_ENTITY_ID
+-    role = user.get("role", "")
+-    if role in CROSS_ENTITY_ROLES:
+-        # admin/manager: akses dinamis ke SEMUA entitas aktif (termasuk yang baru dibuat).
+-        all_ids = await all_active_entity_ids()
+-        allowed = resolve_allowed_entities(role, home, all_ids)
+-    else:
+-        # FASE E-1 (E1.5) — buang badan usaha terarsip dari daftar yang boleh
+-        # dioperasikan (pakai cache status supaya tidak menambah query per request).
+-        stored = user.get("allowed_entity_ids") or [home]
+-        from services.entity_lifecycle_service import entity_status_map, WRITE_LOCKED_STATUSES
+-        smap = await entity_status_map()
+-        allowed = [e for e in stored
+-                   if smap.get(e, {}).get("status", "active") not in WRITE_LOCKED_STATUSES]
+-        if not allowed:
+-            allowed = [home]
++    allowed = await allowed_entities_for(user)
+     requested = (request.headers.get("X-Entity-Id") or "").strip()
+     view_all = False
+     if requested == "all":
+diff --git a/backend/idempotency.py b/backend/idempotency.py
+index aeda13b..7c1dd34 100644
+--- a/backend/idempotency.py
++++ b/backend/idempotency.py
+@@ -1,9 +1,10 @@
+ """Idempotency-Key — aksi gudang dari HP (juga saat sinkron ulang dari antrean offline).
+ 
+ Kunci sama → balasan PERTAMA dikembalikan apa adanya (kode + body), efek samping tidak diulang.
+-Hanya aktif bila klien mengirim header `Idempotency-Key` pada POST. Kunci diikat ke path+user
+-agar kunci yang sama untuk aksi berbeda tidak saling menutupi. Rekaman kedaluwarsa 7 hari.
++Hanya aktif bila klien mengirim header `Idempotency-Key` pada POST. Kunci diikat ke metode+path+
++user_id sesi sah+entitas; payload berbeda dengan kunci sama → 409 (GN-01). Rekaman kedaluwarsa 7 hari.
+ """
++import hashlib
+ import json
+ from datetime import datetime, timedelta, timezone
+ from typing import Any, Dict
+@@ -23,21 +24,48 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
+                        "/api/ar-receipts", "/api/sales-returns", "/api/special-orders")
+ 
+ 
++async def _session_user_id(request: Request) -> str:
++    """GN-01 — identitas stabil dari sesi SAH (cookie `session_token` / Bearer), bukan potongan token."""
++    from dependencies import extract_token, _as_utc
++    token = extract_token(request)
++    if not token:
++        return ""
++    sess = await db.sessions.find_one({"token": token}, {"_id": 0, "user_id": 1, "expires_at": 1})
++    if not sess:
++        return ""
++    exp = _as_utc(sess.get("expires_at"))
++    if exp is not None and exp <= datetime.now(timezone.utc):
++        return ""
++    return sess.get("user_id") or ""
++
++
+ class IdempotencyMiddleware(BaseHTTPMiddleware):
+     async def dispatch(self, request: Request, call_next):
+         key = request.headers.get(HEADER, "").strip()
+         if not key or request.method not in ("POST", "PUT", "PATCH", "DELETE") \
+                 or not request.url.path.startswith(IDEMPOTENT_PREFIXES):
+             return await call_next(request)
+-        who = request.headers.get("authorization", "")[-24:] or request.cookies.get("kn_session", "")[-24:]
+-        doc_id = f"{key}|{request.method}|{request.url.path}|{who}"
++        user_id = await _session_user_id(request)
++        if not user_id:
++            # GN-01 — tanpa sesi sah tidak ada lookup/replay; endpoint yang menolak (401)
++            return await call_next(request)
++        entity = (request.headers.get("X-Entity-Id") or "").strip()
++        body_bytes = await request.body()
++        payload_hash = hashlib.sha256(
++            request.url.query.encode() + b"\n" + body_bytes).hexdigest()
++        doc_id = f"{key}|{request.method}|{request.url.path}|{user_id}|{entity}"
+         now = datetime.now(timezone.utc)
+         try:
+             await db.idempotency_keys.insert_one({
+                 "_id": doc_id, "key": key, "path": request.url.path, "status": "in_progress",
++                "user_id": user_id, "entity": entity, "payload_hash": payload_hash,
+                 "created_at": now_iso(), "expires_at": now + timedelta(days=TTL_DAYS)})
+         except Exception:
+             existing = await db.idempotency_keys.find_one({"_id": doc_id})
++            if existing and existing.get("payload_hash") not in (None, payload_hash):
++                return JSONResponse(status_code=409, content={"detail": {
++                    "code": "IDEMPOTENCY_KEY_REUSED",
++                    "message": "Kunci idempotensi sudah dipakai untuk isi permintaan yang berbeda."}})
+             if existing and existing.get("status") == "done":
+                 resp = JSONResponse(status_code=existing["code"], content=existing["body"])
+                 resp.headers["X-Idempotent-Replay"] = "true"
+diff --git a/backend/indexes.py b/backend/indexes.py
+index 6a6f6ea..6802b22 100644
+--- a/backend/indexes.py
++++ b/backend/indexes.py
+@@ -41,6 +41,10 @@ INDEX_SPECS: Dict[str, List[IndexKeys]] = {
+         [("created_at", D)],
+         [("line_code", A), ("status", A)],   # FASE L — penyaring lini di Daftar Roll
+     ],
++    # RF-12 — autentikasi device via hash key
++    "rfid_devices": [
++        [("api_key_hash", A)],
++    ],
+     # ── Fase C — Lot kelas satu (D-10/D-26) ───────────────────────────────
+     "inventory_lots": [
+         [("lot_number", A)],
+diff --git a/backend/routers/ar_receipts.py b/backend/routers/ar_receipts.py
+index 7a7c826..399bca3 100644
+--- a/backend/routers/ar_receipts.py
++++ b/backend/routers/ar_receipts.py
+@@ -45,7 +45,8 @@ class ReceiptPayload(BaseModel):
+ async def open_orders(request: Request, customer_id: str = Query(...)) -> List[Dict[str, Any]]:
+     """Order AR terbuka customer (untuk alokasi pembayaran)."""
+     await require_permission(request, "ar_receipt", "view")
+-    return await ar_receipt_service.list_open_orders(customer_id)
++    from entity_scope import entity_ctx, resolve_scope_ids  # CX-02
++    return await ar_receipt_service.list_open_orders(customer_id, resolve_scope_ids(await entity_ctx(request), None))
+ 
+ 
+ @router.get("/ar-receipts/deposit")
+diff --git a/backend/routers/bank.py b/backend/routers/bank.py
+index 27bd8a1..7d7fc1c 100644
+--- a/backend/routers/bank.py
++++ b/backend/routers/bank.py
+@@ -78,17 +78,36 @@ async def patch_bank_account(account_id: str, payload: BankAccountUpdate, reques
+ @router.get("/bank-accounts/{account_id}/ledger")
+ async def bank_account_ledger(account_id: str, request: Request) -> Dict[str, Any]:
+     """Buku besar (ledger) akun: transaksi + running balance."""
+-    await require_permission(request, "cash", "view")
++    actor = await require_permission(request, "cash", "view")
++    from db import db as _db
++    await _guard_cash_doc(request, actor, "bank_accounts",
++                          await _db.bank_accounts.find_one({"id": account_id}, {"_id": 0}), "Akun tidak ditemukan")
+     led = await bank_service.account_ledger(account_id)
+     if led is None:
+         raise HTTPException(status_code=404, detail="Akun tidak ditemukan")
+     return led
+ 
+ 
++async def _guard_cash_doc(request: Request, actor: Dict[str, Any], collection: str,
++                          doc: Dict[str, Any], not_found: str) -> None:
++    """GN-03 — dokumen kas/bank lewat ID wajib milik entitas aktif; record grup lama hanya admin/manager."""
++    if not doc:
++        raise HTTPException(status_code=404, detail=not_found)
++    if doc.get("entity_id") in ("all", "", None):
++        if (actor or {}).get("role") not in ("admin", "manager"):
++            raise HTTPException(status_code=404, detail=not_found)
++        return
++    from entity_scope import guard_doc
++    await guard_doc(request, collection, doc, not_found=not_found)
++
++
+ @router.post("/cash-transactions/{txn_id}/reconcile")
+ async def reconcile_cash_transaction(txn_id: str, payload: ReconcilePayload, request: Request) -> Dict[str, Any]:
+     """Tandai transaksi kas sebagai terekonsiliasi / belum."""
+     actor = await require_permission(request, "cash", "create")
++    from db import db as _db
++    await _guard_cash_doc(request, actor, "cash_transactions",
++                          await _db.cash_transactions.find_one({"id": txn_id}, {"_id": 0}), "Transaksi tidak ditemukan")
+     txn = await bank_service.reconcile_txn(txn_id, payload.reconciled)
+     if txn is None:
+         raise HTTPException(status_code=404, detail="Transaksi tidak ditemukan")
+diff --git a/backend/routers/crm_omnichannel.py b/backend/routers/crm_omnichannel.py
+index ccf9af5..ef4aa0e 100644
+--- a/backend/routers/crm_omnichannel.py
++++ b/backend/routers/crm_omnichannel.py
+@@ -125,8 +125,9 @@ async def create_lead(payload: LeadCreate, request: Request) -> Dict[str, Any]:
+ 
+ async def _guard_lead_owner(request: Request, lead_id: str, actor: Dict[str, Any]):
+     lead = await oc.get_lead(lead_id)
+-    if not lead:
+-        raise HTTPException(status_code=404, detail="Lead tidak ditemukan.")
++    # GN-09 — entitas lead wajib = entitas aktif pemanggil (bukan hanya owner untuk role sales)
++    from entity_scope import guard_doc
++    await guard_doc(request, "crm_leads", lead, not_found="Lead tidak ditemukan.")
+     if actor.get("role") == "sales" and lead.get("owner_id") != actor["id"]:
+         raise HTTPException(status_code=403, detail="Lead ini bukan milik Anda.")
+     return lead
+@@ -195,8 +196,8 @@ async def create_interaction(payload: InteractionCreate, request: Request) -> Di
+ async def delete_interaction(intx_id: str, request: Request) -> Dict[str, Any]:
+     actor = await require_permission(request, "customer", "update")
+     intx = await oc.get_interaction(intx_id)
+-    if not intx:
+-        raise HTTPException(status_code=404, detail="Interaksi tidak ditemukan.")
++    from entity_scope import guard_doc
++    await guard_doc(request, "crm_interactions", intx, not_found="Interaksi tidak ditemukan.")  # GN-09
+     if actor.get("role") == "sales" and intx.get("created_by_id") != actor["id"]:
+         raise HTTPException(status_code=403, detail="Interaksi ini bukan milik Anda.")
+     ok = await oc.delete_interaction(intx_id)
+diff --git a/backend/routers/esign.py b/backend/routers/esign.py
+index 20a26a4..4eb0b44 100644
+--- a/backend/routers/esign.py
++++ b/backend/routers/esign.py
+@@ -28,13 +28,29 @@ class VerifyBody(BaseModel):
+     signature_b64: str
+ 
+ 
++async def _guard_source(request: Request, doc_type: str, source_id: str) -> dict:
++    """IX-05 — dokumen sumber e-sign wajib dalam scope entitas pemanggil sebelum apa pun dibaca/ditulis."""
++    from db import db
++    from entity_scope import guard_doc
++    reg = es.DOC_REGISTRY.get(doc_type) or {}
++    coll = reg.get("collection")
++    if not coll:
++        raise HTTPException(status_code=404, detail="Jenis dokumen tidak dikenal")
++    src = await db[coll].find_one({"id": source_id}, {"_id": 0})
++    await guard_doc(request, coll, src, strict=False, not_found="Dokumen sumber tidak ditemukan")
++    return src
++
++
+ @router.post("/request")
+ async def request_otp(body: RequestBody, request: Request):
+     user = await require_permission(request, "esign", "sign")
+     actor = user.get("email") or user.get("name") or user.get("id")
++    src = await _guard_source(request, body.doc_type, body.source_id)
++    if body.entity_id and src.get("entity_id") and body.entity_id != src["entity_id"]:
++        raise HTTPException(status_code=400, detail="Entitas tidak sesuai dengan pemilik dokumen")
+     try:
+         return await es.create_request(
+-            body.doc_type, body.source_id, body.entity_id, body.signer_name,
++            body.doc_type, body.source_id, src.get("entity_id") or body.entity_id, body.signer_name,
+             body.signer_role, body.signer_contact, actor, body.channel)
+     except LookupError as exc:
+         raise HTTPException(status_code=404, detail=str(exc))
+@@ -46,6 +62,11 @@ async def request_otp(body: RequestBody, request: Request):
+ async def verify(body: VerifyBody, request: Request):
+     user = await require_permission(request, "esign", "sign")
+     ip = request.client.host if request.client else ""
++    from db import db
++    req_doc = await db.esign_requests.find_one({"id": body.request_id}, {"_id": 0, "doc_type": 1, "source_id": 1})
++    if not req_doc:
++        raise HTTPException(status_code=404, detail="Permintaan tanda tangan tidak ditemukan")
++    await _guard_source(request, req_doc["doc_type"], req_doc["source_id"])
+     try:
+         res = await es.verify_and_sign(body.request_id, body.otp, body.signature_b64, ip)
+     except LookupError as exc:
+@@ -60,7 +81,8 @@ async def verify(body: VerifyBody, request: Request):
+ @router.get("/signatures/{doc_type}/{source_id}")
+ async def signatures(doc_type: str, source_id: str, request: Request):
+     await require_permission(request, "esign", "view")
+-    return {"signatures": await es.list_signatures(doc_type, source_id)}
++    src = await _guard_source(request, doc_type, source_id)
++    return {"signatures": await es.list_signatures(doc_type, source_id, src.get("entity_id"))}
+ 
+ 
+ @router.get("/verify/{code}")
+diff --git a/backend/routers/period_unlocks.py b/backend/routers/period_unlocks.py
+index 91c2d3f..d88f559 100644
+--- a/backend/routers/period_unlocks.py
++++ b/backend/routers/period_unlocks.py
+@@ -8,8 +8,9 @@ from typing import Any, Dict, List, Optional
+ from fastapi import APIRouter, Request, Query, HTTPException
+ from pydantic import BaseModel
+ 
+-from dependencies import require_permission, current_user, audit
+-from entity_scope import entity_ctx
++from db import db
++from dependencies import require_permission, audit
++from entity_scope import entity_ctx, resolve_scope_ids
+ from services import period_unlock_service as pus
+ 
+ router = APIRouter(prefix="/api")
+@@ -42,16 +43,24 @@ async def _resolve_entity(request: Request, entity_id: Optional[str]) -> str:
+ async def list_unlocks(request: Request, entity_id: Optional[str] = Query(None),
+                        status: Optional[str] = Query(None)) -> List[Dict[str, Any]]:
+     """Riwayat & antrean usul buka periode (per entitas / status)."""
+-    await current_user(request)
+-    return await pus.list_requests(entity_id, status)
++    ctx = await entity_ctx(request)
++    return await pus.list_requests(resolve_scope_ids(ctx, entity_id), status)  # IX-10
+ 
+ 
+ @router.get("/finance/period-unlocks/active")
+ async def active_unlocks(request: Request,
+                          entity_id: Optional[str] = Query(None)) -> List[Dict[str, Any]]:
+     """Unlock yang SEDANG aktif (untuk banner merah global)."""
+-    await current_user(request)
+-    return await pus.active_unlocks(entity_id)
++    ctx = await entity_ctx(request)
++    return await pus.active_unlocks(resolve_scope_ids(ctx, entity_id))  # IX-10
++
++
++async def _guard_unlock(request: Request, plu_id: str) -> None:
++    """IX-10 — keputusan usul wajib oleh aktor yang ditugaskan ke entitas pemilik usul."""
++    ctx = await entity_ctx(request)
++    rec = await db.period_unlock_requests.find_one({"id": plu_id}, {"_id": 0, "entity_id": 1})
++    if not rec or rec.get("entity_id") not in ctx.allowed_entity_ids:
++        raise HTTPException(status_code=404, detail="Usul buka periode tidak ditemukan")
+ 
+ 
+ @router.post("/finance/period-unlocks")
+@@ -75,6 +84,7 @@ async def create_unlock(payload: UnlockRequest, request: Request) -> Dict[str, A
+ async def approve_unlock(plu_id: str, request: Request) -> Dict[str, Any]:
+     """Setujui usul (DUAL CONTROL: pengusul ≠ penyetuju). Mulai jendela berbatas waktu."""
+     actor = await require_permission(request, "period", "unlock")
++    await _guard_unlock(request, plu_id)
+     try:
+         rec = await pus.approve_request(plu_id, actor)
+     except ValueError as e:
+@@ -88,6 +98,7 @@ async def approve_unlock(plu_id: str, request: Request) -> Dict[str, Any]:
+ async def reject_unlock(plu_id: str, payload: RejectRequest, request: Request) -> Dict[str, Any]:
+     """Tolak usul buka periode."""
+     actor = await require_permission(request, "period", "unlock")
++    await _guard_unlock(request, plu_id)
+     try:
+         rec = await pus.reject_request(plu_id, actor, payload.reason or "")
+     except ValueError as e:
+diff --git a/backend/routers/pos.py b/backend/routers/pos.py
+index 1405fe9..4214b88 100644
+--- a/backend/routers/pos.py
++++ b/backend/routers/pos.py
+@@ -9,6 +9,12 @@ from services import pos_recommendation_service as pos_svc
+ router = APIRouter(prefix="/api")
+ 
+ 
++async def _scope(request: Request, entity_id: Optional[str]) -> List[str]:
++    """GN-10 — entity_id query diresolusi lewat izin entitas pemanggil."""
++    from entity_scope import entity_ctx, resolve_scope_ids
++    return resolve_scope_ids(await entity_ctx(request), entity_id)
++
++
+ @router.get("/pos/best-sellers")
+ async def get_best_sellers(
+     request: Request,
+@@ -17,7 +23,7 @@ async def get_best_sellers(
+ ) -> List[Dict[str, Any]]:
+     # INV-AUTH-01 (KN-076-AUTH-MASTER-LEAK P1): analitik penjualan WAJIB login.
+     await require_permission(request, "order", "view")
+-    return await pos_svc.best_sellers(entity_id=entity_id, limit=limit)
++    return await pos_svc.best_sellers(await _scope(request, entity_id), limit=limit)
+ 
+ 
+ @router.get("/pos/frequently-bought-together")
+@@ -29,7 +35,7 @@ async def get_frequently_bought_together(
+ ) -> List[Dict[str, Any]]:
+     # INV-AUTH-01 (KN-076-AUTH-MASTER-LEAK P1): analitik penjualan WAJIB login.
+     await require_permission(request, "order", "view")
+-    return await pos_svc.frequently_bought_together(product_id, entity_id=entity_id, limit=limit)
++    return await pos_svc.frequently_bought_together(product_id, await _scope(request, entity_id), limit=limit)
+ 
+ 
+ @router.get("/pos/substitutes")
+@@ -41,4 +47,4 @@ async def get_substitutes(
+ ) -> List[Dict[str, Any]]:
+     # INV-AUTH-01 (KN-076-AUTH-MASTER-LEAK P1): analitik penjualan WAJIB login.
+     await require_permission(request, "order", "view")
+-    return await pos_svc.substitutes(product_id, entity_id=entity_id, limit=limit)
++    return await pos_svc.substitutes(product_id, await _scope(request, entity_id), limit=limit)
+diff --git a/backend/routers/rfid.py b/backend/routers/rfid.py
+index b5c8217..87a56d4 100644
+--- a/backend/routers/rfid.py
++++ b/backend/routers/rfid.py
+@@ -46,6 +46,7 @@ class DevicePatch(BaseModel):
+     location: Optional[str] = None
+     direction: Optional[str] = None
+     type: Optional[str] = None
++    enabled: Optional[bool] = None
+ 
+ 
+ class GateSimPayload(BaseModel):
+@@ -195,7 +196,7 @@ async def printer_status(request: Request, warehouse_id: Optional[str] = None) -
+     q_dev: Dict[str, Any] = {"type": "printer"}
+     if warehouse_id:
+         q_dev["warehouse_id"] = warehouse_id
+-    devices = await db.rfid_devices.find(q_dev, {"_id": 0, "api_key": 0}).to_list(200)
++    devices = await db.rfid_devices.find(q_dev, rfid.DEVICE_SECRET_PROJECTION).to_list(200)
+     q_job: Dict[str, Any] = {"status": "queued"}
+     if scope:
+         q_job["owner_entity_id"] = {"$in": scope}
+@@ -589,7 +590,7 @@ async def post_cc_start(payload: CycleCountStartPayload, request: Request) -> Di
+ async def post_cc_complete(session_id: str, request: Request) -> Dict[str, Any]:
+     actor = await require_permission(request, "wms", "scan")
+     from services import cycle_count_service as cc
+-    res = await cc.complete(session_id, actor["name"])
++    res = await cc.complete(session_id, actor["name"], resolve_scope_ids(await entity_ctx(request), None))
+     await audit(actor["name"], "rfid_cycle_count_completed", "rfid_cycle_count", res["id"],
+                 {"cc_number": res["cc_number"], "accuracy": res["accuracy_pct"]})
+     return res
+@@ -599,7 +600,7 @@ async def post_cc_complete(session_id: str, request: Request) -> Dict[str, Any]:
+ async def get_cc_list(request: Request, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
+     await require_permission(request, "wms", "view")
+     from services import cycle_count_service as cc
+-    rows = await cc.list_counts(warehouse_id)
++    rows = await cc.list_counts(warehouse_id, resolve_scope_ids(await entity_ctx(request), None))
+     return {"count": len(rows), "counts": rows}
+ 
+ 
+@@ -607,4 +608,4 @@ async def get_cc_list(request: Request, warehouse_id: Optional[str] = None) -> D
+ async def get_cc_detail(cc_id: str, request: Request) -> Dict[str, Any]:
+     await require_permission(request, "wms", "view")
+     from services import cycle_count_service as cc
+-    return await cc.get_count(cc_id)
++    return await cc.get_count(cc_id, resolve_scope_ids(await entity_ctx(request), None))
+diff --git a/backend/routers/settings.py b/backend/routers/settings.py
+index e3ab7b5..dcb5eea 100644
+--- a/backend/routers/settings.py
++++ b/backend/routers/settings.py
+@@ -49,6 +49,15 @@ async def update_settings(payload: SettingsUpdate, request: Request) -> Dict[str
+     # "hr") dikelola endpoint khususnya dan TIDAK boleh ditimpa/dibaca lewat sini.
+     if scope != GLOBAL_SCOPE and not await db.business_entities.find_one({"id": scope}, {"_id": 1}):
+         raise HTTPException(status_code=400, detail="Scope pengaturan harus 'global' atau id entitas.")
++    # IX-07 — target scope memakai kebijakan akses yang sama dengan baca; global hanya peran lintas-PT
++    ctx = await entity_ctx(request)
++    if scope == GLOBAL_SCOPE:
++        if not ctx.is_cross_entity:
++            raise HTTPException(status_code=403, detail="Pengaturan global hanya dapat diubah peran lintas badan usaha.")
++    else:
++        resolve_requested_entity(ctx, scope)
++        from services.entity_lifecycle_service import assert_entity_writable_cached
++        await assert_entity_writable_cached(scope)
+     data: Dict[str, Any] = {"updated_at": now_iso()}
+     for sec in SETTINGS_SECTIONS:
+         val = getattr(payload, sec, None)
+diff --git a/backend/routers/store_credit.py b/backend/routers/store_credit.py
+index 32be106..147353b 100644
+--- a/backend/routers/store_credit.py
++++ b/backend/routers/store_credit.py
+@@ -98,7 +98,8 @@ async def get_ledger(request: Request, customer_id: Optional[str] = Query(None),
+ async def open_orders(request: Request, customer_id: str = Query(...)) -> List[Dict[str, Any]]:
+     """Order AR terbuka customer (untuk alokasi redeem store credit)."""
+     await require_permission(request, "ar_receipt", "view")
+-    return await list_open_orders(customer_id)
++    from entity_scope import entity_ctx, resolve_scope_ids  # CX-02
++    return await list_open_orders(customer_id, resolve_scope_ids(await entity_ctx(request), None))
+ 
+ 
+ @router.post("/store-credit/redeem")
+diff --git a/backend/server.py b/backend/server.py
+index f861e68..83aa727 100644
+--- a/backend/server.py
++++ b/backend/server.py
+@@ -281,7 +281,7 @@ from fastapi import WebSocket, WebSocketDisconnect  # noqa: E402
+ @app.websocket("/api/ws/track")
+ async def ws_track(websocket: WebSocket):
+     from services.tracking_service import (
+-        manager as track_manager, auth_ws_token, employee_for_user, store_track,
++        manager as track_manager, auth_ws_token, employee_for_user, store_track, subscriber_scope,
+     )
+     token = websocket.query_params.get("token", "")
+     mode = websocket.query_params.get("mode", "")
+@@ -296,11 +296,26 @@ async def ws_track(websocket: WebSocket):
+     subscribe = (mode == "subscribe") or (mode != "publish" and is_manager)
+ 
+     if subscribe:
+-        track_manager.add_subscriber(websocket)
+-        await websocket.send_json({"type": "snapshot", "data": track_manager.snapshot()})
++        # GN-02 — izin subscribe = hr.view (bukan pilihan klien), dan hanya entitas penugasan
++        scope = await subscriber_scope(user)
++        if scope is None:
++            await websocket.send_json({"type": "error", "msg": "forbidden"})
++            await websocket.close()
++            return
++        track_manager.add_subscriber(websocket, scope)
++        await websocket.send_json({"type": "snapshot", "data": track_manager.snapshot(scope)})
+         try:
+             while True:
+                 await websocket.receive_text()  # keepalive/ping dari klien
++                # GN-02 — sesi kedaluwarsa/dicabut atau izin dicabut → hentikan koneksi
++                again = await auth_ws_token(token)
++                fresh = await subscriber_scope(again) if again else None
++                if fresh is None:
++                    track_manager.remove_subscriber(websocket)
++                    await websocket.send_json({"type": "error", "msg": "session-revoked"})
++                    await websocket.close()
++                    return
++                track_manager.add_subscriber(websocket, fresh)
+         except WebSocketDisconnect:
+             track_manager.remove_subscriber(websocket)
+         except Exception:  # noqa: BLE001
+diff --git a/backend/services/ai_schedules.py b/backend/services/ai_schedules.py
+index 3463907..c57a239 100644
+--- a/backend/services/ai_schedules.py
++++ b/backend/services/ai_schedules.py
+@@ -90,6 +90,7 @@ async def run_schedule(sched: Dict[str, Any], trigger: str = "schedule") -> Dict
+         body = (narr or {}).get("text") or "Laporan siap. Buka Tanya KN untuk grafik dan tabel lengkap."
+         await create_notification(notif_type="ai_report", title=f"Laporan terjadwal: {sched['title']}", body=body[:1200],
+                                   link="tanya-kn", entity_id=sched["entity_id"], recipient_user=sched["user_id"],
++                                  recipient_role="",  # GN-16 — laporan pribadi, bukan siaran
+                                   ref=run["id"], dedupe=False)
+     except ScheduleError as exc:
+         run.update(status="error", error=str(exc))
+diff --git a/backend/services/ar_receipt_service.py b/backend/services/ar_receipt_service.py
+index d5d1aae..f8ca9a3 100644
+--- a/backend/services/ar_receipt_service.py
++++ b/backend/services/ar_receipt_service.py
+@@ -242,9 +242,15 @@ async def unapply_for_case(order_id: str, amount: float, case_id: str,
+             "payment_status": status, "entity_id": o.get("entity_id", "")}
+ 
+ 
+-async def list_open_orders(customer_id: str) -> List[Dict[str, Any]]:
+-    """Order AR terbuka (ada outstanding) untuk customer, tertua dulu (FIFO)."""
+-    orders = await db.sales_orders.find({"customer_id": customer_id}, {"_id": 0}).to_list(2000)
++async def list_open_orders(customer_id: str, entity_id: Any = None) -> List[Dict[str, Any]]:
++    """Order AR terbuka (ada outstanding) untuk customer, tertua dulu (FIFO).
++    `entity_id` str atau list scope (CX-02 — alokasi/daftar tidak lintas badan usaha)."""
++    q: Dict[str, Any] = {"customer_id": customer_id}
++    if isinstance(entity_id, list):
++        q["entity_id"] = {"$in": entity_id}
++    elif entity_id and entity_id != "all":
++        q["entity_id"] = entity_id
++    orders = await db.sales_orders.find(q, {"_id": 0}).to_list(2000)
+     rows = []
+     for o in orders:
+         if o.get("status") in DEAD_STATUSES:
+diff --git a/backend/services/crm_omnichannel_service.py b/backend/services/crm_omnichannel_service.py
+index 956081f..1eb75cc 100644
+--- a/backend/services/crm_omnichannel_service.py
++++ b/backend/services/crm_omnichannel_service.py
+@@ -146,6 +146,8 @@ async def convert_lead(lead_id: str, actor: Dict[str, Any],
+         return None, "Lead sudah dikonversi ke pelanggan."
+     if existing_customer_id:
+         cust = await db.customers.find_one({"id": existing_customer_id}, {"_id": 0})
++        if cust and cust.get("entity_id") and lead.get("entity_id") and cust["entity_id"] != lead["entity_id"]:
++            cust = None  # GN-09 — customer badan usaha lain diperlakukan tidak ditemukan
+         if not cust:
+             return None, "Pelanggan tujuan tidak ditemukan."
+         customer_id = existing_customer_id
+diff --git a/backend/services/cycle_count_service.py b/backend/services/cycle_count_service.py
+index 6572dec..56ea09f 100644
+--- a/backend/services/cycle_count_service.py
++++ b/backend/services/cycle_count_service.py
+@@ -18,8 +18,10 @@ async def start(warehouse_id: str, scope_ids: List[str], actor_name: str) -> Dic
+     wh = await db.warehouses.find_one({"id": warehouse_id}, {"_id": 0, "name": 1})
+     if not wh:
+         raise HTTPException(status_code=404, detail="Gudang tidak ditemukan")
++    scope_key = sorted(set(scope_ids))  # RF-08/RF-09 — sesi & hasil diikat ke daftar entitas pembuat
+     existing = await db.rfid_verify_sessions.find_one(
+-        {"kind": "cycle_count", "warehouse_id": warehouse_id, "status": "open"}, {"_id": 0})
++        {"kind": "cycle_count", "warehouse_id": warehouse_id, "status": "open",
++         "scope_entity_ids": scope_key}, {"_id": 0})
+     if existing:
+         return safe_doc(existing)
+     rolls = await db.inventory_rolls.find({
+@@ -42,6 +44,7 @@ async def start(warehouse_id: str, scope_ids: List[str], actor_name: str) -> Dic
+         "id": new_id("rvs"), "kind": "cycle_count", "print_job_id": None,
+         "warehouse_id": warehouse_id, "warehouse_name": wh.get("name", ""),
+         "owner_entity_id": scope_ids[0] if len(scope_ids) == 1 else None,
++        "scope_entity_ids": scope_key,
+         "expected": expected, "scanned_epcs": [], "missing": [], "extra": [],
+         "status": "open", "created_at": now_iso(), "created_by": actor_name,
+         "completed_at": None,
+@@ -50,9 +53,19 @@ async def start(warehouse_id: str, scope_ids: List[str], actor_name: str) -> Dic
+     return safe_doc(sess)
+ 
+ 
+-async def complete(session_id: str, actor_name: str) -> Dict[str, Any]:
++def session_scope(doc: Dict[str, Any]) -> List[str]:
++    """Entitas pemilik sesi/hasil count (record lama: owner_entity_id tunggal)."""
++    return list(doc.get("scope_entity_ids") or ([doc["owner_entity_id"]] if doc.get("owner_entity_id") else []))
++
++
++def _in_scope(doc: Optional[Dict[str, Any]], scope_ids: List[str]) -> bool:
++    owners = session_scope(doc or {})
++    return bool(owners) and set(owners) <= set(scope_ids)
++
++
++async def complete(session_id: str, actor_name: str, scope_ids: List[str]) -> Dict[str, Any]:
+     sess = await db.rfid_verify_sessions.find_one({"id": session_id}, {"_id": 0})
+-    if not sess or sess.get("kind") != "cycle_count":
++    if not sess or sess.get("kind") != "cycle_count" or not _in_scope(sess, scope_ids):
+         raise HTTPException(status_code=404, detail="Sesi cycle count tidak ditemukan")
+     if sess["status"] != "open":
+         raise HTTPException(status_code=400, detail="Sesi sudah selesai")
+@@ -83,6 +96,7 @@ async def complete(session_id: str, actor_name: str) -> Dict[str, Any]:
+         "id": new_id("rcc"),
+         "cc_number": await next_doc_number("rfid_cycle_counts", "cc_number", "CC"),
+         "session_id": session_id, "warehouse_id": sess["warehouse_id"],
++        "scope_entity_ids": session_scope(sess),
+         "warehouse_name": sess.get("warehouse_name", ""),
+         "expected_count": len(expected), "found_count": found,
+         "missing_count": len(missing), "extra_count": len(extra_items),
+@@ -99,8 +113,10 @@ async def complete(session_id: str, actor_name: str) -> Dict[str, Any]:
+     return safe_doc(cc)
+ 
+ 
+-async def list_counts(warehouse_id: Optional[str], limit: int = 30) -> List[Dict[str, Any]]:
+-    q: Dict[str, Any] = {}
++async def list_counts(warehouse_id: Optional[str], scope_ids: List[str], limit: int = 30) -> List[Dict[str, Any]]:
++    # RF-08 — hanya hasil yang seluruh entitasnya dalam scope pemanggil
++    q: Dict[str, Any] = {"scope_entity_ids": {"$exists": True, "$ne": [],
++                                              "$not": {"$elemMatch": {"$nin": list(scope_ids)}}}}
+     if warehouse_id:
+         q["warehouse_id"] = warehouse_id
+     rows = await db.rfid_cycle_counts.find(q, {"_id": 0, "missing_items": 0, "extra_items": 0}) \
+@@ -108,8 +124,24 @@ async def list_counts(warehouse_id: Optional[str], limit: int = 30) -> List[Dict
+     return [safe_doc(r) for r in rows]
+ 
+ 
+-async def get_count(cc_id: str) -> Dict[str, Any]:
++async def get_count(cc_id: str, scope_ids: List[str]) -> Dict[str, Any]:
+     cc = await db.rfid_cycle_counts.find_one({"id": cc_id}, {"_id": 0})
+-    if not cc:
++    if not cc or not _in_scope(cc, scope_ids):
+         raise HTTPException(status_code=404, detail="Cycle count tidak ditemukan")
+     return safe_doc(cc)
++
++
++async def backfill_scope() -> int:
++    """RF-08 — sesi/hasil lama tanpa scope: turunkan dari owner roll yang diharapkan (idempotent)."""
++    n = 0
++    async for sess in db.rfid_verify_sessions.find(
++            {"kind": "cycle_count", "scope_entity_ids": {"$exists": False}}, {"_id": 0}):
++        owners = session_scope(sess)
++        if not owners:
++            ids = [e.get("roll_id") for e in sess.get("expected") or [] if e.get("roll_id")]
++            owners = sorted(set(await db.inventory_rolls.distinct("owner_entity_id", {"id": {"$in": ids}})) - {None, ""})
++        await db.rfid_verify_sessions.update_one({"id": sess["id"]}, {"$set": {"scope_entity_ids": owners}})
++        await db.rfid_cycle_counts.update_many({"session_id": sess["id"], "scope_entity_ids": {"$exists": False}},
++                                               {"$set": {"scope_entity_ids": owners}})
++        n += 1
++    return n
+diff --git a/backend/services/digest_service.py b/backend/services/digest_service.py
+index 5c876d1..4d010a7 100644
+--- a/backend/services/digest_service.py
++++ b/backend/services/digest_service.py
+@@ -110,12 +110,17 @@ async def summarize_for(user_id: Optional[str], role: str, day: str,
+     Dengan begitu isi ringkasan == apa yang akan diterima orang itu pada mode instan.
+     """
+     q: Dict[str, Any] = {"created_at": {"$gte": day}}
++    user_doc = (await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
++                if user_id else None) or {"id": user_id, "role": role}
+     if role != "admin":
+         # PERAN & HAK AKSES — audiens + relevansi layar mengikuti pengaturan peran.
+         from services.notification_scope import relevance_filter
+-        user_doc = (await db.users.find_one({"id": user_id}, {"_id": 0, "id": 1, "role": 1})
+-                    if user_id else None) or {"id": user_id, "role": role}
+         q = {"$and": [q, await relevance_filter(user_doc)]}
++    if user_id:
++        # GN-16 — digest hanya entitas penugasan penerima (+ notifikasi global tanpa entitas)
++        from entity_scope import allowed_entities_for
++        ents = await allowed_entities_for(user_doc)
++        q = {"$and": [q, {"entity_id": {"$in": list(ents) + [None, ""]}}]}
+     rows = await db.notifications.find(
+         q, {"_id": 0, "type": 1, "title": 1, "severity": 1, "read": 1}).to_list(MAX_SCAN)
+ 
+diff --git a/backend/services/esign_service.py b/backend/services/esign_service.py
+index 86124cc..25e702c 100644
+--- a/backend/services/esign_service.py
++++ b/backend/services/esign_service.py
+@@ -159,10 +159,12 @@ async def verify_and_sign(request_id: str, otp: str, signature_b64: str, ip: str
+             "verify_url": f"{public_base()}/verify-document/{code}"}
+ 
+ 
+-async def list_signatures(doc_type: str, source_id: str):
++async def list_signatures(doc_type: str, source_id: str, entity_id: Optional[str] = None):
++    q: Dict[str, Any] = {"doc_type": doc_type, "source_id": source_id, "status": "signed"}
++    if entity_id:
++        q["entity_id"] = entity_id
+     sigs = await db.document_signatures.find(
+-        {"doc_type": doc_type, "source_id": source_id, "status": "signed"},
+-        {"_id": 0, "signature_b64": 0}).sort("signed_at", 1).to_list(50)
++        q, {"_id": 0, "signature_b64": 0}).sort("signed_at", 1).to_list(50)
+     return safe_doc(sigs)
+ 
+ 
+diff --git a/backend/services/period_unlock_service.py b/backend/services/period_unlock_service.py
+index 267a963..df7d813 100644
+--- a/backend/services/period_unlock_service.py
++++ b/backend/services/period_unlock_service.py
+@@ -59,11 +59,9 @@ async def _cfg_int(key: str, entity_id: Optional[str], fallback: int) -> int:
+ 
+ 
+ # ─── query ────────────────────────────────────────────────────
+-async def list_requests(entity_id: Optional[str] = None,
++async def list_requests(entity_ids: Optional[List[str]] = None,
+                         status: Optional[str] = None) -> List[Dict[str, Any]]:
+-    q: Dict[str, Any] = {}
+-    if entity_id and entity_id != "all":
+-        q["entity_id"] = entity_id
++    q: Dict[str, Any] = {"entity_id": {"$in": list(entity_ids or [])}}  # IX-10 — scope wajib
+     if status:
+         q["status"] = status
+     rows = await db[COLL].find(q, {"_id": 0}).sort("created_at", -1).to_list(500)
+@@ -76,11 +74,9 @@ async def list_requests(entity_id: Optional[str] = None,
+     return rows
+ 
+ 
+-async def active_unlocks(entity_id: Optional[str] = None) -> List[Dict[str, Any]]:
++async def active_unlocks(entity_ids: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+     """Unlock yang SEDANG aktif (approved & belum lewat batas). Dipakai banner & guard."""
+-    q: Dict[str, Any] = {"status": "approved"}
+-    if entity_id and entity_id != "all":
+-        q["entity_id"] = entity_id
++    q: Dict[str, Any] = {"status": "approved", "entity_id": {"$in": list(entity_ids or [])}}
+     now = _now()
+     out: List[Dict[str, Any]] = []
+     async for r in db[COLL].find(q, {"_id": 0}):
+diff --git a/backend/services/pos_recommendation_service.py b/backend/services/pos_recommendation_service.py
+index ba190a0..4e6600d 100644
+--- a/backend/services/pos_recommendation_service.py
++++ b/backend/services/pos_recommendation_service.py
+@@ -8,22 +8,25 @@ from typing import Any, Dict, List, Optional
+ 
+ from db import db
+ from services.customer_service import DEAD_STATUSES
+-from services.inventory_service import product_summary
+ 
+ 
+-async def _live_orders(entity_id: Optional[str]) -> List[Dict[str, Any]]:
+-    q: Dict[str, Any] = {}
+-    if entity_id and entity_id != "all":
+-        q["entity_id"] = entity_id
++async def _live_orders(scope_ids: List[str]) -> List[Dict[str, Any]]:
++    q: Dict[str, Any] = {"entity_id": {"$in": list(scope_ids)}}  # GN-10 — scope wajib, tanpa fallback global
+     orders = await db.sales_orders.find(q, {"_id": 0, "items": 1, "status": 1, "id": 1}).to_list(8000)
+     return [o for o in orders if o.get("status") not in DEAD_STATUSES]
+ 
+ 
+-async def _enrich(pid: str, extra: Dict[str, Any]) -> Optional[Dict[str, Any]]:
++async def _available_in_scope(pid: str, scope_ids: List[str]) -> float:
++    rows = await db.inventory_balances.find(
++        {"product_id": pid, "owner_entity_id": {"$in": list(scope_ids)}}, {"_id": 0, "available_qty": 1}).to_list(200)
++    return sum(float(b.get("available_qty", 0) or 0) for b in rows)
++
++
++async def _enrich(pid: str, extra: Dict[str, Any], scope_ids: List[str]) -> Optional[Dict[str, Any]]:
+     p = await db.products.find_one({"id": pid}, {"_id": 0})
+     if not p:
+         return None
+-    summ = await product_summary(pid)
++    summ = {"available_qty": await _available_in_scope(pid, scope_ids)}
+     return {
+         "product_id": pid,
+         "sku": p.get("sku"),
+@@ -39,8 +42,8 @@ async def _enrich(pid: str, extra: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+     }
+ 
+ 
+-async def best_sellers(entity_id: Optional[str] = None, limit: int = 8) -> List[Dict[str, Any]]:
+-    orders = await _live_orders(entity_id)
++async def best_sellers(scope_ids: List[str], limit: int = 8) -> List[Dict[str, Any]]:
++    orders = await _live_orders(scope_ids)
+     agg: Dict[str, Dict[str, float]] = {}
+     for o in orders:
+         counted = set()
+@@ -61,7 +64,7 @@ async def best_sellers(entity_id: Optional[str] = None, limit: int = 8) -> List[
+             "order_count": int(a["order_count"]),
+             "qty_sold": round(a["qty"], 2),
+             "revenue": round(a["revenue"], 2),
+-        })
++        }, scope_ids)
+         if row:
+             out.append(row)
+         if len(out) >= limit:
+@@ -69,8 +72,8 @@ async def best_sellers(entity_id: Optional[str] = None, limit: int = 8) -> List[
+     return out
+ 
+ 
+-async def frequently_bought_together(product_id: str, entity_id: Optional[str] = None, limit: int = 6) -> List[Dict[str, Any]]:
+-    orders = await _live_orders(entity_id)
++async def frequently_bought_together(product_id: str, scope_ids: List[str], limit: int = 6) -> List[Dict[str, Any]]:
++    orders = await _live_orders(scope_ids)
+     co: Dict[str, int] = {}
+     for o in orders:
+         pids = [it.get("product_id") for it in (o.get("items") or []) if it.get("product_id")]
+@@ -81,13 +84,13 @@ async def frequently_bought_together(product_id: str, entity_id: Optional[str] =
+     ranked = sorted(co.items(), key=lambda kv: kv[1], reverse=True)[:limit]
+     out: List[Dict[str, Any]] = []
+     for pid, cnt in ranked:
+-        row = await _enrich(pid, {"together_count": cnt})
++        row = await _enrich(pid, {"together_count": cnt}, scope_ids)
+         if row:
+             out.append(row)
+     return out
+ 
+ 
+-async def substitutes(product_id: str, entity_id: Optional[str] = None, limit: int = 6) -> List[Dict[str, Any]]:
++async def substitutes(product_id: str, scope_ids: List[str], limit: int = 6) -> List[Dict[str, Any]]:
+     """Alternatif in-stock saat produk OOS. Tiered: kategori sama > grade sama > populer.
+     Selalu hanya mengembalikan produk yang masih ADA stok (available_qty > 0)."""
+     base = await db.products.find_one({"id": product_id}, {"_id": 0})
+@@ -98,8 +101,7 @@ async def substitutes(product_id: str, entity_id: Optional[str] = None, limit: i
+     ).to_list(300)
+     scored = []
+     for p in cands:
+-        summ = await product_summary(p["id"])
+-        avail = float(summ.get("available_qty", 0) or 0)
++        avail = await _available_in_scope(p["id"], scope_ids)
+         if avail <= 0:
+             continue
+         same_cat = p.get("category") == base.get("category")
+@@ -110,7 +112,7 @@ async def substitutes(product_id: str, entity_id: Optional[str] = None, limit: i
+     scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+     out: List[Dict[str, Any]] = []
+     for score, avail, same_cat, same_grade, reason, p in scored[:limit]:
+-        row = await _enrich(p["id"], {"same_category": same_cat, "same_grade": same_grade, "match_reason": reason})
++        row = await _enrich(p["id"], {"same_category": same_cat, "same_grade": same_grade, "match_reason": reason}, scope_ids)
+         if row:
+             out.append(row)
+     return out
+diff --git a/backend/services/rfid_incident_service.py b/backend/services/rfid_incident_service.py
+index b746b6b..68c718d 100644
+--- a/backend/services/rfid_incident_service.py
++++ b/backend/services/rfid_incident_service.py
+@@ -153,7 +153,8 @@ async def shrinkage_report(days: int = 30) -> Dict[str, Any]:
+ 
+ async def device_health() -> Dict[str, Any]:
+     now = datetime.now(timezone.utc)
+-    devices = await db.rfid_devices.find({}, {"_id": 0, "api_key": 0}).to_list(200)
++    from services.rfid_service import DEVICE_SECRET_PROJECTION
++    devices = await db.rfid_devices.find({}, DEVICE_SECRET_PROJECTION).to_list(200)
+     out = []
+     for d in devices:
+         hb = d.get("last_heartbeat")
+diff --git a/backend/services/rfid_ingest_service.py b/backend/services/rfid_ingest_service.py
+index 7efe977..e8d7326 100644
+--- a/backend/services/rfid_ingest_service.py
++++ b/backend/services/rfid_ingest_service.py
+@@ -6,6 +6,7 @@ kini SADAR-DOKUMEN: gate-in memvalidasi Putaway Order tujuan, gate-out memvalida
+ dokumen keluar (SO/transfer/PA). RFID tetap tidak mengubah stok — hanya mencatat
+ `rfid_reads` dan menjawab green/red agar middleware membunyikan lampu/alarm.
+ """
++import hashlib
+ import secrets
+ from typing import Any, Dict, List, Optional
+ 
+@@ -17,30 +18,60 @@ from core_utils import new_id, now_iso, safe_doc
+ from services.rfid_service import GREEN_OUT as GREEN_OUT_STATUSES  # KN-C03 — satu daftar bersama
+ 
+ 
++def hash_device_key(key: str) -> str:
++    return hashlib.sha256(key.encode("utf-8")).hexdigest()
++
++
+ async def ensure_api_key(device_id: str, regenerate: bool = False) -> Dict[str, Any]:
++    """RF-12 — key hanya ditampilkan SEKALI saat terbit/rotasi; DB menyimpan hash saja."""
+     dev = await db.rfid_devices.find_one({"id": device_id}, {"_id": 0})
+     if not dev:
+         raise HTTPException(status_code=404, detail="Device tidak ditemukan")
+-    if dev.get("api_key") and not regenerate:
+-        return {"device_id": device_id, "api_key": dev["api_key"]}
++    if (dev.get("api_key_hash") or dev.get("api_key")) and not regenerate:
++        raise HTTPException(status_code=409, detail=(
++            "Device sudah punya API key. Key hanya ditampilkan sekali saat diterbitkan — "
++            "gunakan rotasi (regenerate); key lama langsung tidak berlaku."))
+     key = f"dk_{secrets.token_hex(16)}"
+-    await db.rfid_devices.update_one({"id": device_id}, {"$set": {
+-        "api_key": key, "api_key_at": now_iso()}})
+-    return {"device_id": device_id, "api_key": key}
++    await db.rfid_devices.update_one({"id": device_id}, {
++        "$set": {"api_key_hash": hash_device_key(key), "api_key_hint": key[-4:],
++                 "api_key_at": now_iso(), "key_rotation_required": False},
++        "$unset": {"api_key": ""}})
++    return {"device_id": device_id, "api_key": key, "api_key_hint": key[-4:], "shown_once": True}
++
++
++async def migrate_plaintext_keys() -> int:
++    """RF-12 — key plaintext lama → hash (idempotent). Ditandai wajib rotasi karena pernah terbuka."""
++    n = 0
++    async for d in db.rfid_devices.find({"api_key": {"$exists": True}}, {"_id": 0, "id": 1, "api_key": 1}):
++        key = d.get("api_key") or ""
++        upd: Dict[str, Any] = {"$unset": {"api_key": ""}}
++        if key:
++            upd["$set"] = {"api_key_hash": hash_device_key(key), "api_key_hint": key[-4:],
++                           "key_rotation_required": True}
++        await db.rfid_devices.update_one({"id": d["id"]}, upd)
++        n += 1
++    return n
+ 
+ 
+ async def authenticate(device_key: Optional[str]) -> Dict[str, Any]:
+     if not device_key:
+         raise HTTPException(status_code=401, detail="Header X-Device-Key wajib")
+-    dev = await db.rfid_devices.find_one({"api_key": device_key}, {"_id": 0})
++    dev = await db.rfid_devices.find_one({"api_key_hash": hash_device_key(device_key)}, {"_id": 0})
+     if not dev:
+         raise HTTPException(status_code=401, detail="Device key tidak dikenal")
++    if dev.get("enabled") is False:  # RF-13 — lifecycle terpisah dari health (online/offline)
++        raise HTTPException(status_code=403, detail="Device dinonaktifkan — hubungi admin")
+     return dev
+ 
+ 
+-async def heartbeat(device: Dict[str, Any]) -> Dict[str, Any]:
+-    await db.rfid_devices.update_one({"id": device["id"]}, {"$set": {
++async def _mark_online(device_id: str) -> None:
++    # RF-13 — filter enabled: device yang dinonaktifkan di tengah request tidak "hidup" lagi
++    await db.rfid_devices.update_one({"id": device_id, "enabled": {"$ne": False}}, {"$set": {
+         "status": "online", "last_heartbeat": now_iso()}})
++
++
++async def heartbeat(device: Dict[str, Any]) -> Dict[str, Any]:
++    await _mark_online(device["id"])
+     return {"ok": True, "device_id": device["id"], "server_time": now_iso()}
+ 
+ 
+@@ -89,8 +120,7 @@ async def ingest(device: Dict[str, Any], epcs: List[str]) -> Dict[str, Any]:
+     """Batch pembacaan dari device fisik → keputusan per EPC + catat rfid_reads."""
+     if device.get("type") not in ("gate", "fixed_reader", "handheld"):
+         raise HTTPException(status_code=400, detail="Tipe device ini tidak menerima pembacaan EPC")
+-    await db.rfid_devices.update_one({"id": device["id"]}, {"$set": {
+-        "status": "online", "last_heartbeat": now_iso()}})
++    await _mark_online(device["id"])
+     read_type = ("gate_in" if device.get("direction") == "in" else "gate_out") \
+         if device.get("type") == "gate" else "inventory"
+     results, reads = [], []
+diff --git a/backend/services/rfid_print_service.py b/backend/services/rfid_print_service.py
+index 05e5d1b..6ef16f1 100644
+--- a/backend/services/rfid_print_service.py
++++ b/backend/services/rfid_print_service.py
+@@ -117,14 +117,16 @@ async def create_print_job(roll_ids: List[str], scope_ids: List[str],
+     rolls = await db.inventory_rolls.find({"id": {"$in": roll_ids}}, {"_id": 0}).to_list(len(roll_ids) + 5)
+     if len(rolls) != len(set(roll_ids)):
+         raise HTTPException(status_code=404, detail="Sebagian roll tidak ditemukan")
+-    items, wh_id, owner = [], None, None
++    # AX-06 — validasi SELURUH roll sebelum efek samping (encode); satu job = satu owner + satu gudang
+     for roll in rolls:
+         if roll.get("owner_entity_id") not in scope_ids:
+             raise HTTPException(status_code=403, detail=f"Roll {roll.get('roll_no')} di luar entitas Anda")
+-        wh_id = wh_id or roll.get("warehouse_id")
+-        owner = owner or roll.get("owner_entity_id")
+-        if roll.get("warehouse_id") != wh_id:
+-            raise HTTPException(status_code=400, detail="Semua roll dalam satu job harus di gudang yang sama")
++    if len({r.get("owner_entity_id") for r in rolls}) > 1:
++        raise HTTPException(status_code=400, detail="Semua roll dalam satu job harus milik badan usaha yang sama")
++    if len({r.get("warehouse_id") for r in rolls}) > 1:
++        raise HTTPException(status_code=400, detail="Semua roll dalam satu job harus di gudang yang sama")
++    items, wh_id, owner = [], rolls[0].get("warehouse_id"), rolls[0].get("owner_entity_id")
++    for roll in rolls:
+         tag = None
+         if roll.get("rfid_tag_id"):
+             tag = await db.rfid_tags.find_one({"id": roll["rfid_tag_id"], "status": "active"}, {"_id": 0})
+@@ -211,7 +213,9 @@ async def scan_verify(session_id: str, epcs: List[str], scope_ids: List[str]) ->
+     sess = await db.rfid_verify_sessions.find_one({"id": session_id}, {"_id": 0})
+     if not sess:
+         raise HTTPException(status_code=404, detail="Sesi verifikasi tidak ditemukan")
+-    if sess.get("owner_entity_id") not in scope_ids:
++    # RF-09 — sesi multi-entitas memakai daftar scope yang sama dengan pembuatnya
++    owners = list(sess.get("scope_entity_ids") or [sess.get("owner_entity_id")])
++    if not owners or not set(owners) <= set(scope_ids):
+         raise HTTPException(status_code=403, detail="Sesi di luar entitas Anda")
+     if sess["status"] != "open":
+         raise HTTPException(status_code=400, detail="Sesi sudah selesai")
+diff --git a/backend/services/rfid_service.py b/backend/services/rfid_service.py
+index a5814e8..86982ca 100644
+--- a/backend/services/rfid_service.py
++++ b/backend/services/rfid_service.py
+@@ -190,12 +190,29 @@ async def retire_tag(tag_id: str, scope_ids: List[str]) -> Dict[str, Any]:
+ 
+ 
+ # ─── Devices (SHARED infra per-gudang) ───────────────────────────────────────
++DEVICE_PUBLIC_FIELDS = (
++    "id", "code", "name", "type", "direction", "warehouse_id", "warehouse_name", "location",
++    "status", "last_heartbeat", "created_at", "created_by", "updated_at",
++    "disabled_at", "api_key_at", "api_key_hint",
++)
++DEVICE_SECRET_PROJECTION = {"_id": 0, "api_key": 0, "api_key_hash": 0}
++
++
++def public_device(d: Dict[str, Any]) -> Dict[str, Any]:
++    """RF-12 — DTO whitelist: credential/hash tidak pernah keluar lewat list/detail/update."""
++    out = {k: d[k] for k in DEVICE_PUBLIC_FIELDS if k in d}
++    out["enabled"] = d.get("enabled") is not False
++    out["has_api_key"] = bool(d.get("api_key_hash") or d.get("api_key"))
++    out["key_rotation_required"] = bool(d.get("key_rotation_required"))
++    return out
++
++
+ async def list_devices(warehouse_id: Optional[str] = None) -> List[Dict[str, Any]]:
+     q: Dict[str, Any] = {}
+     if warehouse_id:
+         q["warehouse_id"] = warehouse_id
+     devs = await db.rfid_devices.find(q, {"_id": 0}).sort("code", 1).to_list(500)
+-    return [safe_doc(d) for d in devs]
++    return [public_device(d) for d in devs]
+ 
+ 
+ async def create_device(payload: Dict[str, Any], actor_name: str = "System") -> Dict[str, Any]:
+@@ -215,11 +232,11 @@ async def create_device(payload: Dict[str, Any], actor_name: str = "System") ->
+         "type": dtype, "direction": direction if dtype == "gate" else "n/a",
+         "warehouse_id": wh["id"], "warehouse_name": wh.get("name", ""),
+         "location": (payload.get("location") or "").strip(),
+-        "status": payload.get("status") or "online",
++        "status": payload.get("status") or "online", "enabled": True,
+         "last_heartbeat": now_iso(), "created_at": now_iso(), "created_by": actor_name,
+     }
+     await db.rfid_devices.insert_one(dev)
+-    return safe_doc(dev)
++    return public_device(dev)
+ 
+ 
+ async def update_device(device_id: str, patch: Dict[str, Any]) -> Dict[str, Any]:
+@@ -227,14 +244,21 @@ async def update_device(device_id: str, patch: Dict[str, Any]) -> Dict[str, Any]
+     if not dev:
+         raise HTTPException(status_code=404, detail="Device tidak ditemukan")
+     allowed = {k: v for k, v in patch.items()
+-               if k in {"name", "status", "location", "direction", "type"} and v is not None}
++               if k in {"name", "status", "location", "direction", "type", "enabled"} and v is not None}
+     if "type" in allowed and allowed["type"] not in DEVICE_TYPES:
+         raise HTTPException(status_code=400, detail="Tipe device tidak valid")
+-    if allowed.get("status") == "online":
++    # RF-13 — enabled = lifecycle (revocation); status = health. Nonaktif selalu offline.
++    will_enable = allowed.get("enabled", dev.get("enabled") is not False)
++    if allowed.get("enabled") is False:
++        allowed["status"] = "offline"
++        allowed["disabled_at"] = now_iso()
++    elif allowed.get("status") == "online":
++        if not will_enable:
++            raise HTTPException(status_code=400, detail="Device nonaktif — aktifkan dulu sebelum dinyalakan")
+         allowed["last_heartbeat"] = now_iso()
+     allowed["updated_at"] = now_iso()
+     await db.rfid_devices.update_one({"id": device_id}, {"$set": allowed})
+-    return safe_doc(await db.rfid_devices.find_one({"id": device_id}, {"_id": 0}))
++    return public_device(await db.rfid_devices.find_one({"id": device_id}, {"_id": 0}))
+ 
+ 
+ async def delete_device(device_id: str) -> Dict[str, Any]:
+diff --git a/backend/services/rnd_sample_service.py b/backend/services/rnd_sample_service.py
+index 7222adb..d747158 100644
+--- a/backend/services/rnd_sample_service.py
++++ b/backend/services/rnd_sample_service.py
+@@ -1206,6 +1206,9 @@ async def issue_material(sample_id: str, payload: Dict[str, Any],
+     roll = await db.inventory_rolls.find_one({"id": payload.get("roll_id") or ""}, {"_id": 0})
+     if not roll:
+         raise RndError("Roll tidak ditemukan.")
++    # GN-04 — bahan wajib milik badan usaha sample (CAS di bawah menjaga konkurensi, bukan otorisasi)
++    if roll.get("owner_entity_id") != cur.get("entity_id"):
++        raise RndError("Roll tidak ditemukan.")
+     if roll.get("status") != "available":
+         raise RndError(f"Roll {roll.get('roll_no')} berstatus '{roll.get('status')}' — "
+                        "hanya roll tersedia (available) yang boleh dipakai sample.")
+diff --git a/backend/services/roll_service.py b/backend/services/roll_service.py
+index 3f53289..8db4220 100644
+--- a/backend/services/roll_service.py
++++ b/backend/services/roll_service.py
+@@ -1332,21 +1332,31 @@ async def reserve_rolls_for_wh_transfer(
+     ref = {"type": "wh_transfer", "id": transfer_id}
+     if roll_ids:
+         # Operator memilih roll eksplisit (picker): pindahkan roll utuh, tanpa FEFO/split.
++        # AX-04 — pilihan eksplisit divalidasi dimensi yang SAMA dengan jalur FEFO (termasuk owner)
+         chosen = await db.inventory_rolls.find(
+-            {"id": {"$in": list(roll_ids)}, "product_id": product_id, "status": "available"}, {"_id": 0}).to_list(len(roll_ids))
++            {"id": {"$in": list(roll_ids)}, "product_id": product_id, "status": "available",
++             "owner_entity_id": owner_entity_id, "length_remaining": {"$gt": 0}},
++            {"_id": 0}).to_list(len(roll_ids))
+         if len(chosen) != len(set(roll_ids)):
+-            raise HTTPException(status_code=409, detail="Sebagian roll yang dipilih sudah tidak tersedia. Muat ulang daftar roll.")
++            raise HTTPException(status_code=409, detail="Sebagian roll yang dipilih tidak tersedia atau bukan milik badan usaha transfer. Muat ulang daftar roll.")
+         wrong = [r["roll_no"] for r in chosen if r.get("warehouse_id") != source_warehouse_id]
+         if wrong:
+             raise HTTPException(status_code=400, detail=f"Roll {', '.join(map(str, wrong))} tidak berada di gudang asal.")
+         out: List[Dict[str, Any]] = []
+         for r in chosen:
+             res = await db.inventory_rolls.update_one(
+-                {"id": r["id"], "status": "available"},
++                {"id": r["id"], "status": "available", "owner_entity_id": owner_entity_id,
++                 "warehouse_id": source_warehouse_id},
+                 {"$set": {"status": "reserved", "reserved_ref": ref, "updated_at": now_iso()}})
+             if not res.matched_count:
++                # lepas HANYA reservasi milik operasi ini (id yang barusan dipesan + ref sama)
++                if out:
++                    await db.inventory_rolls.update_many(
++                        {"id": {"$in": [x["id"] for x in out]}, "status": "reserved", "reserved_ref": ref},
++                        {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}})
+                 raise HTTPException(status_code=409, detail=f"Roll {r.get('roll_no')} baru saja diambil proses lain.")
+             out.append(r)
++        await rebuild_balance(product_id, source_warehouse_id, owner_entity_id)
+         return out
+     rolls = await db.inventory_rolls.find(
+         {"product_id": product_id, "warehouse_id": source_warehouse_id,
+diff --git a/backend/services/store_credit_service.py b/backend/services/store_credit_service.py
+index c369ca9..439e3b4 100644
+--- a/backend/services/store_credit_service.py
++++ b/backend/services/store_credit_service.py
+@@ -21,7 +21,7 @@ from fastapi import HTTPException
+ from db import db
+ from core_utils import new_id, now_iso, next_doc_number, safe_doc, DEFAULT_ENTITY_ID, rupiah
+ from services import gl_service
+-from services.ar_receipt_service import _apply_to_order, list_open_orders
++from services.ar_receipt_service import _apply_to_order, _validate_allocation_target, list_open_orders
+ from services.customer_service import (
+     order_payment_method, NON_AR_METHODS,
+     _order_grand_total as order_grand_total, _order_paid as order_paid,
+@@ -198,20 +198,23 @@ async def _redeem_locked(*, customer_id: str, entity_id: Optional[str], amount:
+     applied: List[Dict[str, Any]] = []
+     remaining = amount
+     if allocations:
++        # CX-02 — validasi SEMUA tujuan (pelanggan & badan usaha sama) sebelum satu pun order dimutasi
++        planned = []
+         for a in allocations:
+             amt = round(float(a.get("amount", 0) or 0), 2)
+             if amt <= 0:
+                 continue
+-            oo = await db.sales_orders.find_one({"id": a.get("order_id")}, {"_id": 0})
+-            if not oo:
+-                raise HTTPException(status_code=404, detail=f"Order {a.get('order_id')} tidak ditemukan")
++            oo = await _validate_allocation_target(a.get("order_id") or "", amt,
++                                                   customer_id=customer_id, entity_id=entity_id or "")
+             if order_payment_method(oo) in NON_AR_METHODS:
+                 raise HTTPException(status_code=400,
+                                     detail=f"Order {oo.get('number')} bukan penjualan kredit (tanpa piutang)")
+-            applied.append(await _apply_to_order(a["order_id"], amt, redemption_id, number, "store_credit", now))
++            planned.append((oo["id"], amt))
++        for order_id, amt in planned:
++            applied.append(await _apply_to_order(order_id, amt, redemption_id, number, "store_credit", now))
+             remaining = round(remaining - amt, 2)
+     else:
+-        for oo in await list_open_orders(customer_id):
++        for oo in await list_open_orders(customer_id, entity_id=entity_id):
+             if remaining <= EPS:
+                 break
+             take = round(min(remaining, oo["outstanding"]), 2)
+diff --git a/backend/services/tracking_service.py b/backend/services/tracking_service.py
+index fcc9e94..cd8720e 100644
+--- a/backend/services/tracking_service.py
++++ b/backend/services/tracking_service.py
+@@ -26,29 +26,33 @@ _LIVE_FIELDS = ("employee_id", "employee_name", "lat", "lon", "accuracy",
+ class TrackManager:
+     """In-memory: subscriber WS + cache posisi terkini per karyawan."""
+     def __init__(self) -> None:
+-        self.subscribers: Set[Any] = set()
++        self.subscribers: Dict[Any, Set[str]] = {}  # ws → entitas yang boleh dilihat
+         self.latest: Dict[str, Dict[str, Any]] = {}
+         self._store_lock = asyncio.Lock()
+         self._last_store: Dict[str, datetime] = {}
+ 
+-    def add_subscriber(self, ws: Any) -> None:
+-        self.subscribers.add(ws)
++    def add_subscriber(self, ws: Any, scope: Optional[List[str]] = None) -> None:
++        self.subscribers[ws] = set(scope or [])
+ 
+     def remove_subscriber(self, ws: Any) -> None:
+-        self.subscribers.discard(ws)
++        self.subscribers.pop(ws, None)
+ 
+-    def snapshot(self) -> List[Dict[str, Any]]:
+-        return list(self.latest.values())
++    def snapshot(self, scope: Optional[List[str]] = None) -> List[Dict[str, Any]]:
++        allowed = set(scope or [])
++        return [p for p in self.latest.values() if p.get("entity_id") in allowed]
+ 
+     async def broadcast(self, msg: Dict[str, Any]) -> None:
+         dead = []
+-        for ws in list(self.subscribers):
++        ent = (msg.get("data") or {}).get("entity_id")
++        for ws, allowed in list(self.subscribers.items()):
++            if ent not in allowed:  # GN-02 — subscriber hanya menerima entitas penugasannya
++                continue
+             try:
+                 await ws.send_json(msg)
+             except Exception:  # noqa: BLE001 — koneksi mati, bersihkan
+                 dead.append(ws)
+         for ws in dead:
+-            self.subscribers.discard(ws)
++            self.subscribers.pop(ws, None)
+ 
+     async def update_position(self, pos: Dict[str, Any]) -> None:
+         self.latest[pos["employee_id"]] = pos
+@@ -59,17 +63,31 @@ manager = TrackManager()
+ 
+ 
+ async def auth_ws_token(token: str) -> Optional[Dict[str, Any]]:
+-    """Validasi token sesi (query param) untuk WebSocket. Return user atau None."""
++    """Validasi token sesi (query param) untuk WebSocket — kontrak expiry sama dengan HTTP (GN-02)."""
+     if not token:
+         return None
+     session = await db.sessions.find_one({"token": token.strip()}, {"_id": 0})
+     if not session:
+         return None
++    exp = session.get("expires_at")
++    if isinstance(exp, datetime):
++        exp = exp if exp.tzinfo else exp.replace(tzinfo=timezone.utc)
++        if exp <= datetime.now(timezone.utc):
++            return None
+     user = await db.users.find_one(
+         {"id": session["user_id"], "status": "active"}, {"_id": 0, "password_hash": 0})
+     return safe_doc(user) if user else None
+ 
+ 
++async def subscriber_scope(user: Dict[str, Any]) -> Optional[List[str]]:
++    """GN-02 — hak berlangganan Live Map = izin hr.view (sama dengan HTTP), dibatasi entitas."""
++    from dependencies import has_permission
++    if not await has_permission(user, "hr", "view"):
++        return None
++    from entity_scope import allowed_entities_for
++    return await allowed_entities_for(user)
++
++
+ async def employee_for_user(user_id: str) -> Optional[Dict[str, Any]]:
+     return safe_doc(await db.hr_employees.find_one({"user_id": user_id}, {"_id": 0}))
+ 
+diff --git a/backend/tests/test_iter265_r3r4r5.py b/backend/tests/test_iter265_r3r4r5.py
+index d1b60d5..3bfa06d 100644
+--- a/backend/tests/test_iter265_r3r4r5.py
++++ b/backend/tests/test_iter265_r3r4r5.py
+@@ -40,7 +40,7 @@ def api():
+     return s
+ 
+ 
+-def _key(api, device_id: str, regenerate: bool = False) -> str:
++def _key(api, device_id: str, regenerate: bool = True) -> str:
+     url = f"{BASE}/api/rfid/devices/{device_id}/api-key" + ("?regenerate=true" if regenerate else "")
+     r = api.post(url, timeout=60)
+     assert r.status_code == 200, f"api-key {device_id}: {r.status_code} {r.text[:300]}"
+@@ -68,8 +68,9 @@ class TestR3DeviceIngest:
+ 
+     def test_01_api_key_issue_and_idempotent(self, api):
+         k1 = _key(api, GATE_JKT_OUT)
+-        k2 = _key(api, GATE_JKT_OUT)
+-        assert k1 == k2, "api-key tanpa regenerate harus idempotent"
++        # RF-12 — key hanya tampil sekali: terbit ulang tanpa regenerate ditolak & tidak membocorkan key
++        r2 = api.post(f"{BASE}/api/rfid/devices/{GATE_JKT_OUT}/api-key", timeout=60)
++        assert r2.status_code == 409 and k1 not in r2.text, r2.text[:200]
+         k3 = _key(api, GATE_JKT_OUT, regenerate=True)
+         assert k3 != k1, "regenerate=true wajib mengganti key"
+         STATE["key_out"] = k3
+diff --git a/backend/tests/test_iter266_r6_cc_r7.py b/backend/tests/test_iter266_r6_cc_r7.py
+index 6f7345f..1d53cf1 100644
+--- a/backend/tests/test_iter266_r6_cc_r7.py
++++ b/backend/tests/test_iter266_r6_cc_r7.py
+@@ -54,7 +54,7 @@ def _epcs_of(warehouse_id: str, status: str = "available", limit: int = 50) -> L
+ 
+ 
+ def _device_key(api, device_id: str) -> str:
+-    r = api.post(f"{BASE}/api/rfid/devices/{device_id}/api-key", timeout=60)
++    r = api.post(f"{BASE}/api/rfid/devices/{device_id}/api-key?regenerate=true", timeout=60)
+     assert r.status_code == 200, f"api-key: {r.status_code} {r.text[:300]}"
+     return r.json()["api_key"]
+ 
+@@ -196,7 +196,7 @@ class TestR6Reports:
+         assert dev["effective_status"] == "online", dev
+         for d in b["devices"]:
+             assert d["effective_status"] in ("online", "stale", "offline"), d
+-            assert "api_key" not in d, "api_key device BOCOR di device-health"
++            assert "api_key" not in d and "api_key_hash" not in d, "credential device BOCOR di device-health"
+             assert "_id" not in d
+         assert isinstance(b["stale_count"], int)
+ 
+diff --git a/frontend/src/features/rfid/RfidDevicesView.jsx b/frontend/src/features/rfid/RfidDevicesView.jsx
+index e682568..a711433 100644
+--- a/frontend/src/features/rfid/RfidDevicesView.jsx
++++ b/frontend/src/features/rfid/RfidDevicesView.jsx
+@@ -3,6 +3,7 @@ import { Wifi, RefreshCw, Trash2, Plus, Cpu, Router, Power, RadioTower } from "l
+ import KNSelect from "../../components/KNSelect";
+ import ErrorNotice from "../../components/ErrorNotice";
+ import axios, { API } from "../../services/apiClient";
++import { askConfirm } from "../../services/confirmService";
+ import { Stat, EmptyBox, Pill, SectionCard, RfidHeader, fmtTime, useWarehouses } from "./rfidShared";
+ 
+ const TYPE_LABEL = { gate: "Gate", fixed_reader: "Fixed Reader", handheld: "Handheld", printer: "Printer RFID" };
+@@ -22,6 +23,7 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
+   const [error, setError] = useState(null);
+   const [msg, setMsg] = useState("");
+   const [showForm, setShowForm] = useState(false);
++  const [revealed, setRevealed] = useState(null); // RF-12 — key tampil sekali, hanya di memori layar
+   const [form, setForm] = useState({ code: "", name: "", type: "gate", direction: "out", warehouse_id: "", location: "" });
+   // Aturan gudang: lokasi perangkat mengikuti master zona/rak/bin gudang — bukan ketik bebas.
+   const locOpts = (() => {
+@@ -55,8 +57,13 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
+   const issueKey = async (d) => {
+     setBusy(true); setError(null);
+     try {
+-      await axios.post(`${API}/rfid/devices/${d.id}/api-key`, null, { params: { regenerate: !!d.api_key } });
+-      flash(d.api_key ? "API key di-regenerate." : "API key diterbitkan — pakai header X-Device-Key di middleware.");
++      if (d.has_api_key && !(await askConfirm({
++        title: `Rotasi API key ${d.code}?`, danger: true,
++        message: "Key lama langsung tidak berlaku. Middleware harus diperbarui dengan key baru.",
++      }))) return;
++      const r = await axios.post(`${API}/rfid/devices/${d.id}/api-key`, null, { params: { regenerate: !!d.has_api_key } });
++      setRevealed({ id: d.id, key: r.data.api_key });
++      flash(d.has_api_key ? "API key dirotasi." : "API key diterbitkan.");
+       await load();
+     } catch (e) { setError(e.response?.data?.detail || "Gagal menerbitkan API key"); } finally { setBusy(false); }
+   };
+@@ -70,6 +77,15 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
+     try { await axios.patch(`${API}/rfid/devices/${d.id}`, { status: d.status === "online" ? "offline" : "online" }); await load(); }
+     catch (e) { setError(e.response?.data?.detail || "Gagal ubah status"); } finally { setBusy(false); }
+   };
++  const toggleEnabled = async (d) => {
++    if (d.enabled && !(await askConfirm({
++      title: `Nonaktifkan ${d.code}?`, danger: true,
++      message: "Device ditolak saat heartbeat, ingest dan tarik/ack job printer sampai diaktifkan lagi.",
++    }))) return;
++    setBusy(true); setError(null);
++    try { await axios.patch(`${API}/rfid/devices/${d.id}`, { enabled: !d.enabled }); await load(); }
++    catch (e) { setError(e.response?.data?.detail || "Gagal ubah aktivasi"); } finally { setBusy(false); }
++  };
+   const remove = async (id) => {
+     setBusy(true); setError(null);
+     try { await axios.delete(`${API}/rfid/devices/${id}`); flash("Device dihapus."); await load(); }
+@@ -165,32 +181,51 @@ export default function RfidDevicesView({ currentUser, selectedEntity }) {
+                   <div key={d.id} data-testid={`rfid-device-${d.id}`} className="rounded-lg border border-[#EFF0F2] p-3">
+                     <div className="flex items-center justify-between">
+                       <span className="text-[12px] font-mono font-semibold">{d.code}</span>
+-                      <Pill color={d.status === "online" ? "green" : "gray"} testId={`rfid-device-status-${d.id}`}>{d.status}</Pill>
++                      <span className="flex items-center gap-1">
++                        {!d.enabled && <Pill color="red" testId={`rfid-device-disabled-${d.id}`}>nonaktif</Pill>}
++                        <Pill color={d.status === "online" ? "green" : "gray"} testId={`rfid-device-status-${d.id}`}>{d.status}</Pill>
++                      </span>
+                     </div>
+                     <p className="text-[12px] font-semibold mt-1">{d.name}</p>
+                     <p className="text-[11px] text-[#6B6B73]">{TYPE_LABEL[d.type] || d.type}{d.type === "gate" ? ` · ${d.direction}` : ""} · {d.warehouse_name || d.warehouse_id}</p>
+                     <p className="text-[10px] text-[#8E8E93]">{d.location || "—"} · heartbeat {fmtTime(d.last_heartbeat)}</p>
+                     {isAdmin && (
+                       <div className="flex gap-2 mt-2">
+-                        <button data-testid={`rfid-toggle-${d.id}`} disabled={busy} onClick={() => toggleStatus(d)}
++                        <button data-testid={`rfid-toggle-${d.id}`} disabled={busy || !d.enabled} onClick={() => toggleStatus(d)}
+                           className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold hover:bg-[#F5F5F7] disabled:opacity-40">
+                           <Power size={12} /> {d.status === "online" ? "Matikan" : "Nyalakan"}
+                         </button>
+                         <button data-testid={`rfid-apikey-${d.id}`} disabled={busy} onClick={() => issueKey(d)}
+                           title="API key untuk middleware (header X-Device-Key)"
+                           className="rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold text-[#6B219A] hover:bg-[#F3E9FA] disabled:opacity-40">
+-                          Key
++                          {d.has_api_key ? "Rotasi Key" : "Key"}
++                        </button>
++                        <button data-testid={`rfid-enable-toggle-${d.id}`} disabled={busy} onClick={() => toggleEnabled(d)}
++                          className={`rounded-lg border border-[#EFF0F2] px-2 py-1 text-[11px] font-semibold disabled:opacity-40 ${d.enabled ? "text-[#C0341D] hover:bg-[#FBE9E7]" : "text-[#1B7E3B] hover:bg-[#E7F7EC]"}`}>
++                          {d.enabled ? "Nonaktifkan" : "Aktifkan"}
+                         </button>
+                         <button data-testid={`rfid-del-device-${d.id}`} disabled={busy} onClick={() => remove(d.id)}
+                           className="rounded-lg border border-[#EFF0F2] px-2 py-1 text-[#C0341D] hover:bg-[#FBE9E7] disabled:opacity-40"><Trash2 size={12} /></button>
+                       </div>
+                     )}
+-                    {d.api_key && isAdmin && (
+-                      <p data-testid={`rfid-apikey-val-${d.id}`}
+-                        className="mt-1 break-all rounded bg-[#F5F5F7] px-1.5 py-1 font-mono text-[9.5px] text-[#3C3C43]">
+-                        X-Device-Key: {d.api_key}
++                    {d.has_api_key && (
++                      <p data-testid={`rfid-apikey-hint-${d.id}`} className="mt-1 text-[10px] text-[#6B6B73]">
++                        Key aktif ••••{d.api_key_hint || "????"}
++                        {d.key_rotation_required && <span data-testid={`rfid-apikey-rotate-warn-${d.id}`} className="ml-1 font-semibold text-[#C0341D]">· wajib rotasi (key lama pernah terbuka)</span>}
+                       </p>
+                     )}
++                    {revealed?.id === d.id && isAdmin && (
++                      <div data-testid={`rfid-apikey-once-${d.id}`} className="mt-1 rounded bg-[#FFF6E5] px-1.5 py-1">
++                        <p className="text-[10px] font-semibold text-[#8A5A00]">Salin sekarang — key tidak akan ditampilkan lagi.</p>
++                        <p data-testid={`rfid-apikey-val-${d.id}`} className="break-all font-mono text-[9.5px] text-[#3C3C43]">X-Device-Key: {revealed.key}</p>
++                        <div className="mt-1 flex gap-2">
++                          <button data-testid={`rfid-apikey-copy-${d.id}`} onClick={() => { navigator.clipboard?.writeText(revealed.key); flash("Key disalin."); }}
++                            className="rounded border border-[#EFF0F2] bg-white px-2 py-0.5 text-[10px] font-semibold">Salin</button>
++                          <button data-testid={`rfid-apikey-dismiss-${d.id}`} onClick={() => setRevealed(null)}
++                            className="rounded border border-[#EFF0F2] bg-white px-2 py-0.5 text-[10px] font-semibold">Sudah disimpan</button>
++                        </div>
++                      </div>
++                    )}
+                   </div>
+                 ))}
+               </div>
+diff --git a/scripts/probe_sesi13.py b/scripts/probe_sesi13.py
+index 8d8d8b7..d981469 100644
+--- a/scripts/probe_sesi13.py
++++ b/scripts/probe_sesi13.py
+@@ -82,9 +82,10 @@ async def main():
+         check("ZPL job QR memuat ^BQN + nomor roll, tanpa ^RFW", z.status_code == 200 and "^BQN" in z.text and tag in z.text and "^RFW" not in z.text)
+         dev = db.rfid_devices.find_one({"type": "printer", "warehouse_id": fx["warehouse_id"]}, {"_id": 0})
+         if not dev:
+-            dev = {"id": "dev_probe13", "code": "PRN-PROBE", "name": "Printer Probe", "type": "printer", "warehouse_id": fx["warehouse_id"], "api_key": "probe13-key", "status": "online"}
++            dev = {"id": "dev_probe13", "code": "PRN-PROBE", "name": "Printer Probe", "type": "printer", "warehouse_id": fx["warehouse_id"], "status": "online"}
+             db.rfid_devices.insert_one(dict(dev))
+-        key = dev.get("api_key")
++        # RF-12 — key disimpan sebagai hash; ambil key lewat rotasi berizin admin
++        key = (await admin.post(f"/rfid/devices/{dev['id']}/api-key", params={"regenerate": True})).json().get("api_key")
+         anon = httpx.AsyncClient(base_url=API, timeout=60)
+         pend = await anon.get("/rfid/device-jobs/pending", headers={"X-Device-Key": key or ""})
+         ids = [j["id"] for j in pend.json().get("jobs", [])] if pend.status_code == 200 else []

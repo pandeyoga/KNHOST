@@ -1,0 +1,58 @@
+{
+  "summary": "Iter90 review-request testing (backend + frontend). All A/B/C/D/E flows PASS. F regression passes except (i) iter86 known xdist/asyncio-loop flake and (ii) iter89 seed-bound cases (main agent warned demo data would be consumed).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verified_flows": [
+    {
+      "flow": "A. SPK Makloon PDF (makloon_spk)",
+      "steps": "GET /api/pdf/render/makloon_spk/mko_7cb5f43cd996?format=html (admin/ent_ksc)",
+      "result": "PASS. HTML contains 'Riwayat Kiriman Bertahap', row KSC/GRN-00001 · SJ-DEMO-MKL-P1 · 30 yard · 2 roll · status 'Ditahan'. After cancel, same row rendered as 'Dibatalkan — salah alamat pengiriman, batal (Budi Santoso)'."
+    },
+    {
+      "flow": "B. Cancel held partial API negative cases",
+      "steps": "POST /api/makloon-orders/mko_7cb5f43cd996/steps/1/partial-receipts/{grn_id}/cancel",
+      "result": "PASS. reason 'abc' → 400 'Alasan pembatalan wajib diisi (min. 5 karakter).'; unknown grn (grn_nonexistent) → 404 'Kiriman sebagian tidak ditemukan di langkah ini.'; sales@ → 403 'Permission ditolak: makloon_order.receive'; second cancel of same GRN → 404."
+    },
+    {
+      "flow": "C. UI cancel (MKO-00002 detail)",
+      "steps": "Login admin/ent_ksc → ?view=makloon-orders → detail-mko-mko_7cb5f43cd996 → cancel button/form/reason/confirm testids present. Confirm disabled with reason 'abc', enabled with 'salah alamat pengiriman, batal'.",
+      "result": "PASS. After confirm, row shown as mko-step-partial-cancelled-1-KSC/GRN-00001 with 'Dibatalkan' + reason + user + timestamp. Timeline entry visible in 'Riwayat'."
+    },
+    {
+      "flow": "B (positive assertions on data after C)",
+      "steps": "GET /api/makloon-orders/{id}",
+      "result": "PASS. steps[0].partial_receipts=[]; cancelled_partials has 1 entry with cancel_reason='salah alamat pengiriman, batal', cancelled_by='Budi Santoso', cancelled_at set; timeline has 1 'partial_cancelled' event; step.status still 'issued'; goods_receipts.grn_dea401d74efe status='cancelled', cancel_reason set, mko_partial_cancelled populated."
+    },
+    {
+      "flow": "D. Close KSC/GRN-00002 (grn_108ec832bdc7) after cancel",
+      "steps": "POST /api/goods-receipts/grn_108ec832bdc7/close {expected_version:10} (partial=false)",
+      "result": "PASS. mko step status='received', actual_output_qty=42.0 (cancelled 30 NOT absorbed), partial_absorption is None. MKO status 'partially_received'. Vendor bill VBM-00007 has refs: settles→MKO-00002, parent→goods_receipt KSC/GRN-00002 (linked correctly). GET /api/documents/trace/makloon_order/mko_7cb5f43cd996 returns goods_receipt + vendor_bill + journal_entry nodes."
+    },
+    {
+      "flow": "E. Doc chain derived refs",
+      "steps": "trace shipment shp_1dc5cea7197e (SJ-00001); refs ar_receipt arc_6e37e60fbada (AR-00001); trace journal_entry je_9f2ea016b37c (source_type=subcon_issue); GET /api/documents/ref-types; PDF ar_receipt; UI ?view=doc-trace search SJ-00001",
+      "result": "PASS. shipment trace includes 5 journal_entry nodes and journaled_by edges with derived=True. ar_receipt refs include 'child cash_transaction CASH-00008 derived=True'. journal_entry trace reaches makloon_order (2 nodes). /ref-types includes journal_entry. AR receipt PDF Referensi block contains NO 'KSC/JE-' or 'CASH-' numbers. UI Jejak Dokumen for SJ-00001 renders 'Jurnal Umum' group without errors."
+    },
+    {
+      "flow": "F. Regression (pytest addopts='')",
+      "steps": "pytest tests/test_audit_bagian_iii.py test_registry_ai_collections.py test_review_iter86_features.py test_review_iter89_features.py",
+      "result": "45 passed, 4 skipped, 3 failed, 2 errors. Failures/errors: (1) test_review_iter86_features::TestIntercoPpnFollowSalesTax::test_resolve_tax_pkp_follows_sales_tax_12pct_dpp_nilai_lain — pre-existing 'Event loop is closed' flake (documented in iter89 report). (2/3) test_review_iter89_features seed tests expect MKO-00002 in 'issued' with 1 held partial + GRN-00004 — iter90 consumed that demo (cancel + close), review-request explicitly noted data-bound iter89 cases can be adapted/skipped. (4/5) test_review_iter89_features::TestRollsWithoutCost + TestMakloonPartialSeed::test_mko_detail_api_exposes_partial ERROR at setup with 'Invalid URL /api/auth/login' — those tests read BASE_URL differently and are pre-existing config-bound; not a functional regression."
+    }
+  ],
+  "test_report_links": [
+    "/app/test_reports/pytest/iter90_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Route path parameter {grn_id} in POST /api/makloon-orders/{mko_id}/steps/{seq}/partial-receipts/{grn_id}/cancel uses internal grn_id (grn_*) not the human GRN number (KSC/GRN-*). Frontend passes row.grn_id correctly, but any external caller using the visible number will 404 (slash in path). Consider accepting either or exposing an alt endpoint keyed by grn_number.",
+    "The manager permission bug on GET /api/inventory/rolls-without-cost from iter89 was not part of iter90 scope; still HIGH per iter89."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (all iter90 endpoints + assertions)", "frontend": "100% (C UI cancel + E Jejak Dokumen UI)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, sales@kainnusantara.id / demo12345 (ent_ksc). See /app/memory/test_credentials.md.",
+  "seed_data_creation": "Consumed demo as review-request allowed: cancelled held partial KSC/GRN-00001 on MKO-00002 (via UI, reason 'salah alamat pengiriman, batal'), then closed KSC/GRN-00002 normally with expected_version=10. MKO-00002 now 'partially_received' with steps[0] received=42, cancelled_partials=1. Main agent should re-run scripts/seed_makloon_partial_demo.py before further staged-receipt tests.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter90 flows all verified. Demo staged receipt consumed. Re-seed with scripts/seed_makloon_partial_demo.py to re-run iter89 seed-bound tests. Iter86 flake is a known xdist/asyncio-loop issue (passes in isolation). The manager rolls-without-cost 403 bug from iter89 remains OPEN (not in scope this iteration).",
+  "rca of the issue": "N/A — no functional bugs found this iteration."
+}

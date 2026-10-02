@@ -1,0 +1,69 @@
+[
+ {
+  "id": "IX-06",
+  "invariant": "A-only edit (default layer) succeeds on A",
+  "pass": true,
+  "detail": "200 A=2.75"
+ },
+ {
+  "id": "IX-06",
+  "invariant": "A-only edit does NOT change B",
+  "pass": false,
+  "detail": "B before=1.5 after=2.75"
+ },
+ {
+  "id": "IX-06",
+  "invariant": "PUT response == reload (same scope)",
+  "pass": true,
+  "detail": "resp=2.75 reload=2.75"
+ },
+ {
+  "id": "IX-06",
+  "invariant": "A-only cannot write global baseline",
+  "pass": false,
+  "detail": "200 B=2.0"
+ },
+ {
+  "id": "IX-06",
+  "invariant": "A-only cannot write entity layer of B via Pusat Pengaturan",
+  "pass": false,
+  "detail": "200 B=2.0"
+ },
+ {
+  "id": "IX-06",
+  "invariant": "A-only cannot write global via Pusat Pengaturan",
+  "pass": false,
+  "detail": "200 B=2.0"
+ },
+ {
+  "id": "IX-06",
+  "invariant": "A-only can still write own entity layer via Pusat Pengaturan (control)",
+  "pass": true,
+  "detail": "200 {\"saved\":[{\"id\":\"cfgv_d41a55410dbe\",\"key\":\"hr.overtime.multiplier\",\"scope_type\":\"entity\",\"scope_id\":\"ent_ksc\",\"value\":2.75,\"prev_value\":2.0,\"prev_sour"
+ },
+ {
+  "id": "IX-06",
+  "invariant": "admin global edit changes inheriting B",
+  "pass": false,
+  "detail": "200 B=2.0"
+ },
+ {
+  "id": "IX-06",
+  "invariant": "admin global edit keeps A override",
+  "pass": true,
+  "detail": "A=2.75"
+ },
+ {
+  "id": "IX-06",
+  "invariant": "invalid value rejected 400",
+  "pass": false,
+  "detail": "200"
+ },
+ {
+  "id": "IX-06",
+  "invariant": "unknown leaf rejected 400",
+  "pass": false,
+  "detail": "200"
+ }
+]
+SUMMARY pass=4 fail=7

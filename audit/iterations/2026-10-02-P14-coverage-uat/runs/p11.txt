@@ -1,0 +1,130 @@
+# 2026-10-02-P11-mutasi-konversi/repro_p11.py (2s)
+[
+ {
+  "id": "GN-06",
+  "invariant": "draft tidak bisa langsung complete",
+  "pass": true,
+  "detail": "Work Order masih draft — rilis dulu agar resep & rencana bahan dibekukan."
+ },
+ {
+  "id": "IX-11",
+  "invariant": "roll held QC ditolak sebelum stok/output berubah",
+  "pass": true,
+  "detail": "Stok bahan Audit P11 mat tidak cukup: butuh 10 meter, tersedia 0 (roll ditahan QC/dipesan tidak dihitung). len=100.0 out=0"
+ },
+ {
+  "id": "GN-06",
+  "invariant": "complete bersamaan → satu output, konsumsi sekali",
+  "pass": true,
+  "detail": "ok=1 errs=[409, 409] out=1 len=90.0"
+ },
+ {
+  "id": "GN-06",
+  "invariant": "perubahan BOM sesudah release tidak mengubah WO",
+  "pass": true,
+  "detail": "[{'material_product_id': 'audit_p11_d1e314_pmat', 'sku': 'AUDIT_P11_D1E314-mat', 'name': 'Audit P11 mat', 'unit': 'meter', 'qty': 10.0, 'value': 1000.0, 'lot_ids': []}]"
+ },
+ {
+  "id": "GN-06",
+  "invariant": "dua WO tidak memakai qty yang sama",
+  "pass": true,
+  "detail": "done=1 len=30.0 errs=['409: Stok bahan audit_p11_d1e314_pmat tidak cukup saat dikonsumsi: butuh 60, ter']"
+ },
+ {
+  "id": "GN-06",
+  "invariant": "WO yang kalah tanpa efek parsial & tanpa kunci",
+  "pass": true,
+  "detail": "{'status': 'released', 'saga_lock': None}"
+ },
+ {
+  "id": "GN-06",
+  "invariant": "panjang yang dipesan tidak dikonsumsi",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-06",
+  "invariant": "fault sesudah konsumsi dapat dilanjutkan tanpa konsumsi ganda",
+  "pass": true,
+  "detail": "lock=crash sesudah konsumsi mid=20.0 end=20.0"
+ },
+ {
+  "id": "GN-05",
+  "invariant": "GL A gagal + B sukses → panjang 80",
+  "pass": true,
+  "detail": "RndError: Pengambilan bahan dibatalkan: jurnal beban sample gagal dibuat (GL A gagal). Stok tidak diubah. len=80.0"
+ },
+ {
+  "id": "GN-07",
+  "invariant": "roll beda pemilik ditolak tanpa efek & tanpa kunci",
+  "pass": true,
+  "detail": "Roll retur X tidak ditemukan, bukan milik badan usaha retur, atau bukan barang baris ini."
+ },
+ {
+  "id": "GN-07",
+  "invariant": "finalisasi bersamaan → konsumsi sekali",
+  "pass": true,
+  "detail": "len=70.0 kids=1 res=['ok', 409]"
+ },
+ {
+  "id": "GN-07",
+  "invariant": "parent 70 & child retur 30 beridentitas sendiri",
+  "pass": true,
+  "detail": "{'roll_no': 'audit_p11_d1e314-20-1', 'status': 'returned_supplier', 'length_remaining': 30.0}"
+ },
+ {
+  "id": "GN-07",
+  "invariant": "movement return_out menunjuk potongan retur",
+  "pass": true,
+  "detail": "roll_11f4dc26e545"
+ },
+ {
+  "id": "GN-07",
+  "invariant": "mixed UOM dikonversi (10 yd → 9,14 m)",
+  "pass": true,
+  "detail": "60.86"
+ },
+ {
+  "id": "GN-07",
+  "invariant": "reversal: potongan retur kembali available",
+  "pass": true,
+  "detail": "available"
+ },
+ {
+  "id": "GN-08",
+  "invariant": "convert paralel → satu pasangan",
+  "pass": true,
+  "detail": "ict=2 status=converted res=['ok', '409: {\\'code\\': \\'SAGA_IN_PROGRESS\\', \\'message\\': \"Aksi \\'convert\\'', '409: {\\'code\\': \\'SAGA_IN_PROGRESS\\', \\'message\\': \"Aksi \\'convert\\'']"
+ },
+ {
+  "id": "GN-08",
+  "invariant": "cancel sesudah convert ditolak",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-08",
+  "invariant": "retry sesudah fault melanjutkan pasangan yang sama",
+  "pass": true,
+  "detail": "2"
+ },
+ {
+  "id": "CX-13",
+  "invariant": "receive bersamaan → satu output, satu tagihan, lainnya 409",
+  "pass": true,
+  "detail": "ok=1 out=1 bill=1 errs=[409, 409]"
+ },
+ {
+  "id": "CX-13",
+  "invariant": "kunci dilepas & step received tanpa receive_progress",
+  "pass": true,
+  "detail": "None"
+ },
+ {
+  "id": "CX-13",
+  "invariant": "input 0 tanpa receipt sah ditolak",
+  "pass": true,
+  "detail": "409: Bahan input langkah 1 sudah tidak ada di mitra (sudah dikonsumsi) tanpa catatan penerimaan yang sah — penerimaan ganda ditolak. Muat ulang order."
+ }
+]
+pass=21 fail=0

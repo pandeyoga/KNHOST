@@ -1,0 +1,881 @@
+[96m[1m
+==============================================================
+  GATE ORCHESTRATOR (Kain Nusantara)  —  2026-09-27 18:33:03   [mode: quick]
+==============================================================[0m
+[93m  Gate STATIK dijalankan di latar belakang (42 gate · 2 pekerja).[0m
+[93m  Mode --quick: hanya gate STATIK (tanpa DB/backend/seed).[0m
+
+[96m[1m▶ guard:numeric_bounds (INV-NUM-01, statik+runtime)[0m
+
+[1m================================================================[0m
+  NUMERIC-BOUNDS GATE (INV-NUM-01)
+[1m================================================================[0m
+[96m[1m-- LAPIS A · STATIK (AST scan schemas*.py) --[0m
+  141 field numerik ber-semantik diperiksa.
+[93m[WARN-SOFT][0m 6 field Patch/Update tanpa bound (advisory, tak mem-fail):
+  [93m•[0m schemas_contracts.py: SupplierContractPatch.lead_time_days: int (default=None) [COUNT] tanpa ge=/gt= → nilai ≤0/negatif diterima.
+  [93m•[0m schemas_inspection.py: InspectionLineInspect.handfeel_score: float (default=None) [MONEY] tanpa ge=/gt= → nominal negatif diterima.
+  [93m•[0m schemas_rnd.py: SpecPatch.target_price: float (default=None) [MONEY] tanpa ge=/gt= → nominal negatif diterima.
+  [93m•[0m schemas_rnd.py: SamplePatch.qty_requested: float (default=None) [QTY] tanpa ge=/gt= → nilai ≤0/negatif diterima.
+  [93m•[0m schemas_rnd.py: SampleDecideBody.lead_time_days: int (default=0) [COUNT] tanpa ge=/gt= → nilai ≤0/negatif diterima.
+  [93m•[0m schemas_supplier_items.py: SupplierItemPatch.lead_time_days: int (default=None) [COUNT] tanpa ge=/gt= → nilai ≤0/negatif diterima.
+
+[96m[1m-- LAPIS B · RUNTIME (probe adversarial + positive control) --[0m
+  [92m[OK][0m positive-control: POST /uoms factor_to_base=-1 → 422 (bound gt=0 ditegakkan). Harness valid.
+  [92m[OK][0m POST /customers: credit_limit=-5.000.000 (MONEY negatif) → 422 (ditolak lapis skema — aman).
+  [92m[OK][0m POST /products: price=-1000, harga_pokok=-500, gramasi=-10 (MONEY/QTY negatif) → 422 (ditolak lapis skema — aman).
+  [92m[OK][0m POST /payment-terms: dp_percent=999, net_days=-30, installment_count=-5 (PERCENT>100 & COUNT negatif) → 422 (ditolak lapis skema — aman).
+
+[1m================================================================[0m
+  STATIK: [91mHARD 0[0m | [93mSOFT 6[0m    RUNTIME: [91mLEAK 0[0m | [92mOK 4[0m | [93mSKIP 0[0m
+[1m================================================================[0m
+[92m[1m  Numeric-bounds aman untuk cakupan teruji (INV-NUM-01 tertutup).[0m
+
+  [92m✓ guard:numeric_bounds (INV-NUM-01, statik+runtime) PASS[0m (0s)
+
+[93m▶ seed_realistic — SKIP (mode --quick)[0m
+
+[93m▶ verify_data_integrity — SKIP (mode --quick)[0m
+
+[93m▶ gate runtime (IDOR/race/state/sweep/health) — SKIP (mode --quick)[0m
+
+[93m▶ INV-GATE-01 anti-residu — SKIP (mode --quick)[0m
+
+[96m[1m══ HASIL GATE STATIK (kolam paralel · 2 pekerja) ══[0m
+
+[96m[1m▶ guard:auth_coverage (INV-AUTH-01)[0m
+[96m[1m== INV-AUTH-01 — Tiap endpoint router menegakkan auth (kecuali PUBLIC_ALLOWLIST) ==[0m
+[92m[PASS][0m 1308 cek lolos, 0 pelanggaran.  [92m✓ guard:auth_coverage (INV-AUTH-01) PASS[0m (0s)
+
+[96m[1m▶ guard:auth_coverage SELF-TEST (bukti-merah penjaga auth)[0m
+[1m== SELF-TEST INV-AUTH-01 (penjaga auth harus bisa MEMERAH) ==[0m
+  [[92mPASS[0m] endpoint tanpa enforcer apa pun → MERAH  (harap=1 pelanggaran, dapat=1)
+  [[92mPASS[0m] require_permission → hijau  (harap=0 pelanggaran, dapat=0)
+  [[92mPASS[0m] require_any_permission → hijau (akar tuduhan palsu 2026-08-15)  (harap=0 pelanggaran, dapat=0)
+  [[92mPASS[0m] require_role → hijau  (harap=0 pelanggaran, dapat=0)
+  [[92mPASS[0m] current_user ditelan try/except → MERAH  (harap=1 pelanggaran, dapat=1)
+  [[92mPASS[0m] current_user di luar try → hijau  (harap=0 pelanggaran, dapat=0)
+  [[92mPASS[0m] delegasi ke helper lokal ber-auth → hijau  (harap=0 pelanggaran, dapat=0)
+  [[92mPASS[0m] PUBLIC_ALLOWLIST dihormati → hijau  (harap=0 pelanggaran, dapat=0)
+[92m  HIJAU — penjaga terbukti menuduh endpoint tanpa auth dan menerima ketiga enforcer keras.[0m  [92m✓ guard:auth_coverage SELF-TEST (bukti-merah penjaga auth) PASS[0m (0s)
+
+[96m[1m▶ validate_compliance (file/naming/docs/api/env)[0m
+
+Menjalankan compliance check...
+
+======================================================================
+  KAIN NUSANTARA — COMPLIANCE REPORT
+======================================================================
+
+============================================================
+
+  CHECK 1: FILE SIZE LIMITS (panduan=WARN · batas keras=FAIL)
+
+============================================================
+  ⚠️  [FILE_SIZE] backend/routers/purchase_orders.py: 885 baris (di atas panduan 800 untuk router; batas keras 1600) — pertimbangkan split
+  ⚠️  [FILE_SIZE] backend/routers/sales_orders_extra.py: 841 baris (di atas panduan 800 untuk router; batas keras 1600) — pertimbangkan split
+  ⚠️  [FILE_SIZE] backend/routers/special_orders.py: 985 baris (di atas panduan 800 untuk router; batas keras 1600) — pertimbangkan split
+  ⚠️  [FILE_SIZE] backend/schemas.py: 998 baris (di atas panduan 800 untuk core; batas keras 1600) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/admin/AdminView.jsx: 554 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/admin/PurchaseOrderManagement.jsx: 521 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/approvals/MyApprovalsView.jsx: 522 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/internal_requests/InternalRequestsView.jsx: 535 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/orders/OrderDetailPanel.jsx: 623 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/purchasing/MakloonOrderDetailPanel.jsx: 678 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/purchasing/PurchaseReturns.jsx: 572 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/purchasing/makloon/MakloonWizard.jsx: 525 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/sales/PricelistView.jsx: 589 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/sales/ReturnQuarantinePanel.jsx: 503 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/settings/config/SettingsHub.jsx: 515 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/wms/InventoryStockView.jsx: 524 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/features/wms/warehouses/WarehouseMasterView.jsx: 505 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+  ⚠️  [FILE_SIZE] frontend/src/App.js: 579 baris (di atas panduan 380 untuk utility; batas keras 760) — pertimbangkan split
+  ✅ [FILE_SIZE] 916 berkas diperiksa — tak ada yang melewati batas keras
+
+============================================================
+
+  CHECK 2: DEBUG STATEMENTS
+
+============================================================
+  ✅ [DEBUG] Tidak ada console.log atau debug print() ditemukan
+
+============================================================
+
+  CHECK 3: DUPLICATE ENDPOINTS
+
+============================================================
+  ✅ [DUPLICATE_ENDPOINT] Tidak ada duplicate endpoint (1316 endpoints total)
+
+============================================================
+
+  CHECK 4: FORBIDDEN COLLECTION NAMES (SSOT)
+
+============================================================
+  ✅ [FORBIDDEN_COLLECTION] Tidak ada forbidden collection names ditemukan
+
+============================================================
+
+  CHECK 8: ENTITY REGISTRY SYNC (baca ENTITY_REGISTRY.md langsung)
+
+============================================================
+  ⚠️  [ENTITY_REGISTRY] db.ai_fact_state digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.ai_results digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.data_hygiene_log digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.fact_sales_lines digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.fleet_vehicles digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.goods_receipts digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.md_samples digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.mkt_accounts digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.mkt_campaigns digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.mkt_posts digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.mkt_templates digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.product_templates digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.rfid_print_jobs digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.roll_scans digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.sample_price_master digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+  ⚠️  [ENTITY_REGISTRY] db.warehouse_sites digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+
+============================================================
+
+  CHECK 9: REQUIRED DOCUMENTATION
+
+============================================================
+  ✅ [DOCS] ENTITY_REGISTRY.md ✓
+  ✅ [DOCS] CODEBASE_MAP.md ✓
+  ✅ [DOCS] memory/PRD.md ✓
+  ✅ [DOCS] memory/SESSION_HANDOFF.md ✓
+  ✅ [DOCS] memory/SESSION_LOG.md ✓
+  ✅ [DOCS] memory/TECH_DECISIONS.md ✓
+  ✅ [DOCS] plan.md ✓
+  ✅ [DOCS] docs/KN_00_AGENT_QUICK_START.md ✓
+  ✅ [DOCS] docs/KN_13_NAVIGATION_MAP.md ✓
+
+============================================================
+
+  CHECK 11: ENVIRONMENT VARIABLES
+
+============================================================
+  ✅ [ENV] backend/.env: MONGO_URL ✓
+  ✅ [ENV] backend/.env: DB_NAME ✓
+  ✅ [ENV] frontend/.env: REACT_APP_BACKEND_URL ✓
+
+============================================================
+
+  CHECK 5: HARDCODED IDs / WAREHOUSE IDs
+
+============================================================
+  ✅ [HARDCODED] Tidak ada hardcoded IDs di router files
+
+============================================================
+
+  CHECK 6: SAFE_DOC / SERIALIZATION
+
+============================================================
+  ⚠️  [SERIALIZATION] marketing.py: find_one tanpa safe_doc() wrapper (1x)
+
+============================================================
+
+  CHECK 7: DATA-TESTID COVERAGE
+
+============================================================
+  ⚠️  [TESTID] frontend/src/features/logistics/DeliveryPhoto.jsx: tidak ada data-testid (testing agent tidak bisa test ini)
+  ⚠️  [TESTID] frontend/src/features/hr/GalleryImage.jsx: tidak ada data-testid (testing agent tidak bisa test ini)
+
+============================================================
+
+  CHECK 10: API PREFIX (/api/)
+
+============================================================
+  ✅ [API_PREFIX] Semua endpoints menggunakan prefix /api/
+
+============================================================
+
+  CHECK 13: NAMING CONVENTIONS
+
+============================================================
+  ⚠️  [NAMING] Collection 'db.goods_receipts' tidak mengikuti domain prefix convention
+  ⚠️  [NAMING] Collection 'db.amendment_reasons' tidak mengikuti domain prefix convention
+  ⚠️  [NAMING] Collection 'db.rfid_devices' tidak mengikuti domain prefix convention
+  ⚠️  [NAMING] Collection 'db.mkt_templates' tidak mengikuti domain prefix convention
+  ⚠️  [NAMING] Collection 'db.rfid_print_jobs' tidak mengikuti domain prefix convention
+  ⚠️  [NAMING] Collection 'db.design_gallery' tidak mengikuti domain prefix convention
+  ⚠️  [NAMING] Collection 'db.rfid_tags' tidak mengikuti domain prefix convention
+  ⚠️  [NAMING] Collection 'db.sample_price_master' tidak mengikuti domain prefix convention
+  ⚠️  [NAMING] Collection 'db.bank_accounts' tidak mengikuti domain prefix convention
+  ⚠️  [NAMING] Collection 'db.mkt_campaigns' tidak mengikuti domain prefix convention
+
+============================================================
+
+  CHECK 14: TECH DEBT MARKERS
+
+============================================================
+  ✅ [TECH_DEBT] Tidak ada tech debt markers (TODO/FIXME/HACK)
+
+============================================================
+
+  CHECK 15: IMPORT QUALITY (AST — bukan string-split)
+
+============================================================
+  ⚠️  [IMPORTS] entities.py:17: import 'Optional' tidak terpakai
+  ⚠️  [IMPORTS] inbound_scan_label.py:11: import 'DEFAULT_ENTITY_ID' tidak terpakai
+  ⚠️  [IMPORTS] internal_requests.py:20: import 'current_user' tidak terpakai
+  ⚠️  [IMPORTS] makloon_orders.py:17: import 'cs' tidak terpakai
+  ⚠️  [IMPORTS] notifications.py:7: import 'List' tidak terpakai
+  ⚠️  [IMPORTS] product_templates.py:6: import 'List' tidak terpakai
+  ⚠️  [IMPORTS] purchase_orders.py:21: import '_sis' tidak terpakai
+  ⚠️  [IMPORTS] purchase_orders.py:369: import 'resolve_price' tidak terpakai
+  ⚠️  [IMPORTS] sales_orders.py:30: import 'pricelist_service' tidak terpakai
+  ⚠️  [IMPORTS] sample_orders.py:18: import 'so_approvals' tidak terpakai
+  ⚠️  [IMPORTS] ... dan 2 temuan lain
+
+======================================================================
+  SUMMARY: 19 PASS | 0 FAIL | 58 WARN
+======================================================================
+
+⚠️  WARNINGS (Perlu diperhatikan):
+   [FILE_SIZE] backend/routers/purchase_orders.py: 885 baris (di atas panduan 800 untuk router; batas keras 1600) — pertimbangkan split
+   [FILE_SIZE] backend/routers/sales_orders_extra.py: 841 baris (di atas panduan 800 untuk router; batas keras 1600) — pertimbangkan split
+   [FILE_SIZE] backend/routers/special_orders.py: 985 baris (di atas panduan 800 untuk router; batas keras 1600) — pertimbangkan split
+   [FILE_SIZE] backend/schemas.py: 998 baris (di atas panduan 800 untuk core; batas keras 1600) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/admin/AdminView.jsx: 554 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/admin/PurchaseOrderManagement.jsx: 521 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/approvals/MyApprovalsView.jsx: 522 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/internal_requests/InternalRequestsView.jsx: 535 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/orders/OrderDetailPanel.jsx: 623 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/purchasing/MakloonOrderDetailPanel.jsx: 678 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/purchasing/PurchaseReturns.jsx: 572 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/purchasing/makloon/MakloonWizard.jsx: 525 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/sales/PricelistView.jsx: 589 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/sales/ReturnQuarantinePanel.jsx: 503 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/settings/config/SettingsHub.jsx: 515 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/wms/InventoryStockView.jsx: 524 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/features/wms/warehouses/WarehouseMasterView.jsx: 505 baris (di atas panduan 500 untuk komponen; batas keras 1000) — pertimbangkan split
+   [FILE_SIZE] frontend/src/App.js: 579 baris (di atas panduan 380 untuk utility; batas keras 760) — pertimbangkan split
+   [ENTITY_REGISTRY] db.ai_fact_state digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.ai_results digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.data_hygiene_log digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.fact_sales_lines digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.fleet_vehicles digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.goods_receipts digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.md_samples digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.mkt_accounts digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.mkt_campaigns digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.mkt_posts digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.mkt_templates digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.product_templates digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.rfid_print_jobs digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.roll_scans digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.sample_price_master digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [ENTITY_REGISTRY] db.warehouse_sites digunakan di code tapi tidak ada di ENTITY_REGISTRY.md — tambahkan jika ini collection baru
+   [SERIALIZATION] marketing.py: find_one tanpa safe_doc() wrapper (1x)
+   [TESTID] frontend/src/features/logistics/DeliveryPhoto.jsx: tidak ada data-testid (testing agent tidak bisa test ini)
+   [TESTID] frontend/src/features/hr/GalleryImage.jsx: tidak ada data-testid (testing agent tidak bisa test ini)
+   [NAMING] Collection 'db.goods_receipts' tidak mengikuti domain prefix convention
+   [NAMING] Collection 'db.amendment_reasons' tidak mengikuti domain prefix convention
+   [NAMING] Collection 'db.rfid_devices' tidak mengikuti domain prefix convention
+   [NAMING] Collection 'db.mkt_templates' tidak mengikuti domain prefix convention
+   [NAMING] Collection 'db.rfid_print_jobs' tidak mengikuti domain prefix convention
+   [NAMING] Collection 'db.design_gallery' tidak mengikuti domain prefix convention
+   [NAMING] Collection 'db.rfid_tags' tidak mengikuti domain prefix convention
+   [NAMING] Collection 'db.sample_price_master' tidak mengikuti domain prefix convention
+   [NAMING] Collection 'db.bank_accounts' tidak mengikuti domain prefix convention
+   [NAMING] Collection 'db.mkt_campaigns' tidak mengikuti domain prefix convention
+   [IMPORTS] entities.py:17: import 'Optional' tidak terpakai
+   [IMPORTS] inbound_scan_label.py:11: import 'DEFAULT_ENTITY_ID' tidak terpakai
+   [IMPORTS] internal_requests.py:20: import 'current_user' tidak terpakai
+   [IMPORTS] makloon_orders.py:17: import 'cs' tidak terpakai
+   [IMPORTS] notifications.py:7: import 'List' tidak terpakai
+   [IMPORTS] product_templates.py:6: import 'List' tidak terpakai
+   [IMPORTS] purchase_orders.py:21: import '_sis' tidak terpakai
+   [IMPORTS] purchase_orders.py:369: import 'resolve_price' tidak terpakai
+   [IMPORTS] sales_orders.py:30: import 'pricelist_service' tidak terpakai
+   [IMPORTS] sample_orders.py:18: import 'so_approvals' tidak terpakai
+   [IMPORTS] ... dan 2 temuan lain
+
+⚠️  58 warning — fix sebelum ke production  [92m✓ validate_compliance (file/naming/docs/api/env) PASS[0m (2s)
+
+[96m[1m▶ check_nav_map (navigasi vs SSOT)[0m
+
+[1mNavigation Map Validator v2 (config-driven)[0m
+Reference: KN_13 §528 TARGET GROUPED NAVIGATION IA
+
+
+[1m[94m============================================================[0m
+[1mCHECK 1: Nav config integrity + testid convention[0m
+[1m[94m============================================================[0m
+
+[92m✓ Config valid: 26 entri (7 grup), 61 id unik, konvensi testid render OK[0m
+
+[1m[94m============================================================[0m
+[1mCHECK 2: WMS tabs (wms-tab-*) + Orders tabs[0m
+[1m[94m============================================================[0m
+
+[92m✓ Semua 5 tab WMS hadir + konvensi testid OK[0m
+
+[1m[94m============================================================[0m
+[1mCHECK 3: Role-based access (KN_13 role matrix)[0m
+[1m[94m============================================================[0m
+
+[92m✓ overlay ROLE_NAV terbaca untuk 7 peran baru: designer(+5/-2) · driver(+2/-0) · finance(+26/-0) · md(+37/-5) · sales_admin(+9/-2, warisi sales) · sample_admin(+12/-6) · warehouse_admin(+7/-0, warisi warehouse)[0m
+[92m✓ Role matrix konsisten (item ter-reach → admin:61, manager:50, sales_admin:21, finance:17, sales:18, warehouse:20, designer:4, driver:3, md:12, warehouse_admin:22, sample_admin:9)[0m
+
+[1m[94m============================================================[0m
+[1mCHECK 4: Kedalaman IA (maks 4 — KN_13 §585)[0m
+[1m[94m============================================================[0m
+
+[92m✓ Kedalaman IA = 3 (Grup→Menu→Tab) ≤ 4 — sesuai KN_13[0m
+
+[1m[94m============================================================[0m
+[1mCHECK 5: PAGE_META coverage (judul + kicker tiap layar)[0m
+[1m[94m============================================================[0m
+
+[92m✓ 111 layar semuanya punya judul & kicker (PAGE_META: 139 entri)[0m
+
+[1m[94m============================================================[0m
+[1mSUMMARY[0m
+[1m[94m============================================================[0m
+
+[92m✓ Navigation map COMPLIANT dengan KN_13 (grouped IA)[0m
+
+[92m[1m✓ NAV MAP: PASS[0m  [92m✓ check_nav_map (navigasi vs SSOT) PASS[0m (0s)
+
+[96m[1m▶ guard:modal_dismiss (INV-UI-01, modal auto-close)[0m
+[96m[1m== INV-UI-01 — Backdrop modal & dropdown ber-portal (anti auto-close) ==[0m
+[92m[PASS][0m 24 cek lolos, 0 pelanggaran.  [92m✓ guard:modal_dismiss (INV-UI-01, modal auto-close) PASS[0m (1s)
+
+[96m[1m▶ guard:create_modal SELF-TEST (bukti-merah penjaga create pop-up)[0m
+[1m== SELF-TEST INV-UI-05 (penjaga create-modal harus bisa MEMERAH) ==[0m
+  [[92mPASS[0m] semua create sudah modal → hijau  (harap=0, dapat=0)
+  [[92mPASS[0m] create INLINE tanpa alasan → merah  (harap=1, dapat=1)
+  [[92mPASS[0m] create INLINE dengan alasan panjang → hijau  (harap=0, dapat=0)
+  [[92mPASS[0m] create NAVIGATE tanpa keputusan tercatat → merah  (harap=1, dapat=1)
+  [[92mPASS[0m] create NAVIGATE disetujui pemilik → hijau  (harap=0, dapat=0)
+  [[92mPASS[0m] TOMBOL MATI (state tak pernah dirender) → merah  (harap=1, dapat=1)
+  [[92mPASS[0m] pembebasan tanpa alasan (terlalu pendek) → merah  (harap=1, dapat=1)
+  [[92mPASS[0m] isian ADA di berkas induk → FORM  (harap=True, dapat=True)
+  [[92mPASS[0m] isian dipindah ke berkas ANAK → tetap FORM (celah P5 tertutup)  (harap=True, dapat=True)
+  [[92mPASS[0m] anak berisi TABEL → bukan form (anti tuduh palsu)  (harap=False, dapat=False)
+  [[92mPASS[0m] anak bernama netral tapi isinya modal-overlay → MODAL (anti tuduh palsu)  (harap=True, dapat=True)
+  [[92mPASS[0m] kartu biasa tanpa penanda pop-up → bukan modal  (harap=False, dapat=False)
+[92m  HIJAU — penjaga terbukti menuduh form yang menyelip.[0m  [92m✓ guard:create_modal SELF-TEST (bukti-merah penjaga create pop-up) PASS[0m (0s)
+
+[96m[1m▶ guard:create_modal (INV-UI-05, tombol Buat = pop-up konsisten)[0m
+  create → modal: 54 · inline: 3 · navigate: 7 · tombol mati: 0
+[96m[1m== INV-UI-05 — tombol Buat memunculkan pop-up yang konsisten ==[0m
+[92m[PASS][0m 10 cek lolos, 0 pelanggaran.  [92m✓ guard:create_modal (INV-UI-05, tombol Buat = pop-up konsisten) PASS[0m (0s)
+
+[96m[1m▶ guard:blocking_dialogs SELF-TEST (bukti-merah + anti tuduh palsu)[0m
+[1m== SELF-TEST INV-UI-06 (penjaga dialog blokir harus bisa MEMERAH) ==[0m
+  [[92mPASS[0m] alert telanjang terdeteksi
+  [[92mPASS[0m] window.alert terdeteksi (dan hanya SEKALI)
+  [[92mPASS[0m] window.confirm dalam if terdeteksi
+  [[92mPASS[0m] window.prompt terdeteksi
+  [[92mPASS[0m] nomor baris tepat walau ada komentar blok di atasnya
+  [[92mPASS[0m] kata 'alert' di dalam string label → bukan pelanggaran
+  [[92mPASS[0m] fungsi yang KEBETULAN bernama confirm → bukan pelanggaran
+  [[92mPASS[0m] askConfirm()/askReason() → bukan pelanggaran
+  [[92mPASS[0m] metode pada objek lain (`api.confirm()`) → bukan pelanggaran
+  [[92mPASS[0m] komentar yang MENYEBUT alert() → bukan pelanggaran
+  [[92mPASS[0m] nama komponen <ConfirmModal> → bukan pelanggaran
+  [[92mPASS[0m] template literal: teks diabaikan, `${confirm()}` TETAP terdeteksi
+  [[92mPASS[0m] pelanggaran tanpa pembebasan → MERAH
+  [[92mPASS[0m] pembebasan beralasan panjang → hijau
+  [[92mPASS[0m] pembebasan tanpa alasan yang bisa dinilai → MERAH
+  [[92mPASS[0m] index.js tanpa <ConfirmHost/> → MERAH
+  [[92mPASS[0m] index.js dengan <ConfirmHost/> → hijau
+[92m  HIJAU — penjaga terbukti menuduh dialog peramban DAN tidak menuduh palsu string/komentar/fungsi senama.[0m  [92m✓ guard:blocking_dialogs SELF-TEST (bukti-merah + anti tuduh palsu) PASS[0m (0s)
+
+[96m[1m▶ guard:blocking_dialogs (INV-UI-06, alert/confirm/prompt dilarang)[0m
+  dialog peramban ditemukan: 0 di 0 berkas (alert/confirm/prompt) · pengecualian terdaftar: 0
+[96m[1m== INV-UI-06 — dialog bawaan peramban (alert/confirm/prompt) dilarang ==[0m
+[92m[PASS][0m 1 cek lolos, 0 pelanggaran.  [92m✓ guard:blocking_dialogs (INV-UI-06, alert/confirm/prompt dilarang) PASS[0m (1s)
+
+[96m[1m▶ guard:list_export SELF-TEST (bukti-merah + CSV rusak harus memerah)[0m
+[1m== SELF-TEST INV-UI-07 (penjaga unduh daftar harus bisa MEMERAH) ==[0m
+  [[92mPASS[0m] pager dengan exportConfig terdeteksi PUNYA
+  [[92mPASS[0m] pager tanpa exportConfig terdeteksi TIDAK punya
+  [[92mPASS[0m] dua pager dalam satu berkas dihitung dua
+  [[92mPASS[0m] nomor baris tepat walau ada komentar blok di atasnya
+  [[92mPASS[0m] prop bersarang `{{ }}` tidak membuat pembacaan tag berhenti terlalu cepat
+  [[92mPASS[0m] `<PaginationBar>` di dalam KOMENTAR bukan pemakaian
+  [[92mPASS[0m] `<PaginationBar>` di dalam STRING bukan pemakaian
+  [[92mPASS[0m] komponen lain berawalan sama (`<PaginationBarLegacy>`) tidak dihitung
+  [[92mPASS[0m] kata PaginationBar tanpa tag (impor) tidak dihitung
+  [[92mPASS[0m] pager tanpa Unduh & tanpa pembebasan → MERAH
+  [[92mPASS[0m] pager dengan Unduh → hijau
+  [[92mPASS[0m] pembebasan beralasan panjang → hijau
+  [[92mPASS[0m] pembebasan tanpa alasan yang bisa dinilai → MERAH
+  [[92mPASS[0m] satu dari dua pager bolong → tepat 1 pelanggaran
+  [[92mPASS[0m] util CSV yang pemisahnya diganti ',' → uji perilaku MEMERAH
+[92m  HIJAU — penjaga terbukti menuduh pager tanpa Unduh, tidak menuduh palsu komentar/string/komponen senama, DAN lapis perilaku CSV-nya bisa memerah.[0m  [92m✓ guard:list_export SELF-TEST (bukti-merah + CSV rusak harus memerah) PASS[0m (0s)
+
+[96m[1m▶ guard:list_export (INV-UI-07, daftar berhalaman wajib bisa diunduh)[0m
+  daftar berhalaman: 16 di 15 berkas · punya tombol Unduh: 16/16 · pengecualian terdaftar: 0
+  perilaku CSV (dijalankan dengan Node): 20 kasus lulus
+[96m[1m== INV-UI-07 — daftar berhalaman wajib bisa diunduh (CSV) & CSV-nya benar ==[0m
+[92m[PASS][0m 17 cek lolos, 0 pelanggaran.  [92m✓ guard:list_export (INV-UI-07, daftar berhalaman wajib bisa diunduh) PASS[0m (1s)
+
+[96m[1m▶ guard:detail_modal SELF-TEST (bukti-merah + anti tuduh palsu)[0m
+[1m== SELF-TEST INV-UI-08 (panel rincian wajib pop-up) ==[0m
+  [[92mPASS[0m] panel detail di bawah daftar → MERAH
+  [[92mPASS[0m] bentuk ternary juga terdeteksi
+  [[92mPASS[0m] state bernama detailId juga dikenali
+  [[92mPASS[0m] state bernama openId juga dikenali
+  [[92mPASS[0m] pemilihan lewat handler perantara (openDetail) tetap terdeteksi — kasus ARAgingView
+  [[92mPASS[0m] tabel berbasis grid-cols (kelas hanya ada di STRING) tetap dihitung merender baris
+  [[92mPASS[0m] dibungkus <DetailModal> → hijau
+  [[92mPASS[0m] komponen bernama …Modal → hijau
+  [[92mPASS[0m] komponen bernama …Drawer → hijau
+  [[92mPASS[0m] master-detail 2 kolom (lg:grid-cols-[1fr_360px]) → hijau
+  [[92mPASS[0m] master-detail 2 kolom (xl:grid-cols-2) → hijau
+  [[92mPASS[0m] panelnya sendiri merender .modal-overlay di berkas yang sama → hijau
+  [[92mPASS[0m] yang dirender BUKAN panel rincian (mis. <span>) → hijau
+  [[92mPASS[0m] berkas TANPA daftar/baris → bukan urusan penjaga ini
+  [[92mPASS[0m] penyebutan di dalam KOMENTAR tidak dihitung
+  [[92mPASS[0m] penyebutan di dalam STRING tidak dihitung
+  [[92mPASS[0m] pelanggaran tanpa pembebasan → MERAH
+  [[92mPASS[0m] pembebasan beralasan panjang → hijau
+  [[92mPASS[0m] pembebasan tanpa alasan yang bisa dinilai → MERAH
+[92m  HIJAU — penjaga menangkap panel yang diselipkan di bawah daftar (termasuk dua kasus yang PERNAH ia lewatkan), tanpa menuduh pop-up, master-detail 2 kolom, komentar, maupun string.[0m  [92m✓ guard:detail_modal SELF-TEST (bukti-merah + anti tuduh palsu) PASS[0m (0s)
+
+[96m[1m▶ guard:detail_modal (INV-UI-08, panel rincian wajib pop-up)[0m
+  panel rincian diperiksa: 25 → pop-up 20 · berdampingan (2 kolom) 5 · INLINE (pelanggaran) 0 · pengecualian terdaftar: 0
+[96m[1m== INV-UI-08 — panel rincian wajib pop-up (bukan diselipkan di bawah daftar) ==[0m
+[92m[PASS][0m 25 cek lolos, 0 pelanggaran.  [92m✓ guard:detail_modal (INV-UI-08, panel rincian wajib pop-up) PASS[0m (1s)
+
+[96m[1m▶ guard:picker_portal SELF-TEST (bukti-merah + anti tuduh palsu, 16 kasus)[0m
+[1m== SELF-TEST INV-UI-09 (pemilih wajib ber-portal) ==[0m
+  [[92mPASS[0m] pemilih merender pop-up langsung (`{open && <FooPickerModal/>}`) → MERAH
+  [[92mPASS[0m] bentuk ternary juga tertangkap
+  [[92mPASS[0m] dibungkus tanda kurung pun tetap tertangkap
+  [[92mPASS[0m] lapisan pop-up MENTAH di dalam <label> → MERAH
+  [[92mPASS[0m] pemilih memakai createPortal → hijau
+  [[92mPASS[0m] berkas pop-up MURNI (tanpa pemicu ber-triggerTestId) → tidak dituduh
+  [[92mPASS[0m] pemicu TANPA pop-up sendiri (mis. KNSelect/Radix) → tidak dituduh
+  [[92mPASS[0m] `triggerTestId` hanya disebut di KOMENTAR → tidak dituduh
+  [[92mPASS[0m] `triggerTestId` hanya di dalam STRING → tidak dituduh
+  [[92mPASS[0m] <label> berisi input biasa (tanpa lapisan pop-up) → hijau
+  [[92mPASS[0m] lapisan pop-up di dalam <div> (bukan <label>) → hijau
+  [[92mPASS[0m] panel `fixed` tanpa latar gelap (bilah melayang) → bukan pop-up, hijau
+  [[92mPASS[0m] pemilih yang merender LENCANA bersyarat (bukan pop-up) → hijau
+  [[92mPASS[0m] kata `<label>` yang hanya ada di KOMENTAR tidak dihitung elemen label
+  [[92mPASS[0m] pemilih ber-portal YANG punya catatan `<label>` di komentarnya → hijau
+  [[92mPASS[0m] kode nyata saat ini HIJAU (0 berkas melanggar)
+[92m  HIJAU — penjaga menangkap pop-up yang lahir di dalam <label> (3 bentuk render) tanpa menuduh pop-up murni, pemicu ber-portal, komentar, string, maupun panel melayang.[0m  [92m✓ guard:picker_portal SELF-TEST (bukti-merah + anti tuduh palsu, 16 kasus) PASS[0m (5s)
+
+[96m[1m▶ guard:picker_portal (INV-UI-09, pemilih wajib ber-portal · pop-up bukan anak <label>)[0m
+  berkas diperiksa: 236 · komponen pemilih (pemicu+pop-up): 7 → components/MakloonSelect.jsx, components/PantoneFinder.jsx, components/ProductSelect.jsx, features/purchasing/MakloonOrderCreateModal.jsx, features/purchasing/RecipeFormModal.jsx, features/purchasing/contracts/ContractFormModal.jsx, features/purchasing/makloon/MakloonWizard.jsx
+[96m[1m== INV-UI-09 — pemilih (pemicu+pop-up) wajib ber-portal · pop-up bukan anak <label> ==[0m
+[92m[PASS][0m 236 cek lolos, 0 pelanggaran.  [92m✓ guard:picker_portal (INV-UI-09, pemilih wajib ber-portal · pop-up bukan anak <label>) PASS[0m (7s)
+
+[96m[1m▶ guard:escape_layers SELF-TEST (bukti-merah + anti tuduh palsu, 13 kasus)[0m
+[1m== SELF-TEST INV-UI-10 (Esc satu lapisan) ==[0m
+  [[92mPASS[0m] pop-up memasang pendengar Esc sendiri (document) → MERAH
+  [[92mPASS[0m] bentuk `window.addEventListener` juga tertangkap
+  [[92mPASS[0m] FormModal tanpa `useEscapeClose` → MERAH (dukungan Esc hilang)
+  [[92mPASS[0m] implementasi tunggal tanpa fase capture → MERAH
+  [[92mPASS[0m] implementasi tunggal tanpa pemeriksaan lapisan Radix → MERAH
+  [[92mPASS[0m] implementasi tunggal tanpa aturan lapisan TERATAS → MERAH
+  [[92mPASS[0m] pop-up memakai `useEscapeClose` → hijau
+  [[92mPASS[0m] kata "Escape" hanya di KOMENTAR → tidak dituduh
+  [[92mPASS[0m] pendengar keydown untuk hal LAIN (Ctrl+K) tanpa Escape → hijau
+  [[92mPASS[0m] komponen Radix/shadcn bawaan dikecualikan
+  [[92mPASS[0m] implementasi tunggal yang BENAR → hijau
+  [[92mPASS[0m] berkas biasa tanpa pendengar apa pun → hijau
+  [[92mPASS[0m] kode nyata saat ini HIJAU (0 berkas melanggar)
+[92m  HIJAU — penjaga menangkap pendengar Esc sendiri & implementasi tunggal yang dilemahkan, tanpa menuduh komentar, pendengar non-Esc, maupun komponen Radix bawaan.[0m  [92m✓ guard:escape_layers SELF-TEST (bukti-merah + anti tuduh palsu, 13 kasus) PASS[0m (1s)
+
+[96m[1m▶ guard:escape_layers (INV-UI-10, Esc menutup lapisan teratas saja)[0m
+  berkas diperiksa: 776 · memakai useEscapeClose: 28
+[96m[1m== INV-UI-10 — Esc menutup lapisan TERATAS saja (satu tumpukan, bukan pendengar sendiri) ==[0m
+[92m[PASS][0m 776 cek lolos, 0 pelanggaran.  [92m✓ guard:escape_layers (INV-UI-10, Esc menutup lapisan teratas saja) PASS[0m (1s)
+
+[96m[1m▶ guard:to_list_bound SELF-TEST (bukti-merah dua arah, 11 kasus)[0m
+  [[92mPASS[0m] kode bersih, allowlist kosong → hijau → hijau
+  [[92mPASS[0m] to_list(50000) baru tanpa allowlist → MERAH → MERAH
+  [[92mPASS[0m] to_list(20000) tepat batas → tidak dipindai (hijau) → hijau
+  [[92mPASS[0m] to_list(20001) → MERAH → MERAH
+  [[92mPASS[0m] to_list(100_000) dengan underscore → MERAH → MERAH
+  [[92mPASS[0m] terdaftar dengan alasan panjang → hijau → hijau
+  [[92mPASS[0m] terdaftar tapi alasan pendek → MERAH → MERAH
+  [[92mPASS[0m] kejadian bertambah melebihi kuota allowlist → MERAH → MERAH
+  [[92mPASS[0m] entri allowlist basi (kode sudah bersih) → MERAH (ratchet) → MERAH
+  [[92mPASS[0m] berkas uji/POC/seed dikecualikan → hijau → hijau
+  [[92mPASS[0m] kode nyata saat ini HIJAU (0 pelanggaran)
+[92m  SELF-TEST HIJAU (0 gagal).[0m  [92m✓ guard:to_list_bound SELF-TEST (bukti-merah dua arah, 11 kasus) PASS[0m (1s)
+
+[96m[1m▶ guard:to_list_bound (INV-PERF-01, to_list(n>20000) dilarang)[0m
+[96m[1m== INV-PERF-01 — to_list(n) dengan n > 20000 dilarang di kode produksi (kecuali allowlist ber-alasan) ==[0m
+[92m[PASS][0m 18 cek lolos, 0 pelanggaran.  [92m✓ guard:to_list_bound (INV-PERF-01, to_list(n>20000) dilarang) PASS[0m (0s)
+
+[96m[1m▶ guard:codebase_map SELF-TEST (bukti-merah dua arah, 6 kasus)[0m
+  [[92mPASS[0m] peta hasil generator → hijau → hijau
+  [[92mPASS[0m] peta tanpa penanda generator (tulisan tangan) → MERAH → MERAH
+  [[92mPASS[0m] jumlah router digandakan (menyimpang 100%) → MERAH → MERAH
+  [[92mPASS[0m] endpoint menyimpang 5% (≤ toleransi) → hijau → hijau
+  [[92mPASS[0m] endpoint menyimpang 20% → MERAH → MERAH
+  [[92mPASS[0m] peta lama v1.0 (tabel Ringkasan angka tidak ada) → MERAH → MERAH
+[92m  SELF-TEST HIJAU (0 gagal).[0m  [92m✓ guard:codebase_map SELF-TEST (bukti-merah dua arah, 6 kasus) PASS[0m (1s)
+
+[96m[1m▶ guard:codebase_map (INV-DOC-01, CODEBASE_MAP.md selaras kode)[0m
+[96m[1m== INV-DOC-01 — CODEBASE_MAP.md selaras kode (selisih ≤10%) ==[0m
+[91m[FAIL][0m 3 pelanggaran (dari 5 cek):
+  [91m✗[0m endpoints: peta 1167 vs nyata 1316 (selisih 11% > 10%) — jalankan ulang scripts/gen_codebase_map.py
+  [91m✗[0m services: peta 205 vs nyata 235 (selisih 13% > 10%) — jalankan ulang scripts/gen_codebase_map.py
+  [91m✗[0m collections: peta 132 vs nyata 147 (selisih 10% > 10%) — jalankan ulang scripts/gen_codebase_map.py
+[93m→ Perbaiki sesuai INVARIANT INV-DOC-01 (detail: memory/INVARIANTS.md).[0m  [91m✗ guard:codebase_map (INV-DOC-01, CODEBASE_MAP.md selaras kode) FAIL (rc=1)[0m (1s)
+
+[96m[1m▶ guard:atomic_claim SELF-TEST (bukti-merah dua arah, 10 kasus)[0m
+  [[92mPASS[0m] claim + finish_set → hijau → hijau
+  [[92mPASS[0m] claim tanpa pencabut kunci → MERAH → MERAH
+  [[92mPASS[0m] dicatat claim tapi tak memanggil claim() → MERAH → MERAH
+  [[92mPASS[0m] validasi 400 SESUDAH klaim (kunci tertinggal) → MERAH → MERAH
+  [[92mPASS[0m] validasi 400 SEBELUM klaim → hijau → hijau
+  [[92mPASS[0m] validasi 400 sesudah klaim TAPI release() dulu → hijau → hijau
+  [[92mPASS[0m] cas berprasyarat status → hijau → hijau
+  [[92mPASS[0m] dicatat cas tapi tanpa prasyarat status → MERAH → MERAH
+  [[92mPASS[0m] compensate dengan except→release → hijau → hijau
+  [[92mPASS[0m] dicatat compensate tanpa kompensasi → MERAH → MERAH
+  [[92mPASS[0m] service merujuk fungsi yang tak ada → MERAH → MERAH
+  [[92mPASS[0m] service nyata berklaim (putaway confirm_arrival) → hijau → hijau
+  [[92mPASS[0m] service nyata TANPA klaim → MERAH → MERAH
+  [[92mPASS[0m] service_cas nyata berprasyarat status (retire_tag) → hijau → hijau
+  [[92mPASS[0m] service_cas nyata TANPA find_one_and_update berprasyarat → MERAH → MERAH
+  [[92mPASS[0m] entri REVIEWED basi (endpoint hilang) → MERAH → MERAH
+  [[92mPASS[0m] alasan pendek → MERAH → MERAH
+  [[92mPASS[0m] BELUM DITINJAU naik di atas baseline → MERAH → MERAH
+  [[92mPASS[0m] BELUM DITINJAU turun di bawah baseline → MERAH (turunkan baseline) → MERAH
+  [[92mPASS[0m] BELUM DITINJAU == baseline → hijau → hijau
+  [[91mFAIL[0m] kode nyata saat ini HIJAU (2 pelanggaran)
+    ✗ backend/routers/inbound_scan_label.py /inbound/rolls/{roll_id}/scan: dicatat 'cas' tetapi find_one_and_update induk tidak berprasyarat status.
+    ✗ BELUM DITINJAU = 2 > baseline 0. Endpoint multi-koleksi BARU wajib memakai atomic_claim.claim()/CAS dan dicatat di REVIEWED: ai_analytics.py POST /facts/rebuild; goods_receipts.py POST /goods-receipts
+[91m  SELF-TEST MERAH (1 gagal).[0m  [91m✗ guard:atomic_claim SELF-TEST (bukti-merah dua arah, 10 kasus) FAIL (rc=1)[0m (2s)
+
+[96m[1m▶ guard:atomic_claim (INV-ATOMIC-01, saga/CAS endpoint multi-koleksi)[0m
+[96m[1m== INV-ATOMIC-01 — endpoint tulis multi-koleksi memakai klaim atomik / CAS (saga, tanpa transaksi) ==[0m
+[91m[FAIL][0m 2 pelanggaran (dari 106 cek):
+  [91m✗[0m backend/routers/inbound_scan_label.py /inbound/rolls/{roll_id}/scan: dicatat 'cas' tetapi find_one_and_update induk tidak berprasyarat status.
+  [91m✗[0m BELUM DITINJAU = 2 > baseline 0. Endpoint multi-koleksi BARU wajib memakai atomic_claim.claim()/CAS dan dicatat di REVIEWED: ai_analytics.py POST /facts/rebuild; goods_receipts.py POST /goods-receipts/{grn_id}/start-count
+[93m→ Perbaiki sesuai INVARIANT INV-ATOMIC-01 (detail: memory/INVARIANTS.md).[0m  [91m✗ guard:atomic_claim (INV-ATOMIC-01, saga/CAS endpoint multi-koleksi) FAIL (rc=1)[0m (2s)
+
+[96m[1m▶ ux_audit SELF-TEST (bukti-merah baseline UX + anti tuduh palsu)[0m
+[1m== SELF-TEST ux_audit (baseline UX harus bisa MEMERAH & tak menuduh palsu) ==[0m
+  [[92mPASS[0m] tabel tanpa penjaga & tanpa kalimat → E2
+  [[92mPASS[0m] layar yang fetch sendiri tanpa loading → E1
+  [[92mPASS[0m] chart tanpa penjaga kosong → E3
+  [[92mPASS[0m] uang DI KOLOM tanpa tabular-nums → W1
+  [[92mPASS[0m] uang di dalam KALIMAT → bukan W1 (angka proporsional lebih enak dibaca)
+  [[92mPASS[0m] uang di kolom yang SUDAH tabular-nums → bukan W1
+  [[92mPASS[0m] native select → E4
+  [[92mPASS[0m] native select yang menutup sendiri (`<select />`) → E4
+  [[92mPASS[0m] komponen PENAMPIL (data via props, tanpa axios) tidak dituduh E1
+  [[92mPASS[0m] penjaga `length > 0` + kalimat → tidak ada E2
+  [[92mPASS[0m] kalimat kosong via <EmptyState> → tidak ada E2
+  [[92mPASS[0m] penjaga ada tapi TANPA kalimat → W5 (bukan E2)
+  [[92mPASS[0m] kalimat 'belum tersedia' dihitung sbg penjelasan kosong → bukan W5/E2
+  [[92mPASS[0m] panel sengaja menyembunyikan diri saat kosong (return null) → bukan W5
+  [[92mPASS[0m] kekosongan dijelaskan di komponen ANAK → tidak ada E2 (delegasi)
+  [[92mPASS[0m] berkas form/modal dikecualikan dari E1/E2
+  [[92mPASS[0m] layar fetch + skeleton → tidak ada E1
+  [[92mPASS[0m] kata `<select>` di dalam KOMENTAR → bukan E4 (kasus KNSelect.jsx sendiri)
+  [[92mPASS[0m] kata `<select>` di dalam STRING → bukan E4
+  [[92mPASS[0m] komponen shadcn <SelectTrigger>/<Select> → bukan E4 (huruf besar, beda elemen)
+  [[92mPASS[0m] variabel bernama `selected`/`selectedRow` → bukan E4
+[92m  HIJAU — audit terbukti menangkap gap nyata tanpa menuduh komponen penampil.[0m  [92m✓ ux_audit SELF-TEST (bukti-merah baseline UX + anti tuduh palsu) PASS[0m (0s)
+
+[96m[1m▶ ux_audit --strict (INV-UX-01, loading/empty/chart baseline)[0m
+
+[1m[96mKN3 — UX BASELINE AUDIT (619 file)[0m
+
+[93m○[0m [1mfeatures/catalog/GenerateVariants.jsx[0m
+    [93m[WARN W5][0m Kosong DIAM — ada penjaga panjang tapi tak ada kalimat penjelas
+[93m○[0m [1mfeatures/finance/AdvanceReportView.jsx[0m
+    [93m[WARN W1][0m baris 145: nominal di kolom tanpa `tabular-nums` (digit tidak berbaris rapi saat dibandingkan)
+[93m○[0m [1mfeatures/pdf/PdfScriptTab.jsx[0m
+    [93m[WARN W5][0m Kosong DIAM — ada penjaga panjang tapi tak ada kalimat penjelas
+[93m○[0m [1mfeatures/sales/mobile/MobileArReceipt.jsx[0m
+    [93m[WARN W1][0m baris 57: nominal di kolom tanpa `tabular-nums` (digit tidak berbaris rapi saat dibandingkan)
+[91m●[0m [1mfeatures/wms/grn/GoodsReceiptsView.jsx[0m
+    [91m[ERROR E1][0m Tabel data tanpa LOADING state (berkas ini menarik data sendiri)
+
+[1m============================================================[0m
+  [91mERROR 1[0m  |  [93mWARN 4[0m  (di 619 file)
+[1m============================================================[0m
+
+  [91m[1m1 file melanggar baseline UX (loading/empty/chart).[0m
+    [91m·[0m features/wms/grn/GoodsReceiptsView.jsx  [91m✗ ux_audit --strict (INV-UX-01, loading/empty/chart baseline) FAIL (rc=1)[0m (1s)
+
+[96m[1m▶ config_wiring (INV-CFG-01/04, satu sumber kebenaran)[0m
+================================================================================================
+AUDIT WIRING KONFIGURASI — apakah setiap setting benar-benar berfungsi?
+================================================================================================
+Total kunci terdeklarasi : 107
+  OK           98   wiring lengkap (dibaca kode + bisa diubah user)
+  NOT_USED      9   registry menyatakan tidak dipakai + alasan (SAH)
+  HIDDEN        0   dibaca kode TAPI TANPA UI (hanya via DB/API)
+  ORPHAN_UI     0   ADA UI TAPI TIDAK DIBACA KODE  <-- tombol palsu
+  DEAD          0   tidak dibaca & tidak ada UI
+
+Pusat Pengaturan (UI generik): TERSAMBUNG
+Editor konfigurasi di luar Pusat Pengaturan: TIDAK ADA (satu sumber kebenaran)
+
+Per scope:
+  global         total= 59  OK= 58 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  1
+  hr             total= 27  OK= 19 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  8
+  lot            total=  6  OK=  6 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+  makloon        total=  7  OK=  7 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+  receiving      total=  3  OK=  3 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+  uom            total=  5  OK=  5 HIDDEN=  0 ORPHAN_UI=  0 DEAD=  0 NOT_USED=  0
+
+── NOT_USED (9) ────────────────────────────────────────────────────────────────────
+  [global] sales.quotation_enabled                              default=False  alasan: Alur Penawaran (Quotation) BELUM ADA di sistem — tidak ada satu pun en
+  [hr] ptkp_table.TK0                                       default=54000000  alasan: Payroll memakai metode TER (hr.ter_enabled = aktif). Tabel PTKP tahuna
+  [hr] ptkp_table.TK1                                       default=58500000  alasan: Payroll memakai metode TER (hr.ter_enabled = aktif). Tabel PTKP tahuna
+  [hr] ptkp_table.TK2                                       default=63000000  alasan: Payroll memakai metode TER (hr.ter_enabled = aktif). Tabel PTKP tahuna
+  [hr] ptkp_table.TK3                                       default=67500000  alasan: Payroll memakai metode TER (hr.ter_enabled = aktif). Tabel PTKP tahuna
+  [hr] ptkp_table.K0                                        default=58500000  alasan: Payroll memakai metode TER (hr.ter_enabled = aktif). Tabel PTKP tahuna
+  [hr] ptkp_table.K1                                        default=63000000  alasan: Payroll memakai metode TER (hr.ter_enabled = aktif). Tabel PTKP tahuna
+  [hr] ptkp_table.K2                                        default=67500000  alasan: Payroll memakai metode TER (hr.ter_enabled = aktif). Tabel PTKP tahuna
+  [hr] ptkp_table.K3                                        default=72000000  alasan: Payroll memakai metode TER (hr.ter_enabled = aktif). Tabel PTKP tahuna
+
+✅ INV-CFG: setiap setting terdeklarasi punya pembaca kode DAN jalur ubah yang nyata; tidak ada editor ganda.  [92m✓ config_wiring (INV-CFG-01/04, satu sumber kebenaran) PASS[0m (1s)
+
+[96m[1m▶ config_wiring SELF-TEST (bukti-merah guardrail)[0m
+[1] keadaan nyata          : wired=True pelanggaran=0
+[2] Hub diputus (simulasi) : HIDDEN=81 (harus > 0)
+[3] penulis config lama    : 0 berkas (harus 0)
+[4] penulis lama disuntik  : terdeteksi=1 (harus > 0)
+[5] kartu pengalih murni   : tidak dihitung editor (benar)
+[6] index == regex         : 321/321 sama (harus 100%)
+
+SELF-TEST: PASS — guardrail terbukti bisa memerah  [92m✓ config_wiring SELF-TEST (bukti-merah guardrail) PASS[0m (13s)
+
+[96m[1m▶ audit_doc_refs SELF-TEST (bukti-merah relasi dokumen)[0m
+
+[96m[1m==============================================================================
+SELF-TEST — audit wajib bisa MEMERAH (bukti-merah guardrail)
+==============================================================================[0m
+
+[96m[1m==============================================================================
+A. CAKUPAN KODE — hook penautan di titik LAHIR dokumen
+==============================================================================[0m
+  [92m✓ [PASS][0m ar_receipt: hook penautan ada di services/ar_receipt_service.py
+  [92m✓ [PASS][0m credit_note: hook penautan ada di services/amendment_service.py
+  [92m✓ [PASS][0m doc_amendment: hook penautan ada di services/amendment_service.py
+  [91m✗ [FAIL][0m dokumen_hantu_uji: TIDAK ada hook penautan di titik lahir dokumen
+        kandidat berkas: services/tidak_ada_berkas_ini.py — dokumen baru akan lahir tanpa jejak
+  [92m✓ [PASS][0m grn: hook penautan ada di routers/purchase_orders.py
+  [92m✓ [PASS][0m landed_cost: hook penautan ada di routers/landed_cost.py
+  [92m✓ [PASS][0m makloon_order: hook penautan ada di services/makloon_order_service.py
+  [92m✓ [PASS][0m picking_task: hook penautan ada di services/fulfillment_status.py
+  [92m✓ [PASS][0m purchase_order: hook penautan ada di services/pr_sourcing_service.py, routers/purchase_orders.py
+  [92m✓ [PASS][0m purchase_return: hook penautan ada di services/purchase_return_service.py, services/qc_service.py
+  [92m✓ [PASS][0m sales_order: hook penautan ada di routers/sales_orders.py
+  [92m✓ [PASS][0m sales_return: hook penautan ada di services/return_service.py
+  [92m✓ [PASS][0m shipment: hook penautan ada di services/shipment_service.py
+  [92m✓ [PASS][0m tax_invoice: hook penautan ada di services/tax_invoice_service.py
+  [92m✓ [PASS][0m vendor_bill: hook penautan ada di routers/vendor_bills.py, services/makloon_order_service.py
+
+[92m[1m✓ SELF-TEST HIJAU: audit mendeteksi jenis dokumen tanpa hook.[0m  [92m✓ audit_doc_refs SELF-TEST (bukti-merah relasi dokumen) PASS[0m (0s)
+
+[96m[1m▶ guard:ref_unlink SELF-TEST (bukti-merah dua arah, 8 kasus)[0m
+[96m[1m== SELF-TEST INV-REF-04 — bukti-merah DUA ARAH ==[0m
+  [[92mOK[0m] harus MEMERAH · hapus retur beli tanpa sapuan
+  [[92mOK[0m] harus HIJAU   · hapus retur beli DENGAN sapuan
+  [[92mOK[0m] harus MEMERAH · hapus lewat konstanta modul tanpa sapuan
+  [[92mOK[0m] harus HIJAU   · hapus lewat konstanta modul DENGAN sapuan
+  [[92mOK[0m] harus HIJAU   · koleksi TANPA refs tidak dituduh (bukti anti-tuduhan palsu)
+  [[92mOK[0m] harus MEMERAH · koleksi dinamis tak terdaftar = pelanggaran, bukan celah
+  [[92mOK[0m] harus MEMERAH · sapuan di fungsi LAIN tidak dihitung (harus di fungsi yang menghapus)
+  [[92mOK[0m] harus MEMERAH · kata 'unlink_all' hanya di KOMENTAR tidak menolong
+
+[92m[1m✓ SELF-TEST HIJAU: 8/8 kasus — penjaga memerah saat sapuan hilang DAN tidak menuduh saat sapuan ada.[0m  [92m✓ guard:ref_unlink SELF-TEST (bukti-merah dua arah, 8 kasus) PASS[0m (1s)
+
+[96m[1m▶ guard:ref_unlink (INV-REF-04, hapus dokumen wajib sapu tautan balik)[0m
+[96m  447 berkas produksi dipindai · 36 koleksi ber-refs dijaga · 2 koleksi dinamis berdasar alasan tertulis[0m
+[96m[1m== INV-REF-04 — menghapus dokumen wajib menyapu tautan baliknya ==[0m
+[92m[PASS][0m 449 cek lolos, 0 pelanggaran.  [92m✓ guard:ref_unlink (INV-REF-04, hapus dokumen wajib sapu tautan balik) PASS[0m (4s)
+
+[96m[1m▶ guard:notif_audience SELF-TEST (bukti-merah dua arah, 14 kasus)[0m
+[96mINV-NOTIF-02 SELF-TEST (bukti-merah dua arah)[0m
+  [92m✓[0m MEMERAH: K3 pesan PO custom disusun di luar penyusun tunggal
+  [92m✓[0m tetap HIJAU (tidak menuduh palsu): K3 penyusun tunggal yang sah
+  [92m✓[0m MEMERAH: K1 low_stock ber-all
+  [92m✓[0m MEMERAH: K1 low_stock tanpa recipient_role (bawaan all)
+  [92m✓[0m MEMERAH: K1 order_approval ber-all
+  [92m✓[0m MEMERAH: K2 role sales + user (kasus ar_due_soon sebelum FASE N)
+  [92m✓[0m MEMERAH: K2 role all + user (kasus internal_request_decided sebelum FASE N)
+  [92m✓[0m MEMERAH: K2 user tanpa role eksplisit (bawaan all tetap menyiarkan)
+  [92m✓[0m MEMERAH: K1 po_stage_stuck ber-all
+  [92m✓[0m MEMERAH: K2 role manager + user pada peristiwa ber-pemilik
+  [92m✓[0m tetap HIJAU (tidak menuduh palsu): alamat per orang yang benar (role dikosongkan eksplisit)
+  [92m✓[0m tetap HIJAU (tidak menuduh palsu): alamat berbasis izin lewat create_addressed
+  [92m✓[0m tetap HIJAU (tidak menuduh palsu): peristiwa yang memang milik semua orang tetap boleh 'all'
+  [92m✓[0m tetap HIJAU (tidak menuduh palsu): alamat peran untuk peristiwa yang bukan daftar ber-pemilik
+  [92m✓[0m tetap HIJAU (tidak menuduh palsu): create_addressed tanpa recipient_role (bawaannya bukan 'all')
+  [92m✓[0m tetap HIJAU (tidak menuduh palsu): fungsi lain bernama mirip tidak ikut dituduh
+
+  HASIL SELF-TEST: [92m16 PASS[0m · [92m0 FAIL[0m dari 16 kasus  [92m✓ guard:notif_audience SELF-TEST (bukti-merah dua arah, 14 kasus) PASS[0m (0s)
+
+[96m[1m▶ guard:notif_audience (INV-NOTIF-02, alamat notifikasi dari WEWENANG)[0m
+[96mINV-NOTIF-02 — alamat notifikasi (kode + data)[0m
+  [92m✓ nol peristiwa ber-pemilik yang disiarkan ke "all"; nol `recipient_role` + `recipient_user` bersamaan.[0m
+  (9 peristiwa ber-pemilik dijaga di kode DAN data)  [92m✓ guard:notif_audience (INV-NOTIF-02, alamat notifikasi dari WEWENANG) PASS[0m (3s)
+
+[96m[1m▶ audit_i18n_id (label antarmuka Bahasa Indonesia)[0m
+[96m[1m==========================================================================
+  AUDIT BAHASA ANTARMUKA — WAJIB BAHASA INDONESIA
+==========================================================================[0m
+  Cakupan : frontend/src (*.jsx, *.js) · teks yang dilihat pengguna
+            backend (*.py) · label/pesan yang DIKIRIM ke antarmuka
+  Kamus   : 134 istilah wajib diterjemahkan
+  Dipakai : 43 istilah sengaja dibiarkan (lihat --list)
+
+  [93mbackend/services/ocr_sj_v2.py[0m
+     baris   25  “Nomor surat jalan / delivery order persis seperti te”
+                 [91morder[0m → [92mPesanan[0m
+     baris   25  “Nomor surat jalan / delivery order persis seperti te”
+                 [91mdelivery[0m → [92mPengiriman[0m
+     baris   28  “Nama penerima (Kepada Yth / Customer / Ship To).”
+                 [91mcustomer[0m → [92mPelanggan[0m
+     baris   31  “SEMUA teks yang berlabel PO / No PO / Order / No Ord”
+                 [91morder[0m → [92mPesanan[0m
+     baris   36  “Nomor lain: SO, DO, PL, invoice, EX SJ, SJ greige, k”
+                 [91minvoice[0m → [92mFaktur[0m
+     baris  113  “Kosongkan kecuali instruksi pengguna berisi EXTRACT_”
+                 [91mpacking[0m → [92mPengemasan[0m
+  [93mfrontend/src/features/wms/grn/GrnLineRow.jsx[0m
+     baris  153  “Packing list:”
+                 [91mpacking[0m → [92mPengemasan[0m
+  [93mfrontend/src/features/wms/grn/GrnPackingChecklist.jsx[0m
+     baris   11  “Packing list · roll diharapkan”
+                 [91mpacking[0m → [92mPengemasan[0m
+
+  [91m[1m✗ 8 temuan di 3 berkas.[0m  [91m✗ audit_i18n_id (label antarmuka Bahasa Indonesia) FAIL (rc=1)[0m (1s)
+
+[96m[1m▶ audit_i18n_id SELF-TEST (bukti-merah guardrail bahasa)[0m
+[96m[1m== SELF-TEST audit_i18n_id (bukti-merah guardrail) ==[0m
+  [[92mPASS[0m] teks JSX Inggris HARUS terdeteksi
+  [[92mPASS[0m] prop label Inggris HARUS terdeteksi
+  [[92mPASS[0m] placeholder Inggris HARUS terdeteksi
+  [[92mPASS[0m] string dalam kurawal HARUS terdeteksi
+  [[92mPASS[0m] istilah DIPAKAI tidak boleh dilaporkan (Lot/Roll/Grade)
+  [[92mPASS[0m] frasa kecuali tidak boleh dilaporkan (Landed Cost)
+  [[92mPASS[0m] kunci objek / data-testid TIDAK boleh dilaporkan
+  [[92mPASS[0m] className TIDAK boleh dilaporkan
+  [[92mPASS[0m] label yang sudah Indonesia tidak dilaporkan
+  [[92mPASS[0m] URL tidak dilaporkan
+  [[92mPASS[0m] teks SEBELUM interpolasi HARUS terdeteksi (celah nyata)
+  [[92mPASS[0m] teks SESUDAH interpolasi HARUS terdeteksi (celah nyata)
+  [[92mPASS[0m] [7] format uang gaya Inggris HARUS terdeteksi
+  [[92mPASS[0m] [7] format uang gaya Inggris tanpa spasi HARUS terdeteksi
+  [[92mPASS[0m] [7] pemakaian helper rupiah() TIDAK boleh dilaporkan
+  [[92mPASS[0m] [7] angka NON-uang tidak dilaporkan (bukan nominal rupiah)
+
+  16/16 skenario lulus.
+  [92m[1m✓ SELF-TEST HIJAU — guardrail terbukti bisa memerah.[0m  [92m✓ audit_i18n_id SELF-TEST (bukti-merah guardrail bahasa) PASS[0m (0s)
+
+[96m[1m▶ fix_i18n_id SELF-TEST (codemod tak boleh sentuh kode)[0m
+[96m[1m== SELF-TEST fix_i18n_id (codemod tidak boleh merusak kode) ==[0m
+  [[92mPASS[0m] teks JSX diterjemahkan
+  [[92mPASS[0m] prop label diterjemahkan
+  [[92mPASS[0m] kunci objek TIDAK diubah
+  [[92mPASS[0m] data-testid TIDAK diubah
+  [[92mPASS[0m] className TIDAK diubah
+  [[92mPASS[0m] nilai status backend TIDAK diubah
+  [[92mPASS[0m] import path TIDAK diubah
+  [[92mPASS[0m] teks yang sudah Indonesia dibiarkan
+  [[92mPASS[0m] BE: nilai 'label' diterjemahkan
+  [[92mPASS[0m] BE: nilai 'id'/enum TIDAK diubah
+  [[92mPASS[0m] BE: nama variabel TIDAK diubah
+
+  11/11 skenario lulus.
+  [92m[1m✓ SELF-TEST HIJAU — codemod hanya menyentuh teks pengguna.[0m  [92m✓ fix_i18n_id SELF-TEST (codemod tak boleh sentuh kode) PASS[0m (0s)
+
+[96m[1m▶ guard:entity_label (INV-UI-02, id entitas tak boleh tampil)[0m
+[96m[1m
+==========================================================================
+  INV-UI-02 — ID TEKNIS ENTITAS TIDAK BOLEH TAMPIL KE PENGGUNA
+==========================================================================
+[0m
+  helper bersama : frontend/src/utils/entityLabel.js ✓
+  [92m[PASS][0m SELF-TEST: guard menangkap 5 pelanggaran yang disuntik (termasuk `entity_id` mentah di JSX & template literal) & menolak 5 kasus sah (bukti-merah sah).
+  berkas diperiksa: 728
+
+  [91m[1m✗ 1 pelanggaran:[0m
+    [91m✗[0m features/wms/grn/GrnOcrUsagePanel.jsx:53 — mencetak `entity_id` MENTAH ke layar (pakai `entityShortFromCtx()`/`<EntityBadge>`)
+        [93m<td className="px-2">{r.entity_id}</td>[0m
+
+  [93m→ Perbaiki dengan `entityShort/entityFull/entityShortById/entityFullById/entityOptions` dari `utils/entityLabel.js`.[0m  [91m✗ guard:entity_label (INV-UI-02, id entitas tak boleh tampil) FAIL (rc=1)[0m (0s)
+
+[96m[1m▶ guard:error_notice (INV-UI-03, error tak boleh senyap)[0m
+  utang teknis (baseline aturan C): 12 modal lama belum punya bilah error sendiri — lihat MODAL_BASELINE.
+  [PASS] SELF-TEST: 2 pelanggaran tertangkap · 2 pemakaian benar tidak salah-tuduh (bukti-merah sah).
+[96m[1m== INV-UI-03 — Kegagalan backend harus terlihat di layar (anti error senyap) ==[0m
+[92m[PASS][0m 276 cek lolos, 0 pelanggaran.  [92m✓ guard:error_notice (INV-UI-03, error tak boleh senyap) PASS[0m (0s)
+
+[96m[1m▶ guard:role_label (INV-ROLE-01, peran dari registry & izin)[0m
+[1m== SELF-TEST verify_role_label (gate harus bisa MEMERAH) ==[0m
+  [92m[PASS][0m peta label peran lokal TERTANGKAP
+  [92m[PASS][0m pembesaran huruf id peran TERTANGKAP
+  [92m[PASS][0m id peran MENTAH dicetak ke layar TERTANGKAP
+  [92m[PASS][0m wewenang dari literal peran di layar pajak TERTANGKAP  · 4 temuan
+  [92m[PASS][0m pemakaian BENAR (roleLabel + can) tidak salah-tuduh
+  [92m[PASS][0m kode nyata saat ini HIJAU
+
+  [92mHIJAU[0m — 0 pemeriksaan gagal.  [92m✓ guard:role_label (INV-ROLE-01, peran dari registry & izin) PASS[0m (0s)
+
+[96m[1m▶ guard:derived_fields (INV-UI-04, field turunan tak boleh dari respons daftar)[0m
+[96m[1m== INV-UI-04 — Field turunan dibaca dari sumbernya sendiri (bukan dari respons daftar) ==[0m
+[92m[PASS][0m 3 cek lolos, 0 pelanggaran.  [92m✓ guard:derived_fields (INV-UI-04, field turunan tak boleh dari respons daftar) PASS[0m (0s)
+
+[96m[1m▶ audit_entity_isolation SELF-TEST (bukti-merah pagar isolasi)[0m
+==============================================================================
+  GATE ISOLASI LINTAS-ENTITAS (FASE E-0)
+==============================================================================
+  [PASS] gate MENANGKAP koleksi ber-entitas yang tidak terdaftar
+  [PASS] setelah dibersihkan gate kembali hijau  [92m✓ audit_entity_isolation SELF-TEST (bukti-merah pagar isolasi) PASS[0m (0s)
+
+[96m[1m▶ guard:write_scope SELF-TEST (INV-ENTITY-02, mode gabungan hanya-lihat)[0m
+== SELF-TEST entity_write_guard (pagar mode “Semua Entitas”) ==
+  [PASS] POST   /api/customers                                   X-Entity-Id=all      → 409  · buat pelanggan di mode gabungan DITOLAK
+  [PASS] POST   /api/sales-orders                                X-Entity-Id=all      → 409  · buat pesanan di mode gabungan DITOLAK
+  [PASS] POST   /api/ar-receipts                                 X-Entity-Id=all      → 409  · catat uang masuk DITOLAK
+  [PASS] POST   /api/approval-rules                              X-Entity-Id=all      → 409  · aturan persetujuan DITOLAK
+  [PASS] POST   /api/hr/employees                                X-Entity-Id=all      → 409  · karyawan DITOLAK
+  [PASS] POST   /api/customers                                   X-Entity-Id=ent_ksc  → lanjut  · setelah memilih badan usaha: BOLEH
+  [PASS] POST   /api/customers                                   X-Entity-Id=(kosong) → lanjut  · tanpa header (bawaan home): BOLEH
+  [PASS] GET    /api/customers                                   X-Entity-Id=all      → lanjut  · membaca gabungan: BOLEH
+  [PASS] POST   /api/products                                    X-Entity-Id=all      → lanjut  · master katalog bersama: BOLEH
+  [PASS] POST   /api/uoms                                        X-Entity-Id=all      → lanjut  · master satuan bersama: BOLEH
+  [PASS] POST   /api/entities                                    X-Entity-Id=all      → lanjut  · membuat badan usaha itu sendiri: BOLEH
+  [PASS] PATCH  /api/users/{user_id}                             X-Entity-Id=all      → lanjut  · ubah akun: BOLEH
+  [PASS] POST   /api/interco/returns                             X-Entity-Id=all      → lanjut  · retur antar-badan-usaha: BOLEH
+  [PASS] POST   /api/tax-invoices/{fkt_id}/replace               X-Entity-Id=all      → lanjut  · aksi atas dokumen yang sudah ada: BOLEH
+  [PASS] POST   /api/sales-orders/preview-lots                   X-Entity-Id=all      → lanjut  · pratinjau: BOLEH
+  [PASS] DELETE /api/customers/{customer_id}                     X-Entity-Id=all      → lanjut  · hapus dokumen ada: BOLEH
+  [PASS] POST   /api/rute-baru-yang-lupa-didaftarkan             X-Entity-Id=all      → 409  · deny-by-default untuk rute tulis baru
+
+  HIJAU — pagar terbukti bisa memerah.  [92m✓ guard:write_scope SELF-TEST (INV-ENTITY-02, mode gabungan hanya-lihat) PASS[0m (1s)
+
+[96m[1m▶ guard:warehouse_scope SELF-TEST (E4.1, gudang khusus badan usaha)[0m
+== SELF-TEST audit_warehouse_scope (gate harus bisa MEMERAH) ==
+  [PASS] endpoint tulis tanpa pagar TERTANGKAP
+  [PASS] endpoint berpagar tidak salah-tuduh
+==============================================================================
+  GATE E4.1 — PAGAR PEMAKAIAN GUDANG PER BADAN USAHA
+==============================================================================
+  21 endpoint tulis berpagar · 2 dibebaskan dengan alasan
+    - bebas: label_printer.py::generate_product_label             (hanya mencetak label — tidak membuat/menggeser stok)
+    - bebas: rfid.py::post_auto_encode                            (tag mengikuti roll; kepemilikan roll sudah ter-scope owner_entity_id)
+
+  HIJAU — semua endpoint tulis pemilih gudang berpagar.
+  [PASS] kode nyata saat ini HIJAU
+
+  HIJAU — gate terbukti bisa memerah.  [92m✓ guard:warehouse_scope SELF-TEST (E4.1, gudang khusus badan usaha) PASS[0m (1s)
+
+[96m[1m==============================================================[0m
+  [91m[1m✗ ADA GATE MERAH.[0m  31s · Lihat detail di atas & memory/GATE_RECEIPT.md
+[96m[1m==============================================================[0m
+
+EXIT=1

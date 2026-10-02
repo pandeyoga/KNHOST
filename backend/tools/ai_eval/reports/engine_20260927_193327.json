@@ -1,0 +1,781 @@
+{
+ "summary": {
+  "mode": "engine",
+  "n": 110,
+  "p50_ms": 5,
+  "args_valid_pct": 100.0,
+  "access_denied_pct": 100.0
+ },
+ "rows": [
+  {
+   "id": "q001",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q002",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q003",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q004",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 7
+  },
+  {
+   "id": "q005",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q006",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 7
+  },
+  {
+   "id": "q007",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q008",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 7
+  },
+  {
+   "id": "q009",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q010",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q011",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q012",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q013",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q014",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q015",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q016",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q017",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q018",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q019",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q020",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q021",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q022",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 7
+  },
+  {
+   "id": "q023",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q024",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q025",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q026",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q027",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q028",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q029",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q030",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 9
+  },
+  {
+   "id": "q031",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q032",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q033",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q034",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q035",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q036",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q037",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q038",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q039",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q040",
+   "category": "penjualan",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q041",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q042",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q043",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q044",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q045",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 131
+  },
+  {
+   "id": "q046",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 36
+  },
+  {
+   "id": "q047",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 37
+  },
+  {
+   "id": "q048",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 34
+  },
+  {
+   "id": "q049",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 36
+  },
+  {
+   "id": "q050",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 34
+  },
+  {
+   "id": "q051",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q052",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q053",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q054",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q055",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 73
+  },
+  {
+   "id": "q056",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q057",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q058",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q059",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 6
+  },
+  {
+   "id": "q060",
+   "category": "piutang_kas",
+   "ok": true,
+   "error": null,
+   "ms": 18
+  },
+  {
+   "id": "q061",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q062",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q063",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q064",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q065",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q066",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q067",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q068",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q069",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q070",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q071",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q072",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q073",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q074",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 3
+  },
+  {
+   "id": "q075",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q076",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 3
+  },
+  {
+   "id": "q077",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 8
+  },
+  {
+   "id": "q078",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q079",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 9
+  },
+  {
+   "id": "q080",
+   "category": "stok",
+   "ok": true,
+   "error": null,
+   "ms": 8
+  },
+  {
+   "id": "q081",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q082",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q083",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q084",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q085",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q086",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q087",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q088",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 3
+  },
+  {
+   "id": "q089",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 3
+  },
+  {
+   "id": "q090",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 3
+  },
+  {
+   "id": "q091",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 3
+  },
+  {
+   "id": "q092",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q093",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 3
+  },
+  {
+   "id": "q094",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q095",
+   "category": "pembelian_makloon",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q096",
+   "category": "hak_akses",
+   "ok": true,
+   "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin",
+   "ms": 2
+  },
+  {
+   "id": "q097",
+   "category": "hak_akses",
+   "ok": true,
+   "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin_pct",
+   "ms": 2
+  },
+  {
+   "id": "q098",
+   "category": "hak_akses",
+   "ok": true,
+   "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: stock_value",
+   "ms": 1
+  },
+  {
+   "id": "q099",
+   "category": "hak_akses",
+   "ok": true,
+   "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin",
+   "ms": 1
+  },
+  {
+   "id": "q100",
+   "category": "hak_akses",
+   "ok": true,
+   "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin",
+   "ms": 2
+  },
+  {
+   "id": "q101",
+   "category": "hak_akses",
+   "ok": true,
+   "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin_pct",
+   "ms": 1
+  },
+  {
+   "id": "q102",
+   "category": "hak_akses",
+   "ok": true,
+   "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin",
+   "ms": 1
+  },
+  {
+   "id": "q103",
+   "category": "hak_akses",
+   "ok": true,
+   "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: gross_margin",
+   "ms": 1
+  },
+  {
+   "id": "q104",
+   "category": "hak_akses",
+   "ok": true,
+   "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: stock_value",
+   "ms": 1
+  },
+  {
+   "id": "q105",
+   "category": "hak_akses",
+   "ok": true,
+   "error": "Semua metrik yang diminta tidak tersedia untuk peran Anda: stock_value",
+   "ms": 2
+  },
+  {
+   "id": "q106",
+   "category": "hak_akses",
+   "ok": true,
+   "error": null,
+   "ms": 4
+  },
+  {
+   "id": "q107",
+   "category": "hak_akses",
+   "ok": true,
+   "error": null,
+   "ms": 26
+  },
+  {
+   "id": "q108",
+   "category": "hak_akses",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q109",
+   "category": "hak_akses",
+   "ok": true,
+   "error": null,
+   "ms": 5
+  },
+  {
+   "id": "q110",
+   "category": "hak_akses",
+   "ok": true,
+   "error": null,
+   "ms": 36
+  }
+ ]
+}

@@ -1,0 +1,1 @@
+HEAD create_counted_roll task_qty for 100 cm (product base cm, task meter) = 100.0

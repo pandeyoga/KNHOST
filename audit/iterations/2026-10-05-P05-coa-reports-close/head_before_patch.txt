@@ -1,0 +1,177 @@
+[
+ {
+  "id": "FN-05",
+  "invariant": "laporan E memakai override E",
+  "pass": false,
+  "detail": "{'code': '9-AUDf59c64', 'name': 'Override F', 'type': 'income', 'entity_id': 'ent_audit_p05_f_f59c64', 'is_postable': True, 'is_active': True}"
+ },
+ {
+  "id": "FN-05",
+  "invariant": "laporan F memakai override F",
+  "pass": true,
+  "detail": "Override F"
+ },
+ {
+  "id": "FN-05",
+  "invariant": "entitas tanpa override memakai global",
+  "pass": false,
+  "detail": "Override F"
+ },
+ {
+  "id": "FN-05",
+  "invariant": "akun khusus E tidak bocor ke F",
+  "pass": false,
+  "detail": ""
+ },
+ {
+  "id": "FN-05",
+  "invariant": "laporan multi-entitas memakai dimensi global",
+  "pass": false,
+  "detail": "Override F"
+ },
+ {
+  "id": "FN-06",
+  "invariant": "akun khusus E dapat diposting di E",
+  "pass": false,
+  "detail": "Akun '9-CUSf59c64' tidak ditemukan."
+ },
+ {
+  "id": "FN-06",
+  "invariant": "akun khusus E dapat diposting di E",
+  "pass": true,
+  "detail": "e_f59c64/JE-00001"
+ },
+ {
+  "id": "FN-06",
+  "invariant": "akun khusus E ditolak di F",
+  "pass": true,
+  "detail": "Akun '9-CUSf59c64' tidak ditemukan."
+ },
+ {
+  "id": "FN-06",
+  "invariant": "override nonaktif menghalangi posting",
+  "pass": false,
+  "detail": "lolos"
+ },
+ {
+  "id": "FN-06",
+  "invariant": "global default tetap bekerja di F",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "FN-06",
+  "invariant": "autopost juga menolak override nonaktif",
+  "pass": false,
+  "detail": "lolos"
+ },
+ {
+  "id": "FN-16",
+  "invariant": "jurnal masa depan tidak masuk neraca default",
+  "pass": false,
+  "detail": "777.0"
+ },
+ {
+  "id": "FN-16",
+  "invariant": "label as_of = cutoff hari ini",
+  "pass": true,
+  "detail": "2026-09-30"
+ },
+ {
+  "id": "FN-16",
+  "invariant": "as_of masa depan memasukkan jurnal itu",
+  "pass": true,
+  "detail": "777.0"
+ },
+ {
+  "id": "FN-04",
+  "invariant": "penyusutan tidak masuk CFO/CFI",
+  "pass": false,
+  "detail": "({'1-2200': -100.0, '1-2300': -40.0, '1-2900': 100.0}, {'label': 'Arus Kas dari Aktivitas Operasi', 'net_income': 150.0, 'net_income_label': 'Laba bersih (basis akrual)', 'working_capital': [{'code': '2-1100', 'name': 'Hutang Usaha', 'amount': 100.0}], 'total': 250.0})"
+ },
+ {
+  "id": "FN-04",
+  "invariant": "beli aset kredit tidak masuk CFI, diungkap nonkas",
+  "pass": false,
+  "detail": "({'1-2200': -100.0, '1-2300': -40.0, '1-2900': 100.0}, {})"
+ },
+ {
+  "id": "FN-04",
+  "invariant": "beli aset tunai masuk CFI",
+  "pass": true,
+  "detail": "{'1-2200': -100.0, '1-2300': -40.0, '1-2900': 100.0}"
+ },
+ {
+  "id": "FN-04",
+  "invariant": "total arus kas = Δkas & reconciled",
+  "pass": true,
+  "detail": "(210.0, True)"
+ },
+ {
+  "id": "FN-13",
+  "invariant": "3 close bersamaan → tepat 1 sukses, 1 jurnal penutup",
+  "pass": false,
+  "detail": "['dict', 'dict', 'dict']"
+ },
+ {
+  "id": "FN-13",
+  "invariant": "kunci close dilepas setelah selesai",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "FN-09",
+  "invariant": "void di periode tertutup ditolak tanpa unlock",
+  "pass": false,
+  "detail": "lolos"
+ },
+ {
+  "id": "FN-09",
+  "invariant": "jurnal asli tetap posted",
+  "pass": false,
+  "detail": "void"
+ },
+ {
+  "id": "IX-08",
+  "invariant": "tepat satu keputusan menang, lainnya konflik",
+  "pass": false,
+  "detail": "['dict', 'dict']"
+ },
+ {
+  "id": "IX-08",
+  "invariant": "approve menang → tanpa jejak rejected_by",
+  "pass": false,
+  "detail": "approved"
+ },
+ {
+  "id": "IX-08",
+  "invariant": "retry keputusan ditolak",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "IX-08",
+  "invariant": "bagian IX-08 crash",
+  "pass": false,
+  "detail": "ValueError('Jurnal sudah di-void.')"
+ },
+ {
+  "id": "CX-09",
+  "invariant": "E saja: tanpa eliminasi F↔G / E↔F",
+  "pass": false,
+  "detail": "{'revenue': 0.0, 'cogs': 0.0, 'opex': 0.0, 'expense': 0.0, 'gross_profit': 0.0, 'net_income': 0.0, 'assets': -35.0, 'liabilities': -35.0, 'equity': 0.0}"
+ },
+ {
+  "id": "CX-09",
+  "invariant": "E+F: hanya eliminasi E↔F",
+  "pass": false,
+  "detail": "{'revenue': 0.0, 'cogs': 0.0, 'opex': 0.0, 'expense': 0.0, 'gross_profit': 0.0, 'net_income': 0.0, 'assets': -35.0, 'liabilities': -35.0, 'equity': 0.0}"
+ },
+ {
+  "id": "CX-09",
+  "invariant": "membaca laporan tidak menulis eliminasi",
+  "pass": true,
+  "detail": ""
+ }
+]
+pass=11 fail=18

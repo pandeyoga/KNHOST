@@ -1,0 +1,23 @@
+# 2026-10-08-P10-opname-financial/repro_p10.py (4s)
+PASS [WM-07] item binA expected = 40 (bukan 100 seluruh gudang)
+PASS [WM-07] count key duplikat → 409
+PASS [WM-07] campur level gudang + bin untuk produk sama → 409
+PASS [WM-07] actual negatif ditolak (400/422)
+PASS [WM-07] actual NaN ditolak
+PASS [WM-07] binB 60/60 → tidak ada selisih binB
+PASS [WM-07] approve dua bin: binA 40→30, binB tetap 60 (tanpa double reduction)
+PASS [FN-14] kurang 10 @100 → jurnal Dr 5-9500 1.000 / Cr 1-1300 1.000
+PASS [FN-14] approve ulang ditolak & jurnal tidak dobel
+PASS [FN-14] surplus 5 → roll baru ber-HPP WAC (80), bukan 0
+PASS [FN-14] surplus → jurnal Dr 1-1300 400 / Cr pendapatan lain
+PASS [FN-14] surplus tanpa biaya acuan & tanpa alasan → 409, tidak ada roll dibuat
+PASS [FN-14] 409 melepas kunci saga (sesi tetap submitted)
+PASS [FN-14] dengan zero_cost_reason → approved, alasan tersimpan
+PASS [WM-08] expected mencakup picked (40)
+PASS [WM-08] kurang 40 diterapkan penuh (applied == requested) termasuk roll picked
+PASS [WM-08] detail requested/applied/unresolved per baris tersimpan
+PASS [WM-08] stok eligible tak cukup → 409 tanpa approve palsu & tanpa mutasi
+PASS [RF-17] roll WIP ber-tag ikut expected; transit sales TIDAK
+PASS [RF-17] semua expected terbaca + 1 EPC asing → akurasi < 100%
+PASS [RF-17] metrik terpisah: coverage tag, recall, extra rate, unresolved
+{"pass": 21, "fail": 0}

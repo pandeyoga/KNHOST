@@ -1,0 +1,25 @@
+{
+  "summary": "Verified VPS 4/4 fix: backend/scripts/vps_enable_ai.py + deploy/cek_vps.sh now use an internal 1-hour admin session written straight into db.sessions (script runs inside the backend container), removing the hard password/lockout dependency; deploy/setup_vps_ai_import.sh no longer prompts for a password. Ran the full script once end-to-end in preview with ADMIN_PASSWORD=salah — all 7 steps printed OK (internal session, OpenAI test 132 models, config PUT, facts rebuild 11 orders, anomaly scan, ai/status chat_enabled+has_key+no-mock, real chat answer). Zero leftover session_vps_/session_cek_ docs after each run. Added /app/backend/tests/test_vps_enable_ai.py (6 tests, all pass) covering: wrong-password → internal-session branch, no-password → internal-session branch, correct password (demo12345) → login-admin branch, internal_token grants real admin access to GET /api/ai/status (200 with chat_enabled/has_key/model keys), the extracted heredoc python block from cek_vps.sh runs locally without a password and prints 'Daftar Roll ?limit=5 → N baris' with no leftover sessions, and bash -n passes on both shell files with no residual `read -rsp \"Sandi admin` line. Scenarios 2 & 3 monkey-patch run() to a no-op so the OpenAI quota is only consumed once (matching the request).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_vps_enable_ai.py",
+    "/app/test_reports/pytest/vps_enable_ai.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "vps_enable_ai.py:78 `if key and not key.startswith('sk-') or any(c.isspace() for c in key)` — operator precedence quirk: when key is empty, the isspace() branch is False so it works, but the intent reads awkwardly. Consider `if key and (not key.startswith('sk-') or any(c.isspace() for c in key)):` for clarity.",
+    "vps_enable_ai.py:44-45 falls back to *any* active admin when the ADMIN_EMAIL user is missing — silently using a different admin can surprise operators. Consider logging which admin was chosen (info=user['email'] in the step message).",
+    "vps_enable_ai.py:50-52 session document uses ISO string for created_at but datetime for expires_at — inconsistent with the login path (which stores both as strings in some codebases). Confirm auth middleware accepts both; current preview run showed the token works, so functional.",
+    "cek_vps.sh L48 selects the first active admin without preferring admin@kainnusantara.id — same note as above, harmless but worth pinning.",
+    "setup_vps_ai_import.sh L51-52 still passes ADMIN_PASSWORD via `-e` even when empty — no harm (script treats empty as absent), but you could skip `-e ADMIN_PASSWORD=` when empty to reduce env noise."
+  ],
+  "updated_files": ["/app/backend/tests/test_vps_enable_ai.py"],
+  "success_rate": {"backend": "100% (6/6 pytest + full end-to-end script run OK)", "frontend": "n/a (skipped as requested)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None. Tests create and immediately delete their own session_vps_ docs; verified 0 leftovers after every path.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "test_vps_enable_ai.py monkey-patches run() to a no-op for the no-password/correct-password branches to avoid burning OpenAI quota; only the primary manual run (ADMIN_PASSWORD=salah in the preview shell) exercises the full AI chain. To re-run just the shell/branching tests: `pytest /app/backend/tests/test_vps_enable_ai.py -v`. To re-exercise the full AI chain (consumes ~1 OpenAI request): `cd /app/backend && MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database ADMIN_PASSWORD=salah python scripts/vps_enable_ai.py`.",
+  "rca of the issue": "Original 4/4 failure on VPS = admin login rejected (wrong password in deploy/.env and/or 5x/15min lockout after retries). Fix moved auth OUT of the password path: scripts running inside the backend container mint their own 1-hour admin session directly in db.sessions (secrets.token_urlsafe(32)) and clean it up in a try/finally. Login is still attempted first when ADMIN_PASSWORD is set and correct — falling back to the internal session otherwise. The interactive `read -rsp` prompt was also removed so the script no longer hangs when invoked via nohup."
+}

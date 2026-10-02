@@ -1,0 +1,42 @@
+{
+  "summary": "Iter93 — Full review of Tips Foto SJ, Info Foto Diputar, Sampel Uji OCR, Profil SJ (learning from corrections). Found & FIXED 1 critical frontend bug (React error #310 on ALL GRN detail opens due to conditional useState after early return in GrnDetail.jsx). After fix, ALL 9 requested flows PASS end-to-end: photo tips 6-item + collapse persist via localStorage kn.grn.photoTips.collapsed, GRN-00009 rotated banner + hints + landscape photo, samples panel 5/20 with accuracy tiles all 100%, run report visible, sample editor open/edit/save/persist/restore, real-OpenAI run of SJ-3171 now returns qty=2131 yard (backend row-total fix confirmed), make-sample from GRN-00006 returns 200 + duplicate returns 409, Cirebon Craft profile learned box shows notes + correction 495→405 + save works, mobile 390px no overflow. Cleanup done.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "GrnDetail.jsx", "issue": "FIXED. useState(sampled) was declared AFTER `if (!grn) return ...` early return (line 34 before fix). On first render grn=null → early return skips hook; second render registers the hook → hook-count mismatch → React error #310 crash on every GRN detail open in ent_ksc. Moved hook to top of component with the other useState declarations.", "selector": "grn-detail", "priority": "CRITICAL_FIXED"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_flows": [
+    {"flow": "Photo Tips wizard step 2", "result": "PASS. 6 tips grn-photo-tip-0..5 render inside grn-photo-tips. Toggle collapses (0 tips shown) and localStorage.kn.grn.photoTips.collapsed='1' set. Close + reopen wizard → still collapsed (persist confirmed). Restored expanded state at end."},
+    {"flow": "Auto-rotated note on KSC/GRN-00009", "result": "PASS after fix. grn-ocr-rotated text: 'Foto halaman 1 miring — diputar otomatis 90° berlawanan jarum jam sebelum dibaca. Tampilan foto di kiri sudah ikut diputar…'. grn-photo-auto-rotated badge present. grn-ocr-hints text: 'Dibantu 1 koreksi dari SJ mitra ini sebelumnya + catatan format admin.' grn-photo-img rendered landscape (360×203 fully inside panel). grn-make-sample button visible."},
+    {"flow": "Samples tab Cipta Sandang", "result": "PASS. ocr-samples-panel visible, ocr-samples-count='5/20 sampel disarankan'. ocr-run-report visible with all 6 accuracy tiles: dn_number=100% 1/1, dn_date=100% 1/1, qty=100% 1/1 (post-fix), unit=100% 1/1, rolls=100% 1/1, po_ref=— 0/0. Each of 5 sample edit/check buttons present."},
+    {"flow": "Samples tab ent_ksc", "result": "PASS. Backend returns 3 samples (Cirebon Craft SJ pink dikoreksi 495→405, ADETEX AF/PD/LF/07-005/26, SJ pink miring 90°)."},
+    {"flow": "Answer editor", "result": "PASS. ocr-sample-editor opens on ocs_aa84269e37fd (RIBKNIT). Label change (+' (TEST_EDIT)') persists after save + reopen. Line-add adds 4 rows (multi-field row), line-remove removes. Original label restored."},
+    {"flow": "Run 1 sample (SJ-3171)", "result": "PASS. POST /api/ocr-samples/runs {sample_ids:['ocs_4768755b4c32']} → run finishes in ~24s. Result: qty got=2131.0 yard, expected=2131.0 (was 116 pre-fix). Rolls 19/19, unit yard/yard, dn_number and dn_date all ok. Backend row-total fix WORKS. Real OpenAI call cost US$0.017."},
+    {"flow": "Make sample from GRN", "result": "PASS. POST /api/ocr-samples/from-grn/grn_40a455f08a7b (KSC/GRN-00006 ADETEX) → 200 with new sample id. Second POST → 409 'Kedatangan ini sudah dijadikan sampel uji.'. Cleaned up via DELETE."},
+    {"flow": "PATCH sample label + restore", "result": "PASS on ocs_aa84269e37fd — label modified & restored via /api/ocr-samples/{id}."},
+    {"flow": "Profil SJ tab (grn-view-tab-profiles)", "result": "PASS. Cirebon Craft card. grn-profile-learned-sup_44c069fa4f55 visible with notes textarea prefilled 'Nomor PO pemesan tertulis dalam kurung di akhir keterangan barang, format NNNN/SCB/MMYY.'. Correction chip 'Nomor SJ: 26/SEP/PCK/SRJL/495 → 26/SEP/PCK/SRJL/405 (KSC/GRN-00007)' visible. grn-profile-notes-save button present. Backend PATCH /api/goods-receipts/dn-profiles/sup_44c069fa4f55 {format_notes} append + restore verified via API."},
+    {"flow": "Mobile 390px", "result": "PASS. scrollWidth == clientWidth == 390 on samples view — no horizontal overflow."}
+  ],
+  "test_report_links": [
+    "/app/test_reports/it93_phototips.jpg",
+    "/app/test_reports/it93_grn9_fixed.jpg",
+    "/app/test_reports/it93_samples.jpg",
+    "/app/test_reports/it93_profiles.jpg",
+    "/app/test_reports/it93_mobile_samples.jpg"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "GrnDetail.jsx had classic React hook-order violation: useState(sampled) declared after `if (!grn) return …`. Any file that early-returns based on a fetched state MUST declare all useState/useEffect at the top of the function body. Consider adding an ESLint rule 'react-hooks/rules-of-hooks' if not already enforced — this bug would have been caught at lint time."
+  ],
+  "updated_files": ["/app/frontend/src/features/wms/grn/GrnDetail.jsx"],
+  "success_rate": {"backend": "100% (all API flows: list/get/patch/from-grn/runs/files/dn-profiles/single-sample-run)", "frontend": "100% after 1 hook-order fix (was 0% for GRN detail view before fix)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (Bearer POST /api/auth/login).",
+  "seed_data_creation": "None persisted. Created run ocr_run_1705527503cd (Cipta Sandang, single-sample SJ-3171, cost US$0.017). Temporarily created & deleted ocs_ff20611777d6 (make-sample from GRN-00006). Temporarily patched then restored Cirebon Craft format_notes and RIBKNIT sample label.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend row-total fix in dn_rules._row_total/pick_declared confirmed working on SJ-3171 (per-roll listing → aggregate 2131 yard). Only 1 live OpenAI run this iteration (cost 0.017). Existing runs in DB: ocr_run_748670bf9c61 (KSC 2/2), ocr_run_e0796634d731 (Cipta 5/5), ocr_run_1705527503cd (Cipta 1/1 SJ-3171). Frontend served from prebuilt bundle — run /app/scripts/rebuild_frontend.sh after src edits. Login: use data-testid=demo-login-admin-button (form is prefilled).",
+  "rca of the issue": "React error #310 (hook count mismatch) on every GRN detail open: GrnDetail.jsx declared useState(sampled) AFTER an early `if (!grn) return <ErrorBox/>`. First render (grn=null) took the early return → only 3 hooks + 2 effects registered. After the useEffect fetch resolved, grn became truthy, the component proceeded past the early return and hit `const [sampled, setSampled] = useState(false)` → hook count went from 5 to 6 → React invariant violation → ErrorBoundary. Reproduction: log in, ?view=goods-receipts&entity=ent_ksc, click any KSC/GRN card. Fix: hoisted `const [sampled, setSampled] = useState(false);` to the top hook block alongside the other useState calls, above the early return. Verified: GRN-00009 detail now renders fully with all data-testid selectors and photo displayed landscape after auto-rotate."
+}

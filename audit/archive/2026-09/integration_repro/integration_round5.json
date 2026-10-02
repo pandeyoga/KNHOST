@@ -1,0 +1,87 @@
+{
+  "source_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+  "database": "knhost_audit_a576d586218640b29e4ba8c306aba656",
+  "mode": "Original services + actual local Mongo; ASGI for settings; deterministic read barrier for decision race",
+  "results": [
+    {
+      "id": "I5-C01",
+      "kind": "control",
+      "observed": {
+        "read_foreign_settings": 403
+      }
+    },
+    {
+      "id": "I5-SEC01",
+      "kind": "defect",
+      "observed": {
+        "status": 200,
+        "actor_allowed": [
+          "A"
+        ],
+        "target_scope": "B",
+        "currency_before": "IDR",
+        "currency_after": "USD"
+      }
+    },
+    {
+      "id": "I5-C03",
+      "kind": "control",
+      "observed": {
+        "create_foreign_unlock": 403
+      }
+    },
+    {
+      "id": "I5-SEC02",
+      "kind": "defect",
+      "observed": {
+        "status": 200,
+        "foreign_requests": 1
+      }
+    },
+    {
+      "id": "I5-SEC03",
+      "kind": "defect",
+      "observed": {
+        "status": 200,
+        "approved_entity": "B",
+        "decision": "approved"
+      }
+    },
+    {
+      "id": "I5-C02",
+      "kind": "control",
+      "observed": {
+        "self_approval_rejected": true
+      }
+    },
+    {
+      "id": "I5-FN01",
+      "kind": "defect",
+      "observed": {
+        "rejection_returned": "rejected",
+        "final_status": "approved",
+        "retains_rejected_by": "Rejector",
+        "closed_period_guard_accepts_unlock": true
+      }
+    },
+    {
+      "id": "I5-WM01",
+      "kind": "policy_gap",
+      "observed": {
+        "status": "done",
+        "inspected": 1,
+        "total_lines": 2,
+        "decision": "terima"
+      }
+    },
+    {
+      "id": "I5-WM02",
+      "kind": "defect",
+      "observed": {
+        "inspection_status": "in_progress",
+        "inspection_finished_at": "",
+        "return_inspect_done_at": "2026-09-29T16:53:49.782329+00:00"
+      }
+    }
+  ]
+}

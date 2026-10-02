@@ -1,0 +1,149 @@
+{
+ "p01_dev": {
+  "script": "2026-09-30-P01-device-credentials/repro_rf12_rf13.py",
+  "pass": 16,
+  "fail": 0,
+  "ok": true
+ },
+ "p01_s1": {
+  "script": "2026-09-30-P01-scope-batch1/repro_p01_scope.py",
+  "pass": 22,
+  "fail": 0,
+  "ok": true
+ },
+ "p01_s2": {
+  "script": "2026-09-30-P01-scope-batch2/repro_p01_batch2.py",
+  "pass": 12,
+  "fail": 1,
+  "ok": true,
+  "drift_excluded": [
+   "multi-entity count session is scannable by its creator scope"
+  ]
+ },
+ "p01_cx10": {
+  "script": "2026-10-01-P01-ix06-cx10/repro_cx10.py",
+  "pass": 10,
+  "fail": 0,
+  "ok": true
+ },
+ "p01_ix06": {
+  "script": "2026-10-01-P01-ix06-cx10/repro_ix06.py",
+  "pass": 11,
+  "fail": 0,
+  "ok": true
+ },
+ "p02": {
+  "script": "2026-10-01-P02-core-roll/repro_p02.py",
+  "pass": 13,
+  "fail": 0,
+  "ok": true
+ },
+ "p06_qc": {
+  "script": "2026-10-01-P06-qc-sampling/repro_pg01_ix15.py",
+  "pass": 13,
+  "fail": 0,
+  "ok": true
+ },
+ "p02_wm02": {
+  "script": "2026-10-02-P02-wm02-reservation/repro_wm02.py",
+  "pass": 11,
+  "fail": 0,
+  "ok": true
+ },
+ "p03": {
+  "script": "2026-10-02-P03-durable-posting/repro_p03.py",
+  "pass": 43,
+  "fail": 0,
+  "ok": true
+ },
+ "p06": {
+  "script": "2026-10-02-P06-receiving/repro_p06.py",
+  "pass": 12,
+  "fail": 0,
+  "ok": true
+ },
+ "p11": {
+  "script": "2026-10-02-P11-mutasi-konversi/repro_p11.py",
+  "pass": 21,
+  "fail": 0,
+  "ok": true
+ },
+ "p12": {
+  "script": "2026-10-02-P12-payroll-hr-marketing/repro_p12.py",
+  "pass": 23,
+  "fail": 0,
+  "ok": true
+ },
+ "p13": {
+  "script": "2026-10-02-P13-audit-secret-label/repro_p13.py",
+  "pass": 10,
+  "fail": 0,
+  "ok": true
+ },
+ "p04": {
+  "script": "2026-10-03-P04-costing/repro_p04.py",
+  "pass": 7,
+  "fail": 0,
+  "ok": true
+ },
+ "fu1": {
+  "script": "2026-10-03-WM02-identity-CX05-panel/repro_followup.py",
+  "pass": 13,
+  "fail": 0,
+  "ok": true
+ },
+ "fu2": {
+  "script": "2026-10-04-label-reimburse-poline-badge/repro_followup2.py",
+  "pass": 12,
+  "fail": 0,
+  "ok": true
+ },
+ "p05": {
+  "script": "2026-10-05-P05-coa-reports-close/repro_p05.py",
+  "pass": 29,
+  "fail": 0,
+  "ok": true
+ },
+ "fu3": {
+  "script": "2026-10-05-P05-coa-reports-close/repro_followup3.py",
+  "pass": 13,
+  "fail": 0,
+  "ok": true
+ },
+ "p07": {
+  "script": "2026-10-06-P07-dispatch-identity-reversal/repro_p07.py",
+  "pass": 18,
+  "fail": 0,
+  "ok": true
+ },
+ "p07b": {
+  "script": "2026-10-07-P07-fulfillment-saga-loading/repro_p07b.py",
+  "pass": 16,
+  "fail": 0,
+  "ok": true
+ },
+ "p08": {
+  "script": "2026-10-08-P08-tag-printer-verify/repro_p08.py",
+  "pass": 43,
+  "fail": 0,
+  "ok": true
+ },
+ "p09": {
+  "script": "2026-10-08-P09-gate-contract/repro_p09.py",
+  "pass": 22,
+  "fail": 0,
+  "ok": true
+ },
+ "p10": {
+  "script": "2026-10-08-P10-opname-financial/repro_p10.py",
+  "pass": 21,
+  "fail": 0,
+  "ok": true
+ },
+ "p14": {
+  "script": "2026-10-02-P14-coverage-uat/repro_p14_history.py",
+  "pass": 19,
+  "fail": 0,
+  "ok": true
+ }
+}

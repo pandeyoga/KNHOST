@@ -1,0 +1,43 @@
+{
+  "summary": "P13 (GN-14 audit before/after + GN-14 secret cleanup + UX-03 OCR usage label) — regresi penuh LULUS. repro_p13.py pass=10/10, repro_p12.py pass=23/23, verify_no_secrets.py 0 temuan exit 0. 16/16 pytest audit trail hijau (GL PATCH/DELETE, bank PATCH, settings PUT scope ent_ksc, customer PATCH credit_limit, HR employee PATCH phone, serta pengujian redaksi [REDACTED]). Frontend UX-03 terverifikasi: kolom Badan usaha menampilkan 'Sukacita' bukan 'ent_ksc', testid grn-ocr-usage-entity-gpt-4o-mini-ent_ksc, title='ent_ksc' tersimpan.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "PATCH /api/hr/employees/{id}",
+        "issue": "Spec P13 meminta before/after untuk base_salary, tetapi base_salary ∈ hr_service.PII_FIELDS → sengaja dikecualikan dari jejak audit (sejalan dengan IMPLEMENTATION.md: 'PATCH karyawan (PII tetap dikecualikan)'). Nilai tetap berubah di koleksi master; audit row tetap tertulis dengan actor_id/source/content_hash valid. Tes diubah ke field non-PII (phone) agar before/after terbukti; perilaku PII direction terverifikasi (base_salary memang tidak bocor)."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p13_audit.py",
+    "/app/test_reports/pytest/p13_results.xml"
+  ],
+  "action_items": [
+    "Tidak ada tindakan wajib. Opsional: Jika kebijakan audit menuntut jejak perubahan base_salary (gaji), pertimbangkan memisahkan 'rahasia nilai' dari 'rahasia nomor identitas' — base_salary bisa dicatat before/after di audit_logs sambil tetap dikecualikan dari API read non-PII; keputusan desain diserahkan ke owner karena mempengaruhi akses baca jejak."
+  ],
+  "critical_code_review_comments": [
+    "dependencies.audit() rapi: redaksi dua arah (before + after), diff hanya level atas tapi tepat untuk kunci parsial, content_hash sha256 memberi anti-tamper per baris.",
+    "verify_no_secrets.py tegas: file terlarang + pola credential umum, tanpa cetak nilai. Guardrail CI-ready.",
+    "GrnOcrUsagePanel memakai entityShortById + fallback jelas; title tetap simpan ID teknis untuk operator. Baik.",
+    "Catatan: `_SECRET_KEY_HINTS` menyertakan 'hash' — perlu diperhatikan agar kolom functional seperti 'content_hash' tidak teredaksi di tempat lain. Saat ini _redact hanya diterapkan di before/after, bukan ke row (hash row tetap bersih)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p13_audit.py (baru)"
+  ],
+  "success_rate": {
+    "backend": "100% (16/16 pytest + 10/10 repro P13 + 23/23 repro P12)",
+    "frontend": "100% (UX-03 label resolver terverifikasi)"
+  },
+  "test_credentials": "admin@kainnusantara.id / demo12345, X-Entity-Id: ent_ksc",
+  "seed_data_creation": "Dua baris ai_usage_log (TEST_ocrlog_1, TEST_ocrlog_2) untuk GRN usage — SUDAH DIHAPUS. 1 GL akun TEST_ dibuat lalu dihapus via API. 2 bank_accounts TEST_ dibuat lalu dihapus langsung dari koleksi. 1 hr_employees TEST_ dibuat lalu dihapus langsung dari koleksi. system_settings scope ent_ksc.finance dikembalikan ke nilai semula. credit_limit pelanggan dikembalikan.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "P13 lulus menyeluruh. Hanya ada satu catatan desain (bukan bug): base_salary dikecualikan audit karena PII. Jika iterasi berikut ingin memperluas cakupan audit ke base_salary, perlu keputusan owner apakah memindahkannya ke 'nilai yang di-audit tetapi di-mask saat baca'. Tidak ada data uji yang tersisa; audit_logs memuat baris uji (bisa dibiarkan menurut agent note).",
+  "rca_of_the_issue": "Tidak ada bug. Satu-satunya ketidakcocokan spec vs implementasi adalah base_salary — spec review request menyebutnya sebagai field uji, namun IMPLEMENTATION.md dan hr_service.PII_FIELDS mengecualikannya. Direkomendasikan untuk tetap mengecualikan atau mengubah kebijakan secara eksplisit."
+}

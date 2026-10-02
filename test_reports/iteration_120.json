@@ -1,0 +1,39 @@
+{
+  "summary": "P12 (Payroll / HR / Marketing) regression + HTTP smoke. Service-level reproducers P12=23/23 and P11=21/21 pass. New /app/backend/tests/test_iter120_p12.py (11 HTTP tests) covers payroll preview/create run (ter vs annual_pasal17, overtime overlap counted once), night shift 22:00–06:00 (std_min=480, overtime_min=0), leave entitlement -1/0 handling, quota 12+10+10, overlap, cross-year split 2+3 with cancel isolation, and marketing partial metrics preservation incl. metrics_history snapshot. All 11 pass. Frontend smoke: HR Payroll, Cuti, Lembur, Marketing Kalender/Performa load after admin demo-login with zero JS pageerrors/console errors and no error banners.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/hr/leave-balances/set (pre-fix)", "issue": "Service raised ValueError on entitlement<0 but router did not catch it → HTTP 500 instead of 400 (spec IX-01 requires 400). FIXED locally by wrapping call in try/except ValueError → HTTPException(400)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter120_p12.py",
+    "/app/test_reports/pytest/iter120_p12.xml",
+    "/app/audit/iterations/2026-10-02-P12-payroll-hr-marketing/repro_p12.py",
+    "/app/audit/iterations/2026-10-02-P11-mutasi-konversi/repro_p11.py"
+  ],
+  "action_items": [
+    "Verify my minor router fix in /app/backend/routers/hr_leave.py (set_leave_entitlement wraps lv.set_entitlement in try/except ValueError → 400). It is small, defensive, and aligns with other hr_leave endpoints that already do this."
+  ],
+  "critical_code_review_comments": [
+    "routers/hr_leave.py:set_leave_entitlement was missing the try/except ValueError pattern used by submit_leave/approve_leave/reject_leave/cancel/overtime endpoints, causing legitimate 400 cases to leak as 500. Applied the standard wrap (same shape as neighbouring handlers).",
+    "services/hr_payroll_service.py:compute_payslip is monolithic (~55 lines; mixes BPJS, overtime, tax method branching and formatting). Still readable, but a split helper for tax_section() and totals_section() would help cover edge-cases in future iterations.",
+    "backend/tests contains >150 iter test files mixing python/pytest styles — consider periodic consolidation; current iteration keeps the convention (test_iter120_p12.py)."
+  ],
+  "updated_files": [
+    "/app/backend/routers/hr_leave.py",
+    "/app/backend/tests/test_iter120_p12.py"
+  ],
+  "success_rate": {"backend": "100% (11/11 HTTP + 23/23 P12 repro + 21/21 P11 repro)", "frontend": "100% (5/5 views load, 0 JS errors)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (X-Entity-Id: ent_ksc) — read from /app/memory/test_credentials.md",
+  "seed_data_creation": "All synthetic data uses TAG = test_iter120_<rand>. Collections touched: hr_employees, hr_attendance, hr_overtime, hr_leave_requests, hr_leave_balances, hr_payroll_runs, hr_payslips, hr_shifts, mkt_posts, journal_entries. Teardown is automatic in the module-scoped mongo fixture (pymongo delete_many with ^TAG regex on id/employee_id/name/title/number/ref_number).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "P12 fully covered at both service-level (repro_p12.py 23/23) and HTTP-level (test_iter120_p12.py 11/11). The HR leave router fix (try/except ValueError on set_entitlement) landed and does not alter happy-path behaviour. Teardown is idempotent — safe to rerun. The spec example years 2030/2031 are used for cross-year leave invariant because weekday calendar yields the exact 2+3 split. Avoid duplicate periods for the TAG employee: 2030-11 (payroll run), 2030-06 (overtime overlap preview), 2030-12 (annual_pasal17 preview), balance years 2030-2035 are set during the test and cleared on teardown.",
+  "rca of the issue": "Minor: POST /api/hr/leave-balances/set returned HTTP 500 when entitlement<0 because the router did not catch the service ValueError. Fix (one line): wrap lv.set_entitlement call in try/except ValueError and raise HTTPException(400, str(e)), mirroring the pattern already used by the submit/approve/reject/cancel + overtime handlers in the same file. No behaviour change for happy path. Reproduction: POST /api/hr/leave-balances/set {employee_id, year, entitlement:-1} → previously 500, now 400 with detail 'Jatah cuti harus bilangan bulat ≥ 0.'"
+}

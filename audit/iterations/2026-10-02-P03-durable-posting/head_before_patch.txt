@@ -1,0 +1,40 @@
+[
+ {
+  "id": "FN-15",
+  "invariant": "jurnal tidak seimbang ditolak sebelum insert",
+  "pass": false,
+  "detail": "diterima: {'id': 'je_3250d0df726e', 'number': 'AUDIT_P03_CA36A7/JE-00001', 'date': '2026-09-30T17:18:34.078483+00:00', 'descriptio"
+ },
+ {
+  "id": "FN-15",
+  "invariant": "jurnal NaN ditolak sebelum insert",
+  "pass": false,
+  "detail": "('DuplicateKeyError', 'E11000 duplicate key error collection: test_database.journal_entries index: uq_je_source_active dup key: { source_type: \"audit_p03\", source_id: \"x_ca36a7\" }, fu')"
+ },
+ {
+  "id": "FN-15",
+  "invariant": "jurnal negatif ditolak sebelum insert",
+  "pass": false,
+  "detail": "('DuplicateKeyError', 'E11000 duplicate key error collection: test_database.journal_entries index: uq_je_source_active dup key: { source_type: \"audit_p03\", source_id: \"x_ca36a7\" }, fu')"
+ },
+ {
+  "id": "FN-15",
+  "invariant": "jurnal dua sisi ditolak sebelum insert",
+  "pass": false,
+  "detail": "('DuplicateKeyError', 'E11000 duplicate key error collection: test_database.journal_entries index: uq_je_source_active dup key: { source_type: \"audit_p03\", source_id: \"x_ca36a7\" }, fu')"
+ },
+ {
+  "id": "FN-15",
+  "invariant": "jurnal akun induk ditolak sebelum insert",
+  "pass": false,
+  "detail": "('DuplicateKeyError', 'E11000 duplicate key error collection: test_database.journal_entries index: uq_je_source_active dup key: { source_type: \"audit_p03\", source_id: \"x_ca36a7\" }, fu')"
+ },
+ {
+  "id": "FN-15",
+  "invariant": "jurnal akun tak ada ditolak sebelum insert",
+  "pass": false,
+  "detail": "('DuplicateKeyError', 'E11000 duplicate key error collection: test_database.journal_entries index: uq_je_source_active dup key: { source_type: \"audit_p03\", source_id: \"x_ca36a7\" }, fu')"
+ }
+]
+CRASH (kontrak belum ada di kode ini): DuplicateKeyError: E11000 duplicate key error collection: test_database.journal_entries index: uq_je_source_active dup key: { source_type: "audit_p03", source_id: "x_ca36a7" }, full error: {'index': 0, 'code': 11000, 'errmsg': 'E11000 duplicate key error collection: test_database.journal_entries index: uq_je_source_active dup key: { source_type: "audit_p03", source_id: "x_ca36a7" }', 'keyPattern': {'source_type': 1, 'source_id': 1}, 'keyValue': {'source_type': 'audit_p03', 'source_id': 'x_ca36a7'}}
+pass=0 fail=6 crashed=1

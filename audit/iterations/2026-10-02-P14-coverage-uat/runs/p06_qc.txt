@@ -1,0 +1,82 @@
+# 2026-10-01-P06-qc-sampling/repro_pg01_ix15.py (1s)
+[
+ {
+  "id": "PG01",
+  "invariant": "default plan = Cek semua (all rolls required)",
+  "pass": true,
+  "detail": "{'mode': 'all', 'sample_pct': None, 'sample_min': None, 'planned_by': None, 'planned_at': None, 'total_rolls': 3, 'inspected_rolls': 0, 'required_rolls': 3, 'coverage_pct': 0.0, 'met': False}"
+ },
+ {
+  "id": "PG01",
+  "invariant": "Cek semua: decision blocked while rolls uninspected",
+  "pass": true,
+  "detail": "Inspeksi belum memenuhi rencana 'Cek semua': 0/3 roll wajib diinspeksi."
+ },
+ {
+  "id": "PG01",
+  "invariant": "blocked decision leaves task qc_pending (no mutation)",
+  "pass": true,
+  "detail": "qc_pending"
+ },
+ {
+  "id": "PG01",
+  "invariant": "invalid plan ('xyz', 10, 1) rejected",
+  "pass": true,
+  "detail": "Mode QC harus 'all' (Cek semua) atau 'sampling'."
+ },
+ {
+  "id": "PG01",
+  "invariant": "invalid plan ('sampling', 0, 1) rejected",
+  "pass": true,
+  "detail": "Persentase sampel harus 1–100%."
+ },
+ {
+  "id": "PG01",
+  "invariant": "invalid plan ('sampling', 10, 0) rejected",
+  "pass": true,
+  "detail": "Minimal roll sampel harus ≥ 1."
+ },
+ {
+  "id": "PG01",
+  "invariant": "Sampling 34% of 3 rolls → 2 required, plan recorded",
+  "pass": true,
+  "detail": "{'mode': 'sampling', 'sample_pct': 34.0, 'sample_min': 1, 'planned_by': 'Audit QC', 'planned_at': '2026-10-02T18:36:33.383846+00:00', 'total_rolls': 3, 'inspected_rolls': 0, 'required_rolls': 2, 'coverage_pct': 0.0, 'met': False}"
+ },
+ {
+  "id": "PG01",
+  "invariant": "Sampling: 1/2 inspected still blocked",
+  "pass": true,
+  "detail": "Inspeksi belum memenuhi rencana 'Sampling': 1/2 roll wajib diinspeksi."
+ },
+ {
+  "id": "IX-15",
+  "invariant": "partial decision (4 of 30) rejected before mutation",
+  "pass": true,
+  "detail": "Keputusan QC wajib mencakup seluruh qty karantina (30.0); sisa 26.0 belum diputuskan."
+ },
+ {
+  "id": "PG01",
+  "invariant": "Sampling met: full decision succeeds",
+  "pass": true,
+  "detail": "completed"
+ },
+ {
+  "id": "PG01",
+  "invariant": "coverage recorded on task (mode, 2/3, applies to uninspected)",
+  "pass": true,
+  "detail": "{'mode': 'sampling', 'sample_pct': 34.0, 'sample_min': 1, 'planned_by': 'Audit QC', 'planned_at': '2026-10-02T18:36:33.383846+00:00', 'total_rolls': 3, 'inspected_rolls': 2, 'required_rolls': 2, 'coverage_pct': 66.7, 'met': True, 'decision_applies_to_uninspected': True}"
+ },
+ {
+  "id": "IX-15",
+  "invariant": "no residual quarantine after terminal task",
+  "pass": true,
+  "detail": "residual check"
+ },
+ {
+  "id": "PG01",
+  "invariant": "plan locked after task leaves qc_pending",
+  "pass": true,
+  "detail": ""
+ }
+]
+SUMMARY pass=13 fail=0

@@ -1,0 +1,4314 @@
+{
+  "schema_version": 1,
+  "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+  "publication_base_commit": "3a7c40a51129aaa696e0fb5a092d9db90f1cb45f",
+  "updated_at": "2026-10-02",
+  "note": "103 tracking records, not 103 unique bugs. IX-02 aliases HR-03; AX entries overlap core findings. No code on publication main has been revalidated.",
+  "findings": [
+    {
+      "id": "AX-01",
+      "title": "Roll yang dipindai tidak menjadi identitas yang wajib dikirim",
+      "priority": "P1",
+      "domain": "sales-outbound",
+      "phase": "P07",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [
+        "WM-06",
+        "RF-06",
+        "FN-11"
+      ],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "1ea1dd82bd19cf36304c9a1cbef735a74f72b932",
+      "implementation_commits": [
+        "1ea1dd82bd19cf36304c9a1cbef735a74f72b932"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/IMPLEMENTATION.md",
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/head_before_patch.txt",
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-06-P07-dispatch-identity-reversal",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p07); patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-06 termuat di commit 1ea1dd8; agen pengujian iterasi 114 lulus (API 19/19, UI alur pembalik)."
+        }
+      ]
+    },
+    {
+      "id": "AX-02",
+      "title": "Task dispatch dianggap selesai sebelum surat jalan tersimpan",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [
+        "GN-11",
+        "FN-10"
+      ],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "AX-03",
+      "title": "Claim bergantian masih membolehkan progres partial shipment ditimpa",
+      "priority": "P1",
+      "domain": "sales-outbound",
+      "phase": "P07",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [
+        "GN-11"
+      ],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "1ea1dd82bd19cf36304c9a1cbef735a74f72b932",
+      "implementation_commits": [
+        "1ea1dd82bd19cf36304c9a1cbef735a74f72b932"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/IMPLEMENTATION.md",
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/head_before_patch.txt",
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-06-P07-dispatch-identity-reversal",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p07); patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-06 termuat di commit 1ea1dd8; agen pengujian iterasi 114 lulus (API 19/19, UI alur pembalik)."
+        }
+      ]
+    },
+    {
+      "id": "AX-04",
+      "title": "Transfer roll eksplisit melewati owner filter dan rebuild balance",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [
+        "GN-04",
+        "GN-13"
+      ],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch2/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch2/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch2/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch2",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "AX-05",
+      "title": "Penerimaan transfer menghilangkan asal PO dan membawa bin gudang lama",
+      "priority": "P1",
+      "domain": "inventory-core",
+      "phase": "P02",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [
+        "FN-01"
+      ],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "49b177090d57a1d349830c83f7f53c119cb17631"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-01-P02-core-roll/IMPLEMENTATION.md",
+        "iterations/2026-10-01-P02-core-roll/head_before_patch.txt",
+        "iterations/2026-10-01-P02-core-roll/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-01-P02-core-roll",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 0076f7e; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-01 termuat di commit 49b1770."
+        }
+      ]
+    },
+    {
+      "id": "AX-06",
+      "title": "Print job multi-owner membocorkan item melalui owner header pertama",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [
+        "RF-08"
+      ],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch2/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch2/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch2/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch2",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "AX-07",
+      "title": "Potongan generasi kedua mencatat kakek sebagai parent langsung",
+      "priority": "P2",
+      "domain": "inventory-core",
+      "phase": "P02",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [
+        "WM-02",
+        "FN-01",
+        "WM-01"
+      ],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "49b177090d57a1d349830c83f7f53c119cb17631"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-01-P02-core-roll/IMPLEMENTATION.md",
+        "iterations/2026-10-01-P02-core-roll/head_before_patch.txt",
+        "iterations/2026-10-01-P02-core-roll/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-01-P02-core-roll",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 0076f7e; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-01 termuat di commit 49b1770."
+        }
+      ]
+    },
+    {
+      "id": "AX-08",
+      "title": "Verifikasi tag dianggap cukup untuk memindahkan roll QC hold",
+      "priority": "P1",
+      "domain": "wms-inbound-qc",
+      "phase": "P06",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [
+        "RF-02",
+        "RF-14",
+        "WM-04",
+        "WM-05"
+      ],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P06-receiving/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P06-receiving/head_before_patch.txt",
+        "iterations/2026-10-02-P06-receiving/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P06-receiving",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "CX-01",
+      "title": "Penebusan store credit dapat melampaui nominal permintaan dan saldo",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "CX-02",
+      "title": "Store credit dapat dialokasikan ke pelanggan atau badan usaha yang berbeda",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch2/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch2/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch2/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch2",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: terbukti statis (fixture dinamis HEAD tidak konklusif); patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "CX-03",
+      "title": "Gagal posting store credit meninggalkan AR terbayar tetapi kredit belum terpotong",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "CX-04",
+      "title": "Retry pencairan uang muka membuat transaksi kas keluar kedua",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "CX-05",
+      "title": "Uang muka yang telah selesai dapat dipertanggungjawabkan penuh lagi",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "1a2c33a43e5ca4841c95422593aa2a258298dee3",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942",
+        "39c387b93ce476ab4bcb4cfcb864361e9fe4247c",
+        "1a2c33a43e5ca4841c95422593aa2a258298dee3"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt",
+        "iterations/2026-10-03-WM02-identity-CX05-panel/IMPLEMENTATION.md",
+        "iterations/2026-10-03-WM02-identity-CX05-panel/head_before_patch.txt",
+        "iterations/2026-10-03-WM02-identity-CX05-panel/after_patch.txt",
+        "iterations/2026-10-04-label-reimburse-poline-badge/IMPLEMENTATION.md",
+        "iterations/2026-10-04-label-reimburse-poline-badge/head_before_patch.txt",
+        "iterations/2026-10-04-label-reimburse-poline-badge/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-04-label-reimburse-poline-badge",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD; patch di working tree, invariant lulus. Menunggu SHA commit. Keputusan pemilik 2026-10-03: kelebihan LPJ → 2-1650 Hutang Reimburse; 1 LPJ per PD."
+        },
+        {
+          "date": "2026-10-04",
+          "event": "rebaselined_and_patched",
+          "note": "Alur bayar Hutang Reimburse 2-1650 (kas keluar, idempotent). Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-04 termuat di commit 1a2c33a; regression repro_followup2 12/12 diulang di sesi ini."
+        }
+      ]
+    },
+    {
+      "id": "CX-06",
+      "title": "Manual bank matching menerima arah dan rekening yang tidak cocok",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "CX-07",
+      "title": "Split bank reconciliation menghitung target yang sama lebih dari kapasitasnya",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "CX-08",
+      "title": "Reschedule cicilan mengubah arti referensi pembayaran historis",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "CX-09",
+      "title": "Konsolidasi memakai eliminasi di luar entitas yang dilaporkan",
+      "priority": "P1",
+      "domain": "finance-reporting",
+      "phase": "P05",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "6240190c1496165f70d2919add1bbf2d167d082e",
+      "implementation_commits": [
+        "6240190c1496165f70d2919add1bbf2d167d082e"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-05-P05-coa-reports-close/IMPLEMENTATION.md",
+        "iterations/2026-10-05-P05-coa-reports-close/head_before_patch.txt",
+        "iterations/2026-10-05-P05-coa-reports-close/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-05-P05-coa-reports-close",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p05 11/29 lulus); patch di working tree, invariant 29/29 lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-05 termuat di commit 6240190; agen pengujian iterasi 113 lulus (API 10/10, UI struktural)."
+        }
+      ]
+    },
+    {
+      "id": "CX-10",
+      "title": "E-sign tidak terikat pada versi dokumen yang ditampilkan",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "49b177090d57a1d349830c83f7f53c119cb17631"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-01-P01-ix06-cx10/IMPLEMENTATION.md",
+        "iterations/2026-10-01-P01-ix06-cx10/head_before_patch_cx10.txt",
+        "iterations/2026-10-01-P01-ix06-cx10/after_patch_cx10.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-01-P01-ix06-cx10",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined",
+          "note": "Masih ada di HEAD 08a9009 (statis). Ditunda: e-sign perlu binding hash versi dokumen (public_verify/_attach_esign/verify_and_sign)."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 0076f7e; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-01 termuat di commit 49b1770."
+        }
+      ]
+    },
+    {
+      "id": "CX-11",
+      "title": "Retur dua baris produk yang sama memakai harga baris terakhir",
+      "priority": "P1",
+      "domain": "sales-outbound",
+      "phase": "P07",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "1ea1dd82bd19cf36304c9a1cbef735a74f72b932",
+      "implementation_commits": [
+        "1ea1dd82bd19cf36304c9a1cbef735a74f72b932"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/IMPLEMENTATION.md",
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/head_before_patch.txt",
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-06-P07-dispatch-identity-reversal",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p07); patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-06 termuat di commit 1ea1dd8; agen pengujian iterasi 114 lulus (API 19/19, UI alur pembalik)."
+        }
+      ]
+    },
+    {
+      "id": "CX-12",
+      "title": "Pengiriman pertama menutup special order sebelum pengiriman lain selesai",
+      "priority": "P1",
+      "domain": "sales-outbound",
+      "phase": "P07",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [
+        "cc744854e1af92c8c4bac32c792159caa5892fa9"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/IMPLEMENTATION.md",
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/head_before_patch.txt",
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-07-P07-fulfillment-saga-loading",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "deferred_in_session",
+          "note": "Belum dikerjakan sesi 2026-10-06 (prioritas user: WM-06, AX-03, CX-11, RF-05, AX-01). Status tetap needs_revalidation."
+        },
+        {
+          "date": "2026-10-07",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p07b 9/15; GN-11 lewat server terpatch = bukti statis); patch di working tree 16/16. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-07 termuat di commit cc74485; agen pengujian iterasi 115 lulus (API 19/19, UI panel Kunci Saga). UI RF-04 (Master Gudang + LoadingCheckPanel) diuji ulang di iterasi P08."
+        }
+      ]
+    },
+    {
+      "id": "CX-13",
+      "title": "Makloon receive mengunci order tanpa mengikat versi step yang sudah dibaca",
+      "priority": "P1",
+      "domain": "production-returns",
+      "phase": "P11",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P11-mutasi-konversi/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P11-mutasi-konversi/head_before_patch.txt",
+        "iterations/2026-10-02-P11-mutasi-konversi/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P11-mutasi-konversi",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "HEAD 5cddfc9: claim sudah ada (receive paralel in-process 1 sukses), tetapi input-0 tanpa receipt sah lolos dengan fallback nilai step. Patch: claim berprasyarat step issued + snapshot hasil klaim, receive_progress durable, tulisan terarah token-owned. repro_p11 CX-13 3/3."
+        }
+      ]
+    },
+    {
+      "id": "FN-01",
+      "title": "Landed cost menghitung anak split dua kali",
+      "priority": "P1",
+      "domain": "finance-valuation",
+      "phase": "P04",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942",
+      "implementation_commits": [
+        "39c387b93ce476ab4bcb4cfcb864361e9fe4247c"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-03-P04-costing/IMPLEMENTATION.md",
+        "iterations/2026-10-03-P04-costing/head_before_patch.txt",
+        "iterations/2026-10-03-P04-costing/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-03-P04-costing",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-04",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-03 termuat di commit 39c387b."
+        }
+      ]
+    },
+    {
+      "id": "FN-02",
+      "title": "3-way match lolos overbilling dari baris produk duplikat",
+      "priority": "P1",
+      "domain": "finance-valuation",
+      "phase": "P04",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "6240190c1496165f70d2919add1bbf2d167d082e",
+      "implementation_commits": [
+        "39c387b93ce476ab4bcb4cfcb864361e9fe4247c",
+        "1a2c33a43e5ca4841c95422593aa2a258298dee3",
+        "6240190c1496165f70d2919add1bbf2d167d082e"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-03-P04-costing/IMPLEMENTATION.md",
+        "iterations/2026-10-03-P04-costing/head_before_patch.txt",
+        "iterations/2026-10-03-P04-costing/after_patch.txt",
+        "iterations/2026-10-04-label-reimburse-poline-badge/IMPLEMENTATION.md",
+        "iterations/2026-10-04-label-reimburse-poline-badge/head_before_patch.txt",
+        "iterations/2026-10-04-label-reimburse-poline-badge/after_patch.txt",
+        "iterations/2026-10-05-P05-coa-reports-close/IMPLEMENTATION.md",
+        "iterations/2026-10-05-P05-coa-reports-close/fn02_line_code_head.txt",
+        "iterations/2026-10-05-P05-coa-reports-close/followup3_after.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-05-P05-coa-reports-close",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-04",
+          "event": "rebaselined_and_patched",
+          "note": "Match per baris PO (line_code) + klaim PO saat create/submit tagihan. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "rebaselined_and_patched",
+          "note": "Regresi di 1a2c33a: items[].line_code = LINI produk, bukan id baris → produk berbeda berlini sama digabung. Kunci baris diganti line_id/po_line_id; repro_followup3 13/13. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-05 termuat di commit 6240190; agen pengujian iterasi 113 lulus (API 10/10, UI struktural)."
+        }
+      ]
+    },
+    {
+      "id": "FN-03",
+      "title": "WAC menjumlah panjang dan cost lintas unit tanpa konversi",
+      "priority": "P1",
+      "domain": "inventory-core",
+      "phase": "P02",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "49b177090d57a1d349830c83f7f53c119cb17631"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-01-P02-core-roll/IMPLEMENTATION.md",
+        "iterations/2026-10-01-P02-core-roll/head_before_patch.txt",
+        "iterations/2026-10-01-P02-core-roll/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-01-P02-core-roll",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 0076f7e; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-01 termuat di commit 49b1770."
+        }
+      ]
+    },
+    {
+      "id": "FN-04",
+      "title": "Arus kas seimbang tetapi klasifikasi transaksi nonkas salah",
+      "priority": "P1",
+      "domain": "finance-reporting",
+      "phase": "P05",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "6240190c1496165f70d2919add1bbf2d167d082e",
+      "implementation_commits": [
+        "6240190c1496165f70d2919add1bbf2d167d082e"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-05-P05-coa-reports-close/IMPLEMENTATION.md",
+        "iterations/2026-10-05-P05-coa-reports-close/head_before_patch.txt",
+        "iterations/2026-10-05-P05-coa-reports-close/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-05-P05-coa-reports-close",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p05 11/29 lulus); patch di working tree, invariant 29/29 lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-05 termuat di commit 6240190; agen pengujian iterasi 113 lulus (API 10/10, UI struktural)."
+        }
+      ]
+    },
+    {
+      "id": "FN-05",
+      "title": "Master akun laporan menggabungkan override entitas dengan last-write-wins",
+      "priority": "P1",
+      "domain": "finance-reporting",
+      "phase": "P05",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "6240190c1496165f70d2919add1bbf2d167d082e",
+      "implementation_commits": [
+        "6240190c1496165f70d2919add1bbf2d167d082e"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-05-P05-coa-reports-close/IMPLEMENTATION.md",
+        "iterations/2026-10-05-P05-coa-reports-close/head_before_patch.txt",
+        "iterations/2026-10-05-P05-coa-reports-close/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-05-P05-coa-reports-close",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p05 11/29 lulus); patch di working tree, invariant 29/29 lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-05 termuat di commit 6240190; agen pengujian iterasi 113 lulus (API 10/10, UI struktural)."
+        }
+      ]
+    },
+    {
+      "id": "FN-06",
+      "title": "Jurnal manual menolak akun custom entitas dan mengabaikan override",
+      "priority": "P2",
+      "domain": "finance-reporting",
+      "phase": "P05",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "6240190c1496165f70d2919add1bbf2d167d082e",
+      "implementation_commits": [
+        "6240190c1496165f70d2919add1bbf2d167d082e"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-05-P05-coa-reports-close/IMPLEMENTATION.md",
+        "iterations/2026-10-05-P05-coa-reports-close/head_before_patch.txt",
+        "iterations/2026-10-05-P05-coa-reports-close/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-05-P05-coa-reports-close",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p05 11/29 lulus); patch di working tree, invariant 29/29 lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-05 termuat di commit 6240190; agen pengujian iterasi 113 lulus (API 10/10, UI struktural)."
+        }
+      ]
+    },
+    {
+      "id": "FN-07",
+      "title": "Kas manual tidak langsung berjurnal dan void kas tidak membalik jurnal",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "FN-08",
+      "title": "Opening balance rekening dan perubahan rekening tidak tersambung GL",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "FN-09",
+      "title": "Void jurnal manual melewati penguncian periode",
+      "priority": "P1",
+      "domain": "finance-reporting",
+      "phase": "P05",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "6240190c1496165f70d2919add1bbf2d167d082e",
+      "implementation_commits": [
+        "6240190c1496165f70d2919add1bbf2d167d082e"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-05-P05-coa-reports-close/IMPLEMENTATION.md",
+        "iterations/2026-10-05-P05-coa-reports-close/head_before_patch.txt",
+        "iterations/2026-10-05-P05-coa-reports-close/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-05-P05-coa-reports-close",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p05 11/29 lulus); patch di working tree, invariant 29/29 lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-05 termuat di commit 6240190; agen pengujian iterasi 113 lulus (API 10/10, UI struktural)."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "policy_followup",
+          "note": "Jurnal pembalik periode berjalan (kebijakan 2026-10-06) diimplementasikan; lihat iterations/2026-10-06-P07-dispatch-identity-reversal."
+        }
+      ]
+    },
+    {
+      "id": "FN-10",
+      "title": "Pembayaran AR dapat sukses walau jurnal kas gagal",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "FN-11",
+      "title": "HPP per shipment memakai rata-rata semua roll pesanan",
+      "priority": "P1",
+      "domain": "finance-valuation",
+      "phase": "P04",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942",
+      "implementation_commits": [
+        "39c387b93ce476ab4bcb4cfcb864361e9fe4247c"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-03-P04-costing/IMPLEMENTATION.md",
+        "iterations/2026-10-03-P04-costing/head_before_patch.txt",
+        "iterations/2026-10-03-P04-costing/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-03-P04-costing",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-04",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-03 termuat di commit 39c387b."
+        }
+      ]
+    },
+    {
+      "id": "FN-12",
+      "title": "Edit master aset mengubah nilai/akun tanpa mengoreksi jurnal perolehan",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "FN-13",
+      "title": "Close periode dapat berjalan dua kali secara bersamaan",
+      "priority": "P1",
+      "domain": "finance-reporting",
+      "phase": "P05",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "6240190c1496165f70d2919add1bbf2d167d082e",
+      "implementation_commits": [
+        "6240190c1496165f70d2919add1bbf2d167d082e"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-05-P05-coa-reports-close/IMPLEMENTATION.md",
+        "iterations/2026-10-05-P05-coa-reports-close/head_before_patch.txt",
+        "iterations/2026-10-05-P05-coa-reports-close/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-05-P05-coa-reports-close",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p05 11/29 lulus); patch di working tree, invariant 29/29 lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-05 termuat di commit 6240190; agen pengujian iterasi 113 lulus (API 10/10, UI struktural)."
+        }
+      ]
+    },
+    {
+      "id": "FN-14",
+      "title": "Stock opname tidak memposting variance GL dan surplus dibuat tanpa cost",
+      "priority": "P1",
+      "domain": "inventory-count",
+      "phase": "P10",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "b7b418491d38b279272d068ef3f2c5d34087d677",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P10-opname-financial/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P10-opname-financial/head_before_patch.txt",
+        "iterations/2026-10-08-P10-opname-financial/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P10-opname-financial",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD b7b4184 (repro_p10 0/19); patch 21/21. Menunggu SHA commit + validator. Kebijakan valuasi default (5-9500 / 4-9000, WAC surplus, alasan biaya nol) menunggu konfirmasi pemilik buku."
+        }
+      ]
+    },
+    {
+      "id": "FN-15",
+      "title": "Helper autopost tidak menegakkan invariant jurnal di pintu insert",
+      "priority": "P2",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "FN-16",
+      "title": "Neraca default tidak membatasi tanggal meski diberi label hari ini",
+      "priority": "P2",
+      "domain": "finance-reporting",
+      "phase": "P05",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "6240190c1496165f70d2919add1bbf2d167d082e",
+      "implementation_commits": [
+        "6240190c1496165f70d2919add1bbf2d167d082e"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-05-P05-coa-reports-close/IMPLEMENTATION.md",
+        "iterations/2026-10-05-P05-coa-reports-close/head_before_patch.txt",
+        "iterations/2026-10-05-P05-coa-reports-close/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-05-P05-coa-reports-close",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p05 11/29 lulus); patch di working tree, invariant 29/29 lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-05 termuat di commit 6240190; agen pengujian iterasi 113 lulus (API 10/10, UI struktural)."
+        }
+      ]
+    },
+    {
+      "id": "GN-01",
+      "title": "Idempotency tidak terikat user cookie, entitas dan payload",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch1/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch1/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch1/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch1",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "GN-02",
+      "title": "WebSocket GPS dapat dilanggan user biasa dan mengabaikan expiry/scope",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch1/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch1/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch1/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch1",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "GN-03",
+      "title": "Ledger rekening dan reconcile kas berdasarkan ID tidak memeriksa entitas dokumen",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch1/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch1/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch1/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch1",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "GN-04",
+      "title": "R&D dapat mengambil bahan dari roll badan usaha lain",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch2/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch2/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch2/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch2",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: terbukti statis (fixture dinamis HEAD tidak konklusif); patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "GN-05",
+      "title": "Rollback pengambilan bahan R&D dapat menimpa pemakaian roll lain",
+      "priority": "P1",
+      "domain": "production-returns",
+      "phase": "P11",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P11-mutasi-konversi/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P11-mutasi-konversi/head_before_patch.txt",
+        "iterations/2026-10-02-P11-mutasi-konversi/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P11-mutasi-konversi",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (GL A gagal + B sukses → panjang 100). Patch: kompensasi $inc idempoten per movement → 80. repro_p11 GN-05 1/1."
+        }
+      ]
+    },
+    {
+      "id": "GN-06",
+      "title": "Produksi menyelesaikan WO tanpa claim dan memakai BOM terbaru",
+      "priority": "P1",
+      "domain": "production-returns",
+      "phase": "P11",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": ["IX-11"],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P11-mutasi-konversi/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P11-mutasi-konversi/head_before_patch.txt",
+        "iterations/2026-10-02-P11-mutasi-konversi/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P11-mutasi-konversi",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (WO draft langsung complete; sisa invariant tak terukur di harness HEAD karena WO sudah completed — statis: tanpa klaim, BOM terbaru, set tanpa CAS). Patch: resep beku, klaim WO, CAS panjang bebas, kompensasi per operation_id, tahap durable. repro_p11 GN-06 7/7. Kebijakan 'draft wajib dirilis' = default teknis menunggu konfirmasi pemilik proses."
+        }
+      ]
+    },
+    {
+      "id": "GN-07",
+      "title": "Retur supplier mengurangi roll dengan read-set dan partial return kehilangan identitas fisik",
+      "priority": "P1",
+      "domain": "production-returns",
+      "phase": "P11",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P11-mutasi-konversi/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P11-mutasi-konversi/head_before_patch.txt",
+        "iterations/2026-10-02-P11-mutasi-konversi/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P11-mutasi-konversi",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (roll beda pemilik lolos, dua finalisasi paralel → roll 100 jadi 40, tanpa child retur, movement menunjuk induk). Patch: satu jalur _consume_return_rolls (owner/produk/status, konversi UoM, CAS, child returned_supplier), klaim finalisasi. repro_p11 GN-07 6/6."
+        }
+      ]
+    },
+    {
+      "id": "GN-08",
+      "title": "Konversi permintaan internal dapat melahirkan transaksi antar-PT ganda",
+      "priority": "P1",
+      "domain": "production-returns",
+      "phase": "P11",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P11-mutasi-konversi/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P11-mutasi-konversi/head_before_patch.txt",
+        "iterations/2026-10-02-P11-mutasi-konversi/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P11-mutasi-konversi",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (3 convert paralel → >1 pasangan; retry sesudah fault membuat pasangan baru). Patch: klaim request + kunci logis source_request_id, keputusan reject/cancel ber-CAS. repro_p11 GN-08 3/3."
+        }
+      ]
+    },
+    {
+      "id": "GN-09",
+      "title": "CRM mengamankan owner sales tetapi tidak entitas pada operasi berdasarkan ID",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch2/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch2/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch2/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch2",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: terbukti statis (fixture dinamis HEAD tidak konklusif); patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "GN-10",
+      "title": "Rekomendasi POS memakai entity query tanpa resolusi izin dan stok global",
+      "priority": "P2",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch2/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch2/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch2/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch2",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: terbukti statis (fixture dinamis HEAD tidak konklusif); patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "GN-11",
+      "title": "Saga release menghapus lock tanpa mengecek efek yang sudah terposting",
+      "priority": "P1",
+      "domain": "sales-outbound",
+      "phase": "P07",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [
+        "cc744854e1af92c8c4bac32c792159caa5892fa9"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/IMPLEMENTATION.md",
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/head_before_patch.txt",
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-07-P07-fulfillment-saga-loading",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "deferred_in_session",
+          "note": "Belum dikerjakan sesi 2026-10-06 (prioritas user: WM-06, AX-03, CX-11, RF-05, AX-01). Status tetap needs_revalidation."
+        },
+        {
+          "date": "2026-10-07",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p07b 9/15; GN-11 lewat server terpatch = bukti statis); patch di working tree 16/16. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-07 termuat di commit cc74485; agen pengujian iterasi 115 lulus (API 19/19, UI panel Kunci Saga). UI RF-04 (Master Gudang + LoadingCheckPanel) diuji ulang di iterasi P08."
+        }
+      ]
+    },
+    {
+      "id": "GN-12",
+      "title": "Agregasi kritis berhenti pada batas to_list tanpa penanda truncation",
+      "priority": "P2",
+      "domain": "inventory-core",
+      "phase": "P02",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "49b177090d57a1d349830c83f7f53c119cb17631"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-01-P02-core-roll/IMPLEMENTATION.md",
+        "iterations/2026-10-01-P02-core-roll/head_before_patch.txt",
+        "iterations/2026-10-01-P02-core-roll/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-01-P02-core-roll",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 0076f7e; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-01 termuat di commit 49b1770."
+        }
+      ]
+    },
+    {
+      "id": "GN-13",
+      "title": "Rebuild projection dapat menulis snapshot lama dan fallback UOM mencampur unit",
+      "priority": "P2",
+      "domain": "inventory-core",
+      "phase": "P02",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "49b177090d57a1d349830c83f7f53c119cb17631"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-01-P02-core-roll/IMPLEMENTATION.md",
+        "iterations/2026-10-01-P02-core-roll/head_before_patch.txt",
+        "iterations/2026-10-01-P02-core-roll/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-01-P02-core-roll",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 0076f7e; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-01 termuat di commit 49b1770."
+        }
+      ]
+    },
+    {
+      "id": "GN-14",
+      "title": "Audit log selalu before=None dan source secrets tersimpan dalam repo publik",
+      "priority": "P2",
+      "domain": "platform-audit",
+      "phase": "P13",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P13-audit-secret-label/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P13-audit-secret-label/head_before_patch.txt",
+        "iterations/2026-10-02-P13-audit-secret-label/after_patch.txt",
+        "iterations/2026-10-02-P13-audit-secret-label/secret_scan_after.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P13-audit-secret-label",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (audit() tanpa parameter before; .tok/.tok_admin/.tok_mgr/memory/.tok_admin ter-track, tidak di-ignore). Token tersebut ditolak (401) oleh backend preview ini; validitas di lingkungan lain belum diperiksa. Patch: audit before/after/diff + redaksi kunci rahasia + actor_id/source/content_hash; endpoint keuangan (akun GL, void jurnal, rekening bank, settings, syarat bayar, HR settings/karyawan, pelanggan, HPP stok awal) mengirim nilai sebelum; file token dihapus + .gitignore + guardrail verify_no_secrets.py. repro_p13 GN-14 8/8. BELUM: pembersihan riwayat git publik & rotasi/invalidasi sesi oleh pemilik."
+        }
+      ]
+    },
+    {
+      "id": "GN-15",
+      "title": "Duplikasi helper dan definisi status menunjukkan SSOT belum konsisten",
+      "priority": "P3",
+      "domain": "inventory-core",
+      "phase": "P02",
+      "status": "open",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [],
+      "implementation_evidence": [],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": null,
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined",
+          "note": "Masih ada di HEAD 0076f7e (statis). P3; konversi penerimaan kini satu jalur kanonik, sisa duplikasi helper/status belum dirapikan."
+        }
+      ]
+    },
+    {
+      "id": "GN-16",
+      "title": "Laporan AI pribadi disiarkan melalui notifikasi dan digest tidak membatasi entitas",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch2/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch2/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch2/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch2",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "HR-01",
+      "title": "PPh21 memakai TER bahkan pada masa pajak terakhir",
+      "priority": "P1",
+      "domain": "hr-commercial",
+      "phase": "P12",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P12-payroll-hr-marketing/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/head_before_patch.txt",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P12-payroll-hr-marketing",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (Desember & bulan berhenti tetap TER 200.000; karyawan resigned tidak ikut payroll). Patch: masa terakhir (Des / end_date) = PPh setahun Pasal 17 atas bruto aktual (termasuk premi JKK/JKM/Kes pemberi kerja) − BJ − JHT/JP − PTKP − potongan sebelumnya; lebih potong dikembalikan via slip & jurnal. repro_p12 HR-01 4/4. Fixture wajib divalidasi akuntan; pegawai tidak tetap/DTP/bonus terpisah belum dicakup."
+        }
+      ]
+    },
+    {
+      "id": "HR-02",
+      "title": "Lembur memakai multiplier flat dan dua sumber menit berpotensi tumpang tindih",
+      "priority": "P1",
+      "domain": "hr-commercial",
+      "phase": "P12",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": ["IX-04"],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P12-payroll-hr-marketing/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/head_before_patch.txt",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P12-payroll-hr-marketing",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (absensi+pengajuan tanggal sama dijumlah, pengali flat 1,5 → 9.000 untuk kasus acuan 3.500). Patch: satu event per tanggal (pengajuan approved mengesahkan, absensi approved hanya bila tanpa pengajuan, duplikat diambil satu), tier PP 35/2021 (hari kerja/istirahat/libur, jadwal 5/6 hari), snapshot overtime_events di slip. repro_p12 HR-02 3/3. Basis upah lembur tetap gaji pokok (kebijakan: tunjangan tetap belum ikut)."
+        }
+      ]
+    },
+    {
+      "id": "HR-03",
+      "title": "Persetujuan cuti tidak mengecek ulang saldo dan cuti lintas tahun salah pembebanan",
+      "priority": "P2",
+      "domain": "hr-commercial",
+      "phase": "P12",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": ["IX-01"],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P12-payroll-hr-marketing/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/head_before_patch.txt",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P12-payroll-hr-marketing",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (dua pengajuan 10 hari diterima dengan jatah 12, tanggal bertabrakan diterima, cuti lintas tahun ditolak/dibebankan ke tahun awal). Patch: reservasi pending CAS per tahun, guard overlap, approve cek ulang saldo + CAS status, pembebanan per tahun work_dates, absensi cuti menyimpan leave_request_id dan cancel hanya menghapus miliknya. repro_p12 HR-03 5/5. Kalender libur nasional belum dipakai (hari kerja = Senin–Jumat)."
+        }
+      ]
+    },
+    {
+      "id": "IX-01",
+      "title": "Jatah cuti nol berubah kembali menjadi jatah default",
+      "priority": "P2",
+      "domain": "hr-commercial",
+      "phase": "P12",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": ["HR-03"],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P12-payroll-hr-marketing/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/head_before_patch.txt",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P12-payroll-hr-marketing",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (override 0 kembali 12; jatah −1 diterima). Patch: override dibaca bila tidak None; set_entitlement wajib bilangan bulat ≥ 0. repro_p12 IX-01 2/2."
+        }
+      ]
+    },
+    {
+      "id": "IX-02",
+      "title": "Pembatalan satu cuti menghapus absensi milik cuti lain yang masih disetujui",
+      "priority": "P1",
+      "domain": "hr-commercial",
+      "phase": "P12",
+      "status": "duplicate",
+      "duplicate_of": "HR-03",
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": null,
+      "implementation_commits": [],
+      "implementation_evidence": [],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": null,
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        }
+      ]
+    },
+    {
+      "id": "IX-03",
+      "title": "Shift malam menghasilkan durasi standar negatif dan lembur palsu",
+      "priority": "P1",
+      "domain": "hr-commercial",
+      "phase": "P12",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P12-payroll-hr-marketing/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/head_before_patch.txt",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P12-payroll-hr-marketing",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (shift 22–06: std −960, lembur 1.440). Patch: jadwal bertanggal (awal shift terdekat dari clock-in), keluar ≤ masuk = +1 hari, clock-out sebelum masuk → tanpa lembur. repro_p12 IX-03 4/4. Pemisahan jam istirahat & validasi shift nol belum dibuat."
+        }
+      ]
+    },
+    {
+      "id": "IX-04",
+      "title": "Lembur absensi yang belum disetujui tetap dibayar payroll",
+      "priority": "P1",
+      "domain": "hr-commercial",
+      "phase": "P12",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": ["HR-02"],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P12-payroll-hr-marketing/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/head_before_patch.txt",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P12-payroll-hr-marketing",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (absensi flagged approved=false ikut dibayar). Patch: sumber eligible = absensi approved=true (bukan method leave) atau pengajuan approved; event ID disnapshot di slip (overtime_events). repro_p12 IX-04 2/2. Slip posted tidak dihitung ulang; koreksi pasca-posting lewat adjustment belum dibuat."
+        }
+      ]
+    },
+    {
+      "id": "IX-05",
+      "title": "Metadata e-sign lintas badan usaha dapat dibaca lewat HTTP",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch1/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch1/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch1/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch1",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "IX-06",
+      "title": "Edit payroll settings dari entitas A mengubah konfigurasi efektif B",
+      "priority": "P2",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "49b177090d57a1d349830c83f7f53c119cb17631"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-01-P01-ix06-cx10/IMPLEMENTATION.md",
+        "iterations/2026-10-01-P01-ix06-cx10/head_before_patch_ix06.txt",
+        "iterations/2026-10-01-P01-ix06-cx10/after_patch_ix06.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-01-P01-ix06-cx10",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined",
+          "note": "Masih ada di HEAD 08a9009 (statis). Ditunda: butuh kontrak UI lapisan global/entitas untuk PUT payroll settings."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 0076f7e; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-01 termuat di commit 49b1770."
+        }
+      ]
+    },
+    {
+      "id": "IX-07",
+      "title": "Pengaturan Finance entitas lain dapat diubah melalui scope",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch1/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch1/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch1/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch1",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "IX-08",
+      "title": "Approval basi dapat menimpa penolakan buka periode dan mengaktifkan izin posting",
+      "priority": "P1",
+      "domain": "finance-reporting",
+      "phase": "P05",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "6240190c1496165f70d2919add1bbf2d167d082e",
+      "implementation_commits": [
+        "6240190c1496165f70d2919add1bbf2d167d082e"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-05-P05-coa-reports-close/IMPLEMENTATION.md",
+        "iterations/2026-10-05-P05-coa-reports-close/head_before_patch.txt",
+        "iterations/2026-10-05-P05-coa-reports-close/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-05-P05-coa-reports-close",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p05 11/29 lulus); patch di working tree, invariant 29/29 lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-05 termuat di commit 6240190; agen pengujian iterasi 113 lulus (API 10/10, UI struktural)."
+        }
+      ]
+    },
+    {
+      "id": "IX-09",
+      "title": "Membuka kembali inspeksi tidak membatalkan indikator selesai pada retur",
+      "priority": "P2",
+      "domain": "wms-inbound-qc",
+      "phase": "P06",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P06-receiving/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P06-receiving/head_before_patch.txt",
+        "iterations/2026-10-02-P06-receiving/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P06-receiving",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "IX-10",
+      "title": "Baca dan keputusan buka periode tidak memeriksa penugasan entitas",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch1/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch1/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch1/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch1",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "IX-11",
+      "title": "Produksi mengonsumsi roll yang masih ditahan QC",
+      "priority": "P1",
+      "domain": "production-returns",
+      "phase": "P11",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": ["GN-06"],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P11-mutasi-konversi/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P11-mutasi-konversi/head_before_patch.txt",
+        "iterations/2026-10-02-P11-mutasi-konversi/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P11-mutasi-konversi",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "HEAD 5cddfc9: harness IX-11 tidak terukur (bagian produksi crash setelah draft complete); statis: _available_qty/_consume_material hanya menyaring status available. Patch: kontrak eligible_material_q (hold QC dikecualikan) dipakai precheck & CAS konsumsi; setelah release resmi produksi berjalan. Jalur override rework belum dibuat (perlu keputusan pemilik). repro_p11 IX-11 1/1."
+        }
+      ]
+    },
+    {
+      "id": "IX-12",
+      "title": "Kompensasi gagal menempelkan roll ke tugas meninggalkan tag RFID aktif tanpa roll",
+      "priority": "P2",
+      "domain": "rfid-label",
+      "phase": "P08",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P08-tag-printer-verify/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P08-tag-printer-verify/head_before_patch.txt",
+        "iterations/2026-10-08-P08-tag-printer-verify/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P08-tag-printer-verify",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD cc74485 (repro_p08 4/28, sebagian bagian crash = API lama); patch di working tree 43/43. Menunggu SHA commit platform + validator independen."
+        }
+      ]
+    },
+    {
+      "id": "IX-13",
+      "title": "Konversi hitung manual penerimaan menyimpang dari mesin UOM utama",
+      "priority": "P1",
+      "domain": "inventory-core",
+      "phase": "P02",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "49b177090d57a1d349830c83f7f53c119cb17631"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-01-P02-core-roll/IMPLEMENTATION.md",
+        "iterations/2026-10-01-P02-core-roll/head_before_patch.txt",
+        "iterations/2026-10-01-P02-core-roll/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-01-P02-core-roll",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 0076f7e; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-01 termuat di commit 49b1770."
+        }
+      ]
+    },
+    {
+      "id": "IX-14",
+      "title": "GRN dinyatakan closed walau jurnal penerimaan gagal",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "IX-15",
+      "title": "Keputusan QC sebagian menutup tugas dan mengunci sisa karantina",
+      "priority": "P1",
+      "domain": "wms-inbound-qc",
+      "phase": "P06",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "49b177090d57a1d349830c83f7f53c119cb17631"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-01-P06-qc-sampling/IMPLEMENTATION.md",
+        "iterations/2026-10-01-P06-qc-sampling/head_before_patch_ix15.txt",
+        "iterations/2026-10-01-P06-qc-sampling/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-01-P06-qc-sampling",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 0076f7e; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-01 termuat di commit 49b1770."
+        }
+      ]
+    },
+    {
+      "id": "IX-16",
+      "title": "Kontrak nilai net/gross retur beli membuat AP, persediaan dan kas tidak cocok",
+      "priority": "P1",
+      "domain": "finance-valuation",
+      "phase": "P04",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942",
+      "implementation_commits": [
+        "39c387b93ce476ab4bcb4cfcb864361e9fe4247c"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-03-P04-costing/IMPLEMENTATION.md",
+        "iterations/2026-10-03-P04-costing/head_before_patch.txt",
+        "iterations/2026-10-03-P04-costing/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-03-P04-costing",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-04",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-03 termuat di commit 39c387b."
+        }
+      ]
+    },
+    {
+      "id": "IX-17",
+      "title": "Retur menjadi approved dan mengubah stok/AP sebelum jurnal ditolak",
+      "priority": "P1",
+      "domain": "finance-posting",
+      "phase": "P03",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P03-durable-posting/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P03-durable-posting/head_before_patch.txt",
+        "iterations/2026-10-02-P03-durable-posting/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P03-durable-posting",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "MK-01",
+      "title": "Input metrik marketing parsial mengganti seluruh metrik sebelumnya",
+      "priority": "P2",
+      "domain": "hr-commercial",
+      "phase": "P12",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P12-payroll-hr-marketing/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/head_before_patch.txt",
+        "iterations/2026-10-02-P12-payroll-hr-marketing/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P12-payroll-hr-marketing",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (reach saja menghapus likes; dua update paralel saling menimpa). Patch: $set metrics.<field> per field + metrics_version, riwayat menyimpan patch_fields + snapshot penuh. repro_p12 MK-01 3/3."
+        }
+      ]
+    },
+    {
+      "id": "RF-01",
+      "title": "Format EPC database berbeda dari EPC yang ditulis ke chip",
+      "priority": "P1",
+      "domain": "rfid-label",
+      "phase": "P08",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P08-tag-printer-verify/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P08-tag-printer-verify/head_before_patch.txt",
+        "iterations/2026-10-08-P08-tag-printer-verify/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P08-tag-printer-verify",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD cc74485 (repro_p08 4/28, sebagian bagian crash = API lama); patch di working tree 43/43. Menunggu SHA commit platform + validator independen."
+        }
+      ]
+    },
+    {
+      "id": "RF-02",
+      "title": "Gate OUT menganggap status sebagai izin keluar",
+      "priority": "P1",
+      "domain": "rfid-gate",
+      "phase": "P09",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "32b3d199ef5b1733bdfcfccfe26ef19f7f3baec9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P09-gate-contract/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P09-gate-contract/head_before_patch.txt",
+        "iterations/2026-10-08-P09-gate-contract/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P09-gate-contract",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 32b3d19 (repro_p09 3/22); patch evaluator gate tunggal + passage/dedup + kiosk TTL 22/22. Menunggu SHA commit + validator."
+        }
+      ]
+    },
+    {
+      "id": "RF-03",
+      "title": "Gate IN menerima transit di gudang mana pun",
+      "priority": "P1",
+      "domain": "rfid-gate",
+      "phase": "P09",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "32b3d199ef5b1733bdfcfccfe26ef19f7f3baec9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P09-gate-contract/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P09-gate-contract/head_before_patch.txt",
+        "iterations/2026-10-08-P09-gate-contract/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P09-gate-contract",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 32b3d19 (repro_p09 3/22); patch evaluator gate tunggal + passage/dedup + kiosk TTL 22/22. Menunggu SHA commit + validator."
+        }
+      ]
+    },
+    {
+      "id": "RF-04",
+      "title": "Final Loading Check belum menjadi prasyarat dispatch",
+      "priority": "P1",
+      "domain": "sales-outbound",
+      "phase": "P07",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [
+        "cc744854e1af92c8c4bac32c792159caa5892fa9"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/IMPLEMENTATION.md",
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/head_before_patch.txt",
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-07-P07-fulfillment-saga-loading",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "deferred_in_session",
+          "note": "Belum dikerjakan sesi 2026-10-06 (prioritas user: WM-06, AX-03, CX-11, RF-05, AX-01). Status tetap needs_revalidation."
+        },
+        {
+          "date": "2026-10-07",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p07b 9/15; GN-11 lewat server terpatch = bukti statis); patch di working tree 16/16. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-07 termuat di commit cc74485; agen pengujian iterasi 115 lulus (API 19/19, UI panel Kunci Saga). UI RF-04 (Master Gudang + LoadingCheckPanel) diuji ulang di iterasi P08."
+        }
+      ]
+    },
+    {
+      "id": "RF-05",
+      "title": "Loading Check clean walaupun sebagian roll tidak punya tag",
+      "priority": "P1",
+      "domain": "sales-outbound",
+      "phase": "P07",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "1ea1dd82bd19cf36304c9a1cbef735a74f72b932",
+      "implementation_commits": [
+        "1ea1dd82bd19cf36304c9a1cbef735a74f72b932"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/IMPLEMENTATION.md",
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/head_before_patch.txt",
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-06-P07-dispatch-identity-reversal",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p07); patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-06 termuat di commit 1ea1dd8; agen pengujian iterasi 114 lulus (API 19/19, UI alur pembalik)."
+        }
+      ]
+    },
+    {
+      "id": "RF-06",
+      "title": "Hasil loading melekat pada SO, tidak pada versi shipment aktual",
+      "priority": "P1",
+      "domain": "sales-outbound",
+      "phase": "P07",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [
+        "cc744854e1af92c8c4bac32c792159caa5892fa9"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/IMPLEMENTATION.md",
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/head_before_patch.txt",
+        "iterations/2026-10-07-P07-fulfillment-saga-loading/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-07-P07-fulfillment-saga-loading",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "deferred_in_session",
+          "note": "Belum dikerjakan sesi 2026-10-06 (prioritas user: WM-06, AX-03, CX-11, RF-05, AX-01). Status tetap needs_revalidation."
+        },
+        {
+          "date": "2026-10-07",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p07b 9/15; GN-11 lewat server terpatch = bukti statis); patch di working tree 16/16. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-07 termuat di commit cc74485; agen pengujian iterasi 115 lulus (API 19/19, UI panel Kunci Saga). UI RF-04 (Master Gudang + LoadingCheckPanel) diuji ulang di iterasi P08."
+        }
+      ]
+    },
+    {
+      "id": "RF-07",
+      "title": "Tombol simulasi dapat mengisi bukti verifikasi operasional",
+      "priority": "P1",
+      "domain": "rfid-label",
+      "phase": "P08",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P08-tag-printer-verify/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P08-tag-printer-verify/head_before_patch.txt",
+        "iterations/2026-10-08-P08-tag-printer-verify/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P08-tag-printer-verify",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD cc74485 (repro_p08 4/28, sebagian bagian crash = API lama); patch di working tree 43/43. Menunggu SHA commit platform + validator independen."
+        }
+      ]
+    },
+    {
+      "id": "RF-08",
+      "title": "Sesi dan histori Cycle Count RFID tidak terisolasi entitas",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch2/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch2/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch2/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch2",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "RF-09",
+      "title": "Cycle count lintas entitas dibuat tetapi tidak dapat dipindai",
+      "priority": "P2",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-scope-batch2/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-scope-batch2/head_before_patch.txt",
+        "iterations/2026-09-30-P01-scope-batch2/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-scope-batch2",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "RF-10",
+      "title": "Mesin sesi bersama tidak memvalidasi jenis sesi dan kehilangan scan konkuren",
+      "priority": "P1",
+      "domain": "rfid-label",
+      "phase": "P08",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P08-tag-printer-verify/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P08-tag-printer-verify/head_before_patch.txt",
+        "iterations/2026-10-08-P08-tag-printer-verify/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P08-tag-printer-verify",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD cc74485 (repro_p08 4/28, sebagian bagian crash = API lama); patch di working tree 43/43. Menunggu SHA commit platform + validator independen."
+        }
+      ]
+    },
+    {
+      "id": "RF-11",
+      "title": "Payload ZPL dan custom EPC tidak divalidasi aman",
+      "priority": "P2",
+      "domain": "rfid-label",
+      "phase": "P08",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P08-tag-printer-verify/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P08-tag-printer-verify/head_before_patch.txt",
+        "iterations/2026-10-08-P08-tag-printer-verify/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P08-tag-printer-verify",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD cc74485 (repro_p08 4/28, sebagian bagian crash = API lama); patch di working tree 43/43. Menunggu SHA commit platform + validator independen."
+        }
+      ]
+    },
+    {
+      "id": "RF-12",
+      "title": "Daftar device membocorkan API key hardware",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-device-credentials/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-device-credentials/head_before_patch.txt",
+        "iterations/2026-09-30-P01-device-credentials/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-device-credentials",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "RF-13",
+      "title": "Device dinonaktifkan masih diterima autentikasi",
+      "priority": "P1",
+      "domain": "security-scope",
+      "phase": "P01",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "522e28258d1f6dfa9eabc354fd3f034c8225d8dd"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-09-30-P01-device-credentials/IMPLEMENTATION.md",
+        "iterations/2026-09-30-P01-device-credentials/head_before_patch.txt",
+        "iterations/2026-09-30-P01-device-credentials/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-09-30-P01-device-credentials",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "rebaselined_and_patched",
+          "note": "Rebaseline di HEAD 08a9009: direproduksi dinamis; patch diterapkan di working tree, regression invariant lulus. Menunggu SHA commit untuk ready_for_validation."
+        },
+        {
+          "date": "2026-09-30",
+          "event": "ready_for_validation",
+          "note": "Patch ter-commit di 0076f7e; bukti di iteration folder."
+        }
+      ]
+    },
+    {
+      "id": "RF-14",
+      "title": "Lifecycle cetak mengklaim tag tercetak terlalu dini dan retry verifikasi buntu",
+      "priority": "P2",
+      "domain": "rfid-label",
+      "phase": "P08",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P08-tag-printer-verify/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P08-tag-printer-verify/head_before_patch.txt",
+        "iterations/2026-10-08-P08-tag-printer-verify/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P08-tag-printer-verify",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD cc74485 (repro_p08 4/28, sebagian bagian crash = API lama); patch di working tree 43/43. Menunggu SHA commit platform + validator independen."
+        }
+      ]
+    },
+    {
+      "id": "RF-15",
+      "title": "Antrean printer tidak memiliki claim dan ack tidak membatasi tipe device",
+      "priority": "P1",
+      "domain": "rfid-label",
+      "phase": "P08",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P08-tag-printer-verify/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P08-tag-printer-verify/head_before_patch.txt",
+        "iterations/2026-10-08-P08-tag-printer-verify/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P08-tag-printer-verify",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD cc74485 (repro_p08 4/28, sebagian bagian crash = API lama); patch di working tree 43/43. Menunggu SHA commit platform + validator independen."
+        }
+      ]
+    },
+    {
+      "id": "RF-16",
+      "title": "Ingest belum mempunyai event identity, passage window dan deduplikasi lintas batch",
+      "priority": "P2",
+      "domain": "rfid-gate",
+      "phase": "P09",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "32b3d199ef5b1733bdfcfccfe26ef19f7f3baec9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P09-gate-contract/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P09-gate-contract/head_before_patch.txt",
+        "iterations/2026-10-08-P09-gate-contract/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P09-gate-contract",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 32b3d19 (repro_p09 3/22); patch evaluator gate tunggal + passage/dedup + kiosk TTL 22/22. Menunggu SHA commit + validator."
+        }
+      ]
+    },
+    {
+      "id": "RF-17",
+      "title": "Definisi stok fisik RFID berbeda dari SSOT dan metrik count mengabaikan extra",
+      "priority": "P2",
+      "domain": "inventory-count",
+      "phase": "P10",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "b7b418491d38b279272d068ef3f2c5d34087d677",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P10-opname-financial/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P10-opname-financial/head_before_patch.txt",
+        "iterations/2026-10-08-P10-opname-financial/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P10-opname-financial",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD b7b4184 (repro_p10 0/19); patch 21/21. Menunggu SHA commit + validator."
+        }
+      ]
+    },
+    {
+      "id": "UX-01",
+      "title": "Gate kiosk menampilkan hasil lama sebagai LIVE dan tidak mengagregasi satu passage",
+      "priority": "P1",
+      "domain": "rfid-gate",
+      "phase": "P09",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "32b3d199ef5b1733bdfcfccfe26ef19f7f3baec9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P09-gate-contract/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P09-gate-contract/head_before_patch.txt",
+        "iterations/2026-10-08-P09-gate-contract/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P09-gate-contract",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 32b3d19 (repro_p09 3/22); patch evaluator gate tunggal + passage/dedup + kiosk TTL 22/22. Menunggu SHA commit + validator."
+        }
+      ]
+    },
+    {
+      "id": "UX-02",
+      "title": "Unduhan ZPL lewat tautan tidak membawa konteks entitas yang dipilih",
+      "priority": "P2",
+      "domain": "rfid-label",
+      "phase": "P08",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "cc744854e1af92c8c4bac32c792159caa5892fa9",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P08-tag-printer-verify/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P08-tag-printer-verify/head_before_patch.txt",
+        "iterations/2026-10-08-P08-tag-printer-verify/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P08-tag-printer-verify",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD cc74485 (repro_p08 4/28, sebagian bagian crash = API lama); patch di working tree 43/43. Menunggu SHA commit platform + validator independen."
+        }
+      ]
+    },
+    {
+      "id": "UX-03",
+      "title": "Panel biaya OCR menampilkan ID entitas mentah",
+      "priority": "P3",
+      "domain": "platform-audit",
+      "phase": "P13",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "5cddfc964ee0b1b84729d13d01a789d31f31bb7d",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P13-audit-secret-label/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P13-audit-secret-label/head_before_patch.txt",
+        "iterations/2026-10-02-P13-audit-secret-label/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P13-audit-secret-label",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 5cddfc9 (kolom Badan usaha merender r.entity_id). Patch: entityShortById dari EntityScopeContext, fallback 'Badan usaha tidak dikenal'/'Tanpa badan usaha', ID tetap di atribut title. repro_p13 UX-03 2/2 (statis)."
+        }
+      ]
+    },
+    {
+      "id": "WM-01",
+      "title": "Normalisasi setelah split atomik dapat mengembalikan stok yang sudah diambil",
+      "priority": "P1",
+      "domain": "inventory-core",
+      "phase": "P02",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "implementation_commits": [
+        "49b177090d57a1d349830c83f7f53c119cb17631"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-01-P02-core-roll/IMPLEMENTATION.md",
+        "iterations/2026-10-01-P02-core-roll/head_before_patch.txt",
+        "iterations/2026-10-01-P02-core-roll/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-01-P02-core-roll",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 0076f7e; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-01 termuat di commit 49b1770."
+        }
+      ]
+    },
+    {
+      "id": "WM-02",
+      "title": "Reservasi parsial langsung melahirkan roll anak sebelum pemotongan fisik",
+      "priority": "P1",
+      "domain": "inventory-core",
+      "phase": "P02",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "1a2c33a43e5ca4841c95422593aa2a258298dee3",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942",
+        "39c387b93ce476ab4bcb4cfcb864361e9fe4247c",
+        "1a2c33a43e5ca4841c95422593aa2a258298dee3"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P02-wm02-reservation/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P02-wm02-reservation/head_before_patch.txt",
+        "iterations/2026-10-02-P02-wm02-reservation/after_patch.txt",
+        "iterations/2026-10-03-WM02-identity-CX05-panel/IMPLEMENTATION.md",
+        "iterations/2026-10-03-WM02-identity-CX05-panel/head_before_patch.txt",
+        "iterations/2026-10-03-WM02-identity-CX05-panel/after_patch.txt",
+        "iterations/2026-10-04-label-reimburse-poline-badge/IMPLEMENTATION.md",
+        "iterations/2026-10-04-label-reimburse-poline-badge/head_before_patch.txt",
+        "iterations/2026-10-04-label-reimburse-poline-badge/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-04-label-reimburse-poline-badge",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-01",
+          "event": "rebaselined",
+          "note": "Masih ada di HEAD 0076f7e (statis). Butuh model reservasi panjang pada induk (desain alokasi/picking)."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD; patch di working tree, invariant lulus. Menunggu SHA commit. Lanjutan: tag+verifikasi roll anak wajib sebelum muat/kirim; auto-cut dispatch dihapus."
+        },
+        {
+          "date": "2026-10-04",
+          "event": "rebaselined_and_patched",
+          "note": "Verifikasi identitas roll anak via scan label (gudang tanpa RFID). Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-05",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-04 termuat di commit 1a2c33a; regression repro_followup2 12/12 diulang di sesi ini."
+        }
+      ]
+    },
+    {
+      "id": "WM-03",
+      "title": "Konfirmasi tiba dengan scan kosong memindahkan semua roll",
+      "priority": "P1",
+      "domain": "wms-inbound-qc",
+      "phase": "P06",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P06-receiving/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P06-receiving/head_before_patch.txt",
+        "iterations/2026-10-02-P06-receiving/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P06-receiving",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "WM-04",
+      "title": "Putaway antar-gudang in-transit tidak mengubah bucket stok roll",
+      "priority": "P1",
+      "domain": "wms-inbound-qc",
+      "phase": "P06",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P06-receiving/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P06-receiving/head_before_patch.txt",
+        "iterations/2026-10-02-P06-receiving/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P06-receiving",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "WM-05",
+      "title": "PA dapat berebut roll dan arrival menulis lokasi tanpa prasyarat roll",
+      "priority": "P1",
+      "domain": "wms-inbound-qc",
+      "phase": "P06",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P06-receiving/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P06-receiving/head_before_patch.txt",
+        "iterations/2026-10-02-P06-receiving/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P06-receiving",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    },
+    {
+      "id": "WM-06",
+      "title": "Scan picking tidak memvalidasi identitas roll dan menerima qty negatif",
+      "priority": "P1",
+      "domain": "sales-outbound",
+      "phase": "P07",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "1ea1dd82bd19cf36304c9a1cbef735a74f72b932",
+      "implementation_commits": [
+        "1ea1dd82bd19cf36304c9a1cbef735a74f72b932"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/IMPLEMENTATION.md",
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/head_before_patch.txt",
+        "iterations/2026-10-06-P07-dispatch-identity-reversal/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-06-P07-dispatch-identity-reversal",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD (repro_p07); patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-06",
+          "event": "ready_for_validation",
+          "note": "Patch 2026-10-06 termuat di commit 1ea1dd8; agen pengujian iterasi 114 lulus (API 19/19, UI alur pembalik)."
+        }
+      ]
+    },
+    {
+      "id": "WM-07",
+      "title": "Stock opname per bin memakai expected seluruh gudang dan membolehkan duplikasi",
+      "priority": "P1",
+      "domain": "inventory-count",
+      "phase": "P10",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "b7b418491d38b279272d068ef3f2c5d34087d677",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P10-opname-financial/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P10-opname-financial/head_before_patch.txt",
+        "iterations/2026-10-08-P10-opname-financial/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P10-opname-financial",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD b7b4184 (repro_p10 0/19); patch 21/21. Menunggu SHA commit + validator."
+        }
+      ]
+    },
+    {
+      "id": "WM-08",
+      "title": "Adjustment shortage dapat parsial tetapi sesi tetap approved",
+      "priority": "P1",
+      "domain": "inventory-count",
+      "phase": "P10",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "b7b418491d38b279272d068ef3f2c5d34087d677",
+      "implementation_commits": [],
+      "implementation_evidence": [
+        "iterations/2026-10-08-P10-opname-financial/IMPLEMENTATION.md",
+        "iterations/2026-10-08-P10-opname-financial/head_before_patch.txt",
+        "iterations/2026-10-08-P10-opname-financial/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-08-P10-opname-financial",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-08",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD b7b4184 (repro_p10 0/19); patch 21/21. Menunggu SHA commit + validator."
+        }
+      ]
+    },
+    {
+      "id": "WM-09",
+      "title": "Penerimaan exception PA tidak menulis mutasi transfer",
+      "priority": "P2",
+      "domain": "wms-inbound-qc",
+      "phase": "P06",
+      "status": "ready_for_validation",
+      "duplicate_of": null,
+      "related_ids": [],
+      "baseline_verdict": "validated_on_audit_baseline",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_code_checked_commit": "49b177090d57a1d349830c83f7f53c119cb17631",
+      "implementation_commits": [
+        "b25ff3bfe3b6c5c65664e8dae32c85a0a667b942"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P06-receiving/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P06-receiving/head_before_patch.txt",
+        "iterations/2026-10-02-P06-receiving/after_patch.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "validator": null,
+      "owner": null,
+      "iteration": "2026-10-02-P06-receiving",
+      "history": [
+        {
+          "date": "2026-09-30",
+          "event": "imported_historical_audit",
+          "note": "Publication base differs from audited snapshot; no current-main fix claim."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Direproduksi di HEAD 49b1770; patch di working tree, invariant lulus. Menunggu SHA commit."
+        },
+        {
+          "date": "2026-10-03",
+          "event": "ready_for_validation",
+          "note": "Patch sesi 2026-10-02 termuat di commit b25ff3b."
+        }
+      ]
+    }
+  ]
+}

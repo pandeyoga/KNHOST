@@ -1,0 +1,30 @@
+{
+  "summary": "Iter 321 — verified GET /api/inventory/rolls honors ?limit/?skip/?q in bare-array mode, paged mode envelope still works, outbound scan query works. Frontend Daftar Roll shows default 100/page, first/last/prev/next work, page size 20/50/100 switch, search resets to page 1, CSV export dialog opens. Mobile 390x844 shows persona mobile shell (no direct access to Rolls list — pre-existing app-shell behavior).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Mobile 390x844 - /?view=operations&entity=ent_ksc", "issues": ["Admin at mobile viewport is routed to persona mobile shell (Persetujuan/Notifikasi/Antrean/Ringkas/Produk/Tanya); wms-tab-stok / inventory-tab-rolls not reachable. Not a regression of this iteration, but the task requested mobile verification of the rolls pager — the pager itself was not exercisable at mobile viewport. If mobile access to the Rolls list is expected, main agent should surface a way to reach it from the mobile shell or make the desktop layout available."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter321_rolls_pagination.py",
+    "/app/test_reports/pytest/iter321.xml"
+  ],
+  "action_items": [
+    "Optional: expose the Daftar Roll screen (or a compact variant) in the mobile persona shell so warehouse users at 390x844 can browse/scan rolls without switching to desktop mode."
+  ],
+  "critical_code_review_comments": [
+    "backend/routers/inventory.py list_rolls: limit is correctly clamped to max 5000 and _with_search combines roll_no/lot/batch text with product name/SKU resolution via product_id map — good. Default limit=5000 for the legacy bare-array mode still returns up to 5000 rows (~6MB with 45k rolls); for scanner/select UIs consider lowering the default (e.g., 200) or requiring an explicit limit to further reduce payload.",
+    "list_rolls builds products map for the whole tenant on every call (db.products.find({}) with no limit); with 268 SKUs this is fine but note the pattern for future growth."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter321_rolls_pagination.py"],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100% desktop; mobile not exercisable"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None (used existing KSC data ~22985 rolls)",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend test file /app/backend/tests/test_iter321_rolls_pagination.py covers bare-array limit/skip/q, paged envelope, and outbound scan style. Run with: pytest backend/tests/test_iter321_rolls_pagination.py -n 0. Login endpoint /api/auth/login returns {token,user}; use Authorization: Bearer <token> and X-Entity-Id: ent_ksc.",
+  "rca_of_the_issue": "N/A — feature verification only. Observed measured behavior: GET /api/inventory/rolls default returns 5000 rows for bare-array (was previously ignoring ?limit); with ?limit=100 returns exactly 100; ?skip=5 returns disjoint rows from ?skip=0; ?q=<sku> filters to that product only. Paged mode returns envelope with items/total/has_more. Frontend info text confirms 'Menampilkan 1–100 dari 22985 roll' and pager first/last/prev/next/size-20/50/100 all work; search resets to page 1."
+}

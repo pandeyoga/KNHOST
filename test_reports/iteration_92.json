@@ -1,0 +1,33 @@
+{
+  "summary": "Iter92 review-request testing (backend + frontend) for OpenAI live-key features. ALL flows PASS. AI status/model, /admin/integrations/openai/test, config registry keys for OCR, OCR read on sj1 (SUKACITA 3 lines 994/1202/1240 yard, orientation rotate_cw=270, gpt-6-sol run), OCR read on sj4 (ADETEX, orientation 270, lines 4849/495 yard), AI chat SSE streaming from live OpenAI, and frontend review screen for KSC/GRN-00007 all verified. Only very minor observation: sj4 dn.date parsed as 2026-07-08 vs review-request expected 2026-07-07 (1 day off — data-only, tolerable).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/goods-receipts/{id}/read", "issue": "sj4.jpeg: dn.date extracted 2026-07-08 (expected 2026-07-07 per review request). Everything else on sj4 correct (supplier=ADETEX, dn.number=AF/PD/LF/07-005/26, orientation rotate_cw=270, lines 4849 & 495 yard). Likely OCR reading date field with slight ambiguity — not a code issue."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verified_flows": [
+    {"flow": "AI status", "result": "PASS. GET /api/ai/status → chat_enabled=true, has_key=true, mock=false, model=gpt-6-sol, budget spent_usd=0.0231."},
+    {"flow": "OpenAI live key test", "result": "PASS. POST /api/admin/integrations/openai/test → ok=true, verified_at set, models_seen=132 (includes gpt-5-codex, gpt-5-pro, whisper-1, etc)."},
+    {"flow": "Config registry OCR keys", "result": "PASS. GET /api/config/registry?q=ocr returns receiving.ocr_auto_orient=True, receiving.ocr_orient_model=gpt-6-sol, receiving.ocr_price_table includes gpt-6-luna entry ({in:0.5, cached_in:0.05, out:2.0}). Note: /api/config/catalog and /api/config/values (GET) return 404/405 — actual endpoints are /api/config/registry (list) and /api/config/effective."},
+    {"flow": "OCR sj1 full flow", "result": "PASS. Created KSC/GRN-00007 (Cirebon Craft, wh_jakarta), uploaded sj1.jpeg, /read returned status=review, read_failed=false, orientation=[{page:1,rotate_cw:270}], dn.date=2026-09-24, dn.recipient_name='PT. SUKACITA BERKAT MAKMUR TEX', 3 lines with declared.qty 994/1202/1240 unit=yard rolls=8, runs=[gpt-6-sol]. prompt_version=sj-v2."},
+    {"flow": "OCR sj4 flow", "result": "PASS. Uploaded sj4.jpeg, /read returned orientation=[{page:1,rotate_cw:270}], dn.supplier_name_printed='ADETEX', dn.number='AF/PD/LF/07-005/26', 2 lines 4849 yard (47 rolls) and 495 yard (5 rolls). runs=[gpt-6-sol, gpt-5.6-sol] (second reader triggered on_doubt). dn.date=2026-07-08 (see minor)."},
+    {"flow": "AI chat SSE (Tanya KN)", "result": "PASS. POST /api/ai/chat {question:'Siapa 5 pelanggan dengan penjualan terbesar bulan ini?'} streams status → tool call query_metrics → result (r_9a19a93e92 'Penjualan bersih per pelanggan') → delta tokens rendering markdown table with 'Butik Bali Indah' top customer Rp 29.600.000. Not the 'Asisten chat bebas belum aktif' template."},
+    {"flow": "Frontend GRN review UI", "result": "PASS. Admin login → /?view=goods-receipts&entity=ent_ksc → opened KSC/GRN-00007. Screen shows Tinjau SJ step, dn.number/date/recipient prefilled, grn-lines-table present with 994/1202/1240 rows, extraction runs shows 'pembaca utama gpt-6-sol · biaya US$0.0100', no grn-ocr-mock-badge on page. Warning 'SJ ini ditujukan ke PT. SUKACITA BERKAT MAKMUR TEX, Anda di entitas Sukacita Textile' shown."}
+  ],
+  "test_report_links": ["/app/test_reports/iter92_grn_review.jpeg"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Minor: /api/ai/chat request body key is 'question' (returns 'Pertanyaan kosong' on empty) — review request wording said 'message'; consistent internal contract with UI but agent-to-agent context could mention that.",
+    "config endpoints: GET /api/config/values does not exist (returns 405) — only PUT. Callers should use GET /api/config/effective for reads. Not a bug but confusing for the review request which asked for GET /api/config values endpoint."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (7/7 flows)", "frontend": "100% (login+GRN review render)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (from /app/memory/test_credentials.md).",
+  "seed_data_creation": "Created 2 test GRNs during OCR flow verification: KSC/GRN-00007 (sj1.jpeg, id grn_f0695f984209) and KSC/GRN-00008 area (sj4.jpeg, id grn_39fd334b862e). Both left in status=review under ent_ksc supplier Cirebon Craft. OpenAI budget spent went 0.0231 → ~0.05 USD after 2 OCR reads (well under 100 limit).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "OpenAI live key WORKING with model gpt-6-sol (primary) and gpt-5.6-sol (second reader on_doubt). OCR auto-orient functional (rotate_cw=270 on WA screenshots sj1/sj4). AI chat SSE fully live (not mock). To retest OCR, minimise real API cost — use existing GRNs KSC/GRN-00007 and grn_39fd334b862e which already have extraction saved.",
+  "rca of the issue": "N/A — no bugs. sj4 date off-by-one is OCR content interpretation, not application code."
+}

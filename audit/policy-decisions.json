@@ -1,0 +1,28 @@
+{
+  "decisions": [
+    {
+      "id": "PG01",
+      "phase": "P06",
+      "status": "decided",
+      "question": "Apakah inspeksi harus memutuskan seluruh baris, atau sampling diizinkan dengan plan dan coverage eksplisit?",
+      "source": "archive/2026-09/22_AUDIT_PERIODE_SCOPE_DAN_INSPEKSI.md",
+      "decision": "Campuran (opsi C) sebagai PILIHAN UI: default inspeksi semua baris; user dapat memilih mode 'Cek semua' atau 'Sampling' per inspeksi. Sampling wajib mencatat rencana (jumlah/persen roll per lot) dan coverage; keputusan sampel berlaku untuk sisa lot secara eksplisit. Implementasi di P06.",
+      "decided_by": "Pemilik proses (via chat sesi 2026-09-30)",
+      "decided_at": "2026-09-30",
+      "evidence": [],
+      "implementation": "2026-10-01: diimplementasikan di iterations/2026-10-01-P06-qc-sampling (qc_plan + qc_coverage + UI QcPlanPanel)."
+    },
+    {
+      "id": "PG02",
+      "phase": "P05",
+      "status": "decided",
+      "question": "Bagaimana mengoreksi jurnal di periode tertutup (FN-09)?",
+      "source": "findings/FN-09.md",
+      "decision": "Jurnal pembalik (debit↔kredit) di periode TERBUKA; tanggal dipilih user dan wajib di periode terbuka (jendela unlock tidak dipakai). Hak: izin accounting.void (admin/manager), alasan wajib. Berlaku untuk jurnal manual dan otomatis; jurnal asli & dokumen sumber tidak berubah. Jurnal penutup/pembalik tidak dapat dibalik; satu jurnal satu pembalik.",
+      "decided_by": "Pemilik proses (via chat sesi 2026-10-06)",
+      "decided_at": "2026-10-06",
+      "evidence": [],
+      "implementation": "2026-10-06: gl_service.reverse_entry + POST /api/gl/journal/{id}/reverse + tombol Balik Jurnal (iterations/2026-10-06-P07-dispatch-identity-reversal)."
+    }
+  ]
+}

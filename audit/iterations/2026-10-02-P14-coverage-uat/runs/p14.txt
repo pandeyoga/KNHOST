@@ -1,0 +1,118 @@
+# 2026-10-02-P14-coverage-uat/repro_p14_history.py (2s)
+[
+ {
+  "id": "AUDIT-01",
+  "invariant": "riwayat akun GL: nilai lama → baru per field",
+  "pass": true,
+  "detail": "{'field': 'name', 'from': 'TEST_P14_03c6de Lama', 'to': 'TEST_P14_03c6de Baru'}"
+ },
+ {
+  "id": "AUDIT-01",
+  "invariant": "riwayat akun GL: sidik isi utuh (integrity ok)",
+  "pass": true,
+  "detail": "ok"
+ },
+ {
+  "id": "AUDIT-01",
+  "invariant": "riwayat akun GL: pelaku & sumber tercatat",
+  "pass": true,
+  "detail": "user_admin_01"
+ },
+ {
+  "id": "AUDIT-01",
+  "invariant": "baris audit yang diubah sesudahnya terdeteksi (mismatch)",
+  "pass": true,
+  "detail": "mismatch"
+ },
+ {
+  "id": "AUDIT-01",
+  "invariant": "riwayat pelanggan: nilai lama → baru",
+  "pass": true,
+  "detail": "200 {'field': 'pic_name', 'from': 'Pak Hendra', 'to': 'Test_p14_03c6de Pic'}"
+ },
+ {
+  "id": "AUDIT-02",
+  "invariant": "perubahan gaji pokok tercatat sebagai field berubah",
+  "pass": true,
+  "detail": "200 {'field': 'base_salary', 'from': '[REDACTED]', 'to': '[REDACTED]', 'masked': True}"
+ },
+ {
+  "id": "AUDIT-02",
+  "invariant": "nilai gaji lama/baru disamarkan [REDACTED]",
+  "pass": true,
+  "detail": "{'field': 'base_salary', 'from': '[REDACTED]', 'to': '[REDACTED]', 'masked': True}"
+ },
+ {
+  "id": "AUDIT-02",
+  "invariant": "angka gaji tidak bocor ke baris audit",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "AUDIT-02",
+  "invariant": "gaji sama (tanpa perubahan) tidak dicatat sebagai berubah",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "AUTH-01",
+  "invariant": "login sandi salah ditolak 401",
+  "pass": true,
+  "detail": "401"
+ },
+ {
+  "id": "AUTH-01",
+  "invariant": "login valid → /auth/me 200",
+  "pass": true,
+  "detail": "200/200"
+ },
+ {
+  "id": "AUDIT-01",
+  "invariant": "sales tanpa audit.view ditolak 403 pada riwayat",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "AUTH-01",
+  "invariant": "token dicabut setelah logout → 401",
+  "pass": true,
+  "detail": "401"
+ },
+ {
+  "id": "OPS-01",
+  "invariant": "seluruh indeks INDEX_SPECS ada di DB sesudah bootstrap",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "RF-09",
+  "invariant": "sesi cycle count multi-entitas dapat discan oleh scope pembuatnya",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "RF-08",
+  "invariant": "user A-saja tidak dapat memindai sesi A+B",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "AUDIT-03",
+  "invariant": "pemindai secret: 0 temuan (exit 0)",
+  "pass": true,
+  "detail": "verify_no_secrets: 0 temuan"
+ },
+ {
+  "id": "AUDIT-03",
+  "invariant": "workflow CI menjalankan pemindai secret",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "AUDIT-03",
+  "invariant": "pre-commit hook memblokir bila secret terdeteksi",
+  "pass": true,
+  "detail": ""
+ }
+]
+pass=19 fail=0

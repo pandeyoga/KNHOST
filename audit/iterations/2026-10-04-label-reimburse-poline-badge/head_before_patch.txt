@@ -1,0 +1,28 @@
+[
+ {
+  "id": "LABEL",
+  "invariant": "daftar roll anak belum terverifikasi memuat roll",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "LABEL",
+  "invariant": "label salah → 400, identitas tetap belum sah",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "LABEL",
+  "invariant": "gate muat masih menolak sebelum verifikasi",
+  "pass": true,
+  "detail": "(409, 'Roll anak R-audit_f2_26fdc3-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
+ },
+ {
+  "id": "LABEL",
+  "invariant": "label cocok → sah (label_scan), gate lolos, verifikasi ulang 409",
+  "pass": true,
+  "detail": "{'ok': 200, 'again': 409}"
+ }
+]
+CRASH (kontrak belum ada di kode ini): KeyError: 'hutang_reimburse'
+pass=4 fail=0 crashed=1

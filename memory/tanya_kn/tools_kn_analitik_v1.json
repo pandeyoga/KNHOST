@@ -1,0 +1,862 @@
+[
+  {
+    "type": "function",
+    "name": "query_metrics",
+    "description": "Hitung satu atau beberapa metrik dari KATALOG, dikelompokkan per dimensi dan/atau waktu, dengan perbandingan periode opsional. Mengembalikan result_id, kolom, baris, total, delta, persen perubahan, pangsa, definisi, periode, dan peringatan. Hak akses dan entitas diterapkan otomatis.",
+    "strict": true,
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metrics",
+        "group_by",
+        "time_grain",
+        "period",
+        "compare",
+        "filters",
+        "sort",
+        "limit",
+        "include_samples",
+        "entity_scope"
+      ],
+      "properties": {
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "net_sales",
+              "gross_sales",
+              "discount_total",
+              "ppn_amount",
+              "orders_count",
+              "avg_order_value",
+              "qty_sold",
+              "rolls_sold",
+              "customers_active",
+              "new_customers",
+              "gross_margin",
+              "gross_margin_pct",
+              "returns_value",
+              "recognized_revenue",
+              "sample_orders_count",
+              "sales_target",
+              "target_achievement_pct",
+              "collections_amount",
+              "ar_outstanding",
+              "ar_overdue",
+              "ap_outstanding",
+              "ap_due",
+              "purchase_value",
+              "po_count",
+              "received_qty",
+              "stock_qty",
+              "stock_rolls",
+              "stock_value",
+              "stock_available_qty",
+              "stock_reserved_qty"
+            ]
+          },
+          "description": "1–6 metrik."
+        },
+        "group_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "entity",
+              "sales_person",
+              "customer",
+              "customer_city",
+              "customer_segment",
+              "product",
+              "category",
+              "line_code",
+              "fabric_type",
+              "warehouse",
+              "supplier",
+              "grade",
+              "dye_lot",
+              "payment_status",
+              "order_status",
+              "aging_bucket",
+              "stock_age_bucket",
+              "unit"
+            ]
+          },
+          "description": "0–3 dimensi. Untuk tren waktu pakai time_grain, bukan group_by."
+        },
+        "time_grain": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "day",
+            "week",
+            "month",
+            "quarter",
+            "year",
+            null
+          ]
+        },
+        "period": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "preset",
+            "from",
+            "to"
+          ],
+          "description": "Periode. Pakai preset bila cocok; custom memakai from/to (YYYY-MM-DD, inklusif, WIB).",
+          "properties": {
+            "preset": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "today",
+                "yesterday",
+                "this_week",
+                "last_week",
+                "mtd",
+                "last_month",
+                "qtd",
+                "last_quarter",
+                "ytd",
+                "last_year",
+                "last_7d",
+                "last_30d",
+                "last_90d",
+                "last_12m",
+                "custom",
+                null
+              ]
+            },
+            "from": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "to": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "compare": {
+          "type": "string",
+          "enum": [
+            "none",
+            "previous_period",
+            "same_period_last_year"
+          ]
+        },
+        "filters": {
+          "type": "array",
+          "description": "Saring data. values berisi id dari find_entities, atau kode (status, grade, lini, kota).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "dimension",
+              "op",
+              "values"
+            ],
+            "properties": {
+              "dimension": {
+                "type": "string",
+                "enum": [
+                  "date",
+                  "entity",
+                  "sales_person",
+                  "customer",
+                  "customer_city",
+                  "customer_segment",
+                  "product",
+                  "category",
+                  "line_code",
+                  "fabric_type",
+                  "warehouse",
+                  "supplier",
+                  "grade",
+                  "dye_lot",
+                  "payment_status",
+                  "order_status",
+                  "aging_bucket",
+                  "stock_age_bucket",
+                  "unit"
+                ]
+              },
+              "op": {
+                "type": "string",
+                "enum": [
+                  "in",
+                  "not_in"
+                ]
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "sort": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "by",
+            "direction"
+          ],
+          "properties": {
+            "by": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "direction": {
+              "type": "string",
+              "enum": [
+                "desc",
+                "asc"
+              ]
+            }
+          }
+        },
+        "limit": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Jumlah baris (bawaan 10 untuk peringkat, maks 200)."
+        },
+        "include_samples": {
+          "type": "boolean"
+        },
+        "entity_scope": {
+          "type": "string",
+          "enum": [
+            "active",
+            "per_entity",
+            "all_allowed"
+          ],
+          "description": "active = entitas aktif; per_entity = dipecah per entitas; all_allowed = gabungan semua entitas yang boleh dilihat."
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "name": "analyze_change",
+    "description": "Jelaskan perubahan satu metrik antara dua periode: pecah kontribusi perubahan per dimensi (mis. pelanggan/produk mana yang paling menurunkan penjualan). Mengembalikan kontributor positif dan negatif teratas.",
+    "strict": true,
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric",
+        "dimension",
+        "period",
+        "compare_to",
+        "filters",
+        "top_n"
+      ],
+      "properties": {
+        "metric": {
+          "type": "string",
+          "enum": [
+            "net_sales",
+            "gross_sales",
+            "discount_total",
+            "ppn_amount",
+            "orders_count",
+            "avg_order_value",
+            "qty_sold",
+            "rolls_sold",
+            "customers_active",
+            "new_customers",
+            "gross_margin",
+            "gross_margin_pct",
+            "returns_value",
+            "recognized_revenue",
+            "sample_orders_count",
+            "sales_target",
+            "target_achievement_pct",
+            "collections_amount",
+            "ar_outstanding",
+            "ar_overdue",
+            "ap_outstanding",
+            "ap_due",
+            "purchase_value",
+            "po_count",
+            "received_qty",
+            "stock_qty",
+            "stock_rolls",
+            "stock_value",
+            "stock_available_qty",
+            "stock_reserved_qty"
+          ]
+        },
+        "dimension": {
+          "type": "string",
+          "enum": [
+            "entity",
+            "sales_person",
+            "customer",
+            "customer_city",
+            "customer_segment",
+            "product",
+            "category",
+            "line_code",
+            "fabric_type",
+            "warehouse",
+            "supplier",
+            "grade",
+            "dye_lot",
+            "payment_status",
+            "order_status",
+            "aging_bucket",
+            "stock_age_bucket",
+            "unit"
+          ]
+        },
+        "period": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "preset",
+            "from",
+            "to"
+          ],
+          "description": "Periode. Pakai preset bila cocok; custom memakai from/to (YYYY-MM-DD, inklusif, WIB).",
+          "properties": {
+            "preset": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "today",
+                "yesterday",
+                "this_week",
+                "last_week",
+                "mtd",
+                "last_month",
+                "qtd",
+                "last_quarter",
+                "ytd",
+                "last_year",
+                "last_7d",
+                "last_30d",
+                "last_90d",
+                "last_12m",
+                "custom",
+                null
+              ]
+            },
+            "from": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "to": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "compare_to": {
+          "type": "string",
+          "enum": [
+            "previous_period",
+            "same_period_last_year"
+          ]
+        },
+        "filters": {
+          "type": "array",
+          "description": "Saring data. values berisi id dari find_entities, atau kode (status, grade, lini, kota).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "dimension",
+              "op",
+              "values"
+            ],
+            "properties": {
+              "dimension": {
+                "type": "string",
+                "enum": [
+                  "date",
+                  "entity",
+                  "sales_person",
+                  "customer",
+                  "customer_city",
+                  "customer_segment",
+                  "product",
+                  "category",
+                  "line_code",
+                  "fabric_type",
+                  "warehouse",
+                  "supplier",
+                  "grade",
+                  "dye_lot",
+                  "payment_status",
+                  "order_status",
+                  "aging_bucket",
+                  "stock_age_bucket",
+                  "unit"
+                ]
+              },
+              "op": {
+                "type": "string",
+                "enum": [
+                  "in",
+                  "not_in"
+                ]
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "top_n": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "name": "list_records",
+    "description": "Ambil daftar baris rinci (bukan agregat). Kolom sudah dibatasi sesuai hak akses; data pribadi tidak pernah dikirim.",
+    "strict": true,
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_type",
+        "period",
+        "filters",
+        "sort",
+        "limit"
+      ],
+      "properties": {
+        "record_type": {
+          "type": "string",
+          "enum": [
+            "sales_orders",
+            "open_orders",
+            "ar_open_items",
+            "overdue_invoices",
+            "customer_payments",
+            "inactive_customers",
+            "purchase_orders",
+            "overdue_purchase_orders",
+            "vendor_bills_due",
+            "incoming_goods",
+            "goods_receipts",
+            "shipments",
+            "returns",
+            "stock_rolls",
+            "low_stock",
+            "slow_stock",
+            "makloon_orders",
+            "pending_approvals"
+          ]
+        },
+        "period": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "preset",
+                "from",
+                "to"
+              ],
+              "description": "Periode. Pakai preset bila cocok; custom memakai from/to (YYYY-MM-DD, inklusif, WIB).",
+              "properties": {
+                "preset": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "today",
+                    "yesterday",
+                    "this_week",
+                    "last_week",
+                    "mtd",
+                    "last_month",
+                    "qtd",
+                    "last_quarter",
+                    "ytd",
+                    "last_year",
+                    "last_7d",
+                    "last_30d",
+                    "last_90d",
+                    "last_12m",
+                    "custom",
+                    null
+                  ]
+                },
+                "from": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "to": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filters": {
+          "type": "array",
+          "description": "Saring data. values berisi id dari find_entities, atau kode (status, grade, lini, kota).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "dimension",
+              "op",
+              "values"
+            ],
+            "properties": {
+              "dimension": {
+                "type": "string",
+                "enum": [
+                  "date",
+                  "entity",
+                  "sales_person",
+                  "customer",
+                  "customer_city",
+                  "customer_segment",
+                  "product",
+                  "category",
+                  "line_code",
+                  "fabric_type",
+                  "warehouse",
+                  "supplier",
+                  "grade",
+                  "dye_lot",
+                  "payment_status",
+                  "order_status",
+                  "aging_bucket",
+                  "stock_age_bucket",
+                  "unit"
+                ]
+              },
+              "op": {
+                "type": "string",
+                "enum": [
+                  "in",
+                  "not_in"
+                ]
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "sort": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "by",
+            "direction"
+          ],
+          "properties": {
+            "by": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "direction": {
+              "type": "string",
+              "enum": [
+                "desc",
+                "asc"
+              ]
+            }
+          }
+        },
+        "limit": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Bawaan 20, maks 200."
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "name": "run_report",
+    "description": "Jalankan laporan baku yang sudah terdefinisi di sistem. Hasilnya berisi beberapa bagian, masing-masing punya result_id.",
+    "strict": true,
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "report",
+        "period",
+        "filters",
+        "as_of",
+        "top_n"
+      ],
+      "properties": {
+        "report": {
+          "type": "string",
+          "enum": [
+            "daily_brief",
+            "weekly_executive",
+            "sales_kpi",
+            "sales_leaderboard",
+            "target_vs_actual",
+            "ar_aging",
+            "ap_aging",
+            "cash_position",
+            "cashflow_forecast",
+            "income_statement",
+            "profitability",
+            "stock_health",
+            "stock_valuation",
+            "receiving_today",
+            "dispatch_today",
+            "supplier_scorecard",
+            "makloon_status",
+            "entity_comparison",
+            "hr_summary"
+          ]
+        },
+        "period": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "preset",
+                "from",
+                "to"
+              ],
+              "description": "Periode. Pakai preset bila cocok; custom memakai from/to (YYYY-MM-DD, inklusif, WIB).",
+              "properties": {
+                "preset": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "today",
+                    "yesterday",
+                    "this_week",
+                    "last_week",
+                    "mtd",
+                    "last_month",
+                    "qtd",
+                    "last_quarter",
+                    "ytd",
+                    "last_year",
+                    "last_7d",
+                    "last_30d",
+                    "last_90d",
+                    "last_12m",
+                    "custom",
+                    null
+                  ]
+                },
+                "from": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "to": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "filters": {
+          "type": "array",
+          "description": "Saring data. values berisi id dari find_entities, atau kode (status, grade, lini, kota).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "dimension",
+              "op",
+              "values"
+            ],
+            "properties": {
+              "dimension": {
+                "type": "string",
+                "enum": [
+                  "date",
+                  "entity",
+                  "sales_person",
+                  "customer",
+                  "customer_city",
+                  "customer_segment",
+                  "product",
+                  "category",
+                  "line_code",
+                  "fabric_type",
+                  "warehouse",
+                  "supplier",
+                  "grade",
+                  "dye_lot",
+                  "payment_status",
+                  "order_status",
+                  "aging_bucket",
+                  "stock_age_bucket",
+                  "unit"
+                ]
+              },
+              "op": {
+                "type": "string",
+                "enum": [
+                  "in",
+                  "not_in"
+                ]
+              },
+              "values": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "as_of": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Tanggal posisi (YYYY-MM-DD) untuk laporan saldo/umur."
+        },
+        "top_n": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "name": "find_entities",
+    "description": "Cari id dari nama/kode yang disebut pengguna (pencarian mirip). Selalu dipakai sebelum menyaring berdasarkan nama.",
+    "strict": true,
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "query",
+        "limit"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "customer",
+            "product",
+            "sales_person",
+            "supplier",
+            "makloon_partner",
+            "warehouse",
+            "category",
+            "entity",
+            "city"
+          ]
+        },
+        "query": {
+          "type": "string"
+        },
+        "limit": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "name": "get_document",
+    "description": "Ambil ringkasan satu dokumen berdasarkan nomornya (status, pihak, nilai, baris, pembayaran/pengiriman).",
+    "strict": true,
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "doc_type",
+        "number"
+      ],
+      "properties": {
+        "doc_type": {
+          "type": "string",
+          "enum": [
+            "sales_order",
+            "purchase_order",
+            "delivery_note",
+            "tax_invoice",
+            "ar_receipt",
+            "vendor_bill",
+            "makloon_order",
+            "goods_receipt",
+            "roll"
+          ]
+        },
+        "number": {
+          "type": "string"
+        }
+      }
+    }
+  }
+]

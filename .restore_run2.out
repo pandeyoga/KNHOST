@@ -1,0 +1,29 @@
+=== [5/7] seed_realistic Fri Sep 25 02:40:32 UTC 2026
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/pymongo/_csot.py", line 107, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/pymongo/collection.py", line 755, in insert_many
+    blk.execute(write_concern, session=session)
+  File "/root/.venv/lib/python3.11/site-packages/pymongo/bulk.py", line 576, in execute
+    return self.execute_command(generator, write_concern, session)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/pymongo/bulk.py", line 446, in execute_command
+    _raise_bulk_write_error(full_result)
+  File "/root/.venv/lib/python3.11/site-packages/pymongo/bulk.py", line 157, in _raise_bulk_write_error
+    raise BulkWriteError(full_result)
+pymongo.errors.BulkWriteError: batch op errors occurred, full error: {'writeErrors': [{'index': 0, 'code': 11000, 'errmsg': 'E11000 duplicate key error collection: test_database.products index: uniq_sku dup key: { sku: "BTK-MEGA-001" }', 'keyPattern': {'sku': 1}, 'keyValue': {'sku': 'BTK-MEGA-001'}, 'op': {'id': 'prod_batik_mega', 'sku': 'BTK-MEGA-001', 'name': 'Batik Mega Mendung Premium', 'category': 'Batik', 'variant': 'Premium', 'color': 'Biru-Coklat', 'motif': 'Mega Mendung', 'grade': 'A', 'supplier': 'Cirebon Craft', 'base_unit': 'yard', 'price': 185000, 'gramasi': 120, 'lebar': 1.15, 'image': 'https://images.unsplash.com/photo-1761516659766-c092d4b1209d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHw0fHxiYXRpayUyMGluZG9uZXNpYSUyMGZhYnJpYyUyMHRyYWRpdGlvbmFsJTIwdGV4dGlsZSUyMHBhdHRlcm58ZW58MHx8fHwxNzc4NjkyMDU3fDA&ixlib=rb-4.1.0&q=85', 'status': 'active', 'uom_conversions': [], 'batch_lot_rolls': [], 'template_id': 'tpl_batik_mega', 'variant_label': 'Biru-Coklat · Grade A', 'created_at': '2026-03-29T02:40:36.485709+00:00', 'updated_at': '2026-09-23T02:40:36.485713+00:00', 'description': 'Batik Mega Mendung Premium — motif Mega Mendung, warna Biru-Coklat, grade A. Kain Batik premium dari Cirebon Craft; gramasi 120 gsm, lebar 1.15 m. Dijual per yard — panjang tiap roll bervariasi.', 'stage': 'finished', 'color_code': 'KN-BLU-01', 'color_name': 'Biru Indigo', 'color_hex': '#26415E', 'fabric_type': 'woven', 'needs_review': False, 'needs_review_reasons': [], '_id': ObjectId('6ab5df242024752332c26c12')}}], 'writeConcernErrors': [], 'nInserted': 0, 'nUpserted': 0, 'nMatched': 0, 'nModified': 0, 'nRemoved': 0, 'upserted': []}
+SEED_EXIT=1
+=== [6/7] VERIFIKASI FONDASI (gagal berisik, bukan gate merah menyesatkan) Fri Sep 25 02:40:36 UTC 2026
+  OK   expense_categories        8 dok   — kategori pengeluaran petty cash (POC FASE E-4 memeriksanya)
+  OK   gl_accounts              75 dok   — bagan akun baku (COA) — semua jurnal bergantung padanya
+  OK   uoms                     16 dok   — master satuan (FASE U: CM·INCH·KG·MTR·PANEL·PCS·RLL·YRD)
+  fondasi LENGKAP.
+=== [7/7] rebuild frontend Fri Sep 25 02:40:37 UTC 2026
+[rebuild_frontend] starting build at Fri Sep 25 02:40:37 UTC 2026
+[rebuild_frontend] running yarn build (low priority)… tail -f /app/.frontend_build.log
+[rebuild_frontend] BUILD OK at Fri Sep 25 02:41:53 UTC 2026
+[rebuild_frontend] done (bundle baru langsung dilayani — tanpa restart).
+BUILD_EXIT=0
+=== RESTORE DONE Fri Sep 25 02:41:53 UTC 2026

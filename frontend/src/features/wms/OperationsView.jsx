@@ -1,0 +1,188 @@
+import { useState, useEffect } from "react";
+import { Layers, PackageCheck, Truck, ArrowLeftRight, ClipboardCheck, Activity } from "lucide-react";
+import InventoryStockView from "./InventoryStockView";
+import InboundScanInterface from "./InboundScanInterface";
+import OutboundScanInterface from "./OutboundScanInterface";
+import TransferManagement from "./TransferManagement";
+import CycleCount from "../inventory/CycleCount";
+import WmsHealthDashboard from "./WmsHealthDashboard";
+import WaitingBoardsStrip from "../../components/WaitingBoardsStrip";
+import useReceivingMode from "../../hooks/useReceivingMode";
+import { can } from "../../config/roles";
+
+export default function OperationsView({
+  data,
+  movements,
+  tasks,
+  entities = [],
+  selectedEntity = "all",
+  onGenerateLabel,
+  onCreateInboundTask,
+  onCreateOutboundTasks,
+  onScanTask,
+  onAdvanceTask,
+  onShowDetail,
+  onNavigate,
+  token,
+  user,
+  defaultTab,
+  focusDoc,
+  onClearFocus,
+  onOpenDocument,
+}) {
+  const [wmsTab, setWmsTab] = useState(defaultTab || "stok");
+  // T6 DIBAYAR (2026-06c): keputusan dari papan di atas harus ikut menyegarkan
+  // DAFTAR di bawahnya (Transfer & Stock Opname memuat datanya sendiri), supaya
+  // satu dokumen tidak tampil "menunggu ACC" di layar yang sama (INV-HOME-01).
+  const [boardsVersion, setBoardsVersion] = useState(0);
+
+  // Sync tab when deep-link navigation from sidebar changes defaultTab
+  useEffect(() => {
+    if (defaultTab && defaultTab !== wmsTab) setWmsTab(defaultTab);
+  }, [defaultTab]); // eslint-disable-line
+  const WMS_TABS = [
+    { id: "stok",     label: "Stok",        icon: Layers,        desc: "Lihat qty per gudang" },
+    { id: "inbound",  label: "Scan Terima PO",    icon: PackageCheck,  desc: "Tugas scan penerimaan per PO (mode lama). Penerimaan dengan Surat Jalan & OCR ada di tab Barang Masuk (SJ & OCR)." },
+    { id: "outbound", label: "Barang Keluar",     icon: Truck,         desc: "Ambil & kirim SO" },
+    { id: "transfer", label: "Transfer",     icon: ArrowLeftRight, desc: "Pindah antar gudang" },
+    { id: "cycle",    label: "Stock Opname",  icon: ClipboardCheck, desc: "Hitung fisik stok" },
+    { id: "health",   label: "Kesehatan",  icon: Activity, desc: "Ringkasan insiden, opname & antrean per gudang" },
+  ];
+  // AUDIT SALES vs ADMIN SALES (2026-08-15) — tab disaring per IZIN, bukan per peran.
+  // Admin Sales diberi `wms.view` supaya bisa MEMANTAU progres gudang, tetapi tab
+  // "Stock Opname" memanggil `/cycle-count/sessions` yang menuntut
+  // `inventory.cycle_count` — izin yang tidak (dan tidak seharusnya) ia punya. Dulu
+  // tabnya tetap tampil, diklik, lalu 403: pengguna menabrak dinding tanpa alasan.
+  // Daftar di atas SENGAJA tetap lengkap (gate `check_nav_map.py` CHECK 2 membacanya);
+  // yang disaring adalah apa yang DIRENDER.
+  const perms = user?.permissions || {};
+  const TAB_PERMISSION = { cycle: ["inventory", "cycle_count"] };
+  const { isGrn, entityOf } = useReceivingMode();
+  const grnOnly = selectedEntity !== "all" && isGrn(selectedEntity) && !(entityOf(selectedEntity)?.legacy_in_flight || []).length;
+  const visibleTabs = WMS_TABS.filter((t) => {
+    const need = TAB_PERMISSION[t.id];
+    return (!need || can(perms, need[0], need[1])) && !(t.id === "inbound" && grnOnly);   // GRN Fase 7
+  }).map((t) => (t.id === "inbound" && selectedEntity !== "all" && isGrn(selectedEntity) ? { ...t, label: "Scan Terima PO (sisa lama)" } : t));
+  const activeTab = visibleTabs.some((t) => t.id === wmsTab)
+    ? wmsTab
+    : (visibleTabs[0]?.id || "stok");
+  return (
+    <div data-testid="operations-view">
+      {/* Papan keputusan yang MENAHAN BARANG (2026-06) — ditempel di atas tab supaya
+          terlihat di tab mana pun petugas berada. Angkanya milik backend. */}
+      <WaitingBoardsStrip endpoint="/home/warehouse" entityId={selectedEntity}
+        primaryKey="transfer" testIdPrefix="wms-home"
+        onActed={() => setBoardsVersion((v) => v + 1)}
+        onNavigate={(view, key) => {
+          const tab = { transfer: "transfer", cycle_count: "cycle" }[key];
+          if (tab) setWmsTab(tab);
+          else if (onNavigate) onNavigate(view);
+        }} />
+
+      {/* Tab Bar */}
+      <div className="flex items-center gap-0.5 overflow-x-auto pb-0 mb-3 border-b border-[#EFF0F2]">
+        {visibleTabs.map(tab => {
+          const Icon = tab.icon;
+          return (
+            <button key={tab.id} onClick={() => setWmsTab(tab.id)}
+              data-testid={`wms-tab-${tab.id}`}
+              title={tab.desc}
+              className={`flex items-center gap-1.5 px-3 py-2.5 text-[12px] font-medium whitespace-nowrap transition-all border-b-2 -mb-px ${
+                activeTab === tab.id
+                  ? "border-[#007AFF] text-[#007AFF] bg-blue-50/50"
+                  : "border-transparent text-[#6B6B73] hover:text-[#3C3C43] hover:bg-[#FAFBFC]"
+              }`}>
+              <Icon size={13} /> {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* STOK TAB — inventory balances per warehouse + rolls (Roll-as-SSOT) */}
+      {activeTab === "stok" && (
+        <InventoryStockView
+          warehouses={data.warehouses || []}
+          products={data.products || []}
+          entities={entities}
+          customers={data.customers || []}
+          selectedEntity={selectedEntity}
+          user={user}
+        />
+      )}
+
+      {/* INBOUND TAB — receiving from PO, scan embedded */}
+      {activeTab === "inbound" && (
+        <div className="section-card">
+          <div className="section-head">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="kicker">Scan Terima PO</span>
+              <h2>Penerimaan per Pesanan Pembelian (mode lama)</h2>
+            </div>
+            <span className="text-[11px] text-[#6B6B73]">Scan barcode di formulir tugas di bawah</span>
+          </div>
+          <div className="section-body">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#D6E4FF] bg-[#F2F7FF] px-3 py-2 text-[11.5px] text-[#004099]" data-testid="wms-inbound-grn-hint">
+              <span>Kedatangan barang dengan <b>Surat Jalan, foto & OCR</b> sekarang satu pintu di tab <b>Barang Masuk (SJ &amp; OCR)</b> pada Operasi Gudang.</span>
+              {onOpenDocument && (
+                <button type="button" className="secondary-button !py-1 text-[11px]" data-testid="wms-inbound-open-grn"
+                  onClick={() => onOpenDocument({ view: "goods-receipts", nav_id: "wms-operations" })}>Buka Barang Masuk (SJ &amp; OCR)</button>
+              )}
+            </div>
+            <InboundScanInterface user={user}
+              focusPoId={focusDoc?.focus_type === "purchase_order" ? focusDoc.focus_id : ""}
+              onFocusConsumed={onClearFocus}
+              onOpenPO={onOpenDocument ? (poId) => onOpenDocument({ view: "purchasing", nav_id: "purchase-orders", focus_type: "purchase_order", focus_id: poId }) : undefined} />
+          </div>
+        </div>
+      )}
+
+      {/* OUTBOUND TAB — picking & dispatch for SO, scan embedded */}
+      {activeTab === "outbound" && (
+        <div className="section-card">
+          <div className="section-head">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="kicker">Barang Keluar</span>
+              <h2>Pengambilan & Pengiriman Pesanan Penjualan</h2>
+            </div>
+            <span className="text-[11px] text-[#6B6B73]">Scan barcode di formulir tugas di bawah</span>
+          </div>
+          <div className="section-body">
+            <OutboundScanInterface user={user}
+              focusTaskId={focusDoc?.focus_type === "wms_task" ? focusDoc.focus_id : ""}
+              onFocusConsumed={onClearFocus} />
+          </div>
+        </div>
+      )}
+
+      {/* TRANSFER TAB */}
+      {activeTab === "transfer" && (
+        <div className="section-card">
+          <div className="section-head">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="kicker">Transfer</span>
+              <h2>Transfer Antar Gudang</h2>
+            </div>
+          </div>
+          <div className="section-body">
+            {/* T6: papan di atas boleh memaksa daftar ini memuat ulang. */}
+            <TransferManagement key={`transfer-${boardsVersion}`} user={user}
+              focusTransferId={focusDoc?.focus_type === "warehouse_transfer" ? focusDoc.focus_id : ""}
+              onFocusConsumed={onClearFocus} />
+          </div>
+        </div>
+      )}
+
+      {/* CYCLE COUNT TAB */}
+      {activeTab === "cycle" && (
+        <CycleCount key={`cycle-${boardsVersion}`} token={token} warehouses={data.warehouses || []} products={data.products || []} userRole={user?.role}
+          focusSessionId={focusDoc?.focus_type === "cycle_count" ? focusDoc.focus_id : ""}
+          onFocusConsumed={onClearFocus} />
+      )}
+
+      {/* KESEHATAN TAB — ringkasan insiden, opname & antrean per gudang */}
+      {activeTab === "health" && (
+        <WmsHealthDashboard selectedEntity={selectedEntity} />
+      )}
+    </div>
+  );
+}

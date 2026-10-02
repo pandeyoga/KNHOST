@@ -1,0 +1,1331 @@
+{
+  "scope": "Baseline 96 kasus + kasus P14 (AUDIT-*); bukan seluruh kombinasi aplikasi. tested_pass = skenario dieksekusi oleh invariant lulus di DB sintetis, bukan sign-off.",
+  "cases": [
+    {
+      "id": "AUTH-01",
+      "group": "Akun dan scope",
+      "scenario": "Login valid/invalid, expiry dan revoke sesi",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p14.txt"
+      ],
+      "notes": "P14: Login valid/invalid & revoke logout diuji; expiry TTL belum diuji dengan time-travel."
+    },
+    {
+      "id": "AUTH-02",
+      "group": "Akun dan scope",
+      "scenario": "User A membaca/mengubah objek B melalui ID, query dan body",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_s1.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_s2.txt"
+      ],
+      "notes": "P14: IDOR lintas entitas/owner pada endpoint temuan P01; belum sweep semua endpoint."
+    },
+    {
+      "id": "AUTH-03",
+      "group": "Akun dan scope",
+      "scenario": "Role custom dengan modul diizinkan tetapi action ditolak",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "AUTH-04",
+      "group": "Akun dan scope",
+      "scenario": "Entitas diarsipkan saat operasi sedang berjalan",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "AUTH-05",
+      "group": "Akun dan scope",
+      "scenario": "Dua perubahan permission bersamaan dan invalidasi cache",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "AUTH-06",
+      "group": "Akun dan scope",
+      "scenario": "UAT pergantian entitas, refresh dan link unduhan",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "MASTER-01",
+      "group": "Master dan konfigurasi",
+      "scenario": "CRUD produk/supplier/UOM dengan referensi aktif",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "MASTER-02",
+      "group": "Master dan konfigurasi",
+      "scenario": "Pengaturan entity A tidak mengubah entity B",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "IX07 / I5-SEC01",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_ix06.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_s1.txt"
+      ],
+      "notes": "P14: Payroll & Finance settings A tidak mengubah B (IX-06/IX-07); master lain belum."
+    },
+    {
+      "id": "MASTER-03",
+      "group": "Master dan konfigurasi",
+      "scenario": "Global override → entity override → clear layer",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p05.txt"
+      ],
+      "notes": "P14: Override COA entitas (FN-05/FN-06); layer clear untuk config lain belum."
+    },
+    {
+      "id": "MASTER-04",
+      "group": "Master dan konfigurasi",
+      "scenario": "Alias/satuan tak dikenal ditolak sebelum mutasi",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p02.txt"
+      ],
+      "notes": "P14: Fallback UOM tak dikenal (GN-13/IX-13); alias master lain belum."
+    },
+    {
+      "id": "MASTER-05",
+      "group": "Master dan konfigurasi",
+      "scenario": "Archive/merge master yang masih dipakai dokumen",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "MASTER-06",
+      "group": "Master dan konfigurasi",
+      "scenario": "UAT dropdown, pencarian, paginasi dan pesan scope",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "GRN-01",
+      "group": "Penerimaan supplier",
+      "scenario": "Manual satu PO/satu roll sampai karantina dan jurnal",
+      "historical_status": "Kontrol teruji",
+      "historical_evidence": "I7-C01",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p06.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt"
+      ],
+      "notes": "P14: Receiving & jurnal GRN durable (IX-14); karantina end-to-end UI belum."
+    },
+    {
+      "id": "GRN-02",
+      "group": "Penerimaan supplier",
+      "scenario": "Cancel counting lalu cancel ulang tanpa efek tambahan",
+      "historical_status": "Kontrol teruji",
+      "historical_evidence": "I7-C03/C04",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "GRN-03",
+      "group": "Penerimaan supplier",
+      "scenario": "Versi basi, entitas asing dan DN duplikat ditolak",
+      "historical_status": "Kontrol teruji",
+      "historical_evidence": "I7-C06/C07/C08",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "GRN-04",
+      "group": "Penerimaan supplier",
+      "scenario": "Receipt multi-line/partial membentuk remainder task benar",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "GRN-05",
+      "group": "Penerimaan supplier",
+      "scenario": "Closed-period posting gagal lalu pemulihan tanpa stok ganda",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I7-F01/F02",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt"
+      ],
+      "notes": "P14: Jurnal GRN gagal tidak menutup GRN (IX-14); periode tertutup penuh belum."
+    },
+    {
+      "id": "GRN-06",
+      "group": "Penerimaan supplier",
+      "scenario": "OCR, packing list, timbang dan override discrepancy lewat UI",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "QC-01",
+      "group": "Inspeksi dan QC",
+      "scenario": "Keputusan sebagian menyisakan task yang dapat dilanjutkan",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I7-W01/W02",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p06_qc.txt"
+      ],
+      "notes": "P14: IX-15 keputusan sebagian menyisakan task."
+    },
+    {
+      "id": "QC-02",
+      "group": "Inspeksi dan QC",
+      "scenario": "Hold melarang konsumsi produksi dan putaway",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I6-P03; putaway kontrol I6-C04",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p06.txt"
+      ],
+      "notes": "P14: IX-11 produksi menolak roll hold; AX-08 putaway hold."
+    },
+    {
+      "id": "QC-03",
+      "group": "Inspeksi dan QC",
+      "scenario": "Finish inspeksi → reopen memperbarui milestone retur",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I5-WM02",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p06.txt"
+      ],
+      "notes": "P14: IX-09 reopen inspeksi membatalkan indikator retur."
+    },
+    {
+      "id": "QC-04",
+      "group": "Inspeksi dan QC",
+      "scenario": "Accept/reject semua qty lalu supplier return sampai AP",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p04.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt"
+      ],
+      "notes": "P14: Nilai retur beli & AP (IX-16, GN-07); UI belum."
+    },
+    {
+      "id": "QC-05",
+      "group": "Inspeksi dan QC",
+      "scenario": "Dua inspector memutuskan qty yang sama bersamaan",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "QC-06",
+      "group": "Inspeksi dan QC",
+      "scenario": "UAT sampling, hold release, sisa karantina dan genealogy",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "PRET-01",
+      "group": "Retur pembelian",
+      "scenario": "Direct non-PPN mengubah stok, PO dan jurnal konsisten",
+      "historical_status": "Kontrol teruji",
+      "historical_evidence": "I8-C01",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p04.txt"
+      ],
+      "notes": "P14: Kontrak net/gross non-PPN (IX-16)."
+    },
+    {
+      "id": "PRET-02",
+      "group": "Retur pembelian",
+      "scenario": "Reversal lalu retry memulihkan stok/AP dan net akun nol",
+      "historical_status": "Kontrol teruji",
+      "historical_evidence": "I8-C02/C03",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt"
+      ],
+      "notes": "P14: Retur tidak approved sebelum jurnal (IX-17); retry penuh belum."
+    },
+    {
+      "id": "PRET-03",
+      "group": "Retur pembelian",
+      "scenario": "Retur dengan PPN: AP credit dan cash refund cocok dokumen",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I8-F01/F02",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p04.txt"
+      ],
+      "notes": "P14: Retur PPN AP credit (IX-16); cash refund dokumen belum."
+    },
+    {
+      "id": "PRET-04",
+      "group": "Retur pembelian",
+      "scenario": "RMA ditolak supplier lalu goods_back tanpa settlement",
+      "historical_status": "Kontrol teruji",
+      "historical_evidence": "I8-C04",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "PRET-05",
+      "group": "Retur pembelian",
+      "scenario": "Shortage/closed period ditolak atau dapat dipulihkan aman",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I8-F03/F04/F05",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt"
+      ],
+      "notes": "P14: Jurnal ditolak → retur tetap draft (IX-17)."
+    },
+    {
+      "id": "PRET-06",
+      "group": "Retur pembelian",
+      "scenario": "Retur partial/multi-item, owner mismatch dan concurrent approve",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt"
+      ],
+      "notes": "P14: Read-set & partial return (GN-07); concurrent approve belum."
+    },
+    {
+      "id": "PROD-01",
+      "group": "Produksi dan makloon",
+      "scenario": "BOM dirilis tidak berubah saat master BOM direvisi",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I6-P04",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt"
+      ],
+      "notes": "P14: GN-06 WO memakai BOM rilis, bukan terbaru."
+    },
+    {
+      "id": "PROD-02",
+      "group": "Produksi dan makloon",
+      "scenario": "Complete gagal GL lalu retry tidak menggandakan hasil",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I6-P01/P02",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt"
+      ],
+      "notes": "P14: Claim WO (GN-06); kegagalan GL lalu retry belum diinjeksi."
+    },
+    {
+      "id": "PROD-03",
+      "group": "Produksi dan makloon",
+      "scenario": "Bahan held/reserved tidak dikonsumsi tanpa otorisasi",
+      "historical_status": "Parsial",
+      "historical_evidence": "Hold I6-P03; reserved belum diuji",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt"
+      ],
+      "notes": "P14: IX-11 roll held tidak dikonsumsi."
+    },
+    {
+      "id": "PROD-04",
+      "group": "Produksi dan makloon",
+      "scenario": "Multi-komponen shortage pada item akhir tanpa efek parsial",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "PROD-05",
+      "group": "Produksi dan makloon",
+      "scenario": "Makloon issue→partial receipt→final receipt→biaya→retur",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt"
+      ],
+      "notes": "P14: Makloon receive terikat versi step (CX-13); biaya & retur makloon belum."
+    },
+    {
+      "id": "PROD-06",
+      "group": "Produksi dan makloon",
+      "scenario": "UAT operator dan recovery sesudah worker/process mati",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "INV-01",
+      "group": "Stok, transfer dan count",
+      "scenario": "Split serentak mempertahankan total panjang/nilai",
+      "historical_status": "Parsial",
+      "historical_evidence": "I4-WM01; nilai total semua interleaving belum diuji",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p02.txt"
+      ],
+      "notes": "P14: WM-01 split atomik/normalisasi mempertahankan total."
+    },
+    {
+      "id": "INV-02",
+      "group": "Stok, transfer dan count",
+      "scenario": "Transfer antarbin/gudang memiliki lokasi asal/tujuan tepat",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p02.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p06.txt"
+      ],
+      "notes": "P14: AX-05/WM-04/WM-09 lokasi transfer; antargudang UI belum."
+    },
+    {
+      "id": "INV-03",
+      "group": "Stok, transfer dan count",
+      "scenario": "Cycle count menjaga cutoff, recount dan approval adjustment",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p10.txt"
+      ],
+      "notes": "P14: WM-07/WM-08 expected per bin & approval; cutoff/recount belum."
+    },
+    {
+      "id": "INV-04",
+      "group": "Stok, transfer dan count",
+      "scenario": "Antarentitas transfer/retur direkonsiliasi kedua buku",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt"
+      ],
+      "notes": "P14: GN-08 konversi permintaan internal tidak ganda; rekonsiliasi dua buku belum."
+    },
+    {
+      "id": "INV-05",
+      "group": "Stok, transfer dan count",
+      "scenario": "Rebuild balance tidak menimpa proyeksi dengan snapshot lama",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p02.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_s2.txt"
+      ],
+      "notes": "P14: GN-13 rebuild tidak menulis snapshot lama; AX-04 owner filter."
+    },
+    {
+      "id": "INV-06",
+      "group": "Stok, transfer dan count",
+      "scenario": "UAT scan lokasi, exception, partial quantity dan undo",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "RFID-01",
+      "group": "RFID dan gate",
+      "scenario": "Encode→ZPL→raw EPC ingest memakai identitas konsisten",
+      "historical_status": "Parsial",
+      "historical_evidence": "I4-RF01 simulasi software; printer belum",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p08.txt"
+      ],
+      "notes": "P14: RF-01 EPC kanonik ZPL = DB = raw reader (simulasi software)."
+    },
+    {
+      "id": "RFID-02",
+      "group": "RFID dan gate",
+      "scenario": "Gate memvalidasi dokumen, status, roll dan tujuan",
+      "historical_status": "Parsial",
+      "historical_evidence": "I4-RF02 cabang putaway; seluruh gate belum",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p09.txt"
+      ],
+      "notes": "P14: RF-02 gate OUT memvalidasi dokumen/status/roll/tujuan (software)."
+    },
+    {
+      "id": "RFID-03",
+      "group": "RFID dan gate",
+      "scenario": "Loading tidak clean jika roll wajib belum bertag",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I4-RF04",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p07.txt"
+      ],
+      "notes": "P14: RF-05 loading tidak clean bila roll wajib belum bertag."
+    },
+    {
+      "id": "RFID-04",
+      "group": "RFID dan gate",
+      "scenario": "Gagal attach/undo roll tidak meninggalkan tag aktif yatim",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I6-R01/C03",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p08.txt"
+      ],
+      "notes": "P14: IX-12 attach gagal tidak meninggalkan tag aktif."
+    },
+    {
+      "id": "RFID-05",
+      "group": "RFID dan gate",
+      "scenario": "Offline replay, duplicate read, passage direction dan reconnect",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p09.txt"
+      ],
+      "notes": "P14: RF-16 replay/duplicate/passage; offline reconnect perangkat nyata belum."
+    },
+    {
+      "id": "RFID-06",
+      "group": "RFID dan gate",
+      "scenario": "UAT perangkat reader/printer/PLC dan alarm gate fisik",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "blocked",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: Butuh reader/printer/PLC fisik + firmware; simulasi software tidak menggantikan commissioning."
+    },
+    {
+      "id": "SALE-01",
+      "group": "Sales, POS dan logistik",
+      "scenario": "Order→allocation→pick→ship→invoice pada dataset acuan",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p07.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p07b.txt"
+      ],
+      "notes": "P14: Pick→dispatch identitas & saga; invoice dataset acuan belum."
+    },
+    {
+      "id": "SALE-02",
+      "group": "Sales, POS dan logistik",
+      "scenario": "POS split tender, shift close, void dan refund",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "SALE-03",
+      "group": "Sales, POS dan logistik",
+      "scenario": "Partial shipment/cancel tidak melepas reservasi salah",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p02_wm02.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p07b.txt"
+      ],
+      "notes": "P14: WM-02 reservasi parsial, CX-12 special order; cancel reservasi belum."
+    },
+    {
+      "id": "SALE-04",
+      "group": "Sales, POS dan logistik",
+      "scenario": "Store credit tidak melebihi request/balance atau lintas owner",
+      "historical_status": "Parsial",
+      "historical_evidence": "I4-FN01; scope dibuktikan harness lama",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_s2.txt"
+      ],
+      "notes": "P14: CX-01 batas nominal/saldo, CX-02 lintas owner/entitas."
+    },
+    {
+      "id": "SALE-05",
+      "group": "Sales, POS dan logistik",
+      "scenario": "Return/refund/reversal sesuai item, pajak dan receipt asli",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p07.txt"
+      ],
+      "notes": "P14: CX-11 harga baris retur; pajak & receipt asli belum."
+    },
+    {
+      "id": "SALE-06",
+      "group": "Sales, POS dan logistik",
+      "scenario": "UAT backorder, delivery proof dan recovery transaksi gagal",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "APAR-01",
+      "group": "AP, AR, bank dan petty cash",
+      "scenario": "Bill matching receipt/PO lalu bayar AP dan reversal",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p05.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p04.txt"
+      ],
+      "notes": "P14: FN-02 3-way match overbilling; pembayaran & reversal AP belum."
+    },
+    {
+      "id": "APAR-02",
+      "group": "AP, AR, bank dan petty cash",
+      "scenario": "AR receipt allocation/deposit/plan reschedule terjaga",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt"
+      ],
+      "notes": "P14: CX-08 reschedule & FN-10 AR durable."
+    },
+    {
+      "id": "APAR-03",
+      "group": "AP, AR, bank dan petty cash",
+      "scenario": "Bank match menolak arah/akun salah dan alokasi ganda",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I4-FN02/FN03",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt"
+      ],
+      "notes": "P14: CX-06 arah/rekening, CX-07 alokasi ganda."
+    },
+    {
+      "id": "APAR-04",
+      "group": "AP, AR, bank dan petty cash",
+      "scenario": "Advance→payout→settlement→refund tanpa retry ganda",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/fu2.txt"
+      ],
+      "notes": "P14: CX-04 retry payout, CX-05 settlement ulang."
+    },
+    {
+      "id": "APAR-05",
+      "group": "AP, AR, bank dan petty cash",
+      "scenario": "Failed GL mempertahankan recovery state yang konsisten",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt"
+      ],
+      "notes": "P14: FN-10/CX-03/FN-15 recovery state; seluruh sumber belum."
+    },
+    {
+      "id": "APAR-06",
+      "group": "AP, AR, bank dan petty cash",
+      "scenario": "UAT rekonsiliasi, bukti transfer dan laporan saldo",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "GL-01",
+      "group": "Akuntansi dan laporan",
+      "scenario": "Opening balance→posting semua sumber→trial balance",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p05.txt"
+      ],
+      "notes": "P14: FN-08 opening rekening & FN-15 invariant jurnal; TB semua sumber belum."
+    },
+    {
+      "id": "GL-02",
+      "group": "Akuntansi dan laporan",
+      "scenario": "Close periode memblokir posting/void tanpa otorisasi",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p05.txt"
+      ],
+      "notes": "P14: FN-09 void jurnal di periode tertutup ditolak."
+    },
+    {
+      "id": "GL-03",
+      "group": "Akuntansi dan laporan",
+      "scenario": "Approve/reject unlock bersamaan hanya satu keputusan menang",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I5-FN01",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p05.txt"
+      ],
+      "notes": "P14: IX-08 approval basi & FN-13 close ganda."
+    },
+    {
+      "id": "GL-04",
+      "group": "Akuntansi dan laporan",
+      "scenario": "User A tidak membaca/menyetujui unlock B",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I5-SEC02/SEC03",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_s1.txt"
+      ],
+      "notes": "P14: IX-10 unlock lintas entitas."
+    },
+    {
+      "id": "GL-05",
+      "group": "Akuntansi dan laporan",
+      "scenario": "Consolidation/interco elimination dan multi-periode rekonsiliasi",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p05.txt"
+      ],
+      "notes": "P14: CX-09 eliminasi sesuai entitas; multi-periode belum."
+    },
+    {
+      "id": "GL-06",
+      "group": "Akuntansi dan laporan",
+      "scenario": "UAT laporan besar, export, tanggal WIB/UTC dan rounding",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "HR-01",
+      "group": "HR dan payroll",
+      "scenario": "Leave overlap/cancel/cross-year menjaga entitlement dan attendance",
+      "historical_status": "Parsial",
+      "historical_evidence": "I4-HR01–04; seluruh variasi belum",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p12.txt"
+      ],
+      "notes": "P14: HR-03/IX-01 saldo & lintas tahun; IX-02 duplikat HR-03."
+    },
+    {
+      "id": "HR-02",
+      "group": "HR dan payroll",
+      "scenario": "Shift overnight dan approval overtime dihitung tepat",
+      "historical_status": "Cacat teruji",
+      "historical_evidence": "I4-HR05/HR06",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p12.txt"
+      ],
+      "notes": "P14: IX-03 shift malam, IX-04 lembur belum disetujui, HR-02 multiplier."
+    },
+    {
+      "id": "HR-03",
+      "group": "HR dan payroll",
+      "scenario": "Payroll satu periode sampai GL dan pembayaran",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p12.txt"
+      ],
+      "notes": "P14: Payroll periode; posting GL & pembayaran end-to-end belum."
+    },
+    {
+      "id": "HR-04",
+      "group": "HR dan payroll",
+      "scenario": "Year-end/termination tax/BPJS dengan dataset acuan",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p12.txt"
+      ],
+      "notes": "P14: HR-01 PPh21 masa terakhir (software); tabel pajak/BPJS butuh validasi legal."
+    },
+    {
+      "id": "HR-05",
+      "group": "HR dan payroll",
+      "scenario": "Payroll void/retry dan perubahan setting lintas entitas",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_ix06.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p12.txt"
+      ],
+      "notes": "P14: IX-06 settings lintas entitas; void/retry payroll belum."
+    },
+    {
+      "id": "HR-06",
+      "group": "HR dan payroll",
+      "scenario": "UAT employee self-service, akses PII dan approval manager",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "COMM-01",
+      "group": "CRM, marketing dan pricing",
+      "scenario": "Lead→customer→order menjaga owner dan duplicate merge",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_s2.txt"
+      ],
+      "notes": "P14: GN-09 entitas CRM; merge duplikat belum."
+    },
+    {
+      "id": "COMM-02",
+      "group": "CRM, marketing dan pricing",
+      "scenario": "Campaign metrics partial update menjaga nilai sebelumnya",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p12.txt"
+      ],
+      "notes": "P14: MK-01 metrik parsial mempertahankan nilai."
+    },
+    {
+      "id": "COMM-03",
+      "group": "CRM, marketing dan pricing",
+      "scenario": "Special price approval, expiry dan scope order vs standing",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "COMM-04",
+      "group": "CRM, marketing dan pricing",
+      "scenario": "Commission/campaign cost sampai settlement dan reversal",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "COMM-05",
+      "group": "CRM, marketing dan pricing",
+      "scenario": "Concurrent edit/delete/import menjaga sumber data kanonik",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "COMM-06",
+      "group": "CRM, marketing dan pricing",
+      "scenario": "UAT dashboard role, pencarian, export dan empty state",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "DESIGN-01",
+      "group": "Design, R&D dan sample",
+      "scenario": "Request→assignment→revision→approval→produksi",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "DESIGN-02",
+      "group": "Design, R&D dan sample",
+      "scenario": "Sample versi yang disetujui menjadi acuan QC tepat",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "DESIGN-03",
+      "group": "Design, R&D dan sample",
+      "scenario": "Cancel/reopen menjaga dokumen turunan dan file",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "DESIGN-04",
+      "group": "Design, R&D dan sample",
+      "scenario": "Pemindahan designer/role tidak membocorkan file/PII",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "DESIGN-05",
+      "group": "Design, R&D dan sample",
+      "scenario": "Biaya trial/sample dan stock sample direkonsiliasi",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "DESIGN-06",
+      "group": "Design, R&D dan sample",
+      "scenario": "UAT upload, preview, revisi, mobile dan notifikasi",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "DOC-01",
+      "group": "Dokumen, approval dan AI",
+      "scenario": "E-sign metadata/version/sumber dokumen terikat owner",
+      "historical_status": "Parsial",
+      "historical_evidence": "I4-SEC01 metadata; seluruh versi belum",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_cx10.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_s1.txt"
+      ],
+      "notes": "P14: CX-10 e-sign terikat versi, IX-05 metadata lintas entitas."
+    },
+    {
+      "id": "DOC-02",
+      "group": "Dokumen, approval dan AI",
+      "scenario": "PDF/Excel konsisten dengan source dan hak akses",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "DOC-03",
+      "group": "Dokumen, approval dan AI",
+      "scenario": "Approval berjenjang/delegasi menolak stale decision",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p05.txt"
+      ],
+      "notes": "P14: IX-08 stale decision unlock; approval berjenjang lain belum."
+    },
+    {
+      "id": "DOC-04",
+      "group": "Dokumen, approval dan AI",
+      "scenario": "Tanya/analytics/export/scheduled report menjaga scope",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_s2.txt"
+      ],
+      "notes": "P14: GN-16 laporan AI pribadi; scheduled report belum."
+    },
+    {
+      "id": "DOC-05",
+      "group": "Dokumen, approval dan AI",
+      "scenario": "Notifikasi/digest hanya kepada penerima yang sah",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p01_s2.txt"
+      ],
+      "notes": "P14: GN-16 digest penerima sah."
+    },
+    {
+      "id": "DOC-06",
+      "group": "Dokumen, approval dan AI",
+      "scenario": "UAT file rusak, timeout, hasil kosong dan navigasi dokumen",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "OPS-01",
+      "group": "Operasional lintas modul",
+      "scenario": "Bootstrap dan seluruh indeks deployment tervalidasi",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p14.txt"
+      ],
+      "notes": "P14: Bootstrap & indeks diverifikasi di preview; deployment produksi belum."
+    },
+    {
+      "id": "OPS-02",
+      "group": "Operasional lintas modul",
+      "scenario": "Scheduler restart/retry/outbox tidak mengulang efek bisnis",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt"
+      ],
+      "notes": "P14: Outbox/durable posting; restart scheduler belum diinjeksi."
+    },
+    {
+      "id": "OPS-03",
+      "group": "Operasional lintas modul",
+      "scenario": "Import/migration dapat dilanjutkan dan direkonsiliasi",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "OPS-04",
+      "group": "Operasional lintas modul",
+      "scenario": "Crash pada setiap tahap mutasi memiliki recovery terukur",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p07b.txt",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt"
+      ],
+      "notes": "P14: GN-11 saga release; crash tiap tahap belum."
+    },
+    {
+      "id": "OPS-05",
+      "group": "Operasional lintas modul",
+      "scenario": "Backup/restore dan data historis mempertahankan referensi",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "blocked",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: Backup/restore butuh lingkungan & kebijakan pemilik (target DB non-preview)."
+    },
+    {
+      "id": "OPS-06",
+      "group": "Operasional lintas modul",
+      "scenario": "UAT seluruh shell desktop/mobile dan integrasi eksternal",
+      "historical_status": "Belum diuji sesuai checklist",
+      "historical_evidence": "—",
+      "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+      "current_status": "planned",
+      "tested_commit": null,
+      "evidence": [],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+    },
+    {
+      "id": "AUDIT-01",
+      "group": "Jejak audit",
+      "scenario": "Riwayat perubahan akun GL & pelanggan: nilai lama→baru, pelaku, sumber, sidik isi, izin",
+      "historical_status": "Kasus baru P14",
+      "historical_evidence": "—",
+      "audited_commit": null,
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p14.txt"
+      ],
+      "notes": "P14: API + tamper detection; UI tab diuji UAT."
+    },
+    {
+      "id": "AUDIT-02",
+      "group": "Jejak audit",
+      "scenario": "Perubahan gaji/PII tercatat sebagai field berubah dengan nilai disamarkan",
+      "historical_status": "Kasus baru P14",
+      "historical_evidence": "—",
+      "audited_commit": null,
+      "current_status": "tested_pass",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p14.txt"
+      ],
+      "notes": "P14: base_salary disamarkan, tanpa perubahan tidak dicatat."
+    },
+    {
+      "id": "AUDIT-03",
+      "group": "Jejak audit",
+      "scenario": "Pemindai secret memblokir di pre-commit dan CI",
+      "historical_status": "Kasus baru P14",
+      "historical_evidence": "—",
+      "audited_commit": null,
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p14.txt"
+      ],
+      "notes": "P14: Skrip & konfigurasi ada; eksekusi GitHub Actions nyata belum diamati."
+    }
+  ]
+}
