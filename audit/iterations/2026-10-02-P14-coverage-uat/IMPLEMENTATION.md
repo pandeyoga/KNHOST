@@ -41,3 +41,29 @@ Total 99 = 96 baseline + 3 kasus baru (AUDIT-01..03). `tested_pass` berarti sken
 - Tidak ada pembayaran, perangkat fisik, deploy, atau data produksi yang disentuh. Data uji `TEST_P14*` dibersihkan.
 - Riwayat git publik masih memuat token lama (P13) — tugas pemilik.
 - Hanya akun GL & pelanggan yang punya tab riwayat; entitas lain dapat memakai `AuditHistoryPanel` yang sama.
+
+# Putaran 2 — kasus planned (POS, retur supplier, desain) + riwayat entitas lain
+
+## Perubahan aplikasi
+
+- Tab "Riwayat Perubahan" (komponen sama `AuditHistoryPanel`) di Supplier 360 (`supplier-360-tab-changes`), Master Produk per varian (`catalog-tab-history`) dan modal Kas & Bank (`bank-detail-tab-ledger` / `bank-detail-tab-history`); tetap digerbang `audit.view`.
+- Backend: `PATCH /suppliers/{id}` dan `DELETE` kini mengirim `before`; `PATCH /products/{id}` mencatat hanya field yang diubah (sebelumnya seluruh dokumen sebagai `after` tanpa `before`) dan nonaktif produk mencatat status lama/baru. Rekening bank sudah mengirim `before` sejak P13.
+
+## Harness baru `repro_p14b_cases.py` (→ [runs/p14b.txt](runs/p14b.txt)) — 19/21
+
+| Kasus | Hasil | Inti |
+|---|---|---|
+| PRET-04 | tested_pass | RMA submit→approve→ship→supplier-reject→goods-back: roll kembali available utuh, tanpa nota debit/AP credit/jurnal, goods-back ulang ditolak. |
+| SALE-02 | **tested_fail** | Gap produk: router POS hanya `best-sellers`/`frequently-bought-together`/`substitutes`; tidak ada shift close, void, split tender. Perlu keputusan pemilik (fitur baru, bukan bug). |
+| DESIGN-01 | partial | Request→assign→desain Studio→ajukan→revisi→ajukan ulang→ACC; status permintaan ikut Studio (`in_progress→delivered→revision→approved`); desainer tidak bisa ACC sendiri. Lanjutan ke produksi belum. |
+| DESIGN-03 | partial | Cancel wajib alasan, cancel ulang 400, permintaan batal tidak melahirkan desain. |
+| DESIGN-04 | partial | Desainer B: 403 buka tugas A, daftar bersih, unggah referensi ditolak. |
+| AUTH-03 | tested_pass | Role custom `customer.view`: view 200, update 403, modul lain 403. |
+| AUTH-05 | **tested_fail** | Pencabutan izin langsung berlaku (tanpa cache), TETAPI dua `PUT /permissions` bersamaan dari baca yang sama → satu perubahan hilang (lost update; PUT mengganti seluruh matriks tanpa versi/ETag). Kandidat temuan baru; belum diperbaiki. |
+
+`repro_p14_history.py` diperluas ke supplier/produk/rekening bank → 22/22. Penilaian kasus kini per-invariant ber-id kasus (`case_ok`), bukan per skrip.
+
+## Coverage sesudah putaran 2
+
+tested_pass 24 · partial 54 · planned 17 · tested_fail 2 · blocked 2 (99 kasus). Sisa planned: AUTH-04, MASTER-01, MASTER-05, GRN-02, GRN-03, GRN-04, GRN-06, QC-05, PROD-04, PROD-06, COMM-03, COMM-04, COMM-05, DESIGN-02, DESIGN-05, DOC-02, OPS-03.
+

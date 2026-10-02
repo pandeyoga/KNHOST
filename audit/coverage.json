@@ -319,10 +319,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Tab Inspeksi QC & SPK tampil (iteration_123); sampling/hold release belum."
     },
     {
       "id": "PRET-01",
@@ -567,10 +569,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: WMS gudang tampil, scan ada di sub-tab SJ & OCR (iteration_123); exception/undo belum."
     },
     {
       "id": "RFID-01",
@@ -734,10 +738,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Portal sales & SO workspace tampil (iteration_123); backorder/bukti kirim/recovery belum dijalankan."
     },
     {
       "id": "APAR-01",
@@ -818,10 +824,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Layar Rekonsiliasi Bank Otomatis tampil (iteration_123); bukti transfer & laporan saldo belum."
     },
     {
       "id": "GL-01",
@@ -901,10 +909,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Buku Besar + tombol export tampil (iteration_123); laporan besar, WIB/UTC & rounding belum."
     },
     {
       "id": "HR-01",
@@ -1142,10 +1152,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Papan DSR & Design Studio, detail desain 6 tab, mobile 390 tanpa scroll horizontal (iteration_123); unggah/preview/notifikasi belum diuji."
     },
     {
       "id": "DOC-01",
@@ -1223,10 +1235,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Pusat Dokumen + empty state (iteration_123); file rusak/timeout belum."
     },
     {
       "id": "OPS-01",
@@ -1322,7 +1336,7 @@
         "iterations/2026-10-02-P14-coverage-uat/UAT.md",
         "iterations/2026-10-02-P14-coverage-uat/runs/p14.txt"
       ],
-      "notes": "P14: API + tamper detection; UI tab diuji UAT. UAT: Tab Riwayat Perubahan Bagan Akun & Pelanggan 360 (iteration_122): diff lama→baru, Utuh, lapisan; tab tersembunyi untuk sales."
+      "notes": "P14: API + tamper detection; UI tab diuji UAT. UAT: Tab Riwayat Perubahan Bagan Akun & Pelanggan 360 (iteration_122) + Supplier 360, Master Produk (varian), Kas & Bank (iteration_123); tab tersembunyi untuk sales."
     },
     {
       "id": "AUDIT-02",

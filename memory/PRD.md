@@ -809,3 +809,11 @@ Backlog: GN-15; gate PA/loading RFID wajib tag anak (P07/P09); CX-05 akun reimbu
 - P14: run_p14.py menjalankan ulang 24 harness P01–P14 (semua hijau; drift RF-09 & cookie Secure didokumentasikan) dan memetakan ke coverage.json: 22 tested_pass, 44 partial, 31 planned, 2 blocked (99 kasus = 96 + AUDIT-01..03). UAT.md + SIGNOFF.md (belum dapat ditandatangani; 5 exception menunggu pemilik). Agen uji iterasi 122 lulus 100%.
 - Backlog P0: validator independen untuk 101 ID ready_for_validation; UAT pengguna bisnis; dataset acuan O2C/P2P/R2R/payroll. P1: kasus planned (31); akun demo hr.view tanpa view_pii; tab riwayat untuk entitas lain (supplier, produk, rekening bank). P2: tautan arsip *.log/*.lock yang hilang; GN-15 (SSOT helper/status).
 
+## SESI 2026-10-02 (lanjutan 4) — Uji kasus tersisa + Riwayat entitas lain
+- Permintaan user: "Uji Kasus Tersisa: Tambahkan uji untuk 31 kasus yang belum diuji, dimulai dari POS, retur supplier, dan alur desain" + "Riwayat Entitas Lain: Tambahkan tab Riwayat Perubahan yang sama di detail supplier, produk, dan rekening bank".
+- Baru: tab Riwayat Perubahan di Supplier 360, Master Produk (per varian), Kas & Bank; supplier/produk kini mencatat nilai sebelum (produk hanya field berubah).
+- repro_p14b_cases.py: PRET-04 & AUTH-03 lulus; DESIGN-01/03/04 partial; SALE-02 tested_fail (POS tanpa shift/void/split tender); AUTH-05 tested_fail (lost update PUT /permissions). UAT iteration_123: 7 kasus UI partial/pass.
+- Coverage: 24 tested_pass, 54 partial, 17 planned, 2 tested_fail, 2 blocked.
+- Backlog P0: putuskan & perbaiki AUTH-05 (versi/ETag matriks izin); keputusan fitur POS shift/void/split tender. P1: 17 kasus planned tersisa.
+
+

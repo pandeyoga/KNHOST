@@ -4,6 +4,8 @@
 
 RIWAYAT PERUBAHAN (P14, 2026-10-02): hanya peran ber-izin `audit.view` (bawaan: admin). Login admin@kainnusantara.id / demo12345.
 - Bagan Akun: `?view=chart-of-accounts&entity=ent_ksc` → tombol baris `coa-detail-<kode>` → modal `coa-detail-modal`, tab `coa-detail-tab-info` / `coa-detail-tab-history` → panel `coa-history` (baris `coa-history-row-<auditId>`, diff `-diff`, field `-field-<f>`, `-from-<f>`, `-to-<f>`, sidik `-integrity`, lapisan `-layer`; filter `coa-history-only-changes`, `coa-history-refresh`, kosong `coa-history-empty`).
+- Supplier 360 `supplier-360-tab-changes` → `supplier-360-changes`; Master Produk `catalog-tab-history` → `catalog-history` (per varian); Kas & Bank modal `bank-detail-tab-ledger|history` → `bank-history`.
+- Kasus P14b: `python ../audit/iterations/2026-10-02-P14-coverage-uat/run_p14.py --only=p14b` (AUTH-05 & SALE-02 gagal = temuan terdokumentasi).
 - Pelanggan 360: daftar pelanggan → detail `customer-360-panel` → tab `customer-360-tab-changes` → panel `customer-360-changes` (testid sama polanya).
 - API: GET /api/audit-logs/resource?entity_type=gl_account|customer|hr_employee&entity_id=<id> → {total, truncated, items[] (diff, integrity ok|mismatch|unsigned, layer_entity_id)}; 403 tanpa audit.view.
 - Gaji pokok (base_salary) & PII karyawan: diff `{field, from:"[REDACTED]", to:"[REDACTED]", masked:true}`.
