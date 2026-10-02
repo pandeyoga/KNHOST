@@ -2237,19 +2237,22 @@
       "priority": "P3",
       "domain": "inventory-core",
       "phase": "P02",
-      "status": "open",
+      "status": "ready_for_validation",
       "duplicate_of": null,
       "related_ids": [],
       "baseline_verdict": "validated_on_audit_baseline",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_code_checked_commit": "0076f7ea16ddc93d5b01f480768418464c5c3347",
+      "current_code_checked_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
       "implementation_commits": [],
-      "implementation_evidence": [],
+      "implementation_evidence": [
+        "iterations/2026-10-02-P15-gn15-ssot/IMPLEMENTATION.md",
+        "iterations/2026-10-02-P15-gn15-ssot/after_patch.txt"
+      ],
       "validation_commit": null,
       "validation_evidence": [],
       "validator": null,
       "owner": null,
-      "iteration": null,
+      "iteration": "2026-10-02-P15-gn15-ssot",
       "history": [
         {
           "date": "2026-09-30",
@@ -2260,6 +2263,11 @@
           "date": "2026-10-01",
           "event": "rebaselined",
           "note": "Masih ada di HEAD 0076f7e (statis). P3; konversi penerimaan kini satu jalur kanonik, sisa duplikasi helper/status belum dirapikan."
+        },
+        {
+          "date": "2026-10-02",
+          "event": "rebaselined_and_patched",
+          "note": "Di HEAD 8fcb9dc: 4 get_settings (lot/makloon/receiving/uom) AST identik; analytics_catalog.PHYSICAL_ROLL_STATUSES salinan tanpa 'wip' (Tanya KN ≠ saldo gudang). Patch: resolver tunggal config_resolver.policy_settings + definisi stok fisik dari roll_service. repro_gn15 21/21. update_settings tetap per domain (validasi berbeda, bukan duplikat)."
         }
       ]
     },

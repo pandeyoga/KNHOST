@@ -60,27 +60,9 @@ class ContractError(Exception):
 # 1. KEBIJAKAN (system_settings scope `makloon`)
 # ═══════════════════════════════════════════════════════════════════════════
 async def get_settings(entity_id: str = "") -> Dict[str, Any]:
-    """Kebijakan efektif. FASE E-4 (E4.5): bila `entity_id` diisi, setelan khusus
-    badan usaha itu MENIMPA nilai global — dulu satu nilai memaksa seluruh grup.
-    Tanpa `entity_id` perilakunya identik dengan sebelumnya (nol risiko regresi).
-    """
-    doc = await db.system_settings.find_one({"scope": SETTINGS_SCOPE}, {"_id": 0}) or {}
-    out = dict(DEFAULT_SETTINGS)
-    for key in DEFAULT_SETTINGS:
-        if doc.get(key) is not None:
-            out[key] = doc[key]
-    out["updated_at"] = doc.get("updated_at", "")
-    out["updated_by"] = doc.get("updated_by", "")
-    if entity_id and entity_id != "all":
-        from services.config_resolver import entity_overlay
-        ovr = await entity_overlay(SETTINGS_SCOPE, entity_id) or {}
-        for _k, _v in ovr.items():
-            if _k in DEFAULT_SETTINGS:
-                out[_k] = _v
-        out["entity_id"] = entity_id
-        # Daftar kunci yang benar-benar ditimpa — dipakai UI untuk lencana asal nilai.
-        out["entity_overrides"] = sorted(_k for _k in ovr if _k in DEFAULT_SETTINGS)
-    return out
+    """Kebijakan efektif (GN-15: resolver tunggal `config_resolver.policy_settings`)."""
+    from services.config_resolver import policy_settings
+    return await policy_settings(SETTINGS_SCOPE, DEFAULT_SETTINGS, entity_id)
 
 
 async def update_settings(payload: Dict[str, Any], actor: str = "") -> Dict[str, Any]:

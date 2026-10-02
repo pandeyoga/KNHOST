@@ -40,7 +40,7 @@
   "id": "IX-06",
   "invariant": "A-only can still write own entity layer via Pusat Pengaturan (control)",
   "pass": true,
-  "detail": "200 {\"saved\":[{\"id\":\"cfgv_3bb962523158\",\"key\":\"hr.overtime.multiplier\",\"scope_type\":\"entity\",\"scope_id\":\"ent_ksc\",\"value\":2.75,\"prev_value\":2.75,\"prev_sou"
+  "detail": "200 {\"saved\":[{\"id\":\"cfgv_785974379d10\",\"key\":\"hr.overtime.multiplier\",\"scope_type\":\"entity\",\"scope_id\":\"ent_ksc\",\"value\":2.75,\"prev_value\":2.75,\"prev_sou"
  },
  {
   "id": "IX-06",

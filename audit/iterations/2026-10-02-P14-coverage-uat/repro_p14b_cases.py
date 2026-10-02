@@ -187,21 +187,27 @@ async def auth03(c, db):
 
 async def auth05(c, h, db):
     """Dua admin mengubah matriks izin bersamaan dari baca yang sama; efek izin harus langsung."""
-    base = (await c.get("/api/permissions", headers=h)).json()["matrix"]
+    got = (await c.get("/api/permissions", headers=h)).json()
+    base, ver = got["matrix"], got.get("version", 0)
     created.setdefault("matrix", json.loads(json.dumps(base)))
     ra, rb = f"p14b_ra_{uuid.uuid4().hex[:4]}", f"p14b_rb_{uuid.uuid4().hex[:4]}"
     ma, mb = {**base, ra: {"customer": ["view"]}}, {**base, rb: {"customer": ["view"]}}
-    r1, r2 = await asyncio.gather(c.put("/api/permissions", json={"matrix": ma}, headers=h),
-                                  c.put("/api/permissions", json={"matrix": mb}, headers=h))
+    r1, r2 = await asyncio.gather(c.put("/api/permissions", json={"matrix": ma, "version": ver}, headers=h),
+                                  c.put("/api/permissions", json={"matrix": mb, "version": ver}, headers=h))
     final = (await c.get("/api/permissions", headers=h)).json()["matrix"]
     check("AUTH-05", "dua perubahan izin bersamaan: keduanya bertahan atau satu ditolak 409",
           (ra in final and rb in final) or 409 in (r1.status_code, r2.status_code),
-          f"http {r1.status_code}/{r2.status_code}; ra={ra in final} rb={rb in final} (PUT mengganti seluruh matriks)")
+          f"http {r1.status_code}/{r2.status_code}; ra={ra in final} rb={rb in final}")
+    stale = await c.put("/api/permissions", json={"matrix": base, "version": ver}, headers=h)
+    nover = await c.put("/api/permissions", json={"matrix": base}, headers=h)
+    check("AUTH-05", "simpan dengan versi basi ditolak 409; tanpa versi ditolak 400",
+          stale.status_code == 409 and nover.status_code == 400, f"{stale.status_code}/{nover.status_code}")
     await db.permission_settings.update_one({"id": "default"}, {"$set": {"matrix": {**created["matrix"], ra: {"customer": ["view"]}}}})
     _, email = await synthetic_user(db, "perm", perms_role=ra)
     hc = await login(c, email, PWD)
     before = await c.get("/api/customers", headers=hc)
-    await c.put("/api/permissions", json={"matrix": {**created["matrix"], ra: {}}}, headers=h)
+    cur = (await c.get("/api/permissions", headers=h)).json().get("version", 0)
+    await c.put("/api/permissions", json={"matrix": {**created["matrix"], ra: {}}, "version": cur}, headers=h)
     after = await c.get("/api/customers", headers=hc)
     check("AUTH-05", "pencabutan izin berlaku langsung pada sesi aktif (tanpa cache basi)",
           before.status_code == 200 and after.status_code == 403, f"{before.status_code}→{after.status_code}")

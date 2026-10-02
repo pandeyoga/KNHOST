@@ -384,6 +384,7 @@ class TemplatePayload(BaseModel):
 
 class PermissionUpdate(BaseModel):
     matrix: Dict[str, Dict[str, List[str]]]
+    version: Optional[int] = None  # AUTH-05 — versi yang dibaca klien (optimistic concurrency)
 
 
 class WMSTaskCreate(BaseModel):

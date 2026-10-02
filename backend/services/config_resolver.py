@@ -578,3 +578,26 @@ async def ensure_indexes() -> None:
         await db[COLL].create_index([("created_at", -1)], name="cfgv_recent", background=True)
     except Exception as exc:  # noqa: BLE001 — index bentrok tidak boleh menggagalkan request
         logger.warning("[ensure_indexes] efek samping gagal diabaikan: %s", exc)  # KN-C10
+
+
+async def policy_settings(legacy_scope: str, defaults: Dict[str, Any], entity_id: str = "") -> Dict[str, Any]:
+    """GN-15 — SATU resolver kebijakan operasional: default → dokumen global → override badan usaha.
+
+    Dipakai `get_settings` lot/makloon/receiving/uom (dulu empat salinan AST identik).
+    Tanpa `entity_id` hasilnya = nilai global; `entity_overrides` = kunci yang ditimpa PT.
+    """
+    doc = await db.system_settings.find_one({"scope": legacy_scope}, {"_id": 0}) or {}
+    out = dict(defaults)
+    for key in defaults:
+        if doc.get(key) is not None:
+            out[key] = doc[key]
+    out["updated_at"] = doc.get("updated_at", "")
+    out["updated_by"] = doc.get("updated_by", "")
+    if entity_id and entity_id != "all":
+        ovr = await entity_overlay(legacy_scope, entity_id) or {}
+        for key, val in ovr.items():
+            if key in defaults:
+                out[key] = val
+        out["entity_id"] = entity_id
+        out["entity_overrides"] = sorted(k for k in ovr if k in defaults)
+    return out

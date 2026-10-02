@@ -40,7 +40,7 @@
   "id": "PG01",
   "invariant": "Sampling 34% of 3 rolls → 2 required, plan recorded",
   "pass": true,
-  "detail": "{'mode': 'sampling', 'sample_pct': 34.0, 'sample_min': 1, 'planned_by': 'Audit QC', 'planned_at': '2026-10-02T18:41:28.475005+00:00', 'total_rolls': 3, 'inspected_rolls': 0, 'required_rolls': 2, 'coverage_pct': 0.0, 'met': False}"
+  "detail": "{'mode': 'sampling', 'sample_pct': 34.0, 'sample_min': 1, 'planned_by': 'Audit QC', 'planned_at': '2026-10-02T19:21:53.357117+00:00', 'total_rolls': 3, 'inspected_rolls': 0, 'required_rolls': 2, 'coverage_pct': 0.0, 'met': False}"
  },
  {
   "id": "PG01",
@@ -64,7 +64,7 @@
   "id": "PG01",
   "invariant": "coverage recorded on task (mode, 2/3, applies to uninspected)",
   "pass": true,
-  "detail": "{'mode': 'sampling', 'sample_pct': 34.0, 'sample_min': 1, 'planned_by': 'Audit QC', 'planned_at': '2026-10-02T18:41:28.475005+00:00', 'total_rolls': 3, 'inspected_rolls': 2, 'required_rolls': 2, 'coverage_pct': 66.7, 'met': True, 'decision_applies_to_uninspected': True}"
+  "detail": "{'mode': 'sampling', 'sample_pct': 34.0, 'sample_min': 1, 'planned_by': 'Audit QC', 'planned_at': '2026-10-02T19:21:53.357117+00:00', 'total_rolls': 3, 'inspected_rolls': 2, 'required_rolls': 2, 'coverage_pct': 66.7, 'met': True, 'decision_applies_to_uninspected': True}"
  },
  {
   "id": "IX-15",

@@ -22,13 +22,13 @@
   "id": "GN-06",
   "invariant": "perubahan BOM sesudah release tidak mengubah WO",
   "pass": true,
-  "detail": "[{'material_product_id': 'audit_p11_04940b_pmat', 'sku': 'AUDIT_P11_04940B-mat', 'name': 'Audit P11 mat', 'unit': 'meter', 'qty': 10.0, 'value': 1000.0, 'lot_ids': []}]"
+  "detail": "[{'material_product_id': 'audit_p11_cee37f_pmat', 'sku': 'AUDIT_P11_CEE37F-mat', 'name': 'Audit P11 mat', 'unit': 'meter', 'qty': 10.0, 'value': 1000.0, 'lot_ids': []}]"
  },
  {
   "id": "GN-06",
   "invariant": "dua WO tidak memakai qty yang sama",
   "pass": true,
-  "detail": "done=1 len=30.0 errs=['409: Stok bahan audit_p11_04940b_pmat tidak cukup saat dikonsumsi: butuh 60, ter']"
+  "detail": "done=1 len=30.0 errs=['409: Stok bahan audit_p11_cee37f_pmat tidak cukup saat dikonsumsi: butuh 60, ter']"
  },
  {
   "id": "GN-06",
@@ -70,13 +70,13 @@
   "id": "GN-07",
   "invariant": "parent 70 & child retur 30 beridentitas sendiri",
   "pass": true,
-  "detail": "{'roll_no': 'audit_p11_04940b-20-1', 'status': 'returned_supplier', 'length_remaining': 30.0}"
+  "detail": "{'roll_no': 'audit_p11_cee37f-20-1', 'status': 'returned_supplier', 'length_remaining': 30.0}"
  },
  {
   "id": "GN-07",
   "invariant": "movement return_out menunjuk potongan retur",
   "pass": true,
-  "detail": "roll_9945c91565c5"
+  "detail": "roll_e79025d32c63"
  },
  {
   "id": "GN-07",

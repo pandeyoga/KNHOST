@@ -1,4 +1,4 @@
-# 2026-10-07-P07-fulfillment-saga-loading/repro_p07b.py (2s)
+# 2026-10-07-P07-fulfillment-saga-loading/repro_p07b.py (1s)
 [
  {
   "id": "CX-12",
@@ -76,7 +76,7 @@
   "id": "GN-11",
   "invariant": "kunci yang masih aktif (<5 menit) tidak bisa dilepas",
   "pass": true,
-  "detail": "(409, '{\"detail\":\"Kunci masih aktif (diklaim 2026-10-02T18:40:45.426408+00:00) — tunggu 5 menit atau sampai proses tercatat gag')"
+  "detail": "(409, '{\"detail\":\"Kunci masih aktif (diklaim 2026-10-02T19:21:10.843102+00:00) — tunggu 5 menit atau sampai proses tercatat gag')"
  },
  {
   "id": "GN-11",

@@ -4,13 +4,13 @@
   "id": "AX-08",
   "invariant": "roll quarantine bertag terverifikasi ditolak PA",
   "pass": true,
-  "detail": "(400, 'Roll R-audit_p06_9164bc-9 berstatus quarantine — putaway hanya untuk roll available (lolos QC, tidak dipesan)')"
+  "detail": "(400, 'Roll R-audit_p06_bb10f9-9 berstatus quarantine — putaway hanya untuk roll available (lolos QC, tidak dipesan)')"
  },
  {
   "id": "WM-05",
   "invariant": "dua PA serentak satu roll: tepat satu menang",
   "pass": true,
-  "detail": "['PA00004', (409, 'Roll R-audit_p06_9164bc-0 baru saja diambil proses lain (PA/reservasi/QC). Muat ulang layar.')]"
+  "detail": "['PA00007', (409, 'Roll R-audit_p06_bb10f9-0 baru saja diambil proses lain (PA/reservasi/QC). Muat ulang layar.')]"
  },
  {
   "id": "WM-04",
@@ -34,7 +34,7 @@
   "id": "WM-03",
   "invariant": "scanned_epcs=[] → nol roll pindah, semua exception",
   "pass": true,
-  "detail": "{'arrived': 0, 'wh': 'audit_p06_9164bc_whA'}"
+  "detail": "{'arrived': 0, 'wh': 'audit_p06_bb10f9_whA'}"
  },
  {
   "id": "WM-09",
@@ -52,7 +52,7 @@
   "id": "WM-05",
   "invariant": "dispatch ditolak bila roll PA berubah status (kompensasi all-or-none)",
   "pass": true,
-  "detail": "{'err': (409, 'Roll R-audit_p06_9164bc-3 tidak lagi available untuk PA ini (dipesan/QC/berpindah). Keluarkan roll itu atau buat PA baru.'), 'r1': 'available'}"
+  "detail": "{'err': (409, 'Roll R-audit_p06_bb10f9-3 tidak lagi available untuk PA ini (dipesan/QC/berpindah). Keluarkan roll itu atau buat PA baru.'), 'r1': 'available'}"
  },
  {
   "id": "WM-03",
@@ -64,13 +64,13 @@
   "id": "WM-05",
   "invariant": "roll yang berubah status tidak ditimpa lokasinya",
   "pass": true,
-  "detail": "{'wh': 'audit_p06_9164bc_whA', 'status': 'reserved'}"
+  "detail": "{'wh': 'audit_p06_bb10f9_whA', 'status': 'reserved'}"
  },
  {
   "id": "IX-09",
   "invariant": "reopen inspeksi mengosongkan inspect_done_at retur (riwayat disimpan)",
   "pass": true,
-  "detail": "{'id': 'audit_p06_9164bc_ret', 'inspect_done_at': '', 'inspect_reopen_history': [{'previous_done_at': '2026-10-01T10:00:00+00:00', 'reason': 'Salah input grade, perlu periksa ulang barang', 'at': '2026-10-02T18:41:31.521847+00:00'}], 'updated_at': '2026-10-02T18:41:31.521840+00:00'}"
+  "detail": "{'id': 'audit_p06_bb10f9_ret', 'inspect_done_at': '', 'inspect_reopen_history': [{'previous_done_at': '2026-10-01T10:00:00+00:00', 'reason': 'Salah input grade, perlu periksa ulang barang', 'at': '2026-10-02T19:21:56.422368+00:00'}], 'updated_at': '2026-10-02T19:21:56.422360+00:00'}"
  }
 ]
 pass=12 fail=0

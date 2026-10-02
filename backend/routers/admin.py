@@ -448,17 +448,27 @@ async def export_warehouses(request: Request) -> Response:
 async def get_permissions(request: Request) -> Dict[str, Any]:
     await require_permission(request, "permission", "view")
     record = safe_doc(await db.permission_settings.find_one({"id": "default"}, {"_id": 0}))
-    return {"matrix": record.get("matrix", DEFAULT_PERMISSIONS) if record else DEFAULT_PERMISSIONS}
+    return {"matrix": record.get("matrix", DEFAULT_PERMISSIONS) if record else DEFAULT_PERMISSIONS,
+            "version": int((record or {}).get("version") or 0)}
 
 
 @router.put("/permissions")
 async def update_permissions(payload: PermissionUpdate, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "permission", "update")
-    await db.permission_settings.update_one(
-        {"id": "default"}, {"$set": {"matrix": payload.matrix, "updated_at": now_iso()}}, upsert=True
-    )
-    await audit(actor["name"], "permissions_updated", "permission_settings", "default", payload.matrix)
-    return {"matrix": payload.matrix}
+    # AUTH-05 — tanpa versi, dua admin yang menyimpan bersamaan saling menimpa seluruh matriks.
+    if payload.version is None:
+        raise HTTPException(status_code=400, detail="Versi matriks izin wajib dikirim — muat ulang halaman lalu simpan lagi.")
+    prev = await db.permission_settings.find_one({"id": "default"}, {"_id": 0}) or {}
+    match = [{"version": payload.version}] + ([{"version": {"$exists": False}}] if payload.version == 0 else [])
+    res = await db.permission_settings.update_one(
+        {"id": "default", "$or": match},
+        {"$set": {"matrix": payload.matrix, "updated_at": now_iso()}, "$inc": {"version": 1}},
+        upsert=not prev)
+    if not res.matched_count and not res.upserted_id:
+        raise HTTPException(status_code=409, detail="Matriks izin sudah diubah admin lain sejak Anda membukanya. Muat ulang lalu ulangi perubahan Anda.")
+    await audit(actor["name"], "permissions_updated", "permission_settings", "default", payload.matrix,
+                before=prev.get("matrix"))
+    return {"matrix": payload.matrix, "version": payload.version + 1}
 
 
 # =============================================================================

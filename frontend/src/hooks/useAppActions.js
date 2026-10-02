@@ -19,6 +19,7 @@ import { askConfirm } from "@/services/confirmService";
  * NOTE: Keep this hook pure-orchestration only; no JSX, no DOM.
  */
 export function useAppActions(state) {
+  const permVersion = useRef(0); // AUTH-05 — versi matriks izin yang terakhir dibaca
   const {
     user, token, auditFilters, selectedCustomer, selectedAddress, cart, data, selectedEntity,
     setUser, setToken, setActiveView, setNotice, setOnboarding, setShowOnboarding,
@@ -195,6 +196,7 @@ export function useAppActions(state) {
             : Promise.resolve({ data: [] }),
         ]);
         setUsers(userResp.data || []);
+        permVersion.current = permissionResp.data?.version ?? 0;
         setPermissions(permissionResp.data || { matrix: {}, actions: [] });
         setAuditLogs(auditResp.data || []);
       }
@@ -559,7 +561,8 @@ export function useAppActions(state) {
     setPermissions((current) => ({ ...current, matrix }));
     if (!persist) return;
     try {
-      const response = await axios.put(`${API}/permissions`, { matrix });
+      const response = await axios.put(`${API}/permissions`, { matrix, version: permVersion.current });
+      permVersion.current = response.data.version;
       setPermissions((current) => ({ ...current, matrix: response.data.matrix }));
       setNotice("Permission matrix berhasil disimpan.");
     } catch (error) {

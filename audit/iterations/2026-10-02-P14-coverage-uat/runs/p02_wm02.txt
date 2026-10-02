@@ -10,7 +10,7 @@
   "id": "WM-02",
   "invariant": "induk tetap 100 fisik, 30 dipesan, tag induk tetap",
   "pass": true,
-  "detail": "{'length_remaining': 100.0, 'length_reserved': 30.0, 'rfid_tag_id': 'tag_audit_wm02_2529c6', 'status': 'available'}"
+  "detail": "{'length_remaining': 100.0, 'length_reserved': 30.0, 'rfid_tag_id': 'tag_audit_wm02_59eaa4', 'status': 'available'}"
  },
  {
   "id": "WM-02",
@@ -22,7 +22,7 @@
   "id": "WM-02",
   "invariant": "alokasi menandai pending_cut + reservation_id",
   "pass": true,
-  "detail": "{'roll_id': 'audit_wm02_2529c6_r0', 'roll_no': 'R-audit_wm02_2529c6-0', 'reservation_id': 'rsv_f2b7d088c614', 'pending_cut': True, 'lot': 'L1', 'dye_lot': 'L1', 'length': 30}"
+  "detail": "{'roll_id': 'audit_wm02_59eaa4_r0', 'roll_no': 'R-audit_wm02_59eaa4-0', 'reservation_id': 'rsv_391d4b4fce8e', 'pending_cut': True, 'lot': 'L1', 'dye_lot': 'L1', 'length': 30}"
  },
  {
   "id": "WM-02",
@@ -40,7 +40,7 @@
   "id": "WM-02",
   "invariant": "loading check ditolak sebelum potong",
   "pass": true,
-  "detail": "1 reservasi potong belum dikonfirmasi (roll induk R-audit_wm02_2529c6-0). Potong fisik & konfirmasi dulu."
+  "detail": "1 reservasi potong belum dikonfirmasi (roll induk R-audit_wm02_59eaa4-0). Potong fisik & konfirmasi dulu."
  },
  {
   "id": "WM-02",
@@ -52,7 +52,7 @@
   "id": "WM-02",
   "invariant": "anak lahir reserved utk SO, tanpa tag, parent langsung benar",
   "pass": true,
-  "detail": "{'status': 'reserved', 'rfid_tag_id': None, 'parent_roll_id': 'audit_wm02_2529c6_r0', 'roll_no': 'R-audit_wm02_2529c6-0-1'}"
+  "detail": "{'status': 'reserved', 'rfid_tag_id': None, 'parent_roll_id': 'audit_wm02_59eaa4_r0', 'roll_no': 'R-audit_wm02_59eaa4-0-1'}"
  },
  {
   "id": "WM-02",
@@ -64,7 +64,7 @@
   "id": "WM-02",
   "invariant": "dispatch dengan reservasi belum dipotong ditolak (kebijakan 2026-10-03)",
   "pass": true,
-  "detail": "1 reservasi potong belum dikonfirmasi (roll induk R-audit_wm02_2529c6-0). Potong fisik & konfirmasi dulu."
+  "detail": "1 reservasi potong belum dikonfirmasi (roll induk R-audit_wm02_59eaa4-0). Potong fisik & konfirmasi dulu."
  }
 ]
 pass=11 fail=0

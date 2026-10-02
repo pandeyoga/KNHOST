@@ -1,0 +1,33 @@
+p01_dev {'pass': 16, 'fail': 0, 'ok': True}
+p01_s1 {'pass': 22, 'fail': 0, 'ok': True}
+p01_s2 {'pass': 12, 'fail': 1, 'ok': True, 'drift_excluded': ['multi-entity count session is scannable by its creator scope']}
+p01_cx10 {'pass': 10, 'fail': 0, 'ok': True}
+p01_ix06 {'pass': 11, 'fail': 0, 'ok': True}
+p02 {'pass': 13, 'fail': 0, 'ok': True}
+p06_qc {'pass': 13, 'fail': 0, 'ok': True}
+p02_wm02 {'pass': 11, 'fail': 0, 'ok': True}
+p03 {'pass': 43, 'fail': 0, 'ok': True}
+p06 {'pass': 12, 'fail': 0, 'ok': True}
+p11 {'pass': 21, 'fail': 0, 'ok': True}
+p12 {'pass': 23, 'fail': 0, 'ok': True}
+p13 {'pass': 10, 'fail': 0, 'ok': True}
+p04 {'pass': 7, 'fail': 0, 'ok': True}
+fu1 {'pass': 13, 'fail': 0, 'ok': True}
+fu2 {'pass': 12, 'fail': 0, 'ok': True}
+p05 {'pass': 29, 'fail': 0, 'ok': True}
+fu3 {'pass': 13, 'fail': 0, 'ok': True}
+p07 {'pass': 18, 'fail': 0, 'ok': True}
+p07b {'pass': 16, 'fail': 0, 'ok': True}
+p08 {'pass': 43, 'fail': 0, 'ok': True}
+p09 {'pass': 22, 'fail': 0, 'ok': True}
+p10 {'pass': 21, 'fail': 0, 'ok': True}
+p14 {'pass': 22, 'fail': 0, 'ok': True}
+p14b {'pass': 21, 'fail': 1, 'ok': False}
+gn15 {'pass': 21, 'fail': 0, 'ok': True}
+{
+ "partial": 54,
+ "tested_pass": 25,
+ "planned": 17,
+ "blocked": 2,
+ "tested_fail": 1
+}

@@ -111,8 +111,14 @@
  {
   "id": "AUTH-05",
   "invariant": "dua perubahan izin bersamaan: keduanya bertahan atau satu ditolak 409",
-  "pass": false,
-  "detail": "http 200/200; ra=False rb=True (PUT mengganti seluruh matriks)"
+  "pass": true,
+  "detail": "http 200/409; ra=True rb=False"
+ },
+ {
+  "id": "AUTH-05",
+  "invariant": "simpan dengan versi basi ditolak 409; tanpa versi ditolak 400",
+  "pass": true,
+  "detail": "409/400"
  },
  {
   "id": "AUTH-05",
@@ -127,4 +133,4 @@
   "detail": "{'shift_close': False, 'void': False, 'split_tender': False}"
  }
 ]
-pass=19 fail=2
+pass=21 fail=1

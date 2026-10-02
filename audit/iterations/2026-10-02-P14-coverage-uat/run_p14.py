@@ -44,6 +44,7 @@ R = {  # kunci → skrip repro (relatif terhadap audit/iterations)
     "p10": "2026-10-08-P10-opname-financial/repro_p10.py",
     "p14": f"{HERE.name}/repro_p14_history.py",
     "p14b": f"{HERE.name}/repro_p14b_cases.py",
+    "gn15": "2026-10-02-P15-gn15-ssot/repro_gn15.py",
 }
 
 P, T = "partial", "tested_pass"
@@ -113,7 +114,7 @@ MAP = {
     "DESIGN-03": (["p14b"], P, "Cancel wajib alasan, cancel ulang ditolak, permintaan batal tak melahirkan desain; reopen desain belum."),
     "DESIGN-04": (["p14b"], P, "Desainer B ditolak buka/unggah ke tugas A dan daftar B bersih; pemindahan penugasan belum."),
     "AUTH-03": (["p14b"], T, "Role custom customer.view: view 200, update 403, modul lain 403."),
-    "AUTH-05": (["p14b"], T, "Pencabutan izin langsung berlaku; PUT /permissions mengganti seluruh matriks tanpa versi."),
+    "AUTH-05": (["p14b"], T, "Pencabutan izin langsung berlaku; PUT /permissions kini ber-versi: simpan bersamaan → satu 409, versi basi 409, tanpa versi 400."),
 }
 BLOCKED = {
     "RFID-06": "Butuh reader/printer/PLC fisik + firmware; simulasi software tidak menggantikan commissioning.",

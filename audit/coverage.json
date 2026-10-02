@@ -63,12 +63,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "tested_fail",
+      "current_status": "tested_pass",
       "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
       "evidence": [
         "iterations/2026-10-02-P14-coverage-uat/runs/p14b.txt"
       ],
-      "notes": "P14: Pencabutan izin langsung berlaku; PUT /permissions mengganti seluruh matriks tanpa versi. GAGAL: p14b."
+      "notes": "P14: Pencabutan izin langsung berlaku; PUT /permissions kini ber-versi: simpan bersamaan → satu 409, versi basi 409, tanpa versi 400."
     },
     {
       "id": "AUTH-06",

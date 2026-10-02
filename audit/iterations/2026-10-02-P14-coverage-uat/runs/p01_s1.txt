@@ -1,4 +1,4 @@
-# 2026-09-30-P01-scope-batch1/repro_p01_scope.py (5s)
+# 2026-09-30-P01-scope-batch1/repro_p01_scope.py (46s)
 [
  {
   "id": "GN-03",

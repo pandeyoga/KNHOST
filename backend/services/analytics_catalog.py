@@ -12,8 +12,10 @@ CATALOG_VERSION = "cat-v1"
 MAX_METRICS, MAX_DIMS = 6, 3
 ROW_RETURN_LIMIT, ROW_STORE_LIMIT = 200, 5000
 
-PHYSICAL_ROLL_STATUSES = ("available", "reserved", "committed", "picked", "packed", "hold",
-                          "quarantine", "blocked", "damaged")
+# GN-15 — stok fisik = SATU definisi roll_service (dulu salinan tanpa 'wip' → Tanya KN ≠ saldo gudang).
+from services.roll_service import PHYSICAL_ROLL_STATUSES as _PHYS  # noqa: E402
+
+PHYSICAL_ROLL_STATUSES = tuple(_PHYS)
 RESERVED_ROLL_STATUSES = ("reserved", "committed", "picked", "packed")
 RECEIPT_MOVEMENTS = ("inbound_receiving", "subcon_receipt", "subcon_receipt_byproduct")
 PO_DEAD = ("draft", "cancelled", "rejected")

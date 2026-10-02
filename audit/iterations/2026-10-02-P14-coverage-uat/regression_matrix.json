@@ -148,8 +148,14 @@
  },
  "p14b": {
   "script": "2026-10-02-P14-coverage-uat/repro_p14b_cases.py",
-  "pass": 19,
-  "fail": 2,
+  "pass": 21,
+  "fail": 1,
   "ok": false
+ },
+ "gn15": {
+  "script": "2026-10-02-P15-gn15-ssot/repro_gn15.py",
+  "pass": 21,
+  "fail": 0,
+  "ok": true
  }
 }
