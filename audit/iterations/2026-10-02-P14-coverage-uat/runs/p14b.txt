@@ -1,0 +1,130 @@
+# 2026-10-02-P14-coverage-uat/repro_p14b_cases.py (5s)
+[
+ {
+  "id": "PRET-04",
+  "invariant": "rantai submit→approve→ship→supplier-reject→goods-back sukses",
+  "pass": true,
+  "detail": "{'submit': 200, 'approve': 200, 'ship': 200, 'reject': 200, 'goods_back': 200}"
+ },
+ {
+  "id": "PRET-04",
+  "invariant": "roll kembali available dengan panjang utuh",
+  "pass": true,
+  "detail": "available 19.01"
+ },
+ {
+  "id": "PRET-04",
+  "invariant": "status supplier goods_back tanpa nota debit/AP credit",
+  "pass": true,
+  "detail": "{'supplier_status': 'goods_back', 'debit_note_number': '', 'ap_credit_amount': None, 'outcome': None}"
+ },
+ {
+  "id": "PRET-04",
+  "invariant": "tidak ada jurnal settlement untuk retur ditolak",
+  "pass": true,
+  "detail": "jurnal ref=0 total Δ=0"
+ },
+ {
+  "id": "PRET-04",
+  "invariant": "goods-back ulang ditolak (idempoten, tanpa mutasi kedua)",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "DESIGN-01",
+  "invariant": "permintaan → desain Studio tertaut oleh desainer yang ditugaskan",
+  "pass": true,
+  "detail": "200"
+ },
+ {
+  "id": "DESIGN-01",
+  "invariant": "status permintaan mengikuti desain: diajukan → revisi → disetujui",
+  "pass": true,
+  "detail": "in_progress→delivered→revision→approved http 200/200/200/200"
+ },
+ {
+  "id": "DESIGN-01",
+  "invariant": "desainer tidak bisa ACC desainnya sendiri",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "DESIGN-01",
+  "invariant": "nilai ACC tersimpan & lebih dari satu versi/riwayat revisi",
+  "pass": true,
+  "detail": "{'status': 'approved', 'score': None, 'version': 2}"
+ },
+ {
+  "id": "DESIGN-03",
+  "invariant": "batal tanpa alasan ditolak",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "DESIGN-03",
+  "invariant": "batal dengan alasan → cancelled; batal ulang ditolak",
+  "pass": true,
+  "detail": "200/400"
+ },
+ {
+  "id": "DESIGN-03",
+  "invariant": "permintaan batal tidak bisa melahirkan desain baru",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "desainer B ditolak membuka permintaan milik A",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "daftar desainer B tidak memuat tugas A",
+  "pass": true,
+  "detail": "0"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "desainer B tidak bisa mengunggah referensi ke permintaan A",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "AUTH-03",
+  "invariant": "role custom: customer.view diizinkan (200)",
+  "pass": true,
+  "detail": "200"
+ },
+ {
+  "id": "AUTH-03",
+  "invariant": "role custom: customer.update ditolak 403 tanpa mutasi",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "AUTH-03",
+  "invariant": "role custom: modul lain (accounting) ditolak",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "AUTH-05",
+  "invariant": "dua perubahan izin bersamaan: keduanya bertahan atau satu ditolak 409",
+  "pass": false,
+  "detail": "http 200/200; ra=False rb=True (PUT mengganti seluruh matriks)"
+ },
+ {
+  "id": "AUTH-05",
+  "invariant": "pencabutan izin berlaku langsung pada sesi aktif (tanpa cache basi)",
+  "pass": true,
+  "detail": "200→403"
+ },
+ {
+  "id": "SALE-02",
+  "invariant": "POS punya shift close, void dan split tender",
+  "pass": false,
+  "detail": "{'shift_close': False, 'void': False, 'split_tender': False}"
+ }
+]
+pass=19 fail=2

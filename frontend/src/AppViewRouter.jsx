@@ -287,7 +287,7 @@ export default function AppViewRouter(props) {
       {activeView === "advance-report" && <AdvanceReportView selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {activeView === "payment-plans" && <PaymentPlansView currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "store-credit" && <StoreCreditView selectedEntity={selectedEntity} currentUser={user} />}
-      {activeView === "bank-accounts" && <BankAccountsView selectedEntity={selectedEntity} />}
+      {activeView === "bank-accounts" && <BankAccountsView selectedEntity={selectedEntity} currentUser={user} />}
       {activeView === "bank-reconciliation" && <BankReconciliationView selectedEntity={selectedEntity} />}
       {activeView === "finance-cases" && <FinanceCasesView currentUser={user} selectedEntity={selectedEntity} entities={entities} focusCase={caseFocus} onFocusCaseConsumed={onCaseFocusConsumed} />}
       {activeView === "fixed-assets" && <FixedAssetsView selectedEntity={selectedEntity} entities={entities} />}

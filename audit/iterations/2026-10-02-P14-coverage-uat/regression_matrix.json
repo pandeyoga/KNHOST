@@ -142,8 +142,14 @@
  },
  "p14": {
   "script": "2026-10-02-P14-coverage-uat/repro_p14_history.py",
-  "pass": 19,
+  "pass": 22,
   "fail": 0,
   "ok": true
+ },
+ "p14b": {
+  "script": "2026-10-02-P14-coverage-uat/repro_p14b_cases.py",
+  "pass": 19,
+  "fail": 2,
+  "ok": false
  }
 }

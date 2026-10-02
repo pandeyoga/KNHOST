@@ -43,6 +43,7 @@ R = {  # kunci → skrip repro (relatif terhadap audit/iterations)
     "p09": "2026-10-08-P09-gate-contract/repro_p09.py",
     "p10": "2026-10-08-P10-opname-financial/repro_p10.py",
     "p14": f"{HERE.name}/repro_p14_history.py",
+    "p14b": f"{HERE.name}/repro_p14b_cases.py",
 }
 
 P, T = "partial", "tested_pass"
@@ -106,6 +107,13 @@ MAP = {
     "OPS-01": (["p14"], P, "Bootstrap & indeks diverifikasi di preview; deployment produksi belum."),
     "OPS-02": (["p03"], P, "Outbox/durable posting; restart scheduler belum diinjeksi."),
     "OPS-04": (["p07b", "p03"], P, "GN-11 saga release; crash tiap tahap belum."),
+    "PRET-04": (["p14b"], T, "RMA ditolak supplier → goods_back: roll available utuh, tanpa nota debit/jurnal, goods-back ulang ditolak."),
+    "SALE-02": (["p14b"], T, "Gap produk: router POS hanya rekomendasi (best-sellers/FBT/substitutes); belum ada shift close, void, split tender."),
+    "DESIGN-01": (["p14b"], P, "Request→assign→desain→ajukan→revisi→ajukan ulang→ACC (status permintaan ikut Studio); lanjutan ke produksi belum."),
+    "DESIGN-03": (["p14b"], P, "Cancel wajib alasan, cancel ulang ditolak, permintaan batal tak melahirkan desain; reopen desain belum."),
+    "DESIGN-04": (["p14b"], P, "Desainer B ditolak buka/unggah ke tugas A dan daftar B bersih; pemindahan penugasan belum."),
+    "AUTH-03": (["p14b"], T, "Role custom customer.view: view 200, update 403, modul lain 403."),
+    "AUTH-05": (["p14b"], T, "Pencabutan izin langsung berlaku; PUT /permissions mengganti seluruh matriks tanpa versi."),
 }
 BLOCKED = {
     "RFID-06": "Butuh reader/printer/PLC fisik + firmware; simulasi software tidak menggantikan commissioning.",
@@ -173,6 +181,13 @@ def summarize(key):
     return out
 
 
+def case_ok(key, cid, matrix):
+    """Bila keluaran skrip memuat invariant ber-id kasus ini, nilai hanya invariant itu; selain itu status skrip."""
+    txt = (RUNS / f"{key}.txt").read_text() if (RUNS / f"{key}.txt").exists() else ""
+    own = re.findall(r'"id": "' + re.escape(cid) + r'",\s*"invariant": "[^"]+",\s*"pass": (true|false)', txt)
+    return all(x == "true" for x in own) if own else matrix[key]["ok"]
+
+
 def main():
     only = [a.split("=", 1)[1].split(",") for a in sys.argv if a.startswith("--only=")]
     if "--no-run" not in sys.argv:
@@ -196,9 +211,9 @@ def main():
             c.update(current_status="blocked", tested_commit=None, evidence=[], notes=f"P14: {BLOCKED[cid]}")
         elif cid in mapping:
             keys, status, note = mapping[cid]
-            res = [matrix[k] for k in keys]
-            ok = all(r["ok"] for r in res)
-            failed = [k for k, r in zip(keys, res) if not r["ok"]]
+            res = [case_ok(k, cid, matrix) for k in keys]
+            ok = all(res)
+            failed = [k for k, r in zip(keys, res) if not r]
             st = status if ok else ("tested_fail" if status == T else "partial")
             c.update(current_status=st, tested_commit=BASE_SHA,
                      evidence=[f"{REL}/runs/{k}.txt" for k in keys],

@@ -201,7 +201,8 @@ async def update_supplier(supplier_id: str, payload: GenericPatch, request: Requ
         {"id": supplier_id}, {"$set": updates},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER,
     )
-    await audit(actor["name"], "supplier_updated", "supplier", supplier_id, updates)
+    await audit(actor["name"], "supplier_updated", "supplier", supplier_id, updates,
+                before={k: sup.get(k) for k in updates})
     return safe_doc(updated)
 
 
@@ -229,7 +230,8 @@ async def deactivate_supplier(supplier_id: str, request: Request) -> Dict[str, A
         {"id": supplier_id}, {"$set": {"status": "inactive", "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER,
     )
-    await audit(actor["name"], "supplier_deactivated", "supplier", supplier_id, {})
+    await audit(actor["name"], "supplier_deactivated", "supplier", supplier_id, {"status": "inactive"},
+                before={"status": sup.get("status")})
     return safe_doc(updated)
 
 

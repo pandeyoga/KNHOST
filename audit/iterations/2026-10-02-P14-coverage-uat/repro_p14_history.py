@@ -77,6 +77,34 @@ async def customer_checks(c, h, db):
                                      "$or": [{"after.pic_name": new}, {"before.pic_name": new}]})
 
 
+async def master_checks(c, h, db):
+    """Supplier, produk, rekening bank: PATCH menyimpan nilai lama → baru (field yang diubah saja)."""
+    sup = await db.suppliers.find_one({"status": {"$ne": "inactive"}, "partner_kind": {"$ne": "entity"},
+                                       "group_entity_id": {"$in": [None, ""]}}, {"_id": 0, "id": 1, "notes": 1})
+    prod = await db.products.find_one({"status": "active", "saga_lock": {"$in": [None, ""]}}, {"_id": 0, "id": 1, "description": 1})
+    bank = await db.bank_accounts.find_one({"entity_id": ENT}, {"_id": 0, "id": 1, "note": 1})
+    cases = [("supplier", sup, "notes", lambda v: c.patch(f"/api/suppliers/{sup['id']}", json={"data": {"notes": v}}, headers=h)),
+             ("product", prod, "description", lambda v: c.patch(f"/api/products/{prod['id']}", json={"data": {"description": v}}, headers=h)),
+             ("bank_account", bank, "note", lambda v: c.patch(f"/api/bank-accounts/{bank['id']}", json={"note": v}, headers=h))]
+    for etype, doc, field, do in cases:
+        if not doc:
+            check("AUDIT-01", f"fixture {etype}", False, "kosong")
+            continue
+        old, new = doc.get(field), f"{T} {etype}"
+        r = await do(new)
+        _, body = await history(c, h, etype, doc["id"])
+        row = next((x for x in body.get("items", []) if any(d["field"] == field and d.get("to") == new for d in x.get("diff", []))), None)
+        d = next((x for x in (row or {}).get("diff", []) if x["field"] == field), {})
+        check("AUDIT-01", f"riwayat {etype}: nilai lama → baru hanya field yang diubah",
+              r.status_code == 200 and row and d.get("from") == old and len(row.get("diff", [])) == 1 and row.get("integrity") == "ok",
+              f"{r.status_code} diff={(row or {}).get('diff')}")
+        await do(old if old is not None else "")
+        if old is None:
+            coll = {"supplier": "suppliers", "product": "products", "bank_account": "bank_accounts"}[etype]
+            await db[coll].update_one({"id": doc["id"]}, {"$unset": {field: ""}})
+        await db.audit_logs.delete_many({"entity_type": etype, "entity_id": doc["id"], "timestamp": {"$gte": (row or {}).get("timestamp", "9")}})
+
+
 async def salary_checks(c, h, db):
     emp = await db.hr_employees.find_one({"entity_id": ENT, "status": {"$ne": "resigned"}, "base_salary": {"$gt": 0}},
                                          {"_id": 0, "id": 1, "base_salary": 1})
@@ -160,7 +188,7 @@ async def main():
     async with httpx.AsyncClient(base_url="http://localhost:8001", timeout=60) as c:
         _, tok = await login(c, "admin@kainnusantara.id")
         h = hdr(tok)
-        for fn in (gl_checks, customer_checks, salary_checks):
+        for fn in (gl_checks, customer_checks, master_checks, salary_checks):
             try:
                 await fn(c, h, db)
             except Exception as exc:  # noqa: BLE001

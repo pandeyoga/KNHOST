@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { ArrowLeft, Edit3, Truck, Building2, Clock, MapPin, PhoneCall, Wallet,
-  ClipboardList, Receipt, Undo2, Tag, FileText, BarChart3, Star } from "lucide-react";
+  ClipboardList, Receipt, Undo2, Tag, FileText, BarChart3, Star, History } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import RecordDetailModal from "../documents/RecordDetailModal";
 import SupplierPriceList from "./SupplierPriceList";
 import SupplierScorecard from "./SupplierScorecard";
+import AuditHistoryPanel from "../../components/AuditHistoryPanel";
+import { can } from "../../config/roles";
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 const money = (v) => formatCurrency(Number(v || 0));
@@ -33,6 +35,7 @@ export default function Supplier360Panel({ supplierId, currentUser, onBack, onEd
   const [tab, setTab] = useState("po");
   const [record, setRecord] = useState(null); // konfigurasi RecordDetailModal
   const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canAudit = can(currentUser?.permissions, "audit", "view");
 
   useEffect(() => { load(); }, [supplierId]); // eslint-disable-line
   async function load() {
@@ -215,6 +218,11 @@ export default function Supplier360Panel({ supplierId, currentUser, onBack, onEd
                     <Icon size={13} /> {t.label}{n != null && <span className="tab-badge">{n}</span>}
                   </button>
                 ); })}
+              {canAudit && (
+                <button data-testid="supplier-360-tab-changes" className={`tab-button ${tab === "changes" ? "active" : ""}`} onClick={() => setTab("changes")}>
+                  <History size={13} /> Riwayat Perubahan
+                </button>
+              )}
             </div>
           </div>
           <div className="section-body">
@@ -233,6 +241,7 @@ export default function Supplier360Panel({ supplierId, currentUser, onBack, onEd
             {tab === "documents" && <RowList testId="supplier-360-list-documents" rows={docs} empty="Belum ada dokumen." onClick={openDoc}
               render={(d) => ({ id: d.source_id, title: `${d.label} · ${d.number}`, sub: `${fmtDate(d.date)} · ${d.status || "—"}`, amount: money(d.amount) })} />}
             {tab === "scorecard" && <SupplierScorecard supplierId={data.id} />}
+            {tab === "changes" && canAudit && <AuditHistoryPanel entityType="supplier" entityId={data.id} testIdPrefix="supplier-360-changes" />}
           </div>
         </div>
       </div>

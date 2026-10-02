@@ -208,7 +208,9 @@ async def update_product(product_id: str, payload: GenericPatch, request: Reques
     product = await pvs.save_product(merged, actor=actor['name'], existing=existing, entity_id=active_eid)
     if not product:
         raise HTTPException(status_code=404, detail="Produk tidak ditemukan")
-    await audit(actor["name"], "product_updated", "product", product_id, product)
+    _changed = [k for k in data if k != "updated_at"]
+    await audit(actor["name"], "product_updated", "product", product_id,
+                {k: product.get(k) for k in _changed}, before={k: existing.get(k) for k in _changed})
     product["domain_warnings"] = check["warnings"]
     return product
 
@@ -242,7 +244,8 @@ async def delete_product(product_id: str, request: Request) -> Dict[str, Any]:
     )
     if not product:
         raise HTTPException(status_code=404, detail="Produk tidak ditemukan")
-    await audit(actor["name"], "product_deactivated", "product", product_id, product)
+    await audit(actor["name"], "product_deactivated", "product", product_id, {"status": product.get("status")},
+                before={"status": existing.get("status")})
     return product
 
 

@@ -10,6 +10,8 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import { formatCurrency } from "../../utils/formatters";
 import DetailModal from "../../components/DetailModal";
+import AuditHistoryPanel from "../../components/AuditHistoryPanel";
+import { can } from "../../config/roles";
 
 function fmtDate(iso) {
   if (!iso) return "—";
@@ -19,7 +21,9 @@ function fmtDate(iso) {
 
 const EMPTY_FORM = { name: "", account_type: "bank", bank_name: "", account_number: "", opening_balance: "" };
 
-export default function BankAccountsView({ selectedEntity }) {
+export default function BankAccountsView({ selectedEntity, currentUser }) {
+  const canAudit = can(currentUser?.permissions, "audit", "view");
+  const [detailTab, setDetailTab] = useState("ledger");
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -49,7 +53,7 @@ export default function BankAccountsView({ selectedEntity }) {
 
   const openLedger = useCallback(async (id, silent = false) => {
     setSelected(id);
-    if (!silent) { setLedger(null); setLedgerLoading(true); }
+    if (!silent) { setLedger(null); setLedgerLoading(true); setDetailTab("ledger"); }
     try {
       const res = await axios.get(`${API}/bank-accounts/${id}/ledger`);
       setLedger(res.data || null);
@@ -214,12 +218,24 @@ export default function BankAccountsView({ selectedEntity }) {
       {selected && (
         <DetailModal onClose={() => { setSelected(null); setLedger(null); }}
           label="Mutasi rekening bank" testId="bank-ledger-modal">
-          <LedgerPanel
-            ledger={ledger}
-            loading={ledgerLoading}
-            onClose={() => { setSelected(null); setLedger(null); }}
-            onToggle={toggleReconcile}
-          />
+          {canAudit && (
+            <div className="tab-bar">
+              <button data-testid="bank-detail-tab-ledger" className={`tab-button ${detailTab === "ledger" ? "active" : ""}`} onClick={() => setDetailTab("ledger")}>Mutasi</button>
+              <button data-testid="bank-detail-tab-history" className={`tab-button ${detailTab === "history" ? "active" : ""}`} onClick={() => setDetailTab("history")}>Riwayat Perubahan</button>
+            </div>
+          )}
+          {detailTab === "history" && canAudit ? (
+            <div className="section-card mt-3"><div className="section-body">
+              <AuditHistoryPanel entityType="bank_account" entityId={selected} testIdPrefix="bank-history" />
+            </div></div>
+          ) : (
+            <LedgerPanel
+              ledger={ledger}
+              loading={ledgerLoading}
+              onClose={() => { setSelected(null); setLedger(null); }}
+              onToggle={toggleReconcile}
+            />
+          )}
         </DetailModal>
       )}
     </div>

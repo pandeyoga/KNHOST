@@ -4,7 +4,7 @@
   "id": "AUDIT-01",
   "invariant": "riwayat akun GL: nilai lama → baru per field",
   "pass": true,
-  "detail": "{'field': 'name', 'from': 'TEST_P14_499273 Lama', 'to': 'TEST_P14_499273 Baru'}"
+  "detail": "{'field': 'name', 'from': 'TEST_P14_bb28f6 Lama', 'to': 'TEST_P14_bb28f6 Baru'}"
  },
  {
   "id": "AUDIT-01",
@@ -28,7 +28,25 @@
   "id": "AUDIT-01",
   "invariant": "riwayat pelanggan: nilai lama → baru",
   "pass": true,
-  "detail": "200 {'field': 'pic_name', 'from': 'Pak Hendra', 'to': 'Test_p14_499273 Pic'}"
+  "detail": "200 {'field': 'pic_name', 'from': 'Pak Hendra', 'to': 'Test_p14_bb28f6 Pic'}"
+ },
+ {
+  "id": "AUDIT-01",
+  "invariant": "riwayat supplier: nilai lama → baru hanya field yang diubah",
+  "pass": true,
+  "detail": "200 diff=[{'field': 'notes', 'from': '', 'to': 'TEST_P14_bb28f6 supplier'}]"
+ },
+ {
+  "id": "AUDIT-01",
+  "invariant": "riwayat product: nilai lama → baru hanya field yang diubah",
+  "pass": true,
+  "detail": "200 diff=[{'field': 'description', 'from': 'Batik Mega Mendung Premium — motif Mega Mendung, warna Biru-Coklat, grade A. Kain Batik premium dari Cirebon Craft; gramasi 120 gsm, lebar 1.15 m. Dijual per yard — panjang tiap roll bervariasi.', 'to': 'TEST_P14_bb28f6 product'}]"
+ },
+ {
+  "id": "AUDIT-01",
+  "invariant": "riwayat bank_account: nilai lama → baru hanya field yang diubah",
+  "pass": true,
+  "detail": "200 diff=[{'field': 'note', 'from': '', 'to': 'TEST_P14_bb28f6 bank_account'}]"
  },
  {
   "id": "AUDIT-02",
@@ -115,4 +133,4 @@
   "detail": ""
  }
 ]
-pass=19 fail=0
+pass=22 fail=0
