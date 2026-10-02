@@ -109,7 +109,7 @@ MAP = {
     "OPS-02": (["p03"], P, "Outbox/durable posting; restart scheduler belum diinjeksi."),
     "OPS-04": (["p07b", "p03"], P, "GN-11 saga release; crash tiap tahap belum."),
     "PRET-04": (["p14b"], T, "RMA ditolak supplier → goods_back: roll available utuh, tanpa nota debit/jurnal, goods-back ulang ditolak."),
-    "SALE-02": (["p14b"], T, "Gap produk: router POS hanya rekomendasi (best-sellers/FBT/substitutes); belum ada shift close, void, split tender."),
+    "SALE-02": (["p14b"], T, "Premis N/A diverifikasi: POS = layar Sales Order, tanpa laci kas/shift."),
     "DESIGN-01": (["p14b"], P, "Request→assign→desain→ajukan→revisi→ajukan ulang→ACC (status permintaan ikut Studio); lanjutan ke produksi belum."),
     "DESIGN-03": (["p14b"], P, "Cancel wajib alasan, cancel ulang ditolak, permintaan batal tak melahirkan desain; reopen desain belum."),
     "DESIGN-04": (["p14b"], P, "Desainer B ditolak buka/unggah ke tugas A dan daftar B bersih; pemindahan penugasan belum."),
@@ -119,6 +119,11 @@ MAP = {
 BLOCKED = {
     "RFID-06": "Butuh reader/printer/PLC fisik + firmware; simulasi software tidak menggantikan commissioning.",
     "OPS-05": "Backup/restore butuh lingkungan & kebijakan pemilik (target DB non-preview).",
+}
+NOT_APPLICABLE = {
+    "SALE-02": ("Tidak berlaku (keputusan pemilik PG-SALE02, 2026-10-02): semua penjualan lewat Sales Order dan dibayar via "
+                "Penerimaan Piutang; tidak ada penjualan tunai di toko/laci kas, sehingga shift kasir, void kasir dan split tender "
+                "tidak diperlukan. Buka ulang kasus ini bila toko/showroom tunai dibuka."),
 }
 NEW_CASES = [
     {"id": "AUDIT-01", "group": "Jejak audit", "scenario": "Riwayat perubahan akun GL & pelanggan: nilai lama→baru, pelaku, sumber, sidik isi, izin"},
@@ -208,7 +213,10 @@ def main():
     mapping = {**MAP, **NEW_MAP}
     for c in cov["cases"]:
         cid = c["id"]
-        if cid in BLOCKED:
+        if cid in NOT_APPLICABLE:
+            c.update(current_status="not_applicable", tested_commit=BASE_SHA,
+                     evidence=["policy-decisions.json", f"{REL}/runs/p14b.txt"], notes=f"P14: {NOT_APPLICABLE[cid]}")
+        elif cid in BLOCKED:
             c.update(current_status="blocked", tested_commit=None, evidence=[], notes=f"P14: {BLOCKED[cid]}")
         elif cid in mapping:
             keys, status, note = mapping[cid]

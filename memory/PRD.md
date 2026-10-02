@@ -824,4 +824,6 @@ Backlog: GN-15; gate PA/loading RFID wajib tag anak (P07/P09); CX-05 akun reimbu
 - AUTH-05: GET/PUT /permissions ber-versi (stale 409, tanpa versi 400), frontend mengirim versi. Coverage AUTH-05 tested_pass.
 - Regresi 26 harness hijau (kecuali SALE-02 = gap fitur POS). Agen uji iterasi 124 lulus 100%.
 - Sisa: SALE-02 fitur kasir POS (keputusan pemilik), 17 kasus planned, validator independen, pembersihan riwayat git.
+- 2026-10-02: SALE-02 (kasir POS) ditandai not_applicable atas keputusan pemilik (PG-SALE02 di audit/policy-decisions.json): semua penjualan lewat Sales Order. validate.py menerima status not_applicable dengan alasan wajib; repro_p14b memverifikasi premisnya (23/23). Coverage: 25 tested_pass, 54 partial, 17 planned, 2 blocked, 1 not_applicable, 0 tested_fail.
+
 

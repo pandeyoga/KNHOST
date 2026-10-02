@@ -33,7 +33,7 @@ Dokumen ini adalah checklist sign-off, bukan persetujuan. Sesuai [P14](../../pha
 | EX-P14-03 HR-04 | Tabel pajak/BPJS butuh review legal/akuntan | Pemilik HR & Finance | Risiko salah hitung akhir tahun | 2026-11-02 |
 | EX-P14-04 Arsip link | 5 tautan ke `*.log/*.lock` arsip tidak ada di repo | Pemilik repo | validate.py merah pada arsip | 2026-10-16 |
 | EX-P14-05 Riwayat git | Token lama masih di riwayat publik | Pemilik repo | Risiko kebocoran sesi lama | Segera |
-| EX-P14-06 SALE-02 | POS belum punya shift close, void, split tender | Pemilik penjualan/retail | Kas POS tidak bisa ditutup & direkonsiliasi per shift | 2026-10-16 |
+| EX-P14-06 SALE-02 | DITUTUP 2026-10-02: tidak berlaku (PG-SALE02) — semua penjualan lewat Sales Order, tanpa kas toko | Pemilik penjualan/retail | Tidak ada; buka ulang bila toko tunai dibuka | — |
 | EX-P14-07 AUTH-05 | DITUTUP 2026-10-02 (P15): `PUT /permissions` kini ber-versi (409 bila basi) | Pemilik keamanan/admin | — (menunggu validator) | 2026-10-09 |
 
 Pengecualian bukan status fixed. Tanda tangan: — (kosong sampai semua baris di atas memiliki keputusan tercatat).

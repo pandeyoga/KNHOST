@@ -86,11 +86,13 @@ async def pret04(c, h, db):
 
 # ── SALE-02: POS split tender, shift close, void, refund ─────────────────────
 def sale02():
+    """SALE-02 tidak berlaku (PG-SALE02): verifikasi premisnya — POS = layar Sales Order, tanpa laci kas/shift."""
     src = "\n".join(p.read_text(errors="ignore") for p in (ROOT / "backend/routers").glob("*.py"))
-    feats = {"shift_close": "/pos/shift" in src or "/cashier/shift" in src,
-             "void": "/pos/" in src and "void" in src.split("/pos/", 1)[1][:4000],
-             "split_tender": "tenders" in src}
-    check("SALE-02", "POS punya shift close, void dan split tender", all(feats.values()), feats)
+    fe = "\n".join(p.read_text(errors="ignore") for p in (ROOT / "frontend/src/features/pos").rglob("*.js*"))
+    cashier = {"shift_close": "/pos/shift" in src or "/cashier/shift" in src, "split_tender": "tenders" in src}
+    check("SALE-02", "premis N/A: belum ada laci kas/shift kasir (buka ulang kasus bila dibangun)", not any(cashier.values()), cashier)
+    check("SALE-02", "premis N/A: checkout POS membuat Sales Order (pembayaran via Penerimaan Piutang)",
+          "sales-orders" in fe and "/ar-receipts" in src, "")
 
 
 # ── DESIGN-01/03/04: request→assign→revisi→ACC, cancel, isolasi desainer ─────

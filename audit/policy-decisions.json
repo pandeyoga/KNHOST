@@ -23,6 +23,18 @@
       "decided_at": "2026-10-06",
       "evidence": [],
       "implementation": "2026-10-06: gl_service.reverse_entry + POST /api/gl/journal/{id}/reverse + tombol Balik Jurnal (iterations/2026-10-06-P07-dispatch-identity-reversal)."
+    },
+    {
+      "id": "PG-SALE02",
+      "phase": "P14",
+      "status": "decided",
+      "question": "Apakah POS memerlukan buka/tutup shift kasir dengan rekap kas, void kasir beralasan, dan pembayaran beberapa metode (split tender)?",
+      "source": "coverage.json SALE-02",
+      "decision": "Tidak berlaku. Semua penjualan lewat Sales Order; pembayaran dicatat lewat Penerimaan Piutang (tempo/transfer). Tidak ada penjualan tunai di toko/laci kas. SALE-02 ditandai not_applicable; dibuka ulang bila toko/showroom tunai dibuka.",
+      "decided_by": "Pemilik proses (via chat sesi 2026-10-02)",
+      "decided_at": "2026-10-02",
+      "evidence": ["iterations/2026-10-02-P14-coverage-uat/runs/p14b.txt"],
+      "implementation": "2026-10-02: tidak ada perubahan aplikasi; repro_p14b memverifikasi premis (tanpa laci kas, checkout = Sales Order)."
     }
   ]
 }

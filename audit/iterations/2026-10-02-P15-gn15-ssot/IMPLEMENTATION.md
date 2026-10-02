@@ -25,4 +25,4 @@
 
 - Penulis lain ke `permission_settings` (editor peran/bootstrap) tidak menaikkan versi; hanya `PUT /permissions` yang dijaga.
 - Duplikasi kebijakan lain yang disebut kartu (resolver COA posting vs laporan, evaluator gate simulator vs hardware) sudah ditangani di P05/P09; tidak diubah lagi di sini.
-- SALE-02 (POS shift/void/split tender) adalah fitur baru yang belum dibangun — menunggu keputusan pemilik.
+- SALE-02 (POS shift/void/split tender): **tidak berlaku** atas keputusan pemilik `PG-SALE02` (semua penjualan lewat Sales Order); coverage `not_applicable`, premis diverifikasi di `repro_p14b`.

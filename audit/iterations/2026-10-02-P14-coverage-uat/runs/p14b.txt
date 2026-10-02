@@ -128,9 +128,15 @@
  },
  {
   "id": "SALE-02",
-  "invariant": "POS punya shift close, void dan split tender",
-  "pass": false,
-  "detail": "{'shift_close': False, 'void': False, 'split_tender': False}"
+  "invariant": "premis N/A: belum ada laci kas/shift kasir (buka ulang kasus bila dibangun)",
+  "pass": true,
+  "detail": "{'shift_close': False, 'split_tender': False}"
+ },
+ {
+  "id": "SALE-02",
+  "invariant": "premis N/A: checkout POS membuat Sales Order (pembayaran via Penerimaan Piutang)",
+  "pass": true,
+  "detail": ""
  }
 ]
-pass=21 fail=1
+pass=23 fail=0

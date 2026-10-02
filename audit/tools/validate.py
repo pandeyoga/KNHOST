@@ -55,7 +55,8 @@ for p in plan:
  visit(p['id'])
 cases=read('coverage.json')['cases'];require(len({c['id'] for c in cases})==len(cases),'Duplicate coverage IDs')
 for c in cases:
- require(c['current_status'] in {'not_revalidated','planned','partial','tested_pass','tested_fail','blocked'},c['id']+': invalid coverage status')
+ require(c['current_status'] in {'not_revalidated','planned','partial','tested_pass','tested_fail','blocked','not_applicable'},c['id']+': invalid coverage status')
+ if c['current_status']=='not_applicable':require(len(c.get('notes') or '')>20,c['id']+': not_applicable requires a recorded reason')
  evidence(c['evidence'],c['id'])
  if c['current_status'] in {'tested_pass','tested_fail'}:require(sha(c['tested_commit']) and bool(c['evidence']),c['id']+': test SHA and evidence required')
 for p in ROOT.rglob('*.md'):
