@@ -1,10 +1,10 @@
-# 2026-10-02-P14-coverage-uat/repro_p14_history.py (2s)
+# 2026-10-02-P14-coverage-uat/repro_p14_history.py (4s)
 [
  {
   "id": "AUDIT-01",
   "invariant": "riwayat akun GL: nilai lama → baru per field",
   "pass": true,
-  "detail": "{'field': 'name', 'from': 'TEST_P14_03c6de Lama', 'to': 'TEST_P14_03c6de Baru'}"
+  "detail": "{'field': 'name', 'from': 'TEST_P14_499273 Lama', 'to': 'TEST_P14_499273 Baru'}"
  },
  {
   "id": "AUDIT-01",
@@ -28,7 +28,7 @@
   "id": "AUDIT-01",
   "invariant": "riwayat pelanggan: nilai lama → baru",
   "pass": true,
-  "detail": "200 {'field': 'pic_name', 'from': 'Pak Hendra', 'to': 'Test_p14_03c6de Pic'}"
+  "detail": "200 {'field': 'pic_name', 'from': 'Pak Hendra', 'to': 'Test_p14_499273 Pic'}"
  },
  {
   "id": "AUDIT-02",

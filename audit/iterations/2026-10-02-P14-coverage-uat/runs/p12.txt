@@ -82,7 +82,7 @@
   "id": "IX-01",
   "invariant": "override jatah 0 bertahan setelah recompute",
   "pass": true,
-  "detail": "{'employee_id': 'audit_p12_46bca8_elv', 'entity_id': 'ent_ksc', 'year': 2031, 'entitlement': 0, 'used': 0, 'pending': 0, 'remaining': 0, 'updated_at': '2026-10-02T18:36:39.168743+00:00', 'id': 'lbal_745097b86656', 'entitlement_override': True}"
+  "detail": "{'employee_id': 'audit_p12_db3ba6_elv', 'entity_id': 'ent_ksc', 'year': 2031, 'entitlement': 0, 'used': 0, 'pending': 0, 'remaining': 0, 'updated_at': '2026-10-02T18:41:33.220371+00:00', 'id': 'lbal_3d2b9195ba94', 'entitlement_override': True}"
  },
  {
   "id": "IX-01",
@@ -100,13 +100,13 @@
   "id": "HR-03",
   "invariant": "pengajuan bertabrakan tanggal ditolak",
   "pass": true,
-  "detail": "Tanggal bertabrakan dengan pengajuan cuti KSC/LV-00003."
+  "detail": "Tanggal bertabrakan dengan pengajuan cuti KSC/LV-00005."
  },
  {
   "id": "HR-03",
   "invariant": "approved tidak melebihi jatah",
   "pass": true,
-  "detail": "{'employee_id': 'audit_p12_46bca8_elv', 'entity_id': 'ent_ksc', 'year': 2030, 'entitlement': 12, 'used': 10, 'pending': 0, 'remaining': 2, 'updated_at': '2026-10-02T18:36:39.210794+00:00', 'id': 'lbal_fe9beb34091e', 'entitlement_override': True}"
+  "detail": "{'employee_id': 'audit_p12_db3ba6_elv', 'entity_id': 'ent_ksc', 'year': 2030, 'entitlement': 12, 'used': 10, 'pending': 0, 'remaining': 2, 'updated_at': '2026-10-02T18:41:33.247722+00:00', 'id': 'lbal_47b631e30fdd', 'entitlement_override': True}"
  },
  {
   "id": "HR-03",
@@ -124,19 +124,19 @@
   "id": "MK-01",
   "invariant": "update reach tidak menghapus likes",
   "pass": true,
-  "detail": "{'likes': 10.0, 'reach': 100.0, 'recorded_at': '2026-10-02T18:36:39.279823+00:00'}"
+  "detail": "{'likes': 10.0, 'reach': 100.0, 'recorded_at': '2026-10-02T18:41:33.286442+00:00'}"
  },
  {
   "id": "MK-01",
   "invariant": "likes 0 eksplisit mengganti nilai",
   "pass": true,
-  "detail": "{'likes': 0.0, 'reach': 100.0, 'recorded_at': '2026-10-02T18:36:39.281578+00:00'}"
+  "detail": "{'likes': 0.0, 'reach': 100.0, 'recorded_at': '2026-10-02T18:41:33.287964+00:00'}"
  },
  {
   "id": "MK-01",
   "invariant": "dua update field berbeda bersamaan tidak saling menimpa",
   "pass": true,
-  "detail": "{'likes': 0.0, 'reach': 100.0, 'recorded_at': '2026-10-02T18:36:39.285306+00:00', 'shares': 5.0, 'comments': 7.0}"
+  "detail": "{'likes': 0.0, 'reach': 100.0, 'recorded_at': '2026-10-02T18:41:33.290649+00:00', 'shares': 5.0, 'comments': 7.0}"
  }
 ]
 pass=23 fail=0

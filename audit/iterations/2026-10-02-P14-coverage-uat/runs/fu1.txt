@@ -4,7 +4,7 @@
   "id": "WM-02b",
   "invariant": "picker menampilkan induk dengan panjang bebas 70 (fisik 100, dipesan 30)",
   "pass": true,
-  "detail": "{'id': 'audit_fu_d08a20_r0', 'roll_no': 'R-audit_fu_d08a20-0', 'lot': 'L1', 'dye_lot': 'L1', 'length_remaining': 70.0, 'physical_length': 100.0, 'length_reserved': 30.0, 'warehouse_id': 'wh_jakarta', 'warehouse_name': 'Gudang Jakarta Utara', 'warehouse_city': 'Jakarta', 'owner_entity_id': 'ent_ksc',"
+  "detail": "{'id': 'audit_fu_573d42_r0', 'roll_no': 'R-audit_fu_573d42-0', 'lot': 'L1', 'dye_lot': 'L1', 'length_remaining': 70.0, 'physical_length': 100.0, 'length_reserved': 30.0, 'warehouse_id': 'wh_jakarta', 'warehouse_name': 'Gudang Jakarta Utara', 'warehouse_city': 'Jakarta', 'owner_entity_id': 'ent_ksc',"
  },
  {
   "id": "WM-02b",
@@ -16,25 +16,25 @@
   "id": "WM-02b",
   "invariant": "beli melebihi panjang bebas ditolak",
   "pass": true,
-  "detail": "(400, 'Qty roll R-audit_fu_d08a20-0 (60.0) melebihi panjang bebas (50.0).')"
+  "detail": "(400, 'Qty roll R-audit_fu_573d42-0 (60.0) melebihi panjang bebas (50.0).')"
  },
  {
   "id": "WM-02a",
   "invariant": "dispatch sebelum potong → 409",
   "pass": true,
-  "detail": "(409, '1 reservasi potong belum dikonfirmasi (roll induk R-audit_fu_d08a20-0). Potong fisik & konfirmasi dulu.')"
+  "detail": "(409, '1 reservasi potong belum dikonfirmasi (roll induk R-audit_fu_573d42-0). Potong fisik & konfirmasi dulu.')"
  },
  {
   "id": "WM-02a",
   "invariant": "loading check dengan roll anak belum ber-tag → 409",
   "pass": true,
-  "detail": "(409, 'Roll anak R-audit_fu_d08a20-0-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
+  "detail": "(409, 'Roll anak R-audit_fu_573d42-0-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
  },
  {
   "id": "WM-02a",
   "invariant": "dispatch dengan roll anak belum ber-tag → 409",
   "pass": true,
-  "detail": "(409, 'Roll anak R-audit_fu_d08a20-0-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
+  "detail": "(409, 'Roll anak R-audit_fu_573d42-0-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
  },
  {
   "id": "WM-02a",

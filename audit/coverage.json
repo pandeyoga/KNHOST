@@ -73,10 +73,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Pergantian entitas + refresh mempertahankan ?entity & data ter-scope (PASS, iteration_122); link unduhan belum diuji."
     },
     {
       "id": "MASTER-01",
@@ -152,10 +154,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Pencarian & paginasi Master Produk + KNSelect (PASS, iteration_122); pesan scope belum diuji tersendiri."
     },
     {
       "id": "GRN-01",
@@ -972,10 +976,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Manager melihat gaji (punya hr.view_pii); tidak ada akun demo hr.view tanpa view_pii untuk uji redaksi UI."
     },
     {
       "id": "COMM-01",
@@ -1048,10 +1054,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Pencarian, empty state, tombol export daftar pelanggan (PASS, iteration_122); dashboard per role belum."
     },
     {
       "id": "DESIGN-01",
@@ -1280,10 +1288,12 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md"
+      ],
+      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Shell desktop 1920 & mobile 390 tampil (PASS, iteration_122); integrasi eksternal belum."
     },
     {
       "id": "AUDIT-01",
@@ -1295,9 +1305,10 @@
       "current_status": "tested_pass",
       "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
       "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/UAT.md",
         "iterations/2026-10-02-P14-coverage-uat/runs/p14.txt"
       ],
-      "notes": "P14: API + tamper detection; UI tab diuji UAT."
+      "notes": "P14: API + tamper detection; UI tab diuji UAT. UAT: Tab Riwayat Perubahan Bagan Akun & Pelanggan 360 (iteration_122): diff lama→baru, Utuh, lapisan; tab tersembunyi untuk sales."
     },
     {
       "id": "AUDIT-02",

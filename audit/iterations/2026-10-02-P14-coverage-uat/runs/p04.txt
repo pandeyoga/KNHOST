@@ -34,7 +34,7 @@
   "id": "FN-11",
   "invariant": "snapshot biaya tersimpan di surat jalan (edit biaya roll tidak mengubah histori)",
   "pass": true,
-  "detail": "{'roll_id': 'audit_p04_70a5b4_cheap', 'lot': 'L1', 'length': 100.0, 'unit': 'meter', 'unit_cost': 10.0, 'extended_cost': 1000.0}"
+  "detail": "{'roll_id': 'audit_p04_ba04b4_cheap', 'lot': 'L1', 'length': 100.0, 'unit': 'meter', 'unit_cost': 10.0, 'extended_cost': 1000.0}"
  },
  {
   "id": "IX-16",

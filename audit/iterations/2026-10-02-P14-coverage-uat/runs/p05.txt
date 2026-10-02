@@ -4,7 +4,7 @@
   "id": "FN-05",
   "invariant": "laporan E memakai override E",
   "pass": true,
-  "detail": "{'code': '9-AUD5a75a7', 'name': 'Override E', 'type': 'expense', 'entity_id': 'ent_audit_p05_e_5a75a7', 'is_postable': True, 'is_active': True}"
+  "detail": "{'code': '9-AUDb03b1d', 'name': 'Override E', 'type': 'expense', 'entity_id': 'ent_audit_p05_e_b03b1d', 'is_postable': True, 'is_active': True}"
  },
  {
   "id": "FN-05",
@@ -34,13 +34,13 @@
   "id": "FN-06",
   "invariant": "akun khusus E dapat diposting di E",
   "pass": true,
-  "detail": "e_5a75a7/JE-00001"
+  "detail": "e_b03b1d/JE-00001"
  },
  {
   "id": "FN-06",
   "invariant": "akun khusus E ditolak di F",
   "pass": true,
-  "detail": "Akun '9-CUS5a75a7' tidak ditemukan."
+  "detail": "Akun '9-CUSb03b1d' tidak ditemukan."
  },
  {
   "id": "FN-06",
@@ -106,7 +106,7 @@
   "id": "FN-13",
   "invariant": "3 close bersamaan → tepat 1 sukses, 1 jurnal penutup",
   "pass": true,
-  "detail": "['ValueError', 'ValueError', 'dict']"
+  "detail": "['dict', 'ValueError', 'ValueError']"
  },
  {
   "id": "FN-13",
@@ -148,7 +148,7 @@
   "id": "FN-09",
   "invariant": "void dengan unlock aktif tercatat di jendela unlock",
   "pass": true,
-  "detail": "plu_016f824e194b"
+  "detail": "plu_5c799f68025d"
  },
  {
   "id": "FN-09",

@@ -1,4 +1,4 @@
-# 2026-10-08-P10-opname-financial/repro_p10.py (4s)
+# 2026-10-08-P10-opname-financial/repro_p10.py (3s)
 PASS [WM-07] item binA expected = 40 (bukan 100 seluruh gudang)
 PASS [WM-07] count key duplikat → 409
 PASS [WM-07] campur level gudang + bin untuk produk sama → 409

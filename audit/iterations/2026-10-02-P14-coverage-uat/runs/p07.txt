@@ -16,13 +16,13 @@
   "id": "WM-06",
   "invariant": "scan no. roll sah → roll_id di-resolve server",
   "pass": true,
-  "detail": "(200, '{\"id\":\"audit_p07_b439b6_t6\",\"flow_type\":\"outbound\",\"entity_id\":\"ent_ksc\",\"order_id\":\"audit_p07_b439b6_so6\",\"product_id\":')"
+  "detail": "(200, '{\"id\":\"audit_p07_2b76a9_t6\",\"flow_type\":\"outbound\",\"entity_id\":\"ent_ksc\",\"order_id\":\"audit_p07_2b76a9_so6\",\"product_id\":')"
  },
  {
   "id": "AX-01",
   "invariant": "roll dikirim = roll yang dipindai (NEW, bukan OLD terlama)",
   "pass": true,
-  "detail": "[{'roll_id': 'audit_p07_b439b6_rnew', 'lot': '', 'length': 50.0, 'unit': 'meter', 'unit_cost': 0.0, 'extended_cost': 0.0}]"
+  "detail": "[{'roll_id': 'audit_p07_2b76a9_rnew', 'lot': '', 'length': 50.0, 'unit': 'meter', 'unit_cost': 0.0, 'extended_cost': 0.0}]"
  },
  {
   "id": "AX-03",
@@ -76,7 +76,7 @@
   "id": "REV",
   "invariant": "pembalik di periode berjalan: debit↔kredit, asli tetap posted & tertaut",
   "pass": true,
-  "detail": "([{'account_code': '6-4000', 'account_name': 'Beban Operasional Lainnya', 'debit': 0.0, 'credit': 120.0, 'description': 'Pembalik AUDP07/JE-00001'}, {'account_code': '1-1100', 'account_name': 'Kas Besar / Bank', 'debit': 120.0, 'credit': 0.0, 'description': 'Pembalik AUDP07/JE-00001'}], 'je_cf8e9c6a"
+  "detail": "([{'account_code': '6-4000', 'account_name': 'Beban Operasional Lainnya', 'debit': 0.0, 'credit': 120.0, 'description': 'Pembalik AUDP07/JE-00001'}, {'account_code': '1-1100', 'account_name': 'Kas Besar / Bank', 'debit': 120.0, 'credit': 0.0, 'description': 'Pembalik AUDP07/JE-00001'}], 'je_86e87505"
  },
  {
   "id": "REV",

@@ -10,19 +10,19 @@
   "id": "AX-07",
   "invariant": "grandchild.parent_roll_id == child (direct parent)",
   "pass": true,
-  "detail": "{'grand_parent': 'roll_a784d94f3f44', 'child': 'roll_a784d94f3f44', 'root': 'audit_p02_58bcf9_r0'}"
+  "detail": "{'grand_parent': 'roll_e55965ccc518', 'child': 'roll_e55965ccc518', 'root': 'audit_p02_443653_r0'}"
  },
  {
   "id": "AX-07",
   "invariant": "grandchild.root_roll_id == root",
   "pass": true,
-  "detail": "audit_p02_58bcf9_r0"
+  "detail": "audit_p02_443653_r0"
  },
  {
   "id": "AX-05",
   "invariant": "transfer keeps acquisition origin (PO)",
   "pass": true,
-  "detail": "{'via': 'purchase', 'ref_id': 'po_audit_p02_58bcf9', 'date': '2026-10-01'}"
+  "detail": "{'via': 'purchase', 'ref_id': 'po_audit_p02_443653', 'date': '2026-10-01'}"
  },
  {
   "id": "AX-05",
@@ -34,7 +34,7 @@
   "id": "AX-05",
   "invariant": "late landed cost still targets transferred roll",
   "pass": true,
-  "detail": "['audit_p02_58bcf9_r1']"
+  "detail": "['audit_p02_443653_r1']"
  },
  {
   "id": "FN-03",
@@ -70,7 +70,7 @@
   "id": "IX-13",
   "invariant": "unknown unit rejected before roll/tag/counter",
   "pass": true,
-  "detail": "HTTPException(status_code=400, detail=\"Konversi unit 'unitgaib' → 'meter' tidak tersedia untuk produk audit_p02_58bcf9_p"
+  "detail": "HTTPException(status_code=400, detail=\"Konversi unit 'unitgaib' → 'meter' tidak tersedia untuk produk audit_p02_443653_p"
  },
  {
   "id": "IX-13",

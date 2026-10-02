@@ -800,3 +800,12 @@ Backlog: GN-15; gate PA/loading RFID wajib tag anak (P07/P09); CX-05 akun reimbu
 - Bukti: audit/iterations/2026-10-02-P13-audit-secret-label (HEAD 0/7 → 10/10); agen uji iterasi 121 lulus 100% (API 16/16, UI UX-03). Tracker 2 ID ready_for_validation.
 - Tindakan pemilik: bersihkan riwayat git publik dari file token + invalidasi sesi di semua lingkungan; putuskan apakah perubahan gaji (base_salary, kini PII) dicatat before/after di audit; pasang pemindai secret di CI/pre-commit.
 - Backlog: P14 (coverage/UAT/sign-off); validator independen untuk ID ready_for_validation P05–P13.
+
+## SESI 2026-10-02 (lanjutan 3) — P14 Coverage/UAT/sign-off + Riwayat Perubahan
+- Permintaan user: "Fase P14 Sign-off: Melanjutkan P14 agar cakupan uji dan persetujuan akhir audit lengkap." + "Riwayat Audit Layar: Menambahkan tab riwayat perubahan pada detail akun GL dan pelanggan agar perubahan nilai lama dan baru lebih jelas terlihat."
+- Pilihan user: kerjakan keduanya; base_salary dicatat sebagai field berubah dengan nilai [REDACTED]; pemindai secret di pre-commit + GitHub Actions; tab riwayat mengikuti izin audit.view; repo di-clone dari GitHub.
+- Setup ulang kontainer: rsync repo → /app, backend/.env (CORS_ORIGINS eksplisit, SESSION_COOKIE_SECURE, KN_DEMO_DATA, SEED_DEMO_ENABLED, OCR_ALLOW_MOCK), seed_realistic, rebuild bundle.
+- Baru: GET /api/audit-logs/resource (diff, integrity ok/mismatch/unsigned, lapisan override), AuditHistoryPanel; tab Riwayat Perubahan di detail Bagan Akun (coa-detail-<kode>) & Pelanggan 360; audit(masked_fields) untuk PII karyawan; .github/workflows/secret-scan.yml; hook pre-commit memblokir secret.
+- P14: run_p14.py menjalankan ulang 24 harness P01–P14 (semua hijau; drift RF-09 & cookie Secure didokumentasikan) dan memetakan ke coverage.json: 22 tested_pass, 44 partial, 31 planned, 2 blocked (99 kasus = 96 + AUDIT-01..03). UAT.md + SIGNOFF.md (belum dapat ditandatangani; 5 exception menunggu pemilik). Agen uji iterasi 122 lulus 100%.
+- Backlog P0: validator independen untuk 101 ID ready_for_validation; UAT pengguna bisnis; dataset acuan O2C/P2P/R2R/payroll. P1: kasus planned (31); akun demo hr.view tanpa view_pii; tab riwayat untuk entitas lain (supplier, produk, rekening bank). P2: tautan arsip *.log/*.lock yang hilang; GN-15 (SSOT helper/status).
+

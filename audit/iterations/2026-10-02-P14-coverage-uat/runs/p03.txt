@@ -1,4 +1,4 @@
-# 2026-10-02-P03-durable-posting/repro_p03.py (2s)
+# 2026-10-02-P03-durable-posting/repro_p03.py (1s)
 [
  {
   "id": "FN-15",
@@ -40,19 +40,19 @@
   "id": "FN-15",
   "invariant": "jurnal valid tetap terposting",
   "pass": true,
-  "detail": "AUDIT_P03_F260D2/JE-00001"
+  "detail": "AUDIT_P03_FF4BBB/JE-00001"
  },
  {
   "id": "FN-08",
   "invariant": "rekening baru saldo awal 1000 → jurnal pembukaan Dr Bank/Cr 3-2900",
   "pass": true,
-  "detail": "je_98fec5572ac1"
+  "detail": "je_aaef8a5dbe95"
  },
  {
   "id": "FN-08",
   "invariant": "ubah saldo awal → jurnal penyesuaian selisih 500 (bukan edit diam-diam)",
   "pass": true,
-  "detail": "AUDIT_P03_F260D2/JE-00003"
+  "detail": "AUDIT_P03_FF4BBB/JE-00003"
  },
  {
   "id": "FN-07",
@@ -136,7 +136,7 @@
   "id": "CX-04",
   "invariant": "pencairan: GL gagal → 409",
   "pass": true,
-  "detail": "(409, 'Kas AUDIT_P03_F260D2/CASH-00004 tercatat tetapi jurnal gagal: fault injection GL. Ulangi pencairan untuk melanjutkan (tanpa kas ganda).')"
+  "detail": "(409, 'Kas AUDIT_P03_FF4BBB/CASH-00002 tercatat tetapi jurnal gagal: fault injection GL. Ulangi pencairan untuk melanjutkan (tanpa kas ganda).')"
  },
  {
   "id": "CX-04",
@@ -154,7 +154,7 @@
   "id": "CX-05",
   "invariant": "LPJ kedua saat LPJ pertama aktif ditolak",
   "pass": true,
-  "detail": "(409, 'PD ini sudah punya pertanggungjawaban AUDIT_P03_F260D2/STL-00001')"
+  "detail": "(409, 'PD ini sudah punya pertanggungjawaban AUDIT_P03_FF4BBB/STL-00001')"
  },
  {
   "id": "CX-05",

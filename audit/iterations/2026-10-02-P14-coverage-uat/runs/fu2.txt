@@ -16,7 +16,7 @@
   "id": "LABEL",
   "invariant": "gate muat masih menolak sebelum verifikasi",
   "pass": true,
-  "detail": "(409, 'Roll anak R-audit_f2_253d16-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
+  "detail": "(409, 'Roll anak R-audit_f2_cb9567-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
  },
  {
   "id": "LABEL",
