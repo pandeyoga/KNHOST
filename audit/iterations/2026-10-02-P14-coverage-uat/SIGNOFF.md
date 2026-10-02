@@ -17,7 +17,7 @@ Dokumen ini adalah checklist sign-off, bukan persetujuan. Sesuai [P14](../../pha
 | RFID printer/reader/gate commissioning | blocked | RFID-06: perlu perangkat & firmware; hasil simulasi bukan akurasi hardware. |
 | Rekonsiliasi saldo pembukaan, subledger, GL, pajak, laporan | partial | FN-08/FN-15/CX-09 harness; rekonsiliasi angka nyata belum. |
 | Backup/restore | blocked | OPS-05: perlu lingkungan & kebijakan pemilik. |
-| Validator independen untuk 101 temuan `ready_for_validation` | belum | Tidak ada temuan `verified_fixed`. GN-15 masih `open`. |
+| Validator independen untuk 102 temuan `ready_for_validation` | belum | Tidak ada temuan `verified_fixed`. GN-15 kini ready_for_validation (P15). |
 
 ## Lingkungan yang tercatat
 
@@ -34,6 +34,6 @@ Dokumen ini adalah checklist sign-off, bukan persetujuan. Sesuai [P14](../../pha
 | EX-P14-04 Arsip link | 5 tautan ke `*.log/*.lock` arsip tidak ada di repo | Pemilik repo | validate.py merah pada arsip | 2026-10-16 |
 | EX-P14-05 Riwayat git | Token lama masih di riwayat publik | Pemilik repo | Risiko kebocoran sesi lama | Segera |
 | EX-P14-06 SALE-02 | POS belum punya shift close, void, split tender | Pemilik penjualan/retail | Kas POS tidak bisa ditutup & direkonsiliasi per shift | 2026-10-16 |
-| EX-P14-07 AUTH-05 | `PUT /permissions` lost update saat dua admin menyimpan bersamaan | Pemilik keamanan/admin | Perubahan hak akses bisa hilang diam-diam | 2026-10-09 |
+| EX-P14-07 AUTH-05 | DITUTUP 2026-10-02 (P15): `PUT /permissions` kini ber-versi (409 bila basi) | Pemilik keamanan/admin | — (menunggu validator) | 2026-10-09 |
 
 Pengecualian bukan status fixed. Tanda tangan: — (kosong sampai semua baris di atas memiliki keputusan tercatat).

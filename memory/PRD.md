@@ -817,3 +817,11 @@ Backlog: GN-15; gate PA/loading RFID wajib tag anak (P07/P09); CX-05 akun reimbu
 - Backlog P0: putuskan & perbaiki AUTH-05 (versi/ETag matriks izin); keputusan fitur POS shift/void/split tender. P1: 17 kasus planned tersisa.
 
 
+
+## SESI 2026-10-02 (lanjutan 5) — GN-15 + AUTH-05 (label iterasi "P15")
+- Permintaan user: "lanjutkan gn-15 dan yang belum diselesaikan".
+- GN-15: resolver kebijakan tunggal `config_resolver.policy_settings` (lot/makloon/receiving/uom), definisi stok fisik analitik diturunkan dari roll_service (kini termasuk wip). repro_gn15 21/21. Tracker: 102 ready_for_validation, 1 duplicate, 0 open.
+- AUTH-05: GET/PUT /permissions ber-versi (stale 409, tanpa versi 400), frontend mengirim versi. Coverage AUTH-05 tested_pass.
+- Regresi 26 harness hijau (kecuali SALE-02 = gap fitur POS). Agen uji iterasi 124 lulus 100%.
+- Sisa: SALE-02 fitur kasir POS (keputusan pemilik), 17 kasus planned, validator independen, pembersihan riwayat git.
+
