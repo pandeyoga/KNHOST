@@ -258,10 +258,10 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
-      "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17b.txt"],
-      "notes": "P17 API lulus: timbang netto (weight_mismatch), not_on_dn memblokir, override butuh hak & tercatat audit; OCR+packing list via tests/test_grn_phase4_read.py & test_grn_phase6.py (-n0; tes phase6 diselaraskan KN-E22). UI belum diuji agen."
+      "current_status": "tested_pass",
+      "tested_commit": "c70ab0a… (lihat git log P17b)",
+      "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17b.txt", "iterations/2026-10-03-P17-planned-coverage/after_patch_p17j.txt", "iterations/2026-10-03-P17-planned-coverage/uat_iteration_128.json"],
+      "notes": "P17: API lulus (timbang, not_on_dn, override+audit); OCR SUNGGUHAN gpt-6-sol lulus 6/6 (p17j); UI end-to-end iterasi 128: wizard→OCR nyata→packing list→hitung 2 roll→selisih diselesaikan→closed 175 yd + tugas sisa 75. Residu uji KSC/GRN-00003 belum dibalik (lihat HANDOFF P17)."
     },
     {
       "id": "QC-01",

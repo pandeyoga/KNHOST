@@ -151,6 +151,7 @@ acuan tanggal ACC & update terakhir (bisa dipilih); riwayat lengkap (diff field,
 - Permintaan user: "lanjutkan development dari repo ini ... lanjutkan ada handoff dokumen dari sesi sebelumnya". Pilihan: arsip boleh dibuka baca saja; faktur tetap per pesanan; kerjakan 9 kasus planned.
 - Selesai: arsip baca saja (API + pemilih entitas + pita), uji GRN-04/06, PROD-04/06, COMM-04/05, DESIGN-02/05, OPS-03; bug diperbaiki: koreksi akrual insentif, 3 balapan harga pelanggan, acuan QC per supplier.
 - Backlog P0: GRN-06 UI penuh, PROD-06 UAT layar. P1: biaya kampanye → GL, impor produk/stok awal. P2: perbarui tes lama yang basi.
+- P17b: integritas 248/0 (seed KANDA/SO-00001), tes basi diperbarui (f1a 16/16, e1e2 74/74), OCR SUNGGUHAN aktif (kunci OpenAI user, gpt-6-sol) & GRN-06 UI lulus end-to-end (iterasi 128). Sisa: balik residu uji KSC/GRN-00003; backlog P0 sekarang PROD-06 UAT layar.
 
 ## Backlog
 - P2 (Akses): ganti `window.confirm` hapus/reset peran dengan modal in-app — SELESAI 2026-06 (`RoleDangerDialog`).
