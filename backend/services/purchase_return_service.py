@@ -100,6 +100,12 @@ async def create_purchase_return(payload, created_by: str) -> Dict[str, Any]:
             if not sel:
                 raise ValueError(f"Roll asal untuk {prod.get('sku')} tidak ditemukan.")
             roll_qty = round(sum(float(r.get("length_remaining", 0) or 0) for r in sel), 2)
+            if qty > 0:   # P18 PRET-05 — jangan diam-diam memotong qty yang diminta ke panjang roll
+                from services.roll_service import to_base_qty
+                req_base = round(await to_base_qty(prod, qty, getattr(it, "unit", "") or prod.get("base_unit")), 2)
+                if req_base > roll_qty + 0.01:
+                    raise ValueError(f"Qty retur {prod.get('sku') or it.product_id} ({qty:g} {it.unit}) melebihi sisa roll "
+                                     f"yang dipilih ({roll_qty:g} {prod.get('base_unit', '')}). Kurangi qty atau pilih roll lain.")
             qty = roll_qty if qty <= 0 else min(qty, roll_qty)
             if price <= 0:
                 # KN-B24 — rata-rata BERBOBOT panjang (sama dengan nilai persediaan yang

@@ -207,6 +207,38 @@ async def submit_session(session_id: str, request: Request) -> Dict[str, Any]:
     return safe_doc(updated)
 
 
+@router.post("/cycle-count/sessions/{session_id}/reopen")
+async def reopen_session(session_id: str, request: Request) -> Dict[str, Any]:
+    """P18 INV-03 — HITUNG ULANG: sesi submitted/rejected dibuka kembali. Item yang stoknya bergerak
+    sejak dihitung mendapat expected (cutoff) baru dan wajib dihitung ulang; item lain tetap."""
+    actor = await require_permission(request, "inventory", "approve_count")
+    session = await _load_session(session_id, request)
+    if session["status"] not in ("submitted", "rejected"):
+        raise HTTPException(status_code=400, detail="Hanya sesi yang sudah disubmit/ditolak yang bisa dibuka kembali")
+    if any((i.get("adjustment") or {}).get("status") for i in session.get("items", [])):
+        raise HTTPException(status_code=409, detail="Sebagian selisih sudah diterapkan — selesaikan persetujuan, jangan dibuka ulang")
+    items, recount = [], []
+    for item in session.get("items", []):
+        live = await scs.scope_qty(item["product_id"], session["warehouse_id"],
+                                   item.get("owner_entity_id") or DEFAULT_ENTITY_ID, item.get("bin_id") or "")
+        if abs(live - float(item.get("expected_qty", 0) or 0)) > 0.001:
+            item = {**item, "expected_qty": live, "expected_snapshot_at": now_iso(), "actual_qty": None,
+                    "status": "pending", "recount_no": int(item.get("recount_no") or 0) + 1}
+            recount.append(item.get("sku") or item["product_id"])
+        items.append(item)
+    from pymongo import ReturnDocument
+    updated = await db.cycle_count_sessions.find_one_and_update(
+        {"id": session_id, "status": session["status"]},
+        {"$set": {"status": "open", "items": items, "discrepancies": [], "reopened_by": actor["name"],
+                  "reopened_at": now_iso(), "updated_at": now_iso()}, "$unset": {"saga_lock": ""}},
+        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not updated:
+        raise HTTPException(status_code=409, detail="Sesi baru saja berubah — muat ulang")
+    await audit(actor["name"], "cycle_count_reopened", "cycle_count", session_id, {"recount": recount})
+    return {**safe_doc(updated), "recount_items": recount}
+
+
+
 @router.post("/cycle-count/sessions/{session_id}/approve")
 async def approve_session(session_id: str, payload: CycleCountApprove, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "inventory", "approve_count")

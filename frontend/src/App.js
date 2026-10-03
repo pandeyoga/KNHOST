@@ -323,6 +323,7 @@ function App() {
     // Peran kustom (cr_*) baru dikenal navigasi setelah /api/roles terdaftar — tunggu dulu.
     ready: Boolean(user && token) && (!String(user?.role || "").startsWith("cr_") || rolesVersion > 0),
     activeView,
+    activeEntity: selectedEntity,
     onNavigate: handleNavSelect,
     onPickEntity: onSelectEntity,
     onOpenDoc: openDocument,

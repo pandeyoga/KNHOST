@@ -9,6 +9,7 @@ import KNSelect from "../../components/KNSelect";
 import { CreditStatusPill, SegmentBadge, OutcomePill, KpiTile, fmtDate, money } from "./crmUtils";
 import CustomerFormModal from "./CustomerFormModal";
 import CustomerColorsSection from "./CustomerColorsSection";
+import CustomerMergeSection from "./CustomerMergeSection";
 import AuditHistoryPanel from "../../components/AuditHistoryPanel";
 import { can } from "../../config/roles";
 
@@ -178,6 +179,10 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
       </div>
 
       <CustomerColorsSection customerId={customerId} customerName={data.name} />
+
+      {can(currentUser?.permissions, "customer", "delete") && data.status !== "merged" && (
+        <CustomerMergeSection customer={data} onDone={(msg) => { onChanged?.(msg); load(); }} onError={onError} />
+      )}
 
       <CustomerFormModal open={showEdit} editTarget={data} currentUser={currentUser} salesUsers={salesUsers}
         onClose={() => setShowEdit(false)}

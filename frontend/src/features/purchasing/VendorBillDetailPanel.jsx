@@ -7,6 +7,7 @@ import KNSelect from "../../components/KNSelect";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import DocRefsPanel from "../documents/trace/DocRefsPanel";
 import GrnDocVariance from "./GrnDocVariance";
+import VendorBillPayments from "./VendorBillPayments";
 
 /**
  * VendorBillDetailPanel (Fase 5.2) — detail bill: 3-way match, keuangan, aksi.
@@ -140,6 +141,8 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
               <span className="text-[11.5px] font-bold tabular-nums text-right">{formatCurrency(bill.grand_total)}</span>
             </div>
           </div>
+
+          <VendorBillPayments bill={bill} canVoid={canApprove} onAction={onAction} onError={onError} />
 
           {/* Timeline */}
           {(bill.timeline || []).length > 0 && (

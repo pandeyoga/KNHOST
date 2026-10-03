@@ -37,6 +37,7 @@ async def po_landed_cost_context(po_id: str, request: Request) -> Dict[str, Any]
     po = safe_doc(await db.purchase_orders.find_one({"id": po_id}, {"_id": 0}))
     if not po:
         raise HTTPException(status_code=404, detail="Purchase Order tidak ditemukan")
+    await guard_doc(request, "purchase_orders", po, strict=False)   # P18 AUTH-02 IDOR
     return await build_landed_cost_context(po)
 
 

@@ -35,6 +35,8 @@ async def shipment_surat_jalan(shipment_id: str, request: Request):
     shp = safe_doc(await db.shipments.find_one({"id": shipment_id}, {"_id": 0}))
     if not shp:
         raise HTTPException(status_code=404, detail="Shipment tidak ditemukan")
+    from entity_scope import guard_doc
+    await guard_doc(request, "shipments", shp, strict=False)   # P18 AUTH-02 IDOR
     order = safe_doc(await db.sales_orders.find_one({"id": shp["order_id"]}, {"_id": 0})) or {}
     ship_addr = order.get("shipping_address", {}) or {}
     roll_rows = "".join(
@@ -103,6 +105,8 @@ async def generate_surat_jalan(order_id: str, request: Request, warehouse_id: st
     order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     if not order:
         raise HTTPException(status_code=404, detail="Sales Order tidak ditemukan")
+    from entity_scope import guard_doc
+    await guard_doc(request, "sales_orders", order, strict=False)   # P18 AUTH-02 IDOR
     
     # Get dispatched / partially-shipped outbound tasks (Sub-fase 1.8)
     query = {

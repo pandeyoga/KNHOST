@@ -1,0 +1,76 @@
+LEAKS: []
+[
+ {
+  "id": "AUTH-01",
+  "invariant": "login valid → sesi ber-expires_at & /auth/me 200",
+  "pass": true,
+  "detail": "200"
+ },
+ {
+  "id": "AUTH-01",
+  "invariant": "password salah → 401 tanpa sesi baru",
+  "pass": true,
+  "detail": "401"
+ },
+ {
+  "id": "AUTH-01",
+  "invariant": "sisa TTL 5 menit → request 200 & expires_at diperpanjang (sliding)",
+  "pass": true,
+  "detail": "2026-10-04 14:34:50.771000+00:00"
+ },
+ {
+  "id": "AUTH-01",
+  "invariant": "sesi lama tanpa expires_at → 200 lalu distempel expires_at",
+  "pass": true,
+  "detail": "2026-10-04 14:34:50.819000"
+ },
+ {
+  "id": "AUTH-01",
+  "invariant": "expires_at lewat → 401 'kedaluwarsa' & sesi dihapus; request berikutnya tetap 401",
+  "pass": true,
+  "detail": "401 {\"detail\":\"Session kedaluwarsa — silakan login ulang\"} / 401"
+ },
+ {
+  "id": "AUTH-01",
+  "invariant": "user dinonaktifkan → sesi yang masih berlaku ditolak 401",
+  "pass": true,
+  "detail": "401"
+ },
+ {
+  "id": "AUTH-01",
+  "invariant": "logout me-revoke token (401 sesudahnya)",
+  "pass": true,
+  "detail": "200/401"
+ },
+ {
+  "id": "AUTH-01",
+  "invariant": "indeks TTL Mongo pada sessions.expires_at ada (pembersihan otomatis)",
+  "pass": true,
+  "detail": "['_id_', 'expires_at_1', 'token_1']"
+ },
+ {
+  "id": "AUTH-02",
+  "invariant": "sweep 134 GET × 34 koleksi ter-scope × 4 peran KSC-saja: tidak pernah menerima dokumen PT lain",
+  "pass": true,
+  "detail": "{'tried': 18224, '200_tanpa_isi': 579, 'bocor': []}"
+ },
+ {
+  "id": "AUTH-02",
+  "invariant": "kontrol positif: id dokumen PT sendiri terbaca di rute pemiliknya (sweep tidak hampa)",
+  "pass": true,
+  "detail": "1413"
+ },
+ {
+  "id": "AUTH-02",
+  "invariant": "SO milik sales A: A 200; sales B baca 403/404 & ubah ditolak tanpa mutasi",
+  "pass": true,
+  "detail": "200/403/403"
+ },
+ {
+  "id": "AUTH-02",
+  "invariant": "entity_id PT lain lewat query (list) & body (create) → 403",
+  "pass": true,
+  "detail": "403/403"
+ }
+]
+pass=12 fail=0

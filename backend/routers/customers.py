@@ -233,3 +233,43 @@ async def add_customer_address(customer_id: str, payload: CustomerAddress, reque
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
     await audit(actor["name"], "customer_address_added", "customer", customer_id, address)
     return safe_doc(customer)
+
+
+async def _merge_pair(customer_id: str, source_id: str, request: Request):
+    from entity_scope import guard_doc
+    actor = await require_permission(request, "customer", "delete")
+    docs = []
+    for cid in (source_id, customer_id):
+        doc = safe_doc(await db.customers.find_one({"id": cid}, {"_id": 0}))
+        await guard_doc(request, "customers", doc, not_found=f"Customer {cid} tidak ditemukan")
+        docs.append(doc)
+    return actor, docs[0], docs[1]
+
+
+@router.get("/customers/{customer_id}/merge-preview")
+async def merge_customer_preview(customer_id: str, source_id: str, request: Request) -> Dict[str, Any]:
+    """P18 MASTER-05 — jumlah dokumen yang akan dipindah dari pelanggan duplikat (sumber)."""
+    from services import customer_merge_service as cms
+    _, src, tgt = await _merge_pair(customer_id, source_id, request)
+    try:
+        return await cms.preview(src, tgt)
+    except cms.MergeError as e:
+        raise HTTPException(status_code=e.status, detail=str(e))
+
+
+@router.post("/customers/{customer_id}/merge")
+async def merge_customer(customer_id: str, payload: GenericPatch, request: Request) -> Dict[str, Any]:
+    """P18 MASTER-05 / COMM-01 — gabung pelanggan duplikat `data.source_id` ke pelanggan ini."""
+    from services import customer_merge_service as cms
+    source_id = str(payload.data.get("source_id") or "")
+    reason = str(payload.data.get("reason") or "").strip()
+    if len(reason) < 5:
+        raise HTTPException(status_code=400, detail="Alasan penggabungan wajib (min. 5 karakter).")
+    actor, src, tgt = await _merge_pair(customer_id, source_id, request)
+    try:
+        res = await cms.merge(src, tgt, actor=actor["name"], reason=reason)
+    except cms.MergeError as e:
+        raise HTTPException(status_code=e.status, detail=str(e))
+    await audit(actor["name"], "customer_merged", "customer", customer_id,
+                {"source_id": source_id, "moved": res["moved"]}, before={"source": src.get("name")}, reason=reason)
+    return res

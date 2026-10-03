@@ -260,9 +260,9 @@ E("receiving.ocr_image_max_side", group="penerimaan", type="int", default=2048, 
 E("receiving.ocr_max_pages", group="penerimaan", type="int", default=5, scopes=("global",),
   label="Halaman maksimum per pembacaan", help="Lebih dari ini → ditolak (isi manual).", impact="Batas biaya.",
   example="5", consumers=_OCR_C, risk="low")
-E("receiving.ocr_extract_packing_list", group="penerimaan", type="bool", default=False, scopes=G,
+E("receiving.ocr_extract_packing_list", group="penerimaan", type="bool", default=True, scopes=G,
   label="Ekstrak packing list", help="Minta OpenAI juga membaca rincian roll packing list (Fase 6).",
-  impact="Token keluaran lebih banyak.", example="Mati", consumers=_OCR_C, risk="low")
+  impact="Token keluaran lebih banyak.", example="Aktif (keputusan pemilik P18)", consumers=_OCR_C, risk="low")
 E("receiving.ocr_monthly_budget_usd", group="penerimaan", type="decimal", default=75, scopes=("global",),
   label="Anggaran OCR per bulan (USD)", help="Tercapai → tidak memanggil AI; GRN diisi manual.",
   impact="Rem biaya.", example="75", consumers=_OCR_C, risk="medium")

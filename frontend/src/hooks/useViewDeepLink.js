@@ -32,7 +32,7 @@ import { toast } from "@/hooks/use-toast";
 
 const ENTITY_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
-export default function useViewDeepLink({ role, ready, activeView, onNavigate, onPickEntity, onOpenDoc }) {
+export default function useViewDeepLink({ role, ready, activeView, activeEntity, onNavigate, onPickEntity, onOpenDoc }) {
   const docRef = useRef(onOpenDoc);
   docRef.current = onOpenDoc;
   const consumed = useRef(false);
@@ -97,11 +97,14 @@ export default function useViewDeepLink({ role, ready, activeView, onNavigate, o
       const url = new URL(window.location.href);
       // Halaman verifikasi dokumen publik punya path sendiri — jangan disentuh.
       if (url.pathname.startsWith("/verify-document/")) return;
-      if (url.searchParams.get("view") === activeView) return;
+      if (url.searchParams.get("view") === activeView
+          && (!activeEntity || url.searchParams.get("entity") === activeEntity)) return;
       url.searchParams.set("view", activeView);
+      // P18 AUTH-06 — badan usaha aktif ikut di alamat: tautan yang dibagikan/di-refresh tetap ter-scope.
+      if (activeEntity && activeEntity !== "all" && ENTITY_ID_RE.test(activeEntity)) url.searchParams.set("entity", activeEntity);
       window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     } catch (_) {
       /* peramban tanpa History API — abaikan, navigasi tetap jalan */
     }
-  }, [ready, activeView]);
+  }, [ready, activeView, activeEntity]);
 }

@@ -157,6 +157,21 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
   const canSubmit = selectedSession?.status === "open" &&
     (selectedSession?.items || []).length > 0 && uncountedItems.length === 0;
   const canApprove = ["admin", "manager"].includes(userRole) && selectedSession?.status === "submitted";
+  const canReopen = ["admin", "manager"].includes(userRole) && ["submitted", "rejected"].includes(selectedSession?.status);
+
+  // P18 INV-03 — stok bergerak sejak dihitung → buka ulang; item yang berubah wajib dihitung lagi.
+  const reopenSession = async () => {
+    let res;
+    try {
+      res = await axios.post(`${API}/cycle-count/sessions/${selectedSession.id}/reopen`, null, { headers });
+    } catch (e) {
+      setErr(apiErrorText(e, "Gagal membuka ulang sesi")); return;
+    }
+    await loadSession(selectedSession.id);
+    await loadSessions();
+    const n = (res.data?.recount_items || []).length;
+    setMsg(n ? `Sesi dibuka ulang — ${n} item wajib dihitung ulang` : "Sesi dibuka ulang — tidak ada stok yang bergerak");
+  };
 
   return (
     <section data-testid="cycle-count-panel" className="section-card">
@@ -409,6 +424,11 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
                         <XCircle size={13} /> Reject
                       </button>
                     </>
+                  )}
+                  {canReopen && (
+                    <button onClick={reopenSession} className="secondary-button" data-testid="cc-reopen-button">
+                      Hitung ulang
+                    </button>
                   )}
                 </div>
               </div>

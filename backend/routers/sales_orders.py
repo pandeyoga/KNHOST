@@ -91,6 +91,12 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     customer = safe_doc(await db.customers.find_one({"id": payload.customer_id}, {"_id": 0}))
     if not customer:
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
+    if customer.get("status") == "merged":   # P18 MASTER-05 — pelanggan duplikat yang sudah digabung
+        raise HTTPException(status_code=409, detail=(
+            f"Pelanggan '{customer.get('name')}' sudah digabung ke pelanggan lain ({customer.get('merged_into')}). "
+            f"Buat pesanan atas pelanggan hasil gabungan."))
+    if customer.get("status") == "inactive":
+        raise HTTPException(status_code=409, detail=f"Pelanggan '{customer.get('name')}' nonaktif — aktifkan dulu sebelum membuat pesanan.")
     # FASE E-7 (E7.2/E7.7) — badan usaha grup diperlakukan sebagai PEMASOK di sisi
     # pembeli, BUKAN pelanggan. SO biasa ke badan usaha grup melewati dokumen kembar &
     # eliminasi margin, jadi laba grup akan terlihat lebih besar dari kenyataan.

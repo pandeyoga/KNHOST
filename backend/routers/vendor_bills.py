@@ -46,6 +46,7 @@ async def po_billing_context(po_id: str, request: Request) -> Dict[str, Any]:
     po = safe_doc(await db.purchase_orders.find_one({"id": po_id}, {"_id": 0}))
     if not po:
         raise HTTPException(status_code=404, detail="Purchase Order tidak ditemukan")
+    await guard_doc(request, "purchase_orders", po, strict=False)   # P18 AUTH-02 IDOR
     return await build_billing_context(po)
 
 
@@ -613,6 +614,54 @@ async def pay_vendor_bill(bill_id: str, payload: VendorBillPaymentCreate, reques
     if decision:
         out["variance_decision"] = decision
     return out
+
+
+@router.post("/vendor-bills/{bill_id}/payments/{payment_id}/void")
+async def void_vendor_bill_payment(bill_id: str, payment_id: str, payload: VendorBillDecision,
+                                   request: Request) -> Dict[str, Any]:
+    """P18 APAR-01 — batalkan SATU pembayaran bill (salah nominal/rekening): jurnal kas dibalik,
+    kas di-void, hutang kembali terbuka. Kas turunan bill tak bisa di-void dari layar kas (FN-07)."""
+    actor = await require_permission(request, "vendor_bill", "pay")
+    bill = await db.vendor_bills.find_one({"id": bill_id}, {"_id": 0})
+    await guard_doc(request, "vendor_bills", bill, not_found="Vendor Bill tidak ditemukan")
+    if len((payload.notes or "").strip()) < 5:
+        raise HTTPException(status_code=400, detail="Alasan pembatalan pembayaran wajib (min. 5 karakter).")
+    pay = next((p for p in bill.get("payments") or [] if p.get("id") == payment_id), None)
+    if not pay or pay.get("voided"):
+        raise HTTPException(status_code=409, detail="Pembayaran tidak ditemukan atau sudah dibatalkan.")
+    if await db.payment_variance_decisions.count_documents({"bill_id": bill_id, "status": {"$ne": "reversed"}}) \
+            or await db.cash_transactions.count_documents({"ref_type": "ap_advance", "ref_id": bill_id, "status": {"$ne": "void"}}):
+        raise HTTPException(status_code=409, detail="Bill ini punya keputusan selisih/uang muka — batalkan keputusan itu dulu.")
+    txn = await db.cash_transactions.find_one({"id": pay.get("cash_txn_id")}, {"_id": 0}) or {}
+    if txn.get("reconciled") or float(txn.get("reconciled_amount") or 0) > 0:
+        raise HTTPException(status_code=409, detail="Kas pembayaran ini sudah dicocokkan dengan mutasi bank — lepaskan dulu.")
+    try:
+        await gl_service.preflight_posting(bill.get("entity_id", ""), now_iso())
+    except gl_service.ClosedPeriodError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    amount = round(float(pay.get("amount") or 0), 2)
+    claimed = await db.vendor_bills.find_one_and_update(
+        {"id": bill_id, "payments": {"$elemMatch": {"id": payment_id, "voided": {"$ne": True}}}},
+        {"$set": {"payments.$.voided": True, "payments.$.voided_at": now_iso(), "payments.$.voided_by": actor["name"],
+                  "payments.$.void_reason": payload.notes, "status": "posted", "updated_at": now_iso()},
+         "$inc": {"amount_paid": -amount},
+         "$push": {"timeline": timeline_entry("payment_voided", "Pembayaran dibatalkan", actor["name"],
+                                              f"{rupiah(amount)} · {payload.notes}")}},
+        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not claimed:
+        raise HTTPException(status_code=409, detail="Pembayaran sedang/sudah dibatalkan.")
+    rev = None
+    if txn:
+        await gl_service.post_cash_transaction(txn)
+        rev = await gl_service.post_cash_void(txn["id"], label=txn.get("number", ""), created_by=actor["name"])
+        await db.cash_transactions.update_one({"id": txn["id"]}, {"$set": {
+            "status": "void", "updated_at": now_iso(), "void_journal_entry_id": (rev or {}).get("id", "")}})
+    await sync_po_billing(bill["po_id"])
+    await audit(actor["name"], "vendor_bill_payment_voided", "vendor_bill", bill_id,
+                {"payment_id": payment_id, "amount": amount, "cash": txn.get("number", ""),
+                 "reversal_je": (rev or {}).get("number", "")}, reason=payload.notes)
+    return _hydrate(safe_doc(await db.vendor_bills.find_one({"id": bill_id}, {"_id": 0})))
+
 
 
 @router.post("/vendor-bills/{bill_id}/cancel")

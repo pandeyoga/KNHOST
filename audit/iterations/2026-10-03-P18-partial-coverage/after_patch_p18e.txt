@@ -1,0 +1,41 @@
+  [poc-stock] snapshot 181 dokumen stok dari 5 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (181 dokumen, 5 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "INV-03",
+  "invariant": "expected dibekukan saat item ditambah (cutoff) & submit mencatat selisih −2",
+  "pass": true,
+  "detail": "(320.0, 320.0, 200)"
+ },
+ {
+  "id": "INV-03",
+  "invariant": "stok bergerak sesudah dihitung (retur 1 yd) → approve 409, stok tidak disesuaikan",
+  "pass": true,
+  "detail": "(200, 320.0, 319.0, 409, '{\"detail\":\"Stok bergerak sejak dihitung: TNI-GRGD-001 (320.0→319). Buka kembali sesi dan hitung ulang item tersebut sebe')"
+ },
+ {
+  "id": "INV-03",
+  "invariant": "hitung ulang (reopen): sesi open, expected = stok terkini, item wajib dihitung lagi (submit 400)",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"cc_ba6a1d01fdc6\",\"entity_id\":\"ent_ksc\",\"warehouse_id\":\"wh_jakarta\",\"warehouse_name\":\"Gudang Jakarta Utara\",\"wareh', 400)"
+ },
+ {
+  "id": "INV-03",
+  "invariant": "approve 3× bersamaan → tepat 1 sukses, stok turun tepat 2 (sekali), sesi approved",
+  "pass": true,
+  "detail": "([200, 409, 409], 319.0, 317.0, 'approved')"
+ },
+ {
+  "id": "INV-03",
+  "invariant": "sesi approved tidak bisa dibuka ulang (400)",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "INV-03",
+  "invariant": "staf gudang (tanpa approve_count) tidak bisa membuka ulang sesi (403)",
+  "pass": true,
+  "detail": "403"
+ }
+]
+pass=6 fail=0

@@ -57,6 +57,28 @@ async def _assert_no_alias_clash(aliases: List[str], code: str, skip_id: str = "
                             detail="Alias tidak boleh sama dengan kode satuannya sendiri.")
 
 
+async def _assert_used_identity_unchanged(uom_id: str, data: Dict[str, Any]) -> None:
+    """P18 MASTER-01 — satuan yang dipakai dokumen: kode, jenis, faktor & alias lama terkunci."""
+    cur = await db.uoms.find_one({"id": uom_id}, {"_id": 0}) or {}
+    changed = [k for k in ("code", "base_type", "factor_to_base")
+               if k in data and str(data[k]).strip().lower() != str(cur.get(k, "")).strip().lower()
+               and not (k == "factor_to_base" and float(data[k] or 0) == float(cur.get(k) or 0))]
+    dropped = sorted({str(a).lower() for a in cur.get("aliases") or []} - set(data.get("aliases") or [])) \
+        if "aliases" in data else []
+    if not (changed or dropped):
+        return
+    words = [cur.get("code"), cur.get("name")] if changed else []
+    usage = await uom_service.count_unit_usage([w for w in words + dropped if w])
+    if usage:
+        rinci = ", ".join(f"{k} {v}" for k, v in sorted(usage.items()))
+        what = ", ".join(changed + [f"alias {a}" for a in dropped])
+        raise HTTPException(status_code=409, detail=(
+            f"Satuan {cur.get('code')} masih dipakai {sum(usage.values())} dokumen ({rinci}); "
+            f"{what} tidak dapat diubah karena angka dokumen lama akan berubah arti. "
+            f"Buat satuan baru bila perlu."))
+
+
+
 @router.get("/uoms")
 async def list_uoms(request: Request) -> List[Dict[str, Any]]:
     # INV-AUTH-01 (KN-076-AUTH-MASTER-LEAK P1): master data WAJIB login.
@@ -121,6 +143,7 @@ async def update_uom(uom_id: str, payload: GenericPatch, request: Request) -> Di
                                      data.get("code") or cur.get("code", ""), skip_id=uom_id)
     if "factor_per_document" in data:
         data["factor_per_document"] = bool(data["factor_per_document"])
+    await _assert_used_identity_unchanged(uom_id, data)
     data["updated_at"] = now_iso()
     uom = await db.uoms.find_one_and_update(
         {"id": uom_id}, {"$set": data},

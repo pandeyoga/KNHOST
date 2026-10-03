@@ -61,9 +61,10 @@ async def _attach_epc(rolls: List[Dict[str, Any]]) -> None:
 @router.get("/suppliers/{supplier_id}/label-pattern")
 async def get_label_pattern(supplier_id: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "supplier", "view")
-    sup = await db.suppliers.find_one({"id": supplier_id}, {"_id": 0, "label_pattern": 1, "name": 1})
+    sup = await db.suppliers.find_one({"id": supplier_id}, {"_id": 0, "label_pattern": 1, "name": 1, "entity_id": 1})
     if not sup:
         raise HTTPException(status_code=404, detail="Supplier tidak ditemukan")
+    assert_entity_access(sup, "suppliers", await entity_ctx(request))   # P18 AUTH-02 IDOR
     return {"supplier_id": supplier_id, "supplier_name": sup.get("name", ""),
             "pattern": ldec.normalize_pattern(sup.get("label_pattern")),
             "formats": list(ldec.FORMATS), "fields": list(ldec.FIELDS),

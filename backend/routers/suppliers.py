@@ -242,8 +242,10 @@ async def list_supplier_price_list(supplier_id: str, request: Request,
                                    include_inactive: bool = False) -> List[Dict[str, Any]]:
     """Daftar harga (price-list) milik supplier."""
     await require_permission(request, "supplier", "view")
-    if not await db.suppliers.find_one({"id": supplier_id}, {"_id": 0, "id": 1}):
+    sup = await db.suppliers.find_one({"id": supplier_id}, {"_id": 0, "id": 1, "entity_id": 1})
+    if not sup:
         raise HTTPException(status_code=404, detail="Supplier tidak ditemukan")
+    assert_entity_access(sup, "suppliers", await entity_ctx(request))   # P18 AUTH-02 IDOR
     query: Dict[str, Any] = {"supplier_id": supplier_id}
     if not include_inactive:
         query["status"] = "active"
@@ -353,6 +355,9 @@ async def resolve_supplier_price(request: Request, supplier_id: str = "",
 async def get_supplier_scorecard(supplier_id: str, request: Request) -> Dict[str, Any]:
     """Scorecard supplier dari data nyata (PO + penerimaan + retur)."""
     await require_permission(request, "supplier", "view")
+    sup = await db.suppliers.find_one({"id": supplier_id}, {"_id": 0, "id": 1, "entity_id": 1})
+    if sup:
+        assert_entity_access(sup, "suppliers", await entity_ctx(request))   # P18 AUTH-02 IDOR
     card = await compute_scorecard(supplier_id)
     if card is None:
         raise HTTPException(status_code=404, detail="Supplier tidak ditemukan")

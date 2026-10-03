@@ -117,6 +117,7 @@ async def roll_grade_history(roll_id: str, request: Request) -> Dict[str, Any]:
     roll = safe_doc(await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0}))
     if not roll:
         raise HTTPException(status_code=404, detail="Roll tidak ditemukan")
+    assert_entity_access(roll, "inventory_rolls", await entity_ctx(request))   # P18 AUTH-02 IDOR
     history = await grade_service.grade_history(roll_id)
     return {"roll_id": roll_id, "roll_no": roll.get("roll_no", ""),
             "grade": roll.get("grade", ""), "grade_source": roll.get("grade_source", ""),
