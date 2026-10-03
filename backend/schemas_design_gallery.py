@@ -100,6 +100,7 @@ class CategoryPatch(BaseModel):
 
 class DesignApproveIn(BaseModel):
     note: str = ""
+    score: Optional[float] = None   # P16 — jalur lama ikut aturan Studio: nilai wajib saat ACC
 
 
 class DesignRatingIn(BaseModel):

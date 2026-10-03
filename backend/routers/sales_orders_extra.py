@@ -834,6 +834,15 @@ async def cancel_order(order_id: str, request: Request) -> Dict[str, Any]:
     assert_entity_access(order, "sales_orders", await entity_ctx(request))  # S#074 IDOR
     if order["status"] in ["done", "cancelled", "expired", "partially_shipped", "shipped"]:
         raise HTTPException(status_code=409, detail="Order tidak bisa dibatalkan (sudah terkirim sebagian/penuh atau terminal)")
+    # P16 (SALE-03) — Faktur Pajak aktif sudah/akan dilaporkan (NSFP); membatalkan SO diam-diam
+    # meninggalkan PPN Keluaran tanpa transaksi. Batalkan Faktur Pajaknya dulu (beralasan).
+    fkt = await db.tax_invoices.find_one({"order_id": order_id, "status": {"$ne": "batal"}},
+                                         {"_id": 0, "number": 1})
+    if fkt:
+        raise HTTPException(status_code=409, detail=(
+            f"Pesanan ini sudah punya Faktur Pajak aktif ({fkt.get('number')}). "
+            "Batalkan Faktur Pajak tersebut dulu (menu Faktur Pajak → Batalkan, alasan wajib), "
+            "lalu batalkan pesanan."))
     # T-01 Opsi B (INV-ATOMIC-01) — klaim SO sebelum roll dilepas + task gudang dibatalkan
     # + jurnal dibalik (3 koleksi tanpa transaksi). Kunci dicabut oleh `so_transition`.
     from services import atomic_claim as _saga

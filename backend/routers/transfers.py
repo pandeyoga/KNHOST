@@ -19,17 +19,18 @@ from services import gl_service
 router = APIRouter(prefix="/api")
 
 
-# Allowed status transitions
+# P16 — transisi OPERASIONAL saja lewat POST /status. Approve/reject/cancel punya
+# endpoint sendiri (izin terpisah + pelepasan roll), jadi tidak boleh lewat jalur ini.
 STATUS_TRANSITIONS = {
-    "draft": ["waiting_approval", "cancelled"],
-    "waiting_approval": ["approved", "rejected", "cancelled"],
-    "approved": ["picking", "cancelled"],
-    "picking": ["staging", "cancelled"],
-    "staging": ["dispatched", "cancelled"],
-    "dispatched": ["completed", "cancelled"],
-    "completed": [],
-    "rejected": [],
-    "cancelled": []
+    "approved": ["picking"],
+    "picking": ["staging"],
+    "staging": ["dispatched"],
+    "dispatched": ["completed"],
+}
+_DEDICATED_STATUS_ROUTES = {
+    "cancelled": "DELETE /api/transfers/{id}?reason=…",
+    "approved": "POST /api/transfers/{id}/approve",
+    "rejected": "POST /api/transfers/{id}/reject",
 }
 
 
@@ -375,6 +376,9 @@ async def create_inter_company_transfer(payload: InterCompanyTransferCreate, req
             "rejected_by": None, "rejected_at": None, "rejected_reason": None,
             "created_at": now_iso(), "updated_at": now_iso(),
         }
+        # P16 — dokumen WAJIB tersimpan: tanpa ini roll tertahan ber-ref transfer yang tidak ada
+        # (tidak bisa disetujui/dibatalkan → stok bocor permanen).
+        await db.warehouse_transfers.insert_one(dict(transfer))
     except Exception:
         await release_transfer_rolls(transfer_id)   # kompensasi saga: reservasi parsial dilepas bila item/insert gagal
         raise
@@ -553,13 +557,19 @@ async def update_transfer_status(transfer_id: str, payload: TransferStatusUpdate
     - picking → staging
     - staging → dispatched
     - dispatched → completed
-    - any → cancelled (requires cancel permission)
+    Batal/setujui/tolak TIDAK lewat sini (lihat _DEDICATED_STATUS_ROUTES).
     
     Inventory impact:
     - dispatched: reduce source warehouse on_hand, increase in_transit
     - completed: reduce source in_transit, increase dest on_hand
     """
     actor = await require_permission(request, "transfer", "update")
+    if payload.status in _DEDICATED_STATUS_ROUTES:
+        raise HTTPException(
+            status_code=400,
+            detail=(f"Status '{payload.status}' tidak bisa diubah lewat jalur status. "
+                    f"Gunakan {_DEDICATED_STATUS_ROUTES[payload.status]} agar izin dan stok roll tertangani."),
+        )
     # FASE E-0 (L13) — status berjalan di sisi yang berhak: `completed` (terima barang)
     # milik entitas TUJUAN, sisanya milik entitas ASAL.
     _side = "dest" if payload.status == "completed" else "source"

@@ -511,13 +511,16 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "9b0c070408cd259b01aff20ca374203f1883a8fb",
       "evidence": [
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_125.json",
         "iterations/2026-10-02-P14-coverage-uat/runs/p02.txt",
-        "iterations/2026-10-02-P14-coverage-uat/runs/p06.txt"
+        "iterations/2026-10-02-P14-coverage-uat/runs/p06.txt",
+        "iterations/2026-10-09-P16-close-coverage/after_patch.txt",
+        "iterations/2026-10-09-P16-close-coverage/head_before_patch.txt"
       ],
-      "notes": "P14: AX-05/WM-04/WM-09 lokasi transfer; antargudang UI belum."
+      "notes": "P16: transfer antargudang API+UI — buat (reservasi roll), /status hanya transisi operasional (approve/reject/cancel lewat endpoint khusus → 400), batal DELETE+alasan melepas roll (juga sesudah dispatched, ledger seimbang), approve→picking→staging→dispatched→completed: lokasi asal/tujuan, balance, total panjang & audit tepat. UI Batalkan + alur penuh lulus (iteration_125)."
     },
     {
       "id": "INV-03",
@@ -541,11 +544,14 @@
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "tested_commit": "9b0c070408cd259b01aff20ca374203f1883a8fb",
       "evidence": [
-        "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt"
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_125.json",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt",
+        "iterations/2026-10-09-P16-close-coverage/after_patch.txt",
+        "iterations/2026-10-09-P16-close-coverage/head_before_patch.txt"
       ],
-      "notes": "P14: GN-08 konversi permintaan internal tidak ganda; rekonsiliasi dua buku belum."
+      "notes": "P16: BUG transfer antar-PT tidak pernah tersimpan (roll bocor tertahan) diperbaiki; batal melepas roll tanpa jurnal. Rekonsiliasi dua buku saat approve (JE at-cost) belum diuji ulang."
     },
     {
       "id": "INV-05",
@@ -665,13 +671,16 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "9b0c070408cd259b01aff20ca374203f1883a8fb",
       "evidence": [
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_125.json",
         "iterations/2026-10-02-P14-coverage-uat/runs/p07.txt",
-        "iterations/2026-10-02-P14-coverage-uat/runs/p07b.txt"
+        "iterations/2026-10-02-P14-coverage-uat/runs/p07b.txt",
+        "iterations/2026-10-09-P16-close-coverage/after_patch.txt",
+        "iterations/2026-10-09-P16-close-coverage/head_before_patch.txt"
       ],
-      "notes": "P14: Pick→dispatch identitas & saga; invoice dataset acuan belum."
+      "notes": "P16: SO→reservasi→approval kredit→konfirmasi→pick→potong+verifikasi label→kirim; Piutang=grand, Pendapatan=net, PPN=SO; HPP terposting; Faktur Pajak & dokumen Faktur = SO; sisa tagihan turun tepat setelah penerimaan AR; kiriman parsial pro-rata & Σ akhir = grand (data demo, bukan dataset acuan eksternal)."
     },
     {
       "id": "SALE-02",
@@ -695,13 +704,16 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "9b0c070408cd259b01aff20ca374203f1883a8fb",
       "evidence": [
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_125.json",
         "iterations/2026-10-02-P14-coverage-uat/runs/p02_wm02.txt",
-        "iterations/2026-10-02-P14-coverage-uat/runs/p07b.txt"
+        "iterations/2026-10-02-P14-coverage-uat/runs/p07b.txt",
+        "iterations/2026-10-09-P16-close-coverage/after_patch.txt",
+        "iterations/2026-10-09-P16-close-coverage/head_before_patch.txt"
       ],
-      "notes": "P14: WM-02 reservasi parsial, CX-12 special order; cancel reservasi belum."
+      "notes": "P16: batal SO reserved memulihkan panjang bebas persis; SO terkirim sebagian 409; BUG SO ber-Faktur Pajak aktif bisa dibatalkan → kini 409 sampai faktur dibatalkan, lalu batal melepas reservasi & tugas gudang."
     },
     {
       "id": "SALE-04",
@@ -1087,12 +1099,15 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "9b0c070408cd259b01aff20ca374203f1883a8fb",
       "evidence": [
-        "iterations/2026-10-02-P14-coverage-uat/runs/p14b.txt"
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_125.json",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p14b.txt",
+        "iterations/2026-10-09-P16-close-coverage/after_patch.txt",
+        "iterations/2026-10-09-P16-close-coverage/head_before_patch.txt"
       ],
-      "notes": "P14: Request→assign→desain→ajukan→revisi→ajukan ulang→ACC (status permintaan ikut Studio); lanjutan ke produksi belum."
+      "notes": "P16: permintaan→desain→ajukan→ACC(nilai)→serah final (mockup+source wajib)→aktif/produksi; permintaan ikut disetujui; BUG jalur lama /design-gallery/{id}/approve|reject|submit melewati aturan Studio (desainer bisa ACC sendiri tanpa nilai) → kini diteruskan ke siklus Studio."
     },
     {
       "id": "DESIGN-02",
@@ -1113,12 +1128,15 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "9b0c070408cd259b01aff20ca374203f1883a8fb",
       "evidence": [
-        "iterations/2026-10-02-P14-coverage-uat/runs/p14b.txt"
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_125.json",
+        "iterations/2026-10-02-P14-coverage-uat/runs/p14b.txt",
+        "iterations/2026-10-09-P16-close-coverage/after_patch.txt",
+        "iterations/2026-10-09-P16-close-coverage/head_before_patch.txt"
       ],
-      "notes": "P14: Cancel wajib alasan, cancel ulang ditolak, permintaan batal tak melahirkan desain; reopen desain belum."
+      "notes": "P16: arsip wajib alasan, reopen (hanya penilai) → draf tanpa kehilangan berkas/versi, nilai lama dikosongkan, bisa diajukan ulang; cancel permintaan (P14b) tetap lulus."
     },
     {
       "id": "DESIGN-04",

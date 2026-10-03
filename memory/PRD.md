@@ -827,3 +827,10 @@ Backlog: GN-15; gate PA/loading RFID wajib tag anak (P07/P09); CX-05 akun reimbu
 - 2026-10-02: SALE-02 (kasir POS) ditandai not_applicable atas keputusan pemilik (PG-SALE02 di audit/policy-decisions.json): semua penjualan lewat Sales Order. validate.py menerima status not_applicable dengan alasan wajib; repro_p14b memverifikasi premisnya (23/23). Coverage: 25 tested_pass, 54 partial, 17 planned, 2 blocked, 1 not_applicable, 0 tested_fail.
 
 
+
+## SESI 2026-10-09 — P16 Tutup cakupan (transfer, penjualan → faktur, desain)
+- Permintaan user: "lanjutkan uji hingga semua selesai" (lanjutan iterasi yang terhenti sebelum uji dijalankan).
+- Setup ulang kontainer dari GitHub (repo belum memuat P16 lama → dikerjakan ulang): rsync → /app, backend/.env (CORS_ORIGINS, SESSION_COOKIE_SECURE, KN_DEMO_DATA, SEED_DEMO_ENABLED, OCR_ALLOW_MOCK), pip (tanpa litellm konflik), seed_realistic, rebuild bundle.
+- Perbaikan: (1) /transfers/{id}/status hanya transisi operasional; approve/reject/cancel lewat endpoint khusus (400). (2) transfer antar-PT kini tersimpan (dulu roll bocor tertahan). (3) batal SO ditolak 409 bila Faktur Pajak aktif. (4) jalur lama design-gallery submit/reject/approve diteruskan ke siklus Studio (desainer tak bisa ACC sendiri, nilai wajib).
+- Bukti: audit/iterations/2026-10-09-P16-close-coverage (HEAD 24/35 → 43/43); agen uji iterasi 125 lulus 100% (API + UI Manajemen Transfer). Coverage: 30 tested_pass (INV-02, SALE-01, SALE-03, DESIGN-01, DESIGN-03 naik), 49 partial, 17 planned, 2 blocked, 1 not_applicable.
+- Sisa: INV-04 rekonsiliasi dua buku saat approve; 17 kasus planned; FAIL integritas seed KANDA/SO-00001; keputusan faktur per surat jalan vs per pesanan.

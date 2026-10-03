@@ -1,0 +1,261 @@
+[
+ {
+  "id": "INV-02",
+  "invariant": "buat transfer 1 roll → waiting_approval, roll reserved ber-ref wh_transfer",
+  "pass": true,
+  "detail": "200 reserved {\"id\":\"trn_630b044c9f1f\",\"code\":\"KSC/TRF-00017\",\"transfer_kind\":\"intra_entity\",\"entity_id\":\"ent_ksc\",\"source_warehouse_i"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "panjang bebas gudang asal berkurang tepat sepanjang roll",
+  "pass": true,
+  "detail": "157.0→150.0 L=7.0"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "roll yang sudah dipesan tidak bisa dipesan transfer lain (409)",
+  "pass": true,
+  "detail": "409"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "POST /status approved|rejected|cancelled|completed dari waiting_approval → 400, roll tetap reserved",
+  "pass": true,
+  "detail": "{'approved': 400, 'rejected': 400, 'cancelled': 400, 'completed': 400} roll=reserved"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "DELETE ?reason dari waiting_approval → cancelled, roll available di wh_jakarta tanpa reserved_ref",
+  "pass": true,
+  "detail": "200 available"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "alasan batal tersimpan di dokumen & audit log",
+  "pass": true,
+  "detail": "TEST_P16_2efe99 batal audit=True"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "batal ulang ditolak 400",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "panjang bebas gudang asal pulih setelah batal",
+  "pass": true,
+  "detail": "157.0 vs 157.0"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "approve 200; lompat approved→dispatched & /status cancelled ditolak 400",
+  "pass": true,
+  "detail": "200/400/400"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "picking→staging→dispatched 200; roll in_transit_transfer + mutasi transfer_out −L",
+  "pass": true,
+  "detail": "{'picking': 200, 'staging': 200, 'dispatched': 200} in_transit_transfer mov=True"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "completed → roll available di wh_bandung, bin dikosongkan, last_transfer dari wh_jakarta, owner tetap",
+  "pass": true,
+  "detail": "200 available wh_bandung"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "stok asal −L dan tujuan +L; total panjang produk tetap (tidak ada roll ganda/hilang)",
+  "pass": true,
+  "detail": "jkt 157.0→150.0 bdg 0→7.0 total 157.0→157.0"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "inventory_balances dibangun ulang dari roll: on_hand asal −L, in_transit saat jalan, tujuan +L",
+  "pass": true,
+  "detail": "{'jkt': [157.0, 7.0, 150.0], 'bdg': [0.0, 7.0]}"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "transfer selesai tidak bisa dibatalkan (400)",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "jejak audit lengkap per tahap (created/approved/status_changed)",
+  "pass": true,
+  "detail": "['transfer_approved', 'transfer_created', 'transfer_status_changed']"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "batal sesudah dispatched → roll available di gudang asal + mutasi transfer_cancelled menyeimbangkan transfer_out",
+  "pass": true,
+  "detail": "200 available wh_bandung [{'movement_type': 'transfer_cancelled', 'quantity': 7.0}, {'movement_type': 'transfer_out', 'quantity': -7.0}]"
+ },
+ {
+  "id": "INV-02",
+  "invariant": "tolak → roll available tanpa ref",
+  "pass": true,
+  "detail": "200 available"
+ },
+ {
+  "id": "INV-04",
+  "invariant": "transfer antar-PT dibuat & roll entitas asal dipesan",
+  "pass": true,
+  "detail": "200 {\"id\":\"trn_4b1018c7eacd\",\"code\":\"KSC/TRF-00022\",\"transfer_kind\":\"inter_entity\",\"entity_id\":\"ent_ksc\",\"source_entity_id\":\"ent_ksc\",\"dest_entity_id\":\"en held=1"
+ },
+ {
+  "id": "INV-04",
+  "invariant": "/status cancelled ditolak 400; DELETE melepas semua roll, tanpa jurnal antar-PT",
+  "pass": true,
+  "detail": "400/200 left=0 je=0"
+ },
+ {
+  "id": "INV-04",
+  "invariant": "panjang bebas entitas asal pulih",
+  "pass": true,
+  "detail": "170.0 vs 170.0"
+ },
+ {
+  "id": "SALE-01",
+  "invariant": "SO dibuat & stok dipesan (reserved_qty = qty)",
+  "pass": true,
+  "detail": "200 reserved"
+ },
+ {
+  "id": "SALE-01",
+  "invariant": "total = qty×harga; PPN 12%×DPP(11/12); grand = net + PPN",
+  "pass": true,
+  "detail": "{'net': 2800000.0, 'dpp': 2566666.67, 'ppn': 308000.0, 'grand': 3108000.0}"
+ },
+ {
+  "id": "SALE-01",
+  "invariant": "Faktur Pajak dari SO terkonfirmasi: DPP/PPN/grand = SO",
+  "pass": true,
+  "detail": "200/200 {\"id\":\"fkt_99e8ba4a2153\",\"number\":\"KSC/FKT-00009\",\"nsfp\":\"\",\"kode_transaksi\":\"04\",\"status\":\"normal\",\"replaces_id\":null,\""
+ },
+ {
+  "id": "SALE-01",
+  "invariant": "pick → potong → verifikasi label → kirim: SO shipped + surat jalan",
+  "pass": true,
+  "detail": "[200] shipped"
+ },
+ {
+  "id": "SALE-01",
+  "invariant": "jurnal pengakuan: Piutang = grand, Pendapatan = net, PPN Keluaran = PPN SO",
+  "pass": true,
+  "detail": "{'ar': 3108000.0, 'rev': 2800000.0, 'ppn': 308000.0} vs grand=3108000.0"
+ },
+ {
+  "id": "SALE-01",
+  "invariant": "HPP terposting; tak ada sisa reservasi; roll terkirim in_transit_sales Σ=10; panjang bebas −10",
+  "pass": true,
+  "detail": "cogs=1 held=0 lres=0 sold=[{'length_remaining': 10.0, 'status': 'in_transit_sales'}] free 245.0→235.0"
+ },
+ {
+  "id": "SALE-01",
+  "invariant": "sisa tagihan: outstanding = grand, lalu grand − 1.000.000 setelah penerimaan AR",
+  "pass": true,
+  "detail": "3108000.0 → 2108000.0 rc=200 {\"id\":\"arc_5fc421b237b8\",\"number\":\"KSC/AR-00009\",\"customer_id\":\"cust_toko_kain\",\"customer_name\":\"Toko Kain Sejahtera\",\"e"
+ },
+ {
+  "id": "SALE-01",
+  "invariant": "dokumen Faktur: subtotal, PPN, grand total = SO",
+  "pass": true,
+  "detail": "{'Subtotal': 'Rp 2.800.000', 'PPN 12.0%': 'Rp 308.000', 'Grand Total': 'Rp 3.108.000'}"
+ },
+ {
+  "id": "SALE-01",
+  "invariant": "kiriman parsial: status partially_shipped, Piutang = porsi baris terkirim, baris lain tetap dipesan",
+  "pass": true,
+  "detail": "partially_shipped ar=1554000.0 exp=1554000.0 res=1"
+ },
+ {
+  "id": "SALE-03",
+  "invariant": "SO terkirim sebagian tidak bisa dibatalkan (409)",
+  "pass": true,
+  "detail": "409"
+ },
+ {
+  "id": "SALE-01",
+  "invariant": "setelah kiriman terakhir: shipped, Σ Piutang = grand, Σ PPN = PPN SO (tanpa selisih pembulatan)",
+  "pass": true,
+  "detail": "shipped {'ar': 2740312.5, 'rev': 2468750.0, 'ppn': 271562.5} grand=2740312.5 je=2"
+ },
+ {
+  "id": "SALE-03",
+  "invariant": "SO reserved dibatalkan → panjang bebas pulih persis, tidak ada reservasi tersisa",
+  "pass": true,
+  "detail": "{'wh_jakarta': 285.0, 'wh_surabaya': 210.0}→{'wh_jakarta': 281.0, 'wh_surabaya': 210.0}→{'wh_jakarta': 285.0, 'wh_surabaya': 210.0} left=0 200"
+ },
+ {
+  "id": "SALE-03",
+  "invariant": "SO dengan Faktur Pajak aktif: batal ditolak 409 (faktur pajak dibatalkan dulu) — tidak ada faktur aktif untuk SO batal",
+  "pass": true,
+  "detail": "fkt=200 cancel=409 {\"detail\":\"Pesanan ini sudah punya Faktur Pajak aktif (KSC/FKT-00010). Batalkan Faktur Pajak tersebut dulu (menu Faktur Pajak → Batalkan, alasan wajib so=confirmed active=1"
+ },
+ {
+  "id": "SALE-03",
+  "invariant": "setelah faktur pajak dibatalkan: SO batal 200, reservasi lepas, tugas gudang batal",
+  "pass": true,
+  "detail": "fc=200 {\"id\":\"fkt_c11493b3615c\",\"number\":\"KSC/FKT-00010\",\"nsfp\":\"\",\"kode_transaksi\":\"04\",\"status\":\"batal\",\" cx=200 left=0 tasks=0"
+ },
+ {
+  "id": "DESIGN-01",
+  "invariant": "desainer tidak bisa meng-ACC desainnya sendiri lewat POST /design-gallery/{id}/approve (jalur lama)",
+  "pass": true,
+  "detail": "submit=200 approve=403 status=pending_approval"
+ },
+ {
+  "id": "DESIGN-01",
+  "invariant": "ACC lewat jalur lama tanpa nilai ditolak (nilai wajib saat ACC)",
+  "pass": true,
+  "detail": "400 {\"detail\":\"Beri nilai (0–2) untuk versi ini saat ACC — nilai hanya diberikan sekali di akhir.\"} pending_approval"
+ },
+ {
+  "id": "DESIGN-01",
+  "invariant": "desainer tidak bisa mengembalikan (reject) desain lewat jalur lama",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "DESIGN-01",
+  "invariant": "ajukan → ACC(nilai) → serah final (mockup+source wajib) → aktif/produksi",
+  "pass": true,
+  "detail": "sub=200 acc=200 sf0=400 sf=200 act=200 {\"id\":\"dsgn_9fa8bef7b9dd\",\"title\":\"TEST_P16_2efe99 alur produksi\",\"story\":\"TEST_P16_2efe99 alur prod st=active"
+ },
+ {
+  "id": "DESIGN-01",
+  "invariant": "aktivasi sebelum berkas final ditolak; desainer tidak bisa mengaktifkan sendiri",
+  "pass": true,
+  "detail": "400/403"
+ },
+ {
+  "id": "DESIGN-01",
+  "invariant": "permintaan desain ikut berstatus disetujui & timeline mencatat tiap tahap",
+  "pass": true,
+  "detail": "req=approved tl=['created', 'artwork_uploaded', 'submit', 'approve', 'mockup_uploaded', 'source_uploaded', 'submit_final', 'activate']"
+ },
+ {
+  "id": "DESIGN-03",
+  "invariant": "arsip wajib alasan; arsip → reopen kembali ke draf (desainer tak boleh reopen)",
+  "pass": true,
+  "detail": "400/200/403/200 draft"
+ },
+ {
+  "id": "DESIGN-03",
+  "invariant": "reopen tidak menghapus berkas & versi, nilai/ACC lama dikosongkan",
+  "pass": true,
+  "detail": "files 3→3 ver 1→1"
+ },
+ {
+  "id": "DESIGN-03",
+  "invariant": "desain yang dibuka ulang bisa diajukan lagi",
+  "pass": true,
+  "detail": "200 {\"id\":\"dsgn_9fa8bef7b9dd\",\"title\":\"TEST_P16_2efe99 alur produksi\",\"story\":\"TEST_P16_2efe99 alur produksi\",\"tags\":[],\"fil"
+ }
+]
+pass=43 fail=0

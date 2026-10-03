@@ -1,0 +1,29 @@
+{
+  "summary": "Verified transfer cancellation flow, transfer status transitions, inter-company fix, SO cancel/faktur-pajak guard, legacy design-gallery → Studio delegation (via repro_p16.py 43/43 pass). Backend pytest 4/4 pass; UI happy path (manager approve → warehouse picking/staging/dispatch/complete) and cancel-with-reason verified end-to-end. DELETE /api/transfers/{id}?reason=... fires correctly; POST /api/transfers/{id}/status for cancelled|approved|rejected returns 400.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_transfer_status_guard.py",
+    "/app/test_reports/pytest/transfer_guard.xml",
+    "/app/audit/iterations/2026-10-09-P16-close-coverage/repro_p16.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "TransferDetailModal.jsx lines 192-209: approve/reject buttons gated to user.role === 'manager' only; works but denies admin role direct approve from UI (admin uses approve inbox / API). Not a bug per current spec.",
+    "/api/transfers/{id}/status returns 403 for role manager when attempting picking/staging/etc. — expected (warehouse ops permission); verify role matrix doc reflects this."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_transfer_status_guard.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id / manager@kainnusantara.id / warehouse@kainnusantara.id — all demo12345, entity ent_ksc",
+  "seed_data_creation": "Created & cancelled test transfers KSC/TRF-00050..00054; one transfer KSC/TRF-00055 (trn_4c1adb988cbf) completed with roll_c9898aaf394c now in wh_bandung (reverse transfer NOT created — flag for main agent cleanup if desired).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend verified: (1) POST /api/transfers/{id}/status rejects cancelled|approved|rejected with 400; operational transitions (approved→picking→staging→dispatched→completed) succeed; skipping (approved→dispatched) returns 400. (2) DELETE /api/transfers/{id}?reason=... cancels transfer, stores cancelled_reason, releases reserved rolls back to available with reserved_ref null. (3) POST /api/transfers/inter-company now persists document (verified via GET returning 200). (4) repro_p16.py 43/43 passes — includes SO cancel 409 on active Faktur Pajak, design-gallery legacy delegation. UI verified: create modal, DELETE cancel with reason dialog (data-testid='transfer-cancel-confirm-reason' textarea + 'transfer-cancel-confirm-confirm' button), approve as manager, picking/staging/dispatch/complete as warehouse — all buttons wired and succeed. Residual seed roll roll_c9898aaf394c is in wh_bandung (originated wh_jakarta via KSC/TRF-00055).",
+  "rca of the issue": "N/A — review was validation of previously-applied fixes; all pass."
+}

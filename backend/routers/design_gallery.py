@@ -14,8 +14,8 @@ from fastapi.responses import Response
 from dependencies import require_permission, audit
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from schemas_design_gallery import (DesignAiIllustrateIn, DesignApproveIn, DesignRatingIn,
-                                    DesignRejectIn, DesignVersionIn, GalleryInput, GalleryUpdate,
-                                    IllustrationCommentIn)
+                                    DesignRejectIn, DesignTransitionIn, DesignVersionIn, GalleryInput,
+                                    GalleryUpdate, IllustrationCommentIn)
 from services import design_gallery_service as gallery
 logger = logging.getLogger(__name__)
 
@@ -283,50 +283,27 @@ async def bump_design_version(gallery_id: str, payload: DesignVersionIn,
 
 @router.post("/design-gallery/{gallery_id}/submit")
 async def submit_design(gallery_id: str, request: Request) -> Dict[str, Any]:
-    """UTANG ALUR F-6.7 — draf desain DIAJUKAN dulu, baru bisa disahkan."""
-    actor = await _perm_manage(request)
-    ctx = await entity_ctx(request)
-    await _guard(gallery_id, ctx)
-    try:
-        doc = await gallery.submit_design(gallery_id, actor["name"])
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    await audit(actor["name"], "design_submitted", "design_gallery", gallery_id,
-                {"code": doc.get("code"), "version": doc.get("version")})
-    return doc
+    """Jalur lama — P16: diteruskan ke siklus Studio (`lifecycle/submit`) agar aturannya satu."""
+    from routers.design_studio import _do_transition
+    return await _do_transition(gallery_id, "submit", DesignTransitionIn(), request, assess=False)
 
 
 @router.post("/design-gallery/{gallery_id}/reject")
 async def reject_design(gallery_id: str, payload: DesignRejectIn,
                         request: Request) -> Dict[str, Any]:
-    """Kembalikan desain yang diajukan ke draf — ALASAN wajib & tersimpan."""
-    actor = await _perm_manage(request)
-    ctx = await entity_ctx(request)
-    await _guard(gallery_id, ctx)
-    try:
-        doc = await gallery.reject_design(gallery_id, actor["name"], payload.reason)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    await audit(actor["name"], "design_rejected", "design_gallery", gallery_id,
-                {"code": doc.get("code")}, reason=payload.reason)
-    return doc
+    """Jalur lama — P16: = `lifecycle/request-revision` (izin penilai `rnd.assess`, alasan wajib)."""
+    from routers.design_studio import _do_transition
+    return await _do_transition(gallery_id, "request_revision", DesignTransitionIn(note=payload.reason),
+                                request, assess=True)
 
 
 @router.post("/design-gallery/{gallery_id}/approve")
 async def approve_design(gallery_id: str, payload: DesignApproveIn,
                          request: Request) -> Dict[str, Any]:
-    """Sahkan desain agar boleh dipakai proofing & produk printing (wajib kode + berkas)."""
-    actor = await _perm_manage(request)
-    ctx = await entity_ctx(request)
-    await _guard(gallery_id, ctx)
-    try:
-        doc = await gallery.approve_design(gallery_id, actor["name"], payload.note)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    await audit(actor["name"], "design_approved", "design_gallery", gallery_id,
-                {"code": doc.get("code"), "version": doc.get("version")},
-                reason=payload.note or "")
-    return doc
+    """Jalur lama — P16: = `lifecycle/approve` (izin `rnd.assess`, nilai wajib, desainer tak bisa ACC sendiri)."""
+    from routers.design_studio import _do_transition
+    return await _do_transition(gallery_id, "approve", DesignTransitionIn(note=payload.note, score=payload.score),
+                                request, assess=True)
 
 
 # ─── Rating desain (bintang 1–5, 1 nilai per penilai; admin/manager) ─────────────
