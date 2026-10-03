@@ -1,5 +1,14 @@
 # PRD — Kain Nusantara ERP (lanjutan dari repo github.com/kakjsbsbs/KN)
 
+## Sesi P18 (2026-10-03, repo pandeyoga/KNHOST) — menyelesaikan kasus audit "partial"
+**Problem statement (user):** "saya ingin anda lanjutkan development dari repo ini https://github.com/pandeyoga/KNHOST … selesaikan 55 sebagian".
+**Pilihan user:** balik residu GRN-00003 (lingkungan baru di-seed ulang → tidak ada residu); baca packing list OCR **permanen aktif**; kunci OpenAI user diisi ulang (DB saja); urutan ikut handoff/audit; repo publik.
+**Arsitektur yang disentuh:** FastAPI routers (uoms, customers, sales_orders, vendor_bills, cycle_count, purchase_return_service, 6 router IDOR), service baru `customer_merge_service.py`; FE `VendorBillPayments.jsx`, `CustomerMergeSection.jsx`, `CycleCount.jsx`, `useViewDeepLink.js`; alat `audit/tools/set_status.py`.
+**Implemented (2026-10-03):** 18 kasus partial → tested_pass (AUTH-01/02/06, MASTER-01..06, COMM-01, PRET-02/03/05/06, APAR-01, INV-03, INV-04, DOC-02). Bug: IDOR baca PT lain (9 endpoint), UOM terpakai bisa diubah, qty retur dipotong diam-diam, SO ke pelanggan merged/nonaktif, ?entity hilang dari URL. Fitur: gabung pelanggan duplikat, batal pembayaran AP, hitung ulang cycle count. Harness p18a..f 60/60, UAT iterasi 129 lulus, integritas 248/0.
+**Backlog:** P0 — 19 partial berbasis API (lihat `memory/HANDOFF_P18_2026-10-03.md` §6.1); P1 — 13 UAT layar; P2 — butuh pemilik/perangkat: COMM-04, HR-04, RFID-05, OPS-01, AUDIT-03.
+**Next tasks:** lanjut §6 handoff P18.
+
+
 ## Problem statement (asli, 2026-09-17)
 Lanjutkan development repo KN. Fitur dispatch/pengiriman masih sangat basic: tidak ada quick action di dasbor
 (hanya list yang harus buat dispatch), belum ada history pengiriman, visualisasi status pengiriman yang sedang

@@ -8,12 +8,13 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18a.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p14.txt"
       ],
-      "notes": "P14: Login valid/invalid & revoke logout diuji; expiry TTL belum diuji dengan time-travel."
+      "notes": "P18a: time-travel expires_at → 401 + sesi dihapus; sliding renewal; sesi pra-TTL distempel; user nonaktif 401; logout revoke; indeks TTL Mongo ada."
     },
     {
       "id": "AUTH-02",
@@ -22,13 +23,14 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18a.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p01_s1.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p01_s2.txt"
       ],
-      "notes": "P14: IDOR lintas entitas/owner pada endpoint temuan P01; belum sweep semua endpoint."
+      "notes": "P18a sweep 133 GET × 38 koleksi × 4 peran KSC-saja. BUG diperbaiki (IDOR baca PT lain): /outbound/so/{id}/surat-jalan, /shipments/{id}/surat-jalan, /inventory/rolls/{id}/grade-history, /purchase-orders/{id}/billing-context & /landed-cost-context, /suppliers/{id}/label-pattern|price-list|scorecard. Sesudah fix: 0 bocor; antar-pemilik SO 403; entity_id PT lain via query/body 403."
     },
     {
       "id": "AUTH-03",
@@ -81,12 +83,13 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/uat_iteration_129.json",
         "iterations/2026-10-02-P14-coverage-uat/UAT.md"
       ],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Pergantian entitas + refresh mempertahankan ?entity & data ter-scope (PASS, iteration_122); link unduhan belum diuji."
+      "notes": "P18 UAT iter129: ganti PT + refresh tetap ter-scope. Temuan: ?entity hilang dari URL sesudah ganti PT → useViewDeepLink kini menulis entity aktif ke URL."
     },
     {
       "id": "MASTER-01",
@@ -95,14 +98,15 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "42bbb1ab098489e3440fd90fd8afe7209f345a68",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18b.txt",
         "iterations/2026-10-09-P16-close-coverage/after_patch_p16b.txt",
         "iterations/2026-10-09-P16-close-coverage/run_all_p16.txt",
         "iterations/2026-10-09-P16-close-coverage/uat_iteration_126.json"
       ],
-      "notes": "P16b: UOM yang dipakai dokumen 409 saat dinonaktifkan; sales tak bisa nonaktifkan produk (403). CRUD buat/ubah dengan referensi aktif belum."
+      "notes": "P18b BUG diperbaiki: UOM terpakai bisa diganti kode/faktor/alias → kini 409 (routers/uoms.py _assert_used_identity_unchanged). Produk dipakai SO: nama/harga berubah tanpa mengubah snapshot SO; SKU 409; base_unit induk ber-SKU ditolak; supplier ber-PO ganti nama, PO pertahankan snapshot."
     },
     {
       "id": "MASTER-02",
@@ -111,13 +115,14 @@
       "historical_status": "Cacat teruji",
       "historical_evidence": "IX07 / I5-SEC01",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18b.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p01_ix06.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p01_s1.txt"
       ],
-      "notes": "P14: Payroll & Finance settings A tidak mengubah B (IX-06/IX-07); master lain belum."
+      "notes": "P18b: semua master berlapis (payment-terms, expense-categories, document-templates, product-lines, process-stages, complaint-reasons, sample-types) + 5 kunci config: override KSC tidak terbaca di Kanda maupun global."
     },
     {
       "id": "MASTER-03",
@@ -126,12 +131,13 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18b.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p05.txt"
       ],
-      "notes": "P14: Override COA entitas (FN-05/FN-06); layer clear untuk config lain belum."
+      "notes": "P18b: global → override entitas → clear entitas = ikut global (master berlapis & config); clear lapisan Global ditolak 400 by design."
     },
     {
       "id": "MASTER-04",
@@ -140,12 +146,13 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18b.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p02.txt"
       ],
-      "notes": "P14: Fallback UOM tak dikenal (GN-13/IX-13); alias master lain belum."
+      "notes": "P18b: satuan tak dikenal di SO/PO, termin tak dikenal, base_unit produk tak dikenal → 4xx tanpa dokumen; alias sah 'yd' dihitung setara yard."
     },
     {
       "id": "MASTER-05",
@@ -154,15 +161,17 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "42bbb1ab098489e3440fd90fd8afe7209f345a68",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18b.txt",
+        "iterations/2026-10-03-P18-partial-coverage/uat_iteration_129.json",
         "iterations/2026-10-09-P16-close-coverage/after_patch_p16b.txt",
         "iterations/2026-10-09-P16-close-coverage/head_before_patch_p16b.txt",
         "iterations/2026-10-09-P16-close-coverage/run_all_p16.txt",
         "iterations/2026-10-09-P16-close-coverage/uat_iteration_126.json"
       ],
-      "notes": "P16b: produk nonaktif soft (stok utuh), ditolak SO & PO baru; BUG supplier nonaktif masih menerima PO baru → kini 400. Merge master belum."
+      "notes": "P18 FITUR BARU gabung pelanggan duplikat: GET /customers/{id}/merge-preview, POST /customers/{id}/merge (izin customer.delete, alasan wajib, satu PT, bentrok harga khusus 409, idempoten). Semua dokumen ber-customer_id pindah. BUG diperbaiki: SO baru ke pelanggan merged/nonaktif kini 409. UI Customer 360 (iter129)."
     },
     {
       "id": "MASTER-06",
@@ -171,12 +180,13 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/uat_iteration_129.json",
         "iterations/2026-10-02-P14-coverage-uat/UAT.md"
       ],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan. UAT: Pencarian & paginasi Master Produk + KNSelect (PASS, iteration_122); pesan scope belum diuji tersendiri."
+      "notes": "P18 UAT iter129: sales KSC membuka ?entity=ent_kanda → pesan scope jelas + tombol Coba lagi (tanpa crash)."
     },
     {
       "id": "GRN-01",
@@ -234,7 +244,9 @@
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "tested_pass",
       "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
-      "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17a.txt"],
+      "evidence": [
+        "iterations/2026-10-03-P17-planned-coverage/after_patch_p17a.txt"
+      ],
       "notes": "P17: 3 baris SJ/2 tugas, baris penuh tanpa sisa, parsial tepat 1 tugas sisa, idempoten, kiriman sisa melunasi PO. Tanpa perubahan kode."
     },
     {
@@ -260,7 +272,11 @@
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "tested_pass",
       "tested_commit": "c70ab0a8f0f3542a2c3a32ab8bce1d2ea0933f46",
-      "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17b.txt", "iterations/2026-10-03-P17-planned-coverage/after_patch_p17j.txt", "iterations/2026-10-03-P17-planned-coverage/uat_iteration_128.json"],
+      "evidence": [
+        "iterations/2026-10-03-P17-planned-coverage/after_patch_p17b.txt",
+        "iterations/2026-10-03-P17-planned-coverage/after_patch_p17j.txt",
+        "iterations/2026-10-03-P17-planned-coverage/uat_iteration_128.json"
+      ],
       "notes": "P17: API lulus (timbang, not_on_dn, override+audit); OCR SUNGGUHAN gpt-6-sol lulus 6/6 (p17j); UI end-to-end iterasi 128: wizard→OCR nyata→packing list→hitung 2 roll→selisih diselesaikan→closed 175 yd + tugas sisa 75. Residu uji KSC/GRN-00003 belum dibalik (lihat HANDOFF P17)."
     },
     {
@@ -314,12 +330,13 @@
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18c.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p04.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt"
       ],
-      "notes": "P14: Nilai retur beli & AP (IX-16, GN-07); UI belum."
+      "notes": "P18c: retur DIRECT → stok keluar, Nota Debit, AP PO berkurang tepat grand_total, jurnal posted. UAT layar retur beli belum."
     },
     {
       "id": "QC-05",
@@ -373,12 +390,13 @@
       "historical_status": "Kontrol teruji",
       "historical_evidence": "I8-C02/C03",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18c.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt"
       ],
-      "notes": "P14: Retur tidak approved sebelum jurnal (IX-17); retry penuh belum."
+      "notes": "P18c: approve → reverse → roll utuh, AP pulih, net jurnal per akun 0; reverse ulang no-op; retry retur baru sukses sekali."
     },
     {
       "id": "PRET-03",
@@ -387,12 +405,13 @@
       "historical_status": "Cacat teruji",
       "historical_evidence": "I8-F01/F02",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18c.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p04.txt"
       ],
-      "notes": "P14: Retur PPN AP credit (IX-16); cash refund dokumen belum."
+      "notes": "P18c: RMA ber-PPN → refund: kas masuk = Dr Kas jurnal = grand_total, PPN masukan (1-1500) dibalik, AP PO tak berubah; reverse me-void kas, net 0."
     },
     {
       "id": "PRET-04",
@@ -415,12 +434,13 @@
       "historical_status": "Cacat teruji",
       "historical_evidence": "I8-F03/F04/F05",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18c.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p03.txt"
       ],
-      "notes": "P14: Jurnal ditolak → retur tetap draft (IX-17)."
+      "notes": "P18c BUG diperbaiki: qty retur > sisa roll dipotong DIAM-DIAM ke panjang roll → kini 400 saat dibuat. Periode tertutup → approve ditolak tanpa efek; dibuka → approve ulang sukses sekali."
     },
     {
       "id": "PRET-06",
@@ -429,12 +449,13 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18c.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt"
       ],
-      "notes": "P14: Read-set & partial return (GN-07); concurrent approve belum."
+      "notes": "P18c: multi-item parsial, approve 3× bersamaan → 1 sukses & konsumsi sekali; roll PT lain ditolak."
     },
     {
       "id": "PROD-01",
@@ -487,7 +508,9 @@
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "tested_pass",
       "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
-      "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17c.txt"],
+      "evidence": [
+        "iterations/2026-10-03-P17-planned-coverage/after_patch_p17c.txt"
+      ],
       "notes": "P17: fail-fast 400 tanpa mutasi; shortage komponen ke-2 di tengah konsumsi → 409, konsumsi komponen 1 dibalik per roll. Tanpa perubahan kode."
     },
     {
@@ -513,7 +536,9 @@
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "partial",
       "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
-      "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17c.txt"],
+      "evidence": [
+        "iterations/2026-10-03-P17-planned-coverage/after_patch_p17c.txt"
+      ],
       "notes": "P17 recovery lulus (API/servis): mati sesudah 'consumed' & dibunuh di tengah konsumsi → 409 SAGA_IN_PROGRESS, lepas kunci admin (efek diakui), ulang konsumsi tepat sekali. UAT operator layar belum."
     },
     {
@@ -555,12 +580,14 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18e.txt",
+        "iterations/2026-10-03-P18-partial-coverage/uat_iteration_129.json",
         "iterations/2026-10-02-P14-coverage-uat/runs/p10.txt"
       ],
-      "notes": "P14: WM-07/WM-08 expected per bin & approval; cutoff/recount belum."
+      "notes": "P18 FITUR BARU hitung ulang: POST /cycle-count/sessions/{id}/reopen (dulu sesi yang stoknya bergerak macet di submitted). Cutoff beku, drift 409, reopen → expected baru wajib dihitung, approve paralel sekali. UI cc-reopen-button."
     },
     {
       "id": "INV-04",
@@ -569,15 +596,16 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "9b0c070408cd259b01aff20ca374203f1883a8fb",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18f.txt",
         "iterations/2026-10-09-P16-close-coverage/uat_iteration_125.json",
         "iterations/2026-10-02-P14-coverage-uat/runs/p11.txt",
         "iterations/2026-10-09-P16-close-coverage/after_patch.txt",
         "iterations/2026-10-09-P16-close-coverage/head_before_patch.txt"
       ],
-      "notes": "P16: BUG transfer antar-PT tidak pernah tersimpan (roll bocor tertahan) diperbaiki; batal melepas roll tanpa jurnal. Rekonsiliasi dua buku saat approve (JE at-cost) belum diuji ulang."
+      "notes": "P18f: approve antar-PT → completed, jurnal at-cost dua buku seimbang (persediaan keluar = masuk, IC-AR = IC-AP), roll milik tujuan, approve ulang ditolak, TB kedua PT seimbang."
     },
     {
       "id": "INV-05",
@@ -791,13 +819,15 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18d.txt",
+        "iterations/2026-10-03-P18-partial-coverage/uat_iteration_129.json",
         "iterations/2026-10-02-P14-coverage-uat/runs/p05.txt",
         "iterations/2026-10-02-P14-coverage-uat/runs/p04.txt"
       ],
-      "notes": "P14: FN-02 3-way match overbilling; pembayaran & reversal AP belum."
+      "notes": "P18 FITUR BARU batal pembayaran AP: POST /vendor-bills/{id}/payments/{pid}/void (alasan wajib, kas void + jurnal balik, bill kembali posted, paralel aman). Overbilling 3-way ditolak. UI vb-payments (iter129)."
     },
     {
       "id": "APAR-02",
@@ -1047,12 +1077,14 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "8fcb9dc9588cf14d9eeb534be38168a1c50f23d3",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18b.txt",
+        "iterations/2026-10-03-P18-partial-coverage/uat_iteration_129.json",
         "iterations/2026-10-02-P14-coverage-uat/runs/p01_s2.txt"
       ],
-      "notes": "P14: GN-09 entitas CRM; merge duplikat belum."
+      "notes": "P18: merge duplikat menjaga owner target + jejak audit beralasan; sales tidak bisa merge (403, UI tersembunyi). Owner lead→customer: P14 GN-09."
     },
     {
       "id": "COMM-02",
@@ -1094,7 +1126,10 @@
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "partial",
       "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
-      "evidence": ["iterations/2026-10-03-P17-planned-coverage/head_before_patch_p17d.txt", "iterations/2026-10-03-P17-planned-coverage/after_patch_p17d.txt"],
+      "evidence": [
+        "iterations/2026-10-03-P17-planned-coverage/head_before_patch_p17d.txt",
+        "iterations/2026-10-03-P17-planned-coverage/after_patch_p17d.txt"
+      ],
       "notes": "P17 BUG diperbaiki: akrual insentif beku setelah posting pertama → komisi turun/naik (pembayaran batal/susulan) tak terkoreksi, 2-1500 tersisa saat payroll. Kini jurnal koreksi incentive_accrual_adj (gl_service.post_incentive_accrual). Komisi: lulus 3/7→7/7. Biaya kampanye marketing belum punya posting GL (hanya budget) — sisa."
     },
     {
@@ -1106,7 +1141,10 @@
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "tested_pass",
       "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
-      "evidence": ["iterations/2026-10-03-P17-planned-coverage/head_before_patch_p17e.txt", "iterations/2026-10-03-P17-planned-coverage/after_patch_p17e.txt"],
+      "evidence": [
+        "iterations/2026-10-03-P17-planned-coverage/head_before_patch_p17e.txt",
+        "iterations/2026-10-03-P17-planned-coverage/after_patch_p17e.txt"
+      ],
       "notes": "P17 harga pelanggan: 2 BUG diperbaiki — ubah record yang sudah dihapus tertulis diam-diam; hapus ganda bersamaan 2 efek/audit. Kini update bersyarat status (customer_price_service.patch_price/deactivate_price). 5/7→7/7."
     },
     {
@@ -1149,7 +1187,9 @@
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "tested_pass",
       "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
-      "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17f.txt"],
+      "evidence": [
+        "iterations/2026-10-03-P17-planned-coverage/after_patch_p17f.txt"
+      ],
       "notes": "P17 BUG diperbaiki: acuan QC = sample decided TERBARU produk walau dimenangkan supplier lain. Kini sample milik supplier barang didahulukan + round/supplier acuan disimpan (inspection_service._baseline_for)."
     },
     {
@@ -1192,7 +1232,9 @@
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "tested_pass",
       "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
-      "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17g.txt"],
+      "evidence": [
+        "iterations/2026-10-03-P17-planned-coverage/after_patch_p17g.txt"
+      ],
       "notes": "P17: bahan sample → roll & mutasi sample_issue, Dr 6-7000/Cr 1-1300 = biaya, cost_total = round + bahan, ambil bersamaan tanpa lost update. Tanpa perubahan kode."
     },
     {
@@ -1231,14 +1273,15 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "partial",
-      "tested_commit": "42bbb1ab098489e3440fd90fd8afe7209f345a68",
+      "current_status": "tested_pass",
+      "tested_commit": "18d929f84a41b4dc14967f3dac711f02d7f8f378",
       "evidence": [
+        "iterations/2026-10-03-P18-partial-coverage/after_patch_p18f.txt",
         "iterations/2026-10-09-P16-close-coverage/after_patch_p16e.txt",
         "iterations/2026-10-09-P16-close-coverage/run_all_p16.txt",
         "iterations/2026-10-09-P16-close-coverage/uat_iteration_126.json"
       ],
-      "notes": "P16e: preview & cetak Faktur = sumber (nomor, pelanggan, grand total); entitas lain 403/404; desainer 403. Ekspor Excel belum."
+      "notes": "P18f: ekspor CSV (Excel) Laba-Rugi = JSON sumber (laba bersih & jumlah baris), Neraca memuat total aset; desainer 403; finance KSC minta PT lain 403/400."
     },
     {
       "id": "DOC-03",
@@ -1333,7 +1376,9 @@
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "partial",
       "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
-      "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17h.txt"],
+      "evidence": [
+        "iterations/2026-10-03-P17-planned-coverage/after_patch_p17h.txt"
+      ],
       "notes": "P17 impor pelanggan: dry-run, terputus lalu dilanjutkan, ulang idempoten, Σ created = baris valid. Impor produk/stok awal/migrasi skrip belum diuji."
     },
     {

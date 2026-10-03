@@ -1,7 +1,10 @@
 # SESSION HANDOFF — Kain Nusantara (KN10)
 
-## ▶ MULAI DI SINI — Sesi P17 (2026-10-03) — 9 kasus planned diuji, 5 bug diperbaiki, arsip baca-saja, OCR sungguhan aktif ✅
-> **Baca `memory/HANDOFF_P17_2026-10-03.md` §1 dulu** (residu KSC/GRN-00003 belum dibalik; kunci OpenAI ada di DB) — lalu P16 untuk setup & aturan git.
+## ▶ MULAI DI SINI — Sesi P18 (2026-10-03) — 18 kasus partial → lulus (59 lulus · 37 partial), 6 bug + 3 fitur ✅
+> **Baca `memory/HANDOFF_P18_2026-10-03.md`** (setup lingkungan baru, packing list permanen aktif, harness p18a..f, sisa 37 partial) — lalu P16 untuk aturan git.
+
+## Sesi P17 (2026-10-03) — 9 kasus planned diuji, 5 bug diperbaiki, arsip baca-saja, OCR sungguhan aktif ✅
+> Residu KSC/GRN-00003 sudah tidak relevan (P18 seed ulang). Detail: `memory/HANDOFF_P17_2026-10-03.md`.
 
 ## Sesi P16 (2026-10-09) — audit cakupan: transfer, penjualan→faktur, desain + 8 kasus planned ✅
 > **Baca `memory/HANDOFF_P16_2026-10-09.md`** (setup lingkungan, aturan git, status 35 lulus/52 partial/9 planned, 10 bug P16, harness 74/74, urutan lanjut).
