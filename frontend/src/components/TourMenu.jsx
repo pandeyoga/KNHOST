@@ -18,7 +18,16 @@ export default function TourMenu({
   const roleLabel = userRole ? registryRoleLabel(userRole) : "Tamu";
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-4 right-4 z-50 md:bottom-6 md:right-6">
+      {showMenu && (
+        <button
+          type="button"
+          aria-label="Tutup panduan"
+          className="fixed inset-0 -z-10 cursor-default bg-transparent"
+          onClick={onToggleMenu}
+          data-testid="tour-menu-backdrop"
+        />
+      )}
       {showMenu && (
         <div
           className="absolute bottom-16 right-0 w-72 rounded-xl border border-[#EFF0F2] bg-white shadow-2xl mb-2"
@@ -69,11 +78,13 @@ export default function TourMenu({
       )}
       <button
         onClick={onToggleMenu}
-        className="flex items-center gap-2 rounded-full bg-[#007AFF] px-4 py-3 text-white shadow-lg hover:bg-[#0051D5] transition-all"
+        className="flex items-center gap-2 rounded-full bg-[#007AFF] p-3 text-white shadow-lg transition-colors hover:bg-[#0051D5] md:px-4"
+        aria-label="Bantuan & Panduan"
+        title="Bantuan & Panduan"
         data-testid="help-tours-button"
       >
         <Lightbulb size={20} />
-        <span className="text-[13px] font-bold">Bantuan & Panduan</span>
+        <span className="hidden text-[13px] font-bold md:inline">Bantuan & Panduan</span>
       </button>
     </div>
   );

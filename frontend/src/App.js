@@ -477,7 +477,7 @@ function App() {
             />
           }
         />
-        <main id="main-content" className="mx-auto w-full max-w-[1600px] px-4 py-4 md:px-5 md:py-5">
+        <main id="main-content" className="mx-auto w-full max-w-[1600px] px-4 pt-4 pb-24 md:px-5 md:pt-5 md:pb-24">
           <section data-testid="metrics-row" className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 no-print">
             {showHomeWidgets && <>
             <MetricCard testId="metric-products" icon={Archive} label="Produk Aktif" value={data.metrics?.products || 0} tone="rgba(0,122,255,.12)" hint="Buka katalog" onClick={() => showMetricDetail("products")} />

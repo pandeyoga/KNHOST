@@ -94,7 +94,8 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
   };
 
   const addItemToSession = async () => {
-    if (!addItem.product_id || !selectedSession) return;
+    if (!selectedSession) return;
+    if (!addItem.product_id) { setErr("Pilih produk dulu"); return; }
     try {
       await axios.post(`${API}/cycle-count/sessions/${selectedSession.id}/items`, addItem, { headers });
     } catch (e) {
@@ -292,10 +293,7 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
                         value={addItem.product_id}
                         onValueChange={v => setAddItem({...addItem, product_id: v})}
                         placeholder="Pilih Produk"
-                        options={[
-                          { value: "", label: "Pilih Produk" },
-                          ...products.map(p => ({ value: p.id, label: `${p.sku} — ${p.name}` })),
-                        ]}
+                        options={products.map(p => ({ value: p.id, label: `${p.sku} — ${p.name}` }))}
                       />
                       <input placeholder="Bin ID (opsional)" value={addItem.bin_id} onChange={e => setAddItem({...addItem, bin_id: e.target.value})} className="field w-28" />
                       <button onClick={addItemToSession} className="primary-button" data-testid="cc-add-item-button">
