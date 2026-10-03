@@ -237,10 +237,7 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
                     value={form.warehouse_id}
                     onValueChange={v => setForm({...form, warehouse_id: v})}
                     placeholder="Pilih Gudang"
-                    options={[
-                      { value: "", label: "Pilih Gudang" },
-                      ...warehouses.map(w => ({ value: w.id, label: `${w.name} — ${w.city}` })),
-                    ]}
+                    options={warehouses.map(w => ({ value: w.id, label: `${w.name} — ${w.city}` }))}
                   />
                   <input placeholder="Nama sesi (opsional)" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="field" data-testid="cc-session-name-input" />
                   <textarea placeholder="Catatan (opsional)" value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} className="field" rows={2} data-testid="cc-session-notes-input" />
