@@ -118,12 +118,15 @@ async def build_entity_context(user: Dict[str, Any],
         active = requested_entity_id
     else:
         active = home if home in allowed else (allowed[0] if allowed else home)
+    from services.entity_lifecycle_service import archived_readable_ids
+    archived = await archived_readable_ids(user)
     return {
         "home_entity_id": home,
         "allowed_entity_ids": allowed,
         "active_entity_id": active,
         "can_switch_entity": len(allowed) > 1,
         "entities": await entity_summaries(allowed, home_entity_id=home),
+        "archived_entities": await entity_summaries(archived) if archived else [],
     }
 
 

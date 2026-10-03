@@ -366,11 +366,13 @@ async def spk_for_ref(kind: str, ref_id: str,
         q, {"_id": 0, "id": 1, "number": 1, "status": 1, "kind": 1}) or {}
 
 
-async def _baseline_for(product_ids: List[str], entity_id: str) -> Dict[str, str]:
+async def _baseline_for(product_ids: List[str], entity_id: str, supplier_id: str = "") -> Dict[str, str]:
     """Acuan sample yang di-ACC untuk produk ini (FASE S → `md_samples` + kontraknya).
 
     Petugas inspect butuh tahu "dibandingkan dengan apa". Tanpa acuan yang disebut
-    NAMANYA, kolom "warna sesuai?" hanya jadi pendapat.
+    NAMANYA, kolom "warna sesuai?" hanya jadi pendapat. P17 DESIGN-02 — bila supplier
+    barang diketahui, sample yang DIMENANGKAN supplier itu didahulukan (bukan sekadar
+    sample terbaru produk yang mungkin dimenangkan supplier lain).
     """
     if not product_ids:
         return {}
@@ -385,18 +387,21 @@ async def _baseline_for(product_ids: List[str], entity_id: str) -> Dict[str, str
         specs = {s["id"]: s for s in await db.md_specs.find(
             {"id": {"$in": spec_ids}},
             {"_id": 0, "id": 1, "product_id": 1}).to_list(300)}
-    for r in rows:
-        pid = r.get("product_id") or (specs.get(r.get("spec_id"), {}) or {}).get("product_id")
-        if pid and pid in product_ids:
-            color = r.get("color_target") or {}
-            return {
-                "baseline_sample_id": r.get("id", ""),
-                "baseline_sample_number": r.get("number", ""),
-                "baseline_contract_id": (r.get("decision") or {}).get("contract_id", ""),
-                "baseline_color": (f"{color.get('name', '')}"
-                                   f"{' (' + color.get('code', '') + ')' if color.get('code') else ''}"
-                                   ).strip(),
-            }
+    matches = [r for r in rows
+               if (r.get("product_id") or (specs.get(r.get("spec_id"), {}) or {}).get("product_id")) in product_ids]
+    own = [r for r in matches if supplier_id and (r.get("decision") or {}).get("supplier_id") == supplier_id]
+    for r in own or matches:
+        color = r.get("color_target") or {}
+        return {
+            "baseline_sample_id": r.get("id", ""),
+            "baseline_sample_number": r.get("number", ""),
+            "baseline_contract_id": (r.get("decision") or {}).get("contract_id", ""),
+            "baseline_round_no": (r.get("decision") or {}).get("round_no"),
+            "baseline_supplier_id": (r.get("decision") or {}).get("supplier_id", ""),
+            "baseline_color": (f"{color.get('name', '')}"
+                               f"{' (' + color.get('code', '') + ')' if color.get('code') else ''}"
+                               ).strip(),
+        }
     return {}
 
 
@@ -418,7 +423,7 @@ async def _new_doc(*, kind: str, entity_id: str, actor: Dict[str, Any],
         raise InspectionError(f"Jenis inspeksi harus salah satu: {', '.join(KIND_LABEL)}.")
     rows = list(lines or [])
     baseline = await _baseline_for([r.get("product_id") for r in rows if r.get("product_id")],
-                                  entity_id)
+                                  entity_id, supplier[0])
     now = now_iso()
     assigned_id, assigned_name, bagian = assigned
     doc: Dict[str, Any] = {

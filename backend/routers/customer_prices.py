@@ -212,6 +212,8 @@ async def delete_customer_price(price_id: str, request: Request) -> Dict[str, An
         res = await svc.deactivate_price(price_id, actor)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    if not res.get("deactivated"):
+        return res
     await audit(actor.get("name", ""), "customer_price_deactivated", "customer_price",
                 price_id, {"customer": rec.get("customer_name"),
                            "product": rec.get("product_name"),

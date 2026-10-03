@@ -18,6 +18,8 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
+from pymongo.errors import DuplicateKeyError
+
 from db import db
 from core_utils import (new_id, now_iso, next_doc_number, safe_doc, rupiah,
                         to_cents, from_cents, DEFAULT_ENTITY_ID)
@@ -2688,8 +2690,6 @@ async def post_incentive_accrual(entity_id: str, period: str,
     if not entity_id or entity_id == "all" or not period:
         raise ValueError("Akrual insentif membutuhkan entitas spesifik & periode (mis. 2026-06).")
     src_id = f"{entity_id}:{period}"
-    if await _already_posted("incentive_accrual", src_id):
-        return None
     await seed_default_coa()
     from services import sales_force_service as sf
     sales_users = await db.users.find(
@@ -2699,14 +2699,43 @@ async def post_incentive_accrual(entity_id: str, period: str,
         c = await sf.compute_commission(u["id"], period, entity_id=entity_id)
         total += float(c.get("total_incentive", 0) or 0)
     total = round(total, 2)
-    if total <= EPS:
+    if not await _already_posted("incentive_accrual", src_id):
+        if total <= EPS:
+            return None
+        lines = _balanced_pair(ACC_BEBAN_INSENTIF, ACC_HUTANG_INSENTIF, total,
+                               f"Akrual insentif penjualan {period}")
+        return await _insert_entry(
+            lines=lines, description=f"Akrual insentif penjualan {period}",
+            date=now_iso(), source_type="incentive_accrual", source_id=src_id,
+            entity_id=entity_id, created_by=created_by, source_label=f"INS-{period}")
+    # P17 COMM-04 — komisi on-collection berubah (pembayaran batal/susulan) → jurnal koreksi selisih.
+    accrued = await _incentive_accrued(src_id)
+    delta = round(total - accrued, 2)
+    if abs(delta) <= EPS:
         return None
-    lines = _balanced_pair(ACC_BEBAN_INSENTIF, ACC_HUTANG_INSENTIF, total,
-                           f"Akrual insentif penjualan {period}")
-    return await _insert_entry(
-        lines=lines, description=f"Akrual insentif penjualan {period}",
-        date=now_iso(), source_type="incentive_accrual", source_id=src_id,
-        entity_id=entity_id, created_by=created_by, source_label=f"INS-{period}")
+    dr, cr = (ACC_BEBAN_INSENTIF, ACC_HUTANG_INSENTIF) if delta > 0 else (ACC_HUTANG_INSENTIF, ACC_BEBAN_INSENTIF)
+    desc = f"Koreksi akrual insentif {period} ({accrued:,.0f} → {total:,.0f})"
+    try:   # kunci deterministik dari saldo saat ini: klik bersamaan → indeks unik menolak duplikat
+        return await _insert_entry(
+            lines=_balanced_pair(dr, cr, abs(delta), desc), description=desc, date=now_iso(),
+            source_type="incentive_accrual_adj", source_id=f"{src_id}@{accrued:.2f}",
+            entity_id=entity_id, created_by=created_by, source_label=f"INS-{period}-ADJ")
+    except DuplicateKeyError:
+        return None
+
+
+async def _incentive_accrued(src_id: str) -> float:
+    """Saldo akrual insentif bersih (akrual + koreksi, non-void) untuk (entitas, periode)."""
+    total = 0.0
+    async for je in db.journal_entries.find(
+            {"status": {"$ne": "void"}, "$or": [
+                {"source_type": "incentive_accrual", "source_id": src_id},
+                {"source_type": "incentive_accrual_adj", "source_id": {"$regex": f"^{re.escape(src_id)}@"}}]},
+            {"_id": 0, "lines": 1}):
+        for ln in je.get("lines") or []:
+            if ln.get("account_code") == ACC_HUTANG_INSENTIF:
+                total += float(ln.get("credit") or 0) - float(ln.get("debit") or 0)
+    return round(total, 2)
 
 
 async def incentive_accrual_status(entity_id: str, period: str) -> Dict[str, Any]:
@@ -2719,7 +2748,7 @@ async def incentive_accrual_status(entity_id: str, period: str) -> Dict[str, Any
         "entity_id": entity_id,
         "period": period,
         "posted": bool(je),
-        "amount": round(float(je.get("total_debit", 0)), 2) if je else 0.0,
+        "amount": await _incentive_accrued(src_id) if je else 0.0,
         "journal_number": je.get("number") if je else None,
         "journal_id": je.get("id") if je else None,
         "posted_at": je.get("created_at") if je else None,

@@ -307,7 +307,8 @@ async def post_incentive_gl(request: Request, period: str = Query(...),
         await audit(actor["name"], "incentive_accrual", "journal_entry",
                     status.get("journal_id", ""), status,
                     f"Insentif {period} entitas {eid} = {status.get('amount')}")
-        return {"created": True, "message": f"Akrual insentif {period} diposting (JE {status.get('journal_number')}).", **status}
+        verb = "Koreksi akrual" if entry.get("source_type") == "incentive_accrual_adj" else "Akrual"
+        return {"created": True, "message": f"{verb} insentif {period} diposting (JE {entry.get('number')}).", **status}
     # Sudah pernah diposting (idempotent) atau total 0
     if status.get("posted"):
         return {"created": False, "message": "Akrual insentif periode ini sudah pernah diposting.", **status}

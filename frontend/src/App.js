@@ -24,6 +24,7 @@ import AppViewRouter from "./AppViewRouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import PeriodUnlockBanner from "./components/PeriodUnlockBanner";
 import ScopeReadOnlyBanner from "./components/ScopeReadOnlyBanner";
+import ArchivedReadOnlyBanner from "./components/ArchivedReadOnlyBanner";
 import { EntityScopeProvider } from "./context/EntityScopeContext";
 import { entityShortById } from "./utils/entityLabel";
 import { isGroupScope } from "./utils/writeScope";
@@ -242,6 +243,8 @@ function App() {
   // muncul selama mode itu aktif, dan berdenyut sekali lagi tiap kali server
   // menolak sebuah penyimpanan (event dari interseptor `apiClient`).
   const groupScope = isGroupScope(selectedEntity) && canSwitchEntity;
+  const archivedEntities = entityContext?.archived_entities || [];
+  const archivedActive = archivedEntities.find((e) => e.id === selectedEntity);
   const [scopeFlash, setScopeFlash] = useState(0);
   useEffect(() => {
     const onBlocked = () => setScopeFlash((n) => n + 1);
@@ -448,14 +451,14 @@ function App() {
         <TopBar
           title={pageMeta.title}
           kicker={pageMeta.kicker}
-          scopeLabel={groupScope ? "Semua Badan Usaha" : entityShortById(entities, selectedEntity)}
+          scopeLabel={groupScope ? "Semua Badan Usaha" : entityShortById(archivedActive ? archivedEntities : entities, selectedEntity)}
           onToggleSidebar={handleToggleSidebar}
           onAskKn={["admin", "manager", "sales_admin", "finance", "md", "warehouse_admin", "sales"].includes(user?.role) ? () => handleNavSelect("tanya-kn", "tanya-kn") : null}
           onSync={loadAll}
           syncing={loading}
           notice={notice}
           infoCta={guidance ? { label: guidance.label, onClick: () => setActiveView(guidance.target) } : null}
-          entitySwitcher={<EntitySwitcher entities={switcherEntities} value={selectedEntity} onChange={onSelectEntity} canSwitch={canSwitchEntity} role={user?.role} homeEntityId={entityContext?.home_entity_id || ""} />}
+          entitySwitcher={<EntitySwitcher entities={switcherEntities} archived={canSwitchEntity ? archivedEntities : []} value={selectedEntity} onChange={onSelectEntity} canSwitch={canSwitchEntity} role={user?.role} homeEntityId={entityContext?.home_entity_id || ""} />}
           notificationCenter={
             <NotificationCenter
               notifications={notifications}
@@ -503,6 +506,11 @@ function App() {
           )}
 
           <PeriodUnlockBanner currentUser={user} onNavigate={(target) => setActiveView(target)} />
+
+          {archivedActive && (
+            <ArchivedReadOnlyBanner entity={archivedActive}
+              onExit={() => onSelectEntity(entityContext?.home_entity_id || "all")} />
+          )}
 
           {groupScope && (
             <ScopeReadOnlyBanner

@@ -373,10 +373,13 @@ async def entity_ctx(request: Request) -> EntityContext:
         active = home if home in allowed else (allowed[0] if allowed else home)
     elif requested:
         if requested not in allowed:
-            from services.entity_lifecycle_service import entity_denied_message
-            raise HTTPException(
-                status_code=403,
-                detail=await entity_denied_message(requested, allowed))
+            from services.entity_lifecycle_service import archived_read_target, entity_denied_message
+            if not await archived_read_target(request, user):
+                raise HTTPException(
+                    status_code=403,
+                    detail=await entity_denied_message(requested, allowed))
+            # badan usaha terarsip: baca saja (tulis dikunci di current_user)
+            allowed = [*allowed, requested]
         active = requested
     else:
         active = home if home in allowed else (allowed[0] if allowed else home)

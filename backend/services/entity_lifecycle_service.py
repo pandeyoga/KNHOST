@@ -532,6 +532,32 @@ async def readable_entity_ids(user: Dict[str, Any]) -> List[str]:
     return out or ([home] if home else [])
 
 
+READ_METHODS = {"GET", "HEAD", "OPTIONS"}
+
+
+async def archived_readable_ids(user: Dict[str, Any]) -> List[str]:
+    """Keputusan pemilik P17: badan usaha terarsip tetap bisa DIBACA (baca saja).
+
+    Lintas-PT (admin/manager) → semua yang terarsip; peran lain → hanya yang pernah
+    ditugaskan (`allowed_entity_ids`). Tulis tetap dikunci `assert_entity_writable_cached`.
+    """
+    from services.entity_context_service import CROSS_ENTITY_ROLES
+    smap = await entity_status_map()
+    archived = [eid for eid, info in smap.items() if info["status"] in WRITE_LOCKED_STATUSES]
+    if user.get("role") in CROSS_ENTITY_ROLES:
+        return archived
+    stored = user.get("allowed_entity_ids") or []
+    return [e for e in archived if e in stored]
+
+
+async def archived_read_target(request: Any, user: Dict[str, Any]) -> str:
+    """Id badan usaha terarsip yang sah dibaca request ini (GET saja), selain itu ""."""
+    requested = (request.headers.get("X-Entity-Id") or "").strip()
+    if request.method not in READ_METHODS or not requested or requested == "all":
+        return ""
+    return requested if requested in await archived_readable_ids(user) else ""
+
+
 async def entity_denied_message(requested: str, allowed: List[str]) -> str:
     """Pesan 403 yang MENJELASKAN — bukan sekadar “tidak berwenang”.
 
@@ -543,8 +569,8 @@ async def entity_denied_message(requested: str, allowed: List[str]) -> str:
         return (f"Badan usaha “{requested}” tidak ada (mungkin sudah dihapus). "
                 "Pilih badan usaha lain di pemilih entitas.")
     if info["status"] in WRITE_LOCKED_STATUSES:
-        return (f"“{info['name']}” sudah diarsipkan sehingga tidak bisa dipakai sebagai "
-                "konteks kerja. Pilih badan usaha yang masih aktif.")
+        return (f"“{info['name']}” sudah diarsipkan — datanya hanya bisa dibaca, "
+                "tidak bisa dipakai untuk menyimpan transaksi. Pilih badan usaha yang masih aktif.")
     return (f"Anda tidak ditugaskan di “{info['name']}”. Hubungi admin bila memang perlu "
             "akses ke badan usaha ini.")
 
@@ -566,6 +592,6 @@ async def assert_requested_entity_allowed(request: Any, user: Dict[str, Any]) ->
     if not requested or requested == "all":
         return
     allowed = await readable_entity_ids(user)
-    if requested not in allowed:
+    if requested not in allowed and not await archived_read_target(request, user):
         raise HTTPException(status_code=403,
                             detail=await entity_denied_message(requested, allowed))

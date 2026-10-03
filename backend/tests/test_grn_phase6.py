@@ -107,7 +107,8 @@ def test_packing_list_expected_rolls_blind_count_and_bill_variance(admin, wh, md
     g = _ok(admin.post(f"{BASE}/goods-receipts/{g['id']}/start-count", json={"expected_version": g["version"]}))
     # hitung buta: panjang roll packing list tidak terlihat sebelum diukur
     b = _ok(wh.get(f"{BASE}/goods-receipts/{g['id']}"))
-    assert b["blind"] and "length" not in b["lines"][0]["expected_rolls"][0] and b["lines"][0]["expected_rolls"][0]["lot"] == "PL-77"
+    # KN-E22 — stub roll yang belum diukur tidak dikirim ke penghitung buta (jumlahnya membocorkan isi SJ)
+    assert b["blind"] and b["lines"][0]["expected_rolls"] == []
     r1 = _ok(wh.post(f"{BASE}/goods-receipts/{g['id']}/lines/1/rolls", json={"length": 85, "lot": "PL-77", "expected_seq": 1}))
     assert r1["roll"]["grn_expected_seq"] == 1
     assert wh.post(f"{BASE}/goods-receipts/{g['id']}/lines/1/rolls",
@@ -116,7 +117,7 @@ def test_packing_list_expected_rolls_blind_count_and_bill_variance(admin, wh, md
     b = _ok(wh.get(f"{BASE}/goods-receipts/{g['id']}"))
     e1 = b["lines"][0]["expected_rolls"][0]
     assert e1["status"] == "counted" and e1["length"] == 85 and e1["measured"] == 85        # tampil setelah diukur
-    assert "length" not in b["lines"][0]["expected_rolls"][2]
+    assert [r["seq"] for r in b["lines"][0]["expected_rolls"]] == [1, 2]   # roll #3 belum diukur → tak terkirim
     g = _ok(admin.get(f"{BASE}/goods-receipts/{g['id']}"))
     rc = g["lines"][0]["roll_check"]
     assert rc["missing"] == [3] and rc["diffs"][0]["seq"] == 2

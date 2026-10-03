@@ -1,4 +1,4 @@
-import { Building2, ChevronDown, Check, Star, Eye, Search } from "lucide-react";
+import { Archive, Building2, ChevronDown, Check, Star, Eye, Search } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
 
 import { roleLabel } from "../config/roles";
@@ -20,7 +20,7 @@ import { entityShort, entityFull } from "../utils/entityLabel";
  */
 const SEARCH_THRESHOLD = 8;
 
-export default function EntitySwitcher({ entities = [], value = "all", onChange,
+export default function EntitySwitcher({ entities = [], archived = [], value = "all", onChange,
   canSwitch = true, role = "", homeEntityId = "" }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
@@ -44,7 +44,9 @@ export default function EntitySwitcher({ entities = [], value = "all", onChange,
     () => (entities || []).filter((e) => e && e.status !== "archived" && !e.write_locked),
     [entities]
   );
-  const active = selectable.find((e) => e.id === value) || entities.find((e) => e.id === value);
+  const active = selectable.find((e) => e.id === value) || entities.find((e) => e.id === value)
+    || archived.find((e) => e.id === value);
+  const archivedActive = archived.some((e) => e.id === value);
 
   // User terkunci 1 badan usaha (sales/gudang — silo): tampilkan badge statis.
   if (!canSwitch) {
@@ -87,7 +89,7 @@ export default function EntitySwitcher({ entities = [], value = "all", onChange,
       >
         {viewAll ? <Eye size={14} /> : <Building2 size={14} />}
         <span className="entity-switcher-label">{label}</span>
-        {viewAll && <span className="entity-switcher-ro-tag" data-testid="entity-switcher-readonly-tag">hanya lihat</span>}
+        {(viewAll || archivedActive) && <span className="entity-switcher-ro-tag" data-testid="entity-switcher-readonly-tag">{archivedActive ? "arsip · baca saja" : "hanya lihat"}</span>}
         {roleTag && <><span className="entity-switcher-sep" aria-hidden="true">·</span><span className="entity-switcher-role" data-testid="entity-role-tag">{roleTag}</span></>}
         <ChevronDown size={13} className={open ? "rotate-180 transition-transform" : "transition-transform"} />
       </button>
@@ -155,6 +157,32 @@ export default function EntitySwitcher({ entities = [], value = "all", onChange,
               {value === opt.id && <Check size={14} className="shrink-0 text-[#007AFF]" />}
             </button>
           ))}
+
+          {archived.length > 0 && !term && (
+            <div data-testid="entity-switcher-archived">
+              <p className="entity-switcher-empty">Terarsip — baca saja</p>
+              {archived.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="option"
+                  aria-selected={value === opt.id}
+                  data-testid={`entity-option-archived-${opt.id}`}
+                  className={`entity-switcher-item ${value === opt.id ? "active" : ""}`}
+                  onClick={() => { onChange?.(opt.id); setOpen(false); }}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <Archive size={13} className="shrink-0" />
+                    <span className="truncate">
+                      {entityFull(opt)}
+                      <span className="entity-tag entity-tag-ro">baca saja</span>
+                    </span>
+                  </span>
+                  {value === opt.id && <Check size={14} className="shrink-0 text-[#007AFF]" />}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

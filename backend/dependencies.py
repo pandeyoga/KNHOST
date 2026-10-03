@@ -59,9 +59,10 @@ async def current_user(request: Request) -> Dict[str, Any]:
     set_actor(user)
     # FASE E-1 (E1.5) — konteks entitas yang diminta WAJIB sah untuk SEMUA metode.
     # Dipasang sebelum resolusi supaya tidak ada lagi "jatuh diam-diam ke HOME".
-    from services.entity_lifecycle_service import assert_requested_entity_allowed
+    from services.entity_lifecycle_service import archived_read_target, assert_requested_entity_allowed
     await assert_requested_entity_allowed(request, user)
-    active_entity = resolve_from_user(user, request.headers.get("X-Entity-Id", ""))
+    active_entity = (await archived_read_target(request, user)
+                     or resolve_from_user(user, request.headers.get("X-Entity-Id", "")))
     set_active_entity(active_entity)
     # FASE E-1 (E1.6) — KUNCI-TULIS badan usaha terarsip, dipasang di SATU choke point.
     # Semua endpoint terautentikasi lewat sini, jadi tidak ada jalur tulis yang lupa
