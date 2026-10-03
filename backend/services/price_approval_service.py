@@ -250,6 +250,7 @@ async def standing_for(entity_id: str, customer_id: str, product_ids: List[str],
         {"entity_id": entity_id, "customer_id": customer_id,
          "product_id": {"$in": ids}, "status": "approved",
          "scope": {"$ne": SCOPE_ORDER},
+         "so_id": {"$in": [None, ""]},   # P16d — baris terikat SO (data lama tanpa scope) bukan standing
          "$or": [{"customer_price_id": {"$exists": False}}, {"customer_price_id": ""},
                  {"customer_price_id": None}]},
         {"_id": 0}).sort("decided_at", -1).to_list(500)

@@ -777,20 +777,30 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
                                     "sampai manajer memutuskan.")
             warnings.append(patch["hold_reason"])
 
-    lines = [({**ln, **patch} if ln.get("id") == line_id else ln)
-             for ln in (doc.get("lines") or [])]
     note_bits = [b for b in (
         f"warna {COLOR_RESULTS.get(patch['color_result'], patch['color_result'] or '—')}",
         f"handfeel {HANDFEEL_RESULTS.get(patch['handfeel_result'], patch['handfeel_result'] or '—')}",
         (f"grade {patch.get('grade_after')}" if patch.get("grade_after") else ""),
     ) if b]
-    status = doc.get("status")
-    if status in (STATUS_DRAFT, STATUS_ASSIGNED):
-        status = STATUS_IN_PROGRESS
-    out = await _save(doc, "line_inspected",
-                      f"Baris {line.get('roll_no') or line.get('sku') or '—'} diperiksa",
-                      actor, " · ".join(note_bits), lines=lines, status=status,
-                      started_at=doc.get("started_at") or now_iso())
+    # P16f (QC-05) — tulis HANYA baris ini secara atomik (dulu seluruh array `lines` ditimpa dari
+    # salinan basi → dua inspector bersamaan saling menghapus hasil). Status dicek ulang di filter.
+    sets = {f"lines.$[l].{k}": v for k, v in patch.items()}
+    sets["updated_at"] = now_iso()
+    if not doc.get("started_at"):
+        sets["started_at"] = now_iso()
+    if doc.get("status") in (STATUS_DRAFT, STATUS_ASSIGNED):
+        sets["status"] = STATUS_IN_PROGRESS
+    res = await db[COLL].update_one(
+        {"id": doc["id"], "status": {"$in": [STATUS_ASSIGNED, STATUS_IN_PROGRESS]}},
+        {"$set": sets, "$push": {"history": timeline_entry(
+            "line_inspected", f"Baris {line.get('roll_no') or line.get('sku') or '—'} diperiksa",
+            actor.get("name", ""), " · ".join(note_bits))}},
+        array_filters=[{"l.id": line_id}])
+    if not res.matched_count:
+        raise InspectionError("Inspeksi ini baru saja ditutup/diubah orang lain. Muat ulang layar.")
+    fresh = await db[COLL].find_one({"id": doc["id"]}, {"_id": 0})
+    await db[COLL].update_one({"id": doc["id"]}, {"$set": {"summary": summarize(fresh)}})
+    out = safe_doc(await db[COLL].find_one({"id": doc["id"]}, {"_id": 0}))
     out["warnings"] = warnings
     return out
 

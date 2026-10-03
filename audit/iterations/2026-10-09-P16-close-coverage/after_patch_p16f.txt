@@ -1,0 +1,21 @@
+[
+ {
+  "id": "QC-05",
+  "invariant": "6 baris diisi bersamaan oleh 2 inspector → keenam hasil tersimpan (tanpa lost update)",
+  "pass": true,
+  "detail": "http=[200, 200, 200, 200, 200, 200] tersimpan=6/6"
+ },
+ {
+  "id": "QC-05",
+  "invariant": "riwayat mencatat 6 pemeriksaan & ringkasan menghitung 6 baris diperiksa",
+  "pass": true,
+  "detail": "{'summary': {'lines': 6, 'rolls': None, 'measure': None, 'unit': '', 'points_total': 0.0, 'grade_after_counts': {}, 'inspected': 6, 'color_mismatch': 0, 'handfeel_mismatch': 0, 'hold': 0, 'rejected': 0}}"
+ },
+ {
+  "id": "QC-05",
+  "invariant": "baris yang sama diisi bersamaan → satu hasil utuh tersimpan (bukan campuran), 6 baris lain tetap",
+  "pass": true,
+  "detail": "[200, 200] tolak / TEST_P16F_1b43ba tolak"
+ }
+]
+pass=3 fail=0

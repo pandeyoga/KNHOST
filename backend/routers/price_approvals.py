@@ -102,6 +102,10 @@ async def get_effective_special_price(
     rows = await db.price_approvals.find(q, {"_id": 0}).sort("decided_at", -1).to_list(50)
     now = now_iso()
     for r in rows:
+        # P16d (COMM-03) — harga khusus lingkup PESANAN hanya milik SO asalnya (harga barisnya
+        # sudah ditulis saat disetujui); tidak boleh dipakai ulang SO lain walau id-nya dikirim.
+        if (r.get("scope") or "standing") == "order" or (r.get("so_id") or ""):
+            continue
         if not _is_active_approval(r, now):
             continue
         if quantity is not None and float(quantity) < float(r.get("min_quantity", 0) or 0):

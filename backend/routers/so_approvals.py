@@ -116,7 +116,7 @@ async def request_special_price(order_id: str, payload: SoSpecialPriceRequest, r
         "normal_price": normal_price, "requested_price": req_price,
         "min_quantity": float(payload.min_quantity or 0), "valid_until": "",
         "reason": payload.reason.strip(), "entity_id": order.get("entity_id", DEFAULT_ENTITY_ID),
-        "status": "pending", "so_id": order_id, "so_item_index": idx,
+        "status": "pending", "scope": "order", "so_id": order_id, "so_item_index": idx,  # P16d — lingkup pesanan
         "attachments": [], "requested_by": actor["name"], "requested_by_id": actor["id"],
         "created_at": now_iso(), "updated_at": now_iso(),
     })

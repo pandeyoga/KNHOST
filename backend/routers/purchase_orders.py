@@ -340,6 +340,11 @@ async def _create_po_core(payload: PurchaseOrderCreate, actor: Dict[str, Any], *
         supplier = safe_doc(await db.suppliers.find_one({"id": payload.supplier_id}, {"_id": 0}))
         if not supplier:
             raise HTTPException(status_code=404, detail="Supplier tidak ditemukan")
+        # P16b (MASTER-05) — supplier nonaktif tidak boleh menerima PO baru (PO lama tetap jalan).
+        if supplier.get("status") == "inactive":
+            raise HTTPException(status_code=400, detail=(
+                f"Supplier “{supplier.get('name', '')}” sudah dinonaktifkan — PO baru tidak bisa dibuat. "
+                "Aktifkan kembali di Master Supplier bila memang masih dipakai."))
         # FASE E-7 (E7.2) — PAGAR "lawan transaksi ternyata PT sendiri". PO biasa ke
         # badan usaha grup melewati dokumen kembar, kontrak internal, faktur pajak
         # internal, DAN eliminasi margin → laba grup jadi kembung. Arahkan ke Antar Entitas.
