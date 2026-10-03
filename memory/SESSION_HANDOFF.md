@@ -1,5 +1,9 @@
 # SESSION HANDOFF — Kain Nusantara (KN10)
 
+## ▶ MULAI DI SINI — Sesi P16 (2026-10-09) — audit cakupan: transfer, penjualan→faktur, desain + 8 kasus planned ✅
+> **Baca `memory/HANDOFF_P16_2026-10-09.md`** (setup lingkungan, aturan git, status 35 lulus/52 partial/9 planned, 10 bug P16, harness 74/74, urutan lanjut).
+> Wajib akhir sesi: `bash scripts/git_sync_check.sh` (0 belum commit + fast-forward atas GitHub main).
+
 ## Session #086 — 03 Sep 2026 — D-01 penomoran atomik · KNDatePicker ETA · Template PDF paritas sipro ✅
 > `core_utils.next_doc_number` (shared → atomik), `components/KNDatePicker.jsx`, `services/pdf_service.py` berlapis (`__default__`+diff),
 > `routers/pdf.py` (list/reset/validate-script), `pdf_engine.py` (kop mode, tabel, nomor halaman, naskah, meterai, cap).
