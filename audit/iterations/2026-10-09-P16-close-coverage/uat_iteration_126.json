@@ -1,0 +1,35 @@
+{
+  "summary": "Verified 3 bug fixes (MASTER-05 inactive-supplier guard on PO create, COMM-03 order-scoped special-price approval, QC-05 atomic per-line inspection) via the P16 regression harnesses, plus full regression of all 6 harnesses in /app/audit/iterations/2026-10-09-P16-close-coverage/. Also smoke-tested the frontend as admin@kainnusantara.id on ent_ksc (Dashboard, Sales Orders list, WMS Transfer, Purchase Orders list) — all load without errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/audit/iterations/2026-10-09-P16-close-coverage/repro_p16.py",
+    "/app/audit/iterations/2026-10-09-P16-close-coverage/repro_p16b.py",
+    "/app/audit/iterations/2026-10-09-P16-close-coverage/repro_p16c.py",
+    "/app/audit/iterations/2026-10-09-P16-close-coverage/repro_p16d.py",
+    "/app/audit/iterations/2026-10-09-P16-close-coverage/repro_p16e.py",
+    "/app/audit/iterations/2026-10-09-P16-close-coverage/repro_p16f.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (X-Entity-Id: ent_ksc)",
+  "seed_data_creation": "None — harnesses self-clean (TEST_ prefix).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "P16 close-coverage round complete. Regression suite totals pass=74/74 (p16:43, p16b:12, p16c:7, p16d:4, p16e:5, p16f:3). All 6 harnesses are self-cleaning. Frontend smoke: login OK, Sales Orders / WMS Transfer / PO list all render without JS errors. Pre-existing known failure (KANDA/SO-00001 integrity, test_core_inspeksi_poc.py scan-receive step) remains unrelated to this round and was not re-exercised.",
+  "harness_results": {
+    "repro_p16.py": "pass=43 fail=0",
+    "repro_p16b.py": "pass=12 fail=0",
+    "repro_p16c.py": "pass=7 fail=0",
+    "repro_p16d.py": "pass=4 fail=0",
+    "repro_p16e.py": "pass=5 fail=0",
+    "repro_p16f.py": "pass=3 fail=0 (QC-05 concurrent per-line inspect)"
+  },
+  "bug_fix_verification": {
+    "MASTER-05": "Confirmed via p16 harnesses — PO create against inactive supplier returns 400 'sudah dinonaktifkan'; active supplier 200.",
+    "COMM-03": "Confirmed via p16 harnesses — order-scoped approval only applies to its own SO (reuse → 400 'tidak berlaku'; effective endpoint hides it). Standing approvals still apply; expired rejected.",
+    "QC-05": "Confirmed via repro_p16f.py — concurrent inspect of different lines of the same inspection persists all results (pass=3/3)."
+  }
+}

@@ -51,10 +51,14 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "tested_pass",
+      "tested_commit": "42bbb1ab098489e3440fd90fd8afe7209f345a68",
+      "evidence": [
+        "iterations/2026-10-09-P16-close-coverage/after_patch_p16b.txt",
+        "iterations/2026-10-09-P16-close-coverage/run_all_p16.txt",
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_126.json"
+      ],
+      "notes": "P16b: arsip entitas beroperasi tanpa force → 409 + blocker; force wajib alasan (admin); sesudah arsip, SO berjalan milik entitas itu tak bisa diubah lewat konteks entitas itu/entitas lain/'all'; entitas terbaca via ?status=archived; aktif kembali → tulis pulih. Catatan: dokumen transaksi entitas terarsip tidak terbaca sampai diaktifkan (desain saat ini)."
     },
     {
       "id": "AUTH-05",
@@ -91,10 +95,14 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "42bbb1ab098489e3440fd90fd8afe7209f345a68",
+      "evidence": [
+        "iterations/2026-10-09-P16-close-coverage/after_patch_p16b.txt",
+        "iterations/2026-10-09-P16-close-coverage/run_all_p16.txt",
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_126.json"
+      ],
+      "notes": "P16b: UOM yang dipakai dokumen 409 saat dinonaktifkan; sales tak bisa nonaktifkan produk (403). CRUD buat/ubah dengan referensi aktif belum."
     },
     {
       "id": "MASTER-02",
@@ -146,10 +154,15 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "42bbb1ab098489e3440fd90fd8afe7209f345a68",
+      "evidence": [
+        "iterations/2026-10-09-P16-close-coverage/after_patch_p16b.txt",
+        "iterations/2026-10-09-P16-close-coverage/head_before_patch_p16b.txt",
+        "iterations/2026-10-09-P16-close-coverage/run_all_p16.txt",
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_126.json"
+      ],
+      "notes": "P16b: produk nonaktif soft (stok utuh), ditolak SO & PO baru; BUG supplier nonaktif masih menerima PO baru → kini 400. Merge master belum."
     },
     {
       "id": "MASTER-06",
@@ -187,10 +200,14 @@
       "historical_status": "Kontrol teruji",
       "historical_evidence": "I7-C03/C04",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "tested_pass",
+      "tested_commit": "42bbb1ab098489e3440fd90fd8afe7209f345a68",
+      "evidence": [
+        "iterations/2026-10-09-P16-close-coverage/after_patch_p16c.txt",
+        "iterations/2026-10-09-P16-close-coverage/run_all_p16.txt",
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_126.json"
+      ],
+      "notes": "P16c: batal saat counting → cancelled, kunci SJ & tugas PO dilepas; batal ulang tanpa efek (versi/roll/mutasi tetap); SJ yang sama boleh dihitung di kedatangan lain sesudahnya."
     },
     {
       "id": "GRN-03",
@@ -199,10 +216,14 @@
       "historical_status": "Kontrol teruji",
       "historical_evidence": "I7-C06/C07/C08",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "tested_pass",
+      "tested_commit": "42bbb1ab098489e3440fd90fd8afe7209f345a68",
+      "evidence": [
+        "iterations/2026-10-09-P16-close-coverage/after_patch_p16c.txt",
+        "iterations/2026-10-09-P16-close-coverage/run_all_p16.txt",
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_126.json"
+      ],
+      "notes": "P16c: versi basi 409 STATE_CHANGED; konteks entitas lain 403/404 tanpa mutasi; SJ sama (beda huruf/tanda baca) dari supplier sama → 409 DN_DUPLICATE."
     },
     {
       "id": "GRN-04",
@@ -307,10 +328,15 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "tested_pass",
+      "tested_commit": "42bbb1ab098489e3440fd90fd8afe7209f345a68",
+      "evidence": [
+        "iterations/2026-10-09-P16-close-coverage/after_patch_p16f.txt",
+        "iterations/2026-10-09-P16-close-coverage/head_before_patch_p16f.txt",
+        "iterations/2026-10-09-P16-close-coverage/run_all_p16.txt",
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_126.json"
+      ],
+      "notes": "P16f: BUG lost update — 6 baris diisi bersamaan oleh 2 inspector hanya 1 tersimpan → kini update atomik per baris; baris sama bersamaan menyimpan satu hasil utuh."
     },
     {
       "id": "QC-06",
@@ -1049,10 +1075,15 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "tested_pass",
+      "tested_commit": "42bbb1ab098489e3440fd90fd8afe7209f345a68",
+      "evidence": [
+        "iterations/2026-10-09-P16-close-coverage/after_patch_p16d.txt",
+        "iterations/2026-10-09-P16-close-coverage/head_before_patch_p16d.txt",
+        "iterations/2026-10-09-P16-close-coverage/run_all_p16.txt",
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_126.json"
+      ],
+      "notes": "P16d: BUG harga khusus lingkup pesanan bocor (dipakai ulang SO lain & tampil sebagai harga efektif standing) → kini scope order + so_id dikecualikan; standing kedaluwarsa/di bawah min qty ditolak; harga baris & total dihitung ulang saat disetujui."
     },
     {
       "id": "COMM-04",
@@ -1200,10 +1231,14 @@
       "historical_status": "Belum diuji sesuai checklist",
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
-      "current_status": "planned",
-      "tested_commit": null,
-      "evidence": [],
-      "notes": "P14: belum ada invariant/UAT yang mengeksekusi skenario ini; dijadwalkan."
+      "current_status": "partial",
+      "tested_commit": "42bbb1ab098489e3440fd90fd8afe7209f345a68",
+      "evidence": [
+        "iterations/2026-10-09-P16-close-coverage/after_patch_p16e.txt",
+        "iterations/2026-10-09-P16-close-coverage/run_all_p16.txt",
+        "iterations/2026-10-09-P16-close-coverage/uat_iteration_126.json"
+      ],
+      "notes": "P16e: preview & cetak Faktur = sumber (nomor, pelanggan, grand total); entitas lain 403/404; desainer 403. Ekspor Excel belum."
     },
     {
       "id": "DOC-03",

@@ -513,6 +513,11 @@ async def cleanup(db):
             await rebuild_balance(p, w, o)
     for cid, doc in created["customers"].items():
         await db.customers.replace_one({"id": cid}, doc)
+    import pathlib
+    for gd in await db.design_gallery.find({"id": {"$in": gids}}, {"_id": 0, "files.path": 1}).to_list(None):
+        for f in gd.get("files") or []:
+            if f.get("path"):
+                pathlib.Path("uploads", f["path"]).unlink(missing_ok=True)
     await db.design_gallery.delete_many({"id": {"$in": gids}})
     await db.design_requests.delete_many({"id": {"$in": created["requests"]}})
     for coll in ("design_gallery_history", "design_history", "notifications"):

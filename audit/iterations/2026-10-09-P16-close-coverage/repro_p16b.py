@@ -120,6 +120,8 @@ async def cleanup(db):
             await release_order_rolls(o)
         await db.sales_orders.delete_many({"id": {"$in": oids}})
     await db.purchase_orders.delete_many({"id": {"$in": [p for p in created["pos"] if p]}})
+    await db.wms_tasks.delete_many({"po_id": {"$in": [p for p in created["pos"] if p]}})
+    await db.doc_refs.delete_many({"$or": [{"from_id": {"$in": created["pos"]}}, {"to_id": {"$in": created["pos"]}}]})
     await db.audit_logs.delete_many({"$or": [{"entity_id": {"$in": oids + created["pos"]}}, {"reason": {"$regex": T}},
                                              {"details.reason": {"$regex": T}}]})
 

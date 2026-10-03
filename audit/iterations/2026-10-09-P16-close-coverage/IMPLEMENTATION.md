@@ -27,3 +27,16 @@ Lingkungan: repo pandeyoga/KNHOST di-clone ulang ke /app, `seed_realistic.py`, d
 - Integritas: 2 FAIL `KANDA/SO-00001` (backorder seed, sudah tercatat sejak P05).
 - INV-04 rekonsiliasi dua buku saat approve belum diuji ulang; 17 kasus `planned` di luar cakupan putaran ini.
 - Dokumen Faktur komersial selalu memuat nilai pesanan penuh (bukan per kiriman) — perilaku saat ini, keputusan pemilik bila ingin faktur per surat jalan.
+
+## Putaran 2 — kasus planned (P16b–P16f)
+| Harness | Kasus | HEAD → sesudah | Temuan & perbaikan |
+|---|---|---|---|
+| `repro_p16b.py` | AUTH-04, MASTER-01/05 | 11/12 → 12/12 | Supplier nonaktif masih menerima PO baru → 400 (`routers/purchase_orders.py`). |
+| `repro_p16c.py` | GRN-02, GRN-03 | 7/7 | Tanpa perubahan kode (batal ulang idempoten, versi basi, entitas asing, SJ duplikat). |
+| `repro_p16d.py` | COMM-03 | 2/4 → 4/4 | Harga khusus lingkup pesanan tersimpan tanpa `scope` → bisa dipakai ulang SO lain & tampil sebagai harga standing. Kini `scope:"order"` + baris ber-`so_id` dikecualikan (`so_approvals.py`, `price_approvals.py`, `price_approval_service.py`). |
+| `repro_p16e.py` | DOC-02 | 5/5 | Tanpa perubahan kode (isi dokumen = sumber, pagar entitas & peran). |
+| `repro_p16f.py` | QC-05 | 0/3 → 3/3 | Lost update hasil inspeksi bersamaan (seluruh `lines` ditimpa dari salinan basi) → update atomik per baris (`services/inspection_service.py`). |
+
+Regresi semua harness: `run_all_p16.txt` (74/74). Agen uji iterasi 126: 100%.
+Sisa planned: GRN-04, GRN-06, PROD-04, PROD-06, COMM-04, COMM-05, DESIGN-02, DESIGN-05, OPS-03 (+ blocked RFID-06, OPS-05).
+Catatan desain (keputusan pemilik): dokumen transaksi entitas terarsip tidak terbaca sampai diaktifkan kembali.
