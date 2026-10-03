@@ -233,7 +233,7 @@
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "tested_pass",
-      "tested_commit": "b68ae87+P17",
+      "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
       "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17a.txt"],
       "notes": "P17: 3 baris SJ/2 tugas, baris penuh tanpa sisa, parsial tepat 1 tugas sisa, idempoten, kiriman sisa melunasi PO. Tanpa perubahan kode."
     },
@@ -259,7 +259,7 @@
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "partial",
-      "tested_commit": "b68ae87+P17",
+      "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
       "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17b.txt"],
       "notes": "P17 API lulus: timbang netto (weight_mismatch), not_on_dn memblokir, override butuh hak & tercatat audit; OCR+packing list via tests/test_grn_phase4_read.py & test_grn_phase6.py (-n0; tes phase6 diselaraskan KN-E22). UI belum diuji agen."
     },
@@ -486,7 +486,7 @@
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "tested_pass",
-      "tested_commit": "b68ae87+P17",
+      "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
       "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17c.txt"],
       "notes": "P17: fail-fast 400 tanpa mutasi; shortage komponen ke-2 di tengah konsumsi → 409, konsumsi komponen 1 dibalik per roll. Tanpa perubahan kode."
     },
@@ -512,7 +512,7 @@
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "partial",
-      "tested_commit": "b68ae87+P17",
+      "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
       "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17c.txt"],
       "notes": "P17 recovery lulus (API/servis): mati sesudah 'consumed' & dibunuh di tengah konsumsi → 409 SAGA_IN_PROGRESS, lepas kunci admin (efek diakui), ulang konsumsi tepat sekali. UAT operator layar belum."
     },
@@ -1093,7 +1093,7 @@
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "partial",
-      "tested_commit": "b68ae87+P17",
+      "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
       "evidence": ["iterations/2026-10-03-P17-planned-coverage/head_before_patch_p17d.txt", "iterations/2026-10-03-P17-planned-coverage/after_patch_p17d.txt"],
       "notes": "P17 BUG diperbaiki: akrual insentif beku setelah posting pertama → komisi turun/naik (pembayaran batal/susulan) tak terkoreksi, 2-1500 tersisa saat payroll. Kini jurnal koreksi incentive_accrual_adj (gl_service.post_incentive_accrual). Komisi: lulus 3/7→7/7. Biaya kampanye marketing belum punya posting GL (hanya budget) — sisa."
     },
@@ -1105,7 +1105,7 @@
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "tested_pass",
-      "tested_commit": "b68ae87+P17",
+      "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
       "evidence": ["iterations/2026-10-03-P17-planned-coverage/head_before_patch_p17e.txt", "iterations/2026-10-03-P17-planned-coverage/after_patch_p17e.txt"],
       "notes": "P17 harga pelanggan: 2 BUG diperbaiki — ubah record yang sudah dihapus tertulis diam-diam; hapus ganda bersamaan 2 efek/audit. Kini update bersyarat status (customer_price_service.patch_price/deactivate_price). 5/7→7/7."
     },
@@ -1148,7 +1148,7 @@
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "tested_pass",
-      "tested_commit": "b68ae87+P17",
+      "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
       "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17f.txt"],
       "notes": "P17 BUG diperbaiki: acuan QC = sample decided TERBARU produk walau dimenangkan supplier lain. Kini sample milik supplier barang didahulukan + round/supplier acuan disimpan (inspection_service._baseline_for)."
     },
@@ -1191,7 +1191,7 @@
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "tested_pass",
-      "tested_commit": "b68ae87+P17",
+      "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
       "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17g.txt"],
       "notes": "P17: bahan sample → roll & mutasi sample_issue, Dr 6-7000/Cr 1-1300 = biaya, cost_total = round + bahan, ambil bersamaan tanpa lost update. Tanpa perubahan kode."
     },
@@ -1332,7 +1332,7 @@
       "historical_evidence": "—",
       "audited_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
       "current_status": "partial",
-      "tested_commit": "b68ae87+P17",
+      "tested_commit": "b991f4cd26477d8ce05b2dfa534f32683471a759",
       "evidence": ["iterations/2026-10-03-P17-planned-coverage/after_patch_p17h.txt"],
       "notes": "P17 impor pelanggan: dry-run, terputus lalu dilanjutkan, ulang idempoten, Σ created = baris valid. Impor produk/stok awal/migrasi skrip belum diuji."
     },

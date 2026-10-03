@@ -146,6 +146,12 @@ acuan tanggal ACC & update terakhir (bisa dipilih); riwayat lengkap (diff field,
 - Seed demo: `scripts/seed_design_hold_proofing_demo.py`. Testing agent iterasi 39: backend 14/14, frontend 100%.
 
 
+
+## Sesi P17 (2026-10-03) — lanjutan handoff P16 (repo pandeyoga/KNHOST)
+- Permintaan user: "lanjutkan development dari repo ini ... lanjutkan ada handoff dokumen dari sesi sebelumnya". Pilihan: arsip boleh dibuka baca saja; faktur tetap per pesanan; kerjakan 9 kasus planned.
+- Selesai: arsip baca saja (API + pemilih entitas + pita), uji GRN-04/06, PROD-04/06, COMM-04/05, DESIGN-02/05, OPS-03; bug diperbaiki: koreksi akrual insentif, 3 balapan harga pelanggan, acuan QC per supplier.
+- Backlog P0: GRN-06 UI penuh, PROD-06 UAT layar. P1: biaya kampanye → GL, impor produk/stok awal. P2: perbarui tes lama yang basi.
+
 ## Backlog
 - P2 (Akses): ganti `window.confirm` hapus/reset peran dengan modal in-app — SELESAI 2026-06 (`RoleDangerDialog`).
 - P2 (Akses): daftar akun pemakai peran di editor — SELESAI 2026-06 (`RoleAccountsList`, `accounts[]` di GET /api/access/roles/{id}).
