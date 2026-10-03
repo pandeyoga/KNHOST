@@ -72,8 +72,11 @@ def mk_env(mdb):
     assert full.get("__enabled__")
     ids = snapshot_new_ids(["inventory_movements", "journal_entries", "vendor_bills", "goods_receipts", "notifications",
                             "audit_logs", "doc_refs", "ai_usage_log", "inventory_lots"])
+    s0 = _p2._login("admin@kainnusantara.id")
+    items = _ok(s0.get(f"{BASE}/config/effective", params={"group": "penerimaan"}))["items"]
+    prev = {i["key"]: i.get("value") for i in items if i["key"] in CFG_OFF}   # pulihkan nilai pemilik, bukan bawaan
     yield
-    _cfg(_p2._login("admin@kainnusantara.id"), CFG_OFF)
+    _cfg(_p2._login("admin@kainnusantara.id"), prev or CFG_OFF)
     purge_new_ids(ids)
     restore_stock(full)
 

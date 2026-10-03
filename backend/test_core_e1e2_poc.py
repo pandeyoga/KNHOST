@@ -45,6 +45,7 @@ PWD = "demo12345"
 
 RESULTS: List[Dict[str, Any]] = []
 CREATED: Dict[str, List[str]] = {"entities": [], "users": [], "employees": []}
+BASELINE: Dict[str, int] = {"active": 0}
 
 GREEN, RED, DIM, RESET = "\033[92m", "\033[91m", "\033[2m", "\033[0m"
 
@@ -132,19 +133,25 @@ async def fase_e1(cl: httpx.AsyncClient, adm: str) -> Dict[str, Any]:
           f"{(body.get('provisioning') or {}).get('number_preview')}")
 
     print("\n── E1.2 · keunikan nama singkat & kode dokumen (POST dan PATCH) ──")
+    from db import db as _dbx
+    ksc_short = ((await _dbx.business_entities.find_one({"id": "ent_ksc"}, {"_id": 0, "short_name": 1})) or {}).get("short_name", "ksc")
     r = await cl.post(f"{BASE}/api/entities", headers=H(adm), json={
-        "legal_name": "PT Tabrakan", "short_name": "ksc", "type": "PT",
+        "legal_name": "PT Tabrakan", "short_name": ksc_short.lower(), "type": "PT",
         "npwp": "1", "doc_prefix": "POCX1"})
-    check("E1.2a", "nama singkat duplikat (huruf kecil 'ksc') DITOLAK 409",
+    if r.status_code == 200:
+        CREATED["entities"].append(r.json()["id"])
+    check("E1.2a", f"nama singkat duplikat (huruf kecil '{ksc_short.lower()}') DITOLAK 409",
           r.status_code == 409, f"HTTP {r.status_code} · {r.text[:110]}")
     r = await cl.post(f"{BASE}/api/entities", headers=H(adm), json={
         "legal_name": "PT Tabrakan2", "short_name": "POCX2", "type": "PT",
         "npwp": "1", "doc_prefix": "ksc"})
+    if r.status_code == 200:
+        CREATED["entities"].append(r.json()["id"])
     check("E1.2b", "kode dokumen duplikat ('ksc') DITOLAK 409", r.status_code == 409,
           f"HTTP {r.status_code}")
     pid = ctxdata.get("ent_personal", "")
     r = await cl.patch(f"{BASE}/api/entities/{pid}", headers=H(adm),
-                       json={"data": {"short_name": "KSC"}})
+                       json={"data": {"short_name": ksc_short}})
     check("E1.2c", "PATCH juga ditegakkan (satu jalur validasi) → 409",
           r.status_code == 409, f"HTTP {r.status_code}")
 
@@ -224,7 +231,7 @@ async def fase_e1(cl: httpx.AsyncClient, adm: str) -> Dict[str, Any]:
     from db import db as _db
     s3b = await login("sales3@kainnusantara.id")
     cust_body = {"name": "Poc Pelanggan Selundupan", "pic_name": "Poc",
-                 "phone": "0801", "city": "Solo", "address": "Jl. Uji 2"}
+                 "phone": "081234567801", "city": "Solo", "address": "Jl. Uji 2"}
     r = await cl.post(f"{BASE}/api/customers", headers=H(s3b),
                       json={**cust_body, "entity_id": "ent_ksc"})
     check("E1.10a", "sales Kanda MENANAM pelanggan di KSC lewat body → 403",
@@ -495,7 +502,7 @@ async def fase_e1_lifecycle(cl: httpx.AsyncClient, adm: str,
     if u3.get("id"):
         CREATED["users"].append(u3["id"])
     tok_u3 = await login("poc.dual@example.test")
-    cust = {"name": "Poc Pelanggan Terlarang", "pic_name": "Poc", "phone": "0800",
+    cust = {"name": "Poc Pelanggan Terlarang", "pic_name": "Poc", "phone": "081234567800",
             "city": "Solo", "address": "Jl. Uji 1"}
     r_read = await cl.get(f"{BASE}/api/sales-orders", headers=H(tok_u3))
     r_write = await cl.post(f"{BASE}/api/customers", headers=H(tok_u3, target),
@@ -572,10 +579,10 @@ async def cleanup() -> None:
     check("CLEAN", "nol residu fixture di DB",
           residue == 0,
           f"user={d_users} karyawan={d_emp} badan_usaha={d_ent} residu={residue}")
-    # pastikan entitas demo utuh & aktif
+    # pastikan entitas demo utuh & aktif (jumlah sama dengan sebelum POC)
     left = await db.business_entities.count_documents({"status": "active"})
-    check("CLEAN2", "badan usaha demo utuh & aktif (KSC + Kanda)", left == 2,
-          f"{left} badan usaha aktif")
+    check("CLEAN2", "badan usaha demo utuh & aktif (sama seperti sebelum POC)", left == BASELINE["active"],
+          f"{left} badan usaha aktif (sebelum POC {BASELINE['active']})")
 
 
 async def main() -> int:
@@ -586,6 +593,8 @@ async def main() -> int:
     if not adm:
         print("GAGAL: tidak bisa login admin.")
         return 1
+    from db import db as _db0
+    BASELINE["active"] = await _db0.business_entities.count_documents({"status": "active"})
     async with httpx.AsyncClient(timeout=90.0) as cl:
         try:
             ctxdata = await fase_e1(cl, adm)

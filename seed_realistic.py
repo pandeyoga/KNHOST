@@ -1976,6 +1976,7 @@ async def seed_sales_orders():
         "items": [
             {"product_id": "prod_batik_mega", "sku": "BTK-MEGA-001",
              "product_name": "Batik Mega Mendung Premium", "quantity": 150.0,
+             "base_quantity": 150.0, "reserved_qty": 30.0, "backorder_qty": 120.0,
              "unit": "yard", "price": 172500, "subtotal": 25875000,
              "warehouse_id": "wh_jakarta", "warehouse_name": "Gudang Jakarta Utara"},
         ],
@@ -1988,7 +1989,9 @@ async def seed_sales_orders():
         "ppn_mode": "excluded", "is_pkp": True, "tax": 0,
         "grand_total": 28721250.0,
         "payment_term_code": "NET30", "payment_term_name": "Kredit NET 30 Hari",
-        "status": "waiting_stock", "payment_status": "pending", "has_backorder": True,
+        # P17 — 30 yard sudah dicadangkan ⇒ status 'reserved' (waiting_stock = nol cadangan);
+        # kekurangan dibawa flag has_backorder + item.backorder_qty (INV-BO-1/2).
+        "status": "reserved", "payment_status": "pending", "has_backorder": True,
         "backorders": [{
             "id": new_id("bo"), "product_id": "prod_batik_mega", "sku": "BTK-MEGA-001",
             "product_name": "Batik Mega Mendung Premium", "entity_id": "ent_kanda",

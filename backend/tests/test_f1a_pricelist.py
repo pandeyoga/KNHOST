@@ -79,12 +79,29 @@ def cleanup(tokens):
             requests.delete(f"{BASE}/api/pricelist/{pid}", headers=_h(tokens["admin"], KSC), timeout=15)
         except Exception:
             pass
-    # cancel created SO
+    # cancel created SO (header entitas pemilik SO), lalu hapus jejak uji supaya DB demo bersih
     for soid in CREATED_ORDERS:
-        try:
-            requests.post(f"{BASE}/api/sales-orders/{soid}/cancel", headers=_h(tokens["admin"], KSC), timeout=15)
-        except Exception:
-            pass
+        for eid in (KSC, KANDA):
+            try:
+                r = requests.post(f"{BASE}/api/sales-orders/{soid}/cancel", headers=_h(tokens["admin"], eid), timeout=15)
+                if r.status_code == 200:
+                    break
+            except Exception:
+                pass
+    try:
+        from pymongo import MongoClient
+        from dotenv import load_dotenv
+        load_dotenv("/app/backend/.env")
+        mdb = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
+        ids = list(CREATED_ORDERS)
+        if ids:
+            mdb.inventory_movements.delete_many({"$or": [{"source_document": {"$in": ids}}, {"reference_id": {"$in": ids}}]})
+            mdb.audit_logs.delete_many({"entity_id": {"$in": ids}})
+            mdb.sales_orders.delete_many({"id": {"$in": ids}})
+        if CREATED_PRICES:
+            mdb.entity_prices.delete_many({"id": {"$in": list(CREATED_PRICES)}})
+    except Exception as exc:  # noqa: BLE001
+        print(f"[cleanup f1a] gagal membersihkan: {exc!r}")
 
 
 # ─── Consolidation ───────────────────────────────────────────────────────────
@@ -221,7 +238,7 @@ class TestSOIntegration:
             "shipment_policy": "all_or_nothing",
             "allow_backorder": True,
             "confirm_mixed_lot": True,
-            "items": [{"product_id": product_id, "quantity": 1, "unit": "meter"}],
+            "items": [{"product_id": product_id, "quantity": 1, "unit": "yard"}],
         }
         r = requests.post(f"{BASE}/api/sales-orders", json=payload,
                           headers=_h(tokens["admin"], KSC), timeout=30)
@@ -230,6 +247,7 @@ class TestSOIntegration:
         CREATED_ORDERS.append(so["id"])
         item = so["items"][0]
         # KSC price = 199000 (set in TestCreatePrice). global = 185000.
+        # Harga pricelist per satuan dasar produk (yard); pesan dalam yard agar tanpa konversi m↔yd.
         assert abs(item["price"] - 199000) < 0.01, f"expected entity price 199000, got {item['price']}"
 
     def test_so_uses_global_for_kanda(self, tokens, product_id):
@@ -244,7 +262,7 @@ class TestSOIntegration:
             "shipment_policy": "all_or_nothing",
             "allow_backorder": True,
             "confirm_mixed_lot": True,
-            "items": [{"product_id": product_id, "quantity": 1, "unit": "meter"}],
+            "items": [{"product_id": product_id, "quantity": 1, "unit": "yard"}],
         }
         r = requests.post(f"{BASE}/api/sales-orders", json=payload,
                           headers=_h(tokens["admin"], KANDA), timeout=30)
@@ -252,8 +270,13 @@ class TestSOIntegration:
         so = r.json()
         CREATED_ORDERS.append(so["id"])
         item = so["items"][0]
-        # global = 185000
-        assert abs(item["price"] - 185000) < 0.01, f"expected global 185000, got {item['price']}"
+        # Kanda tidak terpengaruh harga KSC: harga = effective_price grid Kanda
+        # (seed punya harga entitas Kanda; tanpa itu = global 185000).
+        g = requests.get(f"{BASE}/api/pricelist?entity_id={KANDA}", headers=_h(tokens["admin"]), timeout=20).json()
+        row = next(x for x in g["rows"] if x["product_id"] == product_id)
+        assert row["effective_price"] != 199000
+        assert abs(item["price"] - row["effective_price"]) < 0.01, \
+            f"expected Kanda effective {row['effective_price']}, got {item['price']}"
 
 
 # ─── PATCH / DELETE / RBAC ───────────────────────────────────────────────────

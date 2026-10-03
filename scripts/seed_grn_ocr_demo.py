@@ -51,6 +51,10 @@ def main() -> None:
                                                   "warehouse_id": t["warehouse_id"], "po_ids": [t["po_id"]]}),
              ("SJ-MKL-0139", "mock-sj_makloon", {"partner_type": "makloon", "partner_id": "mak_seed_tenun",
                                                  "warehouse_id": "wh_surabaya", "mko_ids": [MKO]})]
+    keys = ("receiving.ocr_enabled", "receiving.ocr_model_primary", "receiving.ocr_model_second",
+            "receiving.ocr_extract_packing_list")
+    eff = s.get(f"{BASE}/config/effective", params={"group": "penerimaan"}, timeout=30).json()["items"]
+    prev = {i["key"]: i.get("value") for i in eff if i["key"] in keys}   # pulihkan nilai pemilik (OCR sungguhan)
     try:
         for dn, model, body in demos:
             if db.goods_receipts.find_one({"dn.number": dn, "status": {"$nin": ["cancelled", "rejected"]}}):
@@ -68,8 +72,8 @@ def main() -> None:
             g = s.post(f"{BASE}/goods-receipts/{g['id']}/read", json={"expected_version": g["version"]}).json()
             print(f"{g['number']} ({dn}) → {g['status']} · baris {len(g['lines'])} · runs {len(g['extraction']['runs'])}")
     finally:
-        cfg(s, {"receiving.ocr_enabled": False, "receiving.ocr_model_primary": "gpt-6-sol",
-                "receiving.ocr_model_second": "gpt-5.6-sol", "receiving.ocr_extract_packing_list": False})
+        cfg(s, prev or {"receiving.ocr_enabled": False, "receiving.ocr_model_primary": "gpt-6-sol",
+                        "receiving.ocr_model_second": "gpt-5.6-sol", "receiving.ocr_extract_packing_list": False})
 
 
 if __name__ == "__main__":

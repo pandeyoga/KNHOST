@@ -27,14 +27,21 @@ def _cfg(s, values):
     _ok(s.put(f"{BASE}/config/values", json={"items": items}))
 
 
+def _current(s, keys):
+    """Nilai OCR yang berlaku SEKARANG — dipulihkan sesudah uji (OCR sungguhan pemilik tidak boleh dimatikan uji)."""
+    items = _ok(s.get(f"{BASE}/config/effective", params={"group": "penerimaan"}))["items"]
+    return {i["key"]: i.get("value") for i in items if i["key"] in keys}
+
+
 @pytest.fixture()
 def ocr(admin, mdb):
     if os.environ.get("OCR_ALLOW_MOCK") != "1" and "OCR_ALLOW_MOCK" not in open("/app/backend/.env").read():
         pytest.skip("OCR_ALLOW_MOCK tidak aktif")
     before = set(mdb.ai_usage_log.distinct("id"))
+    prev = _current(admin, set(KEYS) | {"receiving.ocr_second_reader_mode"})
     _cfg(admin, KEYS)
     yield lambda v: _cfg(admin, v)
-    _cfg(admin, DEFAULTS)
+    _cfg(admin, prev or DEFAULTS)
     mdb.ai_usage_log.delete_many({"id": {"$nin": list(before)}})
 
 
