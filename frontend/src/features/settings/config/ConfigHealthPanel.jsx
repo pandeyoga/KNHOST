@@ -13,6 +13,7 @@ import {
   ShieldCheck, RefreshCw, AlertTriangle, Ban, CheckCircle2, Search, Loader2,
 } from "lucide-react";
 import ErrorNotice from "../../../components/ErrorNotice";
+import usePagedRows from "@/hooks/usePagedRows";
 import { configApi, errMsg, WIRING_LABEL, WIRING_TONE } from "./configApi";
 
 const STATUS_HELP = {
@@ -51,6 +52,7 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
       return `${r.key} ${r.label} ${r.group}`.toLowerCase().includes(term);
     });
   }, [data, q, only]);
+  const pgRows = usePagedRows(rows, { pageSize: 30, testId: "config-health-pager" });
 
   const summary = data?.summary || {};
   // BENTUK DATA NYATA dari GET /api/config/health (diverifikasi via curl):
@@ -163,8 +165,9 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
               <th> </th>
             </tr>
           </thead>
+          <caption className="caption-bottom px-3 py-2">{rows.length > 30 && pgRows.pager}</caption>
           <tbody>
-            {rows.map((r) => (
+            {pgRows.pageRows.map((r) => (
               <tr key={r.key} data-testid={`cfg-health-row-${r.key}`}>
                 <td>
                   <b>{r.label}</b>

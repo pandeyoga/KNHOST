@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Award, ImageOff, Palette, Search, X } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
+import { OptionTabs } from "../../components/ListControls";
 import { listDesigns, designFileUrl } from "../rnd/rndApi";
 import { DESIGN_STATUS_META, PROOFING_STATE_META, fmtScore } from "../rnd/rndMeta";
 import DesignShowcaseModal from "./DesignShowcaseModal";
@@ -78,8 +79,9 @@ export default function DesignGalleryView({ selectedEntity }) {
           </div>
         </div>
         <div className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7" data-testid="gallery-filters">
-          <KNSelect data-testid="gallery-filter-status" className="field" value={f.status} onValueChange={set("status")}
-            options={[{ value: "", label: "Semua status ACC" }, ...ACC_STATUSES.map((s) => ({ value: s, label: DESIGN_STATUS_META[s].label }))]} />
+          <div className="col-span-full"><OptionTabs testId="gallery-filter-status" value={f.status} onChange={set("status")}
+            countOf={(v) => (v === (f.status || "") ? items.length : undefined)}
+            options={[{ value: "", label: "Semua status ACC" }, ...ACC_STATUSES.map((s) => ({ value: s, label: DESIGN_STATUS_META[s].label }))]} /></div>
           <KNSelect data-testid="gallery-filter-category" className="field" value={f.cat} onValueChange={set("cat")} options={opts(options.cat, "Semua kategori pattern")} />
           <KNSelect data-testid="gallery-filter-dcategory" className="field" value={f.dcat} onValueChange={set("dcat")} options={opts(options.dcat, "Semua kategori design")} />
           <KNSelect data-testid="gallery-filter-tag" className="field" value={f.tag} onValueChange={set("tag")} options={opts(options.tag, "Semua tag")} />

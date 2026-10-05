@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Plus, ShieldCheck, Lock, Users, Sparkles, Pencil, Copy } from "lucide-react";
 
 import RoleEditorDrawer from "./RoleEditorDrawer";
+import useListSearch from "@/hooks/useListSearch";
 import { accessModules, accessRoles, errText } from "./entityApi";
 
 function RoleCard({ role, onOpen, onDuplicate }) {
@@ -78,6 +79,7 @@ export default function RoleAccessPanel({ canManage, onChanged, onError }) {
 
   const customs = roles.filter((r) => r.custom);
   const builtins = roles.filter((r) => !r.custom);
+  const pgBuilt = useListSearch(builtins, (r) => [r.label, r.name, r.id, r.description], { testId: "role-builtin", pageSize: 18, placeholder: "Cari peran…" });
 
   return (
     <div data-testid="role-access-panel">
@@ -117,8 +119,9 @@ export default function RoleAccessPanel({ canManage, onChanged, onError }) {
             </div>
           )}
           <p className="kicker mb-1.5">Peran bawaan sistem ({builtins.length}) — hak aksesnya bisa disesuaikan</p>
+          {pgBuilt.toolbar}
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" data-testid="role-builtin-grid">
-            {builtins.map((r) => <RoleCard key={r.id} role={r} onOpen={setEditor} onDuplicate={r.locked ? null : duplicate} />)}
+            {pgBuilt.pageRows.map((r) => <RoleCard key={r.id} role={r} onOpen={setEditor} onDuplicate={r.locked ? null : duplicate} />)}
           </div>
         </>
       )}

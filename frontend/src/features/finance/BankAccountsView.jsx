@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import { formatCurrency } from "../../utils/formatters";
 import DetailModal from "../../components/DetailModal";
 import AuditHistoryPanel from "../../components/AuditHistoryPanel";
@@ -25,6 +26,7 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
   const canAudit = can(currentUser?.permissions, "audit", "view");
   const [detailTab, setDetailTab] = useState("ledger");
   const [accounts, setAccounts] = useState([]);
+  const srch = useListSearch(accounts, null, { testId: "bank-accounts", pageSize: 24, placeholder: "Cari nama / bank / nomor rekening…" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);     // account id
@@ -168,15 +170,16 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
             </form>
           )}
 
+          {srch.toolbar}
           {loading ? (
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3" data-testid="bank-loading">{[0, 1, 2].map((i) => <div key={i} className="h-28 bg-[#F5F5F7] rounded-lg animate-pulse" />)}</div>
-          ) : accounts.length === 0 ? (
+          ) : srch.shown.length === 0 ? (
             <div data-testid="bank-empty" className="py-12 text-center text-[12px] text-[#8E8E93]">
               <Landmark size={26} className="mx-auto mb-2 text-gray-300" />Belum ada akun. Klik “Tambah Akun”.
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="bank-cards">
-              {accounts.map((a) => (
+              {srch.pageRows.map((a) => (
                 <button
                   key={a.id}
                   type="button"

@@ -9,6 +9,7 @@ import { Filter, Layers, Plus, RefreshCw, Search, Tags, X } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import LineFilter from "../../components/LineFilter";
 import KNSelect from "../../components/KNSelect";
+import { OptionTabs } from "../../components/ListControls";
 import DesignFormModal from "./DesignFormModal";
 import DesignDetailPage from "./design/DesignDetailPage";
 import CategoryManagerModal from "./design/CategoryManagerModal";
@@ -184,7 +185,8 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
           </div>
           {showFilters && (
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5" data-testid="rnd-designs-filters">
-              <KNSelect data-testid="rnd-filter-status" className="field" value={f.status} options={STATUS_OPTS} onValueChange={(v) => set("status", v)} />
+              <div className="col-span-full"><OptionTabs testId="rnd-filter-status" value={f.status} options={STATUS_OPTS} onChange={(v) => set("status", v)}
+                countOf={(v) => (v === (f.status || "") ? rows.length : undefined)} /></div>
               <KNSelect data-testid="rnd-filter-hold" className="field" value={f.hold} options={HOLD_OPTS} onValueChange={(v) => set("hold", v)} />
               <KNSelect data-testid="rnd-filter-proofing" className="field" value={f.proofing} options={PROOFING_OPTS} onValueChange={(v) => set("proofing", v)} />
               <KNSelect data-testid="rnd-filter-category" className="field" value={f.cat} options={catOpts} onValueChange={(v) => set("cat", v)} searchable />

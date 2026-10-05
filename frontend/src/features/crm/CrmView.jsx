@@ -5,7 +5,6 @@ import CollectionWorklist from "./CollectionWorklist";
 import SalesForceDashboard from "./SalesForceDashboard";
 import CreditOverridesPanel from "./CreditOverridesPanel";
 import IncentiveSchemeEditor from "./IncentiveSchemeEditor";
-import IncentiveRatesEditor from "./IncentiveRatesEditor";
 import LeadsPipeline from "./LeadsPipeline";
 import OmnichannelInteractions from "./OmnichannelInteractions";
 
@@ -23,7 +22,6 @@ export default function CrmView({ currentUser, selectedEntity, focusDoc, onClear
     { key: "interactions", label: "Interaksi", icon: MessageSquare },
     { key: "collection", label: "Penagihan", icon: Receipt },
     { key: "salesforce", label: "Sales Force", icon: TrendingUp },
-    ...(isManager ? [{ key: "rates", label: "Rate Insentif", icon: Percent }] : []),
     ...(isManager ? [{ key: "schemes", label: "Skema (Arsip)", icon: SlidersHorizontal }] : []),
     ...(isManager ? [{ key: "approvals", label: "Persetujuan Kredit", icon: ShieldCheck }] : []),
   ];
@@ -48,7 +46,6 @@ export default function CrmView({ currentUser, selectedEntity, focusDoc, onClear
       {tab === "interactions" && <OmnichannelInteractions currentUser={currentUser} selectedEntity={selectedEntity} />}
       {tab === "collection" && <CollectionWorklist currentUser={currentUser} selectedEntity={selectedEntity} />}
       {tab === "salesforce" && <SalesForceDashboard currentUser={currentUser} selectedEntity={selectedEntity} />}
-      {tab === "rates" && isManager && <IncentiveRatesEditor currentUser={currentUser} selectedEntity={selectedEntity} />}
       {tab === "schemes" && isManager && <IncentiveSchemeEditor currentUser={currentUser} selectedEntity={selectedEntity} />}
       {tab === "approvals" && isManager && <CreditOverridesPanel currentUser={currentUser} />}
     </div>

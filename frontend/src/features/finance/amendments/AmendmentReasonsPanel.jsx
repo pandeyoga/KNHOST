@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus, RefreshCw, Save, Tag } from "lucide-react";
 import ErrorNotice from "../../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import { errText, listReasons, upsertReason } from "./amendmentApi";
 import KNSelect from "../../../components/KNSelect";
 
@@ -17,6 +18,7 @@ const BLANK = { code: "", label: "", help: "", affects_master: false, status: "a
 
 export default function AmendmentReasonsPanel({ currentUser }) {
   const [rows, setRows] = useState([]);
+  const srch = useListSearch(rows, null, { testId: "amd-reasons", pageSize: 15, placeholder: "Cari kode / nama alasan…" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState("");
@@ -106,11 +108,12 @@ export default function AmendmentReasonsPanel({ currentUser }) {
             <div className="grid grid-cols-[150px_1fr_110px_96px] gap-2 bg-[#FAFBFC] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73] border-b border-[#EFF0F2]">
               <span>Kode</span><span>Nama & penjelasan</span><span>Data master</span><span>Status</span>
             </div>
-            {rows.map((r) => (
+            {srch.toolbar}
+            {srch.pageRows.map((r) => (
               <ReasonRow key={r.code} row={r} isAdmin={isAdmin} saving={saving === r.code}
                 onSave={(payload) => save(payload, r.code)} />
             ))}
-            {rows.length === 0 && (
+            {srch.shown.length === 0 && (
               <p data-testid="amd-reasons-empty" className="px-2.5 py-6 text-center text-[11.5px] text-[#6B6B73]">
                 Belum ada label alasan.
               </p>

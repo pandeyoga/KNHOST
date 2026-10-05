@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
+import { SearchBox } from "../../components/ListControls";
 // Tujuan navigasi yang SAH untuk peran ini (sumber sama dengan Ctrl+K & deep-link) —
 // dipakai ringkasan antrean agar tidak pernah menawarkan tautan yang buntu.
 import { resolveDeepLinkTarget } from "../../config/navigationConfig";
@@ -230,7 +231,9 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
     acc[t.key] = t.key === "all" ? items.length : items.filter((i) => groupOf(i) === t.key).length;
     return acc;
   }, {});
-  const filtered = items.filter((i) => tab === "all" || groupOf(i) === tab);
+  const [inboxQ, setInboxQ] = useState("");
+  const filtered = items.filter((i) => (tab === "all" || groupOf(i) === tab)
+    && (!inboxQ.trim() || Object.values(i).filter((v) => typeof v === "string" || typeof v === "number").join(" ").toLowerCase().includes(inboxQ.trim().toLowerCase())));
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const curPage = Math.min(page, totalPages);
   const pageRows = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
@@ -418,6 +421,7 @@ export default function ApprovalInbox({ currentUser, onNavigate, onOpenDocument 
       )}
 
       <div className="section-card">
+        <div className="px-3 py-2"><SearchBox value={inboxQ} onChange={setInboxQ} placeholder="Cari nomor / judul / pengaju…" testId="approval-inbox-search" /></div>
         {loading ? (
           <div className="py-12 text-center text-[12px] text-[#6B6B73]">Memuat antrian persetujuan...</div>
         ) : filtered.length === 0 ? (

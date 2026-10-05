@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { MapPin, RefreshCw, Radar, Radio, PackageX, AlertTriangle } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import axios, { API } from "../../services/apiClient";
 import { Stat, EmptyBox, Pill, SectionCard, RfidHeader, TabBtn, fmtTime, useWarehouses } from "./rfidShared";
 import CycleCountPanel from "./CycleCountPanel";
@@ -12,6 +13,7 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
   const { whId, setWhId, whOpts } = useWarehouses();
   const [tab, setTab] = useState("lokasi");
   const [items, setItems] = useState([]);
+  const srch = useListSearch(items, null, { testId: "rfid-loc", placeholder: "Cari EPC / produk / roll / bin…" });
   const [readers, setReaders] = useState([]);
   const [readerId, setReaderId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -91,8 +93,9 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
             <Radar size={14} /> Sweep
           </button>
         </div>}>
+        {srch.toolbar}
         {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
-          : items.length === 0 ? <EmptyBox icon={MapPin} text="Belum ada tag. Encode roll di menu Tags dulu." />
+          : srch.shown.length === 0 ? <EmptyBox icon={MapPin} text="Belum ada tag. Encode roll di menu Tags dulu." />
             : (
               <div className="overflow-x-auto">
                 <table className="w-full text-[12px]">
@@ -101,7 +104,7 @@ export default function RfidLocationsView({ currentUser, selectedEntity }) {
                     <th className="pr-2">Bin Assigned</th><th className="pr-2">Last Seen</th><th className="pr-2 text-right">Status</th>
                   </tr></thead>
                   <tbody>
-                    {items.map((i) => (
+                    {srch.pageRows.map((i) => (
                       <tr key={i.tag_id} data-testid={`rfid-loc-row-${i.tag_id}`} className="border-b border-[#F5F5F7] hover:bg-[#FAFAFB]">
                         <td className="py-2 pr-2 font-mono font-semibold text-[11px]">{i.epc}</td>
                         <td className="pr-2">{i.product_name || "—"}<span className="text-[#8E8E93]"> · {i.sku}</span></td>

@@ -8,6 +8,8 @@ import { Clock, CalendarDays, BarChart3, Upload, CheckCircle2, Plus, FileSpreads
 import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
+import { OptionTabs } from "../../components/ListControls";
+import useListSearch from "@/hooks/useListSearch";
 import ConfirmModal from "../../components/ConfirmModal";
 
 export const STATUS_PILL = {
@@ -149,6 +151,8 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
   }
 
   const shown = rows.filter((r) => (statusFilter ? r.status === statusFilter : true));
+  const srch = useListSearch(shown, (r) => [r.employee_name, r.employee_code, r.shift_name, r.status, r.method],
+    { testId: "attendance", placeholder: "Cari karyawan / shift…" });
   const counts = useMemo(() => {
     const c = { total: rows.length, hadir: 0, telat: 0, flagged: 0 };
     rows.forEach((r) => { if (r.status === "hadir") c.hadir++; else if (r.status === "telat") c.telat++; else if (r.status === "flagged") c.flagged++; });
@@ -188,8 +192,10 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
                 <KNDatePicker data-testid="attendance-date" value={date} onChange={(v) => setDate(v || date)} clearable={false} />
               </div>
               <div>
-                <label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Status</label>
-                <KNSelect data-testid="attendance-status-filter" value={statusFilter} onValueChange={setStatusFilter} className="field" placeholder="Semua Status"
+              </div>
+              <div className="md:col-span-full">
+                <OptionTabs testId="attendance-status-filter" value={statusFilter} onChange={setStatusFilter}
+                  countOf={(v) => (v === "flagged" ? undefined : rows.filter((r) => !v || r.status === v).length)}
                   options={[{ value: "", label: "Semua Status" }, ...STATUS_OPTS, { value: "flagged", label: "Perlu Review" }]} />
               </div>
               {canManage && (
@@ -211,16 +217,17 @@ export default function AttendanceView({ currentUser, selectedEntity }) {
           </div>
 
           <div className="section-card">
+            {srch.toolbar}
             <div className="grid grid-cols-[1.6fr_1fr_84px_84px_80px_80px_96px_110px_84px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
               <span>Karyawan</span><span>Shift</span><span>Masuk</span><span>Keluar</span><span>Telat</span><span>Kerja</span><span>Metode</span><span>Status</span><span className="text-right">Aksi</span>
             </div>
             {loadingDaily ? (
               <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="attendance-loading">Memuat kehadiran...</div>
-            ) : shown.length === 0 ? (
+            ) : srch.shown.length === 0 ? (
               <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="attendance-empty"><CalendarDays className="mx-auto mb-2 text-gray-300" size={28} /><p>Belum ada kehadiran pada tanggal ini.</p></div>
             ) : (
               <div className="divide-y divide-[#EFF0F2] max-h-[560px] overflow-y-auto">
-                {shown.map((r) => {
+                {srch.pageRows.map((r) => {
                   const pill = STATUS_PILL[r.status] || STATUS_PILL.hadir;
                   return (
                     <div key={r.id} data-testid={`attendance-row-${r.id}`} className="grid grid-cols-[1.6fr_1fr_84px_84px_80px_80px_96px_110px_84px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">

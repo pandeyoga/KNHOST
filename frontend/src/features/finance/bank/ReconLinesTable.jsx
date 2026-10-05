@@ -17,6 +17,7 @@ import { overlayDismiss } from "../../../utils/overlayDismiss";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { apiErrorText } from "../../../utils/apiError";
 import ReconContraBonModal from "./ReconContraBonModal";
+import useListSearch from "@/hooks/useListSearch";
 
 const fmtDate = (s) => {
   if (!s) return "—";
@@ -67,6 +68,7 @@ function ScoreBadge({ score, explain, testId }) {
 
 export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, onReload,
   onError, onNotify }) {
+  const srch = useListSearch(lines || [], null, { testId: "recon-lines", pageSize: 50, placeholder: "Cari keterangan / nominal / status…" });
   const [picked, setPicked] = useState([]);
   const [groupTxn, setGroupTxn] = useState(null);   // { candidates, total }
   // FASE G-7 US8 — baris dana KELUAR bisa langsung melunasi satu kontrabon.
@@ -131,6 +133,7 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
       )}
 
       <div className="rounded-lg border border-[#E5E5EA] overflow-hidden" data-testid="recon-lines-table">
+        {srch.toolbar}
         <table className="w-full text-[12px]">
           <thead>
             <tr className="text-left text-[10px] font-bold uppercase text-[#8E8E93] bg-[#FAFBFC] border-b border-[#EFF0F2]">
@@ -145,14 +148,14 @@ export default function ReconLinesTable({ lines, busy, onAction, onOpenMatch, on
             </tr>
           </thead>
           <tbody>
-            {(lines || []).length === 0 ? (
+            {srch.shown.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-3 py-8 text-center text-[#8E8E93]">
                   Belum ada mutasi untuk akun ini. Tekan “Impor mutasi bank” untuk menempel
                   atau mengunggah rekening koran.
                 </td>
               </tr>
-            ) : lines.map((l) => {
+            ) : srch.pageRows.map((l) => {
               const [pill, plabel] = STATUS_PILL[l.status] || STATUS_PILL.unmatched;
               const sugs = l.suggestions || [];
               return (

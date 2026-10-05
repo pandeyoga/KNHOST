@@ -9,8 +9,10 @@ import { formatCurrency } from "../../../utils/formatters";
 import { STATUS_CLASS, STATUS_LABEL, humanAge, slaText } from "./caseApi";
 
 import PagedRows from "@/components/PagedRows";
+import useListSearch from "@/hooks/useListSearch";
 
 export default function CaseInboxTable({ cases, loading, activeId, onOpen }) {
+  const srch = useListSearch(cases, null, { testId: "case-inbox", placeholder: "Cari nomor / jenis / pihak…" });
   if (loading) {
     return (
       <div className="rounded-lg border border-[#E5E5EA] bg-white p-4"
@@ -41,6 +43,7 @@ export default function CaseInboxTable({ cases, loading, activeId, onOpen }) {
     <div className="overflow-hidden rounded-lg border border-[#E5E5EA] bg-white"
       data-testid="case-table">
       <table className="w-full text-[12px]">
+        <caption className="px-3 py-2 text-left">{srch.searchBox}</caption>
         <thead>
           <tr className="border-b border-[#EFF0F2] bg-[#FAFBFC] text-left text-[10px] font-bold uppercase text-[#8E8E93]">
             <th className="px-3 py-2">Nomor</th>
@@ -53,7 +56,7 @@ export default function CaseInboxTable({ cases, loading, activeId, onOpen }) {
           </tr>
         </thead>
         <tbody>
-          <PagedRows rows={cases} testId="case-inbox-pager">{(c) => (
+          <PagedRows rows={srch.shown} testId="case-inbox-pager">{(c) => (
             <tr key={c.id} data-testid={`case-row-${c.id}`}
               onClick={() => onOpen(c)}
               className={`cursor-pointer border-b border-[#F4F4F6] last:border-0 hover:bg-[#FAFBFF] ${

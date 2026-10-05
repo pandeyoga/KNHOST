@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, TrendingUp, Search, Layers, AlertTriangle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import usePagedRows from "@/hooks/usePagedRows";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 
 const SOURCE_LABEL = {
@@ -46,6 +47,7 @@ export default function CostingView({ selectedEntity }) {
     const term = q.trim().toLowerCase();
     return term ? rows.filter((r) => `${r.name} ${r.sku} ${r.category}`.toLowerCase().includes(term)) : rows;
   }, [rows, q]);
+  const pgView = usePagedRows(view, { pageSize: 25, testId: "costing-pager" });
 
   const summary = useMemo(() => {
     const withMargin = rows.filter((r) => r.margin_pct != null);
@@ -101,8 +103,9 @@ export default function CostingView({ selectedEntity }) {
                     <th className="px-3 py-2">Sumber</th>
                   </tr>
                 </thead>
+                <caption className="caption-bottom px-3 py-2">{view.length > 25 && pgView.pager}</caption>
                 <tbody>
-                  {view.map((r) => {
+                  {pgView.pageRows.map((r) => {
                     const b = marginBadge(r.margin_pct);
                     return (
                       <tr key={r.product_id} data-testid={`costing-row-${r.product_id}`} className="border-b border-[#F5F5F7] last:border-0">

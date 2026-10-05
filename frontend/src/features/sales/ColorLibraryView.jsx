@@ -9,6 +9,7 @@ import { Palette, Search, Plus, RefreshCw, Pencil, Ban, X, Save, Layers, History
 import axios, { API } from "../../services/apiClient";
 import usePagedRows from "../../hooks/usePagedRows";
 import KNSelect from "../../components/KNSelect";
+import { OptionTabs } from "../../components/ListControls";
 import ErrorNotice from "../../components/ErrorNotice";
 import { overlayDismiss } from "@/utils/overlayDismiss";
 import { openRnd } from "../rnd/rndDeepLink";
@@ -129,7 +130,8 @@ export default function ColorLibraryView({ currentUser }) {
           </div>
           <KNSelect data-testid="color-family-filter" className="field w-[150px]" value={family} onValueChange={setFamily} options={familyOpts} />
           <KNSelect data-testid="color-system-filter" className="field w-[140px]" value={system} onValueChange={setSystem} options={[{ value: "", label: "Semua Sistem" }, ...SYSTEMS]} />
-          <KNSelect data-testid="color-status-filter" className="field w-[120px]" value={status} onValueChange={setStatus} options={STATUS_OPTS} />
+          <OptionTabs testId="color-status-filter" value={status} onChange={setStatus} options={STATUS_OPTS}
+            countOf={(v) => colors.filter((c) => !c.is_customer_color && (!v || c.status === v)).length} />
           <button data-testid="color-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
           {canCreate && (
             <button data-testid="color-create-btn" className="primary-button" onClick={() => setModal({ mode: "create" })}><Plus size={14} /> Tambah Warna</button>

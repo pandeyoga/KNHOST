@@ -5,7 +5,7 @@ import { Timer, RefreshCw, Plus, Check, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
-import { SearchBox } from "../../components/ListControls";
+import { SearchBox, OptionTabs } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
 import { REQ_STATUS, recentMonths, wibToday } from "./leaveUtils";
 
@@ -119,7 +119,7 @@ export default function OvertimeView({ currentUser, selectedEntity }) {
         </div>
         <div className="flex items-center gap-2 px-3 pb-2">
           <div className="w-[150px]"><KNSelect data-testid="overtime-filter-month" value={month} onValueChange={setMonth} className="field !py-1" options={monthOpts} /></div>
-          <div className="w-[150px]"><KNSelect data-testid="overtime-filter-status" value={status} onValueChange={setStatus} className="field !py-1" options={statusOpts} /></div>
+          <OptionTabs testId="overtime-filter-status" value={status} onChange={setStatus} options={statusOpts} countOf={(v) => (v === (status || "") ? rows.length : undefined)} />
           <SearchBox value={q} onChange={setQ} placeholder="Cari karyawan / alasan…" testId="overtime-search" />
         </div>
       </div>

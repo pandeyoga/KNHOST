@@ -249,11 +249,14 @@ export default function DesignRequestsView({ currentUser, selectedEntity = "all"
           <div className="ml-auto flex flex-wrap items-center gap-1.5">
             <RevisionFilter value={minRevision} onChange={setMinRevision} testId="dsr-revision-filter" />
             <span className="mx-1 h-4 w-px bg-[#E5E5EA]" />
+            <div className="tab-bar !mb-0">
             {chips.map((c) => (
               <button key={c.key || "all"} data-testid={`dsr-chip-${c.key || "all"}`}
-                className={`status-pill ${statusFilter === c.key ? "pill-info" : "pill-muted"}`}
-                onClick={() => setStatusFilter(c.key)}>{c.label}</button>
+                className={`tab-button ${statusFilter === c.key ? "active" : ""}`}
+                onClick={() => setStatusFilter(c.key)}>{c.label}
+                {(c.key ? summary?.by_status?.[c.key] : summary?.total) != null && <span className="tab-badge">{c.key ? summary.by_status[c.key] : summary.total}</span>}</button>
             ))}
+            </div>
           </div>
         )}
       </div>

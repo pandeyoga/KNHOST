@@ -16,6 +16,7 @@ import {
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { KNSelect } from "../../../components/KNSelect";
+import { OptionTabs } from "../../../components/ListControls";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
 import CaseInboxTable from "./CaseInboxTable";
@@ -287,8 +288,8 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
         data-testid="case-filter-bar">
         <div className="min-w-[190px]">
           <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Status</label>
-          <KNSelect data-testid="case-filter-status" value={fStatus}
-            onValueChange={setFStatus} options={STATUS_FILTERS} />
+          <OptionTabs testId="case-filter-status" value={fStatus}
+            onChange={setFStatus} options={STATUS_FILTERS} countOf={(v) => (v === (fStatus || "") ? cases.length : undefined)} />
         </div>
         <div className="min-w-[230px]">
           <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Jenis kasus</label>

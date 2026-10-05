@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Bus, Plus, Wrench, CheckCircle2, UserRound, Save, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import { askReason } from "../../services/confirmService";
 import { fleetAvailability, createVehicle, updateVehicle, setVehicleStatus, VEHICLE_STATUS_PILL } from "./logisticsApi";
 
@@ -10,6 +11,7 @@ const EMPTY = { plate: "", type: "pickup", name: "", capacity_note: "", default_
 
 export default function FleetPanel({ params, canManage, onOpen, refreshKey }) {
   const [d, setD] = useState(null);
+  const srch = useListSearch(d?.vehicles || [], null, { testId: "fleet", pageSize: 20, placeholder: "Cari plat / jenis / sopir…" });
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState(null);   // null | {…} (baru) | {id,…} (ubah)
@@ -75,9 +77,10 @@ export default function FleetPanel({ params, canManage, onOpen, refreshKey }) {
               <div className="sm:col-span-3 flex justify-end gap-2"><button className="secondary-button" onClick={() => setForm(null)} disabled={busy}><X size={12} /> Batal</button><button data-testid="fleet-save" className="primary-button" onClick={save} disabled={busy || form.plate.trim().length < 3}><Save size={12} /> {busy ? "Menyimpan…" : "Simpan"}</button></div>
             </div>
           )}
+          {(d.vehicles || []).length > 0 && <div className="mt-2 flex flex-wrap items-center gap-2">{srch.searchBox}{srch.pager}</div>}
           {!(d.vehicles || []).length ? <p className="text-[11.5px] text-[#9A9BA3] mt-3" data-testid="fleet-empty">Belum ada kendaraan. {canManage ? "Tambahkan kendaraan agar bisa dipilih saat membuat pengiriman armada sendiri." : ""}</p> : (
             <div className="grid gap-2 sm:grid-cols-2 mt-2">
-              {d.vehicles.map((v) => (
+              {srch.pageRows.map((v) => (
                 <div key={v.id} className="rounded-lg border border-[#E1E4EA] p-2.5" data-testid={`fleet-vehicle-${v.id}`}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono font-bold text-[13px]">{v.plate}</span>

@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Layers, RefreshCw, ShieldCheck, Users2 } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import KNSelect from "../../components/KNSelect";
 import { errMsg } from "../rnd/rndMeta";
 import { approvalMatrix } from "../approvals/approvalsMatrixApi";
@@ -93,6 +94,8 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
   const shownMembers = filterDiv
     ? members.filter((m) => m.division === filterDiv)
     : members;
+  const pgMem = useListSearch(shownMembers, null, { testId: "rnd-members", pageSize: 20, placeholder: "Cari anggota / divisi…" });
+  const pgDiv = useListSearch(divisions, null, { testId: "rnd-divisions", pageSize: 12, placeholder: "Cari divisi…" });
 
   return (
     <div className="grid gap-3" data-testid="rnd-divisions-view">
@@ -129,9 +132,10 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
       <section className="section-card">
         <div className="section-head"><h2>Divisi ({divisions.length})</h2></div>
         <div className="section-body">
+          {pgDiv.toolbar}
           <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
             data-testid="rnd-divisions-cards">
-            {divisions.map((d) => {
+            {pgDiv.pageRows.map((d) => {
               const activeCard = filterDiv === d.id;
               return (
                 <button key={d.id} type="button"
@@ -245,7 +249,7 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
         <div className="section-body">
           {loading && !data ? (
             <p className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat anggota…</p>
-          ) : shownMembers.length === 0 ? (
+          ) : pgMem.shown.length === 0 ? (
             <p className="py-8 text-center text-[12px] text-[#9A9BA3]"
               data-testid="rnd-divisions-members-empty">
               Tidak ada anggota untuk saringan ini.
@@ -261,8 +265,9 @@ export default function DivisionsView({ currentUser, selectedEntity }) {
                     <th className="py-1.5 font-bold">Divisi</th>
                   </tr>
                 </thead>
+                <caption className="caption-top px-3 py-2 text-left">{pgMem.toolbar}</caption>
                 <tbody className="divide-y divide-[#F4F5F7]">
-                  {shownMembers.map((m) => (
+                  {pgMem.pageRows.map((m) => (
                     <tr key={m.name} data-testid={`rnd-member-row-${m.name}`}>
                       <td className="py-2 pr-3 font-semibold text-[#1C1C1E]">
                         {m.name}

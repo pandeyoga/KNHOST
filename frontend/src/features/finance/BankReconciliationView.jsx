@@ -16,19 +16,16 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { KNSelect } from "../../components/KNSelect";
+import { OptionTabs } from "../../components/ListControls";
 import { formatCurrency } from "../../utils/formatters";
 import ReconImportPanel from "./bank/ReconImportPanel";
 import ReconLinesTable from "./bank/ReconLinesTable";
 import ReconMatchModal from "./bank/ReconMatchModal";
 import ReconHoldingPanel from "./bank/ReconHoldingPanel";
-import ReconRulesPanel from "./bank/ReconRulesPanel";
-import ReconFormatsPanel from "./bank/ReconFormatsPanel";
 
 const TABS = [
   { id: "lines", label: "Mutasi & Pencocokan", icon: ListChecks },
   { id: "holding", label: "Dana Titipan", icon: PiggyBank },
-  { id: "rules", label: "Aturan Pembelajaran", icon: Sparkles },
-  { id: "formats", label: "Template Bank", icon: FileCog },
 ];
 
 // Status baris mutasi (SSOT status ada di backend: unmatched|matched|ignored|holding).
@@ -211,11 +208,14 @@ export default function BankReconciliationView() {
         </div>
       )}
 
+      <p className="mb-1 text-[11px] text-[#6B6B73]" data-testid="recon-rules-moved">
+        Aturan pembelajaran & template bank kini di <a className="font-semibold text-[#0058CC] underline" href="?view=bank-recon-rules" data-testid="recon-rules-link">Pengaturan › Keuangan</a>
+        {suggestedRules ? <span className="ml-1 rounded-full bg-[#FFF4E5] px-1.5 text-[10px] font-bold text-[#B26A00]">{suggestedRules} usulan menunggu</span> : null}
+      </p>
       <div className="flex items-center gap-1 border-b border-[#E5E5EA] mb-3 flex-wrap">
         {TABS.map((t) => {
           const Icon = t.icon;
-          const badge = t.id === "rules" && suggestedRules ? suggestedRules
-            : t.id === "holding" && holding?.needs_action ? holding.needs_action : 0;
+          const badge = t.id === "holding" && holding?.needs_action ? holding.needs_action : 0;
           return (
             <button key={t.id} data-testid={`recon-tab-${t.id}`}
               onClick={() => setTab(t.id)}
@@ -257,8 +257,8 @@ export default function BankReconciliationView() {
               <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
                 Tampilkan status
               </label>
-              <KNSelect data-testid="recon-filter-status" value={fStatus}
-                onValueChange={setFStatus} options={STATUS_FILTERS} />
+              <OptionTabs testId="recon-filter-status" value={fStatus}
+                onChange={setFStatus} options={STATUS_FILTERS} countOf={(v) => (v === (fStatus || "") ? lines.length : undefined)} />
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-[#6B6B73] mb-1">
@@ -303,14 +303,6 @@ export default function BankReconciliationView() {
           onAction={lineAction} onReload={loadData} onError={fail} onNotify={notify} />
       )}
 
-      {tab === "rules" && (
-        <ReconRulesPanel rules={rules} onReload={loadData} onError={fail} onNotify={notify} />
-      )}
-
-      {tab === "formats" && (
-        <ReconFormatsPanel formats={formats} onReload={loadData} onError={fail}
-          onNotify={notify} />
-      )}
 
       {matchFor && (
         <ReconMatchModal line={matchFor} onClose={() => setMatchFor(null)}

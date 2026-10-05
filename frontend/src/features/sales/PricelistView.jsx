@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import usePagedRows from "@/hooks/usePagedRows";
 import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import { entityShort, entityShortById } from "../../utils/entityLabel";
@@ -114,6 +115,7 @@ export default function PricelistView({ entities = [], selectedEntity, currentUs
   const shown = useMemo(
     () => (onlyOverride ? rows.filter((r) => r.entity_price != null) : rows),
     [rows, onlyOverride]);
+  const pgShown = usePagedRows(shown, { pageSize: 25, testId: "pricelist-pager" });
 
   // Produk tanpa harga jual di lapisan mana pun — wajib terlihat, bukan disembunyikan
   // sebagai "Rp 0" yang seolah-olah harga sah.
@@ -274,8 +276,9 @@ export default function PricelistView({ entities = [], selectedEntity, currentUs
                     <th className="px-3 py-2 text-right">Aksi</th>
                   </tr>
                 </thead>
+                <caption className="caption-bottom px-3 py-2">{shown.length > 25 && pgShown.pager}</caption>
                 <tbody>
-                  {shown.map((r) => {
+                  {pgShown.pageRows.map((r) => {
                     const has = r.entity_price != null;
                     // Tanpa harga efektif = belum ada harga jual di lapisan mana pun.
                     const noPrice = r.effective_price == null || Number(r.effective_price) === 0;
@@ -473,6 +476,7 @@ function SetPriceModal({ row, entityId, entityName, onClose, onSaved, onError })
 // ─── Riwayat Harga Modal ─────────────────────────────────────────────────────
 function HistoryModal({ row, entityId, entities, canManage, onClose, onChanged }) {
   const [records, setRecords] = useState([]);
+  const pgRec = usePagedRows(records, { pageSize: 25, testId: "pricelist-records-pager" });
   const [loading, setLoading] = useState(true);
   useEscapeClose(true, onClose, false);
   const [err, setErr] = useState("");
@@ -533,8 +537,9 @@ function HistoryModal({ row, entityId, entities, canManage, onClose, onChanged }
                     {canManage && <th className="px-3 py-2"></th>}
                   </tr>
                 </thead>
+                <caption className="caption-bottom px-3 py-2">{records.length > 25 && pgRec.pager}</caption>
                 <tbody>
-                  {records.map((r) => {
+                  {pgRec.pageRows.map((r) => {
                     const sm = STATUS_META[r.effective_status] || STATUS_META.inactive;
                     return (
                       <tr key={r.id} data-testid={`pl-hist-row-${r.id}`} className="border-b border-[#F5F5F7] last:border-0">

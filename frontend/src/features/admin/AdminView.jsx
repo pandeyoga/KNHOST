@@ -203,15 +203,20 @@ export default function AdminView({
   const [productQuery, setProductQuery] = useState("");   // MD-08 — cari kode KN / kode pabrik
   const AUDIT_PAGE = 50;   // X-2 — render bertahap, bukan 500 baris sekaligus
   const [auditShown, setAuditShown] = useState(AUDIT_PAGE);
+  const [recordQuery, setRecordQuery] = useState("");
   const visibleRecords = useMemo(() => {
     let rows = records;
+    if (tab !== "products" && recordQuery.trim()) {
+      const t = recordQuery.trim().toLowerCase();
+      rows = (rows || []).filter((r) => Object.values(r || {}).filter((v) => typeof v === "string" || typeof v === "number").join(" ").toLowerCase().includes(t));
+    }
     if (tab === "products" && lineFilter) {
       const want = lineFilter.split(",").map((s) => s.trim()).filter(Boolean);
       rows = (rows || []).filter((r) => want.includes(String(r.line_code || "")));
     }
     if (tab === "products" && productQuery.trim()) rows = (rows || []).filter((r) => productMatches(r, productQuery));
     return rows;
-  }, [records, tab, lineFilter, productQuery]);
+  }, [records, tab, lineFilter, productQuery, recordQuery]);
 
   const handleDryRunImport = async () => {
     if (!importFile) return;
@@ -480,6 +485,10 @@ export default function AdminView({
                             allowed={currentUser?.allowed_line_codes} className="mb-1"
                             testId="admin-products-line-filter" />
               </>
+            )}
+            {tab !== "products" && (
+              <input data-testid="admin-records-search" className="field mb-1" value={recordQuery}
+                onChange={(e) => setRecordQuery(e.target.value)} placeholder={`Cari ${(tabLabel[tab] || tab).toLowerCase()}…`} />
             )}
             {visibleRecords.length === 0 && (
               <div data-testid={`admin-records-empty-${tab}`} className="px-3 py-8 text-center text-[12px] text-[#6B6B73]">Belum ada {(tabLabel[tab] || tab).toLowerCase()} {scopeSuffix(scopeEntities, scopeEntityId)}.</div>

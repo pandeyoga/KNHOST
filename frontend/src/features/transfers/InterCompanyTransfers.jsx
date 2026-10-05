@@ -122,15 +122,13 @@ export default function InterCompanyTransfers({ currentUser = {} }) {
           <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="interco-transfers"
                       allowed={currentUser?.allowed_line_codes} testId="interco-line-filter" />
         </div>
-        <div className="flex flex-wrap items-center gap-2 px-4 py-2">
+        <div className="tab-bar px-4">
           {FILTERS.map((f) => (
             <button
               key={f.id}
               data-testid={`interco-filter-${f.id}`}
               onClick={() => setFilter(f.id)}
-              className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
-                filter === f.id ? "bg-[#1C1C1E] text-white" : "bg-[#F2F2F7] text-[#3C3C43] hover:bg-[#E5E5EA]"
-              }`}
+              className={`tab-button ${filter === f.id ? "active" : ""}`}
             >
               {f.label}
               {f.id === "waiting_approval" && counts.waiting_approval > 0 && (

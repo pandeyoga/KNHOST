@@ -5,6 +5,7 @@ import { Wallet, Plus, ArrowDownCircle, ArrowUpCircle, Ban, X, Building2 } from 
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import FormModal from "../../components/FormModal";
 import ConfirmModal from "../../components/ConfirmModal";
 
@@ -97,6 +98,8 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
     return entities.find((e) => e.id === id)?.short_name || entities.find((e) => e.id === id)?.legal_name || id || "—";
   };
   const filtered = txns.filter((t) => filter === "all" || t.cash_type === filter);
+  const cashCount = (k) => txns.filter((t) => k === "all" || t.cash_type === k).length;
+  const srch = useListSearch(filtered, null, { testId: "cash-txn", placeholder: "Cari nomor / deskripsi / kategori…" });
   const fmtDate = (s) => s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
   return (
@@ -165,7 +168,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
         <div className="section-body">
           <div className="tab-bar">
             {[{ k: "all", l: "Semua" }, { k: "kas_kecil", l: "Kas Kecil" }, { k: "kas_besar", l: "Kas Besar" }].map((t) => (
-              <button key={t.k} data-testid={`cash-filter-${t.k}`} className={`tab-button ${filter === t.k ? "active" : ""}`} onClick={() => setFilter(t.k)}>{t.l}</button>
+              <button key={t.k} data-testid={`cash-filter-${t.k}`} className={`tab-button ${filter === t.k ? "active" : ""}`} onClick={() => setFilter(t.k)}>{t.l}<span className="tab-badge">{cashCount(t.k)}</span></button>
             ))}
             {filter === "kas_kecil" && <a href="?view=cash-advances" data-testid="cash-link-petty" className="ml-2 self-center text-[11px] font-semibold text-[#0058CC] hover:underline">Pengajuan & LPJ Kas Kecil →</a>}
           </div>
@@ -224,16 +227,17 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
           <div className="grid grid-cols-[90px_90px_1.4fr_110px_120px_60px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
             <span>Nomor</span><span>Tanggal</span><span>Deskripsi / Kategori</span><span>Jenis / Entitas</span><span className="text-right">Nominal</span><span></span>
           </div>
+          {srch.toolbar}
           {loading ? (
             <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat transaksi kas...</div>
-          ) : filtered.length === 0 ? (
+          ) : srch.shown.length === 0 ? (
             <div className="py-12 text-center text-[12px] text-[#6B6B73]">
               <Wallet className="mx-auto mb-2 text-gray-300" size={28} />
               <p>Belum ada transaksi kas.</p>
             </div>
           ) : (
             <div className="divide-y divide-[#EFF0F2] max-h-[520px] overflow-y-auto">
-              {filtered.map((t) => (
+              {srch.pageRows.map((t) => (
                 <div key={t.id} data-testid={`cash-row-${t.id}`} className="grid grid-cols-[90px_90px_1.4fr_110px_120px_60px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
                   <span className="text-[11px] font-bold text-[#0058CC]">{t.number}</span>
                   <span className="text-[10.5px] text-[#6B6B73]">{fmtDate(t.txn_date)}</span>

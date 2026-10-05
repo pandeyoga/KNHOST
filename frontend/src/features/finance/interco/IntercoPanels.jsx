@@ -11,6 +11,8 @@ import {
   AlertTriangle, Bell, Eye, Receipt, Truck, Undo2,
 } from "lucide-react";
 import { KNSelect } from "../../../components/KNSelect";
+import useListSearch from "@/hooks/useListSearch";
+import { OptionTabs } from "../../../components/ListControls";
 import { formatCurrency } from "../../../utils/formatters";
 import {
   STATUS_CLASS, STATUS_LABEL, STATUS_FILTERS, ROLE_FILTERS,
@@ -21,14 +23,17 @@ export function TransactionsPanel({
   rows, fStatus, fRole, setFStatus, setFRole, onAdvance, onView, onCancel,
   onTax, onReturn, canWrite,
 }) {
+  const srch = useListSearch(rows, null, { testId: "interco-tx", placeholder: "Cari nomor / PT / barang…" });
   return (
     <div className="space-y-4">
+      <OptionTabs testId="interco-filter-status" value={fStatus} onChange={setFStatus}
+        options={STATUS_FILTERS} countOf={(v) => (v === (fStatus || "") ? rows.length : undefined)} />
       <div className="flex flex-wrap items-center gap-3">
-        <KNSelect data-testid="interco-filter-status" value={fStatus} onChange={setFStatus}
-                  options={STATUS_FILTERS} className="min-w-[190px]" placeholder="Status" />
         <KNSelect data-testid="interco-filter-role" value={fRole} onChange={setFRole}
                   options={ROLE_FILTERS} className="min-w-[190px]" placeholder="Peran" />
-        <div className="ml-auto text-xs text-[#6E6E73]">{rows.length} transaksi</div>
+        {srch.searchBox}
+        {srch.pager}
+        <div className="ml-auto text-xs text-[#6E6E73]">{srch.shown.length} transaksi</div>
       </div>
 
       <div className="rounded-xl border border-[#E5E5EA] bg-white overflow-hidden">
@@ -48,12 +53,12 @@ export function TransactionsPanel({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F2F2F5]">
-              {rows.length === 0 && (
+              {srch.shown.length === 0 && (
                 <tr><td colSpan={9} className="px-4 py-10 text-center text-[#8E8E93]">
                   Belum ada transaksi antar-PT.
                 </td></tr>
               )}
-              {rows.map((r) => {
+              {srch.pageRows.map((r) => {
                 const step = nextStep(r, r.role);
                 const tax = taxState(r);
                 const returned = Number(r.returned_amount || 0) > 0;

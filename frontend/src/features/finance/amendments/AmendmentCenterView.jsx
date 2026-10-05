@@ -18,7 +18,6 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { openConfig } from "../../settings/config/configDeepLink";
 import AmendmentDetailPanel from "./AmendmentDetailPanel";
-import AmendmentReasonsPanel from "./AmendmentReasonsPanel";
 import { amendmentStats, errText, listAmendments, methodMeta, statusMeta } from "./amendmentApi";
 
 const STATUS_TABS = [
@@ -128,18 +127,16 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
               <span className="tab-badge">{rows.length}</span>
             </button>
             {canSeeReasons && (
-              <button data-testid="amd-tab-alasan" className={`tab-button ${tab === "alasan" ? "active" : ""}`}
-                onClick={() => setTab("alasan")}>
-                <Tag size={12} className="mr-1 inline" /> Label Alasan
-              </button>
+              <a data-testid="amd-reasons-link" href="?view=amendment-reasons" className="ml-auto self-center text-[11px] font-semibold text-[#0058CC] underline">
+                <Tag size={12} className="mr-1 inline" /> Label Alasan (Pengaturan)
+              </a>
             )}
           </div>
         </div>
       </div>
 
-      {tab === "alasan" ? (
-        <AmendmentReasonsPanel currentUser={currentUser} />
-      ) : (
+      {(
+
         <>
           <div className="section-card mb-3">
             <div className="section-body flex flex-wrap items-center gap-2">
@@ -148,11 +145,11 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
                 <input data-testid="amd-search" value={q} onChange={(e) => setQ(e.target.value)}
                   className="field !pl-8" placeholder="Cari no. amandemen / dokumen / alasan / pengusul…" />
               </div>
-              <div className="flex flex-wrap gap-1.5" data-testid="amd-status-filters">
+              <div className="tab-bar" data-testid="amd-status-filters">
                 {STATUS_TABS.map((f) => (
                   <button key={f.key} data-testid={`amd-filter-${f.key || "all"}`} onClick={() => { setStatus(f.key); setSelected(null); }}
-                    className={`rounded-full border px-3 py-1 text-[11px] font-medium ${status === f.key ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#0058CC]"}`}>
-                    {f.label}
+                    className={`tab-button ${status === f.key ? "active" : ""}`}>
+                    {f.label}<span className="tab-badge">{Number((f.key ? stats[f.key] : stats.total) ?? 0)}</span>
                   </button>
                 ))}
               </div>

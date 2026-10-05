@@ -8,6 +8,7 @@ import axios, { API } from "../../services/apiClient";
 import { ScrollText, Plus, X, Pencil, Power, ShieldCheck } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import FormModal from "../../components/FormModal";
 import ConfirmModal from "../../components/ConfirmModal";
 
@@ -36,6 +37,7 @@ function ScopePill({ scope }) {
 
 export default function ReturnPoliciesView({ currentUser }) {
   const [rows, setRows] = useState([]);
+  const srch = useListSearch(rows, null, { testId: "policy", placeholder: "Cari kebijakan…" });
   const [cats, setCats] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -248,16 +250,17 @@ export default function ReturnPoliciesView({ currentUser }) {
         <div className="grid grid-cols-[1.4fr_100px_100px_1fr_90px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
           <span>Nama / Scope</span><span>Window</span><span>Inspeksi</span><span>Jenis / Restocking</span><span className="text-right">Aksi</span>
         </div>
+        {srch.toolbar}
         {loading ? (
           <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat kebijakan...</div>
-        ) : rows.length === 0 ? (
+        ) : srch.shown.length === 0 ? (
           <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="policy-empty">
             <ScrollText className="mx-auto mb-2 text-gray-300" size={28} />
             <p>Belum ada kebijakan retur. {canManage ? "Buat kebijakan pertama." : ""}</p>
           </div>
         ) : (
           <div className="divide-y divide-[#EFF0F2]">
-            {rows.map((p) => (
+            {srch.pageRows.map((p) => (
               <div key={p.id} data-testid={`policy-row-${p.id}`}
                 className="grid grid-cols-[1.4fr_100px_100px_1fr_90px] items-center px-3 py-2.5 hover:bg-[#FAFBFC]">
                 <div className="min-w-0">

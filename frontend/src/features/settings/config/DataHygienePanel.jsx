@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Sparkles, Loader2, RefreshCw, Undo2, LockOpen, ShieldCheck, Play } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import KNSelect from "../../../components/KNSelect";
 import { notifySuccess } from "../../../utils/feedback";
 import { askConfirm } from "../../../services/confirmService";
@@ -52,6 +53,7 @@ function ChangeList({ changes, testId }) {
 export default function DataHygienePanel({ isAdmin = false }) {
   const [summary, setSummary] = useState(null);
   const [rows, setRows] = useState([]);
+  const srch = useListSearch(rows, null, { testId: "hygiene", pageSize: 25, placeholder: "Cari koleksi / dokumen / temuan…" });
   const [preview, setPreview] = useState(null);
   const [coll, setColl] = useState("");
   const [busy, setBusy] = useState(false);
@@ -168,8 +170,9 @@ export default function DataHygienePanel({ isAdmin = false }) {
           <thead>
             <tr><th>Record</th><th>Perubahan</th><th>Kapan</th><th>Status</th><th> </th></tr>
           </thead>
+          <caption className="caption-top px-3 py-2 text-left">{srch.toolbar}</caption>
           <tbody>
-            {rows.map((r) => (
+            {srch.pageRows.map((r) => (
               <tr key={r.id} data-testid={`data-hygiene-row-${r.id}`}>
                 <td><b>{labels[r.collection] || r.collection}</b><br /><span>{r.doc_label}</span><br /><code className="cfg-key">{r.doc_id}</code></td>
                 <td><ChangeList changes={r.changes} testId={`data-hygiene-changes-${r.id}`} /></td>

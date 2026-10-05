@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Tag, RefreshCw, Trash2, Zap, Boxes, Radio, PackageSearch, Printer } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import axios, { API } from "../../services/apiClient";
 import { nf, q, fmtTime, Stat, EmptyBox, TabBtn, SectionCard, RfidHeader, useWarehouses } from "./rfidShared";
 import RfidPrintVerifyPanel from "./RfidPrintVerifyPanel";
@@ -14,6 +15,7 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
   const { whId, setWhId, whOpts } = useWarehouses();
   const [summary, setSummary] = useState(null);
   const [tags, setTags] = useState([]);
+  const srch = useListSearch(tags, null, { testId: "rfid-tags", placeholder: "Cari EPC / SKU / produk / roll…" });
   const [untagged, setUntagged] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -90,8 +92,9 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
         <RfidPrintVerifyPanel whId={whId} selectedEntity={selectedEntity} onChanged={load} />
       ) : tab === "tags" ? (
         <SectionCard title="Daftar Tag RFID Aktif">
+          {srch.searchBox}
           {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
-            : tags.length === 0 ? <EmptyBox icon={Tag} text="Belum ada tag aktif. Encode roll di tab 'Belum Ber-tag'." />
+            : srch.shown.length === 0 ? <EmptyBox icon={Tag} text="Belum ada tag aktif. Encode roll di tab 'Belum Ber-tag'." />
               : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-[12px]">
@@ -100,7 +103,7 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
                       <th className="pr-2">Roll / Lot</th><th className="pr-2">Last Seen</th><th className="pr-2 text-right">Aksi</th>
                     </tr></thead>
                     <tbody>
-                      <PagedRows rows={tags} testId="rfid-tags-pager">{(t) => (
+                      <PagedRows rows={srch.shown} testId="rfid-tags-pager">{(t) => (
                         <tr key={t.id} data-testid={`rfid-tag-row-${t.id}`} className="border-b border-[#F5F5F7] hover:bg-[#FAFAFB]">
                           <td className="py-2 pr-2 font-mono font-semibold text-[11px]">{t.epc}</td>
                           <td className="pr-2">{t.sku || "—"}</td>

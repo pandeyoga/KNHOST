@@ -10,6 +10,7 @@ import { Filter, FlaskConical, Plus, RefreshCw, Search, X } from "lucide-react";
 import DetailModal from "../../components/DetailModal";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
+import { OptionTabs } from "../../components/ListControls";
 import LineFilter from "../../components/LineFilter";
 import { REVISION_FILTER_OPTIONS, sampleRevisionCount } from "../../components/RevisionProgress";
 import SampleDetailPanel from "./SampleDetailPanel";
@@ -164,7 +165,8 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
           </div>
           {showFilters && (
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6" data-testid={`sample-gallery-filters-${code}`}>
-              <KNSelect data-testid={`sample-gallery-filter-status-${code}`} className="field" value={f.status} options={STATUS_OPTS} onValueChange={(v) => set("status", v)} />
+              <div className="col-span-full"><OptionTabs testId={`sample-gallery-filter-status-${code}`} value={f.status} options={STATUS_OPTS} onChange={(v) => set("status", v)}
+                countOf={(v) => (v === (f.status || "") ? rows.length : undefined)} /></div>
               <KNSelect data-testid={`sample-gallery-filter-supplier-${code}`} className="field" value={f.supplier} searchable
                 options={[{ value: "", label: "Semua supplier" }, ...suppliers.map(([id, name]) => ({ value: id, label: name }))]} onValueChange={(v) => set("supplier", v)} />
               <KNSelect data-testid={`sample-gallery-filter-result-${code}`} className="field" value={f.result} options={RESULT_OPTS} onValueChange={(v) => set("result", v)} />

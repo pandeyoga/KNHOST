@@ -139,12 +139,10 @@ export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDo
                 className="field !pl-8" placeholder="Cari nomor / pesanan / pelanggan…" />
             </div>
             {tab === "denda" && (
-              <div className="flex flex-wrap gap-1.5" data-testid="pp-status-filters">
+              <div className="tab-bar" data-testid="pp-status-filters">
                 {PEN_TABS.map((f) => (
                   <button key={f.key} data-testid={`pp-filter-${f.key || "all"}`} onClick={() => setStatus(f.key)}
-                    className={`rounded-full border px-3 py-1 text-[11px] font-medium ${status === f.key
-                      ? "border-[#0058CC] bg-[#0058CC] text-white"
-                      : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#0058CC]"}`}>
+                    className={`tab-button ${status === f.key ? "active" : ""}`}>
                     {f.label}
                   </button>
                 ))}

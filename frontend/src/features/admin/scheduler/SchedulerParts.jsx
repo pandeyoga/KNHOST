@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { X, Play, Clock, CheckCircle2, AlertTriangle, Loader2, Save, ExternalLink } from "lucide-react";
 import { Badge } from "../../finance/financeShared";
+import useListSearch from "@/hooks/useListSearch";
 
 export const inputCls = "w-full rounded-lg border border-[#E2E2E7] bg-white px-2.5 py-1.5 text-[12px] text-[#1C1C1E] focus:border-[#6B219A] focus:outline-none";
 export const labelCls = "block text-[11px] font-bold text-[#3A3A3C] mb-1";
@@ -101,6 +102,7 @@ function ScheduleEditor({ job, onSave, saving }) {
 
 // ── Tabel job ────────────────────────────────────────────────────────
 export function JobTable({ jobs, perms, busyId, onRun, onPatch, onOpenDetail }) {
+  const srch = useListSearch(jobs, (j) => [j.id, j.label, j.description, j.module], { testId: "jobs", pageSize: 20, placeholder: "Cari job…" });
   return (
     <div className="overflow-hidden rounded-xl border border-[#EFF0F2] bg-white" data-testid="job-table">
       <table className="w-full text-[12px]">
@@ -115,8 +117,9 @@ export function JobTable({ jobs, perms, busyId, onRun, onPatch, onOpenDetail }) 
             <th className="px-3 py-2.5 font-bold text-right">Aksi</th>
           </tr>
         </thead>
+        <caption className="caption-top px-3 py-2 text-left">{srch.toolbar}</caption>
         <tbody className="divide-y divide-[#F2F2F5]">
-          {jobs.map((j) => (
+          {srch.pageRows.map((j) => (
             <tr key={j.id} data-testid={`job-row-${j.id}`} className="hover:bg-[#FCFAFE]">
               <td className="px-3 py-2.5">
                 <button data-testid={`job-detail-${j.id}`} onClick={() => onOpenDetail(j)}
@@ -183,6 +186,7 @@ export function JobTable({ jobs, perms, busyId, onRun, onPatch, onOpenDetail }) 
 
 // ── Tabel riwayat run ─────────────────────────────────────────────────
 export function RunTable({ runs }) {
+  const srch = useListSearch(runs, null, { testId: "runs", pageSize: 20, placeholder: "Cari eksekusi…" });
   return (
     <div className="overflow-hidden rounded-xl border border-[#EFF0F2] bg-white" data-testid="run-table">
       <table className="w-full text-[12px]">
@@ -198,8 +202,9 @@ export function RunTable({ runs }) {
             <th className="px-3 py-2.5 font-bold">Keterangan</th>
           </tr>
         </thead>
+        <caption className="caption-top px-3 py-2 text-left">{srch.toolbar}</caption>
         <tbody className="divide-y divide-[#F2F2F5]">
-          {runs.map((r) => (
+          {srch.pageRows.map((r) => (
             <tr key={r.id} data-testid={`run-row-${r.id}`} className="hover:bg-[#FCFAFE]">
               <td className="px-3 py-2 whitespace-nowrap text-[#3A3A3C]">{fmtWaktu(r.started_at)}</td>
               <td className="px-3 py-2 font-semibold text-[#1C1C1E]">{r.job_label || r.job_id}</td>

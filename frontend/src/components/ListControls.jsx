@@ -33,3 +33,13 @@ export function SearchBox({ value, onChange, placeholder, testId }) {
 export function ListToolbar({ children, testId }) {
   return <div data-testid={testId} className="filter-bar mb-3">{children}</div>;
 }
+
+
+// Pengganti dropdown status: opsi {value,label} → tab bergaris. `countOf(value)` opsional (undefined = tanpa angka).
+export function OptionTabs({ options, value, onChange, testId, countOf }) {
+  return (
+    <StatusTabs value={value || ""} onChange={onChange} testIdPrefix={testId}
+      tabs={(options || []).map((o) => ({ key: o.value || "", label: o.label, testKey: o.value || "all",
+        count: countOf ? countOf(o.value || "") : undefined }))} />
+  );
+}

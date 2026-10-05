@@ -5,8 +5,10 @@ import axios, { API } from "../../services/apiClient";
 import KNMonthPicker from "@/components/KNMonthPicker";
 import { Route, Users, BarChart3, RefreshCw, Building2 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import { OptionTabs } from "../../components/ListControls";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import { MyVisitsPanel } from "./MyVisitsPanel";
 // FASE E-8 (E8.3 · SD4) — riwayat + KPI kunjungan MILIK SENDIRI (`/hr/visits/mine`).
 // Dulu sales hanya melihat kunjungan HARI INI; catatan kerja sebulannya cuma bisa
@@ -35,6 +37,7 @@ function VisitsLog({ currentUser, selectedEntity }) {
   const [empFilter, setEmpFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [rows, setRows] = useState([]);
+  const srch = useListSearch(rows, null, { testId: "visits", pageSize: 1000, placeholder: "Cari sales / pelanggan / hasil (halaman ini)…" });
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const PAGE_SIZE = 50;
@@ -104,21 +107,22 @@ function VisitsLog({ currentUser, selectedEntity }) {
               <div><label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Karyawan</label>
                 <KNSelect data-testid="visits-emp-filter" value={empFilter} onValueChange={setEmpFilter} className="field" searchable options={empOpts} /></div>
               <div><label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Status</label>
-                <KNSelect data-testid="visits-status-filter" value={statusFilter} onValueChange={setStatusFilter} className="field" options={statusOpts} /></div>
+                <OptionTabs testId="visits-status-filter" value={statusFilter} onChange={setStatusFilter} options={statusOpts} countOf={(v) => (v === (statusFilter || "") ? total : undefined)} /></div>
             </div>
           </div>
           <div className="section-card">
             <div className="grid grid-cols-[1.4fr_1.4fr_84px_84px_72px_96px_96px] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
               <span>Sales</span><span>Pelanggan</span><span>Masuk</span><span>Keluar</span><span className="text-right">Durasi</span><span>Hasil</span><span>Status</span>
             </div>
-            <KNPager page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} testId="visits-pager" />
+            <div className="flex flex-wrap items-center gap-2 px-3 py-2">{srch.searchBox}
+              <KNPager page={page} pageSize={PAGE_SIZE} total={total} onChange={setPage} testId="visits-pager" /></div>
             {loading ? (
               <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="visits-loading">Memuat kunjungan...</div>
-            ) : rows.length === 0 ? (
+            ) : srch.shown.length === 0 ? (
               <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="visits-empty"><Route className="mx-auto mb-2 text-gray-300" size={28} /><p>Belum ada kunjungan pada rentang ini.</p></div>
             ) : (
               <div className="divide-y divide-[#EFF0F2] max-h-[520px] overflow-y-auto">
-                {rows.map((v) => {
+                {srch.pageRows.map((v) => {
                   const oc = OUTCOME_PILL[v.outcome] || OUTCOME_PILL[""];
                   const st = VISIT_STATUS_PILL[v.status] || VISIT_STATUS_PILL.done;
                   return (

@@ -19,6 +19,7 @@ import { Calculator, Plus, RefreshCw, Ruler, X } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import DecimalInput from "../../../components/DecimalInput";
 import KNSelect from "../../../components/KNSelect";
+import { OptionTabs } from "../../../components/ListControls";
 import UomInputConvert from "../../../components/UomInputConvert";
 import useUomConversions, { invalidateUomCache } from "../../../hooks/useUomConversions";
 import { RuleTable, StatCards, UsageTable } from "./UomConversionParts";
@@ -210,12 +211,13 @@ export default function UomConversionView({ user, products = [] }) {
                   options={[{ value: "", label: "Semua jenis" },
                             ...kinds.map((k) => ({ value: k.value, label: k.label }))]}
                   onValueChange={(v) => setFilter({ ...filter, kind: v })} />
-                <KNSelect data-testid="uom-filter-status" className="field !py-1 !text-[10.5px] w-[120px]"
-                  value={filter.status} placeholder="Semua status"
+                <OptionTabs testId="uom-filter-status"
+                  value={filter.status}
                   options={[{ value: "", label: "Semua status" },
                             { value: "active", label: "Aktif" },
                             { value: "inactive", label: "Nonaktif" }]}
-                  onValueChange={(v) => setFilter({ ...filter, status: v })} />
+                  countOf={(v) => (v === (filter.status || "") ? shown.length : undefined)}
+                  onChange={(v) => setFilter({ ...filter, status: v })} />
                 {canEdit && (
                   <button data-testid="uom-rule-add" className="primary-button !px-2 !py-1 !text-[10.5px]"
                     onClick={() => { setModal({ mode: "create", data: { ...EMPTY_RULE } }); setModalErr(""); }}>

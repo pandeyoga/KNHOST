@@ -84,9 +84,12 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
       ) : (<>
         <div className="flex flex-wrap items-center gap-2">
           <SearchBox value={q} onChange={setQ} placeholder="Nomor GRN / SJ / mitra" testId="grn-search" />
+        </div>
+        <div className="tab-bar">
           {FILTERS.map(([v, l]) => (
             <button key={l} data-testid={`grn-filter-${v || "all"}`} onClick={() => setStatus(v)}
-              className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${status === v ? "border-[#0058CC] bg-[#EEF4FF] text-[#0058CC]" : "border-[#E5E5EA] text-[#3C3C43]"}`}>{l}</button>
+              className={`tab-button ${status === v ? "active" : ""}`}>{l}
+              {status === v && <span className="tab-badge">{rows.length}</span>}</button>
           ))}
         </div>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3" data-testid="grn-list">

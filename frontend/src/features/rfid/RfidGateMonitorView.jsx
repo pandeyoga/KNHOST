@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Cpu, RefreshCw, ScanLine, ShieldCheck, ShieldAlert, ArrowLeftRight, Radio, Volume2, VolumeX, Maximize2, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import { useEscapeClose } from "../../utils/escapeLayers";
 import axios, { API } from "../../services/apiClient";
 import { playSiren, isSirenMuted, setSirenMuted } from "../../utils/sirenAlarm";
@@ -17,6 +18,7 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
   const [tags, setTags] = useState([]);
   const [rollId, setRollId] = useState("");
   const [reads, setReads] = useState([]);
+  const srch = useListSearch(reads, null, { testId: "rfid-reads", placeholder: "Cari EPC / roll / gate / hasil…" });
   const [summary, setSummary] = useState(null);
   const [lastResult, setLastResult] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -215,11 +217,12 @@ export default function RfidGateMonitorView({ currentUser, selectedEntity }) {
       <GatePassageHistory gateId={gateId} whId={whId} refreshKey={`${lastResult?.id || ""}-${gateStatus.data?.passage?.acknowledged_at || ""}-${gateStatus.data?.passage?.red_count || 0}`} />
 
       <SectionCard title="Aktivitas Gate Terbaru">
+        {srch.toolbar}
         {loading ? <div className="h-16 bg-[#F5F5F7] rounded animate-pulse" />
-          : reads.length === 0 ? <EmptyBox icon={ScanLine} text="Belum ada aktivitas gate. Lakukan simulasi di atas." />
+          : srch.shown.length === 0 ? <EmptyBox icon={ScanLine} text="Belum ada aktivitas gate. Lakukan simulasi di atas." />
             : (
               <div className="space-y-1.5">
-                {reads.map((r) => (
+                {srch.pageRows.map((r) => (
                   <div key={r.id} data-testid={`rfid-read-${r.id}`} className="flex items-center gap-2 rounded-lg bg-[#FAFAFB] px-3 py-2">
                     <Pill color={resultColor(r.result)}>{r.result === "green" ? "LOLOS" : r.result === "red" ? "DITAHAN" : "INFO"}</Pill>
                     <span className="text-[12px] font-semibold">{r.roll_no || "—"}</span>

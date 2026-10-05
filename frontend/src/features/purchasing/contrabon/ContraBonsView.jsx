@@ -19,6 +19,7 @@ import {
 import axios, { API } from "../../../services/apiClient";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { KNSelect } from "../../../components/KNSelect";
+import { OptionTabs } from "../../../components/ListControls";
 import { formatCurrency } from "../../../utils/formatters";
 import { apiErrorText } from "../../../utils/apiError";
 import { entityShortById } from "../../../utils/entityLabel";
@@ -274,8 +275,8 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
             data-testid="cb-filter-bar">
             <div className="min-w-[210px]">
               <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Status</label>
-              <KNSelect data-testid="cb-filter-status" value={fStatus} onValueChange={setFStatus}
-                options={statusOptions} className="field" />
+              <OptionTabs testId="cb-filter-status" value={fStatus} onChange={setFStatus}
+                options={statusOptions} countOf={(v) => (v === (fStatus || "") ? rows.length : undefined)} />
             </div>
             <div className="min-w-[240px]">
               <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">

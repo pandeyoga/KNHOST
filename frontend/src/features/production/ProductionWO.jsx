@@ -5,6 +5,7 @@
 import { useMemo, useState } from "react";
 import { Eye, PlayCircle, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import { OptionTabs } from "../../components/ListControls";
 import { StatusBadge } from "./ProductionParts";
 import { formatCurrency, Badge } from "../finance/financeShared";
 
@@ -20,11 +21,11 @@ export function WOTable({ wos, perms, busyId, onDetail, onAction }) {
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
-        <KNSelect data-testid="wo-status-filter" value={filter} onValueChange={setFilter}
+        <OptionTabs testId="wo-status-filter" value={filter} onChange={setFilter}
+                  countOf={(v) => wos.filter((w) => !v || w.status === v).length}
                   options={[{ value: "", label: "Semua status" }, { value: "draft", label: "Draf" },
                             { value: "released", label: "Dirilis" }, { value: "completed", label: "Selesai" },
-                            { value: "cancelled", label: "Dibatalkan" }]}
-                  className={`${inputCls} w-48`} />
+                            { value: "cancelled", label: "Dibatalkan" }]} />
         <span className="text-[11px] text-[#9A9BA3]">{rows.length} Perintah Kerja</span>
       </div>
       <div className="overflow-hidden rounded-xl border border-[#EFF0F2] bg-white" data-testid="wo-table">

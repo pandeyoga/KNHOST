@@ -9,6 +9,7 @@ import KNSelect from "../../components/KNSelect";
 import useDomainEnums from "../../hooks/useDomainEnums";
 import RollInspectionModal from "./RollInspectionModal";
 import QcPlanPanel from "./QcPlanPanel";
+import useListSearch from "@/hooks/useListSearch";
 
 /**
  * QC Inspection (Depth #3a) — antrian inspeksi QC barang masuk.
@@ -28,6 +29,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
   const { options: enumOptions, labelOf } = useDomainEnums();
   const gradeOptions = enumOptions("grade");
   const [rows, setRows] = useState([]);
+  const srch = useListSearch(rows, null, { testId: "qc-queue", placeholder: "Cari SKU / produk / roll / GRN…" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
@@ -154,6 +156,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
       <section className="section-card">
         <div className="section-head"><h3>Antrian Inspeksi</h3></div>
         <div className="section-body">
+          {srch.toolbar}
           {loading ? (
             <div data-testid="qc-loading" className="py-10 text-center text-[#9A9BA3] text-[13px]">
               <RefreshCw size={20} className="animate-spin mx-auto mb-2" /> Memuat antrian QC…
@@ -163,7 +166,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
               <span><AlertTriangle size={14} className="inline mr-1" />{error}</span>
               <button onClick={load}>Coba lagi</button>
             </div>
-          ) : rows.length === 0 ? (
+          ) : srch.shown.length === 0 ? (
             <div data-testid="qc-empty" className="py-12 text-center">
               <PackageCheck size={32} className="mx-auto mb-2 text-[#34C759]" />
               <p className="text-[13.5px] font-semibold">Tidak ada barang menunggu QC</p>
@@ -175,7 +178,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
                 <span>Produk</span><span>PO / Supplier</span>
                 <span className="text-right">Karantina</span><span className="text-right">Aksi</span>
               </div>
-              {rows.map((t, i) => (
+              {srch.pageRows.map((t, i) => (
                 <div key={t.id} data-testid={`qc-task-row-${i}`}
                      className="grid grid-cols-[1.6fr_1fr_120px_120px] items-center px-3 py-2.5 border-t border-[#F4F5F7]">
                   <div className="min-w-0">

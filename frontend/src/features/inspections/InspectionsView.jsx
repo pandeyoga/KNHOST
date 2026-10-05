@@ -229,11 +229,13 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
             onClick={() => setKindFilter(c.key)}>{c.label}</button>
         ))}
         <span className="mx-1 h-4 w-px bg-[#E5E5EA]" />
+        <div className="tab-bar !mb-0 w-full">
         {statusChips.map((c) => (
           <button key={c.key || "all-status"} data-testid={`ins-chip-status-${c.key || "all"}`}
-            className={`status-pill ${statusFilter === c.key ? "pill-info" : "pill-muted"}`}
+            className={`tab-button ${statusFilter === c.key ? "active" : ""}`}
             onClick={() => setStatusFilter(c.key)}>{c.label}</button>
         ))}
+        </div>
         <button data-testid="ins-chip-hold"
           className={`status-pill ${holdOnly ? "pill-danger" : "pill-muted"}`}
           onClick={() => setHoldOnly((v) => !v)}>

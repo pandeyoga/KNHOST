@@ -107,6 +107,9 @@ const MakloonOrdersView = lazy(() => import("./features/purchasing/MakloonOrders
 const MakloonClaimsView = lazy(() => import("./features/purchasing/makloon/MakloonClaimsView"));
 const ContractsView = lazy(() => import("./features/purchasing/contracts/ContractsView"));
 const InternalPricesView = lazy(() => import("./features/interco_prices/InternalPricesView"));
+const AmendmentReasonsPanel = lazy(() => import("./features/finance/amendments/AmendmentReasonsPanel"));
+const IncentiveRatesEditor = lazy(() => import("./features/crm/IncentiveRatesEditor"));
+const BankRulesSettingsView = lazy(() => import("./features/finance/bank/BankRulesSettingsView"));
 const SupplierItemsView = lazy(() => import("./features/purchasing/supplier-items/SupplierItemsView"));
 const PurchaseApprovalView = lazy(() => import("./features/purchasing/PurchaseApprovalView"));
 const CashManagementView = lazy(() => import("./features/purchasing/CashManagementView"));
@@ -399,6 +402,9 @@ export default function AppViewRouter(props) {
       {activeView === "makloon-claims" && <MakloonClaimsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "supplier-contracts" && <ContractsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "internal-prices" && <InternalPricesView />}
+      {activeView === "amendment-reasons" && <AmendmentReasonsPanel currentUser={user} />}
+      {activeView === "incentive-rates" && <IncentiveRatesEditor currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "bank-recon-rules" && <BankRulesSettingsView />}
       {/* FASE F — hub R&D & Desain (4 tab). `rndFocus` = deep-link dari Pustaka Warna,
           Kontrak Supplier, atau kartu desain (event global `kn-open-rnd`). */}
       {activeView === "rnd-specs" && (

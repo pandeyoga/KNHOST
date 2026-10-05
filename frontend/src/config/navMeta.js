@@ -117,6 +117,9 @@ export const PAGE_META = {
   // Coming Soon views (cs-* yang benar-benar belum live)
   "cs-price-list":        { kicker: "Produk & Harga", title: "Harga per Pelanggan" },
   "internal-prices":      { kicker: "Produk & Harga", title: "Harga Internal Antar-PT" },
+  "amendment-reasons":    { kicker: "Pengaturan · Penjualan", title: "Label Alasan Amandemen" },
+  "incentive-rates":      { kicker: "Pengaturan · Penjualan", title: "Rate Insentif Sales" },
+  "bank-recon-rules":     { kicker: "Pengaturan · Keuangan", title: "Aturan & Template Bank" },
   "cs-bom":               { kicker: "Pembelian",      title: "BOM Printing" },
   "cs-stock-analytics":   { kicker: "Gudang",         title: "Analitik Stok (Cepat/Lambat/Mati)" },
   "goods-receipts":       { kicker: "Operasi Gudang", title: "Barang Masuk · Surat Jalan, OCR & Hitung Fisik" },

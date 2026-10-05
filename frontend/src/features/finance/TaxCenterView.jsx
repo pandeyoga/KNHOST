@@ -33,7 +33,6 @@ const BASIS_LABEL = { payroll: "Otomatis · Payroll", omzet: "Otomatis · Omzet"
 const TABS = [
   { key: "ppn", label: "PPN (SPT Masa)", icon: Receipt },
   { key: "pph", label: "PPh", icon: ScrollText },
-  { key: "config", label: "Konfigurasi", icon: Settings },
 ];
 
 export default function TaxCenterView({ currentUser, selectedEntity }) {
@@ -120,8 +119,8 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
               onRecord={(item) => setRecordFor(item)} onReload={() => load(period)}
               entityId={selectedEntity} period={period} />
           )}
-          {tab === "config" && (
-            <ConfigRedirectCard
+          {tab === "pph" && canManage && (
+            <div className="mt-3"><ConfigRedirectCard
               title="Konfigurasi Pajak"
               note="Perubahan tarif PPN berisiko tinggi, jadi di sana Anda juga bisa mencoba dampaknya dulu sebelum menyimpan."
               group="pajak"
@@ -133,7 +132,7 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
                 { key: "tax.efaktur_enabled", label: "Terbitkan e-Faktur" },
                 { key: "tax.pph_items", label: "Daftar butir PPh" },
               ]}
-            />
+            /></div>
           )}
         </>
       )}

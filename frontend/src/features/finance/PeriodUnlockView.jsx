@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import KNSelect from "../../components/KNSelect";
 import { askReason } from "@/services/confirmService";
 
@@ -60,6 +61,7 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
 
   const [closings, setClosings] = useState([]);
   const [requests, setRequests] = useState([]);
+  const srch = useListSearch(requests, null, { testId: "plu", placeholder: "Cari periode / alasan / pengusul…" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -247,9 +249,10 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
 
               {/* Riwayat usul */}
               <p className="text-[11px] font-bold uppercase tracking-wide text-[#8E8E93] mb-2 flex items-center gap-1"><History size={12} /> Riwayat & Antrean Usul</p>
+              {srch.toolbar}
               {loading ? (
                 <div className="grid gap-2" data-testid="plu-loading">{[0, 1, 2].map((i) => <div key={i} className="h-10 bg-[#F5F5F7] rounded animate-pulse" />)}</div>
-              ) : requests.length === 0 ? (
+              ) : srch.shown.length === 0 ? (
                 <div data-testid="plu-empty" className="py-10 text-center text-[12px] text-[#8E8E93]">
                   <Unlock size={26} className="mx-auto mb-2 text-gray-300" />Belum ada usul buka periode untuk entitas ini.
                 </div>
@@ -269,7 +272,7 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
                       </tr>
                     </thead>
                     <tbody>
-                      {requests.map((r) => {
+                      {srch.pageRows.map((r) => {
                         const badge = STATUS_BADGE[r.status] || STATUS_BADGE.pending;
                         const BadgeIcon = badge.icon;
                         const isRequester = currentUser?.id && currentUser.id === r.requested_by_id;

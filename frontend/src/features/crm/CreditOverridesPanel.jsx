@@ -3,12 +3,14 @@ import axios, { API } from "../../services/apiClient";
 import { ShieldCheck, Check, XCircle } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import ConfirmModal from "../../components/ConfirmModal";
 import { fmtDate } from "./crmUtils";
 
 /** Persetujuan override kredit (KN_17 §5.2 / S37) — Manager/Finance. */
 export default function CreditOverridesPanel({ currentUser }) {
   const [rows, setRows] = useState([]);
+  const srch = useListSearch(rows, null, { testId: "overrides", placeholder: "Cari pelanggan / pemohon / alasan…" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -73,7 +75,8 @@ export default function CreditOverridesPanel({ currentUser }) {
               <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid="overrides-empty">Tidak ada permohonan {tab !== "all" ? `(${tab})` : ""}.</div>
             ) : (
               <div className="divide-y divide-[#EFF0F2] max-h-[560px] overflow-y-auto">
-                {rows.map((r) => (
+                {srch.toolbar}
+                {srch.pageRows.map((r) => (
                   <div key={r.id} data-testid={`override-row-${r.id}`} className="grid grid-cols-[1.3fr_110px_1fr_120px_120px] items-center px-3 py-2.5 text-[11.5px]">
                     <div className="min-w-0"><p className="font-semibold truncate">{r.customer_name}</p><p className="text-[10.5px] text-[#6B6B73] truncate">{r.reason}</p></div>
                     <span className="tabular-nums font-semibold">{formatCurrency(r.amount)}</span>

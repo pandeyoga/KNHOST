@@ -5,7 +5,7 @@ import { CalendarDays, RefreshCw, Plus, Check, X, Ban, Users } from "lucide-reac
 import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
-import { SearchBox } from "../../components/ListControls";
+import { SearchBox, OptionTabs } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
 import { LEAVE_TYPES, LEAVE_TYPE_LABEL, REQ_STATUS, recentMonths, curMonth, wibToday, countWorkdays, monthCells } from "./leaveUtils";
 
@@ -189,7 +189,7 @@ export default function LeaveView({ currentUser, selectedEntity }) {
         <div className="section-card">
           <div className="flex items-center gap-2 px-3 py-2 border-b border-[#EFF0F2]">
             <div className="w-[150px]"><KNSelect data-testid="leave-filter-month" value={month} onValueChange={setMonth} className="field !py-1" options={monthOpts} /></div>
-            <div className="w-[150px]"><KNSelect data-testid="leave-filter-status" value={status} onValueChange={setStatus} className="field !py-1" options={statusOpts} /></div>
+            <OptionTabs testId="leave-filter-status" value={status} onChange={setStatus} options={statusOpts} countOf={(v) => (v === (status || "") ? rows.length : undefined)} />
             <SearchBox value={q} onChange={setQ} placeholder="Cari karyawan / alasan…" testId="leave-search" />
           </div>
           <div className="grid grid-cols-[1.5fr_1fr_1.2fr_70px_100px_1.3fr] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">

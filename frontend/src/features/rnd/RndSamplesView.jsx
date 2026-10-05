@@ -188,11 +188,14 @@ export default function RndSamplesView({ currentUser, selectedEntity, focus, onF
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <RevisionFilter value={minRevision} onChange={setMinRevision} testId="rnd-samples-revision-filter" />
           <span className="mx-1 h-4 w-px bg-[#E5E5EA]" />
+          <div className="tab-bar !mb-0 w-full">
           {statusChips.map((c) => (
             <button key={c.key || "all"} data-testid={`rnd-samples-chip-${c.key || "all"}`}
-              className={`status-pill ${statusFilter === c.key ? "pill-info" : "pill-muted"}`}
-              onClick={() => setStatusFilter(c.key)}>{c.label}</button>
+              className={`tab-button ${statusFilter === c.key ? "active" : ""}`}
+              onClick={() => setStatusFilter(c.key)}>{c.label}
+              {statusFilter === c.key && <span className="tab-badge">{rows.length}</span>}</button>
           ))}
+          </div>
         </div>
       </div>
 

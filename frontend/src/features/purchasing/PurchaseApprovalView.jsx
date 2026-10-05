@@ -6,6 +6,7 @@ import POTimeline from "../admin/po/POTimeline";
 import PODeviationBanner from "../admin/po/PODeviationBanner";
 import ConfirmModal from "../../components/ConfirmModal";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
 
 /**
@@ -149,6 +150,8 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
     rejected: pos.filter((p) => matchTab(p, "rejected")).length,
   };
   const filtered = pos.filter((p) => matchTab(p, tab));
+  const srch = useListSearch(filtered, (p) => [p.po_number, p.number, p.supplier_name, p.warehouse_name, p.status],
+    { testId: "po-approval", placeholder: "Cari nomor PO / supplier / gudang…" });
 
   return (
     <div data-testid="purchase-approval-view">
@@ -178,6 +181,7 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
       </div>
 
       <div className="section-card">
+        {srch.toolbar}
         {/* Tabel lebar: beri jarak antar kolom + izinkan geser mendatar pada layar
             sempit. Sebelumnya `overflow-hidden` tanpa `gap` membuat angka Total
             menempel ke kolom Tingkat Persetujuan ("Rp 588.000.000MANAGER") dan
@@ -188,14 +192,14 @@ export default function PurchaseApprovalView({ currentUser, selectedEntity }) {
           </div>
           {loading ? (
             <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat pesanan pembelian…</div>
-          ) : filtered.length === 0 ? (
+          ) : srch.shown.length === 0 ? (
             <div className="py-12 text-center text-[12px] text-[#6B6B73]">
               <ClipboardList className="mx-auto mb-2 text-gray-300" size={28} />
               <p>Tidak ada PO {TABS.find((t) => t.key === tab)?.label.toLowerCase()}.</p>
             </div>
           ) : (
             <div className="divide-y divide-[#EFF0F2] max-h-[600px] overflow-y-auto">
-              {filtered.map((po) => {
+              {srch.pageRows.map((po) => {
                 const open = expandedId === po.id;
                 const chain = getChain(po);
                 const pending = pendingLevelOf(chain);

@@ -17,6 +17,7 @@ import {
   RefreshCw, ScrollText, ShieldCheck, ShoppingBag, Users2, X,
 } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import { formatCurrency } from "../../utils/formatters";
 import {
   apiErr, approvalMatrixLog, approveMakloonClaim, approvePr, approveSpec, approveSpecialOrder,
@@ -139,6 +140,8 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
 
   const cfg = data?.config || {};
   const items = (data?.items || []).filter((it) => !stage || it.stage === stage);
+  const srch = useListSearch(items, (it) => [it.number, it.title, it.doc_number, it.label, it.summary, it.requester_name, it.stage_label],
+    { testId: "my-approvals", placeholder: "Cari nomor / judul / pengaju…" });
   const counts = data?.counts || {};
 
   function openModal(item, action) {
@@ -270,9 +273,10 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
       <section className="section-card">
         <div className="section-head"><h2>Dokumen Menunggu ({items.length})</h2></div>
         <div className="section-body">
+          {srch.toolbar}
           {loading && !data ? (
             <p className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat antrean…</p>
-          ) : items.length === 0 ? (
+          ) : srch.shown.length === 0 ? (
             <p className="py-8 text-center text-[12px] text-[#9A9BA3]"
               data-testid="my-approvals-empty">
               Tidak ada dokumen yang menunggu keputusan pada saringan ini. 🎉
@@ -293,7 +297,7 @@ export default function MyApprovalsView({ currentUser, selectedEntity, onNavigat
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F4F5F7]">
-                  {items.map((it) => {
+                  {srch.pageRows.map((it) => {
                     const meta = STAGE_META[it.stage] || {};
                     const Icon = meta.icon || ShieldCheck;
                     const isSample = it.stage === "sample_acc";

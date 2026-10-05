@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { Users, Plus, Search, Pencil, Power, UserCheck, Building2, Briefcase, BarChart3 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import { OptionTabs } from "../../components/ListControls";
 import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -151,7 +152,8 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
           </div>
           <KNSelect data-testid="employee-filter-dept" value={filterDept} onValueChange={setFilterDept} className="field" placeholder="Semua Departemen"
             options={[{ value: "", label: "Semua Departemen" }, ...departments.map((d) => ({ value: d.id, label: d.name }))]} />
-          <KNSelect data-testid="employee-filter-status" value={filterStatus} onValueChange={setFilterStatus} className="field" placeholder="Semua Status"
+          <OptionTabs testId="employee-filter-status" value={filterStatus} onChange={setFilterStatus}
+            countOf={(v) => employees.filter((e) => !v || e.status === v).length}
             options={[{ value: "", label: "Semua Status" }, { value: "active", label: "Aktif" }, { value: "inactive", label: "Nonaktif" }, { value: "resigned", label: "Resigned" }]} />
         </div>
       </div>

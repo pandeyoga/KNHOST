@@ -212,7 +212,10 @@ export const HUB_TABS = {
     // 2026-10 (T6) — pengaturan yang dulu menumpang di menu operasional. Fitur & hak akses TETAP.
     { view: "cs-rfid-devices",   label: "Perangkat RFID",         roles: ["admin"], section: "Gudang" },
     { view: "return-policies",   label: "Kebijakan Retur",        roles: ["admin", "manager"], section: "Penjualan" },
+    { view: "amendment-reasons", label: "Label Alasan Amandemen", roles: ["admin", "manager"], section: "Penjualan" },
+    { view: "incentive-rates",   label: "Rate Insentif Sales",    roles: ["admin", "manager"], section: "Penjualan" },
     { view: "expense-categories", label: "Kategori Beban",        roles: ["admin", "manager"], section: "Keuangan" },
+    { view: "bank-recon-rules",  label: "Aturan & Template Bank", roles: ["admin", "manager"], section: "Keuangan" },
     { view: "hr-attendance-setup", label: "Shift & Geofence",     roles: ["admin", "manager"], section: "SDM" },
     { view: "rnd-divisions",     label: "Divisi & Persetujuan R&D", roles: ["admin", "manager"], section: "Organisasi & Akses" },
   ],

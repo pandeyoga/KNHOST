@@ -3,6 +3,7 @@ import axios, { API } from "../../services/apiClient";
 import { FolderTree, RefreshCw, Save, Info } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 
 /**
  * ExpenseCategoriesView — Konfigurasi pemetaan kategori pengeluaran petty cash → akun COA.
@@ -11,6 +12,7 @@ import ErrorNotice from "../../components/ErrorNotice";
  */
 export default function ExpenseCategoriesView({ currentUser }) {
   const [cats, setCats] = useState([]);
+  const srch = useListSearch(cats, null, { testId: "excat", placeholder: "Cari kategori / akun…" });
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -73,15 +75,16 @@ export default function ExpenseCategoriesView({ currentUser }) {
             <span>Pemetaan ini menentukan akun beban yang di-debit saat pertanggungjawaban (LPJ) disetujui. Kredit selalu ke <b>Kas Kecil</b>. {canManage ? "" : "Hanya admin/manager yang dapat mengubah."}</span>
           </div>
 
+          {srch.toolbar}
           <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
             <div className="grid grid-cols-[1.6fr_1.6fr_100px] bg-[#FAFBFC] px-3 py-1.5 text-[10px] font-bold uppercase text-[#6B6B73]">
               <span>Kategori</span><span>Akun Beban (COA)</span><span className="text-right">Status</span>
             </div>
             {loading ? <div className="py-10 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
-              : cats.length === 0 ? <div data-testid="excat-empty" className="py-12 text-center text-[12px] text-[#6B6B73]">Belum ada kategori.</div>
+              : srch.shown.length === 0 ? <div data-testid="excat-empty" className="py-12 text-center text-[12px] text-[#6B6B73]">Belum ada kategori.</div>
               : (
                 <div className="divide-y divide-[#EFF0F2]">
-                  {cats.map((c) => (
+                  {srch.pageRows.map((c) => (
                     <div key={c.code} data-testid={`excat-row-${c.code}`} className="grid grid-cols-[1.6fr_1.6fr_100px] items-center gap-2 px-3 py-2.5">
                       <div className="min-w-0">
                         <p className="text-[12px] font-semibold truncate">{c.label}</p>

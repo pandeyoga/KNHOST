@@ -10,6 +10,7 @@ import { formatQty } from "../../utils/formatters";
 // dari baris inilah permintaan internal diajukan (dulu: WhatsApp ke rekan PT lain).
 import InternalRequestCreateModal from "../internal_requests/InternalRequestCreateModal";
 import { SearchBox } from "../../components/ListControls";
+import usePagedRows from "@/hooks/usePagedRows";
 
 // W2-REQ-04 — POV sales: angka utama = total GRUP (tanpa owner); baris kecil = entitas saya.
 const pv = (row, k) => (row.detail_scope === "own_entity" && row.global_total
@@ -67,6 +68,7 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
       && (STOCK_TABS.find((t) => t.key === stockTab)?.test || (() => true))(r)),
     [rows, search, stockTab]
   );
+  const pgInv = usePagedRows(filtered, { pageSize: 25, testId: "inventory-board-pager" });
   const tabCounts = useMemo(() => Object.fromEntries(STOCK_TABS.map((t) => [t.key, t.test ? rows.filter(t.test).length : rows.length])), [rows]);
 
   const totals = useMemo(() => ({
@@ -157,8 +159,9 @@ export default function InventoryStatusBoard({ currentUser, selectedEntity = "al
                   <th className="px-2">Entitas</th>
                 </tr>
               </thead>
+              <caption className="caption-bottom px-3 py-2">{filtered.length > 25 && pgInv.pager}</caption>
               <tbody>
-                {filtered.map((r) => (
+                {pgInv.pageRows.map((r) => (
                   <RowGroup key={r.product_id} row={r} open={!!expanded[r.product_id]}
                             onToggle={() => toggle(r.product_id)}
                             canRequest={canRequest}
