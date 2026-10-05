@@ -9,6 +9,7 @@ import { Save, Trash2, Pencil, Plus, RefreshCw, Tag, XCircle } from "lucide-reac
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
+import useListSearch from "@/hooks/useListSearch";
 import useUomConversions from "../../hooks/useUomConversions";
 import { uomSelectOptions } from "../../utils/uomCatalog";
 import { askConfirm } from "@/services/confirmService";
@@ -96,7 +97,8 @@ export default function CategoryManager({ onChanged }) {
     }
   };
 
-  const activeRows = rows;
+  const srch = useListSearch(rows, null, { testId: "category", placeholder: "Cari kode / nama kategori…" });
+  const activeRows = srch.pageRows;
 
   return (
     <section className="grid items-start gap-3 lg:grid-cols-[360px_1fr]" data-testid="category-manager">
@@ -167,6 +169,7 @@ export default function CategoryManager({ onChanged }) {
         </div>
         <div className="section-body">
           <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="category-list-error" />
+          {srch.toolbar}
 
           {loading ? (
             <div className="grid gap-2" data-testid="category-loading">

@@ -119,7 +119,7 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
               onRecord={(item) => setRecordFor(item)} onReload={() => load(period)}
               entityId={selectedEntity} period={period} />
           )}
-          {tab === "pph" && canManage && (
+          {canManage && (
             <div className="mt-3"><ConfigRedirectCard
               title="Konfigurasi Pajak"
               note="Perubahan tarif PPN berisiko tinggi, jadi di sana Anda juga bisa mencoba dampaknya dulu sebelum menyimpan."

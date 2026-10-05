@@ -24,7 +24,7 @@ export default function CaseInboxTable({ cases, loading, activeId, onOpen }) {
     );
   }
 
-  if (!cases.length) {
+  if (!cases.length && !srch.q) {
     return (
       <div className="rounded-lg border border-[#E5E5EA] bg-white px-4 py-10 text-center"
         data-testid="case-table-empty">

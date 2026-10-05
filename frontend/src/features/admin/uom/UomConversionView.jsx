@@ -24,6 +24,7 @@ import UomInputConvert from "../../../components/UomInputConvert";
 import useUomConversions, { invalidateUomCache } from "../../../hooks/useUomConversions";
 import { RuleTable, StatCards, UsageTable } from "./UomConversionParts";
 import ConfigRedirectCard from "../../settings/config/ConfigRedirectCard";
+import useListSearch from "@/hooks/useListSearch";
 
 const EMPTY_RULE = { from_unit: "", to_unit: "", kind: "fixed", factor: "", formula: "",
                      note: "", status: "active" };
@@ -63,6 +64,7 @@ export default function UomConversionView({ user, products = [] }) {
     (!filter.dimension || r.dimension === filter.dimension)
     && (!filter.kind || r.kind === filter.kind)
     && (!filter.status || r.status === filter.status)), [rules, filter]);
+  const srch = useListSearch(shown, null, { testId: "uom-rules", pageSize: 30, placeholder: "Cari satuan / dimensi / jenis…" });
 
   async function submitRule() {    setModalErr("");
     const d = modal?.data || {};
@@ -216,7 +218,8 @@ export default function UomConversionView({ user, products = [] }) {
                   options={[{ value: "", label: "Semua status" },
                             { value: "active", label: "Aktif" },
                             { value: "inactive", label: "Nonaktif" }]}
-                  countOf={(v) => (v === (filter.status || "") ? shown.length : undefined)}
+                  countOf={(v) => rules.filter((r) => (!filter.dimension || r.dimension === filter.dimension)
+                    && (!filter.kind || r.kind === filter.kind) && (!v || r.status === v)).length}
                   onChange={(v) => setFilter({ ...filter, status: v })} />
                 {canEdit && (
                   <button data-testid="uom-rule-add" className="primary-button !px-2 !py-1 !text-[10.5px]"
@@ -226,7 +229,8 @@ export default function UomConversionView({ user, products = [] }) {
                 )}
               </div>
             </div>
-            <RuleTable rules={shown} canEdit={canEdit} busyId={busyId} loading={loading}
+            {srch.toolbar}
+            <RuleTable rules={srch.pageRows} canEdit={canEdit} busyId={busyId} loading={loading}
               onEdit={(r) => { setModal({ mode: "edit", data: { ...r, factor: String(r.factor ?? "") } }); setModalErr(""); }}
               onToggle={toggleRule} />
           </div>
