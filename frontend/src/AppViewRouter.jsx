@@ -18,9 +18,9 @@ const PriceApprovals = lazy(() => import("./features/sales/PriceApprovals"));
 const OrdersView = lazy(() => import("./features/orders/OrdersView"));
 const CrmView = lazy(() => import("./features/crm/CrmView"));
 const OperationsView = lazy(() => import("./features/wms/OperationsView"));
-const QCInspection = lazy(() => import("./features/wms/QCInspection"));
 // FASE I — SPK Inspeksi & QC sebagai DOKUMEN (`<ENT>/INS-#####`). Layar QC lama di
 // atas tetap ada sebagai antrean karantina; dokumennya hidup di layar ini.
+const QcHubView = lazy(() => import("./features/inspections/QcHubView"));
 const InspectionsView = lazy(() => import("./features/inspections/InspectionsView"));
 const DocumentsView = lazy(() => import("./features/documents/DocumentsView"));
 const AdminView = lazy(() => import("./features/admin/AdminView"));
@@ -445,8 +445,8 @@ export default function AppViewRouter(props) {
       {activeView === "purchase-requisitions" && <PurchaseRequisitions currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "reorder" && <ReorderSuggestions currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "operations" && <OperationsView data={data} movements={movements} tasks={tasks} entities={entities} selectedEntity={selectedEntity} onGenerateLabel={generateLabel} onCreateInboundTask={createInboundTask} onCreateOutboundTasks={createOutboundTasks} onScanTask={scanTask} onAdvanceTask={advanceTask} onShowDetail={setActiveDetail} onNavigate={(target) => onNavSelect(target, target)} token={token} user={user} defaultTab={wmsInitialTab} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} onOpenDocument={openDocument} />}
-      {activeView === "qc-inspection" && <QCInspection currentUser={user} selectedEntity={selectedEntity} />}
-      {activeView === "inspections" && <InspectionsView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
+      {activeView === "qc-inspection" && <QcHubView key="qc-queue" initial="queue" currentUser={user} selectedEntity={selectedEntity} />}
+      {activeView === "inspections" && <QcHubView key="qc-docs" initial="docs" currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "hr-employees" && <EmployeesView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-org-units" && <OrgUnitsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "hr-attendance" && <AttendanceView currentUser={user} selectedEntity={selectedEntity} />}

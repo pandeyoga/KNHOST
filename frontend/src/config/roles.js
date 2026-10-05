@@ -177,6 +177,7 @@ export const ROLE_NAV = {
       "pembelian", "sourcing", "purchase-requisitions",
       "akuntansi", "interco-transactions",
       "return-policies",           // perlu membaca kebijakan retur saat memproses retur
+      "settings-hub",              // 2026-10 — Kebijakan Retur kini di Pengaturan › Penjualan (hanya tab itu yang tampil)
       "document-center", "doc-trace",
       // AUDIT SALES vs ADMIN SALES (sesi 2026-08-15) — keputusan pemilik E8.1b memberi
       // peran ini `approval: ["view"]` ("melihat antrean, tanpa menyetujui"). Izin itu

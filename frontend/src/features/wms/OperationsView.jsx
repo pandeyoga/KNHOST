@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Layers, ArrowLeftRight, ClipboardCheck, Activity } from "lucide-react";
 import InventoryStockView from "./InventoryStockView";
 import TransferManagement from "./TransferManagement";
@@ -6,6 +6,10 @@ import CycleCount from "../inventory/CycleCount";
 import WmsHealthDashboard from "./WmsHealthDashboard";
 import WaitingBoardsStrip from "../../components/WaitingBoardsStrip";
 import { can } from "../../config/roles";
+import { StatusTabs } from "../../components/ListControls";
+
+const InterCompanyTransfers = lazy(() => import("../transfers/InterCompanyTransfers"));
+const IC_ROLES = ["admin", "warehouse", "manager", "warehouse_admin"];
 
 export default function OperationsView({
   data,
@@ -32,6 +36,7 @@ export default function OperationsView({
   // DAFTAR di bawahnya (Transfer & Stock Opname memuat datanya sendiri), supaya
   // satu dokumen tidak tampil "menunggu ACC" di layar yang sama (INV-HOME-01).
   const [boardsVersion, setBoardsVersion] = useState(0);
+  const [transferScope, setTransferScope] = useState("warehouse");
 
   // Sync tab when deep-link navigation from sidebar changes defaultTab
   useEffect(() => {
@@ -111,14 +116,24 @@ export default function OperationsView({
           <div className="section-head">
             <div className="flex items-center gap-2 min-w-0">
               <span className="kicker">Transfer</span>
-              <h2>Transfer Antar Gudang</h2>
+              <h2>{transferScope === "entity" ? "Transfer Antar-Entitas (PT)" : "Transfer Antar Gudang"}</h2>
             </div>
           </div>
           <div className="section-body">
-            {/* T6: papan di atas boleh memaksa daftar ini memuat ulang. */}
+            {IC_ROLES.includes(user?.role) && (
+              <StatusTabs value={transferScope} onChange={setTransferScope} testIdPrefix="wms-transfer-scope"
+                tabs={[{ key: "warehouse", label: "Antar gudang" }, { key: "entity", label: "Antar entitas (PT)" }]} />
+            )}
+            {transferScope === "entity" && IC_ROLES.includes(user?.role) ? (
+              <Suspense fallback={<div className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat…</div>}>
+                <InterCompanyTransfers currentUser={user} />
+              </Suspense>
+            ) : (
+            /* T6: papan di atas boleh memaksa daftar ini memuat ulang. */
             <TransferManagement key={`transfer-${boardsVersion}`} user={user}
               focusTransferId={focusDoc?.focus_type === "warehouse_transfer" ? focusDoc.focus_id : ""}
               onFocusConsumed={onClearFocus} />
+            )}
           </div>
         </div>
       )}

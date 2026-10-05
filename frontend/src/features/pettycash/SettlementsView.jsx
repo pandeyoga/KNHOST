@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
+import { SearchBox } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
 import { STL_STATUS, StatusPill, fmtDate, printSettlement } from "./pettyCashShared";
 import SettlementForm from "./SettlementForm";
@@ -65,7 +66,10 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
     return m;
   }, [rows]);
 
-  const filtered = rows.filter((r) => !statusFilter || r.status === statusFilter);
+  const [q, setQ] = useState("");
+  const countOf = (k) => rows.filter((r) => !k || r.status === k).length;
+  const filtered = rows.filter((r) => (!statusFilter || r.status === statusFilter)
+    && (!q.trim() || [r.number, r.advance_number, r.description, r.requester_name, r.employee_name].some((v) => String(v || "").toLowerCase().includes(q.trim().toLowerCase()))));
   const entityName = (id) => entities.find((e) => e.id === id)?.short_name || entities.find((e) => e.id === id)?.legal_name || id || "—";
   const catLabels = useMemo(() => Object.fromEntries(categories.map((c) => [c.code, c.label])), [categories]);
 
@@ -111,7 +115,8 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
         </section>
 
         <div className="flex flex-wrap gap-1.5 px-3 pb-3">
-          {TABS.map((t) => (<button key={t.key || "all"} data-testid={`stl-tab-${t.key || "all"}`} className={`tab-button ${statusFilter === t.key ? "active" : ""}`} onClick={() => setStatusFilter(t.key)}>{t.label}</button>))}
+          {TABS.map((t) => (<button key={t.key || "all"} data-testid={`stl-tab-${t.key || "all"}`} className={`tab-button ${statusFilter === t.key ? "active" : ""}`} onClick={() => setStatusFilter(t.key)}>{t.label}<span className="tab-badge">{countOf(t.key)}</span></button>))}
+          <div className="ml-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor / PD / pemohon…" testId="stl-search" /></div>
         </div>
       </section>
 

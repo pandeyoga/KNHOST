@@ -3,6 +3,7 @@ import axios, { API } from "../../services/apiClient";
 import { Wallet, Plus, RefreshCw, FileText } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import ErrorNotice from "../../components/ErrorNotice";
+import { SearchBox } from "../../components/ListControls";
 import { CA_STATUS, StatusPill, fmtDate } from "./pettyCashShared";
 import CashAdvanceForm from "./CashAdvanceForm";
 import CashAdvanceDetail from "./CashAdvanceDetail";
@@ -69,7 +70,11 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
     return m;
   }, [rows]);
 
+  const [q, setQ] = useState("");
+  const countOf = (k) => rows.filter((r) => !k || (k === "pending_atasan" ? PENDING.includes(r.status) : r.status === k)).length;
   const filtered = rows.filter((r) => {
+    const t = q.trim().toLowerCase();
+    if (t && ![r.number, r.purpose, r.description, r.requester_name, r.employee_name].some((v) => String(v || "").toLowerCase().includes(t))) return false;
     if (!statusFilter) return true;
     if (statusFilter === "pending_atasan") return PENDING.includes(r.status);
     return r.status === statusFilter;
@@ -128,8 +133,9 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
 
         <div className="flex flex-wrap gap-1.5 px-3 pb-3">
           {TABS.map((t) => (
-            <button key={t.key || "all"} data-testid={`ca-tab-${t.key || "all"}`} className={`tab-button ${statusFilter === t.key ? "active" : ""}`} onClick={() => setStatusFilter(t.key)}>{t.label}</button>
+            <button key={t.key || "all"} data-testid={`ca-tab-${t.key || "all"}`} className={`tab-button ${statusFilter === t.key ? "active" : ""}`} onClick={() => setStatusFilter(t.key)}>{t.label}<span className="tab-badge">{countOf(t.key)}</span></button>
           ))}
+          <div className="ml-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor / keperluan / pemohon…" testId="ca-search" /></div>
         </div>
       </section>
 

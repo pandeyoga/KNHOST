@@ -49,8 +49,8 @@ const fmtCell = (col, row) => cellText(col, row, formatCurrency);
 const FULL_EDITOR = {
   "approval-rules": { view: "approval-rules", label: "Pengaturan › Aturan Persetujuan" },
   "incentive-rates": { view: "customers-crm", label: "Pelanggan › CRM › Rate Insentif" },
-  "sales-return-policies": { view: "return-policies", label: "Pesanan › Kebijakan Retur" },
-  "expense-categories": { view: "expense-categories", label: "Kas Kecil › Kategori Beban" },
+  "sales-return-policies": { view: "return-policies", label: "Pengaturan › Penjualan › Kebijakan Retur" },
+  "expense-categories": { view: "expense-categories", label: "Pengaturan › Keuangan › Kategori Beban" },
   "document-templates": { view: "doc-templates-basic", label: "Pengaturan › Template Dokumen Dasar" },
   "process-stages": { view: "domain-registry", label: "Pengaturan › Registri Domain" },
 };

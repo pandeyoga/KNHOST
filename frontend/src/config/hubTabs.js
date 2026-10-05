@@ -21,7 +21,6 @@ export const HUB_TABS = {
     { view: "orders",            label: "Pesanan (SO)",          roles: ["admin", "sales", "manager"] },
     { view: "amendments",        label: "Koreksi & Amandemen",   roles: ["admin", "sales", "manager"] },
     { view: "returns",           label: "Retur & Barang Sisa",   roles: ["admin", "sales", "manager"] },
-    { view: "return-policies",   label: "Kebijakan Retur",       roles: ["admin", "manager"] },
     // FASE E-7 (E7d) — jalur yang dulu buntu: papan stok bilang "tersedia di badan
     // usaha lain", tetapi seluruh menu Antar Entitas 403 untuk sales. Di sini sales
     // MENGAJUKAN, admin/manajer MENINDAK (jadi transaksi antar-PT G-6).
@@ -104,19 +103,18 @@ export const HUB_TABS = {
     { view: "designer-kpi",      label: "KPI Desainer",       roles: ["admin", "manager"] },
     { view: "rnd-designs",       label: "Desain & Pattern",   roles: ["admin", "manager", "designer"] },
     { view: "cs-design-gallery", label: "Galeri Desain (Showcase)", roles: ["admin", "manager"] },
-    { view: "rnd-divisions",     label: "Divisi & Persetujuan", roles: ["admin", "manager"] },
   ],
   "wms-operations": [
     { view: "operations",        label: "Stok, Transfer & Opname", roles: ["admin", "warehouse", "manager", "sales"] },
     // 2026-10 — Barang Masuk & Barang Keluar SATU LEVEL (dulu Barang Keluar tab di dalam Operasi WMS).
     { view: "goods-receipts",    label: "Barang Masuk",          roles: ["admin", "warehouse", "manager", "warehouse_admin", "finance"] },
     { view: "wms-outbound",      label: "Barang Keluar",         roles: ["admin", "warehouse", "manager", "sales"] },
-    { view: "qc-inspection",     label: "Antrean QC Kedatangan", roles: ["admin", "warehouse", "manager"] },
-    // FASE I — dokumen inspeksi (SPK): siapa memeriksa, atas dasar sample mana, dan
-    // keputusannya. Ditaruh SESUDAH "Inspeksi QC" (antrean karantina) karena itulah
-    // urutan kerjanya: barang masuk antrean \u2192 SPK-nya lahir \u2192 hasil & keputusan.
-    { view: "inspections",       label: "Dokumen Inspeksi (INS)", roles: ["admin", "warehouse", "manager"] },
-    { view: "interco-transfers", label: "Transfer Antar-Entitas", roles: ["admin", "warehouse", "manager"] },
+    { view: "qc-inspection",     label: "QC & Inspeksi",         roles: ["admin", "warehouse", "manager"] },
+    // 2026-10 (T5.3) — Dokumen Inspeksi digabung ke tab "QC & Inspeksi" (sub-tab). Entri `hidden`
+    // tetap ada agar deep-link `inspections` menyorot hub ini.
+    { view: "inspections",       label: "Dokumen Inspeksi (INS)", roles: ["admin", "warehouse", "manager"], hidden: true },
+    // 2026-10 (T5.2) — Transfer Antar-Entitas kini sub-tab di "Stok, Transfer & Opname" › Transfer.
+    { view: "interco-transfers", label: "Transfer Antar-Entitas", roles: ["admin", "warehouse", "manager"], hidden: true },
   ],
   "stock-atp": [
     { view: "inventory-board",   label: "Status Stok & ATP",     roles: ["admin", "warehouse", "manager", "sales"] },
@@ -132,7 +130,6 @@ export const HUB_TABS = {
     { view: "cash-advances",      label: "Pengajuan Dana (PD)",  roles: ["admin", "manager", "sales"] },
     { view: "settlements",        label: "Pertanggungjawaban",   roles: ["admin", "manager", "sales"] },
     { view: "reimburse-payables", label: "Hutang Reimburse",     roles: ["admin", "manager"] },
-    { view: "expense-categories", label: "Kategori Beban",       roles: ["admin", "manager"] },
   ],
   "tax-hub": [
     { view: "tax-invoices",      label: "Faktur Keluaran",       roles: ["admin", "manager"] },
@@ -159,7 +156,6 @@ export const HUB_TABS = {
     { view: "hr-leave",            label: "Cuti & Izin",         roles: ["admin", "manager"] },
     { view: "hr-overtime",         label: "Lembur",              roles: ["admin", "manager"] },
     { view: "hr-live-tracking",    label: "Lacak Lapangan",      roles: ["admin", "manager"] },
-    { view: "hr-attendance-setup", label: "Shift & Geofence",    roles: ["admin", "manager"] },
   ],
   "hr-payroll-hub": [
     { view: "hr-payroll-runs",   label: "Payroll Run",           roles: ["admin", "manager"] },
@@ -194,7 +190,6 @@ export const HUB_TABS = {
   "rfid-hub": [
     { view: "cs-rfid-lokasi",    label: "Lokasi RFID",           roles: ["admin", "warehouse"] },
     { view: "cs-rfid-tags",      label: "Tag RFID",              roles: ["admin", "warehouse"] },
-    { view: "cs-rfid-devices",   label: "Perangkat",             roles: ["admin"] },
     { view: "cs-rfid-gate",      label: "Monitor Gerbang",       roles: ["admin", "warehouse"] },
   ],
   // IA 2026-10 (D3) — 3 seksi: Sistem · Organisasi & Akses · Kamus & Dokumen.
@@ -214,5 +209,11 @@ export const HUB_TABS = {
     { view: "doc-templates-basic", label: "Template Dokumen Dasar", roles: ["admin"], section: "Kamus & Dokumen" },
     // 2026-10 — Profil SJ · Sampel Uji OCR · Biaya OCR · Mode Penerimaan (dulu tab di Barang Masuk).
     { view: "settings-receiving-ocr", label: "Penerimaan & OCR", roles: ["admin", "manager", "warehouse_admin"], section: "Gudang" },
+    // 2026-10 (T6) — pengaturan yang dulu menumpang di menu operasional. Fitur & hak akses TETAP.
+    { view: "cs-rfid-devices",   label: "Perangkat RFID",         roles: ["admin"], section: "Gudang" },
+    { view: "return-policies",   label: "Kebijakan Retur",        roles: ["admin", "manager"], section: "Penjualan" },
+    { view: "expense-categories", label: "Kategori Beban",        roles: ["admin", "manager"], section: "Keuangan" },
+    { view: "hr-attendance-setup", label: "Shift & Geofence",     roles: ["admin", "manager"], section: "SDM" },
+    { view: "rnd-divisions",     label: "Divisi & Persetujuan R&D", roles: ["admin", "manager"], section: "Organisasi & Akses" },
   ],
 };

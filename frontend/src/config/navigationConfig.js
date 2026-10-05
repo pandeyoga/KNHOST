@@ -15,7 +15,7 @@ export { HUB_TABS, NAV_STRUCTURE } from "./navStructure";
 export { PAGE_META, ROLE_HOME_REGISTRY, GUIDANCE_MAP } from "./navMeta";
 
 export function hubTabsForRole(hubId, role) {
-  return (HUB_TABS[hubId] || []).filter((t) => roleCanSee(t.roles, role, t.view));
+  return (HUB_TABS[hubId] || []).filter((t) => !t.hidden && roleCanSee(t.roles, role, t.view));
 }
 
 // ─── KLASIFIKASI VIEW (SSOT — dipakai App.js, jangan disalin ke komponen) ──────

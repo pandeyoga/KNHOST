@@ -150,7 +150,10 @@ export default function InternalRequestsView({ currentUser, selectedEntity = "al
           {tabs.map((t) => (
             <button key={t.key || "all"} data-testid={`pin-tab-${t.key || "all"}`}
               className={`tab-button ${statusFilter === t.key ? "active" : ""}`}
-              onClick={() => setStatusFilter(t.key)}>{t.label}</button>
+              onClick={() => setStatusFilter(t.key)}>{t.label}
+              {t.key ? (summary.by_status || {})[t.key] != null && <span className="tab-badge">{(summary.by_status || {})[t.key]}</span>
+                : summary.by_status && <span className="tab-badge">{Object.values(summary.by_status).reduce((s, n) => s + (Number(n) || 0), 0)}</span>}
+            </button>
           ))}
           <div className="ml-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nomor / barang / alasan…" testId="pin-search" /></div>
         </div>

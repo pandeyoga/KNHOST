@@ -14,6 +14,7 @@ import { openRnd } from "../../rnd/rndDeepLink";
 import { openTrace } from "../../documents/trace/traceDeepLink";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import ContractFormModal from "./ContractFormModal";
+import { StatusTabs } from "../../../components/ListControls";
 import InternalPriceBulkPanel from "../../interco_prices/InternalPriceBulkPanel";
 import { entitiesFromSummary, InternalPriceSummary } from "../../interco_prices/InternalPricesView";
 import { internalPriceAccess, internalPriceSummary } from "../../interco_prices/internalPriceApi";
@@ -81,6 +82,10 @@ export default function ContractsView({ currentUser, selectedEntity }) {
     return rows.filter((r) => [r.contract_number, r.partner_name, r.title, r.product_name, r.process_type]
       .some((v) => (v || "").toLowerCase().includes(term)));
   }, [rows, q]);
+  const typeCount = (k) => {
+    if (type) return k === type ? rows.length : undefined;
+    return k ? rows.filter((r) => r.contract_type === k).length : rows.length;
+  };
 
   const changeStatus = async (row, status) => {
     try {
@@ -146,12 +151,8 @@ export default function ContractsView({ currentUser, selectedEntity }) {
                 className="field !pl-8" placeholder="Cari nomor / mitra / produk / proses…" />
             </div>
             <div className="flex flex-wrap gap-1.5" data-testid="contracts-filters">
-              {TYPE_FILTERS.map((f) => (
-                <button key={f.key} data-testid={`contracts-filter-${f.key || "all"}`} onClick={() => setType(f.key)}
-                  className={`rounded-full border px-3 py-1 text-[11px] font-medium ${type === f.key ? "border-[#0058CC] bg-[#0058CC] text-white" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#0058CC]"}`}>
-                  {f.label}
-                </button>
-              ))}
+              <StatusTabs value={type} onChange={setType} testIdPrefix="contracts-filter"
+                tabs={TYPE_FILTERS.map((f) => ({ ...f, testKey: f.key || "all", count: typeCount(f.key) }))} />
             </div>
           </div>
         </div>
