@@ -1,0 +1,33 @@
+{
+  "summary": "FE click-through verified for Harga Internal Antar-PT flow inside FulfillmentDecisionDialog. Setup via API: created TEST_ SO KANDA/SO-00003 (prod_ulos_batak, allow_backorder) in Kanda and temporarily terminated the active KSC→Kanda internal contract (sct_519eb36b4d4c) to force price-missing state. UI phase 1 (salesadmin.kanda / demo1234): opened Meja Admin Sales → clicked 'Putuskan pemenuhan' on KANDA/SO-00003 → FulfillmentDecisionDialog opened; the 'Transfer dari Sukacita' row shows badge fulfill-ic-price-missing-prod_ulos_batak-ent_ksc, qty input fulfill-ic-prod_ulos_batak-ent_ksc is disabled, fulfill-create-price button is HIDDEN (correct — salesadmin lacks interco_price.set); clicked fulfill-request-price-prod_ulos_batak-ent_ksc → fulfill-notice shows 'Permintaan dikirim ke 3 orang (MD/Finance/Admin).' and button text becomes 'Permintaan terkirim' (disabled). UI phase 2 (admin / demo12345, entity ent_kanda): fulfill-create-price-prod_ulos_batak-ent_ksc visible → internal-price-modal opens → filled 100000 → internal-price-preview visible → internal-price-save → modal detaches → fulfill-notice shows 'Harga internal ULS-BTK-001 tersimpan — transfer sekarang bisa dijalankan.' → plan reloaded → fulfill-ic-price-prod_ulos_batak-ent_ksc now reads 'Harga internal Rp\u00a0100.000 / yard', qty input enabled. Pagination render check: ?view=supplier-items, ?view=color-library, ?view=reorder all render without crash. CLEANUP done: TEST SO cancelled, original internal contract restored to active, new internal contract created by admin's modal (sct_a210f6e93cd5) terminated.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iter155_setup.py",
+    "/app/test_reports/iter155_handoff.json",
+    "/app/test_reports/iter155_sa_dialog.jpeg",
+    "/app/test_reports/iter155_admin_modal.jpeg",
+    "/app/test_reports/iter155_admin_after.jpeg"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "FulfillmentLineCard.jsx correctly gates the two buttons on canSetPrice prop (sourced from data.can_set_internal_price, which the backend sets per actor permission interco_price.set). Verified end-to-end in UI.",
+    "InternalPriceModal.jsx uses internalPriceBulk → POST /api/interco/prices/bulk with a single item. The flow succeeds and triggers plan reload via onSaved→load() in FulfillmentDecisionDialog — row flips from missing-badge to price-ready in one UX pass.",
+    "FulfillmentDecisionDialog.initLine filters proposed interco qty to only entities with price_ready!==false, so a missing-price seller never pre-fills qty — correct guard.",
+    "Admin entity switch via URL param '?view=sales-admin-desk&entity=ent_kanda' is honored and causes the Kanda queues to appear — no explicit switcher click needed.",
+    "The 'Minta harga internal' request endpoint returns a user-readable Indonesian message that the UI surfaces verbatim via fulfill-notice — good UX."
+  ],
+  "updated_files": [
+    "/app/test_reports/iter155_setup.py (new, setup + teardown helper)"
+  ],
+  "success_rate": {"backend": "n/a (not re-run; see iteration_154)", "frontend": "100% (3/3 phases, 3/3 render checks)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345; salesadmin.kanda@kainnusantara.id / demo1234",
+  "seed_data_creation": "TEST_ SO KANDA/SO-00003 (so_c86b48179e12) — cancelled on teardown. 2 temporary status flips on supplier_contracts (sct_519eb36b4d4c terminated→active restored; sct_a210f6e93cd5 created by UI modal → terminated on teardown).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The full FulfillmentDecisionDialog interco price flow is now exercised end-to-end from the UI (iteration_154 covered backend + testid existence; iteration_155 covers clicks). Setup/teardown helper lives at /app/test_reports/iter155_setup.py (run with no args to seed, --teardown to cleanup). If the test contract sct_519eb36b4d4c is already terminated at the start of a future run, the seed script will choose a different product; the Playwright script hard-codes PID=prod_ulos_batak so adjust it accordingly."
+}
