@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Palette, Search, Plus, RefreshCw, Pencil, Ban, X, Save, Layers, History, AlertTriangle, Users } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import usePagedRows from "../../hooks/usePagedRows";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import { overlayDismiss } from "@/utils/overlayDismiss";
@@ -74,6 +75,7 @@ export default function ColorLibraryView({ currentUser }) {
       return true;
     });
   }, [internal, q, family, system]);
+  const { pageRows: pagedColors, pager: colorPager } = usePagedRows(filtered, { pageSize: 24, testId: "color-library-pager" });
 
   const deactivate = async (c) => {
     const ok = await askConfirm({
@@ -146,7 +148,8 @@ export default function ColorLibraryView({ currentUser }) {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-              {filtered.map((c) => (
+              {filtered.length > 24 && <div className="col-span-full">{colorPager}</div>}
+              {pagedColors.map((c) => (
                 <div key={c.id} data-testid={`color-card-${c.id}`} className={`group relative overflow-hidden rounded-lg border ${c.status === "inactive" ? "border-dashed border-[#E5E5EA] opacity-60" : "border-[#E5E5EA]"} bg-white`}>
                   <div className="h-14 w-full" style={{ backgroundColor: c.hex }} />
                   {Number(c.labdip_overdue_count) > 0 && (

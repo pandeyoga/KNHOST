@@ -12,6 +12,7 @@ import KNSelect from "../../../components/KNSelect";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import SupplierItemFormModal from "./SupplierItemFormModal";
 import SupplierItemImportModal from "./SupplierItemImportModal";
+import usePagedRows from "../../../hooks/usePagedRows";
 import {
   deleteSupplierItem, listSupplierItems, lookupSupplierSku, supplierItemStats,
 } from "./supplierItemsApi";
@@ -72,6 +73,7 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
     return rows.filter((r) => [r.supplier_sku, r.supplier_item_name, r.sku, r.product_name, r.barcode]
       .some((v) => (v || "").toLowerCase().includes(term)));
   }, [rows, q]);
+  const { pageRows, pager } = usePagedRows(filtered, { pageSize: 25, testId: "supplier-items-pager" });
 
   async function doLookup() {
     if (!lookupSku.trim()) return;
@@ -211,7 +213,8 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
                 Memuat data…
               </div>
             )}
-            {!loading && filtered.map((r) => (
+            {!loading && filtered.length > 25 && <div className="px-3 py-1.5">{pager}</div>}
+            {!loading && pageRows.map((r) => (
               <div key={r.id} data-testid={`supplier-item-row-${r.id}`}
                 className="grid grid-cols-[1.1fr_1.3fr_1.3fr_130px_120px_90px_80px] items-center px-3 py-2 border-t border-[#F4F5F7]">
                 <div className="min-w-0">
