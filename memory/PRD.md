@@ -994,3 +994,11 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - Uji: iteration_154 (backend 16/16, `backend/tests/test_interco_prices_2026_10_05.py`), iteration_155 (klik-tembus dialog pemenuhan: minta harga sbg salesadmin.kanda, buat harga sbg admin). Data uji dibersihkan.
 - BELUM: sisa temuan 3.1 (±20 daftar tanpa cari), 3.2 (paginasi daftar panjang lain), 3.3 (penyeragaman filter status), 3.5 IA Operasi Gudang (T5.2–T5.5), 3.6 pemindahan pengaturan (T6.3–T6.13), 3.7 lain-lain.
 
+
+
+## 2026-10-05 (lanjutan 2) — Rapikan menu Gudang + pengaturan pindah + filter seragam
+- T5.2: "Transfer Antar-Entitas" bukan tab hub lagi → sub-tab di Operasi Gudang › Stok, Transfer & Opname › Transfer (`wms-transfer-scope-warehouse|entity`; antar-PT hanya admin/warehouse/manager/warehouse_admin). T5.3: "Antrean QC Kedatangan" + "Dokumen Inspeksi" → satu tab "QC & Inspeksi" (`QcHubView`, sub-tab `qc-hub-tab-queue|docs`). Mekanisme tab `hidden: true` di hubTabs (alias deep-link `inspections`, `interco-transfers` tetap jalan: `hubForView` + `resolveDeepLinkTarget`).
+- T6: pindah ke Pengaturan (hak akses tetap): Perangkat RFID (Gudang), Kebijakan Retur (Penjualan; sales_admin kini melihat menu Pengaturan dengan tab ini saja), Kategori Beban (Keuangan), Shift & Geofence (SDM), Divisi & Persetujuan R&D (Organisasi & Akses).
+- Tab status bergaris + jumlah: Kontrak Mitra & Supplier, Permintaan Internal, Pengajuan Dana (+cari), Pertanggungjawaban (+cari).
+- Uji: iteration_156 (18/19; bug deep-link `inspections` sudah diperbaiki & dicek screenshot).
+- BELUM: cari/paginasi di sisa daftar (Kebijakan Retur, Kendaraan, Lokasi/Tag RFID, Monitor Gerbang, Rekening, Transaksi Kas, Rekonsiliasi Bank, Kasus Keuangan, Antar Entitas Grup, Presensi, Slip Gaji, Kunjungan Sales, Buka Kunci Periode, Kategori Produk, Satuan, Inbox/Persetujuan Saya, Riwayat Persetujuan PO, Pengiriman); paginasi daftar panjang lain; penyeragaman filter di ±18 layar lain; T5.4/T5.5; T6.4 Label Alasan, T6.5 Rate Insentif, T6.7 aturan/template bank, T6.8 konfigurasi PPh, T6.12 master produk, T6.13.

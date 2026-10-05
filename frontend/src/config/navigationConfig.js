@@ -47,7 +47,10 @@ export function hubForView(view, role) {
   const hubId = HUB_VIEW_INDEX[view];
   if (!hubId) return null;
   const tabs = hubTabsForRole(hubId, role);
-  if (!tabs.length || !tabs.some((t) => t.view === view)) return null;
+  // Tab `hidden` (alias deep-link) tetap sah bila perannya boleh — tab bar memakai tab yang tampil.
+  const own = (HUB_TABS[hubId] || []).find((t) => t.view === view);
+  const allowed = tabs.some((t) => t.view === view) || (own?.hidden && roleCanSee(own.roles, role, own.view));
+  if (!tabs.length || !allowed) return null;
   return { hubId, tabs };
 }
 
@@ -219,6 +222,13 @@ export function resolveDeepLinkTarget(view, role) {
   // "ledger" dari peta navigasi mendarat di halaman depan tanpa penjelasan.
   const byNav = entries.find((e) => e.navId === view);
   if (byNav) return { navId: byNav.navId, view: byNav.view, tab: byNav.tab };
+  // Tab `hidden` (alias deep-link, mis. `inspections`) → menu hub-nya, view aslinya.
+  const hubId = HUB_VIEW_INDEX[view];
+  const own = (HUB_TABS[hubId] || []).find((t) => t.view === view);
+  if (own?.hidden && roleCanSee(own.roles, role, own.view)) {
+    const sibling = entries.find((e) => HUB_VIEW_INDEX[e.view] === hubId);
+    if (sibling) return { navId: sibling.navId, view };
+  }
   const home = ROLE_HOME_REGISTRY[role];
   if (home && home.view === view) return { navId: home.navId, view: home.view };
   return null;
