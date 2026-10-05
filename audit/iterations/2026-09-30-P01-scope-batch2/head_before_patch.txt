@@ -1,0 +1,69 @@
+[
+ {
+  "id": "AX-04",
+  "invariant": "owner A transfer cannot reserve roll of B",
+  "pass": false,
+  "detail": "['NoneType', 'reserved']"
+ },
+ {
+  "id": "AX-04",
+  "invariant": "explicit A roll reserved (control)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "AX-04",
+  "invariant": "explicit pick rebuilds balance projection",
+  "pass": false,
+  "detail": "{'reserved_before': 50.0, 'reserved_after': 50.0}"
+ },
+ {
+  "id": "AX-06",
+  "invariant": "multi-owner print job rejected before encode side effects",
+  "pass": false,
+  "detail": "['NoneType', 0, 2]"
+ },
+ {
+  "id": "GN-04",
+  "invariant": "sample of A cannot take material from roll of B",
+  "pass": true,
+  "detail": "['RndError(\"Roll audit_p01b_7c4d63-b1 berstatus \\'reserved\\' \u2014 hanya roll tersedia (available) yang boleh dipakai sample.\")', {'length_remaining': 10.0}]"
+ },
+ {
+  "id": "CX-02",
+  "invariant": "store credit cannot be allocated to order of other customer/entity",
+  "pass": true,
+  "detail": "['HTTPException', 400]"
+ },
+ {
+  "id": "GN-10",
+  "invariant": "POS best-sellers for scope A excludes B orders",
+  "pass": true,
+  "detail": "0"
+ },
+ {
+  "id": "GN-16",
+  "invariant": "digest of A-only user excludes entity B notifications",
+  "pass": false,
+  "detail": "3"
+ },
+ {
+  "id": "GN-16",
+  "invariant": "scheduled AI report is private (recipient_role empty)",
+  "pass": false,
+  "detail": ""
+ },
+ {
+  "id": "RF-09",
+  "invariant": "multi-entity count session is scannable by its creator scope",
+  "pass": false,
+  "detail": "HTTPException(status_code=403, detail='Sesi di luar entitas Anda')"
+ },
+ {
+  "id": "RF-08",
+  "invariant": "A-only user cannot complete A+B session",
+  "pass": false,
+  "detail": "None"
+ }
+]
+SUMMARY pass=4 fail=7

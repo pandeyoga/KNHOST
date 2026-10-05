@@ -1,0 +1,83 @@
+  [poc-stock] snapshot 169 dokumen stok dari 8 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (169 dokumen, 8 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "APAR-05",
+  "invariant": "jurnal nota kredit gagal (akun 4-1000 nonaktif) → retur & CN ber-gl_status 'failed' + pesan, tanpa jurnal",
+  "pass": true,
+  "detail": "(200, 'refund_settled', 'failed', 'Akun 4-1000 nonaktif')"
+ },
+ {
+  "id": "SALE-05",
+  "invariant": "nota kredit dari baris SO asli: harga neto per yd, PPN = rasio faktur SO asal, gross = net + PPN",
+  "pass": true,
+  "detail": "(925000.0, 925000.0, 101750.0, 101750.0, 'ar', 185000.0)"
+ },
+ {
+  "id": "SALE-05",
+  "invariant": "pengurang piutang: sisa tagihan SO turun tepat sebesar nota kredit (subledger), tercatat sebagai baris 'credit_note'",
+  "pass": true,
+  "detail": "(5571200.0, 4544450.0, 1026750.0)"
+ },
+ {
+  "id": "SALE-05",
+  "invariant": "barang retur masuk karantina 5 (sekali)",
+  "pass": true,
+  "detail": "[{'length_remaining': 5.0, 'status': 'quarantine'}]"
+ },
+ {
+  "id": "APAR-05",
+  "invariant": "settle ulang sesudah akun aktif → gl_status posted, tepat 1 jurnal (settle ke-3 tidak menggandakan)",
+  "pass": true,
+  "detail": "(200, 'posted', 1)"
+ },
+ {
+  "id": "SALE-05",
+  "invariant": "jurnal: Dr 4-1000 net, Dr 2-1200 PPN, Cr 1-1200 gross; piutang GL turun = subledger; stok & HPP dibalik seimbang",
+  "pass": true,
+  "detail": "{'4-1000': 925000.0, '2-1200': 101750.0, '1-1200': -1026750.0, '1-1300': 610102.75, '5-1000': -610102.75}"
+ },
+ {
+  "id": "SALE-05",
+  "invariant": "roll tidak bertambah karena settle ulang",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "SALE-05",
+  "invariant": "reversal: retur cancelled, CN void, net jurnal 0, roll retur dihapus, sisa tagihan SO pulih",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"sret_854ebec2239d\",\"number\":\"SRET-00003\",\"order_id\":\"so_001\",\"order_number\":\"SO-0001\",\"customer_id\":\"cust_toko_ka', 'cancelled', {}, 5571200.0, 5571200.0)"
+ },
+ {
+  "id": "APAR-02",
+  "invariant": "kwitansi 1.250.000 dialokasikan 1.000.000 → sisa tagihan −1.000.000, kelebihan 250.000 masuk deposit",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"arc_a8e8dda038c8\",\"number\":\"KSC/AR-00007\",\"customer_id\":\"cust_toko_kain\",\"customer_name\":\"Toko Kain Sejahtera\",\"entity_id\":\"ent_ksc\",\"receipt_date\":\"2026', 5571200.0, 4571200.0, 0.0, 250000.0)"
+ },
+ {
+  "id": "APAR-02",
+  "invariant": "pakai deposit melebihi saldo → 400, tanpa mutasi",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "APAR-02",
+  "invariant": "deposit 250.000 dipakai melunasi → sisa tagihan −1.250.000 total, deposit kembali ke awal, tanpa kas baru",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"arc_1c8d9ed1c279\",\"number\":\"KSC/AR-00008\",\"customer_id\":\"cust_toko_kain\",\"customer_name\":\"Toko Kain Sejahtera\",\"e', 0.0)"
+ },
+ {
+  "id": "APAR-02",
+  "invariant": "void kwitansi pertama selagi depositnya sudah dipakai → 409 berpesan jelas, TANPA efek parsial (SO, kas, kunci utuh)",
+  "pass": true,
+  "detail": "(409, '{\"detail\":\"Kelebihan bayar Rp 250.000 dari kwitansi KSC/AR-00007 sudah dipakai sebagai deposit. Batalkan dulu kwitansi yang memakai deposit tersebut, lalu batal', 4321200.0, 'posted', None)"
+ },
+ {
+  "id": "APAR-02",
+  "invariant": "void berurutan (pemakaian deposit lalu kwitansi) → sisa tagihan & deposit kembali persis, kas kwitansi void, net jurnal kas 0",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"arc_1c8d9ed1c279\",\"number\":\"KSC/AR-00008\",\"customer_id\":\"cust_toko_kain\",\"customer_name\":\"Tok', 200, '{\"id\":\"arc_a8e8dda038c8\",\"number\":\"KSC/AR-00007\",\"customer_id\":\"cust_toko_kain\",\"customer_name\":\"Tok', 5571200.0, 5571200.0, 0.0, 'void')"
+ }
+]
+pass=13 fail=0

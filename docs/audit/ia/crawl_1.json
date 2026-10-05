@@ -1,0 +1,576 @@
+{
+ "sales": {
+  "tabs": [],
+  "heads": [
+   "POS / Sales Portal",
+   "Filter",
+   "Katalog Kain Nusantara",
+   "Sering dibeli Moda Surabaya Fashion",
+   "Produk Terlaris",
+   "Batik Mega Mendung Premium",
+   "Lurik Klasik Solo",
+   "Tenun Ikat Garuda Premium"
+  ],
+  "subs": {}
+ },
+ "special-orders": {
+  "tabs": [
+   "Semua",
+   "Draf 1",
+   "Menunggu Persetujuan",
+   "Terkonfirmasi",
+   "Produksi",
+   "Siap",
+   "Dikirim",
+   "Selesai"
+  ],
+  "heads": [
+   "Pesanan Khusus (OD)",
+   "Pesanan Khusus (OD)"
+  ],
+  "subs": {}
+ },
+ "orders": {
+  "tabs": [],
+  "heads": [
+   "Pesanan Penjualan",
+   "Sales Orders"
+  ],
+  "subs": {}
+ },
+ "amendments": {
+  "tabs": [
+   "Daftar Amandemen 4",
+   "Label Alasan"
+  ],
+  "heads": [
+   "Pusat Amandemen · Koreksi Ber-alasan & Ber-jejak",
+   "Pusat Amandemen",
+   "Daftar amandemen"
+  ],
+  "subs": {}
+ },
+ "returns": {
+  "tabs": [
+   "Semua 6",
+   "1 · Draf",
+   "2 · Menunggu ACC 1",
+   "3 · Disetujui",
+   "4 · Inspeksi",
+   "5 · Siap Diselesaikan",
+   "Refund",
+   "Store Credit 5",
+   "Nego",
+   "Ditolak",
+   "Semua Tipe",
+   "Retur",
+   "Barang Sisa (BS)",
+   "Penggantian",
+   "Komplain",
+   "Garansi"
+  ],
+  "heads": [
+   "Retur & Barang Sisa",
+   "Retur & Barang Sisa"
+  ],
+  "subs": {}
+ },
+ "return-policies": {
+  "tabs": [],
+  "heads": [
+   "Kebijakan Retur Jual",
+   "Kebijakan Retur Jual"
+  ],
+  "subs": {}
+ },
+ "internal-requests": {
+  "tabs": [
+   "Semua",
+   "Antrean",
+   "Jadi transaksi antar-PT",
+   "Ditolak",
+   "Dibatalkan"
+  ],
+  "heads": [
+   "Permintaan Internal (PIN)",
+   "Permintaan Internal (PIN)"
+  ],
+  "subs": {}
+ },
+ "sample-orders": {
+  "tabs": [],
+  "heads": [
+   "Pesanan Sampel (SOS) · Terpisah dari SO Biasa",
+   "Pesanan Sampel (SOS)"
+  ],
+  "subs": {}
+ },
+ "customers-crm": {
+  "tabs": [
+   "Pelanggan",
+   "Leads",
+   "Interaksi",
+   "Penagihan",
+   "Sales Force",
+   "Rate Insentif",
+   "Skema (Arsip)",
+   "Persetujuan Kredit"
+  ],
+  "heads": [
+   "Pelanggan & CRM · Sales Force",
+   "Pelanggan (Semua)"
+  ],
+  "subs": {
+   "Penagihan": [
+    "Semua aktif",
+    "Lewat Jatuh Tempo"
+   ],
+   "Persetujuan Kredit": [
+    "Menunggu",
+    "Disetujui",
+    "Ditolak",
+    "Semua"
+   ]
+  }
+ },
+ "hr-visits": {
+  "tabs": [],
+  "heads": [
+   "Kunjungan Sales (Visit)",
+   "Kunjungan Sales — Log & KPI"
+  ],
+  "subs": {}
+ },
+ "md-products": {
+  "tabs": [],
+  "heads": [
+   "Produk & Varian",
+   "Produk & varian",
+   "Kain Demo Rantai Retur (E-9)",
+   "Kain Kombinasi Batik-Lurik (per Yard)",
+   "Kain PFP Katun (siap print, per Yard)",
+   "Kain Grey Katun Sisa (per Yard)",
+   "Benang Katun Sisa (per Kg)",
+   "Kain Grey Katun (per Yard)"
+  ],
+  "subs": {}
+ },
+ "md-categories": {
+  "tabs": [],
+  "heads": [
+   "Kategori Produk",
+   "Kategori Baru",
+   "Daftar Kategori (12)"
+  ],
+  "subs": {}
+ },
+ "color-library": {
+  "tabs": [],
+  "heads": [
+   "Pustaka Warna"
+  ],
+  "subs": {}
+ },
+ "md-uoms": {
+  "tabs": [],
+  "heads": [
+   "Satuan & Konversi",
+   "Daftar Satuan (UOM)",
+   "Konversi Satuan (Global)"
+  ],
+  "subs": {}
+ },
+ "pricelist": {
+  "tabs": [],
+  "heads": [
+   "Harga per Badan Usaha",
+   "Master Harga Sampel (per induk, per satuan roll)"
+  ],
+  "subs": {}
+ },
+ "cs-price-list": {
+  "tabs": [],
+  "heads": [
+   "Harga per Pelanggan",
+   "Daftar Harga per Pelanggan"
+  ],
+  "subs": {}
+ },
+ "reorder": {
+  "tabs": [],
+  "heads": [
+   "Saran Reorder · Replenishment",
+   "Saran Reorder · Replenishment",
+   "Daftar Saran"
+  ],
+  "subs": {}
+ },
+ "purchase-requisitions": {
+  "tabs": [
+   "Semua",
+   "Draf 1",
+   "Menunggu Persetujuan 1",
+   "Disetujui 2",
+   "Jadi PO 4",
+   "Ditolak"
+  ],
+  "heads": [
+   "Permintaan Pembelian (PR)",
+   "Permintaan Pembelian (PR)"
+  ],
+  "subs": {
+   "Draf 1": [
+    "Menunggu Persetujuan",
+    "Disetujui",
+    "Jadi PO"
+   ],
+   "Menunggu Persetujuan 1": [
+    "Draf",
+    "Disetujui",
+    "Jadi PO"
+   ],
+   "Disetujui 2": [
+    "Draf",
+    "Menunggu Persetujuan",
+    "Jadi PO"
+   ],
+   "Jadi PO 4": [
+    "Draf",
+    "Menunggu Persetujuan",
+    "Disetujui"
+   ],
+   "Ditolak": [
+    "Draf",
+    "Menunggu Persetujuan",
+    "Disetujui",
+    "Jadi PO"
+   ]
+  }
+ },
+ "rfq": {
+  "tabs": [
+   "Semua 3",
+   "Draf 1",
+   "Berjalan 1",
+   "Awarded 1",
+   "Batal 0"
+  ],
+  "heads": [
+   "RFQ / Penawaran · Tender & Banding Harga Supplier",
+   "RFQ / Penawaran — Tender Pengadaan"
+  ],
+  "subs": {}
+ },
+ "purchasing": {
+  "tabs": [
+   "Semua",
+   "Menunggu Persetujuan 2",
+   "Menunggu / Proses Terima 7",
+   "Selesai 3",
+   "Ditolak / Batal"
+  ],
+  "heads": [
+   "Pesanan Pembelian (PO)",
+   "Pesanan Pembelian (PO)"
+  ],
+  "subs": {}
+ },
+ "po-board": {
+  "tabs": [
+   "Semua lini",
+   "Woven (Tenun)",
+   "Knit (Rajut)",
+   "Printing",
+   "Berjalan",
+   "Semua",
+   "Menunggu kirim",
+   "Sedang diterima",
+   "Diterima sebagian",
+   "Selesai"
+  ],
+  "heads": [
+   "Papan PO per Lini",
+   "Papan PO per Lini"
+  ],
+  "subs": {}
+ },
+ "blanket-po": {
+  "tabs": [
+   "Semua 0",
+   "Aktif 0",
+   "Habis 0",
+   "Kadaluarsa 0",
+   "Ditutup 0"
+  ],
+  "heads": [
+   "Blanket / Contract PO · Call-off",
+   "Blanket / Contract PO — Call-off"
+  ],
+  "subs": {}
+ },
+ "makloon-orders": {
+  "tabs": [
+   "Semua",
+   "Draf",
+   "Diproses 1",
+   "Diterima sebagian 1",
+   "Selesai 3",
+   "Dibatalkan"
+  ],
+  "heads": [
+   "Order Makloon (Subkontrak · WIP-at-Vendor)",
+   "Order Makloon (Subkontrak)"
+  ],
+  "subs": {}
+ },
+ "makloon-claims": {
+  "tabs": [
+   "Semua",
+   "Selisih Terbuka",
+   "Menunggu Persetujuan 1",
+   "Disetujui",
+   "Ditolak"
+  ],
+  "heads": [
+   "Klaim Selisih Makloon · Persetujuan & Skor Mitra",
+   "Klaim Selisih Makloon",
+   "Skor Mitra Makloon"
+  ],
+  "subs": {}
+ },
+ "vendor-bills": {
+  "tabs": [
+   "Semua 12",
+   "Draf",
+   "Menunggu Persetujuan",
+   "Terposting (belum lunas) 9",
+   "Lunas 3",
+   "Dibatalkan"
+  ],
+  "heads": [
+   "Tagihan Supplier · 3-Way Matching",
+   "Tagihan Supplier (Vendor Bill)"
+  ],
+  "subs": {}
+ },
+ "contra-bons": {
+  "tabs": [
+   "Daftar Kontrabon",
+   "GR Belum Ditagih",
+   "Jadwal Tukar Faktur"
+  ],
+  "heads": [
+   "Kontrabon · Siklus Tukar Faktur Supplier",
+   "Kontrabon · Tukar Faktur Supplier"
+  ],
+  "subs": {
+   "GR Belum Ditagih": [
+    "NILAI BELUM DITAGIH Rp 97.940.000 barang"
+   ],
+   "Jadwal Tukar Faktur": [
+    "SUPPLIER TERJADWAL 3 3 supplier belum pu"
+   ]
+  }
+ },
+ "interco-transactions": {
+  "tabs": [
+   "Daftar Transaksi",
+   "Saldo Antar-PT",
+   "Settlement",
+   "Retur Antar-PT 1",
+   "Pinjaman Antar-PT",
+   "Rapor Margin"
+  ],
+  "heads": [
+   "Transaksi Antar Entitas · Jual-Beli Antar-PT",
+   "Transaksi Antar Entitas"
+  ],
+  "subs": {}
+ },
+ "landed-cost": {
+  "tabs": [
+   "Semua 3",
+   "Draf 1",
+   "Menunggu 1",
+   "Diterapkan 1",
+   "Lunas 0",
+   "Batal 0"
+  ],
+  "heads": [
+   "Landed Cost · Alokasi HPP Roll",
+   "Landed Cost (Alokasi HPP Roll)"
+  ],
+  "subs": {}
+ },
+ "purchase-returns": {
+  "tabs": [
+   "Semua 2",
+   "Draf 1",
+   "Menunggu Persetujuan 1",
+   "Disetujui",
+   "Ditolak"
+  ],
+  "heads": [
+   "Retur Pembelian (Nota Debit)",
+   "Retur Pembelian (Nota Debit)"
+  ],
+  "subs": {}
+ },
+ "suppliers": {
+  "tabs": [],
+  "heads": [
+   "Master Pemasok (Supplier)",
+   "Master Pemasok (Supplier)"
+  ],
+  "subs": {}
+ },
+ "makloons": {
+  "tabs": [],
+  "heads": [
+   "Mitra Makloon (Subkontraktor)",
+   "Mitra Makloon (Subkontraktor)"
+  ],
+  "subs": {}
+ },
+ "supplier-contracts": {
+  "tabs": [],
+  "heads": [
+   "Kontrak Mitra & Supplier · Tarif, Susut & Tolerans",
+   "Kontrak Mitra & Supplier"
+  ],
+  "subs": {}
+ },
+ "supplier-items": {
+  "tabs": [],
+  "heads": [
+   "Barang Supplier · Peta SKU/Nama Supplier & Impor M",
+   "Barang Supplier"
+  ],
+  "subs": {}
+ },
+ "process-recipes": {
+  "tabs": [],
+  "heads": [
+   "Resep Proses (Konversi & Rumus Makloon)",
+   "Resep Proses (Konversi)"
+  ],
+  "subs": {}
+ },
+ "operations": {
+  "tabs": [
+   "Stok",
+   "Scan Terima PO (sisa lama)",
+   "Barang Keluar",
+   "Transfer",
+   "Stock Opname",
+   "Kesehatan",
+   "Roll",
+   "Mutasi"
+  ],
+  "heads": [
+   "Operasi Gudang (WMS)",
+   "Transfer gudang menunggu ACC — barang belum boleh ",
+   "Stock opname menunggu ACC (1)",
+   "Barang ditahan QC — hanya manajer boleh melepas (2"
+  ],
+  "subs": {
+   "Roll": [
+    "<klik gagal>"
+   ],
+   "Mutasi": [
+    "<klik gagal>"
+   ]
+  }
+ },
+ "goods-receipts": {
+  "tabs": [
+   "Kedatangan",
+   "Selisih Supplier",
+   "Profil SJ",
+   "Sampel Uji OCR",
+   "Biaya OCR",
+   "Mode Penerimaan"
+  ],
+  "heads": [
+   "Barang Masuk · Surat Jalan, OCR & Hitung Fisik"
+  ],
+  "subs": {}
+ },
+ "qc-inspection": {
+  "tabs": [],
+  "heads": [
+   "Inspeksi QC · Penerimaan",
+   "Inspeksi QC — Penerimaan",
+   "Antrian Inspeksi"
+  ],
+  "subs": {}
+ },
+ "inspections": {
+  "tabs": [],
+  "heads": [
+   "SPK Inspeksi & QC (INS)",
+   "SPK Inspeksi & QC"
+  ],
+  "subs": {}
+ },
+ "interco-transfers": {
+  "tabs": [],
+  "heads": [
+   "Transfer Antar-Entitas",
+   "Transfer Antar-Entitas"
+  ],
+  "subs": {}
+ },
+ "inventory-board": {
+  "tabs": [],
+  "heads": [
+   "Status Stok & ATP",
+   "Papan Status Persediaan · ATP"
+  ],
+  "subs": {}
+ },
+ "stock-buckets": {
+  "tabs": [
+   "Ringkasan Bucket",
+   "Tahanan Aktif",
+   "WIP Aktif",
+   "SO Menunggu (4)"
+  ],
+  "heads": [
+   "Stok Multi-Kantong (WIP / Ditahan / Dalam Perjalan"
+  ],
+  "subs": {}
+ },
+ "inventory-lots": {
+  "tabs": [],
+  "heads": [
+   "Lot & Silsilah · Traceability, Recall & Label",
+   "Lot & Silsilah"
+  ],
+  "subs": {}
+ },
+ "production": {
+  "tabs": [
+   "Perintah Kerja",
+   "BOM / Resep"
+  ],
+  "heads": [
+   "Produksi In-House · BOM & Work Order",
+   "Produksi In-House"
+  ],
+  "subs": {}
+ },
+ "wms-locations": {
+  "tabs": [
+   "Struktur Lokasi",
+   "Putaway (13)",
+   "Perintah Simpan ke Rak (Antar Gedung)",
+   "Antrean Potong"
+  ],
+  "heads": [
+   "Lokasi Gudang & Penempatan Rak",
+   "Lokasi Gudang & Penempatan Rak"
+  ],
+  "subs": {}
+ }
+}

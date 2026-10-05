@@ -1,0 +1,63 @@
+[
+ {
+  "id": "CX-10",
+  "invariant": "control: signed version carries esign block",
+  "pass": true,
+  "detail": "{'code': 'KABF53PP', 'signers': 'Signer Versi 1', 'people': [{'name': 'Signer Versi 1', 'role': 'Direktur', 'at': '2026-09-30 16:23:54'}], 'signed_at': '2026-09-30 16:23:54', 'hash_short': '0226ce7a8dc54960fa139369…', 'verify_url': 'https://knhost-audit.preview.emergentagent.com/verify-document/KABF"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "control: verify on unchanged doc = current",
+  "pass": true,
+  "detail": "current"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "changed doc does NOT carry old signature",
+  "pass": true,
+  "detail": "None"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "changed doc marked esign_superseded",
+  "pass": true,
+  "detail": "{'message': 'Isi dokumen berubah setelah ditandatangani — tanda tangan lama tidak berlaku untuk versi ini.', 'last_signed_at': '2026-09-30 16:23:54'}"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "old QR reports superseded (verifies old artifact only)",
+  "pass": true,
+  "detail": "superseded"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "new version gets NEW verification code",
+  "pass": true,
+  "detail": "['KABF53PP', '9TBPB3CW']"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "old code not mixed with new signer",
+  "pass": true,
+  "detail": "[{'name': 'Signer Versi 1', 'role': 'Direktur', 'signed_at': '2026-09-30T16:23:54.169360+00:00'}]"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "new PDF carries only new-version signature",
+  "pass": true,
+  "detail": "{'code': '9TBPB3CW', 'signers': 'Signer Versi 2', 'people': [{'name': 'Signer Versi 2', 'role': 'Direktur', 'at': '2026-09-30 16:23:54'}], 'signed_at': '2026-09-30 16:23:54', 'hash_short': 'aad216a3642b81d91f0b56a0…', 'verify_url': 'https://knhost-audit.preview.emergentagent.com/verify-document/9TBP"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "signed snapshot stored immutably with old content",
+  "pass": true,
+  "detail": "True"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "content hash stable across prints (no print timestamp)",
+  "pass": true,
+  "detail": "['aad216a3642b', 'aad216a3642b']"
+ }
+]
+SUMMARY pass=10 fail=0

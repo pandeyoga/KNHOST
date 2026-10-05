@@ -1,0 +1,24 @@
+# 2026-10-08-P09-gate-contract/repro_p09.py (1s)
+PASS [RF-02] roll delivered tanpa dokumen di gate OUT gudang lain → MERAH
+PASS [RF-02] roll reserved (belum dispatch) → MERAH
+PASS [RF-02] roll di surat jalan dispatched, gudang asal benar → HIJAU
+PASS [RF-02] roll sah dibaca di gate OUT gudang lain → MERAH
+PASS [RF-02] roll SO tapi tidak tercantum di surat jalan → MERAH
+PASS [RF-02] tag roll consumed → MERAH
+PASS [RF-02] SO batal → MERAH
+PASS [RF-02] PA selesai → keluar MERAH
+PASS [RF-02] kode alasan jelas pada penolakan
+PASS [RF-02] keluar pertama HIJAU, keluar ulang (gate lain) MERAH
+PASS [RF-03] roll menuju D dibaca IN di H → MERAH
+PASS [RF-03] roll menuju D dibaca IN di D (transfer dispatched) → HIJAU
+PASS [RF-03] transit tanpa dokumen → MERAH (tanpa fallback hijau)
+PASS [RF-03] transit penjualan bukan transfer internal → MERAH
+PASS [RF-03] transfer belum dispatched → MERAH
+PASS [RF-16] replay event_id sama → tidak menambah read / insiden
+PASS [RF-16] tag diam (event baru, EPC sama, dalam dwell) → bukan event bisnis baru
+PASS [RF-16] >500 event ditolak eksplisit (413), tidak dipotong diam-diam
+PASS [UX-01] passage campuran merah+hijau → verdict MERAH (red-dominant)
+PASS [UX-01] status server: alarm terkunci + umur heartbeat
+PASS [UX-01] acknowledge membuka kunci TANPA menghapus read/insiden sumber
+PASS [UX-01] filter server read_type=gate tidak tertutup trafik inventory
+{"pass": 22, "fail": 0}

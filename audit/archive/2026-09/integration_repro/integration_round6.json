@@ -1,0 +1,124 @@
+{
+  "source_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+  "database": "knhost_audit_4240c9340cfd45aab5a3cae691e73160",
+  "mode": "Real local Mongo and unmodified service functions; fixtures for master/opening stock and closing; no simulated exceptions",
+  "results": [
+    {
+      "id": "I6-P01",
+      "kind": "defect",
+      "observed": {
+        "exception": "ClosedPeriodError",
+        "material_remaining": 90.0,
+        "output_rolls": 1,
+        "output_qty": 10.0,
+        "wo_status": "released",
+        "recorded_output_ids": 0,
+        "journal_count": 0,
+        "journal_debit": 0,
+        "material_plus_output_value": 1020.0
+      }
+    },
+    {
+      "id": "I6-P02",
+      "kind": "defect",
+      "observed": {
+        "material_remaining": 80.0,
+        "output_rolls": 2,
+        "output_qty": 20.0,
+        "wo_status": "completed",
+        "recorded_output_ids": 1,
+        "journal_count": 1,
+        "journal_debit": 20.0,
+        "material_plus_output_value": 1040.0
+      }
+    },
+    {
+      "id": "I6-C01",
+      "kind": "control",
+      "observed": {
+        "material_remaining": 80.0,
+        "output_rolls": 2,
+        "output_qty": 20.0,
+        "wo_status": "completed",
+        "recorded_output_ids": 1,
+        "journal_count": 1,
+        "journal_debit": 20.0,
+        "material_plus_output_value": 1040.0
+      }
+    },
+    {
+      "id": "I6-C04",
+      "kind": "control",
+      "observed": {
+        "putaway_rejected_for_hold_before_bin_lookup": true
+      }
+    },
+    {
+      "id": "I6-P03",
+      "kind": "defect",
+      "observed": {
+        "hold_remains": true,
+        "material_remaining": 90.0,
+        "output_rolls": 1,
+        "output_qty": 10.0,
+        "wo_status": "completed",
+        "recorded_output_ids": 1,
+        "journal_count": 0,
+        "journal_debit": 0,
+        "material_plus_output_value": 1000.0
+      }
+    },
+    {
+      "id": "I6-P04",
+      "kind": "defect",
+      "observed": {
+        "original_plan_required": 10.0,
+        "material_remaining": 80.0,
+        "output_rolls": 1,
+        "output_qty": 10.0,
+        "wo_status": "completed",
+        "recorded_output_ids": 1,
+        "journal_count": 0,
+        "journal_debit": 0,
+        "material_plus_output_value": 1000.0
+      }
+    },
+    {
+      "id": "I6-C02",
+      "kind": "control",
+      "observed": {
+        "insufficient_stock_rejected": true,
+        "unchanged": true
+      }
+    },
+    {
+      "id": "I6-C03",
+      "kind": "control",
+      "observed": {
+        "normal_undo_tag_status": "retired"
+      }
+    },
+    {
+      "id": "I6-R01",
+      "kind": "defect",
+      "observed": {
+        "failed_attach_http_status": 409,
+        "active_tags_before": 0,
+        "active_tags_after": 1,
+        "active_tags_without_roll": 1
+      }
+    },
+    {
+      "id": "I6-W01",
+      "kind": "defect",
+      "observed": {
+        "roll_length": 100.0,
+        "roll_unit": "cm",
+        "task_unit": "meter",
+        "recorded_received_qty": 100.0,
+        "canonical_received_qty": 1.0,
+        "task_status": "qc_check"
+      }
+    }
+  ]
+}

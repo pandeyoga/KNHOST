@@ -1,0 +1,44 @@
+{
+  "database": "knhost_audit_e72f5c9ac84041678fea9a75209b3ff6",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "mode": "Actual ASGI+indexed synthetic Mongo, same entity two product lines; permitted view/create actions; no external data",
+  "results": [
+    {
+      "id": "W2-RNDLINE-C01",
+      "kind": "control",
+      "label": "Woven-only actor list excludes printing",
+      "observed": [
+        "W"
+      ],
+      "expected": [
+        "W"
+      ]
+    },
+    {
+      "id": "W2-RNDLINE-F01",
+      "kind": "defect",
+      "label": "Same actor can open printing sample by ID",
+      "observed": [
+        200,
+        "printing"
+      ],
+      "expected": [
+        200,
+        "printing"
+      ]
+    },
+    {
+      "id": "W2-RNDLINE-F02",
+      "kind": "defect",
+      "label": "Same actor can modify printing sample",
+      "observed": [
+        200,
+        "Edited from woven-only account"
+      ],
+      "expected": [
+        200,
+        "Edited from woven-only account"
+      ]
+    }
+  ]
+}

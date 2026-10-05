@@ -1,0 +1,123 @@
+[
+ {
+  "nav": "nav-zone-kerja",
+  "view": "finance-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-home",
+  "view": "finance-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-finance-desk",
+  "view": "finance-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-zone-modul",
+  "view": "finance-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-tanya-kn",
+  "view": "tanya-kn",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-sales-orders",
+  "view": "orders",
+  "hub_tabs": [
+   "orders",
+   "returns"
+  ]
+ },
+ {
+  "nav": "nav-sample-orders",
+  "view": "sample-orders",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-customers-crm",
+  "view": "customers-crm",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-purchase-orders",
+  "view": "purchasing",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-wms-operations",
+  "view": "goods-receipts",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-finance-tower",
+  "view": "finance-tower",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-cash-bank",
+  "view": "cash-management",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-ar-aging",
+  "view": "ar-aging",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-advance-report",
+  "view": "advance-report",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-payment-plans",
+  "view": "payment-plans",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-finance-cases",
+  "view": "finance-cases",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-store-credit",
+  "view": "store-credit",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-tax-hub",
+  "view": "tax-invoices",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-zone-alat",
+  "view": "tax-invoices",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-document-center",
+  "view": "document-center",
+  "hub_tabs": [
+   "document-center",
+   "doc-trace",
+   "documents"
+  ]
+ },
+ {
+  "nav": "nav-zone-akun",
+  "view": "document-center",
+  "hub_tabs": [
+   "document-center",
+   "doc-trace",
+   "documents"
+  ]
+ },
+ {
+  "nav": "nav-hr-my-profile",
+  "view": "hr-my-profile",
+  "hub_tabs": []
+ }
+]

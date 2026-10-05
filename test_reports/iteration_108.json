@@ -1,0 +1,28 @@
+{
+  "summary": "ITER108 validation of P01 Scope Hotfix (RF-12/RF-13 device key protection + 19 scope/credential findings) and PG01 decision recording. Ran the three authoritative invariant repro scripts and they ALL pass end-to-end against the public preview: (1) /app/audit/iterations/2026-09-30-P01-device-credentials/repro_rf12_rf13.py = 16/16 (device api_key never exposed on GET/PATCH; POST /api/rfid/devices/{id}/api-key returns key once, 409 on repeat, ?regenerate=true rotates and invalidates old key; warehouse role gets 403; PATCH enabled:false rejects heartbeat/ingest/device-jobs pending+ack with 401/403; heartbeat cannot flip disabled back online; PATCH status while disabled → 400; PATCH enabled:true restores; offline-but-enabled device can heartbeat 200). (2) /app/audit/iterations/2026-09-30-P01-scope-batch1/repro_p01_scope.py = 22/22 (covers GN-01 idempotency 2-user isolation + IDEMPOTENCY_KEY_REUSED 409 + 401 anonymous; GN-02 WS sales→error vs manager→snapshot; GN-03 bank ledger + cash reconcile cross-entity 404; IX-05 esign cross-entity 404; IX-07 settings scope 403; IX-10 period-unlocks entity filter 403 + own scope + cross-entity approve/reject 404). (3) /app/audit/iterations/2026-09-30-P01-scope-batch2/repro_p01_batch2.py = 13/13 (RF-08 roll+print+cycle-count scope + others). PG01 decision confirmed recorded-only in /app/audit/policy-decisions.json (not implemented; belongs to P06). Additionally wrote and ran /app/backend/tests/test_iter108_regression.py — 12/12 pytest passing (login smoke for admin/manager/finance/warehouse/sales; POS best-sellers & substitutes; RFID cycle-counts, print-jobs; RFID GET /api/rfid/devices as admin AND warehouse both confirmed NO api_key/api_key_hash fields and always include has_api_key; store-credit open-orders). Playwright UI check on /?view=cs-rfid-devices as admin: 13 rfid-apikey-* buttons, 12 rfid-enable-toggle-* buttons; rotation on device that already has key triggers confirm dialog (Batal/Konfirmasi) — clicked Batal to preserve keys; rfid-apikey-hint-<id> chip shown for device with existing key. Nonaktifkan flow on rdev_ce3fe47fdf18: confirm dialog present → after Konfirmasi rfid-device-disabled-<id> pill rendered, rfid-device-status-<id>='offline', rfid-toggle-<id> disabled attribute set. Aktifkan flow restores device (pill gone). All devices left in their original state (re-enabled the one I disabled; no rotated keys). NO issues found. Total invariants+regression = 51 + 12 = 63/63 green.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/audit/iterations/2026-09-30-P01-device-credentials/repro_rf12_rf13.py",
+    "/app/audit/iterations/2026-09-30-P01-scope-batch1/repro_p01_scope.py",
+    "/app/audit/iterations/2026-09-30-P01-scope-batch2/repro_p01_batch2.py",
+    "/app/backend/tests/test_iter108_regression.py",
+    "/app/test_reports/pytest/iter108.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "public_device in rfid_service.py correctly strips api_key/api_key_hash and exposes has_api_key/api_key_hint/key_rotation_required — good defense in depth even for PATCH responses.",
+    "authenticate() in rfid_ingest_service.py correctly rejects requests where device.enabled is False before touching status — preventing a disabled device from being flipped back to online via heartbeat.",
+    "idempotency.py stores the response under a (user_id, key) tuple which is why cross-user replay is not served — confirmed by GN-01 invariant tests.",
+    "ws_track in server.py correctly returns type='error' for sales role subscribing (out of scope) — behavior matches invariant GN-02.",
+    "PG01 sampling policy is (as requested) only recorded in /app/audit/policy-decisions.json; implementation deferred to P06. No dead code shipped."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter108_regression.py", "/app/test_reports/iteration_108.json"],
+  "success_rate": {"backend": "100% (16+22+13 invariants + 12 pytest = 63/63)", "frontend": "100% (RFID Devices UI: key panel/hint/dismiss + enable-toggle/confirm/pill/status/disabled all present and functional)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, warehouse@kainnusantara.id / demo12345, finance/manager/sales/@kainnusantara.id / demo12345 — from /app/memory/test_credentials.md.",
+  "seed_data_creation": "None. Restored the one device I temporarily disabled (rdev_ce3fe47fdf18) back to enabled. Did not rotate any keys.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "P01 scope hotfix + Device Key Protection are fully green. Run all three invariant scripts from /app/audit/iterations/2026-09-30-P01-*/repro_*.py — env: KN_API=https://knhost-audit.preview.emergentagent.com/api MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database, cwd=/app/backend. Plus /app/backend/tests/test_iter108_regression.py for regression smoke. Frontend is a static bundle — after src edits run bash /app/scripts/rebuild_frontend.sh. If you disable a device via UI, remember to re-enable it before finishing.",
+  "rca of the issue": "N/A — no bugs found. All 19 scope findings + RF-12/RF-13 device credential protections are correctly enforced at server level and the RFID Devices UI exposes the intended data-testid contract."
+}

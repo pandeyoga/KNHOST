@@ -1,0 +1,76 @@
+# 2026-10-04-label-reimburse-poline-badge/repro_followup2.py (2s)
+[
+ {
+  "id": "LABEL",
+  "invariant": "daftar roll anak belum terverifikasi memuat roll",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "LABEL",
+  "invariant": "label salah → 400, identitas tetap belum sah",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "LABEL",
+  "invariant": "gate muat masih menolak sebelum verifikasi",
+  "pass": true,
+  "detail": "(409, 'Roll anak R-audit_f2_4a5a01-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
+ },
+ {
+  "id": "LABEL",
+  "invariant": "label cocok → sah (label_scan), gate lolos, verifikasi ulang 409",
+  "pass": true,
+  "detail": "{'ok': 200, 'again': 409}"
+ },
+ {
+  "id": "REIMB",
+  "invariant": "LPJ 130 atas PD 100 → hutang_reimburse terbuka 30",
+  "pass": true,
+  "detail": "{'amount': 30.0, 'status': 'open', 'cash_txn_id': '', 'paid_at': ''}"
+ },
+ {
+  "id": "REIMB",
+  "invariant": "bayar (setelah 1× gagal GL) → satu kas 30, status paid, saldo 2-1650 = 0",
+  "pass": true,
+  "detail": "{'cash': 1, 'bal': 0.0}"
+ },
+ {
+  "id": "REIMB",
+  "invariant": "bayar kedua ditolak",
+  "pass": true,
+  "detail": "(409, 'LPJ ini tidak punya hutang reimburse terbuka')"
+ },
+ {
+  "id": "POLINE",
+  "invariant": "produk sama di dua baris/harga: 100@10 + 50@12 → matched, harga PO per baris benar",
+  "pass": true,
+  "detail": "matched"
+ },
+ {
+  "id": "POLINE",
+  "invariant": "tagih 60 pada baris L2 (diterima 50) → blocked",
+  "pass": true,
+  "detail": "blocked"
+ },
+ {
+  "id": "POLINE",
+  "invariant": "sisa tertagih dihitung per baris PO",
+  "pass": true,
+  "detail": "{'L1': 70.0}"
+ },
+ {
+  "id": "POLINE",
+  "invariant": "2 tagihan 60 bersamaan + 1 berurutan → Σ tagihan aktif ≤ diterima 100",
+  "pass": true,
+  "detail": "{'codes': [200, 400, 400], 'total': 60.0}"
+ },
+ {
+  "id": "BADGE",
+  "invariant": "count naik 1 saat ada kas gagal",
+  "pass": true,
+  "detail": "{'before': 0, 'after': 1}"
+ }
+]
+pass=12 fail=0

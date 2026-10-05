@@ -1,0 +1,125 @@
+{
+  "completed": true,
+  "commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_d272b7dabbb349a5820f2e65d146124c",
+  "purpose": "validate prior findings, not new coverage count",
+  "probes": [
+    {
+      "probe": "fixture_and_policy",
+      "indexes": {
+        "created": 210,
+        "existed": 0,
+        "failed": 0,
+        "unique": {
+          "created": 25,
+          "failed": []
+        }
+      },
+      "reads_scope": "owner_entity_id",
+      "incidents_scope": null,
+      "dedicated_B_usable_by_A": false,
+      "legacy_entity_id_only_mode": "shared"
+    },
+    {
+      "probe": "W2-010_SH",
+      "tag_list_http": 200,
+      "visible_tags": 0,
+      "reads_http": 200,
+      "read_owner": "B"
+    },
+    {
+      "probe": "W2-010_DB",
+      "tag_list_http": 200,
+      "visible_tags": 0,
+      "reads_http": 200,
+      "read_owner": "B"
+    },
+    {
+      "probe": "scope_control",
+      "forced_B_header_http": 403
+    },
+    {
+      "probe": "shared_security_policy_observation",
+      "incidents_http": 200,
+      "ack_http": 200,
+      "resolve_http": 200,
+      "dedicated_B_device_visible": true,
+      "report_includes_B_warehouse": true,
+      "classification": "behavior confirmed; unauthorized classification not established because incidents are explicitly SHARED"
+    },
+    {
+      "probe": "W2-011_http_two_actors",
+      "http": [
+        200,
+        200
+      ],
+      "status": "acknowledged",
+      "ack_by": "Audit User A",
+      "resolved_by": "Audit Operator 2",
+      "notes": [
+        {
+          "by": "Audit Operator 2",
+          "at": "2026-10-01T04:42:26.198563+00:00",
+          "text": "resolve actor2"
+        },
+        {
+          "by": "Audit User A",
+          "at": "2026-10-01T04:42:26.177056+00:00",
+          "text": "ack actor1"
+        }
+      ],
+      "resolved_at": "2026-10-01T04:42:26.198563+00:00"
+    },
+    {
+      "probe": "terminal_serial_control",
+      "resolve_http": 200,
+      "late_ack_http": 400
+    },
+    {
+      "probe": "W2-012_http_with_indexes",
+      "http": [
+        200,
+        200
+      ],
+      "open_incidents": 2,
+      "distinct_read_ids": 2,
+      "hits": [
+        1,
+        1
+      ],
+      "notifications": 2,
+      "incident_indexes": {
+        "_id_": {
+          "v": 2,
+          "key": [
+            [
+              "_id",
+              1
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "probe": "serial_dedupe_control",
+      "incidents": 1,
+      "hits": 2
+    },
+    {
+      "probe": "uninstrumented_ingest_pairs",
+      "incident_counts_for_10_pairs": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        2,
+        2
+      ],
+      "pairs_with_duplicates": 9
+    }
+  ]
+}

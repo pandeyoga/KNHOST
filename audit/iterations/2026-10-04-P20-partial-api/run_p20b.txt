@@ -1,0 +1,101 @@
+  [poc-stock] snapshot 253 dokumen stok dari 7 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (253 dokumen, 7 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "PROD-02",
+  "invariant": "jurnal overhead gagal → complete ditolak 4xx berpesan jelas (bukan 500), WO tetap released, kunci tercatat gagal",
+  "pass": true,
+  "detail": "(400, '{\"detail\":\"Akun 5-1100 nonaktif\"}', 'released', 'Akun 5-1100 nonaktif')"
+ },
+ {
+  "id": "PROD-02",
+  "invariant": "efek fisik tercatat SEKALI sebelum gagal: bahan −4, 1 roll output, tahap 'output', tanpa jurnal",
+  "pass": true,
+  "detail": "(425.0, 421.0, 1, 'output')"
+ },
+ {
+  "id": "PROD-02",
+  "invariant": "complete ulang saat kunci gagal belum dilepas → 409, tidak ada konsumsi/output tambahan",
+  "pass": true,
+  "detail": "(409, '{\"detail\":{\"code\":\"SAGA_IN_PROGRESS\",\"message\":\"Aksi \\'complete\\' atas dokumen ini sedang/pernah berjalan (mulai 2026-10-0')"
+ },
+ {
+  "id": "PROD-02",
+  "invariant": "lepas kunci (admin, alasan) → retry: WO completed, tetap 1 roll output 4, bahan −4 (bukan −8)",
+  "pass": true,
+  "detail": "(200, '{\"released\":true,\"collection\":\"mfg_work_orders\",\"id\":\"wo_c6453b4cef39\",\"lock\":{\"action\":\"complete\",\"by\":\"Budi Santoso\",\"', 200, '{\"id\":\"wo_c6453b4cef39\",\"wo_number\":\"WO-00004\",\"entity_id\":\"ent_ksc\",\"bom_id\":\"bom_e88754857f34\",\"bom_name\":\"TEST_P20B_d', 'completed', 1)"
+ },
+ {
+  "id": "PROD-02",
+  "invariant": "tepat 1 jurnal overhead 20.000 (Dr 1-1300 / Cr 5-1100); HPP output = bahan + overhead",
+  "pass": true,
+  "detail": "({'1-1300': 20000.0, '5-1100': -20000.0}, 488400.0, 508400.0)"
+ },
+ {
+  "id": "PROD-02",
+  "invariant": "complete ke-3 (sudah completed) idempoten: tanpa output/jurnal tambahan",
+  "pass": true,
+  "detail": "200"
+ },
+ {
+  "id": "PROD-05",
+  "invariant": "langkah MKO sudah di-issue: WIP (1-1350) bertambah sebesar nilai bahan",
+  "pass": true,
+  "detail": "('MKO-00002', 1030000.0)"
+ },
+ {
+  "id": "PROD-05",
+  "invariant": "kiriman sebagian 30 → GRN closed, langkah tetap issued, kiriman DITAHAN (tanpa stok/tagihan)",
+  "pass": true,
+  "detail": "('closed', 'issued', 0)"
+ },
+ {
+  "id": "PROD-05",
+  "invariant": "batal kiriman sebagian: alasan pendek 400; sukses → partial kosong, GRN cancelled",
+  "pass": true,
+  "detail": "(400, 200, '{\"id\":\"mko_f8ff2c07e8f5\",\"mko_number\":\"MKO-00002\",\"entity_id\":\"ent_ksc\",\"mode\":\"process_only\",\"material_product_id\":\"pro')"
+ },
+ {
+  "id": "PROD-05",
+  "invariant": "kiriman akhir menyerap kiriman sebagian: langkah received, 4 roll = 72 (bukan 102), actual_output 72",
+  "pass": true,
+  "detail": "('closed', 'received', 4, [15.0, 15.0, 21.0, 21.0], 72.0)"
+ },
+ {
+  "id": "PROD-05",
+  "invariant": "tepat 1 tagihan jasa makloon untuk langkah ini (kiriman sebagian tak membuat tagihan sendiri)",
+  "pass": true,
+  "detail": "[('VBM-00007', 500000.0, 1)]"
+ },
+ {
+  "id": "PROD-05",
+  "invariant": "biaya: WIP langkah ter-clear (net 1-1350 = 0); nilai roll output = bahan + jasa (±1)",
+  "pass": true,
+  "detail": "({'1-1300': 500000.0, '2-1100': -500000.0}, 1530000.0, 1030000.0, 500000.0, 1530000.0)"
+ },
+ {
+  "id": "PROD-05",
+  "invariant": "GRN kiriman sebagian tertaut ke tagihan akhir; tidak bisa dibatalkan lagi (409)",
+  "pass": true,
+  "detail": "{'status': 'closed'}"
+ },
+ {
+  "id": "PROD-05",
+  "invariant": "retur/klaim potong bon > sisa tagihan ditolak 400 tanpa jurnal",
+  "pass": true,
+  "detail": "(400, '{\"detail\":\"Potongan Rp 500.001 melebihi sisa tagihan Rp 500.000.\"}')"
+ },
+ {
+  "id": "PROD-05",
+  "invariant": "klaim potong bon 50.000: sales tak bisa menyetujui (403); disetujui → tagihan jasa −50.000, 1 jurnal klaim seimbang",
+  "pass": true,
+  "detail": "(403, 200, '{\"id\":\"mko_f8ff2c07e8f5\",\"mko_number\":\"MKO-00002\",\"entity_id\":\"ent_ksc\",\"mode\":\"process_only\",\"material_product_id\":\"pro', 450000.0, 1)"
+ },
+ {
+  "id": "PROD-05",
+  "invariant": "setujui ulang → 400, potongan tidak ganda",
+  "pass": true,
+  "detail": "400"
+ }
+]
+pass=16 fail=0

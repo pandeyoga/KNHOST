@@ -1,0 +1,95 @@
+  [poc-stock] snapshot 222 dokumen stok dari 10 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (222 dokumen, 10 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "MASTER-01",
+  "invariant": "UOM terpakai: ganti kode/faktor/hapus alias terpakai ('yard') → 409; ganti nama → 200",
+  "pass": true,
+  "detail": "(409, 409, 409, 200, '{\"detail\":\"Satuan YRD masih dipakai 215 dokumen (interco_returns 2, interco_transactions 8, inventory_movements 49, inve')"
+ },
+ {
+  "id": "MASTER-01",
+  "invariant": "produk dipakai SO: ubah nama/harga 200 tapi baris SO tetap snapshot; ganti SKU 409; base_unit beda induk 400",
+  "pass": true,
+  "detail": "(200, 200, 409, 400, 'Endek Bali Rangrang')"
+ },
+ {
+  "id": "MASTER-01",
+  "invariant": "induk produk yang sudah punya SKU ber-stok: ganti base_unit ditolak",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "MASTER-01",
+  "invariant": "supplier ber-PO: ganti nama 200, PO lama mempertahankan snapshot nama supplier",
+  "pass": true,
+  "detail": "(200, 'Cirebon Craft')"
+ },
+ {
+  "id": "MASTER-02",
+  "invariant": "master berlapis (semua jenis): override & ubah di KSC tidak mengubah Kanda maupun baris global",
+  "pass": true,
+  "detail": "{'lulus': ['payment-terms', 'expense-categories', 'document-templates', 'product-lines', 'process-stages', 'sample-types', 'complaint-reasons'], 'gagal': []}"
+ },
+ {
+  "id": "MASTER-03",
+  "invariant": "master berlapis: lepas override (DELETE) → KSC kembali ke nilai global",
+  "pass": true,
+  "detail": "['payment-terms', 'expense-categories', 'document-templates', 'product-lines', 'process-stages', 'sample-types', 'complaint-reasons']"
+ },
+ {
+  "id": "MASTER-03",
+  "invariant": "config global → override KSC (Kanda tetap global) → clear KSC = ikut global; clear lapisan Global ditolak 400",
+  "pass": true,
+  "detail": "{'lulus': ['tax.dpp_nilai_lain', 'tax.efaktur_enabled', 'sales.allow_item_discount', 'sales.allow_order_discount', 'sales.allow_partial_shipment'], 'gagal': []}"
+ },
+ {
+  "id": "MASTER-02",
+  "invariant": "config override KSC tidak terbaca di Kanda",
+  "pass": true,
+  "detail": "['tax.dpp_nilai_lain', 'tax.efaktur_enabled', 'sales.allow_item_discount', 'sales.allow_order_discount', 'sales.allow_partial_shipment']"
+ },
+ {
+  "id": "MASTER-04",
+  "invariant": "satuan tak dikenal di SO/PO, termin tak dikenal, base_unit produk tak dikenal → 4xx tanpa dokumen baru",
+  "pass": true,
+  "detail": "{'so': (400, '{\"detail\":\"Konversi unit \\'parsec\\' → \\'yard\\' tidak tersedia untuk produk ENK-BALI-001. Tamba'), 'po': (400, '{\"detail\":\"Item ENK-BALI-001: Konversi \\'jengkal\\' → \\'yard\\' belum punya aturan untuk produk '), 'term': (400, '{\"detail\":\"Termin pembayaran \\'NET999X\\' tidak ada di master.\""
+ },
+ {
+  "id": "MASTER-04",
+  "invariant": "alias sah 'yd' diterima & dihitung setara yard (base_quantity = qty)",
+  "pass": true,
+  "detail": "(200, 1.0)"
+ },
+ {
+  "id": "MASTER-05",
+  "invariant": "prasyarat: SO dibuat untuk pelanggan duplikat",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"so_7ee074098cfe\",\"number\":\"KSC/SO-00012\",\"status\":\"reserved\",\"entity_id\":\"ent_ksc\",\"customer_id\":\"cust_43b9bdbac3')"
+ },
+ {
+  "id": "MASTER-05",
+  "invariant": "preview menghitung referensi (SO); sales 403; tanpa alasan 400; lintas PT ditolak",
+  "pass": true,
+  "detail": "(200, '{\"source_id\":\"cust_43b9bdbac3c5\",\"target_id\":\"cust_69e338a56843\",\"references\":{\"sales_orders\":1},\"total\":1,\"price_confli', 403, 400, 404)"
+ },
+ {
+  "id": "MASTER-05",
+  "invariant": "merge: SO pindah ke target, sumber status merged + merged_into, alamat sumber ditambahkan, pemilik target tetap",
+  "pass": true,
+  "detail": "(200, '{\"source_id\":\"cust_43b9bdbac3c5\",\"target_id\":\"cust_69e338a56843\",\"moved\":{\"sales_orders\":1},\"total_moved\":1,\"addresses_added\":1}')"
+ },
+ {
+  "id": "MASTER-05",
+  "invariant": "merge ulang 409 (idempoten), 0 dokumen tersisa di sumber, SO baru ke pelanggan merged ditolak",
+  "pass": true,
+  "detail": "(409, 0, 409, '{\"detail\":\"Pelanggan \\'Test_p18b_664cfe Toko Maju Dup\\' sudah digabung ke pelanggan lain (cust_69e338a')"
+ },
+ {
+  "id": "COMM-01",
+  "invariant": "duplikat pelanggan digabung dengan jejak audit (alasan) & owner target dipertahankan",
+  "pass": true,
+  "detail": "True"
+ }
+]
+pass=15 fail=0

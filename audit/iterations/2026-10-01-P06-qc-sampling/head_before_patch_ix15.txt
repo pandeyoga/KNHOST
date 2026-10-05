@@ -1,0 +1,1 @@
+HEAD: decision 4 of 30 (no inspections) -> completed | task status: completed | residual quarantine: 26.0

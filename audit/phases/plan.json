@@ -1,0 +1,265 @@
+{
+  "phases": [
+    {
+      "id": "P00",
+      "title": "Rebaseline dan fixture",
+      "depends_on": [],
+      "finding_ids": []
+    },
+    {
+      "id": "P01",
+      "title": "Scope, credentials dan request identity",
+      "depends_on": [
+        "P00"
+      ],
+      "finding_ids": [
+        "AX-04",
+        "AX-06",
+        "CX-02",
+        "CX-10",
+        "GN-01",
+        "GN-02",
+        "GN-03",
+        "GN-04",
+        "GN-09",
+        "GN-10",
+        "GN-16",
+        "IX-05",
+        "IX-06",
+        "IX-07",
+        "IX-10",
+        "RF-08",
+        "RF-09",
+        "RF-12",
+        "RF-13"
+      ]
+    },
+    {
+      "id": "P02",
+      "title": "Core roll, split, provenance dan projection",
+      "depends_on": [
+        "P01"
+      ],
+      "finding_ids": [
+        "AX-05",
+        "AX-07",
+        "FN-03",
+        "GN-12",
+        "GN-13",
+        "GN-15",
+        "IX-13",
+        "WM-01",
+        "WM-02"
+      ]
+    },
+    {
+      "id": "P03",
+      "title": "Cash, AR, bank, aset dan durable posting",
+      "depends_on": [
+        "P01",
+        "P02"
+      ],
+      "finding_ids": [
+        "AX-02",
+        "CX-01",
+        "CX-03",
+        "CX-04",
+        "CX-05",
+        "CX-06",
+        "CX-07",
+        "CX-08",
+        "FN-07",
+        "FN-08",
+        "FN-10",
+        "FN-12",
+        "FN-15",
+        "IX-14",
+        "IX-17"
+      ]
+    },
+    {
+      "id": "P04",
+      "title": "Landed cost, costing dan AP match",
+      "depends_on": [
+        "P02",
+        "P03"
+      ],
+      "finding_ids": [
+        "FN-01",
+        "FN-02",
+        "FN-11",
+        "IX-16"
+      ]
+    },
+    {
+      "id": "P05",
+      "title": "COA, laporan dan period close",
+      "depends_on": [
+        "P03",
+        "P04"
+      ],
+      "finding_ids": [
+        "CX-09",
+        "FN-04",
+        "FN-05",
+        "FN-06",
+        "FN-09",
+        "FN-13",
+        "FN-16",
+        "IX-08"
+      ]
+    },
+    {
+      "id": "P06",
+      "title": "Putaway, transfer, QC dan lokasi",
+      "depends_on": [
+        "P02",
+        "P03"
+      ],
+      "finding_ids": [
+        "AX-08",
+        "IX-09",
+        "IX-15",
+        "WM-03",
+        "WM-04",
+        "WM-05",
+        "WM-09"
+      ]
+    },
+    {
+      "id": "P07",
+      "title": "Pick, shipment manifest dan dispatch atomik",
+      "depends_on": [
+        "P02",
+        "P03",
+        "P06"
+      ],
+      "finding_ids": [
+        "AX-01",
+        "AX-03",
+        "CX-11",
+        "CX-12",
+        "GN-11",
+        "RF-04",
+        "RF-05",
+        "RF-06",
+        "WM-06"
+      ]
+    },
+    {
+      "id": "P08",
+      "title": "Tag, printer dan typed verification",
+      "depends_on": [
+        "P01",
+        "P02",
+        "P06"
+      ],
+      "finding_ids": [
+        "IX-12",
+        "RF-01",
+        "RF-07",
+        "RF-10",
+        "RF-11",
+        "RF-14",
+        "RF-15",
+        "UX-02"
+      ]
+    },
+    {
+      "id": "P09",
+      "title": "Gate edge contract, evaluator dan kiosk",
+      "depends_on": [
+        "P07",
+        "P08"
+      ],
+      "finding_ids": [
+        "RF-02",
+        "RF-03",
+        "RF-16",
+        "UX-01"
+      ]
+    },
+    {
+      "id": "P10",
+      "title": "Count, opname dan adjustment financial",
+      "depends_on": [
+        "P02",
+        "P03",
+        "P04",
+        "P08"
+      ],
+      "finding_ids": [
+        "FN-14",
+        "RF-17",
+        "WM-07",
+        "WM-08"
+      ]
+    },
+    {
+      "id": "P11",
+      "title": "Mutasi alternatif dan konversi dokumen",
+      "depends_on": [
+        "P02",
+        "P03",
+        "P04",
+        "P06"
+      ],
+      "finding_ids": [
+        "CX-13",
+        "GN-05",
+        "GN-06",
+        "GN-07",
+        "GN-08",
+        "IX-11"
+      ]
+    },
+    {
+      "id": "P12",
+      "title": "Payroll, HR dan marketing",
+      "depends_on": [
+        "P01",
+        "P03"
+      ],
+      "finding_ids": [
+        "HR-01",
+        "HR-02",
+        "HR-03",
+        "IX-01",
+        "IX-03",
+        "IX-04",
+        "MK-01"
+      ]
+    },
+    {
+      "id": "P13",
+      "title": "Audit trail, kandidat secret dan label ringan",
+      "depends_on": [
+        "P01"
+      ],
+      "finding_ids": [
+        "GN-14",
+        "UX-03"
+      ]
+    },
+    {
+      "id": "P14",
+      "title": "Coverage, UAT dan sign-off lintas flow",
+      "depends_on": [
+        "P01",
+        "P02",
+        "P03",
+        "P04",
+        "P05",
+        "P06",
+        "P07",
+        "P08",
+        "P09",
+        "P10",
+        "P11",
+        "P12",
+        "P13"
+      ],
+      "finding_ids": []
+    }
+  ]
+}

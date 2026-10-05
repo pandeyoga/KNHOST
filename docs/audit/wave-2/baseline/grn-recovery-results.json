@@ -1,0 +1,76 @@
+{
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_a1d124e58cca44208cf83bc1a55a2a8b",
+  "mode": "Actual service + Mongo with one injected AutoReconnect before second roll update; no production outage frequency claim",
+  "results": [
+    {
+      "id": "W2-G-E01",
+      "kind": "wave1_extension",
+      "related": "GN-11",
+      "observed": {
+        "failure_injected": true,
+        "grn_status": "closing",
+        "po_received": 0,
+        "quarantine_rolls": 1,
+        "receiving_rolls": 1
+      },
+      "expected_reproduction": {
+        "failure_injected": true,
+        "grn_status": "closing",
+        "po_received": 0,
+        "quarantine_rolls": 1,
+        "receiving_rolls": 1
+      }
+    },
+    {
+      "id": "W2-G-C15",
+      "kind": "control",
+      "label": "Immediate retry held by surviving inbound saga lock",
+      "observed": {
+        "grn_status": "closing",
+        "posting_status": "failed",
+        "po_received": 0
+      }
+    },
+    {
+      "id": "W2-G-E02",
+      "kind": "wave1_extension",
+      "related": "GN-11",
+      "observed": {
+        "grn_status": "closed",
+        "po_received": 6.0,
+        "physical_qty": 10.0,
+        "counted_qty": 10.0,
+        "remainder_qty": [
+          4.0
+        ]
+      },
+      "expected_reproduction": {
+        "grn_status": "closed",
+        "po_received": 6,
+        "physical_qty": 10,
+        "counted_qty": 10,
+        "remainder_qty": [
+          4
+        ]
+      }
+    },
+    {
+      "id": "W2-G-E03",
+      "kind": "wave1_extension",
+      "related": "GN-11",
+      "observed": {
+        "quarantine_qty": 6.0,
+        "physical_quarantine_qty": 10.0,
+        "task_qty_rolls": 1,
+        "physical_rolls": 2
+      },
+      "expected_reproduction": {
+        "quarantine_qty": 6,
+        "physical_quarantine_qty": 10,
+        "task_qty_rolls": 1,
+        "physical_rolls": 2
+      }
+    }
+  ]
+}

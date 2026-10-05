@@ -1,0 +1,107 @@
+{
+  "decisions": [
+    {
+      "id": "PG01",
+      "phase": "P06",
+      "status": "decided",
+      "question": "Apakah inspeksi harus memutuskan seluruh baris, atau sampling diizinkan dengan plan dan coverage eksplisit?",
+      "source": "archive/2026-09/22_AUDIT_PERIODE_SCOPE_DAN_INSPEKSI.md",
+      "decision": "Campuran (opsi C) sebagai PILIHAN UI: default inspeksi semua baris; user dapat memilih mode 'Cek semua' atau 'Sampling' per inspeksi. Sampling wajib mencatat rencana (jumlah/persen roll per lot) dan coverage; keputusan sampel berlaku untuk sisa lot secara eksplisit. Implementasi di P06.",
+      "decided_by": "Pemilik proses (via chat sesi 2026-09-30)",
+      "decided_at": "2026-09-30",
+      "evidence": [],
+      "implementation": "2026-10-01: diimplementasikan di iterations/2026-10-01-P06-qc-sampling (qc_plan + qc_coverage + UI QcPlanPanel)."
+    },
+    {
+      "id": "PG02",
+      "phase": "P05",
+      "status": "decided",
+      "question": "Bagaimana mengoreksi jurnal di periode tertutup (FN-09)?",
+      "source": "findings/FN-09.md",
+      "decision": "Jurnal pembalik (debit↔kredit) di periode TERBUKA; tanggal dipilih user dan wajib di periode terbuka (jendela unlock tidak dipakai). Hak: izin accounting.void (admin/manager), alasan wajib. Berlaku untuk jurnal manual dan otomatis; jurnal asli & dokumen sumber tidak berubah. Jurnal penutup/pembalik tidak dapat dibalik; satu jurnal satu pembalik.",
+      "decided_by": "Pemilik proses (via chat sesi 2026-10-06)",
+      "decided_at": "2026-10-06",
+      "evidence": [],
+      "implementation": "2026-10-06: gl_service.reverse_entry + POST /api/gl/journal/{id}/reverse + tombol Balik Jurnal (iterations/2026-10-06-P07-dispatch-identity-reversal)."
+    },
+    {
+      "id": "PG-SALE02",
+      "phase": "P14",
+      "status": "decided",
+      "question": "Apakah POS memerlukan buka/tutup shift kasir dengan rekap kas, void kasir beralasan, dan pembayaran beberapa metode (split tender)?",
+      "source": "coverage.json SALE-02",
+      "decision": "Tidak berlaku. Semua penjualan lewat Sales Order; pembayaran dicatat lewat Penerimaan Piutang (tempo/transfer). Tidak ada penjualan tunai di toko/laci kas. SALE-02 ditandai not_applicable; dibuka ulang bila toko/showroom tunai dibuka.",
+      "decided_by": "Pemilik proses (via chat sesi 2026-10-02)",
+      "decided_at": "2026-10-02",
+      "evidence": [
+        "iterations/2026-10-02-P14-coverage-uat/runs/p14b.txt"
+      ],
+      "implementation": "2026-10-02: tidak ada perubahan aplikasi; repro_p14b memverifikasi premis (tanpa laci kas, checkout = Sales Order)."
+    },
+    {
+      "id": "PG04",
+      "phase": "P21",
+      "status": "decided",
+      "case": "COMM-04",
+      "question": "Apakah biaya kampanye marketing dicatat ke buku besar (jurnal Beban Pemasaran saat realisasi/tagihan, dibalik saat batal)?",
+      "source": "owner-questions-P21.md",
+      "decision": "Ya — jurnal Beban Pemasaran saat biaya kampanye benar-benar keluar (realisasi/tagihan vendor), dibalik bila dibatalkan.",
+      "decided_by": "Pemilik (via chat sesi 2026-10-04)",
+      "decided_at": "2026-10-04",
+      "evidence": [],
+      "implementation": ""
+    },
+    {
+      "id": "PG05",
+      "phase": "P21",
+      "status": "decided",
+      "case": "HR-04",
+      "question": "Siapa yang menyediakan dataset acuan PPh21 Desember/PHK & BPJS 2026 untuk dicocokkan per rupiah?",
+      "source": "owner-questions-P21.md",
+      "decision": "Konsultan pajak/akuntan menyerahkan 3–5 slip contoh resmi (Desember + 1 PHK); dicocokkan per rupiah.",
+      "decided_by": "Pemilik (via chat sesi 2026-10-04)",
+      "decided_at": "2026-10-04",
+      "evidence": [],
+      "implementation": ""
+    },
+    {
+      "id": "PG06",
+      "phase": "P21",
+      "status": "decided",
+      "case": "RFID-05",
+      "question": "Kapan uji putus-sambung reader/gate RFID nyata dilakukan, atau ditutup sebagai diuji simulasi?",
+      "source": "owner-questions-P21.md",
+      "decision": "Belum ada perangkat — tutup sebagai diuji simulasi; uji nyata saat RFID dipasang.",
+      "decided_by": "Pemilik (via chat sesi 2026-10-04)",
+      "decided_at": "2026-10-04",
+      "evidence": [],
+      "implementation": ""
+    },
+    {
+      "id": "PG07",
+      "phase": "P21",
+      "status": "decided",
+      "case": "OPS-01",
+      "question": "Apakah validasi bootstrap & indeks dijalankan di database produksi saat deploy pertama?",
+      "source": "owner-questions-P21.md",
+      "decision": "Saat deploy pertama: jalankan validasi bootstrap & indeks sesudah deploy dan lampirkan hasilnya.",
+      "decided_by": "Pemilik (via chat sesi 2026-10-04)",
+      "decided_at": "2026-10-04",
+      "evidence": [],
+      "implementation": ""
+    },
+    {
+      "id": "PG08",
+      "phase": "P21",
+      "status": "decided",
+      "case": "AUDIT-03",
+      "question": "Bagaimana bukti pemindai secret di GitHub Actions nyata diperoleh (cabang uji + tautan run)?",
+      "source": "owner-questions-P21.md",
+      "decision": "Cukup uji lokal pre-commit (risiko CI diterima).",
+      "decided_by": "Pemilik (via chat sesi 2026-10-04)",
+      "decided_at": "2026-10-04",
+      "evidence": [],
+      "implementation": ""
+    }
+  ]
+}

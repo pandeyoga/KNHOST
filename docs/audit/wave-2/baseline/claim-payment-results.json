@@ -1,0 +1,190 @@
+{
+  "commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_f3abbcfd94894591a62277d0566178bf",
+  "level": "real Mongo; bill pay/cancel via ASGI; claim service; deterministic scheduling barrier delegates original assessment",
+  "scenarios": [
+    {
+      "id": "W2-B-C01",
+      "kind": "control",
+      "observed": {
+        "http_status": 200,
+        "bill_status": "paid",
+        "grand_total": 100000.0,
+        "amount_paid": 100000.0,
+        "cash_amount": 100000.0,
+        "gl_ap_credit_net": 0.0,
+        "claim_status": "open",
+        "journal_sources": [
+          "subcon_issue",
+          "subcon_service",
+          "subcon_receipt",
+          "cash_transaction"
+        ]
+      }
+    },
+    {
+      "id": "W2-B-C02",
+      "kind": "control",
+      "observed": {
+        "http_status": 400,
+        "unchanged": true
+      }
+    },
+    {
+      "id": "W2-B-C03",
+      "kind": "control",
+      "observed": {
+        "bill_status": "posted",
+        "grand_total": 60000.0,
+        "amount_paid": 0,
+        "cash_amount": 0,
+        "gl_ap_credit_net": 60000.0,
+        "claim_status": "approved",
+        "journal_sources": [
+          "subcon_issue",
+          "subcon_service",
+          "subcon_receipt",
+          "makloon_claim"
+        ]
+      }
+    },
+    {
+      "id": "W2-B-C04",
+      "kind": "control",
+      "observed": {
+        "rejected": true,
+        "unchanged": true
+      }
+    },
+    {
+      "id": "W2-B-C05",
+      "kind": "control",
+      "observed": {
+        "http_status": 200,
+        "bill_status": "paid",
+        "grand_total": 60000.0,
+        "amount_paid": 60000.0,
+        "cash_amount": 60000.0,
+        "gl_ap_credit_net": 0.0,
+        "claim_status": "approved",
+        "journal_sources": [
+          "subcon_issue",
+          "subcon_service",
+          "subcon_receipt",
+          "makloon_claim",
+          "cash_transaction"
+        ]
+      }
+    },
+    {
+      "id": "W2-B-C06",
+      "kind": "control",
+      "observed": {
+        "rejected": "Potongan Rp 40.000 melebihi sisa tagihan Rp 20.000.",
+        "bill_status": "posted",
+        "grand_total": 100000.0,
+        "amount_paid": 80000.0,
+        "cash_amount": 80000.0,
+        "gl_ap_credit_net": 20000.0,
+        "claim_status": "pending_approval",
+        "journal_sources": [
+          "subcon_issue",
+          "subcon_service",
+          "subcon_receipt",
+          "cash_transaction"
+        ]
+      }
+    },
+    {
+      "id": "W2-B-F01",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "bill_status": "cancelled",
+        "grand_total": 100000.0,
+        "amount_paid": 0,
+        "cash_amount": 0,
+        "gl_ap_credit_net": 100000.0,
+        "claim_status": "open",
+        "journal_sources": [
+          "subcon_issue",
+          "subcon_service",
+          "subcon_receipt"
+        ]
+      }
+    },
+    {
+      "id": "W2-B-F02",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "interleaving": "pay read grand100000 -> claim reduces to60000 -> payment80000 resumes",
+        "bill_status": "posted",
+        "grand_total": 60000.0,
+        "amount_paid": 80000.0,
+        "cash_amount": 80000.0,
+        "gl_ap_credit_net": -20000.0,
+        "claim_status": "approved",
+        "journal_sources": [
+          "subcon_issue",
+          "subcon_service",
+          "subcon_receipt",
+          "makloon_claim",
+          "cash_transaction"
+        ]
+      }
+    },
+    {
+      "id": "W2-B-F03",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "interleaving": "claim validates unpaid100000 -> payment80000 -> claim40000 resumes",
+        "bill_status": "posted",
+        "grand_total": 60000.0,
+        "amount_paid": 80000.0,
+        "cash_amount": 80000.0,
+        "gl_ap_credit_net": -20000.0,
+        "claim_status": "approved",
+        "journal_sources": [
+          "subcon_issue",
+          "subcon_service",
+          "subcon_receipt",
+          "cash_transaction",
+          "makloon_claim"
+        ]
+      }
+    },
+    {
+      "id": "W2-B-C07",
+      "kind": "control",
+      "observed": {
+        "http_statuses": [
+          200,
+          409
+        ],
+        "bill_status": "posted",
+        "grand_total": 100000.0,
+        "amount_paid": 80000.0,
+        "cash_amount": 80000.0,
+        "gl_ap_credit_net": 20000.0,
+        "claim_status": "open",
+        "journal_sources": [
+          "subcon_issue",
+          "subcon_service",
+          "subcon_receipt",
+          "cash_transaction"
+        ]
+      }
+    },
+    {
+      "id": "W2-B-C08",
+      "kind": "control",
+      "observed": {
+        "http_status": 200,
+        "journal_count": 2,
+        "gl_ap_credit_net": 0.0
+      }
+    }
+  ]
+}

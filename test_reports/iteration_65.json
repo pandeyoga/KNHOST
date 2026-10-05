@@ -1,0 +1,35 @@
+{
+  "summary": "GRN Fase 1 refactor validated. Ran /app/backend/tests/test_inbound_complete_characterization.py (2 tests, scan-label + manual-rolls paths) — BOTH PASS with GOLDEN fingerprints exactly matching (task_status=qc_pending, qty_rolls=2, rolls list, po_received_delta, po_status, je_count/je_debit, lots). test_grn_phase0.py 12/12 PASS. test_wms_advance_expected.py 2/2 PASS. Sequential run: 16/16 pass. Parallel xdist showed 1 transient flake (test_block_over_remaining_changes_scan_label DELETE returned 400 due to concurrent worker touching the same task doc) — passes cleanly when serial; not a refactor regression. Zero residue verified: no wms_char_*/wms_grn0_* tasks, no rolls with dye_lot DL-CH/DL-M1/DL-GRN0. Scan-label API behaviour probe (new test /app/backend/tests/test_iter65_scan_label_probe.py) exercises PO inbound task for prod_batik_mega (CBN-MEGA-PREM): 200 OK for valid raw with roll status=receiving + declared_length=50 + rfid_epc field present in response; 409 on duplicate roll no; 400 OVER_PO for qty far above line qty; 400 UNMAPPED for unknown supplier code; task advanced to receiving with received_qty>=50; cleanup via DELETE /inbound/rolls/{id}/scan + task doc restore leaves zero residue. Frontend smoke (?view=operations&entity=ent_ksc as warehouse@): Barang Masuk tab renders 15 inbound tasks, panel opens on task click, ZERO console errors.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "tests/test_grn_phase0.py::test_block_over_remaining_changes_scan_label", "issue": "Transient parallel-run flake under pytest-xdist loadscope — DELETE /inbound/rolls/{rid}/scan returns 400 when a sibling worker mutates the shared inbound task concurrently. Passes cleanly serial. Consider marking with @pytest.mark.serial or scoping to a synth task like the characterization suite does."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_inbound_complete_characterization.py",
+    "/app/backend/tests/test_grn_phase0.py",
+    "/app/backend/tests/test_wms_advance_expected.py",
+    "/app/backend/tests/test_iter65_scan_label_probe.py",
+    "/app/test_reports/pytest/iter65_phase1.xml",
+    "/app/test_reports/pytest/iter65_scan_probe.xml"
+  ],
+  "action_items": [
+    "(Optional) Refactor test_grn_phase0.py::test_block_over_remaining_changes_scan_label to clone the seed task (like the characterization suite) so parallel xdist workers don't collide on the same task doc during scan/DELETE."
+  ],
+  "critical_code_review_comments": [
+    "Refactor is behaviour-preserving: characterization golden fingerprints match exactly on both scan-label and manual-rolls paths (rolls, PO deltas, GL, lots, task status all bit-for-bit).",
+    "services/receiving_roll_service.py exposes both create_label_roll (wired) and create_counted_roll (prepared, not wired) — matches Phase 1 scope.",
+    "receiving_roll_service.create_label_roll sets roll_doc['rfid_epc']='' when auto_rfid_on_scan is off; the field is always emitted on API response — good for FE contract stability.",
+    "Router inbound_receiving.py 'complete' is a thin wrapper over services/inbound_complete_service.complete_task(task_id, payload, actor, *, ctx=None, via_grn=None) per spec."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter65_scan_label_probe.py (new)"],
+  "success_rate": {"backend": "100% (16/16 characterization+phase0+advance) sequential; scan-label probe 4/4 sub-cases", "frontend": "smoke pass (login + inbound tab + task panel, 0 console errors)"},
+  "test_credentials": "warehouse@kainnusantara.id / demo12345 · admin@kainnusantara.id / demo12345 · header X-Entity-Id: ent_ksc",
+  "seed_data_creation": "None. Characterization test clones seed task under wms_char_* ids and restores; scan-label probe snapshots task doc and restores in finally. Zero residue confirmed post-run (no wms_char_*/wms_grn0_* tasks, no DL-CH/DL-M1/DL-GRN0 rolls).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fase 1 GREEN. inbound_complete logic lives in services/inbound_complete_service.py; roll creation for scan-label lives in services/receiving_roll_service.py::create_label_roll; create_counted_roll is defined but not yet wired to any endpoint (planned for Phase 2 — manual count input path). Legacy test_fase_sl_* suites still reference stale seed IDs (KSC/PO-00014 / wms_e2e3d9059660) and are known non-regression as of iter64. When running phase0 concurrently again, note the DELETE-on-shared-task flake documented above.",
+  "rca of the issue": "N/A — pure refactor, no bugs found. The single xdist flake is a test-isolation issue in test_grn_phase0, not a product bug."
+}

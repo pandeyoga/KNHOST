@@ -1,0 +1,172 @@
+{
+  "phases": [
+    {
+      "id": "P00",
+      "title": "Rekonsiliasi baseline dan perbaikan Wave1",
+      "depends_on": [],
+      "findings": [],
+      "requirements": [],
+      "status": "ready_for_validation",
+      "iteration": "iterations/2026-10-04-W2-P00-P07",
+      "notes": "Rekonsiliasi Wave1: W2-008/009 via AX-04, W2-024 via GN-06, W2-021 (FS) via GN-12, W2-016 via APAR-02. Lihat IMPLEMENTATION.md."
+    },
+    {
+      "id": "P01",
+      "title": "Scope entitas, owner dan lini",
+      "depends_on": [
+        "P00"
+      ],
+      "findings": [
+        "W2-006",
+        "W2-008",
+        "W2-010",
+        "W2-025"
+      ],
+      "requirements": [],
+      "status": "ready_for_validation",
+      "iteration": "iterations/2026-10-04-W2-P00-P07",
+      "notes": ""
+    },
+    {
+      "id": "P02",
+      "title": "Stok, receiving, proyeksi dan QC",
+      "depends_on": [
+        "P01"
+      ],
+      "findings": [
+        "W2-007",
+        "W2-009",
+        "W2-013",
+        "W2-014",
+        "W2-019"
+      ],
+      "requirements": [],
+      "status": "ready_for_validation",
+      "iteration": "iterations/2026-10-04-W2-P00-P07",
+      "notes": ""
+    },
+    {
+      "id": "P03",
+      "title": "Makloon, biaya jasa dan klaim",
+      "depends_on": [
+        "P02"
+      ],
+      "findings": [
+        "W2-001",
+        "W2-002",
+        "W2-003",
+        "W2-004",
+        "W2-005"
+      ],
+      "requirements": [],
+      "status": "ready_for_validation",
+      "iteration": "iterations/2026-10-04-W2-P00-P07",
+      "notes": ""
+    },
+    {
+      "id": "P04",
+      "title": "Completion dan recovery produksi",
+      "depends_on": [
+        "P02"
+      ],
+      "findings": [
+        "W2-024"
+      ],
+      "requirements": [],
+      "status": "ready_for_validation",
+      "iteration": "iterations/2026-10-04-W2-P00-P07",
+      "notes": ""
+    },
+    {
+      "id": "P05",
+      "title": "AR, deposit, refund dan recovery pembayaran",
+      "depends_on": [
+        "P02"
+      ],
+      "findings": [
+        "W2-015",
+        "W2-016",
+        "W2-017",
+        "W2-018",
+        "W2-020"
+      ],
+      "requirements": [],
+      "status": "ready_for_validation",
+      "iteration": "iterations/2026-10-04-W2-P00-P07",
+      "notes": ""
+    },
+    {
+      "id": "P06",
+      "title": "Laporan Finance, payroll dan rekening",
+      "depends_on": [
+        "P05"
+      ],
+      "findings": [
+        "W2-021",
+        "W2-022",
+        "W2-023"
+      ],
+      "requirements": [],
+      "status": "ready_for_validation",
+      "iteration": "iterations/2026-10-04-W2-P00-P07",
+      "notes": ""
+    },
+    {
+      "id": "P07",
+      "title": "RFID insiden dan regresi gate",
+      "depends_on": [
+        "P01",
+        "P02"
+      ],
+      "findings": [
+        "W2-011",
+        "W2-012"
+      ],
+      "requirements": [],
+      "status": "ready_for_validation",
+      "iteration": "iterations/2026-10-04-W2-P00-P07",
+      "notes": ""
+    },
+    {
+      "id": "P08",
+      "title": "Penerapan kebutuhan bisnis klien",
+      "depends_on": [
+        "P03",
+        "P04",
+        "P06",
+        "P07"
+      ],
+      "findings": [],
+      "requirements": [
+        "W2-REQ-01",
+        "W2-REQ-02",
+        "W2-REQ-03",
+        "W2-REQ-04",
+        "W2-REQ-05",
+        "W2-REQ-06",
+        "W2-REQ-07",
+        "W2-REQ-08",
+        "W2-REQ-09"
+      ],
+      "status": "ready_for_validation",
+      "iteration": "iterations/2026-10-04-W2-P08-decisions",
+      "notes": "6 subfase selesai implementasi; ditunda (butuh keputusan pemilik): standar penamaan perusahaan, alias kode warna customer, COMM-04. Batas uji: printer/reader fisik, UAT browser 3 gudang."
+    },
+    {
+      "id": "P09",
+      "title": "Validasi gabungan dan serah-terima",
+      "depends_on": [
+        "P03",
+        "P04",
+        "P06",
+        "P07",
+        "P08"
+      ],
+      "findings": [],
+      "requirements": [],
+      "status": "not_started",
+      "iteration": null,
+      "notes": ""
+    }
+  ]
+}

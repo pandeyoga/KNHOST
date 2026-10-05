@@ -1,0 +1,35 @@
+{
+  "summary": "Iter-119 P11 Mutasi & Konversi (CX-13, GN-05, GN-06, GN-07, GN-08, IX-11). SERVICE-LEVEL (gold-standard invariants): /app/audit/iterations/2026-10-02-P11-mutasi-konversi/repro_p11.py → pass=21 fail=0. Regresi P10: audit/iterations/2026-10-08-P10-opname-financial/repro_p10.py → pass=21 fail=0. HTTP smoke pytest baru /app/backend/tests/test_iter119_p11.py → 10/10 PASSED (production list BOM/WO/summary, release/complete bogus→4xx bukan 5xx, purchase-returns list, internal-requests list + convert bogus→4xx, makloon-orders list, saga-locks list). FRONTEND UI (?view=production&entity=ent_ksc, admin): 3 WO terlihat; WO-00003 (Draf) HANYA menampilkan wo-release-<id> + wo-cancel-<id> (TANPA wo-complete-<id>); WO-00002 (Dirilis) HANYA menampilkan wo-complete-<id> (TANPA wo-release-<id>); WO-00001 (Selesai) tanpa tombol aksi. Detail Draf (wo-detail panel) menampilkan Batalkan + Rilis saja (TIDAK ada wo-detail-complete). Detail Dirilis menampilkan wo-detail-complete=true, wo-detail-release=false. Tidak ada baris dengan BOTH release+complete. Semua invariants P11 (CAS atomic claim produksi/makloon, frozen BOM, idempoten complete, hold inspection menghalangi konsumsi, roll anak retur beli, konversi yard→m, pasangan interco unik via source_request_id, receive makloon paralel → 1 sukses + 1 bill + 1 output) terbukti via repro_p11.py service-level 21/21.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter119_p11.py",
+    "/app/test_reports/pytest/iter119.xml",
+    "/app/audit/iterations/2026-10-02-P11-mutasi-konversi/repro_p11.py",
+    "/app/audit/iterations/2026-10-02-P11-mutasi-konversi/after_patch.txt"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/production_service.py: eligible_material_q (owner+warehouse+available+length_remaining>0 + inspection.hold.held!=true) dipakai konsisten di precheck/plan/CAS consume — menghilangkan race condition untuk roll ditahan QC. bom_components dibekukan ke WO saat create (bom_version_at) → PATCH BOM pasca-release TIDAK mengubah konsumsi WO (invariant GN-06).",
+    "services/production_service.complete_work_order: atomic_claim(status=released) → CAS consume per-roll ($expr panjang bebas ≥ ambil, $inc update) → output idempoten by acquired.{via=production_output,ref_id=wo} → JE idempoten per WO → finish_set. Partial consume failure → reverse_operation(op_id) membalik HANYA kontribusi op ini. Draft tidak bisa complete (400 'rilis dulu'). Dua complete paralel → 1 roll output, panjang berkurang sekali.",
+    "services/purchase_return_service._consume_return_rolls: validasi pemilik entitas + produk baris SEBELUM mutasi (else 400 tanpa saga_lock). Satuan yard→meter via to_base_qty. Retur sebagian → roll anak returned_supplier (nomor roll baru, tanpa RFID induk, parent_roll_id=induk) → movement return_out menunjuk anak. applied<requested → _undo_return_effects + 400. Finalisasi stok ber-claim (purchase_return_finalize_stock) → 2x finalize = idempoten.",
+    "services/internal_request_service.convert: claim(submitted) tanpa saga_lock sebelum membuat interco pair; kunci logis source_request_id → retry pasca-fault memakai pasangan sama (tidak membuat baru). IntercoError → release lock. _assert_open menolak reject/cancel sesudah converted (400).",
+    "services/makloon_order_service.receive_step: claim berprasyarat steps.$elemMatch{seq,status:issued}. Snapshot hasil klaim = basis perhitungan (sudah berubah → 409). Input=0 tanpa receive_progress sah → 409 (bukan fallback). receive_progress durable di steps[].{op_id,consumed,bill_id,lots,byproduct_done} → retry tidak duplikat tagihan/output. update_one akhir ter-filter oleh saga_lock.token milik pemegang (bukan replace_one buta).",
+    "services/atomic_claim.release: mendukung pelepasan milik-token (dibutuhkan oleh makloon.receive_step pola klaim-progres-rilis).",
+    "routers/saga_locks.py: mfg_work_orders + internal_requests sudah terdaftar sebagai koleksi berkunci → admin dapat lihat/release jika ada orphan lock.",
+    "frontend/features/production/ProductionWO.jsx: tombol wo-release-<id> hanya saat status==='draft' && perms.release; wo-complete-<id> hanya saat status==='released' && perms.complete. Detail panel wo-detail-complete hanya untuk 'released'. Invariant UI selaras dengan server (draft→complete=400) — tidak ada jalur klien untuk mem-bypass.",
+    "frontend/features/production/ProductionView.jsx: pesan galat 409 berbentuk objek sudah di-flatten jadi teks (lihat IMPLEMENTATION.md §UI produksi) — mencegah '[object Object]' muncul."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter119_p11.py"
+  ],
+  "success_rate": {
+    "backend": "100% (service: 21/21 repro_p11.py · 21/21 repro_p10.py regression · HTTP: 10/10 pytest test_iter119_p11.py)",
+    "frontend": "100% (production UI invariants: draft→release only, released→complete only, detail panel sesuai status; 3/3 WO row perilaku tombol benar)"
+  },
+  "test_credentials": "admin@kainnusantara.id / demo12345 · manager@kainnusantara.id / demo12345 · warehouse@kainnusantara.id / demo12345 · X-Entity-Id: ent_ksc",
+  "seed_data_creation": "Tidak ada data persistent yang dibuat. test_iter119_p11.py hanya GET + POST ke ID bogus (tidak membuat dokumen). repro_p11.py dan repro_p10.py menggunakan prefix TEST_ internal yang mereka bersihkan sendiri. Data WO/BOM yang terlihat di UI (WO-00001/00002/00003) adalah seed demo yang sudah ada sebelum iterasi (bukan dibuat testing agent).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "P11 Mutasi & Konversi COMPLETELY GREEN. repro_p11.py (21/21) adalah referensi tunggal untuk semua invariant race/idempoten/rollback (CX-13, GN-05/06/07/08, IX-11) — jalankan ulang bila berubah: `cd /app/backend && python ../audit/iterations/2026-10-02-P11-mutasi-konversi/repro_p11.py`. HTTP wiring smoke di tests/test_iter119_p11.py. UI produksi stabil: tombol wo-release-<id>/wo-complete-<id>/wo-cancel-<id> dan panel wo-detail dengan wo-detail-complete/wo-detail-release/wo-detail-cancel sudah benar sesuai status WO. P10 regresi (21/21) juga tetap hijau. Tidak ada action item untuk main agent."
+}

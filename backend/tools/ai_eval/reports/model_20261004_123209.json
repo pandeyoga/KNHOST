@@ -1,0 +1,4098 @@
+{
+ "summary": {
+  "mode": "model",
+  "n": 120,
+  "p50_ms": 3815,
+  "tool_pct": 94.2,
+  "args_pct": 90.0,
+  "args_strict_pct": 66.7,
+  "routed_n": 3,
+  "numbers_pct": 98.3
+ },
+ "rows": [
+  {
+   "id": "q001",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3553,
+   "answer": "Penjualan bersih Sukacita bulan ini hingga 4 Okt 2026 adalah **Rp 47.625.000**.\n\nData penjualan tercatat hingga pukul 19.24 WIB.\n\nPeriode 1–4 Okt 2026 (WIB) · Entitas Sukacita · Definisi penjualan bersih: nilai pesanan hidup setelah diskon, tanpa PPN dan tanpa sampel.\n\n```kn-followups\n[\"Bagaimana di"
+  },
+  {
+   "id": "q002",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales"
+    ],
+    "group_by": [
+     "sales_person"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "net_sales",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3960,
+   "answer": "**Penjualan bersih Sukacita bulan ini mencapai Rp 47.625.000**, dipimpin Ayu Permatasari.\n\n- Ayu Permatasari: **Rp 44.850.000** (94,17%).\n- Bima Saputra: **Rp 2.775.000** (5,83%).\n\nData penjualan tersedia hingga 19:24 WIB.\n\n```kn-chart\n{\"result_id\":\"r_c17c97cae4\",\"type\":\"hbar\",\"x\":\"sales_person\",\"y\""
+  },
+  {
+   "id": "q003",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "net_sales",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4672,
+   "answer": "**Tekstil Medan Jaya** mencatat penjualan bersih terbesar bulan ini di Sukacita, sebesar **Rp 20.850.000**. Baru ada empat pelanggan dengan penjualan pada periode ini:\n\n| Peringkat | Pelanggan | Penjualan bersih |\n|---|---|---:|\n| 1 | Tekstil Medan Jaya | Rp 20.850.000 |\n| 2 | Fashion Bandung Kencan"
+  },
+  {
+   "id": "q004",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales"
+    ],
+    "group_by": [
+     "product"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "net_sales",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4135,
+   "answer": "**Tenun Ikat Garuda Premium** adalah produk dengan penjualan bersih tertinggi bulan ini di Sukacita: **Rp 11.250.000** (pangsa 23,6%).\n\n- Berikutnya Ulos Batak Ragidup: Rp 9.600.000 (20,2%).\n- Jumputan Palembang Pelangi: Rp 8.700.000 (18,3%).\n- Data penjualan tersedia hingga 19:24 WIB.\n\n```kn-chart\n"
+  },
+  {
+   "id": "q005",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales"
+    ],
+    "group_by": [],
+    "time_grain": "month",
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "previous_period",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "asc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4992,
+   "answer": "**Penjualan bersih Sukacita tahun ini berjumlah Rp 89.375.000** untuk periode 1 Jan–4 Okt 2026. Data bulanan yang tersedia menunjukkan kenaikan dari Agustus hingga Oktober.\n\n- Agustus: Rp 10.050.000\n- September: Rp 31.700.000\n- Oktober hingga 4 Okt: Rp 47.625.000 — **belum satu bulan penuh**, sehing"
+  },
+  {
+   "id": "q006",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "previous_period",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3632,
+   "answer": "Penjualan bersih Sukacita pada **1–4 Okt 2026 mencapai Rp 47.625.000**. Perbandingan dengan periode sebelumnya belum dapat dinilai karena data pembanding **1–4 Sep 2026 tidak tersedia**.\n\n- Persentase kenaikan atau penurunan tidak tersedia.\n- Data penjualan tercatat hingga 19.24 WIB.\n\nPeriode 1–4 Ok"
+  },
+  {
+   "id": "q007",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales"
+    ],
+    "group_by": [
+     "customer_city"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "net_sales",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3739,
+   "answer": "Penjualan bersih Sukacita bulan ini **Rp 47.625.000**. Kota dengan penjualan terbesar adalah **Medan: Rp 20.850.000**.\n\n- Bandung: Rp 15.700.000\n- Jakarta: Rp 8.300.000\n- Denpasar: Rp 2.775.000\n\n```kn-chart\n{\"result_id\":\"r_82a79b228e\",\"type\":\"hbar\",\"x\":\"customer_city\",\"y\":[\"net_sales\"],\"title\":\"Penj"
+  },
+  {
+   "id": "q008",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales"
+    ],
+    "group_by": [
+     "entity"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "net_sales",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "per_entity"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3774,
+   "answer": "**Penjualan bersih seluruh badan usaha bulan ini mencapai Rp 73.500.000.**\n\n- Sukacita: **Rp 47.625.000** (64,8%).\n- Kanda Fabric: **Rp 25.875.000** (35,2%).\n- Cipta Sandang tidak muncul sebagai baris penjualan pada periode ini.\n\nData penjualan tersedia hingga 19:24 WIB.\n\n```kn-chart\n{\"result_id\":\"r"
+  },
+  {
+   "id": "q009",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "orders_count"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "last_month",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3167,
+   "answer": "Bulan lalu, **Sukacita mencatat 2 pesanan**.\n\nPeriode 1–30 Sep 2026 · Entitas Sukacita · Definisi jumlah pesanan: pesanan hidup, tidak termasuk pesanan batal, draft, kedaluwarsa, ditolak, atau sampel.\n\n```kn-followups\n[\"Berapa nilai penjualan dari pesanan bulan lalu?\", \"Bandingkan jumlah pesanan den"
+  },
+  {
+   "id": "q010",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "orders_count"
+    ],
+    "group_by": [
+     "sales_person"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_month",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "orders_count",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3932,
+   "answer": "Bulan lalu, **Ayu Permatasari mencatat 2 pesanan** di Sukacita.\n\n- Total pesanan dari sales yang tercatat: **2 pesanan**.\n- Atribusi pesanan mengikuti kredit sales pada pesanan.\n\nPeriode 1–30 Sep 2026 (WIB) · Entitas Sukacita · Definisi jumlah pesanan: pesanan hidup (bukan batal, draft, kedaluwarsa,"
+  },
+  {
+   "id": "q011",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "orders_count"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_month",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "orders_count",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 5832,
+   "answer": "Bulan lalu, **Butik Bali Indah** dan **Fashion Bandung Kencana** sama-sama mencatat pesanan terbanyak di Sukacita: masing-masing **1 pesanan**.\n\n- Hanya ada **2 pelanggan** dengan pesanan yang memenuhi definisi pada periode tersebut, jadi daftar 10 besar tidak terisi penuh.\n\n```kn-table\n{\"result_id\""
+  },
+  {
+   "id": "q012",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "orders_count"
+    ],
+    "group_by": [
+     "product"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_month",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "orders_count",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4361,
+   "answer": "**Tidak ada satu produk dengan jumlah pesanan tertinggi:** Songket Palembang Benang Emas, Endek Bali Rangrang, dan Batik Mega Mendung Premium sama-sama tercatat dalam **1 pesanan** bulan lalu.\n\n- Peringkat ini berdasarkan **jumlah pesanan yang memuat produk**, bukan jumlah kain terjual.\n- Total pada"
+  },
+  {
+   "id": "q013",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "orders_count"
+    ],
+    "group_by": [],
+    "time_grain": "month",
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "previous_period",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "asc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4363,
+   "answer": "Jumlah pesanan Sukacita tahun ini **7 pesanan** hingga 4 Okt 2026. Tren bulanan yang tercatat naik: Agustus 1, September 2, dan Oktober 4 pesanan.\n\n```kn-chart\n{\"result_id\":\"r_ca2ad157e2\",\"type\":\"line\",\"x\":\"period\",\"y\":[\"orders_count\"],\"title\":\"Tren jumlah pesanan per bulan\"}\n```\n\n- Oktober masih be"
+  },
+  {
+   "id": "q014",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "orders_count"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "last_month",
+     "from": null,
+     "to": null
+    },
+    "compare": "previous_period",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4265,
+   "answer": "Jumlah pesanan Sukacita pada September 2026 **2 pesanan**, naik **1 pesanan (100,0%)** dibanding Agustus 2026, yaitu **1 pesanan**.\n\nPeriode 1–30 Sep 2026 vs. 1–31 Agu 2026 (WIB) · Entitas Sukacita · Definisi jumlah pesanan: pesanan hidup, tidak termasuk pesanan batal, draft, kedaluwarsa, ditolak, a"
+  },
+  {
+   "id": "q015",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "orders_count"
+    ],
+    "group_by": [
+     "customer_city"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_month",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "orders_count",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3073,
+   "answer": "Bulan lalu, **Sukacita mencatat 2 pesanan**: 1 dari Bandung dan 1 dari Denpasar.\n\n| Kota | Jumlah pesanan |\n|---|---:|\n| Bandung | 1 |\n| Denpasar | 1 |\n\nPeriode 1–30 Sep 2026 · Entitas Sukacita · Definisi jumlah pesanan: pesanan hidup (bukan batal, draft, kedaluwarsa, atau ditolak), tanpa sampel.\n\n`"
+  },
+  {
+   "id": "q016",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "orders_count"
+    ],
+    "group_by": [
+     "entity"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_month",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "orders_count",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "per_entity"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3815,
+   "answer": "**Bulan lalu, jumlah pesanan seluruh badan usaha yang dapat Anda lihat adalah 3 pesanan.**\n\n- Sukacita: **2 pesanan**\n- Kanda Fabric: **1 pesanan**\n- Cipta Sandang: tidak muncul dalam hasil; jumlahnya tidak tersedia secara eksplisit.\n\nPeriode 1–30 Sep 2026 (WIB) · Entitas Sukacita, Kanda Fabric, dan"
+  },
+  {
+   "id": "q017",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "qty_sold"
+    ],
+    "group_by": [
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "qty_sold",
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3403,
+   "answer": "Minggu ini, **qty terjual Sukacita adalah 280 yard**.\n\n- Data penjualan tersedia hingga 19.25 WIB.\n\nPeriode 28 Sep–4 Okt 2026 · Entitas Sukacita · Definisi qty terjual: jumlah qty satuan dasar pada baris pesanan, tidak dijumlah lintas satuan.\n\n```kn-followups\n[\"Bagaimana dibandingkan minggu lalu?\", "
+  },
+  {
+   "id": "q018",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "qty_sold"
+    ],
+    "group_by": [
+     "sales_person",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "qty_sold",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3618,
+   "answer": "**Qty terjual per sales minggu ini di Sukacita: Ayu Permatasari 265 yard dan Bima Saputra 15 yard.**\n\n- Total: **280 yard**.\n- Data penjualan tersedia hingga **19.25 WIB**.\n\nPeriode 28 Sep–4 Okt 2026 · Entitas Sukacita · Definisi qty terjual: jumlah qty satuan dasar dari baris pesanan, tidak dijumla"
+  },
+  {
+   "id": "q019",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "qty_sold"
+    ],
+    "group_by": [
+     "customer",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "qty_sold",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4145,
+   "answer": "**Fashion Bandung Kencana mencatat qty terjual terbesar minggu ini: 135 yard.** Di entitas Sukacita, hanya ada 4 pelanggan dengan penjualan, sehingga daftar 10 teratas berisi 4 pelanggan:\n\n1. Fashion Bandung Kencana — 135 yard\n2. Tekstil Medan Jaya — 80 yard\n3. Toko Kain Sejahtera — 50 yard\n4. Butik"
+  },
+  {
+   "id": "q020",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "qty_sold"
+    ],
+    "group_by": [
+     "product",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "qty_sold",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 7583,
+   "answer": "**Batik Mega Mendung Premium** adalah produk dengan qty terjual tertinggi minggu ini di Sukacita: **65 yard**.\n\n- Berikutnya: Jumputan Palembang Pelangi **60 yard** dan Tenun Ikat Garuda Premium **50 yard**.\n- Data penjualan tersedia hingga **19.25 WIB**.\n\n```kn-table\n{\"result_id\":\"r_db54a2146e\",\"co"
+  },
+  {
+   "id": "q021",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "qty_sold"
+    ],
+    "group_by": [
+     "unit"
+    ],
+    "time_grain": "month",
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "asc"
+    },
+    "limit": 200,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3983,
+   "answer": "Qty terjual Sukacita meningkat dari **50 yard pada Agustus** menjadi **115 yard pada September** dan **230 yard pada Oktober**. Oktober masih berjalan, jadi angkanya belum merupakan total sebulan penuh.\n\n- Hasil tahun ini hanya memuat bulan Agustus–Oktober, seluruhnya dalam satuan yard.\n- Data penju"
+  },
+  {
+   "id": "q022",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "qty_sold"
+    ],
+    "group_by": [
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "previous_period",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3609,
+   "answer": "**Qty terjual minggu ini 280 yard**, dibanding periode sebelumnya yang belum memiliki angka pembanding. Karena itu, persentase perubahan tidak tersedia.\n\n- Periode sebelumnya: 21–27 Sep 2026.\n- Data penjualan minggu ini tersedia hingga 19.25 WIB.\n\nPeriode 28 Sep–4 Okt 2026 · Entitas Sukacita · Defin"
+  },
+  {
+   "id": "q023",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "qty_sold"
+    ],
+    "group_by": [
+     "customer_city",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "qty_sold",
+     "direction": "desc"
+    },
+    "limit": 200,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3980,
+   "answer": "**Qty terjual minggu ini di Sukacita: 280 yard**, terbanyak ke Bandung (135 yard).\n\n- Medan: 80 yard; Jakarta: 50 yard; Denpasar: 15 yard.\n- Data penjualan tersedia hingga 19.26 WIB.\n\n```kn-chart\n{\"result_id\":\"r_bbf7b145da\",\"type\":\"hbar\",\"x\":\"customer_city\",\"y\":[\"qty_sold\"],\"title\":\"Qty terjual per "
+  },
+  {
+   "id": "q024",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "qty_sold"
+    ],
+    "group_by": [
+     "entity",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "entity",
+     "direction": "asc"
+    },
+    "limit": 200,
+    "include_samples": false,
+    "entity_scope": "per_entity"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3684,
+   "answer": "**Minggu ini, Sukacita menjual 280 yard dan Kanda Fabric 150 yard.** Tidak ada baris penjualan untuk Cipta Sandang pada hasil periode ini.\n\n- Angka disajikan per badan usaha dan satuan; seluruh baris yang muncul bersatuan yard.\n- Data penjualan tersedia hingga 19.26 WIB.\n\nPeriode 28 Sep–4 Okt 2026 ("
+  },
+  {
+   "id": "q025",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "avg_order_value",
+     "net_sales",
+     "orders_count"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3235,
+   "answer": "Rata-rata nilai pesanan Sukacita tahun ini adalah **Rp 12.767.857,14**.\n\n- Penjualan bersih: Rp 89.375.000 dari 7 pesanan.\n- Data penjualan tersedia hingga 19.26 WIB.\n\nPeriode 1 Jan–4 Okt 2026 · Entitas Sukacita · Definisi rata-rata nilai pesanan = penjualan bersih dibagi jumlah pesanan hidup; penju"
+  },
+  {
+   "id": "q026",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "avg_order_value",
+     "net_sales",
+     "orders_count"
+    ],
+    "group_by": [
+     "sales_person"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "avg_order_value",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4833,
+   "answer": "**Ayu Permatasari memiliki rata-rata nilai pesanan tertinggi tahun ini, Rp 14.433.333 per pesanan**, diikuti Bima Saputra sebesar Rp 2.775.000.\n\n- Ayu: penjualan bersih Rp 86.600.000 dari 6 pesanan.\n- Bima: penjualan bersih Rp 2.775.000 dari 1 pesanan.\n- Rata-rata seluruh sales: Rp 12.767.857 per pe"
+  },
+  {
+   "id": "q027",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "avg_order_value",
+     "orders_count",
+     "net_sales"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "avg_order_value",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4790,
+   "answer": "**Tekstil Medan Jaya memiliki rata-rata nilai pesanan terbesar tahun ini: Rp 20.850.000 per pesanan.** Di entitas aktif Sukacita, hanya ada 4 pelanggan dengan pesanan yang memenuhi kriteria, sehingga daftar 10 besar berisi 4 pelanggan.\n\n| Peringkat | Pelanggan | Rata-rata per pesanan | Pesanan |\n|--"
+  },
+  {
+   "id": "q028",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "avg_order_value",
+     "net_sales",
+     "orders_count"
+    ],
+    "group_by": [
+     "product"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "avg_order_value",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 5842,
+   "answer": "**Ulos Batak Ragidup** memiliki rata-rata nilai pesanan tertinggi tahun ini di Sukacita: **Rp 9.600.000 per pesanan**. Namun, angka ini berasal dari satu pesanan.\n\n- Endek Bali Rangrang menyusul dengan **Rp 9.100.000 per pesanan** dari dua pesanan.\n- Jumputan Palembang Pelangi berada di urutan berik"
+  },
+  {
+   "id": "q029",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "avg_order_value"
+    ],
+    "group_by": [],
+    "time_grain": "month",
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "previous_period",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "asc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4688,
+   "answer": "**Rata-rata nilai pesanan Sukacita tahun ini naik dari Rp 10.050.000 pada Agustus menjadi Rp 15.850.000 pada September, lalu berada di Rp 11.906.250 pada Oktober hingga 4 Okt.**\n\n- Data bulanan yang tersedia baru Agustus–Oktober; tidak ada baris untuk Januari–Juli.\n- Rata-rata untuk seluruh periode "
+  },
+  {
+   "id": "q030",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "avg_order_value"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "previous_period",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3718,
+   "answer": "Rata-rata nilai pesanan Sukacita tahun ini adalah **Rp 12.767.857,14**. Nilai periode pembanding tidak tersedia, sehingga perubahan rata-ratanya belum dapat dinilai.\n\n- Pembanding yang dikembalikan sistem: 1 Jan–4 Okt 2025.\n- Data penjualan tersedia hingga 19.26 WIB.\n\nPeriode 1 Jan–4 Okt 2026, pemba"
+  },
+  {
+   "id": "q031",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "avg_order_value",
+     "orders_count"
+    ],
+    "group_by": [
+     "customer_city"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "avg_order_value",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4261,
+   "answer": "**Rata-rata nilai pesanan Sukacita tahun ini tertinggi di Medan: Rp 20.850.000**, dari 1 pesanan.\n\n| Kota | Rata-rata nilai pesanan | Jumlah pesanan |\n|---|---:|---:|\n| Medan | Rp 20.850.000 | 1 |\n| Denpasar | Rp 12.612.500 | 2 |\n| Bandung | Rp 12.475.000 | 2 |\n| Jakarta | Rp 9.175.000 | 2 |\n\nRata-r"
+  },
+  {
+   "id": "q032",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "avg_order_value",
+     "net_sales",
+     "orders_count"
+    ],
+    "group_by": [
+     "entity"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "avg_order_value",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "per_entity"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4181,
+   "answer": "**Rata-rata nilai pesanan tahun ini tertinggi di Kanda Fabric: Rp 17.687.500 per pesanan.** Berikut rincian per badan usaha:\n\n| Badan usaha | Rata-rata nilai pesanan | Jumlah pesanan |\n|---|---:|---:|\n| Kanda Fabric | Rp 17.687.500 | 2 |\n| Sukacita | Rp 12.767.857,14 | 7 |\n\nTidak ada pesanan yang te"
+  },
+  {
+   "id": "q033",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "customers_active"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "last_30d",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3345,
+   "answer": "**Ada 4 pelanggan aktif** di Sukacita selama 30 hari terakhir.\n\n- Data penjualan tersedia hingga pukul 19.26 WIB.\n\nPeriode 5 Sep–4 Okt 2026 · Entitas Sukacita · Definisi pelanggan aktif: jumlah pelanggan berbeda yang memiliki pesanan hidup.\n\n```kn-followups\n[\"Siapa saja pelanggan aktif tersebut?\", \""
+  },
+  {
+   "id": "q034",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "customers_active"
+    ],
+    "group_by": [
+     "sales_person"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_30d",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "customers_active",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 5084,
+   "answer": "**Pelanggan aktif terbanyak di Sukacita selama 5 Sep–4 Okt 2026 ditangani Ayu Permatasari: 4 pelanggan.**\n\n- Ayu Permatasari: 4 pelanggan aktif.\n- Bima Saputra: 1 pelanggan aktif.\n\nPelanggan yang ditangani lebih dari satu sales dapat muncul di kedua baris, sehingga jumlah per sales tidak perlu sama "
+  },
+  {
+   "id": "q035",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales",
+     "orders_count"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_30d",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "net_sales",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4537,
+   "answer": "**Butik Bali Indah adalah pelanggan aktif dengan penjualan terbesar dalam 30 hari terakhir**, sebesar Rp 25.225.000. Di entitas Sukacita, hanya ada **4 pelanggan** yang memiliki pesanan dalam periode ini, jadi tidak ada 10 nama untuk ditampilkan.\n\n| Peringkat | Pelanggan | Penjualan bersih | Pesanan"
+  },
+  {
+   "id": "q036",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "customers_active"
+    ],
+    "group_by": [
+     "product"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_30d",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "customers_active",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4105,
+   "answer": "**Tiga produk berbagi posisi tertinggi**, masing-masing dibeli oleh **2 pelanggan aktif** dalam 30 hari terakhir di Sukacita: Batik Mega Mendung Premium, Endek Bali Rangrang, dan Songket Palembang Benang Emas.\n\n- Produk lain masing-masing dibeli oleh 1 pelanggan aktif.\n- Total pelanggan aktif Sukaci"
+  },
+  {
+   "id": "q037",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "customers_active"
+    ],
+    "group_by": [],
+    "time_grain": "month",
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "previous_period",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "asc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4119,
+   "answer": "Pelanggan aktif Sukacita mencapai **4 pelanggan pada Oktober 2026** (hingga 4 Oktober), dibandingkan 2 pada September dan 1 pada Agustus.\n\n- Tren bulanan yang tersedia menunjukkan kenaikan dari Agustus hingga Oktober.\n- Oktober masih berjalan, sehingga angkanya belum mewakili satu bulan penuh.\n- Dat"
+  },
+  {
+   "id": "q038",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "customers_active"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "last_30d",
+     "from": null,
+     "to": null
+    },
+    "compare": "previous_period",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3295,
+   "answer": "**Pelanggan aktif Sukacita dalam 30 hari terakhir: 4**, naik 3 pelanggan (300,0%) dari 1 pelanggan pada periode sebelumnya.\n\n- Periode berjalan: 5 Sep–4 Okt 2026; pembanding: 6 Agu–4 Sep 2026.\n- Data penjualan tersedia hingga 19:27 WIB.\n\nPeriode 5 Sep–4 Okt 2026 vs 6 Agu–4 Sep 2026 · Entitas Sukacit"
+  },
+  {
+   "id": "q039",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "customers_active"
+    ],
+    "group_by": [
+     "customer_city"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_30d",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "customers_active",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3619,
+   "answer": "**Sukacita memiliki 4 pelanggan aktif dalam 30 hari terakhir**, tersebar di Jakarta, Bandung, Medan, dan Denpasar—masing-masing 1 pelanggan.\n\n```kn-chart\n{\"result_id\":\"r_6c96dd8eb2\",\"type\":\"hbar\",\"x\":\"customer_city\",\"y\":[\"customers_active\"],\"title\":\"Pelanggan aktif per kota\"}\n```\n\nData penjualan ter"
+  },
+  {
+   "id": "q040",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "customers_active"
+    ],
+    "group_by": [
+     "entity"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_30d",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "customers_active",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "per_entity"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3761,
+   "answer": "Dalam 30 hari terakhir, **Sukacita memiliki 4 pelanggan aktif** dan **Kanda Fabric 1**. Cipta Sandang tidak muncul dalam hasil untuk periode ini.\n\n- Pelanggan aktif berarti pelanggan berbeda yang memiliki pesanan hidup. Pesanan sampel tidak disertakan.\n- Data penjualan tersedia hingga 19.27 WIB.\n\nPe"
+  },
+  {
+   "id": "q041",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "collections_amount"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3591,
+   "answer": "Jumlah uang masuk dari pelanggan bulan ini **belum tersedia** untuk Sukacita; hasil data tidak memuat total penerimaan. Ini bukan berarti penerimaannya nol.\n\nPeriode 1–4 Okt 2026 (WIB) · Entitas Sukacita · Definisi uang masuk pelanggan: jumlah penerimaan pelanggan berstatus *posted*.\n\n```kn-followup"
+  },
+  {
+   "id": "q042",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "collections_amount"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "last_month",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3634,
+   "answer": "Uang masuk dari pelanggan bulan lalu untuk **Sukacita sebesar Rp 63.741.900**.\n\nPeriode 1–30 Sep 2026 · Entitas Sukacita · Definisi uang masuk pelanggan = jumlah penerimaan pelanggan berstatus *posted*.\n\n```kn-followups\n[\"Bandingkan uang masuk dengan bulan sebelumnya\", \"Berapa piutang Sukacita yang "
+  },
+  {
+   "id": "q043",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "collections_amount"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 2779,
+   "answer": "Uang masuk dari pelanggan minggu ini di **Sukacita sebesar Rp 5.577.800**.\n\nPeriode 28 Sep–4 Okt 2026 (WIB) · Entitas Sukacita · Definisi: jumlah penerimaan pelanggan berstatus *posted*.\n\n```kn-followups\n[\"Bandingkan uang masuk dengan minggu lalu\", \"Pelanggan mana yang membayar minggu ini?\"]\n```"
+  },
+  {
+   "id": "q044",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "collections_amount"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 2957,
+   "answer": "Uang masuk dari pelanggan tahun ini untuk **Sukacita adalah Rp 63.741.900**.\n\nPeriode 1 Jan–4 Okt 2026 (WIB) · Entitas Sukacita · Definisi: jumlah penerimaan pelanggan berstatus *posted*.\n\n```kn-followups\n[\"Bagaimana tren uang masuk per bulan tahun ini?\", \"Berapa piutang pelanggan yang masih outstan"
+  },
+  {
+   "id": "q045",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "ar_outstanding"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3926,
+   "answer": "**Total piutang Sukacita saat ini Rp 34.707.850.**\n\nPeriode 4 Okt 2026 · Entitas Sukacita · Definisi piutang: jumlah sisa tagihan pesanan tempo menurut mesin umur piutang.\n\n```kn-followups\n[\"Berapa piutang yang sudah lewat jatuh tempo?\", \"Tampilkan umur piutang Sukacita\"]\n```"
+  },
+  {
+   "id": "q046",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "ar_outstanding"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "ar_outstanding",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4173,
+   "answer": "**Total piutang Sukacita per 4 Okt 2026 adalah Rp 34.707.850.** Rinciannya per pelanggan:\n\n- Butik Bali Indah: Rp 14.789.950 (42,61%)\n- Toko Kain Sejahtera: Rp 14.784.200 (42,60%)\n- Fashion Bandung Kencana: Rp 5.133.700 (14,79%)\n\n```kn-table\n{\"result_id\":\"r_685962f921\",\"columns\":[\"customer\",\"ar_outs"
+  },
+  {
+   "id": "q047",
+   "category": "piutang_kas",
+   "tool_ok": false,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "ar_aging",
+    "period": null,
+    "filters": [],
+    "as_of": "2026-10-04",
+    "top_n": null
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4827,
+   "answer": "Piutang Sukacita per 4 Okt 2026 sebesar **Rp 34.707.850**. Dari jumlah itu, **Rp 5.571.200** sudah lewat jatuh tempo.\n\n- Belum jatuh tempo: **Rp 29.136.650** (83,95%).\n- Lewat jatuh tempo 1–30 hari: **Rp 5.571.200** (16,05%). Tidak ada saldo pada kelompok umur yang lebih lama.\n- Seluruh piutang lewa"
+  },
+  {
+   "id": "q048",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "ar_outstanding"
+    ],
+    "group_by": [
+     "sales_person"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "ar_outstanding",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4233,
+   "answer": "**Total piutang Sukacita per 4 Okt 2026 adalah Rp 34.707.850.** Rinciannya per sales:\n\n- Bima Saputra: Rp 14.789.950 (42,61%).\n- Ayu Permatasari: Rp 14.784.200 (42,60%).\n- Citra Lestari: Rp 5.133.700 (14,79%).\n\n```kn-chart\n{\"result_id\":\"r_280f728c5b\",\"type\":\"hbar\",\"x\":\"sales_person\",\"y\":[\"ar_outstan"
+  },
+  {
+   "id": "q049",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "ar_overdue"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 2878,
+   "answer": "Piutang Sukacita yang sudah lewat jatuh tempo **Rp 5.571.200** per 4 Okt 2026.\n\nPeriode 4 Okt 2026–4 Okt 2026 · Entitas Sukacita · Definisi piutang lewat jatuh tempo: bagian piutang yang sudah melewati tanggal jatuh tempo.\n\n```kn-followups\n[\"Tampilkan rincian tagihan yang lewat jatuh tempo\", \"Bagaim"
+  },
+  {
+   "id": "q050",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "ar_overdue"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "ar_overdue",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3585,
+   "answer": "**Toko Kain Sejahtera memiliki piutang lewat jatuh tempo terbesar: Rp 5.571.200** per 4 Okt 2026. Nilai ini mencakup seluruh piutang lewat jatuh tempo yang tercatat untuk entitas Sukacita.\n\nPeriode 4 Okt 2026–4 Okt 2026 (posisi) · Entitas Sukacita · Definisi piutang lewat jatuh tempo: bagian piutang"
+  },
+  {
+   "id": "q051",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "list_records"
+   ],
+   "args": {
+    "record_type": "overdue_invoices",
+    "period": null,
+    "filters": [],
+    "sort": {
+     "by": "due_date",
+     "direction": "asc"
+    },
+    "limit": 20
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3461,
+   "answer": "Ada **1 tagihan lewat jatuh tempo** untuk entitas aktif **Sukacita**, dengan sisa **Rp 5.571.200**.\n\n| Nomor SO | Pelanggan | Jatuh tempo | Terlambat | Sisa tagihan |\n|---|---|---|---:|---:|\n| SO-0001 | Toko Kain Sejahtera | 19 Sep 2026 | 15 hari | Rp 5.571.200 |\n\nCatatan: hasil menampilkan **nomor "
+  },
+  {
+   "id": "q052",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "list_records",
+    "query_metrics"
+   ],
+   "args": {
+    "record_type": "ar_open_items",
+    "period": null,
+    "filters": [],
+    "sort": {
+     "by": "due_date",
+     "direction": "asc"
+    },
+    "limit": 20
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 8071,
+   "answer": "Per 4 Okt 2026, ada **5 tagihan belum lunas** di Sukacita, dengan total sisa tagihan **Rp 34.707.850**. Dari jumlah itu, **Rp 5.571.200** sudah lewat jatuh tempo.\n\n| Nomor SO | Pelanggan | Jatuh tempo | Sisa tagihan |\n|---|---|---|---:|\n| SO-0001 | Toko Kain Sejahtera | 19 Sep 2026 | Rp 5.571.200 |\n"
+  },
+  {
+   "id": "q053",
+   "category": "piutang_kas",
+   "tool_ok": false,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "collections_amount"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3371,
+   "answer": "Pembayaran pelanggan yang masuk minggu ini di Sukacita sebesar **Rp 5.577.800**.\n\nPeriode 28 Sep–4 Okt 2026 (WIB) · Entitas Sukacita · Definisi: jumlah penerimaan pelanggan berstatus *posted*.\n\n```kn-followups\n[\"Tampilkan rincian pembayaran pelanggan minggu ini\", \"Bandingkan dengan minggu lalu\"]\n```"
+  },
+  {
+   "id": "q054",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "list_records"
+   ],
+   "args": {
+    "record_type": "inactive_customers",
+    "period": null,
+    "filters": [],
+    "sort": {
+     "by": "last_order_date",
+     "direction": "asc"
+    },
+    "limit": 20
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3191,
+   "answer": "Tidak ada pelanggan Sukacita yang tercatat **tidak memesan lebih dari 60 hari** dalam daftar saat ini.\n\nPeriode: posisi saat ini · Entitas: Sukacita · Definisi: pelanggan tanpa pesanan lebih dari 60 hari.\n\n```kn-followups\n[\"Tampilkan pelanggan yang berisiko berhenti order\", \"Bagaimana jumlah pelangg"
+  },
+  {
+   "id": "q055",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "ar_aging",
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": "2026-10-04",
+    "top_n": 10
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4431,
+   "answer": "**Piutang Sukacita per 4 Okt 2026 sebesar Rp 34.707.850; yang lewat jatuh tempo Rp 5.571.200.**\n\n- Piutang belum jatuh tempo: Rp 29.136.650 (83,95%). Seluruh piutang lewat tempo berada pada kelompok 1–30 hari.\n- Seluruh piutang lewat tempo berasal dari Toko Kain Sejahtera. Total piutang pelanggan in"
+  },
+  {
+   "id": "q056",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "cash_position",
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": "2026-10-04",
+    "top_n": null
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3481,
+   "answer": "**Posisi kas dan bank Sukacita per 4 Okt 2026 adalah minus Rp 264.962.912.**\n\n- Kas Besar / Bank: minus Rp 272.712.912.\n- Kas Kecil: Rp 7.750.000.\n\nSaldo Kas Besar / Bank tercatat negatif; penyebabnya tidak tersedia dalam laporan ini.\n\nPeriode posisi 4 Okt 2026 (WIB) · Entitas Sukacita · Definisi sa"
+  },
+  {
+   "id": "q057",
+   "category": "piutang_kas",
+   "tool_ok": false,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "forecast"
+   ],
+   "args": {
+    "kind": "cashflow",
+    "horizon_weeks": null,
+    "product_ids": [],
+    "limit": null
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 6663,
+   "answer": "**Perkiraan arus kas Sukacita untuk 0–30 hari ke depan adalah defisit Rp 13.278.670.** Perkiraan ini didasarkan pada piutang dan hutang menurut jatuh temponya, bukan kepastian tanggal pembayaran.\n\n- Perkiraan kas masuk: Rp 29.136.650; kas keluar: Rp 42.415.320.\n- Tagihan yang sudah lewat jatuh tempo"
+  },
+  {
+   "id": "q058",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "income_statement",
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": null,
+    "top_n": null
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3362,
+   "answer": "**Sukacita mencatat rugi bersih Rp 28.630.320,44 pada 1–4 Okt 2026.**\n\n- Total pendapatan Rp 3.820.379,56; laba kotor Rp 2.739.379,56.\n- Beban operasional Rp 31.369.700, terutama beban penyusutan aset tetap Rp 30.937.500.\n\n```kn-table\n{\"result_id\":\"r_09fd2fb5df\",\"columns\":[\"section\",\"account\",\"amoun"
+  },
+  {
+   "id": "q059",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report",
+    "query_metrics"
+   ],
+   "args": {
+    "report": "ap_aging",
+    "period": null,
+    "filters": [],
+    "as_of": "2026-10-04",
+    "top_n": 10
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 6154,
+   "answer": "**Per 4 Okt 2026, hutang supplier Sukacita yang jatuh tempo Rp 3.481.500**, dari total hutang usaha Rp 45.896.820.\n\n- Tagihan jatuh tempo terbesar: UD Kasa Mandiri Screen Rp 1.500.000, disusul PT Tenun Nusantara Jaya Rp 881.500.\n- Hutang terbesar secara keseluruhan ada pada Solo Weave Rp 23.323.320 "
+  },
+  {
+   "id": "q060",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "daily_brief",
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": null,
+    "top_n": null
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4143,
+   "answer": "**Penjualan Sukacita hari ini, 4 Okt 2026, mencapai Rp 26.775.000** dari 3 pesanan dan 3 pelanggan aktif.\n\n- Fashion Bandung Kencana menyumbang Rp 15.700.000 (58,6% penjualan), diikuti Toko Kain Sejahtera Rp 8.300.000.\n- Data uang masuk pelanggan dan pembanding kemarin tidak tersedia, sehingga perub"
+  },
+  {
+   "id": "q061",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics",
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_qty"
+    ],
+    "group_by": [
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [
+     {
+      "dimension": "unit",
+      "op": "in",
+      "values": [
+       "yd"
+      ]
+     }
+    ],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4913,
+   "answer": "Total stok fisik Sukacita saat ini **4.452,42 yard**.\n\nPeriode 4 Okt 2026 (WIB) · Entitas Sukacita · Definisi stok fisik: jumlah sisa panjang roll yang berada secara fisik di gudang; tidak termasuk barang dalam perjalanan atau di makloon. Satuan lain tidak digabungkan.\n\n```kn-followups\n[\"Berapa yard"
+  },
+  {
+   "id": "q062",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": false,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_qty",
+     "stock_rolls",
+     "stock_available_qty",
+     "stock_reserved_qty"
+    ],
+    "group_by": [
+     "product",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "stock_qty",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [
+    "16"
+   ],
+   "ms": 6303,
+   "answer": "**Stok fisik terbesar di Sukacita saat ini adalah Lurik Klasik Solo: 1.030 yard**, dengan 965 yard tersedia dan 65 yard dipesan.\n\n- Berikutnya Batik Mega Mendung Premium (SKU `prod_batik_mega`): 968,03 yard fisik, 823,03 yard tersedia.\n- Tenun Ikat Garuda Premium: 565 yard fisik, 500 yard tersedia.\n"
+  },
+  {
+   "id": "q063",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_qty",
+     "stock_rolls"
+    ],
+    "group_by": [
+     "warehouse",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "stock_qty",
+     "direction": "desc"
+    },
+    "limit": 200,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4154,
+   "answer": "**Stok fisik Sukacita paling banyak berada di Gudang Jakarta Utara: 1.957 yard dalam 20 roll.**\n\n- Gudang Bandung Kopo: 1.470 yard dalam 13 roll.\n- Gudang Surabaya Rungkut: 1.025,42 yard dalam 16 roll, serta 26,4 kg dalam 3 roll.\n- Qty yard dan kg tidak dijumlahkan karena berbeda satuan.\n\n```kn-tabl"
+  },
+  {
+   "id": "q064",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": false,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_qty",
+     "stock_rolls"
+    ],
+    "group_by": [
+     "grade",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "stock_rolls",
+     "direction": "desc"
+    },
+    "limit": 200,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [
+    "47"
+   ],
+   "ms": 4161,
+   "answer": "Stok fisik Sukacita per 4 Okt 2026 didominasi **grade A: 4.167,42 yard dan 25 kg**. Jumlah seluruhnya **52 roll**.\n\n| Grade | Yard | Kg | Roll |\n|---|---:|---:|---:|\n| A | 4.167,42 | 25 | 47 |\n| A1 | 75 | — | 1 |\n| B | 210 | 1,4 | 4 |\n\nQty yard dan kg tidak dijumlahkan karena berbeda satuan. Stok fi"
+  },
+  {
+   "id": "q065",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_qty",
+     "stock_available_qty",
+     "stock_rolls"
+    ],
+    "group_by": [
+     "fabric_type",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "stock_qty",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4488,
+   "answer": "Stok fisik Sukacita per jenis kain saat ini tercatat seluruhnya sebagai **woven**: 4.452,42 yard dan 26,4 kg. Kedua satuan tidak dijumlahkan.\n\n- **Woven · yard:** 4.452,42 yard stok fisik; 4.157,42 yard tersedia; 49 roll.\n- **Woven · kg:** 26,4 kg stok fisik dan tersedia; 3 roll.\n- Tidak ada baris j"
+  },
+  {
+   "id": "q066",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_qty",
+     "stock_rolls",
+     "stock_value"
+    ],
+    "group_by": [
+     "stock_age_bucket",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "stock_age_bucket",
+     "direction": "asc"
+    },
+    "limit": 200,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 5072,
+   "answer": "**Seluruh stok fisik Sukacita berada pada kelompok umur 0–30 hari** per 4 Okt 2026: 4.452,42 yard dan 26,4 kg.\n\n- Terdiri dari 49 roll bersatuan yard dan 3 roll bersatuan kg.\n- Nilai persediaan seluruhnya Rp 577.562.300,01. Qty yard dan kg tidak dijumlahkan karena berbeda satuan.\n\n```kn-table\n{\"resu"
+  },
+  {
+   "id": "q067",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_qty",
+     "stock_rolls"
+    ],
+    "group_by": [
+     "line_code",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "stock_qty",
+     "direction": "desc"
+    },
+    "limit": 20,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3898,
+   "answer": "Stok fisik Sukacita per lini saat ini paling besar di **woven: 2.852,89 yard dalam 30 roll**.\n\n- **Printing:** 1.599,53 yard dalam 19 roll.\n- **Woven (satuan kg):** 26,4 kg dalam 3 roll. Qty kg tidak dijumlahkan dengan yard.\n\n```kn-table\n{\"result_id\":\"r_4f9b066800\",\"columns\":[\"line_code\",\"unit\",\"sto"
+  },
+  {
+   "id": "q068",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_qty",
+     "stock_rolls"
+    ],
+    "group_by": [
+     "dye_lot",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "stock_qty",
+     "direction": "desc"
+    },
+    "limit": 200,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4270,
+   "answer": "Stok fisik Sukacita per dye lot tercantum di tabel berikut. Lot terbesar adalah **LOT-001: 1.890 yd dalam 18 roll**.\n\n- Berikutnya **LOT-002: 995 yd dalam 11 roll**.\n- Ada stok dalam satuan yard dan kg; jumlahnya tidak digabung lintas satuan.\n\n```kn-table\n{\"result_id\":\"r_058d3db6a0\",\"columns\":[\"dye_"
+  },
+  {
+   "id": "q069",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_rolls"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4350,
+   "answer": "Stok Sukacita saat ini **52 roll fisik**.\n\nPeriode 4 Okt 2026 · Entitas Sukacita · Definisi: jumlah roll fisik di gudang, termasuk roll yang tersedia, dipesan, ditahan, atau rusak; tidak termasuk roll dalam perjalanan atau di makloon.\n\n```kn-followups\n[\"Berapa roll yang tersedia untuk dijual?\", \"Tam"
+  },
+  {
+   "id": "q070",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": "stock_value_wh",
+   "unmatched": [],
+   "ms": 805,
+   "answer": "Pertanyaan ini cocok dengan template “Nilai persediaan per gudang”, jadi dijawab langsung tanpa AI. Angka di bawah dihitung langsung oleh server.\n\nNilai persediaan: Rp 577.562.300. Tertinggi Gudang Jakarta Utara Rp 209.336.000 (36,2% dari total). Total 6 gudang.\n\n```kn-chart\n{\"kind\": \"chart\", \"type\""
+  },
+  {
+   "id": "q071",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_available_qty"
+    ],
+    "group_by": [
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 2995,
+   "answer": "Stok yang siap dijual di **Sukacita** adalah **4.157,42 yard** dan **26,4 kg**.\n\n- Angka tidak dijumlahkan karena satuannya berbeda.\n\nPeriode 4 Okt 2026 (WIB) · Entitas Sukacita · Definisi stok tersedia: sisa panjang roll berstatus *available*.\n\n```kn-followups\n[\"Stok siap dijual per produk berapa?\""
+  },
+  {
+   "id": "q072",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_reserved_qty"
+    ],
+    "group_by": [
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3544,
+   "answer": "Stok yang sudah dipesan di **Sukacita** saat ini adalah **220 yard**; untuk satuan kg, **0 kg**.\n\n- Stok dipesan mencakup sisa panjang roll berstatus *reserved, committed, picked,* atau *packed*.\n- Total lintas satuan tidak ditampilkan karena yard dan kg tidak dapat dijumlahkan.\n\nPeriode 4 Okt 2026–"
+  },
+  {
+   "id": "q073",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "list_records"
+   ],
+   "args": {
+    "record_type": "low_stock",
+    "period": null,
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": 20
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 5241,
+   "answer": "Stok tersedia beberapa produk di **Sukacita** berada di bawah titik pesan ulang. Yang paling perlu diperhatikan antara lain Kain PFP Katun (24,5 yard tersedia; titik pesan ulang 300 yard), Kain Grey Katun (52,89 yard; 500 yard), dan Benang Katun Cone (25 kg; 250 kg).\n\n- Daftar di bawah memuat seluru"
+  },
+  {
+   "id": "q074",
+   "category": "stok",
+   "tool_ok": false,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "stock_health",
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": "2026-10-04",
+    "top_n": 10
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4546,
+   "answer": "**Di Sukacita, tidak ada roll stok yang tercatat tidak bergerak lebih dari 90 hari** pada laporan kesehatan stok saat ini.\n\n- Seluruh stok fisik yang tercatat berada pada kelompok umur 0–30 hari: 4.452,42 yard dan 26,4 kg. Kedua satuan ditampilkan terpisah.\n- Totalnya 52 roll. Umur stok belum tentu "
+  },
+  {
+   "id": "q075",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "list_records"
+   ],
+   "args": {
+    "record_type": "stock_rolls",
+    "period": null,
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": 20
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4297,
+   "answer": "Berikut **daftar roll stok yang ditampilkan untuk Sukacita**, posisi saat ini. Hasil memuat 20 baris; daftar ini belum dipastikan mencakup seluruh roll di gudang.\n\n```kn-table\n{\"result_id\":\"r_a02ec8844d\",\"columns\":[\"roll_no\",\"product_id\",\"dye_lot\",\"grade\",\"qty\",\"unit\",\"received\"],\"title\":\"Daftar rol"
+  },
+  {
+   "id": "q076",
+   "category": "stok",
+   "tool_ok": false,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "dispatch_today",
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": null,
+    "top_n": 10
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4156,
+   "answer": "Belum ada pengiriman yang tercatat minggu ini untuk **Sukacita**.\n\n- Ada 6 pesanan terbuka; salah satunya berstatus **terkirim sebagian**. Daftar ini bukan daftar pengiriman minggu ini.\n- Dua pesanan berstatus **reserved** dan satu **menunggu stok**, sehingga perlu dipantau sebelum dikirim.\n\n```kn-t"
+  },
+  {
+   "id": "q077",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "stock_health",
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": null,
+    "top_n": 10
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4205,
+   "answer": "Stok fisik Sukacita saat ini terdiri dari **4.452,42 yard dan 26,4 kg**, seluruhnya masuk kelompok umur stok 0–30 hari.\n\n- Terdapat **52 roll** fisik: 49 roll bersatuan yard dan 3 roll bersatuan kg.\n- Laporan tidak mencatat roll yang tidak bergerak lebih dari 90 hari.\n- Qty yard dan kg ditampilkan t"
+  },
+  {
+   "id": "q078",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "stock_valuation",
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": "2026-10-04",
+    "top_n": 10
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3903,
+   "answer": "**Valuasi persediaan Sukacita per 4 Okt 2026 adalah Rp 577.562.300,01**, terdiri dari 52 roll fisik.\n\n- Gudang Jakarta Utara: Rp 333.673.300 (57,77% dari nilai persediaan).\n- Gudang Bandung Kopo: Rp 128.972.000 (22,33%).\n- Gudang Surabaya Rungkut: Rp 114.917.000,01 (19,9%).\n\n```kn-table\n{\"result_id\""
+  },
+  {
+   "id": "q079",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": "receiving_today",
+   "unmatched": [],
+   "ms": 876,
+   "answer": "Pertanyaan ini cocok dengan template “Barang masuk hari ini”, jadi dijawab langsung tanpa AI. Angka di bawah dihitung langsung oleh server.\n\nQty diterima: 263,0. Tertinggi Kain Grey Katun (per Yard) 159,9 (60,8% dari total). Total 4 produk. Kedatangan barang (GRN):\n\n```kn-table\n{\"kind\": \"table\", \"re"
+  },
+  {
+   "id": "q080",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": "dispatch_today",
+   "unmatched": [],
+   "ms": 646,
+   "answer": "Pertanyaan ini cocok dengan template “Pengiriman hari ini”, jadi dijawab langsung tanpa AI. Angka di bawah dihitung langsung oleh server.\n\nPesanan terbuka: Tertinggi SO-0006 Rp 8.300.000. Total 6 nomor.\n\n```kn-table\n{\"kind\": \"table\", \"result_id\": \"r_4394d8fc5f\"}\n```\n\n```kn-table\n{\"kind\": \"table\", \"r"
+  },
+  {
+   "id": "q081",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "purchase_value"
+    ],
+    "group_by": [
+     "supplier"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "purchase_value",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3269,
+   "answer": "Nilai pembelian Sukacita bulan ini **Rp 806.100.000**, dengan Palembang Silk House sebagai supplier terbesar.\n\n| Supplier | Nilai pembelian | Pangsa |\n|---|---:|---:|\n| Palembang Silk House | Rp 722.400.000 | 89,62% |\n| Cirebon Craft | Rp 55.350.000 | 6,87% |\n| NTT Weaving Co | Rp 28.350.000 | 3,52%"
+  },
+  {
+   "id": "q082",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "purchase_value"
+    ],
+    "group_by": [
+     "supplier"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_month",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "purchase_value",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3729,
+   "answer": "Nilai pembelian Sukacita bulan lalu **Rp 251.350.000**. Supplier terbesar adalah **Cirebon Craft**, senilai Rp 132.000.000.\n\n- Cirebon Craft: Rp 132.000.000 (52,52%).\n- Solo Weave: Rp 71.500.000 (28,45%).\n- Palembang Silk House: Rp 47.850.000 (19,04%).\n\nPeriode 1–30 Sep 2026 · Entitas Sukacita · Def"
+  },
+  {
+   "id": "q083",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "purchase_value"
+    ],
+    "group_by": [
+     "supplier"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "purchase_value",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3783,
+   "answer": "**Nilai pembelian Sukacita tahun ini mencapai Rp 1.151.000.000**, dengan Palembang Silk House sebagai supplier terbesar.\n\n| Supplier | Nilai pembelian | Pangsa |\n|---|---:|---:|\n| Palembang Silk House | Rp 770.250.000 | 66,92% |\n| Cirebon Craft | Rp 237.300.000 | 20,62% |\n| NTT Weaving Co | Rp 71.95"
+  },
+  {
+   "id": "q084",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "po_count"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3153,
+   "answer": "Ada **5 PO pembelian** yang dibuat bulan ini di Sukacita.\n\nPeriode 1–4 Okt 2026 · Entitas Sukacita · Definisi jumlah PO: PO yang bukan draft, batal, atau ditolak.\n\n```kn-followups\n[\"Berapa nilai PO bulan ini?\", \"Tampilkan daftar PO bulan ini\"]\n```"
+  },
+  {
+   "id": "q085",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "received_qty"
+    ],
+    "group_by": [
+     "warehouse",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "received_qty",
+     "direction": "desc"
+    },
+    "limit": 200,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3455,
+   "answer": "Bulan ini, **Gudang Surabaya Rungkut menerima 261,62 yard dan 1,4 kg** barang. Hasil untuk entitas Sukacita hanya memuat gudang tersebut.\n\n- Qty tidak dijumlahkan karena yard dan kg adalah satuan berbeda.\n\n```kn-table\n{\"result_id\":\"r_6fd6543760\",\"columns\":[\"warehouse\",\"unit\",\"received_qty\"],\"title\":"
+  },
+  {
+   "id": "q086",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "ap_outstanding"
+    ],
+    "group_by": [
+     "supplier"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "ap_outstanding",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4054,
+   "answer": "Total hutang usaha Sukacita kepada supplier **Rp 45.896.820** per 4 Okt 2026.\n\n- Solo Weave: **Rp 23.323.320** (50,82%).\n- Palembang Silk House: **Rp 19.092.000** (41,60%).\n- Rincian supplier lainnya ada pada tabel berikut.\n\n```kn-table\n{\"result_id\":\"r_b9b958c766\",\"columns\":[\"supplier\",\"ap_outstandi"
+  },
+  {
+   "id": "q087",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "ap_due"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "custom",
+     "from": "2026-10-01",
+     "to": "2026-10-31"
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 5275,
+   "answer": "Hutang usaha Sukacita yang jatuh tempo **hingga akhir Oktober 2026** sebesar **Rp 45.896.820**.\n\nAngka ini mencakup tagihan yang jatuh tempo sebelum Oktober; jadi **bukan khusus tagihan yang tanggal jatuh temponya berada di bulan Oktober**.\n\nPeriode 1–31 Okt 2026 (WIB) · Entitas Sukacita · Definisi "
+  },
+  {
+   "id": "q088",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "list_records"
+   ],
+   "args": {
+    "record_type": "overdue_purchase_orders",
+    "period": null,
+    "filters": [],
+    "sort": {
+     "by": "due_date",
+     "direction": "asc"
+    },
+    "limit": 20
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3778,
+   "answer": "**Ada 1 PO Sukacita yang terlambat datang:** PO-00004 dari Palembang Silk House, terlambat 2 hari per 4 Okt 2026.\n\n- Perkiraan datang: 2 Okt 2026.\n- Status: *receiving*; nilai PO Rp 47.850.000.\n\nPeriode: posisi 4 Okt 2026 (WIB) · Entitas: Sukacita · Definisi: PO yang melewati perkiraan tanggal kedat"
+  },
+  {
+   "id": "q089",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "list_records",
+    "query_metrics"
+   ],
+   "args": {
+    "record_type": "vendor_bills_due",
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "sort": {
+     "by": "due_date",
+     "direction": "asc"
+    },
+    "limit": 20
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4794,
+   "answer": "Tagihan supplier Sukacita yang jatuh tempo hingga 4 Okt 2026 berjumlah **Rp 3.481.500**. Ada 6 tagihan dalam daftar, semuanya jatuh tempo pada 4 Okt 2026.\n\n```kn-table\n{\"result_id\":\"r_d2427bd508\",\"columns\":[\"number\",\"supplier\",\"due_date\",\"outstanding\"],\"title\":\"Rincian tagihan supplier\"}\n```\n\nPeriod"
+  },
+  {
+   "id": "q090",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "list_records"
+   ],
+   "args": {
+    "record_type": "incoming_goods",
+    "period": null,
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "asc"
+    },
+    "limit": 20
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 5239,
+   "answer": "**Barang yang dijadwalkan datang untuk Sukacita tercatat dalam 7 PO.** Jadwal terdekat adalah 7 Okt 2026; satu PO sudah melewati perkiraan tanggal datang.\n\n- **7 Okt:** KSC/PO-00011 dari Solo Weave (pending) dan KSC/PO-00012 dari Solo Weave (receiving).\n- **9–24 Okt:** lima jadwal lainnya dapat dili"
+  },
+  {
+   "id": "q091",
+   "category": "pembelian_makloon",
+   "tool_ok": false,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "makloon_status",
+    "period": null,
+    "filters": [],
+    "as_of": null,
+    "top_n": null
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3370,
+   "answer": "Ada **2 order makloon berjalan** untuk entitas aktif Sukacita:\n\n- **MKO-00002** — Benang Katun Cone, **20 kg**; status *dalam proses*.\n- **MKO-00003** — Benang Katun Cone, **15 kg**; status *sebagian sudah diterima*.\n\n```kn-table\n{\"result_id\":\"r_812baea4c0\",\"columns\":[\"number\",\"material\",\"status\",\"q"
+  },
+  {
+   "id": "q092",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "list_records",
+    "query_metrics"
+   ],
+   "args": {
+    "record_type": "purchase_orders",
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "sort": {
+     "by": "date",
+     "direction": "desc"
+    },
+    "limit": 20
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 6181,
+   "answer": "Bulan ini ada **5 PO Sukacita** dengan nilai pembelian **Rp 806.100.000**.\n\nDaftar rincian yang dikembalikan sistem belum dapat dipastikan sebagai daftar PO bulan ini: hasilnya memuat 12 baris, tetapi tidak menampilkan tanggal PO untuk memverifikasi tiap baris. Karena itu, saya tidak menyajikannya s"
+  },
+  {
+   "id": "q093",
+   "category": "pembelian_makloon",
+   "tool_ok": false,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics",
+    "list_records"
+   ],
+   "args": {
+    "metrics": [
+     "received_qty"
+    ],
+    "group_by": [
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "previous_period",
+    "filters": [],
+    "sort": {
+     "by": "received_qty",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 5131,
+   "answer": "Minggu ini, **Sukacita menerima 261,62 yard dan 1,4 kg barang** berdasarkan pergerakan stok penerimaan.\n\n- Daftar dokumen penerimaan barang (GRN) untuk periode ini kosong.\n- Jumlah yard dan kg tidak digabung karena satuannya berbeda. Data pembanding minggu sebelumnya tidak tersedia.\n\nPeriode 28 Sep–"
+  },
+  {
+   "id": "q094",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report",
+    "ops_metrics"
+   ],
+   "args": {
+    "report": "supplier_scorecard",
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": null,
+    "top_n": 10
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 7040,
+   "answer": "**Rapor supplier Sukacita bulan berjalan:** nilai pembelian Rp 806.100.000 dari 5 PO; Palembang Silk House mendominasi dengan Rp 722.400.000 (89,62%).\n\n- Belum ada PO yang selesai, sehingga ketepatan waktu dan rata-rata lead time **belum dapat dinilai**. Kelengkapan penerimaan tercatat 0% untuk keti"
+  },
+  {
+   "id": "q095",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "makloon_status",
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": null,
+    "top_n": null
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4000,
+   "answer": "**Ada 2 order makloon berjalan di Sukacita:** MKO-00002 berstatus *in_process* dan MKO-00003 berstatus *partially_received*.\n\n- MKO-00002: bahan Benang Katun Cone, 20 kg.\n- MKO-00003: bahan Benang Katun Cone, 15 kg.\n\n```kn-table\n{\"result_id\":\"r_dc5fa30718\",\"columns\":[\"number\",\"material\",\"status\",\"qt"
+  },
+  {
+   "id": "q096",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "gross_margin"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3519,
+   "answer": "Data laba kotor bulan ini tidak tersedia untuk peran sales Anda."
+  },
+  {
+   "id": "q097",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "gross_margin",
+     "gross_margin_pct",
+     "net_sales"
+    ],
+    "group_by": [
+     "product"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "gross_margin",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4966,
+   "answer": "Margin per produk **tidak tersedia untuk peran sales**. Saya tidak dapat menampilkan nilai maupun persentase margin. Sebagai informasi yang tersedia, penjualan bersih produk tertinggi bulan ini adalah **Tenun Ikat Garuda Premium, Rp 11.250.000**.\n\n- Total penjualan bersih produk: **Rp 44.850.000**.\n"
+  },
+  {
+   "id": "q098",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_value"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 2306,
+   "answer": "Nilai persediaan saat ini tidak tersedia untuk peran Anda."
+  },
+  {
+   "id": "q099",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "gross_margin"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "gross_margin",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3387,
+   "answer": "Data laba kotor per pelanggan tidak tersedia untuk peran Anda, sehingga saya tidak dapat menampilkan nilainya. Periode bawaan yang digunakan: bulan berjalan hingga hari ini, untuk entitas Sukacita.\n\n```kn-followups\n[\"Tampilkan penjualan bersih per pelanggan bulan ini\"]\n```"
+  },
+  {
+   "id": "q100",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "gross_margin",
+     "gross_margin_pct"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3453,
+   "answer": "Data margin kotor bulan berjalan tidak tersedia untuk peran Anda."
+  },
+  {
+   "id": "q101",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "gross_margin_pct"
+    ],
+    "group_by": [
+     "sales_person"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "gross_margin_pct",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3432,
+   "answer": "Persentase margin per sales **tidak tersedia untuk peran Anda** karena akses ke data margin dibatasi. Saya menggunakan bawaan bulan berjalan dan entitas aktif Sukacita; tidak ada angka yang dapat ditampilkan.\n\n```kn-followups\n[\"Tampilkan penjualan bersih per sales bulan ini\", \"Bagaimana pencapaian t"
+  },
+  {
+   "id": "q102",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "gross_margin"
+    ],
+    "group_by": [
+     "product"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "gross_margin",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 2815,
+   "answer": "Data laba kotor per produk tidak tersedia untuk peran Anda, jadi saya tidak dapat menampilkan angkanya."
+  },
+  {
+   "id": "q103",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "gross_margin"
+    ],
+    "group_by": [
+     "sales_person"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "gross_margin",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 2721,
+   "answer": "Data laba kotor per sales tahun ini tidak tersedia untuk peran Anda."
+  },
+  {
+   "id": "q104",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_value"
+    ],
+    "group_by": [
+     "warehouse"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "stock_value",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3268,
+   "answer": "Nilai stok per gudang tidak tersedia untuk peran Anda."
+  },
+  {
+   "id": "q105",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_value"
+    ],
+    "group_by": [
+     "product"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "stock_value",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 2954,
+   "answer": "Nilai stok per produk tidak tersedia untuk peran Anda di entitas Sukacita. Saya bisa menampilkan **jumlah stok per produk** sebagai gantinya."
+  },
+  {
+   "id": "q106",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales"
+    ],
+    "group_by": [
+     "sales_person"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "net_sales",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3609,
+   "answer": "Penjualan bulan ini yang **dapat Anda lihat** adalah **Rp 44.850.000**, seluruhnya tercatat atas nama Ayu Permatasari. Data sales lain tidak termasuk dalam hasil karena akses Anda terbatas pada pelanggan sendiri, jadi angka ini **bukan total semua sales**.\n\n- Pangsa Ayu dalam data yang dapat dilihat"
+  },
+  {
+   "id": "q107",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "ar_outstanding"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "ar_outstanding",
+     "direction": "desc"
+    },
+    "limit": 200,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3835,
+   "answer": "Piutang pelanggan yang dapat Anda lihat di Sukacita adalah **Rp 14.784.200** per 4 Okt 2026.\n\n- Seluruh saldo tersebut berasal dari **Toko Kain Sejahtera**.\n- Sesuai hak akses sales, hasil ini hanya mencakup pelanggan Anda, **bukan seluruh pelanggan Sukacita**.\n\nPeriode 4 Okt 2026–4 Okt 2026 (posisi"
+  },
+  {
+   "id": "q108",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales"
+    ],
+    "group_by": [
+     "entity"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "net_sales",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "per_entity"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3556,
+   "answer": "Penjualan badan usaha **Sukacita** bulan berjalan mencapai **Rp 44.850.000**.\n\n- Data yang dapat Anda lihat hanya untuk Sukacita dan pelanggan yang menjadi tanggung jawab Anda; penjualan badan usaha lain tidak tersedia untuk peran Anda.\n- Data penjualan tercatat hingga 19.31 WIB.\n\nPeriode 1–4 Okt 20"
+  },
+  {
+   "id": "q109",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "stock_qty",
+     "stock_rolls"
+    ],
+    "group_by": [
+     "warehouse",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "stock_qty",
+     "direction": "desc"
+    },
+    "limit": 200,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 5788,
+   "answer": "Stok fisik Sukacita per gudang per 4 Okt 2026 paling banyak berada di **Gudang Jakarta Utara: 1.957 yard (20 roll)**.\n\n- Gudang Bandung Kopo: 1.470 yard (13 roll).\n- Gudang Surabaya Rungkut: 1.025,42 yard (16 roll) dan 26,4 kg (3 roll).\n\nQty tidak dijumlahkan lintas satuan yard dan kg.\n\n```kn-table\n"
+  },
+  {
+   "id": "q110",
+   "category": "hak_akses",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "ar_outstanding"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "ar_outstanding",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 3849,
+   "answer": "**Total piutang Sukacita per 4 Okt 2026 adalah Rp 34.707.850.** Rincian per pelanggan:\n\n| Pelanggan | Piutang | Pangsa |\n|---|---:|---:|\n| Butik Bali Indah | Rp 14.789.950 | 42,61% |\n| Toko Kain Sejahtera | Rp 14.784.200 | 42,60% |\n| Fashion Bandung Kencana | Rp 5.133.700 | 14,79% |\n\nPeriode 4 Okt 2"
+  },
+  {
+   "id": "q111",
+   "category": "ambigu",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 1845,
+   "answer": "Baik, Pak Budi, terima kasih. Ada data bisnis Sukacita yang ingin Bapak cek hari ini?"
+  },
+  {
+   "id": "q112",
+   "category": "ambigu",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 1518,
+   "answer": "Saya fokus pada data bisnis Kain Nusantara, jadi tidak membuat puisi. Saya bisa bantu melihat penjualan, stok, atau tren produk kain."
+  },
+  {
+   "id": "q113",
+   "category": "ambigu",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 1747,
+   "answer": "Bagian mana yang ingin Anda ketahui penyebabnya—misalnya penjualan turun, stok menipis, atau piutang meningkat? Sebutkan juga periodenya jika ada; kalau tidak, saya gunakan bulan berjalan untuk Sukacita."
+  },
+  {
+   "id": "q114",
+   "category": "ambigu",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 1495,
+   "answer": "Yang mana yang Anda maksud? Sebutkan metrik atau dokumennya, misalnya omzet hari ini, stok produk tertentu, atau nomor pesanan."
+  },
+  {
+   "id": "q115",
+   "category": "ambigu",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 1712,
+   "answer": "Mau membandingkan apa dan dengan periode mana? Misalnya, penjualan Sukacita bulan berjalan dibandingkan bulan sebelumnya."
+  },
+  {
+   "id": "q116",
+   "category": "ambigu",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 1339,
+   "answer": "Saya fokus pada data bisnis Kain Nusantara, jadi tidak bisa memastikan informasi itu dari data yang tersedia."
+  },
+  {
+   "id": "q117",
+   "category": "ambigu",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 1304,
+   "answer": "Saya tidak bisa menghapus data penjualan atau menyiapkan penghapusannya. Saya hanya bisa membantu membaca dan menganalisis data bisnis KN."
+  },
+  {
+   "id": "q118",
+   "category": "ambigu",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 2380,
+   "answer": "Saya tidak bisa mengubah harga produk langsung, dan saat ini tidak tersedia alat untuk menyiapkan draf perubahan harga massal.\n\nPermintaan Anda adalah menaikkan harga semua produk sebesar 10%. Perubahan belum dilakukan. Silakan lakukan melalui pengelolaan harga di ERP dan tinjau dampaknya sebelum me"
+  },
+  {
+   "id": "q119",
+   "category": "ambigu",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 1262,
+   "answer": "Maaf, saya tidak dapat menampilkan gaji per orang. Saya bisa membantu melihat ringkasan biaya SDM jika diperlukan."
+  },
+  {
+   "id": "q120",
+   "category": "ambigu",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [],
+   "args": null,
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 1546,
+   "answer": "Saya tidak bisa mengirim invoice langsung dari sini. Jika Anda berikan **nomor invoice** dan **nama pelanggan**, saya bisa membantu memeriksa statusnya terlebih dahulu; pengiriman tetap perlu dilakukan melalui sistem Anda."
+  }
+ ]
+}

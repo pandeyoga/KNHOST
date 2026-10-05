@@ -1,0 +1,245 @@
+  [poc-stock] snapshot 178 dokumen stok dari 5 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (178 dokumen, 5 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "DESIGN-04",
+  "invariant": "desainer A (penerima awal) bisa buka & unggah",
+  "pass": true,
+  "detail": "(200, 200)"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "sebelum dipindah: desainer B ditolak membuka permintaan",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "admin memindahkan penugasan A → B",
+  "pass": true,
+  "detail": "{\"id\":\"dsr_2e04b24b9026\",\"number\":\"KSC/DSR-00007\",\"entity_id\":\"ent_ksc\",\"line_code\":\"\",\"source\":\"internal\",\"so_id\":\"\",\"so_number\":\"\",\"customer_id\":\"\",\"customer_name\":\"\",\"requested_by\":\"Budi Santoso\",\""
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "sesudah pindah: A ditolak buka detail (brief/PII), B boleh",
+  "pass": true,
+  "detail": "(403, 200)"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "daftar A tidak lagi memuat permintaan, daftar B memuat",
+  "pass": true,
+  "detail": "(3, 1)"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "sesudah pindah: A ditolak unggah/ubah desain, B boleh unggah",
+  "pass": true,
+  "detail": "(403, 403, 200)"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "B diganti peran (→ sales) dengan token lama: buka & unggah ditolak seketika",
+  "pass": true,
+  "detail": "(403, 403)"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "B dinonaktifkan: token lama ditolak (401/403)",
+  "pass": true,
+  "detail": "401"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "tingkat 1 (manajer) disetujui → menunggu tingkat 2 (admin)",
+  "pass": true,
+  "detail": "{\"id\":\"po_test_p21_bfaaba\",\"po_number\":\"TEST_P21_bfaaba-PO\",\"supplier_name\":\"Solo Weave\",\"supplier_contact\":\"Pak Joko | 085012300003\",\"warehouse_id\":\"wh_bandung\",\"status\":\"waiting_approval\",\"items\":[{"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "manajer yang sama mengirim ulang (keputusan ganda/basi) ditolak",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "admin menyetujui versi basi (v1, PO kini v2) → 409 tanpa perubahan",
+  "pass": true,
+  "detail": "(409, 'waiting_approval')"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "3 admin menyetujui tingkat akhir bersamaan → tepat 1 sukses, sisanya 409/403",
+  "pass": true,
+  "detail": "[409, 200, 409]"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "disetujui penuh sekali: status pending, tugas penerimaan tidak ganda",
+  "pass": true,
+  "detail": "('pending', 2, 2)"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "tolak sesudah disetujui penuh (keputusan basi) → 409",
+  "pass": true,
+  "detail": "409"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "jejak: 2 tingkat ditandatangani 2 orang berbeda",
+  "pass": true,
+  "detail": "['user_manager_01', 'user_test_p21_bfaaba_admin_1']"
+ },
+ {
+  "id": "DOC-04",
+  "invariant": "jadwal sales berjalan dengan hak akses pemilik: total = laporan langsung sales",
+  "pass": true,
+  "detail": "('ok', 86600000.0, 86600000.0)"
+ },
+ {
+  "id": "DOC-04",
+  "invariant": "lingkup sales lebih sempit dari admin (bukan data semua sales)",
+  "pass": true,
+  "detail": "(86600000.0, 89375000.0)"
+ },
+ {
+  "id": "DOC-04",
+  "invariant": "hasil jadwal milik sales: manajer 404 (riwayat & ekspor), admin 200",
+  "pass": true,
+  "detail": "r_abeb9b8550"
+ },
+ {
+  "id": "DOC-04",
+  "invariant": "manajer tidak bisa menjalankan/mengubah/hapus jadwal sales",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "DOC-04",
+  "invariant": "sales tidak bisa menjadwalkan template di luar perannya (peringkat semua sales)",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "DOC-05",
+  "invariant": "notifikasi laporan hanya untuk pemilik (recipient_user, bukan siaran peran)",
+  "pass": true,
+  "detail": "{'recipient_user': 'user_sales_01', 'recipient_role': ''}"
+ },
+ {
+  "id": "DOC-05",
+  "invariant": "pemilik melihat notifikasinya; manajer/finance/admin lain tidak",
+  "pass": true,
+  "detail": "(True, False, False)"
+ },
+ {
+  "id": "DOC-05",
+  "invariant": "pemilik dinonaktifkan: laporan tidak dikirim (run error, 0 notifikasi baru)",
+  "pass": true,
+  "detail": "Pemilik jadwal tidak aktif atau tidak lagi boleh memakai asisten."
+ },
+ {
+  "id": "DOC-05",
+  "invariant": "pemilik diganti peran gudang: laporan tidak dikirim (run error, 0 notifikasi baru)",
+  "pass": true,
+  "detail": "Gagal: Template tidak ditemukan untuk peran Anda."
+ },
+ {
+  "id": "DOC-05",
+  "invariant": "pemilik dicabut dari badan usaha jadwal: laporan tidak dikirim (run error, 0 notifikasi baru)",
+  "pass": true,
+  "detail": "Pemilik jadwal tidak lagi punya akses ke badan usaha jadwal ini."
+ },
+ {
+  "id": "OPS-04",
+  "invariant": "kunci saga yang menggantung terlihat di Kunci Saga (SO & PO — PO dulu tak terdaftar)",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "OPS-04",
+  "invariant": "aksi baru atas dokumen terkunci ditolak 409 SAGA_IN_PROGRESS (tidak menulis dua kali)",
+  "pass": true,
+  "detail": "(409, '{\"detail\":{\"code\":\"SAGA_IN_PROGRESS\",\"message\":\"Aksi \\'simulasi_crash\\' atas dokumen ini sedang/pernah berjalan (mulai 202')"
+ },
+ {
+  "id": "OPS-04",
+  "invariant": "inspeksi: kunci basi (tidak aktif) + efek hilir yang sudah terposting terukur",
+  "pass": true,
+  "detail": "(False, {'journal_entries': 1})"
+ },
+ {
+  "id": "OPS-04",
+  "invariant": "lepas kunci tanpa mengakui efek hilir ditolak; dengan pengakuan diterima",
+  "pass": true,
+  "detail": "(409, 200, '{\"released\":true,\"collection\":\"sales_orders\",\"id\":\"so_005\",\"lock\":{\"action\":\"simulasi_crash\",\"by\":\"TEST_P21_bfaaba\",\"started_at\":\"2026-10-04T12:33:35.655736+00:')"
+ },
+ {
+  "id": "OPS-04",
+  "invariant": "kunci PO yang menggantung kini bisa dilepas admin",
+  "pass": true,
+  "detail": "{\"released\":true,\"collection\":\"purchase_orders\",\"id\":\"po_e72ba4e8b087\",\"lock\":{\"action\":\"simulasi_crash\",\"by\":\"TEST_P21_bfaaba\",\"started_at\":\"2026-10-04T12:33:3"
+ },
+ {
+  "id": "OPS-04",
+  "invariant": "sesudah lepas: tidak ada kunci tersisa di dokumen",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "OPS-02",
+  "invariant": "semua job ber-efek bisnis sukses saat dijalankan",
+  "pass": true,
+  "detail": "{}"
+ },
+ {
+  "id": "OPS-02",
+  "invariant": "putaran ke-2 (retry) tanpa efek baru di dokumen bisnis/notifikasi",
+  "pass": true,
+  "detail": "{}"
+ },
+ {
+  "id": "OPS-02",
+  "invariant": "restart backend (scheduler boot ulang) tidak mengulang efek",
+  "pass": true,
+  "detail": "{}"
+ },
+ {
+  "id": "OPS-02",
+  "invariant": "integritas: tidak ada pelanggaran BARU sesudah retry + restart (FAIL/WARN sama)",
+  "pass": true,
+  "detail": "((246, 2), (246, 2), [])"
+ },
+ {
+  "id": "OPS-02",
+  "invariant": "satu pemilik kunci scheduler sesudah restart",
+  "pass": true,
+  "detail": "None"
+ },
+ {
+  "id": "OPS-03",
+  "invariant": "dry-run produk: 4 akan dibuat, 1 error, tanpa menulis",
+  "pass": true,
+  "detail": "{'total': 5, 'created': 4, 'updated': 0, 'errors': ['Baris 6: SKU wajib diisi'], 'dry_run': True}"
+ },
+ {
+  "id": "OPS-03",
+  "invariant": "impor produk terputus (2) → lanjut file penuh: hanya sisa dibuat, ulang idempoten",
+  "pass": true,
+  "detail": "(2, 2, 2, 0, 4)"
+ },
+ {
+  "id": "OPS-03",
+  "invariant": "migrasi stok awal terputus → ulang semua baris: baris lama 409 (no. roll unik), sisa dibuat",
+  "pass": true,
+  "detail": "([200, 200], [409, 409, 200, 200], 4)"
+ },
+ {
+  "id": "OPS-03",
+  "invariant": "rekonsiliasi: Σ roll = saldo per produk, 1 mutasi per roll",
+  "pass": true,
+  "detail": "(True, 4)"
+ }
+]
+pass=40 fail=0

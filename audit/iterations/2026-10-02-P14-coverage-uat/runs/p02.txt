@@ -1,0 +1,82 @@
+# 2026-10-01-P02-core-roll/repro_p02.py (1s)
+[
+ {
+  "id": "WM-01",
+  "invariant": "concurrent splits conserve length (parent+children == 10)",
+  "pass": true,
+  "detail": "{'parent': 5.0, 'children': 5, 'sum': 10.0, 'errors': []}"
+ },
+ {
+  "id": "AX-07",
+  "invariant": "grandchild.parent_roll_id == child (direct parent)",
+  "pass": true,
+  "detail": "{'grand_parent': 'roll_4851444ac51d', 'child': 'roll_4851444ac51d', 'root': 'audit_p02_ad1914_r0'}"
+ },
+ {
+  "id": "AX-07",
+  "invariant": "grandchild.root_roll_id == root",
+  "pass": true,
+  "detail": "audit_p02_ad1914_r0"
+ },
+ {
+  "id": "AX-05",
+  "invariant": "transfer keeps acquisition origin (PO)",
+  "pass": true,
+  "detail": "{'via': 'purchase', 'ref_id': 'po_audit_p02_ad1914', 'date': '2026-10-01'}"
+ },
+ {
+  "id": "AX-05",
+  "invariant": "source bin not carried to destination warehouse",
+  "pass": true,
+  "detail": "{'wh': 'wh_bandung', 'bin': None}"
+ },
+ {
+  "id": "AX-05",
+  "invariant": "late landed cost still targets transferred roll",
+  "pass": true,
+  "detail": "['audit_p02_ad1914_r1']"
+ },
+ {
+  "id": "FN-03",
+  "invariant": "WAC converts yard to base unit (≈50.000/m)",
+  "pass": true,
+  "detail": "50000.0"
+ },
+ {
+  "id": "GN-13",
+  "invariant": "unconvertible roll excluded + projection_valid False",
+  "pass": true,
+  "detail": "{'available': 19.14, 'valid': False}"
+ },
+ {
+  "id": "GN-13",
+  "invariant": "stale rebuild write (older ticket) is rejected",
+  "pass": true,
+  "detail": "{'modified': 0, 'applied': 2}"
+ },
+ {
+  "id": "GN-12",
+  "invariant": "WAC over 5002 rolls includes the last roll",
+  "pass": true,
+  "detail": "[11999.2, 11999.2]"
+ },
+ {
+  "id": "IX-13",
+  "invariant": "100 cm → 1 meter via canonical converter",
+  "pass": true,
+  "detail": "1.0"
+ },
+ {
+  "id": "IX-13",
+  "invariant": "unknown unit rejected before roll/tag/counter",
+  "pass": true,
+  "detail": "HTTPException(status_code=400, detail=\"Konversi unit 'unitgaib' → 'meter' tidak tersedia untuk produk audit_p02_ad1914_p"
+ },
+ {
+  "id": "IX-13",
+  "invariant": "create_counted_roll/scan-label no longer use local _LEN_FACTOR for task qty",
+  "pass": true,
+  "detail": "static"
+ }
+]
+SUMMARY pass=13 fail=0

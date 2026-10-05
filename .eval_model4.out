@@ -1,0 +1,9 @@
+{"mode": "model", "n": 120, "p50_ms": 3815, "tool_pct": 94.2, "args_pct": 90.0, "args_strict_pct": 66.7, "routed_n": 3, "numbers_pct": 98.3}
+  GAGAL q047 piutang_kas ['run_report']
+  GAGAL q053 piutang_kas ['query_metrics']
+  GAGAL q057 piutang_kas ['forecast']
+  GAGAL q074 stok ['run_report']
+  GAGAL q076 stok ['run_report']
+  GAGAL q091 pembelian_makloon ['run_report']
+  GAGAL q093 pembelian_makloon ['query_metrics', 'list_records']
+laporan: /app/backend/tools/ai_eval/reports/model_20261004_123209.json

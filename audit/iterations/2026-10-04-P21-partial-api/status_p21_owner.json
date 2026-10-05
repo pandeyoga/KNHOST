@@ -1,0 +1,7 @@
+[
+ {"id": "AUDIT-03", "status": "tested_pass", "evidence": ["iterations/2026-10-04-P21-partial-api/audit03_precommit_local.txt"], "notes": "P21: keputusan pemilik PG08 — cukup uji lokal pre-commit (risiko CI GitHub Actions diterima). Sandbox: commit bersih lolos; commit berisi kunci OpenAI palsu DIBLOKIR (exit 1, commit tak tercipta, nilai tidak dicetak)."},
+ {"id": "RFID-05", "status": "tested_pass", "evidence": ["iterations/2026-10-02-P14-coverage-uat/runs/p14.txt", "owner-questions-P21.md"], "notes": "P21: keputusan pemilik PG06 — belum ada perangkat; ditutup sebagai DIUJI SIMULASI (replay/baca ganda/arah lintas RF-16). Uji putus-sambung reader nyata wajib saat RFID dipasang."},
+ {"id": "COMM-04", "status": "partial", "evidence": ["owner-questions-P21.md"], "notes": "P21: keputusan pemilik PG04 — biaya kampanye DICATAT ke GL: jurnal Beban Pemasaran saat realisasi/tagihan vendor kampanye diposting, dibalik saat dibatalkan. Implementasi = sesi berikut (lihat memory/HANDOFF_P22). Komisi sudah lulus 7/7 (P17)."},
+ {"id": "HR-04", "status": "blocked", "evidence": ["owner-questions-P21.md"], "notes": "P21: keputusan pemilik PG05 — menunggu 3–5 slip contoh resmi dari konsultan pajak (Desember + 1 PHK) untuk dicocokkan per rupiah. Software PPh21 TER/BPJS sudah ada (HR-01)."},
+ {"id": "OPS-01", "status": "partial", "evidence": ["owner-questions-P21.md"], "notes": "P21: keputusan pemilik PG07 — validasi bootstrap & indeks dijalankan di produksi saat deploy pertama; hasil dilampirkan untuk menutup kasus."}
+]

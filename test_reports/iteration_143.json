@@ -1,0 +1,44 @@
+{
+  "summary": "Iter143 — covered Stok Makloon Aman (backend), PO variance panel (frontend), nav IA (sidebar + hub tabs), pagination, mobile tab bar, and roll reconcile sheet.  Pytest 6 passed + 1 skipped. Frontend critical flows verified end-to-end.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/sales-orders (roll-mode)", "issue": "test_07 roll-mode blocked check skipped — /api/inventory/rolls/available returned non-200 for the test shape; backend-side rolls listing may require a different query param. Not blocking (block path already proven in qty mode)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "POS sales roll reconcile sheet", "issue": "Sheet still did not open with reconcile-option-* for sales user when qty=150 for Batik Mega. Pre-existing issue carried from iteration_142 (RollReconcileSheet sends all_entities:true → 403 for sales). Admin & manager unaffected. Add-to-cart with no reconcile needed path appears to short-circuit.", "affected_selectors": ["roll-reconcile-sheet", "reconcile-option-*"]}
+    ],
+    "design_issues": [
+      {"screen": "Mobile tab bar (sales role)", "issues": ["Sales session shows 5 tabs instead of 6 (spec says 6 for manager/admin). Height 54px, single row — layout OK. Need to verify with admin login on mobile viewport (not re-tested here)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter143_makloon_po_variance.py",
+    "/app/test_reports/pytest/iter143_results.xml"
+  ],
+  "action_items": [
+    "(carry-over from iter142) RollReconcileSheet.jsx: do not force all_entities:true for sales role; derive from permission (can inventory.view_all). This blocks the full REQ-09 UI path for sales.",
+    "Verify roll-mode SO path with correct available-rolls endpoint response shape (fix test_07 if desired, or confirm endpoint)."
+  ],
+  "critical_code_review_comments": [
+    "makloon_guard & reserve_roll_mode_item correctly produce MAKLOON_RESERVED / MAKLOON_RESERVED_APPROVAL based on config value. Config PUT then re-read works instantly for subsequent requests (no restart needed) — good.",
+    "sales_orders.create: pending_approvals[type=makloon,required_role=manager] created when confirm_makloon_override=true in approve mode; approve endpoint correctly blocks with APPROVAL_PENDING while pending — behaviour matches spec.",
+    "PO variance panel: po-variance-panel + po-variance-task-<id> + po-variance-reason-<id> + po-variance-decide-wait-<id> + po-variance-status-<id> all render and function. Decision stored and reflected in-UI immediately.",
+    "Nav IA: nav-group-toggle-akuntansi present; documents hub exposes hub-tab-document-center/hub-tab-doc-trace/hub-tab-documents (Cetak PDF & Label). Standalone 'Pusat Cetak' and sidebar 'Analitik Stok' removed as spec says. Deep links ?view=documents, ?view=cs-stock-analytics, ?view=tax-invoices all load.",
+    "Pagination: rolls-table-pager appears on operations → Roll tab. (Did not sweep every table individually.)",
+    "allow_backorder path: when free stock exhausted by makloon reservation, backend returns 200 with reserved_qty capped and backorder_qty > 0 — spec-compliant."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter143_makloon_po_variance.py"
+  ],
+  "success_rate": {"backend": "6/7 pass + 1 non-blocking skip (~86%)", "frontend": "~90% — PO variance / nav IA / documents hub / pagination verified. Roll-reconcile sales path still blocked by prior iter142 issue."},
+  "test_credentials": "admin@kainnusantara.id / demo12345, sales@kainnusantara.id / demo12345",
+  "seed_data_creation": "Pytest fixture inserted TEST material_reservations doc (mres_TEST_...) with ref_id TEST_PR_*, auto-removed on teardown. PO variance seed via scripts/seed_test_po_variance.py; cleared with --clear afterwards. All created TEST sales orders cancelled+deleted and config reset to allocation.makloon_reserve_mode=block.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend reproducer: `cd /app/backend && pytest tests/test_iter143_makloon_po_variance.py -v`. Fixture auto-handles reservation seed + SO cleanup + config reset. For PO variance frontend: login admin → ?view=purchase-orders&entity=ent_ksc → click row 'KSC/TEST_PO-VAR-01' → click 'Lihat detail lengkap' (opens modal) → po-variance-panel + task row render. The direct ?po=... query-string does NOT auto-open detail modal on PO list; needed row click. Not necessarily a bug but could be improved. Mobile viewport (390x844) with sales role shows 5 tabs; verify with admin/manager if spec requires 6.",
+  "rca of the issue": "RollReconcileSheet for sales still 403 — same RCA as iter142: components/RollReconcileSheet.jsx sends all_entities:true unconditionally; sales role lacks inventory cross-entity permission → backend 403 → no reconcile-option-* rendered."
+}

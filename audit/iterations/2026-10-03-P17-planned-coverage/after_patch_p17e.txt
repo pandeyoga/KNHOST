@@ -1,0 +1,45 @@
+[
+ {
+  "id": "COMM-05",
+  "invariant": "6 penetapan harga bersamaan (5 manual + 1 impor) semuanya tersimpan",
+  "pass": true,
+  "detail": "[200, 200, 200, 200, 200, 200]"
+ },
+ {
+  "id": "COMM-05",
+  "invariant": "tepat SATU record harga yang berlaku sesudah balapan",
+  "pass": true,
+  "detail": "[(239000.0, '')]"
+ },
+ {
+  "id": "COMM-05",
+  "invariant": "harga efektif = record terakhir dibuat (sumber kanonik)",
+  "pass": true,
+  "detail": "(239000.0, 'cpr_60d1d6644b46', 'cpr_60d1d6644b46')"
+ },
+ {
+  "id": "COMM-05",
+  "invariant": "hapus menang atas ubah bersamaan: record nonaktif",
+  "pass": true,
+  "detail": "(400, 200, 'inactive')"
+ },
+ {
+  "id": "COMM-05",
+  "invariant": "ubah record yang sudah dihapus ditolak (bukan menulis diam-diam)",
+  "pass": true,
+  "detail": "(400, 239000.0)"
+ },
+ {
+  "id": "COMM-05",
+  "invariant": "sesudah hapus, harga efektif bukan record yang dihapus",
+  "pass": true,
+  "detail": "('global', None)"
+ },
+ {
+  "id": "COMM-05",
+  "invariant": "hapus ganda bersamaan: satu efek (satu jejak audit nonaktif)",
+  "pass": true,
+  "detail": "(200, 200, 1)"
+ }
+]
+pass=7 fail=0

@@ -1,0 +1,263 @@
+{
+  "date": "2026-10-03",
+  "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "note": "Requirements are separate from confirmed defect IDs and runtime checkpoint counts. source_gap is limited to inspected paths. Client confirmed MD-developed SKU sampling follows line; standard raw-material SKU may bypass R&D.",
+  "requirements": [
+    {
+      "id": "W2-REQ-01",
+      "client_points": [
+        1
+      ],
+      "title": "Histori pelaksana dan hak jenis sampling",
+      "assessment": "partial",
+      "status": "ready_for_validation",
+      "reference": "baseline/26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [
+        "1bafcda+P08-fase2-6 (working tree)"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase1.py",
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase1_results.json",
+        "iterations/2026-10-04-W2-P08-decisions/testing_agent_iteration_141.json"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "phase": "P08",
+      "history": [
+        {
+          "at": "2026-10-04T18:32:13.166425+00:00",
+          "status": "ready_for_validation",
+          "note": "performed_by/recorded_by + uji wajib = peringatan dgn alasan override; REQ-01b tanpa izin per jenis uji (keputusan pemilik)"
+        }
+      ]
+    },
+    {
+      "id": "W2-REQ-02",
+      "client_points": [
+        2,
+        3,
+        8,
+        12
+      ],
+      "title": "Tata kelola master, stage, warna dan lot",
+      "assessment": "governance_required",
+      "status": "ready_for_validation",
+      "reference": "baseline/26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [
+        "1bafcda+P08-fase2-6 (working tree)"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6.py",
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6_results.json",
+        "iterations/2026-10-04-W2-P08-decisions/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "phase": "P08",
+      "history": [
+        {
+          "at": "2026-10-04T18:32:13.661008+00:00",
+          "status": "ready_for_validation",
+          "note": "Lihat IMPLEMENTATION.md; batas uji & item ditunda tercatat"
+        }
+      ]
+    },
+    {
+      "id": "W2-REQ-03",
+      "client_points": [
+        3
+      ],
+      "title": "Penegakan seluruh uji wajib untuk SKU hasil MD",
+      "assessment": "needs_validation",
+      "status": "ready_for_validation",
+      "reference": "baseline/26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [
+        "1bafcda+P08-fase2-6 (working tree)"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase1.py",
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase1_results.json",
+        "iterations/2026-10-04-W2-P08-decisions/testing_agent_iteration_141.json"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "phase": "P08",
+      "history": [
+        {
+          "at": "2026-10-04T18:32:13.166445+00:00",
+          "status": "ready_for_validation",
+          "note": "performed_by/recorded_by + uji wajib = peringatan dgn alasan override; REQ-01b tanpa izin per jenis uji (keputusan pemilik)"
+        }
+      ]
+    },
+    {
+      "id": "W2-REQ-04",
+      "client_points": [
+        4
+      ],
+      "title": "Angka utama stok grup untuk sales",
+      "assessment": "source_gap",
+      "status": "ready_for_validation",
+      "reference": "baseline/26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [
+        "1bafcda+P08-fase2-6 (working tree)"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6.py",
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6_results.json",
+        "iterations/2026-10-04-W2-P08-decisions/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "phase": "P08",
+      "history": [
+        {
+          "at": "2026-10-04T18:32:13.661029+00:00",
+          "status": "ready_for_validation",
+          "note": "Lihat IMPLEMENTATION.md; batas uji & item ditunda tercatat"
+        }
+      ]
+    },
+    {
+      "id": "W2-REQ-05",
+      "client_points": [
+        5
+      ],
+      "title": "Meja kerja MD dengan buyer eksplisit lintas entitas",
+      "assessment": "source_gap",
+      "status": "ready_for_validation",
+      "reference": "baseline/26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [
+        "1bafcda+P08-fase2-6 (working tree)"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6.py",
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6_results.json",
+        "iterations/2026-10-04-W2-P08-decisions/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "phase": "P08",
+      "history": [
+        {
+          "at": "2026-10-04T18:32:13.661048+00:00",
+          "status": "ready_for_validation",
+          "note": "Lihat IMPLEMENTATION.md; batas uji & item ditunda tercatat"
+        }
+      ]
+    },
+    {
+      "id": "W2-REQ-06",
+      "client_points": [
+        6
+      ],
+      "title": "Keputusan selisih penerimaan, notifikasi MD dan rekonsiliasi PO",
+      "assessment": "partial",
+      "status": "ready_for_validation",
+      "reference": "baseline/26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [
+        "1bafcda+P08-fase2-6 (working tree)"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6.py",
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6_results.json",
+        "iterations/2026-10-04-W2-P08-decisions/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "phase": "P08",
+      "history": [
+        {
+          "at": "2026-10-04T18:32:13.661052+00:00",
+          "status": "ready_for_validation",
+          "note": "Lihat IMPLEMENTATION.md; batas uji & item ditunda tercatat"
+        }
+      ]
+    },
+    {
+      "id": "W2-REQ-07",
+      "client_points": [
+        7
+      ],
+      "title": "Reservasi material sebelum issue makloon",
+      "assessment": "source_gap",
+      "status": "ready_for_validation",
+      "reference": "baseline/26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [
+        "1bafcda+P08-fase2-6 (working tree)"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6.py",
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6_results.json",
+        "iterations/2026-10-04-W2-P08-decisions/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "phase": "P08",
+      "history": [
+        {
+          "at": "2026-10-04T18:32:13.661054+00:00",
+          "status": "ready_for_validation",
+          "note": "Lihat IMPLEMENTATION.md; batas uji & item ditunda tercatat"
+        }
+      ]
+    },
+    {
+      "id": "W2-REQ-08",
+      "client_points": [
+        10,
+        11
+      ],
+      "title": "RFID wajib, cross-dock dan SJ multi-gudang",
+      "assessment": "partial",
+      "status": "ready_for_validation",
+      "reference": "baseline/26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [
+        "1bafcda+P08-fase2-6 (working tree)"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6.py",
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6_results.json",
+        "iterations/2026-10-04-W2-P08-decisions/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "phase": "P08",
+      "history": [
+        {
+          "at": "2026-10-04T18:32:13.661056+00:00",
+          "status": "ready_for_validation",
+          "note": "Lihat IMPLEMENTATION.md; batas uji & item ditunda tercatat"
+        }
+      ]
+    },
+    {
+      "id": "W2-REQ-09",
+      "client_points": [
+        9
+      ],
+      "title": "Urutan roll, pembulatan dan izin potong",
+      "assessment": "policy_required",
+      "status": "ready_for_validation",
+      "reference": "baseline/26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [
+        "1bafcda+P08-fase2-6 (working tree)"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6.py",
+        "iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6_results.json",
+        "iterations/2026-10-04-W2-P08-decisions/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "phase": "P08",
+      "history": [
+        {
+          "at": "2026-10-04T18:32:13.661058+00:00",
+          "status": "ready_for_validation",
+          "note": "Lihat IMPLEMENTATION.md; batas uji & item ditunda tercatat"
+        }
+      ]
+    }
+  ]
+}

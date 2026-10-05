@@ -1,0 +1,99 @@
+[
+ {
+  "id": "CX-12",
+  "invariant": "D1 terkirim + D2 masih jalan → OD tidak done",
+  "pass": true,
+  "detail": "shipped"
+ },
+ {
+  "id": "CX-12",
+  "invariant": "D2 gagal (belum dijadwalkan ulang) → OD tidak done",
+  "pass": true,
+  "detail": "shipped"
+ },
+ {
+  "id": "CX-12",
+  "invariant": "semua surat jalan diterima → OD done",
+  "pass": true,
+  "detail": "done"
+ },
+ {
+  "id": "CX-12",
+  "invariant": "replay event idempoten",
+  "pass": true,
+  "detail": "1"
+ },
+ {
+  "id": "RF-04",
+  "invariant": "gudang 'wajib': dispatch tanpa loading check ditolak",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "RF-04",
+  "invariant": "gudang 'opsional': tetap boleh tanpa check",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "RF-04",
+  "invariant": "override tanpa alasan cukup ditolak",
+  "pass": true,
+  "detail": "400: Alasan override loading check wajib (min. 5 karakter)."
+ },
+ {
+  "id": "RF-04",
+  "invariant": "override berizin + alasan membuka dispatch",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "RF-06",
+  "invariant": "check bersih → dispatch boleh",
+  "pass": true,
+  "detail": "clean"
+ },
+ {
+  "id": "RF-06",
+  "invariant": "roll baru dialokasikan sesudah check → dispatch ditolak",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "RF-06",
+  "invariant": "panjang roll berubah sesudah check → dispatch ditolak",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "RF-06",
+  "invariant": "roll yang sudah terkirim tidak membatalkan hasil (partial dispatch)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-11",
+  "invariant": "kunci yang masih aktif (<5 menit) tidak bisa dilepas",
+  "pass": true,
+  "detail": "(409, '{\"detail\":\"Kunci masih aktif (diklaim 2026-10-01T06:22:47.306700+00:00) — tunggu 5 menit atau sampai proses tercatat gag')"
+ },
+ {
+  "id": "GN-11",
+  "invariant": "efek terposting (surat jalan) → lepas tanpa pengakuan ditolak & efek ditampilkan",
+  "pass": true,
+  "detail": "(409, '{\"detail\":{\"code\":\"SAGA_EFFECTS_PRESENT\",\"message\":\"Sebagian efek sudah terposting — periksa sebelum menjalankan ulang (aksi ulang bisa menggandakan).\",\"effects')"
+ },
+ {
+  "id": "GN-11",
+  "invariant": "fencing: token berbeda tidak melepas kunci baru",
+  "pass": true,
+  "detail": "409"
+ },
+ {
+  "id": "GN-11",
+  "invariant": "pengakuan + alasan → dilepas; audit mencatat efek & alasan",
+  "pass": true,
+  "detail": "(200, ['id', 'actor', 'role', 'action', 'entity_type', 'entity_id', 'scope_entity_id', 'before'])"
+ }
+]
+pass=16 fail=0

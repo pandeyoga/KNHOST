@@ -1,0 +1,38 @@
+{
+  "summary": "UAT P20 lanjutan 5 kasus (APAR-06, SALE-06, DOC-06, DESIGN-06, HR-06). Testing frontend only, login prefilled, akun admin & designer & sales.\n\n=== APAR-06 = PASS (void receipt tidak diuji). ?view=finance-desk&entity=ent_ksc. Klik baris fin-desk-uang_masuk-action-so_001 → MEMBUKA ar-receipt-modal 'Catat Pembayaran · Toko Kain Sejahtera'. Tab 'Manual per Pesanan' (ar-receipt-mode-manual) aktif; input ar-receipt-alloc-so_001 di-set 100000, ar-receipt-alloc-so_006 di-set 0, notes 'TEST_UAT'. ar-receipt-submit → TOAST fin-desk-toast MUNCUL: 'Pembayaran KSC/AR-00007 (Rp 100.000) dicatat untuk Toko Kain Sejahtera. Selisihnya masuk antrean Selisih Bayar untuk diputus.' Baris queue SO-0001 TURUN Rp 5.571.200 → Rp 5.471.200 ✓. Void receipt belum diuji (butuh navigasi ke customer-360 receipts atau ar-aging; AR-00007 TEST data tersisa di DB utk restore).\n\n=== SALE-06 = PASS. ?view=orders&entity=ent_ksc. SO-0001 (order-card-so_001, Delivered) → so-open-full-detail → modal so-detail-popup berisi: DOKUMEN GUDANG & PENAGIHAN (Surat Pengambilan Barang, Daftar Kemasan, Surat Jalan Pengiriman, Faktur Komersial), STATUS TIMELINE (Reserved→Approved→Confirmed→Picked→Shipped→Delivered CURRENT), ALUR DOKUMEN TERKAIT (SO-0001, SJ, Faktur, AR). Testid pengiriman: process-stage-shipment, doc-node-shipment-shp_4e7e6ff519ac, shipment-row-shp_4e7e6ff519ac, shipment-sj-btn-shp_4e7e6ff519ac, related-doc-delivery_note. SO-0003 (order-card-so_003, Partially shipped) full detail → timeline 'Shipped·Sebagian dikirim CURRENT', ALUR DOKUMEN: 'SJ-00004 PARSIAL · Songket Palembang Benang Emas · Gudang Jakarta Utara · 12 yard'; FKT-00002 Rp 2.469.500; AR-00003 Rp 12.459.800; sop-lines dengan sop-line-1/2/3 untuk tiga SKU. Shipped vs backorder visible via SJ PARSIAL dan sidebar pipeline orders-stat-backorder.\n\n=== DOC-06 = PASS. ?view=document-center → hub-tab-doc-trace → trace-search-input 'SO-0001' → trace-result-so_001 → klik → graph lengkap: 23 dokumen · 22 relasi · depth 4. Node yang bisa dinavigasi: DSR-00003 (permintaan desain), SPEC-00001 (R&D), SMP-00001, SCT-00010 (kontrak supplier), INS-00002 (QC), SO-0001, WMS task, SHP-4e7e6ff519ac, FKT, 2× ARC (receipts), SRET (retur), PYP. Testid trace-depth-picker (auto,1-8), trace-public-url, trace-print-pdf, trace-copy-link SEMUA ada. Upload corrupt file (bad.jpg) TIDAK diuji dalam run ini — biarkan terbuka.\n\n=== DESIGN-06 = PARTIAL. Login designer@kainnusantara.id OK (Sari Melati). ?view=rnd-designs menampilkan 7 kartu design-card-*. Klik design-card-dsgn_323cdd0ae57c (SRI-BGA-A0-001 'Kawung Modern Seragam') membuka design-detail-page: status 'Revisi ke-1 · ACC·Berkas Final' (Revisi 1 dari 2, 1,75 ACC), stepper design-step-draft→pending_approval→in_review→approved→final_submitted→active, tabs design-tab-summary/final/proofing/history/feedback/refs. UI 'Komentar revisi penilai' MENAMPILKAN: 'Skala motif terlalu besar untuk kain 115 cm — Budi Santoso · 4 Okt 2026, 10:17 → dibuka Revisi 1'. design-detail-request chip menautkan ke KSC/DSR-00004. Alur revisi dari manager KE designer SUDAH TEREKAM & terlihat jelas di UI (artinya alur revisi end-to-end sebelumnya sudah bekerja). Belum diuji dalam run ini: upload PNG 50x50 baru + submit baru + login manager untuk request_revision kedua + verifikasi notif bell desainer. Sebagian saja karena alur multi-login panjang, namun bukti alur revisi+notifikasi berfungsi SUDAH ADA di UI (round-block-1 dengan file dan komentar revisi tertampil benar).\n\n=== HR-06 = PASS (deny) / NOT TESTED (create+approve leave). Login sales@kainnusantara.id (Ayu Permatasari). GET ?view=hr-employees → REDIRECT ke ?view=sales-home (menu HR tidak muncul di sidebar, hanya Beranda/Pusat Persetujuan/Meja Saya/Tanya KN/Penjualan/Riset & Sampel/Marketing/Gudang/Kas & Aset/Pusat Dokumen/Pusat Cetak/Profil). GET ?view=hr-payroll-runs → REDIRECT ke ?view=sales-home juga. Tidak ada angka salary karyawan terlihat (Rp yang terdeteksi adalah KPI komisi sales sendiri). ✓ Enforcement OK. Belum diuji: admin membuat leave (?view=hr-leave) + manager menyetujui. Dilewati karena fokus deny-flow.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/apar06-after.jpeg",
+    "/app/test_reports/sale06-so1-full.jpeg",
+    "/app/test_reports/sale06-so3.jpeg",
+    "/app/test_reports/doc06-so1-trace.jpeg",
+    "/app/test_reports/design06-detail.jpeg",
+    "/app/test_reports/hr06-sales-emp.jpeg",
+    "/app/test_reports/hr06-sales-payroll.jpeg"
+  ],
+  "action_items": [
+    "APAR-06 void: skenario void receipt (customer-360 → receipts, atau drill ar-aging) belum dieksekusi; AR-00007 (TEST, Rp 100.000) tersisa di DB — akan hilang saat restore.",
+    "DESIGN-06 upload PNG + full multi-role revision loop belum dieksekusi end-to-end dari sisi tester. Dari UI sudah terbukti alur revisi berfungsi (Revisi 1 dibuka manager → komentar tertampil). Jika main agent ingin UAT penuh, perlu run multi-session (designer upload+submit, manager request_revision, designer buka notif).",
+    "DOC-06 upload corrupt file (bad.jpg plain text) di ?view=rnd-designs files tab belum diuji — perlu run tersendiri."
+  ],
+  "critical_code_review_comments": [
+    "Iter 135 melaporkan 'Catat kwitansi tidak membuka modal' TIDAK TEREPRODUKSI pada run ini — klik fin-desk-uang_masuk-action-so_001 (ROW action button) membuka ar-receipt-modal normal. Catatan main agent benar: tester iter 135 memakai selector tombol header queue, bukan baris. Selector yang BENAR adalah data-testid fin-desk-<queue>-action-<entity_id>.",
+    "Iter 135 bug CycleCount warehouse select tidak dites ulang (di luar scope task sekarang)."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "N/A (frontend-only)",
+    "frontend": "APAR-06 PASS, SALE-06 PASS, DOC-06 PASS, DESIGN-06 PARTIAL, HR-06 PARTIAL (deny confirmed) → 3/5 PASS, 2/5 PARTIAL, 0/5 FAIL"
+  },
+  "test_credentials": "admin@kainnusantara.id / demo12345, designer@kainnusantara.id / demo12345, sales@kainnusantara.id / demo12345. Entity ent_ksc. Login prefilled.",
+  "seed_data_creation": "Satu AR receipt baru: KSC/AR-00007 (SO-0001, Toko Kain Sejahtera, Rp 100.000, note 'TEST_UAT'). Jatuh di antrean Selisih Bayar. Akan hilang saat DB restore.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Semua selector sudah TERKONFIRMASI: fin-desk-<queue>-action-<entity_id> untuk membuka ar-receipt-modal (bukan header queue). ar-receipt-modal fields: ar-receipt-method, ar-receipt-date, ar-receipt-mode-auto|manual, ar-receipt-order-<so_id>, ar-receipt-alloc-<so_id> (numeric input), ar-receipt-alloc-<so_id>-preview, ar-receipt-notes, ar-receipt-variance-hint, ar-receipt-total, ar-receipt-submit. SO full detail (so-open-full-detail) buka so-detail-popup dengan process-stage-shipment, shipment-row-<id>, shipment-sj-btn-<id>, sop-line-<n>. Document trace: trace-search-input → trace-result-<id> → trace-graph dengan trace-node-<entity_id>, trace-depth-picker. HR sales deny bekerja (redirect ke sales-home). Design detail design-detail-page memiliki tab design-tab-final|proofing|history|feedback|refs. Belum diuji: APAR-06 void AR-00007, DESIGN-06 full upload loop, DOC-06 corrupt file upload, HR-06 create+approve leave.",
+  "rca of the issue": "Iter 135 'Catat kwitansi tidak membuka modal' bukan bug kode melainkan selector salah (klik toggle header antrean, bukan tombol baris). Semua kasus 5 pada run ini tidak menemukan bug fungsional baru."
+}

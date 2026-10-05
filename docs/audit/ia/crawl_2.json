@@ -1,0 +1,469 @@
+{
+ "md-warehouses": {
+  "tabs": [],
+  "heads": [
+   "Gudang (Master) · Lokasi & Bin",
+   "Gudang bersama & gudang khusus badan usaha"
+  ],
+  "subs": {}
+ },
+ "logistics": {
+  "tabs": [
+   "Dasbor",
+   "Daftar pengiriman",
+   "Riwayat",
+   "Armada"
+  ],
+  "heads": [
+   "Pengiriman & Pelacakan · Ekspedisi, Armada Sendiri"
+  ],
+  "subs": {}
+ },
+ "cs-rfid-lokasi": {
+  "tabs": [
+   "Lokasi Tag",
+   "Stock Opname (RFID)"
+  ],
+  "heads": [
+   "Lokasi RFID",
+   "Lokasi RFID",
+   "Simulasi Sweep (Fixed Reader)"
+  ],
+  "subs": {}
+ },
+ "cs-rfid-tags": {
+  "tabs": [
+   "Tag Aktif (52)",
+   "Belum Ber-tag (4)",
+   "Cetak & Verifikasi"
+  ],
+  "heads": [
+   "Tags (tag↔item)",
+   "Tags (tag ↔ item)",
+   "Daftar Tag RFID Aktif"
+  ],
+  "subs": {}
+ },
+ "cs-rfid-devices": {
+  "tabs": [],
+  "heads": [
+   "Devices (Reader / Gate)",
+   "Devices (Reader / Gate)",
+   "Daftar Device"
+  ],
+  "subs": {}
+ },
+ "cs-rfid-gate": {
+  "tabs": [
+   "Monitor Gate",
+   "Alarm & Keamanan"
+  ],
+  "heads": [
+   "Gate Monitor",
+   "Gate Monitor",
+   "Simulasi Pembacaan Gate",
+   "Riwayat Passage Gate",
+   "Aktivitas Gate Terbaru"
+  ],
+  "subs": {}
+ },
+ "finance-tower": {
+  "tabs": [],
+  "heads": [
+   "Dashboard Keuangan · Control Tower"
+  ],
+  "subs": {}
+ },
+ "bank-accounts": {
+  "tabs": [],
+  "heads": [
+   "Kas & Bank · Rekening & Saldo",
+   "Akun Kas & Bank"
+  ],
+  "subs": {}
+ },
+ "cash-management": {
+  "tabs": [
+   "Semua",
+   "Kas Kecil",
+   "Kas Besar"
+  ],
+  "heads": [
+   "Transaksi Kas",
+   "Pengelolaan Kas"
+  ],
+  "subs": {}
+ },
+ "bank-reconciliation": {
+  "tabs": [
+   "Mutasi & Pencocokan",
+   "Dana Titipan 1",
+   "Aturan Pembelajaran",
+   "Template Bank"
+  ],
+  "heads": [
+   "Kas & Bank · Rekonsiliasi Bank Otomatis",
+   "Rekonsiliasi Bank"
+  ],
+  "subs": {}
+ },
+ "ar-aging": {
+  "tabs": [],
+  "heads": [
+   "AR / Piutang & Umur",
+   "Sebaran Umur Piutang",
+   "Piutang per Pelanggan"
+  ],
+  "subs": {}
+ },
+ "advance-report": {
+  "tabs": [],
+  "heads": [
+   "Uang Muka Pelanggan",
+   "Laporan Uang Muka Pelanggan"
+  ],
+  "subs": {}
+ },
+ "payment-plans": {
+  "tabs": [
+   "Antrean Denda 1",
+   "Jadwal Pembayaran 2",
+   "Selisih Bayar 0"
+  ],
+  "heads": [
+   "Rencana Pembayaran & Denda",
+   "Rencana Pembayaran & Denda",
+   "Antrean denda keterlambatan"
+  ],
+  "subs": {}
+ },
+ "finance-cases": {
+  "tabs": [],
+  "heads": [
+   "Pusat Kasus Keuangan",
+   "Pusat Kasus Keuangan"
+  ],
+  "subs": {}
+ },
+ "store-credit": {
+  "tabs": [],
+  "heads": [
+   "Store Credit / Saldo Pelanggan",
+   "Saldo Store Credit Pelanggan"
+  ],
+  "subs": {}
+ },
+ "tax-invoices": {
+  "tabs": [],
+  "heads": [
+   "Faktur Pajak Keluaran",
+   "Faktur Pajak Jual"
+  ],
+  "subs": {}
+ },
+ "input-tax": {
+  "tabs": [
+   "Faktur Masukan",
+   "Rekap PPN",
+   "Semua 0",
+   "Tercatat 0",
+   "Batal 0"
+  ],
+  "heads": [
+   "Faktur Pajak Masukan · PPN Masukan & Rekap",
+   "Faktur Pajak Masukan (Input VAT)"
+  ],
+  "subs": {
+   "Semua 0": [
+    "<klik gagal>"
+   ],
+   "Tercatat 0": [
+    "<klik gagal>"
+   ],
+   "Batal 0": [
+    "<klik gagal>"
+   ]
+  }
+ },
+ "cs-pajak": {
+  "tabs": [
+   "PPN (SPT Masa)",
+   "PPh",
+   "Konfigurasi",
+   "PAJAK KELUARAN Rp 3.747.700 3 faktur · D"
+  ],
+  "heads": [
+   "PPh & Rekap Pajak",
+   "Pusat Pajak",
+   "Rincian Pajak Masukan per Pemasok"
+  ],
+  "subs": {
+   "PPh": [
+    "TOTAL PPH PERIODE Rp 0 PPh 21 ditarik ot"
+   ],
+   "PAJAK KELUARAN Rp 3.747.700 3 faktur · D": [
+    "<klik gagal>"
+   ]
+  }
+ },
+ "general-ledger": {
+  "tabs": [
+   "Jurnal",
+   "Neraca Saldo",
+   "Buku Besar",
+   "Rekonsiliasi Persediaan",
+   "Suspense"
+  ],
+  "heads": [
+   "Buku Besar · Jurnal Umum"
+  ],
+  "subs": {
+   "Rekonsiliasi Persediaan": [
+    "GL Persediaan sinkron dengan subledger r"
+   ]
+  }
+ },
+ "chart-of-accounts": {
+  "tabs": [],
+  "heads": [
+   "Bagan Akun · Chart of Accounts",
+   "Bagan Akun · Template Global"
+  ],
+  "subs": {}
+ },
+ "financial-statements": {
+  "tabs": [
+   "Laba-Rugi",
+   "Neraca",
+   "Arus Kas",
+   "Perubahan Ekuitas"
+  ],
+  "heads": [
+   "Laporan Keuangan · Laba-Rugi, Neraca & Arus Kas"
+  ],
+  "subs": {}
+ },
+ "profitability": {
+  "tabs": [],
+  "heads": [
+   "Profitabilitas & Margin (WAC)"
+  ],
+  "subs": {}
+ },
+ "cashflow-forecast": {
+  "tabs": [],
+  "heads": [
+   "Proyeksi Arus Kas · Likuiditas"
+  ],
+  "subs": {}
+ },
+ "budget": {
+  "tabs": [
+   "Per Akun COA",
+   "Per Kategori Beban"
+  ],
+  "heads": [
+   "Anggaran vs Realisasi · Commitment Control"
+  ],
+  "subs": {}
+ },
+ "consolidation": {
+  "tabs": [
+   "Laba-Rugi",
+   "Neraca",
+   "Eliminasi (3)"
+  ],
+  "heads": [
+   "Konsolidasi Grup · Eliminasi Intercompany"
+  ],
+  "subs": {}
+ },
+ "closing": {
+  "tabs": [],
+  "heads": [
+   "Tutup Buku · Closing Bulanan & Tahunan",
+   "Tutup Buku (Closing)"
+  ],
+  "subs": {}
+ },
+ "period-unlock": {
+  "tabs": [],
+  "heads": [
+   "Buka Periode (Unlock) · Kontrol Ganda & Jendela Wa",
+   "Buka Periode (Unlock) — Kontrol Ganda"
+  ],
+  "subs": {}
+ },
+ "posting-failures": {
+  "tabs": [],
+  "heads": [
+   "Posting Gagal · Dokumen dengan Jurnal Gagal"
+  ],
+  "subs": {}
+ },
+ "cash-advances": {
+  "tabs": [
+   "Semua",
+   "Draf",
+   "Menunggu Persetujuan",
+   "Disetujui",
+   "Dicairkan",
+   "Selesai",
+   "Ditolak"
+  ],
+  "heads": [
+   "Pengajuan Dana (PD) · Cash Advance",
+   "Pengajuan Dana (PD)"
+  ],
+  "subs": {}
+ },
+ "settlements": {
+  "tabs": [
+   "Semua",
+   "Draf",
+   "Diajukan",
+   "Terposting",
+   "Ditolak"
+  ],
+  "heads": [
+   "Pertanggungjawaban (LPJ) · Petty Cash",
+   "Pertanggungjawaban (LPJ)"
+  ],
+  "subs": {}
+ },
+ "reimburse-payables": {
+  "tabs": [],
+  "heads": [
+   "Hutang Reimburse Karyawan · Umur Hutang",
+   "Hutang Reimburse Karyawan (2-1650)",
+   "Per Karyawan",
+   "Rincian LPJ"
+  ],
+  "subs": {}
+ },
+ "expense-categories": {
+  "tabs": [],
+  "heads": [
+   "Kategori Beban → Akun COA",
+   "Kategori Beban → Akun COA"
+  ],
+  "subs": {}
+ },
+ "vehicle-logs": {
+  "tabs": [
+   "Log & Biaya",
+   "Master Kendaraan",
+   "Rekap"
+  ],
+  "heads": [
+   "Penggunaan & Biaya Kendaraan",
+   "Penggunaan & Biaya Kendaraan"
+  ],
+  "subs": {}
+ },
+ "fixed-assets": {
+  "tabs": [],
+  "heads": [
+   "Aset Tetap · Penyusutan & Disposal",
+   "Daftar Aset Tetap"
+  ],
+  "subs": {}
+ },
+ "hr-employees": {
+  "tabs": [],
+  "heads": [
+   "Karyawan",
+   "Master Karyawan"
+  ],
+  "subs": {}
+ },
+ "hr-org-units": {
+  "tabs": [],
+  "heads": [
+   "Struktur Organisasi",
+   "Struktur Organisasi"
+  ],
+  "subs": {}
+ },
+ "hr-attendance": {
+  "tabs": [
+   "Kehadiran Harian",
+   "Rekap Periode",
+   "Impor Sidik Jari"
+  ],
+  "heads": [
+   "Presensi & Kehadiran",
+   "Presensi & Kehadiran"
+  ],
+  "subs": {}
+ },
+ "hr-leave": {
+  "tabs": [
+   "Pengajuan",
+   "Kalender",
+   "Saldo Cuti"
+  ],
+  "heads": [
+   "Cuti & Izin",
+   "Cuti & Izin"
+  ],
+  "subs": {
+   "Saldo Cuti": [
+    "KARYAWAN JATAH TERPAKAI MENUNGGU SISA Be"
+   ]
+  }
+ },
+ "hr-overtime": {
+  "tabs": [],
+  "heads": [
+   "Lembur (Overtime)",
+   "Lembur"
+  ],
+  "subs": {}
+ },
+ "hr-live-tracking": {
+  "tabs": [],
+  "heads": [
+   "Lacak Lapangan · Live Tracking Sales",
+   "Lacak Lapangan — Posisi Sales Realtime"
+  ],
+  "subs": {}
+ },
+ "hr-attendance-setup": {
+  "tabs": [
+   "Shift",
+   "Geofence",
+   "Perangkat"
+  ],
+  "heads": [
+   "Shift & Geofence",
+   "Shift & Geofence",
+   "Daftar Shift"
+  ],
+  "subs": {}
+ },
+ "hr-payroll-runs": {
+  "tabs": [],
+  "heads": [
+   "Penggajian (Payroll Run)",
+   "Payroll Run — Penggajian"
+  ],
+  "subs": {}
+ },
+ "hr-payslips": {
+  "tabs": [],
+  "heads": [
+   "Slip Gaji (Payslip)",
+   "Slip Gaji Karyawan"
+  ],
+  "subs": {}
+ },
+ "cs-kpi": {
+  "tabs": [],
+  "heads": [
+   "KPI Karyawan (input manual per periode)",
+   "Daftar KPI"
+  ],
+  "subs": {}
+ }
+}

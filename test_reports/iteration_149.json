@@ -1,0 +1,50 @@
+{
+  "summary": "Iter149 verifies main-agent fixes for user's screenshots (settings-config health + Riwayat Perubahan pollution) and runs a read-only numeric sweep. CONFIG HEALTH FIX: VERIFIED at both API and UI. GET /api/config/health → summary={OK:263, NOT_USED:2}; UI (admin, ent_ksc, ?view=settings-config → Kesehatan Konfigurasi) shows green banner 'Semua setting aktif benar-benar tersambung ke mesin · Diperiksa 265 setting …'; counters: 263 Aktif & tersambung, 0 Referensi kode basi, 0 Referensi kode salah, 2 Tidak dipakai. User complaint ('2 setting BELUM tersambung ke mesin' + 2 'Referensi kode basi') is fully resolved. RIWAYAT PERUBAHAN FIX: audit-log scan over 500 recent rows → zero reasons containing 'TEST'/iter1xx (only legitimate reason 'test toggle' which is user-created not TEST-prefixed). RFID TAG RFID › Antrean cetak: no 'TEST Printer RFID' in RFID hub DOM or API payloads for /api/rfid/*. Sales returns list: GET /api/sales-returns returned 1 row, number not TEST_R5-prefixed. Pytest 7/7 PASS (file /app/backend/tests/test_iter149_audit.py). REGRESSION ITER148: admin AR Rp 442.999.761 = /api/ar/aging totals.total 442,999,760.5; kas_kecil balance 9,750,000; kas_besar 195,399,200 — all intact. NUMBERS SWEEP (/app/test_reports/iter149_numbers_sweep.json): sales_orders total/by_status/sum, PO totals, vendor_bills, finance_cases, makloon_orders, credit_overrides, notifications dumped for main agent. Several /api endpoints returned 404 for GET-list variants (customer_advances, payment_plans needs limit≤500, payroll_runs, approvals, analytics summary/margin/hpp, bi/finance, bi/hr, home/salesadmin) — these may use different route names; captured for main agent follow-up (not necessarily bugs — most likely different URL paths used by frontend). STOCK ATP TRANSPARENCY FINDING: On /api/inventory/status-board rows, ATP ≠ Tersedia(available) + Incoming − Dipesan(reserved). atp_policy.compute_atp uses `pending_demand` (active backorder qty, ACTIVE_BACKORDER_STATUSES) not `reserved`, and `incoming_in_horizon` (horizon-filtered PO ETA) not raw `incoming`. Example BTK-MEGA-001 wh_jakarta UI: Tersedia=290 Incoming=800 Dipesan=98 → naive formula=992, actual ATP=653 (Δ=-339, likely 339 incoming beyond ATP horizon or additional backorder demand). Stok Fisik 968.03 vs Tersedia 310 + Dipesan 496.03 = 806.03 (Δ=162, likely karantina/blocked buckets not shown on main row). This is a transparency issue — users will not be able to reconcile numbers by eye. Main agent should either (a) add hidden buckets (incoming_out_of_horizon, pending_demand, karantina) to the ATP row expanded view, or (b) rename UI columns to match (Dipesan→Pesanan aktif + backorder; Incoming→Incoming ≤ horizon). FULL POP-UP SWEEP: NOT PERFORMED comprehensively this run (would risk polluting data per agent-to-agent context note — strict read-only). Previous iter148 covered PO/Makloon/Vendor Bill/Pelanggan/Cash create modals (all open cleanly). Config health UI itself passed, rfid-hub tabs intact.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/customer-advances, /api/payroll-runs, /api/approvals, /api/analytics/{summary,margin,hpp}, /api/bi/{finance,hr}, /api/home/salesadmin", "issue": "GET list returned 404 — likely different route names in use by frontend. Not covered by iter148 regression. Document actual paths or add aliases."},
+      {"endpoint": "/api/payment-plans?limit=1000", "issue": "422 - limit max is 500. Pydantic bound le=500; consumer-side pagination required."},
+      {"endpoint": "/api/inventory/status-board", "issue": "ATP vs row columns: ATP uses pending_demand (not shown) and incoming_in_horizon; UI column 'Dipesan' maps to 'reserved' and 'Incoming' maps to raw total. Users cannot verify ATP arithmetic. Also Stok Fisik > Tersedia+Dipesan (karantina/blocked buckets hidden)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Stok & ATP board", "issues": ["ATP row columns Tersedia+Incoming-Dipesan ≠ ATP for most products (uses horizon-filtered incoming and pending_demand internally). Users will see visually inconsistent math. Recommend expand-row disclosure of (incoming_in_horizon, pending_demand, karantina/blocked)."]},
+      {"screen": "Transaksi Kas modal (carry-over iter148)", "issues": ["Modal panel still unconstrained width; max-w class not applied."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter149_audit.py",
+    "/app/backend/tests/iter149_numbers_sweep.py",
+    "/app/test_reports/pytest/iter149.xml",
+    "/app/test_reports/iter149_numbers_sweep.json",
+    "/app/test_reports/iter149_atp_dump.json",
+    "/app/test_reports/iter149-config-health.jpeg",
+    "/app/test_reports/iter149-audit.jpeg",
+    "/app/test_reports/iter149-rfid.jpeg",
+    "/app/test_reports/iter149-atp.jpeg"
+  ],
+  "action_items": [
+    "(COSMETIC, LOW) Make Stok & ATP row expandable to show incoming_in_horizon, pending_demand, karantina/blocked so Tersedia+Incoming-Dipesan math matches ATP in UI.",
+    "(DOCS, LOW) Document which GET-list endpoints exist for customer_advances, payroll_runs, approvals, analytics summary/margin/hpp, bi/finance, bi/hr, home/salesadmin — this testing agent's naïve guesses got 404. Capture actual paths used by UI.",
+    "(carry-over iter148) Constrain Transaksi Kas create modal panel width."
+  ],
+  "critical_code_review_comments": [
+    "services/atp_policy.compute_atp is correct and clean, but the UI column mapping on /api/inventory/status-board rows is misleading — rename or disclose.",
+    "config_health.py now returns correct {OK:263, NOT_USED:2} after the catalog consumer-reference cleanup; recommend adding a CI check that no catalog entry ends up in NOT_WIRED/STALE_REF buckets."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter149_audit.py (new)",
+    "/app/backend/tests/iter149_numbers_sweep.py (new, read-only probe)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "95%"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 OK; entity ent_ksc.",
+  "seed_data_creation": "NONE — strict read-only, no business data or config values changed. No audit_log rows added.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Config-health fix (263 OK, 2 NOT_USED, 0 stale/bad) and Riwayat-Perubahan cleanup (no TEST/iter1xx) are both verified at API+UI. Numbers sweep JSON at /app/test_reports/iter149_numbers_sweep.json gives counts/sums for sales_orders, PO, vendor_bills, finance_cases, makloon_orders, credit_overrides, notifications. ATP transparency reported as design issue, not a bug. If main agent fixes ATP columns, re-run tests/test_iter149_audit.py::test_stock_atp_sum_matches which prints formula mismatches. Pop-up full sweep was skipped to avoid data pollution; iter148 covered the critical create modals. Backend pytest file ready for regression: `cd /app/backend && REACT_APP_BACKEND_URL=https://kain-control.preview.emergentagent.com python -m pytest tests/test_iter149_audit.py -v -n0`.",
+  "rca of the issue": "User's screenshot 1 (2 settings BELUM tersambung + 2 referensi kode basi) was caused by stale catalog consumer references in config_catalog_ops.py / config_catalog_ai.py (receiving.auto_rfid_on_scan + ai.route_threshold_pct listed consumer paths that config_health.py could not resolve). Main agent updated those catalog entries to point at the real wiring; result: NOT_WIRED/STALE_REF buckets dropped to 0, keeping only the 2 intentional NOT_USED (sales.quotation_enabled, hr.ptkp_table). Screenshot 2 (Riwayat Perubahan full of TEST iter143) was caused by test fixture _cleanup_test_artifacts (tests/test_iter265_r3r4r5.py) that previously left config_values + audit_logs rows with reasons like 'TEST iter143 toggle'. Main agent purged those rows and tightened the fixture teardown. Both now verified clean."
+}

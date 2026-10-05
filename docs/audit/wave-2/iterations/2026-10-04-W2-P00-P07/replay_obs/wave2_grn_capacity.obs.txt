@@ -1,0 +1,3 @@
+OBS ('W2-G-C14', [501.0, 501, 501], [501, 501, 501])
+OBS ('W2-G-F01', {'grn_status': 'closed', 'counted': 501.0, 'po_received': 501.0, 'statuses': {'receiving': 0, 'quarantine': 501, 'available': 0}, 'task_status': 'qc_pending', 'movement_count': 501}, {'grn_status': 'closed', 'counted': 501, 'po_received': 500, 'statuses': {'receiving': 1, 'quarantine': 500, 'available': 0}, 'task_status': 'qc_pending', 'movement_count': 500})
+OBS ('W2-G-F02', [409, 0, 0], [409, 1, 0])

@@ -1,0 +1,76 @@
+{
+  "database": "knhost_audit_78fde6dc36244b1896a5772cdf59800a",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "mode": "Actual report services+indexed Mongo; bulk-seeded balanced journals, not100001 business posting calls; no timing/performance conclusion",
+  "results": [
+    {
+      "id": "W2-GCAP-C01",
+      "kind": "control",
+      "label": "At50k boundary report agrees with fixture",
+      "observed": [
+        50000.0,
+        50000.0
+      ],
+      "expected": [
+        50000,
+        50000
+      ]
+    },
+    {
+      "id": "W2-GCAP-C02",
+      "kind": "control",
+      "label": "Independent Mongo sum confirms50001 posted units",
+      "observed": 50001,
+      "expected": 50001
+    },
+    {
+      "id": "W2-GCAP-F01",
+      "kind": "defect",
+      "label": "TB silently truncates and still reports balanced",
+      "observed": [
+        50000.0,
+        50000.0,
+        true
+      ],
+      "expected": [
+        50000,
+        50000,
+        true
+      ]
+    },
+    {
+      "id": "W2-GCAP-F02",
+      "kind": "defect",
+      "label": "Account ledger silently omits one posted cash debit",
+      "observed": [
+        50000,
+        50000.0
+      ],
+      "expected": [
+        50000,
+        50000
+      ]
+    },
+    {
+      "id": "W2-GCAP-C03",
+      "kind": "control",
+      "label": "Income statement includes50001 unlike TB",
+      "observed": 50001.0,
+      "expected": 50001
+    },
+    {
+      "id": "W2-GCAP-C04",
+      "kind": "control",
+      "label": "All100001 fixture entries exist",
+      "observed": 100001,
+      "expected": 100001
+    },
+    {
+      "id": "W2-GCAP-F03",
+      "kind": "defect",
+      "label": "Income statement reaches its own100k truncation boundary",
+      "observed": 100000.0,
+      "expected": 100000
+    }
+  ]
+}

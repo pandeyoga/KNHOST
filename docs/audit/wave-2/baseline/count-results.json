@@ -1,0 +1,102 @@
+{
+  "commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_dfb36f3b1ba4459fb456eb1bd2a5e423",
+  "level": "Mongo + ASGI; F03 scheduling barrier wrapping original session loader; no lifecycle startup",
+  "scenarios": [
+    {
+      "id": "W2-C-C01",
+      "kind": "control",
+      "observed": {
+        "http_status": 200,
+        "status": "approved",
+        "quantity": 90.0
+      }
+    },
+    {
+      "id": "W2-C-C02",
+      "kind": "control",
+      "observed": {
+        "http_status": 400,
+        "quantity": 90.0
+      }
+    },
+    {
+      "id": "W2-C-C03",
+      "kind": "control",
+      "observed": {
+        "http_status": 404
+      }
+    },
+    {
+      "id": "W2-C-C08",
+      "kind": "control",
+      "observed": {
+        "http_status": 403,
+        "foreign_remaining": 10.0
+      }
+    },
+    {
+      "id": "W2-C-F02",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "user_allowed_entity_ids": [
+          "A"
+        ],
+        "session_entity": "A",
+        "requested_owner": null,
+        "resolved_owner": "B",
+        "expected_qty": 10.0,
+        "foreign_remaining": 8.0
+      }
+    },
+    {
+      "id": "W2-C-C04",
+      "kind": "control",
+      "observed": {
+        "http_status": 200,
+        "resolved_owner": "A",
+        "A": 18.0,
+        "B": 100.0
+      }
+    },
+    {
+      "id": "W2-C-C05",
+      "kind": "control",
+      "observed": {
+        "http_status": 409,
+        "quantity": 110.0,
+        "status": "submitted",
+        "lock_present": false
+      }
+    },
+    {
+      "id": "W2-C-C06",
+      "kind": "control",
+      "observed": {
+        "reject_status": 200,
+        "approve_status": 400,
+        "quantity": 100.0
+      }
+    },
+    {
+      "id": "W2-C-C07",
+      "kind": "control",
+      "observed": {
+        "http_status": 400
+      }
+    },
+    {
+      "id": "W2-C-F03",
+      "kind": "defect",
+      "observed": {
+        "approve_status": 200,
+        "reject_status": 200,
+        "final_status": "rejected",
+        "quantity": 90.0,
+        "has_approved_at": true,
+        "has_rejected_at": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only Playwright regression for the KNHOST 'Rapikan Modul Lain + Konsolidasi Penerimaan' iteration. Verified: (a) 'Kedatangan Barang' sidebar item removed for admin; (b) Operasi Gudang hub tabs present with the correct set 'Operasi WMS · Barang Masuk (SJ & OCR) · Inspeksi QC · SPK Inspeksi & QC · Transfer Antar-Entitas'; (c) Clicking 'Barang Masuk (SJ & OCR)' renders GoodsReceiptsView (grn-new-button, grn-view-tab-list, grn-list-empty); (d) Deep link ?view=goods-receipts still works; (e) Operasi WMS inbound tab is testid wms-tab-inbound labelled 'Scan Terima PO' with banner wms-inbound-grn-hint and button wms-inbound-open-grn that opens the GRN tab; (f) SalesReturns (h1 'Retur & Barang Sisa', create-return-btn='Buat Retur', KPIs, return-search, return-status-filter, filter-pending_approval); (g) PurchaseReturns (h1 'Retur Pembelian (Nota Debit)', create-return-button, pret-stats, pret-search + pret-search-clear, all 5 pret-tab-*, ID labels 'Draf' & 'Menunggu Persetujuan'); (h) MakloonOrders (title, KPIs, mko-search, all 6 mko-filter-*, and 'completed' filter narrows client-side to Selesai only, 3 rows); (i) MakloonClaims (title, claims-refresh, claims-stats, claims-search, all 5 claims-filter-*, partner-scorecard); (j) Warehouse role sees Operasi WMS + Barang Masuk (SJ & OCR); (k) Mobile 390px on returns, purchase-returns, makloon-orders shows no horizontal body overflow for both admin and warehouse. FAILURE: Finance role cannot see Operasi Gudang in sidebar and is redirected to finance-desk when opening ?view=wms-operations — this violates the spec.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Finance role - Operasi Gudang visibility",
+        "issue": "Finance user has NO 'Operasi Gudang' entry in sidebar (nav-wms-operations testid absent) and navigating to ?view=wms-operations&entity=ent_ksc redirects to ?view=finance-desk. Root cause: in /app/frontend/src/config/navStructure.js line 226, the parent group 'gudang' has roles ['admin','warehouse','manager','sales','driver','sales_admin','warehouse_admin','md'] — 'finance' is missing. The child 'wms-operations' at line 236 already whitelists 'finance', but the group-level filter hides the whole 'Gudang & Logistik' group first, so the finance user never reaches the child. Fix: add 'finance' to the group.roles array at line 226 (and rebuild the frontend bundle).",
+        "affected_selectors": ["nav-wms-operations", "hub-tabs-wms-operations"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Add 'finance' to the group.roles array of the 'gudang' (Gudang & Logistik) group in frontend/src/config/navStructure.js (line 226). Without this fix, finance cannot open the consolidated Operasi Gudang hub even though wms-operations child roles include finance, breaking the review-request requirement 'Role finance: sidebar punya Operasi Gudang dan hub hanya menampilkan tab Barang Masuk (SJ & OCR)'. Then run bash /app/scripts/rebuild_frontend.sh."
+  ],
+  "critical_code_review_comments": [
+    "navStructure.js parent group.roles and child.roles are not automatically unioned — always add every child role to the group.roles too, otherwise child whitelists become dead-code. Consider a helper that auto-computes group.roles from union(child.roles) to prevent this class of bug.",
+    "The finance visibility for Operasi Gudang is the whole point of the consolidation (finance now sees the Barang Masuk sub-tab only); the current config regresses that intent silently because there is no test on the flattened nav per role."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "97% (63/66 assertions; 3 finance-role failures rooted in a single config bug; no code changes made by tester)"},
+  "test_credentials": "admin@kainnusantara.id / finance@kainnusantara.id / warehouse@kainnusantara.id — password demo12345 (from /app/memory/test_credentials.md).",
+  "seed_data_creation": "None — used existing demo data; no TEST_ records created.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The only outstanding failure is the finance-role nav bug. Everything else (admin & warehouse) passes: consolidated hub tabs, GoodsReceiptsView, wms-tab-inbound relabel + banner+button, SalesReturns/PurchaseReturns/MakloonOrders/MakloonClaims redesign selectors, mobile no-overflow on 390px for both admin (may be routed to mobile shell — expected) and warehouse. After main agent updates navStructure.js group.roles and rebuilds, only re-test the two Finance assertions: (1) finance sidebar contains testid nav-wms-operations; (2) opening ?view=wms-operations&entity=ent_ksc for finance renders hub-tabs-wms-operations with only the Barang Masuk (SJ & OCR) tab visible (Operasi WMS must NOT be visible for finance).",
+  "rca of the issue": "In /app/frontend/src/config/navStructure.js the 'gudang' group at line ~221-244 declares roles at both group and item levels. Group roles = ['admin','warehouse','manager','sales','driver','sales_admin','warehouse_admin','md']; item wms-operations roles = ['admin','warehouse','manager','warehouse_admin','finance']. The nav renderer filters at the group level first, so finance is dropped before its child is even considered. Reproduce: login as finance@kainnusantara.id → sidebar lacks the whole 'Gudang & Logistik' section → ?view=wms-operations redirects to finance-desk. Mitigation: add 'finance' to the gudang group.roles array (single-line change) and run bash /app/scripts/rebuild_frontend.sh; re-verify with the two assertions above."
+}

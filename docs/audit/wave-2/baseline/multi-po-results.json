@@ -1,0 +1,153 @@
+{
+  "database": "knhost_audit_e4cb908b9a1e4131bd1a83d626d29f7e",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "mode": "Actual services and Mongo indexes, synthetic masters, two PO and two products, same supplier and warehouse",
+  "results": [
+    {
+      "id": "W2-MPO-C01",
+      "kind": "control",
+      "label": "Counting two products leaves both PO receipts unchanged",
+      "observed": [
+        0,
+        0
+      ],
+      "expected": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "W2-MPO-C02",
+      "kind": "control",
+      "label": "Close dispatches exactly two task groups",
+      "observed": [
+        "closed",
+        2
+      ],
+      "expected": [
+        "closed",
+        2
+      ]
+    },
+    {
+      "id": "W2-MPO-C03",
+      "kind": "control",
+      "label": "Each PO receives its own measured quantity",
+      "observed": [
+        10.0,
+        12.0
+      ],
+      "expected": [
+        10,
+        12
+      ]
+    },
+    {
+      "id": "W2-MPO-C04",
+      "kind": "control",
+      "label": "Only partial PO creates remainder",
+      "observed": [
+        0,
+        1,
+        8.0,
+        "PMULTIB"
+      ],
+      "expected": [
+        0,
+        1,
+        8,
+        "PMULTIB"
+      ]
+    },
+    {
+      "id": "W2-MPO-C05",
+      "kind": "control",
+      "label": "Rolls retain independent PO product ownership",
+      "observed": [
+        [
+          "POMULTIA",
+          "PMULTIA",
+          10.0,
+          "quarantine",
+          "A"
+        ],
+        [
+          "POMULTIB",
+          "PMULTIB",
+          12.0,
+          "quarantine",
+          "A"
+        ]
+      ],
+      "expected": [
+        [
+          "POMULTIA",
+          "PMULTIA",
+          10,
+          "quarantine",
+          "A"
+        ],
+        [
+          "POMULTIB",
+          "PMULTIB",
+          12,
+          "quarantine",
+          "A"
+        ]
+      ]
+    },
+    {
+      "id": "W2-MPO-C06",
+      "kind": "control",
+      "label": "Later receipt completes second PO without touching first",
+      "observed": [
+        10.0,
+        20.0
+      ],
+      "expected": [
+        10,
+        20
+      ]
+    },
+    {
+      "id": "W2-MPO-C07",
+      "kind": "control",
+      "label": "Cancel removes both products counted rolls",
+      "observed": 0,
+      "expected": 0
+    },
+    {
+      "id": "W2-MPO-C08",
+      "kind": "control",
+      "label": "Cancel resets both tasks and leaves both POs untouched",
+      "observed": [
+        [
+          null,
+          0.0
+        ],
+        [
+          null,
+          0.0
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "expected": [
+        [
+          null,
+          0
+        ],
+        [
+          null,
+          0
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "summary": "Iteration 80: verified iteration 320 changes for sales mobile @ 390x800 (sales@kainnusantara.id). Backend: 5/5 pytest cases pass in /app/backend/tests/test_iter320_mobile_amendments_customers.py (amendment-reasons, amendments list, stats summary, /amendments/preview impact, POST /api/customers with cascading wilayah + list readback). Frontend: (a) Lainnya (mobile-tab-btn-more) now renders 6 collapsible sections with correct default states — assist OPEN, orders OPEN, customers/stock/hubs/full CLOSED; toggling customers → mobile-more-crm becomes visible; state persists across reload via localStorage kn_m_more_open. (b) Native Koreksi & Amandemen: mobile-more-amendments → m-amendments; stats pending=1, applied=2, rejected=1; both tabs present; 7 order rows shown; tapping m-amd-order-<id> opens m-amd-sheet; tapping m-amd-item-<pid>-plus auto-selects reason chip m-amd-reason-qty_adjustment (highlighted with #0058CC bg + white text) and m-amd-impact renders 'Nilai sekarang Rp 4.856.250 / Setelah koreksi Rp 5.050.500 / Selisih +Rp 194.250 / Langsung diterapkan setelah diajukan'; m-amd-submit enabled and clicking creates KSC/AMD-00005 auto-applied (m-amd-result shows DITERAPKAN OTOMATIS with Selesai button) — two taps after opening confirmed. (c) From Pesanan tab: expanding an order (mobile-order-<id>) shows mobile-order-amend-<id> which opens the same m-amd-sheet. (d) Pelanggan Baru: mobile-more-crm → m-customers → m-customers-add opens m-customer-form; all fields present (name, pic, phone, address, loc province/city/district/postal via KNSelect); submit initially disabled, becomes enabled after filling required + wilayah cascade; POST succeeds and m-customers-saved notice shows and the new customer appears at TOP of list. (e) Hubs: mobile-hub-md-products navigates to ?view=md-products, mobile-back-to-app visible and returns to mobile-sales-app. (f) Special order: mobile-more-special → m-special-new present. Not fully verified: mobile-cart-new-customer flow (could not reliably add a product via quickview during automation; selector exists in MobileCart.jsx L130 and opens same form via setNewCustomer(true) — recommend main-agent self-test). No console errors observed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter320_mobile_amendments_customers.py",
+    "/app/test_reports/pytest/iter320.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "MobileCart.mobile-cart-new-customer flow was not exercised end-to-end here; consider a Playwright smoke that adds a product via mobile-quickview-add and verifies the checkout-stage 'Pelanggan Baru' link opens MobileCustomerForm and pre-selects the returned customer.",
+    "GET /api/customers/{id} returns 405 (only GET list, POST create, PATCH update are defined). If mobile ever needs single-fetch by id, add a GET-by-id endpoint; today customer readback must go through the list endpoint with filters, which is acceptable for the mobile flow but worth documenting.",
+    "Backend normalizes customer name to Title Case on save — client sending 'TEST_MobCust_x' comes back as 'Test_mobcust_x'. Not a bug, but a UX note if users type all-caps brand names."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter320_mobile_amendments_customers.py"],
+  "success_rate": {"backend": "100% (5/5)", "frontend": "~95% (all specified flows verified except cart-new-customer end-to-end which was blocked by inability to script product-add through the QuickView; selector confirmed in code)"},
+  "test_credentials": "sales@kainnusantara.id / demo12345, X-Entity-Id: ent_ksc",
+  "seed_data_creation": "Created a few TEST_ customers (TEST_MC_*, TEST_MobCust_*) via API + UI; harmless, prefixed for cleanup.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "For cart-new-customer flow, from catalog tap a product tile (MobileProductCard onOpen), then in MobileQuickView click [data-testid=mobile-quickview-add], back to cart via mobile-catalog-cart-bar, then click the checkout button in MobileCart (find via 'Lanjut Checkout' text) to advance to the checkout step where [data-testid=mobile-cart-new-customer] is rendered next to the customer selector. AMD-00005 was auto-applied during this iteration; if you re-run the amendment flow the next created row will be AMD-00006+.",
+  "rca of the issue": "N/A — no failing behavior; all requested UX changes function as described."
+}

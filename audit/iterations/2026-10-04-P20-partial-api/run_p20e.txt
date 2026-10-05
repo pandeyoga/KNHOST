@@ -1,0 +1,83 @@
+  [poc-stock] snapshot 147 dokumen stok dari 6 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (147 dokumen, 6 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "HR-01",
+  "invariant": "cuti 30 Des–5 Jan (5 hari kerja) → pending terpecah per tahun: 2026 +2, 2027 +3",
+  "pass": true,
+  "detail": "(5, (0, 2, 12), (0, 3, 12))"
+ },
+ {
+  "id": "HR-01",
+  "invariant": "pengajuan yang menimpa tanggal cuti lain (meski jenis lain) ditolak 400",
+  "pass": true,
+  "detail": "(400, '{\"detail\":\"Tanggal bertabrakan dengan pengajuan cuti KSC/LV-00003.\"}')"
+ },
+ {
+  "id": "HR-01",
+  "invariant": "10 hari 2027 saat sisa 2027 = 12−3 pending = 9 → ditolak 400, pending tidak bocor",
+  "pass": true,
+  "detail": "(400, '{\"detail\":\"Saldo cuti 2027 tidak cukup (sisa 9 hari setelah pengajuan yang menunggu, diminta 10 hari).\"}', (0, 3, 12))"
+ },
+ {
+  "id": "HR-01",
+  "invariant": "approve → used 2026 +2 / 2027 +3, pending kembali, 5 absensi 'leave' tercatat",
+  "pass": true,
+  "detail": "((2, 0, 12), (3, 0, 12), 5)"
+ },
+ {
+  "id": "HR-01",
+  "invariant": "batal cuti approved → used kembali ke awal di dua tahun, absensi cuti dihapus",
+  "pass": true,
+  "detail": "(200, (0, 0, 12), (0, 0, 12))"
+ },
+ {
+  "id": "HR-01",
+  "invariant": "batal ulang 400 (final); tanggal yang dibatalkan bisa diajukan lagi",
+  "pass": true,
+  "detail": "(400, 200, '{\"id\":\"leave_6abbe409a4d1\",\"number\":\"KSC/LV-00004\",\"employee_id\":\"emp_d616f9290ed5\",\"employee_name\":')"
+ },
+ {
+  "id": "HR-03",
+  "invariant": "run periode dibuat: slip = karyawan aktif, totals.net = Σ take-home slip",
+  "pass": true,
+  "detail": "(18, {'employees': 18, 'salary_earnings': 120961199.43, 'commission': 9423.27, 'gross': 120970622.7, 'bpjs_emp': 4693692.0, 'bpjs_er': 12423004.0, 'pph21': 2450227.2, 'net': 113826703.5})"
+ },
+ {
+  "id": "HR-05",
+  "invariant": "post GL sebelum approve 400; akun Hutang Gaji nonaktif → post gagal 4xx berpesan, run tetap approved, tanpa jurnal",
+  "pass": true,
+  "detail": "(400, 400, '{\"detail\":\"Akun 2-1600 nonaktif\"}', 'approved')"
+ },
+ {
+  "id": "HR-05",
+  "invariant": "retry post GL 3× bersamaan → 1 sukses + 2 ditolak 400 (bukan 500), run posted, tepat 1 jurnal gaji",
+  "pass": true,
+  "detail": "([200, 400, 400], 'posted', 1)"
+ },
+ {
+  "id": "HR-03",
+  "invariant": "jurnal payroll seimbang & Hutang Gaji (2-1600) dikredit = Σ take-home",
+  "pass": true,
+  "detail": "({'6-1000': 120961199.43, '6-1100': 12423004.0, '2-1500': 9423.27, '2-1600': -113826703.5, '2-1700': -17116696.0, '2-1800': -2450227.2}, 113826703.5)"
+ },
+ {
+  "id": "HR-05",
+  "invariant": "bayar 3× bersamaan → 1 sukses + 2 ditolak 400, tepat 1 jurnal pembayaran, run paid",
+  "pass": true,
+  "detail": "([400, 200, 400], 'paid', [{'id': 'je_91162072c1f6'}])"
+ },
+ {
+  "id": "HR-03",
+  "invariant": "pembayaran: Dr 2-1600 / Cr kas = Σ take-home → Hutang Gaji netral; slip berstatus paid",
+  "pass": true,
+  "detail": "({'2-1600': 113826703.5, '1-1100': -113826703.5}, 113826703.5)"
+ },
+ {
+  "id": "HR-05",
+  "invariant": "bayar ulang run paid → 400",
+  "pass": true,
+  "detail": "400"
+ }
+]
+pass=13 fail=0

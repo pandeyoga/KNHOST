@@ -1,0 +1,23 @@
+{
+  "summary": "Tanya KN F2/F3 (mock-chat) full backend+frontend regression. Backend: all 6 tests in tests/test_tanya_kn_f2_f3.py PASS (number check, template listing, period override, chat-disabled suggestions, tools+export, mock-mode chat + combined /api/ai/export.xlsx + 404 cross-user). Edge cases via curl: /api/ai/export.xlsx empty ids→400, unknown id→404, missing param→422 (FastAPI validation, not 400). Frontend: logged in as admin, /?view=tanya-kn&entity=ent_ksc with ai.enabled=true + ai.model_main=mock-chat renders status pill 'Mode uji (tiruan)'. Chat: typing 'pelanggan terbesar bulan ini' + submit produced [data-testid=tanya-answer] with [data-testid=tanya-chat-text] containing '[MODE UJI — jawaban tiruan tanpa OpenAI]', 1 TanyaTable rendered, chart SVGs present, 3 [data-testid^=tanya-followup-] chips; clicking a follow-up re-asked and refreshed the answer view. Header 'Unduh Excel' [data-testid=tanya-answer-export] downloaded valid .xlsx (PK signature, filename 'pelanggan-terbesar-bulan-ini.xlsx'). Template flow: clicked 'Ranking sales person' → answer with chart+table, both header ExportAll and per-table Excel buttons produced valid .xlsx. Disabled state: after PUT ai.enabled=false, chat input remained visible, status pill switched to 'Menunggu kunci OpenAI', asking a question returned [data-testid=tanya-suggestions] with 3 template chips (Pelanggan baru / Pelanggan terbesar / Target vs realisasi). Final DB restored to ai.enabled=false + ai.model_main=gpt-6-sol as instructed.",
+  "backend_issues": {"critical": [], "minor": [
+    {"endpoint": "GET /api/ai/export.xlsx", "issue": "Missing 'ids' query param returns 422 (FastAPI validation) instead of 400 — acceptable but slightly inconsistent with empty-ids→400 contract"}
+  ]},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_tanya_kn_f2_f3.py",
+    "/app/test_reports/pytest/tanya_f2_f3.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Export label shows plain 'Unduh Excel' both when the answer has 1 result and >1 results; spec says '(N sheet)' should appear when >1. Verified 1-result case shows no count, but I did not exercise a >1-result chat/template flow; consider adding a Playwright assertion once a multi-result template is exercised.",
+    "Follow-up chip click replaces (updates) the same answer node rather than appending a new one — behaviour is fine but the spec wording 'which re-ask when clicked' is ambiguous. If append-history is desired, TanyaKnView should push to answers[] instead of mutating latest."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (6/6 pytest + 3/3 export edge cases)", "frontend": "100% for exercised flows"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, sales@kainnusantara.id / demo12345 (see /app/memory/test_credentials.md)",
+  "seed_data_creation": "None. DB state toggled during test: ai.enabled=true/mock-chat during F2/F3 execution, restored to ai.enabled=false/gpt-6-sol at end (verified via /api/ai/status).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Tanya KN F2/F3 mock-mode end-to-end (backend + UI) is green. To re-run backend: `cd /app/backend && set -a && . ./.env && set +a && python -m pytest -n 0 tests/test_tanya_kn_f2_f3.py --junitxml=/app/test_reports/pytest/tanya_f2_f3.xml -v`. Frontend uses static bundle at REACT_APP_BACKEND_URL; login=admin@kainnusantara.id/demo12345, view=?view=tanya-kn&entity=ent_ksc. Turn on mock mode by PUT /api/config/values ai.enabled=true + ai.model_main=mock-chat, restore after."
+}

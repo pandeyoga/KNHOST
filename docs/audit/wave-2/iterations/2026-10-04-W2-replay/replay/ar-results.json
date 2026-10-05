@@ -1,0 +1,7 @@
+{
+  "completed": false,
+  "commit": "6206f5f5cc3b4aa46acf87762b7c63f245bf35c3",
+  "database": "knhost_audit_3b85abdfdd184d9a8263811bdc5f5312",
+  "level": "ASGI HTTP + Mongo + real GL; seeded shipped legacy SO; indexes initialized; no UI/hardware",
+  "scenarios": []
+}

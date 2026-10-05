@@ -1,0 +1,97 @@
+{
+ "chart-of-accounts|coa-add-toggle": "no-dialog",
+ "budget|budget-add-toggle": "no-dialog",
+ "interco-transactions|interco-open-settle-btn": "no-dialog",
+ "interco-transactions|interco-advance-ict_f485880b932b": "err",
+ "interco-transactions|interco-tax-ict_b373df1b85a6": "err",
+ "vehicle-logs|veh-log-create-btn": {
+  "w": 640,
+  "h": 594,
+  "issues": []
+ },
+ "fixed-assets|add-asset-btn": {
+  "w": 480,
+  "h": 599,
+  "issues": []
+ },
+ "hr-employees|create-employee-button": {
+  "w": 672,
+  "h": 800,
+  "issues": []
+ },
+ "hr-org-units|create-department-button": {
+  "w": 672,
+  "h": 338,
+  "issues": [
+   "1 select bawaan tanpa gaya"
+  ]
+ },
+ "hr-leave|leave-create-button": {
+  "w": 480,
+  "h": 428,
+  "issues": []
+ },
+ "hr-overtime|overtime-create-button": {
+  "w": 480,
+  "h": 335,
+  "issues": []
+ },
+ "hr-attendance-setup|setup-create-button": {
+  "w": 448,
+  "h": 800,
+  "issues": []
+ },
+ "hr-payroll-runs|payroll-create-submit": "no-dialog",
+ "cs-kpi|kpi-add-button": {
+  "w": 480,
+  "h": 498,
+  "issues": []
+ },
+ "price-approvals|price-approvals-new": {
+  "w": 896,
+  "h": 412,
+  "issues": []
+ },
+ "tanya-kn|tanya-welcome-prompt-0": "no-dialog",
+ "rnd-samples|rnd-sample-create-button": {
+  "w": 896,
+  "h": 728,
+  "issues": [
+   "1 select bawaan tanpa gaya"
+  ]
+ },
+ "design-requests|dsr-create-button": {
+  "w": 896,
+  "h": 728,
+  "issues": [
+   "2 select bawaan tanpa gaya"
+  ]
+ },
+ "entities-access|entity-add-button": {
+  "w": 720,
+  "h": 674,
+  "issues": []
+ },
+ "approval-rules|create-rule-btn": {
+  "w": 896,
+  "h": 462,
+  "issues": [
+   "3 select bawaan tanpa gaya"
+  ]
+ },
+ "entity-masters|em-override-pterm_1cbf1d59ce12": "no-dialog",
+ "entity-masters|em-override-pterm_1376b9cd222e": "no-dialog",
+ "entity-masters|em-override-pterm_a3895887f222": "no-dialog",
+ "doc-templates-basic|toggle-admin-create-form-button": {
+  "w": 672,
+  "h": 728,
+  "issues": [
+   "2 select bawaan tanpa gaya"
+  ]
+ },
+ "hr-my-profile|ess-leave-request-button": {
+  "w": 480,
+  "h": 410,
+  "issues": []
+ }
+}

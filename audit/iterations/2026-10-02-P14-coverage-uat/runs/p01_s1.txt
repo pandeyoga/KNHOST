@@ -1,0 +1,149 @@
+# 2026-09-30-P01-scope-batch1/repro_p01_scope.py (46s)
+[
+ {
+  "id": "GN-03",
+  "invariant": "ledger own entity (control) 200",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-03",
+  "invariant": "ledger of entity B denied",
+  "pass": true,
+  "detail": 404
+ },
+ {
+  "id": "GN-03",
+  "invariant": "reconcile txn of entity B denied",
+  "pass": true,
+  "detail": 404
+ },
+ {
+  "id": "GN-03",
+  "invariant": "reconcile own txn (control) 200",
+  "pass": true,
+  "detail": 200
+ },
+ {
+  "id": "IX-05",
+  "invariant": "signatures of entity B source denied, no metadata",
+  "pass": true,
+  "detail": 404
+ },
+ {
+  "id": "IX-05",
+  "invariant": "signatures of own source (control) visible",
+  "pass": true,
+  "detail": 200
+ },
+ {
+  "id": "IX-05",
+  "invariant": "create e-sign request on entity B source denied",
+  "pass": true,
+  "detail": 404
+ },
+ {
+  "id": "IX-07",
+  "invariant": "PUT settings scope=B denied",
+  "pass": true,
+  "detail": 403
+ },
+ {
+  "id": "IX-07",
+  "invariant": "settings B unchanged after denial",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "IX-07",
+  "invariant": "single-entity user cannot write global scope",
+  "pass": true,
+  "detail": 403
+ },
+ {
+  "id": "IX-10",
+  "invariant": "list with entity_id=B denied",
+  "pass": true,
+  "detail": 403
+ },
+ {
+  "id": "IX-10",
+  "invariant": "default list excludes B rows",
+  "pass": true,
+  "detail": 200
+ },
+ {
+  "id": "IX-10",
+  "invariant": "active with entity_id=B denied",
+  "pass": true,
+  "detail": 403
+ },
+ {
+  "id": "IX-10",
+  "invariant": "approve B request denied & unchanged",
+  "pass": true,
+  "detail": [
+   404,
+   "pending"
+  ]
+ },
+ {
+  "id": "IX-10",
+  "invariant": "reject B request denied & unchanged",
+  "pass": true,
+  "detail": [
+   404,
+   "pending"
+  ]
+ },
+ {
+  "id": "GN-01",
+  "invariant": "second cookie user does not receive first user's cached response",
+  "pass": true,
+  "detail": [
+   404,
+   404,
+   null
+  ]
+ },
+ {
+  "id": "GN-01",
+  "invariant": "same user same payload is replayed (control)",
+  "pass": true,
+  "detail": 404
+ },
+ {
+  "id": "GN-01",
+  "invariant": "same key different payload -> 409",
+  "pass": true,
+  "detail": 409
+ },
+ {
+  "id": "GN-01",
+  "invariant": "anonymous replay rejected (401, no cached body)",
+  "pass": true,
+  "detail": 401
+ },
+ {
+  "id": "GN-02",
+  "invariant": "sales cannot subscribe",
+  "pass": true,
+  "detail": "error"
+ },
+ {
+  "id": "GN-02",
+  "invariant": "expired session rejected on WS",
+  "pass": true,
+  "detail": {
+   "type": "error",
+   "msg": "unauthorized"
+  }
+ },
+ {
+  "id": "GN-02",
+  "invariant": "manager subscribe (control) gets snapshot",
+  "pass": true,
+  "detail": "snapshot"
+ }
+]
+SUMMARY pass=22 fail=0

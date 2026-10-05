@@ -1,0 +1,394 @@
+[
+ {
+  "nav": "nav-zone-kerja",
+  "view": "manager-home",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-home",
+  "view": "manager-home",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-approval-inbox",
+  "view": "approval-inbox",
+  "hub_tabs": [
+   "approval-inbox",
+   "my-approvals",
+   "price-approvals",
+   "purchase-approval"
+  ]
+ },
+ {
+  "nav": "nav-zone-modul",
+  "view": "approval-inbox",
+  "hub_tabs": [
+   "approval-inbox",
+   "my-approvals",
+   "price-approvals",
+   "purchase-approval"
+  ]
+ },
+ {
+  "nav": "nav-my-desk",
+  "view": "my-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-tanya-kn",
+  "view": "tanya-kn",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-special-orders",
+  "view": "special-orders",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-sales-orders",
+  "view": "orders",
+  "hub_tabs": [
+   "orders",
+   "amendments",
+   "returns",
+   "return-policies",
+   "internal-requests"
+  ]
+ },
+ {
+  "nav": "nav-sample-orders",
+  "view": "sample-orders",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-customers-crm",
+  "view": "customers-crm",
+  "hub_tabs": [
+   "customers-crm",
+   "hr-visits"
+  ]
+ },
+ {
+  "nav": "nav-products-pricing",
+  "view": "md-products",
+  "hub_tabs": [
+   "md-products",
+   "md-categories",
+   "color-library",
+   "md-uoms",
+   "pricelist",
+   "cs-price-list"
+  ]
+ },
+ {
+  "nav": "nav-sourcing",
+  "view": "reorder",
+  "hub_tabs": [
+   "reorder",
+   "purchase-requisitions",
+   "rfq"
+  ]
+ },
+ {
+  "nav": "nav-purchase-orders",
+  "view": "purchasing",
+  "hub_tabs": [
+   "purchasing",
+   "po-board",
+   "blanket-po",
+   "makloon-orders",
+   "makloon-claims"
+  ]
+ },
+ {
+  "nav": "nav-accounts-payable",
+  "view": "vendor-bills",
+  "hub_tabs": [
+   "vendor-bills",
+   "contra-bons",
+   "landed-cost",
+   "purchase-returns"
+  ]
+ },
+ {
+  "nav": "nav-master-pembelian",
+  "view": "suppliers",
+  "hub_tabs": [
+   "suppliers",
+   "makloons",
+   "supplier-contracts",
+   "supplier-items",
+   "process-recipes"
+  ]
+ },
+ {
+  "nav": "nav-rnd-hub",
+  "view": "rnd-samples",
+  "hub_tabs": [
+   "rnd-samples",
+   "rnd-labdip",
+   "rnd-handfeel",
+   "rnd-proofing",
+   "rnd-reports"
+  ]
+ },
+ {
+  "nav": "nav-designer-hub",
+  "view": "design-requests",
+  "hub_tabs": [
+   "design-requests",
+   "designer-kpi",
+   "rnd-designs",
+   "cs-design-gallery",
+   "rnd-divisions"
+  ]
+ },
+ {
+  "nav": "nav-marketing-hub",
+  "view": "mkt-calendar",
+  "hub_tabs": [
+   "mkt-calendar",
+   "mkt-analytics",
+   "mkt-campaigns",
+   "mkt-accounts"
+  ]
+ },
+ {
+  "nav": "nav-wms-operations",
+  "view": "operations",
+  "hub_tabs": [
+   "operations",
+   "goods-receipts",
+   "qc-inspection",
+   "inspections",
+   "interco-transfers"
+  ]
+ },
+ {
+  "nav": "nav-stock-atp",
+  "view": "inventory-board",
+  "hub_tabs": [
+   "inventory-board",
+   "stock-buckets",
+   "inventory-lots"
+  ]
+ },
+ {
+  "nav": "nav-production",
+  "view": "production",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-wms-locations",
+  "view": "wms-locations",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-md-warehouses",
+  "view": "md-warehouses",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-logistics",
+  "view": "logistics",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-escalations",
+  "view": "escalations",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-finance-tower",
+  "view": "finance-tower",
+  "hub_tabs": [
+   "finance-tower",
+   "bi-finance"
+  ]
+ },
+ {
+  "nav": "nav-cash-bank",
+  "view": "bank-accounts",
+  "hub_tabs": [
+   "bank-accounts",
+   "cash-management",
+   "bank-reconciliation"
+  ]
+ },
+ {
+  "nav": "nav-ar-aging",
+  "view": "ar-aging",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-advance-report",
+  "view": "advance-report",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-payment-plans",
+  "view": "payment-plans",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-finance-cases",
+  "view": "finance-cases",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-store-credit",
+  "view": "store-credit",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-tax-hub",
+  "view": "tax-invoices",
+  "hub_tabs": [
+   "tax-invoices",
+   "input-tax",
+   "cs-pajak"
+  ]
+ },
+ {
+  "nav": "nav-ledger",
+  "view": "general-ledger",
+  "hub_tabs": [
+   "general-ledger",
+   "chart-of-accounts"
+  ]
+ },
+ {
+  "nav": "nav-fin-reports",
+  "view": "financial-statements",
+  "hub_tabs": [
+   "financial-statements",
+   "profitability",
+   "cashflow-forecast",
+   "budget",
+   "consolidation"
+  ]
+ },
+ {
+  "nav": "nav-closing",
+  "view": "closing",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-period-unlock",
+  "view": "period-unlock",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-posting-failures",
+  "view": "posting-failures",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-interco-transactions",
+  "view": "interco-transactions",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-petty-cash",
+  "view": "cash-advances",
+  "hub_tabs": [
+   "cash-advances",
+   "settlements",
+   "reimburse-payables",
+   "expense-categories"
+  ]
+ },
+ {
+  "nav": "nav-vehicle-logs",
+  "view": "vehicle-logs",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-fixed-assets",
+  "view": "fixed-assets",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-hr-people",
+  "view": "hr-employees",
+  "hub_tabs": [
+   "hr-employees",
+   "hr-org-units"
+  ]
+ },
+ {
+  "nav": "nav-hr-attendance-hub",
+  "view": "hr-attendance",
+  "hub_tabs": [
+   "hr-attendance",
+   "hr-leave",
+   "hr-overtime",
+   "hr-live-tracking",
+   "hr-attendance-setup"
+  ]
+ },
+ {
+  "nav": "nav-hr-payroll-hub",
+  "view": "hr-payroll-runs",
+  "hub_tabs": [
+   "hr-payroll-runs",
+   "hr-payslips"
+  ]
+ },
+ {
+  "nav": "nav-hr-kpi-hub",
+  "view": "cs-kpi",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-zone-alat",
+  "view": "cs-kpi",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-analytics",
+  "view": "reports",
+  "hub_tabs": [
+   "reports",
+   "costing",
+   "cs-bi-hrd",
+   "cs-stock-analytics"
+  ]
+ },
+ {
+  "nav": "nav-document-center",
+  "view": "document-center",
+  "hub_tabs": [
+   "document-center",
+   "doc-trace",
+   "documents"
+  ]
+ },
+ {
+  "nav": "nav-settings-hub",
+  "view": "settings-config",
+  "hub_tabs": [
+   "settings-config",
+   "scheduler",
+   "entities-access",
+   "entity-masters",
+   "domain-registry"
+  ]
+ },
+ {
+  "nav": "nav-zone-akun",
+  "view": "settings-config",
+  "hub_tabs": [
+   "settings-config",
+   "scheduler",
+   "entities-access",
+   "entity-masters",
+   "domain-registry"
+  ]
+ },
+ {
+  "nav": "nav-hr-my-profile",
+  "view": "hr-my-profile",
+  "hub_tabs": []
+ }
+]

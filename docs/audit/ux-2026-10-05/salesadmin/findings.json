@@ -1,0 +1,473 @@
+{
+ "findings": {
+  "tab_bernuansa_pengaturan_di_menu_operasional": [
+   {
+    "where": "amendments",
+    "tab": "Kebijakan Retur"
+   },
+   {
+    "where": "orders",
+    "tab": "Kebijakan Retur"
+   },
+   {
+    "where": "return-policies",
+    "tab": "Kebijakan Retur"
+   },
+   {
+    "where": "returns",
+    "tab": "Kebijakan Retur"
+   },
+   {
+    "where": "tanya-kn",
+    "tab": "Biaya"
+   }
+  ],
+  "daftar_tanpa_search": [
+   {
+    "where": "my-desk",
+    "rows": 0
+   },
+   {
+    "where": "return-policies",
+    "rows": 0
+   },
+   {
+    "where": "sales-admin-desk",
+    "rows": 22
+   },
+   {
+    "where": "tanya-kn › Jadwal",
+    "rows": 0
+   },
+   {
+    "where": "tanya-kn › Biaya",
+    "rows": 0
+   }
+  ],
+  "daftar_tanpa_filter_dan_search": [
+   {
+    "where": "my-desk",
+    "rows": 0
+   },
+   {
+    "where": "return-policies",
+    "rows": 0
+   },
+   {
+    "where": "sales-admin-desk",
+    "rows": 22
+   },
+   {
+    "where": "tanya-kn › Jadwal",
+    "rows": 0
+   }
+  ],
+  "filter_tidak_mengubah_daftar": [
+   {
+    "where": "returns",
+    "filter": "Retur",
+    "rows": 1
+   },
+   {
+    "where": "sales",
+    "filter": "Kain",
+    "rows": 12
+   },
+   {
+    "where": "sales",
+    "filter": "B",
+    "rows": 10
+   },
+   {
+    "where": "sales",
+    "filter": "Biru-Oranye",
+    "rows": 2
+   },
+   {
+    "where": "sales",
+    "filter": "Coklat-Putih",
+    "rows": 3
+   },
+   {
+    "where": "sales",
+    "filter": "Emas-Hitam",
+    "rows": 3
+   }
+  ],
+  "daftar_panjang_tanpa_paginasi": [
+   {
+    "where": "sales-admin-desk",
+    "rows": 22
+   }
+  ]
+ },
+ "signatures": {
+  "sales-admin-desk": {
+   "title": "Meja Admin Sales · Antrean Alur Pesanan",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 22,
+   "pager": false,
+   "heads": [
+    "Meja Admin Sales"
+   ],
+   "inner_tabs": []
+  },
+  "price-approvals": {
+   "title": "Persetujuan Harga Khusus",
+   "kpi": 0,
+   "search": [
+    [
+     161,
+     103,
+     "bg-transparent text-[13px] w-full | bg-white border border-[#E5E5EA] px-2 py-1.5"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Inbox Persetujuan",
+      "Pengajuan Harga Khusus"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua",
+     "Menunggu 2",
+     "Disetujui",
+     "Ditolak",
+     "Draf",
+     "Digantikan",
+     "Diakhiri",
+     "Dibatalkan"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 5,
+   "pager": false,
+   "heads": [
+    "Persetujuan Harga Khusus"
+   ],
+   "inner_tabs": []
+  },
+  "my-desk": {
+   "title": "Meja Saya · Giliran & Antrean Peran",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Meja Saya"
+   ],
+   "inner_tabs": []
+  },
+  "tanya-kn": {
+   "title": "Tanya KN · Laporan & Pertanyaan Data",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     false,
+     140,
+     "",
+     [
+      "Laporan",
+      "Peringatan",
+      "Riwayat",
+      "Jadwal",
+      "Biaya"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Hari ini",
+     "Minggu ini",
+     "Bulan ini",
+     "Bulan lalu",
+     "3 bulan",
+     "Tahun ini"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Apa yang ingin Anda ketahui hari ini?"
+   ],
+   "inner_tabs": [
+    "Laporan",
+    "Peringatan",
+    "Riwayat",
+    "Jadwal",
+    "Biaya"
+   ]
+  },
+  "sales": {
+   "title": "POS / Sales Portal",
+   "kpi": 5,
+   "search": [
+    [
+     201,
+     212,
+     "bg-transparent text-[13px] w-full | bg-white border border-[#E5E5EA] px-2 py-1.5"
+    ]
+   ],
+   "tabs": [],
+   "chips": [
+    [
+     "Barang Sisa",
+     "Batik",
+     "Benang",
+     "Denim",
+     "Endek",
+     "Grey",
+     "Jumputan",
+     "Kain"
+    ],
+    [
+     "A",
+     "B"
+    ],
+    [
+     "-",
+     "Biru-Coklat",
+     "Biru-Indigo",
+     "Biru-Oranye",
+     "Biru-Putih",
+     "Coklat-Putih",
+     "Emas-Hitam",
+     "Hijau-Emas"
+    ]
+   ],
+   "selects": 3,
+   "rows": 0,
+   "listRows": 16,
+   "pager": true,
+   "heads": [
+    "Filter",
+    "Katalog Kain Nusantara",
+    "Sering dibeli Toko Kain Sejahtera"
+   ],
+   "inner_tabs": []
+  },
+  "special-orders": {
+   "title": "Pesanan Khusus (OD)",
+   "kpi": 5,
+   "search": [
+    [
+     292,
+     209,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     false,
+     248,
+     "",
+     [
+      "Semua",
+      "Draf 1",
+      "Menunggu Persetujuan",
+      "Terkonfirmasi",
+      "Produksi",
+      "Siap",
+      "Dikirim",
+      "Selesai"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 1,
+   "listRows": 1,
+   "pager": false,
+   "heads": [
+    "Pesanan Khusus (OD)"
+   ],
+   "inner_tabs": [
+    "Semua",
+    "Draf 1",
+    "Menunggu Persetujuan",
+    "Terkonfirmasi",
+    "Produksi",
+    "Siap",
+    "Dikirim",
+    "Selesai"
+   ]
+  },
+  "orders": {
+   "title": "Pesanan Penjualan",
+   "kpi": 7,
+   "search": [
+    [
+     1292,
+     289,
+     "bg-transparent flex-1 text-[13px] | bg-white border border-[#E5E5EA] px-3 py-2 r"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Pesanan (SO)",
+      "Koreksi & Amandemen",
+      "Retur & Barang Sisa",
+      "Kebijakan Retur",
+      "Permintaan Internal (PIN)"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 40,
+   "pager": true,
+   "heads": [
+    "Sales Orders"
+   ],
+   "inner_tabs": []
+  },
+  "amendments": {
+   "title": "Pusat Amandemen · Koreksi Ber-alasan & Ber-jejak",
+   "kpi": 0,
+   "search": [
+    [
+     384,
+     298,
+     " | flex-1 max-w-sm"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pesanan (SO)",
+      "Koreksi & Amandemen",
+      "Retur & Barang Sisa",
+      "Kebijakan Retur",
+      "Permintaan Internal (PIN)"
+     ]
+    ],
+    [
+     false,
+     218,
+     "",
+     [
+      "Daftar Amandemen 4"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua",
+     "Menunggu persetujuan",
+     "Diterapkan",
+     "Diterapkan otomatis",
+     "Ditolak"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 4,
+   "pager": false,
+   "heads": [
+    "Pusat Amandemen",
+    "Daftar amandemen"
+   ],
+   "inner_tabs": [
+    "Daftar Amandemen 4"
+   ]
+  },
+  "returns": {
+   "title": "Retur & Barang Sisa",
+   "kpi": 4,
+   "search": [
+    [
+     293,
+     321,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pesanan (SO)",
+      "Koreksi & Amandemen",
+      "Retur & Barang Sisa",
+      "Kebijakan Retur",
+      "Permintaan Internal (PIN)"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua Tipe",
+     "Retur",
+     "Barang Sisa (BS)",
+     "Penggantian",
+     "Komplain",
+     "Garansi"
+    ]
+   ],
+   "selects": 0,
+   "rows": 1,
+   "listRows": 1,
+   "pager": true,
+   "heads": [
+    "Retur & Barang Sisa"
+   ],
+   "inner_tabs": []
+  },
+  "return-policies": {
+   "title": "Kebijakan Retur Jual",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pesanan (SO)",
+      "Koreksi & Amandemen",
+      "Retur & Barang Sisa",
+      "Kebijakan Retur",
+      "Permintaan Internal (PIN)"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Kebijakan Retur Jual"
+   ],
+   "inner_tabs": []
+  }
+ }
+}

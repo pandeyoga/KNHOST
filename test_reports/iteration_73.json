@@ -1,0 +1,25 @@
+{
+  "summary": "Tanya KN F0/F1 backend test run (iteration 73). Ran existing suite (test_tanya_kn_f0_time.py, test_tanya_kn_f0_access.py, test_tanya_kn_f1_engine.py = 22 tests, all pass) and added a new supplemental suite (test_tanya_kn_supplemental.py = 44 tests) covering catalog counts (30 metrics / 19 dimensions / cat-v1), config registry `asisten-analitik` group + 4 keys (ai.sales_definition, ai.sales_attribution, ai.margin_roles, ai.stock_value_roles), role gating for /api/ai/catalog across all 7 AI roles (admin/manager/sales_admin/finance/md/warehouse_admin/sales) and denial for `warehouse`, /api/ai/facts/rebuild admin-only + status admin/manager, 21 valid metric/dimension/time_grain combinations returning 200 with all required response keys, 8 invalid-input scenarios (unknown metric/dim, incompatible dims like net_sales+warehouse, >6 metrics, >3 dims, qty_sold+recognized_revenue mix, unknown preset, empty metrics) all returning 400 with Indonesian detail message (never 500), and regression pings on /api/reports/summary (admin), /api/sales/leaderboard (manager), /api/finance/profitability (admin). Final result: 65 passed, 1 skipped (warehouseadmin@ demo user not seeded – warehouse-role deny path is covered separately and passes).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_tanya_kn_f0_time.py",
+    "/app/backend/tests/test_tanya_kn_f0_access.py",
+    "/app/backend/tests/test_tanya_kn_f1_engine.py",
+    "/app/backend/tests/test_tanya_kn_supplemental.py",
+    "/app/test_reports/pytest/tanya_kn_all.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Consider seeding a `warehouseadmin@kainnusantara.id` demo user so role coverage tests exercise the warehouse_admin path via the API (currently only warehouse (denied) is exercised end-to-end; warehouse_admin verified only from AI_ROLES tuple in code).",
+    "/api/ai/facts/rebuild has no rate-limit or 202/async response; rebuilds are synchronous within the request. For larger fact tables (post-F1 growth) this may exceed proxy timeouts – consider background task + return {job_id, started_at}.",
+    "GET /api/ai/results/{result_id} returns 404 rather than 403 when a non-owner requests an existing id (intentional per code and reasonable), but ensure this behaviour is documented for F3 UI consumers."
+  ],
+  "updated_files": ["/app/backend/tests/test_tanya_kn_supplemental.py"],
+  "success_rate": {"backend": "100% (65/65 executed, 1 environment-skip)", "frontend": "not tested (per request)"},
+  "test_credentials": "demo12345 for all seeded users (see /app/memory/test_credentials.md)",
+  "seed_data_creation": "Existing F1 fixture (TEST_A..G sales_orders 2025-02..04) is created and cleaned up by the module-scoped fixture in test_tanya_kn_f1_engine.py. Supplemental suite adds no persistent data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All Tanya KN F0+F1 backend tests are green. To rerun: `cd /app/backend && set -a && . ./.env && set +a && python -m pytest -n 0 tests/test_tanya_kn_*.py --junitxml=/app/test_reports/pytest/tanya_kn_all.xml`. F2 (LLM) and F3 (UI) are not yet implemented; when they land, extend test_tanya_kn_supplemental.py's VALID_COMBOS and add a Playwright suite for the ?view=tanya-kn screen."
+}

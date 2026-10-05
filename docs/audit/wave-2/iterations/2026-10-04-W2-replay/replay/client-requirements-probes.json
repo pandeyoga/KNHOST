@@ -1,0 +1,57 @@
+{
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_c216c14b025742e0b848b88c0cf4ddc2",
+  "mode": "Focused actual service probes with synthetic Mongo; explanatory evidence excluded from239 checkpoint totals",
+  "observations": [
+    {
+      "probe": "LONG_LAST",
+      "options": {
+        "round_up": {
+          "qty": 1005.0,
+          "rolls": 10
+        },
+        "round_down": {
+          "qty": 900.0,
+          "rolls": 9
+        },
+        "exact_cut": {
+          "qty": 1000.0,
+          "rolls": 10
+        }
+      },
+      "note": "Base-unit numeric fixture; yard conversion and browser selection not tested"
+    },
+    {
+      "probe": "LONG_FIRST",
+      "options": {
+        "round_up": {
+          "qty": 1005.0,
+          "rolls": 10
+        },
+        "round_down": {
+          "qty": 905.0,
+          "rolls": 9
+        },
+        "exact_cut": {
+          "qty": 1000.0,
+          "rolls": 10
+        }
+      },
+      "note": "Base-unit numeric fixture; yard conversion and browser selection not tested"
+    },
+    {
+      "probe": "LINE_POLICY",
+      "woven_allowed": true,
+      "printing_allowed": false,
+      "unclassified_allowed": true,
+      "empty_assignment_all": true
+    },
+    {
+      "probe": "LOT_IDENTITY",
+      "internal_number": "A/LOT-2610-0003",
+      "supplier_before": "123",
+      "supplier_after": "123-CORRECTED",
+      "normal_patch_internal_rename_blocked": true
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "summary": "Backend + frontend smoke validation of Audit KNHOST Bagian III fixes (KN-E01/E02/E03/E04c/E12/E17/E23/E31/E37/E38/E39/E44/E45/E50). Created pytest suite /app/backend/tests/test_audit_bagian_iii.py — 24 tests, 24 passed (0 failed, 0 skipped after fixes). Frontend smoke via public preview URL: admin login → Pesanan (?view=sales / Kasir & Portal), Kedatangan Barang (?view=goods-receipts), Tanya KN (?view=tanya-kn) all render side nav + main content with no page errors and 0 error elements; sales login (Ayu) renders /?view=sales POS OK. Every audited finding was reproduced and now behaves per audit spec.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_audit_bagian_iii.py",
+    "/app/test_reports/pytest/audit_iii.xml"
+  ],
+  "action_items": [
+    "OPTIONAL (out-of-scope of Bagian III): services/ai_number_check._SKIP_CTX month regex has no leading word-boundary — text like 'panjang 2050 m' masks 'jang 2050' because '(jan)[a-z]*' matches 'jang' inside 'panjang'. This can suppress a legitimate number check when the surrounding word happens to start with a month prefix. Consider prefixing _MONTHS alternatives with \\b."
+  ],
+  "critical_code_review_comments": [
+    "E01 fix in services/sales_ownership.py is clean and single-sourced (list + IDOR guard share owner_clause/assert_may_open); explicitly excludes name-based matching (id-only $or on created_by/sales_id/sales_team.sales_id).",
+    "E12 dn_rules.match_po now anchors PO tokens with (?<![A-Z0-9]) / (?![A-Z0-9]) after whitespace-stripped normalization — PO-1 no longer collides with PO-12 in isolated token contexts (verified). NOTE: because normalize() strips whitespace, the token guard only matches when the PO number is bordered by non-alnum chars in the raw text (dashes, quotes, EOL). Free text like 'PO-12 kirim' becomes 'PO-12KIRIM' → no match. If audit intended broader detection, evaluate keeping whitespace in norm.",
+    "E37 list_records collects `unused = filters - used` and raises AnalyticsError('Saringan … belum didukung') → HTTP 400 with clear message. Good.",
+    "E45 settings PUT rejects scope='integrations' (must go through /api/integrations) and scope='global' response does not leak api_key/openai fields — verified.",
+    "E04c amendments/{id}/decision second call returns 400 'sudah diputus'. Note there is also a self-approval guard ('pengusul tidak boleh menyetujui usulannya sendiri') which is a nice-to-have not in the audit scope."
+  ],
+  "updated_files": ["/app/backend/tests/test_audit_bagian_iii.py"],
+  "success_rate": {"backend": "100% (24/24)", "frontend": "smoke-pass (login+3 views for admin, sales POS)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, sales@kainnusantara.id / demo12345, manager@kainnusantara.id / demo12345, warehouse@kainnusantara.id / demo12345, salesadmin@kainnusantara.id / demo12345 — verified working.",
+  "seed_data_creation": "Created 3 test amendments on so_4c92d0bc9f3e (KSC/AMD-000## with reason_code=price_correction, prefix TEST_) during E04c probing; one approved via manager. No other data mutations.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend audit suite lives at /app/backend/tests/test_audit_bagian_iii.py. Amendment API: create via POST /api/amendments with reason_code (list via GET /api/amendment-reasons where applies_to includes doc_type). Line targeting uses product_id, NOT line_id. Decision endpoint is POST /api/amendments/{id}/decision {action:'approve'|'reject', note}. Self-approval blocked (400) — use a different approver than the proposer. Sales list endpoint returns a plain JSON array (not {rows:[]}). Preview URL: https://knhost-build.preview.emergentagent.com. Frontend is a prebuilt static bundle — rerun bash /app/scripts/rebuild_frontend.sh after src edits.",
+  "rca_of_issue": "n/a — all audit findings behave as fixed"
+}

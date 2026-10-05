@@ -1,0 +1,297 @@
+"""GRN Fase 2 — `/api/goods-receipts` (Kedatangan Barang). Pembungkus tipis atas layanan GRN."""
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import Response
+
+from db import db
+from dependencies import audit, require_any_permission, require_permission
+from entity_scope import entity_ctx
+from schemas_goods_receipt import (GRNCatalogIn, GRNCountRollIn, GRNCreateIn, GRNDnPatch, GRNLineIn, GRNLinePatch,
+                                   GRNModeIn, GRNProfilePatch, GRNReasonIn, GRNResolveIn, GRNScanIn, GRNVersionIn)
+from services import goods_receipt_close_service as gc
+from services import goods_receipt_ocr_service as go
+from services import goods_receipt_service as gs
+from services import receiving_mode_service as rms
+from services import supplier_dn_profile_service as sdp
+
+router = APIRouter(prefix="/api")
+M = "goods_receipt"
+
+
+async def _act(request: Request, action: str):
+    return await require_permission(request, M, action), await entity_ctx(request)
+
+
+async def _out(doc: Dict[str, Any], user: Dict[str, Any]) -> Dict[str, Any]:
+    return await gs.public_view(doc, user)
+
+
+@router.post("/goods-receipts")
+async def create_grn(body: GRNCreateIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "create")
+    return await _out(await gs.create_grn(body, actor, ctx), actor)
+
+
+@router.post("/goods-receipts/photo-check")
+async def photo_check(request: Request, file: UploadFile = File(...)) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "create")
+    data = await file.read()
+    if len(data) > 8 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Foto terlalu besar (maks 8 MB).")
+    return await go.check_photo(data, file.content_type or "", actor, ctx)
+
+
+@router.get("/goods-receipts")
+async def list_grn(request: Request, status: str = "", partner_id: str = "", q: str = "",
+                   limit: int = 100) -> List[Dict[str, Any]]:
+    await require_permission(request, M, "view")
+    ctx = await entity_ctx(request)
+    flt: Dict[str, Any] = {"entity_id": {"$in": ctx.allowed_entity_ids} if ctx.view_all else ctx.active_entity_id}
+    if status:
+        flt["status"] = {"$in": status.split(",")}
+    if partner_id:
+        flt["partner_id"] = partner_id
+    if q:
+        import re as _re
+        q = _re.escape(q.strip()[:100])   # KN-E23 — regex mentah → 500 / kueri lambat
+        flt["$or"] = [{"number": {"$regex": q, "$options": "i"}}, {"dn.number": {"$regex": q, "$options": "i"}},
+                      {"partner_name": {"$regex": q, "$options": "i"}}]
+    rows = await db.goods_receipts.find(flt, {"_id": 0}).sort("created_at", -1).to_list(min(limit, 500))
+    return [{"id": r["id"], "number": r["number"], "status": r["status"], "version": r["version"],
+             "partner_type": r["partner_type"], "partner_id": r["partner_id"], "partner_name": r["partner_name"],
+             "warehouse_id": r["warehouse_id"], "dn_number": (r.get("dn") or {}).get("number", ""),
+             "lines": len(r.get("lines") or []), "pages": len(r.get("files") or []),
+             "open_blockers": len(gc.open_blockers(r.get("discrepancies") or [])),
+             "created_by": r.get("created_by"), "created_at": r.get("created_at"),
+             "closed_at": r.get("closed_at", "")} for r in rows]
+
+
+@router.get("/goods-receipts/partners")
+async def grn_partners(request: Request, partner_type: str = "supplier") -> List[Dict[str, Any]]:
+    _, ctx = await _act(request, "create")
+    return await gs.list_partners(partner_type, ctx)
+
+
+@router.get("/goods-receipts/supplier-variance")
+async def grn_supplier_variance(request: Request, since: str = "") -> List[Dict[str, Any]]:
+    await require_any_permission(request, [(M, "view"), ("purchase_order", "view")])
+    return await gs.supplier_variance(await entity_ctx(request), since)
+
+
+@router.get("/goods-receipts/usage")
+async def grn_ocr_usage(request: Request, month: str = "") -> Dict[str, Any]:
+    _, ctx = await _act(request, "approve")
+    return await go.usage_summary(month, ctx)
+
+
+@router.get("/goods-receipts/mode")
+async def grn_mode_status(request: Request) -> Dict[str, Any]:
+    """Fase 7 — mode penerimaan per badan usaha (dibaca layar lama untuk menyembunyikan tombol terima)."""
+    await require_any_permission(request, [(M, "view"), ("purchase_order", "view"), ("makloon_order", "view")])
+    return await rms.status(await entity_ctx(request))
+
+
+@router.put("/goods-receipts/mode")
+async def grn_mode_switch(body: GRNModeIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "approve")
+    if actor.get("role") not in ("admin", "manager"):
+        raise HTTPException(status_code=403, detail="Hanya admin/manajer yang boleh mengganti mode penerimaan.")
+    return await rms.switch(body.entity_id, body.mode, body.reason, actor, ctx)
+
+
+@router.get("/goods-receipts/doc-variance")
+async def grn_doc_variance(request: Request, po_id: str = "", mko_id: str = "",
+                           step_seq: Optional[int] = None) -> Dict[str, Any]:
+    """Layar pencocokan tagihan supplier/makloon: qty SJ vs hitung fisik (baca-saja)."""
+    await require_any_permission(request, [(M, "view"), ("vendor_bill", "view")])
+    return await gc.doc_variance(await entity_ctx(request), po_id, mko_id, step_seq)
+
+
+@router.post("/goods-receipts/{grn_id}/lines/{line_no}/save-catalog")
+async def grn_save_catalog(grn_id: str, line_no: int, body: GRNCatalogIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    return await gs.save_line_to_catalog(grn_id, line_no, body, actor, ctx)
+
+
+@router.get("/goods-receipts/dn-profiles")
+async def grn_dn_profiles(request: Request) -> List[Dict[str, Any]]:
+    _, ctx = await _act(request, "view")
+    return await sdp.list_profiles(ctx.active_entity_id or "")
+
+
+@router.get("/goods-receipts/dn-profiles/{partner_id}")
+async def grn_dn_profile(partner_id: str, request: Request) -> Dict[str, Any]:
+    _, ctx = await _act(request, "view")
+    return await sdp.get_profile(ctx.active_entity_id or "", partner_id) or {}
+
+
+@router.patch("/goods-receipts/dn-profiles/{partner_id}")
+async def grn_dn_profile_patch(partner_id: str, body: GRNProfilePatch, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    res = await sdp.patch_profile(ctx.active_entity_id or "", partner_id, body)
+    await audit(actor["name"], "supplier_dn_profile_updated", "supplier_dn_profile", partner_id,
+                body.model_dump(exclude_none=True), scope_entity_id=ctx.active_entity_id)
+    return res
+
+
+@router.get("/goods-receipts/{grn_id}/rolls")
+async def grn_rolls(grn_id: str, request: Request) -> List[Dict[str, Any]]:
+    _, ctx = await _act(request, "view")
+    return await gs.list_rolls(grn_id, ctx)
+
+
+@router.get("/goods-receipts/{grn_id}")
+async def get_grn(grn_id: str, request: Request, view: str = "review") -> Dict[str, Any]:
+    actor, ctx = await _act(request, "view")
+    out = await _out(await go.sweep_stale(await gs.load(grn_id, ctx)), actor)
+    from services.supplier_item_service import attach_line_aliases   # dualisme nama/warna KN ↔ supplier
+    await attach_line_aliases([ln["target"] for ln in out.get("lines") or [] if isinstance(ln.get("target"), dict)], out.get("supplier_id", ""))
+    return out
+
+
+@router.post("/goods-receipts/{grn_id}/read")
+async def read_grn(grn_id: str, body: GRNVersionIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "create")
+    return await _out(await go.read_grn(grn_id, body.expected_version, actor, ctx), actor)
+
+
+@router.get("/goods-receipts/{grn_id}/targets")
+async def grn_targets(grn_id: str, request: Request) -> List[Dict[str, Any]]:
+    _, ctx = await _act(request, "review")
+    return await gs.list_targets(grn_id, ctx)
+
+
+@router.post("/goods-receipts/{grn_id}/files")
+async def add_file(grn_id: str, request: Request, file: UploadFile = File(...),
+                   expected_version: Optional[int] = Form(None),
+                   original_sha256: str = Form("")) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "create")
+    res = await gs.add_file(grn_id, file.filename or "", file.content_type or "", await file.read(),
+                            expected_version, actor, ctx, original_sha256=original_sha256)
+    return {**res, "grn": await _out(res["grn"], actor)}
+
+
+@router.delete("/goods-receipts/{grn_id}/files/{page}")
+async def delete_file(grn_id: str, page: int, request: Request, expected_version: int) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "create")
+    return await _out(await gs.delete_file(grn_id, page, expected_version, actor, ctx), actor)
+
+
+@router.get("/goods-receipts/{grn_id}/files/{page}")
+async def get_file(grn_id: str, page: int, request: Request) -> Response:
+    actor, ctx = await _act(request, "view")
+    data, ctype = await gs.get_file(grn_id, page, actor, ctx)
+    return Response(content=data, media_type=ctype, headers={"Cache-Control": "private, no-store",
+                                                             "X-Content-Type-Options": "nosniff"})   # KN-E30
+
+
+@router.post("/goods-receipts/{grn_id}/manual-entry")
+async def manual_entry(grn_id: str, body: GRNVersionIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "create")
+    return await _out(await gs.manual_entry(grn_id, body.expected_version, actor, ctx), actor)
+
+
+@router.patch("/goods-receipts/{grn_id}/dn")
+async def patch_dn(grn_id: str, body: GRNDnPatch, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    return await _out(await gs.patch_dn(grn_id, body, actor, ctx), actor)
+
+
+@router.post("/goods-receipts/{grn_id}/lines")
+async def add_line(grn_id: str, body: GRNLineIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    return await _out(await gs.add_line(grn_id, body, actor, ctx), actor)
+
+
+@router.patch("/goods-receipts/{grn_id}/lines/{line_no}")
+async def patch_line(grn_id: str, line_no: int, body: GRNLinePatch, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    return await _out(await gs.patch_line(grn_id, line_no, body, actor, ctx), actor)
+
+
+@router.delete("/goods-receipts/{grn_id}/lines/{line_no}")
+async def delete_line(grn_id: str, line_no: int, request: Request, expected_version: int) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    return await _out(await gs.delete_line(grn_id, line_no, expected_version, actor, ctx), actor)
+
+
+@router.post("/goods-receipts/{grn_id}/start-count")
+async def start_count(grn_id: str, body: GRNVersionIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    return await _out(await gs.start_count(grn_id, body.expected_version, actor, ctx), actor)
+
+
+@router.post("/goods-receipts/{grn_id}/lines/{line_no}/scan-label")
+async def scan_label(grn_id: str, line_no: int, body: GRNScanIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "count")
+    res = await gs.scan_label(grn_id, line_no, body, actor, ctx)
+    return {"roll": res["roll"], "grn": await _out(res["grn"], actor)}
+
+
+@router.post("/goods-receipts/{grn_id}/lines/{line_no}/rolls")
+async def add_roll(grn_id: str, line_no: int, body: GRNCountRollIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "count")
+    res = await gs.add_counted_roll(grn_id, line_no, body, actor, ctx)
+    return {"roll": res["roll"], "grn": await _out(res["grn"], actor)}
+
+
+@router.delete("/goods-receipts/{grn_id}/rolls/{roll_id}")
+async def delete_roll(grn_id: str, roll_id: str, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "count")
+    return await _out(await gs.delete_roll(grn_id, roll_id, actor, ctx), actor)
+
+
+@router.post("/goods-receipts/{grn_id}/finish-count")
+async def finish_count(grn_id: str, body: GRNVersionIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "count")
+    return await _out(await gc.finish_count(grn_id, body.expected_version, actor, ctx), actor)
+
+
+@router.post("/goods-receipts/{grn_id}/reopen-count")
+async def reopen_count(grn_id: str, body: GRNVersionIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    return await _out(await gc.reopen_count(grn_id, body.expected_version, actor, ctx), actor)
+
+
+@router.post("/goods-receipts/{grn_id}/discrepancies/{key}/resolve")
+async def resolve(grn_id: str, key: str, body: GRNResolveIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    return await _out(await gc.resolve(grn_id, key, body, actor, ctx), actor)
+
+
+@router.post("/goods-receipts/{grn_id}/close")
+async def close(grn_id: str, body: GRNVersionIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "close")
+    res = await gc.close_grn(grn_id, body.expected_version, actor, ctx)
+    return {"grn": await _out(res["grn"], actor), "results": res["results"]}
+
+
+class GRNPartialIn(BaseModel):
+    expected_version: int
+    partial: bool
+
+
+@router.post("/goods-receipts/{grn_id}/mko-partial")
+async def set_mko_partial(grn_id: str, body: GRNPartialIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "close")   # terima makloon bertahap
+    return await _out(await gc.set_mko_partial(grn_id, body.expected_version, body.partial, actor, ctx), actor)
+
+
+@router.post("/goods-receipts/{grn_id}/return-to-reconcile")
+async def return_to_reconcile(grn_id: str, body: GRNVersionIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "close")   # KN-E06
+    return await _out(await gc.return_to_reconcile(grn_id, body.expected_version, actor, ctx), actor)
+
+
+@router.post("/goods-receipts/{grn_id}/reject")
+async def reject(grn_id: str, body: GRNReasonIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "review")
+    return await _out(await gc.reject_grn(grn_id, body, actor, ctx), actor)
+
+
+@router.post("/goods-receipts/{grn_id}/cancel")
+async def cancel(grn_id: str, body: GRNReasonIn, request: Request) -> Dict[str, Any]:
+    actor, ctx = await _act(request, "create")
+    return await _out(await gc.cancel_grn(grn_id, body, actor, ctx), actor)

@@ -1,0 +1,15 @@
+{
+  "AUTH-06": {"status": "partial", "note": "Pergantian entitas + refresh mempertahankan ?entity & data ter-scope (PASS, iteration_122); link unduhan belum diuji."},
+  "MASTER-06": {"status": "partial", "note": "Pencarian & paginasi Master Produk + KNSelect (PASS, iteration_122); pesan scope belum diuji tersendiri."},
+  "COMM-06": {"status": "partial", "note": "Pencarian, empty state, tombol export daftar pelanggan (PASS, iteration_122); dashboard per role belum."},
+  "HR-06": {"status": "partial", "note": "Manager melihat gaji (punya hr.view_pii); tidak ada akun demo hr.view tanpa view_pii untuk uji redaksi UI."},
+  "OPS-06": {"status": "partial", "note": "Shell desktop 1920 & mobile 390 tampil (PASS, iteration_122); integrasi eksternal belum."},
+  "AUDIT-01": {"status": "tested_pass", "note": "Tab Riwayat Perubahan Bagan Akun & Pelanggan 360 (iteration_122) + Supplier 360, Master Produk (varian), Kas & Bank (iteration_123); tab tersembunyi untuk sales."},
+  "DESIGN-06": {"status": "partial", "note": "Papan DSR & Design Studio, detail desain 6 tab, mobile 390 tanpa scroll horizontal (iteration_123); unggah/preview/notifikasi belum diuji."},
+  "SALE-06": {"status": "partial", "note": "Portal sales & SO workspace tampil (iteration_123); backorder/bukti kirim/recovery belum dijalankan."},
+  "GL-06": {"status": "partial", "note": "Buku Besar + tombol export tampil (iteration_123); laporan besar, WIB/UTC & rounding belum."},
+  "APAR-06": {"status": "partial", "note": "Layar Rekonsiliasi Bank Otomatis tampil (iteration_123); bukti transfer & laporan saldo belum."},
+  "DOC-06": {"status": "partial", "note": "Pusat Dokumen + empty state (iteration_123); file rusak/timeout belum."},
+  "INV-06": {"status": "partial", "note": "WMS gudang tampil, scan ada di sub-tab SJ & OCR (iteration_123); exception/undo belum."},
+  "QC-06": {"status": "partial", "note": "Tab Inspeksi QC & SPK tampil (iteration_123); sampling/hold release belum."}
+}

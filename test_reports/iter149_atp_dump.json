@@ -1,0 +1,145 @@
+{
+  "bad_row": [
+    {
+      "sku": "BTK-MEGA-001",
+      "av": 310.0,
+      "inc": 800.0,
+      "rsv": 506.03,
+      "atp": 563.0,
+      "expected_av+inc-rsv": 603.97
+    },
+    {
+      "sku": "LRK-CLSC-001",
+      "av": 85.0,
+      "inc": 200.0,
+      "rsv": 945.0,
+      "atp": -250.0,
+      "expected_av+inc-rsv": -660.0
+    },
+    {
+      "sku": "SGK-PLB-001",
+      "av": 135.0,
+      "inc": 35.0,
+      "rsv": 20.0,
+      "atp": 170.0,
+      "expected_av+inc-rsv": 150.0
+    },
+    {
+      "sku": "TNI-GRGD-001",
+      "av": 60.0,
+      "inc": 0.0,
+      "rsv": 500.0,
+      "atp": 60.0,
+      "expected_av+inc-rsv": -440.0
+    },
+    {
+      "sku": "ULS-BTK-001",
+      "av": 95.0,
+      "inc": 100.0,
+      "rsv": 140.0,
+      "atp": 195.0,
+      "expected_av+inc-rsv": 55.0
+    }
+  ],
+  "bad_wh": [
+    {
+      "sku": "BTK-MEGA-001",
+      "wh": "wh_jakarta",
+      "av": 290.0,
+      "inc": 800.0,
+      "rsv": 98.0,
+      "atp": 653.0,
+      "expected": 992.0
+    },
+    {
+      "sku": "BTK-MEGA-001",
+      "wh": "wh_bandung",
+      "av": 20.0,
+      "inc": 0.0,
+      "rsv": 320.0,
+      "atp": -417.0,
+      "expected": -300.0
+    },
+    {
+      "sku": "BTK-MEGA-001",
+      "wh": "wh_surabaya",
+      "av": 0.0,
+      "inc": 0.0,
+      "rsv": 78.03,
+      "atp": -437.0,
+      "expected": -78.03
+    },
+    {
+      "sku": "BTK-MEGA-001",
+      "wh": "wh_jakarta",
+      "av": 0.0,
+      "inc": 0.0,
+      "rsv": 10.0,
+      "atp": -110.0,
+      "expected": -10.0
+    },
+    {
+      "sku": "LRK-CLSC-001",
+      "wh": "wh_surabaya",
+      "av": 85.0,
+      "inc": 0.0,
+      "rsv": 325.0,
+      "atp": -450.0,
+      "expected": -240.0
+    },
+    {
+      "sku": "LRK-CLSC-001",
+      "wh": "wh_bandung",
+      "av": 0.0,
+      "inc": 0.0,
+      "rsv": 620.0,
+      "atp": -535.0,
+      "expected": -620.0
+    },
+    {
+      "sku": "LRK-CLSC-001",
+      "wh": "wh_jakarta",
+      "av": 0.0,
+      "inc": 200.0,
+      "rsv": 0.0,
+      "atp": -335.0,
+      "expected": 200.0
+    },
+    {
+      "sku": "SGK-PLB-001",
+      "wh": "wh_jakarta",
+      "av": 135.0,
+      "inc": 35.0,
+      "rsv": 20.0,
+      "atp": 170.0,
+      "expected": 150.0
+    },
+    {
+      "sku": "TNI-GRGD-001",
+      "wh": "wh_surabaya",
+      "av": 60.0,
+      "inc": 0.0,
+      "rsv": 180.0,
+      "atp": 60.0,
+      "expected": -120.0
+    },
+    {
+      "sku": "TNI-GRGD-001",
+      "wh": "wh_jakarta",
+      "av": 0.0,
+      "inc": 0.0,
+      "rsv": 320.0,
+      "atp": 0.0,
+      "expected": -320.0
+    },
+    {
+      "sku": "ULS-BTK-001",
+      "wh": "wh_surabaya",
+      "av": 0.0,
+      "inc": 0.0,
+      "rsv": 140.0,
+      "atp": 0.0,
+      "expected": -140.0
+    }
+  ]
+}

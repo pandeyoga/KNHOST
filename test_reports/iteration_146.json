@@ -1,0 +1,38 @@
+{
+  "summary": "Iter146 RETEST — Confirmed the critical dashboard makloon fix from iter145. With seed doc mres_TEST_ui (prod_batik_mega, qty 50, active), GET /api/dashboard?entity_id=ent_ksc now returns prod_batik_mega with available_qty=260 (reduced from 310) and makloon_reserved_qty=50; /api/products returns the same values — shared apply_to_products overlay works for both. Kasir UI (sales@, ?view=sales&entity=ent_ksc): desktop 1920 shows pill [data-testid=product-makloon-reserved-prod_batik_mega] text 'Dicadangkan makloon: 50 yard'; mobile 390 Katalog tab shows [data-testid=mobile-product-makloon-reserved-prod_batik_mega] text 'Dicadangkan makloon: 50'. After deleting the TEST reservation, dashboard reverts to available_qty=310 and no makloon_reserved_qty — label disappears. Escalations hub hero now reads 'Eskalasi Gudang' (sidebar + hub section both 'Eskalasi Gudang'); however, the view/breadcrumb page title at the top-left header still reads 'Eskalasi Barang Masuk & Barang Keluar' because /app/frontend/src/config/navMeta.js has a duplicate `escalations` entry at line 113 (page_titles map) that overrides the fixed line 21 entry. Minor leftover. CSS/UI consistency sweep (sampled create modals, admin role): detected native <select> elements inside modals on supplier-create, purchase-returns create, approval-rules create, doc-templates-basic create (3, 3, 3, 2 occurrences respectively) — not shadcn Select, inconsistent styling vs rest of app. Karyawan (hr-employees) create modal is taller than viewport (1518px vs 1080) — needs internal scroll or shorter height. Other probed views (customers, purchase-orders, makloon-orders, vendor-bills, cash-management) — automated create-button selectors did not match; could not verify their modals in this sweep.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "navMeta.js duplicate key", "issue": "`escalations` present twice (line 21 'Eskalasi Gudang', line 113 'Eskalasi Barang Masuk & Barang Keluar'). Second entry wins for header/breadcrumb; hub hero still reads 'Eskalasi Gudang'. Remove or unify line 113.", "selector": "/app/frontend/src/config/navMeta.js:113", "priority": "LOW"},
+      {"component": "SupplierCreateModal", "issue": "Uses native <select> inside dialog (3 instances) — inconsistent with shadcn Select used elsewhere; no custom chevron/search; different hover/focus ring.", "selector": "[role='dialog'] select on ?view=suppliers", "priority": "MEDIUM"},
+      {"component": "PurchaseReturnCreateModal", "issue": "Native <select> inside dialog (3 instances).", "selector": "[role='dialog'] select on ?view=purchase-returns", "priority": "MEDIUM"},
+      {"component": "ApprovalRuleCreateModal", "issue": "Native <select> inside dialog (3 instances).", "selector": "[role='dialog'] select on ?view=approval-rules", "priority": "MEDIUM"},
+      {"component": "DocTemplateBasicCreateModal", "issue": "Native <select> inside dialog (2 instances). Note: Ukuran kertas/Orientasi fields do use shadcn (verified iter145), but 2 remaining selects still native.", "selector": "[role='dialog'] select on ?view=doc-templates-basic", "priority": "MEDIUM"},
+      {"component": "EmployeeCreateModal", "issue": "Modal content height ~1518px exceeds 1080 viewport; dialog does not scroll internally — fields below Simpan get clipped on 1080 screens. Consider max-h-[90vh] overflow-y-auto on content.", "selector": "?view=hr-employees create modal", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iter146-kasir-desktop.jpeg", "/app/test_reports/iter146-kasir-mobile-catalog.jpeg", "/app/test_reports/iter146-escalations.jpeg"],
+  "action_items": [
+    "Remove duplicate `escalations` key at /app/frontend/src/config/navMeta.js:113 (or change its title to 'Eskalasi Gudang') so header/breadcrumb match the hub.",
+    "Replace native <select> with shadcn Select in Supplier/PurchaseReturn/ApprovalRule/DocTemplateBasic create modals (reduce occurrences logged above).",
+    "Give hr-employees create modal max-h-[90vh] + overflow-y-auto so bottom fields are reachable on 1080px screens.",
+    "Expose stable data-testid=`<domain>-create-button` on Pelanggan/PO/Makloon Order/Vendor Bill/Cash create entry points — current naming unknown prevented automated open in this sweep."
+  ],
+  "critical_code_review_comments": [
+    "Dashboard + products share the same apply_to_products helper now — good (single source of truth).",
+    "navMeta.js has duplicate map keys for the same view id; linting could catch this (eslint no-dupe-keys)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "95%"},
+  "test_credentials": "sales@kainnusantara.id / demo12345 (ent_ksc); admin@kainnusantara.id / demo12345",
+  "seed_data_creation": "Inserted & then deleted material_reservations doc id=mres_TEST_ui (prod_batik_mega, qty 50, ent_ksc, ref TEST_PR, active) — DB clean afterwards.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Primary critical fix (kasir makloon label) verified end-to-end. Only cosmetic cleanups remain (duplicate navMeta key, native select → shadcn select in 4 create modals, hr-employees modal height). Testids for Pelanggan/PO/Makloon Order/Vendor Bill/Cash create buttons could not be auto-discovered — ask main agent for the exact testids or add `<domain>-create-button` convention before next sweep.",
+  "rca of the issue": "The iter145 critical bug (makloon label missing in Kasir) was caused by backend/routers/dashboard.py building the products payload directly from db.products + inventory_balances aggregation without the material_reservations overlay, while backend/routers/products.py already called apply_to_products. SalesPortal reads data.products from /api/dashboard, so makloon_reserved_qty was always missing/0 → PosProductCard & MobileProductCard rendered no pill. Fix extracted the overlay into material_reservation_service.apply_to_products and invoked it from both routers (dashboard.py line 102). Verified via live API diff (310→260, +makloon_reserved_qty=50) and visible pills on both viewports."
+}

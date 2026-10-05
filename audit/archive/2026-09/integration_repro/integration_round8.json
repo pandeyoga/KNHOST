@@ -1,0 +1,134 @@
+{
+  "source_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+  "database": "knhost_audit_cf3b6d99ee8a413cb5779539b308d967",
+  "mode": "Original purchase return services and real Mongo, synthetic master/PO/opening rolls; no tax-law assumptions",
+  "results": [
+    {
+      "id": "I8-C01",
+      "kind": "control",
+      "observed": {
+        "status": "approved",
+        "supplier_status": "accepted_supplier",
+        "roll_status": "returned_supplier",
+        "roll_remaining": 10.0,
+        "returned_amount": 100.0,
+        "journal_count": 1,
+        "journal_debit": 100.0,
+        "grand_total": 100.0
+      }
+    },
+    {
+      "id": "I8-C02",
+      "kind": "control",
+      "observed": {
+        "status": "cancelled",
+        "supplier_status": "accepted_supplier",
+        "roll_status": "available",
+        "roll_remaining": 10.0,
+        "returned_amount": 0.0,
+        "journal_count": 2,
+        "journal_debit": 200.0,
+        "grand_total": 100.0,
+        "account_net_after_reversal": {
+          "2-1150": 0.0,
+          "1-1300": 0.0
+        }
+      }
+    },
+    {
+      "id": "I8-C03",
+      "kind": "control",
+      "observed": {
+        "unchanged": true
+      }
+    },
+    {
+      "id": "I8-F01",
+      "kind": "defect",
+      "observed": {
+        "status": "approved",
+        "supplier_status": "accepted_supplier",
+        "roll_status": "returned_supplier",
+        "roll_remaining": 10.0,
+        "returned_amount": 111.0,
+        "journal_count": 1,
+        "journal_debit": 100.0,
+        "grand_total": 111.0,
+        "credits": {
+          "1-1300": 89.0,
+          "1-1500": 11.0
+        },
+        "debits": {
+          "2-1100": 100.0
+        }
+      }
+    },
+    {
+      "id": "I8-F02",
+      "kind": "defect",
+      "observed": {
+        "status": "approved",
+        "supplier_status": "accepted_supplier",
+        "roll_status": "returned_supplier",
+        "roll_remaining": 10.0,
+        "returned_amount": 0,
+        "journal_count": 1,
+        "journal_debit": 100.0,
+        "grand_total": 111.0,
+        "cash_amount": 100.0
+      }
+    },
+    {
+      "id": "I8-C04",
+      "kind": "control",
+      "observed": {
+        "status": "approved",
+        "supplier_status": "goods_back",
+        "roll_status": "available",
+        "roll_remaining": 10.0,
+        "returned_amount": 0,
+        "journal_count": 0,
+        "journal_debit": 0,
+        "grand_total": 100.0
+      }
+    },
+    {
+      "id": "I8-F03",
+      "kind": "defect",
+      "observed": {
+        "exception": "ClosedPeriodError",
+        "status": "approved",
+        "supplier_status": "accepted_supplier",
+        "roll_status": "returned_supplier",
+        "roll_remaining": 10.0,
+        "returned_amount": 100.0,
+        "journal_count": 0,
+        "journal_debit": 0,
+        "grand_total": 100.0
+      }
+    },
+    {
+      "id": "I8-F04",
+      "kind": "defect",
+      "observed": {
+        "retry_rejected": true,
+        "journal_count": 0
+      }
+    },
+    {
+      "id": "I8-F05",
+      "kind": "defect",
+      "observed": {
+        "insufficient_stock_rejected": true,
+        "status": "pending_approval",
+        "supplier_status": "",
+        "roll_status": "returned_supplier",
+        "roll_remaining": 10.0,
+        "returned_amount": 0,
+        "journal_count": 0,
+        "journal_debit": 0,
+        "grand_total": 150.0
+      }
+    }
+  ]
+}

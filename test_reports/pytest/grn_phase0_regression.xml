@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="2" failures="29" skipped="0" tests="39" time="8.598" timestamp="2026-09-24T17:21:07.727228+00:00" hostname="agent-env-5b093851-a964-4ea0-a80f-c6b7ea178080"><testcase classname="" name="tests.test_fase_sl_rfid_alias" time="0.000"><error message="collection failure">tests/test_fase_sl_rfid_alias.py:11: in &lt;module&gt;
+    BASE_URL = os.environ.get('REACT_APP_BACKEND_URL').rstrip('/')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'rstrip'</error><error message="collection failure">tests/test_fase_sl_rfid_alias.py:11: in &lt;module&gt;
+    BASE_URL = os.environ.get('REACT_APP_BACKEND_URL').rstrip('/')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'rstrip'</error></testcase><testcase classname="tests.test_fase_sl_item_label_pattern" name="test_01_set_item_pattern" time="0.879"><failure message="AssertionError: {&quot;detail&quot;:&quot;Barang supplier tidak ditemukan.&quot;}&#10;assert 400 == 200&#10; +  where 400 = &lt;Response [400]&gt;.status_code">tests/test_fase_sl_item_label_pattern.py:56: in test_01_set_item_pattern
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Barang supplier tidak ditemukan."}
+E   assert 400 == 200
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_01_list_scanned_rolls_initial" time="0.976"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_scan_label.py:74: in test_01_list_scanned_rolls_initial
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_02_scan_json" time="0.272"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_scan_label.py:89: in test_02_scan_json
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_item_label_pattern" name="test_02_scanned_rolls_exposes_item_patterns" time="0.514"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_item_label_pattern.py:65: in test_02_scanned_rolls_exposes_item_patterns
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_03_scan_delimited" time="0.131"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_scan_label.py:109: in test_03_scan_delimited
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_item_label_pattern" name="test_03_gs1_label_decoded_by_item_pattern" time="0.157"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_item_label_pattern.py:74: in test_03_gs1_label_decoded_by_item_pattern
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_04_scan_gs1" time="0.158"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_scan_label.py:118: in test_04_scan_gs1
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_item_label_pattern" name="test_04_delimited_label_falls_back_to_supplier_pattern" time="0.244"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_item_label_pattern.py:85: in test_04_delimited_label_falls_back_to_supplier_pattern
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_05_duplicate" time="0.180"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 409&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_scan_label.py:128: in test_05_duplicate
+    assert r.status_code == 409, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 409
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_06_unmapped" time="0.148"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_scan_label.py:136: in test_06_unmapped
+    assert r.status_code == 400, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_item_label_pattern" name="test_05_gs1_without_sku_implies_item" time="0.147"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_item_label_pattern.py:96: in test_05_gs1_without_sku_implies_item
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_07_not_in_task" time="0.146"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_scan_label.py:144: in test_07_not_in_task
+    assert r.status_code == 400, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_item_label_pattern" name="test_06_garbage_still_undecodable" time="0.126"><failure message="assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_item_label_pattern.py:107: in test_06_garbage_still_undecodable
+    assert r.status_code == 400
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_08_no_roll_no" time="0.169"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_scan_label.py:151: in test_08_no_roll_no
+    assert r.status_code == 400, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_item_label_pattern" name="test_07_clear_item_pattern_with_empty_object" time="0.128"><failure message="AssertionError: {&quot;detail&quot;:&quot;Barang supplier tidak ditemukan.&quot;}&#10;assert 400 == 200&#10; +  where 400 = &lt;Response [400]&gt;.status_code">tests/test_fase_sl_item_label_pattern.py:113: in test_07_clear_item_pattern_with_empty_object
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Barang supplier tidak ditemukan."}
+E   assert 400 == 200
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_09_undecodable" time="0.381"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_scan_label.py:158: in test_09_undecodable
+    assert r.status_code == 400, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_receipt_variance" name="test_po_detail_has_receipt_variances" time="0.517"><failure message="AssertionError: {&quot;detail&quot;:&quot;Purchase Order tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_receipt_variance.py:50: in test_po_detail_has_receipt_variances
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Purchase Order tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_10_over_po" time="0.128"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_scan_label.py:165: in test_10_over_po
+    assert r.status_code == 400, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_receipt_variance" name="test_po_list_row_carries_variances" time="0.155"><failure message="assert None is not None">tests/test_fase_sl_receipt_variance.py:66: in test_po_list_row_carries_variances
+    assert row is not None
+E   assert None is not None</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_11_manual_fallback" time="0.186"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_scan_label.py:175: in test_11_manual_fallback
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_12_confirm_measure_variance" time="0.281"><failure message="KeyError: 'rolls'">tests/test_fase_sl_scan_label.py:184: in test_12_confirm_measure_variance
+    rolls = r.json()["rolls"]
+            ^^^^^^^^^^^^^^^^^
+E   KeyError: 'rolls'</failure></testcase><testcase classname="tests.test_fase_sl_receipt_variance" name="test_billing_context_exposes_variances_for_finance" time="0.488"><failure message="AssertionError: {&quot;detail&quot;:&quot;Purchase Order tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">tests/test_fase_sl_receipt_variance.py:72: in test_billing_context_exposes_variances_for_finance
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Purchase Order tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_13_putaway" time="0.139"><failure message="KeyError: 'rolls'">tests/test_fase_sl_scan_label.py:207: in test_13_putaway
+    rolls = r.json()["rolls"]
+            ^^^^^^^^^^^^^^^^^
+E   KeyError: 'rolls'</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_14_delete_manual" time="0.481"><failure message="KeyError: 'rolls'">tests/test_fase_sl_scan_label.py:231: in test_14_delete_manual
+    m1 = next(x for x in d["rolls"] if x.get("supplier_roll_no") == "TA-M1")
+                         ^^^^^^^^^^
+E   KeyError: 'rolls'</failure></testcase><testcase classname="tests.test_fase_sl_receipt_variance" name="test_po_board_row_has_variance_summary" time="0.496"><failure message="AssertionError: PO-00014 harus ada di papan&#10;assert None is not None">tests/test_fase_sl_receipt_variance.py:84: in test_po_board_row_has_variance_summary
+    assert row is not None, "PO-00014 harus ada di papan"
+E   AssertionError: PO-00014 harus ada di papan
+E   assert None is not None</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_15_stats" time="0.150"><failure message="AssertionError: Cirebon supplier not present: []&#10;assert False&#10; +  where False = any(&lt;generator object TestScanLabelFlow.test_15_stats.&lt;locals&gt;.&lt;genexpr&gt; at 0xfeec67790d40&gt;)">tests/test_fase_sl_scan_label.py:251: in test_15_stats
+    assert any("Cirebon" in (n or "") for n in names), f"Cirebon supplier not present: {names}"
+E   AssertionError: Cirebon supplier not present: []
+E   assert False
+E    +  where False = any(&lt;generator object TestScanLabelFlow.test_15_stats.&lt;locals&gt;.&lt;genexpr&gt; at 0xfeec67790d40&gt;)</failure></testcase><testcase classname="tests.test_fase_sl_receipt_variance" name="test_po_board_row_without_variance_is_none" time="0.132" /><testcase classname="tests.test_fase_sl_receipt_variance" name="test_scan_label_stats_report" time="0.578"><failure message="assert (True and [])&#10; +  where True = isinstance([], list)">tests/test_fase_sl_receipt_variance.py:105: in test_scan_label_stats_report
+    assert isinstance(rows, list) and rows
+E   assert (True and [])
+E    +  where True = isinstance([], list)</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_16_pattern_test_endpoint" time="0.473" /><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_17_pattern_get_put_and_scan_meter" time="0.745"><failure message="assert None">tests/test_fase_sl_scan_label.py:279: in test_17_pattern_get_put_and_scan_meter
+    assert supp_id
+E   assert None</failure></testcase><testcase classname="tests.test_fase_sl_scan_label.TestScanLabelFlow" name="test_18_complete_task" time="0.267"><failure message="KeyError: 'rolls'">tests/test_fase_sl_scan_label.py:318: in test_18_complete_task
+    scanned = r.json()["rolls"]
+              ^^^^^^^^^^^^^^^^^
+E   KeyError: 'rolls'</failure></testcase><testcase classname="tests.test_iter280_makloon_partial_queue" name="test_01_detail_memuat_source_stock" time="0.805" /><testcase classname="tests.test_iter280_makloon_partial_queue" name="test_02_issue_dari_gudang_kosong_409_menuntun" time="0.492" /><testcase classname="tests.test_iter280_makloon_partial_queue" name="test_03_issue_mengurangi_available" time="0.583" /><testcase classname="tests.test_iter280_makloon_partial_queue" name="test_04_terima_kurang_status_sebagian_bukan_selesai" time="0.344" /><testcase classname="tests.test_iter280_makloon_partial_queue" name="test_05_klaim_masuk_my_queue_manajer" time="0.821" /><testcase classname="tests.test_iter280_makloon_partial_queue" name="test_06_klaim_diputus_spk_selesai" time="0.455" /></testsuite></testsuites>

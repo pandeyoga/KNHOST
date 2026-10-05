@@ -1,0 +1,127 @@
+{
+  "database": "knhost_audit_1bde8f8eeafe45c095ca67f235234b3a",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "mode": "Actual GL report/closing services and Mongo; manually posted synthetic oracle dataset; no source subledger integration or HTTP permission test",
+  "results": [
+    {
+      "id": "W2-GL-C01",
+      "kind": "control",
+      "label": "Scoped trial balance exact totals",
+      "observed": [
+        120000.0,
+        120000.0,
+        true
+      ],
+      "expected": [
+        120000,
+        120000,
+        true
+      ]
+    },
+    {
+      "id": "W2-GL-C02",
+      "kind": "control",
+      "label": "Scoped cash GL excludes other entity",
+      "observed": [
+        3,
+        115000.0
+      ],
+      "expected": [
+        3,
+        115000
+      ]
+    },
+    {
+      "id": "W2-GL-C03",
+      "kind": "control",
+      "label": "Income report matches independent arithmetic",
+      "observed": [
+        20000.0,
+        5000.0,
+        15000.0
+      ],
+      "expected": [
+        20000,
+        5000,
+        15000
+      ]
+    },
+    {
+      "id": "W2-GL-C04",
+      "kind": "control",
+      "label": "Unbalanced entry rejected before journal insert",
+      "observed": [
+        true,
+        4
+      ],
+      "expected": [
+        true,
+        4
+      ]
+    },
+    {
+      "id": "W2-GL-C05",
+      "kind": "control",
+      "label": "Real month close records correct profit",
+      "observed": [
+        "closed",
+        15000.0
+      ],
+      "expected": [
+        "closed",
+        15000
+      ]
+    },
+    {
+      "id": "W2-GL-C06",
+      "kind": "control",
+      "label": "Posting into closed month blocked without unlock",
+      "observed": true,
+      "expected": true
+    },
+    {
+      "id": "W2-GL-C07",
+      "kind": "control",
+      "label": "Sequential repeated close rejected",
+      "observed": true,
+      "expected": true
+    },
+    {
+      "id": "W2-GL-C08",
+      "kind": "control",
+      "label": "Reopen voids closing journal",
+      "observed": [
+        "reopened",
+        "void"
+      ],
+      "expected": [
+        "reopened",
+        "void"
+      ]
+    },
+    {
+      "id": "W2-GL-C09",
+      "kind": "control",
+      "label": "Close again recalculates profit after additional posting",
+      "observed": 18000.0,
+      "expected": 18000
+    },
+    {
+      "id": "W2-GL-E01",
+      "kind": "wave1_extension",
+      "label": "FN-09 closed-month void changes cash GL while period remains closed",
+      "observed": [
+        "void",
+        "closed",
+        true,
+        98000.0
+      ],
+      "expected": [
+        "void",
+        "closed",
+        true,
+        98000
+      ]
+    }
+  ]
+}

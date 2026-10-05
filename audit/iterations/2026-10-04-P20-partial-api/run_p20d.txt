@@ -1,0 +1,101 @@
+  [poc-stock] snapshot 51 dokumen stok dari 3 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (51 dokumen, 3 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "GL-01",
+  "invariant": "neraca saldo KSC seimbang (Σ debit = Σ kredit)",
+  "pass": true,
+  "detail": "(1129065299.56, 1129065299.56)"
+ },
+ {
+  "id": "GL-01",
+  "invariant": "setiap jurnal semua sumber (20 jenis) seimbang per dokumen",
+  "pass": true,
+  "detail": "({'landed_cost': 1, 'finance_case': 2, 'fixed_asset_depreciation': 18, 'interco_return': 1, 'interco_transaction': 4, 'cash_transaction': 13, 'vendor_bill': 6, 'contra_bon_deduction': 1, 'penalty': 1, 'production_output': 1, 'subcon_receipt': 5, 'subcon_service': 6, 'subcon_issue': 6, 'inventory_opening': 1, 'rnd_sample_issue': 1, 'interco_settlement': 1, 'shipment_revenue': 2, 'shipment_cogs': 2,"
+ },
+ {
+  "id": "GL-01",
+  "invariant": "neraca saldo API = agregasi langsung baris jurnal DB (tanpa akun hilang/ganda)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GL-01",
+  "invariant": "saldo awal rekening baru 1.000.000 → TB bertambah tepat Dr kas/bank & Cr 3-2900 (ekuitas saldo awal)",
+  "pass": true,
+  "detail": "('1-1100', {'3-2900': -1000000.0, '1-1100': 1000000.0})"
+ },
+ {
+  "id": "GL-01",
+  "invariant": "jurnal manual 250.000 → TB bergeser tepat dua akun, tetap seimbang",
+  "pass": true,
+  "detail": "('KSC/JE-00077', {'6-1100': 250000.0, '1-1110': -250000.0})"
+ },
+ {
+  "id": "GL-01",
+  "invariant": "jurnal timpang ditolak 400, TB tidak berubah",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "GL-01",
+  "invariant": "TB per akhir bulan lalu tidak memuat posting hari ini (saldo awal & jurnal uji)",
+  "pass": true,
+  "detail": "(None, None, -578818500.0)"
+ },
+ {
+  "id": "GL-01",
+  "invariant": "rekonsiliasi persediaan: GL 1-1300 vs subledger roll terbaca (selisih dilaporkan, tidak error)",
+  "pass": true,
+  "detail": "['rows', 'total_difference', 'rounding_tolerance', 'reconciled', 'as_of']"
+ },
+ {
+  "id": "GL-05",
+  "invariant": "[bulan_lalu 2026-09-30] Σ per-PT = gross; konsolidasi = gross + eliminasi (pendapatan/aset/kewajiban/ekuitas)",
+  "pass": true,
+  "detail": "({'revenue': 29029129.56, 'assets': 201088400.0, 'liabilities': 67279400.0, 'equity': 133809000.0}, {'revenue': 29029129.56, 'cogs': 14522000.0, 'opex': 41176842.88, 'expense': 55698842.88, 'gross_profit': 14507129.56, 'net_income': -26669713.32, 'assets': 201088400.0, 'liabilities': 67279400.0, 'equity': 133809000.0}, {'revenue': -3270800.0, 'cogs': -1221000.0, 'opex': 0.0, 'expense': -1221000.0,"
+ },
+ {
+  "id": "GL-05",
+  "invariant": "[bulan_lalu] eliminasi seimbang (Δaset = Δkewajiban + Δekuitas) & neraca konsolidasi balanced",
+  "pass": true,
+  "detail": "({'revenue': -3270800.0, 'cogs': -1221000.0, 'opex': 0.0, 'expense': -1221000.0, 'gross_profit': -2049800.0, 'net_income': -2049800.0, 'assets': 0.0, 'liabilities': 0.0, 'equity': 0.0}, True)"
+ },
+ {
+  "id": "GL-05",
+  "invariant": "[hari_ini 2026-10-04] Σ per-PT = gross; konsolidasi = gross + eliminasi (pendapatan/aset/kewajiban/ekuitas)",
+  "pass": true,
+  "detail": "({'revenue': 29029129.56, 'assets': 741555494.68, 'liabilities': 58516708.0, 'equity': 683038786.68}, {'revenue': 29029129.56, 'cogs': 14522000.0, 'opex': 41176842.88, 'expense': 55698842.88, 'gross_profit': 14507129.56, 'net_income': -26669713.32, 'assets': 741555494.68, 'liabilities': 58516708.0, 'equity': 683038786.68}, {'revenue': -3270800.0, 'cogs': -1221000.0, 'opex': 0.0, 'expense': -122100"
+ },
+ {
+  "id": "GL-05",
+  "invariant": "[hari_ini] eliminasi seimbang (Δaset = Δkewajiban + Δekuitas) & neraca konsolidasi balanced",
+  "pass": true,
+  "detail": "({'revenue': -3270800.0, 'cogs': -1221000.0, 'opex': 0.0, 'expense': -1221000.0, 'gross_profit': -2049800.0, 'net_income': -2049800.0, 'assets': -3792500.0, 'liabilities': -1742700.0, 'equity': -2049800.0}, True)"
+ },
+ {
+  "id": "GL-05",
+  "invariant": "buku PT ent_ksc: TB seimbang (eliminasi tidak menyentuh buku PT)",
+  "pass": true,
+  "detail": "(1129065299.56, 1129065299.56)"
+ },
+ {
+  "id": "GL-05",
+  "invariant": "buku PT ent_kanda: TB seimbang (eliminasi tidak menyentuh buku PT)",
+  "pass": true,
+  "detail": "(103236480.88, 103236480.88)"
+ },
+ {
+  "id": "GL-05",
+  "invariant": "buku PT ent_28e22ddd9a1b: TB seimbang (eliminasi tidak menyentuh buku PT)",
+  "pass": true,
+  "detail": "(0.0, 0.0)"
+ },
+ {
+  "id": "GL-05",
+  "invariant": "setiap entri eliminasi seimbang",
+  "pass": true,
+  "detail": "[('Auto G-6: Eliminasi antar-PT KSC/IC-00001', True), ('Auto G-6: Eliminasi antar-PT KSC/IC-00002', True), ('Auto G-6: Eliminasi antar-PT KSC/IC-00004', True)]"
+ }
+]
+pass=16 fail=0

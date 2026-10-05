@@ -1,0 +1,36 @@
+{
+  "summary": "GRN Fase 3 verified end-to-end. Backend: 28/28 pytest pass (22 Fase 1+2 regression + 6 new Fase 3 endpoint tests in test_grn_phase3_endpoints.py — partners for supplier & makloon, supplier-variance for admin AND warehouse (via goods_receipt.view), rolls 404 on bogus id, route ordering /partners & /supplier-variance NOT captured by /{grn_id}). Frontend E2E as admin@ ent_ksc: (1) ?view=goods-receipts loads Kedatangan / Selisih Supplier tabs (grn-view-tab-list, grn-view-tab-variance) + grn-new-button. (2) Wizard flow: grn-new-button → grn-wizard opens Langkah 1 dari 2 with grn-wizard-type-supplier|makloon, grn-wizard-partner KNSelect showing 5 supplier options with 'N PO terbuka' hint. Selected Cirebon Craft (2 PO terbuka) → grn-wizard-docs chips rendered (grn-wizard-doc-<po_id> for KSC/PO-00014 & KSC/PO-00013). Warehouse auto-preset to 'Gudang Jakarta Utara' from first open_doc. grn-wizard-next → step 2 (photo upload optional, skipped) → grn-wizard-submit → created KSC/GRN-00001 with status Draf, GrnDetail shows grn-stepper (Draf → Tinjau SJ → Hitung fisik → Rekonsiliasi → Ditutup), tabs grn-tab-review|count|recon, grn-review-panel, grn-photo-empty, grn-manual-entry, grn-cancel. (3) grn-manual-entry → grn-dn-form fields grn-dn-number/date/supplier-printed/recipient/po-refs/plate + grn-dn-save. Filled TEST_SJ-276433 → save → status advanced to Tinjau SJ (2), line-add form appeared with Kode/Deskripsi/PO/Qty/Satuan/Roll/Kg/Bruto-Netto/Grade/Lot/Non-stok + Target KNSelect + Baris button + 'Mulai hitung fisik'/Tolak buttons. (4) PO integration: ?view=purchase-orders → KSC/PO-00014 detail shows receive-goods-button ('Terima Barang di Gudang') AND receive-goods-legacy-button ('Barang Masuk (lama)'). Click receive-goods-button navigates to ?view=goods-receipts with grn-wizard preset — Cirebon Craft partner, both PO chips (KSC/PO-00014 highlighted), Gudang Jakarta Utara warehouse preset. Preset works exactly per spec. (5) Selisih Supplier tab (grn-view-tab-variance): loads grn-variance-panel with range chips grn-variance-range-90|180|365|all + grn-variance-table + grn-variance-empty (no closed GRNs yet — expected). (6) Warehouse@ view: after warehouse login → ?view=goods-receipts loads with same tab structure, grn-new-button PRESENT (has create perm), grn-view-tab-variance PRESENT (has view perm). ?view=operations → Barang Masuk shows 19 inbound-task-* cards, task panel opens fine (SKU/supplier/scan-label input renders); no inbound-grn-banner (no active GRN counting a task — correct). Cleanup: cancelled the 1 test GRN via grn-cancel + confirm-modal (testids confirm-modal-reason + confirm-modal-confirm) → status Dibatalkan. No residue closed GRN created (kept receiving.mode legacy, no stock posted).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_grn_phase3_endpoints.py",
+    "/app/backend/tests/test_grn_phase2.py",
+    "/app/test_reports/pytest/iter67_all.xml",
+    "/app/test_reports/pytest/iter67_grn_phase3.xml"
+  ],
+  "action_items": [
+    "Minor doc drift only: the request spec calls the reason dialog 'askReason dialog' but the actual DOM testids are confirm-modal / confirm-modal-reason / confirm-modal-confirm (used by grn-cancel). Consider aligning either the spec wording or exposing a stable alias like ask-reason-* for consistency with the rest of the codebase.",
+    "Not tested end-to-end (out of scope for time budget & to avoid stock-posting side effects): Hitung-tab scan flow (grn-count-scan-1, undo, grn-finish-count), Rekonsiliasi discrepancy resolve (grn-disc-<key>-<action>), grn-close, blind-count UI for warehouse@ opening an in-review GRN (grn-blind-note), and old-inbound-panel inbound-grn-banner while a GRN is actively counting. Backend behaviour for these is already covered by test_grn_phase2.py (blind_count contract test + partial delivery / discrepancies test + GRN_MODE guard). Recommend main-agent self-test or a dedicated follow-up iteration for these UI paths."
+  ],
+  "critical_code_review_comments": [
+    "Route ordering in /app/backend/routers/goods_receipts.py is correct: /goods-receipts/partners and /goods-receipts/supplier-variance are registered BEFORE /goods-receipts/{grn_id} so path routing won't mis-match — verified by test_route_ordering_partners_not_treated_as_id.",
+    "supplier-variance uses require_any_permission([(goods_receipt,view),(purchase_order,view)]) — verified warehouse@ (has goods_receipt.view) receives 200 not 403.",
+    "GrnCreateWizard.jsx auto-presets whId from partner.open_docs[0].warehouse_id (line 25) which is exactly what makes the 'Terima Barang di Gudang' PO shortcut land users on a ready-to-submit wizard — verified in UI test.",
+    "Wizard preset (partner_id + po_ids + warehouse_id) via location state is propagated correctly from PODetail → GoodsReceiptsView → GrnCreateWizard — the PO chip was highlighted (docIds prefilled from preset.po_ids) and partner select showed the preselected supplier.",
+    "Warehouse role legitimately sees grn-new-button and grn-view-tab-variance because they hold goods_receipt.create and goods_receipt.view. If the intent was to hide variance from warehouse (per some interpretations), reconsider the permission mapping; per current spec it is INTENDED (view perm is enough)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_grn_phase3_endpoints.py"
+  ],
+  "success_rate": {"backend": "100% (28/28)", "frontend": "100% on tested surface — wizard create, DN save, tabs, PO shortcut, variance panel, warehouse role access, inbound task panel; deep count/close flow deferred"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 · warehouse@kainnusantara.id / demo12345 · X-Entity-Id: ent_ksc",
+  "seed_data_creation": "Created + immediately cancelled 1 test GRN KSC/GRN-00001 (Cirebon Craft, DN TEST_SJ-276433). Final state = Dibatalkan (no lines, no rolls, no stock posted). receiving.mode left as default (legacy).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fase 3 GREEN on all backend endpoints and on the primary UI paths (wizard, detail stepper, DN entry, PO shortcut, Selisih Supplier tab shell, warehouse view). NOT yet UI-exercised: the count/scan/finish/resolve/close cycle, the blind-count UI (grn-blind-note), and inbound-grn-banner on an inbound task whose PO task is being counted by a GRN. Backend contracts for these paths are already covered by test_grn_phase2.py (blind_count, partial delivery + single remainder, GRN_MODE guard, duplicate DN, entity isolation) — 6 dedicated tests. Note: cancellation reason dialog uses confirm-modal-* testids (not ask-reason-*). Preserve receiving.mode=legacy (unset).",
+  "rca of the issue": "N/A — no bugs found. All 28 tests pass, wizard + detail + PO shortcut + variance panel + warehouse role access all behave per spec; leftover test GRN cleaned up to Dibatalkan."
+}

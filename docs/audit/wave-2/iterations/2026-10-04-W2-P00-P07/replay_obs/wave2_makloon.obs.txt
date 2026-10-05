@@ -1,0 +1,5 @@
+OBS ('W2-M-C01', {'status': 'completed', 'step_status': 'received', 'quantity': 10.0, 'roll_value': 120.0, 'journal_value': 120.0, 'warehouses': ['WH'], 'roll_count': 1})
+OBS ('W2-M-C02', {'http_status': 409, 'unchanged': True})
+OBS ('W2-M-F01', {'http_status': 200, 'status': 'completed', 'step_status': 'received', 'quantity': 9.5, 'roll_value': 120.0002, 'journal_value': 120.0, 'warehouses': ['WH'], 'roll_count': 1})
+OBS ('W2-M-F02', {'http_status': 404, 'status': 'in_process', 'step_status': 'issued', 'quantity': 0, 'roll_value': 0, 'journal_value': 0, 'warehouses': [], 'roll_count': 0})
+OBS ('W2-M-C03', {'http_status': 400, 'status': 'in_process', 'step_status': 'issued', 'quantity': 0, 'roll_value': 0, 'journal_value': 0, 'warehouses': [], 'roll_count': 0})

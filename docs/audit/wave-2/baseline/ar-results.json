@@ -1,0 +1,504 @@
+{
+  "completed": true,
+  "commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_c4281045cb6c4d3f872f9942cfb39ff3",
+  "level": "ASGI HTTP + Mongo + real GL; seeded shipped legacy SO; indexes initialized; no UI/hardware",
+  "scenarios": [
+    {
+      "id": "W2-A-C01",
+      "kind": "control",
+      "observed": {
+        "http": 200,
+        "state": {
+          "deposit": 0,
+          "orders": {
+            "N": {
+              "paid": 100000.0,
+              "paid_total": 100000.0,
+              "status": "paid"
+            }
+          },
+          "receipts": [
+            {
+              "id": "arc_cff6dc35a1d5",
+              "status": "posted",
+              "amount": 100000.0,
+              "used_deposit": 0.0,
+              "applied": 100000.0,
+              "locked": false
+            }
+          ],
+          "active_cash": 100000.0,
+          "void_cash": 0
+        },
+        "gl_delta": {
+          "1-1100": 100000.0,
+          "1-1200": -100000.0
+        }
+      }
+    },
+    {
+      "id": "W2-A-C02",
+      "kind": "control",
+      "observed": {
+        "http": 200,
+        "state": {
+          "deposit": 0,
+          "orders": {
+            "N": {
+              "paid": 0,
+              "paid_total": 0,
+              "status": "unpaid"
+            }
+          },
+          "receipts": [
+            {
+              "id": "arc_cff6dc35a1d5",
+              "status": "void",
+              "amount": 100000.0,
+              "used_deposit": 0.0,
+              "applied": 100000.0,
+              "locked": false
+            }
+          ],
+          "active_cash": 0,
+          "void_cash": 100000.0
+        },
+        "gl_net_delta": {}
+      }
+    },
+    {
+      "id": "W2-A-C03",
+      "kind": "control",
+      "observed": {
+        "http": 409
+      }
+    },
+    {
+      "id": "W2-A-C04",
+      "kind": "control",
+      "observed": {
+        "http": 400,
+        "state": {
+          "deposit": 0,
+          "orders": {
+            "OVER": {
+              "paid": 0,
+              "paid_total": 0,
+              "status": "unpaid"
+            }
+          },
+          "receipts": [],
+          "active_cash": 0,
+          "void_cash": 0
+        }
+      }
+    },
+    {
+      "id": "W2-A-C05",
+      "kind": "control",
+      "observed": {
+        "http": 400,
+        "state": {
+          "deposit": 0,
+          "orders": {
+            "DUP": {
+              "paid": 0,
+              "paid_total": 0,
+              "status": "unpaid"
+            }
+          },
+          "receipts": [],
+          "active_cash": 0,
+          "void_cash": 0
+        }
+      }
+    },
+    {
+      "id": "W2-A-C06",
+      "kind": "control",
+      "observed": {
+        "http": 403,
+        "state": {
+          "deposit": 0,
+          "orders": {
+            "FOREIGN": {
+              "paid": 0,
+              "paid_total": 0,
+              "status": "unpaid"
+            }
+          },
+          "receipts": [],
+          "active_cash": 0,
+          "void_cash": 0
+        }
+      }
+    },
+    {
+      "id": "W2-A-C07",
+      "kind": "control",
+      "observed": {
+        "http": 200,
+        "state": {
+          "deposit": 0.0,
+          "orders": {
+            "MIX": {
+              "paid": 100000.0,
+              "paid_total": 100000.0,
+              "status": "paid"
+            }
+          },
+          "receipts": [
+            {
+              "id": "arc_60fbbf717b8f",
+              "status": "posted",
+              "amount": 80000.0,
+              "used_deposit": 0.0,
+              "applied": 0,
+              "locked": false
+            },
+            {
+              "id": "arc_3800254526bc",
+              "status": "posted",
+              "amount": 20000.0,
+              "used_deposit": 80000.0,
+              "applied": 100000.0,
+              "locked": false
+            }
+          ],
+          "active_cash": 100000.0,
+          "void_cash": 0
+        },
+        "gl_delta": {
+          "1-1100": 20000.0,
+          "2-1400": 80000.0,
+          "1-1200": -100000.0
+        }
+      }
+    },
+    {
+      "id": "W2-A-F01",
+      "kind": "defect",
+      "observed": {
+        "http": 200,
+        "state": {
+          "deposit": 0.0,
+          "orders": {
+            "PURE": {
+              "paid": 100000.0,
+              "paid_total": 100000.0,
+              "status": "paid"
+            }
+          },
+          "receipts": [
+            {
+              "id": "arc_0357c4130289",
+              "status": "posted",
+              "amount": 100000.0,
+              "used_deposit": 0.0,
+              "applied": 0,
+              "locked": false
+            },
+            {
+              "id": "arc_c5e630b767d5",
+              "status": "posted",
+              "amount": 0.0,
+              "used_deposit": 100000.0,
+              "applied": 100000.0,
+              "locked": false
+            }
+          ],
+          "active_cash": 100000.0,
+          "void_cash": 0
+        },
+        "gl_delta": {}
+      }
+    },
+    {
+      "id": "W2-A-C08",
+      "kind": "control",
+      "observed": {
+        "http": 200,
+        "state": {
+          "deposit": 100000.0,
+          "orders": {
+            "PURE": {
+              "paid": 0,
+              "paid_total": 0,
+              "status": "unpaid"
+            }
+          },
+          "receipts": [
+            {
+              "id": "arc_0357c4130289",
+              "status": "posted",
+              "amount": 100000.0,
+              "used_deposit": 0.0,
+              "applied": 0,
+              "locked": false
+            },
+            {
+              "id": "arc_c5e630b767d5",
+              "status": "void",
+              "amount": 0.0,
+              "used_deposit": 100000.0,
+              "applied": 100000.0,
+              "locked": false
+            }
+          ],
+          "active_cash": 100000.0,
+          "void_cash": 0
+        }
+      }
+    },
+    {
+      "id": "W2-A-C09",
+      "kind": "control",
+      "observed": {
+        "http": 200,
+        "state": {
+          "deposit": 0.0,
+          "orders": {},
+          "receipts": [
+            {
+              "id": "arc_992f770a9c07",
+              "status": "void",
+              "amount": 100000.0,
+              "used_deposit": 0.0,
+              "applied": 0,
+              "locked": false
+            }
+          ],
+          "active_cash": 0,
+          "void_cash": 100000.0
+        }
+      }
+    },
+    {
+      "id": "W2-A-F02",
+      "kind": "defect",
+      "observed": {
+        "http": 409,
+        "state": {
+          "deposit": 0.0,
+          "orders": {
+            "S1": {
+              "paid": 0,
+              "paid_total": 0,
+              "status": "unpaid"
+            },
+            "S2": {
+              "paid": 100000.0,
+              "paid_total": 100000.0,
+              "status": "paid"
+            }
+          },
+          "receipts": [
+            {
+              "id": "arc_cb94dfa9a314",
+              "status": "posted",
+              "amount": 150000.0,
+              "used_deposit": 0.0,
+              "applied": 50000.0,
+              "locked": true
+            },
+            {
+              "id": "arc_40edac47a979",
+              "status": "posted",
+              "amount": 0.0,
+              "used_deposit": 100000.0,
+              "applied": 100000.0,
+              "locked": false
+            }
+          ],
+          "active_cash": 0,
+          "void_cash": 150000.0
+        },
+        "gl_delta": {
+          "1-1100": -150000.0,
+          "2-1400": 100000.0,
+          "1-1200": 50000.0
+        }
+      }
+    },
+    {
+      "id": "W2-A-F03",
+      "kind": "defect",
+      "observed": {
+        "http": [
+          200,
+          409
+        ],
+        "state": {
+          "deposit": 20000.0,
+          "orders": {
+            "R1": {
+              "paid": 80000.0,
+              "paid_total": 80000.0,
+              "status": "paid"
+            },
+            "R2": {
+              "paid": 80000.0,
+              "paid_total": 80000.0,
+              "status": "paid"
+            }
+          },
+          "receipts": [
+            {
+              "id": "arc_19811a500728",
+              "status": "posted",
+              "amount": 100000.0,
+              "used_deposit": 0.0,
+              "applied": 0,
+              "locked": false
+            },
+            {
+              "id": "arc_69410ae33feb",
+              "status": "posted",
+              "amount": 0.0,
+              "used_deposit": 80000.0,
+              "applied": 80000.0,
+              "locked": false
+            },
+            {
+              "id": "arc_668130d9660c",
+              "status": "posted",
+              "amount": 0.0,
+              "used_deposit": 80000.0,
+              "applied": 80000.0,
+              "locked": false
+            }
+          ],
+          "active_cash": 100000.0,
+          "void_cash": 0
+        }
+      }
+    },
+    {
+      "id": "W2-A-C10",
+      "kind": "control",
+      "observed": {
+        "http": [
+          200,
+          400
+        ],
+        "state": {
+          "deposit": 20000.0,
+          "orders": {
+            "Q1": {
+              "paid": 80000.0,
+              "paid_total": 80000.0,
+              "status": "paid"
+            },
+            "Q2": {
+              "paid": 0,
+              "paid_total": 0,
+              "status": "unpaid"
+            }
+          },
+          "receipts": [
+            {
+              "id": "arc_f3f2630d75c1",
+              "status": "posted",
+              "amount": 100000.0,
+              "used_deposit": 0.0,
+              "applied": 0,
+              "locked": false
+            },
+            {
+              "id": "arc_9d5b0ea69bbc",
+              "status": "posted",
+              "amount": 0.0,
+              "used_deposit": 80000.0,
+              "applied": 80000.0,
+              "locked": false
+            }
+          ],
+          "active_cash": 100000.0,
+          "void_cash": 0
+        }
+      }
+    },
+    {
+      "id": "W2-A-F04",
+      "kind": "defect",
+      "observed": {
+        "http": [
+          200,
+          200
+        ],
+        "state": {
+          "deposit": 0,
+          "orders": {
+            "L": {
+              "paid": 0,
+              "paid_total": 0,
+              "status": "unpaid"
+            }
+          },
+          "receipts": [
+            {
+              "id": "arc_c321a938b161",
+              "status": "void",
+              "amount": 40000.0,
+              "used_deposit": 0.0,
+              "applied": 40000.0,
+              "locked": false
+            },
+            {
+              "id": "arc_0c06e51b6bb4",
+              "status": "posted",
+              "amount": 60000.0,
+              "used_deposit": 0.0,
+              "applied": 60000.0,
+              "locked": false
+            }
+          ],
+          "active_cash": 60000.0,
+          "void_cash": 40000.0
+        },
+        "gl_delta": {
+          "1-1100": 20000.0,
+          "1-1200": -20000.0
+        }
+      }
+    },
+    {
+      "id": "W2-A-C11",
+      "kind": "control",
+      "observed": {
+        "http": 200,
+        "state": {
+          "deposit": 0,
+          "orders": {
+            "O": {
+              "paid": 60000.0,
+              "paid_total": 60000.0,
+              "status": "partial"
+            }
+          },
+          "receipts": [
+            {
+              "id": "arc_da87a0080ca2",
+              "status": "void",
+              "amount": 40000.0,
+              "used_deposit": 0.0,
+              "applied": 40000.0,
+              "locked": false
+            },
+            {
+              "id": "arc_18a713e3773a",
+              "status": "posted",
+              "amount": 60000.0,
+              "used_deposit": 0.0,
+              "applied": 60000.0,
+              "locked": false
+            }
+          ],
+          "active_cash": 60000.0,
+          "void_cash": 40000.0
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "source_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+  "database": "knhost_audit_7696758df2924ea7ba9cb349cbb7f9a1",
+  "mode": "Actual manual GRN service lifecycle; synthetic master/PO/task; actual Mongo with active_key unique index; no external calls",
+  "results": [
+    {
+      "id": "I7-C01",
+      "kind": "control",
+      "observed": {
+        "grn_status": "closed",
+        "task_status": "qc_pending",
+        "po_received_qty": 10.0,
+        "roll_count": 1,
+        "roll_statuses": [
+          "quarantine"
+        ],
+        "journal_count": 1,
+        "journal_debit": 100.0,
+        "posted_statuses": [
+          "done"
+        ]
+      }
+    },
+    {
+      "id": "I7-C02",
+      "kind": "control",
+      "observed": {
+        "repeat_close_status": 409,
+        "unchanged": true
+      }
+    },
+    {
+      "id": "I7-W01",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "task_status": "completed",
+        "remaining_quarantine": 6.0
+      }
+    },
+    {
+      "id": "I7-W02",
+      "kind": "defect",
+      "observed": {
+        "remaining_decision_status": 400,
+        "detail": "Task harus berstatus qc_pending untuk inspeksi (current: completed)"
+      }
+    },
+    {
+      "id": "I7-C03",
+      "kind": "control",
+      "observed": {
+        "grn_status": "cancelled",
+        "task_status": "waiting_goods",
+        "po_received_qty": 0,
+        "roll_count": 0,
+        "roll_statuses": [],
+        "journal_count": 0,
+        "journal_debit": 0,
+        "posted_statuses": [
+          "pending"
+        ],
+        "tag_status": "retired"
+      }
+    },
+    {
+      "id": "I7-C04",
+      "kind": "control",
+      "observed": {
+        "unchanged": true
+      }
+    },
+    {
+      "id": "I7-F01",
+      "kind": "defect",
+      "observed": {
+        "grn_status": "closed",
+        "task_status": "qc_pending",
+        "po_received_qty": 10.0,
+        "roll_count": 1,
+        "roll_statuses": [
+          "quarantine"
+        ],
+        "journal_count": 0,
+        "journal_debit": 0,
+        "posted_statuses": [
+          "done"
+        ]
+      }
+    },
+    {
+      "id": "I7-F02",
+      "kind": "defect",
+      "observed": {
+        "retry_status": 409,
+        "journal_count": 0
+      }
+    },
+    {
+      "id": "I7-C05",
+      "kind": "control",
+      "observed": {
+        "close_status": 400,
+        "error": {
+          "code": "BLOCKERS_OPEN",
+          "keys": [
+            "L1:over_remaining"
+          ],
+          "message": "1 selisih pemblokir belum diselesaikan: baris 1 over_remaining."
+        },
+        "grn_status": "reconcile",
+        "task_status": "qc_check",
+        "po_received_qty": 0,
+        "roll_count": 1,
+        "roll_statuses": [
+          "receiving"
+        ],
+        "journal_count": 0,
+        "journal_debit": 0,
+        "posted_statuses": [
+          "pending"
+        ]
+      }
+    },
+    {
+      "id": "I7-C06",
+      "kind": "control",
+      "observed": {
+        "stale_version_status": 409,
+        "grn_status": "counting"
+      }
+    },
+    {
+      "id": "I7-C07",
+      "kind": "control",
+      "observed": {
+        "foreign_grn_access_status": 404
+      }
+    },
+    {
+      "id": "I7-C08",
+      "kind": "control",
+      "observed": {
+        "duplicate_dn_status": 409,
+        "code": "DN_DUPLICATE",
+        "losing_grn_status": "review"
+      }
+    }
+  ]
+}

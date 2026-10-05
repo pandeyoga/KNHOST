@@ -1,0 +1,25 @@
+{
+  "summary": "Iter 61 — audit fitur Pustaka Warna. Backend: 53/53 tes lulus. Validasi PATCH tepat (nama kosong→400, status 'hapus'→400, hex salah→400, id tak ada→404), POST duplikat case-insensitive→400, sistem tak dikenal→KN, kode/nama kosong→400/422, hex salah→400. DELETE = soft (status inactive) + 404 utk id tak ada. GET /supplier-variants menampilkan baris Palembang Silk House · Navy 07 · NV-07 · color_code KN-BLU-01 · products[KTN-NVY-PSH-01] · color_products_count>=1. GET /col_kn_blu_01/links berisi supplier_variant dgn products KTN-NVY-PSH-01, products list, samples≥1; 404 utk id tak ada. Produk KTN-NVY-PSH-01 di /api/products punya color_ref.code=KN-BLU-01, supplier_colors[0].supplier_color_name='Navy 07', rnd_supplier.name='Palembang Silk House'. Izin per peran match spec: admin/manager full · md view+create+update (delete 403) · sales view+create (update/delete 403) · salesadmin/warehouse/designer view saja (create/update/delete 403) · finance 403 semua. Frontend: (admin) ?view=color-library menampilkan 28 kartu color-card-*, KPI/filter/search/create-btn/subtab OK, buat warna via modal berhasil, hover kartu → color-edit-<id>+color-delete-<id> tampil, konfirmasi color-deactivate-confirm-confirm menonaktifkan. Sub-tab supplier menampilkan supplier-colors-tab + baris supplier-color-row-col_kn_blu_01-* + membuka color-links-modal dengan kolom internal/suppliers/products/samples. (md) melihat halaman + color-create-btn + color-edit-<id> saat hover, color-delete-<id> TIDAK muncul (persis spec). (designer) tidak dapat membuka layar (color-library-view=0, create-btn=0) — sesuai spec 'bila bisa membuka halaman' (opsional).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter61_color_library.py",
+    "/app/test_reports/pytest/iter61.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "color_service.color_links: mencocokkan supplier_variant→products via sample_id pada decision.product_sku — bagus. Namun bila satu warna internal punya 2 supplier menang untuk SKU yang sama (mustahil dalam alur nyata namun mungkin dari data lama), produk akan muncul di kedua supplier_variant. Tidak blocking; catatan saja.",
+    "list_colors line 74-83: query md_samples pakai $elemMatch dgn due_date $gt:''+$lt:today; kombinasi filter di elemMatch cukup ketat, tetapi field 'rounds.result: {$in:['',None]}' tidak menutup skenario field tak ada (missing key). Sudah OK karena rounds selalu punya result string kosong. Tidak blocking.",
+    "Router color_library.py delete_color: ValueError yang di-raise service diubah jadi 404 (bukan 400). Konsisten karena satu-satunya ValueError di delete_color adalah 'Warna tidak ditemukan' → benar."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter61_color_library.py (new)"
+  ],
+  "success_rate": {"backend": "100% (53/53)", "frontend": "100% (semua flow admin/md/designer sesuai spec)"},
+  "test_credentials": "Semua akun demo12345 (admin@, manager@, md@, sales@, salesadmin@, warehouse@, finance@, designer@)@kainnusantara.id — sudah diuji.",
+  "seed_data_creation": "Test file membuat sekitar 15 warna TEST- selama run (create + izin + patchable) dan menghapusnya semua di test_zzz_cleanup lewat db.color_library.delete_many. Ada 1 warna TEST-UI-* yang dibuat lewat UI admin sudah dinonaktifkan lewat UI (masih di DB status=inactive). Bisa dibersihkan manual bila perlu.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "test_iter61_color_library.py adalah regresi lengkap Pustaka Warna. Jalankan: `cd /app/backend && REACT_APP_BACKEND_URL=$URL pytest tests/test_iter61_color_library.py -o addopts='' -v`. Test lama test_color_links.py (dari iter 42) memakai supplier_id 'sup_a05908473e52' + expects color_products_count>=3 & samples>=3; DB skrg menghasilkan 1/1, jadi 2 dari 3 asersinya akan gagal — bukan regresi (dokumentasi problem statement mengizinkan). Boleh di-refactor supaya asersi lebih longgar (>=1). Tidak menyentuh col_kn_blu_01 secara permanen sesuai instruksi.",
+  "rca of the issue": "Tidak ada bug. Semua 4 perbaikan yang dilaporkan main agent terverifikasi: (1) PATCH name kosong→400 (test_patch_empty_name_400), (2) PATCH status invalid→400 (test_patch_bad_status_400), (3) tombol UI md@ mengikuti izin server: create+edit tampil, delete tidak (test frontend md), (4) list_supplier_variants pakai _products_of_colors batch (satu query md_specs + satu query products) — code review mengonfirmasi."
+}

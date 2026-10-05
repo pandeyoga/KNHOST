@@ -1,0 +1,4 @@
+{"dn_number": "26/SEP/PCK/SRJL/405", "dn_date": "2026-09-24",
+ "lines": [{"qty": 994, "unit": "yard", "rolls": 8, "po_ref": "3374/SCB/0926", "is_non_stock": false},
+           {"qty": 1202, "unit": "yard", "rolls": 8, "po_ref": "3351/SCB/0926", "is_non_stock": false},
+           {"qty": 1240, "unit": "yard", "rolls": 8, "po_ref": "3382/SCB/0926", "is_non_stock": false}]}

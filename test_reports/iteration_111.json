@@ -1,0 +1,27 @@
+{
+  "summary": "Iter 111 — Verified P03/P04 & iter-323 review targets. Backend: pytest test_posting_failures.py 5/5 PASSED (admin 200 + sales 403 + kind 400 + id 404 + full seed→retry→cleanup with JE conservation). Ran the two official repro scripts on head: repro_p04.py (P04 costing: FN-01 landed cost, FN-02 3-way match dup-line reject, FN-11 HPP per shipment, IX-16 retur beli net/gross) 7/7 pass; repro_followup.py (WM-02 identity gate, dispatch/loading-check 409 pre-tag, RFID complete_verify, CX-05 LPJ over-uang-muka → 2-1650, Panel Posting Gagal full loop, role sales 403) 13/13 pass. UI: /?view=posting-failures renders with data-testid posting-failures-view + all 5 pf-filter-<kind> + pf-refresh + pf-empty state text 'Tidak ada dokumen dengan jurnal gagal. Semua posting tercatat.' correct; filter click OK. Regression: /?view=wms-locations shows both tabs lp-tab-cuts (Antrean Potong) and lp-tab-pa (Perintah Simpan ke Rak Antar Gedung) with pending-cuts + putaway panels rendering. All target invariants hold.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_posting_failures.py",
+    "/app/test_reports/pytest/iter111_posting_failures.xml",
+    "/app/audit/iterations/2026-10-03-P04-costing/repro_p04.py",
+    "/app/audit/iterations/2026-10-03-WM02-identity-CX05-panel/repro_followup.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routers/posting_failures.py: SOURCES table cleanly parametrizes 5 doc kinds; retry dispatcher uses each module's idempotent path (gl_service.post_cash_durable, ar_receipt_service.repost_receipt, purchase_return_service.approve_and_adjust_stock, goods_receipt_close_service._ensure_gr_posted, gl_service.post_order_revenue_and_cogs). Retry wraps non-HTTPException in 409 with clear reason — good.",
+  "Scope isolation via resolve_scope_ids(entity_ctx) — entity_id scoped queries prevent cross-entity retry. Verified: sales role hits 403 via require_permission('accounting','view').",
+    "PostingFailuresView.jsx: reactive filter+refresh, msg surface after retry, disabled state on busy button. Data-testids consistent (pf-filter-<kind>, pf-row-<id>, pf-retry-<id>, pf-empty, pf-msg, pf-refresh, pf-table).",
+    "Cash retry path also cascades to referenced ar_receipts (ref_type=ar_receipt) → clears gl_error + posts. Good coupling.",
+    "P04 landed cost + 3-way match dup-line reject + HPP-per-shipment snapshot immutability + IX-16 net/gross AP-debit invariants all verified by repro."
+  ],
+  "updated_files": ["/app/backend/tests/test_posting_failures.py"],
+  "success_rate": {"backend": "100% (5/5 pytest + 7/7 P04 + 13/13 WM02/CX05/PANEL = 25/25)", "frontend": "100% structural"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (ent_ksc)",
+  "seed_data_creation": "test_failed_cash_txn_surfaces_retry_and_cleanup seeds one synthetic cash_transactions doc with gl_status=failed for ent_ksc, verifies surfacing + retry + JE=1, and CLEANS UP the txn + all matching journal_entries + gl_entries. Repro scripts self-clean.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "test_posting_failures.py uses -o addopts= to bypass pytest-xdist (not needed). BASE_URL falls back to reading /app/frontend/.env if env var missing. Demo entity ent_ksc currently has no rolls with length_reserved>0 and no failed cash_transactions in steady state, so picker length_remaining and posting-failures rows only surface when repro scripts or the seeded test create synthetic data. Both repro scripts under /app/audit/iterations/2026-10-03-*/ pass on head and are the canonical invariant coverage for P04 + WM-02 identity + CX-05 + Panel Posting Gagal.",
+  "rca of the issue": "N/A — verification only. No regressions found. Panel Posting Gagal, gate-tag anak, picker length bebas, reallocate cleanup, purchase-per-roll partial length, vendor bill dup-line reject, CX-05 LPJ overflow, and P04 landed/3-way/HPP/IX-16 all conform to spec."
+}

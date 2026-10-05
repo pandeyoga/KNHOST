@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-03",
+  "total_checkpoints": 242,
+  "counts": {
+    "control": 174,
+    "defect": 36,
+    "wave1_extension": 26,
+    "policy_observation": 6
+  },
+  "finding_ids": 25,
+  "included_results": [
+    "makloon-results.json",
+    "claim-payment-results.json",
+    "count-results.json",
+    "transfer-results.json",
+    "rfid-results.json",
+    "wms-uom-results.json",
+    "grn-partial-results.json",
+    "grn-capacity-results.json",
+    "grn-recovery-results.json",
+    "qc-flow-results.json",
+    "sales-flow-results.json",
+    "projection-results.json",
+    "ar-results.json",
+    "advance-results.json",
+    "multi-po-results.json",
+    "cash-refund-results.json",
+    "gl-close-results.json",
+    "gl-capacity-results.json",
+    "production-flow-results.json",
+    "payroll-flow-results.json",
+    "bank-flow-results.json",
+    "production-recovery-results.json",
+    "production-capacity-results.json",
+    "rnd-line-scope-results.json"
+  ],
+  "excluded_pending": [],
+  "note": "Three R&D line-scope checkpoints added: one control, two defect reproductions for W2-025. Four explanatory client probes excluded. Source review of 12 client questions is not full runtime coverage or a coverage percentage.",
+  "excluded_explanatory": [
+    "client-requirements-probes.json"
+  ]
+}

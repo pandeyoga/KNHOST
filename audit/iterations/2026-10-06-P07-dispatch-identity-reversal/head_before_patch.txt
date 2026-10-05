@@ -1,0 +1,63 @@
+[
+ {
+  "id": "WM-06",
+  "invariant": "qty negatif / NaN ditolak",
+  "pass": true,
+  "detail": "(400, 400)"
+ },
+ {
+  "id": "WM-06",
+  "invariant": "roll produk lain / tak dikenal / tanpa scan ditolak",
+  "pass": true,
+  "detail": "(400, 400, 400)"
+ },
+ {
+  "id": "WM-06",
+  "invariant": "scan no. roll sah → roll_id di-resolve server",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"audit_p07_603948_t6\",\"flow_type\":\"outbound\",\"entity_id\":\"ent_ksc\",\"order_id\":\"audit_p07_603948_so6\",\"product_id\":')"
+ },
+ {
+  "id": "AX-01",
+  "invariant": "roll dikirim = roll yang dipindai (NEW, bukan OLD terlama)",
+  "pass": false,
+  "detail": "[{'roll_id': 'audit_p07_603948_rold', 'lot': '', 'length': 50.0, 'unit': 'meter', 'unit_cost': 0.0, 'extended_cost': 0.0}]"
+ },
+ {
+  "id": "AX-03",
+  "invariant": "task.shipped_qty = Σ surat jalan (60)",
+  "pass": false,
+  "detail": "(30.0, 60.0)"
+ },
+ {
+  "id": "AX-03",
+  "invariant": "snapshot lama tidak boleh kirim melebihi sisa terbaru",
+  "pass": true,
+  "detail": "409: Roll commit untuk order tak cukup dikirim (tersedia 40.0 dari 80.0)."
+ },
+ {
+  "id": "RF-05",
+  "invariant": "1 bertag + 1 tanpa tag, scan 1 EPC → tidak clean",
+  "pass": false,
+  "detail": "clean"
+ },
+ {
+  "id": "RF-05",
+  "invariant": "bagian RF-05 crash",
+  "pass": false,
+  "detail": "AttributeError(\"module 'services.loading_check_service' has no attribute 'scan_label'\")"
+ },
+ {
+  "id": "CX-11",
+  "invariant": "bagian CX-11 crash",
+  "pass": false,
+  "detail": "AttributeError(\"module 'services.return_service' has no attribute '_consume_lines'\")"
+ },
+ {
+  "id": "REV",
+  "invariant": "bagian REV crash",
+  "pass": false,
+  "detail": "AttributeError(\"module 'services.gl_service' has no attribute 'reverse_entry'\")"
+ }
+]
+pass=4 fail=6

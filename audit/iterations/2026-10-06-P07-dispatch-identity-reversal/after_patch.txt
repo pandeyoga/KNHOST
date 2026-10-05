@@ -1,0 +1,111 @@
+[
+ {
+  "id": "WM-06",
+  "invariant": "qty negatif / NaN ditolak",
+  "pass": true,
+  "detail": "(400, 400)"
+ },
+ {
+  "id": "WM-06",
+  "invariant": "roll produk lain / tak dikenal ditolak",
+  "pass": true,
+  "detail": "(400, 400)"
+ },
+ {
+  "id": "WM-06",
+  "invariant": "scan no. roll sah → roll_id di-resolve server",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"audit_p07_3941fe_t6\",\"flow_type\":\"outbound\",\"entity_id\":\"ent_ksc\",\"order_id\":\"audit_p07_3941fe_so6\",\"product_id\":')"
+ },
+ {
+  "id": "AX-01",
+  "invariant": "roll dikirim = roll yang dipindai (NEW, bukan OLD terlama)",
+  "pass": true,
+  "detail": "[{'roll_id': 'audit_p07_3941fe_rnew', 'lot': '', 'length': 50.0, 'unit': 'meter', 'unit_cost': 0.0, 'extended_cost': 0.0}]"
+ },
+ {
+  "id": "AX-03",
+  "invariant": "task.shipped_qty = Σ surat jalan (60)",
+  "pass": true,
+  "detail": "(60.0, 60.0)"
+ },
+ {
+  "id": "AX-03",
+  "invariant": "snapshot lama tidak boleh kirim melebihi sisa terbaru",
+  "pass": true,
+  "detail": "409: Progres tugas berubah (siap kirim kini 40.0) — muat ulang lalu kirim lagi."
+ },
+ {
+  "id": "RF-05",
+  "invariant": "1 bertag + 1 tanpa tag, scan 1 EPC → tidak clean",
+  "pass": true,
+  "detail": "with_issues"
+ },
+ {
+  "id": "RF-05",
+  "invariant": "roll tanpa tag diverifikasi lewat label → clean",
+  "pass": true,
+  "detail": "clean"
+ },
+ {
+  "id": "CX-11",
+  "invariant": "retur penuh 10@10+10@20 = 300",
+  "pass": true,
+  "detail": "300.0"
+ },
+ {
+  "id": "CX-11",
+  "invariant": "retur bertahap: pertama 100, kedua 200 (bukan harga baris terakhir)",
+  "pass": true,
+  "detail": "(100.0, 200.0)"
+ },
+ {
+  "id": "REV",
+  "invariant": "tanggal pembalik di periode tertutup ditolak",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "REV",
+  "invariant": "alasan wajib",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "REV",
+  "invariant": "pembalik di periode berjalan: debit↔kredit, asli tetap posted & tertaut",
+  "pass": true,
+  "detail": "([{'account_code': '6-4000', 'account_name': 'Beban Operasional Lainnya', 'debit': 0.0, 'credit': 120.0, 'description': 'Pembalik AUDP07/JE-00001'}, {'account_code': '1-1100', 'account_name': 'Kas Besar / Bank', 'debit': 120.0, 'credit': 0.0, 'description': 'Pembalik AUDP07/JE-00001'}], 'je_7bc14a5f"
+ },
+ {
+  "id": "REV",
+  "invariant": "pembalikan kedua ditolak",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "REV",
+  "invariant": "jurnal pembalik tidak bisa dibalik",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "REV",
+  "invariant": "jurnal otomatis boleh dibalik",
+  "pass": true,
+  "detail": "AUDP07/JE-00005"
+ },
+ {
+  "id": "REV",
+  "invariant": "periode tertutup tidak berubah (closing tidak stale)",
+  "pass": true,
+  "detail": "{'stale': False}"
+ },
+ {
+  "id": "REV",
+  "invariant": "3 pembalikan bersamaan → tepat 1",
+  "pass": true,
+  "detail": "['dict', 'ValueError', 'ValueError']"
+ }
+]
+pass=18 fail=0

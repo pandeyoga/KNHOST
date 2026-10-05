@@ -1,0 +1,130 @@
+# 2026-10-02-P15-gn15-ssot/repro_gn15.py (2s)
+[
+ {
+  "id": "GN-15",
+  "invariant": "tidak ada lagi salinan AST identik get_settings di services",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "contract_service: get_settings global = resolver tunggal",
+  "pass": true,
+  "detail": "variance_tolerance_pct"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "contract_service: fallback default→global untuk 'variance_tolerance_pct'",
+  "pass": true,
+  "detail": "3.0 vs 3.0"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "contract_service: override badan usaha menimpa global, sisanya ikut global",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "contract_service: entity 'all' = nilai global",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-15",
+  "invariant": "lot_service: get_settings global = resolver tunggal",
+  "pass": true,
+  "detail": "enforcement_mode"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "lot_service: fallback default→global untuk 'enforcement_mode'",
+  "pass": true,
+  "detail": "warn vs warn"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "lot_service: override badan usaha menimpa global, sisanya ikut global",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "lot_service: entity 'all' = nilai global",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-15",
+  "invariant": "receiving_uom_service: get_settings global = resolver tunggal",
+  "pass": true,
+  "detail": "supplier_uom_input_mode"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "receiving_uom_service: fallback default→global untuk 'supplier_uom_input_mode'",
+  "pass": true,
+  "detail": "prefer vs prefer"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "receiving_uom_service: override badan usaha menimpa global, sisanya ikut global",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "receiving_uom_service: entity 'all' = nilai global",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-15",
+  "invariant": "uom_rules_service: get_settings global = resolver tunggal",
+  "pass": true,
+  "detail": "warn_pct"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "uom_rules_service: fallback default→global untuk 'warn_pct'",
+  "pass": true,
+  "detail": "2.0 vs 2.0"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "uom_rules_service: override badan usaha menimpa global, sisanya ikut global",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "uom_rules_service: entity 'all' = nilai global",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-15",
+  "invariant": "Tanya KN/analitik memakai definisi stok fisik roll_service (termasuk wip)",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "GN-15",
+  "invariant": "analitik stok (stock_analytics) = definisi roll_service",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-15",
+  "invariant": "kandidat tag RFID ⊇ stok fisik roll_service (RF-17)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-15",
+  "invariant": "status reserved analitik ⊂ stok fisik",
+  "pass": true,
+  "detail": ""
+ }
+]
+pass=21 fail=0

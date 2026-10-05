@@ -1,0 +1,43 @@
+{
+ "tag": "TEST_W2H_a53fe1",
+ "passed": 6,
+ "total": 6,
+ "results": [
+  {
+   "id": "W2-010",
+   "invariant": "user A-only tidak melihat raw read owner B (filter warehouse dipaksa caller)",
+   "pass": true,
+   "detail": "(200, ['TEST_W2H_a53fe1_rA'])"
+  },
+  {
+   "id": "W2-010",
+   "invariant": "tanpa filter apa pun tetap tanpa row B",
+   "pass": true,
+   "detail": "46"
+  },
+  {
+   "id": "W2-025",
+   "invariant": "woven-only membuka sample woven (kontrol)",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "W2-025",
+   "invariant": "woven-only DITOLAK membuka sample printing",
+   "pass": true,
+   "detail": "403"
+  },
+  {
+   "id": "W2-025",
+   "invariant": "patch sample printing ditolak tanpa mutasi",
+   "pass": true,
+   "detail": "(403, 'P')"
+  },
+  {
+   "id": "W2-004",
+   "invariant": "cancel generik tagihan jasa makloon ditolak 409, status tetap posted, tanpa kunci tertinggal",
+   "pass": true,
+   "detail": "(409, 'posted')"
+  }
+ ]
+}

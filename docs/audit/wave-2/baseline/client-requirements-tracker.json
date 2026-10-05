@@ -1,0 +1,137 @@
+{
+  "date": "2026-10-03",
+  "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "note": "Requirements are separate from confirmed defect IDs and runtime checkpoint counts. source_gap is limited to inspected paths. Client confirmed MD-developed SKU sampling follows line; standard raw-material SKU may bypass R&D.",
+  "requirements": [
+    {
+      "id": "W2-REQ-01",
+      "client_points": [
+        1
+      ],
+      "title": "Histori pelaksana dan hak jenis sampling",
+      "assessment": "partial",
+      "status": "open",
+      "reference": "26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [],
+      "implementation_evidence": [],
+      "validation_commit": null,
+      "validation_evidence": []
+    },
+    {
+      "id": "W2-REQ-02",
+      "client_points": [
+        2,
+        3,
+        8,
+        12
+      ],
+      "title": "Tata kelola master, stage, warna dan lot",
+      "assessment": "governance_required",
+      "status": "open",
+      "reference": "26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [],
+      "implementation_evidence": [],
+      "validation_commit": null,
+      "validation_evidence": []
+    },
+    {
+      "id": "W2-REQ-03",
+      "client_points": [
+        3
+      ],
+      "title": "Penegakan seluruh uji wajib untuk SKU hasil MD",
+      "assessment": "needs_validation",
+      "status": "open",
+      "reference": "26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [],
+      "implementation_evidence": [],
+      "validation_commit": null,
+      "validation_evidence": []
+    },
+    {
+      "id": "W2-REQ-04",
+      "client_points": [
+        4
+      ],
+      "title": "Angka utama stok grup untuk sales",
+      "assessment": "source_gap",
+      "status": "open",
+      "reference": "26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [],
+      "implementation_evidence": [],
+      "validation_commit": null,
+      "validation_evidence": []
+    },
+    {
+      "id": "W2-REQ-05",
+      "client_points": [
+        5
+      ],
+      "title": "Meja kerja MD dengan buyer eksplisit lintas entitas",
+      "assessment": "source_gap",
+      "status": "open",
+      "reference": "26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [],
+      "implementation_evidence": [],
+      "validation_commit": null,
+      "validation_evidence": []
+    },
+    {
+      "id": "W2-REQ-06",
+      "client_points": [
+        6
+      ],
+      "title": "Keputusan selisih penerimaan, notifikasi MD dan rekonsiliasi PO",
+      "assessment": "partial",
+      "status": "open",
+      "reference": "26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [],
+      "implementation_evidence": [],
+      "validation_commit": null,
+      "validation_evidence": []
+    },
+    {
+      "id": "W2-REQ-07",
+      "client_points": [
+        7
+      ],
+      "title": "Reservasi material sebelum issue makloon",
+      "assessment": "source_gap",
+      "status": "open",
+      "reference": "26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [],
+      "implementation_evidence": [],
+      "validation_commit": null,
+      "validation_evidence": []
+    },
+    {
+      "id": "W2-REQ-08",
+      "client_points": [
+        10,
+        11
+      ],
+      "title": "RFID wajib, cross-dock dan SJ multi-gudang",
+      "assessment": "partial",
+      "status": "open",
+      "reference": "26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [],
+      "implementation_evidence": [],
+      "validation_commit": null,
+      "validation_evidence": []
+    },
+    {
+      "id": "W2-REQ-09",
+      "client_points": [
+        9
+      ],
+      "title": "Urutan roll, pembulatan dan izin potong",
+      "assessment": "policy_required",
+      "status": "open",
+      "reference": "26_TAMBAHAN_KLIEN_DAN_W2_025.md",
+      "implementation_commits": [],
+      "implementation_evidence": [],
+      "validation_commit": null,
+      "validation_evidence": []
+    }
+  ]
+}

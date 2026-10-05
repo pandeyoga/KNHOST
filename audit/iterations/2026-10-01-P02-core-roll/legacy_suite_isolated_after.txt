@@ -1,0 +1,1 @@
+isolated after-patch rerun: tests/test_iter270_reallocate_extra.py + tests/test_roll_pick_and_reallocate.py -> 11 passed, 2 skipped (suite-level failures are state-dependent and also occur at HEAD, see legacy_suite_head.txt)

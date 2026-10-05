@@ -1,0 +1,19 @@
+{
+  "summary": "RETEST of iteration_78 issues at 390x800 for sales@kainnusantara.id. localStorage.kn_force_desktop cleared before login. All 10 hub buttons under mobile-tab-btn-more (orders, amendments, returns, internal-requests, customers-crm, hr-visits, md-products, cs-price-list, inventory-board, inventory-lots) tested with NORMAL clicks (no force=True) after scroll_into_view_if_needed. Each opens the full responsive view correctly: URL becomes ?view=<view>, floating [mobile-back-to-app] visible, and the corresponding [hub-tab-<view>] is rendered (active in its hub tab bar). Clicking mobile-back-to-app on every hub returns to mobile-sales-app. Returns full view (mobile-hub-returns) at 390px: documentElement.scrollWidth === innerWidth === 390 (diff=0), confirming the PaginationBar flex-wrap fix eliminated the prior 156px horizontal overflow. Confirms iteration_78 suspected root cause (chip covered by fixed bottom tabbar led to force-click landing on mobile-tab-btn-orders/amendments) — with scroll_into_view + normal click the chips are reachable above the tabbar, and orders/amendments open exactly like the other 8 hubs. No console errors during the flow.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fix verified: PaginationBar right-side group flex-wrap prevents min-width overflow on narrow (390px) responsive pages inside .m-main. Consider adding a regression check (Cypress/Playwright) that documentElement.scrollWidth<=innerWidth on all mobile hub full views to catch future regressions.",
+    "The 'chip under fixed bottom tabbar' class of bug is easy to reintroduce; the added scroll-padding/scroll-margin is good, but consider also adding a bottom safe-area padding to the More hub scroll container equal to the tabbar height so users can scroll chips fully into a tap-safe zone without needing programmatic scroll."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "skipped per request", "frontend": "100% (10/10 hubs open, 10/10 back-to-app returns, returns overflow = 0px)"},
+  "test_credentials": "sales@kainnusantara.id / demo12345 at 390x800; kn_force_desktop cleared.",
+  "seed_data_creation": "None.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "iteration_78 mobile hub full-view issue is fully resolved. Chips must be scrolled into view before clicking (test used scroll_into_view_if_needed + normal click). No force=True needed. Returns page horizontal overflow fix (PaginationBar flex-wrap) is confirmed at 390px.",
+  "rca of the issue": "Prior iteration_78 failure on mobile-hub-orders/amendments was NOT a state/race bug in openFullView — it was a UI/hit-test artifact. The two chips at the end of the More list were rendered underneath the fixed bottom tab bar; when the test used force=True the click bypassed hit-test occlusion and Playwright's coordinate-based click actually reached the bottom tabbar's mobile-tab-btn-orders (which navigates to sales-home flow), so activeView appeared to 'revert' to sales-home. Mitigation applied by main agent (scroll-padding/scroll-margin so chips scroll above the tabbar) plus using non-forced clicks resolves the issue for real users and tests alike. Returns page overflow RCA: PaginationBar's right-side control group had no wrap; on 390px the combined width of per-page selector + CSV + total pushed the row beyond viewport. Fix: flex-wrap on that group — verified diff=0."
+}

@@ -1,0 +1,38 @@
+{
+  "summary": "P19 continuation UAT — focused coverage on QC-06 Roll Hold/Release (new feature) + journey timeline + FAB-hiding-on-modal fix. Backend: 7/7 pytest PASS in /app/backend/tests/test_p19_roll_hold_release.py (RBAC, validation, happy-path hold→release with inventory_balances available_qty↓/blocked_qty↑ shift verified, qc_decision blocked while held, journey timeline enriched). Frontend UI: ?view=operations&entity=ent_ksc → inventory-tab-rolls → roll-hold-btn-{id} opens roll-hold-dialog (reason textarea + submit); FAB (.tour-fab) correctly hidden (display:none) via body:has([data-testid$=\"-dialog\"]) rule while hold dialog open; after submit, roll becomes blocked and roll-release-btn-{id} replaces the hold button on the same row; roll-journey-btn-{id} opens roll-journey-popup with roll-journey-origin + roll-journey-hold panels and timeline entries 'DITAHAN oleh ...' and 'Tahanan DILEPAS oleh ...'; release returns roll to available. GRN-01 and QC-04 FLOWS NOT EXERCISED in this iteration (focus was the newly built QC-06 UI+API & the FAB fix; GRN/QC decide paths are large multi-step wizards and were out-of-scope for this focused run).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "RollJourneyPopup overlay vs floating help button", "issues": ["`roll-journey-popup` testid does NOT end in `-dialog`/`-modal` so the CSS rule in /app/frontend/src/styles/layout.css:354 (body:has(.modal-overlay, [role=\"dialog\"][data-state=\"open\"], [data-testid$=\"-modal\"], [data-testid$=\"-dialog\"]) .tour-fab { display:none }) does NOT hide the FAB when the journey popup is open. In the current screenshot the FAB does not visually overlap the centered popup, but the fix is incomplete for this component. Suggest renaming testid to `roll-journey-dialog` or `-modal`, or adding an explicit selector."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p19_roll_hold_release.py",
+    "/app/test_reports/pytest/p19_hold.xml"
+  ],
+  "action_items": [
+    "Make FAB-hide rule also cover roll-journey-popup (rename testid to end with -dialog/-modal, or extend CSS selector in layout.css line 354).",
+    "RollHoldControl: the submit button uses the same data-testid `roll-hold-submit` for both HOLD and RELEASE flows. The problem brief references `roll-release-submit` as separate testid — consider using dynamic `roll-${mode}-submit` to disambiguate.",
+    "GRN-01 and QC-04 end-to-end UAT (PO create → GRN create → QC inspect-and-decide → PR/AP journal verification) remain NOT executed; a future iteration with dedicated flow scripts recommended."
+  ],
+  "critical_code_review_comments": [
+    "roll_hold_service.release_roll else-branch at line 69 is reachable only if neither hold.held nor inspection.hold.held is True — ok. However the method accepts calls on blocked rolls whose hold.held was previously set to false (rare state) — defensive OK.",
+    "RollHoldControl.jsx L36-39: data-testid `roll-${mode}-submit` would be clearer; currently `roll-hold-submit` is reused for release.",
+    "QcPlanPanel/RollInspectionModal flows not exercised in this iteration; add integration tests covering sampling + hold-blocks-decision + genealogy via sampling flag."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p19_roll_hold_release.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (7/7 — new QC-06 hold/release & journey endpoints)",
+    "frontend": "QC-06 UI (hold/release/journey) PASS; FAB-hide on hold dialog PASS; GRN-01/QC-04 NOT TESTED"
+  },
+  "test_credentials": "admin@kainnusantara.id / demo12345 (shown as Sukacita; ent_ksc = Sukacita Textile); manager@/sales@/finance@/warehouse@ all demo12345",
+  "seed_data_creation": "No DB seeding — used existing seed rolls (roll_4df48c2bd03f RL-00004 avail, roll_81e1135f31dc RL-00043 quarantine, roll_3a630c9ff59b RL-00002 earmarked). Hold reasons/release notes all prefixed `TEST_P19`. Final state of rolls is restored to pre-test status by the test itself.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Entity ent_ksc shows in UI as 'Sukacita' / 'Sukacita Textile'. Roll table (inventory-tab-rolls) is reached via ?view=operations&entity=ent_ksc, NOT ?view=stock-atp (that URL silently redirects to ?view=inventory-board which has different tabs). Backend test harness invocation: `cd /app/backend && REACT_APP_BACKEND_URL=$(grep REACT_APP_BACKEND_URL /app/frontend/.env | cut -d= -f2) python -m pytest tests/test_p19_roll_hold_release.py -v -o addopts=''`. The suite includes a module-scope autouse _reset_rolls fixture that releases any leftover blocked state. GRN-01 and QC-04 UAT remain outstanding for a dedicated iteration; both require multi-step UI wizards (PO/GRN create → scan rolls → QC decide → PR approve).",
+  "rca of the issue": "N/A — all tested features pass. The FAB-hide-on-journey-popup gap is cosmetic (popup is centered, no actual overlap observed) and documented as design_issue."
+}

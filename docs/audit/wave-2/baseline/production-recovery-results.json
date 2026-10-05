@@ -1,0 +1,125 @@
+{
+  "database": "knhost_audit_e9fa9b4b7eb7405fb59e872c58bebfcc",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "mode": "Real month close/reopen causes GL failure; actual WO/stock/GL; one scheduling barrier for same-WO concurrency; not process-crash or HTTP permission test",
+  "results": [
+    {
+      "id": "W2-PR-C01",
+      "kind": "control",
+      "label": "Actual closed period rejects production overhead GL",
+      "observed": true,
+      "expected": true
+    },
+    {
+      "id": "W2-PR-E01",
+      "kind": "wave1_extension",
+      "label": "GN-06 closed-period failure leaves output with released WO",
+      "observed": [
+        "released",
+        5.0,
+        0,
+        0
+      ],
+      "expected": [
+        "released",
+        5,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "W2-PR-E02",
+      "kind": "wave1_extension",
+      "label": "GN-06 closed-period failure has consumed both inputs",
+      "observed": [
+        10.0,
+        15.0
+      ],
+      "expected": [
+        10,
+        15
+      ]
+    },
+    {
+      "id": "W2-PR-E03",
+      "kind": "wave1_extension",
+      "label": "GN-06 reopening and retry creates output twice but records once",
+      "observed": [
+        "completed",
+        10.0,
+        2,
+        1,
+        5.0
+      ],
+      "expected": [
+        "completed",
+        10,
+        2,
+        1,
+        5
+      ]
+    },
+    {
+      "id": "W2-PR-E04",
+      "kind": "wave1_extension",
+      "label": "GN-06 overhead stock30 but GL15 after recovery",
+      "observed": [
+        30.0,
+        15.0
+      ],
+      "expected": [
+        30,
+        15
+      ]
+    },
+    {
+      "id": "W2-PR-E05",
+      "kind": "wave1_extension",
+      "label": "GN-06 two callers create two outputs",
+      "observed": [
+        2,
+        10.0,
+        1
+      ],
+      "expected": [
+        2,
+        10,
+        1
+      ]
+    },
+    {
+      "id": "W2-PR-E06",
+      "kind": "wave1_extension",
+      "label": "GN-06 stale last writer clears link to posted overhead",
+      "observed": [
+        "",
+        15.0,
+        30.0
+      ],
+      "expected": [
+        "",
+        15,
+        30
+      ]
+    },
+    {
+      "id": "W2-PR-E07",
+      "kind": "wave1_extension",
+      "label": "GN-06 cancel after GL failure leaves produced inventory",
+      "observed": [
+        "cancelled",
+        5.0,
+        0,
+        10.0,
+        15.0
+      ],
+      "expected": [
+        "cancelled",
+        5,
+        0,
+        10,
+        15
+      ]
+    }
+  ]
+}

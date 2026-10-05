@@ -1,0 +1,7 @@
+# AUDIT-03 — uji lokal pre-commit (sandbox /tmp/secretdemo, hook identik scripts/install_hooks.sh bagian GN-14), 2026-10-04T13:34:38Z
+commit bersih: LOLOS
+[pre-commit] pemindai secret (GN-14, memblokir)
+SECRET? leak.env:1 [openai_key]
+verify_no_secrets: 1 temuan
+SECRET TERDETEKSI — commit dibatalkan (nilai tidak dicetak)
+commit bersecret exit=1; jumlah commit tetap 1; nilai secret muncul di output: 0 kali

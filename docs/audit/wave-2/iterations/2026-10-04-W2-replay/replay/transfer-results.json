@@ -1,0 +1,99 @@
+{
+  "commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_b14ff52618ca48149d2459a30b8236f2",
+  "level": "ASGI HTTP + Mongo; synthetic shared warehouses; no app lifespan",
+  "scenarios": [
+    {
+      "id": "W2-T-C01",
+      "kind": "control",
+      "observed": {
+        "http_status": 200,
+        "roll_owner": "A",
+        "available": 10.0,
+        "reserved": 10.0
+      }
+    },
+    {
+      "id": "W2-T-C02",
+      "kind": "control",
+      "observed": {
+        "http_status": 200,
+        "available": 20.0,
+        "reserved": 0.0
+      }
+    },
+    {
+      "id": "W2-T-C03",
+      "kind": "control",
+      "observed": {
+        "http_status": 400,
+        "roll_status": "available"
+      }
+    },
+    {
+      "id": "W2-T-F01",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "roll_status": "reserved",
+        "projected_available": 10.0,
+        "projected_reserved": 0.0
+      }
+    },
+    {
+      "id": "W2-T-C04",
+      "kind": "control",
+      "observed": {
+        "available_after_cancel": 10.0
+      }
+    },
+    {
+      "id": "W2-T-F02",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "user_scope": [
+          "A"
+        ],
+        "transfer_entity": "A",
+        "item_owner": "A",
+        "selected_roll_owner": "B",
+        "selected_roll_status": "reserved",
+        "B_projected_available": 10.0
+      }
+    },
+    {
+      "id": "W2-T-C05",
+      "kind": "control",
+      "observed": {
+        "http_status": 200,
+        "foreign_status": "available",
+        "foreign_available": 10.0
+      }
+    },
+    {
+      "id": "W2-T-F03",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "transfer_entity": "A",
+        "item_owner": "B"
+      }
+    },
+    {
+      "id": "W2-T-C06",
+      "kind": "control",
+      "observed": {
+        "http_statuses": [
+          200,
+          200,
+          200,
+          200,
+          200
+        ],
+        "source_available": 0.0,
+        "dest_available": 10.0
+      }
+    }
+  ]
+}

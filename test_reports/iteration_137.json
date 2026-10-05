@@ -1,0 +1,23 @@
+{
+  "summary": "Reviewed Tanya KN (AI Analytics) after enabling real OpenAI key stored in DB. 6/6 backend pytest cases pass, including SSE streaming chat with real OpenAI (gpt-6-sol), access control (sales margin refusal, no cross-sales data), template run + narrative (gpt-6-luna, verification.ok=true), xlsx export (PK header), and /api/ai/usage/daily. Frontend E2E (admin) on /?view=tanya-kn&entity=ent_ksc: status pill 'Aktif', chat streams answer with chart + table + export button + thumbs feedback + followup chips, Riwayat tab opens, cost page (?tab=cost) renders charts with new 'Evaluasi model (admin)' feature label, and template 'Pelanggan terbesar' produces chart/table + AI narrative via gpt-6-luna.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter_tanya_kn_review.py",
+    "/app/test_reports/pytest/iter_tanya_kn_review.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Status pill in UI shows text 'Aktif' only; copy spec expected 'Chat AI Aktif'. The header already labels CHAT AI, so this is acceptable but worth consistency check.",
+    "Template run response uses `results: {<id>: ...}` dict (not `result_ids: [...]`). Frontend handles this fine; just a note for future API consumers.",
+    "SSE stream from /api/ai/chat emits default `message` events whose payloads carry inner `type` fields (status/tool/delta/result/done) rather than using SSE `event:` headers. Works correctly but worth documenting."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter_tanya_kn_review.py"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id/demo12345, manager@kainnusantara.id/demo12345, sales@kainnusantara.id/demo12345 (header X-Entity-Id: ent_ksc)",
+  "seed_data_creation": "none (used existing seed; results persisted r_3d9cd32d6f etc.)",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Real OpenAI chat used ~4 questions in this iteration (budget spent moved from $3.41 -> $3.46). Daily per-user limit 60 remains. Model config untouched (ai.enabled=true, model_main=gpt-6-sol, narrative=gpt-6-luna). Reusable pytest at /app/backend/tests/test_iter_tanya_kn_review.py.",
+  "rca of the issue": "N/A — no bugs found this iteration."
+}

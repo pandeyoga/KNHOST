@@ -1,0 +1,62 @@
+[1m38 POC diukur — selisih SELURUH koleksi per POC[0m
+
+  [92m✓[0m test_f0c_scoping_leak_poc                1.7s  nol residu
+  [92m✓[0m test_core_e0_isolation_poc               2.2s  nol residu
+  [92m✓[0m test_core_e3_write_guard_poc             2.3s  nol residu
+  [92m✓[0m test_core_e4_poc                         2.7s  nol residu
+  [92m✓[0m test_core_e4_master_layers_poc           3.3s  nol residu
+  [92m✓[0m test_core_e5_visibility_poc              1.2s  nol residu
+  [92m✓[0m test_core_e7_interco_poc                 4.2s  nol residu
+  [92m✓[0m test_core_e8_roles_poc                   3.3s  nol residu
+  [91m✗[0m test_core_e8_desk_poc                    4.2s
+        turn_marks                          26 ->    27  (+1)
+  [92m✓[0m test_core_rantai_retur_poc               3.6s  nol residu
+  [92m✓[0m test_core_role_reality_poc               2.7s  nol residu
+  [92m✓[0m test_core_role_access_poc                4.7s  nol residu
+  [92m✓[0m test_core_group_cash_migration_poc       3.7s  nol residu
+  [92m✓[0m test_core_approval_reminder_poc          1.8s  nol residu
+  [92m✓[0m test_core_f6_approval_coverage_poc       2.7s  nol residu
+  [92m✓[0m test_core_f67_workflow_poc               4.2s  nol residu
+  [92m✓[0m test_core_papan_po_custom_poc            1.8s  nol residu
+  [92m✓[0m test_core_sesi_2026_06_poc               3.8s  nol residu
+  [92m✓[0m test_core_lini_poc                       2.6s  nol residu
+  [92m✓[0m test_core_tahapan_poc                    5.7s  nol residu
+  [92m✓[0m test_core_p0_poc                         4.2s  nol residu
+  [92m✓[0m test_core_po_board_poc                  10.2s  nol residu
+  [92m✓[0m test_core_design_request_poc             4.7s  nol residu
+  [92m✓[0m test_core_sampling_poc                   7.7s  nol residu
+  [92m✓[0m test_core_inspeksi_poc                   9.8s  nol residu
+  [92m✓[0m test_core_notifikasi_alamat_poc          1.4s  nol residu
+  [91m✗[0m test_g0_config_poc                      11.6s
+        audit_logs                         102 ->   116  (+14)
+        notifications                      116 ->   134  (+18)
+  [91m✗[0m test_g1_amendment_poc                    3.0s
+        audit_logs                         116 ->   148  (+32)
+        notifications                      134 ->   137  (+3)
+  [91m✗[0m test_g4_refs_poc                        12.0s
+        audit_logs                         148 ->   169  (+21)
+        notifications                      137 ->   146  (+9)
+  [91m✗[0m test_g2_payment_poc                     12.8s
+        audit_logs                         169 ->   198  (+29)
+        notifications                      146 ->   147  (+1)
+  [91m✗[0m test_g3_variance_poc                    12.5s
+        audit_logs                         198 ->   223  (+25)
+  [91m✗[0m test_fase_f1_receiving_uom_poc           3.1s
+        audit_logs                         223 ->   232  (+9)
+        notifications                      147 ->   158  (+11)
+  [91m✗[0m test_fase_f_rnd_poc                     13.5s
+        audit_logs                         232 ->   247  (+15)
+  [91m✗[0m test_fase_f_us3_us11_us12_poc            1.7s
+        audit_logs                         247 ->   250  (+3)
+  [91m✗[0m test_fase_d_makloon_poc                  4.7s
+        audit_logs                         250 ->   274  (+24)
+        notifications                      158 ->   164  (+6)
+  [91m✗[0m test_g8_bank_poc                        15.1s
+        audit_logs                         274 ->   325  (+51)
+        notifications                      164 ->   165  (+1)
+  [91m✗[0m test_g9_case_poc                        15.5s
+        audit_logs                         325 ->   383  (+58)
+        notifications                      165 ->   192  (+27)
+  [92m✓[0m test_g7_contrabon_poc                   13.3s  nol residu
+
+[1mRINGKASAN:[0m 26 bersih · [91m12 meninggalkan residu[0m

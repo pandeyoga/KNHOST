@@ -1,0 +1,114 @@
+{
+  "database": "knhost_audit_c2ceb3c3569f4b50973c4798da0cd9b1",
+  "mongo_target": "127.0.0.1:27919",
+  "source_commit": "d1fd56e4f0fbd1af1a46bc0b9932dc8545d78467",
+  "mode": "Actual imported application modules + Motor + Mongo; ASGI HTTP for marked cases; full lifespan not started; Windows uname adapter only.",
+  "external_network_attempts_blocked": [],
+  "results": [
+    {
+      "id": "I4-HR01",
+      "kind": "defect",
+      "observed": {
+        "approved_days": 20,
+        "remaining": -8
+      }
+    },
+    {
+      "id": "I4-HR02",
+      "kind": "defect",
+      "observed": {
+        "explicit_zero_entitlement_after_recompute": 12
+      }
+    },
+    {
+      "id": "I4-HR03",
+      "kind": "defect",
+      "observed": {
+        "work_dates": [
+          "2026-12-31",
+          "2027-01-01",
+          "2027-01-04"
+        ],
+        "used_2026": 3,
+        "used_2027": 0
+      }
+    },
+    {
+      "id": "I4-HR04",
+      "kind": "defect",
+      "observed": {
+        "other_leave_status": "approved",
+        "attendance_records": 0
+      }
+    },
+    {
+      "id": "I4-HR05",
+      "kind": "defect",
+      "observed": {
+        "work_min": 480,
+        "late_min": 0,
+        "early_leave_min": 0,
+        "overtime_min": 1440,
+        "std_min": -960
+      }
+    },
+    {
+      "id": "I4-HR06",
+      "kind": "defect",
+      "observed": {
+        "unapproved_minutes": 120,
+        "payroll_overtime_min": 120,
+        "payroll_overtime_amount": 300000.0
+      }
+    },
+    {
+      "id": "I4-HR07",
+      "kind": "design_gap",
+      "observed": {
+        "auto_minutes": 120,
+        "formal_minutes_same_day": 120,
+        "payroll_total_minutes": 240
+      }
+    },
+    {
+      "id": "I4-C01",
+      "kind": "control",
+      "observed": {
+        "work_min": 540,
+        "late_min": 0,
+        "early_leave_min": 0,
+        "overtime_min": 0,
+        "std_min": 540
+      }
+    },
+    {
+      "id": "I4-SEC01",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "foreign_signatures_returned": 1,
+        "image_returned": false
+      }
+    },
+    {
+      "id": "I4-C02",
+      "kind": "control",
+      "observed": {
+        "cross_entity_payroll_preview_status": 403
+      }
+    },
+    {
+      "id": "I4-CFG01",
+      "kind": "defect",
+      "observed": {
+        "actor_scope": [
+          "A"
+        ],
+        "active_entity": "A",
+        "http_status": 200,
+        "entity_B_multiplier_before": 1.5,
+        "entity_B_multiplier_after": 3.0
+      }
+    }
+  ]
+}

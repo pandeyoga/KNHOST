@@ -1,0 +1,180 @@
+{
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_ba04b131d8b24559a3807e3dd556a162",
+  "mode": "Actual GRN services and Mongo, full indexes, synthetic fixtures, no browser or hardware",
+  "results": [
+    {
+      "id": "W2-G-C01",
+      "kind": "control",
+      "label": "Before close: PO unchanged, counted quantity from two rolls",
+      "observed": [
+        0,
+        40.0,
+        2
+      ],
+      "expected": [
+        0,
+        40,
+        2
+      ]
+    },
+    {
+      "id": "W2-G-C02",
+      "kind": "control",
+      "label": "First partial close posts40 and creates exactly one remainder60",
+      "observed": [
+        "closed",
+        40.0,
+        1,
+        60.0
+      ],
+      "expected": [
+        "closed",
+        40,
+        1,
+        60
+      ]
+    },
+    {
+      "id": "W2-G-C03",
+      "kind": "control",
+      "label": "Remainder has fresh counters and no active GRN",
+      "observed": [
+        0.0,
+        0.0,
+        0,
+        null,
+        []
+      ],
+      "expected": [
+        0,
+        0,
+        0,
+        null,
+        []
+      ]
+    },
+    {
+      "id": "W2-G-C04",
+      "kind": "control",
+      "label": "Sequential remainder generation is idempotent",
+      "observed": [
+        false,
+        1
+      ],
+      "expected": [
+        false,
+        1
+      ]
+    },
+    {
+      "id": "W2-G-C05",
+      "kind": "control",
+      "label": "Cancel second receipt preserves first delivery and resets remainder",
+      "observed": [
+        "cancelled",
+        40.0,
+        2,
+        0.0,
+        0
+      ],
+      "expected": [
+        "cancelled",
+        40,
+        2,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "W2-G-C06",
+      "kind": "control",
+      "label": "Multiple lines for same task post once and fulfill PO",
+      "observed": [
+        "closed",
+        100.0,
+        0,
+        1
+      ],
+      "expected": [
+        "closed",
+        100,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "W2-G-C07",
+      "kind": "control",
+      "label": "Physical quantities conserved across partials and cancelled receipt",
+      "observed": [
+        5,
+        100.0
+      ],
+      "expected": [
+        5,
+        100
+      ]
+    },
+    {
+      "id": "W2-G-C08",
+      "kind": "control",
+      "label": "Second task declared quantity sums both lines once",
+      "observed": 60.0,
+      "expected": 60
+    },
+    {
+      "id": "W2-G-C13",
+      "kind": "control",
+      "label": "Supplier unit without required supplier item rejected",
+      "observed": true,
+      "expected": true
+    },
+    {
+      "id": "W2-G-C09",
+      "kind": "control",
+      "label": "Supplier DN yard converted to meter before reconciliation",
+      "observed": 91.44,
+      "expected": 91.44
+    },
+    {
+      "id": "W2-G-C10",
+      "kind": "control",
+      "label": "Yard declaration closes against measured meter rolls",
+      "observed": [
+        "closed",
+        91.44,
+        0
+      ],
+      "expected": [
+        "closed",
+        91.44,
+        0
+      ]
+    },
+    {
+      "id": "W2-G-C11",
+      "kind": "control",
+      "label": "Remaining guard aggregates multiple lines of same task",
+      "observed": [
+        "over_remaining"
+      ],
+      "expected": [
+        "over_remaining"
+      ]
+    },
+    {
+      "id": "W2-G-C12",
+      "kind": "control",
+      "label": "Over receipt close rejected without posting PO",
+      "observed": [
+        400,
+        0
+      ],
+      "expected": [
+        400,
+        0
+      ]
+    }
+  ]
+}

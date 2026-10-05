@@ -1,0 +1,1115 @@
+{
+  "wave": 2,
+  "findings": [
+    {
+      "id": "W2-001",
+      "title": "Toleransi jumlah receipt menyebabkan drift nilai roll terhadap GL",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/makloon-results.json"
+      ],
+      "scenario": "W2-M-F01",
+      "evidence_level": "ASGI HTTP + Mongo",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_makloon.obs.txt",
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_claim_payment.obs.txt",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "CX-13"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-09-30"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04",
+          "note": "W2-001 sisa sub-sen; W2-003 belum e2e GRN HTTP multi-gudang"
+        }
+      ],
+      "phase": "P03",
+      "card": "findings/W2-001.md"
+    },
+    {
+      "id": "W2-002",
+      "title": "Receipt menerima output warehouse tidak terdaftar",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/makloon-results.json"
+      ],
+      "scenario": "W2-M-F02",
+      "evidence_level": "ASGI HTTP + Mongo",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_makloon.obs.txt",
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_claim_payment.obs.txt",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "CX-13"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-09-30"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04",
+          "note": "W2-001 sisa sub-sen; W2-003 belum e2e GRN HTTP multi-gudang"
+        }
+      ],
+      "phase": "P03",
+      "card": "findings/W2-002.md"
+    },
+    {
+      "id": "W2-003",
+      "title": "Partial receipt kehilangan lokasi asal saat finalisasi",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/makloon-results.json"
+      ],
+      "scenario": "W2-M-F03",
+      "evidence_level": "Internal GRN posting helper + Mongo",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_makloon.obs.txt",
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_claim_payment.obs.txt",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "CX-13"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-09-30"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04",
+          "note": "W2-001 sisa sub-sen; W2-003 belum e2e GRN HTTP multi-gudang"
+        }
+      ],
+      "phase": "P03",
+      "card": "findings/W2-003.md"
+    },
+    {
+      "id": "W2-004",
+      "title": "Cancel bill jasa makloon tidak membalik utang GL",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/claim-payment-results.json",
+        "baseline/04_TEMUAN_KLAIM_DAN_PEMBAYARAN.md"
+      ],
+      "scenarios": [
+        "W2-B-F01"
+      ],
+      "evidence_level": "Real Mongo; payment/cancel ASGI, claim service; deterministic interleaving for W2-005",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2_http.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_http_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md",
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_makloon.obs.txt",
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_claim_payment.obs.txt"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "CX-13",
+        "FN-07"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-09-30"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04",
+          "note": "W2-001 sisa sub-sen; W2-003 belum e2e GRN HTTP multi-gudang"
+        }
+      ],
+      "phase": "P03",
+      "card": "findings/W2-004.md"
+    },
+    {
+      "id": "W2-005",
+      "title": "Race potong bon dan pembayaran meloloskan paid melebihi grand",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/claim-payment-results.json",
+        "baseline/04_TEMUAN_KLAIM_DAN_PEMBAYARAN.md"
+      ],
+      "scenarios": [
+        "W2-B-F02",
+        "W2-B-F03"
+      ],
+      "evidence_level": "Real Mongo; payment/cancel ASGI, claim service; deterministic interleaving for W2-005",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_makloon.obs.txt",
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_claim_payment.obs.txt",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "CX-13",
+        "FN-07"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-09-30"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04",
+          "note": "W2-001 sisa sub-sen; W2-003 belum e2e GRN HTTP multi-gudang"
+        }
+      ],
+      "phase": "P03",
+      "card": "findings/W2-005.md"
+    },
+    {
+      "id": "W2-006",
+      "title": "Owner otomatis opname dapat memilih stok entitas di luar scope",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/count-results.json",
+        "baseline/06_TEMUAN_CYCLE_COUNT.md",
+        "baseline/transfer-results.json",
+        "baseline/08_TEMUAN_TRANSFER_STOK.md"
+      ],
+      "scenarios": [
+        "W2-C-F02",
+        "W2-T-F03"
+      ],
+      "evidence_level": "ASGI HTTP + Mongo; scheduling barrier for reject/approve",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "WM-07",
+        "WM-08",
+        "FN-14"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-09-30"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P01",
+      "card": "findings/W2-006.md"
+    },
+    {
+      "id": "W2-007",
+      "title": "Reject stale menimpa approved setelah adjustment stok",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/count-results.json",
+        "baseline/06_TEMUAN_CYCLE_COUNT.md"
+      ],
+      "scenarios": [
+        "W2-C-F03"
+      ],
+      "evidence_level": "ASGI HTTP + Mongo; scheduling barrier for reject/approve",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "WM-07",
+        "WM-08",
+        "FN-14"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-09-30"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P02",
+      "card": "findings/W2-007.md"
+    },
+    {
+      "id": "W2-008",
+      "title": "Transfer manual A dapat mereservasi roll milik B",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/transfer-results.json",
+        "baseline/08_TEMUAN_TRANSFER_STOK.md"
+      ],
+      "scenarios": [
+        "W2-T-F02"
+      ],
+      "evidence_level": "ASGI HTTP + Mongo",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "GN-13",
+        "WM-04"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-10-01"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P01",
+      "card": "findings/W2-008.md"
+    },
+    {
+      "id": "W2-009",
+      "title": "Reservasi transfer pilihan roll tidak rebuild balance",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/transfer-results.json",
+        "baseline/08_TEMUAN_TRANSFER_STOK.md"
+      ],
+      "scenarios": [
+        "W2-T-F01"
+      ],
+      "evidence_level": "ASGI HTTP + Mongo",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "GN-13",
+        "WM-04"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-10-01"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P02",
+      "card": "findings/W2-009.md"
+    },
+    {
+      "id": "W2-010",
+      "title": "Histori pembacaan RFID tidak menerapkan scope owner roll",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/rfid-results.json",
+        "baseline/10_TEMUAN_RFID_GATE_DAN_INSIDEN.md"
+      ],
+      "scenarios": [
+        "W2-R-F01"
+      ],
+      "evidence_level": "ASGI HTTP + Mongo, user A-only versus row/device B",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2_http.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_http_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "RF-08",
+        "GN-01",
+        "GN-02",
+        "GN-03",
+        "GN-04"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-10-01"
+        },
+        {
+          "event": "audit_revalidated_with_corrections",
+          "date": "2026-10-01"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "audit_review": {
+        "date": "2026-10-01",
+        "commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+        "evidence": [
+          "12_VALIDASI_ULANG_W2_05.md",
+          "validation/W2-05-review/results.json"
+        ],
+        "verdict": "valid_with_scope_correction",
+        "not_fix_validation": true,
+        "correction": "Incidents SHARED and devices shared infrastructure; narrow confirmed defect to raw reads."
+      },
+      "policy_observations_not_confirmed_defects": [
+        "W2-R-F02",
+        "W2-R-F03",
+        "W2-R-F04",
+        "W2-R-F05",
+        "W2-R-F06",
+        "W2-R-F07"
+      ],
+      "phase": "P01",
+      "card": "findings/W2-010.md"
+    },
+    {
+      "id": "W2-011",
+      "title": "Race acknowledge versus resolve dapat memundurkan status insiden",
+      "priority": "P2",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/rfid-results.json",
+        "baseline/10_TEMUAN_RFID_GATE_DAN_INSIDEN.md"
+      ],
+      "scenarios": [
+        "W2-R-F08"
+      ],
+      "evidence_level": "ASGI HTTP + Mongo; scheduling barrier at transition update",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "RF-16"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-10-01"
+        },
+        {
+          "event": "audit_revalidated_with_corrections",
+          "date": "2026-10-01"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "audit_review": {
+        "date": "2026-10-01",
+        "commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+        "evidence": [
+          "12_VALIDASI_ULANG_W2_05.md",
+          "validation/W2-05-review/results.json"
+        ],
+        "verdict": "valid",
+        "not_fix_validation": true,
+        "correction": "P1 to P2: workflow regression confirmed, stock/gate authorization impact not demonstrated."
+      },
+      "phase": "P07",
+      "card": "findings/W2-011.md"
+    },
+    {
+      "id": "W2-012",
+      "title": "Concurrent red reads membuat dua insiden open untuk EPC dan device sama",
+      "priority": "P2",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/rfid-results.json",
+        "baseline/10_TEMUAN_RFID_GATE_DAN_INSIDEN.md"
+      ],
+      "scenarios": [
+        "W2-R-F09"
+      ],
+      "evidence_level": "Two HTTP ingest requests + Mongo indexes; deterministic barrier and uninstrumented concurrent runs",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "RF-16"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-10-01"
+        },
+        {
+          "event": "audit_revalidated_with_corrections",
+          "date": "2026-10-01"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "audit_review": {
+        "date": "2026-10-01",
+        "commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+        "evidence": [
+          "12_VALIDASI_ULANG_W2_05.md",
+          "validation/W2-05-review/results.json"
+        ],
+        "verdict": "valid",
+        "not_fix_validation": true,
+        "relation": "Distinct atomic dedupe subproblem within RF-16 event/passage work; do not assume independent root-cause count."
+      },
+      "phase": "P07",
+      "card": "findings/W2-012.md"
+    },
+    {
+      "id": "W2-013",
+      "title": "GRN closed meskipun finalisasi hanya memproses500 dari501 roll",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/grn-capacity-results.json",
+        "baseline/14_UJI_GRN_PARSIAL_KAPASITAS_RECOVERY.md"
+      ],
+      "scenario": [
+        "W2-G-F01",
+        "W2-G-F02"
+      ],
+      "evidence_level": "Actual GRN services + Mongo;501 real count calls",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_grn_capacity.obs.txt",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [],
+      "history": [
+        {
+          "event": "runtime_reproduced",
+          "date": "2026-10-02"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P02",
+      "card": "findings/W2-013.md"
+    },
+    {
+      "id": "W2-014",
+      "title": "Qty dasar QC dipakai sebagai unit harga PO pada retur supplier",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/qc-flow-results.json",
+        "baseline/16_AUDIT_LINTAS_FLOW_QC_SALES_STOK_AR.md"
+      ],
+      "scenario": [
+        "W2-Q-F01",
+        "W2-Q-F02"
+      ],
+      "evidence_level": "Actual ASGI/services + synthetic Mongo; scheduling barriers on AR F03/F04 only",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P02",
+      "card": "findings/W2-014.md"
+    },
+    {
+      "id": "W2-015",
+      "title": "Pelunasan murni deposit melewati posting reklasifikasi GL",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/ar-results.json",
+        "baseline/16_AUDIT_LINTAS_FLOW_QC_SALES_STOK_AR.md"
+      ],
+      "scenario": [
+        "W2-A-F01"
+      ],
+      "evidence_level": "Actual ASGI/services + synthetic Mongo; scheduling barriers on AR F03/F04 only",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/test_w2_targeted.py",
+        "iterations/2026-10-04-W2-P00-P07/testing_agent_iteration_140.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "FN-10"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P05",
+      "card": "findings/W2-015.md"
+    },
+    {
+      "id": "W2-016",
+      "title": "Void sumber deposit gagal setelah payment dan kas dibalik",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/ar-results.json",
+        "baseline/16_AUDIT_LINTAS_FLOW_QC_SALES_STOK_AR.md"
+      ],
+      "scenario": [
+        "W2-A-F02"
+      ],
+      "evidence_level": "Actual ASGI/services + synthetic Mongo; scheduling barriers on AR F03/F04 only",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "GN-11"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P05",
+      "card": "findings/W2-016.md"
+    },
+    {
+      "id": "W2-017",
+      "title": "CAS deposit terlambat meninggalkan pembayaran tanpa dana",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/ar-results.json",
+        "baseline/16_AUDIT_LINTAS_FLOW_QC_SALES_STOK_AR.md"
+      ],
+      "scenario": [
+        "W2-A-F03"
+      ],
+      "evidence_level": "Actual ASGI/services + synthetic Mongo; scheduling barriers on AR F03/F04 only",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md",
+        "iterations/2026-10-04-W2-P00-P07/test_w2_targeted.py",
+        "iterations/2026-10-04-W2-P00-P07/testing_agent_iteration_140.json"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "GN-11"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P05",
+      "card": "findings/W2-017.md"
+    },
+    {
+      "id": "W2-018",
+      "title": "Void menimpa pembayaran baru dengan snapshot array lama",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/ar-results.json",
+        "baseline/16_AUDIT_LINTAS_FLOW_QC_SALES_STOK_AR.md"
+      ],
+      "scenario": [
+        "W2-A-F04"
+      ],
+      "evidence_level": "Actual ASGI/services + synthetic Mongo; scheduling barriers on AR F03/F04 only",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P05",
+      "card": "findings/W2-018.md"
+    },
+    {
+      "id": "W2-019",
+      "title": "Split QC menggandakan berat aktual tersimpan",
+      "priority": "P2",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/qc-flow-results.json",
+        "baseline/16_AUDIT_LINTAS_FLOW_QC_SALES_STOK_AR.md"
+      ],
+      "scenario": [
+        "W2-Q-F03"
+      ],
+      "evidence_level": "Actual ASGI/services + synthetic Mongo; scheduling barriers on AR F03/F04 only",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "WM-02"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P02",
+      "card": "findings/W2-019.md"
+    },
+    {
+      "id": "W2-020",
+      "title": "Refund jual final meskipun buku kas gagal dan retry tidak melengkapi efek",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/cash-refund-results.json",
+        "baseline/19_AUDIT_REFUND_ADVANCE_MULTI_PO_GL.md"
+      ],
+      "scenario": [
+        "W2-CR-F01",
+        "W2-CR-F02"
+      ],
+      "evidence_level": "Actual ASGI/services + indexed synthetic Mongo; limitations specified in report19",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/test_w2_targeted.py",
+        "iterations/2026-10-04-W2-P00-P07/testing_agent_iteration_140.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "FN-10",
+        "GN-11"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P05",
+      "card": "findings/W2-020.md"
+    },
+    {
+      "id": "W2-021",
+      "title": "Batas query5000/50000/100000 memotong saldo rekening dan laporan keuangan",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/gl-capacity-results.json",
+        "baseline/19_AUDIT_REFUND_ADVANCE_MULTI_PO_GL.md",
+        "baseline/bank-flow-results.json",
+        "baseline/21_AUDIT_PRODUKSI_PAYROLL_BANK.md"
+      ],
+      "scenario": [
+        "W2-GCAP-F01",
+        "W2-GCAP-F02",
+        "W2-GCAP-F03",
+        "W2-BANK-F01",
+        "W2-BANK-F02"
+      ],
+      "evidence_level": "Actual ASGI/services + indexed synthetic Mongo; limitations specified in report19",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "bank_ledger_capacity_extension",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P06",
+      "card": "findings/W2-021.md"
+    },
+    {
+      "id": "W2-022",
+      "title": "Payroll paid mengkredit kas GL tanpa transaksi buku kas",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/payroll-flow-results.json",
+        "baseline/21_AUDIT_PRODUKSI_PAYROLL_BANK.md"
+      ],
+      "scenario": [
+        "W2-PAY-F01"
+      ],
+      "evidence_level": "Actual payroll services, payment ASGI API, indexed synthetic Mongo; tax/BPJS disabled",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/test_w2_targeted.py",
+        "iterations/2026-10-04-W2-P00-P07/testing_agent_iteration_140.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P06",
+      "card": "findings/W2-022.md"
+    },
+    {
+      "id": "W2-023",
+      "title": "Payroll menerima akun beban sebagai sumber pembayaran",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/payroll-flow-results.json",
+        "baseline/21_AUDIT_PRODUKSI_PAYROLL_BANK.md"
+      ],
+      "scenario": [
+        "W2-PAY-F02"
+      ],
+      "evidence_level": "Actual payroll services, payment ASGI API, indexed synthetic Mongo; tax/BPJS disabled",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md",
+        "iterations/2026-10-04-W2-P00-P07/test_w2_targeted.py",
+        "iterations/2026-10-04-W2-P00-P07/testing_agent_iteration_140.json"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P06",
+      "card": "findings/W2-023.md"
+    },
+    {
+      "id": "W2-024",
+      "title": "WO completed dengan konsumsi bahan terpotong pada5000 roll",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/production-capacity-results.json",
+        "baseline/23_AUDIT_RECOVERY_DAN_KAPASITAS_PRODUKSI.md"
+      ],
+      "scenario": [
+        "W2-PCAP-F01",
+        "W2-PCAP-F02"
+      ],
+      "evidence_level": "Actual WO complete and5000 roll mutations; indexed synthetic Mongo, input rolls bulk seeded",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/replay_obs/wave2_production_capacity.obs.txt",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [
+        "GN-06"
+      ],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P04",
+      "card": "findings/W2-024.md"
+    },
+    {
+      "id": "W2-025",
+      "title": "Scope lini R&D hanya membatasi daftar; detail dan patch sample lintas lini tetap diterima",
+      "priority": "P1",
+      "status": "ready_for_validation",
+      "wave": 2,
+      "audited_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+      "evidence": [
+        "baseline/rnd-line-scope-results.json",
+        "baseline/26_TAMBAHAN_KLIEN_DAN_W2_025.md"
+      ],
+      "scenario": [
+        "W2-RNDLINE-F01",
+        "W2-RNDLINE-F02"
+      ],
+      "evidence_level": "Actual ASGI HTTP + indexed synthetic Mongo; same entity, woven-only actor",
+      "implementation_commits": [
+        "uncommitted@base-8934e12"
+      ],
+      "implementation_evidence": [
+        "iterations/2026-10-04-W2-P00-P07/regression_w2_http.py",
+        "iterations/2026-10-04-W2-P00-P07/regression_http_results.json",
+        "iterations/2026-10-04-W2-P00-P07/IMPLEMENTATION.md"
+      ],
+      "validation_commit": null,
+      "validation_evidence": [],
+      "related_wave1": [],
+      "history": [
+        {
+          "event": "runtime_reproduced_and_reviewed",
+          "date": "2026-10-03"
+        },
+        {
+          "event": "ready_for_validation",
+          "date": "2026-10-04"
+        }
+      ],
+      "phase": "P01",
+      "card": "findings/W2-025.md"
+    }
+  ],
+  "schema_version": 1,
+  "note": "Active status SSOT. Baseline trackers are immutable historical snapshots. Implementer stops at ready_for_validation; separate review sets verified_fixed."
+}

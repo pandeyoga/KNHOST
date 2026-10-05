@@ -1,0 +1,158 @@
+[
+ {
+  "nav": "nav-zone-kerja",
+  "view": "operations",
+  "hub_tabs": [
+   "operations",
+   "goods-receipts",
+   "qc-inspection",
+   "inspections",
+   "interco-transfers"
+  ]
+ },
+ {
+  "nav": "nav-home",
+  "view": "operations",
+  "hub_tabs": [
+   "operations",
+   "goods-receipts",
+   "qc-inspection",
+   "inspections",
+   "interco-transfers"
+  ]
+ },
+ {
+  "nav": "nav-zone-modul",
+  "view": "operations",
+  "hub_tabs": [
+   "operations",
+   "goods-receipts",
+   "qc-inspection",
+   "inspections",
+   "interco-transfers"
+  ]
+ },
+ {
+  "nav": "nav-my-desk",
+  "view": "my-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-sourcing",
+  "view": "purchase-requisitions",
+  "hub_tabs": [
+   "purchase-requisitions",
+   "rfq"
+  ]
+ },
+ {
+  "nav": "nav-accounts-payable",
+  "view": "contra-bons",
+  "hub_tabs": [
+   "contra-bons",
+   "purchase-returns"
+  ]
+ },
+ {
+  "nav": "nav-rnd-hub",
+  "view": "rnd-samples",
+  "hub_tabs": [
+   "rnd-samples",
+   "rnd-labdip",
+   "rnd-handfeel",
+   "rnd-proofing"
+  ]
+ },
+ {
+  "nav": "nav-wms-operations",
+  "view": "operations",
+  "hub_tabs": [
+   "operations",
+   "goods-receipts",
+   "qc-inspection",
+   "inspections",
+   "interco-transfers"
+  ]
+ },
+ {
+  "nav": "nav-stock-atp",
+  "view": "inventory-board",
+  "hub_tabs": [
+   "inventory-board",
+   "stock-buckets",
+   "inventory-lots"
+  ]
+ },
+ {
+  "nav": "nav-production",
+  "view": "production",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-wms-locations",
+  "view": "wms-locations",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-md-warehouses",
+  "view": "md-warehouses",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-logistics",
+  "view": "logistics",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-rfid-hub",
+  "view": "cs-rfid-lokasi",
+  "hub_tabs": [
+   "cs-rfid-lokasi",
+   "cs-rfid-tags",
+   "cs-rfid-gate"
+  ]
+ },
+ {
+  "nav": "nav-escalations",
+  "view": "escalations",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-interco-transactions",
+  "view": "interco-transactions",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-vehicle-logs",
+  "view": "vehicle-logs",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-zone-alat",
+  "view": "vehicle-logs",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-document-center",
+  "view": "document-center",
+  "hub_tabs": [
+   "document-center",
+   "doc-trace",
+   "documents"
+  ]
+ },
+ {
+  "nav": "nav-zone-akun",
+  "view": "document-center",
+  "hub_tabs": [
+   "document-center",
+   "doc-trace",
+   "documents"
+  ]
+ },
+ {
+  "nav": "nav-hr-my-profile",
+  "view": "hr-my-profile",
+  "hub_tabs": []
+ }
+]

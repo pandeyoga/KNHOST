@@ -1,0 +1,49 @@
+{
+  "summary": "RETEST of iter147 fixes on ent_ksc. Verified at API + UI levels using live backend and Playwright. FIX 1 (home/admin AR vs ar/aging parity): PASS — admin home 'Piutang Belum Lunas' = Rp 442.999.761 == /api/ar/aging totals.total 442,999,760.5 == DB. FIX 2 (leaderboard entity scoping): PASS — leaderboard Σtotal_sales = 507,498,160.5 which now equals /api/ar/aging total (442.99M) + collected (64.5M) across sales users; previous cross-entity 25.875M leak gone; 'Top Sales (MTD)' admin card shows '0.2% tertagih' (real percent, previously raw 0.0002). FIX 3 (cash summary opening_balance): PASS — kas_kecil opening=2M + in 10M - out 2.25M = 9.75M; kas_besar opening=50M + in 176.20M - out 30.80M = 195.40M; UI Kas Besar/Bank Rp 195.399.200 and Kas Kecil Rp 9.750.000. FIX 4 (sales home target): PASS — target.amount=200M (penagihan), sales_amount=250M (penjualan), sales_pct=3.7; UI 'Capaian Target Penagihan 0% dari Rp 200.000.000', 'Penjualan MTD Rp 9.213.000 3.7% dari target Rp 250.000.000', 'Tertagih Rp 6.500 0.1% dari penjualan' (collection_rate*100 formatted correctly). FIX 5 (Pelanggan): PASS — no pre-shown 'Pilih provinsi.' error; submit with empty address blocks with 'Alamat toko wajib diisi.' NOT BUGS confirmed: vendor_bills paid n=3 total 27.75M outstanding 0 (grand_total incl PPN covers). FORMS: PO 'Buat' popover (Beli FG/Raw Material/Proses Saja) opens cleanly; Makloon wizard dialog opens; Vendor Bill 3-way modal opens narrow and clean; Pelanggan modal clean; Transaksi Kas modal opens but visible card width still ~1480px (max-w-2xl class exists but applied width is near full). Native selects inside Transaksi Kas are KNSelect's Radix hidden natives — confirmed NOT a bug.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/stock/atp (GET w/o product_id)", "issue": "Returns 422; previous iteration noted. Not in retest scope but still present."},
+      {"endpoint": "/api/sales/leaderboard & /api/ar/aging (sales role)", "issue": "Return 403 for sales@ (expected by permissions; sales see /api/home/sales only)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CashTransactionCreateModal", "issue": "Dialog visible card width still unconstrained (bounding ~1880px; max-w-2xl class present but parent container is w-full). Fields render stretched. Should wrap inner panel in flex-center with max-w-xl/2xl taking effect.", "selector": "[role=dialog] on ?view=cash-management → create-cash-button", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Transaksi Kas modal", "issues": ["Panel occupies nearly full viewport width; needs centering wrapper so max-w applies."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/audit_numbers.py",
+    "/app/test_reports/audit_numbers_dump.json",
+    "/app/test_reports/iter148-admin-home.jpeg",
+    "/app/test_reports/iter148-kas.jpeg",
+    "/app/test_reports/iter148-sales-home.jpeg",
+    "/app/test_reports/iter148-pelanggan-initial.jpeg",
+    "/app/test_reports/iter148-pelanggan-after-submit.jpeg",
+    "/app/test_reports/iter148-cash-modal.jpeg",
+    "/app/test_reports/iter148-po-modal.jpeg",
+    "/app/test_reports/iter148-makloon-modal.jpeg",
+    "/app/test_reports/iter148-vb-modal.jpeg"
+  ],
+  "action_items": [
+    "(Optional/LOW) Constrain Transaksi Kas create modal panel to max-w-xl with centered wrapper so max-w class actually applies; currently visible card is near full-viewport width.",
+    "(Carry-over from iter147, not in retest scope) Create md@kainnusantara.id or seed role='md' when KN_DEMO_DATA includes MD; confirmed md role still missing in DB (expected)."
+  ],
+  "critical_code_review_comments": [
+    "AR parity achieved by routing /api/home/admin AR to the same entity-scoped aggregation used by /api/ar/aging — good consolidation of _scope_entity.",
+    "cash_summary now includes opening_balance from bank_accounts; balance = opening + in - out works per account bucket.",
+    "SalesHome 'collection_rate' is now formatted as pct (rate*100) in UI; verify same formatter is used in mobile sales home (not re-screenshotted) and any email digests."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "95%"},
+  "test_credentials": "admin@/sales@/manager@/finance@/warehouse@/salesadmin@ all demo12345 OK. md@kainnusantara.id still absent (expected — demo not seeded).",
+  "seed_data_creation": "None (read-only retest; a form submit attempt on Pelanggan with name 'TEST_Validation_Toko' was blocked by validation, so no row created).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All 5 fixes from iter147 verified. Only cosmetic remaining item is Transaksi Kas modal width (max-w-2xl class present but parent dialog takes full width — likely needs flex items-center justify-center wrapper). Audit script usable: `cd /app/backend && python tests/audit_numbers.py` dumps to /app/test_reports/audit_numbers_dump.json for numeric comparisons. Period: 2026-10. Entity: ent_ksc.",
+  "rca of the issue": "N/A — retest confirmed main-agent fixes landed and are consistent across API and UI."
+}

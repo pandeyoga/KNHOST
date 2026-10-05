@@ -1,0 +1,41 @@
+  [poc-stock] snapshot 50 dokumen stok dari 1 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (50 dokumen, 1 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "OPS-03",
+  "invariant": "dry-run: 3 akan dibuat, 1 error (sales tak dikenal), tanpa menulis",
+  "pass": true,
+  "detail": "(3, ['Baris 5: sales dengan email tidakada@kainnusantara.id tidak ditemukan'])"
+ },
+ {
+  "id": "OPS-03",
+  "invariant": "impor terputus: 2 baris pertama masuk",
+  "pass": true,
+  "detail": "{'total': 2, 'created': 2, 'updated': 0, 'errors': [], 'dry_run': False, 'entity_id': 'ent_ksc'}"
+ },
+ {
+  "id": "OPS-03",
+  "invariant": "lanjut dengan file penuh: hanya sisa baris yang dibuat (1), 2 diperbarui, 1 error",
+  "pass": true,
+  "detail": "{'total': 4, 'created': 1, 'updated': 2, 'errors': ['Baris 5: sales dengan email tidakada@kainnusantara.id tidak ditemukan'], 'dry_run': False, 'entity_id': 'ent_ksc'}"
+ },
+ {
+  "id": "OPS-03",
+  "invariant": "impor ulang idempoten: 0 dibuat, jumlah tetap 3, kode unik sesuai file",
+  "pass": true,
+  "detail": "({'total': 4, 'created': 0, 'updated': 3, 'errors': ['Baris 5: sales dengan email tidakada@kainnusantara.id tidak ditemukan'], 'dry_run': False, 'entity_id': 'ent_ksc'}, ['TEST_P17H_44E28A-C1', 'TEST_P17H_44E28A-C2', 'TEST_P17H_44E28A-C3'])"
+ },
+ {
+  "id": "OPS-03",
+  "invariant": "rekonsiliasi: Σ created seluruh run = jumlah pelanggan baru = baris valid file",
+  "pass": true,
+  "detail": "3"
+ },
+ {
+  "id": "OPS-03",
+  "invariant": "tiap run impor (bukan dry-run) tercatat di audit",
+  "pass": true,
+  "detail": "3"
+ }
+]
+pass=6 fail=0

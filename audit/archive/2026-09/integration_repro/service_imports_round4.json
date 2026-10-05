@@ -1,0 +1,1232 @@
+[
+  {
+    "module": "services.advance_report_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ai_chat_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ai_cost",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ai_narrative",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ai_number_check",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ai_schedules",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ai_templates",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ai_tools",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ai_usage_report",
+    "status": "imported",
+    "elapsed_seconds": 0.016
+  },
+  {
+    "module": "services.alert_ops_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.alert_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.amendment_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.analytics_catalog",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.analytics_config",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.analytics_engine",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.analytics_facts",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.analytics_snapshots",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.analytics_time",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.app_url",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.approval_backlog_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.approval_matrix_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.approval_reminder",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.approval_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ar_aging_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ar_receipt_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.atomic_claim",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.atp_policy",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.backorder_service",
+    "status": "imported",
+    "elapsed_seconds": 0.015
+  },
+  {
+    "module": "services.bank_recon_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.bank_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.bank_statement_parser",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.base_fabric",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.blanket_po_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.budget_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.cash_advance_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.cash_entity_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.cash_flow_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.cash_ledger",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.cashflow_forecast_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.catalog_access",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.catalog_rules",
+    "status": "imported",
+    "elapsed_seconds": 0.016
+  },
+  {
+    "module": "services.closing_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.color_card_pdf",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.color_lock_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.color_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.config_currency",
+    "status": "imported",
+    "elapsed_seconds": 0.016
+  },
+  {
+    "module": "services.config_health",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.config_impact_service",
+    "status": "imported",
+    "elapsed_seconds": 0.015
+  },
+  {
+    "module": "services.config_resolver",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.config_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.config_simulator",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.consolidation_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.contra_bon_reminder",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.contra_bon_scan",
+    "status": "imported",
+    "elapsed_seconds": 0.016
+  },
+  {
+    "module": "services.contra_bon_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.contract_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.costing_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.crm_omnichannel_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.csv_money",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.custom_role_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.customer_feedback_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.customer_price_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.customer_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.cycle_count_service",
+    "status": "imported",
+    "elapsed_seconds": 0.016
+  },
+  {
+    "module": "services.data_hygiene_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.delivery_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.demo_seed_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.design_gallery_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.design_request_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.design_studio_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.digest_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.dn_rules",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.doc_refs_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.document_relations_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.dual_qty_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.entity_context_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.entity_lifecycle_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.entity_master_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.entity_provisioning_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.entity_readiness_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.equity_statement_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.escalation_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.esign_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.finance_bi_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.finance_case_actions",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.finance_case_playbooks",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.finance_case_scan",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.finance_case_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.finance_tower_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.financial_statement_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.fixed_asset_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.fleet_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.fulfillment_decision_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.fulfillment_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.fulfillment_status",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.fulfillment_wizard_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.gemini_image_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.gl_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.goods_receipt_close_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.goods_receipt_ocr_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.goods_receipt_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.grade_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.group_partner_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.home_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.hr_ai_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.hr_analytics_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.hr_attendance_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.hr_kpi_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.hr_leave_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.hr_payroll_pdf",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.hr_payroll_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.hr_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.inbound_complete_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.input_tax_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.inspection_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.integrations_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.interco_loan_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.interco_margin",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.interco_money_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.interco_reminder",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.interco_return_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.interco_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.interco_tax_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.internal_request_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.inventory_drift_watch",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.inventory_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.label_decoder_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.label_printer_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.landed_cost_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.line_scope",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.loading_check_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.location_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.logistics_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.lot_migration",
+    "status": "imported",
+    "elapsed_seconds": 0.015
+  },
+  {
+    "module": "services.lot_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.lot_trace_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.makloon_calc_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.makloon_claim_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.makloon_order_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.makloon_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.marketing_ext",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.marketing_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.master_registry",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.movement_label_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.notification_audience",
+    "status": "imported",
+    "elapsed_seconds": 0.016
+  },
+  {
+    "module": "services.notification_scope",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.notification_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ocr_openai_client",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.ocr_sj_v2",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.order_journey_service",
+    "status": "imported",
+    "elapsed_seconds": 0.015
+  },
+  {
+    "module": "services.payment_plan_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.payment_variance_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.pdf_engine",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.pdf_resolvers",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.pdf_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.penalty_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.period_unlock_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.po_amendment_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.po_board_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.po_line_guard",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.pos_recommendation_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.pr_sourcing_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.price_approval_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.price_guard_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.pricelist_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.printer_stuck_watch",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.process_recipe_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.product_exclusivity",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.product_media_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.product_template_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.product_variant_service",
+    "status": "imported",
+    "elapsed_seconds": 0.016
+  },
+  {
+    "module": "services.production_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.profitability_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.purchase_requisition_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.purchase_return_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.purchase_return_state",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.putaway_order_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.qc_inspection_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.qc_service",
+    "status": "imported",
+    "elapsed_seconds": 0.016
+  },
+  {
+    "module": "services.receiving_mode_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.receiving_roll_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.receiving_uom_service",
+    "status": "imported",
+    "elapsed_seconds": 0.031
+  },
+  {
+    "module": "services.restock_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.return_chain_service",
+    "status": "imported",
+    "elapsed_seconds": 0.016
+  },
+  {
+    "module": "services.return_policy_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.return_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.return_state",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.rfid_incident_service",
+    "status": "imported",
+    "elapsed_seconds": 0.031
+  },
+  {
+    "module": "services.rfid_ingest_service",
+    "status": "imported",
+    "elapsed_seconds": 0.015
+  },
+  {
+    "module": "services.rfid_print_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.rfid_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.rfq_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.rnd_catalog_validation",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.rnd_gate",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.rnd_kpi_export",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.rnd_kpi_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.rnd_org_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.rnd_sample_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.rnd_sla_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.rnd_spec_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.role_desk_service",
+    "status": "imported",
+    "elapsed_seconds": 0.032
+  },
+  {
+    "module": "services.role_reality_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.roll_cost_history",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.roll_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.roll_timeline_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.saga_lock_watch",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.sales_force_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.sales_order_helpers",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.sales_ownership",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.sample_sale_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.scheduler_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.shipment_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.so_approvals",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.so_status",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.so_verify_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.special_order_phase2",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.special_order_routing",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.special_order_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.status_history",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.stock_analytics_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.stock_bucket_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.storage_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.store_credit_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.supplier_dn_profile_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.supplier_item_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.supplier_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.tax_center_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.tax_invoice_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.text_normalize",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.three_way_policy",
+    "status": "imported",
+    "elapsed_seconds": 0.015
+  },
+  {
+    "module": "services.tolerances",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.trace_print_service",
+    "status": "imported",
+    "elapsed_seconds": 0.016
+  },
+  {
+    "module": "services.tracking_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.turn_notification_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.uom_rules_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.uom_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.user_admin_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.variant_axes",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.vendor_bill_service",
+    "status": "imported",
+    "elapsed_seconds": 0.016
+  },
+  {
+    "module": "services.wa_alert_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.warehouse_profile_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.warehouse_scope_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.web_push_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.wilayah_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.wms_health_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  },
+  {
+    "module": "services.work_desk_service",
+    "status": "imported",
+    "elapsed_seconds": 0.0
+  }
+]

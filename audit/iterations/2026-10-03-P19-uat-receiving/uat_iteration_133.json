@@ -1,0 +1,32 @@
+{
+  "summary": "P19 iter 133 — FOKUS: (A) GRN-01 PENUH DI LAYAR, (B) re-check 2 perbaikan UI QC. HASIL: GRN-01 = PASS DI LAYAR. QC UI FIXES = PASS DI LAYAR.\n\nGRN-01 PASS (full UI, no API bypass): Setup PO baru via API → KSC/PO-00019 (po_10a56ad900b9, Cirebon Craft, prod_batik_mega, 50 yard, warehouse Jakarta). Task inbound wms_b325e9398484 (waiting_goods, expected 50 yd, cocok po_id). Lalu DI LAYAR login admin@kainnusantara.id → ?view=goods-receipts&entity=ent_ksc → grn-new-button → grn-wizard: grn-wizard-type-supplier (default), grn-wizard-partner → Cirebon Craft, grn-wizard-doc-po_10a56ad900b9 (PO baru), grn-wizard-next, grn-wizard-submit → grn-detail KSC/GRN-00005 terbuka. grn-manual-entry → DN: grn-dn-number='TEST_P19-SJ-UI', grn-dn-date='2026-01-15', grn-dn-recipient='TEST_P19 UI' → grn-dn-save. Baris: grn-line-desc='TEST_P19 UI batik mega', grn-line-qty=50, grn-line-unit='yard', grn-line-rolls=1, grn-line-target=opsi 'KSC/PO-00019 · Batik Mega Mendung Premium (yard)' → grn-line-add. grn-start-count → hitung: grn-count-length-1=50, grn-count-lot-1='TEST_P19-UI', grn-count-add-1 → grn-finish-count → grn-recon-panel 'Tidak ada selisih — surat jalan cocok dengan hitungan fisik.', hanya grn-disc-list muncul (tanpa pemblokir). grn-close → grn-detail-status 'Ditutup', grn-recon-posted-1 'Terposting'. VERIFIKASI: (1) grn-detail-number KSC/GRN-00005 status Ditutup; (2) di ?view=operations&entity=ent_ksc tab inventory-tab-rolls dengan filter 'TEST_P19-UI' muncul RL-00062 (lot KSC/LOT-2610-0033, dye_lot TEST_P19-UI, grade A, 50 yard, 6,31 kg, status Karantina); (3) jurnal GRN KSC/JE-00080 source=goods_receipt desc 'Goods Receipt KSC/PO-00019' lines: Dr 1-1300 Persediaan Barang 5.000.000 / Cr 2-1150 Hutang Belum Ditagih (GR/IR) 5.000.000 — SESUAI ekspektasi brief.\n\nQC UI RE-CHECK PASS: Di qc-inspect-modal task PO-00019 (wms_b325e9398484, qc_pending, 1 roll roll_758b00d91f9e) → QcPlanPanel: switch ke Sampling (qc-plan-mode-sampling) → qc-plan-pct=30, qc-plan-min=1 → qc-plan-save. Klik qc-plan-open-rolls → roll-inspection-modal → roll-inspect-btn-roll_758b00d91f9e → roll-inspect-save-{id} (grade A default, 0 defect) → roll inspected. FIX1 TERKONFIRMASI: qc-plan-met='Cakupan terpenuhi' AND qc-plan-open-rolls TETAP TAMPAK dengan label='Lihat roll (inspeksi · tahan / lepas tahan)'. FIX2 TERKONFIRMASI: setelah roll-inspect-close, roll-inspection-modal tertutup DAN qc-inspect-modal otomatis TERBUKA KEMBALI untuk tugas yang sama (siap untuk qc-accept-all/qc-submit-decision).\n\nTemuan sekunder: tombol qc-plan-mode-sampling perlu klik tanpa force (Playwright `force=True` dilewatkan oleh handler); setelah dipakai klik normal, mode beralih normal dan qc-plan-pct/min muncul.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iter133_setup_po.py",
+    "/app/test_reports/create_grns.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "QcPlanPanel + QCInspection: dua perbaikan iterasi 132 (qc-plan-open-rolls selalu tampil + onOpenRolls menyetel _fromDecision untuk reopen qc-inspect-modal via onClose) berfungsi persis sesuai brief. Verified in UI.",
+    "GRN wizard + manual-entry + count + close berjalan 100% dari UI untuk PO sederhana (1 line, qty tepat). Jurnal akuntansi GRN terbit sesuai aturan (Dr 1-1300 / Cr 2-1150).",
+    "Pengamatan non-blocker: `button[data-testid=qc-plan-mode-sampling]` tak merespons Playwright `force=True` click (klik native via JS/Playwright normal click bekerja). Tidak mempengaruhi end-user karena tombol dapat diklik mouse biasa."
+  ],
+  "updated_files": [
+    "/app/test_reports/iter133_setup_po.py (utility baru buat PO KSC/PO-00019)"
+  ],
+  "success_rate": {
+    "backend": "N/A (frontend-only per brief)",
+    "frontend": "GRN-01 PASS (full UI); QC UI fixes PASS (FIX1 + FIX2 verified)"
+  },
+  "test_credentials": "admin@kainnusantara.id / demo12345 (ent_ksc Sukacita)",
+  "seed_data_creation": "PO KSC/PO-00019 (po_10a56ad900b9, Cirebon Craft, 50 yard prod_batik_mega), GRN KSC/GRN-00005 Ditutup, roll RL-00062 (roll_758b00d91f9e, lot KSC/LOT-2610-0033, dye_lot TEST_P19-UI, grade A, Karantina → setelah inspeksi QC roll sudah ter-inspect grade A). Journal KSC/JE-00080 goods_receipt Dr 1-1300 5.000.000 / Cr 2-1150 5.000.000.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iterasi ini menuntaskan GRN-01 full-screen UI (sebelumnya di iter 132 PARTIAL karena masalah over_remaining). Perbaikan iter 132 (qc-plan-open-rolls selalu tampil + auto-reopen qc-inspect-modal) sudah PASS di layar. Task PO-00019 wms_b325e9398484 masih qc_pending dengan 1 roll ter-inspect, siap untuk qc-accept-all/qc-submit-decision kalau mau latihan lanjutan.",
+  "rca of the issue": "N/A — semua kasus pass."
+}

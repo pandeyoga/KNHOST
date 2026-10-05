@@ -1,0 +1,26 @@
+{
+  "summary": "Iter 112 — Verified iter-323 follow-up (label verification, reimburse payable 2-1650, PO-line matching, posting-failure badge). Backend: (a) ran official repro_followup2.py end-to-end 12/12 pass covering LABEL (list, wrong code→400, gate 409, correct code (case-insensitive+trim)→200 with verified_via=label_scan, retry→409, gate lolos), REIMB (LPJ 130 over PD 100 → hutang_reimburse=30 open; pay after 1× GL fault-injection → one cash txn ref_type=reimburse_payable + 2-1650 saldo=0 + status=paid; second pay→409), POLINE (evaluate_match multi-line matched with per-line PO price; billing L2 60 over received 50→blocked; already_billed_map per line; HTTP concurrent 2× + 1 sequential 60 units against received=100 → only one 200, others 400, total ≤ received), BADGE (count delta +1 when synthetic failed cash_txn seeded). (b) Wrote /app/backend/tests/test_iter112_followup2.py 6/6 PASSED: posting-failures/count admin=200 & sales=403, cut-children-unverified admin=200, vendor-bill ambiguous-line (no po_line_code, product in 2 PO lines)→400, duplicate po_line_code→400, per-line matched bill→200. Frontend: login (admin) OK; ?view=posting-failures renders posting-failures-view + pf-empty (steady state); sidebar Keuangan group present (steady-state badges nav-badge-keuangan and nav-badge-posting-failures correctly hidden when count=0); ?view=wms-locations renders both lp-tab-cuts and lp-tab-pa, and PendingCutsPanel shows 'menunggu verifikasi identitas' section header (label-scan-input-<id>/label-verify-btn-<id> testids appear only when synthetic reserved+cut.identity_verified=false rolls exist, per contract); ?view=settlements renders LPJ page with full stl-* testids (stl-create-btn, stl-tab-*, stl-empty in steady state; stl-pay-reimburse-btn/stl-reimburse-paid gated to LPJ with hutang_reimburse=open). No regressions on sidebar, Antrean Potong, Posting Gagal, detail LPJ. Test data cleaned by repro script + pytest fixtures.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter112_followup2.py",
+    "/app/test_reports/pytest/iter112_followup2.xml",
+    "/app/audit/iterations/2026-10-04-label-reimburse-poline-badge/repro_followup2.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "roll_service.verify_cut_identity_by_label: label match normalised via strip+casefold and idempotent (409 on second verify) — matches spec.",
+    "cash_advance_service.pay_reimburse: writes single cash_transactions doc with ref_type=reimburse_payable and JE Dr 2-1650 / Cr Kas, guards double-pay with 409 — verified via GL fault injection: after failed GL post the status is not left in paid inconsistent state (retry succeeds; balance 2-1650=0).",
+    "vendor_bill_service.evaluate_match + already_billed_map correctly key by po_line_code so same product on 2 PO lines is unambiguous and per-line receipt caps enforced; concurrent-bill locking successfully serialises (only 1 of 2 concurrent 60-unit bills posts).",
+    "posting_failures.count endpoint is permission-gated (accounting.view); sales returns 403 as expected.",
+    "Frontend CoreWidgets usePostingFailureCount hook only surfaces nav-badge-keuangan/nav-badge-posting-failures when count>0 — steady state (0 failures) correctly hides badges."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter112_followup2.py"],
+  "success_rate": {"backend": "100% (6/6 pytest + 12/12 repro_followup2 = 18/18)", "frontend": "100% structural"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (ent_ksc); sales@kainnusantara.id / demo12345",
+  "seed_data_creation": "repro_followup2.py + pytest fixtures create synthetic rolls / cash_advances / settlements / POs / cash_transactions under audit_f2_* / po_iter112_* prefixes and delete them in finally blocks. No changes to demo data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "iter-323 follow-up (LABEL verify, REIMBURSE 2-1650, PO-LINE matching, BADGE) all green. UI badges nav-badge-keuangan/nav-badge-posting-failures are conditionally rendered (count>0); tests verifying them from UI must first seed a failed cash_transactions doc (see repro_followup2). Vendor-bill ambiguity rules: product on >1 PO lines requires po_line_code, duplicate po_line_code within a bill → 400, both covered in test_iter112_followup2.py.",
+  "rca of the issue": "N/A — verification only."
+}
