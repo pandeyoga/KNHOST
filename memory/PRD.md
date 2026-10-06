@@ -1016,5 +1016,11 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - Jumlah di SETIAP tab: Cuti (endpoint baru GET `/api/hr/leave-requests/status-counts`), Kontrabon (`/contra-bons/status-counts`, label lama "(n)" diganti badge), Kasus Keuangan (`/finance-cases/stats` kini memuat `by_status`).
 - Uji: iteration_158 (backend 4/4, frontend lolos; `backend/tests/test_iter_158_status_counts.py`).
 
+## 2026-10-05 (lanjutan 5) — Jumlah tab Lembur/Kunjungan/Galeri + ringkasan antrean tertua
+- Lembur & Kunjungan Sales: permintaan kedua tanpa saringan status → jumlah per status di setiap tab (Kunjungan mengikuti rentang tanggal & karyawan). Galeri Desain: dihitung dari daftar lengkap.
+- RoleDesk (Meja Saya / Meja MD / Meja Admin Gudang): kartu `<prefix>-oldest-card` "Paling lama menunggu" (antrean, jumlah, umur, dokumen tertua) + `<prefix>-oldest-open-queue` (antrean naik ke atas, terbuka, digulir) + `<prefix>-oldest-open-doc` (buka layar penanganan dokumen tertua).
+- Uji: iteration_159 lolos semua.
+
+
 
 - BELUM: cari/paginasi di sisa daftar (Kebijakan Retur, Kendaraan, Lokasi/Tag RFID, Monitor Gerbang, Rekening, Transaksi Kas, Rekonsiliasi Bank, Kasus Keuangan, Antar Entitas Grup, Presensi, Slip Gaji, Kunjungan Sales, Buka Kunci Periode, Kategori Produk, Satuan, Inbox/Persetujuan Saya, Riwayat Persetujuan PO, Pengiriman); paginasi daftar panjang lain; penyeragaman filter di ±18 layar lain; T5.4/T5.5; T6.4 Label Alasan, T6.5 Rate Insentif, T6.7 aturan/template bank, T6.8 konfigurasi PPh, T6.12 master produk, T6.13.

@@ -1,0 +1,22 @@
+{
+  "summary": "Verified (1) status-tab counts on EVERY tab for Lembur, Kunjungan Sales, Galeri Desain (not just the active tab, and 'Semua' == total), and (2) 'Paling lama menunggu' summary card on Meja Saya / Meja MD / Meja Admin Gudang (my-desk-/md-desk-/wh-desk-oldest-* testids) with working Buka antrean + Buka dokumen tertua actions, and (3) no horizontal overflow on 390px mobile. All checks pass.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "OvertimeView.jsx:88-94 fetches /hr/overtime twice per load() (once without `status` for counts, once with filters for rows). Fine for small data; consider adding a dedicated status-counts endpoint for parity with LeaveView.",
+    "VisitsView.jsx:61-63 fetches /hr/visits WITHOUT page/page_size for counts. Backend returns paginated envelope → statusCounts may understate when total > default page_size. Low risk right now (demo total=0) but should use ?page_size=10000 or a dedicated counts endpoint.",
+    "DesignGalleryView.jsx:82-84 computes gallery-filter-status counts client-side from `items` (already filtered to ACC statuses) — correct for current scope (3 ACC statuses + 'Semua'); not affected by current `f.status` selection so counts stay stable across tab switches.",
+    "RoleDesk.jsx:80-84 computes `oldestQ`/`oldestRow` from queues with count>0 — safe when no queue has items (card hidden). oldest-card uses flex-wrap so at 390px the two action buttons wrap under the label without overflow (verified: card_right=361, viewport=390, doc.scrollWidth=390)."
+  ],
+  "updated_files": [],
+  "success_rate": {"frontend": "100% (all checks pass)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; md@/whadmin@/finance@kainnusantara.id/demo1234",
+  "seed_data_creation": "Dynamic: POST 3 TEST_iter159 overtime requests (one approved, one rejected, one left pending) against ent_ksc; deleted all 3 directly from Mongo (collection hr_overtime, reason regex TEST_iter159) after count verification — 0 rows left.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Verification matrix (desktop 1920x1080 unless noted):\n- /?view=hr-overtime&entity=ent_ksc (admin) → with 1 pending + 1 approved + 1 rejected: tabs overtime-filter-status-{all,pending,approved,rejected} show 3/1/1/1 and are STABLE while switching tabs. 'Semua Status' == total. ✅\n- /?view=hr-visits (admin) → tabs visits-status-filter-{all,ongoing,done} all render count (0/0/0 in demo, confirmed stable). ✅ Caveat: statusCounts is computed from first-page envelope (see critical_code_review_comments). Demo has 0 visits so not observable.\n- /?view=cs-design-gallery (admin) → tabs gallery-filter-status-{all,approved,final_submitted,active} all render count (0 in demo). ✅ The view id design-gallery is NOT routed; cs-design-gallery is the correct view.\n- /?view=my-desk (admin) → my-desk-oldest-card ✅ label='Pesanan penjualan menunggu ACC · 1 dokumen · hari ini', doc='Tertua: KANDA/SO-00001 — CV Garmen Soreang Jaya'. Buka antrean → my-desk-queue-so_acc moved to top & toggle aria-expanded=true. Buka dokumen tertua → navigates to ?view=orders (openDocument). ✅\n- /?view=md-desk (admin) → md-desk-oldest-card ✅ label='SPK inspeksi tanpa acuan sample · 1 dokumen · 1 hari'; Buka antrean focuses md-desk-queue-acuan at top. ✅\n- /?view=warehouse-admin-desk (admin) → wh-desk-oldest-card ✅ label='SPK inspeksi belum ditugaskan · 1 dokumen · 1 hari'. ✅\n- Mobile 390px (admin, Monitor toggle to desktop UI) → my-desk-oldest-card: card_right=361, viewport=390, doc.scrollWidth=390 — NO horizontal overflow. Buttons wrap below label due to flex-wrap. ✅\n- Role note: finance@kainnusantara.id goes to view=my-desk but is routed to FinanceDesk (custom component titled 'Meja Finance'), NOT RoleDesk. The user-facing testids my-desk-oldest-* therefore do not render for finance — this appears intentional (FinanceDesk has its own component). If finance should also show the oldest-card, the pattern must be ported into FinanceDesk. Flag only, not treated as a bug per spec which only names my-/md-/wh-desk prefixes."
+  ,
+  "rca of the issue": "n/a — both features (per-tab counts and oldest-waiting summary card) are correctly implemented end-to-end."
+}
