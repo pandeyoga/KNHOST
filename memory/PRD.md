@@ -1067,6 +1067,14 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - Uji: tests/test_g3_phase03.py 22/22, regresi Fase 01/02 65/65, iteration_169 (live 10/10 + frontend) lulus.
 - Berikutnya: Gelombang 3 Fase 04 (docs/audit/gelombang-3/prompts/FASE-04.md).
 
+## 2026-10-06 — Gelombang 3 Fase 04 TUNTAS (24/24 implemented_pending_validation) + Ekspor Excel Profitabilitas
+- Keputusan user (semua a): persediaan biaya penuh (dasar+landed), pelanggan baru per lini, turnover dari tanggal keluar resmi (lama tanpa tanggal tidak dihitung), reach per kanal = atribusi bersama, bobot KPI 0 sah.
+- Rincian per ID: docs/audit/gelombang-3/implementation/FASE-04-STATUS.md. Field baru: `hr_employees.separation_date` (+`separation_history`), `fact_sales_lines.build_gen`.
+- Ekspor: GET /api/finance/profitability/export.xlsx (Per Pelanggan / Per Produk / Keterangan; HPP-marjin hanya admin/manager), tombol `prof-export-xlsx`.
+- Uji: tests/test_g3_phase04.py 17/17, regresi Fase 01–03 87/87, iteration_170 (live 12/12 + frontend) lulus.
+- Berikutnya: Gelombang 3 Fase 05 (docs/audit/gelombang-3/prompts/FASE-05.md).
+
+
 
 
 
