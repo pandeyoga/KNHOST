@@ -66,18 +66,18 @@ class SupplierContractPatch(BaseModel):
     product_id: Optional[str] = None
     input_product_id: Optional[str] = None
     tariff_basis: Optional[str] = None
-    tariff_rate: Optional[MoneyDecimal] = None
+    tariff_rate: Optional[MoneyDecimal] = Field(None, ge=0)  # G3 D4-COMM-BOUNDS-01 — batas sama dgn Create
     tariff_formula: Optional[str] = None
     tariff_qty_source: Optional[str] = None
-    ppi: Optional[QtyDecimal] = None
+    ppi: Optional[QtyDecimal] = Field(None, ge=0)
     aux_fees: Optional[List[ContractAuxFee]] = None
-    min_charge: Optional[MoneyDecimal] = None
-    shrinkage_pct: Optional[QtyDecimal] = None
-    tolerance_pct: Optional[QtyDecimal] = None
-    yield_factor: Optional[QtyDecimal] = None
-    byproduct_pct: Optional[QtyDecimal] = None
-    moq: Optional[QtyDecimal] = None
-    lead_time_days: Optional[int] = None
+    min_charge: Optional[MoneyDecimal] = Field(None, ge=0)
+    shrinkage_pct: Optional[QtyDecimal] = Field(None, ge=0, le=100)
+    tolerance_pct: Optional[QtyDecimal] = Field(None, ge=0, le=100)
+    yield_factor: Optional[QtyDecimal] = Field(None, ge=0)
+    byproduct_pct: Optional[QtyDecimal] = Field(None, ge=0, le=100)
+    moq: Optional[QtyDecimal] = Field(None, ge=0)
+    lead_time_days: Optional[int] = Field(None, ge=0)
     payment_term_code: Optional[str] = None
     valid_from: Optional[str] = None
     valid_to: Optional[str] = None

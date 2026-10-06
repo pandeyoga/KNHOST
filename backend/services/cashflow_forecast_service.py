@@ -61,10 +61,11 @@ async def cashflow_forecast(scope: Optional[Dict[str, Any]] = None,
     now = datetime.now(timezone.utc)
     cash_now = await _cash_now(scope)
 
-    # Peta term_days per customer utk estimasi jatuh tempo AR.
+    # G3 D4-FIN-02 — basis AR & termin = AR kanonis (ar_aging_service): metode tunai dikecualikan,
+    # termin dari snapshot SO (payment_term_days) dulu, termin 0 tetap 0.
+    from services.ar_aging_service import _eligible_outstanding, term_days
     cust_rows = await db.customers.find({}, {"_id": 0, "id": 1, "payment_profile": 1}).to_list(20000)
-    term_map = {c["id"]: int((c.get("payment_profile") or {}).get("term_days", 30) or 30)
-                for c in cust_rows}
+    cmap = {c["id"]: c for c in cust_rows}
 
     buckets: Dict[str, Dict[str, Any]] = {
         k: {"key": k, "label": lbl, "inflow": 0.0, "outflow": 0.0}
@@ -75,20 +76,13 @@ async def cashflow_forecast(scope: Optional[Dict[str, Any]] = None,
 
     # ── INFLOW (AR) ──
     soq: Dict[str, Any] = {**(scope or {})}
-    orders = await db.sales_orders.find(soq, {
-        "_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
-        "status": 1, "payment_status": 1, "grand_total": 1, "total_amount": 1,
-        "paid_total": 1, "created_at": 1, "payment_term_code": 1,
-    }).to_list(50000)
+    orders = await db.sales_orders.find(soq, {"_id": 0}).to_list(50000)
     for o in orders:
-        if o.get("status") in DEAD_SO or o.get("payment_status") == "paid":
-            continue
-        grand = float(o.get("grand_total", 0) or 0) or float(o.get("total_amount", 0) or 0)
-        outstanding = round(grand - float(o.get("paid_total", 0) or 0), 2)
-        if outstanding <= EPS:
+        outstanding = _eligible_outstanding(o)
+        if outstanding is None:
             continue
         created = _parse(o.get("created_at")) or now
-        due = created + timedelta(days=term_map.get(o.get("customer_id"), 30))
+        due = created + timedelta(days=term_days(cmap.get(o.get("customer_id"), {}), o))
         days = (due - now).days
         bk = _bucket_key(days)
         buckets[bk]["inflow"] = round(buckets[bk]["inflow"] + outstanding, 2)

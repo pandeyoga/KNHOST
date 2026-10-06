@@ -222,7 +222,17 @@ async def update_budget(budget_id: str, patch: Dict[str, Any],
             val = int(patch[k])
             if k == "month" and (val < 0 or val > 12):
                 raise ValueError("Bulan harus 0 (tahunan) atau 1–12.")
+            if k == "year" and (val < 2000 or val > 2999):  # G3 D4-BUD-EDIT-01 — batas sama dgn create
+                raise ValueError("Tahun anggaran harus 2000–2999.")
             upd[k] = val
+    if "month" in upd or "year" in upd:
+        cur = await db.budgets.find_one(q, {"_id": 0})
+        if not cur:
+            return None
+        merged = {f: upd.get(f, cur.get(f)) for f in ("entity_id", "year", "month", "dimension", "key")}
+        if await db.budgets.find_one({**merged, "id": {"$ne": budget_id}}, {"_id": 1}):
+            raise ValueError("Anggaran untuk kombinasi entitas/tahun/bulan/kunci ini sudah ada — ubah yang itu.")
+        q = {**q, "year": cur.get("year"), "month": cur.get("month")}  # CAS: gagal bila diubah bersamaan
     res = await db.budgets.find_one_and_update(q, {"$set": upd}, return_document=True)
     if res:
         res.pop("_id", None)
@@ -238,7 +248,7 @@ async def delete_budget(budget_id: str, scope: Optional[Dict[str, Any]]) -> bool
 async def _actual_by_account(scope: Optional[Dict[str, Any]], year: int) -> Dict[str, Dict[int, float]]:
     """Realisasi net per (account_code, month) dari jurnal operasional tahun tsb."""
     q: Dict[str, Any] = {"status": {"$ne": "void"}, "source_type": {"$ne": "closing"}, **(scope or {})}
-    q["date"] = {"$gte": f"{year}-01-01T00:00:00", "$lte": f"{year}-12-31T23:59:59.999999"}
+    q["date"] = {"$gte": f"{year}-01-01", "$lte": f"{year}-12-31T23:59:59.999999"}  # G3 V3-DATE-01
     amap = await _accounts_map()
     out: Dict[str, Dict[int, float]] = {}
     async for je in db.journal_entries.find(q, {"_id": 0, "date": 1, "lines": 1}):

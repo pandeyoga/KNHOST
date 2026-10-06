@@ -137,17 +137,15 @@ def order_payment_method(o: Dict[str, Any]) -> str:
 
 
 def _term_days(customer: Dict[str, Any], order: Dict[str, Any]) -> int:
+    """Termin snapshot SO menang; G3 D4-FIN-02 — termin 0 (tunai/COD) tetap 0, bukan jadi 30."""
     pp = customer.get("payment_profile") or {}
-    try:
-        td = int(order.get("payment_term_days") or 0)
-    except Exception:
-        td = 0
-    if td > 0:
-        return td
-    try:
-        return int(pp.get("term_days") or 30)
-    except Exception:
-        return 30
+    for src, key in ((order, "payment_term_days"), (pp, "term_days")):
+        if src.get(key) not in (None, ""):
+            try:
+                return max(0, int(src[key]))
+            except (TypeError, ValueError):
+                continue
+    return 30
 
 
 async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[str] = None) -> Dict[str, Any]:

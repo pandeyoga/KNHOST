@@ -28,7 +28,9 @@ EPS = 0.005
 def _day_start(d: Optional[str]) -> Optional[str]:
     if not d:
         return None
-    return d if "T" in d else f"{d}T00:00:00"
+    # G3 V3-DATE-01 — batas bawah = tanggal saja: "YYYY-MM-DD" ≤ semua nilai hari itu (date-only
+    # maupun ISO). Dulu "YYYY-MM-DDT00:00:00" membuang jurnal date-only hari pertama periode.
+    return d[:10] if "T" not in d else d
 
 
 def _day_end(d: Optional[str]) -> Optional[str]:
@@ -49,9 +51,20 @@ def scope_entity(scope: Optional[Dict[str, Any]]) -> Optional[str]:
 
 async def _accounts_map(scope: Optional[Dict[str, Any]] = None) -> Dict[str, Dict[str, Any]]:
     """FN-05 — COA efektif entitas laporan (global + override entitas itu, deterministik).
-    Laporan multi-entitas memakai dimensi akun global (bukan override acak entitas lain)."""
+    Laporan multi-entitas memakai dimensi akun global; G3 D4-COA-01 — akun KHUSUS entitas
+    (kode tidak ada di global) ikut dimasukkan supaya baris lawannya tidak hilang."""
     from services.gl_service import effective_accounts
-    return await effective_accounts(None, scope_entity(scope))
+    one = scope_entity(scope)
+    base = await effective_accounts(None, one)
+    if one:
+        return base
+    v = (scope or {}).get("entity_id")
+    ents = list(v.get("$in") or []) if isinstance(v, dict) else [
+        e["id"] async for e in db.business_entities.find({}, {"_id": 0, "id": 1})]
+    for ent in ents:
+        for code, acc in (await effective_accounts(None, ent)).items():
+            base.setdefault(code, acc)
+    return base
 
 
 async def _aggregate(scope: Optional[Dict[str, Any]],

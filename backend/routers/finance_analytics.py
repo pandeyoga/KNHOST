@@ -64,6 +64,10 @@ async def get_finance_tower(
     await require_permission(request, "accounting", "view")
     ctx = await entity_ctx(request)
     scope = resolve_list_scope("journal_entries", {}, ctx, entity_id)
-    ent = entity_id if entity_id and entity_id != "all" else None
-    comp_ids = [entity_id] if ent else list(ctx.allowed_entity_ids)
+    # G3 D4-FIN-01 — tanpa parameter = entitas AKTIF (sama dengan jurnal), bukan gabungan semua entitas
+    if entity_id == "all" or (not entity_id and getattr(ctx, "view_all", False)):
+        ent, comp_ids = None, list(ctx.allowed_entity_ids)
+    else:
+        ent = entity_id or ctx.active_entity_id
+        comp_ids = [ent]
     return await tower.finance_tower(scope=scope, entity_id=ent, entity_ids=comp_ids)

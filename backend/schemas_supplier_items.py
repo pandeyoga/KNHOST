@@ -45,11 +45,11 @@ class SupplierItemPatch(BaseModel):
     supplier_item_name: Optional[str] = None
     supplier_color: Optional[str] = None
     supplier_uom: Optional[str] = None
-    conv_factor: Optional[QtyDecimal] = None
-    last_price: Optional[MoneyDecimal] = None
+    conv_factor: Optional[QtyDecimal] = Field(None, gt=0)  # G3 D4-COMM-BOUNDS-01 — batas sama dgn Create
+    last_price: Optional[MoneyDecimal] = Field(None, ge=0)
     currency: Optional[str] = None
-    moq: Optional[QtyDecimal] = None
-    lead_time_days: Optional[int] = None
+    moq: Optional[QtyDecimal] = Field(None, ge=0)
+    lead_time_days: Optional[int] = Field(None, ge=0)
     expected_grade: Optional[str] = None
     barcode: Optional[str] = None
     notes: Optional[str] = None

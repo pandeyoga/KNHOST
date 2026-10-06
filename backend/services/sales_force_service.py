@@ -142,9 +142,20 @@ async def sales_kpi(sales_id: str, period: Optional[str] = None, entity_id: Opti
     }
 
 
-async def _target_collection_for(sales_id: str, period: str) -> float:
-    """Agregasi target_collection bulanan yang termasuk dalam periode (bulan/kuartal/tahun)."""
+async def _targets_in_scope(sales_id: str, entity_id: Optional[str]) -> List[Dict[str, Any]]:
+    """G3 D4-SALES-01 — target milik entitas yang diminta; target lama tanpa entity_id hanya
+    berlaku untuk entitas induk sales tersebut (tidak dipinjam entitas lain)."""
     targets = await db.sales_targets.find({"sales_id": sales_id}, {"_id": 0}).to_list(400)
+    if not entity_id or entity_id == "all":
+        return targets
+    home = (await db.users.find_one({"id": sales_id}, {"_id": 0, "entity_id": 1}) or {}).get("entity_id")
+    return [t for t in targets if t.get("entity_id") == entity_id
+            or (not t.get("entity_id") and home == entity_id)]
+
+
+async def _target_collection_for(sales_id: str, period: str, entity_id: Optional[str] = None) -> float:
+    """Agregasi target_collection bulanan yang termasuk dalam periode (bulan/kuartal/tahun)."""
+    targets = await _targets_in_scope(sales_id, entity_id)
     total = 0.0
     for t in targets:
         if _period_contains(period, t.get("period", "")):
@@ -152,9 +163,9 @@ async def _target_collection_for(sales_id: str, period: str) -> float:
     return total
 
 
-async def _target_sales_for(sales_id: str, period: str) -> float:
+async def _target_sales_for(sales_id: str, period: str, entity_id: Optional[str] = None) -> float:
     """Target PENJUALAN (omzet) dalam periode — terpisah dari target penagihan."""
-    targets = await db.sales_targets.find({"sales_id": sales_id}, {"_id": 0}).to_list(400)
+    targets = await _targets_in_scope(sales_id, entity_id)
     return sum(float(t.get("target_sales_amount") or 0) for t in targets if _period_contains(period, t.get("period", "")))
 
 
@@ -185,7 +196,7 @@ async def _compute_commission_tiered(sales_id: str, period: str, entity_id: Opti
     scheme = await _scheme_for(sales_id, period)
     basis = scheme.get("basis", "collection")
     base_amount = kpi["total_collected"] if basis != "sales" else kpi["total_sales"]
-    target_collection = await _target_collection_for(sales_id, period)
+    target_collection = await _target_collection_for(sales_id, period, entity_id)
     achievement = (base_amount / target_collection * 100) if target_collection else 0
     tiers = scheme.get("tiers") or DEFAULT_TIERS
     rate = pick_tier_rate(tiers, achievement)
@@ -301,7 +312,9 @@ async def _compute_commission_per_sku(
     customers = await db.customers.find(cust_filter, {"_id": 0, "id": 1}).to_list(2000)
     cust_id_set = {c["id"] for c in customers}
     # F-4c — sertakan order ber-`sales_team` (join/group sales) walau customer-nya tak di-assign ke sales ini.
-    order_filter = {"$or": [{"customer_id": {"$in": list(cust_id_set)}}, {"sales_team.sales_id": sales_id}]}
+    order_filter: Dict[str, Any] = {"$or": [{"customer_id": {"$in": list(cust_id_set)}}, {"sales_team.sales_id": sales_id}]}
+    if entity_id and entity_id != "all":  # G3 D4-SALES-03 — basis komisi hanya SO entitas yang diminta
+        order_filter["entity_id"] = entity_id
     orders = await db.sales_orders.find(order_filter, {"_id": 0}).to_list(8000)
     live = [o for o in orders if o.get("status") not in DEAD_STATUSES]
 
@@ -378,7 +391,7 @@ async def _compute_commission_per_sku(
             b["qty_base"] += base_qty * frac_paid * weight
             b["commission"] += line_comm
 
-    target_collection = await _target_collection_for(sales_id, period)
+    target_collection = await _target_collection_for(sales_id, period, entity_id)
     achievement = (kpi["total_collected"] / target_collection * 100) if target_collection else 0
     rows = sorted(breakdown.values(), key=lambda x: x["commission"], reverse=True)
     for r in rows:

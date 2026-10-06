@@ -285,7 +285,9 @@ async def _src_ar(metrics, dims, grain, p, filters, sc: Scope, w, _s):
 
 async def _src_ap(metrics, dims, grain, p: Period, filters, sc, w, _s):
     fq = _match_filters("ap", filters, w)
-    remaining = {"$subtract": [{"$ifNull": ["$grand_total", 0]}, {"$ifNull": ["$amount_paid", 0]}]}
+    # G3 D4-AI-01 — sama dengan vendor_bill_service.bill_financials: grand_total 0 → total_amount
+    gross = {"$cond": [{"$gt": [{"$ifNull": ["$grand_total", 0]}, 0]}, "$grand_total", {"$ifNull": ["$total_amount", 0]}]}
+    remaining = {"$subtract": [gross, {"$ifNull": ["$amount_paid", 0]}]}
     due_field = {"$ifNull": ["$due_date", "$bill_date"]}
     pre = [{"$match": {"entity_id": {"$in": sc.entity_ids},
                        "status": {"$nin": ["draft", "cancelled", "void", "paid", "rejected"]}, **fq}},

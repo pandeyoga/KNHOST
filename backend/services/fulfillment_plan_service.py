@@ -78,16 +78,26 @@ async def plan_options(order: Dict[str, Any]) -> Dict[str, Any]:
 def _validate(lines_in: List[Dict[str, Any]], opts: Dict[str, Any]) -> List[Dict[str, Any]]:
     by_pid = {ln["product_id"]: ln for ln in opts["lines"]}
     plan = []
+    seen: set = set()
     for raw in lines_in or []:
         ln = by_pid.get(raw.get("product_id"))
         if not ln:
             raise FulfillmentError("Barang ini tidak (lagi) punya kekurangan di pesanan — muat ulang.")
         nm = ln["product_name"] or ln["product_id"]
+        # G3 D4-PLAN-02 — satu baris per produk; dua baris 100+100 tidak boleh lolos kekurangan 100
+        if ln["product_id"] in seen:
+            raise FulfillmentError(f"{nm}: produk ini muncul lebih dari sekali di rencana — gabungkan jadi satu baris.")
+        seen.add(ln["product_id"])
         stock = round(float(raw.get("stock_qty") or 0), 2)
         reorder = round(float(raw.get("reorder_qty") or 0), 2)
         wait = round(float(raw.get("wait_qty") or 0), 2)
-        ic = [{"entity_id": x.get("entity_id"), "qty": round(float(x.get("qty") or 0), 2)}
-              for x in raw.get("interco") or [] if float(x.get("qty") or 0) > EPS]
+        ic_sum: Dict[str, float] = {}
+        for x in raw.get("interco") or []:
+            if float(x.get("qty") or 0) < 0:
+                raise FulfillmentError(f"{nm}: qty tidak boleh negatif.")
+            if float(x.get("qty") or 0) > EPS:
+                ic_sum[x.get("entity_id")] = round(ic_sum.get(x.get("entity_id"), 0.0) + float(x["qty"]), 2)
+        ic = [{"entity_id": e, "qty": q} for e, q in ic_sum.items()]
         if min(stock, reorder, wait) < 0:
             raise FulfillmentError(f"{nm}: qty tidak boleh negatif.")
         total = stock + reorder + wait + sum(x["qty"] for x in ic)
@@ -151,10 +161,17 @@ async def _execute(order, plan, actor, note, done: List[Dict[str, Any]]) -> None
     rows = [_row(ln, ln["reorder"]) for ln in plan if ln["reorder"] > EPS]
     if rows:
         res = await fds._reorder_supplier(order, rows, actor, note)
+        added, existing = res.get("added") or {}, res.get("existing_pr_qty") or {}
         for r in rows:
-            done.append({"mode": "reorder", "product_id": r["product_id"], "qty": r["backorder_qty"],
+            pid = r["product_id"]
+            got = round(float(added.get(pid, 0.0)), 2)
+            summ = (f"{r['product_name']}: {got:g} PO ke supplier ({res.get('ref_number') or '-'})" if got > EPS else
+                    f"{r['product_name']}: PR terbuka {res.get('ref_number') or '-'} sudah ada "
+                    f"({existing.get(pid, 0):g}) — qty TIDAK ditambah")
+            done.append({"mode": "reorder", "product_id": pid, "qty": got, "requested": r["backorder_qty"],
+                         "existing_pr_qty": existing.get(pid, 0.0), "reaffirmed": got <= EPS,
                          "ref_type": res.get("ref_type"), "ref_id": res.get("ref_id"), "ref_number": res.get("ref_number"),
-                         "summary": f"{r['product_name']}: {r['backorder_qty']:g} PO ke supplier ({res.get('ref_number') or '-'})"})
+                         "summary": summ})
     for ln in plan:
         if ln["wait"] > EPS:
             done.append({"mode": "wait", "product_id": ln["product_id"], "qty": ln["wait"],
@@ -178,8 +195,13 @@ async def decide_plan(order_id: str, lines_in: List[Dict[str, Any]], actor: Dict
             raise
         error = str(exc)
     modes = {p["mode"] for p in done}
-    full = all(abs((ln["stock"] + ln["reorder"] + ln["wait"] + sum(x["qty"] for x in ln["interco"]))
-                   - ln["backorder_qty"]) <= EPS for ln in plan) and len(plan) == len(opts["lines"])
+    # G3 D4-PLAN-03 — "penuh" dihitung dari qty yang BENAR-BENAR tercatat, bukan qty permintaan;
+    # kegagalan sebagian selalu partial dan sisa tetap backorder.
+    got: Dict[str, float] = {}
+    for p in done:
+        got[p["product_id"]] = got.get(p["product_id"], 0.0) + float(p.get("qty") or 0)
+    full = (not error and len(plan) == len(opts["lines"])
+            and all(abs(got.get(ln["product_id"], 0.0) - ln["backorder_qty"]) <= EPS for ln in plan))
     decision = {
         "mode": next(iter(modes)) if len(modes) == 1 else "split",
         "scope": "full" if full else "partial",
@@ -187,6 +209,9 @@ async def decide_plan(order_id: str, lines_in: List[Dict[str, Any]], actor: Dict
         "at": now_iso(), "note": (note or "").strip()[:400],
         "summary": ("Penuh" if full else "Sebagian") + " — " + "; ".join(p["summary"] for p in done),
         "parts": done, "products": sorted({p["product_id"] for p in done}),
+        "error": error or None,
+        "remaining": {ln["product_id"]: round(max(0.0, ln["backorder_qty"] - got.get(ln["product_id"], 0.0)), 2)
+                      for ln in plan},
         "ref_type": next((p.get("ref_type") for p in done if p.get("ref_type")), ""),
         "ref_id": next((p.get("ref_id") for p in done if p.get("ref_id")), ""),
         "ref_number": next((p.get("ref_number") for p in done if p.get("ref_number")), ""),

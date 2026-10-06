@@ -30,9 +30,9 @@ def _month_progress() -> tuple:
     return now.day, monthrange(now.year, now.month)[1]
 
 
-async def _sales_target(sales_id: str, period: str, total_sales: float) -> Dict[str, Any]:
+async def _sales_target(sales_id: str, period: str, total_sales: float, entity_id: Optional[str] = None) -> Dict[str, Any]:
     """Target PENJUALAN (omzet) + capaian; `amount` di atas = target PENAGIHAN (basis komisi)."""
-    amt = await sf._target_sales_for(sales_id, period)
+    amt = await sf._target_sales_for(sales_id, period, entity_id)
     return {"sales_amount": round(amt, 2), "sales_pct": round(total_sales / amt * 100, 1) if amt else 0}
 
 
@@ -55,8 +55,9 @@ async def sales_home(sales_id: str, entity_id: Optional[str] = None,
         cust_filter["entity_id"] = entity_id
     customers = await db.customers.find(cust_filter, {"_id": 0}).to_list(2000)
     cust_rows: List[Dict[str, Any]] = []
+    ent_scope = entity_id if entity_id and entity_id != "all" else None
     for c in customers:
-        cc = await compute_customer_credit(c)
+        cc = await compute_customer_credit(c, ent_scope)  # G3 D4-SALES-02 — AR hanya entitas aktif
         cust_rows.append({
             "id": c["id"], "name": c.get("name", ""),
             "credit_limit": cc["credit_limit"], "ar_outstanding": cc["ar_outstanding"],
@@ -70,9 +71,10 @@ async def sales_home(sales_id: str, entity_id: Optional[str] = None,
     cust_ids = [c["id"] for c in customers]
     if cust_ids:
         cmap = {c["id"]: c.get("name", "") for c in customers}
-        raw = await db.sales_orders.find(
-            {"customer_id": {"$in": cust_ids}}, {"_id": 0}
-        ).sort("created_at", -1).to_list(8)
+        so_q: Dict[str, Any] = {"customer_id": {"$in": cust_ids}}
+        if ent_scope:
+            so_q["entity_id"] = ent_scope
+        raw = await db.sales_orders.find(so_q, {"_id": 0}).sort("created_at", -1).to_list(8)
         for o in raw:
             recent_orders.append({
                 "id": o.get("id"), "number": o.get("number"),
@@ -95,7 +97,7 @@ async def sales_home(sales_id: str, entity_id: Optional[str] = None,
             "bonus_new_customer": comm["bonus_new_customer"],
         },
         "target": {"amount": comm["target_amount"], "achievement_pct": comm["achievement_pct"],
-                   **(await _sales_target(sales_id, period, kpi["total_sales"]))},
+                   **(await _sales_target(sales_id, period, kpi["total_sales"], entity_id))},
         "kpi": {
             "total_sales": kpi["total_sales"],
             "total_collected": kpi["total_collected"],
@@ -142,7 +144,7 @@ async def manager_home(period: Optional[str] = None, entity_id: Optional[str] = 
     target_total = 0.0
     team: List[Dict[str, Any]] = []
     for r in board:
-        tgt = await sf._target_collection_for(r["sales_id"], period)  # noqa: SLF001
+        tgt = await sf._target_collection_for(r["sales_id"], period, entity_id)  # noqa: SLF001
         target_total += tgt
         team.append({
             **r,

@@ -238,7 +238,9 @@ async def backfill(dbx, *, demo_plan: bool = False, dry_run: bool = False) -> Di
                 if it.get("qty_rolls") not in (None, ""):
                     continue
                 raw = it.get(src_field) or []
-                cnt = len([x for x in raw if x])
+                # G3 D4-UOM-BF-01 — sama dengan rolls_of_ids: hanya ID unik yang benar-benar ada
+                ids = list({str(x if not isinstance(x, dict) else x.get("roll_id") or x.get("id") or "") for x in raw if x} - {""})
+                cnt = await dbx.inventory_rolls.count_documents({"id": {"$in": ids}}) if ids else 0
                 if cnt:
                     upd[f"items.{i}.qty_rolls"] = cnt
             if upd:
@@ -252,7 +254,9 @@ async def backfill(dbx, *, demo_plan: bool = False, dry_run: bool = False) -> Di
     async for sh in dbx.shipments.find({"qty_rolls": {"$in": [None, ""]}},
                                        {"_id": 0, "id": 1, "rolls": 1, "qty": 1,
                                         "product_id": 1}):
-        cnt = len([r for r in (sh.get("rolls") or []) if r])
+        sh_ids = list({str(r if not isinstance(r, dict) else r.get("roll_id") or r.get("id") or "")
+                       for r in (sh.get("rolls") or []) if r} - {""})
+        cnt = await dbx.inventory_rolls.count_documents({"id": {"$in": sh_ids}}) if sh_ids else 0
         if not cnt and demo_plan and sh.get("product_id"):
             avg = await _avg_roll_len(dbx, sh["product_id"])
             qty = float(sh.get("qty") or 0)

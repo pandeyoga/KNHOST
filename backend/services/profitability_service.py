@@ -63,7 +63,7 @@ async def profitability(start: Optional[str] = None, end: Optional[str] = None,
     q: Dict[str, Any] = {"status": {"$in": SOLD_STATUSES}, **(scope or {})}
     date_f: Dict[str, str] = {}
     if start:
-        date_f["$gte"] = start if "T" in start else f"{start}T00:00:00"
+        date_f["$gte"] = start[:10] if "T" not in start else start  # G3 V3-DATE-01
     if end:
         date_f["$lte"] = end if "T" in end else f"{end}T23:59:59.999999"
     if date_f:
@@ -111,13 +111,24 @@ async def profitability(start: Optional[str] = None, end: Optional[str] = None,
         created = str(o.get("created_at") or "")
         mkey = created[:7]  # YYYY-MM
 
-        for it in o.get("items", []):
+        # G3 D4-FIN-03 — pendapatan kanonis per order = grand_total − ppn_amount (harga include PPN
+        # & diskon header legacy ikut teralokasi proporsional ke baris; sisa sen ke baris terakhir).
+        lines = [it for it in o.get("items", [])
+                 if float(it.get("base_quantity") or it.get("quantity") or 0) > 0
+                 or float(it.get("line_total", it.get("subtotal", 0)) or 0) > 0]
+        raw = [float(it.get("line_total", it.get("subtotal", 0)) or 0) for it in lines]
+        gt = float(o.get("grand_total") or 0)
+        net = round(gt - float(o.get("ppn_amount") or 0), 2) if gt > 0 else round(sum(raw), 2)
+        tot_raw = sum(raw)
+        alloc = [round(r * net / tot_raw, 2) if tot_raw else 0.0 for r in raw]
+        if alloc:
+            alloc[-1] = round(alloc[-1] + net - sum(alloc), 2)
+
+        for idx, it in enumerate(lines):
             pid = it.get("product_id") or ""
             # Tanya KN F0.4 — WAC per satuan DASAR → HPP memakai base_quantity (qty jual bisa roll/meter).
             qty = float(it.get("base_quantity") or it.get("quantity") or 0)
-            revenue = float(it.get("line_total", it.get("subtotal", 0)) or 0)
-            if qty <= 0 and revenue <= 0:
-                continue
+            revenue = alloc[idx]
             ck = f"{pid}::{ent or ''}"
             if ck in wac_cache:
                 wb, wl = wac_cache[ck]

@@ -279,11 +279,16 @@ async def _reorder_supplier(order, kurang, actor, note):
         for it in p.get("items") or []:
             already.setdefault(it.get("product_id", ""), p)
     baru = [b for b in kurang if b["product_id"] not in already]
+    # G3 D4-PLAN-01 — qty yang BENAR-BENAR menjadi pasokan baru per produk (reaffirm = 0) +
+    # qty PR terbuka yang sudah ada, supaya rencana tidak mencatat pembelian yang tidak terjadi.
+    existing = {pid: round(sum(float(it.get("quantity") or 0) for it in (p.get("items") or [])
+                               if it.get("product_id") == pid), 2) for pid, p in already.items()}
     if not baru:
         pr = already[kurang[0]["product_id"]]
         nomor = pr.get("number") or ""
         return {"ref_type": "purchase_requisition", "ref_id": pr.get("id", ""),
                 "ref_number": nomor, "requisition": pr, "reaffirmed": True,
+                "added": {}, "existing_pr_qty": existing,
                 "summary": f"Reorder ditegaskan ulang — {nomor} masih terbuka"}
     items = [{"product_id": b["product_id"], "quantity": b["backorder_qty"],
               "unit": b.get("unit", ""), "note": f"kekurangan {order.get('number')}"}
@@ -299,6 +304,7 @@ async def _reorder_supplier(order, kurang, actor, note):
     nomor = pr.get("number") or pr.get("pr_number") or ""
     return {"ref_type": "purchase_requisition", "ref_id": pr.get("id", ""),
             "ref_number": nomor, "requisition": pr,
+            "added": {b["product_id"]: b["backorder_qty"] for b in baru}, "existing_pr_qty": existing,
             "summary": f"Reorder ke supplier lewat {nomor or 'permintaan pembelian'}"}
 
 
