@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_makloon_core_poc.py",
+    "database": "knhost_audit_native90_e0467326a89c4ad486c95dec1ed13c26",
+    "exit": 0,
+    "seconds": 61.58,
+    "pass_log_tokens": 20,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_makloon_core_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "ependencies\\python\\Lib\\threading.py\", line 1032 in _bootstrap\n\nThread 0x000188e8 (most recent call first):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\native_runner.py\", line 68 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 98 in _run_module_code\n  File \"<frozen runpy>\", line 287 in run_path\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\run_isolated.py\", line 25 in <module>\nNATIVE90_READY knhost_audit_native90_e0467326a89c4ad486c95dec1ed13c26 test_makloon_core_poc.py\n\n=== POC MAKLOON CORE (M2) — mko=mko_poc_d86a92 ===\n  [PASS] Setup: 100kg benang available  (available=100.0)\n  [PASS] Setup: subledger benang = 100*100 = 10000  (sub=10000.0)\n  [PASS] Issue: available benang → 0  (available=0.0)\n  [PASS] Issue: subcon benang = 100  (subcon=100.0)\n  [PASS] Issue: nilai material = 10000  (value=10000.0)\n  [PASS] Issue: JE terbentuk\n  [PASS] Issue: JE seimbang  (D=10000.0 C=10000.0)\n  [PASS] Issue: Δsubledger benang (−10000) == Cr 1-1300  (Δsub=10000.0 Cr1-1300=10000.0)\n  [PASS] Service: JE terbentuk\n  [PASS] Service: JE seimbang  (D=2775.0 C=2775.0)\n  [PASS] Consume: subcon benang → 0  (subcon=0.0)\n  [PASS] Consume: nilai terkonsumsi = 10000  (val=10000.0)\n  [PASS] Receive: output grey available = 95  (avail=95.0)\n  [PASS] Receive: barang sisa available = 3  (avail=3.0)\n  [PASS] Receive: JE terbentuk\n  [PASS] Receive: JE seimbang  (D=12500.0 C=12500.0)\n  [PASS] WIP 1-1350 net = 0 (dibuka & di-clear penuh)  (Δ=0.0)\n  [PASS] GL 1-1300 Δ == Δsubledger (rolls) — anti-drift  (ΔGL=2500.0 Δsub=2500.0)\n  [PASS] Idempoten: post_subcon_issue kedua = None\n  [cleanup] data uji POC dihapus.\n\n=== HASIL POC: 19 PASS / 0 FAIL ===\n\n"
+  }
+]

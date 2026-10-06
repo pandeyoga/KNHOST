@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_sales_returns_r1.py",
+    "database": "knhost_audit_native90_3018d6fd01d3496190a6a5d288eabc32",
+    "exit": 1,
+    "seconds": 51.13,
+    "pass_log_tokens": 16,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_sales_returns_r1.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_3018d6fd01d3496190a6a5d288eabc32 test_sales_returns_r1.py\n\n============================================================\nR1 SALES RETURN STATE MACHINE TEST\n============================================================\n\n✅ PASS: Auth - Login\n   User: Budi Santoso\n✅ PASS: List Returns\n   Found 1 returns\n✅ PASS: Auth Permissions\n   Unauthorized access blocked: 401\n✅ PASS: Get Eligible Order\n   Order: SO-0004 (status: confirmed)\n✅ PASS: Create Return Draft\n   Return: SRET-00003 (status: draft)\n✅ PASS: Submit Return\n   Status: pending_approval\n✅ PASS: Approve Return\n   Status: approved (no CN, no stock adjustment)\n✅ PASS: Start Inspection\n   Status: inspecting\n✅ PASS: Complete Inspection\n   Status: inspected (inspection data saved)\n✅ PASS: Settle Refund\n   Status: refund_settled (CN: CN-00001, stock adjusted)\n✅ PASS: Idempotency Test\n   Same CN returned: CN-00001\n✅ PASS: Credit Note GL\n   Journal entry: je_3482a80deca7\n✅ PASS: State Guard - Invalid Approve\n   400 returned for invalid transition\n✅ PASS: Store Credit Outcome\n   Status: credit_settled (store_credit_amount: 102675.0)\n✅ PASS: Nego Outcome\n   Status: nego_settled (CN created, NO stock movement)\n✅ PASS: Reject Outcome\n   Status: rejected (reason: Test rejection reason)\n❌ FAIL: Partial Settle\n   Need order with at least 2 items\n\n============================================================\nRESULTS: 16/17 tests passed\n============================================================\n\n"
+  }
+]

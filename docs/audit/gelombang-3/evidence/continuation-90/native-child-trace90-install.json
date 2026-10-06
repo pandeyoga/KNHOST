@@ -1,0 +1,7 @@
+{
+  "files": [
+    "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\knhost_audit_child_trace90.py",
+    "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\knhost_audit_child_trace90.pth"
+  ],
+  "scope": "Only candidate-script subprocesses with task-owned localhost Mongo DB; no application implementation changes."
+}

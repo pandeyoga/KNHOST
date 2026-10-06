@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="1.395" timestamp="2026-10-06T14:04:50.286845+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="" time="0.000"><error message="collection failure">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_wms_advance_expected.py:9: in &lt;module&gt;
+    for line in (ROOT / "frontend/.env").read_text().splitlines():
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\pathlib.py:1013: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\frontend\\.env'</error></testcase></testsuite></testsuites>

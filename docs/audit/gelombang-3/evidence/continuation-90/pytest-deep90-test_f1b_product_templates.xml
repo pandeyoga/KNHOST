@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="13" skipped="0" tests="20" time="5.138" timestamp="2026-10-06T14:01:37.655004+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="test_create_template_invalid_no_name" time="0.792" /><testcase classname="" name="test_create_template_ok" time="0.063"><failure message="AssertionError: {&quot;detail&quot;:&quot;Jenis kain (woven/knit) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)'. Gramasi/GSM (gram per m²) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)'. Lebar kain (meter) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)'.&quot;}&#10;assert 400 in (200, 201)&#10; +  where 400 = &lt;Response [400]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:119: in test_create_template_ok
+    assert r.status_code in (200, 201), r.text
+E   AssertionError: {"detail":"Jenis kain (woven/knit) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)'. Gramasi/GSM (gram per m²) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)'. Lebar kain (meter) wajib diisi untuk stage 'Finished (Jadi — dyed/printed)'."}
+E   assert 400 in (200, 201)
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase><testcase classname="" name="test_generate_variants_cartesian" time="0.003"><failure message="AssertionError: template harus sudah dibuat&#10;assert []">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:133: in test_generate_variants_cartesian
+    assert created_template_ids, "template harus sudah dibuat"
+E   AssertionError: template harus sudah dibuat
+E   assert []</failure></testcase><testcase classname="" name="test_generate_variants_idempotent" time="0.007"><failure message="IndexError: list index out of range">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:155: in test_generate_variants_idempotent
+    tid = created_template_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="" name="test_generate_variants_subset_axes" time="0.003"><failure message="IndexError: list index out of range">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:166: in test_generate_variants_subset_axes
+    tid = created_template_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="" name="test_get_template_detail" time="0.003"><failure message="IndexError: list index out of range">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:183: in test_get_template_detail
+    tid = created_template_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="" name="test_list_templates" time="0.063"><failure message="IndexError: list index out of range">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:200: in test_list_templates
+    ours = [t for t in arr if t["id"] == created_template_ids[0]]
+                                         ^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="" name="test_list_templates_search" time="0.054"><failure message="assert False&#10; +  where False = any(&lt;generator object test_list_templates_search.&lt;locals&gt;.&lt;genexpr&gt; at 0x00000246806017D0&gt;)">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:211: in test_list_templates_search
+    assert any("TPL Test Katun" in t["name"] for t in arr)
+E   assert False
+E    +  where False = any(&lt;generator object test_list_templates_search.&lt;locals&gt;.&lt;genexpr&gt; at 0x00000246806017D0&gt;)</failure></testcase><testcase classname="" name="test_assign_and_detach" time="0.003"><failure message="IndexError: list index out of range">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:216: in test_assign_and_detach
+    tid = created_template_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="" name="test_products_include_template_fields" time="0.192"><failure message="assert 0 &gt;= 6&#10; +  where 0 = len([])">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:248: in test_products_include_template_fields
+    assert len(variants) &gt;= 6
+E   assert 0 &gt;= 6
+E    +  where 0 = len([])</failure></testcase><testcase classname="" name="test_patch_product_template_id" time="0.082"><failure message="IndexError: list index out of range">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:259: in test_patch_product_template_id
+    tid = created_template_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="" name="test_rbac_sales_cannot_create" time="0.669" /><testcase classname="" name="test_rbac_manager_cannot_create" time="0.587" /><testcase classname="" name="test_rbac_sales_can_view" time="0.066" /><testcase classname="" name="test_rbac_manager_can_view" time="0.075" /><testcase classname="" name="test_rbac_sales_cannot_generate" time="0.003"><failure message="IndexError: list index out of range">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:297: in test_rbac_sales_cannot_generate
+    tid = created_template_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="" name="test_rbac_sales_cannot_delete" time="0.005"><failure message="IndexError: list index out of range">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:304: in test_rbac_sales_cannot_delete
+    tid = created_template_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="" name="test_delete_template_non_destructive" time="0.002"><failure message="IndexError: list index out of range">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_f1b_product_templates.py:312: in test_delete_template_non_destructive
+    tid = created_template_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="" name="test_regression_endpoints" time="0.308" /><testcase classname="" name="test_products_seed_count_preserved" time="0.158" /></testsuite></testsuites>

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_g4_comprehensive.py",
+    "database": "knhost_audit_native90_fbbfbf0af90e443e9b093578725ac3f9",
+    "exit": 0,
+    "seconds": 55.17,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_g4_comprehensive.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "ments/vendor_bill has signed\n  ✓ pdf/documents/vendor_bill has sign_count\n  ✓ pdf/documents/vendor_bill has esignable\n  ✓ pdf/documents/ar_receipt returns 200\n  ✓ pdf/documents/ar_receipt has trace_type\n  ✓ pdf/documents/ar_receipt has ref_count\n  ✓ pdf/documents/ar_receipt has signed\n  ✓ pdf/documents/ar_receipt has sign_count\n  ✓ pdf/documents/ar_receipt has esignable\n\n[TEST 7] GET /api/pdf/render/{doc_type}/{source_id}?format=html — HTML with refs block + QR\n  ✓ pdf/render invoice HTML returns 200\n  ✓ pdf/render HTML has refs block\n  ✓ pdf/render HTML has 'Merujuk:'\n  ✓ pdf/render HTML has QR code\n  ✓ pdf/render delivery_note HTML returns 200\n  ✓ pdf/render purchase_order HTML returns 200\n\n[TEST 8] E-Sign Flow: request → verify → public verification\n  ✓ esign/request returns 200\n  ✓ esign/request has request_id\n  ✓ esign/request has channel\n  ✓ esign/verify returns 200\n  ✓ esign/verify has verification_code\n  ✓ esign/verify has doc_hash (SHA-256)\n  ✓ esign/verify/{code} public access returns 200\n  ✓ esign/verify public has valid=True\n  ✓ esign/verify public has signers\n  ✓ esign signer has role (JABATAN)\n  ✓ esign signer has signed_at (WAKTU)\n  ✓ pdf/render after e-sign has 'DOKUMEN TERVERIFIKASI ELEKTRONIK'\n  ✓ pdf/render after e-sign shows JABATAN\n\n[TEST 9] Regression: existing endpoints still return refs[]\n  ✓ GET /api/sales-orders returns 200\n  ✓ sales-orders items have refs[] field\n  ✓ GET /api/purchase-orders returns 200\n  ✓ GET /api/vendor-bills returns 200\n  ✓ GET /api/ar-receipts returns 200\n  ✓ GET /api/wms/tasks returns 200\n\n================================================================================\nTEST SUMMARY\n================================================================================\nTotal Tests: 106\nPassed: 106\nFailed: 0\n\n✅ ALL TESTS PASSED!\n"
+  }
+]

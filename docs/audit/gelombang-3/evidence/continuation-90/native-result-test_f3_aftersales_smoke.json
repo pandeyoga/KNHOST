@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_f3_aftersales_smoke.py",
+    "database": "knhost_audit_native90_e6641445fb8243e4b20ecb7a446e5240",
+    "exit": 1,
+    "seconds": 69.57,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_f3_aftersales_smoke.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\test_f3_aftersales_smoke.py\", line 10, in login\n    d = requests.post(f\"{API}/auth/login\", json={\"email\": email, \"password\": pw}).json()\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\api.py\", line 134, in post\n    return request(\"post\", url, data=data, json=json, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\api.py\", line 71, in request\n    return session.request(method=method, url=url, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\sessions.py\", line 651, in request\n    resp = self.send(prep, **send_kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\sessions.py\", line 784, in send\n    r = adapter.send(request, **kwargs)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\adapters.py\", line 729, in send\n    raise ConnectionError(e, request=request)\nrequests.exceptions.ConnectionError: HTTPConnectionPool(host='127.0.0.1', port=8006): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(\"HTTPConnection(host='127.0.0.1', port=8006): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))\n"
+  }
+]

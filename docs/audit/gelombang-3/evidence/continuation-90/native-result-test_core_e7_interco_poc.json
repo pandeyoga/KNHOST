@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_e7_interco_poc.py",
+    "database": "knhost_audit_native90_c81d55fd4ee84147ada5481c49a35fe9",
+    "exit": 1,
+    "seconds": 58.15,
+    "pass_log_tokens": 51,
+    "fail_log_tokens": 4,
+    "log": "continuation-90\\native-test_core_e7_interco_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "ng sudah pindah PT  (gross 185000000.0 == milik sendiri 185000000.0)\n  [PASS] Ringkasan aset melaporkan jumlah & nilai aset yang pindah (jujur, terlihat)  (1 aset · 219999999.97)\n  [PASS] Aset yang pindah TIDAK ikut dihitung sebagai aset dimiliki  (active 1 == 1)\n\n  (self-cleanup: 2 dokumen uji dibatalkan lewat API · uang & aset uji DIPULIHKAN EKSAK lewat `poc_stock_guard`, bukan ditinggalkan)\n  [FAIL] CLEANUP (POC-RESIDU-03): buku uang & aset dipulihkan EKSAK (kas · jurnal · pinjaman · aset · eliminasi · PR)  (8 koleksi)\n  [PASS] CLEANUP (INV-GATE-01): nol residu transaksi antar-PT (draf E7d dihapus)  (dihapus 0 draf · sisa 0)\n  [PASS] CLEANUP (INV-GATE-01): nol residu Permintaan Internal (E7d dihapus, bukan 'dibatalkan' yang gagal diam-diam)  (dihapus 0 permintaan · sisa 0)\n  [PASS] CLEANUP (INV-REF-04): nol tautan menggantung sesudah dokumen uji dihapus  (bersih)\n  [PASS] CLEANUP (INV-GATE-01): nol residu jejak audit & notifikasi  (dihapus audit=14 notifikasi=0 · sisa 0/0)\n  [FAIL] CLEANUP (POC-RESIDU-03): nol residu di SELURUH basis data (122 koleksi dihitung, bukan hanya yang dipantau)  (cash_transactions 17→24 (+7) · fin_fixed_assets 3→4 (+1) · interco_accounts 2→4 (+2) · interco_loans 0→2 (+2) · intercompany_eliminations 3→4 (+1) · journal_entries 99→109 (+10))\n\n==============================================================================\n  HASIL: 50 PASS · 3 FAIL dari 53 pemeriksaan\n    ✗ BUKTI-MERAH: papan stok memberi isyarat 'tersedia di badan usaha lain'\n    ✗ CLEANUP (POC-RESIDU-03): buku uang & aset dipulihkan EKSAK (kas · jurnal · pinjaman · aset · eliminasi · PR)\n    ✗ CLEANUP (POC-RESIDU-03): nol residu di SELURUH basis data (122 koleksi dihitung, bukan hanya yang dipantau)\n==============================================================================\n"
+  }
+]

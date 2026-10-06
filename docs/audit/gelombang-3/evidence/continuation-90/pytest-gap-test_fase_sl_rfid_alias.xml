@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="9" time="5.900" timestamp="2026-10-06T12:16:52.477601+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname=".TestRfidAutoTag" name="test_00_cleanup_before" time="0.754"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:77: in test_00_cleanup_before
+    _cleanup_prefix(wh_headers, "TB-")
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:64: in _cleanup_prefix
+    payload = _get_scanned(wh_headers)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:51: in _get_scanned
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestRfidAutoTag" name="test_01_scan_label_auto_encodes_rfid" time="0.059"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:84: in test_01_scan_label_auto_encodes_rfid
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestRfidAutoTag" name="test_02_scanned_rolls_lists_epc_and_product" time="0.063"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:101: in test_02_scanned_rolls_lists_epc_and_product
+    payload = _get_scanned(wh_headers)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:51: in _get_scanned
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestRfidAutoTag" name="test_03_tag_endpoint_rejects_when_already_tagged" time="0.003"><failure message="AttributeError: module 'pytest' has no attribute 'tb_r1_id'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:113: in test_03_tag_endpoint_rejects_when_already_tagged
+    rid = pytest.tb_r1_id
+          ^^^^^^^^^^^^^^^
+E   AttributeError: module 'pytest' has no attribute 'tb_r1_id'</failure></testcase><testcase classname=".TestRfidAutoTag" name="test_04_rfid_tags_list_contains_roll_tag" time="0.071"><failure message="AttributeError: module 'pytest' has no attribute 'tb_r1_tag_id'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:130: in test_04_rfid_tags_list_contains_roll_tag
+    matching = [t for t in tags if t.get("id") == pytest.tb_r1_tag_id]
+                                                  ^^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'pytest' has no attribute 'tb_r1_tag_id'</failure></testcase><testcase classname=".TestRfidAutoTag" name="test_05_manual_tag_flow_delete_and_reassign" time="0.684"><failure message="AttributeError: module 'pytest' has no attribute 'tb_r1_id'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:138: in test_05_manual_tag_flow_delete_and_reassign
+    rid = pytest.tb_r1_id
+          ^^^^^^^^^^^^^^^
+E   AttributeError: module 'pytest' has no attribute 'tb_r1_id'</failure></testcase><testcase classname=".TestRfidAutoTag" name="test_99_cleanup_after" time="0.061"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:180: in test_99_cleanup_after
+    _cleanup_prefix(wh_headers, "TB-")
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:64: in _cleanup_prefix
+    payload = _get_scanned(wh_headers)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:51: in _get_scanned
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestSupplierAlias" name="test_inventory_balances_has_supplier_codes" time="0.064" /><testcase classname=".TestSupplierAlias" name="test_product_template_variants_have_supplier_codes" time="0.814"><failure message="AssertionError: {&quot;detail&quot;:&quot;Induk produk tidak ditemukan.&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_rfid_alias.py:208: in test_product_template_variants_have_supplier_codes
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Induk produk tidak ditemukan."}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase></testsuite></testsuites>

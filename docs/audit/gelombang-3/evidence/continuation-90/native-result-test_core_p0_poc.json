@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_p0_poc.py",
+    "database": "knhost_audit_native90_e4fa5e3d3cf64f6e8ad75d9d19f662be",
+    "exit": 1,
+    "seconds": 62.72,
+    "pass_log_tokens": 37,
+    "fail_log_tokens": 16,
+    "log": "continuation-90\\native-test_core_p0_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "i titik lahir dokumen ‖ ✗ [FAIL] sales_return: TIDAK ada hook penautan di titik lahir dokumen ‖ ✗ [FAIL] shipment: TIDAK ada hook penautan di titik lahir dokumen ‖ ✗ [FAIL] tax_invoice: TIDAK ada hook penautan di titik lahir dokumen ‖ ✗ [FAIL] vendor_bill: TIDAK ada hook penautan di titik lahir dokumen\n\nP0-8 · Data demo memang punya rantainya (bukan 'hijau tapi hampa')\n  [PASS] ≥3 rantai SO→PR→PO tersedia di data demo (papan PO punya isi untuk diklik)  [('KSC/PO-00013', 'Ayu Permatasari'), ('KSC/PO-00014', 'Bima Saputra'), ('KSC/PO-00015', 'Ayu Permatasari')]\n  [PASS] setiap rantai demo membawa Nama Sales yang dirunut (bukan kosong)  ['Ayu Permatasari', 'Bima Saputra', 'Ayu Permatasari']\n  [PASS] data demo memuat ≥2 nama sales BERBEDA — membuktikan kolom mengikuti SO-nya  ['Ayu Permatasari', 'Bima Saputra']\n\nP0-9 · Keputusan pemilik: PO lama DIBIARKAN kosong (tanpa backfill)\n  [PASS] PO lama tetap tanpa `pr_id` — dan gate di atas tetap HIJAU (bukan pelanggaran)  14 PO berdiri sendiri\n  [PASS] nol PO yang memuat Nama Sales tanpa jejak dokumen (nama tidak dikarang)  0 pelanggaran\n\nP0-10 · CLEANUP + NOL RESIDU (diukur, bukan diklaim)\n  [PASS] nol residu: jumlah dokumen tiap koleksi SAMA sebelum & sesudah POC  7 koleksi identik\n  [PASS] nol jejak hantu: pesanan demo tidak menyimpan permintaan ke PR yang dihapus  0 pesanan masih menyimpannya\n  [PASS] sesudah pembersihan, backfill relasi tetap bersih (nol tautan menggantung)  {'dry_run': True, 'candidates': 71, 'would_add': 0, 'written': 0, 'skipped': 0}\n\n==============================================================================\n  HASIL: 35 PASS · 1 FAIL dari 36 pemeriksaan\n  GAGAL:\n   - `INV-REF` HIJAU — PO mandiri TIDAK dituduh dokumen yatim\n==============================================================================\n"
+  }
+]

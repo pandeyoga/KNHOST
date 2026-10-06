@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_f3_smoke.py",
+    "database": "knhost_audit_native90_cd64b43b55764557926dd8c56af07d46",
+    "exit": "timeout",
+    "seconds": 210.07,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_f3_smoke.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "Timeout (0:00:55)!\nThread 0x00013154 (most recent call first):\n  File \"<frozen ntpath>\", line 680 in realpath\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\coverage\\files.py\", line 158 in abs_file\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\coverage\\files.py\", line 275 in match\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\coverage\\inorout.py\", line 473 in check_include_omit_etc\n  File "
+  }
+]

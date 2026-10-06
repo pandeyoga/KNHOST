@@ -578,6 +578,11 @@ async def confirm_cut(roll_id: str, reservation_id: str, actual_length: Optional
     parent = await db.inventory_rolls.find_one(
         {"id": roll_id, "length_reservations.id": reservation_id}, {"_id": 0})
     if not parent:
+        # G3 V3-CUT-01 — percobaan sebelumnya sudah mengurangi induk tapi mati sebelum anak lahir → lanjutkan.
+        resumed = await db.inventory_rolls.find_one({"id": roll_id, "pending_cut_ops.op": reservation_id}, {"_id": 0})
+        if resumed:
+            op = next(x for x in resumed["pending_cut_ops"] if x["op"] == reservation_id)
+            return await _finish_cut(resumed, op)
         raise HTTPException(status_code=404, detail="Reservasi potong tidak ditemukan / sudah dipotong")
     rsv = next(x for x in parent["length_reservations"] if x["id"] == reservation_id)
     actual = round(float(rsv["qty"] if actual_length is None else actual_length), 2)
@@ -588,44 +593,57 @@ async def confirm_cut(roll_id: str, reservation_id: str, actual_length: Optional
         raise HTTPException(status_code=400, detail=(
             f"Panjang potong {actual} melebihi reservasi {rsv['qty']} — tambah reservasi dulu"))
     used = round(actual + waste, 2)
-    # CAS: reservasi masih ada & panjang fisik cukup; pull + kurangi dalam satu update.
+    cut = {"reservation_id": reservation_id, "reserved_qty": rsv["qty"], "actual_length": actual,
+           "waste": waste, "mode": mode, "by": actor, "at": now_iso(), "note": note,
+           "identity_verified": False}
+    op = {"op": reservation_id, "child_id": f"roll_cut_{reservation_id}", "rsv": rsv, "cut": cut,
+          "actual": actual, "waste": waste}
+    # CAS: reservasi masih ada & panjang fisik cukup; pull + kurangi + catat operasi potong DURABLE
+    # (pending_cut_ops) dalam SATU update → gagal sesudahnya selalu bisa dilanjutkan, tidak pernah hilang.
     upd = await db.inventory_rolls.find_one_and_update(
         {"id": roll_id, "length_reservations.id": reservation_id, "length_remaining": {"$gte": used - QTY_EPS}},
         [{"$set": {"length_reservations": {"$filter": {"input": "$length_reservations", "as": "r",
                                                        "cond": {"$ne": ["$$r.id", reservation_id]}}},
                    "length_remaining": {"$round": [{"$subtract": ["$length_remaining", used]}, 2]},
                    "length_initial": {"$round": [{"$subtract": ["$length_initial", actual]}, 2]},
+                   "pending_cut_ops": {"$concatArrays": [{"$ifNull": ["$pending_cut_ops", []]}, [{"$literal": op}]]},
                    "updated_at": now_iso()}},
          _recompute_reserved_stage()],
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     if not upd:
         raise HTTPException(status_code=409, detail="Roll induk berubah / panjang fisik tidak cukup untuk dipotong")
-    child = dict(parent)
-    for k in ("_id", "length_reservations", "length_reserved", "active_movement"):
-        child.pop(k, None)
-    cut = {"reservation_id": reservation_id, "reserved_qty": rsv["qty"], "actual_length": actual,
-           "waste": waste, "mode": mode, "by": actor, "at": now_iso(), "note": note,
-           "identity_verified": False}
-    child.update({
-        "id": new_id("roll"), "length_initial": actual, "length_remaining": actual,
-        "status": rsv.get("status") or "reserved", "reserved_ref": rsv["ref"], "earmarked_for": None,
-        "is_remnant": False, "cut": cut, "journey": {"stage": "cut_pending_tag", "updated_at": now_iso()},
-        "created_at": now_iso(), "updated_at": now_iso()})
-    child = await insert_child_roll(child, parent)
-    await db.inventory_movements.insert_one({
-        "id": new_id("mov"), "product_id": parent["product_id"], "warehouse_id": parent["warehouse_id"],
-        "owner_entity_id": parent.get("owner_entity_id"), "movement_type": "roll_cut",
-        "quantity": 0, "unit": parent.get("unit", "meter"), "lot": parent.get("lot", ""),
-        "roll_id": child["id"], "parent_roll_id": roll_id, "qty_rolls": 1,
-        "source_document": rsv["ref"]["id"], "cut": cut, "timestamp": now_iso()})
+    return await _finish_cut({**parent, **{k: upd[k] for k in ("length_remaining", "length_initial")}}, op, upd)
+
+
+async def _finish_cut(parent: Dict[str, Any], op: Dict[str, Any],
+                      upd: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Tahap idempoten sesudah induk dikurangi: anak (id deterministik) + movement + cabut penanda."""
+    rsv, cut, actual, waste, roll_id = op["rsv"], op["cut"], op["actual"], op["waste"], parent["id"]
+    child = await db.inventory_rolls.find_one({"id": op["child_id"]}, {"_id": 0})
+    if not child:
+        child = dict(parent)
+        for k in ("_id", "length_reservations", "length_reserved", "active_movement", "pending_cut_ops"):
+            child.pop(k, None)
+        child.update({
+            "id": op["child_id"], "length_initial": actual, "length_remaining": actual,
+            "status": rsv.get("status") or "reserved", "reserved_ref": rsv["ref"], "earmarked_for": None,
+            "is_remnant": False, "cut": cut, "journey": {"stage": "cut_pending_tag", "updated_at": now_iso()},
+            "created_at": now_iso(), "updated_at": now_iso()})
+        child = await insert_child_roll(child, parent)
+    base = {"product_id": parent["product_id"], "warehouse_id": parent["warehouse_id"],
+            "owner_entity_id": parent.get("owner_entity_id"), "unit": parent.get("unit", "meter"),
+            "lot": parent.get("lot", ""), "source_document": rsv["ref"]["id"], "timestamp": now_iso()}
+    moves = [{**base, "id": f"mov_cut_{op['op']}", "movement_type": "roll_cut", "quantity": 0,
+              "roll_id": child["id"], "parent_roll_id": roll_id, "qty_rolls": 1, "cut": cut}]
     if waste > 0:
-        await db.inventory_movements.insert_one({
-            "id": new_id("mov"), "product_id": parent["product_id"], "warehouse_id": parent["warehouse_id"],
-            "owner_entity_id": parent.get("owner_entity_id"), "movement_type": "cut_waste",
-            "quantity": -waste, "unit": parent.get("unit", "meter"), "lot": parent.get("lot", ""),
-            "roll_id": roll_id, "qty_rolls": None, "source_document": rsv["ref"]["id"], "timestamp": now_iso()})
+        moves.append({**base, "id": f"mov_cutw_{op['op']}", "movement_type": "cut_waste", "quantity": -waste,
+                      "roll_id": roll_id, "qty_rolls": None})
+    for mv in moves:
+        await db.inventory_movements.update_one({"id": mv["id"]}, {"$setOnInsert": mv}, upsert=True)
+    await db.inventory_rolls.update_one({"id": roll_id}, {"$pull": {"pending_cut_ops": {"op": op["op"]}}})
     # Selisih reservasi − aktual kembali bebas di induk (reservasi sudah ditarik utuh).
     await rebuild_balance(parent["product_id"], parent["warehouse_id"], parent["owner_entity_id"])
+    upd = upd or await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0})
     return {"parent": upd, "child": child, "cut": cut}
 
 
@@ -1897,6 +1915,7 @@ async def create_inbound_roll(
     lot_source: str = "manual", lot_source_ref: Optional[Dict[str, Any]] = None,
     parent_lot_ids: Optional[List[str]] = None, supplier_lot: str = "",
     lot_status: str = "",
+    roll_id: str = "",
 ) -> Dict[str, Any]:
     """Buat 1 roll `available` (SSOT) + movement + rebuild balance.
     Dipakai inbound manual (/wms/tasks) & surplus cycle-count — MENGGANTIKAN $inc balance.
@@ -1933,8 +1952,12 @@ async def create_inbound_roll(
     # dikonversi, biaya per satuan dasar ikut dikonversi agar NILAI roll tidak berubah.
     if unit_cost is not None and quantity > 0 and abs(quantity - qty_in) > 1e-9:
         _uc = round(float(unit_cost) * qty_in / quantity, 4)
+    if roll_id:   # G3 V3-MKO-01 — identitas deterministik: retry mengembalikan roll yang sama
+        existing = await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0})
+        if existing:
+            return existing
     roll = {
-        "id": new_id("roll"), "product_id": product_id, "owner_entity_id": owner_entity_id,
+        "id": roll_id or new_id("roll"), "product_id": product_id, "owner_entity_id": owner_entity_id,
         "ownership_type": "internal", "consignor_ref": None,
         "warehouse_id": warehouse_id, "bin_id": bin_id,
         "lot": _lot_doc["lot_number"], "lot_id": _lot_doc["id"],
@@ -1956,8 +1979,8 @@ async def create_inbound_roll(
         "created_by": created_by, "created_by_name": created_by,
     }
     await db.inventory_rolls.insert_one(dict(roll))
-    await db.inventory_movements.insert_one({
-        "id": new_id("mov"), "product_id": product_id, "warehouse_id": warehouse_id,
+    mov = {
+        "id": f"mov_{roll['id']}" if roll_id else new_id("mov"), "product_id": product_id, "warehouse_id": warehouse_id,
         "owner_entity_id": owner_entity_id, "movement_type": acquired_via,
         "quantity": round(float(quantity), 2), "unit": prod.get("base_unit") or unit or "meter",
         "lot": _lot_doc["lot_number"], "lot_id": _lot_doc["id"],
@@ -1965,7 +1988,8 @@ async def create_inbound_roll(
  # FASE U — satu baris mutasi menunjuk SATU roll fisik.
  "qty_rolls": (1 if roll["id"] else None),
         "source_document": ref_id, "timestamp": now_iso(),
-    })
+    }
+    await db.inventory_movements.update_one({"id": mov["id"]}, {"$setOnInsert": mov}, upsert=True)
     await _lots.recompute(_lot_doc["id"])
     await rebuild_balance(product_id, warehouse_id, owner_entity_id)
     return roll

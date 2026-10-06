@@ -658,6 +658,11 @@ async def create_manual_entry(payload, actor: Dict[str, Any],
             raise ValueError(f"Akun '{c}' nonaktif.")
     names = {c: accounts[c]["name"] for c in codes}
     lines = _norm_lines(raw, names)
+    import math as _math
+    for l in lines:
+        # G3 D4-GL-02 — NaN/±Infinity lolos semua perbandingan di bawah → tolak lebih dulu.
+        if not (_math.isfinite(float(l["debit"])) and _math.isfinite(float(l["credit"]))):
+            raise ValueError("Nilai debit/kredit harus angka terhingga (NaN/Infinity ditolak).")
     for l in lines:
         if l["debit"] < 0 or l["credit"] < 0:
             raise ValueError("Nilai debit/kredit tidak boleh negatif.")
@@ -761,11 +766,13 @@ async def void_entry(entry_id: str, actor: Dict[str, Any],
         raise ValueError("Jurnal sudah di-void.")
     if je.get("source_type") != "manual":
         raise ValueError("Hanya jurnal manual yang dapat di-void langsung (jurnal otomatis mengikuti dokumen sumber).")
+    if je.get("reversed_by_entry_id"):  # G3 D4-GL-01 — sudah/sedang dibalik → anulir = pembatalan ganda
+        raise ValueError("Jurnal sudah/sedang dibalik — tidak bisa dianulir lagi.")
     # FN-09 — void mengubah angka periode jurnal itu: penjaga periode sama dengan posting.
     plu = await enforce_closed_period_guard(je.get("entity_id", ""), je.get("date", ""),
                                             source_type="manual_void", can_backdate=can_backdate)
     res = await db.journal_entries.update_one(
-        {"id": entry_id, "status": {"$ne": "void"}},
+        {"id": entry_id, "status": {"$ne": "void"}, "reversed_by_entry_id": {"$exists": False}},
         {"$set": {"status": "void", "voided_by": actor.get("name", "system"),
                   "voided_at": now_iso(), "updated_at": now_iso(),
                   **({"voided_in_unlock": plu["id"]} if plu else {})}},

@@ -1,0 +1,68 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "audit_started_on": "2026-10-05",
+  "package_updated_on": "2026-10-06",
+  "findings": 78,
+  "previous_open": 19,
+  "new": 59,
+  "suite_stats": {
+    "core": {
+      "scripts": 15,
+      "cases": 310,
+      "passed": 309,
+      "failed": 1,
+      "nonzero": 0
+    },
+    "w2": {
+      "scripts": 4,
+      "cases": 82,
+      "passed": 82,
+      "failed": 0,
+      "nonzero": 0
+    },
+    "extended": {
+      "scripts": 41,
+      "cases": 455,
+      "passed": 414,
+      "failed": 41,
+      "nonzero": 3
+    }
+  },
+  "source_inventory": 5824,
+  "frontend_chart_files": 21,
+  "coverage": {
+    "covered_lines": 50308,
+    "num_statements": 102029,
+    "percent_covered": 47.14540149304634,
+    "percent_covered_display": "47",
+    "missing_lines": 51721,
+    "excluded_lines": 30,
+    "percent_statements_covered": 49.30754981426849,
+    "percent_statements_covered_display": "49",
+    "num_branches": 29916,
+    "num_partial_branches": 4336,
+    "covered_branches": 11898,
+    "missing_branches": 18018,
+    "percent_branches_covered": 39.77135980746089,
+    "percent_branches_covered_display": "40"
+  },
+  "routes": {
+    "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+    "registered_api_methods": 1410,
+    "recorded_body_entered": 1024,
+    "mutation_methods": 772,
+    "mutation_body_entered": 398,
+    "mutation_no_recorded_body": 374,
+    "note": "Body line hits prove some handler body execution including guards/errors, never all branches, authorized success, numeric correctness or whole business flow. Counting imported def/decorator lines is avoided."
+  },
+  "get": {
+    "total": 638,
+    "executed": 589,
+    "successful": 539,
+    "exceptions": 0,
+    "remaining": 49
+  },
+  "get_http_500_paths": [],
+  "replay_nonpass_rows": 44,
+  "coverage_100_proven": false
+}

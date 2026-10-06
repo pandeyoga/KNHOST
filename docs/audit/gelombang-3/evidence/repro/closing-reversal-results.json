@@ -1,0 +1,1677 @@
+{
+  "commit": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_f4b0d2011c644a2b94385e5aea23f25a",
+  "results": [
+    {
+      "id": "D4-EQ-01-open-period-income-control",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-EQ-01-closed-period-net-income",
+      "expected": 100,
+      "actual": 0.0,
+      "note": "Same operational profit100 before/after closing; equity API uses the change in unclosed earnings and the actual UI labels it Laba Periode Berjalan. Closing transfers100 to retained earnings and incorrectly turns the profit KPI to0.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-EQ-01-total-equity-movement-control",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "The equity roll-forward remains reconciled. Only the net_income definition/label is wrong; do not count the correct retained-earnings transfer twice when fixing.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-EQ-01-operating-profit-control",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CLOSE-01-nested-producer-control",
+      "expected": {
+        "month": 100,
+        "year": 0
+      },
+      "actual": {
+        "month": 100.0,
+        "year": 0.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CLOSE-01-before-reopen-control",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CLOSE-01-parent-stale",
+      "expected": true,
+      "actual": false,
+      "note": "Reopening January removes its closing100. The annual closing depended on that100, but still says closed/stale=False. Original UI only offers Tutup Ulang when stale is true.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CLOSE-01-parent-residual-control",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CLOSE-01-post-reopen-operating-income-control",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "Operational P&L and balance arithmetic remain correct; finding is invalidated annual close status, not a claim that the balanced equation fails.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CLOSE-01-post-reopen-unclosed-income-control",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "Reopening the child correctly restores unclosed profit100. The defect is the parent still declaring a final/non-stale close, not this balance calculation.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CLOSE-01-direct-reclose-workaround-control",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CLOSE-02-normal-reclose-control",
+      "expected": {
+        "net": 120,
+        "stale": false
+      },
+      "actual": {
+        "net": 120.0,
+        "stale": false
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CLOSE-02-linked-journal-posted",
+      "expected": "posted",
+      "actual": "void",
+      "note": "Original new JE130 is active, but the parent still points to the void old JE120 and old net_income120 after acknowledgement failure.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CLOSE-02-active-journal-control",
+      "expected": {
+        "count": 1,
+        "total": 130
+      },
+      "actual": {
+        "count": 1,
+        "total": 130.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CLOSE-02-parent-net-income",
+      "expected": 130,
+      "actual": 120.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CLOSE-02-immediate-lock-control",
+      "expected": 409,
+      "actual": 409,
+      "note": "A visible saga lock intentionally blocks concurrent replay; that block alone is not labelled a defect.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CLOSE-02-admin-release-control",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CLOSE-02-original-recovery-retry",
+      "expected": 200,
+      "actual": 500,
+      "note": "After original admin release, retry tries to insert another active JE with the stable closing source_id. Original unique index rejects it; existing JE is not adopted and parent remains stale/locked.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CLOSE-02-recovery-linked-existing",
+      "expected": "je_6eaaad066784",
+      "actual": "je_5de1a6405853",
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-GL-01-ordinary-void-control",
+      "expected": {
+        "http": 200,
+        "income": 0
+      },
+      "actual": {
+        "http": 200,
+        "income": 0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-GL-01-single-reversal-control",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-GL-01-second-cancellation-rejected",
+      "expected": true,
+      "actual": false,
+      "note": "Original public void still accepts a journal already reversed. Original UI still exposes Anulir Jurnal for manual/posted regardless of reversed_by_entry_id.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-GL-01-post-reversal-void-income",
+      "expected": 0,
+      "actual": 100.0,
+      "note": "Original expense100 and reversal initially net0. Voiding only the original leaves standalone credit expense100, reporting a profit100 after double cancellation.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-COA-01-single-entity-income-control",
+      "expected": 77,
+      "actual": 77.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-COA-01-all-entities-income",
+      "expected": 77,
+      "actual": 0,
+      "note": "Authorized all scope contains A+B; B has no July journals. Single A correctly reports income77 from an original permitted entity-only account, but all uses global-only account dimensions and drops that income.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-COA-01-single-entity-balance-control",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-COA-01-all-entities-balanced",
+      "expected": true,
+      "actual": false,
+      "note": "Bank asset line is retained but the entity-only income is unclassified, making all-scope financial statements unbalanced. This is not an entity-specific override changing the meaning of an existing global code.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-COA-01-all-entities-assets-control",
+      "expected": 307,
+      "actual": 307.0,
+      "note": "Original lifecycle produced100+130+77 in A. B is still empty at this test; non-finite fixture runs later in another month.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-GL-02-healthy-summary-control",
+      "expected": {
+        "http": 200,
+        "debit": 50
+      },
+      "actual": {
+        "http": 200,
+        "debit": 50.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-GL-02-nan-persisted",
+      "expected": 0,
+      "actual": 1,
+      "note": "JSON string is valid JSON; original Pydantic float coercion accepts it. Manual path bypasses _validate_entry_lines, persists non-finite double values, and returns200 with amounts sanitized to null.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-GL-02-nan-validation",
+      "expected": true,
+      "actual": false,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-GL-02-infinity-persisted",
+      "expected": 0,
+      "actual": 1,
+      "note": "JSON string is valid JSON; original Pydantic float coercion accepts it. Manual path bypasses _validate_entry_lines, persists non-finite double values, and returns200 with amounts sanitized to null.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-GL-02-infinity-validation",
+      "expected": true,
+      "actual": false,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-GL-02-summary-valid-amount-retained",
+      "expected": 50,
+      "actual": 0.0,
+      "note": "The summary still returns200/balanced=True, but the poisoned accounts are omitted and even the legitimate expense50 disappears from the totals. No500/serialization-crash hypothesis is claimed.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-GL-02-income-valid-expense-retained",
+      "expected": 50,
+      "actual": 0,
+      "note": "",
+      "status": "observed_difference"
+    }
+  ],
+  "contexts": {
+    "indexes": {
+      "created": 212,
+      "existed": 0,
+      "failed": 0,
+      "unique": {
+        "created": 25,
+        "failed": []
+      }
+    },
+    "journal_indexes": {
+      "_id_": {
+        "v": 2,
+        "key": [
+          [
+            "_id",
+            1
+          ]
+        ]
+      },
+      "kn_entity_id_1__date_-1": {
+        "v": 2,
+        "key": [
+          [
+            "entity_id",
+            1
+          ],
+          [
+            "date",
+            -1
+          ]
+        ],
+        "background": true
+      },
+      "kn_source_type_1__source_id_1": {
+        "v": 2,
+        "key": [
+          [
+            "source_type",
+            1
+          ],
+          [
+            "source_id",
+            1
+          ]
+        ],
+        "background": true
+      },
+      "kn_status_1__date_-1": {
+        "v": 2,
+        "key": [
+          [
+            "status",
+            1
+          ],
+          [
+            "date",
+            -1
+          ]
+        ],
+        "background": true
+      },
+      "kn_entity_id_1__lines.account_code_1__date_1": {
+        "v": 2,
+        "key": [
+          [
+            "entity_id",
+            1
+          ],
+          [
+            "lines.account_code",
+            1
+          ],
+          [
+            "date",
+            1
+          ]
+        ],
+        "background": true
+      },
+      "kn_number_1": {
+        "v": 2,
+        "key": [
+          [
+            "number",
+            1
+          ]
+        ],
+        "background": true
+      },
+      "kn_date_-1": {
+        "v": 2,
+        "key": [
+          [
+            "date",
+            -1
+          ]
+        ],
+        "background": true
+      },
+      "uq_number": {
+        "v": 2,
+        "key": [
+          [
+            "number",
+            1
+          ]
+        ],
+        "background": true,
+        "unique": true,
+        "partialFilterExpression": {
+          "number": {
+            "$type": "string",
+            "$gt": ""
+          }
+        }
+      },
+      "uq_je_source_active": {
+        "v": 2,
+        "key": [
+          [
+            "source_type",
+            1
+          ],
+          [
+            "source_id",
+            1
+          ]
+        ],
+        "background": true,
+        "unique": true,
+        "partialFilterExpression": {
+          "source_type": {
+            "$type": "string",
+            "$gt": ""
+          },
+          "source_id": {
+            "$type": "string",
+            "$gt": ""
+          },
+          "status": {
+            "$in": [
+              "posted",
+              "draft"
+            ]
+          }
+        }
+      }
+    },
+    "equity_metric": {
+      "before_close": {
+        "period": {
+          "start": "2024-01-01",
+          "end": "2024-12-31"
+        },
+        "components": [
+          {
+            "code": "__pl__",
+            "name": "Laba (Rugi) Periode Berjalan",
+            "begin": 0.0,
+            "movement": 100.0,
+            "end": 100.0
+          }
+        ],
+        "begin_total": 0.0,
+        "movement_total": 100.0,
+        "end_total": 100.0,
+        "net_income": 100.0,
+        "generated_at": "2026-10-05T16:56:13.130419+00:00"
+      },
+      "after_close": {
+        "period": {
+          "start": "2024-01-01",
+          "end": "2024-12-31"
+        },
+        "components": [
+          {
+            "code": "3-2000",
+            "name": "Laba Ditahan",
+            "begin": 0.0,
+            "movement": 100.0,
+            "end": 100.0
+          },
+          {
+            "code": "__pl__",
+            "name": "Laba (Rugi) Periode Berjalan",
+            "begin": 0.0,
+            "movement": 0.0,
+            "end": 0.0
+          }
+        ],
+        "begin_total": 0.0,
+        "movement_total": 100.0,
+        "end_total": 100.0,
+        "net_income": 0.0,
+        "generated_at": "2026-10-05T16:56:13.421265+00:00"
+      },
+      "intended_UI_label": "Laba Periode Berjalan",
+      "scope": "Actual original API and source consumer, DOM not verified"
+    },
+    "nested": {
+      "manual": {
+        "id": "je_aaf3fe1bb0c7",
+        "number": "A/JE-00001",
+        "date": "2024-01-15T12:00:00+00:00",
+        "description": "Synthetic audit nested closing",
+        "source": "manual",
+        "source_type": "manual",
+        "source_id": "",
+        "source_label": "Manual",
+        "lines": [
+          {
+            "account_code": "1-1100",
+            "account_name": "Kas Besar / Bank",
+            "debit": 100.0,
+            "credit": 0.0,
+            "description": ""
+          },
+          {
+            "account_code": "4-1000",
+            "account_name": "Pendapatan Penjualan",
+            "debit": 0.0,
+            "credit": 100.0,
+            "description": ""
+          }
+        ],
+        "total_debit": 100.0,
+        "total_credit": 100.0,
+        "status": "posted",
+        "entity_id": "A",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:56:13.090853+00:00",
+        "updated_at": "2026-10-05T16:56:13.090853+00:00"
+      },
+      "month": {
+        "id": "close_bd9f1c4314f5",
+        "entity_id": "A",
+        "period_type": "month",
+        "period_key": "2024-01",
+        "period_label": "Januari 2024",
+        "start_date": "2024-01-01",
+        "end_date": "2024-01-31",
+        "status": "closed",
+        "net_income": 100.0,
+        "residual_net_income": 100.0,
+        "revenue_total": 100.0,
+        "expense_total": 0,
+        "journal_entry_id": "je_2b5a93992d13",
+        "journal_entry_number": "A/JE-00002",
+        "note": "Synthetic audit",
+        "stale": false,
+        "stale_at": null,
+        "stale_reason": "",
+        "closed_by": "Audit User A",
+        "closed_at": "2026-10-05T16:56:13.189724+00:00",
+        "reopened_by": null,
+        "reopened_at": null,
+        "reclosed_by": null,
+        "reclosed_at": null,
+        "created_at": "2026-10-05T16:56:13.189724+00:00",
+        "updated_at": "2026-10-05T16:56:13.189724+00:00"
+      },
+      "year": {
+        "id": "close_04521ebc7794",
+        "entity_id": "A",
+        "period_type": "year",
+        "period_key": "2024",
+        "period_label": "Tahun 2024",
+        "start_date": "2024-01-01",
+        "end_date": "2024-12-31",
+        "status": "closed",
+        "net_income": 100.0,
+        "residual_net_income": 0.0,
+        "revenue_total": 100.0,
+        "expense_total": 0,
+        "journal_entry_id": null,
+        "journal_entry_number": null,
+        "note": "Synthetic audit",
+        "stale": false,
+        "stale_at": null,
+        "stale_reason": "",
+        "closed_by": "Audit User A",
+        "closed_at": "2026-10-05T16:56:13.271819+00:00",
+        "reopened_by": null,
+        "reopened_at": null,
+        "reclosed_by": null,
+        "reclosed_at": null,
+        "created_at": "2026-10-05T16:56:13.271819+00:00",
+        "updated_at": "2026-10-05T16:56:13.271819+00:00"
+      },
+      "reopen": {
+        "http": 200,
+        "body": {
+          "id": "close_bd9f1c4314f5",
+          "entity_id": "A",
+          "period_type": "month",
+          "period_key": "2024-01",
+          "period_label": "Januari 2024",
+          "start_date": "2024-01-01",
+          "end_date": "2024-01-31",
+          "status": "reopened",
+          "net_income": 100.0,
+          "residual_net_income": 100.0,
+          "revenue_total": 100.0,
+          "expense_total": 0,
+          "journal_entry_id": "je_2b5a93992d13",
+          "journal_entry_number": "A/JE-00002",
+          "note": "Synthetic audit",
+          "stale": false,
+          "stale_at": null,
+          "stale_reason": "",
+          "closed_by": "Audit User A",
+          "closed_at": "2026-10-05T16:56:13.189724+00:00",
+          "reopened_by": "Audit User A",
+          "reopened_at": "2026-10-05T16:56:13.470847+00:00",
+          "reclosed_by": null,
+          "reclosed_at": null,
+          "created_at": "2026-10-05T16:56:13.189724+00:00",
+          "updated_at": "2026-10-05T16:56:13.470847+00:00"
+        }
+      },
+      "parent_after": {
+        "id": "close_04521ebc7794",
+        "entity_id": "A",
+        "period_type": "year",
+        "period_key": "2024",
+        "period_label": "Tahun 2024",
+        "start_date": "2024-01-01",
+        "end_date": "2024-12-31",
+        "status": "closed",
+        "net_income": 100.0,
+        "residual_net_income": 0.0,
+        "revenue_total": 100.0,
+        "expense_total": 0,
+        "journal_entry_id": null,
+        "journal_entry_number": null,
+        "note": "Synthetic audit",
+        "stale": false,
+        "stale_at": null,
+        "stale_reason": "",
+        "closed_by": "Audit User A",
+        "closed_at": "2026-10-05T16:56:13.271819+00:00",
+        "reopened_by": null,
+        "reopened_at": null,
+        "reclosed_by": null,
+        "reclosed_at": null,
+        "created_at": "2026-10-05T16:56:13.271819+00:00",
+        "updated_at": "2026-10-05T16:56:13.271819+00:00"
+      },
+      "preview_after": {
+        "period_type": "year",
+        "period_key": "2024",
+        "period_label": "Tahun 2024",
+        "start_date": "2024-01-01",
+        "end_date": "2024-12-31",
+        "entity_id": "A",
+        "revenue_total": 100.0,
+        "expense_total": 0,
+        "net_income": 100.0,
+        "residual_net_income": 100.0,
+        "closing_lines": [
+          {
+            "account_code": "4-1000",
+            "debit": 100.0,
+            "credit": 0.0,
+            "description": "Tutup Pendapatan Penjualan"
+          },
+          {
+            "account_code": "3-2000",
+            "debit": 0.0,
+            "credit": 100.0,
+            "description": "Laba Bersih → Laba Ditahan"
+          }
+        ],
+        "retained_earnings_account": "3-2000",
+        "can_close": false,
+        "blocking_closing": {
+          "id": "close_04521ebc7794",
+          "entity_id": "A",
+          "period_type": "year",
+          "period_key": "2024",
+          "period_label": "Tahun 2024",
+          "start_date": "2024-01-01",
+          "end_date": "2024-12-31",
+          "status": "closed",
+          "net_income": 100.0,
+          "residual_net_income": 0.0,
+          "revenue_total": 100.0,
+          "expense_total": 0,
+          "journal_entry_id": null,
+          "journal_entry_number": null,
+          "note": "Synthetic audit",
+          "stale": false,
+          "stale_at": null,
+          "stale_reason": "",
+          "closed_by": "Audit User A",
+          "closed_at": "2026-10-05T16:56:13.271819+00:00",
+          "reopened_by": null,
+          "reopened_at": null,
+          "reclosed_by": null,
+          "reclosed_at": null,
+          "created_at": "2026-10-05T16:56:13.271819+00:00",
+          "updated_at": "2026-10-05T16:56:13.271819+00:00"
+        },
+        "suspense_balance": 0.0,
+        "suspense_warning": false
+      },
+      "balance_after": {
+        "as_of": "2024-12-31",
+        "comparative": false,
+        "compare_as_of": "",
+        "assets": {
+          "sections": [
+            {
+              "key": "current",
+              "label": "Aset Lancar",
+              "lines": [
+                {
+                  "code": "1-1100",
+                  "name": "Kas Besar / Bank",
+                  "amount": 100.0
+                }
+              ],
+              "total": 100.0
+            }
+          ],
+          "total": 100.0
+        },
+        "liabilities": {
+          "sections": [],
+          "total": 0
+        },
+        "equity": {
+          "lines": [],
+          "accounts_total": 0,
+          "current_earnings": 100.0,
+          "total": 100.0
+        },
+        "assets_total": 100.0,
+        "liabilities_total": 0,
+        "equity_total": 100.0,
+        "liabilities_equity_total": 100.0,
+        "balanced": true,
+        "generated_at": "2026-10-05T16:56:13.531555+00:00"
+      },
+      "UI_guard": "c.status === closed && c.stale && canReclose",
+      "direct_api_workaround": {
+        "http": 200,
+        "body": {
+          "id": "close_04521ebc7794",
+          "entity_id": "A",
+          "period_type": "year",
+          "period_key": "2024",
+          "period_label": "Tahun 2024",
+          "start_date": "2024-01-01",
+          "end_date": "2024-12-31",
+          "status": "closed",
+          "net_income": 100.0,
+          "residual_net_income": 100.0,
+          "revenue_total": 100.0,
+          "expense_total": 0,
+          "journal_entry_id": "je_3e3d966a23cf",
+          "journal_entry_number": "A/JE-00003",
+          "note": "Synthetic audit",
+          "stale": false,
+          "stale_at": null,
+          "stale_reason": "",
+          "closed_by": "Audit User A",
+          "closed_at": "2026-10-05T16:56:13.271819+00:00",
+          "reopened_by": null,
+          "reopened_at": null,
+          "reclosed_by": "Audit User A",
+          "reclosed_at": "2026-10-05T16:56:13.573948+00:00",
+          "created_at": "2026-10-05T16:56:13.271819+00:00",
+          "updated_at": "2026-10-05T16:56:13.573948+00:00"
+        }
+      }
+    },
+    "reclose": {
+      "initial": {
+        "id": "close_4f64663b278d",
+        "entity_id": "A",
+        "period_type": "month",
+        "period_key": "2025-02",
+        "period_label": "Februari 2025",
+        "start_date": "2025-02-01",
+        "end_date": "2025-02-28",
+        "status": "closed",
+        "net_income": 120.0,
+        "residual_net_income": 120.0,
+        "revenue_total": 100.0,
+        "expense_total": 0,
+        "journal_entry_id": "je_5de1a6405853",
+        "journal_entry_number": "A/JE-00007",
+        "note": "Synthetic audit",
+        "stale": false,
+        "stale_at": null,
+        "stale_reason": "",
+        "closed_by": "Audit User A",
+        "closed_at": "2026-10-05T16:56:13.738577+00:00",
+        "reopened_by": null,
+        "reopened_at": null,
+        "reclosed_by": "Audit User A",
+        "reclosed_at": "2026-10-05T16:56:13.957679+00:00",
+        "created_at": "2026-10-05T16:56:13.738577+00:00",
+        "updated_at": "2026-10-05T16:56:13.957679+00:00"
+      },
+      "unlock": {
+        "id": "plu_65651acac42b",
+        "entity_id": "A",
+        "period_type": "month",
+        "period_key": "2025-02",
+        "period_label": "Februari 2025",
+        "start_date": "2025-02-01",
+        "end_date": "2025-02-28",
+        "closing_id": "close_4f64663b278d",
+        "reason": "Synthetic authorized correction audit",
+        "status": "pending",
+        "requested_by": "Audit User A",
+        "requested_by_id": "U",
+        "requested_at": "2026-10-05T16:56:13.805032+00:00",
+        "approved_by": null,
+        "approved_by_id": null,
+        "approved_at": null,
+        "window_hours": null,
+        "window_until": null,
+        "reject_reason": "",
+        "rejected_by": null,
+        "rejected_at": null,
+        "je_ids": [],
+        "reclosed_at": null,
+        "created_at": "2026-10-05T16:56:13.805032+00:00",
+        "updated_at": "2026-10-05T16:56:13.805032+00:00"
+      },
+      "approved": {
+        "id": "plu_65651acac42b",
+        "entity_id": "A",
+        "period_type": "month",
+        "period_key": "2025-02",
+        "period_label": "Februari 2025",
+        "start_date": "2025-02-01",
+        "end_date": "2025-02-28",
+        "closing_id": "close_4f64663b278d",
+        "reason": "Synthetic authorized correction audit",
+        "status": "approved",
+        "requested_by": "Audit User A",
+        "requested_by_id": "U",
+        "requested_at": "2026-10-05T16:56:13.805032+00:00",
+        "approved_by": "Audit Approver",
+        "approved_by_id": "U2",
+        "approved_at": "2026-10-05T16:56:13.872920+00:00",
+        "window_hours": 24,
+        "window_until": "2026-10-06T16:56:13.872920+00:00",
+        "reject_reason": "",
+        "rejected_by": null,
+        "rejected_at": null,
+        "je_ids": [],
+        "reclosed_at": null,
+        "created_at": "2026-10-05T16:56:13.805032+00:00",
+        "updated_at": "2026-10-05T16:56:13.872920+00:00"
+      },
+      "correction2": {
+        "id": "je_b9a0b289e034",
+        "number": "A/JE-00008",
+        "date": "2025-02-21T12:00:00+00:00",
+        "description": "Synthetic audit second authorized correction",
+        "source": "manual",
+        "source_type": "manual",
+        "source_id": "",
+        "source_label": "Manual",
+        "lines": [
+          {
+            "account_code": "1-1100",
+            "account_name": "Kas Besar / Bank",
+            "debit": 10.0,
+            "credit": 0.0,
+            "description": ""
+          },
+          {
+            "account_code": "4-1000",
+            "account_name": "Pendapatan Penjualan",
+            "debit": 0.0,
+            "credit": 10.0,
+            "description": ""
+          }
+        ],
+        "total_debit": 10.0,
+        "total_credit": 10.0,
+        "status": "posted",
+        "entity_id": "A",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:56:13.994415+00:00",
+        "updated_at": "2026-10-05T16:56:13.995426+00:00",
+        "backdated_in_unlock": "plu_65651acac42b"
+      },
+      "first": {
+        "http": 500,
+        "body": "Internal Server Error"
+      },
+      "immediate": {
+        "http": 409,
+        "body": {
+          "detail": {
+            "code": "SAGA_IN_PROGRESS",
+            "message": "Aksi 'closing_reclose' atas dokumen ini sedang/pernah berjalan (mulai 2026-10-05T16:56:14.031008+00:00) dan belum selesai. Muat ulang; bila tetap menggantung, admin dapat melepasnya lewat Kunci Saga.",
+            "lock": {
+              "action": "closing_reclose",
+              "by": "Audit User A",
+              "started_at": "2026-10-05T16:56:14.031008+00:00",
+              "token": "lk_fd6e304b543f"
+            }
+          }
+        }
+      },
+      "damaged_parent": {
+        "id": "close_4f64663b278d",
+        "entity_id": "A",
+        "period_type": "month",
+        "period_key": "2025-02",
+        "period_label": "Februari 2025",
+        "start_date": "2025-02-01",
+        "end_date": "2025-02-28",
+        "status": "closed",
+        "net_income": 120.0,
+        "residual_net_income": 120.0,
+        "revenue_total": 100.0,
+        "expense_total": 0,
+        "journal_entry_id": "je_5de1a6405853",
+        "journal_entry_number": "A/JE-00007",
+        "note": "Synthetic audit",
+        "stale": true,
+        "stale_at": "2026-10-05T16:56:13.999635+00:00",
+        "stale_reason": "Ada posting jurnal backdate (2025-02-21) setelah periode ditutup",
+        "closed_by": "Audit User A",
+        "closed_at": "2026-10-05T16:56:13.738577+00:00",
+        "reopened_by": null,
+        "reopened_at": null,
+        "reclosed_by": "Audit User A",
+        "reclosed_at": "2026-10-05T16:56:13.957679+00:00",
+        "created_at": "2026-10-05T16:56:13.738577+00:00",
+        "updated_at": "2026-10-05T16:56:13.999635+00:00",
+        "saga_lock": {
+          "action": "closing_reclose",
+          "by": "Audit User A",
+          "started_at": "2026-10-05T16:56:14.031008+00:00",
+          "token": "lk_fd6e304b543f"
+        }
+      },
+      "void_old_je": {
+        "id": "je_5de1a6405853",
+        "number": "A/JE-00007",
+        "date": "2025-02-28T23:59:59",
+        "description": "Jurnal Penutup (Ulang) — Februari 2025",
+        "source": "closing",
+        "source_type": "closing",
+        "source_id": "close_4f64663b278d",
+        "source_label": "Tutup Ulang 2025-02",
+        "lines": [
+          {
+            "account_code": "4-1000",
+            "account_name": "Pendapatan Penjualan",
+            "debit": 120.0,
+            "credit": 0.0,
+            "description": "Tutup Pendapatan Penjualan"
+          },
+          {
+            "account_code": "3-2000",
+            "account_name": "Laba Ditahan",
+            "debit": 0.0,
+            "credit": 120.0,
+            "description": "Laba Bersih → Laba Ditahan"
+          }
+        ],
+        "total_debit": 120.0,
+        "total_credit": 120.0,
+        "status": "void",
+        "entity_id": "A",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:56:13.955639+00:00",
+        "updated_at": "2026-10-05T16:56:14.034006+00:00",
+        "voided_at": "2026-10-05T16:56:14.034006+00:00",
+        "voided_by": "Audit User A"
+      },
+      "active_new_jes": [
+        {
+          "id": "je_6eaaad066784",
+          "number": "A/JE-00009",
+          "date": "2025-02-28T23:59:59",
+          "description": "Jurnal Penutup (Ulang) — Februari 2025",
+          "source": "closing",
+          "source_type": "closing",
+          "source_id": "close_4f64663b278d",
+          "source_label": "Tutup Ulang 2025-02",
+          "lines": [
+            {
+              "account_code": "4-1000",
+              "account_name": "Pendapatan Penjualan",
+              "debit": 130.0,
+              "credit": 0.0,
+              "description": "Tutup Pendapatan Penjualan"
+            },
+            {
+              "account_code": "3-2000",
+              "account_name": "Laba Ditahan",
+              "debit": 0.0,
+              "credit": 130.0,
+              "description": "Laba Bersih → Laba Ditahan"
+            }
+          ],
+          "total_debit": 130.0,
+          "total_credit": 130.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:56:14.051165+00:00",
+          "updated_at": "2026-10-05T16:56:14.051165+00:00"
+        }
+      ],
+      "clock_fixture": "Only saga_lock.started_at aged by two hours, before original admin release",
+      "release": {
+        "http": 200,
+        "body": {
+          "released": true,
+          "collection": "period_closings",
+          "id": "close_4f64663b278d",
+          "lock": {
+            "action": "closing_reclose",
+            "by": "Audit User A",
+            "started_at": "2026-10-05T14:56:14.082059+00:00",
+            "token": "lk_fd6e304b543f"
+          },
+          "effects": [
+            {
+              "collection": "journal_entries",
+              "count": 3,
+              "samples": [
+                "A/JE-00005",
+                "A/JE-00007",
+                "A/JE-00009"
+              ]
+            }
+          ]
+        }
+      },
+      "retry": {
+        "http": 500,
+        "body": "Internal Server Error"
+      },
+      "original_retry_exception": {
+        "type": "DuplicateKeyError",
+        "message": "E11000 duplicate key error collection: knhost_audit_f4b0d2011c644a2b94385e5aea23f25a.journal_entries index: uq_je_source_active dup key: { source_type: \"closing\", source_id: \"close_4f64663b278d\" }, full error: {'index': 0, 'code': 11000, 'errmsg': 'E11000 duplicate key error collection: knhost_audit_f4b0d2011c644a2b94385e5aea23f25a.journal_entries index: uq_je_source_active dup key: { source_type: \"closing\", source_id: \"close_4f64663b278d\" }', 'keyPattern': {'source_type': 1, 'source_id': 1}, 'keyValue': {'source_type': 'closing', 'source_id': 'close_4f64663b278d'}}",
+        "source_type": "closing",
+        "source_id": "close_4f64663b278d"
+      },
+      "final_parent": {
+        "id": "close_4f64663b278d",
+        "entity_id": "A",
+        "period_type": "month",
+        "period_key": "2025-02",
+        "period_label": "Februari 2025",
+        "start_date": "2025-02-01",
+        "end_date": "2025-02-28",
+        "status": "closed",
+        "net_income": 120.0,
+        "residual_net_income": 120.0,
+        "revenue_total": 100.0,
+        "expense_total": 0,
+        "journal_entry_id": "je_5de1a6405853",
+        "journal_entry_number": "A/JE-00007",
+        "note": "Synthetic audit",
+        "stale": true,
+        "stale_at": "2026-10-05T16:56:13.999635+00:00",
+        "stale_reason": "Ada posting jurnal backdate (2025-02-21) setelah periode ditutup",
+        "closed_by": "Audit User A",
+        "closed_at": "2026-10-05T16:56:13.738577+00:00",
+        "reopened_by": null,
+        "reopened_at": null,
+        "reclosed_by": "Audit User A",
+        "reclosed_at": "2026-10-05T16:56:13.957679+00:00",
+        "created_at": "2026-10-05T16:56:13.738577+00:00",
+        "updated_at": "2026-10-05T16:56:13.999635+00:00",
+        "saga_lock": {
+          "action": "closing_reclose",
+          "by": "Audit User A",
+          "started_at": "2026-10-05T16:56:14.136453+00:00",
+          "token": "lk_65506b4df52e"
+        }
+      }
+    },
+    "reversal_void": {
+      "original": {
+        "id": "je_87eb27aab38f",
+        "number": "A/JE-00012",
+        "date": "2026-08-02T12:00:00+00:00",
+        "description": "Synthetic audit reversal then void",
+        "source": "manual",
+        "source_type": "manual",
+        "source_id": "",
+        "source_label": "Manual",
+        "lines": [
+          {
+            "account_code": "6-4000",
+            "account_name": "Beban Operasional Lainnya",
+            "debit": 100.0,
+            "credit": 0.0,
+            "description": ""
+          },
+          {
+            "account_code": "1-1100",
+            "account_name": "Kas Besar / Bank",
+            "debit": 0.0,
+            "credit": 100.0,
+            "description": ""
+          }
+        ],
+        "total_debit": 100.0,
+        "total_credit": 100.0,
+        "status": "posted",
+        "entity_id": "A",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:56:14.266941+00:00",
+        "updated_at": "2026-10-05T16:56:14.267945+00:00"
+      },
+      "reversal": {
+        "http": 200,
+        "body": {
+          "id": "je_e70d34fe7ffd",
+          "number": "A/JE-00013",
+          "date": "2026-08-03T00:00:00",
+          "description": "Pembalik A/JE-00012: Synthetic ordinary reversal",
+          "source": "reversal",
+          "source_type": "reversal",
+          "source_id": "je_87eb27aab38f",
+          "source_label": "Pembalik A/JE-00012",
+          "lines": [
+            {
+              "account_code": "6-4000",
+              "account_name": "Beban Operasional Lainnya",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "Pembalik A/JE-00012"
+            },
+            {
+              "account_code": "1-1100",
+              "account_name": "Kas Besar / Bank",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": "Pembalik A/JE-00012"
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:56:14.314502+00:00",
+          "updated_at": "2026-10-05T16:56:14.314502+00:00",
+          "ref": {
+            "reverses_entry_id": "je_87eb27aab38f",
+            "reverses_entry_number": "A/JE-00012",
+            "reason": "Synthetic ordinary reversal"
+          }
+        }
+      },
+      "void": {
+        "http": 200,
+        "body": {
+          "id": "je_87eb27aab38f",
+          "number": "A/JE-00012",
+          "date": "2026-08-02T12:00:00+00:00",
+          "description": "Synthetic audit reversal then void",
+          "source": "manual",
+          "source_type": "manual",
+          "source_id": "",
+          "source_label": "Manual",
+          "lines": [
+            {
+              "account_code": "6-4000",
+              "account_name": "Beban Operasional Lainnya",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": ""
+            },
+            {
+              "account_code": "1-1100",
+              "account_name": "Kas Besar / Bank",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": ""
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "void",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:56:14.266941+00:00",
+          "updated_at": "2026-10-05T16:56:14.355464+00:00",
+          "reversed_by_entry_id": "je_e70d34fe7ffd",
+          "reversal_reason": "Synthetic ordinary reversal",
+          "reversed_at": "2026-10-05T16:56:14.319916+00:00",
+          "reversed_by": "Audit User A",
+          "reversed_by_entry_number": "A/JE-00013",
+          "voided_at": "2026-10-05T16:56:14.355464+00:00",
+          "voided_by": "Audit User A"
+        }
+      },
+      "income_statement_after": {
+        "period": {
+          "start": "2026-08-01",
+          "end": "2026-08-31"
+        },
+        "sections": [
+          {
+            "key": "revenue",
+            "label": "Pendapatan",
+            "lines": [],
+            "total": 0
+          },
+          {
+            "key": "cogs",
+            "label": "Beban Pokok Penjualan (HPP)",
+            "lines": [],
+            "total": 0
+          },
+          {
+            "key": "opex",
+            "label": "Beban Operasional",
+            "lines": [
+              {
+                "code": "6-4000",
+                "name": "Beban Operasional Lainnya",
+                "amount": -100.0
+              }
+            ],
+            "total": -100.0
+          }
+        ],
+        "revenue_total": 0,
+        "cogs_total": 0,
+        "gross_profit": 0,
+        "gross_margin": 0.0,
+        "opex_total": -100.0,
+        "operating_profit": 100.0,
+        "net_income": 100.0,
+        "net_margin": 0.0,
+        "generated_at": "2026-10-05T16:56:14.372176+00:00"
+      }
+    },
+    "entity_only_coa": {
+      "account": {
+        "id": "gla_d498953b72e2",
+        "code": "4-7777",
+        "name": "Synthetic entity-only income",
+        "type": "income",
+        "normal_balance": "credit",
+        "parent_code": "4-0000",
+        "is_postable": true,
+        "is_active": true,
+        "system": false,
+        "currency": "IDR",
+        "description": "",
+        "entity_id": "A",
+        "created_at": "2026-10-05T16:56:14.391414+00:00",
+        "updated_at": "2026-10-05T16:56:14.391414+00:00"
+      },
+      "manual": {
+        "id": "je_493bbdc6561d",
+        "number": "A/JE-00014",
+        "date": "2026-07-15T12:00:00+00:00",
+        "description": "Synthetic entity-only account producer",
+        "source": "manual",
+        "source_type": "manual",
+        "source_id": "",
+        "source_label": "Manual",
+        "lines": [
+          {
+            "account_code": "1-1100",
+            "account_name": "Kas Besar / Bank",
+            "debit": 77.0,
+            "credit": 0.0,
+            "description": ""
+          },
+          {
+            "account_code": "4-7777",
+            "account_name": "Synthetic entity-only income",
+            "debit": 0.0,
+            "credit": 77.0,
+            "description": ""
+          }
+        ],
+        "total_debit": 77.0,
+        "total_credit": 77.0,
+        "status": "posted",
+        "entity_id": "A",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:56:14.433280+00:00",
+        "updated_at": "2026-10-05T16:56:14.433280+00:00"
+      },
+      "single_income": {
+        "period": {
+          "start": "2026-07-01",
+          "end": "2026-07-31"
+        },
+        "sections": [
+          {
+            "key": "revenue",
+            "label": "Pendapatan",
+            "lines": [
+              {
+                "code": "4-7777",
+                "name": "Synthetic entity-only income",
+                "amount": 77.0
+              }
+            ],
+            "total": 77.0
+          },
+          {
+            "key": "cogs",
+            "label": "Beban Pokok Penjualan (HPP)",
+            "lines": [],
+            "total": 0
+          },
+          {
+            "key": "opex",
+            "label": "Beban Operasional",
+            "lines": [],
+            "total": 0
+          }
+        ],
+        "revenue_total": 77.0,
+        "cogs_total": 0,
+        "gross_profit": 77.0,
+        "gross_margin": 100.0,
+        "opex_total": 0,
+        "operating_profit": 77.0,
+        "net_income": 77.0,
+        "net_margin": 100.0,
+        "generated_at": "2026-10-05T16:56:14.467668+00:00"
+      },
+      "all_income": {
+        "period": {
+          "start": "2026-07-01",
+          "end": "2026-07-31"
+        },
+        "sections": [
+          {
+            "key": "revenue",
+            "label": "Pendapatan",
+            "lines": [],
+            "total": 0
+          },
+          {
+            "key": "cogs",
+            "label": "Beban Pokok Penjualan (HPP)",
+            "lines": [],
+            "total": 0
+          },
+          {
+            "key": "opex",
+            "label": "Beban Operasional",
+            "lines": [],
+            "total": 0
+          }
+        ],
+        "revenue_total": 0,
+        "cogs_total": 0,
+        "gross_profit": 0,
+        "gross_margin": 0.0,
+        "opex_total": 0,
+        "operating_profit": 0,
+        "net_income": 0,
+        "net_margin": 0.0,
+        "generated_at": "2026-10-05T16:56:14.499522+00:00"
+      },
+      "single_balance": {
+        "as_of": "2026-07-31",
+        "comparative": false,
+        "compare_as_of": "",
+        "assets": {
+          "sections": [
+            {
+              "key": "current",
+              "label": "Aset Lancar",
+              "lines": [
+                {
+                  "code": "1-1100",
+                  "name": "Kas Besar / Bank",
+                  "amount": 307.0
+                }
+              ],
+              "total": 307.0
+            }
+          ],
+          "total": 307.0
+        },
+        "liabilities": {
+          "sections": [],
+          "total": 0
+        },
+        "equity": {
+          "lines": [
+            {
+              "code": "3-2000",
+              "name": "Laba Ditahan",
+              "amount": 230.0
+            }
+          ],
+          "accounts_total": 230.0,
+          "current_earnings": 77.0,
+          "total": 307.0
+        },
+        "assets_total": 307.0,
+        "liabilities_total": 0,
+        "equity_total": 307.0,
+        "liabilities_equity_total": 307.0,
+        "balanced": true,
+        "generated_at": "2026-10-05T16:56:14.528108+00:00"
+      },
+      "all_balance": {
+        "as_of": "2026-07-31",
+        "comparative": false,
+        "compare_as_of": "",
+        "assets": {
+          "sections": [
+            {
+              "key": "current",
+              "label": "Aset Lancar",
+              "lines": [
+                {
+                  "code": "1-1100",
+                  "name": "Kas Besar / Bank",
+                  "amount": 307.0
+                }
+              ],
+              "total": 307.0
+            }
+          ],
+          "total": 307.0
+        },
+        "liabilities": {
+          "sections": [],
+          "total": 0
+        },
+        "equity": {
+          "lines": [
+            {
+              "code": "3-2000",
+              "name": "Laba Ditahan",
+              "amount": 230.0
+            }
+          ],
+          "accounts_total": 230.0,
+          "current_earnings": 0.0,
+          "total": 230.0
+        },
+        "assets_total": 307.0,
+        "liabilities_total": 0,
+        "equity_total": 230.0,
+        "liabilities_equity_total": 230.0,
+        "balanced": false,
+        "generated_at": "2026-10-05T16:56:14.560827+00:00"
+      },
+      "scope": "Original authorized public account/manual creators; A+B all scope; unique entity-only account with no global code, not conflicting override"
+    },
+    "non_finite": {
+      "fixture_scope": "Invalid numeric requests by authorized admin, valid JSON strings; no legitimate browser input path assumed",
+      "healthy_summary": {
+        "http": 200,
+        "body": {
+          "journal_count": 1,
+          "account_count": 77,
+          "total_debit": 50.0,
+          "total_credit": 50.0,
+          "balanced": true
+        }
+      },
+      "scenarios": [
+        {
+          "token": "NaN",
+          "response": {
+            "http": 200,
+            "body": {
+              "id": "je_b3cab529c9b0",
+              "number": "B/JE-00002",
+              "date": "2026-09-01T12:00:00+00:00",
+              "description": "Synthetic non-finite manual NaN",
+              "source": "manual",
+              "source_type": "manual",
+              "source_id": "",
+              "source_label": "Manual",
+              "lines": [
+                {
+                  "account_code": "6-4000",
+                  "account_name": "Beban Operasional Lainnya",
+                  "debit": null,
+                  "credit": 0.0,
+                  "description": ""
+                },
+                {
+                  "account_code": "1-1100",
+                  "account_name": "Kas Besar / Bank",
+                  "debit": 0.0,
+                  "credit": null,
+                  "description": ""
+                }
+              ],
+              "total_debit": null,
+              "total_credit": null,
+              "status": "posted",
+              "entity_id": "B",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:56:14.669212+00:00",
+              "updated_at": "2026-10-05T16:56:14.669212+00:00"
+            }
+          },
+          "persisted": [
+            {
+              "id": "je_b3cab529c9b0",
+              "number": "B/JE-00002",
+              "date": "2026-09-01T12:00:00+00:00",
+              "description": "Synthetic non-finite manual NaN",
+              "source": "manual",
+              "source_type": "manual",
+              "source_id": "",
+              "source_label": "Manual",
+              "lines": [
+                {
+                  "account_code": "6-4000",
+                  "account_name": "Beban Operasional Lainnya",
+                  "debit": {
+                    "non_finite": "NaN"
+                  },
+                  "credit": 0.0,
+                  "description": ""
+                },
+                {
+                  "account_code": "1-1100",
+                  "account_name": "Kas Besar / Bank",
+                  "debit": 0.0,
+                  "credit": {
+                    "non_finite": "NaN"
+                  },
+                  "description": ""
+                }
+              ],
+              "total_debit": {
+                "non_finite": "NaN"
+              },
+              "total_credit": {
+                "non_finite": "NaN"
+              },
+              "status": "posted",
+              "entity_id": "B",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:56:14.669212+00:00",
+              "updated_at": "2026-10-05T16:56:14.669212+00:00"
+            }
+          ]
+        },
+        {
+          "token": "Infinity",
+          "response": {
+            "http": 200,
+            "body": {
+              "id": "je_211a176abb3a",
+              "number": "B/JE-00003",
+              "date": "2026-09-01T12:00:00+00:00",
+              "description": "Synthetic non-finite manual Infinity",
+              "source": "manual",
+              "source_type": "manual",
+              "source_id": "",
+              "source_label": "Manual",
+              "lines": [
+                {
+                  "account_code": "6-4000",
+                  "account_name": "Beban Operasional Lainnya",
+                  "debit": null,
+                  "credit": 0.0,
+                  "description": ""
+                },
+                {
+                  "account_code": "1-1100",
+                  "account_name": "Kas Besar / Bank",
+                  "debit": 0.0,
+                  "credit": null,
+                  "description": ""
+                }
+              ],
+              "total_debit": null,
+              "total_credit": null,
+              "status": "posted",
+              "entity_id": "B",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:56:14.712110+00:00",
+              "updated_at": "2026-10-05T16:56:14.712110+00:00"
+            }
+          },
+          "persisted": [
+            {
+              "id": "je_211a176abb3a",
+              "number": "B/JE-00003",
+              "date": "2026-09-01T12:00:00+00:00",
+              "description": "Synthetic non-finite manual Infinity",
+              "source": "manual",
+              "source_type": "manual",
+              "source_id": "",
+              "source_label": "Manual",
+              "lines": [
+                {
+                  "account_code": "6-4000",
+                  "account_name": "Beban Operasional Lainnya",
+                  "debit": {
+                    "non_finite": "Infinity"
+                  },
+                  "credit": 0.0,
+                  "description": ""
+                },
+                {
+                  "account_code": "1-1100",
+                  "account_name": "Kas Besar / Bank",
+                  "debit": 0.0,
+                  "credit": {
+                    "non_finite": "Infinity"
+                  },
+                  "description": ""
+                }
+              ],
+              "total_debit": {
+                "non_finite": "Infinity"
+              },
+              "total_credit": {
+                "non_finite": "Infinity"
+              },
+              "status": "posted",
+              "entity_id": "B",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:56:14.712110+00:00",
+              "updated_at": "2026-10-05T16:56:14.712110+00:00"
+            }
+          ]
+        }
+      ],
+      "summary_after": {
+        "http": 200,
+        "body": {
+          "journal_count": 3,
+          "account_count": 77,
+          "total_debit": 0.0,
+          "total_credit": 0.0,
+          "balanced": true
+        }
+      },
+      "income_statement_after": {
+        "http": 200,
+        "body": {
+          "period": {
+            "start": "2026-09-01",
+            "end": "2026-09-30"
+          },
+          "sections": [
+            {
+              "key": "revenue",
+              "label": "Pendapatan",
+              "lines": [],
+              "total": 0
+            },
+            {
+              "key": "cogs",
+              "label": "Beban Pokok Penjualan (HPP)",
+              "lines": [],
+              "total": 0
+            },
+            {
+              "key": "opex",
+              "label": "Beban Operasional",
+              "lines": [],
+              "total": 0
+            }
+          ],
+          "revenue_total": 0,
+          "cogs_total": 0,
+          "gross_profit": 0,
+          "gross_margin": 0.0,
+          "opex_total": 0,
+          "operating_profit": 0,
+          "net_income": 0,
+          "net_margin": 0.0,
+          "generated_at": "2026-10-05T16:56:14.784861+00:00"
+        }
+      },
+      "raw_DB_type": "Non-finite native Mongo/Python double; artifact replaces them with explicit non_finite tags for valid JSON"
+    }
+  },
+  "harness_errors": [],
+  "external_connections": []
+}

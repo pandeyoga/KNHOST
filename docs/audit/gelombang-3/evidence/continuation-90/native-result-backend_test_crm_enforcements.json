@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_crm_enforcements.py",
+    "database": "knhost_audit_native90_c34fd60a85e34cc287e31056da74d7cf",
+    "exit": 1,
+    "seconds": 49.83,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_crm_enforcements.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "s users\n🔍 Testing Get customers...\n🔍 Found test customer: Butik Bali Indah (ID: cust_butik_bali)\n✅ PASSED - Get customers\n🔍 Testing Credit status API...\n🔍 Credit status: level=blocked, blocked=True, projected_ar=64789950.0\n✅ PASSED - Credit status API\n🔍 Testing Create SO with credit blocked (409)...\n❌ FAILED - Create SO with credit blocked (409): Expected CREDIT_BLOCKED code, got MIXED_LOT_CONFIRMATION_REQUIRED\n🔍 Testing Collection reminders...\n🔍 Found 6 collection reminders\n✅ PASSED - Collection reminders\n🔍 Testing Mark reminder...\n🔍 Reminder marked successfully\n✅ PASSED - Mark reminder\n🔍 Testing Add follow-up...\n🔍 Follow-up added successfully\n✅ PASSED - Add follow-up\n🔍 Testing Sales KPI...\n🔍 Sales KPI: sales=0, collected=0.0, orders=0\n✅ PASSED - Sales KPI\n🔍 Testing Sales commission...\n🔍 Commission: base=0.0, achievement=0%, incentive=0.0\n✅ PASSED - Sales commission\n🔍 Testing Commission history (6 periods)...\n🔍 Commission history: 6 periods\n✅ PASSED - Commission history (6 periods)\n🔍 Testing Leaderboard (manager)...\n🔍 Leaderboard: 4 entries\n✅ PASSED - Leaderboard (manager)\n🔍 Testing Create sales target (admin)...\n🔍 Sales target created successfully\n✅ PASSED - Create sales target (admin)\n🔍 Testing Sales target forbidden (sales role)...\n🔍 Sales targets correctly forbidden for sales role\n✅ PASSED - Sales target forbidden (sales role)\n🔍 Testing Create sales incentive (admin)...\n🔍 Sales incentive scheme created successfully\n✅ PASSED - Create sales incentive (admin)\n🔍 Testing Sales incentive forbidden (sales role)...\n🔍 Sales incentives correctly forbidden for sales role\n✅ PASSED - Sales incentive forbidden (sales role)\n🔍 ============================================================\n🔍 Tests completed: 15/16 passed\n🔍 ============================================================\n"
+  }
+]

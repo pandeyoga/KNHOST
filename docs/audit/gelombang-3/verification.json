@@ -1,0 +1,53 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "checks": [
+    {
+      "name": "101 unique findings",
+      "pass_": true
+    },
+    {
+      "name": "23 additional findings",
+      "pass_": true
+    },
+    {
+      "name": "each finding assigned once",
+      "pass_": true
+    },
+    {
+      "name": "all source anchors resolved",
+      "pass_": true
+    },
+    {
+      "name": "all additional proof files exist",
+      "pass_": true
+    },
+    {
+      "name": "all final probes have zero harness errors",
+      "pass_": true
+    },
+    {
+      "name": "fixed runtime denominator",
+      "pass_": true
+    },
+    {
+      "name": "target honestly marked unmet",
+      "pass_": true
+    },
+    {
+      "name": "old checkpoint ids preserved",
+      "pass_": true
+    },
+    {
+      "name": "historical 137 revalidation items preserved",
+      "pass_": true
+    },
+    {
+      "name": "5 phase prompts present",
+      "pass_": true
+    },
+    {
+      "name": "manual import folder only",
+      "pass_": true
+    }
+  ]
+}

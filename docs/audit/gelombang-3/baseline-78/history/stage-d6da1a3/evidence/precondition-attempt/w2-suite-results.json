@@ -1,0 +1,38 @@
+[
+  {
+    "script": "docs/audit/wave-2/iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 9.37,
+    "log": "test-logs\\w2-00-regression_w2.log",
+    "cases": [],
+    "tail": "ca saldo 50.001 jurnal tidak terpotong\nPASS W2-021 — buku besar 50.001 baris tidak terpotong\nPASS W2-021 — saldo rekening dari 5.001 mutasi (bukan 5.000)\n25/25\n"
+  },
+  {
+    "script": "docs/audit/wave-2/iterations/2026-10-04-W2-P00-P07/regression_w2_http.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 1,
+    "seconds": 15.49,
+    "log": "test-logs\\w2-01-regression_w2_http.log",
+    "cases": [],
+    "tail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\coverage\\control.py:967: CoverageWarning: No data was collected. (no-data-collected); see https://coverage.readthedocs.io/en/7.16.2/messages.html#warning-no-data-collected\n  self._warn(\"No data was collected.\", slug=\"no-data-collected\")\nFAIL w2_010 — harness error :: ConnectionError(MaxRetryError('HTTPConnectionPool(host=\\'localhost\\', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(\"HTTPConnection(host=\\'localhost\\', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because th\nFAIL w2_025 — harness error :: ConnectionError(MaxRetryError('HTTPConnectionPool(host=\\'localhost\\', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(\"HTTPConnection(host=\\'localhost\\', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because th\nFAIL w2_004 — harness error :: ConnectionError(MaxRetryError('HTTPConnectionPool(host=\\'localhost\\', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(\"HTTPConnection(host=\\'localhost\\', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because th\n0/3\n"
+  },
+  {
+    "script": "docs/audit/wave-2/iterations/2026-10-04-W2-P08-decisions/regression_p08_fase1.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 1,
+    "seconds": 6.52,
+    "log": "test-logs\\w2-02-regression_p08_fase1.log",
+    "cases": [],
+    "tail": "\n    r = s.post(f\"{BASE}/auth/login\", json={\"email\": email, \"password\": PWD}, timeout=30)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\sessions.py\", line 712, in post\n    return self.request(\"POST\", url, data=data, json=json, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\sessions.py\", line 651, in request\n    resp = self.send(prep, **send_kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\sessions.py\", line 784, in send\n    r = adapter.send(request, **kwargs)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\adapters.py\", line 729, in send\n    raise ConnectionError(e, request=request)\nrequests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))\n"
+  },
+  {
+    "script": "docs/audit/wave-2/iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 1,
+    "seconds": 8.23,
+    "log": "test-logs\\w2-03-regression_p08_fase2_6.log",
+    "cases": [],
+    "tail": "f\"{BASE}/auth/login\", json={\"email\": email, \"password\": \"demo12345\"}, timeout=30)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\sessions.py\", line 712, in post\n    return self.request(\"POST\", url, data=data, json=json, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\sessions.py\", line 651, in request\n    resp = self.send(prep, **send_kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\sessions.py\", line 784, in send\n    r = adapter.send(request, **kwargs)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\adapters.py\", line 729, in send\n    raise ConnectionError(e, request=request)\nrequests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(\"HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))\n"
+  }
+]

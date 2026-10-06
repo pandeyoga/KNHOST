@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="10" time="3.204" timestamp="2026-10-06T13:01:46.235076+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname=".TestPositionGps" name="test_delivery_precondition" time="0.700"><failure message="AssertionError: {&quot;detail&quot;:&quot;Pengiriman tidak ditemukan.&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-current90-copies\test_iter288_logistics_gps.py:42: in test_delivery_precondition
+    assert r.status_code == 200, r.text[:300]
+E   AssertionError: {"detail":"Pengiriman tidak ditemukan."}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestPositionGps" name="test_post_position_with_latlng" time="0.058"><failure message="AssertionError: 404 {&quot;detail&quot;:&quot;Pengiriman tidak ditemukan.&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-current90-copies\test_iter288_logistics_gps.py:52: in test_post_position_with_latlng
+    assert r.status_code == 200, f"{r.status_code} {r.text[:300]}"
+E   AssertionError: 404 {"detail":"Pengiriman tidak ditemukan."}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestPositionGps" name="test_post_position_without_latlng" time="0.074"><failure message="AssertionError: 404 {&quot;detail&quot;:&quot;Pengiriman tidak ditemukan.&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-current90-copies\test_iter288_logistics_gps.py:69: in test_post_position_without_latlng
+    assert r.status_code == 200, f"{r.status_code} {r.text[:300]}"
+E   AssertionError: 404 {"detail":"Pengiriman tidak ditemukan."}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestPositionGps" name="test_post_position_invalid_lat" time="0.046" /><testcase classname=".TestPositionGps" name="test_post_position_short_location" time="0.037" /><testcase classname=".TestSalesReadOnly" name="test_sales_can_list" time="0.641" /><testcase classname=".TestSalesReadOnly" name="test_sales_can_read_detail" time="0.064"><failure message="AssertionError: {&quot;detail&quot;:&quot;Pengiriman tidak ditemukan.&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-current90-copies\test_iter288_logistics_gps.py:92: in test_sales_can_read_detail
+    assert r.status_code == 200, r.text[:300]
+E   AssertionError: {"detail":"Pengiriman tidak ditemukan."}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestSalesReadOnly" name="test_sales_summary" time="0.065" /><testcase classname=".TestSalesReadOnly" name="test_sales_cannot_add_position" time="0.071" /><testcase classname=".TestSalesReadOnly" name="test_sales_cannot_create_delivery" time="0.079" /></testsuite></testsuites>

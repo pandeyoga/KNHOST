@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_makloon_order_api.py",
+    "database": "knhost_audit_native90_cf90d7a2c30b4604aa6dfdf13ae3bd05",
+    "exit": 0,
+    "seconds": 65.98,
+    "pass_log_tokens": 37,
+    "fail_log_tokens": 2,
+    "log": "continuation-90\\native-test_makloon_order_api.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "s=200 {\"id\":\"mko_02344c28e4df\",\"mko_number\":\"MKO-00006\",\"entity_id\":\"ent_ksc\",\"mode\":\"process_only\",\"material_product_id\":\"prod_benang_katun\",\"material_sku\")\n  [PASS] step status = issued  (issued)\n  [PASS] material_value = 50*51500 = 2,575,000  (val=2575000.0)\n  [PASS] order status = in_process  (in_process)\n  [PASS] detail: step subcon_qty = 50  (subcon=50.0)\n  [PASS] re-issue same step → 409\n  [PASS] receive without rolls → 400\n  [PASS] warehouse receive step 1 → 200  (status=200 {\"id\":\"mko_02344c28e4df\",\"mko_number\":\"MKO-00006\",\"entity_id\":\"ent_ksc\",\"mode\":\"process_only\",\"material_product_id\":\"prod_benang_katun\",\"material_sku\":\"BNG-KTN-001\",\"material_name\":\"Benang Katun Cone )\n  [PASS] step status = received  (received)\n  [PASS] order status = completed  (completed)\n  [PASS] output_value = wip - sisa = 3,160,500  (val=3160500.0)\n  [PASS] byproduct_value = 51,500 (1kg benang sisa @ WAC)  (by=51500.0)\n  [PASS] 2 output lots created  (lots=2)\n  [PASS] costing hpp_output = 3,160,500  (hpp=3160500.0)\n  [PASS] costing byproduct_credit = 51,500  (bc=51500.0)\n  [PASS] costing hpp_per_unit = 3160500/182  (hpp_u=17365.38)\n  [PASS] grey available bertambah 182 (output saja)  (delta=182.0)\n  [PASS] benang sisa (produk tersendiri) bertambah 1 kg  (delta=1.0)\n  [PASS] byproduct remnant roll created on benang_sisa  (count=1)\n  [PASS] scorecard has_data = true  (has_data=True)\n  [PASS] scorecard realized_yield ≈ 182/50 = 3.64  (yield=3.5988)\n  [PASS] Makloon 360 order_count >= 1  (count=4)\n  [PASS] Makloon 360 service_bills >= 1  (bills=3)\n  [PASS] all subcon JE balanced  (je_count=3)\n  [PASS] WIP 1-1350 net = 0  (delta=0.0)\n  [PASS] cancel draft order → 200  (status=200)\n  [PASS] cancelled status  (cancelled)\n  [PASS] cancel completed order → 409\n\n=== HASIL: 36 PASS / 1 FAIL ===\n\n"
+  }
+]

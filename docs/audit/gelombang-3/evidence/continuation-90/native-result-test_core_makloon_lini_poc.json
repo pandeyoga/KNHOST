@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_makloon_lini_poc.py",
+    "database": "knhost_audit_native90_b204d4cbdc344eff86668b7fa9567288",
+    "exit": 1,
+    "seconds": 51.65,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_core_makloon_lini_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_b204d4cbdc344eff86668b7fa9567288 test_core_makloon_lini_poc.py\nTraceback (most recent call last):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\run_isolated.py\", line 25, in <module>\n    try:runpy.run_path(str(script),run_name='__main__')\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\native_runner.py\", line 56, in <module>\n    try:\n        ^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\native-copies\\test_core_makloon_lini_poc.py\", line 351, in <module>\n    hasil = asyncio.get_event_loop().run_until_complete(run())\n            ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\asyncio\\events.py\", line 702, in get_event_loop\n    raise RuntimeError('There is no current event loop in thread %r.'\nRuntimeError: There is no current event loop in thread 'MainThread'.\n"
+  }
+]

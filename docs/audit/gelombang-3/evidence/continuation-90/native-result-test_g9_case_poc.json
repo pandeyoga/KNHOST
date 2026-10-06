@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_g9_case_poc.py",
+    "database": "knhost_audit_native90_bc33512ce23d47b7bba0da065963514e",
+    "exit": 1,
+    "seconds": 113.63,
+    "pass_log_tokens": 108,
+    "fail_log_tokens": 9,
+    "log": "continuation-90\\native-test_g9_case_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "': 23, 'lines': 5, 'cash': 11, 'je': 5, 'je_cash': 11, 'je_hold': 1, 'notif': 0, 'receipts': 1, 'je_rec': 0, 'sc_ledger': 2, 'penalties': 0, 'seq': 2})\n  [poc-stock] DB_NAME='knhost_audit_native90_bc33512ce23d47b7bba0da065963514e' bukan basis data uji — restore stok DIMATIKAN (set KN_GATE_ALLOW_RESTORE=1 bila memang disengaja).\n  [poc-stock] DB_NAME='knhost_audit_native90_bc33512ce23d47b7bba0da065963514e' bukan basis data uji — restore stok DIMATIKAN (set KN_GATE_ALLOW_RESTORE=1 bila memang disengaja).\n  [PASS] nol tautan hantu sesudah kasus & kwitansi POC dihapus (INV-REF-04 · 0 disapu)\n  [PASS] nol residu artefak POC (kasus DEMO sengaja dibiarkan utuh)  (artefak POC 0 · kas POC 0 · kasus demo tersisa 3)\n  [PASS] jumlah kasus DEMO kembali seperti sebelum POC (INV-GATE-01 · data demo tak digeser)  (3 → 3)\n  [PASS] saldo Kas & Bank Transit (1-1150) kembali ke keadaan SEBELUM POC  (Rp 0 (awal Rp 0))\n  [PASS] saldo Piutang Titipan Karyawan (1-1280) kembali ke keadaan SEBELUM POC  (Rp 750,000 (awal Rp 750,000))\n  [PASS] saldo Titipan Dana Belum Teridentifikasi (2-1950) kembali ke keadaan SEBELUM POC  (Rp -12,459,800 (awal Rp -12,459,800))\n  [PASS] saldo Uang Muka Pelanggan (2-1400) kembali ke keadaan SEBELUM POC  (Rp -53,120,100 (awal Rp -53,120,100))\n  [PASS] saldo Uang Muka & Biaya Dibayar Dimuka (1-1400) kembali ke keadaan SEBELUM POC  (Rp 500,000 (awal Rp 500,000))\n  [FAIL] invarian GLOBAL tetap HIJAU setelah pembersihan (nol residu)  (s\\httpx\\_transports\\default.py\", line 118, in map_httpcore_exceptions\n    raise mapped_exc(message) from exc\nhttpx.ConnectError: All connection attempts failed\n)\n\n==========================================================================\n  HASIL: 107 PASS · 8 FAIL\n==========================================================================\n"
+  }
+]

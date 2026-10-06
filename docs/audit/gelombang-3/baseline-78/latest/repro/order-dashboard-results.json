@@ -1,0 +1,35 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "file": "frontend/src/features/orders/OrderDashboard.jsx",
+  "mode": "Unmodified Babel-extracted useMemo function, with output of original public ASGI dashboard and summary endpoints. No rendered browser test.",
+  "results": [
+    {
+      "id": "D4-ORDER-01-revenue-control",
+      "expected": 3000,
+      "actual": 3000,
+      "note": "Full server aggregate is correct; preserve this successful repair.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-ORDER-01-count",
+      "expected": 30,
+      "actual": 20,
+      "note": "The original component still counts the twenty-item dashboard window.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-ORDER-01-average",
+      "expected": 100,
+      "actual": 150,
+      "note": "Full revenue3000 divided by local count20 produces150; same eligible thirty orders should average100. Server already supplies matching revenue.count30.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-ORDER-01-customer-revenue",
+      "expected": 3000,
+      "actual": 2000,
+      "note": "Top Customers uses capped local list, even though all thirty orders have the same customer.",
+      "status": "observed_difference"
+    }
+  ]
+}

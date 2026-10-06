@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_fase4.py",
+    "database": "knhost_audit_native90_834bc24bb162437e96f6e06213a0db8d",
+    "exit": 1,
+    "seconds": 71.03,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_fase4.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "====================================\nTotal Tests: 19\n✅ Passed: 17\n❌ Failed: 3\nSuccess Rate: 89.5%\n\n======================================================================\nFAILURES:\n======================================================================\n1. Migration script failed: Traceback (most recent call last):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\scripts\\migrate_so_status.py\", line 52, in <module>\n    sys.exit(asyncio.run(_run()))\n             ^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\asyncio\\runners.py\", line 195, in run\n    return runner.run(main)\n           ^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\asyncio\\runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\asyncio\\base_events.py\", line 691, in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\scripts\\migrate_so_status.py\", line 24, in _run\n    from db import db\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\db.py\", line 2, in <module>\n    from motor.motor_asyncio import AsyncIOMotorClient\nModuleNotFoundError: No module named 'motor'\n\n2. POST sales-orders/{id}/confirm (verify stage=Confirmed): Expected 200, got 409\n3. POST sales-orders/{id}/approve on waiting_stock (should 409 with guiding message): Expected 409, got 200\n======================================================================\n"
+  }
+]

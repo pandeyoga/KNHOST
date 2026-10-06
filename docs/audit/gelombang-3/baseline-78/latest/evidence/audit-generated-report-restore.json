@@ -1,0 +1,7 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "path": "test_reports/iter149_atp_dump.json",
+  "inventory_capture_hash": "78456b602d40796aa16d520de3057774199a3e7623185f4f7d962784872ac162",
+  "restored_head_hash": "8318080a6d54df4c06a647b58b033eb153ba1ad350673e4b905e2f73a2b1278e",
+  "reason": "Only this test diagnostic dump had a capture-vs-final hash mismatch. Final bytes are exact git HEAD; git diff empty. Inventory records both hashes; no application source was changed."
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_fase_b_uom.py",
+    "database": "knhost_audit_native90_7cb7fce6726b4166a0e0971599400f2c",
+    "exit": 0,
+    "seconds": 52.96,
+    "pass_log_tokens": 42,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-backend_test_fase_b_uom.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "\n  ✅ [PASS] Fixed cross-dimension rejected with formula suggestion\n  ℹ️  Testing UOM Rule Update...\n  ✅ [PASS] Rule updated with decimal comma (105,75 → 105.75)\n  ℹ️  Testing UOM Rule Status Toggle...\n  ✅ [PASS] Rule deactivated successfully\n  ✅ [PASS] Rule reactivated successfully\n  ℹ️  Testing UOM Settings...\n  ✅ [PASS] Settings retrieved (warn=2.0%, block=5.0%)\n  ✅ [PASS] Invalid settings rejected (warn > block)\n  ✅ [PASS] Settings updated with decimal comma (1,5 → 1.5)\n  ✅ [PASS] Settings restored to default\n  ℹ️  Testing UOM Conversion...\n  ✅ [PASS] Conversion accepts decimal comma (10,5 → 10.5)\n  ✅ [PASS] Yard to meter conversion correct (10.5 yd ≈ 9.6 m)\n  ✅ [PASS] Conversion trail complete (D-07)\n  ✅ [PASS] Unknown unit rejected with Indonesian message\n  ℹ️  Testing Variance Check...\n  ✅ [PASS] Variance 1% → OK level\n  ✅ [PASS] Variance 2.5% → warn level\n  ✅ [PASS] Variance 6% → block level\n  ✅ [PASS] Block message explains action in Indonesian\n  ℹ️  Testing Usage Tracking...\n  ✅ [PASS] Usage tracking returns document trails (3 found)\n  ✅ [PASS] Usage trail contains required fields\n\n[MANAGER TESTS - RBAC]\n  ✅ [PASS] Login manager\n  ℹ️  Testing RBAC for manager...\n  ✅ [PASS] manager cannot create rules (403)\n  ✅ [PASS] manager cannot update settings (403)\n  ✅ [PASS] manager can read rules (200)\n  ✅ [PASS] manager can read catalog (200)\n\n[SALES TESTS - RBAC]\n  ✅ [PASS] Login sales\n  ℹ️  Testing RBAC for sales...\n  ✅ [PASS] sales cannot create rules (403)\n  ✅ [PASS] sales cannot update settings (403)\n  ✅ [PASS] sales can read rules (200)\n  ✅ [PASS] sales can read catalog (200)\n\n================================================================================\n  RESULTS: 41 PASS · 0 FAIL\n================================================================================\n"
+  }
+]

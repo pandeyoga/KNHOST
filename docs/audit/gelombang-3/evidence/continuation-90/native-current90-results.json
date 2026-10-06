@@ -1,0 +1,836 @@
+[
+  {
+    "script": "backend/test_core_sampling_poc.py",
+    "database": "knhost_audit_native90_current_replay2",
+    "exit": 0,
+    "seconds": 20.7,
+    "log": "native-current90-test_core_sampling_poc.log",
+    "pass_log_tokens": 67,
+    "fail_log_tokens": 1,
+    "input_adaptations": [
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_50db0fd44b58/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      }
+    ],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_fase_f_rnd_poc.py",
+    "database": "knhost_audit_native90_current_replay2",
+    "exit": 1,
+    "seconds": 57.59,
+    "log": "native-current90-test_fase_f_rnd_poc.log",
+    "pass_log_tokens": 5,
+    "fail_log_tokens": 1,
+    "input_adaptations": [
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_50db0fd44b58/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_5068ea46630d/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_3b7d92b87a56/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      }
+    ],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_fase_f1_receiving_uom_poc.py",
+    "database": "knhost_audit_native90_current_replay2",
+    "exit": 0,
+    "seconds": 6.57,
+    "log": "native-current90-test_fase_f1_receiving_uom_poc.log",
+    "pass_log_tokens": 47,
+    "fail_log_tokens": 0,
+    "input_adaptations": [
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_50db0fd44b58/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_5068ea46630d/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_3b7d92b87a56/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      }
+    ],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_fase_b_uom_poc.py",
+    "database": "knhost_audit_native90_current_replay2",
+    "exit": 1,
+    "seconds": 19.26,
+    "log": "native-current90-test_fase_b_uom_poc.log",
+    "pass_log_tokens": 2,
+    "fail_log_tokens": 1,
+    "input_adaptations": [
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_50db0fd44b58/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_5068ea46630d/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_3b7d92b87a56/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      }
+    ],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_e4_master_layers_poc.py",
+    "database": "knhost_audit_native90_current_replay2",
+    "exit": 1,
+    "seconds": 5.21,
+    "log": "native-current90-test_core_e4_master_layers_poc.log",
+    "pass_log_tokens": 56,
+    "fail_log_tokens": 2,
+    "input_adaptations": [
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_50db0fd44b58/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_5068ea46630d/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_3b7d92b87a56/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      }
+    ],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_e4_poc.py",
+    "database": "knhost_audit_native90_current_replay2",
+    "exit": 0,
+    "seconds": 7.03,
+    "log": "native-current90-test_core_e4_poc.log",
+    "pass_log_tokens": 42,
+    "fail_log_tokens": 1,
+    "input_adaptations": [
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_50db0fd44b58/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_5068ea46630d/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_3b7d92b87a56/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      }
+    ],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_e5_visibility_poc.py",
+    "database": "knhost_audit_native90_current_replay2",
+    "exit": 0,
+    "seconds": 3.37,
+    "log": "native-current90-test_core_e5_visibility_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_50db0fd44b58/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_5068ea46630d/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_3b7d92b87a56/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      }
+    ],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_sesi_2026_06c_poc.py",
+    "database": "knhost_audit_native90_current_replay2",
+    "exit": 0,
+    "seconds": 5.82,
+    "log": "native-current90-test_core_sesi_2026_06c_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a9f633cd3a37/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_6c65ed6b58ed/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_a8bafd6de7e9/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_c91dc1d90fa5/rounds/rnd_50db0fd44b58/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_cd344e1f43bf/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_5068ea46630d/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      },
+      {
+        "url": "http://127.0.0.1:8021/api/rnd/samples/smp_d2c38ad33b27/rounds/rnd_3b7d92b87a56/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_admin_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      }
+    ],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  }
+]

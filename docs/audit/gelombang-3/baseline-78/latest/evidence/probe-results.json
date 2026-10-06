@@ -1,0 +1,1981 @@
+[
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-PROD-01",
+    "actual": {
+      "error": "RuntimeError",
+      "before_qty": 20,
+      "after_fault_qty": 15.0,
+      "after_retry_qty": 10.0,
+      "output": 5.0,
+      "reported_consumed": 5.0,
+      "movement_qty": 5.0
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-PROD-02",
+    "actual": {
+      "retry_restored": 0.0,
+      "remaining": 5,
+      "movement_reversed": true
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-MRES-01",
+    "actual": {
+      "on_hand_available": 1000,
+      "reserved": 1400.0,
+      "shortage": 0.0,
+      "pr_count": 2
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-AR-01",
+    "actual": {
+      "error": "RuntimeError('Synthetic receipt insert fault BEFORE write')",
+      "paid_total": 100.0,
+      "payments": 1,
+      "deposit": 100.0,
+      "receipts": 0
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-BANK-01",
+    "actual": {
+      "statement_amount": 100,
+      "statement_allocated": 100.0,
+      "cash_reconciled": 200.0,
+      "linked_cash_count": 2
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-WEIGHT-01",
+    "actual": {
+      "initial_length": 10,
+      "remaining_length": 6.0,
+      "initial_weight": 3,
+      "parent_weight": 2.4,
+      "child_weights": [
+        0.6,
+        0.6
+      ],
+      "total_weight": 3.5999999999999996
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-PO-01",
+    "actual": {
+      "actual_shortages": [
+        5,
+        100
+      ],
+      "task_count": 1,
+      "task_received": 90.0,
+      "task_short": 10.0,
+      "live_first_received": 95
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-MKO-01",
+    "actual": {
+      "error": "RuntimeError('Synthetic second output failure BEFORE write')",
+      "rolls_after_fault": 1,
+      "rolls_after_retry": 3,
+      "expected_output": 10,
+      "actual_output": 15.0,
+      "roll_value": 180.0,
+      "journal_value": 120.0
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-RFID-01",
+    "actual": {
+      "first": "green",
+      "fresh_event_after_seconds": 20,
+      "second": "green",
+      "duplicate": true,
+      "current_evaluator_result": "red",
+      "current_evaluator_code": "REPLAY_EXIT",
+      "different_passage": true
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-CF-01",
+    "actual": {
+      "expected_investing": -40,
+      "expected_operating": 0,
+      "expected_noncash_asset": 60,
+      "actual_investing": -100.0,
+      "actual_operating": 60.0,
+      "net_change": -40.0,
+      "noncash": []
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-DATE-01",
+    "actual": {
+      "expected_opex": 10,
+      "actual_opex": 0,
+      "stored_date": "2026-09-01",
+      "filter_start": "2026-09-01T00:00:00"
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-WMS-02",
+    "actual": {
+      "local_ready_tagged_rolls": 1,
+      "local_cut_guard": "passed",
+      "pending_cuts_other_warehouse": 1,
+      "loading_check_start_error": "409: 1 reservasi potong belum dikonfirmasi (roll induk RL-00010). Potong fisik & konfirmasi dulu."
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-MASTER-01",
+    "actual": {
+      "error": "RuntimeError('Synthetic batch journal failure BEFORE write')",
+      "original_stage": "greige",
+      "current_stage": "grey",
+      "batch_reference": "mgb_5a8480b0aa4d",
+      "durable_batch_count": 0
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-PO-02",
+    "actual": {
+      "ordered": 1000,
+      "received": 960,
+      "suggested_amendment": 960,
+      "error": "400: Baris MAT sudah diterima 960 — terkunci dari revisi (qty 1000→960). Barang yang sudah masuk gudang tidak bisa diubah qty/satuan/harga/diskonnya; buat PO baru untuk tambahan, atau retur beli bila ada selisih."
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-CUT-01",
+    "actual": {
+      "before_length": 10,
+      "after_length": 7.0,
+      "length_reserved": 0,
+      "child_count": 0,
+      "error": "Synthetic cut child insert fault BEFORE write",
+      "retry_error": "404: Reservasi potong tidak ditemukan / sudah dipotong"
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-MRES-02",
+    "actual": {
+      "expected_reserved": 2001,
+      "actual_reserved": 2000.0,
+      "document_count": 2001
+    }
+  },
+  {
+    "file": "new-failure-probes.json",
+    "id": "V3-PO-03",
+    "actual": {
+      "http_status": 200,
+      "po_status": "waiting_approval",
+      "po_quantity": 1000,
+      "task_status": "decided",
+      "detail": null
+    }
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-STOCK-01-value",
+    "expected": 500,
+    "actual": 1000.0,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-STOCK-01-velocity",
+    "expected": 10,
+    "actual": 20.0,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-STOCK-01-onhand-control",
+    "expected": 30,
+    "actual": 30.0,
+    "status": "pass",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-STOCK-02-filter",
+    "expected": 100,
+    "actual": 500.0,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-STOCK-03-landed",
+    "expected": 120,
+    "actual": 100.0,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-STOCK-04-date-only",
+    "expected": null,
+    "actual": "TypeError: can't subtract offset-naive and offset-aware datetimes",
+    "status": "observed_difference",
+    "note": "A stored date-only string is legacy/import input; report must normalize or reject with useful validation."
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-FIN-01-tower",
+    "expected": {
+      "omitted": 100,
+      "explicit": 100
+    },
+    "actual": {
+      "omitted": 1000.0,
+      "explicit": 100.0
+    },
+    "status": "observed_difference",
+    "note": "HTTP 200/200, same active entity A."
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-SALES-01-target-scope",
+    "expected": 0,
+    "actual": 100.0,
+    "status": "observed_difference",
+    "note": "Scope B has no target. Target A must not become a denominator for sales in B."
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-SALES-02-recent-orders",
+    "expected": false,
+    "actual": true,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-SALES-02-credit-cards",
+    "expected": 100,
+    "actual": 800.0,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-FIN-02-cash-order-as-ar",
+    "expected": 0,
+    "actual": 200.0,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-FIN-03-order-discount-legacy",
+    "expected": 900,
+    "actual": 1000.0,
+    "status": "observed_difference",
+    "note": "Legacy/header-discount shape only: current create_order forces manual order discount=0. Do not infer every new SO can produce this header discount."
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-FIN-03-tax-included",
+    "expected": 900.9,
+    "actual": 1000.0,
+    "status": "observed_difference",
+    "note": "Use the original pricing producer with a real PKP entity and entity settings ppn_mode=included. Current create_order uses this producer/settings. Revenue must exclude VAT; report directly sums the inclusive line_total."
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-AI-01-ap-fallback",
+    "expected": 100,
+    "actual": null,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-AI-02-new-customer-line",
+    "expected": 0,
+    "actual": 1,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-AI-03-durable-refresh",
+    "expected": 1,
+    "actual": 0,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-AI-04-money-conservation",
+    "expected": 1.01,
+    "actual": 1.02,
+    "status": "observed_difference",
+    "note": "Two members with PIC/co roles and 50/50 split satisfy current max-two-sales rule; the monetary producer keeps two decimal places."
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-CASH-01-opening-reclass",
+    "expected": {
+      "before_kecil_opening": 1000,
+      "after_kecil_opening": 1000,
+      "after_besar_opening": 0
+    },
+    "actual": {
+      "before_kecil_opening": 1000.0,
+      "after_kecil_opening": 0,
+      "after_besar_opening": 1000.0
+    },
+    "status": "observed_difference",
+    "note": "Voiding its only petty transaction must not move unchanged opening money to large cash."
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-DASH-01-master-window-reservation",
+    "expected": 850,
+    "actual": 850.0,
+    "status": "pass",
+    "note": ""
+  },
+  {
+    "file": "data-lineage-results.json",
+    "id": "D4-DASH-01-master-completeness",
+    "expected": 103,
+    "actual": 103,
+    "status": "pass",
+    "note": "Master product consumers receive a truncated list without continuation metadata."
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-SALES-03-commission-entity",
+    "expected": {
+      "commission": 0,
+      "collected_basis": 0
+    },
+    "actual": {
+      "commission": 9.0,
+      "collected_basis": 0.0
+    },
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-HR-01-multi-run-trend",
+    "expected": 300,
+    "actual": 200.0,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-HR-01-multi-run-kpi",
+    "expected": 300,
+    "actual": 100.0,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-HR-02-separation-date",
+    "expected": 0,
+    "actual": 1,
+    "status": "observed_difference",
+    "note": "Updating a former employee now must not count their departure as this month."
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-WMS-01-wib-day",
+    "expected": 1,
+    "actual": 2,
+    "status": "observed_difference",
+    "note": "Freeze now=01 Oct 01:00 WIB; 30 Sept 23:00 WIB belongs yesterday."
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-DATE-01-home-default",
+    "expected": {
+      "month": "2026-10",
+      "day": "2026-10-01"
+    },
+    "actual": {
+      "month": "2026-09",
+      "day": "2026-09-30"
+    },
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-DATE-01-month-inclusion",
+    "expected": true,
+    "actual": false,
+    "status": "observed_difference",
+    "note": "Normal UTC timestamp is 01 Oct 01:00 WIB; selected October must include it."
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-DATE-01-prior-month",
+    "expected": false,
+    "actual": true,
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-DATE-01-year-inclusion",
+    "expected": true,
+    "actual": false,
+    "status": "observed_difference",
+    "note": "01 Jan 2027 01:00 WIB belongs business year2027."
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-WMS-02-last-measured-cc",
+    "expected": "CCOK",
+    "actual": "CCOPEN",
+    "status": "observed_difference",
+    "note": "New unfinished count must not erase last measured accuracy."
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-AI-05-partial-cut-live",
+    "expected": {
+      "stock_available_qty": 7,
+      "stock_reserved_qty": 3
+    },
+    "actual": {
+      "stock_available_qty": 10.0,
+      "stock_reserved_qty": 0
+    },
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-AI-05-partial-cut-snapshot",
+    "expected": {
+      "avail": 7,
+      "reserved": 3
+    },
+    "actual": {
+      "avail": 10.0,
+      "reserved": 0
+    },
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-MKT-01-attribution-conservation",
+    "expected": {
+      "total_reach": 100,
+      "platform_reach_sum": 100,
+      "account_reach_sum": 100
+    },
+    "actual": {
+      "total_reach": 100.0,
+      "platform_reach_sum": 200.0,
+      "account_reach_sum": 200.0
+    },
+    "status": "observed_difference",
+    "note": "No per-platform/account measurements stored. The UI presents the whole aggregate independently for each platform/account."
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-RND-01-person-identity",
+    "expected": 2,
+    "actual": 1,
+    "status": "observed_difference",
+    "note": "Two genuine performer user IDs sharing a display name become one KPI identity."
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-AI-06-mixed-product-total",
+    "expected": null,
+    "actual": 15.0,
+    "status": "observed_difference",
+    "note": "Products individually have correct meters/kg, but the combined total must not add dimensions."
+  },
+  {
+    "file": "extended-numeric-results.json",
+    "id": "D4-WMS-03-level-capacity",
+    "expected": {
+      "locations": 100,
+      "manager_report": 100
+    },
+    "actual": {
+      "locations": 100.0,
+      "manager_report": 0.0
+    },
+    "status": "observed_difference",
+    "note": ""
+  },
+  {
+    "file": "additional-metric-results.json",
+    "id": "D4-FIN-04-unshipped-as-realisation",
+    "expected": 0,
+    "actual": 100.0,
+    "note": "0 expected only for the UI label Pendapatan (Realisasi). A booked-order forecast may legitimately be 100 but needs a different definition and label. No shipment or GL revenue was created.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "additional-metric-results.json",
+    "id": "D4-FE-03-redacted-hpp",
+    "expected": {
+      "status": 200,
+      "has_cogs": false
+    },
+    "actual": {
+      "status": 200,
+      "has_cogs": false
+    },
+    "note": "Positive control: backend redacts cost correctly. The separate JS probe verifies the renderer falsely formats the omitted field as Rp0.",
+    "status": "pass"
+  },
+  {
+    "file": "additional-metric-results.json",
+    "id": "D4-FIN-02-order-terms",
+    "expected": "2027-01-03",
+    "actual": "2026-11-04",
+    "note": "The original canonical customer_service helper honours the order snapshot of 90 days; forecast uses the current customer default of 30 days.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "frontend-numeric-results.json",
+    "id": "D4-FE-01-chart-7",
+    "expected": 7,
+    "actual": 7,
+    "status": "pass",
+    "note": "Execute the original velocityData expression with n input days."
+  },
+  {
+    "file": "frontend-numeric-results.json",
+    "id": "D4-FE-01-chart-30",
+    "expected": 30,
+    "actual": 14,
+    "status": "observed_difference",
+    "note": "Execute the original velocityData expression with n input days."
+  },
+  {
+    "file": "frontend-numeric-results.json",
+    "id": "D4-FE-01-chart-90",
+    "expected": 90,
+    "actual": 14,
+    "status": "observed_difference",
+    "note": "Execute the original velocityData expression with n input days."
+  },
+  {
+    "file": "frontend-numeric-results.json",
+    "id": "D4-FE-02-after-current-period-response",
+    "expected": 90,
+    "actual": 90,
+    "status": "pass",
+    "note": ""
+  },
+  {
+    "file": "frontend-numeric-results.json",
+    "id": "D4-FE-02-stale-period-overwrite",
+    "expected": 90,
+    "actual": 30,
+    "status": "observed_difference",
+    "note": "Actual UI-consumed total_orders: same entity A, period30 then90; old30 finishes last. App.js remounts by selectedEntity, not period. The earlier entity-switch hypothesis is withdrawn because the remount invalidates that shared-setter scenario."
+  },
+  {
+    "file": "latest-delta-results.json",
+    "id": "D4-PLAN-01-reaffirmed-qty",
+    "expected": {
+      "decision_qty": 20,
+      "referenced_pr_qty": 20
+    },
+    "actual": {
+      "decision_qty": 80.0,
+      "referenced_pr_qty": 20.0
+    },
+    "note": "First plan creates PR20; second asks80. Existing helper reaffirms PR20 while new planner records80. No duplicate PR inferred.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "latest-delta-results.json",
+    "id": "D4-PLAN-01-planned-conservation",
+    "expected": 20,
+    "actual": 100.0,
+    "note": "Cumulative history counts20+80, but only PR20 exists. Reaffirmation is not new supply.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "latest-delta-results.json",
+    "id": "D4-PLAN-02-duplicate-product",
+    "expected": 100,
+    "actual": 200.0,
+    "note": "Each duplicate plan row passes its own100<=shortage100 validation; combined plan creates PR200. Normal browser sends one row, but public typed API does not reject duplicates.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "latest-delta-results.json",
+    "id": "D4-PLAN-03-partial-scope",
+    "expected": {
+      "scope": "partial",
+      "actual_qty": 30
+    },
+    "actual": {
+      "scope": "full",
+      "actual_qty": 30.0
+    },
+    "note": "Original interco service lacks internal price contract in synthetic fixture; stock30 succeeded and recorded, interco70 failed. History says FULL from requested quantities. Error: Barang P belum punya harga internal di kontrak aktif untuk pasangan PT ini. Buat kontrak internal (partner_kind='entity') dengan harga tetap sebelum menerbitkan transaksi. — bagian yang SUDAH dijalankan & tercatat: Penuh — P: 30 dari stok sendiri",
+    "status": "observed_difference"
+  },
+  {
+    "file": "latest-delta-results.json",
+    "id": "D4-PLAN-05-wait-supply-conservation",
+    "expected": 100,
+    "actual": 200.0,
+    "note": "One pending PO100 is independently offered and fully planned for two SOs100 each. Plans record no exclusive supply allocation; status covers both.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "latest-delta-results.json",
+    "id": "D4-SUPPLY-01-open-qty",
+    "expected": 10,
+    "actual": 0,
+    "note": "Original recompute_po_status produces partial for PO100 received90. Shared OPEN_PO_STATUSES excludes partial, so remaining10 disappears from future ATP/pending board.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "latest-delta-results.json",
+    "id": "D4-SUPPLY-01-global-partial",
+    "expected": 10,
+    "actual": 0.0,
+    "note": "New global sales helper imports same OPEN_PO_STATUSES and also loses remaining10.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "latest-delta-results.json",
+    "id": "D4-GLOBAL-01-incoming-uom",
+    "expected": 91.44,
+    "actual": 100.0,
+    "note": "Original public POST /purchase-orders produces quantity100 yard/quantity_base91.44 meter. POS global badge labels raw100 as product base_unit meter. PO status=pending",
+    "status": "observed_difference"
+  },
+  {
+    "file": "latest-delta-results.json",
+    "id": "D4-DASH-01-latest-cap-master",
+    "expected": 3003,
+    "actual": 3000,
+    "note": "Old103 SKU counterexample passes at latest cap3000. Scale3003 proves truncation persists without continuation metadata.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "latest-delta-results.json",
+    "id": "D4-DASH-01-latest-cap-reservation",
+    "expected": 30022,
+    "actual": 30030.0,
+    "note": "3003 products each10; valid reservation8 on last product. Balance KPI includes last10, but reservation subtraction only visits first3000 products.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "latest-delta-results.json",
+    "id": "D4-CAP-01-purchase-known-sku",
+    "expected": {
+      "CAP0001": {
+        "http_status": 200,
+        "exists": true
+      },
+      "CAP1002": {
+        "http_status": 200,
+        "exists": true
+      }
+    },
+    "actual": {
+      "CAP0001": {
+        "http_status": 200,
+        "exists": true
+      },
+      "CAP1002": {
+        "http_status": 404,
+        "exists": true,
+        "detail": "Produk CAP1002 tidak ditemukan"
+      }
+    },
+    "note": "Real public producer on same valid input differing only product_id. Lookup reads first1000 master products, while updated catalog can show3000.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "latest-frontend-results.json",
+    "id": "D4-PLAN-04-error-erased",
+    "expected": "Interco failed; stock30 already executed and persisted",
+    "actual": "",
+    "error_transitions": [
+      "",
+      "Interco failed; stock30 already executed and persisted",
+      ""
+    ],
+    "status": "observed_difference",
+    "note": "Execute original submit and load functions with controlled failed POST and successful refresh. Catch sets error, refresh load resets it. Function-level JS, not browser rendering."
+  },
+  {
+    "file": "backorder-concurrency-results.json",
+    "id": "D4-BACKORDER-01-concurrent-fill",
+    "expected": {
+      "allocated_qty": 100,
+      "item_reserved_qty": 100,
+      "backorder_qty": 0
+    },
+    "actual": {
+      "allocated_qty": 160.0,
+      "item_reserved_qty": 80.0,
+      "backorder_qty": 20.0
+    },
+    "returned_qty": [
+      80.0,
+      80.0
+    ],
+    "status": "observed_difference",
+    "note": "Two real stock fulfillment calls for one SO shortage100 from physical200. Barrier schedules final SO writes only; allocators and database CAS unchanged. Demand should cap combined reservation at100 and item/allocation/backorder must reconcile."
+  },
+  {
+    "file": "order-dashboard-results.json",
+    "id": "D4-ORDER-01-revenue-control",
+    "expected": 3000,
+    "actual": 3000,
+    "note": "Full server aggregate is correct; preserve this successful repair.",
+    "status": "pass"
+  },
+  {
+    "file": "order-dashboard-results.json",
+    "id": "D4-ORDER-01-count",
+    "expected": 30,
+    "actual": 20,
+    "note": "The original component still counts the twenty-item dashboard window.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "order-dashboard-results.json",
+    "id": "D4-ORDER-01-average",
+    "expected": 100,
+    "actual": 150,
+    "note": "Full revenue3000 divided by local count20 produces150; same eligible thirty orders should average100. Server already supplies matching revenue.count30.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "order-dashboard-results.json",
+    "id": "D4-ORDER-01-customer-revenue",
+    "expected": 3000,
+    "actual": 2000,
+    "note": "Top Customers uses capped local list, even though all thirty orders have the same customer.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-01-public-resolution-control",
+    "expected": 200,
+    "actual": 200,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-01-ledger-control",
+    "expected": 20,
+    "actual": 20.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-01-liability-debit",
+    "expected": 80,
+    "actual": 160.0,
+    "note": "Refund80 should debit the liability once. Original manual adjustment and original cash posting each debit80.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-01-phantom-income",
+    "expected": 0,
+    "actual": 80.0,
+    "note": "Paying cash is not forfeiture of customer credit; refund should not create Other Income.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-01-liability-ledger-reconciliation",
+    "expected": 20,
+    "actual": -60.0,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-normal-refund-control",
+    "expected": {
+      "http": 200,
+      "deposit": 20,
+      "cash": 80,
+      "liability_debit": 80
+    },
+    "actual": {
+      "http": 200,
+      "deposit": 20.0,
+      "cash": 80.0,
+      "liability_debit": 80.0
+    },
+    "note": "Normal original producer then one refund is correct; wrong-account hypothesis rejected.",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-concurrent-cash",
+    "expected": 80,
+    "actual": 160.0,
+    "note": "Two original public resolutions read deposit100 before cash creation. CAS prevents a negative deposit, but both cash80 and both GL journals already exist.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-concurrent-deposit-control",
+    "expected": 20,
+    "actual": 20.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-concurrent-http-control",
+    "expected": [
+      200,
+      400
+    ],
+    "actual": [
+      200,
+      400
+    ],
+    "note": "Original executor translates the balance CAS409 into CaseActionError and the router returns400. One request is rejected, but its cash is already committed.",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-failure-retry-cash",
+    "expected": 80,
+    "actual": 160.0,
+    "note": "Original first cash+JE survives a failed deposit step; same case retry creates a new cash UUID instead of resuming the existing action.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-failure-retry-deposit-control",
+    "expected": 20,
+    "actual": 20.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-01-normal-control",
+    "expected": {
+      "http": 200,
+      "je_posted": true,
+      "owner": "B"
+    },
+    "actual": {
+      "http": 200,
+      "je_posted": true,
+      "owner": "B"
+    },
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-01-owner-after-failed-transfer",
+    "expected": "A",
+    "actual": "B",
+    "note": "Original physical ownership, lot, RFID owner and balance move before both journals succeed; rollback filters the cleared reserved_ref and does not restore ownership.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-01-transfer-history-after-failure",
+    "expected": 1,
+    "actual": 0,
+    "note": "Once ownership is committed, recovery needs a durable transfer document; current path inserts it only after both journals.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-01-rfid-owner-after-failure",
+    "expected": "A",
+    "actual": "B",
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-01-journal-pair-after-failure",
+    "expected": [
+      "A",
+      "B"
+    ],
+    "actual": [
+      "A"
+    ],
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-01-helper-recovery-pair",
+    "expected": 2,
+    "actual": 1,
+    "note": "The presence of just source JE causes already_posted, so retry does not create missing destination JE.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-01-public-recovery",
+    "expected": 200,
+    "actual": 400,
+    "note": "Same original API retry rejects destination==current owner; no supported recovery is reached.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-02-empty_source-valuation",
+    "expected": 150.0,
+    "actual": 10.0,
+    "note": "The original helper promises source WAC at-cost; it recalculates AFTER the chosen roll leaves the source. Empty source falls back to stale master1, or cheaper remainder changes WAC to5.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-02-empty_source-http-control",
+    "expected": 200,
+    "actual": 200,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-02-empty_source-retained-roll-cost-control",
+    "expected": 15,
+    "actual": 15.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-02-cheaper_remainder-valuation",
+    "expected": 100.0,
+    "actual": 50.0,
+    "note": "The original helper promises source WAC at-cost; it recalculates AFTER the chosen roll leaves the source. Empty source falls back to stale master1, or cheaper remainder changes WAC to5.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-02-cheaper_remainder-http-control",
+    "expected": 200,
+    "actual": 200,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-INTERCO-02-cheaper_remainder-retained-roll-cost-control",
+    "expected": 15,
+    "actual": 15.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-bank-transfer-retry-total",
+    "expected": {
+      "in": 80,
+      "out": 80
+    },
+    "actual": {
+      "in": 80.0,
+      "out": 160.0
+    },
+    "note": "Same unresolved case retry repeats the succeeded first leg: original out80, retry out80 and in80; the resolved case has an extra cash out80.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-bank-transfer-transit",
+    "expected": 0,
+    "actual": 80.0,
+    "note": "A completed own-bank transfer should clear transit; current resolved case leaves debit80.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-supplier-producer-control",
+    "expected": {
+      "http": 200,
+      "advance": 100
+    },
+    "actual": {
+      "http": 200,
+      "advance": 100.0
+    },
+    "note": "Original manual approved case action creates supplier advance; preceding vendor-bill/payment producer is not executed in this fixture.",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-supplier-concurrent-cash",
+    "expected": 80,
+    "actual": 160.0,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-supplier-concurrent-balance",
+    "expected": 20,
+    "actual": -60.0,
+    "note": "Unlike customer deposit, supplier refund uses unconditional $inc after cash; both original requests succeed and supplier advance goes negative.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-supplier-advance-retry-balance",
+    "expected": 100,
+    "actual": 200.0,
+    "note": "Finance-case JE uses stable case ID and skips repost; supplier balance increment still repeats. Stable JE idempotency alone is insufficient.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-supplier-advance-retry-journal-control",
+    "expected": 100,
+    "actual": 100.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-03-normal-two-step-control",
+    "expected": {
+      "http": [
+        200,
+        200
+      ],
+      "state": "resolved",
+      "debt": 0,
+      "cash_in": 80
+    },
+    "actual": {
+      "http": [
+        200,
+        200
+      ],
+      "state": "resolved",
+      "debt": -0.0,
+      "cash_in": 80.0
+    },
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-03-skip-step-one-cash",
+    "expected": 0,
+    "actual": 80.0,
+    "note": "Original public action accepts step2 on a newly open case: no step1 liability/AR transfer exists, but cash80 and Cr employee receivable80 are posted.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-03-skip-step-one-debt",
+    "expected": 0,
+    "actual": -80.0,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-03-partial-remains-open",
+    "expected": "in_progress",
+    "actual": "resolved",
+    "note": "Acknowledged employee receivable80, received40: case must keep an outstanding40 or reject partial; it currently resolves and removes next_action.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-03-partial-receivable-control",
+    "expected": 40,
+    "actual": 40.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-03-excess-receivable",
+    "expected": 0,
+    "actual": -20.0,
+    "note": "Received100 is applied wholly to an acknowledged debt80, creating negative employee receivable20; no surplus classification or amount bound is applied.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "REPLAY-OPS-02-escalation-level-control",
+    "expected": [
+      1,
+      2,
+      2
+    ],
+    "actual": [
+      1,
+      2,
+      2
+    ],
+    "note": "Separate manager then admin escalation is intentional, not duplicate notifications. Third scan no new level.",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-closed-period-cash",
+    "expected": 0,
+    "actual": 80.0,
+    "note": "No injection: a valid locked-period state rejects GL, but the refund cash is already inserted with status posted; deposit is unchanged and case remains open.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-closed-period-journal-control",
+    "expected": 0,
+    "actual": 0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "continuation-finance-results.json",
+    "id": "D4-CASE-02-closed-period-deposit-control",
+    "expected": 100,
+    "actual": 100.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "document-preview-api-results.json",
+    "id": "D4-DOC-01-existing-template-control",
+    "expected": {
+      "http": 200,
+      "exists": true
+    },
+    "actual": {
+      "http": 200,
+      "exists": true
+    },
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "document-preview-api-results.json",
+    "id": "D4-DOC-01-preview-contract",
+    "expected": 200,
+    "actual": 404,
+    "note": "A real original-created template and an accessible SO are present. No registered POST endpoint exists at the UI preview path. This is not empty data/auth failure.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "document-preview-api-results.json",
+    "id": "D4-DOC-01-alternative-renderer-control",
+    "expected": {
+      "http": 200,
+      "html": true
+    },
+    "actual": {
+      "http": 200,
+      "html": true
+    },
+    "note": "Existing GET document preview renderer works for this read-state fixture. It does not accept selected template ID, so merely repointing the button is insufficient.",
+    "status": "pass"
+  },
+  {
+    "file": "document-preview-js-results.json",
+    "id": "D4-DOC-01-original-route-control",
+    "expected": "http://audit.local/api/document-templates/tmpl_437b60725d91/preview",
+    "actual": "http://audit.local/api/document-templates/tmpl_437b60725d91/preview",
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "document-preview-js-results.json",
+    "id": "D4-DOC-01-selected-template-document-type",
+    "expected": "surat_jalan",
+    "actual": "invoice",
+    "note": "Selected Surat Jalan template loses its document type: original hook hardcodes invoice. Source call passes only templateId/orderId.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "document-preview-js-results.json",
+    "id": "D4-DOC-01-original-preview-html",
+    "expected": true,
+    "actual": false,
+    "note": "Original hook processes the original API404 response: notice Not Found, no iframe HTML. Browser DOM not tested.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-EQ-01-open-period-income-control",
+    "expected": 100,
+    "actual": 100.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-EQ-01-closed-period-net-income",
+    "expected": 100,
+    "actual": 0.0,
+    "note": "Same operational profit100 before/after closing; equity API uses the change in unclosed earnings and the actual UI labels it Laba Periode Berjalan. Closing transfers100 to retained earnings and incorrectly turns the profit KPI to0.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-EQ-01-total-equity-movement-control",
+    "expected": 100,
+    "actual": 100.0,
+    "note": "The equity roll-forward remains reconciled. Only the net_income definition/label is wrong; do not count the correct retained-earnings transfer twice when fixing.",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-EQ-01-operating-profit-control",
+    "expected": 100,
+    "actual": 100.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-01-nested-producer-control",
+    "expected": {
+      "month": 100,
+      "year": 0
+    },
+    "actual": {
+      "month": 100.0,
+      "year": 0.0
+    },
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-01-before-reopen-control",
+    "expected": 0,
+    "actual": 0.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-01-parent-stale",
+    "expected": true,
+    "actual": false,
+    "note": "Reopening January removes its closing100. The annual closing depended on that100, but still says closed/stale=False. Original UI only offers Tutup Ulang when stale is true.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-01-parent-residual-control",
+    "expected": 100,
+    "actual": 100.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-01-post-reopen-operating-income-control",
+    "expected": 100,
+    "actual": 100.0,
+    "note": "Operational P&L and balance arithmetic remain correct; finding is invalidated annual close status, not a claim that the balanced equation fails.",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-01-post-reopen-unclosed-income-control",
+    "expected": 100,
+    "actual": 100.0,
+    "note": "Reopening the child correctly restores unclosed profit100. The defect is the parent still declaring a final/non-stale close, not this balance calculation.",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-01-direct-reclose-workaround-control",
+    "expected": 200,
+    "actual": 200,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-02-normal-reclose-control",
+    "expected": {
+      "net": 120,
+      "stale": false
+    },
+    "actual": {
+      "net": 120.0,
+      "stale": false
+    },
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-02-linked-journal-posted",
+    "expected": "posted",
+    "actual": "void",
+    "note": "Original new JE130 is active, but the parent still points to the void old JE120 and old net_income120 after acknowledgement failure.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-02-active-journal-control",
+    "expected": {
+      "count": 1,
+      "total": 130
+    },
+    "actual": {
+      "count": 1,
+      "total": 130.0
+    },
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-02-parent-net-income",
+    "expected": 130,
+    "actual": 120.0,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-02-immediate-lock-control",
+    "expected": 409,
+    "actual": 409,
+    "note": "A visible saga lock intentionally blocks concurrent replay; that block alone is not labelled a defect.",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-02-admin-release-control",
+    "expected": 200,
+    "actual": 200,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-02-original-recovery-retry",
+    "expected": 200,
+    "actual": 500,
+    "note": "After original admin release, retry tries to insert another active JE with the stable closing source_id. Original unique index rejects it; existing JE is not adopted and parent remains stale/locked.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-CLOSE-02-recovery-linked-existing",
+    "expected": "je_6eaaad066784",
+    "actual": "je_5de1a6405853",
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-GL-01-ordinary-void-control",
+    "expected": {
+      "http": 200,
+      "income": 0
+    },
+    "actual": {
+      "http": 200,
+      "income": 0
+    },
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-GL-01-single-reversal-control",
+    "expected": 0,
+    "actual": 0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-GL-01-second-cancellation-rejected",
+    "expected": true,
+    "actual": false,
+    "note": "Original public void still accepts a journal already reversed. Original UI still exposes Anulir Jurnal for manual/posted regardless of reversed_by_entry_id.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-GL-01-post-reversal-void-income",
+    "expected": 0,
+    "actual": 100.0,
+    "note": "Original expense100 and reversal initially net0. Voiding only the original leaves standalone credit expense100, reporting a profit100 after double cancellation.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-COA-01-single-entity-income-control",
+    "expected": 77,
+    "actual": 77.0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-COA-01-all-entities-income",
+    "expected": 77,
+    "actual": 0,
+    "note": "Authorized all scope contains A+B; B has no July journals. Single A correctly reports income77 from an original permitted entity-only account, but all uses global-only account dimensions and drops that income.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-COA-01-single-entity-balance-control",
+    "expected": true,
+    "actual": true,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-COA-01-all-entities-balanced",
+    "expected": true,
+    "actual": false,
+    "note": "Bank asset line is retained but the entity-only income is unclassified, making all-scope financial statements unbalanced. This is not an entity-specific override changing the meaning of an existing global code.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-COA-01-all-entities-assets-control",
+    "expected": 307,
+    "actual": 307.0,
+    "note": "Original lifecycle produced100+130+77 in A. B is still empty at this test; non-finite fixture runs later in another month.",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-GL-02-healthy-summary-control",
+    "expected": {
+      "http": 200,
+      "debit": 50
+    },
+    "actual": {
+      "http": 200,
+      "debit": 50.0
+    },
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-GL-02-nan-persisted",
+    "expected": 0,
+    "actual": 1,
+    "note": "JSON string is valid JSON; original Pydantic float coercion accepts it. Manual path bypasses _validate_entry_lines, persists non-finite double values, and returns200 with amounts sanitized to null.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-GL-02-nan-validation",
+    "expected": true,
+    "actual": false,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-GL-02-infinity-persisted",
+    "expected": 0,
+    "actual": 1,
+    "note": "JSON string is valid JSON; original Pydantic float coercion accepts it. Manual path bypasses _validate_entry_lines, persists non-finite double values, and returns200 with amounts sanitized to null.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-GL-02-infinity-validation",
+    "expected": true,
+    "actual": false,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-GL-02-summary-valid-amount-retained",
+    "expected": 50,
+    "actual": 0.0,
+    "note": "The summary still returns200/balanced=True, but the poisoned accounts are omitted and even the legitimate expense50 disappears from the totals. No500/serialization-crash hypothesis is claimed.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "closing-reversal-results.json",
+    "id": "D4-GL-02-income-valid-expense-retained",
+    "expected": 50,
+    "actual": 0,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-02-normal-movement-control",
+    "expected": {
+      "status": "completed",
+      "roll_wh": "NORMAL-TO",
+      "tag_wh": "NORMAL-TO",
+      "from_qty": 0,
+      "to_qty": 10,
+      "movement_count": 2
+    },
+    "actual": {
+      "status": "completed",
+      "roll_wh": "NORMAL-TO",
+      "tag_wh": "NORMAL-TO",
+      "from_qty": 0.0,
+      "to_qty": 10.0,
+      "movement_count": 2
+    },
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-02-normal-btg-control",
+    "expected": true,
+    "actual": true,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-01-whole-exclusive-claim",
+    "expected": 0,
+    "actual": 10.0,
+    "note": "A successful PA claim must prevent conflicting sales allocation or explicitly coordinate/rebind it. Original public SO creator and allocator are used, not a mock. Subsequent approval/picking/shipping is not claimed tested.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-01-whole-dispatch-guard-control",
+    "expected": 409,
+    "actual": 409,
+    "note": "The dispatch guard correctly rejects the now reserved roll, but reservation has already claimed a PA-owned roll.",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-01-partial-exclusive-claim",
+    "expected": 0,
+    "actual": 6.0,
+    "note": "A successful PA claim must prevent conflicting sales allocation or explicitly coordinate/rebind it. Original public SO creator and allocator are used, not a mock. Subsequent approval/picking/shipping is not claimed tested.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-01-partial-dispatch-blocked",
+    "expected": 409,
+    "actual": 200,
+    "note": "The partial reservation leaves status available with length_reserved6. Dispatch checks status only, so succeeds despite the simultaneous SO length reservation.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-01-partial-source-location-retained",
+    "expected": "PARTIAL-FROM",
+    "actual": "PARTIAL-TO",
+    "note": "Original sales allocation still points to PARTIAL-FROM while the reserved parent roll has moved to PARTIAL-TO.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-01-rmwhole-exclusive-claim",
+    "expected": 0,
+    "actual": 10.0,
+    "note": "Original public explicit-roll SO path also reserves a roll owned by an open PA; partial uses explicit exact_cut permission and choice.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-01-rmwhole-quantity-control",
+    "expected": 10,
+    "actual": 10.0,
+    "note": "Original roll-mode allocation quantity is correct; do not mislabel this as a partial-qty overcount.",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-01-rmwhole-dispatch-guard",
+    "expected": 409,
+    "actual": 409,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-01-rmpart-exclusive-claim",
+    "expected": 0,
+    "actual": 6.0,
+    "note": "Original public explicit-roll SO path also reserves a roll owned by an open PA; partial uses explicit exact_cut permission and choice.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-01-rmpart-quantity-control",
+    "expected": 6,
+    "actual": 6.0,
+    "note": "Original roll-mode allocation quantity is correct; do not mislabel this as a partial-qty overcount.",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-01-rmpart-dispatch-guard",
+    "expected": 409,
+    "actual": 200,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-02-fault-control",
+    "expected": 500,
+    "actual": 500,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-02-immediate-lock-control",
+    "expected": 409,
+    "actual": 409,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-02-inspect-durable-roll-effect",
+    "expected": true,
+    "actual": false,
+    "note": "The roll has moved and lost active_movement. The admin effect scan only examines source_ref/created_at, so reports no effect for this existing roll update.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-02-retry-parent-finalized",
+    "expected": "completed",
+    "actual": "completed_with_exception",
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-02-retry-tag-location",
+    "expected": "RECOVERY-TO",
+    "actual": "RECOVERY-FROM",
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-02-retry-audit-pair",
+    "expected": 2,
+    "actual": 0,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-02-retry-destination-balance",
+    "expected": 10,
+    "actual": 0,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-02-retry-source-balance",
+    "expected": 0,
+    "actual": 10.0,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-02-roll-is-at-destination-control",
+    "expected": "RECOVERY-TO",
+    "actual": "RECOVERY-TO",
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-03-input-base-units-control",
+    "expected": [
+      "meter",
+      "yard"
+    ],
+    "actual": [
+      "meter",
+      "yard"
+    ],
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-03-mixed-group-validity",
+    "expected": true,
+    "actual": false,
+    "note": "Two products in one owner/category/grade group use base units meter and yard. A single metre total must normalize10yard to9.144m or separate units, not sum20.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-PA-03-document-labelled-total",
+    "expected": 19.144,
+    "actual": 20.0,
+    "note": "Actual frontend labels total_qty with items[0].unit, so20 native mixed units is an invalid labelled total. Per-roll quantities remain correct.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-WMS-04-ready-normal-control",
+    "expected": 1,
+    "actual": 1,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-WMS-04-reserved-suggestion-control",
+    "expected": 0,
+    "actual": 0,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-WMS-04-reserved-ready-kpi",
+    "expected": 0,
+    "actual": 1,
+    "note": "The same original reserved roll is counted as ready on Warehouse Health but excluded by the actual PA suggestion and rejected by PA creation.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-WMS-04-create-reserved-guard-control",
+    "expected": 400,
+    "actual": 400,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-RFID-01-fault-control",
+    "expected": 500,
+    "actual": 500,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-RFID-01-original-exit-stamp-control",
+    "expected": "pa_7287e1da23b7",
+    "actual": "pa_7287e1da23b7",
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-RFID-01-retry-business-read",
+    "expected": 1,
+    "actual": 0,
+    "note": "Event-ID dedupe treats the committed raw observation as processed even though the corresponding business read was never inserted.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-RFID-01-retry-decision-count",
+    "expected": 1,
+    "actual": 0,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-RFID-01-fresh-event-recovery-verdict",
+    "expected": "MOVEMENT_OUT",
+    "actual": "REPLAY_EXIT",
+    "note": "Gate_exit was stamped green before the failed read insertion; a new event is rejected REPLAY_EXIT, and creates a red incident instead of recovering the original green decision.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-RFID-01-stock-unchanged-control",
+    "expected": "in_transit_transfer",
+    "actual": "in_transit_transfer",
+    "note": "RFID ingest correctly does not post stock movement; this is decision/event durability, not RFID reducing quantities.",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-RFID-01-normal-dedupe-control",
+    "expected": {
+      "code": "MOVEMENT_OUT",
+      "reads": 1,
+      "duplicates": 1
+    },
+    "actual": {
+      "code": "MOVEMENT_OUT",
+      "reads": 1,
+      "duplicates": 1
+    },
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-RFID-01-red-read-durable-control",
+    "expected": 1,
+    "actual": 1,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-RFID-01-red-incident-recovery",
+    "expected": 1,
+    "actual": 0,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-RFID-01-red-passage-recovery",
+    "expected": "red",
+    "actual": "info",
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-RFID-01-red-latch-recovery",
+    "expected": true,
+    "actual": false,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-CC-01-normal-count-control",
+    "expected": {
+      "accuracy": 100,
+      "results": 1,
+      "retry_http": 400
+    },
+    "actual": {
+      "accuracy": 100.0,
+      "results": 1,
+      "retry_http": 400
+    },
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-CC-01-fault-control",
+    "expected": 500,
+    "actual": 500,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-CC-01-first-result-persisted-control",
+    "expected": 1,
+    "actual": 1,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-CC-01-inspect-count-effect",
+    "expected": true,
+    "actual": false,
+    "note": "",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-CC-01-one-session-one-result",
+    "expected": 1,
+    "actual": 2,
+    "note": "Admin recovery succeeds, but completion creates a second independent CC number/result for the exact same session. Original startup indexes do not prevent duplicates by session_id.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-TAG-01-retire-removes-current-tag-control",
+    "expected": null,
+    "actual": null,
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-TAG-01-retired-putaway-rejected",
+    "expected": true,
+    "actual": false,
+    "note": "The original verified roll was validly retired through the public API. Journey verification stays true, so PA accepts a roll with no current live tag and snapshots empty EPC. This is an original lifecycle counterexample, not an arbitrary tagless fixture.",
+    "status": "observed_difference"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-TAG-01-pending-print-control",
+    "expected": "pending_print",
+    "actual": "pending_print",
+    "note": "",
+    "status": "pass"
+  },
+  {
+    "file": "wms-movement-results.json",
+    "id": "D4-TAG-01-new-unverified-identity-rejected",
+    "expected": true,
+    "actual": false,
+    "note": "New tag is pending_print and has never been verified; journey from the retired identity remains tag_verified and allows a new PA.",
+    "status": "observed_difference"
+  }
+]

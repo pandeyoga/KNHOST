@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_role_reality_poc.py",
+    "database": "knhost_audit_native90_7bacfe54d81c4541ac7d1c2ddfa36180",
+    "exit": 0,
+    "seconds": 61.55,
+    "pass_log_tokens": 49,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_core_role_reality_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "oran cek peran  (HTTP 403)\n  [PASS] R7 · Finance DITOLAK menerapkan perubahan peran  (HTTP 403)\n\nLANGKAH 5 — menerapkan usulan dengan aman (R8/R9)\n  [PASS] R8 · peran yang BUKAN usulan ditolak  (HTTP 400)\n  [PASS] R8 · penolakannya MENUNTUN (menyebut usulan yang sah & jalur manual)  (Peran “Finance” bukan usulan untuk akun ini, jadi tidak diterapkan dari layar ini. Usulan )\n  [PASS] R8 · peran yang sama dengan sekarang juga ditolak  (HTTP 400)\n  [PASS] R9 · usulan yang sah berhasil diterapkan  (HTTP 200)\n  [PASS] R9 · pesannya menyebut peran lama → peran baru  (Peran Rudi Hartono diubah dari Manajer menjadi Admin Sales. 0 sesi dicabut — ia harus masu)\n  [PASS] R9 · sesinya dicabut supaya izin baru benar-benar berlaku  (sessions_revoked=0)\n  [PASS] R9 · laporan ikut berubah: akun itu kini `sesuai`  (sales_admin → sesuai)\n  [PASS] R9 · jejak audit `role_reclassified` tertulis\n  [PASS] R9 · jejaknya menyimpan POTRET BUKTI (bisa dijawab 6 bulan kemudian)  (3 baris bukti tersimpan)\n  [PASS] R9 · keadaan dipulihkan (peran dikembalikan ke manager)\n\nLANGKAH 6 — BUKTI-MERAH: sabotase matriks izin harus mengubah usulan (R10)\n  [PASS] R10 · sebelum sabotase: usulan = Admin Sales  (usul=sales_admin · matriks dari baris permission_settings)\n  [PASS] R10 · setelah `order.verify` dicabut dari Admin Sales, usulan BERUBAH (usulan memang dibaca dari matriks izin, bukan tabel kedua)  (usul=— · kesimpulan=sesuai)\n  [PASS] R10 · matriks dipulihkan → usulan kembali Admin Sales  (usul=sales_admin)\n\n── CLEANUP (INV-GATE-01: nol residu)\n  [PASS] CLEANUP: nol residu audit_logs & sessions · peran dipulihkan  (dihapus=5 sisa=0)\n\n==============================================================================\n  48/48 PASS\n==============================================================================\n"
+  }
+]

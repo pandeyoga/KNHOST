@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="1.899" timestamp="2026-10-06T14:02:29.575089+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="test_existing_product_two_color" time="0.403"><failure message="AssertionError: TST-TWL-NVY-01 not found in /api/products&#10;assert None is not None">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter44_two_color.py:57: in test_existing_product_two_color
+    assert prod is not None, "TST-TWL-NVY-01 not found in /api/products"
+E   AssertionError: TST-TWL-NVY-01 not found in /api/products
+E   assert None is not None</failure></testcase><testcase classname="" name="test_decide_syncs_two_color_to_new_product" time="0.534"><failure message="AssertionError: {&quot;detail&quot;:&quot;Supplier 'sup_grp_ksc_527ac628fd3b' tidak ditemukan.&quot;}&#10;assert 400 == 200&#10; +  where 400 = &lt;Response [400]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter44_two_color.py:119: in test_decide_syncs_two_color_to_new_product
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Supplier 'sup_grp_ksc_527ac628fd3b' tidak ditemukan."}
+E   assert 400 == 200
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase></testsuite></testsuites>

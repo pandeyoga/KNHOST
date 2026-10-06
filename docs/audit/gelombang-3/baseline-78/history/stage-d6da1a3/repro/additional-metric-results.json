@@ -1,0 +1,32 @@
+{
+  "commit": "d6da1a3d536228582645abb98aea19f3e491f300",
+  "results": [
+    {
+      "id": "D4-FIN-04-unshipped-as-realisation",
+      "expected": 0,
+      "actual": 100.0,
+      "note": "0 expected only for the UI label Pendapatan (Realisasi). A booked-order forecast may legitimately be 100 but needs a different definition and label. No shipment or GL revenue was created.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-FE-03-redacted-hpp",
+      "expected": {
+        "status": 200,
+        "has_cogs": false
+      },
+      "actual": {
+        "status": 200,
+        "has_cogs": false
+      },
+      "note": "Positive control: backend redacts cost correctly. The separate JS probe verifies the renderer falsely formats the omitted field as Rp0.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-FIN-02-order-terms",
+      "expected": "2027-01-03",
+      "actual": "2026-11-04",
+      "note": "The original canonical customer_service helper honours the order snapshot of 90 days; forecast uses the current customer default of 30 days.",
+      "status": "observed_difference"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_ica_directional.py",
+    "database": "knhost_audit_native90_da6556decb214bafb87c720d8935bcb7",
+    "exit": 0,
+    "seconds": 52.51,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_ica_directional.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "ders...\n✅ Passed - Status: 200\n✅ Reminders structure correct\n   Total rows: 1\n   Overdue: 0\n   Checked: 1\n✅ Row structure correct\n\n============================================================\nTEST 5: POST /api/interco/accounts/{payer}/{payee}/remind\n============================================================\n\n🔍 Testing Get accounts...\n✅ Passed - Status: 200\n\n🔍 Testing Remind ent_kanda → ent_ksc...\n✅ Passed - Status: 200\n✅ Reminder sent successfully\n   Outstanding: Rp 1,742,700.00\n\n🔍 Testing Remind again (dedupe test)...\n✅ Passed - Status: 200\n✅ Second reminder deduped correctly\n\n🔍 Testing Remind with fake IDs (should fail)...\n✅ Passed - Status: 400\n✅ Zero balance reminder rejected with 400\n\n============================================================\nTEST 6: RBAC - Sales user on returns endpoints\n============================================================\n✅ GET /api/interco/returns correctly returns 403 for sales\n✅ POST /api/interco/returns correctly returns 403 for sales\n\n============================================================\nTEST 7: Regression - Other Interco Endpoints\n============================================================\n\n🔍 Testing Transactions...\n✅ Passed - Status: 200\n\n🔍 Testing Settlements...\n✅ Passed - Status: 200\n\n🔍 Testing Returns...\n✅ Passed - Status: 200\n\n🔍 Testing Margin Report...\n✅ Passed - Status: 200\n\n============================================================\nCLEANUP: Removing test data\n============================================================\n⚠️  Cleanup requires MongoDB access\n   Test data created: 1 items\n   - interco_transaction: icp_6ac1a17a221e\n\n============================================================\n📊 BACKEND TESTS SUMMARY\n============================================================\nTests passed: 22/22\nSuccess rate: 100.0%\n"
+  }
+]

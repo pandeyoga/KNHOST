@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_sesi_2026_06b_poc.py",
+    "database": "knhost_audit_native90_4d39162a804346fca4a2960e9d7e90a8",
+    "exit": 1,
+    "seconds": 73.02,
+    "pass_log_tokens": 33,
+    "fail_log_tokens": 3,
+    "log": "continuation-90\\native-test_core_sesi_2026_06b_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "isi baris LAIN (bisa ditelusuri sampai baris terakhir) 2 baris baru\n  [PASS] `total` konsisten antar halaman (angka lencana punya penyebut tetap)\n  [PASS] `total` >= jumlah belum dibaca — lencana selalu bisa dibuktikan dari daftar total=35 belum_dibaca=33\n  [PASS] ISOLASI tetap: paginasi tidak membuka notifikasi non-kritis PT lain\n\n▶ H4 — Papan Keuangan: kontrabon & tagihan yang menahan uang\n  [PASS] Meja Finance bisa membaca papannya 200\n  [PASS] empat papan hadir dalam urutan tetap ['contra_bon_approve', 'contra_bon_verify', 'contra_bon_dispute', 'vendor_bill']\n  [PASS] angka papan IDENTIK dengan Pusat Persetujuan (INV-HOME-01) {'contra_bon_approve': 0, 'contra_bon_verify': 1, 'contra_bon_dispute': 0, 'vendor_bill': 0}\n  [PASS] papan contra_bon_approve membawa penanda `shown`/`truncated` (angka judul tak boleh melebihi baris tanpa tanda)\n  [PASS] papan contra_bon_verify membawa penanda `shown`/`truncated` (angka judul tak boleh melebihi baris tanpa tanda)\n  [PASS] papan contra_bon_dispute membawa penanda `shown`/`truncated` (angka judul tak boleh melebihi baris tanpa tanda)\n  [PASS] papan vendor_bill membawa penanda `shown`/`truncated` (angka judul tak boleh melebihi baris tanpa tanda)\n  [PASS] badan usaha di luar penugasan dijawab 403 (isolasi tak dilonggarkan) 403\n\n▶ H5 — nol residu setelah POC (DIUKUR, bukan diklaim)\n  [FAIL] seluruh koleksi tersentuh kembali ke jumlah awal (INV-GATE-01) {'audit_logs': (66, 69), 'sessions': (4, 7)}\n  [PASS] BUKTI-MERAH: pengukur residu MEMERAH saat 1 dokumen sengaja nyangkut\n  [FAIL] sentinel ikut dibersihkan (POC ini nol residu)\n\n==============================================================================\n  HASIL: 32 PASS · 2 FAIL dari 34 pemeriksaan\n==============================================================================\n"
+  }
+]

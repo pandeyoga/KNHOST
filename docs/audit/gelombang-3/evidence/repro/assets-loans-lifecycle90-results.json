@@ -1,0 +1,899 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_b148656a4e934f4bb1efffe6d37f7d01",
+  "observations": [
+    {
+      "id": "FA90-normal-capitalized",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-monthly-straight-line",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-capitalized-price-edit",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-normal-first-month",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-repeat-same-month",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-normal-book-value",
+      "expected": 200,
+      "actual": 200.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-preview-schedule-total",
+      "expected": 300,
+      "actual": 300.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-disposal-gain",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-disposal-state",
+      "expected": "disposed",
+      "actual": "disposed",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-repeat-disposal",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-failed-attempt-status-control",
+      "expected": 500,
+      "actual": 500,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-failure-retry-posted",
+      "expected": 1,
+      "actual": 0,
+      "note": "A failed journal must not consume the asset+period permanently; retry should complete exactly once.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "FA90-failure-retry-accumulated",
+      "expected": 100,
+      "actual": 0.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "FA90-failure-retry-entry-count",
+      "expected": 1,
+      "actual": 0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "FA90-parallel-months-http-control",
+      "expected": [
+        200,
+        200
+      ],
+      "actual": [
+        200,
+        200
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-parallel-months-entry-control",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "FA90-parallel-months-accumulated",
+      "expected": 200,
+      "actual": 100.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "FA90-parallel-months-book-value",
+      "expected": 100,
+      "actual": 200.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "FA90-parallel-months-count",
+      "expected": 2,
+      "actual": 1,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "ICL90-disburse-both-sides",
+      "expected": [
+        "disbursed",
+        "disbursed"
+      ],
+      "actual": [
+        "disbursed",
+        "disbursed"
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ICL90-disburse-twin-cash",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ICL90-disburse-twin-journal",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ICL90-first-outstanding",
+      "expected": [
+        60,
+        60
+      ],
+      "actual": [
+        60.0,
+        60.0
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ICL90-overpayment-rejected",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ICL90-final-outstanding",
+      "expected": [
+        0,
+        0
+      ],
+      "actual": [
+        0.0,
+        0.0
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ICL90-final-status",
+      "expected": "repaid",
+      "actual": "repaid",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ICL90-final-elimination-cleared",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ICL90-cancel-draft",
+      "expected": "cancelled",
+      "actual": "cancelled",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ICL90-foreign-read-denied-control",
+      "expected": true,
+      "actual": true,
+      "note": "Outside-scope resources may be hidden with404 or rejected with403; either is a valid denial.",
+      "status": "pass"
+    },
+    {
+      "id": "ICL90-foreign-repayment-denied",
+      "expected": 403,
+      "actual": 200,
+      "note": "Finance restricted to A is denied GET for B/C. Module settle permission must not authorize a B/C repayment. Manager is intentionally cross-entity and is not used for this scope test.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "ICL90-foreign-repayment-outstanding",
+      "expected": 50,
+      "actual": 40.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "ICL90-foreign-repayment-no-cash",
+      "expected": 0,
+      "actual": 2,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "ICL90-foreign-cancellation-denied",
+      "expected": 403,
+      "actual": 200,
+      "note": "",
+      "status": "observed_difference"
+    }
+  ],
+  "context": {
+    "asset-normal": {
+      "asset": {
+        "id": "fasset_055ba28f1c01",
+        "number": "A/FA-00001",
+        "name": "Local audit NORMAL",
+        "category": "Peralatan & Mesin",
+        "acquisition_cost": 300.0,
+        "acquisition_date": "2025-01-01",
+        "useful_life_months": 3,
+        "salvage_value": 0.0,
+        "method": "straight_line",
+        "entity_id": "A",
+        "gl_account_asset": "1-2100",
+        "gl_account_dep_exp": "6-6000",
+        "gl_account_acc_dep": "1-2900",
+        "funding_account": "1-1100",
+        "monthly_depreciation": 100.0,
+        "accumulated_depreciation": 100.0,
+        "book_value": 200.0,
+        "depreciated_months": 1,
+        "last_depreciation_period": "2025-01",
+        "status": "disposed",
+        "acquisition_je": "A/JE-00001",
+        "disposal": {
+          "date": "2025-02-01",
+          "proceeds": 250.0,
+          "book_value": 200.0,
+          "gain_loss": 50.0,
+          "result": "gain",
+          "je_id": "je_75ee602e2bd0",
+          "je_number": "A/JE-00003",
+          "note": "Synthetic sale",
+          "by": "Audit User A",
+          "at": "2026-10-06T05:08:11.731297+00:00"
+        },
+        "notes": "Local trace",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-06T05:08:11.143186+00:00",
+        "updated_at": "2026-10-06T05:08:11.732053+00:00",
+        "depreciation_periods": [
+          "2025-01"
+        ]
+      },
+      "entries": [
+        {
+          "id": "depe_f3b59ba46bdb",
+          "asset_id": "fasset_055ba28f1c01",
+          "asset_number": "A/FA-00001",
+          "entity_id": "A",
+          "period": "2025-01",
+          "amount": 100.0,
+          "accumulated_after": 100.0,
+          "book_value_after": 200.0,
+          "je_id": "je_a061fd0e7523",
+          "je_number": "A/JE-00002",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T05:08:11.489389+00:00"
+        }
+      ],
+      "journals": []
+    },
+    "asset-failure": {
+      "first_http": 500,
+      "retry": {
+        "period": "2025-01",
+        "posted": 0,
+        "skipped": 1,
+        "total_amount": 0.0,
+        "assets": []
+      },
+      "state": {
+        "asset": {
+          "id": "fasset_aa39c9c62138",
+          "number": "A/FA-00002",
+          "name": "Local audit RETRY",
+          "category": "Peralatan & Mesin",
+          "acquisition_cost": 300.0,
+          "acquisition_date": "2025-01-01",
+          "useful_life_months": 3,
+          "salvage_value": 0.0,
+          "method": "straight_line",
+          "entity_id": "A",
+          "gl_account_asset": "1-2100",
+          "gl_account_dep_exp": "6-6000",
+          "gl_account_acc_dep": "1-2900",
+          "funding_account": "1-1100",
+          "monthly_depreciation": 100.0,
+          "accumulated_depreciation": 0.0,
+          "book_value": 300.0,
+          "depreciated_months": 0,
+          "last_depreciation_period": "",
+          "status": "active",
+          "acquisition_je": "A/JE-00004",
+          "disposal": null,
+          "notes": "",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T05:08:11.985973+00:00",
+          "updated_at": "2026-10-06T05:08:11.985973+00:00",
+          "depreciation_periods": [
+            "2025-01"
+          ]
+        },
+        "entries": [],
+        "journals": []
+      }
+    },
+    "asset-race": {
+      "responses": [
+        {
+          "period": "2025-01",
+          "posted": 1,
+          "skipped": 0,
+          "total_amount": 100.0,
+          "assets": [
+            {
+              "asset_id": "fasset_54b82e3064ad",
+              "number": "A/FA-00003",
+              "name": "Local audit TWO-PERIODS",
+              "amount": 100.0,
+              "accumulated": 100.0,
+              "book_value": 200.0,
+              "status": "active"
+            }
+          ]
+        },
+        {
+          "period": "2025-02",
+          "posted": 1,
+          "skipped": 0,
+          "total_amount": 100.0,
+          "assets": [
+            {
+              "asset_id": "fasset_54b82e3064ad",
+              "number": "A/FA-00003",
+              "name": "Local audit TWO-PERIODS",
+              "amount": 100.0,
+              "accumulated": 100.0,
+              "book_value": 200.0,
+              "status": "active"
+            }
+          ]
+        }
+      ],
+      "state": {
+        "asset": {
+          "id": "fasset_54b82e3064ad",
+          "number": "A/FA-00003",
+          "name": "Local audit TWO-PERIODS",
+          "category": "Peralatan & Mesin",
+          "acquisition_cost": 300.0,
+          "acquisition_date": "2025-01-01",
+          "useful_life_months": 3,
+          "salvage_value": 0.0,
+          "method": "straight_line",
+          "entity_id": "A",
+          "gl_account_asset": "1-2100",
+          "gl_account_dep_exp": "6-6000",
+          "gl_account_acc_dep": "1-2900",
+          "funding_account": "1-1100",
+          "monthly_depreciation": 100.0,
+          "accumulated_depreciation": 100.0,
+          "book_value": 200.0,
+          "depreciated_months": 1,
+          "last_depreciation_period": "2025-01",
+          "status": "active",
+          "acquisition_je": "A/JE-00005",
+          "disposal": null,
+          "notes": "",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T05:08:12.223587+00:00",
+          "updated_at": "2026-10-06T05:08:12.439638+00:00",
+          "depreciation_periods": [
+            "2025-02",
+            "2025-01"
+          ]
+        },
+        "entries": [
+          {
+            "id": "depe_20b911ce82fd",
+            "asset_id": "fasset_54b82e3064ad",
+            "asset_number": "A/FA-00003",
+            "entity_id": "A",
+            "period": "2025-02",
+            "amount": 100.0,
+            "accumulated_after": 100.0,
+            "book_value_after": 200.0,
+            "je_id": "je_6afdf86d3d0f",
+            "je_number": "A/JE-00006",
+            "created_by": "Audit User A",
+            "created_at": "2026-10-06T05:08:12.427604+00:00"
+          },
+          {
+            "id": "depe_48dafd08b9b6",
+            "asset_id": "fasset_54b82e3064ad",
+            "asset_number": "A/FA-00003",
+            "entity_id": "A",
+            "period": "2025-01",
+            "amount": 100.0,
+            "accumulated_after": 100.0,
+            "book_value_after": 200.0,
+            "je_id": "je_9c1ac22488c7",
+            "je_number": "A/JE-00007",
+            "created_by": "Audit User A",
+            "created_at": "2026-10-06T05:08:12.435287+00:00"
+          }
+        ],
+        "journals": []
+      }
+    },
+    "loan-normal": {
+      "pair_id": "iclp_722c9f723183",
+      "lender": {
+        "pair_id": "iclp_722c9f723183",
+        "lender_entity_id": "A",
+        "lender_entity_name": "A",
+        "borrower_entity_id": "B",
+        "borrower_entity_name": "B",
+        "principal": 100.0,
+        "outstanding": 0.0,
+        "repaid_amount": 100.0,
+        "purpose": "Local audit working capital",
+        "interest_note": "",
+        "agreed_return_date": "",
+        "doc_date": "2026-10-06",
+        "notes": "",
+        "status": "repaid",
+        "repayments": [
+          {
+            "seq": 1,
+            "amount": 40.0,
+            "at": "2026-10-06T05:08:13.430119+00:00",
+            "by": "Audit User A",
+            "note": "First installment"
+          },
+          {
+            "seq": 2,
+            "amount": 60.0,
+            "at": "2026-10-06T05:08:13.688109+00:00",
+            "by": "Audit User A",
+            "note": "Final installment"
+          }
+        ],
+        "disbursed_at": "2026-10-06T05:08:13.125089+00:00",
+        "disbursed_by": "Audit User A",
+        "timeline": [
+          {
+            "event": "draft",
+            "label": "Pinjaman antar-PT dibuat",
+            "actor": "Audit User A",
+            "at": "2026-10-06T05:08:12.554357+00:00",
+            "note": "Rp 100 · Local audit working capital"
+          },
+          {
+            "event": "disbursed",
+            "label": "Pinjaman dicairkan",
+            "actor": "Audit User A",
+            "at": "2026-10-06T05:08:13.126094+00:00",
+            "note": "Rp 100 berpindah dari A ke B"
+          },
+          {
+            "event": "partially_repaid",
+            "label": "Angsuran #1 diterima",
+            "actor": "Audit User A",
+            "at": "2026-10-06T05:08:13.430119+00:00",
+            "note": "Rp 40 · sisa Rp 60"
+          },
+          {
+            "event": "repaid",
+            "label": "Angsuran #2 diterima",
+            "actor": "Audit User A",
+            "at": "2026-10-06T05:08:13.688109+00:00",
+            "note": "Rp 60 · sisa Rp 0"
+          }
+        ],
+        "created_at": "2026-10-06T05:08:12.554357+00:00",
+        "created_by": "Audit User A",
+        "updated_at": "2026-10-06T05:08:13.688109+00:00",
+        "updated_by": "Audit User A",
+        "id": "icl_0b6a71d026ca",
+        "number": "A/ICL-00001",
+        "role": "lender",
+        "entity_id": "A",
+        "counterpart_id": "icl_3a9f2408e261",
+        "counterpart_number": "B/ICL-00001"
+      },
+      "borrower": {
+        "pair_id": "iclp_722c9f723183",
+        "lender_entity_id": "A",
+        "lender_entity_name": "A",
+        "borrower_entity_id": "B",
+        "borrower_entity_name": "B",
+        "principal": 100.0,
+        "outstanding": 0.0,
+        "repaid_amount": 100.0,
+        "purpose": "Local audit working capital",
+        "interest_note": "",
+        "agreed_return_date": "",
+        "doc_date": "2026-10-06",
+        "notes": "",
+        "status": "repaid",
+        "repayments": [
+          {
+            "seq": 1,
+            "amount": 40.0,
+            "at": "2026-10-06T05:08:13.430119+00:00",
+            "by": "Audit User A",
+            "note": "First installment"
+          },
+          {
+            "seq": 2,
+            "amount": 60.0,
+            "at": "2026-10-06T05:08:13.688109+00:00",
+            "by": "Audit User A",
+            "note": "Final installment"
+          }
+        ],
+        "disbursed_at": "2026-10-06T05:08:13.125089+00:00",
+        "disbursed_by": "Audit User A",
+        "timeline": [
+          {
+            "event": "draft",
+            "label": "Pinjaman antar-PT dibuat",
+            "actor": "Audit User A",
+            "at": "2026-10-06T05:08:12.554357+00:00",
+            "note": "Rp 100 · Local audit working capital"
+          },
+          {
+            "event": "disbursed",
+            "label": "Pinjaman dicairkan",
+            "actor": "Audit User A",
+            "at": "2026-10-06T05:08:13.126094+00:00",
+            "note": "Rp 100 berpindah dari A ke B"
+          },
+          {
+            "event": "partially_repaid",
+            "label": "Angsuran #1 diterima",
+            "actor": "Audit User A",
+            "at": "2026-10-06T05:08:13.430119+00:00",
+            "note": "Rp 40 · sisa Rp 60"
+          },
+          {
+            "event": "repaid",
+            "label": "Angsuran #2 diterima",
+            "actor": "Audit User A",
+            "at": "2026-10-06T05:08:13.688109+00:00",
+            "note": "Rp 60 · sisa Rp 0"
+          }
+        ],
+        "created_at": "2026-10-06T05:08:12.554357+00:00",
+        "created_by": "Audit User A",
+        "updated_at": "2026-10-06T05:08:13.688109+00:00",
+        "updated_by": "Audit User A",
+        "id": "icl_3a9f2408e261",
+        "number": "B/ICL-00001",
+        "role": "borrower",
+        "entity_id": "B",
+        "counterpart_id": "icl_0b6a71d026ca",
+        "counterpart_number": "A/ICL-00001"
+      }
+    },
+    "loan-foreign": {
+      "get_http": 404,
+      "post_http": 200,
+      "response": {
+        "pair_id": "iclp_d24dc5867d84",
+        "lender": {
+          "pair_id": "iclp_d24dc5867d84",
+          "lender_entity_id": "B",
+          "lender_entity_name": "B",
+          "borrower_entity_id": "C",
+          "borrower_entity_name": "C",
+          "principal": 50.0,
+          "outstanding": 40.0,
+          "repaid_amount": 10.0,
+          "purpose": "Other entity synthetic loan",
+          "interest_note": "",
+          "agreed_return_date": "",
+          "doc_date": "2026-10-06",
+          "notes": "",
+          "status": "partially_repaid",
+          "repayments": [
+            {
+              "seq": 1,
+              "amount": 10.0,
+              "at": "2026-10-06T05:08:15.652685+00:00",
+              "by": "Audit User A",
+              "note": "Synthetic foreign-scope control"
+            }
+          ],
+          "disbursed_at": "2026-10-06T05:08:14.544690+00:00",
+          "disbursed_by": "Audit User A",
+          "timeline": [
+            {
+              "event": "draft",
+              "label": "Pinjaman antar-PT dibuat",
+              "actor": "Audit User A",
+              "at": "2026-10-06T05:08:13.940931+00:00",
+              "note": "Rp 50 · Other entity synthetic loan"
+            },
+            {
+              "event": "disbursed",
+              "label": "Pinjaman dicairkan",
+              "actor": "Audit User A",
+              "at": "2026-10-06T05:08:14.544690+00:00",
+              "note": "Rp 50 berpindah dari B ke C"
+            },
+            {
+              "event": "partially_repaid",
+              "label": "Angsuran #1 diterima",
+              "actor": "Audit User A",
+              "at": "2026-10-06T05:08:15.652685+00:00",
+              "note": "Rp 10 · sisa Rp 40"
+            }
+          ],
+          "created_at": "2026-10-06T05:08:13.940931+00:00",
+          "created_by": "Audit User A",
+          "updated_at": "2026-10-06T05:08:15.652685+00:00",
+          "updated_by": "Audit User A",
+          "id": "icl_72b1fafaf705",
+          "number": "B/ICL-00003",
+          "role": "lender",
+          "entity_id": "B",
+          "counterpart_id": "icl_f771b175c25f",
+          "counterpart_number": "C/ICL-00001"
+        },
+        "borrower": {
+          "pair_id": "iclp_d24dc5867d84",
+          "lender_entity_id": "B",
+          "lender_entity_name": "B",
+          "borrower_entity_id": "C",
+          "borrower_entity_name": "C",
+          "principal": 50.0,
+          "outstanding": 40.0,
+          "repaid_amount": 10.0,
+          "purpose": "Other entity synthetic loan",
+          "interest_note": "",
+          "agreed_return_date": "",
+          "doc_date": "2026-10-06",
+          "notes": "",
+          "status": "partially_repaid",
+          "repayments": [
+            {
+              "seq": 1,
+              "amount": 10.0,
+              "at": "2026-10-06T05:08:15.652685+00:00",
+              "by": "Audit User A",
+              "note": "Synthetic foreign-scope control"
+            }
+          ],
+          "disbursed_at": "2026-10-06T05:08:14.544690+00:00",
+          "disbursed_by": "Audit User A",
+          "timeline": [
+            {
+              "event": "draft",
+              "label": "Pinjaman antar-PT dibuat",
+              "actor": "Audit User A",
+              "at": "2026-10-06T05:08:13.940931+00:00",
+              "note": "Rp 50 · Other entity synthetic loan"
+            },
+            {
+              "event": "disbursed",
+              "label": "Pinjaman dicairkan",
+              "actor": "Audit User A",
+              "at": "2026-10-06T05:08:14.544690+00:00",
+              "note": "Rp 50 berpindah dari B ke C"
+            },
+            {
+              "event": "partially_repaid",
+              "label": "Angsuran #1 diterima",
+              "actor": "Audit User A",
+              "at": "2026-10-06T05:08:15.652685+00:00",
+              "note": "Rp 10 · sisa Rp 40"
+            }
+          ],
+          "created_at": "2026-10-06T05:08:13.940931+00:00",
+          "created_by": "Audit User A",
+          "updated_at": "2026-10-06T05:08:15.652685+00:00",
+          "updated_by": "Audit User A",
+          "id": "icl_f771b175c25f",
+          "number": "C/ICL-00001",
+          "role": "borrower",
+          "entity_id": "C",
+          "counterpart_id": "icl_72b1fafaf705",
+          "counterpart_number": "B/ICL-00003"
+        }
+      },
+      "persisted": {
+        "pair_id": "iclp_d24dc5867d84",
+        "lender_entity_id": "B",
+        "lender_entity_name": "B",
+        "borrower_entity_id": "C",
+        "borrower_entity_name": "C",
+        "principal": 50.0,
+        "outstanding": 40.0,
+        "repaid_amount": 10.0,
+        "purpose": "Other entity synthetic loan",
+        "interest_note": "",
+        "agreed_return_date": "",
+        "doc_date": "2026-10-06",
+        "notes": "",
+        "status": "partially_repaid",
+        "repayments": [
+          {
+            "seq": 1,
+            "amount": 10.0,
+            "at": "2026-10-06T05:08:15.652685+00:00",
+            "by": "Audit User A",
+            "note": "Synthetic foreign-scope control"
+          }
+        ],
+        "disbursed_at": "2026-10-06T05:08:14.544690+00:00",
+        "disbursed_by": "Audit User A",
+        "timeline": [
+          {
+            "event": "draft",
+            "label": "Pinjaman antar-PT dibuat",
+            "actor": "Audit User A",
+            "at": "2026-10-06T05:08:13.940931+00:00",
+            "note": "Rp 50 · Other entity synthetic loan"
+          },
+          {
+            "event": "disbursed",
+            "label": "Pinjaman dicairkan",
+            "actor": "Audit User A",
+            "at": "2026-10-06T05:08:14.544690+00:00",
+            "note": "Rp 50 berpindah dari B ke C"
+          },
+          {
+            "event": "partially_repaid",
+            "label": "Angsuran #1 diterima",
+            "actor": "Audit User A",
+            "at": "2026-10-06T05:08:15.652685+00:00",
+            "note": "Rp 10 · sisa Rp 40"
+          }
+        ],
+        "created_at": "2026-10-06T05:08:13.940931+00:00",
+        "created_by": "Audit User A",
+        "updated_at": "2026-10-06T05:08:15.652685+00:00",
+        "updated_by": "Audit User A",
+        "id": "icl_72b1fafaf705",
+        "number": "B/ICL-00003",
+        "role": "lender",
+        "entity_id": "B",
+        "counterpart_id": "icl_f771b175c25f",
+        "counterpart_number": "C/ICL-00001"
+      },
+      "cancel_http": 200,
+      "cash": [
+        {
+          "id": "cash_8403e90f126f",
+          "number": "B/CASH-00004",
+          "cash_type": "kas_besar",
+          "direction": "out",
+          "amount": 50.0,
+          "category": "pinjaman antar-PT",
+          "description": "Pencairan pinjaman ke C — Other entity synthetic loan",
+          "entity_id": "B",
+          "counterparty_entity_id": "C",
+          "ref_type": "interco_loan",
+          "ref_id": "iclp_d24dc5867d84",
+          "account_id": "",
+          "txn_date": "2026-10-06T05:08:14.283058+00:00",
+          "reconciled": false,
+          "status": "posted",
+          "gl_posted": true,
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T05:08:14.283058+00:00",
+          "updated_at": "2026-10-06T05:08:14.283058+00:00"
+        },
+        {
+          "id": "cash_0f793a25a1eb",
+          "number": "C/CASH-00001",
+          "cash_type": "kas_besar",
+          "direction": "in",
+          "amount": 50.0,
+          "category": "pinjaman antar-PT",
+          "description": "Pencairan pinjaman ke C — Other entity synthetic loan",
+          "entity_id": "C",
+          "counterparty_entity_id": "B",
+          "ref_type": "interco_loan",
+          "ref_id": "iclp_d24dc5867d84",
+          "account_id": "",
+          "txn_date": "2026-10-06T05:08:14.379341+00:00",
+          "reconciled": false,
+          "status": "posted",
+          "gl_posted": true,
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T05:08:14.379341+00:00",
+          "updated_at": "2026-10-06T05:08:14.379341+00:00"
+        },
+        {
+          "id": "cash_56a601ed7cf8",
+          "number": "C/CASH-00002",
+          "cash_type": "kas_besar",
+          "direction": "out",
+          "amount": 10.0,
+          "category": "angsuran pinjaman antar-PT",
+          "description": "Angsuran #1 pinjaman ke B — Synthetic foreign-scope control",
+          "entity_id": "C",
+          "counterparty_entity_id": "B",
+          "ref_type": "interco_loan_repayment",
+          "ref_id": "iclp_d24dc5867d84:rp1",
+          "account_id": "",
+          "txn_date": "2026-10-06T05:08:15.437510+00:00",
+          "reconciled": false,
+          "status": "posted",
+          "gl_posted": true,
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T05:08:15.437510+00:00",
+          "updated_at": "2026-10-06T05:08:15.437510+00:00"
+        },
+        {
+          "id": "cash_19edaec641b9",
+          "number": "B/CASH-00005",
+          "cash_type": "kas_besar",
+          "direction": "in",
+          "amount": 10.0,
+          "category": "angsuran pinjaman antar-PT",
+          "description": "Angsuran #1 pinjaman ke B — Synthetic foreign-scope control",
+          "entity_id": "B",
+          "counterparty_entity_id": "C",
+          "ref_type": "interco_loan_repayment",
+          "ref_id": "iclp_d24dc5867d84:rp1",
+          "account_id": "",
+          "txn_date": "2026-10-06T05:08:15.535930+00:00",
+          "reconciled": false,
+          "status": "posted",
+          "gl_posted": true,
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T05:08:15.535930+00:00",
+          "updated_at": "2026-10-06T05:08:15.535930+00:00"
+        }
+      ]
+    }
+  },
+  "harness_errors": [],
+  "scope": "Original ASGI producers with real local Mongo. Boundary injection does not alter business logic. No deployment or live funds."
+}

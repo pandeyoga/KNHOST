@@ -1,0 +1,18 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "target": "Original built frontend at http://127.0.0.1:3000; original backend8006 on UUID local synthetic database",
+  "attempts": [
+    {
+      "action": "createBrowserTab",
+      "error": "failed to write kernel assets: The system cannot find the path specified. (os error 3)"
+    },
+    {
+      "action": "reset session then createBrowserTab once",
+      "error": "failed to write kernel assets: The system cannot find the path specified. (os error 3)"
+    }
+  ],
+  "verdict": "environment_blocked_before_navigation",
+  "DOM_verified": false,
+  "screen_verified": false,
+  "product_bug_claimed": false
+}

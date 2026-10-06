@@ -1,0 +1,161 @@
+{
+  "commit": "d6da1a3d536228582645abb98aea19f3e491f300",
+  "database": "knhost_audit_739570d786f943ffb8e4a0c008cb4a3e",
+  "mode": "Synthetic localhost original application services and ASGI; observations differ from independent business oracles, not automatically adjudicated findings.",
+  "results": [
+    {
+      "id": "D4-STOCK-01-value",
+      "expected": 500,
+      "actual": 1000.0,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-STOCK-01-velocity",
+      "expected": 10,
+      "actual": 20.0,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-STOCK-01-onhand-control",
+      "expected": 30,
+      "actual": 30.0,
+      "status": "pass",
+      "note": ""
+    },
+    {
+      "id": "D4-STOCK-02-filter",
+      "expected": 100,
+      "actual": 500.0,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-STOCK-03-landed",
+      "expected": 120,
+      "actual": 100.0,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-STOCK-04-date-only",
+      "expected": null,
+      "actual": "TypeError: can't subtract offset-naive and offset-aware datetimes",
+      "status": "observed_difference",
+      "note": "A stored date-only string is legacy/import input; report must normalize or reject with useful validation."
+    },
+    {
+      "id": "D4-FIN-01-tower",
+      "expected": {
+        "omitted": 100,
+        "explicit": 100
+      },
+      "actual": {
+        "omitted": 1000.0,
+        "explicit": 100.0
+      },
+      "status": "observed_difference",
+      "note": "HTTP 200/200, same active entity A."
+    },
+    {
+      "id": "D4-SALES-01-target-scope",
+      "expected": 0,
+      "actual": 100.0,
+      "status": "observed_difference",
+      "note": "Scope B has no target. Target A must not become a denominator for sales in B."
+    },
+    {
+      "id": "D4-SALES-02-recent-orders",
+      "expected": false,
+      "actual": true,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-SALES-02-credit-cards",
+      "expected": 100,
+      "actual": 800.0,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-FIN-02-cash-order-as-ar",
+      "expected": 0,
+      "actual": 200.0,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-FIN-03-order-discount-legacy",
+      "expected": 900,
+      "actual": 1000.0,
+      "status": "observed_difference",
+      "note": "Legacy/header-discount shape only: current create_order forces manual order discount=0. Do not infer every new SO can produce this header discount."
+    },
+    {
+      "id": "D4-FIN-03-tax-included",
+      "expected": 900.9,
+      "actual": 1000.0,
+      "status": "observed_difference",
+      "note": "Use the original pricing producer with a real PKP entity and entity settings ppn_mode=included. Current create_order uses this producer/settings. Revenue must exclude VAT; report directly sums the inclusive line_total."
+    },
+    {
+      "id": "D4-AI-01-ap-fallback",
+      "expected": 100,
+      "actual": null,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-AI-02-new-customer-line",
+      "expected": 0,
+      "actual": 1,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-AI-03-durable-refresh",
+      "expected": 1,
+      "actual": 0,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-AI-04-money-conservation",
+      "expected": 1.01,
+      "actual": 1.02,
+      "status": "observed_difference",
+      "note": "Two members with PIC/co roles and 50/50 split satisfy current max-two-sales rule; the monetary producer keeps two decimal places."
+    },
+    {
+      "id": "D4-CASH-01-opening-reclass",
+      "expected": {
+        "before_kecil_opening": 1000,
+        "after_kecil_opening": 1000,
+        "after_besar_opening": 0
+      },
+      "actual": {
+        "before_kecil_opening": 1000.0,
+        "after_kecil_opening": 0,
+        "after_besar_opening": 1000.0
+      },
+      "status": "observed_difference",
+      "note": "Voiding its only petty transaction must not move unchanged opening money to large cash."
+    },
+    {
+      "id": "D4-DASH-01-master-window-reservation",
+      "expected": 850,
+      "actual": 1050.0,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-DASH-01-master-completeness",
+      "expected": 103,
+      "actual": 100,
+      "status": "observed_difference",
+      "note": "Master product consumers receive a truncated list without continuation metadata."
+    }
+  ]
+}

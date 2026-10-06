@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_g6.py",
+    "database": "knhost_audit_native90_60e34ff27ca942caac687e882dc544e0",
+    "exit": 1,
+    "seconds": 49.89,
+    "pass_log_tokens": 14,
+    "fail_log_tokens": 2,
+    "log": "continuation-90\\native-backend_test_g6.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "======================\nFASE G-6 Backend API Test\n======================================================================\n\n  ✅ [PASS] Login admin@kainnusantara.id\n  ℹ️  Found 4 interco transactions\n  ℹ️  Found draft transaction: KSC/IC-00003 (id: ict_7cb1)\n  ℹ️  Found confirmed transaction: KSC/IC-00004 (id: ict_0ba9)\n  ✅ [PASS] Setup references: received=False, draft=True, confirmed=True\n\n----------------------------------------------------------------------\nTesting G-6 Features\n----------------------------------------------------------------------\n\n  ℹ️  Skipping journal test for received transaction (no received transaction found)\n  ✅ [PASS] GET journal for draft transaction - seller=null & buyer=null\n  ℹ️  First sync-g6 call: created=0, updated=0, skipped=3\n  ✅ [PASS] POST sync-g6 idempotent (second call created=0)\n  ❌ [FAIL] POST sync-g6 without auth should return 401/403, got 200\n  ❌ [FAIL] warehouse-task response missing or invalid code\n  ✅ [PASS] POST warehouse-task on draft transaction - 400 with confirmation message\n  ✅ [PASS] POST receive without warehouse task - 400 with warehouse task message\n  ✅ [PASS] POST cancel without reason on confirmed - 400 with reason message\n  ✅ [PASS] POST internal contract - 200/201 with partner_kind='entity'\n  ✅ [PASS] GET /interco/summary - 200\n  ✅ [PASS] GET /interco/transactions - 200\n  ✅ [PASS] GET /interco/accounts - 200\n  ✅ [PASS] GET /interco/settlements - 200\n  ✅ [PASS] GET /interco/meta - 200\n  ✅ [PASS] GET /interco/contracts - 200\n\n======================================================================\n📊 Tests passed: 14/16\n======================================================================\n\nFailed tests:\n  ❌ POST sync-g6 without auth should return 401/403, got 200\n  ❌ warehouse-task response missing or invalid code\n\n"
+  }
+]

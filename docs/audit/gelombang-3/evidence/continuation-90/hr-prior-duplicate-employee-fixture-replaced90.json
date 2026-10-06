@@ -1,0 +1,260 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_39ca5846800e4386af64d142d96ecb97",
+  "observations": [
+    {
+      "id": "kpi.create_regular A",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.create_regular B",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.weighted_control",
+      "expected": 65,
+      "actual": 65.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.create_excluded zero",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.zero_weight_retained",
+      "expected": 0,
+      "actual": 1.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "kpi.zero_weight_aggregate",
+      "expected": 65,
+      "actual": 82.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "kpi.patch_zero_accepted",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.patch_zero_persisted",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.zero_weight_projection_after_patch",
+      "expected": 65,
+      "actual": 82.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "kpi.patch_auto_recompute",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.recompute_score",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.patch_explicit_score",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.manual_cap",
+      "expected": 150,
+      "actual": 150.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.patch_reset_auto",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.manual_reset",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.patch_empty",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.create_negative actual",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.auto_score_lower_bound",
+      "expected": 0,
+      "actual": -10.0,
+      "note": "Source compute_score docstring says 0–150. Metric freeform can have negative actual; public producer accepts it.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "kpi.create_period invalid",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.calendar_period_rejected",
+      "expected": true,
+      "actual": false,
+      "note": "Public producer accepted invalid month; schema period has no calendar validator.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "kpi.latest_period_real_calendar",
+      "expected": "2026-10",
+      "actual": "2026-99",
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "kpi.patch_empty_metric_bad_period_rejected",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "kpi.create_guard_22",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.create_guard_23",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.create_guard_24",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.create_guard_25",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.create_guard_26",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.list_period_filter",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.delete_persisted",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.deleted_repeat",
+      "expected": 404,
+      "actual": 404,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.numeric_guard_(0, 20, None)",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.numeric_guard_(-10, 20, None)",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.numeric_guard_(100, 200, None)",
+      "expected": 150,
+      "actual": 150.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.numeric_guard_(100, 20, -1)",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.numeric_guard_(100, 20, 'bad')",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "kpi.numeric_guard_('bad', 20, None)",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "harness_errors": [],
+  "scope": "Original KPI HTTP producer -> persisted rows -> self-service aggregate.\n\nZero weight is accepted by current request schema and entered by the UI. Independent\nweighted mean excludes it; target/actual scores are checked against [0,150] contract.\n"
+}

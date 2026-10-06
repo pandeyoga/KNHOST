@@ -1,0 +1,114 @@
+{
+  "commit": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_1cabfc0a5f294b62b3edf4bfd09eb674",
+  "results": [
+    {
+      "id": "D4-PLAN-01-reaffirmed-qty",
+      "expected": {
+        "decision_qty": 20,
+        "referenced_pr_qty": 20
+      },
+      "actual": {
+        "decision_qty": 80.0,
+        "referenced_pr_qty": 20.0
+      },
+      "note": "First plan creates PR20; second asks80. Existing helper reaffirms PR20 while new planner records80. No duplicate PR inferred.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PLAN-01-planned-conservation",
+      "expected": 20,
+      "actual": 100.0,
+      "note": "Cumulative history counts20+80, but only PR20 exists. Reaffirmation is not new supply.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PLAN-02-duplicate-product",
+      "expected": 100,
+      "actual": 200.0,
+      "note": "Each duplicate plan row passes its own100<=shortage100 validation; combined plan creates PR200. Normal browser sends one row, but public typed API does not reject duplicates.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PLAN-03-partial-scope",
+      "expected": {
+        "scope": "partial",
+        "actual_qty": 30
+      },
+      "actual": {
+        "scope": "full",
+        "actual_qty": 30.0
+      },
+      "note": "Original interco service lacks internal price contract in synthetic fixture; stock30 succeeded and recorded, interco70 failed. History says FULL from requested quantities. Error: Barang P belum punya harga internal di kontrak aktif untuk pasangan PT ini. Buat kontrak internal (partner_kind='entity') dengan harga tetap sebelum menerbitkan transaksi. — bagian yang SUDAH dijalankan & tercatat: Penuh — P: 30 dari stok sendiri",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PLAN-05-wait-supply-conservation",
+      "expected": 100,
+      "actual": 200.0,
+      "note": "One pending PO100 is independently offered and fully planned for two SOs100 each. Plans record no exclusive supply allocation; status covers both.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-SUPPLY-01-open-qty",
+      "expected": 10,
+      "actual": 0,
+      "note": "Original recompute_po_status produces partial for PO100 received90. Shared OPEN_PO_STATUSES excludes partial, so remaining10 disappears from future ATP/pending board.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-SUPPLY-01-global-partial",
+      "expected": 10,
+      "actual": 0.0,
+      "note": "New global sales helper imports same OPEN_PO_STATUSES and also loses remaining10.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-GLOBAL-01-incoming-uom",
+      "expected": 91.44,
+      "actual": 100.0,
+      "note": "Original public POST /purchase-orders produces quantity100 yard/quantity_base91.44 meter. POS global badge labels raw100 as product base_unit meter. PO status=pending",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-DASH-01-latest-cap-master",
+      "expected": 3003,
+      "actual": 3000,
+      "note": "Old103 SKU counterexample passes at latest cap3000. Scale3003 proves truncation persists without continuation metadata.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-DASH-01-latest-cap-reservation",
+      "expected": 30022,
+      "actual": 30030.0,
+      "note": "3003 products each10; valid reservation8 on last product. Balance KPI includes last10, but reservation subtraction only visits first3000 products.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CAP-01-purchase-known-sku",
+      "expected": {
+        "CAP0001": {
+          "http_status": 200,
+          "exists": true
+        },
+        "CAP1002": {
+          "http_status": 200,
+          "exists": true
+        }
+      },
+      "actual": {
+        "CAP0001": {
+          "http_status": 200,
+          "exists": true
+        },
+        "CAP1002": {
+          "http_status": 404,
+          "exists": true,
+          "detail": "Produk CAP1002 tidak ditemukan"
+        }
+      },
+      "note": "Real public producer on same valid input differing only product_id. Lookup reads first1000 master products, while updated catalog can show3000.",
+      "status": "observed_difference"
+    }
+  ]
+}

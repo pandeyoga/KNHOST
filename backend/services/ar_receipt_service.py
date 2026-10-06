@@ -451,9 +451,50 @@ async def create_receipt(payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict
                                                    total_funds, method, receipt_date, entity_id,
                                                    receipt_id, number)
     except BaseException:
-        if not await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 1}):
-            await _adjust_deposit(customer["id"], use_deposit_amount)   # kompensasi reservasi
+        # G3 V3-AR-01 — kwitansi yang efeknya belum tuntas (atau belum lahir) dibatalkan SELURUHNYA:
+        # alokasi SO dicari dari data (payments.receipt_id), bukan daftar di memori.
+        r = await db.ar_receipts.find_one({"id": receipt_id}, {"_id": 0})
+        if not r or r.get("effects_done") is False:
+            await _rollback_unfinished_receipt(receipt_id, r, customer["id"], use_deposit_amount)
         raise
+
+
+async def _pull_receipt_payments(receipt_id: str) -> None:
+    async for o in db.sales_orders.find({"payments.receipt_id": receipt_id}, {"_id": 0}):
+        for _try in range(10):
+            payments = [p for p in (o.get("payments") or []) if p.get("receipt_id") != receipt_id]
+            paid = round(sum(float(p.get("amount", 0) or 0) for p in payments), 2)
+            res = await db.sales_orders.update_one(
+                {"id": o["id"], "payments": o.get("payments") or []},
+                {"$set": {"payments": payments, "paid_total": paid,
+                          "payment_status": _payment_status(order_grand_total(o), paid), "updated_at": now_iso()}})
+            if res.matched_count:
+                break
+            o = await db.sales_orders.find_one({"id": o["id"]}, {"_id": 0}) or o
+
+
+async def _rollback_unfinished_receipt(receipt_id: str, r: Optional[Dict[str, Any]], customer_id: str,
+                                       use_deposit_amount: float) -> None:
+    await _pull_receipt_payments(receipt_id)
+    from services import gl_service as _gl
+    async for c in db.cash_transactions.find({"ref_type": "ar_receipt", "ref_id": receipt_id,
+                                              "status": {"$ne": "void"}}, {"_id": 0, "id": 1}):
+        await db.cash_transactions.update_one({"id": c["id"]}, {"$set": {"status": "void", "updated_at": now_iso()}})
+        try:
+            await _gl.post_cash_void(c["id"], label=f"rollback {receipt_id}", created_by="system")
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[create_receipt] rollback jurnal kas %s gagal: %s", c["id"], exc)
+    if r:
+        try:
+            await _gl.reverse_deposit_only_receipt(receipt_id, label=f"rollback {r.get('number', '')}",
+                                                   created_by="system")
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[create_receipt] rollback reklas deposit %s gagal: %s", receipt_id, exc)
+        if r.get("deposit_credited"):
+            await _adjust_deposit(customer_id, -float(r.get("unapplied_amount") or 0))
+        await db.ar_receipt_failures.insert_one({**r, "failed_at": now_iso()})
+        await db.ar_receipts.delete_one({"id": receipt_id, "effects_done": False})
+    await _adjust_deposit(customer_id, use_deposit_amount)   # kompensasi reservasi
 
 
 async def _create_receipt_after_reserve(payload, actor, customer, amount, use_deposit_amount, total_funds,
@@ -535,6 +576,7 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
         "allocations": allocations,
         "notes": payload.get("notes", ""),
         "status": "posted",
+        "effects_done": False,   # G3 V3-AR-01 — True hanya setelah kas/GL/deposit tuntas
         # FASE G-3 — catatan selisih pembayaran (bahan antrean keputusan & INV-VAR).
         "variance": pvs.variance_block(assessment),
         "created_by": actor.get("id"),
@@ -580,6 +622,7 @@ async def _create_receipt_after_reserve(payload, actor, customer, amount, use_de
 
     # P2-5 — sesuaikan saldo deposit customer (pemakaian sudah direservasi di awal — W2-017).
     await _adjust_deposit(customer["id"], unapplied)
+    await db.ar_receipts.update_one({"id": receipt_id}, {"$set": {"deposit_credited": True, "effects_done": True}})
 
     # ── FASE G-3 — selesaikan selisih pembayaran ────────────────────────────
     # Di dalam toleransi → diputus OTOMATIS (tetap berlabel, tetap bisa diaudit).

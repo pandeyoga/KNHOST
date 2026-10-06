@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_fase_f_final.py",
+    "database": "knhost_audit_native90_161090c79c86442cb262f2e2ef1b25c2",
+    "exit": 1,
+    "seconds": 52.74,
+    "pass_log_tokens": 37,
+    "fail_log_tokens": 10,
+    "log": "continuation-90\\native-backend_test_fase_f_final.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "================\n  3. LOCALIZATION — Onboarding Labels\n======================================================================\n\n── Testing admin onboarding ──\n  ✅ [PASS] admin onboarding → HTTP 200\n  ✅ [PASS] admin onboarding has NO forbidden English words\n  ✅ [PASS] admin onboarding contains Indonesian words: ['Cek', 'Buat', 'Tinjau', 'gudang']\n  ℹ️    admin has 6 onboarding tasks\n\n── Testing sales onboarding ──\n  ✅ [PASS] sales onboarding → HTTP 200\n  ✅ [PASS] sales onboarding has NO forbidden English words\n  ✅ [PASS] sales onboarding contains Indonesian words: ['Buat', 'Kirim', 'pesanan']\n  ℹ️    sales has 5 onboarding tasks\n\n── Testing warehouse onboarding ──\n  ✅ [PASS] warehouse onboarding → HTTP 200\n  ❌ [FAIL] warehouse onboarding contains English words: ['Scan']\n  ✅ [PASS] warehouse onboarding contains Indonesian words: ['Cek', 'Proses', 'Buat', 'Lanjutkan', 'Kirim']\n  ℹ️    warehouse has 5 onboarding tasks\n\n── Testing manager onboarding ──\n  ✅ [PASS] manager onboarding → HTTP 200\n  ✅ [PASS] manager onboarding has NO forbidden English words\n  ✅ [PASS] manager onboarding contains Indonesian words: ['Cek', 'Buat', 'Tinjau', 'Jalankan', 'gudang']\n  ℹ️    manager has 5 onboarding tasks\n\n======================================================================\n  RESULTS: ✅ 36 PASS · ❌ 9 FAIL\n======================================================================\n\n❌ FAILED TESTS:\n  - sales PT-A requesting entity_id=PT-B → HTTP ERROR (expected 403)\n  - sales PT-A → HTTP ERROR\n  - sales PT-A requesting entity_id=PT-B → HTTP ERROR (expected 403)\n  - Inbound Tasks → Request failed\n  - Outbound Tasks → Request failed\n  - Transfers → Request failed\n  - Cycle Count Sessions → Request failed\n  - R&D Designs → Request failed\n  - warehouse onboarding contains English words: ['Scan']\n"
+  }
+]

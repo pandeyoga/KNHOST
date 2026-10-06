@@ -351,22 +351,29 @@ async def _consume_material(product_id: str, warehouse_id: str, owner_entity_id:
             take = round(min(free, need - consumed_qty), 2)
             if take <= EPS:
                 continue
-            won = await db.inventory_rolls.find_one_and_update(
-                {**q, "id": r["id"], "$expr": {"$gte": [_FREE, take - EPS]}},
-                [{"$set": {"length_remaining": {"$round": [{"$subtract": ["$length_remaining", take]}, 2]},
-                           "updated_at": now_iso()}},
-                 {"$set": {"status": {"$cond": [{"$lte": ["$length_remaining", EPS]}, "consumed", "$status"]}}}],
-                projection={"_id": 0, "id": 1})
-            if not won:
-                continue  # roll berubah/di-hold bersamaan — dicoba lagi di putaran berikut
             uc = float(r.get("unit_cost") or r.get("base_unit_cost") or 0)
+            # G3 V3-PROD-01 — WRITE-AHEAD: movement `pending` lahir SEBELUM roll dikurangi; CAS roll
+            # menulis penanda `op_marks` di update yang SAMA → recovery tahu pasti efek mana yang terjadi.
+            mov_id = new_id("mov")
             await db.inventory_movements.insert_one({
-                "id": new_id("mov"), "product_id": product_id, "warehouse_id": warehouse_id,
+                "id": mov_id, "product_id": product_id, "warehouse_id": warehouse_id,
                 "owner_entity_id": owner_entity_id, "movement_type": "production_consume",
                 "quantity": -take, "unit": r.get("unit", "meter"), "lot": r.get("lot", ""),
                 "lot_id": r.get("lot_id", ""), "roll_id": r["id"], "unit_cost": uc,
                 "qty_rolls": 1, "source_document": wo_id, "operation_id": op_id, "timestamp": now_iso(),
+                "pending": True, "wal": True,
             })
+            won = await db.inventory_rolls.find_one_and_update(
+                {**q, "id": r["id"], "$expr": {"$gte": [_FREE, take - EPS]}},
+                [{"$set": {"length_remaining": {"$round": [{"$subtract": ["$length_remaining", take]}, 2]},
+                           "op_marks": {"$concatArrays": [{"$ifNull": ["$op_marks", []]}, [mov_id]]},
+                           "updated_at": now_iso()}},
+                 {"$set": {"status": {"$cond": [{"$lte": ["$length_remaining", EPS]}, "consumed", "$status"]}}}],
+                projection={"_id": 0, "id": 1})
+            if not won:
+                await db.inventory_movements.delete_one({"id": mov_id, "pending": True})
+                continue  # roll berubah/di-hold bersamaan — dicoba lagi di putaran berikut
+            await db.inventory_movements.update_one({"id": mov_id}, {"$unset": {"pending": ""}})
             value += take * uc
             if r.get("lot_id") and r["lot_id"] not in lot_ids:
                 lot_ids.append(r["lot_id"])
@@ -380,25 +387,52 @@ async def _consume_material(product_id: str, warehouse_id: str, owner_entity_id:
     return round(consumed_qty, 2), round(value, 2), lot_ids
 
 
+async def reconcile_pending_consumes(op_id: str) -> None:
+    """G3 V3-PROD-01 — movement `pending` sisa crash: penanda di roll ada → efek terjadi (lunasi);
+    tidak ada → efek tak pernah terjadi (hapus movement)."""
+    async for m in db.inventory_movements.find({"operation_id": op_id, "movement_type": "production_consume",
+                                                "pending": True}, {"_id": 0, "id": 1, "roll_id": 1}):
+        if await db.inventory_rolls.find_one({"id": m["roll_id"], "op_marks": m["id"]}, {"_id": 1}):
+            await db.inventory_movements.update_one({"id": m["id"]}, {"$unset": {"pending": ""}})
+        else:
+            await db.inventory_movements.delete_one({"id": m["id"], "pending": True})
+
+
 async def reverse_operation(op_id: str) -> float:
-    """Balik HANYA kontribusi operasi `op_id` ($inc, bukan $set) — idempoten per movement."""
+    """Balik HANYA kontribusi operasi `op_id`. G3 V3-PROD-02 — restore roll + cabut penanda `op_marks`
+    dalam SATU update ber-syarat penanda; movement baru ditandai reversed SESUDAH itu, sehingga retry
+    setelah gagal di tahap mana pun tidak melewatkan restore dan tidak menggandakannya."""
+    await reconcile_pending_consumes(op_id)
     restored, segs = 0.0, set()
     async for m in db.inventory_movements.find(
             {"operation_id": op_id, "movement_type": "production_consume", "reversed": {"$ne": True}}, {"_id": 0}):
-        mark = await db.inventory_movements.update_one(
-            {"id": m["id"], "reversed": {"$ne": True}}, {"$set": {"reversed": True, "reversed_at": now_iso()}})
-        if mark.modified_count != 1:
-            continue
         qty = -float(m["quantity"])
-        await db.inventory_rolls.update_one({"id": m["roll_id"]}, [
-            {"$set": {"status": {"$cond": [{"$eq": ["$status", "consumed"]}, "available", "$status"]},
-                      "length_remaining": {"$round": [{"$add": ["$length_remaining", qty]}, 2]},
-                      "updated_at": now_iso()}}])
-        await db.inventory_movements.insert_one({
-            **{k: m.get(k) for k in ("product_id", "warehouse_id", "owner_entity_id", "unit", "lot", "lot_id",
-                                     "roll_id", "unit_cost", "source_document", "operation_id")},
-            "id": new_id("mov"), "movement_type": "production_consume_reversal", "quantity": qty,
-            "qty_rolls": 1, "reverses": m["id"], "timestamp": now_iso()})
+        if not m.get("wal"):  # movement lama (sebelum write-ahead) — pola lama, satu kali lewat klaim reversed
+            mark = await db.inventory_movements.update_one(
+                {"id": m["id"], "reversed": {"$ne": True}}, {"$set": {"reversed": True, "reversed_at": now_iso()}})
+            if mark.modified_count != 1:
+                continue
+            await db.inventory_rolls.update_one({"id": m["roll_id"]}, [
+                {"$set": {"status": {"$cond": [{"$eq": ["$status", "consumed"]}, "available", "$status"]},
+                          "length_remaining": {"$round": [{"$add": ["$length_remaining", qty]}, 2]}}}])
+        else:
+            res = await db.inventory_rolls.update_one({"id": m["roll_id"], "op_marks": m["id"]}, [
+                {"$set": {"status": {"$cond": [{"$eq": ["$status", "consumed"]}, "available", "$status"]},
+                          "length_remaining": {"$round": [{"$add": ["$length_remaining", qty]}, 2]},
+                          "op_marks": {"$setDifference": ["$op_marks", [m["id"]]]},
+                          "updated_at": now_iso()}}])
+            if res.modified_count != 1:
+                qty = 0.0  # penanda sudah dicabut oleh percobaan sebelumnya — restore sudah terjadi
+        # restore sudah pasti terjadi tepat sekali → movement pembalik (id deterministik) + tandai reversed
+        await db.inventory_movements.update_one(
+            {"id": f"rev_{m['id']}"},
+            {"$setOnInsert": {
+                **{k: m.get(k) for k in ("product_id", "warehouse_id", "owner_entity_id", "unit", "lot", "lot_id",
+                                         "roll_id", "unit_cost", "source_document", "operation_id")},
+                "id": f"rev_{m['id']}", "movement_type": "production_consume_reversal",
+                "quantity": -float(m["quantity"]), "qty_rolls": 1, "reverses": m["id"],
+                "timestamp": now_iso()}}, upsert=True)
+        await db.inventory_movements.update_one({"id": m["id"]}, {"$set": {"reversed": True, "reversed_at": now_iso()}})
         restored += qty
         segs.add((m["product_id"], m["warehouse_id"], m["owner_entity_id"]))
     for seg in segs:

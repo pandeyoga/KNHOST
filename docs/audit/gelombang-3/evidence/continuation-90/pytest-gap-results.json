@@ -1,0 +1,100 @@
+[
+  {
+    "module": "test_iter297_revenue_policy.py",
+    "exit": 0,
+    "database": "knhost_audit_native90_pytest_de7c0e3ddb5d4e8383fde90351665815",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter297_revenue_policy.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter297_revenue_policy.log"
+  },
+  {
+    "module": "test_iter115_p07b.py",
+    "exit": 0,
+    "database": "knhost_audit_native90_pytest_d56e30455aa845699060dcdff7000d77",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter115_p07b.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter115_p07b.log"
+  },
+  {
+    "module": "test_iter61_color_library.py",
+    "error": "TimeoutExpired(['C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\work\\\\integration_env\\\\Scripts\\\\python.exe', 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\outputs\\\\data-flow-audit-2026-10-05\\\\latest\\\\repro\\\\run_isolated.py', 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\outputs\\\\data-flow-audit-2026-10-05\\\\latest\\\\continuation-90\\\\native_runner.py'], 180.0)",
+    "database": "knhost_audit_native90_pytest_f22f9bb48b8943c487007a0147ff3c7f",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter61_color_library.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter61_color_library.log"
+  },
+  {
+    "module": "test_iter316_catalog_rnd_security.py",
+    "error": "TimeoutExpired(['C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\work\\\\integration_env\\\\Scripts\\\\python.exe', 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\outputs\\\\data-flow-audit-2026-10-05\\\\latest\\\\repro\\\\run_isolated.py', 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\outputs\\\\data-flow-audit-2026-10-05\\\\latest\\\\continuation-90\\\\native_runner.py'], 180.0)",
+    "database": "knhost_audit_native90_pytest_96e8bcddf74e44058a7f36cf35a4973b",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter316_catalog_rnd_security.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter316_catalog_rnd_security.log"
+  },
+  {
+    "module": "test_iter317_completion_targets.py",
+    "error": "TimeoutExpired(['C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\work\\\\integration_env\\\\Scripts\\\\python.exe', 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\outputs\\\\data-flow-audit-2026-10-05\\\\latest\\\\repro\\\\run_isolated.py', 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\outputs\\\\data-flow-audit-2026-10-05\\\\latest\\\\continuation-90\\\\native_runner.py'], 180.0)",
+    "database": "knhost_audit_native90_pytest_13a5f7693822468b9156627db401bef9",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter317_completion_targets.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter317_completion_targets.log"
+  },
+  {
+    "module": "test_iter302_approval_rbac.py",
+    "error": "TimeoutExpired(['C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\work\\\\integration_env\\\\Scripts\\\\python.exe', 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\outputs\\\\data-flow-audit-2026-10-05\\\\latest\\\\repro\\\\run_isolated.py', 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\outputs\\\\data-flow-audit-2026-10-05\\\\latest\\\\continuation-90\\\\native_runner.py'], 180.0)",
+    "database": "knhost_audit_native90_pytest_9da5bea2d940454c8c6d395b62b3b3f3",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter302_approval_rbac.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter302_approval_rbac.log"
+  },
+  {
+    "module": "test_iter301_rbac_pricing_uom.py",
+    "exit": 1,
+    "database": "knhost_audit_native90_pytest_9ef7f85d18b546f0ae01e3c9513164d0",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter301_rbac_pricing_uom.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter301_rbac_pricing_uom.log"
+  },
+  {
+    "module": "test_iter295_role_desks_bridge.py",
+    "exit": 1,
+    "database": "knhost_audit_native90_pytest_eb738a572290406eab18a65f9388ec40",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter295_role_desks_bridge.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter295_role_desks_bridge.log"
+  },
+  {
+    "module": "test_iter277_gates_pin_isolation.py",
+    "exit": 1,
+    "database": "knhost_audit_native90_pytest_1e586630ed40404fa13add491aebfaef",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter277_gates_pin_isolation.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter277_gates_pin_isolation.log"
+  },
+  {
+    "module": "test_iter23_sample_and_designer.py",
+    "exit": 1,
+    "database": "knhost_audit_native90_pytest_b28e93d9768b413abd8e71965ac405c7",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter23_sample_and_designer.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_iter23_sample_and_designer.log"
+  },
+  {
+    "module": "test_customer_colors.py",
+    "error": "TimeoutExpired(['C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\work\\\\integration_env\\\\Scripts\\\\python.exe', 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\outputs\\\\data-flow-audit-2026-10-05\\\\latest\\\\repro\\\\run_isolated.py', 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\outputs\\\\data-flow-audit-2026-10-05\\\\latest\\\\continuation-90\\\\native_runner.py'], 180.0)",
+    "database": "knhost_audit_native90_pytest_1bea115ae620494e83ed5e491d200e35",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_customer_colors.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_customer_colors.log"
+  },
+  {
+    "module": "test_fase_sl_rfid_alias.py",
+    "exit": 1,
+    "database": "knhost_audit_native90_pytest_41dc296de0934e678f808c1c0c257581",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_fase_sl_rfid_alias.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_fase_sl_rfid_alias.log"
+  },
+  {
+    "module": "test_fase_sl_receipt_variance.py",
+    "exit": 1,
+    "database": "knhost_audit_native90_pytest_5adc6a75e16f4197bdef8435cf682c1f",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_fase_sl_receipt_variance.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_fase_sl_receipt_variance.log"
+  },
+  {
+    "module": "test_interco_g6.py",
+    "exit": 1,
+    "database": "knhost_audit_native90_pytest_c9529732e07049bb99c892806af061f9",
+    "xml": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_interco_g6.xml",
+    "log": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\pytest-gap-test_interco_g6.log"
+  }
+]

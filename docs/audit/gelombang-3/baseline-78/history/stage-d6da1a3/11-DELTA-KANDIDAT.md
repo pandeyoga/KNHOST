@@ -1,0 +1,53 @@
+# Delta source kandidat
+
+Pembanding `5b7f34122bd104f4426ccd7f72b38fb7969eda8f` → kandidat `d6da1a3d536228582645abb98aea19f3e491f300`: 49 path berubah. Daftar ini membantu review dampak perubahan; tidak mengklaim semua path berubah adalah bug atau semua file tidak berubah sudah terbukti benar.
+
+- `.emergent/emergent.yml`
+- `.emergent/markers/.restore-complete`
+- `backend/config_catalog_ai.py`
+- `backend/config_catalog_ops.py`
+- `backend/routers/cash.py`
+- `backend/routers/crm.py`
+- `backend/routers/home.py`
+- `backend/scripts/demo_api.py`
+- `backend/scripts/import_stok_awal_kn.py`
+- `backend/scripts/seed_demo_lengkap_kn.py`
+- `backend/scripts/seed_demo_transaksi_kn.py`
+- `backend/services/customer_service.py`
+- `backend/services/fulfillment_service.py`
+- `backend/services/home_service.py`
+- `backend/services/sales_force_service.py`
+- `backend/tests/audit_numbers.py`
+- `backend/tests/iter149_numbers_sweep.py`
+- `backend/tests/test_iter149_audit.py`
+- `backend/tests/test_iter150_atp_board.py`
+- `backend/tests/test_iter265_r3r4r5.py`
+- `deploy/DEMO_LENGKAP_VPS.md`
+- `deploy/setup_demo_lengkap.sh`
+- `docs/DEPLOY_VPS.md`
+- `docs/audit/ia/dialogscan_1.json`
+- `docs/audit/ia/dialogscan_2.json`
+- `docs/audit/ia/uiscan_1.json`
+- `docs/audit/ia/uiscan_2.json`
+- `docs/audit/ia/uiscan_3.json`
+- `docs/audit/ia/views.json`
+- `frontend/src/components/LocationFields.jsx`
+- `frontend/src/features/crm/SalesForceDashboard.jsx`
+- `frontend/src/features/home/AdminHome.jsx`
+- `frontend/src/features/home/SalesHome.jsx`
+- `frontend/src/features/inventory/InventoryStatusBoard.jsx`
+- `frontend/src/features/sales/mobile/MobileSalesHome.jsx`
+- `frontend/src/styles/components.css`
+- `memory/PRD.md`
+- `memory/test_credentials.md`
+- `scripts/ui_dialog_js.py`
+- `scripts/ui_scan_js.py`
+- `test_reports/audit_numbers_dump.json`
+- `test_reports/iter149_atp_dump.json`
+- `test_reports/iter149_numbers_sweep.json`
+- `test_reports/iteration_147.json`
+- `test_reports/iteration_148.json`
+- `test_reports/iteration_149.json`
+- `test_reports/iteration_150.json`
+- `test_reports/pytest/iter149.xml`
+- `test_reports/pytest/iter150.xml`

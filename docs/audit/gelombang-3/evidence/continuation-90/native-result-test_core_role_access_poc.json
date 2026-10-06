@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_role_access_poc.py",
+    "database": "knhost_audit_native90_3b5400d5ff1f446693a278cba9c53f53",
+    "exit": 1,
+    "seconds": 56.78,
+    "pass_log_tokens": 42,
+    "fail_log_tokens": 3,
+    "log": "continuation-90\\native-test_core_role_access_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "ger     rincian bisa diklik (items terisi) (17 baris)\n\n▶ G4 — wewenang dari IZIN, bukan nama peran (INV-ROLE-01)\n  [PASS] finance memang memegang izin penalty.issue (dari respons login) (['view', 'issue'])\n  [PASS] finance bisa membaca aging (prasyarat) → 200\n  [PASS] finance BOLEH menerbitkan nota denda dari aging (server menerima) customer=Toko Kain Sejahtera → 200 \n  [PASS] sales TETAP ditolak menerbitkan denda → 403\n\n▶ G6 — `GET /approvals/backlog`: satu sumber untuk beranda & Pusat Persetujuan\n  [PASS] admin       GET /approvals/backlog 200 → 200\n  [PASS] manager     GET /approvals/backlog 200 → 200\n  [PASS] sales_admin GET /approvals/backlog 200 → 200\n  [PASS] finance     GET /approvals/backlog 200 → 200\n  [PASS] sales       GET /approvals/backlog 403 (bukan wilayahnya) → 403\n  [PASS] warehouse   GET /approvals/backlog 403 (bukan wilayahnya) → 403\n  [PASS] total backlog == KPI beranda (tidak mungkin dua angka berbeda lagi) (backlog 25 vs KPI 25)\n  [PASS] angka per badan usaha ≤ angka gabungan (isolasi entitas terjaga) (KSC 23 ≤ semua 25)\n  [PASS] semua baris antrean menunjuk layar yang ADA di AppViewRouter hantu=[]\n  [PASS] setiap baris antrean menyebut koleksi yang benar (ada di DB atau di kode) salah=[]\n\n▶ G5 — BUKTI-MERAH (cabut izinnya → POC wajib memerah)\n  [PASS] izin dicabut → finance kembali 403 di /ar/aging (gate bisa memerah)\n  [PASS] izin dicabut → warehouse kembali 403 di /suppliers (gate bisa memerah)\n  [PASS] matriks dipulihkan → finance 200 kembali (nol residu izin)\n\n==============================================================================\n  HASIL: 41 PASS · 2 FAIL dari 43 pemeriksaan\n==============================================================================\nTimeout (0:00:55)!\nThread 0x0000de70 (most recent call first):\n  <no Python frame>\n"
+  }
+]

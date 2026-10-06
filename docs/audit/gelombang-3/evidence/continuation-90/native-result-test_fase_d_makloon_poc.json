@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_fase_d_makloon_poc.py",
+    "database": "knhost_audit_native90_47f51261e980497da53df39e2cb6a3cd",
+    "exit": "timeout",
+    "seconds": 210.05,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_fase_d_makloon_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "Timeout (0:00:55)!\nThread 0x0000d4d8 (most recent call first):\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\re\\_parser.py\", line 168 in __getitem__\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\re\\_parser.py\", line 886 in _parse\n  File "
+  }
+]

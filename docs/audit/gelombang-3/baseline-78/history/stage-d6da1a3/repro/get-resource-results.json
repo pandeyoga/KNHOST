@@ -1,0 +1,3575 @@
+{
+  "commit": "d6da1a3d536228582645abb98aea19f3e491f300",
+  "database": "knhost_audit_099934f51c324e5eb7391fe2a24f7f18",
+  "note": "Seeded synthetic resources, readonly GET attempts. Collection hints may not resolve the correct lifecycle; non200 is not a bug verdict. Multiple-key foreign-key coherence is not asserted by this sweep. Execution/shape is not business/arithmetic coverage.",
+  "results": [
+    {
+      "path": "/api/users/{user_id}",
+      "handler": "routers.users.get_user",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "user_id",
+              "collection": "users",
+              "id": "user_admin_01"
+            }
+          ],
+          "concrete_path": "/api/users/user_admin_01",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/products/{product_id}/stock-breakdown",
+      "handler": "routers.products.stock_breakdown",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "product_id",
+              "collection": "products",
+              "id": "prod_batik_mega"
+            }
+          ],
+          "concrete_path": "/api/products/prod_batik_mega/stock-breakdown",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/customers/{customer_id}/merge-preview",
+      "handler": "routers.customers.merge_customer_preview",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for source_id"
+    },
+    {
+      "path": "/api/warehouses/{warehouse_id}/locations",
+      "handler": "routers.warehouses.get_warehouse_locations",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "warehouse_id",
+              "collection": "warehouses",
+              "id": "wh_jakarta"
+            }
+          ],
+          "concrete_path": "/api/warehouses/wh_jakarta/locations",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/warehouses/{warehouse_id}/occupancy",
+      "handler": "routers.warehouses.get_warehouse_occupancy",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "warehouse_id",
+              "collection": "warehouses",
+              "id": "wh_jakarta"
+            }
+          ],
+          "concrete_path": "/api/warehouses/wh_jakarta/occupancy",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/inventory/rolls/{roll_id}/journey-timeline",
+      "handler": "routers.inventory.roll_journey_timeline",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "roll_id",
+              "collection": "inventory_rolls",
+              "id": "roll_80d5c1fc3b0b"
+            }
+          ],
+          "concrete_path": "/api/inventory/rolls/roll_80d5c1fc3b0b/journey-timeline",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/inventory/rolls/{roll_id}/cost-history",
+      "handler": "routers.inventory.roll_cost_history_endpoint",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "roll_id",
+              "collection": "inventory_rolls",
+              "id": "roll_80d5c1fc3b0b"
+            }
+          ],
+          "concrete_path": "/api/inventory/rolls/roll_80d5c1fc3b0b/cost-history",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/inventory/rolls/available",
+      "handler": "routers.inventory.list_rolls_available",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for product_id"
+    },
+    {
+      "path": "/api/history/{product_id}",
+      "handler": "routers.inventory.product_history",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "product_id",
+              "collection": "products",
+              "id": "prod_batik_mega"
+            }
+          ],
+          "concrete_path": "/api/history/prod_batik_mega",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/sales-orders/{order_id}/journey",
+      "handler": "routers.sales_orders_extra.order_journey",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/sales-orders/so_001/journey",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/sales-orders/{order_id}/restock-state",
+      "handler": "routers.sales_orders_extra.restock_state",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/sales-orders/so_001/restock-state",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/sales-orders/{order_id}",
+      "handler": "routers.sales_orders.get_order",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/sales-orders/so_001",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/sales-orders/{order_id}/invoices",
+      "handler": "routers.invoices.order_invoices",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/sales-orders/so_001/invoices",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/documents/trace/{doc_type}/{doc_id}",
+      "handler": "routers.documents.document_trace",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_type,doc_id"
+    },
+    {
+      "path": "/api/documents/trace/{doc_type}/{doc_id}/print",
+      "handler": "routers.documents.document_trace_print",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_type,doc_id"
+    },
+    {
+      "path": "/api/documents/refs/{doc_type}/{doc_id}",
+      "handler": "routers.documents.document_refs",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_type,doc_id"
+    },
+    {
+      "path": "/api/documents/relations/{doc_type}/{doc_id}",
+      "handler": "routers.documents.document_relations",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "doc_type",
+              "collection": "sales_orders",
+              "id": "so_001"
+            },
+            {
+              "param": "doc_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/documents/relations/so_001/so_001",
+          "http_status": 400,
+          "content_type": "application/json",
+          "detail": "doc_type tidak didukung (sales_order|purchase_order)"
+        }
+      ]
+    },
+    {
+      "path": "/api/documents/{doc_id}/print",
+      "handler": "routers.documents.print_generated_document",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_id"
+    },
+    {
+      "path": "/api/documents/preview/{order_id}",
+      "handler": "routers.documents.preview_document",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/documents/preview/so_001",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "path": "/api/documents/resolve",
+      "handler": "routers.documents.resolve_document_number",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for number"
+    },
+    {
+      "path": "/api/audit-logs/resource",
+      "handler": "routers.audit.resource_audit_history",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for entity_type"
+    },
+    {
+      "path": "/api/cycle-count/sessions/{session_id}",
+      "handler": "routers.cycle_count.get_session",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "session_id",
+              "collection": "cycle_count_sessions",
+              "id": "cc_seed_001"
+            }
+          ],
+          "concrete_path": "/api/cycle-count/sessions/cc_seed_001",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/transfers/{transfer_id}",
+      "handler": "routers.transfers.get_transfer_detail",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "transfer_id",
+              "collection": "warehouses",
+              "id": "wh_jakarta"
+            }
+          ],
+          "concrete_path": "/api/transfers/wh_jakarta",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Transfer tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "transfer_id",
+              "collection": "warehouses",
+              "id": "wh_bandung"
+            }
+          ],
+          "concrete_path": "/api/transfers/wh_bandung",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Transfer tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "transfer_id",
+              "collection": "warehouses",
+              "id": "wh_surabaya"
+            }
+          ],
+          "concrete_path": "/api/transfers/wh_surabaya",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Transfer tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "transfer_id",
+              "collection": "warehouses",
+              "id": "wh_tangerang"
+            }
+          ],
+          "concrete_path": "/api/transfers/wh_tangerang",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Transfer tidak ditemukan"
+        }
+      ]
+    },
+    {
+      "path": "/api/purchase-orders/{po_id}",
+      "handler": "routers.purchase_orders.get_purchase_order",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "po_id",
+              "collection": "purchase_orders",
+              "id": "po_001"
+            }
+          ],
+          "concrete_path": "/api/purchase-orders/po_001",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/inbound/tasks/{task_id}/uom-options",
+      "handler": "routers.inbound_receiving_extra.inbound_uom_options",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "task_id",
+              "collection": "wms_tasks",
+              "id": "wms_c912bedca3d9"
+            }
+          ],
+          "concrete_path": "/api/inbound/tasks/wms_c912bedca3d9/uom-options",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/inbound/po/{po_id}/receiving-goods-document",
+      "handler": "routers.inbound_receiving_extra.generate_receiving_goods_document",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "po_id",
+              "collection": "purchase_orders",
+              "id": "po_001"
+            }
+          ],
+          "concrete_path": "/api/inbound/po/po_001/receiving-goods-document",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}/label-pattern",
+      "handler": "routers.inbound_scan_label.get_label_pattern",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "supplier_id",
+              "collection": "suppliers",
+              "id": "sup_860fe26ad30c"
+            }
+          ],
+          "concrete_path": "/api/suppliers/sup_860fe26ad30c/label-pattern",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/inbound/tasks/{task_id}/scanned-rolls",
+      "handler": "routers.inbound_scan_label.list_scanned_rolls",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "task_id",
+              "collection": "inventory_rolls",
+              "id": "roll_80d5c1fc3b0b"
+            }
+          ],
+          "concrete_path": "/api/inbound/tasks/roll_80d5c1fc3b0b/scanned-rolls",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Inbound task tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "task_id",
+              "collection": "inventory_rolls",
+              "id": "roll_3974ae28e4a6"
+            }
+          ],
+          "concrete_path": "/api/inbound/tasks/roll_3974ae28e4a6/scanned-rolls",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Inbound task tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "task_id",
+              "collection": "inventory_rolls",
+              "id": "roll_b521f69e8831"
+            }
+          ],
+          "concrete_path": "/api/inbound/tasks/roll_b521f69e8831/scanned-rolls",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Inbound task tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "task_id",
+              "collection": "inventory_rolls",
+              "id": "roll_96e39b425f2a"
+            }
+          ],
+          "concrete_path": "/api/inbound/tasks/roll_96e39b425f2a/scanned-rolls",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Inbound task tidak ditemukan"
+        }
+      ]
+    },
+    {
+      "path": "/api/goods-receipts/dn-profiles/{partner_id}",
+      "handler": "routers.goods_receipts.grn_dn_profile",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for partner_id"
+    },
+    {
+      "path": "/api/goods-receipts/{grn_id}/rolls",
+      "handler": "routers.goods_receipts.grn_rolls",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "grn_id",
+              "collection": "inventory_rolls",
+              "id": "roll_80d5c1fc3b0b"
+            }
+          ],
+          "concrete_path": "/api/goods-receipts/roll_80d5c1fc3b0b/rolls",
+          "http_status": 403,
+          "content_type": "application/json",
+          "detail": "Permission ditolak: goods_receipt.view"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "grn_id",
+              "collection": "inventory_rolls",
+              "id": "roll_3974ae28e4a6"
+            }
+          ],
+          "concrete_path": "/api/goods-receipts/roll_3974ae28e4a6/rolls",
+          "http_status": 403,
+          "content_type": "application/json",
+          "detail": "Permission ditolak: goods_receipt.view"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "grn_id",
+              "collection": "inventory_rolls",
+              "id": "roll_b521f69e8831"
+            }
+          ],
+          "concrete_path": "/api/goods-receipts/roll_b521f69e8831/rolls",
+          "http_status": 403,
+          "content_type": "application/json",
+          "detail": "Permission ditolak: goods_receipt.view"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "grn_id",
+              "collection": "inventory_rolls",
+              "id": "roll_96e39b425f2a"
+            }
+          ],
+          "concrete_path": "/api/goods-receipts/roll_96e39b425f2a/rolls",
+          "http_status": 403,
+          "content_type": "application/json",
+          "detail": "Permission ditolak: goods_receipt.view"
+        }
+      ]
+    },
+    {
+      "path": "/api/goods-receipts/{grn_id}",
+      "handler": "routers.goods_receipts.get_grn",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for grn_id"
+    },
+    {
+      "path": "/api/goods-receipts/{grn_id}/targets",
+      "handler": "routers.goods_receipts.grn_targets",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "grn_id",
+              "collection": "wms_tasks",
+              "id": "wms_c912bedca3d9"
+            }
+          ],
+          "concrete_path": "/api/goods-receipts/wms_c912bedca3d9/targets",
+          "http_status": 403,
+          "content_type": "application/json",
+          "detail": "Permission ditolak: goods_receipt.review"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "grn_id",
+              "collection": "wms_tasks",
+              "id": "wms_5dffaf4b5889"
+            }
+          ],
+          "concrete_path": "/api/goods-receipts/wms_5dffaf4b5889/targets",
+          "http_status": 403,
+          "content_type": "application/json",
+          "detail": "Permission ditolak: goods_receipt.review"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "grn_id",
+              "collection": "wms_tasks",
+              "id": "wms_284f2dd49345"
+            }
+          ],
+          "concrete_path": "/api/goods-receipts/wms_284f2dd49345/targets",
+          "http_status": 403,
+          "content_type": "application/json",
+          "detail": "Permission ditolak: goods_receipt.review"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "grn_id",
+              "collection": "wms_tasks",
+              "id": "wms_d050a833279c"
+            }
+          ],
+          "concrete_path": "/api/goods-receipts/wms_d050a833279c/targets",
+          "http_status": 403,
+          "content_type": "application/json",
+          "detail": "Permission ditolak: goods_receipt.review"
+        }
+      ]
+    },
+    {
+      "path": "/api/goods-receipts/{grn_id}/files/{page}",
+      "handler": "routers.goods_receipts.get_file",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for grn_id,page"
+    },
+    {
+      "path": "/api/ocr-samples/runs/{run_id}",
+      "handler": "routers.ocr_samples.get_run",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for run_id"
+    },
+    {
+      "path": "/api/ocr-samples/{sample_id}/files/{page}",
+      "handler": "routers.ocr_samples.sample_file",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for sample_id,page"
+    },
+    {
+      "path": "/api/shipments/{shipment_id}/surat-jalan",
+      "handler": "routers.outbound_picking_extra.shipment_surat_jalan",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "shipment_id",
+              "collection": "shipments",
+              "id": "shp_bd458e2b18c6"
+            }
+          ],
+          "concrete_path": "/api/shipments/shp_bd458e2b18c6/surat-jalan",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "path": "/api/outbound/so/{order_id}/surat-jalan",
+      "handler": "routers.outbound_picking_extra.generate_surat_jalan",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/outbound/so/so_001/surat-jalan",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "path": "/api/outbound/so/{order_id}/loading-check",
+      "handler": "routers.outbound_picking.get_loading_check",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/outbound/so/so_001/loading-check",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/entities/{entity_id}",
+      "handler": "routers.entities.get_entity",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "entity_id",
+              "collection": "business_entities",
+              "id": "ent_ksc"
+            }
+          ],
+          "concrete_path": "/api/entities/ent_ksc",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/entities/{entity_id}/readiness",
+      "handler": "routers.entities.get_readiness",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "entity_id",
+              "collection": "business_entities",
+              "id": "ent_ksc"
+            }
+          ],
+          "concrete_path": "/api/entities/ent_ksc/readiness",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/entities/{entity_id}/deactivation-impact",
+      "handler": "routers.entities.get_deactivation_impact",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "entity_id",
+              "collection": "business_entities",
+              "id": "ent_ksc"
+            }
+          ],
+          "concrete_path": "/api/entities/ent_ksc/deactivation-impact",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/entities/{entity_id}/audit",
+      "handler": "routers.entities.get_entity_audit",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "entity_id",
+              "collection": "business_entities",
+              "id": "ent_ksc"
+            }
+          ],
+          "concrete_path": "/api/entities/ent_ksc/audit",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/settings/compute-tax",
+      "handler": "routers.settings.compute_tax_endpoint",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for subtotal"
+    },
+    {
+      "path": "/api/settings/evaluate-approval",
+      "handler": "routers.settings.evaluate_approval_endpoint",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_type,amount"
+    },
+    {
+      "path": "/api/price-approvals/hint",
+      "handler": "routers.price_approvals.price_hint",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for product_id,price"
+    },
+    {
+      "path": "/api/price-approvals/effective",
+      "handler": "routers.price_approvals.effective_price",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for customer_id,product_id"
+    },
+    {
+      "path": "/api/price-approvals/{approval_id}",
+      "handler": "routers.price_approvals.get_price_approval",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "approval_id",
+              "collection": "price_approvals",
+              "id": "pra_7d0f89c454e4"
+            }
+          ],
+          "concrete_path": "/api/price-approvals/pra_7d0f89c454e4",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/price-approvals/{approval_id}/attachments/{att_id}/download",
+      "handler": "routers.price_approvals.download_attachment",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "approval_id",
+              "collection": "price_approvals",
+              "id": "pra_7d0f89c454e4"
+            },
+            {
+              "param": "att_id",
+              "collection": "price_approvals",
+              "id": "pra_7d0f89c454e4"
+            }
+          ],
+          "concrete_path": "/api/price-approvals/pra_7d0f89c454e4/attachments/pra_7d0f89c454e4/download",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Lampiran tidak ditemukan"
+        }
+      ]
+    },
+    {
+      "path": "/api/tax-invoices/{fkt_id}",
+      "handler": "routers.tax_invoices.get_tax_invoice",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "fkt_id",
+              "collection": "tax_invoices",
+              "id": "fkt_b732c0b8183b"
+            }
+          ],
+          "concrete_path": "/api/tax-invoices/fkt_b732c0b8183b",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/tax-invoices/{fkt_id}/document",
+      "handler": "routers.tax_invoices.faktur_document",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "fkt_id",
+              "collection": "tax_invoices",
+              "id": "fkt_b732c0b8183b"
+            }
+          ],
+          "concrete_path": "/api/tax-invoices/fkt_b732c0b8183b/document",
+          "http_status": 200,
+          "content_type": "text/html; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "path": "/api/credit-notes/{cn_id}",
+      "handler": "routers.sales_returns.get_credit_note",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "cn_id",
+              "collection": "credit_notes",
+              "id": "cn_cb0f34928767"
+            }
+          ],
+          "concrete_path": "/api/credit-notes/cn_cb0f34928767",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/sales-returns/{return_id}",
+      "handler": "routers.sales_returns.get_return",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "return_id",
+              "collection": "sales_returns",
+              "id": "sret_28b0f7aaf192"
+            }
+          ],
+          "concrete_path": "/api/sales-returns/sret_28b0f7aaf192",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/sales-returns/{return_id}/quarantine",
+      "handler": "routers.sales_returns.list_quarantine_rolls",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "return_id",
+              "collection": "sales_returns",
+              "id": "sret_28b0f7aaf192"
+            }
+          ],
+          "concrete_path": "/api/sales-returns/sret_28b0f7aaf192/quarantine",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/returns/chain/{doc_id}",
+      "handler": "routers.sales_returns.return_chain",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_id"
+    },
+    {
+      "path": "/api/sales-returns/{return_id}/attachments/{att_id}/download",
+      "handler": "routers.sales_returns.download_attachment",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "return_id",
+              "collection": "sales_returns",
+              "id": "sret_28b0f7aaf192"
+            },
+            {
+              "param": "att_id",
+              "collection": "sales_returns",
+              "id": "sret_28b0f7aaf192"
+            }
+          ],
+          "concrete_path": "/api/sales-returns/sret_28b0f7aaf192/attachments/sret_28b0f7aaf192/download",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Lampiran tidak ditemukan"
+        }
+      ]
+    },
+    {
+      "path": "/api/special-orders/{order_id}",
+      "handler": "routers.special_orders.get_special_order",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "special_orders",
+              "id": "sord_6ab9ef6cff0b"
+            }
+          ],
+          "concrete_path": "/api/special-orders/sord_6ab9ef6cff0b",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/special-orders/{order_id}/references/{file_id}",
+      "handler": "routers.special_orders.get_od_reference",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "special_orders",
+              "id": "sord_6ab9ef6cff0b"
+            },
+            {
+              "param": "file_id",
+              "collection": "special_orders",
+              "id": "sord_6ab9ef6cff0b"
+            }
+          ],
+          "concrete_path": "/api/special-orders/sord_6ab9ef6cff0b/references/sord_6ab9ef6cff0b",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Special order tidak ditemukan"
+        }
+      ]
+    },
+    {
+      "path": "/api/special-orders/{order_id}/customer-decision/evidence/{file_id}",
+      "handler": "routers.special_orders.customer_decision_evidence_file",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "special_orders",
+              "id": "sord_6ab9ef6cff0b"
+            },
+            {
+              "param": "file_id",
+              "collection": "special_orders",
+              "id": "sord_6ab9ef6cff0b"
+            }
+          ],
+          "concrete_path": "/api/special-orders/sord_6ab9ef6cff0b/customer-decision/evidence/sord_6ab9ef6cff0b",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Bukti tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/special-orders/{order_id}/pricing",
+      "handler": "routers.special_orders.pricing_preview",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "special_orders",
+              "id": "sord_6ab9ef6cff0b"
+            }
+          ],
+          "concrete_path": "/api/special-orders/sord_6ab9ef6cff0b/pricing",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/approval-rules/{rule_id}",
+      "handler": "routers.approval_rules.get_approval_rule",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "rule_id",
+              "collection": "approval_rules",
+              "id": "aprule_2cb7d833fc5c"
+            }
+          ],
+          "concrete_path": "/api/approval-rules/aprule_2cb7d833fc5c",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}",
+      "handler": "routers.suppliers.get_supplier",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "supplier_id",
+              "collection": "suppliers",
+              "id": "sup_860fe26ad30c"
+            }
+          ],
+          "concrete_path": "/api/suppliers/sup_860fe26ad30c",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}/price-list",
+      "handler": "routers.suppliers.list_supplier_price_list",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "supplier_id",
+              "collection": "suppliers",
+              "id": "sup_860fe26ad30c"
+            }
+          ],
+          "concrete_path": "/api/suppliers/sup_860fe26ad30c/price-list",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}/scorecard",
+      "handler": "routers.suppliers.get_supplier_scorecard",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "supplier_id",
+              "collection": "suppliers",
+              "id": "sup_860fe26ad30c"
+            }
+          ],
+          "concrete_path": "/api/suppliers/sup_860fe26ad30c/scorecard",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}/360",
+      "handler": "routers.suppliers.get_supplier_360",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "supplier_id",
+              "collection": "suppliers",
+              "id": "sup_860fe26ad30c"
+            }
+          ],
+          "concrete_path": "/api/suppliers/sup_860fe26ad30c/360",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}/return-policy",
+      "handler": "routers.suppliers.get_supplier_return_policy",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "supplier_id",
+              "collection": "suppliers",
+              "id": "sup_860fe26ad30c"
+            }
+          ],
+          "concrete_path": "/api/suppliers/sup_860fe26ad30c/return-policy",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/purchase-returns/source-rolls",
+      "handler": "routers.purchase_returns.purchase_return_source_rolls",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for product_id"
+    },
+    {
+      "path": "/api/purchase-returns/{return_id}",
+      "handler": "routers.purchase_returns.get_purchase_return",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "return_id",
+              "collection": "purchase_returns",
+              "id": "pret_aafd800a9b2a"
+            }
+          ],
+          "concrete_path": "/api/purchase-returns/pret_aafd800a9b2a",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/purchase-requisitions/{pr_id}",
+      "handler": "routers.purchase_requisitions.get_requisition",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "pr_id",
+              "collection": "purchase_requisitions",
+              "id": "pr_6628fd6f9dc2"
+            }
+          ],
+          "concrete_path": "/api/purchase-requisitions/pr_6628fd6f9dc2",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/purchase-requisitions/{pr_id}/sourcing",
+      "handler": "routers.purchase_requisitions.pr_sourcing",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "pr_id",
+              "collection": "purchase_requisitions",
+              "id": "pr_6628fd6f9dc2"
+            }
+          ],
+          "concrete_path": "/api/purchase-requisitions/pr_6628fd6f9dc2/sourcing",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/purchase-requisitions/{pr_id}/makloon-prefill",
+      "handler": "routers.purchase_requisitions.makloon_prefill",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for line_no"
+    },
+    {
+      "path": "/api/purchase-orders/{po_id}/billing-context",
+      "handler": "routers.vendor_bills.po_billing_context",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "po_id",
+              "collection": "purchase_orders",
+              "id": "po_001"
+            }
+          ],
+          "concrete_path": "/api/purchase-orders/po_001/billing-context",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/vendor-bills/{bill_id}",
+      "handler": "routers.vendor_bills.get_vendor_bill",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "bill_id",
+              "collection": "vendor_bills",
+              "id": "vb_76edcb8010d1"
+            }
+          ],
+          "concrete_path": "/api/vendor-bills/vb_76edcb8010d1",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/purchase-orders/{po_id}/landed-cost-context",
+      "handler": "routers.landed_cost.po_landed_cost_context",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "po_id",
+              "collection": "purchase_orders",
+              "id": "po_001"
+            }
+          ],
+          "concrete_path": "/api/purchase-orders/po_001/landed-cost-context",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/landed-costs/{voucher_id}",
+      "handler": "routers.landed_cost.get_landed_cost",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "voucher_id",
+              "collection": "landed_cost_vouchers",
+              "id": "lcv_713e5cb5f14f"
+            }
+          ],
+          "concrete_path": "/api/landed-costs/lcv_713e5cb5f14f",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/input-tax-invoices/{fpm_id}",
+      "handler": "routers.input_tax.get_input_tax",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "fpm_id",
+              "collection": "tax_invoices_in",
+              "id": "fpm_c61759f9d736"
+            }
+          ],
+          "concrete_path": "/api/input-tax-invoices/fpm_c61759f9d736",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/rfqs/{rfq_id}",
+      "handler": "routers.rfq.get_rfq",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "rfq_id",
+              "collection": "rfqs",
+              "id": "rfq_6f10cc7a627b"
+            }
+          ],
+          "concrete_path": "/api/rfqs/rfq_6f10cc7a627b",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/rfqs/{rfq_id}/compare",
+      "handler": "routers.rfq.compare_rfq",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "rfq_id",
+              "collection": "rfqs",
+              "id": "rfq_6f10cc7a627b"
+            }
+          ],
+          "concrete_path": "/api/rfqs/rfq_6f10cc7a627b/compare",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/inbound/qc/tasks/{task_id}/rolls",
+      "handler": "routers.qc_inspection.list_task_rolls",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "task_id",
+              "collection": "inventory_rolls",
+              "id": "roll_80d5c1fc3b0b"
+            }
+          ],
+          "concrete_path": "/api/inbound/qc/tasks/roll_80d5c1fc3b0b/rolls",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Inbound task tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "task_id",
+              "collection": "inventory_rolls",
+              "id": "roll_3974ae28e4a6"
+            }
+          ],
+          "concrete_path": "/api/inbound/qc/tasks/roll_3974ae28e4a6/rolls",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Inbound task tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "task_id",
+              "collection": "inventory_rolls",
+              "id": "roll_b521f69e8831"
+            }
+          ],
+          "concrete_path": "/api/inbound/qc/tasks/roll_b521f69e8831/rolls",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Inbound task tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "task_id",
+              "collection": "inventory_rolls",
+              "id": "roll_96e39b425f2a"
+            }
+          ],
+          "concrete_path": "/api/inbound/qc/tasks/roll_96e39b425f2a/rolls",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Inbound task tidak ditemukan"
+        }
+      ]
+    },
+    {
+      "path": "/api/inbound/qc/tasks/{task_id}/plan",
+      "handler": "routers.qc_inspection.get_qc_plan",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "task_id",
+              "collection": "wms_tasks",
+              "id": "wms_c912bedca3d9"
+            }
+          ],
+          "concrete_path": "/api/inbound/qc/tasks/wms_c912bedca3d9/plan",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/inventory/rolls/{roll_id}/grade-history",
+      "handler": "routers.qc_inspection.roll_grade_history",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "roll_id",
+              "collection": "inventory_rolls",
+              "id": "roll_80d5c1fc3b0b"
+            }
+          ],
+          "concrete_path": "/api/inventory/rolls/roll_80d5c1fc3b0b/grade-history",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/customers/{customer_id}/360",
+      "handler": "routers.crm.get_customer_360",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "customer_id",
+              "collection": "customers",
+              "id": "cust_toko_kain"
+            }
+          ],
+          "concrete_path": "/api/customers/cust_toko_kain/360",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/credit-overrides/{override_id}",
+      "handler": "routers.crm.get_credit_override",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for override_id"
+    },
+    {
+      "path": "/api/customers/{customer_id}/credit-status",
+      "handler": "routers.crm.get_credit_status",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "customer_id",
+              "collection": "customers",
+              "id": "cust_toko_kain"
+            }
+          ],
+          "concrete_path": "/api/customers/cust_toko_kain/credit-status",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/costing/wac/{product_id}",
+      "handler": "routers.costing.get_wac",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "product_id",
+              "collection": "products",
+              "id": "prod_batik_mega"
+            }
+          ],
+          "concrete_path": "/api/costing/wac/prod_batik_mega",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/ar-receipts/open-orders",
+      "handler": "routers.ar_receipts.open_orders",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for customer_id"
+    },
+    {
+      "path": "/api/ar-receipts/deposit",
+      "handler": "routers.ar_receipts.deposit_balance",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for customer_id"
+    },
+    {
+      "path": "/api/ar-receipts/{receipt_id}",
+      "handler": "routers.ar_receipts.get_receipt",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "receipt_id",
+              "collection": "ar_receipts",
+              "id": "arc_a487d59a1765"
+            }
+          ],
+          "concrete_path": "/api/ar-receipts/arc_a487d59a1765",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/ar/aging/{customer_id}",
+      "handler": "routers.ar_aging.ar_aging_detail",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "customer_id",
+              "collection": "customers",
+              "id": "cust_toko_kain"
+            }
+          ],
+          "concrete_path": "/api/ar/aging/cust_toko_kain",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/bank-accounts/{account_id}/ledger",
+      "handler": "routers.bank.bank_account_ledger",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "account_id",
+              "collection": "bank_accounts",
+              "id": "bank_bca_ksc"
+            }
+          ],
+          "concrete_path": "/api/bank-accounts/bank_bca_ksc/ledger",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/gl/accounts/{code}/ledger",
+      "handler": "routers.gl.gl_account_ledger",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "code",
+              "collection": "gl_accounts",
+              "id": "gla_a48fec3831e6"
+            }
+          ],
+          "concrete_path": "/api/gl/accounts/1-0000/ledger",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/gl/journal/{entry_id}",
+      "handler": "routers.gl.get_journal",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "entry_id",
+              "collection": "journal_entries",
+              "id": "je_bea187e1149f"
+            }
+          ],
+          "concrete_path": "/api/gl/journal/je_bea187e1149f",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/product-templates/{template_id}/summary",
+      "handler": "routers.product_templates.template_summary",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for template_id"
+    },
+    {
+      "path": "/api/product-templates/{template_id}",
+      "handler": "routers.product_templates.get_template",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for template_id"
+    },
+    {
+      "path": "/api/stock/atp",
+      "handler": "routers.stock_buckets.stock_atp",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for product_id"
+    },
+    {
+      "path": "/api/pos/frequently-bought-together",
+      "handler": "routers.pos.get_frequently_bought_together",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for product_id"
+    },
+    {
+      "path": "/api/pos/substitutes",
+      "handler": "routers.pos.get_substitutes",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for product_id"
+    },
+    {
+      "path": "/api/sales-orders/{order_id}/approvals/{approval_id}/evidence/{att_id}/download",
+      "handler": "routers.so_approvals.download_evidence",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            },
+            {
+              "param": "approval_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            },
+            {
+              "param": "att_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/sales-orders/so_001/approvals/so_001/evidence/so_001/download",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Entri approval tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/approvals/queue-board/{key}",
+      "handler": "routers.so_approvals.approvals_queue_board",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for key"
+    },
+    {
+      "path": "/api/hr/employees/{employee_id}",
+      "handler": "routers.hr.get_employee",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "employee_id",
+              "collection": "users",
+              "id": "user_admin_01"
+            }
+          ],
+          "concrete_path": "/api/hr/employees/user_admin_01",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Karyawan tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "employee_id",
+              "collection": "users",
+              "id": "user_sales_01"
+            }
+          ],
+          "concrete_path": "/api/hr/employees/user_sales_01",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Karyawan tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "employee_id",
+              "collection": "users",
+              "id": "user_manager_01"
+            }
+          ],
+          "concrete_path": "/api/hr/employees/user_manager_01",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Karyawan tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "employee_id",
+              "collection": "users",
+              "id": "user_wh_01"
+            }
+          ],
+          "concrete_path": "/api/hr/employees/user_wh_01",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Karyawan tidak ditemukan"
+        }
+      ]
+    },
+    {
+      "path": "/api/hr/employees/{employee_id}/360",
+      "handler": "routers.hr.get_employee_360",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "employee_id",
+              "collection": "users",
+              "id": "user_admin_01"
+            }
+          ],
+          "concrete_path": "/api/hr/employees/user_admin_01/360",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Karyawan tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "employee_id",
+              "collection": "users",
+              "id": "user_sales_01"
+            }
+          ],
+          "concrete_path": "/api/hr/employees/user_sales_01/360",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Karyawan tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "employee_id",
+              "collection": "users",
+              "id": "user_manager_01"
+            }
+          ],
+          "concrete_path": "/api/hr/employees/user_manager_01/360",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Karyawan tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "employee_id",
+              "collection": "users",
+              "id": "user_wh_01"
+            }
+          ],
+          "concrete_path": "/api/hr/employees/user_wh_01/360",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Karyawan tidak ditemukan"
+        }
+      ]
+    },
+    {
+      "path": "/api/hr/field-tracks",
+      "handler": "routers.hr_tracking.track_history",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for employee_id"
+    },
+    {
+      "path": "/api/hr/payroll/runs/{run_id}",
+      "handler": "routers.hr_payroll.get_payroll_run",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for run_id"
+    },
+    {
+      "path": "/api/hr/payslips/{slip_id}",
+      "handler": "routers.hr_payroll.get_payslip",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for slip_id"
+    },
+    {
+      "path": "/api/hr/payslips/{slip_id}/pdf",
+      "handler": "routers.hr_payroll.payslip_pdf",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "slip_id",
+              "collection": "business_entities",
+              "id": "ent_ksc"
+            }
+          ],
+          "concrete_path": "/api/hr/payslips/ent_ksc/pdf",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Slip gaji tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "slip_id",
+              "collection": "business_entities",
+              "id": "ent_kanda"
+            }
+          ],
+          "concrete_path": "/api/hr/payslips/ent_kanda/pdf",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Slip gaji tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/design-gallery/{gallery_id}",
+      "handler": "routers.design_gallery.get_gallery",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "gallery_id",
+              "collection": "design_gallery",
+              "id": "dsgn_6cd519d07153"
+            }
+          ],
+          "concrete_path": "/api/design-gallery/dsgn_6cd519d07153",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/design-gallery/{gallery_id}/files/{file_id}",
+      "handler": "routers.design_gallery.get_gallery_file",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "gallery_id",
+              "collection": "design_gallery",
+              "id": "dsgn_6cd519d07153"
+            },
+            {
+              "param": "file_id",
+              "collection": "design_gallery",
+              "id": "dsgn_6cd519d07153"
+            }
+          ],
+          "concrete_path": "/api/design-gallery/dsgn_6cd519d07153/files/dsgn_6cd519d07153",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "File tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/finance/closing/preview",
+      "handler": "routers.closing.preview_closing",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for period_type,period_key"
+    },
+    {
+      "path": "/api/finance/closing/status",
+      "handler": "routers.closing.closing_status",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for date"
+    },
+    {
+      "path": "/api/rfid/lookup",
+      "handler": "routers.rfid.lookup_code",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for code"
+    },
+    {
+      "path": "/api/rfid/roll-scans/{roll_id}",
+      "handler": "routers.rfid.get_roll_scans",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "roll_id",
+              "collection": "inventory_rolls",
+              "id": "roll_80d5c1fc3b0b"
+            }
+          ],
+          "concrete_path": "/api/rfid/roll-scans/roll_80d5c1fc3b0b",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/rfid/gate/{device_id}/status",
+      "handler": "routers.rfid.get_gate_status",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "device_id",
+              "collection": "rfid_devices",
+              "id": "rdev_601e63a65ac3"
+            }
+          ],
+          "concrete_path": "/api/rfid/gate/rdev_601e63a65ac3/status",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/rfid/print-jobs/{job_id}",
+      "handler": "routers.rfid.get_print_job",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for job_id"
+    },
+    {
+      "path": "/api/rfid/print-jobs/{job_id}/zpl",
+      "handler": "routers.rfid.get_print_job_zpl",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for job_id"
+    },
+    {
+      "path": "/api/rfid/cycle-counts/{cc_id}",
+      "handler": "routers.rfid.get_cc_detail",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for cc_id"
+    },
+    {
+      "path": "/api/putaway-orders/suggest",
+      "handler": "routers.putaway_orders.get_suggest",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for from_warehouse_id"
+    },
+    {
+      "path": "/api/fulfillment/wizard/{so_id}",
+      "handler": "routers.fulfillment.get_wizard",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "so_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/fulfillment/wizard/so_001",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/finance/budget-vs-actual",
+      "handler": "routers.budgets.budget_vs_actual",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [],
+          "concrete_path": "/api/finance/budget-vs-actual",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/enums/{name}",
+      "handler": "routers.enums.get_enum",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for name"
+    },
+    {
+      "path": "/api/marketing/posts/{pid}",
+      "handler": "routers.marketing.get_post",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for pid"
+    },
+    {
+      "path": "/api/marketing/posts/{pid}/attachments/{fid}",
+      "handler": "routers.marketing.attachment_file",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for pid,fid"
+    },
+    {
+      "path": "/api/color-library/customer-colors/{customer_id}/card",
+      "handler": "routers.color_library.customer_color_card",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "customer_id",
+              "collection": "customers",
+              "id": "cust_toko_kain"
+            }
+          ],
+          "concrete_path": "/api/color-library/customer-colors/cust_toko_kain/card",
+          "http_status": 200,
+          "content_type": "application/pdf"
+        }
+      ]
+    },
+    {
+      "path": "/api/color-library/nearest",
+      "handler": "routers.color_library.nearest_color",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for hex"
+    },
+    {
+      "path": "/api/color-library/{color_id}/links",
+      "handler": "routers.color_library.color_links",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "color_id",
+              "collection": "color_library",
+              "id": "col_kn_wht_01"
+            }
+          ],
+          "concrete_path": "/api/color-library/col_kn_wht_01/links",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/access/roles/{rid}",
+      "handler": "routers.access_roles.get_role",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "rid",
+              "collection": "users",
+              "id": "user_admin_01"
+            }
+          ],
+          "concrete_path": "/api/access/roles/user_admin_01",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Peran tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "rid",
+              "collection": "users",
+              "id": "user_sales_01"
+            }
+          ],
+          "concrete_path": "/api/access/roles/user_sales_01",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Peran tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "rid",
+              "collection": "users",
+              "id": "user_manager_01"
+            }
+          ],
+          "concrete_path": "/api/access/roles/user_manager_01",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Peran tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "rid",
+              "collection": "users",
+              "id": "user_wh_01"
+            }
+          ],
+          "concrete_path": "/api/access/roles/user_wh_01",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Peran tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/products/{product_id}/media",
+      "handler": "routers.product_media.list_media",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "product_id",
+              "collection": "products",
+              "id": "prod_batik_mega"
+            }
+          ],
+          "concrete_path": "/api/products/prod_batik_mega/media",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/products/{product_id}/media/{media_id}/content",
+      "handler": "routers.product_media.content",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "product_id",
+              "collection": "products",
+              "id": "prod_batik_mega"
+            },
+            {
+              "param": "media_id",
+              "collection": "products",
+              "id": "prod_batik_mega"
+            }
+          ],
+          "concrete_path": "/api/products/prod_batik_mega/media/prod_batik_mega/content",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Foto tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/products/{product_id}/catalog-relations",
+      "handler": "routers.product_media.relations",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "product_id",
+              "collection": "products",
+              "id": "prod_batik_mega"
+            }
+          ],
+          "concrete_path": "/api/products/prod_batik_mega/catalog-relations",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/saga-locks/{collection}/{doc_id}/inspect",
+      "handler": "routers.saga_locks.inspect_saga_lock",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for collection,doc_id"
+    },
+    {
+      "path": "/api/wilayah/regencies",
+      "handler": "routers.wilayah.regencies",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for province_code"
+    },
+    {
+      "path": "/api/wilayah/districts",
+      "handler": "routers.wilayah.districts",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for regency_code"
+    },
+    {
+      "path": "/api/wilayah/villages",
+      "handler": "routers.wilayah.villages",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for district_code"
+    },
+    {
+      "path": "/api/wilayah/postal-code/{code}",
+      "handler": "routers.wilayah.postal_code",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for code"
+    },
+    {
+      "path": "/api/ai/results/{result_id}",
+      "handler": "routers.ai_analytics.get_result",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for result_id"
+    },
+    {
+      "path": "/api/ai/sessions/{session_id}",
+      "handler": "routers.ai_analytics.get_session",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for session_id"
+    },
+    {
+      "path": "/api/ai/results/{result_id}/export.xlsx",
+      "handler": "routers.ai_analytics.export_result",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for result_id"
+    },
+    {
+      "path": "/api/ai/schedule-runs/{run_id}",
+      "handler": "routers.ai_analytics.get_schedule_run",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for run_id"
+    },
+    {
+      "path": "/api/ai/actions/{pid}",
+      "handler": "routers.ai_assist.get_action",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for pid"
+    },
+    {
+      "path": "/api/sample-quote",
+      "handler": "routers.sample_sales.sample_quote",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for product_id,length"
+    },
+    {
+      "path": "/api/makloons/{makloon_id}",
+      "handler": "routers.makloons.get_makloon",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "makloon_id",
+              "collection": "makloons",
+              "id": "mak_seed_tenun"
+            }
+          ],
+          "concrete_path": "/api/makloons/mak_seed_tenun",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/makloons/{makloon_id}/scorecard",
+      "handler": "routers.makloons.get_makloon_scorecard",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "makloon_id",
+              "collection": "makloons",
+              "id": "mak_seed_tenun"
+            }
+          ],
+          "concrete_path": "/api/makloons/mak_seed_tenun/scorecard",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/process-stages/for-line/{line_code}",
+      "handler": "routers.makloon_orders.process_stages_for_line",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for line_code"
+    },
+    {
+      "path": "/api/makloon-orders/{mko_id}",
+      "handler": "routers.makloon_orders.get_order",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "mko_id",
+              "collection": "makloon_orders",
+              "id": "mko_68aad62d20f0"
+            }
+          ],
+          "concrete_path": "/api/makloon-orders/mko_68aad62d20f0",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/cash-advances/{ca_id}",
+      "handler": "routers.cash_advances.get_cash_advance",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for ca_id"
+    },
+    {
+      "path": "/api/cash-advance-settlements/{stl_id}",
+      "handler": "routers.cash_advances.get_settlement",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for stl_id"
+    },
+    {
+      "path": "/api/pdf/render/{doc_type}/{source_id}",
+      "handler": "routers.pdf.render_document",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_type,source_id"
+    },
+    {
+      "path": "/api/pdf/sample/{doc_type}",
+      "handler": "routers.pdf.get_sample",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_type"
+    },
+    {
+      "path": "/api/pdf/documents/{doc_type}",
+      "handler": "routers.pdf.list_documents",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_type"
+    },
+    {
+      "path": "/api/pdf/templates/{doc_type}",
+      "handler": "routers.pdf.get_template",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_type"
+    },
+    {
+      "path": "/api/pdf/branding/{entity_id}",
+      "handler": "routers.pdf.get_branding",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "entity_id",
+              "collection": "business_entities",
+              "id": "ent_ksc"
+            }
+          ],
+          "concrete_path": "/api/pdf/branding/ent_ksc",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/esign/signatures/{doc_type}/{source_id}",
+      "handler": "routers.esign.signatures",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_type,source_id"
+    },
+    {
+      "path": "/api/esign/verify/{code}",
+      "handler": "routers.esign.public_verify",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for code"
+    },
+    {
+      "path": "/api/deliveries/whatsapp/recipient/{doc_type}/{source_id}",
+      "handler": "routers.deliveries.wa_recipient",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_type,source_id"
+    },
+    {
+      "path": "/api/deliveries/{doc_type}/{source_id}",
+      "handler": "routers.deliveries.list_deliveries",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for doc_type,source_id"
+    },
+    {
+      "path": "/api/products/{product_id}/purchase-history",
+      "handler": "routers.product_traceability.product_purchase_history",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "product_id",
+              "collection": "products",
+              "id": "prod_batik_mega"
+            }
+          ],
+          "concrete_path": "/api/products/prod_batik_mega/purchase-history",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/sales-return-policies/eligibility",
+      "handler": "routers.return_policies.sales_return_eligibility",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for order_id"
+    },
+    {
+      "path": "/api/sales-return-policies/{policy_id}",
+      "handler": "routers.return_policies.get_sales_return_policy",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for policy_id"
+    },
+    {
+      "path": "/api/entity-masters/{kind}",
+      "handler": "routers.entity_masters.list_master_rows",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "kind",
+              "collection": "business_entities",
+              "id": "ent_ksc"
+            }
+          ],
+          "concrete_path": "/api/entity-masters/ent_ksc",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Master 'ent_ksc' tidak dikenal"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "kind",
+              "collection": "business_entities",
+              "id": "ent_kanda"
+            }
+          ],
+          "concrete_path": "/api/entity-masters/ent_kanda",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Master 'ent_kanda' tidak dikenal"
+        }
+      ]
+    },
+    {
+      "path": "/api/entity-masters/{kind}/effective",
+      "handler": "routers.entity_masters.list_master_effective",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for kind"
+    },
+    {
+      "path": "/api/store-credit/balance",
+      "handler": "routers.store_credit.get_balance",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for customer_id"
+    },
+    {
+      "path": "/api/store-credit/open-orders",
+      "handler": "routers.store_credit.open_orders",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for customer_id"
+    },
+    {
+      "path": "/api/bank-reconciliation/lines",
+      "handler": "routers.bank_reconciliation.list_lines",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for bank_account_id"
+    },
+    {
+      "path": "/api/bank-reconciliation/lines/{line_id}/candidates",
+      "handler": "routers.bank_reconciliation.line_candidates",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "line_id",
+              "collection": "bank_statement_lines",
+              "id": "stmtline_65b06cd79ef5"
+            }
+          ],
+          "concrete_path": "/api/bank-reconciliation/lines/stmtline_65b06cd79ef5/candidates",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/bank-reconciliation/summary",
+      "handler": "routers.bank_reconciliation.recon_summary",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for bank_account_id"
+    },
+    {
+      "path": "/api/finance-cases/{case_id}",
+      "handler": "routers.finance_cases.get_case",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for case_id"
+    },
+    {
+      "path": "/api/contra-bons/prepare",
+      "handler": "routers.contra_bons.contra_bon_prepare",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for supplier_id"
+    },
+    {
+      "path": "/api/contra-bons/bank-line-candidates/{line_id}",
+      "handler": "routers.contra_bons.contra_bon_bank_candidates",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "line_id",
+              "collection": "bank_statement_lines",
+              "id": "stmtline_65b06cd79ef5"
+            }
+          ],
+          "concrete_path": "/api/contra-bons/bank-line-candidates/stmtline_65b06cd79ef5",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/contra-bons/{cb_id}",
+      "handler": "routers.contra_bons.get_contra_bon",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for cb_id"
+    },
+    {
+      "path": "/api/contra-bons/{cb_id}/receipt",
+      "handler": "routers.contra_bons.contra_bon_receipt",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "cb_id",
+              "collection": "wms_tasks",
+              "id": "wms_c912bedca3d9"
+            }
+          ],
+          "concrete_path": "/api/contra-bons/wms_c912bedca3d9/receipt",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Kontrabon tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "cb_id",
+              "collection": "wms_tasks",
+              "id": "wms_5dffaf4b5889"
+            }
+          ],
+          "concrete_path": "/api/contra-bons/wms_5dffaf4b5889/receipt",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Kontrabon tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "cb_id",
+              "collection": "wms_tasks",
+              "id": "wms_284f2dd49345"
+            }
+          ],
+          "concrete_path": "/api/contra-bons/wms_284f2dd49345/receipt",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Kontrabon tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "cb_id",
+              "collection": "wms_tasks",
+              "id": "wms_d050a833279c"
+            }
+          ],
+          "concrete_path": "/api/contra-bons/wms_d050a833279c/receipt",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Kontrabon tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/interco/transactions/{interco_id}",
+      "handler": "routers.interco.get_ict",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for interco_id"
+    },
+    {
+      "path": "/api/interco/transactions/{interco_id}/journal",
+      "handler": "routers.interco.journal_ict",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "interco_id",
+              "collection": "journal_entries",
+              "id": "je_bea187e1149f"
+            }
+          ],
+          "concrete_path": "/api/interco/transactions/je_bea187e1149f/journal",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Transaksi antar-PT tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "interco_id",
+              "collection": "journal_entries",
+              "id": "je_6c3d501b32ba"
+            }
+          ],
+          "concrete_path": "/api/interco/transactions/je_6c3d501b32ba/journal",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Transaksi antar-PT tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "interco_id",
+              "collection": "journal_entries",
+              "id": "je_9303696dc592"
+            }
+          ],
+          "concrete_path": "/api/interco/transactions/je_9303696dc592/journal",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Transaksi antar-PT tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "interco_id",
+              "collection": "journal_entries",
+              "id": "je_316f4b626661"
+            }
+          ],
+          "concrete_path": "/api/interco/transactions/je_316f4b626661/journal",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Transaksi antar-PT tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/interco/accounts/{from_entity_id}/{to_entity_id}",
+      "handler": "routers.interco.get_ica",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for from_entity_id,to_entity_id"
+    },
+    {
+      "path": "/api/interco/settlements/{sid}",
+      "handler": "routers.interco.get_ics",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for sid"
+    },
+    {
+      "path": "/api/interco/transactions/{interco_id}/tax-invoice",
+      "handler": "routers.interco.get_interco_tax",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for interco_id"
+    },
+    {
+      "path": "/api/interco/transactions/{interco_id}/returnable",
+      "handler": "routers.interco.returnable_lines",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "interco_id",
+              "collection": "warehouse_transfers",
+              "id": "trn_seed_001"
+            }
+          ],
+          "concrete_path": "/api/interco/transactions/trn_seed_001/returnable",
+          "http_status": 400,
+          "content_type": "application/json",
+          "detail": "Transaksi tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "interco_id",
+              "collection": "warehouse_transfers",
+              "id": "trn_seed_002"
+            }
+          ],
+          "concrete_path": "/api/interco/transactions/trn_seed_002/returnable",
+          "http_status": 400,
+          "content_type": "application/json",
+          "detail": "Transaksi tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "interco_id",
+              "collection": "warehouse_transfers",
+              "id": "trn_seed_003"
+            }
+          ],
+          "concrete_path": "/api/interco/transactions/trn_seed_003/returnable",
+          "http_status": 400,
+          "content_type": "application/json",
+          "detail": "Transaksi tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "interco_id",
+              "collection": "warehouse_transfers",
+              "id": "trn_e3fe65089c7a"
+            }
+          ],
+          "concrete_path": "/api/interco/transactions/trn_e3fe65089c7a/returnable",
+          "http_status": 400,
+          "content_type": "application/json",
+          "detail": "Transaksi tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/interco/returns/{ret_id}",
+      "handler": "routers.interco.get_interco_return",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for ret_id"
+    },
+    {
+      "path": "/api/interco/loans/{loan_id}",
+      "handler": "routers.interco_loans.get_loan",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for loan_id"
+    },
+    {
+      "path": "/api/interco/non-trade/{from_entity_id}/{to_entity_id}",
+      "handler": "routers.interco_loans.non_trade_balance",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "from_entity_id",
+              "collection": "fin_fixed_assets",
+              "id": "fasset_2847c0477f46"
+            },
+            {
+              "param": "to_entity_id",
+              "collection": "fin_fixed_assets",
+              "id": "fasset_2847c0477f46"
+            }
+          ],
+          "concrete_path": "/api/interco/non-trade/fasset_2847c0477f46/fasset_2847c0477f46",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/internal-requests/{req_id}",
+      "handler": "routers.internal_requests.get_request",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for req_id"
+    },
+    {
+      "path": "/api/internal-requests/{req_id}/sources",
+      "handler": "routers.internal_requests.request_sources",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "req_id",
+              "collection": "business_entities",
+              "id": "ent_ksc"
+            }
+          ],
+          "concrete_path": "/api/internal-requests/ent_ksc/sources",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Permintaan internal tidak ditemukan."
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "req_id",
+              "collection": "business_entities",
+              "id": "ent_kanda"
+            }
+          ],
+          "concrete_path": "/api/internal-requests/ent_kanda/sources",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Permintaan internal tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/internal-requests-availability/{product_id}",
+      "handler": "routers.internal_requests.product_availability",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "product_id",
+              "collection": "products",
+              "id": "prod_batik_mega"
+            }
+          ],
+          "concrete_path": "/api/internal-requests-availability/prod_batik_mega",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/design-requests/{req_id}",
+      "handler": "routers.design_requests.get_request",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "req_id",
+              "collection": "design_requests",
+              "id": "dsr_7b622add18a0"
+            }
+          ],
+          "concrete_path": "/api/design-requests/dsr_7b622add18a0",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/design-requests/{req_id}/references/{file_id}",
+      "handler": "routers.design_requests.get_reference",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "req_id",
+              "collection": "design_requests",
+              "id": "dsr_7b622add18a0"
+            },
+            {
+              "param": "file_id",
+              "collection": "design_requests",
+              "id": "dsr_7b622add18a0"
+            }
+          ],
+          "concrete_path": "/api/design-requests/dsr_7b622add18a0/references/dsr_7b622add18a0",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Referensi tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/design-requests-for-so/{so_id}",
+      "handler": "routers.design_requests.requests_for_so",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "so_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/design-requests-for-so/so_001",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/design-gallery/{gallery_id}/history",
+      "handler": "routers.design_studio.design_history",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "gallery_id",
+              "collection": "design_gallery",
+              "id": "dsgn_6cd519d07153"
+            }
+          ],
+          "concrete_path": "/api/design-gallery/dsgn_6cd519d07153/history",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/logistics/deliveries/{delivery_id}",
+      "handler": "routers.logistics.get_delivery",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for delivery_id"
+    },
+    {
+      "path": "/api/logistics/deliveries/{delivery_id}/photos/{photo_id}",
+      "handler": "routers.logistics.get_photo",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for delivery_id,photo_id"
+    },
+    {
+      "path": "/api/inspections/{ins_id}",
+      "handler": "routers.inspections.get_inspection",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for ins_id"
+    },
+    {
+      "path": "/api/inspections/{ins_id}/pdf",
+      "handler": "routers.inspections.inspection_pdf",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for ins_id"
+    },
+    {
+      "path": "/api/fixed-assets/{asset_id}",
+      "handler": "routers.fixed_assets.get_fixed_asset",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "asset_id",
+              "collection": "fin_fixed_assets",
+              "id": "fasset_2847c0477f46"
+            }
+          ],
+          "concrete_path": "/api/fixed-assets/fasset_2847c0477f46",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/production/boms/{bom_id}",
+      "handler": "routers.production.get_bom",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "bom_id",
+              "collection": "mfg_boms",
+              "id": "bom_d245e60d59ba"
+            }
+          ],
+          "concrete_path": "/api/production/boms/bom_d245e60d59ba",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/production/work-orders/{wo_id}",
+      "handler": "routers.production.get_work_order",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "wo_id",
+              "collection": "mfg_work_orders",
+              "id": "wo_645a3cccf154"
+            }
+          ],
+          "concrete_path": "/api/production/work-orders/wo_645a3cccf154",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/lots/{lot_id}",
+      "handler": "routers.lots.get_lot",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "lot_id",
+              "collection": "inventory_lots",
+              "id": "lot_892e461520e2"
+            }
+          ],
+          "concrete_path": "/api/lots/lot_892e461520e2",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/lots/{lot_id}/genealogy",
+      "handler": "routers.lots.lot_genealogy",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "lot_id",
+              "collection": "inventory_lots",
+              "id": "lot_892e461520e2"
+            }
+          ],
+          "concrete_path": "/api/lots/lot_892e461520e2/genealogy",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/lots/{lot_id}/recall",
+      "handler": "routers.lots.lot_recall",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "lot_id",
+              "collection": "inventory_lots",
+              "id": "lot_892e461520e2"
+            }
+          ],
+          "concrete_path": "/api/lots/lot_892e461520e2/recall",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/rolls/{roll_id}/lot",
+      "handler": "routers.lots.roll_lot",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "roll_id",
+              "collection": "inventory_rolls",
+              "id": "roll_80d5c1fc3b0b"
+            }
+          ],
+          "concrete_path": "/api/rolls/roll_80d5c1fc3b0b/lot",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/supplier-contracts/{contract_id}",
+      "handler": "routers.supplier_contracts.get_contract",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for contract_id"
+    },
+    {
+      "path": "/api/supplier-items/lookup",
+      "handler": "routers.supplier_items.lookup_supplier_item",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for supplier_sku"
+    },
+    {
+      "path": "/api/supplier-items/{sid}",
+      "handler": "routers.supplier_items.get_supplier_item",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for sid"
+    },
+    {
+      "path": "/api/config/explain",
+      "handler": "routers.config.explain",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for key"
+    },
+    {
+      "path": "/api/amendments/doc/{doc_type}/{doc_id}",
+      "handler": "routers.amendments.by_document",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "doc_type",
+              "collection": "sales_orders",
+              "id": "so_001"
+            },
+            {
+              "param": "doc_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/amendments/doc/so_001/so_001",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/amendments/{amd_id}",
+      "handler": "routers.amendments.detail",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "amd_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/amendments/so_001",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Amandemen tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "amd_id",
+              "collection": "sales_orders",
+              "id": "so_002"
+            }
+          ],
+          "concrete_path": "/api/amendments/so_002",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Amandemen tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "amd_id",
+              "collection": "sales_orders",
+              "id": "so_003"
+            }
+          ],
+          "concrete_path": "/api/amendments/so_003",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Amandemen tidak ditemukan"
+        },
+        {
+          "resource_binding": [
+            {
+              "param": "amd_id",
+              "collection": "sales_orders",
+              "id": "so_004"
+            }
+          ],
+          "concrete_path": "/api/amendments/so_004",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Amandemen tidak ditemukan"
+        }
+      ]
+    },
+    {
+      "path": "/api/payment-plans/by-doc/{doc_type}/{doc_id}",
+      "handler": "routers.payment_plans.plan_by_doc",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "doc_type",
+              "collection": "sales_orders",
+              "id": "so_001"
+            },
+            {
+              "param": "doc_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/payment-plans/by-doc/so_001/so_001",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/penalties/{penalty_id}",
+      "handler": "routers.payment_plans.get_penalty",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for penalty_id"
+    },
+    {
+      "path": "/api/payment-variances/receipt/{receipt_id}",
+      "handler": "routers.payment_variance.by_receipt",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "receipt_id",
+              "collection": "ar_receipts",
+              "id": "arc_a487d59a1765"
+            }
+          ],
+          "concrete_path": "/api/payment-variances/receipt/arc_a487d59a1765",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/payment-variances/{decision_id}",
+      "handler": "routers.payment_variance.get_decision",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for decision_id"
+    },
+    {
+      "path": "/api/rnd/specs/{spec_id}",
+      "handler": "routers.rnd.get_spec",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for spec_id"
+    },
+    {
+      "path": "/api/rnd/specs/{spec_id}/required-tests",
+      "handler": "routers.rnd.spec_required_tests",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "spec_id",
+              "collection": "md_samples",
+              "id": "smp_2f9143e34885"
+            }
+          ],
+          "concrete_path": "/api/rnd/specs/smp_2f9143e34885/required-tests",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Spesifikasi tidak ditemukan."
+        }
+      ]
+    },
+    {
+      "path": "/api/rnd/samples/{sample_id}",
+      "handler": "routers.rnd.get_sample",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "sample_id",
+              "collection": "md_samples",
+              "id": "smp_2f9143e34885"
+            }
+          ],
+          "concrete_path": "/api/rnd/samples/smp_2f9143e34885",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/rnd/samples/{sample_id}/performers",
+      "handler": "routers.rnd.sample_performers",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "sample_id",
+              "collection": "md_samples",
+              "id": "smp_2f9143e34885"
+            }
+          ],
+          "concrete_path": "/api/rnd/samples/smp_2f9143e34885/performers",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/rnd/samples/{sample_id}/required-tests",
+      "handler": "routers.rnd.sample_required_tests",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "sample_id",
+              "collection": "md_samples",
+              "id": "smp_2f9143e34885"
+            }
+          ],
+          "concrete_path": "/api/rnd/samples/smp_2f9143e34885/required-tests",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/rnd/samples/{sample_id}/rounds/{round_id}/attachments/{file_id}",
+      "handler": "routers.rnd.download_round_file",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "sample_id",
+              "collection": "md_samples",
+              "id": "smp_2f9143e34885"
+            },
+            {
+              "param": "round_id",
+              "collection": "md_samples",
+              "id": "smp_2f9143e34885"
+            },
+            {
+              "param": "file_id",
+              "collection": "md_samples",
+              "id": "smp_2f9143e34885"
+            }
+          ],
+          "concrete_path": "/api/rnd/samples/smp_2f9143e34885/rounds/smp_2f9143e34885/attachments/smp_2f9143e34885",
+          "http_status": 404,
+          "content_type": "application/json",
+          "detail": "Round tidak ditemukan pada permintaan sample ini."
+        }
+      ]
+    },
+    {
+      "path": "/api/rnd/reports/designer-kpi/report",
+      "handler": "routers.rnd.designer_kpi_report_pdf",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for designer"
+    },
+    {
+      "path": "/api/customer-prices",
+      "handler": "routers.customer_prices.customer_price_grid",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for customer_id"
+    },
+    {
+      "path": "/api/customer-prices/quote",
+      "handler": "routers.customer_prices.customer_price_quote",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for customer_id"
+    },
+    {
+      "path": "/api/customer-prices/floor",
+      "handler": "routers.customer_prices.customer_price_floor",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for product_id"
+    },
+    {
+      "path": "/api/customer-prices/export",
+      "handler": "routers.customer_prices.customer_price_export",
+      "status": "not_executed",
+      "attempts": [],
+      "reason": "No coherent seed resource/query for customer_id"
+    },
+    {
+      "path": "/api/sales-orders/{order_id}/verification",
+      "handler": "routers.work_desks.verification_preview",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/sales-orders/so_001/verification",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    },
+    {
+      "path": "/api/sales-admin/orders/{order_id}/fulfillment",
+      "handler": "routers.work_desks.fulfillment_options",
+      "status": "executed",
+      "attempts": [
+        {
+          "resource_binding": [
+            {
+              "param": "order_id",
+              "collection": "sales_orders",
+              "id": "so_001"
+            }
+          ],
+          "concrete_path": "/api/sales-admin/orders/so_001/fulfillment",
+          "http_status": 200,
+          "content_type": "application/json"
+        }
+      ]
+    }
+  ]
+}

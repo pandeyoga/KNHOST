@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_fase_a_poc.py",
+    "database": "knhost_audit_native90_33177f92a6e34841bbdb206612998e84",
+    "exit": 1,
+    "seconds": 76.11,
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_fase_a_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": " menerima '182,5' & '1,48'  ·  HTTP 200 · gsm=182.5\n✅ US-9g inspeksi QC menulis riwayat grade (source=qc_inspection)  ·  sumber=['qc_inspection']\n\n── US-11 · Migrasi idempoten (R8) ────────────────────────────────\n✅ US-11a migrasi jalan tanpa error  ·  rc=0/0\n✅ US-11b jalan kedua → changed=0 (idempoten)  ·  ['Ringkasan: changed=0 · masalah_invarian=0']\n✅ US-11c invarian pasca-migrasi bersih\n\n── US-12 · Template & varian mewarisi domain (PS-02) ─────────────\n✅ US-12a template stage grey tanpa fabric_type ditolak 400  ·  HTTP 400: {\"detail\":\"Jenis kain (woven/knit) wajib diisi untuk stage 'Grey / Greige (Kain Mentah)'.\"}\n✅ US-12b template knit tersimpan (desimal koma diterima)  ·  HTTP 200 · gsm=210.5\n✅ US-12c generate varian berhasil  ·  HTTP 200 · 2 varian\n✅ US-12d varian mewarisi fabric_type & stage induk  ·  [('knit', 'grey'), ('knit', 'grey')]\n\n==============================================================================\n  HASIL: 47 PASS · 6 FAIL\n==============================================================================\n  ❌ US-1c urutan grade D-01 (A→A1→A2→B→BS) + rank 1..5 — ['A', 'A1', 'A2', 'B', 'B1', 'C', 'BS'] [1, 2, 3, 4, 5, 6, 7]\n  ❌ US-7c alias dinormalisasi (Greige→grey, Tenun→woven, c→BS) — HTTP 200 · grey/woven/C\n  ❌ US-8a PO tanpa expected_grade ditolak 400 (tanpa default) — HTTP 409: {\"detail\":\"“CV Cipta Sandang Textile” adalah badan usaha di dalam grup Anda, bukan pemasok luar — jadi Pesanan Pembelian (PO) bias\n  ❌ US-8b PO dengan grade dipilih tersimpan + tercatat per item — HTTP 409 · grade=None src=None\n  ❌ US-10a PO menerima desimal koma (10,5 & 50.000,25) — qty=None price=None\n  ❌ US-8c grade tak dikenal di PO ditolak 400 — HTTP 409: {\"detail\":\"“CV Cipta Sandang Textile” adalah badan usaha di dalam grup Anda, bukan pemasok luar — jadi Pesanan\n"
+  }
+]

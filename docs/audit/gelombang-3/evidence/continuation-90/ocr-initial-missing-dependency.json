@@ -1,0 +1,326 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_services90_13356a9ddb3b45d48ca26d694e4f01f5",
+  "observations": [
+    {
+      "id": "ocr.cost_{'input': 1000000, 'cached_input': 0, 'output': 0}",
+      "expected": 2.0,
+      "actual": 2.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.cost_{'input': 1000000, 'cached_input': 250000, 'output': 100000}",
+      "expected": 2.425,
+      "actual": 2.425,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.cost_{'input': 0, 'output': 0}",
+      "expected": 0.0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.price_mock-sj_clear",
+      "expected": "allowed",
+      "actual": "allowed",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.price_missing",
+      "expected": "OCR_PRICE",
+      "actual": "OCR_PRICE",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.price_priced",
+      "expected": "allowed",
+      "actual": "allowed",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.score_correct",
+      "expected": [
+        1
+      ],
+      "actual": [
+        1
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.score_greige_not_declared",
+      "expected": 250,
+      "actual": 250.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.score_unit_correct",
+      "expected": [
+        1
+      ],
+      "actual": [
+        1
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.score_roll_correct",
+      "expected": [
+        1
+      ],
+      "actual": [
+        1
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.score_po_correct",
+      "expected": [
+        1
+      ],
+      "actual": [
+        1
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.score_wrong_qty",
+      "expected": [
+        0
+      ],
+      "actual": [
+        0
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.score_wrong_unit",
+      "expected": [
+        0
+      ],
+      "actual": [
+        0
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.score_wrong_rolls",
+      "expected": [
+        0
+      ],
+      "actual": [
+        0
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.score_wrong_po_ref",
+      "expected": [
+        0
+      ],
+      "actual": [
+        0
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.score_missing",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.score_extra",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.gate_empty",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.gate_exact_target",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.gate_qty_below",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.gate_dn_below",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.gate_failed",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.clean_numeric",
+      "expected": [
+        12.5,
+        2
+      ],
+      "actual": [
+        12.5,
+        2
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.sample_label",
+      "expected": "Audit",
+      "actual": "Audit",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.sample_scoped",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.sample_other_scope",
+      "expected": 404,
+      "actual": 404,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.sample_update",
+      "expected": "SJ 2",
+      "actual": "SJ 2",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.sample_missing_page",
+      "expected": 404,
+      "actual": 404,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.sample_deleted",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.run_no_samples",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.run_missing",
+      "expected": 404,
+      "actual": 404,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.run_list_empty",
+      "expected": [],
+      "actual": [],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.photo_pages",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.photo_text",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.photo_upscale",
+      "expected": [
+        200,
+        400
+      ],
+      "actual": [
+        200,
+        400
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.photo_rotate",
+      "expected": [
+        400,
+        200
+      ],
+      "actual": [
+        400,
+        200
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.preprocess_pages",
+      "expected": "OCR_PAGES",
+      "actual": "OCR_PAGES",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "ocr.preprocess_bad_image",
+      "expected": "OCR_FILE",
+      "actual": "OCR_FILE",
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "harness_errors": [
+    "Traceback (most recent call last):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\ocr_semantics90.py\", line 71, in main\n    try:go.pages_from_bytes(docs,conf);actual='accepted'\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\services\\goods_receipt_ocr_service.py\", line 155, in pages_from_bytes\n    import fitz\nModuleNotFoundError: No module named 'fitz'\n"
+  ],
+  "scope": "Original OCR consumer logic and repository native mock provider, synthetic bytes/DB; external AI accuracy unverified."
+}

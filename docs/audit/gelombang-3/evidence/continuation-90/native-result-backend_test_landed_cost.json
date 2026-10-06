@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_landed_cost.py",
+    "database": "knhost_audit_native90_8d477a82050942dd8accabe616427268",
+    "exit": 1,
+    "seconds": 49.94,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_landed_cost.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "ending_approval\n\n📝 Phase 7: Segregation of Duties (SoD)\n----------------------------------------------------------------------\n\n🔍 Test #6: POST /api/landed-costs/{id}/approve (admin tries to approve own voucher - should fail)\n❌ FAILED - Expected 403, got 200\n   Response: {\"id\":\"lcv_84f130a8017f\",\"voucher_number\":\"LCV-00004\",\"provider_name\":\"Test Forwarder\",\"supplier_invoice_no\":\"\",\"po_ids\":[\"po_lctest\"],\"po_numbers\":[\"PO-LCTEST\"],\"entity_id\":\"ent_ksc\",\"basis\":\"value\",\n\n📝 Phase 8: Manager Approval\n----------------------------------------------------------------------\n\n🔍 Test #7: POST /api/landed-costs/{id}/approve (manager approves)\n❌ FAILED - Expected 200, got 409\n   Response: Voucher status 'applied' tidak menunggu approval.\n\n📝 Phase 9: Idempotency Check\n----------------------------------------------------------------------\n\n🔍 Test #8: POST /api/landed-costs/{id}/approve (approve again - should fail with 409)\n✅ PASSED - Status: 409\n   Idempotency enforced: Voucher status 'applied' tidak menunggu approval.\n\n📝 Phase 10: Payment\n----------------------------------------------------------------------\n\n🔍 Test #9: POST /api/landed-costs/{id}/pay\n✅ PASSED - Status: 200\n   Status: paid, amount_paid: 800000.0\n\n📝 Phase 11: Verify Voucher Detail\n----------------------------------------------------------------------\n\n🔍 Test #10: GET /api/landed-costs/{id} (verify final state)\n✅ PASSED - Status: 200\n   Voucher LCV-00004: status=paid, financials.outstanding=0.0\n\n======================================================================\n📊 LANDED COST TEST SUMMARY\n======================================================================\nTotal Tests: 10\n✅ Passed: 8\n❌ Failed: 2\nSuccess Rate: 80.0%\n======================================================================\n\n   🧹 Cleaned up test data\n"
+  }
+]

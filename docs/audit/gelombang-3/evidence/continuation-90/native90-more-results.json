@@ -1,0 +1,211 @@
+[
+  {
+    "script": "backend/test_core_e7_interco_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 6.82,
+    "log": "native90-more-test_core_e7_interco_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_e8_roles_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 2,
+    "seconds": 2.8,
+    "log": "native90-more-test_core_e8_roles_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 0,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_f67_workflow_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 12.51,
+    "log": "native90-more-test_core_f67_workflow_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_f6_approval_coverage_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 7.19,
+    "log": "native90-more-test_core_f6_approval_coverage_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_group_cash_migration_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 5.26,
+    "log": "native90-more-test_core_group_cash_migration_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_lini_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 3.52,
+    "log": "native90-more-test_core_lini_poc.log",
+    "pass_log_tokens": 40,
+    "fail_log_tokens": 2,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_inspeksi_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 34.37,
+    "log": "native90-more-test_core_inspeksi_poc.log",
+    "pass_log_tokens": 91,
+    "fail_log_tokens": 3,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_p0_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 7.93,
+    "log": "native90-more-test_core_p0_poc.log",
+    "pass_log_tokens": 37,
+    "fail_log_tokens": 16,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_papan_po_custom_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 0,
+    "seconds": 5.27,
+    "log": "native90-more-test_core_papan_po_custom_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_po_board_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 19.55,
+    "log": "native90-more-test_core_po_board_poc.log",
+    "pass_log_tokens": 53,
+    "fail_log_tokens": 19,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_sesi_2026_06_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 0,
+    "seconds": 7.89,
+    "log": "native90-more-test_core_sesi_2026_06_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_sesi_2026_06b_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 0,
+    "seconds": 2.59,
+    "log": "native90-more-test_core_sesi_2026_06b_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_approval_reminder_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 0,
+    "seconds": 4.46,
+    "log": "native90-more-test_core_approval_reminder_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_g0_config_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 13.34,
+    "log": "native90-more-test_g0_config_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_g1_amendment_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 4.54,
+    "log": "native90-more-test_g1_amendment_poc.log",
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_g4_refs_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 29.0,
+    "log": "native90-more-test_g4_refs_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_fase_f_us3_us11_us12_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 2.99,
+    "log": "native90-more-test_fase_f_us3_us11_us12_poc.log",
+    "pass_log_tokens": 28,
+    "fail_log_tokens": 3,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_fase_a_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 7.84,
+    "log": "native90-more-test_fase_a_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_core_role_access_poc.py",
+    "database": "knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+    "exit": 1,
+    "seconds": 11.26,
+    "log": "native90-more-test_core_role_access_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_f67_workflow_poc.py",
+    "database": "knhost_audit_native90_c44979e943ec4245a558322cc88b2791",
+    "exit": 1,
+    "seconds": 66.07,
+    "pass_log_tokens": 38,
+    "fail_log_tokens": 5,
+    "log": "continuation-90\\native-test_core_f67_workflow_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "kumen desainnya\n  [FAIL] W6 desain yang diajukan bisa disahkan HTTP 400\n\nW7 — SELISIH PEMBAYARAN: antrean beranda == layar antrean finance\n  [PASS] W7 layar antrean finance naik 1 0 → 1\n  [PASS] W7 antrean beranda `payment_variance` naik 1 0 → 1\n  [PASS] W7 DUA sumber yang dulu tak pernah dibandingkan kini SAMA beranda 1 == layar 1\n  [PASS] W7 dokumen dihapus → angka kembali (bukan hiasan)\n\nW8 — VERIFIKASI SO: dihitung, dan tidak dobel dengan antrean persetujuan nilai\n  [PASS] W8 antrean `so_verify` == hitung-ulang MANDIRI dari MongoDB (ter-scope KSC) antrean 3 == mongo 3\n  [PASS] W8 datanya memang ada (kalau 0, klaim ini hampa) 3 pesanan\n  [PASS] W8 pesanan badan usaha LAIN tidak ikut terhitung di konteks ini global 4 · KSC 3\n  [PASS] W8 pesanan yang menunggu keputusan manajer TIDAK ikut dihitung di sini 0 pesanan sengaja dikecualikan\n  [PASS] W8 Meja Admin Sales tetap punya antreannya sendiri meja: None · beranda: 3\n\nW9 — PENJAGA: nol pembebasan 'UTANG ALUR' yang tersisa\n  [PASS] W9 nol pembebasan bertanda 'UTANG ALUR' yang tersisa []\n  [PASS] W9 keempat pintu itu sekarang DIPETAKAN ke antreannya\n  [FAIL] W9 gate INV-APPR-01 (tiap pintu punya antrean) HIJAU → Perbaiki sesuai INVARIANT INV-APPR-01 (detail: memory/INVARIANTS.md).\n  [PASS] W9 gate INV-HOME-01 (KPI beranda == kenyataan) HIJAU   backend tak terjangkau ([WinError 10061] No connection could be made because the target machine activel\n\nW10 — NOL RESIDU (diukur, bukan diklaim)\n  [FAIL] W10 seluruh koleksi tersentuh kembali ke keadaan awal {'audit_logs': (66, 74), 'sessions': (4, 6), 'notifications': (83, 85)}\n\n==============================================================================\n  HASIL: 37 PASS · 4 FAIL dari 41 pemeriksaan\n==============================================================================\n"
+  }
+]

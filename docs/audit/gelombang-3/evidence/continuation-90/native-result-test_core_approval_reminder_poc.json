@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_approval_reminder_poc.py",
+    "database": "knhost_audit_native90_7ae7fdaed7d24e6996d2f41ee9fa93ca",
+    "exit": 1,
+    "seconds": 158.29,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_core_approval_reminder_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "\\coverage\\control.py\", line 864 in save\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\native_runner.py\", line 27 in checkpoint\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\threading.py\", line 1012 in run\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\threading.py\", line 1075 in _bootstrap_inner\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\threading.py\", line 1032 in _bootstrap\n\nThread 0x0001b05c (most recent call first):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\native_runner.py\", line 58 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 98 in _run_module_code\n  File \"<frozen runpy>\", line 287 in run_path\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\run_isolated.py\", line 25 in <module>\nTraceback (most recent call last):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\run_isolated.py\", line 25, in <module>\n    try:runpy.run_path(str(script),run_name='__main__')\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\native_runner.py\", line 59, in <module>\n    lifespan='off',access_log=False,log_level='error'))\n                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Native audit server readiness timeout\n"
+  }
+]

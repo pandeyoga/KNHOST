@@ -1090,7 +1090,13 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
     _mko_ref = {"type": "makloon_order", "id": mko_id,
                 "number": f"{order.get('mko_number')} step{seq}"}
     _last = len(rolls_in) - 1
-    for _i, r in enumerate(rolls_in if not prog.get("lots") else []):
+    # G3 V3-MKO-01 — tiap output punya identitas deterministik (mko+langkah+indeks) dan progres
+    # disimpan PER roll; retry melanjutkan indeks yang belum ada, bukan membuat ulang semuanya.
+    _done_ids = {x.get("roll_id") for x in created_lots}
+    for _i, r in enumerate(rolls_in):
+        _rid = f"roll_mko_{mko_id}_{seq}_{_i}"
+        if _rid in _done_ids or (prog.get("lots") and not prog.get("lots_partial")):
+            continue
         _len = round(float(r["length"]), 2)
         _uc = out_uc
         if _i == _last and _len > 0:
@@ -1103,7 +1109,7 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
             unit_cost=_uc, created_by=actor_name,
             lot_source="makloon", lot_source_ref=_mko_ref,
             parent_lot_ids=_input_lot_ids,
-            dye_lot=(r.get("dye_lot") or "").strip())
+            dye_lot=(r.get("dye_lot") or "").strip(), roll_id=_rid)
         wkg = round(float(r.get("weight_kg") or 0), 3)
         if wkg > 0:
             await db.inventory_rolls.update_one({"id": roll["id"]}, {"$set": {
@@ -1112,8 +1118,10 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
                              "lot_id": roll.get("lot_id", ""),
                              "length": roll["length_remaining"], "unit": roll["unit"],
                              **({"weight_kg": wkg} if wkg > 0 else {})})
-    if created_lots and not prog.get("lots"):
-        prog["lots"] = created_lots
+        prog["lots"], prog["lots_partial"] = created_lots, _i < _last
+        await _save_prog()
+    if created_lots and prog.get("lots_partial"):
+        prog["lots_partial"] = False
         await _save_prog()
 
     # Barang sisa → roll available (is_remnant). Satuan roll = base_unit produk sisa (kg/yard).

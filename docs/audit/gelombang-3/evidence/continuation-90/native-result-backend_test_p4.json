@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_p4.py",
+    "database": "knhost_audit_native90_585a5d47a22941fd8112c80646cb01b4",
+    "exit": 0,
+    "seconds": 48.49,
+    "pass_log_tokens": 8,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_p4.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_585a5d47a22941fd8112c80646cb01b4 backend_test_p4.py\n\n======================================================================\nBACKEND SANITY TEST — P4 Modal Conversion\n======================================================================\n\n  ✅ [PASS] Login admin@kainnusantara.id\n\n📋 Running API sanity checks...\n\n  ✅ [PASS] GET /api/suppliers → 200 (6 suppliers)\n  ✅ [PASS] POST /api/suppliers → 200 (code=SUP-00013, name=PT Uji Backend P4)\n  ✅ [PASS] GET /api/purchase-returns → 200 (2 returns)\n  ✅ [PASS] GET /api/approval-rules → 200 (7 rules)\n  ✅ [PASS] GET /api/hr/org-units → 200 (12 units)\n  ✅ [PASS] GET /api/sales-return-policies → 200 (0 policies)\n  ✅ [PASS] GET /api/transfers → 200 (4 transfers)\n\n======================================================================\nSUMMARY: 8 passed, 0 failed\n======================================================================\n\n✅ All backend sanity checks passed!\n"
+  }
+]

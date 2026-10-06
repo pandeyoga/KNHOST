@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_e8_roles_poc.py",
+    "database": "knhost_audit_native90_26daa5ff786c4c6586fc77cb5277d8a0",
+    "exit": 2,
+    "seconds": 51.65,
+    "pass_log_tokens": 7,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_core_e8_roles_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_26daa5ff786c4c6586fc77cb5277d8a0 test_core_e8_roles_poc.py\n==============================================================================\n  POC FASE E-8 GELOMBANG 1 — DUA PERAN BARU (sales_admin · finance)\n  http://127.0.0.1:8017\n==============================================================================\n\nA · E8.1 — registry peran: server ↔ layar tidak boleh bercabang\n  [PASS] self-test role_registry HIJAU  (HIJAU — 11 peran, 0 gagal.)\n  [PASS] registry peran terisi & memuat peran inti (11 peran terdaftar)  (admin · manager · sales_admin · finance · sales · warehouse · designer · driver · md · warehouse_admin · sample_admin)\n  [PASS] layar mengenal peran yang SAMA dengan server (nol percabangan)  (11 peran identik: admin · designer · driver · finance · manager · md · sales · sales_admin · sample_admin · warehouse · warehouse_admin)\n  [PASS] label · peringkat · lintas-entitas · urutan IDENTIK server↔layar  (11/11 sama)\n  [PASS] beranda tiap peran sama di server & layar (tak ada yang mendarat di layar kosong)  (sales_admin→sales-admin-desk · finance→finance-desk)\n  [FAIL] gate check_nav_map PASS (beranda tiap peran ter-reach dari menunya)  (✗ SSOT peran tidak ditemukan: \\app\\frontend\\src\\config\\roles.js\n)\n✗ SSOT peran tidak ditemukan: \\app\\frontend\\src\\config\\roles.js\n\n── CLEANUP (INV-GATE-01: nol residu)\n  [PASS] CLEANUP: nol residu sessions & audit_logs (POC tak membuat dokumen bisnis)  (dihapus=4 sisa=0)\n"
+  }
+]

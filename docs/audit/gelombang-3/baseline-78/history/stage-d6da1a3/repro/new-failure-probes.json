@@ -1,0 +1,184 @@
+{
+  "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+  "database": "knhost_audit_5b7fe1bdb6de44e083c83b8aabb3f4ee",
+  "mode": "Original services/indexed synthetic Mongo; scoped BEFORE-write faults and scheduling barrier. Lock removal in production probe is controlled recovery, not admin authorization validation.",
+  "results": [
+    {
+      "id": "V3-PROD-01",
+      "actual": {
+        "error": "RuntimeError",
+        "before_qty": 20,
+        "after_fault_qty": 15.0,
+        "after_retry_qty": 10.0,
+        "output": 5.0,
+        "reported_consumed": 5.0,
+        "movement_qty": 5.0
+      }
+    },
+    {
+      "id": "V3-PROD-02",
+      "actual": {
+        "retry_restored": 0.0,
+        "remaining": 5,
+        "movement_reversed": true
+      }
+    },
+    {
+      "id": "V3-MRES-01",
+      "actual": {
+        "on_hand_available": 1000,
+        "reserved": 1400.0,
+        "shortage": 0.0,
+        "pr_count": 2
+      }
+    },
+    {
+      "id": "V3-AR-01",
+      "actual": {
+        "error": "RuntimeError('Synthetic receipt insert fault BEFORE write')",
+        "paid_total": 100.0,
+        "payments": 1,
+        "deposit": 100.0,
+        "receipts": 0
+      }
+    },
+    {
+      "id": "V3-BANK-01",
+      "actual": {
+        "statement_amount": 100,
+        "statement_allocated": 100.0,
+        "cash_reconciled": 200.0,
+        "linked_cash_count": 2
+      }
+    },
+    {
+      "id": "V3-WEIGHT-01",
+      "actual": {
+        "initial_length": 10,
+        "remaining_length": 6.0,
+        "initial_weight": 3,
+        "parent_weight": 2.4,
+        "child_weights": [
+          0.6,
+          0.6
+        ],
+        "total_weight": 3.5999999999999996
+      }
+    },
+    {
+      "id": "V3-PO-01",
+      "actual": {
+        "actual_shortages": [
+          5,
+          100
+        ],
+        "task_count": 1,
+        "task_received": 90.0,
+        "task_short": 10.0,
+        "live_first_received": 95
+      }
+    },
+    {
+      "id": "V3-MKO-01",
+      "actual": {
+        "error": "RuntimeError('Synthetic second output failure BEFORE write')",
+        "rolls_after_fault": 1,
+        "rolls_after_retry": 3,
+        "expected_output": 10,
+        "actual_output": 15.0,
+        "roll_value": 180.0,
+        "journal_value": 120.0
+      }
+    },
+    {
+      "id": "V3-RFID-01",
+      "actual": {
+        "first": "green",
+        "fresh_event_after_seconds": 20,
+        "second": "green",
+        "duplicate": true,
+        "current_evaluator_result": "red",
+        "current_evaluator_code": "REPLAY_EXIT",
+        "different_passage": true
+      }
+    },
+    {
+      "id": "V3-CF-01",
+      "actual": {
+        "expected_investing": -40,
+        "expected_operating": 0,
+        "expected_noncash_asset": 60,
+        "actual_investing": -100.0,
+        "actual_operating": 60.0,
+        "net_change": -40.0,
+        "noncash": []
+      }
+    },
+    {
+      "id": "V3-DATE-01",
+      "actual": {
+        "expected_opex": 10,
+        "actual_opex": 0,
+        "stored_date": "2026-09-01",
+        "filter_start": "2026-09-01T00:00:00"
+      }
+    },
+    {
+      "id": "V3-WMS-02",
+      "actual": {
+        "local_ready_tagged_rolls": 1,
+        "local_cut_guard": "passed",
+        "pending_cuts_other_warehouse": 1,
+        "loading_check_start_error": "409: 1 reservasi potong belum dikonfirmasi (roll induk RL-00010). Potong fisik & konfirmasi dulu."
+      }
+    },
+    {
+      "id": "V3-MASTER-01",
+      "actual": {
+        "error": "RuntimeError('Synthetic batch journal failure BEFORE write')",
+        "original_stage": "greige",
+        "current_stage": "grey",
+        "batch_reference": "mgb_9d8b6fa3b9f5",
+        "durable_batch_count": 0
+      }
+    },
+    {
+      "id": "V3-PO-02",
+      "actual": {
+        "ordered": 1000,
+        "received": 960,
+        "suggested_amendment": 960,
+        "error": "400: Baris MAT sudah diterima 960 \u2014 terkunci dari revisi (qty 1000\u2192960). Barang yang sudah masuk gudang tidak bisa diubah qty/satuan/harga/diskonnya; buat PO baru untuk tambahan, atau retur beli bila ada selisih."
+      }
+    },
+    {
+      "id": "V3-CUT-01",
+      "actual": {
+        "before_length": 10,
+        "after_length": 7.0,
+        "length_reserved": 0,
+        "child_count": 0,
+        "error": "Synthetic cut child insert fault BEFORE write",
+        "retry_error": "404: Reservasi potong tidak ditemukan / sudah dipotong"
+      }
+    },
+    {
+      "id": "V3-MRES-02",
+      "actual": {
+        "expected_reserved": 2001,
+        "actual_reserved": 2000.0,
+        "document_count": 2001
+      }
+    },
+    {
+      "id": "V3-PO-03",
+      "actual": {
+        "http_status": 200,
+        "po_status": "waiting_approval",
+        "po_quantity": 1000,
+        "task_status": "decided",
+        "detail": null
+      }
+    }
+  ]
+}

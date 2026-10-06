@@ -1,0 +1,49 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "new_findings": 59,
+  "previous_open": 19,
+  "total_findings": 78,
+  "suite_stats": {
+    "core": {
+      "scripts": 15,
+      "nonzero_or_timeout": 0,
+      "cases": 310,
+      "passed": 309,
+      "failed": 1
+    },
+    "w2": {
+      "scripts": 4,
+      "nonzero_or_timeout": 0,
+      "cases": 82,
+      "passed": 82,
+      "failed": 0
+    },
+    "extended": {
+      "scripts": 41,
+      "nonzero_or_timeout": 3,
+      "cases": 455,
+      "passed": 414,
+      "failed": 41
+    }
+  },
+  "literal_api_calls": 1477,
+  "mapped_api_calls": 1431,
+  "chart_files": 21,
+  "historical_items": 137,
+  "coverage": {
+    "covered_lines": 50308,
+    "num_statements": 102029,
+    "percent_covered": 47.14540149304634,
+    "percent_covered_display": "47",
+    "missing_lines": 51721,
+    "excluded_lines": 30,
+    "percent_statements_covered": 49.30754981426849,
+    "percent_statements_covered_display": "49",
+    "num_branches": 29916,
+    "num_partial_branches": 4336,
+    "covered_branches": 11898,
+    "missing_branches": 18018,
+    "percent_branches_covered": 39.77135980746089,
+    "percent_branches_covered_display": "40"
+  }
+}

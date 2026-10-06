@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_inspeksi_poc.py",
+    "database": "knhost_audit_native90_7ba1eecd57b540efbaa608ec7aca2176",
+    "exit": 1,
+    "seconds": 102.93,
+    "pass_log_tokens": 92,
+    "fail_log_tokens": 8,
+    "log": "continuation-90\\native-test_core_inspeksi_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "san inspeksi punya antreannya)\n         → exit 1 · usan di pintu ini tidak akan pernah muncul di KPI beranda / Pusat Persetujuan.\n→ Perbaiki sesuai INVARIANT INV-APPR-01 (detail: memory/INVARIANTS.md).\n\n  [PASS] gate `INV-HOME-01` HIJAU (KPI beranda punya opini kedua untuk tahanan)  exit 0 · , 'inspection_hold': 2}\n  backend tak terjangkau ([WinError 10061] No connection could be made because the target machine actively refused it) — SKIP.\n\n  [FAIL] gate `INV-QTY-01` HIJAU (dua satuan sampai ke dokumen inspeksi)\n         → exit 1 · \", line 277, in _dont_follow_symlinks\n    func(path, *args)\nPermissionError: [WinError 5] Access is denied: 'C:\\\\Users\\\\abc\\\\AppData\\\\Local\\\\Temp\\\\tmpjferc5_i'\n\n\nI11 · CLEANUP + NOL RESIDU (diukur, bukan diklaim)\n  [FAIL] stok · buku besar · kas dipulihkan EKSAK (poc_stock_guard)\n  [poc-stock] DB_NAME='knhost_audit_native90_7ba1eecd57b540efbaa608ec7aca2176' bukan basis data uji — restore stok DIMATIKAN (set KN_GATE_ALLOW_RESTORE=1 bila memang disengaja).\n  [PASS] nol residu: jumlah dokumen tiap koleksi SAMA sebelum & sesudah POC  6 koleksi identik\n  [FAIL] invarian INV-QC tetap HIJAU sesudah pembersihan\n         → exit 1 · =============================================================\n  PASS 3  |  FAIL 1  |  WARN 0\n  INTEGRITY VIOLATION — blokir seed/deploy sampai diperbaiki.\n\n\n\n==============================================================================\n  HASIL: 88 PASS · 4 FAIL dari 92 pemeriksaan\n  GAGAL:\n   - gate `INV-APPR-01` HIJAU (pintu keputusan inspeksi punya antreannya)\n   - gate `INV-QTY-01` HIJAU (dua satuan sampai ke dokumen inspeksi)\n   - stok · buku besar · kas dipulihkan EKSAK (poc_stock_guard)\n   - invarian INV-QC tetap HIJAU sesudah pembersihan\n==============================================================================\n"
+  }
+]

@@ -1,0 +1,274 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_services90_0c8803c0e0864d838b5fa4b4778e4580",
+  "observations": [
+    {
+      "id": "alerts.parse_None",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.parse_",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.parse_invalid",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.parse_42",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.parse_2026-01-02",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.parse_2026-01-02T00:00:00Z",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.parse_2026-01-02 00:00:00",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.parse_2026-10-06 06:09:59.765728+00:00",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.empty_job_ap_due",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.empty_job_depreciation_due",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.empty_job_production_stalled",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.empty_job_ops_stalled",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ap_future",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ap_soon",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ap_daily_dedup_soon",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ap_old",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ap_daily_dedup_old",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ap_paid",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ap_draft",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ap_due_calendar_today",
+      "expected": true,
+      "actual": false,
+      "note": "Tagihan supplier LEWAT 1 hari: TODAY",
+      "status": "observed_difference"
+    },
+    {
+      "id": "alerts.ap_today_not_overdue",
+      "expected": "warning",
+      "actual": "critical",
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "alerts.ap_partial_reports_outstanding",
+      "expected": true,
+      "actual": false,
+      "note": "Audit Supplier · Rp 100 · jatuh tempo 2026-10-03 (term 30 hari).",
+      "status": "observed_difference"
+    },
+    {
+      "id": "alerts.depreciation_pending",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.depreciation_daily_dedup",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.depreciation_done",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.production_recent",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.production_draft_old",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.production_severity_draft_old",
+      "expected": "warning",
+      "actual": "warning",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.production_released_old",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.production_severity_released_old",
+      "expected": "warning",
+      "actual": "warning",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.production_short",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.production_severity_short",
+      "expected": "critical",
+      "actual": "critical",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ops_group_by_flow",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ops_recent_excluded",
+      "expected": 3,
+      "actual": 3,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ops_daily_dedup",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "alerts.ops_shared_warehouse_separate_owners",
+      "expected": 2,
+      "actual": 1,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "alerts.ops_foreign_order_not_in_owner_notice",
+      "expected": false,
+      "actual": true,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "alerts.no_external_outbox",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "harness_errors": [],
+  "scope": "Original alert generators, explicit synthetic ledger/task fixtures, internal notification records only; no external messaging."
+}

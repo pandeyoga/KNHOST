@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_f6_approval_retirement.py",
+    "database": "knhost_audit_native90_bff9e43c84664dbdb3e9e1e8f6494c50",
+    "exit": 1,
+    "seconds": 55.87,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_f6_approval_retirement.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "_payroll', 'design_gallery', 'payment_variance', 'so_verify']\n✅ Queue items have required fields\n   First item keys: ['key', 'label', 'view', 'count']\n\n🔍 Testing Backlog Oldest Documents...\n✅ Backlog response has oldest array\n   oldest type: <class 'list'>\n✅ Oldest documents have required fields\n   First doc keys: ['key', 'queue_label', 'view', 'id', 'number', 'title', 'entity_id', 'since', 'days_waiting']\n✅ Oldest documents have non-empty number\n   number: PRET-00001\n✅ Oldest documents have valid days_waiting\n   days_waiting: 6\n✅ Oldest documents include new queue types\n   Found: ['landed_cost', 'transfer']\n\n🔍 Testing Single Source of Truth (Backlog == Home KPI)...\n✅ admin: home.approvals_pending == backlog.total\n   home.approvals_pending=25, backlog.total=25\n✅ admin: home.approvals.total == home.approvals_pending\n   home.approvals.total=25, home.approvals_pending=25\n✅ manager: home.approvals_pending == backlog.total\n   home.approvals_pending=25, backlog.total=25\n✅ manager: home.approvals.total == home.approvals_pending\n   home.approvals.total=25, home.approvals_pending=25\n\n🔍 Testing Entity Scoping...\n✅ Entity scoped total <= combined total\n   ent_ksc total=23, all total=25\n\n🔍 Testing Approval Rules (Not Retired)...\n✅ GET /api/approval-rules returns 200\n   Expected 200, got 200\n✅ GET /api/approvals/queue returns 200\n   Expected 200, got 200\n\n🔍 Testing No Import Breakage...\n✅ GET /dashboard returns 200 for manager\n   Expected 200, got 200\n✅ GET /notifications returns 200 for manager\n   Expected 200, got 200\n\n======================================================================\n📊 Test Summary: 46/47 passed\n======================================================================\n\n❌ Failed Tests:\n  - GET /api/approvals/backlog returns 403 for finance: Expected 403, got 200\n"
+  }
+]

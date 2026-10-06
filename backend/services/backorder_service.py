@@ -29,6 +29,24 @@ ACTIVE = ["waiting_stock", "reserved", "waiting_approval", "approved", "confirme
 async def _fill_order(order: Dict[str, Any], product_id: str, owner_entity_id: str,
                       cap: Optional[float] = None, actor_name: str = "system",
                       reason: str = "Auto-fulfill backorder saat barang masuk (GR)") -> Dict[str, Any]:
+    """G3 D4-BACKORDER-01 — demand SO DIKLAIM (kunci saga) lalu dibaca ULANG sebelum reservasi, sehingga
+    dua pemenuhan bersamaan tidak sama-sama mereservasi kekurangan yang sama (80+80 > 100)."""
+    from fastapi import HTTPException as _HE
+    from services import atomic_claim as _saga
+    try:
+        fresh = await _saga.claim("sales_orders", order["id"], "backorder_fill",
+                                  precondition={"status": {"$in": ACTIVE}}, actor=actor_name)
+    except _HE:
+        return {"got": 0.0, "exhausted": False, "completed": False, "busy": True}
+    try:
+        return await _fill_order_locked(fresh, product_id, owner_entity_id, cap, actor_name, reason)
+    finally:
+        await _saga.release("sales_orders", order["id"], fresh[_saga.LOCK]["token"])
+
+
+async def _fill_order_locked(order: Dict[str, Any], product_id: str, owner_entity_id: str,
+                             cap: Optional[float] = None, actor_name: str = "system",
+                             reason: str = "Auto-fulfill backorder saat barang masuk (GR)") -> Dict[str, Any]:
     """Isi backorder (produk) satu pesanan dari stok entitas. `cap` = batas qty (None = sebanyak mungkin)."""
     order_got = 0.0
     exhausted = False
@@ -131,4 +149,7 @@ async def fulfill_from_stock(order_id: str, product_id: str, qty: float,
         return 0.0
     r = await _fill_order(order, product_id, order.get("entity_id") or "", cap=qty,
                           actor_name=actor_name, reason="Admin Sales: penuhi kekurangan dari stok")
+    if r.get("busy"):
+        from fastapi import HTTPException as _HE
+        raise _HE(status_code=409, detail="Pesanan sedang diproses pemenuhan lain — coba lagi sebentar.")
     return r["got"]

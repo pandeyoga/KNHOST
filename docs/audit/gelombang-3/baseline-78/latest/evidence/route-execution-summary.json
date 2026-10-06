@@ -1,0 +1,9 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "registered_api_methods": 1410,
+  "recorded_body_entered": 1024,
+  "mutation_methods": 772,
+  "mutation_body_entered": 398,
+  "mutation_no_recorded_body": 374,
+  "note": "Body line hits prove some handler body execution including guards/errors, never all branches, authorized success, numeric correctness or whole business flow. Counting imported def/decorator lines is avoided."
+}

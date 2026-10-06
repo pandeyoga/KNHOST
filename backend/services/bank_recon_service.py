@@ -595,6 +595,17 @@ async def _link(line: Dict[str, Any], allocations: List[Dict[str, Any]], actor: 
     for a in allocations:
         merged[a["txn_id"]] = _round(merged.get(a["txn_id"], 0.0) + _round(a["amount"]))
     allocations = [{"txn_id": k, "amount": v} for k, v in merged.items()]
+    # G3 V3-BANK-01 — baris mutasi DIKLAIM dulu (CAS status+kunci) sebelum kapasitas transaksi:
+    # dua pencocokan paralel atas satu baris → satu menang, yang lain konflik tanpa efek.
+    op = new_id("bmatch")
+    from datetime import datetime, timedelta, timezone as _tz
+    stale = (datetime.now(_tz.utc) - timedelta(minutes=10)).isoformat()
+    got = await db.bank_statement_lines.update_one(
+        {"id": line["id"], "status": {"$nin": ["matched", "ignored"]},
+         "$or": [{"match_lock": {"$exists": False}}, {"match_lock_at": {"$lt": stale}}]},
+        {"$set": {"match_lock": op, "match_lock_at": now}})
+    if got.modified_count != 1:
+        raise ValueError("Mutasi bank ini baru saja dicocokkan proses lain — muat ulang.")
     claimed: List[Dict[str, Any]] = []
     for a in allocations:
         amt = _round(a["amount"])
@@ -608,15 +619,17 @@ async def _link(line: Dict[str, Any], allocations: List[Dict[str, Any]], actor: 
                 await db.cash_transactions.update_one(
                     {"id": c["txn_id"]}, [{"$set": {"reconciled_amount": {"$round": [
                         {"$subtract": ["$reconciled_amount", c["amount"]]}, 2]}}}])
+            await db.bank_statement_lines.update_one({"id": line["id"], "match_lock": op},
+                                                     {"$unset": {"match_lock": "", "match_lock_at": ""}})
             raise ValueError("Sisa transaksi buku tidak cukup (baru saja dipakai proses lain / alokasi ganda).")
         claimed.append({"txn_id": a["txn_id"], "amount": amt})
     txn_ids = [a["txn_id"] for a in allocations]
-    await db.bank_statement_lines.update_one({"id": line["id"]}, {"$set": {
+    await db.bank_statement_lines.update_one({"id": line["id"], "match_lock": op}, {"$set": {
         "status": "matched", "match_kind": match_kind,
         "matched_txn_id": txn_ids[0] if len(txn_ids) == 1 else "",
         "matched_txn_ids": txn_ids, "allocations": allocations,
         "match_type": match_type, "matched_at": now, "matched_by": actor,
-        "updated_at": now}})
+        "updated_at": now}, "$unset": {"match_lock": "", "match_lock_at": ""}})
     for a in allocations:
         t = await db.cash_transactions.find_one({"id": a["txn_id"]}, {"_id": 0})
         if not t:

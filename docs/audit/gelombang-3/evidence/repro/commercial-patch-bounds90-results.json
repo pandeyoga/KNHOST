@@ -1,0 +1,218 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_6c1204eff2684fccad30e0f730851733",
+  "observations": [
+    {
+      "id": "bounds.item_valid_create",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.item_create_reject_last_price",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.item_patch_reject_last_price",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.item_stored_nonnegative_last_price",
+      "expected": true,
+      "actual": false,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.item_create_reject_moq",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.item_patch_reject_moq",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.item_stored_nonnegative_moq",
+      "expected": true,
+      "actual": false,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.item_create_reject_lead_time_days",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.item_patch_reject_lead_time_days",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.item_stored_nonnegative_lead_time_days",
+      "expected": true,
+      "actual": false,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.item_factor_zero_guard",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.item_csv_negative_rejected",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.contract_valid_create",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.contract_create_reject_tariff_rate",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.contract_patch_reject_tariff_rate",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.contract_negative_rate_not_charged",
+      "expected": true,
+      "actual": false,
+      "note": "200: {\"basis\":\"meter\",\"basis_qty\":10.0,\"basis_uom\":\"meter\",\"rate\":-5.0,\"qty_base\":10.0,\"base_uom\":\"meter\",\"conversion\":{\"factor\":1.0,\"source\":\"same_unit\",\"from\":\"meter\",\"to\":\"meter\"},\"formula_used\":\"\",\"service_amount\":-50.0,\"aux_total\":0.0,\"aux_breakdown\":[],\"min_charge\":0.0,\"min_charge_applied\":false,\"amount\":-50.0,\"contract_id\":\"sct_2eb5535ac77d\",\"con",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.contract_create_reject_min_charge",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.contract_patch_reject_min_charge",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.contract_create_reject_shrinkage_pct",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.contract_patch_reject_shrinkage_pct",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.contract_create_reject_tolerance_pct",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.contract_patch_reject_tolerance_pct",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.contract_create_reject_byproduct_pct",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.contract_patch_reject_byproduct_pct",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.contract_create_reject_yield_factor",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.contract_patch_reject_yield_factor",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.contract_create_reject_moq",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.contract_patch_reject_moq",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "bounds.contract_create_reject_lead_time_days",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "bounds.contract_patch_reject_lead_time_days",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    }
+  ],
+  "harness_errors": [],
+  "scope": "Original public ASGI producer, update, CSV preview and tariff-preview routes; isolated valid master records. Bounds mirror the domain constraints already enforced by original creation schemas."
+}

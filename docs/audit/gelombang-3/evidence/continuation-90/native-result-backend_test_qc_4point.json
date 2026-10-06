@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_qc_4point.py",
+    "database": "knhost_audit_native90_ea3a1ed9863f46408849f5aa29451149",
+    "exit": 1,
+    "seconds": 53.85,
+    "pass_log_tokens": 10,
+    "fail_log_tokens": 2,
+    "log": "continuation-90\\native-backend_test_qc_4point.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_ea3a1ed9863f46408849f5aa29451149 backend_test_qc_4point.py\n======================================================================\nQC 4-Point Inspection Backend Tests - Phase 6.2\n======================================================================\n\n=== Test 1: Login as Admin ===\n✅ PASS: Admin login successful\n\n=== Test 2: Login as Sales User ===\n✅ PASS: Sales user login successful\n\n=== Test 3: GET Grade Thresholds ===\n✅ PASS: Grade thresholds correct (a_max=20.0, b_max=40.0)\n\n=== Test 4: GET QC Queue ===\n✅ PASS: QC queue has 1 qc_pending task(s), task_id=wms_fd3640b47271\n\n=== Test 5: GET Task Rolls ===\n✅ PASS: Task rolls has 1 roll(s) with all required fields, roll_id=roll_f6af7844f356\n\n=== Test 6: Inspect Roll - Grade A (10 points) ===\n✅ PASS: Inspect Grade A: points=10, grade=A\n\n=== Test 7: Inspect Roll - Grade B (30 points) ===\n❌ FAIL: Inspect Grade B\n   Reason: Expected points=30, grade=B, got points=30.0, grade=A2\n\n=== Test 8: Inspect Roll - Grade C (48 points) ===\n❌ FAIL: Inspect Grade C\n   Reason: Expected points=48, grade=C, got points=48.0, grade=BS\n\n=== Test 9: Boundary Test - 20 points -> Grade A ===\n✅ PASS: Boundary 20 points: grade=A\n\n=== Test 10: Boundary Test - 40 points -> Grade B ===\n✅ PASS: Boundary 40 points: grade=B\n\n=== Test 11: Validation - Invalid point_value ===\n✅ PASS: Invalid point_value: correctly returns 400\n\n=== Test 12: Permission Test - Sales User ===\n✅ PASS: Sales permission: correctly returns 403 (forbidden)\n\n======================================================================\nTEST SUMMARY: 10 PASSED | 2 FAILED | 12 TOTAL\n======================================================================\n"
+  }
+]

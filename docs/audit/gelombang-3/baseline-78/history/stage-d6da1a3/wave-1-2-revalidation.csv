@@ -1,0 +1,138 @@
+﻿id,wave,title,previous_verdict,current_evidence_status,changed_sources,replay_cases,related_open_findings
+AX-01,1,Roll yang dipindai tidak menjadi identitas yang wajib dikirim,verified_fixed,replay_failures_need_adjudication,,1,
+AX-02,1,Task dispatch dianggap selesai sebelum surat jalan tersimpan,verified_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+AX-03,1,Claim bergantian masih membolehkan progres partial shipment ditimpa,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+AX-04,1,Transfer roll eksplisit melewati owner filter dan rebuild balance,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+AX-05,1,Penerimaan transfer menghilangkan asal PO dan membawa bin gudang lama,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+AX-06,1,Print job multi-owner membocorkan item melalui owner header pertama,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+AX-07,1,Potongan generasi kedua mencatat kakek sebagai parent langsung,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+AX-08,1,Verifikasi tag dianggap cukup untuk memindahkan roll QC hold,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+CX-01,1,Penebusan store credit dapat melampaui nominal permintaan dan saldo,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+CX-02,1,Store credit dapat dialokasikan ke pelanggan atau badan usaha yang berbeda,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+CX-03,1,Gagal posting store credit meninggalkan AR terbayar tetapi kredit belum terpotong,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+CX-04,1,Retry pencairan uang muka membuat transaksi kas keluar kedua,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+CX-05,1,Uang muka yang telah selesai dapat dipertanggungjawabkan penuh lagi,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+CX-06,1,Manual bank matching menerima arah dan rekening yang tidak cocok,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,V3-BANK-01
+CX-07,1,Split bank reconciliation menghitung target yang sama lebih dari kapasitasnya,partially_fixed,targeted_replay_passed_not_full_acceptance,,2,V3-BANK-01
+CX-08,1,Reschedule cicilan mengubah arti referensi pembayaran historis,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+CX-09,1,Konsolidasi memakai eliminasi di luar entitas yang dilaporkan,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+CX-10,1,E-sign tidak terikat pada versi dokumen yang ditampilkan,verified_fixed,targeted_replay_passed_not_full_acceptance,,10,
+CX-11,1,Retur dua baris produk yang sama memakai harga baris terakhir,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+CX-12,1,Pengiriman pertama menutup special order sebelum pengiriman lain selesai,verified_fixed,targeted_replay_passed_not_full_acceptance,,4,
+CX-13,1,Makloon receive mengunci order tanpa mengikat versi step yang sudah dibaca,partially_fixed,targeted_replay_passed_not_full_acceptance,,3,V3-MKO-01
+FN-01,1,Landed cost menghitung anak split dua kali,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+FN-02,1,3-way match lolos overbilling dari baris produk duplikat,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,V3-PO-01
+FN-03,1,WAC menjumlah panjang dan cost lintas unit tanpa konversi,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+FN-04,1,Arus kas seimbang tetapi klasifikasi transaksi nonkas salah,partially_fixed,targeted_replay_passed_not_full_acceptance,,4,V3-CF-01
+FN-05,1,Master akun laporan menggabungkan override entitas dengan last-write-wins,verified_fixed,targeted_replay_passed_not_full_acceptance,,5,
+FN-06,1,Jurnal manual menolak akun custom entitas dan mengabaikan override,verified_fixed,targeted_replay_passed_not_full_acceptance,,5,
+FN-07,1,Kas manual tidak langsung berjurnal dan void kas tidak membalik jurnal,verified_fixed,targeted_replay_passed_not_full_acceptance,backend/routers/cash.py,3,
+FN-08,1,Opening balance rekening dan perubahan rekening tidak tersambung GL,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+FN-09,1,Void jurnal manual melewati penguncian periode,verified_fixed,targeted_replay_passed_not_full_acceptance,,4,
+FN-10,1,Pembayaran AR dapat sukses walau jurnal kas gagal,partially_fixed,targeted_replay_passed_not_full_acceptance,,4,V3-AR-01
+FN-11,1,HPP per shipment memakai rata-rata semua roll pesanan,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+FN-12,1,Edit master aset mengubah nilai/akun tanpa mengoreksi jurnal perolehan,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+FN-13,1,Close periode dapat berjalan dua kali secara bersamaan,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+FN-14,1,Stock opname tidak memposting variance GL dan surplus dibuat tanpa cost,verified_fixed,targeted_replay_passed_not_full_acceptance,,7,
+FN-15,1,Helper autopost tidak menegakkan invariant jurnal di pintu insert,verified_fixed,targeted_replay_passed_not_full_acceptance,,7,
+FN-16,1,Neraca default tidak membatasi tanggal meski diberi label hari ini,partially_fixed,targeted_replay_passed_not_full_acceptance,,3,V3-DATE-01
+GN-01,1,"Idempotency tidak terikat user cookie, entitas dan payload",verified_fixed,targeted_replay_passed_not_full_acceptance,,4,
+GN-02,1,WebSocket GPS dapat dilanggan user biasa dan mengabaikan expiry/scope,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+GN-03,1,Ledger rekening dan reconcile kas berdasarkan ID tidak memeriksa entitas dokumen,verified_fixed,targeted_replay_passed_not_full_acceptance,,4,
+GN-04,1,R&D dapat mengambil bahan dari roll badan usaha lain,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+GN-05,1,Rollback pengambilan bahan R&D dapat menimpa pemakaian roll lain,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+GN-06,1,Produksi menyelesaikan WO tanpa claim dan memakai BOM terbaru,partially_fixed,targeted_replay_passed_not_full_acceptance,,7,V3-PROD-01;V3-PROD-02
+GN-07,1,Retur supplier mengurangi roll dengan read-set dan partial return kehilangan identitas fisik,verified_fixed,targeted_replay_passed_not_full_acceptance,,6,
+GN-08,1,Konversi permintaan internal dapat melahirkan transaksi antar-PT ganda,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+GN-09,1,CRM mengamankan owner sales tetapi tidak entitas pada operasi berdasarkan ID,verified_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+GN-10,1,Rekomendasi POS memakai entity query tanpa resolusi izin dan stok global,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+GN-11,1,Saga release menghapus lock tanpa mengecek efek yang sudah terposting,partially_fixed,replay_failures_need_adjudication,,4,V3-PROD-01;V3-PROD-02;V3-MKO-01;V3-CUT-01
+GN-12,1,Agregasi kritis berhenti pada batas to_list tanpa penanda truncation,partially_fixed,targeted_replay_passed_not_full_acceptance,backend/routers/cash.py,1,V3-MRES-02
+GN-13,1,Rebuild projection dapat menulis snapshot lama dan fallback UOM mencampur unit,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+GN-14,1,Audit log selalu before=None dan source secrets tersimpan dalam repo publik,partially_fixed,replay_failures_need_adjudication,,8,
+GN-15,1,Duplikasi helper dan definisi status menunjukkan SSOT belum konsisten,partially_fixed,targeted_replay_passed_not_full_acceptance,,21,V3-DUP-01;V3-BUILD-01
+GN-16,1,Laporan AI pribadi disiarkan melalui notifikasi dan digest tidak membatasi entitas,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+HR-01,1,PPh21 memakai TER bahkan pada masa pajak terakhir,verified_fixed,targeted_replay_passed_not_full_acceptance,,4,
+HR-02,1,Lembur memakai multiplier flat dan dua sumber menit berpotensi tumpang tindih,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+HR-03,1,Persetujuan cuti tidak mengecek ulang saldo dan cuti lintas tahun salah pembebanan,verified_fixed,targeted_replay_passed_not_full_acceptance,,5,
+IX-01,1,Jatah cuti nol berubah kembali menjadi jatah default,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+IX-02,1,Pembatalan satu cuti menghapus absensi milik cuti lain yang masih disetujui,duplicate,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+IX-03,1,Shift malam menghasilkan durasi standar negatif dan lembur palsu,verified_fixed,targeted_replay_passed_not_full_acceptance,,4,
+IX-04,1,Lembur absensi yang belum disetujui tetap dibayar payroll,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+IX-05,1,Metadata e-sign lintas badan usaha dapat dibaca lewat HTTP,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+IX-06,1,Edit payroll settings dari entitas A mengubah konfigurasi efektif B,verified_fixed,targeted_replay_passed_not_full_acceptance,,11,
+IX-07,1,Pengaturan Finance entitas lain dapat diubah melalui scope,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+IX-08,1,Approval basi dapat menimpa penolakan buka periode dan mengaktifkan izin posting,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+IX-09,1,Membuka kembali inspeksi tidak membatalkan indikator selesai pada retur,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+IX-10,1,Baca dan keputusan buka periode tidak memeriksa penugasan entitas,verified_fixed,targeted_replay_passed_not_full_acceptance,,5,
+IX-11,1,Produksi mengonsumsi roll yang masih ditahan QC,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+IX-12,1,Kompensasi gagal menempelkan roll ke tugas meninggalkan tag RFID aktif tanpa roll,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+IX-13,1,Konversi hitung manual penerimaan menyimpang dari mesin UOM utama,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+IX-14,1,GRN dinyatakan closed walau jurnal penerimaan gagal,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+IX-15,1,Keputusan QC sebagian menutup tugas dan mengunci sisa karantina,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+IX-16,1,"Kontrak nilai net/gross retur beli membuat AP, persediaan dan kas tidak cocok",verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+IX-17,1,Retur menjadi approved dan mengubah stok/AP sebelum jurnal ditolak,verified_fixed,targeted_replay_passed_not_full_acceptance,,5,
+MK-01,1,Input metrik marketing parsial mengganti seluruh metrik sebelumnya,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+RF-01,1,Format EPC database berbeda dari EPC yang ditulis ke chip,verified_fixed,targeted_replay_passed_not_full_acceptance,,6,
+RF-02,1,Gate OUT menganggap status sebagai izin keluar,partially_fixed,targeted_replay_passed_not_full_acceptance,,10,V3-RFID-01
+RF-03,1,Gate IN menerima transit di gudang mana pun,verified_fixed,targeted_replay_passed_not_full_acceptance,,5,
+RF-04,1,Final Loading Check belum menjadi prasyarat dispatch,verified_fixed,targeted_replay_passed_not_full_acceptance,,4,
+RF-05,1,Loading Check clean walaupun sebagian roll tidak punya tag,verified_fixed,replay_failures_need_adjudication,,2,
+RF-06,1,"Hasil loading melekat pada SO, tidak pada versi shipment aktual",partially_fixed,targeted_replay_passed_not_full_acceptance,,4,V3-WMS-02
+RF-07,1,Tombol simulasi dapat mengisi bukti verifikasi operasional,verified_fixed,targeted_replay_passed_not_full_acceptance,,6,
+RF-08,1,Sesi dan histori Cycle Count RFID tidak terisolasi entitas,verified_fixed,targeted_replay_passed_not_full_acceptance,,4,
+RF-09,1,Cycle count lintas entitas dibuat tetapi tidak dapat dipindai,verified_fixed,replay_failures_need_adjudication,,2,
+RF-10,1,Mesin sesi bersama tidak memvalidasi jenis sesi dan kehilangan scan konkuren,verified_fixed,targeted_replay_passed_not_full_acceptance,,5,
+RF-11,1,Payload ZPL dan custom EPC tidak divalidasi aman,verified_fixed,targeted_replay_passed_not_full_acceptance,,7,
+RF-12,1,Daftar device membocorkan API key hardware,verified_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+RF-13,1,Device dinonaktifkan masih diterima autentikasi,verified_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+RF-14,1,Lifecycle cetak mengklaim tag tercetak terlalu dini dan retry verifikasi buntu,verified_fixed,targeted_replay_passed_not_full_acceptance,,8,
+RF-15,1,Antrean printer tidak memiliki claim dan ack tidak membatasi tipe device,verified_fixed,targeted_replay_passed_not_full_acceptance,,6,
+RF-16,1,"Ingest belum mempunyai event identity, passage window dan deduplikasi lintas batch",partially_fixed,targeted_replay_passed_not_full_acceptance,,3,V3-RFID-01
+RF-17,1,Definisi stok fisik RFID berbeda dari SSOT dan metrik count mengabaikan extra,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+UX-01,1,Gate kiosk menampilkan hasil lama sebagai LIVE dan tidak mengagregasi satu passage,verified_in_source,targeted_replay_passed_not_full_acceptance,,4,
+UX-02,1,Unduhan ZPL lewat tautan tidak membawa konteks entitas yang dipilih,verified_in_source,targeted_replay_passed_not_full_acceptance,,2,
+UX-03,1,Panel biaya OCR menampilkan ID entitas mentah,verified_in_source,targeted_replay_passed_not_full_acceptance,,2,
+WM-01,1,Normalisasi setelah split atomik dapat mengembalikan stok yang sudah diambil,partially_fixed,targeted_replay_passed_not_full_acceptance,,1,V3-WEIGHT-01;V3-CUT-01
+WM-02,1,Reservasi parsial langsung melahirkan roll anak sebelum pemotongan fisik,partially_fixed,targeted_replay_passed_not_full_acceptance,,11,V3-CUT-01
+WM-03,1,Konfirmasi tiba dengan scan kosong memindahkan semua roll,verified_fixed,targeted_replay_passed_not_full_acceptance,,4,
+WM-04,1,Putaway antar-gudang in-transit tidak mengubah bucket stok roll,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+WM-05,1,PA dapat berebut roll dan arrival menulis lokasi tanpa prasyarat roll,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+WM-06,1,Scan picking tidak memvalidasi identitas roll dan menerima qty negatif,verified_fixed,replay_failures_need_adjudication,,3,
+WM-07,1,Stock opname per bin memakai expected seluruh gudang dan membolehkan duplikasi,verified_fixed,targeted_replay_passed_not_full_acceptance,,7,
+WM-08,1,Adjustment shortage dapat parsial tetapi sesi tetap approved,verified_fixed,targeted_replay_passed_not_full_acceptance,,4,
+WM-09,1,Penerimaan exception PA tidak menulis mutasi transfer,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+W2-001,2,Toleransi jumlah receipt menyebabkan drift nilai roll terhadap GL,partially_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,V3-MKO-01
+W2-002,2,Receipt menerima output warehouse tidak terdaftar,verified_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+W2-003,2,Partial receipt kehilangan lokasi asal saat finalisasi,verified_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+W2-004,2,Cancel bill jasa makloon tidak membalik utang GL,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+W2-005,2,Race potong bon dan pembayaran meloloskan paid melebihi grand,verified_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+W2-006,2,Owner otomatis opname dapat memilih stok entitas di luar scope,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+W2-007,2,Reject stale menimpa approved setelah adjustment stok,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+W2-008,2,Transfer manual A dapat mereservasi roll milik B,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+W2-009,2,Reservasi transfer pilihan roll tidak rebuild balance,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+W2-010,2,Histori pembacaan RFID tidak menerapkan scope owner roll,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+W2-011,2,Race acknowledge versus resolve dapat memundurkan status insiden,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+W2-012,2,Concurrent red reads membuat dua insiden open untuk EPC dan device sama,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+W2-013,2,GRN closed meskipun finalisasi hanya memproses500 dari501 roll,verified_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+W2-014,2,Qty dasar QC dipakai sebagai unit harga PO pada retur supplier,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,
+W2-015,2,Pelunasan murni deposit melewati posting reklasifikasi GL,verified_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+W2-016,2,Void sumber deposit gagal setelah payment dan kas dibalik,verified_fixed,targeted_replay_passed_not_full_acceptance,,2,
+W2-017,2,CAS deposit terlambat meninggalkan pembayaran tanpa dana,partially_fixed,targeted_replay_passed_not_full_acceptance,,1,V3-AR-01
+W2-018,2,Void menimpa pembayaran baru dengan snapshot array lama,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+W2-019,2,Split QC menggandakan berat aktual tersimpan,partially_fixed,targeted_replay_passed_not_full_acceptance,,1,V3-WEIGHT-01
+W2-020,2,Refund jual final meskipun buku kas gagal dan retry tidak melengkapi efek,verified_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+W2-021,2,Batas query5000/50000/100000 memotong saldo rekening dan laporan keuangan,verified_fixed,targeted_replay_passed_not_full_acceptance,,3,V3-DATE-01
+W2-022,2,Payroll paid mengkredit kas GL tanpa transaksi buku kas,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+W2-023,2,Payroll menerima akun beban sebagai sumber pembayaran,verified_fixed,targeted_replay_passed_not_full_acceptance,,1,
+W2-024,2,WO completed dengan konsumsi bahan terpotong pada5000 roll,verified_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,V3-PROD-01
+W2-025,2,Scope lini R&D hanya membatasi daftar; detail dan patch sample lintas lini tetap diterima,verified_fixed,targeted_replay_passed_not_full_acceptance,,6,
+W2-REQ-01,2,Histori pelaksana dan hak jenis sampling,needs_business_confirmation,targeted_replay_passed_not_full_acceptance,,4,
+W2-REQ-02,2,"Tata kelola master, stage, warna dan lot",partially_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,V3-MASTER-01
+W2-REQ-03,2,Penegakan seluruh uji wajib untuk SKU hasil MD,needs_business_confirmation,targeted_replay_passed_not_full_acceptance,,8,
+W2-REQ-04,2,Angka utama stok grup untuk sales,partially_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,V3-MRES-01;V3-MRES-02
+W2-REQ-05,2,Meja kerja MD dengan buyer eksplisit lintas entitas,partially_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,
+W2-REQ-06,2,"Keputusan selisih penerimaan, notifikasi MD dan rekonsiliasi PO",partially_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,V3-PO-01;V3-PO-02;V3-PO-03
+W2-REQ-07,2,Reservasi material sebelum issue makloon,partially_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,V3-MRES-01;V3-MRES-02
+W2-REQ-08,2,"RFID wajib, cross-dock dan SJ multi-gudang",partially_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,V3-WMS-02
+W2-REQ-09,2,"Urutan roll, pembulatan dan izin potong",partially_fixed,prior_evidence_source_unchanged_no_unique_current_runtime_proof,,0,V3-CUT-01

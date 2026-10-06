@@ -1,0 +1,857 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_a336e58fbb2f474591c686b85d81b9c0",
+  "observations": [
+    {
+      "id": "blanket.default_cap",
+      "expected": 1000,
+      "actual": 1000.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "blanket.has_no_inbound",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "blanket.invalid_warehouse",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Warehouse tidak ditemukan'}",
+      "status": "pass"
+    },
+    {
+      "id": "blanket.invalid_empty",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Kontrak harus punya minimal 1 item'}",
+      "status": "pass"
+    },
+    {
+      "id": "blanket.invalid_product",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Produk missing tidak ditemukan'}",
+      "status": "pass"
+    },
+    {
+      "id": "blanket.invalid_duplicate",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Produk BTK-MEGA-001 duplikat dalam kontrak'}",
+      "status": "pass"
+    },
+    {
+      "id": "blanket.invalid_quantity",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Qty kontrak BTK-MEGA-001 harus > 0'}",
+      "status": "pass"
+    },
+    {
+      "id": "blanket.invalid_unit",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': \"Item BTK-MEGA-001: satuan 'nonexistent_unit' tidak sah — Konversi 'nonexistent_unit' → 'yard' belum punya aturan untuk produk BTK-MEGA-001. Tambahkan aturan di Produk & Harga → Konversi Satuan, atau isi grama",
+      "status": "pass"
+    },
+    {
+      "id": "blanket.invalid_date_order",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'valid_until tidak boleh sebelum valid_from'}",
+      "status": "pass"
+    },
+    {
+      "id": "blanket.invalid_term",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': \"Termin pembayaran 'NEVER99' tidak ada di master.\"}",
+      "status": "pass"
+    },
+    {
+      "id": "blanket.invalid_tax",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': \"tax_mode harus '', 'ppn', atau 'non_ppn'.\"}",
+      "status": "pass"
+    },
+    {
+      "id": "blanket.invalid_supplier",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Supplier tidak ditemukan'}",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.price_inherits",
+      "expected": 10,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.total",
+      "expected": 200,
+      "actual": 200.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.called_qty",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.remaining_qty",
+      "expected": 80,
+      "actual": 80.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.value_remaining",
+      "expected": 800,
+      "actual": 800.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.invalid_empty",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Call-off harus punya minimal 1 item'}",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.invalid_unit",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': \"Item BTK-MEGA-001: satuan call-off 'kg' harus sama dengan satuan kontrak 'yard'.\"}",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.invalid_zero",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Qty BTK-MEGA-001 harus > 0'}",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.invalid_foreign_product",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Produk missing tidak ada dalam kontrak — gunakan PO standar.'}",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.invalid_duplicate",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Produk BTK-MEGA-001 duplikat dalam call-off'}",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.invalid_override_no_reason",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Override harga call-off wajib menyertakan alasan (aturan 3.b).'}",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.over_qty_requires_approval",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.over_qty_waits",
+      "expected": "waiting_approval",
+      "actual": "waiting_approval",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.exhausted_new_rejected",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "calloff.override_value",
+      "expected": 240,
+      "actual": 240.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST purchase-orders/po_876c14f5f384/close-contract",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST purchase-orders/po_876c14f5f384/call-off",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST purchase-orders/po_a99e601783ea/call-off",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "drawdown.only_active_child",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "drawdown.excludes_cancelled_rejected",
+      "expected": 200,
+      "actual": 200.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "drawdown.status_closed",
+      "expected": "closed",
+      "actual": "closed",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "drawdown.status_expired",
+      "expected": "expired",
+      "actual": "expired",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "drawdown.status_exhausted",
+      "expected": "exhausted",
+      "actual": "exhausted",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.qty_rolls_preserved",
+      "expected": [
+        1,
+        2
+      ],
+      "actual": [
+        1,
+        2
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_7dc642b58d41/send",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_7dc642b58d41/award",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.invalid_uninvited",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Supplier tidak diundang pada RFQ ini'}",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.invalid_bad_line",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'line_id bad tidak ada di RFQ'}",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.invalid_zero",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Minimal 1 baris dengan harga > 0'}",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.invalid_unavailable_only",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Minimal 1 baris dengan harga > 0'}",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.total_s1",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.total_s2",
+      "expected": 48,
+      "actual": 48.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.cheapest_full",
+      "expected": "sup_3e7f77cb0c34",
+      "actual": "sup_3e7f77cb0c34",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.cheapest_lines",
+      "expected": [
+        "sup_75ead9b7fba9",
+        "sup_3e7f77cb0c34"
+      ],
+      "actual": [
+        "sup_75ead9b7fba9",
+        "sup_3e7f77cb0c34"
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_7dc642b58d41/award",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_7dc642b58d41/award",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_7dc642b58d41/award",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_7dc642b58d41/award",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_7dc642b58d41/award",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_7dc642b58d41/award",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.split_two_pos",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.split_value",
+      "expected": 46,
+      "actual": 46.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_7dc642b58d41/award",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_7dc642b58d41/quote",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_7dc642b58d41/cancel",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.po_origin_po_637dc7cd7ffc",
+      "expected": "rfq_7dc642b58d41",
+      "actual": "rfq_7dc642b58d41",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.price_list_prod_batik_mega",
+      "expected": 10.0,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.po_origin_po_7c527cb6dbf3",
+      "expected": "rfq_7dc642b58d41",
+      "actual": "rfq_7dc642b58d41",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.price_list_prod_tenun_ikat",
+      "expected": 18.0,
+      "actual": 18.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.full_single_po",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.full_total",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_ee5ff7b171ea/cancel",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "POST rfqs/rfq_ee5ff7b171ea/award",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.unavailable_not_complete_control",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.full_unavailable_rejected",
+      "expected": 400,
+      "actual": 200,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "rfq.full_unavailable_no_po",
+      "expected": 0,
+      "actual": 1,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "rfq.foreign_detail_denied_control",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rfq.foreign_compare_denied",
+      "expected": true,
+      "actual": false,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "rfq.foreign_cancel_denied",
+      "expected": true,
+      "actual": false,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "rfq.foreign_state_preserved",
+      "expected": "draft",
+      "actual": "cancelled",
+      "note": "",
+      "status": "observed_difference"
+    }
+  ],
+  "context": {
+    "products": [
+      {
+        "id": "prod_batik_mega",
+        "sku": "BTK-MEGA-001",
+        "base_unit": "yard"
+      },
+      {
+        "id": "prod_tenun_ikat",
+        "sku": "TNI-GRGD-001",
+        "base_unit": "yard"
+      }
+    ],
+    "supplier_ids": [
+      "sup_75ead9b7fba9",
+      "sup_3e7f77cb0c34"
+    ],
+    "calloff": {
+      "id": "po_f67157819ffc",
+      "status": "pending",
+      "items": [
+        {
+          "product_id": "prod_batik_mega",
+          "sku": "BTK-MEGA-001",
+          "product_name": "Batik Mega Mendung Premium",
+          "line_code": "printing",
+          "expected_grade": "A",
+          "expected_grade_source": "derived_product",
+          "quantity": 20.0,
+          "unit": "yard",
+          "base_unit": "yard",
+          "quantity_base": 20.0,
+          "uom_trail": {
+            "doc_uom": "yard",
+            "doc_qty": 20.0,
+            "base_uom": "yard",
+            "base_qty": 20.0,
+            "factor": 1.0,
+            "source": "same_unit",
+            "rule_id": "",
+            "formula": "",
+            "path": [
+              "yard = yard"
+            ],
+            "context": "purchase_order",
+            "converted_at": "2026-10-06T05:42:23.532622+00:00"
+          },
+          "price": 10.0,
+          "discount_percent": 0.0,
+          "received_qty": 0.0,
+          "qty_rolls": null,
+          "received_rolls": null,
+          "supplier_item_id": "sit_706b661c00d9",
+          "supplier_sku": "CBN-MEGA-PREM",
+          "supplier_item_name": "Batik Cap Mega Mendung Premium",
+          "supplier_uom": "roll",
+          "supplier_conv_factor": 45.0,
+          "contract_id": "sct_ac9a8ec7f10c",
+          "contract_number": "KSC/SCT-00003",
+          "price_source": "manual_override",
+          "sourcing_explain": [
+            "Barang supplier: CBN-MEGA-PREM — Batik Cap Mega Mendung Premium (1 roll = 45.0 yard)",
+            "Harga dari kontrak KSC/SCT-00003: Rp 117.000 / yard",
+            "⚠️ Qty 20 di bawah MOQ kontrak 90 — konfirmasi ke supplier.",
+            "Harga diisi manual (override) Rp 10 — kontrak KSC/SCT-00003 menawarkan Rp 117.000."
+          ],
+          "subtotal": 200.0,
+          "discount_amount": 0.0,
+          "line_total": 200.0
+        }
+      ]
+    },
+    "unavailable_full": {
+      "rfq_id": "rfq_d95357d477b4",
+      "response": {
+        "rfq": {
+          "id": "rfq_d95357d477b4",
+          "rfq_number": "RFQ-00007",
+          "title": "RFQ Pengadaan",
+          "entity_id": "ent_ksc",
+          "source": "manual",
+          "pr_id": "",
+          "pr_number": "",
+          "warehouse_id": "wh_jakarta",
+          "warehouse_name": "Gudang Jakarta Utara",
+          "status": "awarded",
+          "items": [
+            {
+              "line_id": "L1",
+              "product_id": "prod_batik_mega",
+              "sku": "BTK-MEGA-001",
+              "product_name": "Batik Mega Mendung Premium",
+              "quantity": 1.0,
+              "unit": "yard",
+              "note": "",
+              "qty_rolls": 1,
+              "line_code": "printing"
+            },
+            {
+              "line_id": "L2",
+              "product_id": "prod_tenun_ikat",
+              "sku": "TNI-GRGD-001",
+              "product_name": "Tenun Ikat Garuda Premium",
+              "quantity": 2.0,
+              "unit": "yard",
+              "note": "",
+              "qty_rolls": 2,
+              "line_code": "woven"
+            }
+          ],
+          "suppliers": [
+            {
+              "supplier_id": "sup_75ead9b7fba9",
+              "supplier_name": "Cirebon Craft",
+              "quote_status": "quoted",
+              "quoted_at": "2026-10-06T05:42:24.841099+00:00",
+              "valid_until": "",
+              "lead_time_days": 0,
+              "note": "",
+              "lines": [
+                {
+                  "line_id": "L1",
+                  "price": 10.0,
+                  "available": true,
+                  "note": ""
+                },
+                {
+                  "line_id": "L2",
+                  "price": 20.0,
+                  "available": false,
+                  "note": ""
+                }
+              ],
+              "total": 10.0
+            },
+            {
+              "supplier_id": "sup_3e7f77cb0c34",
+              "supplier_name": "NTT Weaving Co",
+              "quote_status": "pending",
+              "quoted_at": "",
+              "valid_until": "",
+              "lead_time_days": 0,
+              "note": "",
+              "lines": [],
+              "total": 0.0
+            }
+          ],
+          "needed_by_date": "",
+          "due_date": "",
+          "notes": "",
+          "award": {
+            "mode": "full",
+            "awarded_by": "Audit Procurement",
+            "awarded_at": "2026-10-06T05:42:24.922660+00:00",
+            "full_supplier_id": "sup_75ead9b7fba9",
+            "line_awards": [
+              {
+                "line_id": "L1",
+                "supplier_id": "sup_75ead9b7fba9",
+                "price": 10.0
+              },
+              {
+                "line_id": "L2",
+                "supplier_id": "sup_75ead9b7fba9",
+                "price": 20.0
+              }
+            ],
+            "po_ids": [
+              "po_bf06e3f4c3ae"
+            ],
+            "po_numbers": [
+              "KSC/PO-00025"
+            ]
+          },
+          "timeline": [
+            {
+              "event": "created",
+              "label": "RFQ dibuat",
+              "actor": "Admin",
+              "at": "2026-10-06T05:42:24.822003+00:00",
+              "note": "2 item · 2 supplier diundang"
+            },
+            {
+              "event": "quoted",
+              "label": "Penawaran Cirebon Craft masuk",
+              "actor": "Audit Procurement",
+              "at": "2026-10-06T05:42:24.841099+00:00",
+              "note": "Total Rp 10"
+            },
+            {
+              "event": "awarded",
+              "label": "RFQ di-award (full) → 1 PO",
+              "actor": "Audit Procurement",
+              "at": "2026-10-06T05:42:24.923665+00:00",
+              "note": "KSC/PO-00025"
+            }
+          ],
+          "created_by": "Admin",
+          "created_by_id": "PROC90",
+          "created_at": "2026-10-06T05:42:24.819776+00:00",
+          "updated_at": "2026-10-06T05:42:24.923665+00:00",
+          "line_codes": [
+            "printing",
+            "woven"
+          ],
+          "refs": [
+            {
+              "rel": "child",
+              "doc_type": "purchase_order",
+              "doc_id": "po_bf06e3f4c3ae",
+              "doc_number": "KSC/PO-00025",
+              "note": "hasil award RFQ",
+              "at": "2026-10-06T05:42:24.894787+00:00"
+            }
+          ]
+        },
+        "pos": [
+          {
+            "id": "po_bf06e3f4c3ae",
+            "po_number": "KSC/PO-00025",
+            "supplier_id": "sup_75ead9b7fba9",
+            "supplier_name": "Cirebon Craft",
+            "supplier_contact": "Pak Wahyu | 6281234500001",
+            "supplier_npwp": "21.111.222.3-401.000",
+            "warehouse_id": "wh_jakarta",
+            "warehouse_name": "Gudang Jakarta Utara",
+            "warehouse_city": "Jakarta",
+            "items": [
+              {
+                "product_id": "prod_batik_mega",
+                "sku": "BTK-MEGA-001",
+                "product_name": "Batik Mega Mendung Premium",
+                "quantity": 1.0,
+                "unit": "yard",
+                "price": 10.0,
+                "discount_percent": 0.0,
+                "received_qty": 0.0,
+                "subtotal": 10.0,
+                "discount_amount": 0.0,
+                "line_total": 10.0,
+                "expected_grade": "A",
+                "expected_grade_source": "derived_product",
+                "line_code": "printing"
+              },
+              {
+                "product_id": "prod_tenun_ikat",
+                "sku": "TNI-GRGD-001",
+                "product_name": "Tenun Ikat Garuda Premium",
+                "quantity": 2.0,
+                "unit": "yard",
+                "price": 20.0,
+                "discount_percent": 0.0,
+                "received_qty": 0.0,
+                "subtotal": 40.0,
+                "discount_amount": 0.0,
+                "line_total": 40.0,
+                "expected_grade": "A",
+                "expected_grade_source": "derived_product",
+                "line_code": "woven"
+              }
+            ],
+            "total_amount": 50.0,
+            "entity_id": "ent_ksc",
+            "items_discount_total": 0.0,
+            "order_discount_percent": 0.0,
+            "order_discount_amount": 0.0,
+            "discount_total": 0.0,
+            "net_subtotal": 50.0,
+            "dpp": 45.83,
+            "ppn_rate": 12.0,
+            "ppn_mode": "excluded",
+            "is_pkp": true,
+            "ppn_amount": 5.5,
+            "grand_total": 55.5,
+            "tax_mode": "",
+            "expected_delivery_date": "",
+            "notes": "Dari RFQ-00007",
+            "status": "pending",
+            "approval_required": false,
+            "required_approval_role": null,
+            "approval_status": "not_required",
+            "approval_amount": 50.0,
+            "approval_reason": "",
+            "price_deviation": {
+              "flagged": false
+            },
+            "amount_paid": 0.0,
+            "returned_amount": 0.0,
+            "outstanding": 55.5,
+            "payment_status": "unpaid",
+            "payments": [],
+            "source_rfq_id": "rfq_d95357d477b4",
+            "source_rfq_number": "RFQ-00007",
+            "source_pr_id": "",
+            "source_pr_number": "",
+            "pr_id": "",
+            "pr_number": "",
+            "source": "rfq",
+            "source_so_ids": [],
+            "sales_user_id": "",
+            "sales_name": "",
+            "stage_progress": [],
+            "timeline": [
+              {
+                "event": "created",
+                "label": "PO dibuat dari RFQ-00007",
+                "actor": "Audit Procurement",
+                "at": "2026-10-06T05:42:24.886470+00:00",
+                "note": "2 item · Rp 50"
+              }
+            ],
+            "created_by": "Audit Procurement",
+            "created_by_id": "PROC90",
+            "created_at": "2026-10-06T05:42:24.884214+00:00",
+            "updated_at": "2026-10-06T05:42:24.884214+00:00",
+            "line_codes": [
+              "printing",
+              "woven"
+            ]
+          }
+        ]
+      }
+    },
+    "foreign_scope_fixture": {
+      "rfq_id": "rfq_1d4d8f2255aa",
+      "entity_id": "ent_kanda",
+      "entity_exists": true,
+      "actor_allowed_entity_ids": [
+        "ent_ksc"
+      ],
+      "note": "A synthetic RFQ created through original public producer is assigned a real second active legal owner for isolated scope checks."
+    }
+  },
+  "harness_errors": [],
+  "blocked_external": []
+}

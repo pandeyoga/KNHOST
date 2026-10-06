@@ -1,0 +1,95 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_services90_0b0c05004aae486896c0670674417bf5",
+  "observations": [
+    {
+      "id": "spec.patch_title",
+      "expected": "spec_75215840b23f",
+      "actual": "spec_75215840b23f",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_strings",
+      "expected": "spec_75215840b23f",
+      "actual": "spec_75215840b23f",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_target",
+      "expected": "spec_75215840b23f",
+      "actual": "spec_75215840b23f",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_null_numeric",
+      "expected": "spec_75215840b23f",
+      "actual": "spec_75215840b23f",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_hint",
+      "expected": "spec_75215840b23f",
+      "actual": "spec_75215840b23f",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_color_by_code",
+      "expected": "spec_75215840b23f",
+      "actual": "spec_75215840b23f",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_clear_color",
+      "expected": "spec_75215840b23f",
+      "actual": "spec_75215840b23f",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_price",
+      "expected": "spec_75215840b23f",
+      "actual": "spec_75215840b23f",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_clear_design",
+      "expected": "spec_75215840b23f",
+      "actual": "spec_75215840b23f",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_clear_fabric",
+      "expected": "spec_75215840b23f",
+      "actual": "spec_75215840b23f",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.numeric_decimal",
+      "expected": 123.45,
+      "actual": 123.45,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.width_cm",
+      "expected": 155,
+      "actual": 155.0,
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "harness_errors": [
+    "rnd\nTraceback (most recent call last):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\rnd_feedback_rules90.py\", line 83, in main\n    try:await fn()\n        ^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\rnd_feedback_rules90.py\", line 26, in rnd\n    for key,patch in [('hint',{'sample_type_hint':'missing'}),('color',{'color_target':{'color_id':'missing'}}),('design',{'design_id':'missing'}),('fabric',{'base_fabric_template_id':'missing'})]:await reject('spec.invalid_'+key,spec.patch_spec(sid,patch))\n                                                                                                                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\rnd_feedback_rules90.py\", line 16, in reject\n    try:await fn();out=False\n              ^^^^\nTypeError: 'coroutine' object is not callable\n",
+    "feedback\nTraceback (most recent call last):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\rnd_feedback_rules90.py\", line 83, in main\n    try:await fn()\n        ^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\rnd_feedback_rules90.py\", line 58, in feedbacks\n    doc=await feedback.create_feedback(base,ACTOR);fid=doc['id'];rec('feedback.initial_status','open',doc['status'])\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\services\\customer_feedback_service.py\", line 50, in create_feedback\n    raise FeedbackError(\"Pesanan (SO) tidak ditemukan.\")\nservices.customer_feedback_service.FeedbackError: Pesanan (SO) tidak ditemukan.\n"
+  ],
+  "scope": "Original R&D edit contracts and feedback state/counter consistency.\n\nFresh synthetic template database. Direct service callers are explicitly scoped\nas service verification, not frontend/RBAC verification. Inputs use actual master\nrecords; seeded status/round fixtures only test already existing history guards.\n"
+}

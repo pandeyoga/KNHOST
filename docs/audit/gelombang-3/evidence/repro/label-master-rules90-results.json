@@ -1,0 +1,947 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_services90_ab3ef9facf504271820e9271dc7b3a5d",
+  "observations": [
+    {
+      "id": "label.0.supplier_sku",
+      "expected": "SKU",
+      "actual": "SKU",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.1.lot",
+      "expected": "LOT",
+      "actual": "LOT",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.2.roll_no",
+      "expected": "ROLL",
+      "actual": "ROLL",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.3.length",
+      "expected": 12.5,
+      "actual": 12.5,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.4.weight_kg",
+      "expected": 2.25,
+      "actual": 2.25,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.5.color_code",
+      "expected": "NAVY",
+      "actual": "NAVY",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.6.supplier_sku",
+      "expected": "SKU",
+      "actual": "SKU",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.7.length",
+      "expected": 12.5,
+      "actual": 12.5,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.8.length_unit",
+      "expected": "meter",
+      "actual": "meter",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.9.weight_kg",
+      "expected": 2.25,
+      "actual": 2.25,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.10.supplier_sku",
+      "expected": "SKU",
+      "actual": "SKU",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.11.length",
+      "expected": 12.5,
+      "actual": 12.5,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.12.length_unit",
+      "expected": "yard",
+      "actual": "yard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.13.supplier_sku",
+      "expected": "SKU",
+      "actual": "SKU",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.14.length",
+      "expected": 10.0,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.15.length_unit",
+      "expected": "meter",
+      "actual": "meter",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.16.supplier_sku",
+      "expected": "SKU",
+      "actual": "SKU",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.17.length",
+      "expected": 123.0,
+      "actual": 123.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.18.supplier_sku",
+      "expected": "CUSTOM",
+      "actual": "CUSTOM",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.19.length",
+      "expected": 10.5,
+      "actual": 10.5,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.20.gtin",
+      "expected": "09506000134352",
+      "actual": "09506000134352",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.21.lot",
+      "expected": "LOT",
+      "actual": "LOT",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.22.roll_no",
+      "expected": "R1",
+      "actual": "R1",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.23.weight_kg",
+      "expected": 2.25,
+      "actual": 2.25,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.24.length",
+      "expected": 12.5,
+      "actual": 12.5,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.25.length_unit",
+      "expected": "meter",
+      "actual": "meter",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.26.gtin",
+      "expected": "09506000134352",
+      "actual": "09506000134352",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.27.weight_kg",
+      "expected": 2.25,
+      "actual": 2.25,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.28.length",
+      "expected": 12.5,
+      "actual": 12.5,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.29.length_unit",
+      "expected": "yard",
+      "actual": "yard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.30.supplier_sku",
+      "expected": "SKU",
+      "actual": "SKU",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.31.lot",
+      "expected": "LOT",
+      "actual": "LOT",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.32.roll_no",
+      "expected": "R1",
+      "actual": "R1",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.33.count",
+      "expected": 2.0,
+      "actual": 2.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.reject_34",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.reject_35",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.reject_36",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.reject_37",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.reject_38",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.reject_39",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.reject_40",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.reject_41",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.reject_42",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.reject_43",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.normalize_format",
+      "expected": "auto",
+      "actual": "auto",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.normalize_length_unit",
+      "expected": "meter",
+      "actual": "meter",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.normalize_delimiter",
+      "expected": "|",
+      "actual": "|",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.normalize_json_keys",
+      "expected": {},
+      "actual": {},
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.normalize_gs1_ai_map",
+      "expected": {},
+      "actual": {},
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.pattern_fallback",
+      "expected": "supplier",
+      "actual": "supplier",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "label.default_pattern",
+      "expected": "supplier",
+      "actual": "supplier",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.factor",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.price",
+      "expected": 1000,
+      "actual": 1000.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.duplicate",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.create_guard_{'supplier_id': ''}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.create_guard_{'supplier_sku': ''}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.create_guard_{'status': 'wrong'}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.create_guard_{'conv_factor': 0}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.create_guard_{'conv_factor': -1}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.create_guard_{'product_id': 'missing'}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.patch_supplier_sku",
+      "expected": "AUD-NEW",
+      "actual": "AUD-NEW",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.patch_supplier_item_name",
+      "expected": "Renamed",
+      "actual": "Renamed",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.patch_conv_factor",
+      "expected": 1,
+      "actual": 1.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.patch_last_price",
+      "expected": 15,
+      "actual": 15.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.patch_moq",
+      "expected": 3,
+      "actual": 3.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.patch_lead_time_days",
+      "expected": 5,
+      "actual": 5,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.patch_status",
+      "expected": "inactive",
+      "actual": "inactive",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.patch_guard_{'status': 'wrong'}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.patch_guard_{'conv_factor': 0}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.patch_guard_{'conv_factor': -1}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.patch_guard_{'product_id': 'missing'}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.remove_override",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.lookup",
+      "expected": "sit_aa213fb1b85d",
+      "actual": "sit_aa213fb1b85d",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.import_preview",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.preview_no_write",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.import_first",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.import_second_no_duplicate",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.import_second_update",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.csv_guard_{'supplier_sku': '', 'sku': 'BTK-MEGA-001', 'conv_factor': '1', 'last_price': '20', 'supplier_uom': 'yard'}",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.csv_guard_{'supplier_sku': 'CSV-A', 'sku': 'missing', 'conv_factor': '1', 'last_price': '20', 'supplier_uom': 'yard'}",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.csv_guard_{'supplier_sku': 'CSV-A', 'sku': 'BTK-MEGA-001', 'conv_factor': '0', 'last_price': '20', 'supplier_uom': 'yard'}",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.csv_guard_{'supplier_sku': 'CSV-A', 'sku': 'BTK-MEGA-001', 'conv_factor': '1', 'last_price': '-1', 'supplier_uom': 'yard'}",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.csv_guard_{'supplier_sku': 'CSV-A', 'sku': 'BTK-MEGA-001', 'conv_factor': '1', 'last_price': '20', 'supplier_uom': 'yard', 'lead_time_days': 'bad'}",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.csv_duplicate_guard",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.used_delete_guard",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "supplier_item.unused_delete",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_rows_",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_errors_",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_rows_sku;nama;harga\nP;Product;1.250,50",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_errors_sku;nama;harga\nP;Product;1.250,50",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_rows_sku,name,price\nP,Product,12.50",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_errors_sku,name,price\nP,Product,12.50",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_rows_P;Name;",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_errors_P;Name;",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_rows_P",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_errors_P",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_rows_;Name;10",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_errors_;Name;10",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_rows_P;Name;not-number",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "customer_price.csv_errors_P;Name;not-number",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_tariff_rate",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_tariff_qty_source",
+      "expected": "input",
+      "actual": "input",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_ppi",
+      "expected": 10,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_shrinkage_pct",
+      "expected": 2,
+      "actual": 2.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_yield_factor",
+      "expected": 1.2,
+      "actual": 1.2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_byproduct_pct",
+      "expected": 1,
+      "actual": 1.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_moq",
+      "expected": 3,
+      "actual": 3.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_lead_time_days",
+      "expected": 4,
+      "actual": 4,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_tolerance_pct",
+      "expected": 5,
+      "actual": 5.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_min_charge",
+      "expected": 30,
+      "actual": 30.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_guard_{'tariff_basis': 'bad'}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_guard_{'tariff_qty_source': 'bad'}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_guard_{'valid_to': '2020-01-01'}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.patch_guard_{'aux_fees': [{'basis': 'invalid'}]}",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.tariff_meter",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.tariff_lumpsum",
+      "expected": 10,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.tariff_lot",
+      "expected": 10,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.tariff_custom",
+      "expected": 10,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.tariff_roll",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.tariff_pick",
+      "expected": 400,
+      "actual": 400.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.aux_lumpsum",
+      "expected": 5,
+      "actual": 5.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.aux_per_roll",
+      "expected": 10,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.aux_per_color",
+      "expected": 15,
+      "actual": 15.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.aux_per_repeat",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.aux_per_output_unit",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.aux_per_meter",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.kg_total",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.formula_total",
+      "expected": 125,
+      "actual": 125.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.invalid_formula_warn",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.invalid_formula_fallback",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.minimum",
+      "expected": 150,
+      "actual": 150.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.minimum_label",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.override",
+      "expected": 120,
+      "actual": 120.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "contract.override_label",
+      "expected": "override",
+      "actual": "override",
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "harness_errors": [],
+  "scope": "Original pure supplier label decoder, catalog import/CRUD and tariff service arithmetic; no scanner/printer or public authorization claim.",
+  "standard_source": "https://ref.gs1.org/ai/?lang=en"
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_po_timeline_approval.py",
+    "database": "knhost_audit_native90_298614cbd5f140f5a736e265f4d1f362",
+    "exit": 1,
+    "seconds": 55.84,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_po_timeline_approval.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "200 - PASSED\n   Timeline events: ['created', 'submitted_for_approval', 'rejected']\n   ✓ Validation: ✓ Timeline has 3 entries with expected events\n\n🔍 Testing GET PO PO-00007 timeline...\n✅ Status 200 - PASSED\n   Timeline events: ['created', 'submitted_for_approval']\n   ✓ Validation: ✓ Timeline has 2 entries with expected events\n\n📋 PHASE 3: Legacy PO Timeline\n\n🔍 Testing GET purchase orders list...\n✅ Status 200 - PASSED\n   Found legacy PO: PO-00003 (no backend timeline)\n   Frontend should synthesize timeline from timestamps\n\n📋 PHASE 4: Notification Generation\n\n🔍 Testing Generate system notifications...\n✅ Status 200 - PASSED\n   ✓ Validation: ✓ Generated 24 notifications\n\n🔍 Testing GET notifications (check PO approval)...\n✅ Status 200 - PASSED\n   Found PO approval notification: PO menunggu persetujuan: PO-00010\n   ✓ Validation: ✓ PO approval notification has correct action fields (action_id=po_010)\n\n📋 PHASE 5: PO Approval Role Gating\n\n🔍 Testing GET purchase orders to find waiting_approval PO...\n✅ Status 200 - PASSED\n   Found waiting PO: PO-00010 (id=po_010)\n\n🔍 Testing Approve PO po_010 as sales (expect 403)...\n✅ Status 403 - PASSED\n\n🔍 Testing Approve PO po_010 as manager...\n✅ Status 200 - PASSED\n   ✓ Validation: ❌ Status is 'waiting_approval', expected 'pending'\n\n🔍 Testing Approve non-waiting PO po_010 (expect 409)...\n❌ Expected 409, got 403 - FAILED\n   Error: {'detail': \"Approval PO butuh role minimal 'admin'. Role Anda: 'manager'.\"}\n\n📋 PHASE 6: Backend Regression\n\n🔍 Testing GET /api/purchase-orders (list)...\n✅ Status 200 - PASSED\n\n================================================================================\n📊 TESTS SUMMARY: 13/14 passed\n================================================================================\n\n❌ FAILED TESTS:\n   - ❌ Expected 409, got 403 - FAILED\n"
+  }
+]

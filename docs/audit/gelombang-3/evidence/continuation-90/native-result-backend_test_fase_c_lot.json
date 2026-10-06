@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_fase_c_lot.py",
+    "database": "knhost_audit_native90_20fdd1870a5f4d9a8c4e00e4faa0faca",
+    "exit": 0,
+    "seconds": 55.32,
+    "pass_log_tokens": 47,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-backend_test_fase_c_lot.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "✅ [PASS] Merge with <2 lots rejected\n  ✅ [PASS] Merge successful: KSC/LOT-2610-0032 with 2 parents\n\nTEST 10 — POST /api/lots/{id}/rework (rework lot)\n  ✅ [PASS] Invalid process_type rejected\n  ✅ [PASS] Invalid stage transition rejected by state machine\n  ✅ [PASS] Rework successful: KSC/LOT-2610-0033\n  ✅ [PASS] Parent lot status changed to 'rework'\n\nTEST 11 — GET /api/lots/{id}/genealogy (genealogy tree)\n  ✅ [PASS] Genealogy complete: 3 nodes, 2 edges\n  ✅ [PASS] Stage chain present: finished\n\nTEST 12 — GET /api/lots/{id}/recall (recall tracing)\n  ✅ [PASS] Recall complete: 1 rolls, 0 orders, 0 customers\n\nTEST 13 — POST /api/lots/{id}/label (label/QR generation)\n  ✅ [PASS] Invalid label format rejected\n  ✅ [PASS] Invalid qty (>50) rejected\n  ✅ [PASS] Label generated: format=zpl, qty=2\n  ✅ [PASS] Lot number included in label content\n\nTEST 14 — GET /api/lots/unassigned-rolls\n  ✅ [PASS] Unassigned rolls endpoint works: 0 rolls without lot\n  ✅ [PASS] All rolls have lot_id (clean data)\n\nTEST 15 — GET /api/rolls/{roll_id}/lot\n  ✅ [PASS] Roll-lot relationship endpoint works\n\nTEST 16 — GET /api/enums (lot_source, lot_status)\n  ✅ [PASS] lot_source enum active with 11 values\n  ✅ [PASS] lot_status enum active with 5 values\n  ✅ [PASS] Decisions D-10, D-26, D-27 documented in registry\n\nTEST 17 — RBAC: Sales can view but not modify settings\n  ✅ [PASS] Sales can VIEW lots (traceability transparent)\n  ✅ [PASS] Sales CANNOT modify lot settings (403 Forbidden)\n\nTEST 18 — REGRESSION: Existing endpoints still work\n  ✅ [PASS] inventory/rolls still works\n  ✅ [PASS] inventory/balances still works\n  ✅ [PASS] uom-conversions/rules still works\n\n======================================================================\n  PASS 46  |  FAIL 0\n  ALL TESTS PASSED — Backend Fase C Lot APIs working correctly.\n"
+  }
+]

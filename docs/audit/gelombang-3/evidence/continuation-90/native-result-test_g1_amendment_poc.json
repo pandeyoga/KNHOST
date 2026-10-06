@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_g1_amendment_poc.py",
+    "database": "knhost_audit_native90_bf39808085a04c41adb1497d24fc6620",
+    "exit": 1,
+    "seconds": 70.68,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_g1_amendment_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "===========================================\n  ✓ turunkan ambang jadi Rp 100.000 (uji jalur persetujuan)\n  ✓ penyetuju = manager\n  ✓ kontrol ganda AKTIF\n  ✓ catatan wajib di atas Rp 100.000\n  ✗ usulan besar TANPA catatan DITOLAK — Pesanan KSC/SO-00010 bukan pesanan Anda. Peran sales hanya membuka pes\n  ✗ sales boleh MENGAJUKAN; statusnya menunggu persetujuan\nTraceback (most recent call last):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\run_isolated.py\", line 25, in <module>\n    try:runpy.run_path(str(script),run_name='__main__')\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\native_runner.py\", line 78, in <module>\n    exec(compile(target.read_text(encoding='utf-8-sig'),str(original_path),'exec'),namespace)\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\test_g1_amendment_poc.py\", line 565, in <module>\n    sys.exit(__import__('poc_stock_guard').with_journal_cleanup(main))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\poc_stock_guard.py\", line 335, in with_journal_cleanup\n    return fn()\n           ^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\test_g1_amendment_poc.py\", line 247, in main\n    ok(amd2[\"required_role\"] == \"manager\", \"penyetuju yang dibutuhkan = manager\")\n       ~~~~^^^^^^^^^^^^^^^^^\nKeyError: 'required_role'\n"
+  }
+]

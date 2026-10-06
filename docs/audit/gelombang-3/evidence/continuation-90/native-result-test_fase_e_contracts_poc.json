@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_fase_e_contracts_poc.py",
+    "database": "knhost_audit_native90_c84de9d2e1314b4d9b092a523f7742f7",
+    "exit": 0,
+    "seconds": 60.88,
+    "pass_log_tokens": 70,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_fase_e_contracts_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "h ke `block` tanpa deploy\n  ✅ [PASS] PO hasil realisasi PR DITOLAK 400 karena melampaui anggaran (R6.3 konsisten)\n  ✅ [PASS] Setelah anggaran dinormalkan, realisasi PR→PO berhasil (tidak ada efek samping)\n\nTEST 12 — RBAC: warehouse lihat-saja · sales tanpa akses · realisasi butuh izin\n  ✅ [PASS] Warehouse BOLEH melihat Barang Supplier (butuh saat penerimaan)\n  ✅ [PASS] Warehouse DITOLAK 403 membuat Barang Supplier\n  ✅ [PASS] Warehouse DITOLAK 403 melakukan impor massal\n  ✅ [PASS] Sales DITOLAK 403 melihat Barang Supplier (data komersial pembelian)\n  ✅ [PASS] Sales DITOLAK 403 merealisasikan PR ke PO\n  ✅ [PASS] Manager bisa melihat ringkasan sourcing PR\n\nTEST 13 — Proteksi jejak audit: barang supplier & kontrak terpakai tidak bisa dihapus\n  ✅ [PASS] usage_count barang supplier naik setelah dipakai PO (2×) & harga terakhir tersinkron Rp 49,500\n  ✅ [PASS] Barang supplier yang sudah dipakai PO DITOLAK dihapus (409)\n  ✅ [PASS] Kontrak pembelian yang sudah dipakai PO DITOLAK dihapus (409)\n  ✅ [PASS] Barang supplier yang BELUM dipakai boleh dihapus\n\nTEST 14 — Invarian INV-SRC-01..05 hijau pada data POC (sebelum dibersihkan)\n  ✅ [PASS] Ringkasan realisasi turunan konsisten dengan yang tersimpan\n  ✅ [PASS] Realisasi penuh & tidak berlebih: 550 dari 550 unit\n  ✅ [PASS] Semua jejak realisasi menunjuk dokumen yang ADA (INV-SRC-04)\n  ✅ [PASS] Kunci (supplier, kode) unik pada 11 barang supplier (INV-SRC-05)\n\nTEST 15 — Kebersihan data: artifact POC dibersihkan (invarian global tetap hijau)\n  ✅ [PASS] Semua artifact POC dihapus (kontrak/barang supplier/PR/PO/order makloon/produk)\n\n================================================================\n  PASS 69  |  FAIL 0\n  POC FASE E HIJAU — sourcing berbasis kontrak terbukti.\n================================================================\n"
+  }
+]

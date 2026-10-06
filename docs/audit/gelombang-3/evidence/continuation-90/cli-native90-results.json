@@ -1,0 +1,57 @@
+[
+  {
+    "script": "backend/verify_data_integrity.py",
+    "database": "knhost_audit_native90_cli_2d542867ffe04a19bdb615a06d0f1cf6",
+    "exit": 1,
+    "seconds": 6.07,
+    "log": "cli-native90-verify_data_integrity.log",
+    "pass_log_tokens": 187,
+    "fail_log_tokens": 4,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/check_notifs_per_role.py",
+    "database": "knhost_audit_native90_cli_2d542867ffe04a19bdb615a06d0f1cf6",
+    "exit": 0,
+    "seconds": 5.31,
+    "log": "cli-native90-check_notifs_per_role.log",
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/entity_audit/verify_leaks.py",
+    "database": "knhost_audit_native90_cli_2d542867ffe04a19bdb615a06d0f1cf6",
+    "exit": 1,
+    "seconds": 4.67,
+    "log": "cli-native90-verify_leaks.log",
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/entity_audit/verify_leaks2.py",
+    "database": "knhost_audit_native90_cli_2d542867ffe04a19bdb615a06d0f1cf6",
+    "exit": 0,
+    "seconds": 4.68,
+    "log": "cli-native90-verify_leaks2.log",
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/entity_audit/verify_interco.py",
+    "database": "knhost_audit_native90_cli_2d542867ffe04a19bdb615a06d0f1cf6",
+    "exit": 0,
+    "seconds": 3.97,
+    "log": "cli-native90-verify_interco.log",
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_e5_visibility_poc.py",
+    "database": "knhost_audit_native90_1d10daab3a014c3e90c0c31527bd2293",
+    "exit": "timeout",
+    "seconds": 210.04,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_core_e5_visibility_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "Timeout (0:00:55)!\nThread 0x0001b408 (most recent call first):\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\re\\_parser.py\", line 884 in _parse\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\re\\_parser.py\", line 259 in _parse_sub\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\re\\_parser.py\", line 872 in _parse\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\re\\_parser.py\", line 460 in _parse_sub\n  File "
+  }
+]

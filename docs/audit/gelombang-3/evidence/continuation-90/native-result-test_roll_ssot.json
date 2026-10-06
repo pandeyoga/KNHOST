@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_roll_ssot.py",
+    "database": "knhost_audit_native90_18c39871cd5b4c0ab122857b6aa36b66",
+    "exit": 1,
+    "seconds": 57.14,
+    "pass_log_tokens": 5,
+    "fail_log_tokens": 3,
+    "log": "continuation-90\\native-test_roll_ssot.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": " masuk ke buk\n  ℹ️  \n=== D1 negative: Insufficient stock ===\n  ✅ [PASS] D1-neg: Correctly returned 409 for qty 420.0 > available 320.0\n  ℹ️  \n=== D2: Cycle Count (roll-aware) ===\n  ❌ [FAIL] D2: Create session failed: 409 {\"detail\":\"Mode “Semua Entitas” hanya untuk melihat gabungan. Pilih satu badan usaha dulu di pemilih badan usaha (kanan atas) sebelum membuat atau menyimpan data — supaya dokumennya tidak masuk ke buk\n  ℹ️  \n=== D3: Manual inbound WMS task ===\n  ❌ [FAIL] D3: Create inbound task failed: 409 {\"detail\":\"Mode “Semua Entitas” hanya untuk melihat gabungan. Pilih satu badan usaha dulu di pemilih badan usaha (kanan atas) sebelum membuat atau menyimpan data — supaya dokumennya tidak masuk ke buk\n  ℹ️  \n=== Regression: Inter-company transfer ===\n  ✅ [PASS] Regression: Created inter-company transfer KSC/TRF-00005\n  ✅ [PASS] Regression: Inter-company transfer approved and completed\n\n======================================================================\n  ✅ PASSED: 5\n  ❌ FAILED: 3\n======================================================================\n\nFailed tests:\n  - D1: Create transfer failed: 409 {\"detail\":\"Mode “Semua Entitas” hanya untuk melihat gabungan. Pilih satu badan usaha dulu di pemilih badan usaha (kanan atas) sebelum membuat atau menyimpan data — supaya dokumennya tidak masuk ke buk\n  - D2: Create session failed: 409 {\"detail\":\"Mode “Semua Entitas” hanya untuk melihat gabungan. Pilih satu badan usaha dulu di pemilih badan usaha (kanan atas) sebelum membuat atau menyimpan data — supaya dokumennya tidak masuk ke buk\n  - D3: Create inbound task failed: 409 {\"detail\":\"Mode “Semua Entitas” hanya untuk melihat gabungan. Pilih satu badan usaha dulu di pemilih badan usaha (kanan atas) sebelum membuat atau menyimpan data — supaya dokumennya tidak masuk ke buk\n"
+  }
+]

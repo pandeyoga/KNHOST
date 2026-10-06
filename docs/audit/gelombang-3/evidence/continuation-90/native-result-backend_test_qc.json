@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_qc.py",
+    "database": "knhost_audit_native90_9643a2483c054bbbaf3991fab0f8b5c6",
+    "exit": 1,
+    "seconds": 55.24,
+    "pass_log_tokens": 17,
+    "fail_log_tokens": 5,
+    "log": "continuation-90\\native-backend_test_qc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "-receive: status=qc_check, received_qty=250.0\n  ✅ [PASS] Complete: status=qc_pending, qc_status=pending, quarantine_qty=250.0\n  ✅ [PASS] Quarantine roll created: 1 roll(s) with status=quarantine\n  ℹ️  TEST 4: QC reject damaged\n  ❌ [FAIL] QC reject damaged failed: 400 {\"detail\":\"Inspeksi belum memenuhi rencana 'Cek semua': 0/1 roll wajib diinspeksi.\"}\n  ℹ️  TEST 2: GR routes to quarantine\n  ℹ️     Testing with task wms_6f534aa0ca55, product prod_jumputan_palembang, qty 300.0\n  ✅ [PASS] Scan-receive: status=qc_check, received_qty=300.0\n  ✅ [PASS] Complete: status=qc_pending, qc_status=pending, quarantine_qty=300.0\n  ✅ [PASS] Quarantine roll created: 1 roll(s) with status=quarantine\n  ℹ️  TEST 5: QC reject return (Nota Debit)\n  ❌ [FAIL] QC reject return failed: 400 {\"detail\":\"Inspeksi belum memenuhi rencana 'Cek semua': 0/1 roll wajib diinspeksi.\"}\n  ℹ️  TEST 6: QC decision validations\n  ✅ [PASS] Validation: Over-allocation rejected (400)\n  ✅ [PASS] Validation: Both zero rejected (400)\n  ✅ [PASS] Validation: Non-qc_pending task rejected (400)\n  ℹ️  TEST 7: Data integrity verification\n  ❌ [FAIL] Data integrity check exception: [WinError 267] The directory name is invalid\n\n======================================================================\nSUMMARY: 16 PASS, 4 FAIL\n======================================================================\n\n❌ FAILED TESTS:\n  - QC accept failed: 400 {\"detail\":\"Inspeksi belum memenuhi rencana 'Cek semua': 0/1 roll wajib diinspeksi.\"}\n  - QC reject damaged failed: 400 {\"detail\":\"Inspeksi belum memenuhi rencana 'Cek semua': 0/1 roll wajib diinspeksi.\"}\n  - QC reject return failed: 400 {\"detail\":\"Inspeksi belum memenuhi rencana 'Cek semua': 0/1 roll wajib diinspeksi.\"}\n  - Data integrity check exception: [WinError 267] The directory name is invalid\n"
+  }
+]

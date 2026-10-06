@@ -1,0 +1,25 @@
+{
+  "commit": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_835a011e4c4e4be48b890008859d843a",
+  "results": [
+    {
+      "id": "D4-BACKORDER-01-concurrent-fill",
+      "expected": {
+        "allocated_qty": 100,
+        "item_reserved_qty": 100,
+        "backorder_qty": 0
+      },
+      "actual": {
+        "allocated_qty": 160.0,
+        "item_reserved_qty": 80.0,
+        "backorder_qty": 20.0
+      },
+      "returned_qty": [
+        80.0,
+        80.0
+      ],
+      "status": "observed_difference",
+      "note": "Two real stock fulfillment calls for one SO shortage100 from physical200. Barrier schedules final SO writes only; allocators and database CAS unchanged. Demand should cap combined reservation at100 and item/allocation/backorder must reconcile."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_g0_config_poc.py",
+    "database": "knhost_audit_native90_b122d9fc6c1f490c8566cc69876f1694",
+    "exit": 1,
+    "seconds": 82.56,
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_g0_config_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "']\n  ✗ 0 referensi consumer yang tidak ada\n  ✓ 0 referensi consumer yang basi\n  ✗ 0 setting terbukti tersambung (≥90)\n  ✓ layar kesehatan menjelaskan arti setiap status ke user\n\n==============================================================================\nTEST 9 — DAFTAR DAMPAK: koreksi harga master hanya menyentuh yang dicentang\n==============================================================================\n  ✓ produk uji dibuat\n  ✓ 3 pesanan terbuka memakai produk itu (3 dibuat)\n  ✓ POST /config/impact-preview 200\n  ✓ daftar dampak menemukan 3 dokumen terbuka terdampak\n  ✓ DEFAULT: HANYA dokumen yang sedang dibuka yang tercentang (['so_67b78ce66af2'])\n  ✓ dampak dirinci per baris (qty, harga lama→baru, Δ)\n  ✓ selisih per dokumen terhitung benar: Rp 200000.0\n  ✓ ringkasan + penjelasan kebijakan ditampilkan ke user\n  ✓ menolak koreksi harga tanpa alasan\n  ✓ POST /config/impact-apply 200\n  ✓ tepat 1 dokumen diubah (1)\n  ✓ INV-CFG-07: dokumen tak tercentang terbukti BYTE-IDENTIK (sidik jari sama)\n  ✓ harga master ikut diperbaiki\n  ✓ pesanan lain TIDAK berubah — harga tetap Rp 100000.0\n  ✓ pesanan lain TIDAK berubah — harga tetap Rp 100000.0\n  ✓ dokumen yang dicentang di-derive ulang → Rp 120000.0\n  ✓ invoice uji tidak bisa dibuat pada data ini — sub-uji dilewati\n\n==============================================================================\nCLEANUP — kembalikan lingkungan ke keadaan semula\n==============================================================================\n  dibersihkan: 10 objek uji · 25 baris config_values POC\n\n==============================================================================\nRINGKASAN\n==============================================================================\n  PASS 112 / FAIL 3  (total 115)\n\n✗ 3 pemeriksaan GAGAL — perbaiki sebelum lanjut.\n\n"
+  }
+]

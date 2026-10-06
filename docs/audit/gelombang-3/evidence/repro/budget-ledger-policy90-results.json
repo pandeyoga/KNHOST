@@ -1,0 +1,1642 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_cc46858e69174db3acce754b68d07672",
+  "observations": [
+    {
+      "id": "budget.create",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.duplicate_create",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.create_guard_dimension",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.create_guard_key",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.create_guard_zero",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.create_guard_year_low",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.create_guard_year_high",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.create_guard_month_low",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.create_guard_month_high",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.patch_guard_zero",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.patch_guard_month_low",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.patch_guard_month_high",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.patch_amount",
+      "expected": 150,
+      "actual": 150.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.report_actual",
+      "expected": 10,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.report_committed",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.report_spent",
+      "expected": 30,
+      "actual": 30.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.report_remaining",
+      "expected": 120,
+      "actual": 120.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.report_used_pct",
+      "expected": 6.7,
+      "actual": 6.7,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.report_spent_pct",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.mode_off",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('off', 10)",
+      "expected": 110,
+      "actual": 110.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('off', 10)",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('off', 110)",
+      "expected": 10,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('off', 110)",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('off', 120)",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('off', 120)",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('off', 121)",
+      "expected": -1,
+      "actual": -1.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('off', 121)",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.mode_warn",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('warn', 10)",
+      "expected": 110,
+      "actual": 110.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('warn', 10)",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('warn', 110)",
+      "expected": 10,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('warn', 110)",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('warn', 120)",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('warn', 120)",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('warn', 121)",
+      "expected": -1,
+      "actual": -1.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('warn', 121)",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.mode_block",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('block', 10)",
+      "expected": 110,
+      "actual": 110.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('block', 10)",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('block', 110)",
+      "expected": 10,
+      "actual": 10.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('block', 110)",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('block', 120)",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('block', 120)",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_available_('block', 121)",
+      "expected": -1,
+      "actual": -1.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.check_block_('block', 121)",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.unbudgeted_('off', 'allow')",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.unbudgeted_('off', 'warn')",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.unbudgeted_('off', 'block')",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.unbudgeted_('warn', 'allow')",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.unbudgeted_('warn', 'warn')",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.unbudgeted_('warn', 'block')",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.unbudgeted_('block', 'allow')",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.unbudgeted_('block', 'warn')",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.unbudgeted_('block', 'block')",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.zero_threshold_check_warning",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.zero_threshold_report_warning",
+      "expected": "warning",
+      "actual": "ok",
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "budget.rule_guard_mode",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.rule_guard_action",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.rule_guard_threshold_low",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.rule_guard_threshold_high",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.po_enforcement_over",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.po_enforcement_under",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.disabled_stage_skips",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.patch_duplicate_rejected",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "budget.single_envelope_per_key",
+      "expected": 1,
+      "actual": 2,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "budget.patch_invalid_year_rejected",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "budget.delete",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "budget.delete_again",
+      "expected": 404,
+      "actual": 404,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_goods_receipt.debit",
+      "expected": {
+        "1-1300": 100.0
+      },
+      "actual": {
+        "1-1300": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_goods_receipt.credit",
+      "expected": {
+        "2-1150": 100.0
+      },
+      "actual": {
+        "2-1150": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_goods_receipt.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_goods_receipt.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_goods_receipt.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_goods_receipt.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_goods_receipt.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_issue.debit",
+      "expected": {
+        "1-1350": 100.0
+      },
+      "actual": {
+        "1-1350": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_issue.credit",
+      "expected": {
+        "1-1300": 100.0
+      },
+      "actual": {
+        "1-1300": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_issue.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_issue.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_issue.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_issue.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_issue.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_receipt.debit",
+      "expected": {
+        "1-1300": 100.0
+      },
+      "actual": {
+        "1-1300": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_receipt.credit",
+      "expected": {
+        "1-1350": 100.0
+      },
+      "actual": {
+        "1-1350": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_receipt.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_receipt.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_receipt.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_receipt.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_receipt.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_service_unabsorbed.debit",
+      "expected": {
+        "5-1200": 100.0
+      },
+      "actual": {
+        "5-1200": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_service_unabsorbed.credit",
+      "expected": {
+        "1-1350": 100.0
+      },
+      "actual": {
+        "1-1350": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_service_unabsorbed.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_service_unabsorbed.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_service_unabsorbed.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_service_unabsorbed.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_subcon_service_unabsorbed.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_inventory_writeoff.debit",
+      "expected": {
+        "5-9500": 100.0
+      },
+      "actual": {
+        "5-9500": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_inventory_writeoff.credit",
+      "expected": {
+        "1-1300": 100.0
+      },
+      "actual": {
+        "1-1300": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_inventory_writeoff.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_inventory_writeoff.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_inventory_writeoff.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_inventory_writeoff.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_inventory_writeoff.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_sample_material_issue.debit",
+      "expected": {
+        "6-7000": 100.0
+      },
+      "actual": {
+        "6-7000": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_sample_material_issue.credit",
+      "expected": {
+        "1-1300": 100.0
+      },
+      "actual": {
+        "1-1300": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_sample_material_issue.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_sample_material_issue.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_sample_material_issue.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_sample_material_issue.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_sample_material_issue.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_issue.debit",
+      "expected": {
+        "1-1270": 100.0
+      },
+      "actual": {
+        "1-1270": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_issue.credit",
+      "expected": {
+        "4-9300": 100.0
+      },
+      "actual": {
+        "4-9300": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_issue.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_issue.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_issue.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_issue.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_issue.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_reversal.debit",
+      "expected": {
+        "4-9300": 100.0
+      },
+      "actual": {
+        "4-9300": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_reversal.credit",
+      "expected": {
+        "1-1270": 100.0
+      },
+      "actual": {
+        "1-1270": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_reversal.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_reversal.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_reversal.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_reversal.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_penalty_reversal.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_writeoff.debit",
+      "expected": {
+        "6-9100": 100.0
+      },
+      "actual": {
+        "6-9100": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_writeoff.credit",
+      "expected": {
+        "1-1200": 100.0
+      },
+      "actual": {
+        "1-1200": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_writeoff.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_writeoff.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_writeoff.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_writeoff.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_writeoff.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_ap_variance_writeoff.debit",
+      "expected": {
+        "2-1100": 100.0
+      },
+      "actual": {
+        "2-1100": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_ap_variance_writeoff.credit",
+      "expected": {
+        "4-9000": 100.0
+      },
+      "actual": {
+        "4-9000": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_ap_variance_writeoff.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_ap_variance_writeoff.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_ap_variance_writeoff.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_ap_variance_writeoff.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_ap_variance_writeoff.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_reallocation.debit",
+      "expected": {
+        "2-1400": 100.0
+      },
+      "actual": {
+        "2-1400": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_reallocation.credit",
+      "expected": {
+        "1-1200": 100.0
+      },
+      "actual": {
+        "1-1200": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_reallocation.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_reallocation.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_reallocation.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_reallocation.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_variance_reallocation.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_bank_holding_allocation.debit",
+      "expected": {
+        "2-1950": 100.0
+      },
+      "actual": {
+        "2-1950": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_bank_holding_allocation.credit",
+      "expected": {
+        "1-1200": 100.0
+      },
+      "actual": {
+        "1-1200": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_bank_holding_allocation.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_bank_holding_allocation.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_bank_holding_allocation.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_bank_holding_allocation.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_bank_holding_allocation.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_redemption.debit",
+      "expected": {
+        "2-1450": 100.0
+      },
+      "actual": {
+        "2-1450": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_redemption.credit",
+      "expected": {
+        "1-1200": 100.0
+      },
+      "actual": {
+        "1-1200": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_redemption.balanced",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_redemption.retry_no_duplicate",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_redemption.invalid_amount_0",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_redemption.invalid_amount_-1",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_redemption.empty_source",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_cycle_count_variance100.debit",
+      "expected": {
+        "1-1300": 100
+      },
+      "actual": {
+        "1-1300": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_cycle_count_variance100.credit",
+      "expected": {
+        "4-9000": 100
+      },
+      "actual": {
+        "4-9000": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_cycle_count_variance100.retry",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_cycle_count_variance100.zero",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_cycle_count_variance-100.debit",
+      "expected": {
+        "5-9500": 100
+      },
+      "actual": {
+        "5-9500": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_cycle_count_variance-100.credit",
+      "expected": {
+        "1-1300": 100
+      },
+      "actual": {
+        "1-1300": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_cycle_count_variance-100.retry",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_cycle_count_variance-100.zero",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_adjust100.debit",
+      "expected": {
+        "5-9500": 100
+      },
+      "actual": {
+        "5-9500": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_adjust100.credit",
+      "expected": {
+        "2-1450": 100
+      },
+      "actual": {
+        "2-1450": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_adjust100.retry",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_adjust100.zero",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_adjust-100.debit",
+      "expected": {
+        "2-1450": 100
+      },
+      "actual": {
+        "2-1450": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_adjust-100.credit",
+      "expected": {
+        "4-9000": 100
+      },
+      "actual": {
+        "4-9000": 100.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_adjust-100.retry",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "post_store_credit_adjust-100.zero",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.cash.gross_credit",
+      "expected": 112,
+      "actual": 112.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.cash.recovered_stock",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.cash.conservation",
+      "expected": 162,
+      "actual": 162.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.cash.retry",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.store_credit.gross_credit",
+      "expected": 112,
+      "actual": 112.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.store_credit.recovered_stock",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.store_credit.conservation",
+      "expected": 162,
+      "actual": 162.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.store_credit.retry",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.ar.gross_credit",
+      "expected": 112,
+      "actual": 112.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.ar.recovered_stock",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.ar.conservation",
+      "expected": 162,
+      "actual": 162.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.ar.retry",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.nego.gross_credit",
+      "expected": 112,
+      "actual": 112.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.nego.recovered_stock",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.nego.conservation",
+      "expected": 162,
+      "actual": 162.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return.nego.retry",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "subcon.service-1.balanced",
+      "expected": 112,
+      "actual": 112.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "subcon.service-1.debit_equals_credit",
+      "expected": 112.0,
+      "actual": 112.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "subcon.service-1.retry",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "subcon.service0.balanced",
+      "expected": 112,
+      "actual": 112.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "subcon.service0.debit_equals_credit",
+      "expected": 112.0,
+      "actual": 112.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "subcon.service0.retry",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "subcon.service1.balanced",
+      "expected": 113,
+      "actual": 113.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "subcon.service1.debit_equals_credit",
+      "expected": 113.0,
+      "actual": 113.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "subcon.service1.retry",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return_policy.own_source",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return_policy.own_supplier",
+      "expected": "SA",
+      "actual": "SA",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return_policy.foreign_unrelated_po_not_selected",
+      "expected": "SA",
+      "actual": "SB",
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "return_policy.eligibility_not_changed_by_foreign_po",
+      "expected": true,
+      "actual": false,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "return_policy.deadline_not_changed_by_foreign_po",
+      "expected": "2026-01-31T00:00:00+00:00",
+      "actual": "2025-12-02T00:00:00+00:00",
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "return_policy.date_parse_",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return_policy.date_parse_None",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return_policy.date_parse_bad",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return_policy.date_parse_2026-01-01",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return_policy.date_parse_2026-01-01T00:00:00Z",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return_policy.origin_po_override",
+      "expected": "local",
+      "actual": "local",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return_policy.origin_supplier",
+      "expected": "import",
+      "actual": "import",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "return_policy.origin_invalid_default",
+      "expected": "local",
+      "actual": "local",
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "harness_errors": [],
+  "scope": "Finance budget producer/report/check consistency and original GL posting rules.\n\nBudget API uses current schemas. Synthetic journals/POs are explicitly direct\nreport fixtures, not claims about the normal document producers. Posting helpers\nare tested for account direction, conserved amounts and replay suppression.\n"
+}

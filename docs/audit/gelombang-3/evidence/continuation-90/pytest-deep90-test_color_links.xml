@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="3" time="1.899" timestamp="2026-10-06T14:04:23.173445+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="test_supplier_variants_contains_target_row" time="0.684"><failure message="assert (True and 0 &gt; 0)&#10; +  where True = isinstance([], list)&#10; +  and   0 = len([])">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_color_links.py:28: in test_supplier_variants_contains_target_row
+    assert isinstance(data, list) and len(data) &gt; 0
+E   assert (True and 0 &gt; 0)
+E    +  where True = isinstance([], list)
+E    +  and   0 = len([])</failure></testcase><testcase classname="" name="test_color_links_returns_full_structure" time="0.062"><failure message="assert 0 &gt;= 1&#10; +  where 0 = len([])">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_color_links.py:52: in test_color_links_returns_full_structure
+    assert len(sv) &gt;= 1
+E   assert 0 &gt;= 1
+E    +  where 0 = len([])</failure></testcase><testcase classname="" name="test_color_links_404" time="0.057" /></testsuite></testsuites>

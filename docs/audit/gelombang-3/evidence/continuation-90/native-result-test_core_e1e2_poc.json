@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_e1e2_poc.py",
+    "database": "knhost_audit_native90_57a03dcc34ee4b81b54d662db52c3497",
+    "exit": 0,
+    "seconds": 150.33,
+    "pass_log_tokens": 75,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_core_e1e2_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": " {\"detail\":\"Akun Anda terdaftar di “PT Uji Non PKP” yang sudah diarsipkan, jadi belum bisa masuk. Minta admin memindahkan akun Anda ke badan usaha yang\n  [PASS] E1.6i — badan usaha terarsip: BACA entitas sendiri 200, TULIS ke yang terarsip DITOLAK + pesan menyebut 'diarsipkan'\n         baca=200 tulis=403 · {\"detail\":\"“PT Uji Non PKP” sudah diarsipkan — datanya hanya bisa dibaca, tidak bisa dipakai untuk menyimpan transaksi. Pilih bada\n  [PASS] E1.6i2 — BUKTI-MERAH: TULIS ke badan usaha yang masih aktif tetap boleh\n         HTTP 200 · {\"id\":\"cust_238484292f62\",\"code\":\"CUST-0007\",\"name\":\"Poc Pelanggan Sah\",\"pic_name\":\"Poc\",\"phone\":\"628123456780\n  [PASS] E1.6i3 — pagar kunci-tulis terpasang di choke point auth (409) — melindungi endpoint yang tidak memakai entity_ctx\n         “PT Uji Non PKP” sudah diarsipkan sehingga tidak bisa lagi menerima transaksi baru. Data lama tetap bisa dibaca. Aktifkan kembali badan usah\n  [PASS] E1.6j — badan usaha terarsip HILANG dari daftar/pemilih default\n         daftar aktif=['ent_ksc', 'ent_kanda', 'ent_7ed5f01ddd68', 'ent_69f9bc39fc72']\n  [PASS] E1.6k — tetap terbaca admin lewat ?status=archived (data lama tidak hilang)\n         1 terarsip\n  [PASS] E1.6l — aktifkan kembali → status active lagi\n         HTTP 200\n  [PASS] E1.6m — setelah aktif kembali, penghuninya bisa masuk lagi\n         login OK\n\n── CLEANUP (self-healing: DB kembali seperti sebelum POC) ──\n  [PASS] CLEAN — nol residu fixture di DB\n         user=3 karyawan=2 badan_usaha=2 residu=0\n  [PASS] CLEAN2 — badan usaha demo utuh & aktif (sama seperti sebelum POC)\n         3 badan usaha aktif (sebelum POC 3)\n\n==========================================================================\n  HASIL: 74 PASS · 0 FAIL\n==========================================================================\n"
+  }
+]

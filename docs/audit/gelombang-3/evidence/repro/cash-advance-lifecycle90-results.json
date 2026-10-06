@@ -1,0 +1,1298 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_052fef70b3414b8da0c82b606b45ae89",
+  "observations": [
+    {
+      "id": "CA90-80-amount-source",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "Display-only roll/yard/kg breakdown must not multiply the active qty.",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-pending_pimpinan",
+      "expected": "pending_pimpinan",
+      "actual": "pending_pimpinan",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-pending_finance",
+      "expected": "pending_finance",
+      "actual": "pending_finance",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-approved",
+      "expected": "approved",
+      "actual": "approved",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-disbursed",
+      "expected": "disbursed",
+      "actual": "disbursed",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-advance-debit",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-remaining-amount",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-duplicate-active-lpj",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-expense-gl",
+      "expected": 80,
+      "actual": 80.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-remaining-advance-gl",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-reimburse-liability-gl",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-repeat-approval",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-80-cash-conservation",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-amount-source",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "Display-only roll/yard/kg breakdown must not multiply the active qty.",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-pending_pimpinan",
+      "expected": "pending_pimpinan",
+      "actual": "pending_pimpinan",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-pending_finance",
+      "expected": "pending_finance",
+      "actual": "pending_finance",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-approved",
+      "expected": "approved",
+      "actual": "approved",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-disbursed",
+      "expected": "disbursed",
+      "actual": "disbursed",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-advance-debit",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-remaining-amount",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-duplicate-active-lpj",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-expense-gl",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-remaining-advance-gl",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-reimburse-liability-gl",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-repeat-approval",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-100-cash-conservation",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-amount-source",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "Display-only roll/yard/kg breakdown must not multiply the active qty.",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-pending_pimpinan",
+      "expected": "pending_pimpinan",
+      "actual": "pending_pimpinan",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-pending_finance",
+      "expected": "pending_finance",
+      "actual": "pending_finance",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-approved",
+      "expected": "approved",
+      "actual": "approved",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-disbursed",
+      "expected": "disbursed",
+      "actual": "disbursed",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-advance-debit",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-remaining-amount",
+      "expected": -20,
+      "actual": -20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-duplicate-active-lpj",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-expense-gl",
+      "expected": 120,
+      "actual": 120.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-remaining-advance-gl",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-reimburse-liability-gl",
+      "expected": -20,
+      "actual": -20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-repeat-approval",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-payable-report",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-reimburse-payment-gl",
+      "expected": 0,
+      "actual": 0.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-repeat-reimbursement",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-120-cash-conservation",
+      "expected": 120,
+      "actual": 120.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-rejected-revision-total",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-premature-disbursement",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-validation-zero",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-validation-negative",
+      "expected": 422,
+      "actual": 422,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-validation-empty",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-validation-invalid-payment",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-invalid-expense-account",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-read-cash-advances?status=draft",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-read-cash-advance-settlements?status=posted_to_gl",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "CA90-read-expense-categories?active_only=true",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "context": {
+    "CA90-80": {
+      "ca": {
+        "id": "ca_0c6110f8d1ad",
+        "number": "A/PD-00001",
+        "entity_id": "A",
+        "divisi": "Audit MD",
+        "kegiatan": "CA90-80",
+        "period_from": "",
+        "period_to": "",
+        "tanggal_pengajuan": "2026-10-06T04:52:38.846658+00:00",
+        "account_label": "",
+        "payment_method": "tunai",
+        "bank_detail": {
+          "account_label": "",
+          "nama": "",
+          "no_account": "LOCAL",
+          "bank": "Synthetic",
+          "cabang": "",
+          "alamat_bank": "",
+          "swift_iban": ""
+        },
+        "lines": [
+          {
+            "description": "Audit expense",
+            "qty": 2.0,
+            "satuan": "unit",
+            "unit_price": 50.0,
+            "catatan": "",
+            "qty_roll": 999.0,
+            "yard": 888.0,
+            "kg": 777.0,
+            "amount": 100.0
+          }
+        ],
+        "total_amount": 100.0,
+        "status": "settled",
+        "approvals": [
+          {
+            "stage": "atasan",
+            "label": "Atasan Langsung",
+            "decision": "approved",
+            "by": "Audit User A",
+            "role": "admin",
+            "note": "Audit approval",
+            "at": "2026-10-06T04:52:39.007298+00:00"
+          },
+          {
+            "stage": "pimpinan",
+            "label": "Pimpinan",
+            "decision": "approved",
+            "by": "Audit User A",
+            "role": "admin",
+            "note": "Audit approval",
+            "at": "2026-10-06T04:52:39.055132+00:00"
+          },
+          {
+            "stage": "finance",
+            "label": "Bagian Keuangan",
+            "decision": "approved",
+            "by": "Audit User A",
+            "role": "admin",
+            "note": "Audit approval",
+            "at": "2026-10-06T04:52:39.102074+00:00"
+          }
+        ],
+        "disbursement": {
+          "cash_txn_id": "cash_17cc9712a4d8",
+          "cash_txn_number": "A/CASH-00001",
+          "je_id": "je_7ff4bf36554b",
+          "je_number": "A/JE-00001",
+          "cash_type": "kas_kecil",
+          "amount": 100.0,
+          "disbursed_at": "2026-10-06T04:52:39.221004+00:00",
+          "disbursed_by": "Audit User A",
+          "note": ""
+        },
+        "rejected_reason": "",
+        "catatan": "Synthetic local lifecycle",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-06T04:52:38.846658+00:00",
+        "updated_at": "2026-10-06T04:52:39.486396+00:00",
+        "disbursement_attempt": {
+          "cash_txn_id": "cash_17cc9712a4d8",
+          "at": "2026-10-06T04:52:39.178521+00:00",
+          "by": "Audit User A"
+        },
+        "settling_stl_id": "stl_389e404c0dbd",
+        "settled_by_stl_id": "stl_389e404c0dbd"
+      },
+      "settlement": {
+        "id": "stl_389e404c0dbd",
+        "number": "A/STL-00001",
+        "entity_id": "A",
+        "cash_advance_id": "ca_0c6110f8d1ad",
+        "cash_advance_number": "A/PD-00001",
+        "divisi": "Audit MD",
+        "periode": "",
+        "dibuat_oleh": "Audit User A",
+        "disetujui_oleh": "Audit User A",
+        "catatan": "Checked actual receipts",
+        "status": "posted_to_gl",
+        "journal_entry_id": "je_ebc3771adf97",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-06T04:52:39.279997+00:00",
+        "updated_at": "2026-10-06T04:52:39.484135+00:00",
+        "expense_lines": [
+          {
+            "date": "",
+            "description": "Synthetic actual expenses",
+            "category": "atk",
+            "amount": 80.0
+          }
+        ],
+        "category_totals": {
+          "atk": 80.0
+        },
+        "total_pengeluaran": 80.0,
+        "total_pettycash": 100.0,
+        "sisa_kurang_dana": 20.0,
+        "approved_at": "2026-10-06T04:52:39.484135+00:00",
+        "hutang_reimburse": {
+          "amount": 0.0,
+          "status": "none",
+          "cash_txn_id": "",
+          "paid_at": ""
+        },
+        "journal_entry_number": "A/JE-00002"
+      },
+      "cash": [
+        {
+          "id": "cash_17cc9712a4d8",
+          "number": "A/CASH-00001",
+          "cash_type": "kas_kecil",
+          "direction": "out",
+          "amount": 100.0,
+          "category": "cash_advance",
+          "description": "Pencairan A/PD-00001 — CA90-80",
+          "entity_id": "A",
+          "ref_type": "cash_advance",
+          "ref_id": "ca_0c6110f8d1ad",
+          "txn_date": "2026-10-06T04:52:39.163894+00:00",
+          "account_id": "",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:39.163894+00:00",
+          "updated_at": "2026-10-06T04:52:39.217613+00:00",
+          "gl_error": "",
+          "gl_status": "posted",
+          "journal_entry_id": "je_7ff4bf36554b"
+        }
+      ],
+      "journals": [
+        {
+          "id": "je_7ff4bf36554b",
+          "number": "A/JE-00001",
+          "date": "2026-10-06T04:52:39.163894+00:00",
+          "description": "Kas out · Pencairan A/PD-00001 — CA90-80",
+          "source": "cash_transaction",
+          "source_type": "cash_transaction",
+          "source_id": "cash_17cc9712a4d8",
+          "source_label": "A/CASH-00001",
+          "lines": [
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": "A/CASH-00001 · Pencairan A/PD-00001 — CA90-80"
+            },
+            {
+              "account_code": "1-1110",
+              "account_name": "Kas Kecil",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "A/CASH-00001 · Pencairan A/PD-00001 — CA90-80"
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:39.197851+00:00",
+          "updated_at": "2026-10-06T04:52:39.197851+00:00"
+        },
+        {
+          "id": "je_ebc3771adf97",
+          "number": "A/JE-00002",
+          "date": "2026-10-06T04:52:39.462856+00:00",
+          "description": "Pertanggungjawaban petty cash A/STL-00001 · Audit MD",
+          "source": "petty_cash_settlement",
+          "source_type": "petty_cash_settlement",
+          "source_id": "stl_389e404c0dbd",
+          "source_label": "A/STL-00001 · Audit MD",
+          "lines": [
+            {
+              "account_code": "6-4100",
+              "account_name": "Beban ATK & Perlengkapan Kantor",
+              "debit": 80.0,
+              "credit": 0.0,
+              "description": "Beban atk"
+            },
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 0.0,
+              "credit": 80.0,
+              "description": "Pertanggungjawaban A/STL-00001 · Audit MD"
+            }
+          ],
+          "total_debit": 80.0,
+          "total_credit": 80.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:39.476308+00:00",
+          "updated_at": "2026-10-06T04:52:39.477524+00:00"
+        }
+      ]
+    },
+    "CA90-100": {
+      "ca": {
+        "id": "ca_7a0eef28c872",
+        "number": "A/PD-00002",
+        "entity_id": "A",
+        "divisi": "Audit MD",
+        "kegiatan": "CA90-100",
+        "period_from": "",
+        "period_to": "",
+        "tanggal_pengajuan": "2026-10-06T04:52:39.603385+00:00",
+        "account_label": "",
+        "payment_method": "tunai",
+        "bank_detail": {
+          "account_label": "",
+          "nama": "",
+          "no_account": "LOCAL",
+          "bank": "Synthetic",
+          "cabang": "",
+          "alamat_bank": "",
+          "swift_iban": ""
+        },
+        "lines": [
+          {
+            "description": "Audit expense",
+            "qty": 2.0,
+            "satuan": "unit",
+            "unit_price": 50.0,
+            "catatan": "",
+            "qty_roll": 999.0,
+            "yard": 888.0,
+            "kg": 777.0,
+            "amount": 100.0
+          }
+        ],
+        "total_amount": 100.0,
+        "status": "settled",
+        "approvals": [
+          {
+            "stage": "atasan",
+            "label": "Atasan Langsung",
+            "decision": "approved",
+            "by": "Audit User A",
+            "role": "admin",
+            "note": "Audit approval",
+            "at": "2026-10-06T04:52:39.739906+00:00"
+          },
+          {
+            "stage": "pimpinan",
+            "label": "Pimpinan",
+            "decision": "approved",
+            "by": "Audit User A",
+            "role": "admin",
+            "note": "Audit approval",
+            "at": "2026-10-06T04:52:39.790743+00:00"
+          },
+          {
+            "stage": "finance",
+            "label": "Bagian Keuangan",
+            "decision": "approved",
+            "by": "Audit User A",
+            "role": "admin",
+            "note": "Audit approval",
+            "at": "2026-10-06T04:52:39.839089+00:00"
+          }
+        ],
+        "disbursement": {
+          "cash_txn_id": "cash_3abd257f816a",
+          "cash_txn_number": "A/CASH-00002",
+          "je_id": "je_191354aca47e",
+          "je_number": "A/JE-00003",
+          "cash_type": "kas_kecil",
+          "amount": 100.0,
+          "disbursed_at": "2026-10-06T04:52:39.922174+00:00",
+          "disbursed_by": "Audit User A",
+          "note": ""
+        },
+        "rejected_reason": "",
+        "catatan": "Synthetic local lifecycle",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-06T04:52:39.603385+00:00",
+        "updated_at": "2026-10-06T04:52:40.189987+00:00",
+        "disbursement_attempt": {
+          "cash_txn_id": "cash_3abd257f816a",
+          "at": "2026-10-06T04:52:39.899503+00:00",
+          "by": "Audit User A"
+        },
+        "settling_stl_id": "stl_e48480114b3e",
+        "settled_by_stl_id": "stl_e48480114b3e"
+      },
+      "settlement": {
+        "id": "stl_e48480114b3e",
+        "number": "A/STL-00002",
+        "entity_id": "A",
+        "cash_advance_id": "ca_7a0eef28c872",
+        "cash_advance_number": "A/PD-00002",
+        "divisi": "Audit MD",
+        "periode": "",
+        "dibuat_oleh": "Audit User A",
+        "disetujui_oleh": "Audit User A",
+        "catatan": "Checked actual receipts",
+        "status": "posted_to_gl",
+        "journal_entry_id": "je_c4437de91261",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-06T04:52:39.980433+00:00",
+        "updated_at": "2026-10-06T04:52:40.187858+00:00",
+        "expense_lines": [
+          {
+            "date": "",
+            "description": "Synthetic actual expenses",
+            "category": "atk",
+            "amount": 100.0
+          }
+        ],
+        "category_totals": {
+          "atk": 100.0
+        },
+        "total_pengeluaran": 100.0,
+        "total_pettycash": 100.0,
+        "sisa_kurang_dana": 0.0,
+        "approved_at": "2026-10-06T04:52:40.187858+00:00",
+        "hutang_reimburse": {
+          "amount": 0.0,
+          "status": "none",
+          "cash_txn_id": "",
+          "paid_at": ""
+        },
+        "journal_entry_number": "A/JE-00004"
+      },
+      "cash": [
+        {
+          "id": "cash_3abd257f816a",
+          "number": "A/CASH-00002",
+          "cash_type": "kas_kecil",
+          "direction": "out",
+          "amount": 100.0,
+          "category": "cash_advance",
+          "description": "Pencairan A/PD-00002 — CA90-100",
+          "entity_id": "A",
+          "ref_type": "cash_advance",
+          "ref_id": "ca_7a0eef28c872",
+          "txn_date": "2026-10-06T04:52:39.898391+00:00",
+          "account_id": "",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:39.898391+00:00",
+          "updated_at": "2026-10-06T04:52:39.919943+00:00",
+          "gl_error": "",
+          "gl_status": "posted",
+          "journal_entry_id": "je_191354aca47e"
+        }
+      ],
+      "journals": [
+        {
+          "id": "je_7ff4bf36554b",
+          "number": "A/JE-00001",
+          "date": "2026-10-06T04:52:39.163894+00:00",
+          "description": "Kas out · Pencairan A/PD-00001 — CA90-80",
+          "source": "cash_transaction",
+          "source_type": "cash_transaction",
+          "source_id": "cash_17cc9712a4d8",
+          "source_label": "A/CASH-00001",
+          "lines": [
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": "A/CASH-00001 · Pencairan A/PD-00001 — CA90-80"
+            },
+            {
+              "account_code": "1-1110",
+              "account_name": "Kas Kecil",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "A/CASH-00001 · Pencairan A/PD-00001 — CA90-80"
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:39.197851+00:00",
+          "updated_at": "2026-10-06T04:52:39.197851+00:00"
+        },
+        {
+          "id": "je_ebc3771adf97",
+          "number": "A/JE-00002",
+          "date": "2026-10-06T04:52:39.462856+00:00",
+          "description": "Pertanggungjawaban petty cash A/STL-00001 · Audit MD",
+          "source": "petty_cash_settlement",
+          "source_type": "petty_cash_settlement",
+          "source_id": "stl_389e404c0dbd",
+          "source_label": "A/STL-00001 · Audit MD",
+          "lines": [
+            {
+              "account_code": "6-4100",
+              "account_name": "Beban ATK & Perlengkapan Kantor",
+              "debit": 80.0,
+              "credit": 0.0,
+              "description": "Beban atk"
+            },
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 0.0,
+              "credit": 80.0,
+              "description": "Pertanggungjawaban A/STL-00001 · Audit MD"
+            }
+          ],
+          "total_debit": 80.0,
+          "total_credit": 80.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:39.476308+00:00",
+          "updated_at": "2026-10-06T04:52:39.477524+00:00"
+        },
+        {
+          "id": "je_191354aca47e",
+          "number": "A/JE-00003",
+          "date": "2026-10-06T04:52:39.898391+00:00",
+          "description": "Kas out · Pencairan A/PD-00002 — CA90-100",
+          "source": "cash_transaction",
+          "source_type": "cash_transaction",
+          "source_id": "cash_3abd257f816a",
+          "source_label": "A/CASH-00002",
+          "lines": [
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": "A/CASH-00002 · Pencairan A/PD-00002 — CA90-100"
+            },
+            {
+              "account_code": "1-1110",
+              "account_name": "Kas Kecil",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "A/CASH-00002 · Pencairan A/PD-00002 — CA90-100"
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:39.914234+00:00",
+          "updated_at": "2026-10-06T04:52:39.914234+00:00"
+        },
+        {
+          "id": "je_c4437de91261",
+          "number": "A/JE-00004",
+          "date": "2026-10-06T04:52:40.165256+00:00",
+          "description": "Pertanggungjawaban petty cash A/STL-00002 · Audit MD",
+          "source": "petty_cash_settlement",
+          "source_type": "petty_cash_settlement",
+          "source_id": "stl_e48480114b3e",
+          "source_label": "A/STL-00002 · Audit MD",
+          "lines": [
+            {
+              "account_code": "6-4100",
+              "account_name": "Beban ATK & Perlengkapan Kantor",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": "Beban atk"
+            },
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "Pertanggungjawaban A/STL-00002 · Audit MD"
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:40.181058+00:00",
+          "updated_at": "2026-10-06T04:52:40.181058+00:00"
+        }
+      ]
+    },
+    "CA90-120": {
+      "ca": {
+        "id": "ca_6bc10143353e",
+        "number": "A/PD-00003",
+        "entity_id": "A",
+        "divisi": "Audit MD",
+        "kegiatan": "CA90-120",
+        "period_from": "",
+        "period_to": "",
+        "tanggal_pengajuan": "2026-10-06T04:52:40.294133+00:00",
+        "account_label": "",
+        "payment_method": "tunai",
+        "bank_detail": {
+          "account_label": "",
+          "nama": "",
+          "no_account": "LOCAL",
+          "bank": "Synthetic",
+          "cabang": "",
+          "alamat_bank": "",
+          "swift_iban": ""
+        },
+        "lines": [
+          {
+            "description": "Audit expense",
+            "qty": 2.0,
+            "satuan": "unit",
+            "unit_price": 50.0,
+            "catatan": "",
+            "qty_roll": 999.0,
+            "yard": 888.0,
+            "kg": 777.0,
+            "amount": 100.0
+          }
+        ],
+        "total_amount": 100.0,
+        "status": "settled",
+        "approvals": [
+          {
+            "stage": "atasan",
+            "label": "Atasan Langsung",
+            "decision": "approved",
+            "by": "Audit User A",
+            "role": "admin",
+            "note": "Audit approval",
+            "at": "2026-10-06T04:52:40.424341+00:00"
+          },
+          {
+            "stage": "pimpinan",
+            "label": "Pimpinan",
+            "decision": "approved",
+            "by": "Audit User A",
+            "role": "admin",
+            "note": "Audit approval",
+            "at": "2026-10-06T04:52:40.466803+00:00"
+          },
+          {
+            "stage": "finance",
+            "label": "Bagian Keuangan",
+            "decision": "approved",
+            "by": "Audit User A",
+            "role": "admin",
+            "note": "Audit approval",
+            "at": "2026-10-06T04:52:40.513581+00:00"
+          }
+        ],
+        "disbursement": {
+          "cash_txn_id": "cash_e2acc5d2d5fa",
+          "cash_txn_number": "A/CASH-00003",
+          "je_id": "je_a82ed79d9164",
+          "je_number": "A/JE-00005",
+          "cash_type": "kas_kecil",
+          "amount": 100.0,
+          "disbursed_at": "2026-10-06T04:52:40.595527+00:00",
+          "disbursed_by": "Audit User A",
+          "note": ""
+        },
+        "rejected_reason": "",
+        "catatan": "Synthetic local lifecycle",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-06T04:52:40.294133+00:00",
+        "updated_at": "2026-10-06T04:52:40.854892+00:00",
+        "disbursement_attempt": {
+          "cash_txn_id": "cash_e2acc5d2d5fa",
+          "at": "2026-10-06T04:52:40.570502+00:00",
+          "by": "Audit User A"
+        },
+        "settling_stl_id": "stl_fc552ecdd17e",
+        "settled_by_stl_id": "stl_fc552ecdd17e"
+      },
+      "settlement": {
+        "id": "stl_fc552ecdd17e",
+        "number": "A/STL-00003",
+        "entity_id": "A",
+        "cash_advance_id": "ca_6bc10143353e",
+        "cash_advance_number": "A/PD-00003",
+        "divisi": "Audit MD",
+        "periode": "",
+        "dibuat_oleh": "Audit User A",
+        "disetujui_oleh": "Audit User A",
+        "catatan": "Checked actual receipts",
+        "status": "posted_to_gl",
+        "journal_entry_id": "je_dc1667082ef6",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-06T04:52:40.653713+00:00",
+        "updated_at": "2026-10-06T04:52:41.012642+00:00",
+        "expense_lines": [
+          {
+            "date": "",
+            "description": "Synthetic actual expenses",
+            "category": "atk",
+            "amount": 120.0
+          }
+        ],
+        "category_totals": {
+          "atk": 120.0
+        },
+        "total_pengeluaran": 120.0,
+        "total_pettycash": 100.0,
+        "sisa_kurang_dana": -20.0,
+        "approved_at": "2026-10-06T04:52:40.852661+00:00",
+        "hutang_reimburse": {
+          "amount": 20.0,
+          "status": "paid",
+          "cash_txn_id": "cash_7e49cec32509",
+          "paid_at": "2026-10-06T04:52:41.012642+00:00",
+          "cash_txn_number": "A/CASH-00004",
+          "journal_entry_number": "A/JE-00007",
+          "paid_by": "Audit User A"
+        },
+        "journal_entry_number": "A/JE-00006"
+      },
+      "cash": [
+        {
+          "id": "cash_e2acc5d2d5fa",
+          "number": "A/CASH-00003",
+          "cash_type": "kas_kecil",
+          "direction": "out",
+          "amount": 100.0,
+          "category": "cash_advance",
+          "description": "Pencairan A/PD-00003 — CA90-120",
+          "entity_id": "A",
+          "ref_type": "cash_advance",
+          "ref_id": "ca_6bc10143353e",
+          "txn_date": "2026-10-06T04:52:40.568227+00:00",
+          "account_id": "",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:40.568227+00:00",
+          "updated_at": "2026-10-06T04:52:40.593269+00:00",
+          "gl_error": "",
+          "gl_status": "posted",
+          "journal_entry_id": "je_a82ed79d9164"
+        },
+        {
+          "id": "cash_7e49cec32509",
+          "number": "A/CASH-00004",
+          "cash_type": "kas_besar",
+          "direction": "out",
+          "amount": 20.0,
+          "category": "reimburse karyawan",
+          "description": "Bayar kelebihan LPJ A/STL-00003",
+          "entity_id": "A",
+          "ref_type": "reimburse_payable",
+          "ref_id": "stl_fc552ecdd17e",
+          "txn_date": "2026-10-06T04:52:40.980019+00:00",
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:40.991298+00:00",
+          "updated_at": "2026-10-06T04:52:41.011450+00:00",
+          "gl_error": "",
+          "gl_status": "posted",
+          "journal_entry_id": "je_9cc8f3f9dd96"
+        }
+      ],
+      "journals": [
+        {
+          "id": "je_7ff4bf36554b",
+          "number": "A/JE-00001",
+          "date": "2026-10-06T04:52:39.163894+00:00",
+          "description": "Kas out · Pencairan A/PD-00001 — CA90-80",
+          "source": "cash_transaction",
+          "source_type": "cash_transaction",
+          "source_id": "cash_17cc9712a4d8",
+          "source_label": "A/CASH-00001",
+          "lines": [
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": "A/CASH-00001 · Pencairan A/PD-00001 — CA90-80"
+            },
+            {
+              "account_code": "1-1110",
+              "account_name": "Kas Kecil",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "A/CASH-00001 · Pencairan A/PD-00001 — CA90-80"
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:39.197851+00:00",
+          "updated_at": "2026-10-06T04:52:39.197851+00:00"
+        },
+        {
+          "id": "je_ebc3771adf97",
+          "number": "A/JE-00002",
+          "date": "2026-10-06T04:52:39.462856+00:00",
+          "description": "Pertanggungjawaban petty cash A/STL-00001 · Audit MD",
+          "source": "petty_cash_settlement",
+          "source_type": "petty_cash_settlement",
+          "source_id": "stl_389e404c0dbd",
+          "source_label": "A/STL-00001 · Audit MD",
+          "lines": [
+            {
+              "account_code": "6-4100",
+              "account_name": "Beban ATK & Perlengkapan Kantor",
+              "debit": 80.0,
+              "credit": 0.0,
+              "description": "Beban atk"
+            },
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 0.0,
+              "credit": 80.0,
+              "description": "Pertanggungjawaban A/STL-00001 · Audit MD"
+            }
+          ],
+          "total_debit": 80.0,
+          "total_credit": 80.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:39.476308+00:00",
+          "updated_at": "2026-10-06T04:52:39.477524+00:00"
+        },
+        {
+          "id": "je_191354aca47e",
+          "number": "A/JE-00003",
+          "date": "2026-10-06T04:52:39.898391+00:00",
+          "description": "Kas out · Pencairan A/PD-00002 — CA90-100",
+          "source": "cash_transaction",
+          "source_type": "cash_transaction",
+          "source_id": "cash_3abd257f816a",
+          "source_label": "A/CASH-00002",
+          "lines": [
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": "A/CASH-00002 · Pencairan A/PD-00002 — CA90-100"
+            },
+            {
+              "account_code": "1-1110",
+              "account_name": "Kas Kecil",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "A/CASH-00002 · Pencairan A/PD-00002 — CA90-100"
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:39.914234+00:00",
+          "updated_at": "2026-10-06T04:52:39.914234+00:00"
+        },
+        {
+          "id": "je_c4437de91261",
+          "number": "A/JE-00004",
+          "date": "2026-10-06T04:52:40.165256+00:00",
+          "description": "Pertanggungjawaban petty cash A/STL-00002 · Audit MD",
+          "source": "petty_cash_settlement",
+          "source_type": "petty_cash_settlement",
+          "source_id": "stl_e48480114b3e",
+          "source_label": "A/STL-00002 · Audit MD",
+          "lines": [
+            {
+              "account_code": "6-4100",
+              "account_name": "Beban ATK & Perlengkapan Kantor",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": "Beban atk"
+            },
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "Pertanggungjawaban A/STL-00002 · Audit MD"
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:40.181058+00:00",
+          "updated_at": "2026-10-06T04:52:40.181058+00:00"
+        },
+        {
+          "id": "je_a82ed79d9164",
+          "number": "A/JE-00005",
+          "date": "2026-10-06T04:52:40.568227+00:00",
+          "description": "Kas out · Pencairan A/PD-00003 — CA90-120",
+          "source": "cash_transaction",
+          "source_type": "cash_transaction",
+          "source_id": "cash_e2acc5d2d5fa",
+          "source_label": "A/CASH-00003",
+          "lines": [
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": "A/CASH-00003 · Pencairan A/PD-00003 — CA90-120"
+            },
+            {
+              "account_code": "1-1110",
+              "account_name": "Kas Kecil",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "A/CASH-00003 · Pencairan A/PD-00003 — CA90-120"
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:40.586369+00:00",
+          "updated_at": "2026-10-06T04:52:40.586369+00:00"
+        },
+        {
+          "id": "je_dc1667082ef6",
+          "number": "A/JE-00006",
+          "date": "2026-10-06T04:52:40.832245+00:00",
+          "description": "Pertanggungjawaban petty cash A/STL-00003 · Audit MD",
+          "source": "petty_cash_settlement",
+          "source_type": "petty_cash_settlement",
+          "source_id": "stl_fc552ecdd17e",
+          "source_label": "A/STL-00003 · Audit MD",
+          "lines": [
+            {
+              "account_code": "6-4100",
+              "account_name": "Beban ATK & Perlengkapan Kantor",
+              "debit": 120.0,
+              "credit": 0.0,
+              "description": "Beban atk"
+            },
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "Pertanggungjawaban A/STL-00003 · Audit MD"
+            },
+            {
+              "account_code": "2-1650",
+              "account_name": "Hutang Reimburse Karyawan",
+              "debit": 0.0,
+              "credit": 20.0,
+              "description": "Kelebihan pengeluaran di atas uang muka A/STL-00003 · Audit MD"
+            }
+          ],
+          "total_debit": 120.0,
+          "total_credit": 120.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:40.847070+00:00",
+          "updated_at": "2026-10-06T04:52:40.847070+00:00"
+        },
+        {
+          "id": "je_9cc8f3f9dd96",
+          "number": "A/JE-00007",
+          "date": "2026-10-06T04:52:40.980019+00:00",
+          "description": "Kas out · Bayar kelebihan LPJ A/STL-00003",
+          "source": "cash_transaction",
+          "source_type": "cash_transaction",
+          "source_id": "cash_7e49cec32509",
+          "source_label": "A/CASH-00004",
+          "lines": [
+            {
+              "account_code": "2-1650",
+              "account_name": "Hutang Reimburse Karyawan",
+              "debit": 20.0,
+              "credit": 0.0,
+              "description": "A/CASH-00004 · Bayar kelebihan LPJ A/STL-00003"
+            },
+            {
+              "account_code": "1-1100",
+              "account_name": "Kas Besar / Bank",
+              "debit": 0.0,
+              "credit": 20.0,
+              "description": "A/CASH-00004 · Bayar kelebihan LPJ A/STL-00003"
+            }
+          ],
+          "total_debit": 20.0,
+          "total_credit": 20.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-06T04:52:41.005735+00:00",
+          "updated_at": "2026-10-06T04:52:41.005735+00:00"
+        }
+      ]
+    }
+  },
+  "harness_errors": [],
+  "scope": "Original public APIs, real local Mongo; independent debit/credit arithmetic. Synthetic evidence, not physical receipts or all failure paths."
+}

@@ -235,15 +235,24 @@ async def act_refund_store_credit(case: Dict[str, Any], p: Dict[str, Any],
     if amount > bal + EPS:
         raise CaseActionError(
             f"Pengembalian {_rp(amount)} melebihi saldo kredit toko {_rp(bal)}")
-    entry = await sc.adjust(customer_id=cust, entity_id=ent, amount_signed=-amount,
-                            note=f"Dicairkan lewat kasus {case['number']}", actor=actor)
-    res = await _cash_txn(
-        direction="out", amount=amount, category="refund store credit",
-        description=f"Pencairan saldo kredit toko · {case['number']}",
-        entity_id=ent, account_id=p.get("account_id", ""),
-        cash_type=p.get("cash_type") or "kas_besar", ref_type="finance_case",
-        ref_id=case["id"], contra=gl.ACC_STORE_CREDIT, owner_entity_id=ent,
-        actor=actor.get("name", "system"))
+    # G3 D4-CASE-01 — BUKAN `adjust` (itu menjurnal Dr 2-1450 / Cr Pendapatan Lain = hangus saldo).
+    # Pencairan = SATU jurnal Dr 2-1450 / Cr Kas (dari transaksi kas); baris buku saldo menunjuk kasus yang sama.
+    entry = await sc._append(customer_id=cust, entity_id=ent, kind="payout", amount_signed=-amount,
+                             ref_type="finance_case", ref_id=case["id"], ref_number=case.get("number", ""),
+                             note=f"Dicairkan lewat kasus {case['number']}", actor=actor)
+    try:
+        res = await _cash_txn(
+            direction="out", amount=amount, category="refund store credit",
+            description=f"Pencairan saldo kredit toko · {case['number']}",
+            entity_id=ent, account_id=p.get("account_id", ""),
+            cash_type=p.get("cash_type") or "kas_besar", ref_type="finance_case",
+            ref_id=case["id"], contra=gl.ACC_STORE_CREDIT, owner_entity_id=ent,
+            actor=actor.get("name", "system"))
+    except Exception:
+        await sc._append(customer_id=cust, entity_id=ent, kind="payout_reversal", amount_signed=amount,
+                         ref_type="finance_case", ref_id=case["id"], ref_number=case.get("number", ""),
+                         note=f"Pencairan gagal — saldo dikembalikan ({case['number']})", actor=actor)
+        raise
     docs = res["documents"] + [
         _doc("store_credit_entry", (entry or {}).get("id", ""), "",
              f"Baris buku saldo kredit −{_rp(amount)}")]

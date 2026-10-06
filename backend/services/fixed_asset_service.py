@@ -232,17 +232,24 @@ async def run_depreciation(period: str, actor: Dict[str, Any],
         if remaining <= EPS or a.get("depreciated_months", 0) >= life:
             skipped += 1
             continue
-        # Idempotent: sudah ada entry utk periode ini?
-        if await db.fin_depreciation_entries.find_one(
-                {"asset_id": a["id"], "period": period}, {"_id": 1}):
+        # Idempotent: sudah ada entry utk periode ini? (G3 D4-ASSET-01: entri ada tapi register belum
+        # menerapkannya → terapkan sekarang, jangan dilewati selamanya)
+        done = await db.fin_depreciation_entries.find_one({"asset_id": a["id"], "period": period}, {"_id": 0})
+        if done:
+            if period not in (a.get("applied_periods") or []) and float(done.get("amount") or 0) > EPS \
+                    and a.get("applied_periods") is not None:
+                await _apply_dep_to_register(a, period, float(done["amount"]), depreciable, life)
             skipped += 1
             continue
-        # INV-ATOMIC-01 — CAS per aset: hanya pemenang yang belum mencatat periode ini yang
-        # boleh menjurnal + menulis entri; balapan run ganda → aset dilewati, bukan dobel.
+        # INV-ATOMIC-01 — CAS per aset; G3 D4-ASSET-01 — klaim macet (>10 menit tanpa entri) boleh diambil alih.
+        from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+        stale = (_dt.now(_tz.utc) - _td(minutes=10)).isoformat()
         won = await db.fin_fixed_assets.find_one_and_update(
             {"id": a["id"], "status": a.get("status", "active"),
-             "depreciation_periods": {"$ne": period}},
-            {"$addToSet": {"depreciation_periods": period}},
+             "$or": [{"depreciation_periods": {"$ne": period}},
+                     {f"depreciation_claims.{period}": {"$lt": stale}}]},
+            {"$addToSet": {"depreciation_periods": period},
+             "$set": {f"depreciation_claims.{period}": now_iso()}},
             projection={"_id": 0, "id": 1})
         if not won:
             skipped += 1
@@ -259,21 +266,22 @@ async def run_depreciation(period: str, actor: Dict[str, Any],
             dep_exp_acc=a.get("gl_account_dep_exp", gl_service.ACC_DEP_EXPENSE),
             acc_dep_acc=a.get("gl_account_acc_dep", gl_service.ACC_FA_ACCUM_DEP))
         new_acc = round(acc + amt, 2)
-        new_months = int(a.get("depreciated_months", 0)) + 1
         new_book = round(cost - new_acc, 2)
-        status = "fully_depreciated" if (new_acc >= depreciable - EPS or new_months >= life) else "active"
-        await db.fin_depreciation_entries.insert_one({
-            "id": new_id("depe"),
+        if not je:   # post_depreciation idempoten per (aset, periode) — retry mengadopsi jurnal yang ada
+            je = await db.journal_entries.find_one({"source_type": "fixed_asset_depreciation",
+                                                    "source_id": f"{a['id']}:{period}",
+                                                    "status": {"$ne": "void"}}, {"_id": 0, "id": 1, "number": 1})
+        await db.fin_depreciation_entries.update_one({"id": f"depe_{a['id']}_{period}"}, {"$setOnInsert": {
+            "id": f"depe_{a['id']}_{period}",
             "asset_id": a["id"], "asset_number": a.get("number", ""),
             "entity_id": a.get("entity_id", ""), "period": period, "amount": amt,
             "accumulated_after": new_acc, "book_value_after": new_book,
             "je_id": (je or {}).get("id", ""), "je_number": (je or {}).get("number", ""),
             "created_by": actor.get("name", "system"), "created_at": now_iso(),
-        })
-        await db.fin_fixed_assets.update_one({"id": a["id"]}, {"$set": {
-            "accumulated_depreciation": new_acc, "book_value": new_book,
-            "depreciated_months": new_months, "last_depreciation_period": period,
-            "status": status, "updated_at": now_iso()}})
+        }}, upsert=True)
+        fresh = await _apply_dep_to_register(a, period, amt, depreciable, life)
+        new_acc = round(float(fresh.get("accumulated_depreciation") or new_acc), 2)
+        new_book, status = round(float(fresh.get("book_value") or new_book), 2), fresh.get("status", "active")
         total = round(total + amt, 2)
         posted.append({"asset_id": a["id"], "number": a.get("number", ""),
                        "name": a.get("name", ""), "amount": amt,
@@ -283,6 +291,24 @@ async def run_depreciation(period: str, actor: Dict[str, Any],
 
 
 # ── Disposal (gain/loss) ─────────────────────────────────────────────────────
+async def _apply_dep_to_register(a: Dict[str, Any], period: str, amt: float, depreciable: float,
+                                 life: int) -> Dict[str, Any]:
+    """G3 D4-ASSET-01/02 — register diperbarui ATOMIK (pipeline $add) & tepat sekali per periode
+    (`applied_periods`), sehingga run Jan/Feb bersamaan tidak saling menimpa akumulasi."""
+    await db.fin_fixed_assets.update_one(
+        {"id": a["id"], "applied_periods": {"$ne": period}},
+        [{"$set": {"accumulated_depreciation": {"$round": [{"$add": [{"$ifNull": ["$accumulated_depreciation", 0]}, amt]}, 2]},
+                   "depreciated_months": {"$add": [{"$ifNull": ["$depreciated_months", 0]}, 1]},
+                   "applied_periods": {"$concatArrays": [{"$ifNull": ["$applied_periods", []]}, [period]]},
+                   "last_depreciation_period": {"$max": [{"$ifNull": ["$last_depreciation_period", ""]}, period]},
+                   "updated_at": now_iso()}},
+         {"$set": {"book_value": {"$round": [{"$subtract": [{"$ifNull": ["$acquisition_cost", 0]}, "$accumulated_depreciation"]}, 2]},
+                   "status": {"$cond": [{"$or": [{"$gte": ["$accumulated_depreciation", depreciable - EPS]},
+                                                  {"$gte": ["$depreciated_months", life]}]},
+                                         "fully_depreciated", "$status"]}}}])
+    return await db.fin_fixed_assets.find_one({"id": a["id"]}, {"_id": 0}) or {}
+
+
 async def dispose_asset(asset_id: str, proceeds: float, actor: Dict[str, Any],
                         date: str = "", note: str = "") -> Dict[str, Any]:
     a = await db.fin_fixed_assets.find_one({"id": asset_id}, {"_id": 0})

@@ -107,8 +107,14 @@ async def complete(session_id: str, actor_name: str, scope_ids: List[str]) -> Di
                "extra_rate_pct": pct(len(extra_items), found + len(extra_items)),
                "unresolved_count": len(missing) + len(extra_items) + untagged_n}
     now = now_iso()
+    # G3 D4-CC-01 — satu sesi = satu hasil: retry (ack hilang / update sesi gagal) MENGADOPSI hasil lama.
+    prior = await db.rfid_cycle_counts.find_one({"session_id": session_id}, {"_id": 0})
+    if prior:
+        await db.rfid_verify_sessions.update_one({"id": session_id}, _saga.finish_set({
+            "status": "completed", "completed_at": prior.get("created_at", now), "cycle_count_id": prior["id"]}))
+        return safe_doc(prior)
     cc = {
-        "id": new_id("rcc"),
+        "id": f"rcc_{session_id}",
         "cc_number": await next_doc_number("rfid_cycle_counts", "cc_number", "CC"),
         "session_id": session_id, "warehouse_id": sess["warehouse_id"],
         "scope_entity_ids": session_scope(sess),
@@ -121,7 +127,13 @@ async def complete(session_id: str, actor_name: str, scope_ids: List[str]) -> Di
         "extra_items": extra_items[:500],
         "created_at": now, "created_by": actor_name,
     }
-    await db.rfid_cycle_counts.insert_one(dict(cc))
+    try:
+        await db.rfid_cycle_counts.insert_one(dict(cc))
+    except Exception:  # noqa: BLE001 — id deterministik: pemenang balapan sudah menulis hasilnya
+        won = await db.rfid_cycle_counts.find_one({"id": cc["id"]}, {"_id": 0})
+        if not won:
+            raise
+        cc = won
     await db.rfid_verify_sessions.update_one({"id": session_id}, _saga.finish_set({
         "status": "completed",
         "result": "simulated" if simulated else ("clean" if not missing and not extra_items and not untagged_n else "with_issues"),

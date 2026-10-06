@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_m0_color.py",
+    "database": "knhost_audit_native90_e6bf872756db4c52a7ba1806896ef945",
+    "exit": 1,
+    "seconds": 51.3,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_m0_color.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "t-deactivate\n  ✓ Soft-deleted color col_705014ce01d3\n✅ PASSED\n\n🔍 Test 10: GET /api/color-library/nearest valid hex\n  ✓ Nearest color query returned 3 results\n    Nearest: TCX-19-4052 (distance: 39.1)\n✅ PASSED\n\n🔍 Test 11: GET /api/color-library/nearest invalid hex → 400\n  ✓ Invalid hex rejected with 400\n✅ PASSED\n\n🔍 Test 12: Sales can GET color-library\n  ✓ Sales can GET colors\n✅ PASSED\n\n🔍 Test 13: Sales can POST color-library\n  ✓ Sales can POST colors\n✅ PASSED\n\n🔍 Test 14: Warehouse can GET color-library\n  ✓ Warehouse can GET colors\n✅ PASSED\n\n🔍 Test 15: Warehouse cannot POST color-library\n  ✓ Warehouse cannot POST colors (got 403)\n✅ PASSED\n\n🔍 Test 16: Unauthenticated → 401/403\n  ✓ Unauthenticated access blocked (got 401)\n✅ PASSED\n\n🔍 Test 17: Products have stage field\n  ✓ Benang product has stage=yarn\n  ✓ Found 14 products with stage=finished\n✅ PASSED\n\n🔍 Test 18: Products have color snapshot fields\n  ✓ Found 18 products with color snapshots\n    Sample: BTK-MEGA-001 - color_code=KN-BLU-01, color_hex=#26415E\n✅ PASSED\n\n🔍 Test 19: POST /api/products with stage + color\n❌ FAILED: Expected 200, got 400: {\"detail\":\"Jenis kain (woven/knit) wajib diisi untuk stage 'Grey / Greige (Kain Mentah)'. Gramasi/GSM (gram per m²) wajib diisi untuk stage 'Grey / Greige (Kain Mentah)'. Lebar kain (meter) wajib diisi untuk stage 'Grey / Greige (Kain Mentah)'.\"}\n\n🔍 Test 20: Product templates have stage field\n  ✓ Product templates have stage field\n    Sample: Katun Combed 150 gsm Warna Khusus - stage=finished\n✅ PASSED\n\n============================================================\nM0 COLOR LIBRARY TEST SUMMARY\n============================================================\nTests Run:    20\nTests Passed: 19\nTests Failed: 1\nSuccess Rate: 95.0%\n============================================================\n\n"
+  }
+]

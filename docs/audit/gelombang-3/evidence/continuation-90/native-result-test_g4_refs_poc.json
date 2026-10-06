@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_g4_refs_poc.py",
+    "database": "knhost_audit_native90_1ff297d8cb714c21be946833e7562b7a",
+    "exit": 1,
+    "seconds": 98.25,
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_g4_refs_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "en\n==============================================================================\n  ✓ daftar dokumen menampilkan status tanda tangan (belum ditandatangani)\n  ✓ permintaan tanda tangan dibuat (kanal simulasi) — simulated\n  ✓ dokumen ditandatangani: kode verifikasi + hash SHA-256 tersimpan — ZQPIZ385\n  ✓ status di daftar dokumen berubah menjadi SUDAH ditandatangani — kode ZQPIZ385\n  ✓ verifikasi PUBLIK (tanpa login) mengembalikan dokumen + daftar penandatangan — Pesanan Penjualan SO-0007\n  ✓ blok tanda tangan menyebut JABATAN + WAKTU (bukan sekadar nama)\n  ✓ dokumen cetak menampilkan blok tanda tangan bernama + jabatan\n\n==============================================================================\nTEST 8 — BUKTI-MERAH: invarian INV-REF benar-benar bisa MEMERAH\n==============================================================================\n  ✗ keadaan awal: INV-REF-01 & INV-REF-02 HIJAU\n  ✗ tagihan supplier dijadikan YATIM → INV-REF-01 MERAH (gate memblokir)\n  ✗ setelah dipulihkan → INV-REF-01 kembali HIJAU\n  ✗ relasi dibuat SATU ARAH → INV-REF-02 MERAH (jejak tidak bisa dibaca balik)\n  ✗ dipulihkan → INV-REF-02 & INV-REF-03 HIJAU (invarian bukan hiasan)\n\n==============================================================================\nCLEANUP — kembalikan lingkungan ke keadaan semula (nol residu)\n==============================================================================\n  ✓ seluruh konfigurasi dokumen dipulihkan ke nilai semula\n  ✓ 7 artefak POC dihapus dari database\n  ✗ invarian global tetap HIJAU setelah pembersihan (nol residu)\n\n==============================================================================\nRINGKASAN\n==============================================================================\n  PASS 43 / FAIL 6  (total 49)\n\n✗ POC FASE G-4 GAGAL — 6 pemeriksaan merah.\n"
+  }
+]

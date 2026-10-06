@@ -365,6 +365,15 @@ async def reopen_period(closing_id: str, actor: Dict[str, Any]) -> Optional[Dict
                           "reopened_by": actor.get("name", "system"),
                           "reopened_at": now_iso(), "updated_at": now_iso()}),
     )
+    # G3 D4-CLOSE-01 — jurnal penutup periode ini dianulir → penutupan yang MEMUATNYA (mis. tahunan)
+    # residualnya basi: tandai STALE supaya aksi Tutup Ulang tersedia (sama dengan reclose).
+    await db.period_closings.update_many(
+        {"entity_id": rec.get("entity_id"), "status": "closed", "id": {"$ne": closing_id},
+         "stale": {"$ne": True}, "start_date": {"$lte": rec.get("start_date")},
+         "end_date": {"$gte": rec.get("end_date")}},
+        {"$set": {"stale": True, "stale_at": now_iso(),
+                  "stale_reason": f"Closing periode di dalamnya dibuka kembali ({rec.get('period_label', '')})",
+                  "updated_at": now_iso()}})
     return await db.period_closings.find_one({"id": closing_id}, {"_id": 0})
 
 

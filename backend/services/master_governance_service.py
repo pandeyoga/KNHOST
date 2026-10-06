@@ -83,6 +83,14 @@ async def apply_batch(scope_filter: Dict[str, Any], signature: str, accepted: Li
     if not picks or any(p is None for p in picks):
         raise HTTPException(status_code=422, detail="Hanya usulan dari preview yang boleh dieksekusi.")
     batch_id = new_id("mgb")
+    # G3 V3-MASTER-01 — rencana + snapshot before/after DURABLE dulu (status `applying`), baru produk
+    # diubah; gagal di tengah → batch tetap ada dan bisa di-rollback (CAS field==after per produk).
+    planned = [{"product_id": p["product_id"], "sku": p["sku"], "field": p["field"],
+                "before": p["from"], "after": p["to"]} for p in picks]
+    await db.master_governance_batches.insert_one({
+        "id": batch_id, "status": "applying", "note": (note or "").strip(), "changes": planned,
+        "planned": planned, "preview_signature": signature, "applied_by": actor.get("name", ""),
+        "applied_at": now_iso()})
     changes = []
     for p in picks:
         res = await db.products.update_one({"id": p["product_id"], p["field"]: p["from"] or {"$in": ["", None]}},
@@ -91,22 +99,23 @@ async def apply_batch(scope_filter: Dict[str, Any], signature: str, accepted: Li
         if res.modified_count == 1:
             changes.append({"product_id": p["product_id"], "sku": p["sku"], "field": p["field"],
                             "before": p["from"], "after": p["to"]})
-    batch = {"id": batch_id, "status": "applied", "note": (note or "").strip(), "changes": changes,
-             "preview_signature": signature, "applied_by": actor.get("name", ""), "applied_at": now_iso()}
-    await db.master_governance_batches.insert_one(dict(batch))
-    return safe_doc(batch)
+    await db.master_governance_batches.update_one({"id": batch_id}, {"$set": {
+        "status": "applied", "changes": changes, "applied_at": now_iso()}})
+    return safe_doc(await db.master_governance_batches.find_one({"id": batch_id}, {"_id": 0}))
 
 
 async def rollback_batch(batch_id: str, reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:
     if len((reason or "").strip()) < 5:
         raise HTTPException(status_code=422, detail="Alasan rollback wajib (min. 5 karakter).")
     b = await db.master_governance_batches.find_one_and_update(
-        {"id": batch_id, "status": "applied"}, {"$set": {"status": "rolling_back"}})
+        {"id": batch_id, "status": {"$in": ["applied", "applying"]}}, {"$set": {"status": "rolling_back"}})
     if not b:
         raise HTTPException(status_code=409, detail="Batch tidak ditemukan atau sudah di-rollback.")
     restored, skipped = [], []
-    for c in b["changes"]:
-        res = await db.products.update_one({"id": c["product_id"], c["field"]: c["after"]},
+    # batch `applying` (gagal di tengah) → rencana lengkap; CAS field==after hanya membalik yang benar terubah
+    for c in (b.get("planned") if b["status"] == "applying" else None) or b["changes"]:
+        res = await db.products.update_one({"id": c["product_id"], c["field"]: c["after"],
+                                            "last_governance_batch": batch_id},
                                            {"$set": {c["field"]: c["before"], "updated_at": now_iso()}})
         (restored if res.modified_count == 1 else skipped).append(c)
     await db.master_governance_batches.update_one({"id": batch_id}, {"$set": {

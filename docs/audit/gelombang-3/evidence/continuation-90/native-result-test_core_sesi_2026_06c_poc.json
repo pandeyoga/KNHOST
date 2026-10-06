@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_sesi_2026_06c_poc.py",
+    "database": "knhost_audit_native90_4cfd2509ba3a46f6b1beb9df74001d4e",
+    "exit": "timeout",
+    "seconds": 210.07,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_core_sesi_2026_06c_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "Timeout (0:00:55)!\nThread 0x00019e8c (most recent call first):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\fastapi\\dependencies\\utils.py\", line 472 in add_non_field_param_to_dependency\n  File "
+  }
+]

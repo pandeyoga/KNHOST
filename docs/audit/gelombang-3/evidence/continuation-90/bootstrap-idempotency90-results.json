@@ -1,0 +1,4040 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_native90_template",
+  "observations": [
+    {
+      "id": "BOOT90-second-start-counts",
+      "expected": {
+        "users": 17,
+        "hr_employees": 16,
+        "hr_shifts": 3,
+        "hr_leave_balances": 15,
+        "rfid_tags": 43,
+        "inventory_rolls": 61,
+        "inventory_balances": 23,
+        "inventory_lots": 30,
+        "journal_entries": 99,
+        "sales_orders": 10,
+        "purchase_orders": 16,
+        "products": 19
+      },
+      "actual": {
+        "users": 17,
+        "hr_employees": 19,
+        "hr_shifts": 3,
+        "hr_leave_balances": 18,
+        "rfid_tags": 43,
+        "inventory_rolls": 61,
+        "inventory_balances": 23,
+        "inventory_lots": 30,
+        "journal_entries": 99,
+        "sales_orders": 10,
+        "purchase_orders": 16,
+        "products": 19
+      },
+      "status": "observed_difference"
+    },
+    {
+      "id": "BOOT90-second-start-rolls",
+      "expected": [
+        {
+          "id": "roll_00cb7ea603a5",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 95.0,
+          "status": "available",
+          "base_unit_cost": 217600.0,
+          "unit_cost": 217600.0
+        },
+        {
+          "id": "roll_077e0037f41e",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 140.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_1bff7313598b",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 30.0,
+          "status": "available",
+          "base_unit_cost": 193200.0,
+          "unit_cost": 193200.0
+        },
+        {
+          "id": "roll_1e15cc85d5fa",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 35.0,
+          "status": "reserved",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_1ecd421939ad",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 140.0,
+          "status": "available",
+          "base_unit_cost": 217600.0,
+          "unit_cost": 217600.0
+        },
+        {
+          "id": "roll_1fbe78995c5a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 20.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_2a6833923ef0",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 141900.0,
+          "unit_cost": 141900.0
+        },
+        {
+          "id": "roll_2db5da08f84a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_3331a60e5ce8",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_3875c8f07236",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_4071da16b952",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 60.0,
+          "status": "available",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_427f4372d804",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_4b0ec09b7f9d",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 140.0,
+          "status": "available",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_57aab6262e60",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_5d23d64ff575",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 50.0,
+          "status": "reserved",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_61160a99e208",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 20.0,
+          "status": "subcon",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_65260fd54e0a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 87000.0,
+          "unit_cost": 87000.0
+        },
+        {
+          "id": "roll_6adb03e12287",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 17201.8349,
+          "unit_cost": 17201.8349
+        },
+        {
+          "id": "roll_73cf97c3b4bd",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 110.0,
+          "status": "available",
+          "base_unit_cost": 220800.0,
+          "unit_cost": 220800.0
+        },
+        {
+          "id": "roll_7793440cbefc",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_77c4c690147f",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 75.0,
+          "status": "available",
+          "base_unit_cost": 193200.0,
+          "unit_cost": 193200.0
+        },
+        {
+          "id": "roll_7ce1e05b77ed",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 19.02,
+          "status": "available",
+          "base_unit_cost": 78571.4804,
+          "unit_cost": 78571.4804
+        },
+        {
+          "id": "roll_7d39d23fba6c",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 19.01,
+          "status": "available",
+          "base_unit_cost": 78571.4803,
+          "unit_cost": 78571.4803
+        },
+        {
+          "id": "roll_7d866dbb4655",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 135.0,
+          "status": "available",
+          "base_unit_cost": 324000.0,
+          "unit_cost": 324000.0
+        },
+        {
+          "id": "roll_805e95c9d1a1",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_80a91feaf0b8",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 40.0,
+          "status": "available",
+          "base_unit_cost": 21561.9267,
+          "unit_cost": 21561.9267
+        },
+        {
+          "id": "roll_80f6a0ed9bc9",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 2.0,
+          "status": "available",
+          "base_unit_cost": 17201.8349,
+          "unit_cost": 17201.8349
+        },
+        {
+          "id": "roll_8100486c7c15",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 85.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_82bf040f5beb",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 40.0,
+          "status": "reserved",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_84423c4c5da0",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.4,
+          "status": "available",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_92fcc921b343",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 17201.8349,
+          "unit_cost": 17201.8349
+        },
+        {
+          "id": "roll_97a0d95b3d31",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_9ebc276cf3d7",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 90.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_a4bf6ecca9fe",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 10.0,
+          "status": "available",
+          "base_unit_cost": 141900.0,
+          "unit_cost": 141900.0
+        },
+        {
+          "id": "roll_a9d8a790bfa7",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 193200.0,
+          "unit_cost": 193200.0
+        },
+        {
+          "id": "roll_ad9fbd5ef2b5",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 25.44,
+          "status": "available",
+          "base_unit_cost": 24600.1179,
+          "unit_cost": 24600.1179
+        },
+        {
+          "id": "roll_ae31ace68d8e",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 24.5,
+          "status": "available",
+          "base_unit_cost": 29797.7906,
+          "unit_cost": 29797.7906
+        },
+        {
+          "id": "roll_b3d18453e193",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 60.0,
+          "status": "available",
+          "base_unit_cost": 87000.0,
+          "unit_cost": 87000.0
+        },
+        {
+          "id": "roll_b6cfacf31f1a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 193200.0,
+          "unit_cost": 193200.0
+        },
+        {
+          "id": "roll_b70c33aa886b",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 108900.0,
+          "unit_cost": 108900.0
+        },
+        {
+          "id": "roll_b87d37c5eb5b",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 10.0,
+          "status": "reserved",
+          "base_unit_cost": 324000.0,
+          "unit_cost": 324000.0
+        },
+        {
+          "id": "roll_bf082ed2ef38",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_c16f2e929da4",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_c907fd427c73",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_cd08161103cf",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 1.0,
+          "status": "available",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_cd8b1b87e7de",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 25.0,
+          "status": "available",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_d2c744835c8a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 108900.0,
+          "unit_cost": 108900.0
+        },
+        {
+          "id": "roll_d46f2530a6fe",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_de91cc8df020",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 130.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_dec9a21ec292",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_e2ccb7c47b38",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 25.0,
+          "status": "reserved",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_e3e001a0e0b9",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 25205.9541,
+          "unit_cost": 25205.9541
+        },
+        {
+          "id": "roll_ec2e376caf9a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 25.45,
+          "status": "available",
+          "base_unit_cost": 24600.1179,
+          "unit_cost": 24600.1179
+        },
+        {
+          "id": "roll_eda38bb7f532",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 10.0,
+          "status": "reserved",
+          "base_unit_cost": 324000.0,
+          "unit_cost": 324000.0
+        },
+        {
+          "id": "roll_ee18adbf0260",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 17201.8349,
+          "unit_cost": 17201.8349
+        },
+        {
+          "id": "roll_ee3fe2052737",
+          "owner_entity_id": "ent_kanda",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 10.0,
+          "status": "reserved",
+          "base_unit_cost": 157000.0,
+          "unit_cost": 157000.0
+        },
+        {
+          "id": "roll_f1cc6de38b17",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 30.0,
+          "status": "reserved",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_f4c929a68121",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 25205.9541,
+          "unit_cost": 25205.9541
+        },
+        {
+          "id": "roll_f6af7844f356",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 75.0,
+          "status": "quarantine",
+          "unit_cost": 196766.66666699998,
+          "base_unit_cost": 122100.0
+        },
+        {
+          "id": "roll_f9f28d9b371c",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 135.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_fcd84472edd0",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 20.0,
+          "status": "reserved",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        }
+      ],
+      "actual": [
+        {
+          "id": "roll_00cb7ea603a5",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 95.0,
+          "status": "available",
+          "base_unit_cost": 217600.0,
+          "unit_cost": 217600.0
+        },
+        {
+          "id": "roll_077e0037f41e",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 140.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_1bff7313598b",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 30.0,
+          "status": "available",
+          "base_unit_cost": 193200.0,
+          "unit_cost": 193200.0
+        },
+        {
+          "id": "roll_1e15cc85d5fa",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 35.0,
+          "status": "reserved",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_1ecd421939ad",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 140.0,
+          "status": "available",
+          "base_unit_cost": 217600.0,
+          "unit_cost": 217600.0
+        },
+        {
+          "id": "roll_1fbe78995c5a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 20.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_2a6833923ef0",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 141900.0,
+          "unit_cost": 141900.0
+        },
+        {
+          "id": "roll_2db5da08f84a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_3331a60e5ce8",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_3875c8f07236",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_4071da16b952",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 60.0,
+          "status": "available",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_427f4372d804",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_4b0ec09b7f9d",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 140.0,
+          "status": "available",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_57aab6262e60",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_5d23d64ff575",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 50.0,
+          "status": "reserved",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_61160a99e208",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 20.0,
+          "status": "subcon",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_65260fd54e0a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 87000.0,
+          "unit_cost": 87000.0
+        },
+        {
+          "id": "roll_6adb03e12287",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 17201.8349,
+          "unit_cost": 17201.8349
+        },
+        {
+          "id": "roll_73cf97c3b4bd",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 110.0,
+          "status": "available",
+          "base_unit_cost": 220800.0,
+          "unit_cost": 220800.0
+        },
+        {
+          "id": "roll_7793440cbefc",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_77c4c690147f",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 75.0,
+          "status": "available",
+          "base_unit_cost": 193200.0,
+          "unit_cost": 193200.0
+        },
+        {
+          "id": "roll_7ce1e05b77ed",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 19.02,
+          "status": "available",
+          "base_unit_cost": 78571.4804,
+          "unit_cost": 78571.4804
+        },
+        {
+          "id": "roll_7d39d23fba6c",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 19.01,
+          "status": "available",
+          "base_unit_cost": 78571.4803,
+          "unit_cost": 78571.4803
+        },
+        {
+          "id": "roll_7d866dbb4655",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 135.0,
+          "status": "available",
+          "base_unit_cost": 324000.0,
+          "unit_cost": 324000.0
+        },
+        {
+          "id": "roll_805e95c9d1a1",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_80a91feaf0b8",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 40.0,
+          "status": "available",
+          "base_unit_cost": 21561.9267,
+          "unit_cost": 21561.9267
+        },
+        {
+          "id": "roll_80f6a0ed9bc9",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 2.0,
+          "status": "available",
+          "base_unit_cost": 17201.8349,
+          "unit_cost": 17201.8349
+        },
+        {
+          "id": "roll_8100486c7c15",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 85.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_82bf040f5beb",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 40.0,
+          "status": "reserved",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_84423c4c5da0",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.4,
+          "status": "available",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_92fcc921b343",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 17201.8349,
+          "unit_cost": 17201.8349
+        },
+        {
+          "id": "roll_97a0d95b3d31",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_9ebc276cf3d7",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 90.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_a4bf6ecca9fe",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 10.0,
+          "status": "available",
+          "base_unit_cost": 141900.0,
+          "unit_cost": 141900.0
+        },
+        {
+          "id": "roll_a9d8a790bfa7",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 193200.0,
+          "unit_cost": 193200.0
+        },
+        {
+          "id": "roll_ad9fbd5ef2b5",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 25.44,
+          "status": "available",
+          "base_unit_cost": 24600.1179,
+          "unit_cost": 24600.1179
+        },
+        {
+          "id": "roll_ae31ace68d8e",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 24.5,
+          "status": "available",
+          "base_unit_cost": 29797.7906,
+          "unit_cost": 29797.7906
+        },
+        {
+          "id": "roll_b3d18453e193",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 60.0,
+          "status": "available",
+          "base_unit_cost": 87000.0,
+          "unit_cost": 87000.0
+        },
+        {
+          "id": "roll_b6cfacf31f1a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 193200.0,
+          "unit_cost": 193200.0
+        },
+        {
+          "id": "roll_b70c33aa886b",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 108900.0,
+          "unit_cost": 108900.0
+        },
+        {
+          "id": "roll_b87d37c5eb5b",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 10.0,
+          "status": "reserved",
+          "base_unit_cost": 324000.0,
+          "unit_cost": 324000.0
+        },
+        {
+          "id": "roll_bf082ed2ef38",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_c16f2e929da4",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_c907fd427c73",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_cd08161103cf",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 1.0,
+          "status": "available",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_cd8b1b87e7de",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 25.0,
+          "status": "available",
+          "base_unit_cost": 51500.0,
+          "unit_cost": 51500.0
+        },
+        {
+          "id": "roll_d2c744835c8a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 108900.0,
+          "unit_cost": 108900.0
+        },
+        {
+          "id": "roll_d46f2530a6fe",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_de91cc8df020",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 130.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_dec9a21ec292",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 150.0,
+          "status": "available",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_e2ccb7c47b38",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 25.0,
+          "status": "reserved",
+          "base_unit_cost": 58900.0,
+          "unit_cost": 58900.0
+        },
+        {
+          "id": "roll_e3e001a0e0b9",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 25205.9541,
+          "unit_cost": 25205.9541
+        },
+        {
+          "id": "roll_ec2e376caf9a",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 25.45,
+          "status": "available",
+          "base_unit_cost": 24600.1179,
+          "unit_cost": 24600.1179
+        },
+        {
+          "id": "roll_eda38bb7f532",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 10.0,
+          "status": "reserved",
+          "base_unit_cost": 324000.0,
+          "unit_cost": 324000.0
+        },
+        {
+          "id": "roll_ee18adbf0260",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 17201.8349,
+          "unit_cost": 17201.8349
+        },
+        {
+          "id": "roll_ee3fe2052737",
+          "owner_entity_id": "ent_kanda",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 10.0,
+          "status": "reserved",
+          "base_unit_cost": 157000.0,
+          "unit_cost": 157000.0
+        },
+        {
+          "id": "roll_f1cc6de38b17",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 30.0,
+          "status": "reserved",
+          "base_unit_cost": 157500.0,
+          "unit_cost": 157500.0
+        },
+        {
+          "id": "roll_f4c929a68121",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_surabaya",
+          "length_remaining": 0.0,
+          "status": "consumed",
+          "base_unit_cost": 25205.9541,
+          "unit_cost": 25205.9541
+        },
+        {
+          "id": "roll_f6af7844f356",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 75.0,
+          "status": "quarantine",
+          "unit_cost": 196766.66666699998,
+          "base_unit_cost": 122100.0
+        },
+        {
+          "id": "roll_f9f28d9b371c",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_jakarta",
+          "length_remaining": 135.0,
+          "status": "available",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        },
+        {
+          "id": "roll_fcd84472edd0",
+          "owner_entity_id": "ent_ksc",
+          "warehouse_id": "wh_bandung",
+          "length_remaining": 20.0,
+          "status": "reserved",
+          "base_unit_cost": 122100.0,
+          "unit_cost": 122100.0
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "id": "BOOT90-second-start-products",
+      "expected": [
+        {
+          "id": "prod_07d613e9eae2",
+          "price": 52000.0,
+          "harga_pokok": 0.0
+        },
+        {
+          "id": "prod_batik_mega",
+          "price": 185000,
+          "harga_pokok": 122100.0
+        },
+        {
+          "id": "prod_batik_mega_hijau",
+          "price": 215000,
+          "harga_pokok": 141900.0
+        },
+        {
+          "id": "prod_batik_mega_merah",
+          "price": 185000,
+          "harga_pokok": 122100.0
+        },
+        {
+          "id": "prod_benang_katun",
+          "price": 78000,
+          "harga_pokok": 51500.0
+        },
+        {
+          "id": "prod_benang_sisa",
+          "price": 0,
+          "harga_pokok": 0
+        },
+        {
+          "id": "prod_denim_selvedge",
+          "price": 165000,
+          "harga_pokok": 108900.0
+        },
+        {
+          "id": "prod_endek_bali",
+          "price": 280000,
+          "harga_pokok": 193200.0
+        },
+        {
+          "id": "prod_endek_bali_biru",
+          "price": 280000,
+          "harga_pokok": 193200.0
+        },
+        {
+          "id": "prod_endek_bali_ungu",
+          "price": 320000,
+          "harga_pokok": 220800.0
+        },
+        {
+          "id": "prod_grey_katun",
+          "price": 0,
+          "harga_pokok": 34000
+        },
+        {
+          "id": "prod_grey_sisa",
+          "price": 0,
+          "harga_pokok": 0
+        },
+        {
+          "id": "prod_jumputan_palembang",
+          "price": 145000,
+          "harga_pokok": 87000.0
+        },
+        {
+          "id": "prod_kombinasi_batik_lurik",
+          "price": 128000,
+          "harga_pokok": 0
+        },
+        {
+          "id": "prod_lurik_classic",
+          "price": 95000,
+          "harga_pokok": 58900.0
+        },
+        {
+          "id": "prod_pfp_katun",
+          "price": 0,
+          "harga_pokok": 41000
+        },
+        {
+          "id": "prod_songket_palembang",
+          "price": 450000,
+          "harga_pokok": 324000.0
+        },
+        {
+          "id": "prod_tenun_ikat",
+          "price": 225000,
+          "harga_pokok": 157500.0
+        },
+        {
+          "id": "prod_ulos_batak",
+          "price": 320000,
+          "harga_pokok": 217600.0
+        }
+      ],
+      "actual": [
+        {
+          "id": "prod_07d613e9eae2",
+          "price": 52000.0,
+          "harga_pokok": 0.0
+        },
+        {
+          "id": "prod_batik_mega",
+          "price": 185000,
+          "harga_pokok": 122100.0
+        },
+        {
+          "id": "prod_batik_mega_hijau",
+          "price": 215000,
+          "harga_pokok": 141900.0
+        },
+        {
+          "id": "prod_batik_mega_merah",
+          "price": 185000,
+          "harga_pokok": 122100.0
+        },
+        {
+          "id": "prod_benang_katun",
+          "price": 78000,
+          "harga_pokok": 51500.0
+        },
+        {
+          "id": "prod_benang_sisa",
+          "price": 0,
+          "harga_pokok": 0
+        },
+        {
+          "id": "prod_denim_selvedge",
+          "price": 165000,
+          "harga_pokok": 108900.0
+        },
+        {
+          "id": "prod_endek_bali",
+          "price": 280000,
+          "harga_pokok": 193200.0
+        },
+        {
+          "id": "prod_endek_bali_biru",
+          "price": 280000,
+          "harga_pokok": 193200.0
+        },
+        {
+          "id": "prod_endek_bali_ungu",
+          "price": 320000,
+          "harga_pokok": 220800.0
+        },
+        {
+          "id": "prod_grey_katun",
+          "price": 0,
+          "harga_pokok": 34000
+        },
+        {
+          "id": "prod_grey_sisa",
+          "price": 0,
+          "harga_pokok": 0
+        },
+        {
+          "id": "prod_jumputan_palembang",
+          "price": 145000,
+          "harga_pokok": 87000.0
+        },
+        {
+          "id": "prod_kombinasi_batik_lurik",
+          "price": 128000,
+          "harga_pokok": 0
+        },
+        {
+          "id": "prod_lurik_classic",
+          "price": 95000,
+          "harga_pokok": 58900.0
+        },
+        {
+          "id": "prod_pfp_katun",
+          "price": 0,
+          "harga_pokok": 41000
+        },
+        {
+          "id": "prod_songket_palembang",
+          "price": 450000,
+          "harga_pokok": 324000.0
+        },
+        {
+          "id": "prod_tenun_ikat",
+          "price": 225000,
+          "harga_pokok": 157500.0
+        },
+        {
+          "id": "prod_ulos_batak",
+          "price": 320000,
+          "harga_pokok": 217600.0
+        }
+      ],
+      "status": "pass"
+    },
+    {
+      "id": "BOOT90-second-start-balances",
+      "expected": [
+        {
+          "id": "bal_045ab39eaeb6",
+          "available_qty": 425.0,
+          "owned_qty": 550.0,
+          "reserved_qty": 50.0
+        },
+        {
+          "id": "bal_054643156c0d",
+          "available_qty": 0.0,
+          "owned_qty": 10.0,
+          "reserved_qty": 10.0
+        },
+        {
+          "id": "bal_0655cce08175",
+          "available_qty": 24.5,
+          "owned_qty": 24.5,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_09a889d36a8b",
+          "available_qty": 240.0,
+          "owned_qty": 240.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_2ad6d58a8a2e",
+          "available_qty": 78.03,
+          "owned_qty": 78.03,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_34b98cf78355",
+          "available_qty": 1.4,
+          "owned_qty": 1.4,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_40b870632bb4",
+          "available_qty": 135.0,
+          "owned_qty": 155.0,
+          "reserved_qty": 20.0
+        },
+        {
+          "id": "bal_41c2c5060d51",
+          "available_qty": 290.0,
+          "owned_qty": 320.0,
+          "reserved_qty": 30.0
+        },
+        {
+          "id": "bal_439d94a302da",
+          "available_qty": 160.0,
+          "owned_qty": 160.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_4e8a80ca4702",
+          "available_qty": 180.0,
+          "owned_qty": 180.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_7ba9c088fc46",
+          "available_qty": 52.89,
+          "owned_qty": 52.89,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_7ff772cec7d9",
+          "available_qty": 320.0,
+          "owned_qty": 340.0,
+          "reserved_qty": 20.0
+        },
+        {
+          "id": "bal_9445f24247a6",
+          "available_qty": 95.0,
+          "owned_qty": 95.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_a0a345b54ab3",
+          "available_qty": 580.0,
+          "owned_qty": 620.0,
+          "reserved_qty": 40.0
+        },
+        {
+          "id": "bal_ad4918c26e69",
+          "available_qty": 300.0,
+          "owned_qty": 300.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_bbc8632fbba2",
+          "available_qty": 25.0,
+          "owned_qty": 45.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_c5e8672a66c7",
+          "available_qty": 110.0,
+          "owned_qty": 110.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_cfdea569f0da",
+          "available_qty": 385.0,
+          "owned_qty": 410.0,
+          "reserved_qty": 25.0
+        },
+        {
+          "id": "bal_d91dafb32085",
+          "available_qty": 210.0,
+          "owned_qty": 210.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_e6edb57b6ca7",
+          "available_qty": 150.0,
+          "owned_qty": 150.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_ebb76a9bb617",
+          "available_qty": 210.0,
+          "owned_qty": 245.0,
+          "reserved_qty": 35.0
+        },
+        {
+          "id": "bal_f2bc6a7bbbe9",
+          "available_qty": 75.0,
+          "owned_qty": 75.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_ff9c8c5ff45c",
+          "available_qty": 140.0,
+          "owned_qty": 140.0,
+          "reserved_qty": 0.0
+        }
+      ],
+      "actual": [
+        {
+          "id": "bal_045ab39eaeb6",
+          "available_qty": 425.0,
+          "owned_qty": 550.0,
+          "reserved_qty": 50.0
+        },
+        {
+          "id": "bal_054643156c0d",
+          "available_qty": 0.0,
+          "owned_qty": 10.0,
+          "reserved_qty": 10.0
+        },
+        {
+          "id": "bal_0655cce08175",
+          "available_qty": 24.5,
+          "owned_qty": 24.5,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_09a889d36a8b",
+          "available_qty": 240.0,
+          "owned_qty": 240.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_2ad6d58a8a2e",
+          "available_qty": 78.03,
+          "owned_qty": 78.03,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_34b98cf78355",
+          "available_qty": 1.4,
+          "owned_qty": 1.4,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_40b870632bb4",
+          "available_qty": 135.0,
+          "owned_qty": 155.0,
+          "reserved_qty": 20.0
+        },
+        {
+          "id": "bal_41c2c5060d51",
+          "available_qty": 290.0,
+          "owned_qty": 320.0,
+          "reserved_qty": 30.0
+        },
+        {
+          "id": "bal_439d94a302da",
+          "available_qty": 160.0,
+          "owned_qty": 160.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_4e8a80ca4702",
+          "available_qty": 180.0,
+          "owned_qty": 180.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_7ba9c088fc46",
+          "available_qty": 52.89,
+          "owned_qty": 52.89,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_7ff772cec7d9",
+          "available_qty": 320.0,
+          "owned_qty": 340.0,
+          "reserved_qty": 20.0
+        },
+        {
+          "id": "bal_9445f24247a6",
+          "available_qty": 95.0,
+          "owned_qty": 95.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_a0a345b54ab3",
+          "available_qty": 580.0,
+          "owned_qty": 620.0,
+          "reserved_qty": 40.0
+        },
+        {
+          "id": "bal_ad4918c26e69",
+          "available_qty": 300.0,
+          "owned_qty": 300.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_bbc8632fbba2",
+          "available_qty": 25.0,
+          "owned_qty": 45.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_c5e8672a66c7",
+          "available_qty": 110.0,
+          "owned_qty": 110.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_cfdea569f0da",
+          "available_qty": 385.0,
+          "owned_qty": 410.0,
+          "reserved_qty": 25.0
+        },
+        {
+          "id": "bal_d91dafb32085",
+          "available_qty": 210.0,
+          "owned_qty": 210.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_e6edb57b6ca7",
+          "available_qty": 150.0,
+          "owned_qty": 150.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_ebb76a9bb617",
+          "available_qty": 210.0,
+          "owned_qty": 245.0,
+          "reserved_qty": 35.0
+        },
+        {
+          "id": "bal_f2bc6a7bbbe9",
+          "available_qty": 75.0,
+          "owned_qty": 75.0,
+          "reserved_qty": 0.0
+        },
+        {
+          "id": "bal_ff9c8c5ff45c",
+          "available_qty": 140.0,
+          "owned_qty": 140.0,
+          "reserved_qty": 0.0
+        }
+      ],
+      "status": "pass"
+    }
+  ],
+  "harness_errors": [],
+  "before": {
+    "counts": {
+      "users": 14,
+      "hr_employees": 0,
+      "hr_shifts": 0,
+      "hr_leave_balances": 0,
+      "rfid_tags": 43,
+      "inventory_rolls": 61,
+      "inventory_balances": 23,
+      "inventory_lots": 30,
+      "journal_entries": 99,
+      "sales_orders": 10,
+      "purchase_orders": 16,
+      "products": 19
+    },
+    "rolls": [
+      {
+        "id": "roll_00cb7ea603a5",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 95.0,
+        "status": "available",
+        "base_unit_cost": 217600.0,
+        "unit_cost": 217600.0
+      },
+      {
+        "id": "roll_077e0037f41e",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 140.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_1bff7313598b",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 30.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_1e15cc85d5fa",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 35.0,
+        "status": "reserved",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_1ecd421939ad",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 140.0,
+        "status": "available",
+        "base_unit_cost": 217600.0,
+        "unit_cost": 217600.0
+      },
+      {
+        "id": "roll_1fbe78995c5a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 20.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_2a6833923ef0",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 141900.0,
+        "unit_cost": 141900.0
+      },
+      {
+        "id": "roll_2db5da08f84a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_3331a60e5ce8",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_3875c8f07236",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_4071da16b952",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 60.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_427f4372d804",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_4b0ec09b7f9d",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 140.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_57aab6262e60",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_5d23d64ff575",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 50.0,
+        "status": "reserved",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_61160a99e208",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 20.0,
+        "status": "subcon",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_65260fd54e0a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 87000.0,
+        "unit_cost": 87000.0
+      },
+      {
+        "id": "roll_6adb03e12287",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_73cf97c3b4bd",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 110.0,
+        "status": "available",
+        "base_unit_cost": 220800.0,
+        "unit_cost": 220800.0
+      },
+      {
+        "id": "roll_7793440cbefc",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_77c4c690147f",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 75.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_7ce1e05b77ed",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 19.02,
+        "status": "available",
+        "base_unit_cost": 78571.4804,
+        "unit_cost": 78571.4804
+      },
+      {
+        "id": "roll_7d39d23fba6c",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 19.01,
+        "status": "available",
+        "base_unit_cost": 78571.4803,
+        "unit_cost": 78571.4803
+      },
+      {
+        "id": "roll_7d866dbb4655",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 135.0,
+        "status": "available",
+        "base_unit_cost": 324000.0,
+        "unit_cost": 324000.0
+      },
+      {
+        "id": "roll_805e95c9d1a1",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_80a91feaf0b8",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 40.0,
+        "status": "available",
+        "base_unit_cost": 21561.9267,
+        "unit_cost": 21561.9267
+      },
+      {
+        "id": "roll_80f6a0ed9bc9",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 2.0,
+        "status": "available",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_8100486c7c15",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 85.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_82bf040f5beb",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 40.0,
+        "status": "reserved",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_84423c4c5da0",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.4,
+        "status": "available",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_92fcc921b343",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_97a0d95b3d31",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_9ebc276cf3d7",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 90.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_a4bf6ecca9fe",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "available",
+        "base_unit_cost": 141900.0,
+        "unit_cost": 141900.0
+      },
+      {
+        "id": "roll_a9d8a790bfa7",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_ad9fbd5ef2b5",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.44,
+        "status": "available",
+        "base_unit_cost": 24600.1179,
+        "unit_cost": 24600.1179
+      },
+      {
+        "id": "roll_ae31ace68d8e",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 24.5,
+        "status": "available",
+        "base_unit_cost": 29797.7906,
+        "unit_cost": 29797.7906
+      },
+      {
+        "id": "roll_b3d18453e193",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 60.0,
+        "status": "available",
+        "base_unit_cost": 87000.0,
+        "unit_cost": 87000.0
+      },
+      {
+        "id": "roll_b6cfacf31f1a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_b70c33aa886b",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 108900.0,
+        "unit_cost": 108900.0
+      },
+      {
+        "id": "roll_b87d37c5eb5b",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "reserved",
+        "base_unit_cost": 324000.0,
+        "unit_cost": 324000.0
+      },
+      {
+        "id": "roll_bf082ed2ef38",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_c16f2e929da4",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_c907fd427c73",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_cd08161103cf",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 1.0,
+        "status": "available",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_cd8b1b87e7de",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.0,
+        "status": "available",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_d2c744835c8a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 108900.0,
+        "unit_cost": 108900.0
+      },
+      {
+        "id": "roll_d46f2530a6fe",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_de91cc8df020",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 130.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_dec9a21ec292",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_e2ccb7c47b38",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.0,
+        "status": "reserved",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_e3e001a0e0b9",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 25205.9541,
+        "unit_cost": 25205.9541
+      },
+      {
+        "id": "roll_ec2e376caf9a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.45,
+        "status": "available",
+        "base_unit_cost": 24600.1179,
+        "unit_cost": 24600.1179
+      },
+      {
+        "id": "roll_eda38bb7f532",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "reserved",
+        "base_unit_cost": 324000.0,
+        "unit_cost": 324000.0
+      },
+      {
+        "id": "roll_ee18adbf0260",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_ee3fe2052737",
+        "owner_entity_id": "ent_kanda",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "reserved",
+        "base_unit_cost": 157000.0,
+        "unit_cost": 157000.0
+      },
+      {
+        "id": "roll_f1cc6de38b17",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 30.0,
+        "status": "reserved",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_f4c929a68121",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 25205.9541,
+        "unit_cost": 25205.9541
+      },
+      {
+        "id": "roll_f6af7844f356",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 75.0,
+        "status": "quarantine",
+        "unit_cost": 196766.66666699998,
+        "base_unit_cost": 122100.0
+      },
+      {
+        "id": "roll_f9f28d9b371c",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 135.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_fcd84472edd0",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 20.0,
+        "status": "reserved",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      }
+    ],
+    "products": [
+      {
+        "id": "prod_07d613e9eae2",
+        "price": 52000.0,
+        "harga_pokok": 0.0
+      },
+      {
+        "id": "prod_batik_mega",
+        "price": 185000,
+        "harga_pokok": 122100.0
+      },
+      {
+        "id": "prod_batik_mega_hijau",
+        "price": 215000,
+        "harga_pokok": 141900.0
+      },
+      {
+        "id": "prod_batik_mega_merah",
+        "price": 185000,
+        "harga_pokok": 122100.0
+      },
+      {
+        "id": "prod_benang_katun",
+        "price": 78000,
+        "harga_pokok": 51500.0
+      },
+      {
+        "id": "prod_benang_sisa",
+        "price": 0,
+        "harga_pokok": 0
+      },
+      {
+        "id": "prod_denim_selvedge",
+        "price": 165000,
+        "harga_pokok": 108900.0
+      },
+      {
+        "id": "prod_endek_bali",
+        "price": 280000,
+        "harga_pokok": 193200.0
+      },
+      {
+        "id": "prod_endek_bali_biru",
+        "price": 280000,
+        "harga_pokok": 193200.0
+      },
+      {
+        "id": "prod_endek_bali_ungu",
+        "price": 320000,
+        "harga_pokok": 220800.0
+      },
+      {
+        "id": "prod_grey_katun",
+        "price": 0,
+        "harga_pokok": 34000
+      },
+      {
+        "id": "prod_grey_sisa",
+        "price": 0,
+        "harga_pokok": 0
+      },
+      {
+        "id": "prod_jumputan_palembang",
+        "price": 145000,
+        "harga_pokok": 87000.0
+      },
+      {
+        "id": "prod_kombinasi_batik_lurik",
+        "price": 128000,
+        "harga_pokok": 0
+      },
+      {
+        "id": "prod_lurik_classic",
+        "price": 95000,
+        "harga_pokok": 58900.0
+      },
+      {
+        "id": "prod_pfp_katun",
+        "price": 0,
+        "harga_pokok": 41000
+      },
+      {
+        "id": "prod_songket_palembang",
+        "price": 450000,
+        "harga_pokok": 324000.0
+      },
+      {
+        "id": "prod_tenun_ikat",
+        "price": 225000,
+        "harga_pokok": 157500.0
+      },
+      {
+        "id": "prod_ulos_batak",
+        "price": 320000,
+        "harga_pokok": 217600.0
+      }
+    ],
+    "balances": [
+      {
+        "id": "bal_045ab39eaeb6",
+        "available_qty": 425.0,
+        "owned_qty": 550.0,
+        "reserved_qty": 50.0
+      },
+      {
+        "id": "bal_054643156c0d",
+        "available_qty": 0.0,
+        "owned_qty": 10.0,
+        "reserved_qty": 10.0
+      },
+      {
+        "id": "bal_0655cce08175",
+        "available_qty": 24.5,
+        "owned_qty": 24.5,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_09a889d36a8b",
+        "available_qty": 240.0,
+        "owned_qty": 240.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_2ad6d58a8a2e",
+        "available_qty": 78.03,
+        "owned_qty": 78.03,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_34b98cf78355",
+        "available_qty": 1.4,
+        "owned_qty": 1.4,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_40b870632bb4",
+        "available_qty": 135.0,
+        "owned_qty": 155.0,
+        "reserved_qty": 20.0
+      },
+      {
+        "id": "bal_41c2c5060d51",
+        "available_qty": 290.0,
+        "owned_qty": 320.0,
+        "reserved_qty": 30.0
+      },
+      {
+        "id": "bal_439d94a302da",
+        "available_qty": 160.0,
+        "owned_qty": 160.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_4e8a80ca4702",
+        "available_qty": 180.0,
+        "owned_qty": 180.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_7ba9c088fc46",
+        "available_qty": 52.89,
+        "owned_qty": 52.89,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_7ff772cec7d9",
+        "available_qty": 320.0,
+        "owned_qty": 340.0,
+        "reserved_qty": 20.0
+      },
+      {
+        "id": "bal_9445f24247a6",
+        "available_qty": 95.0,
+        "owned_qty": 95.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_a0a345b54ab3",
+        "available_qty": 580.0,
+        "owned_qty": 620.0,
+        "reserved_qty": 40.0
+      },
+      {
+        "id": "bal_ad4918c26e69",
+        "available_qty": 300.0,
+        "owned_qty": 300.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_bbc8632fbba2",
+        "available_qty": 25.0,
+        "owned_qty": 45.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_c5e8672a66c7",
+        "available_qty": 110.0,
+        "owned_qty": 110.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_cfdea569f0da",
+        "available_qty": 385.0,
+        "owned_qty": 410.0,
+        "reserved_qty": 25.0
+      },
+      {
+        "id": "bal_d91dafb32085",
+        "available_qty": 210.0,
+        "owned_qty": 210.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_e6edb57b6ca7",
+        "available_qty": 150.0,
+        "owned_qty": 150.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_ebb76a9bb617",
+        "available_qty": 210.0,
+        "owned_qty": 245.0,
+        "reserved_qty": 35.0
+      },
+      {
+        "id": "bal_f2bc6a7bbbe9",
+        "available_qty": 75.0,
+        "owned_qty": 75.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_ff9c8c5ff45c",
+        "available_qty": 140.0,
+        "owned_qty": 140.0,
+        "reserved_qty": 0.0
+      }
+    ]
+  },
+  "once": {
+    "counts": {
+      "users": 17,
+      "hr_employees": 16,
+      "hr_shifts": 3,
+      "hr_leave_balances": 15,
+      "rfid_tags": 43,
+      "inventory_rolls": 61,
+      "inventory_balances": 23,
+      "inventory_lots": 30,
+      "journal_entries": 99,
+      "sales_orders": 10,
+      "purchase_orders": 16,
+      "products": 19
+    },
+    "rolls": [
+      {
+        "id": "roll_00cb7ea603a5",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 95.0,
+        "status": "available",
+        "base_unit_cost": 217600.0,
+        "unit_cost": 217600.0
+      },
+      {
+        "id": "roll_077e0037f41e",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 140.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_1bff7313598b",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 30.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_1e15cc85d5fa",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 35.0,
+        "status": "reserved",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_1ecd421939ad",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 140.0,
+        "status": "available",
+        "base_unit_cost": 217600.0,
+        "unit_cost": 217600.0
+      },
+      {
+        "id": "roll_1fbe78995c5a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 20.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_2a6833923ef0",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 141900.0,
+        "unit_cost": 141900.0
+      },
+      {
+        "id": "roll_2db5da08f84a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_3331a60e5ce8",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_3875c8f07236",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_4071da16b952",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 60.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_427f4372d804",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_4b0ec09b7f9d",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 140.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_57aab6262e60",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_5d23d64ff575",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 50.0,
+        "status": "reserved",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_61160a99e208",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 20.0,
+        "status": "subcon",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_65260fd54e0a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 87000.0,
+        "unit_cost": 87000.0
+      },
+      {
+        "id": "roll_6adb03e12287",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_73cf97c3b4bd",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 110.0,
+        "status": "available",
+        "base_unit_cost": 220800.0,
+        "unit_cost": 220800.0
+      },
+      {
+        "id": "roll_7793440cbefc",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_77c4c690147f",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 75.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_7ce1e05b77ed",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 19.02,
+        "status": "available",
+        "base_unit_cost": 78571.4804,
+        "unit_cost": 78571.4804
+      },
+      {
+        "id": "roll_7d39d23fba6c",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 19.01,
+        "status": "available",
+        "base_unit_cost": 78571.4803,
+        "unit_cost": 78571.4803
+      },
+      {
+        "id": "roll_7d866dbb4655",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 135.0,
+        "status": "available",
+        "base_unit_cost": 324000.0,
+        "unit_cost": 324000.0
+      },
+      {
+        "id": "roll_805e95c9d1a1",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_80a91feaf0b8",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 40.0,
+        "status": "available",
+        "base_unit_cost": 21561.9267,
+        "unit_cost": 21561.9267
+      },
+      {
+        "id": "roll_80f6a0ed9bc9",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 2.0,
+        "status": "available",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_8100486c7c15",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 85.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_82bf040f5beb",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 40.0,
+        "status": "reserved",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_84423c4c5da0",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.4,
+        "status": "available",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_92fcc921b343",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_97a0d95b3d31",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_9ebc276cf3d7",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 90.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_a4bf6ecca9fe",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "available",
+        "base_unit_cost": 141900.0,
+        "unit_cost": 141900.0
+      },
+      {
+        "id": "roll_a9d8a790bfa7",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_ad9fbd5ef2b5",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.44,
+        "status": "available",
+        "base_unit_cost": 24600.1179,
+        "unit_cost": 24600.1179
+      },
+      {
+        "id": "roll_ae31ace68d8e",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 24.5,
+        "status": "available",
+        "base_unit_cost": 29797.7906,
+        "unit_cost": 29797.7906
+      },
+      {
+        "id": "roll_b3d18453e193",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 60.0,
+        "status": "available",
+        "base_unit_cost": 87000.0,
+        "unit_cost": 87000.0
+      },
+      {
+        "id": "roll_b6cfacf31f1a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_b70c33aa886b",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 108900.0,
+        "unit_cost": 108900.0
+      },
+      {
+        "id": "roll_b87d37c5eb5b",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "reserved",
+        "base_unit_cost": 324000.0,
+        "unit_cost": 324000.0
+      },
+      {
+        "id": "roll_bf082ed2ef38",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_c16f2e929da4",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_c907fd427c73",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_cd08161103cf",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 1.0,
+        "status": "available",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_cd8b1b87e7de",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.0,
+        "status": "available",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_d2c744835c8a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 108900.0,
+        "unit_cost": 108900.0
+      },
+      {
+        "id": "roll_d46f2530a6fe",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_de91cc8df020",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 130.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_dec9a21ec292",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_e2ccb7c47b38",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.0,
+        "status": "reserved",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_e3e001a0e0b9",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 25205.9541,
+        "unit_cost": 25205.9541
+      },
+      {
+        "id": "roll_ec2e376caf9a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.45,
+        "status": "available",
+        "base_unit_cost": 24600.1179,
+        "unit_cost": 24600.1179
+      },
+      {
+        "id": "roll_eda38bb7f532",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "reserved",
+        "base_unit_cost": 324000.0,
+        "unit_cost": 324000.0
+      },
+      {
+        "id": "roll_ee18adbf0260",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_ee3fe2052737",
+        "owner_entity_id": "ent_kanda",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "reserved",
+        "base_unit_cost": 157000.0,
+        "unit_cost": 157000.0
+      },
+      {
+        "id": "roll_f1cc6de38b17",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 30.0,
+        "status": "reserved",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_f4c929a68121",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 25205.9541,
+        "unit_cost": 25205.9541
+      },
+      {
+        "id": "roll_f6af7844f356",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 75.0,
+        "status": "quarantine",
+        "unit_cost": 196766.66666699998,
+        "base_unit_cost": 122100.0
+      },
+      {
+        "id": "roll_f9f28d9b371c",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 135.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_fcd84472edd0",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 20.0,
+        "status": "reserved",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      }
+    ],
+    "products": [
+      {
+        "id": "prod_07d613e9eae2",
+        "price": 52000.0,
+        "harga_pokok": 0.0
+      },
+      {
+        "id": "prod_batik_mega",
+        "price": 185000,
+        "harga_pokok": 122100.0
+      },
+      {
+        "id": "prod_batik_mega_hijau",
+        "price": 215000,
+        "harga_pokok": 141900.0
+      },
+      {
+        "id": "prod_batik_mega_merah",
+        "price": 185000,
+        "harga_pokok": 122100.0
+      },
+      {
+        "id": "prod_benang_katun",
+        "price": 78000,
+        "harga_pokok": 51500.0
+      },
+      {
+        "id": "prod_benang_sisa",
+        "price": 0,
+        "harga_pokok": 0
+      },
+      {
+        "id": "prod_denim_selvedge",
+        "price": 165000,
+        "harga_pokok": 108900.0
+      },
+      {
+        "id": "prod_endek_bali",
+        "price": 280000,
+        "harga_pokok": 193200.0
+      },
+      {
+        "id": "prod_endek_bali_biru",
+        "price": 280000,
+        "harga_pokok": 193200.0
+      },
+      {
+        "id": "prod_endek_bali_ungu",
+        "price": 320000,
+        "harga_pokok": 220800.0
+      },
+      {
+        "id": "prod_grey_katun",
+        "price": 0,
+        "harga_pokok": 34000
+      },
+      {
+        "id": "prod_grey_sisa",
+        "price": 0,
+        "harga_pokok": 0
+      },
+      {
+        "id": "prod_jumputan_palembang",
+        "price": 145000,
+        "harga_pokok": 87000.0
+      },
+      {
+        "id": "prod_kombinasi_batik_lurik",
+        "price": 128000,
+        "harga_pokok": 0
+      },
+      {
+        "id": "prod_lurik_classic",
+        "price": 95000,
+        "harga_pokok": 58900.0
+      },
+      {
+        "id": "prod_pfp_katun",
+        "price": 0,
+        "harga_pokok": 41000
+      },
+      {
+        "id": "prod_songket_palembang",
+        "price": 450000,
+        "harga_pokok": 324000.0
+      },
+      {
+        "id": "prod_tenun_ikat",
+        "price": 225000,
+        "harga_pokok": 157500.0
+      },
+      {
+        "id": "prod_ulos_batak",
+        "price": 320000,
+        "harga_pokok": 217600.0
+      }
+    ],
+    "balances": [
+      {
+        "id": "bal_045ab39eaeb6",
+        "available_qty": 425.0,
+        "owned_qty": 550.0,
+        "reserved_qty": 50.0
+      },
+      {
+        "id": "bal_054643156c0d",
+        "available_qty": 0.0,
+        "owned_qty": 10.0,
+        "reserved_qty": 10.0
+      },
+      {
+        "id": "bal_0655cce08175",
+        "available_qty": 24.5,
+        "owned_qty": 24.5,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_09a889d36a8b",
+        "available_qty": 240.0,
+        "owned_qty": 240.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_2ad6d58a8a2e",
+        "available_qty": 78.03,
+        "owned_qty": 78.03,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_34b98cf78355",
+        "available_qty": 1.4,
+        "owned_qty": 1.4,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_40b870632bb4",
+        "available_qty": 135.0,
+        "owned_qty": 155.0,
+        "reserved_qty": 20.0
+      },
+      {
+        "id": "bal_41c2c5060d51",
+        "available_qty": 290.0,
+        "owned_qty": 320.0,
+        "reserved_qty": 30.0
+      },
+      {
+        "id": "bal_439d94a302da",
+        "available_qty": 160.0,
+        "owned_qty": 160.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_4e8a80ca4702",
+        "available_qty": 180.0,
+        "owned_qty": 180.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_7ba9c088fc46",
+        "available_qty": 52.89,
+        "owned_qty": 52.89,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_7ff772cec7d9",
+        "available_qty": 320.0,
+        "owned_qty": 340.0,
+        "reserved_qty": 20.0
+      },
+      {
+        "id": "bal_9445f24247a6",
+        "available_qty": 95.0,
+        "owned_qty": 95.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_a0a345b54ab3",
+        "available_qty": 580.0,
+        "owned_qty": 620.0,
+        "reserved_qty": 40.0
+      },
+      {
+        "id": "bal_ad4918c26e69",
+        "available_qty": 300.0,
+        "owned_qty": 300.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_bbc8632fbba2",
+        "available_qty": 25.0,
+        "owned_qty": 45.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_c5e8672a66c7",
+        "available_qty": 110.0,
+        "owned_qty": 110.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_cfdea569f0da",
+        "available_qty": 385.0,
+        "owned_qty": 410.0,
+        "reserved_qty": 25.0
+      },
+      {
+        "id": "bal_d91dafb32085",
+        "available_qty": 210.0,
+        "owned_qty": 210.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_e6edb57b6ca7",
+        "available_qty": 150.0,
+        "owned_qty": 150.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_ebb76a9bb617",
+        "available_qty": 210.0,
+        "owned_qty": 245.0,
+        "reserved_qty": 35.0
+      },
+      {
+        "id": "bal_f2bc6a7bbbe9",
+        "available_qty": 75.0,
+        "owned_qty": 75.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_ff9c8c5ff45c",
+        "available_qty": 140.0,
+        "owned_qty": 140.0,
+        "reserved_qty": 0.0
+      }
+    ]
+  },
+  "twice": {
+    "counts": {
+      "users": 17,
+      "hr_employees": 19,
+      "hr_shifts": 3,
+      "hr_leave_balances": 18,
+      "rfid_tags": 43,
+      "inventory_rolls": 61,
+      "inventory_balances": 23,
+      "inventory_lots": 30,
+      "journal_entries": 99,
+      "sales_orders": 10,
+      "purchase_orders": 16,
+      "products": 19
+    },
+    "rolls": [
+      {
+        "id": "roll_00cb7ea603a5",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 95.0,
+        "status": "available",
+        "base_unit_cost": 217600.0,
+        "unit_cost": 217600.0
+      },
+      {
+        "id": "roll_077e0037f41e",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 140.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_1bff7313598b",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 30.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_1e15cc85d5fa",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 35.0,
+        "status": "reserved",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_1ecd421939ad",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 140.0,
+        "status": "available",
+        "base_unit_cost": 217600.0,
+        "unit_cost": 217600.0
+      },
+      {
+        "id": "roll_1fbe78995c5a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 20.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_2a6833923ef0",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 141900.0,
+        "unit_cost": 141900.0
+      },
+      {
+        "id": "roll_2db5da08f84a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_3331a60e5ce8",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_3875c8f07236",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_4071da16b952",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 60.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_427f4372d804",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_4b0ec09b7f9d",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 140.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_57aab6262e60",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_5d23d64ff575",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 50.0,
+        "status": "reserved",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_61160a99e208",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 20.0,
+        "status": "subcon",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_65260fd54e0a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 87000.0,
+        "unit_cost": 87000.0
+      },
+      {
+        "id": "roll_6adb03e12287",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_73cf97c3b4bd",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 110.0,
+        "status": "available",
+        "base_unit_cost": 220800.0,
+        "unit_cost": 220800.0
+      },
+      {
+        "id": "roll_7793440cbefc",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_77c4c690147f",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 75.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_7ce1e05b77ed",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 19.02,
+        "status": "available",
+        "base_unit_cost": 78571.4804,
+        "unit_cost": 78571.4804
+      },
+      {
+        "id": "roll_7d39d23fba6c",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 19.01,
+        "status": "available",
+        "base_unit_cost": 78571.4803,
+        "unit_cost": 78571.4803
+      },
+      {
+        "id": "roll_7d866dbb4655",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 135.0,
+        "status": "available",
+        "base_unit_cost": 324000.0,
+        "unit_cost": 324000.0
+      },
+      {
+        "id": "roll_805e95c9d1a1",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_80a91feaf0b8",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 40.0,
+        "status": "available",
+        "base_unit_cost": 21561.9267,
+        "unit_cost": 21561.9267
+      },
+      {
+        "id": "roll_80f6a0ed9bc9",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 2.0,
+        "status": "available",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_8100486c7c15",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 85.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_82bf040f5beb",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 40.0,
+        "status": "reserved",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_84423c4c5da0",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.4,
+        "status": "available",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_92fcc921b343",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_97a0d95b3d31",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_9ebc276cf3d7",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 90.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_a4bf6ecca9fe",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "available",
+        "base_unit_cost": 141900.0,
+        "unit_cost": 141900.0
+      },
+      {
+        "id": "roll_a9d8a790bfa7",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_ad9fbd5ef2b5",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.44,
+        "status": "available",
+        "base_unit_cost": 24600.1179,
+        "unit_cost": 24600.1179
+      },
+      {
+        "id": "roll_ae31ace68d8e",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 24.5,
+        "status": "available",
+        "base_unit_cost": 29797.7906,
+        "unit_cost": 29797.7906
+      },
+      {
+        "id": "roll_b3d18453e193",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 60.0,
+        "status": "available",
+        "base_unit_cost": 87000.0,
+        "unit_cost": 87000.0
+      },
+      {
+        "id": "roll_b6cfacf31f1a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 193200.0,
+        "unit_cost": 193200.0
+      },
+      {
+        "id": "roll_b70c33aa886b",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 108900.0,
+        "unit_cost": 108900.0
+      },
+      {
+        "id": "roll_b87d37c5eb5b",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "reserved",
+        "base_unit_cost": 324000.0,
+        "unit_cost": 324000.0
+      },
+      {
+        "id": "roll_bf082ed2ef38",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_c16f2e929da4",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_c907fd427c73",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_cd08161103cf",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 1.0,
+        "status": "available",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_cd8b1b87e7de",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.0,
+        "status": "available",
+        "base_unit_cost": 51500.0,
+        "unit_cost": 51500.0
+      },
+      {
+        "id": "roll_d2c744835c8a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 108900.0,
+        "unit_cost": 108900.0
+      },
+      {
+        "id": "roll_d46f2530a6fe",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_de91cc8df020",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 130.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_dec9a21ec292",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 150.0,
+        "status": "available",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_e2ccb7c47b38",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.0,
+        "status": "reserved",
+        "base_unit_cost": 58900.0,
+        "unit_cost": 58900.0
+      },
+      {
+        "id": "roll_e3e001a0e0b9",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 25205.9541,
+        "unit_cost": 25205.9541
+      },
+      {
+        "id": "roll_ec2e376caf9a",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 25.45,
+        "status": "available",
+        "base_unit_cost": 24600.1179,
+        "unit_cost": 24600.1179
+      },
+      {
+        "id": "roll_eda38bb7f532",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "reserved",
+        "base_unit_cost": 324000.0,
+        "unit_cost": 324000.0
+      },
+      {
+        "id": "roll_ee18adbf0260",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 17201.8349,
+        "unit_cost": 17201.8349
+      },
+      {
+        "id": "roll_ee3fe2052737",
+        "owner_entity_id": "ent_kanda",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 10.0,
+        "status": "reserved",
+        "base_unit_cost": 157000.0,
+        "unit_cost": 157000.0
+      },
+      {
+        "id": "roll_f1cc6de38b17",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 30.0,
+        "status": "reserved",
+        "base_unit_cost": 157500.0,
+        "unit_cost": 157500.0
+      },
+      {
+        "id": "roll_f4c929a68121",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_surabaya",
+        "length_remaining": 0.0,
+        "status": "consumed",
+        "base_unit_cost": 25205.9541,
+        "unit_cost": 25205.9541
+      },
+      {
+        "id": "roll_f6af7844f356",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 75.0,
+        "status": "quarantine",
+        "unit_cost": 196766.66666699998,
+        "base_unit_cost": 122100.0
+      },
+      {
+        "id": "roll_f9f28d9b371c",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_jakarta",
+        "length_remaining": 135.0,
+        "status": "available",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      },
+      {
+        "id": "roll_fcd84472edd0",
+        "owner_entity_id": "ent_ksc",
+        "warehouse_id": "wh_bandung",
+        "length_remaining": 20.0,
+        "status": "reserved",
+        "base_unit_cost": 122100.0,
+        "unit_cost": 122100.0
+      }
+    ],
+    "products": [
+      {
+        "id": "prod_07d613e9eae2",
+        "price": 52000.0,
+        "harga_pokok": 0.0
+      },
+      {
+        "id": "prod_batik_mega",
+        "price": 185000,
+        "harga_pokok": 122100.0
+      },
+      {
+        "id": "prod_batik_mega_hijau",
+        "price": 215000,
+        "harga_pokok": 141900.0
+      },
+      {
+        "id": "prod_batik_mega_merah",
+        "price": 185000,
+        "harga_pokok": 122100.0
+      },
+      {
+        "id": "prod_benang_katun",
+        "price": 78000,
+        "harga_pokok": 51500.0
+      },
+      {
+        "id": "prod_benang_sisa",
+        "price": 0,
+        "harga_pokok": 0
+      },
+      {
+        "id": "prod_denim_selvedge",
+        "price": 165000,
+        "harga_pokok": 108900.0
+      },
+      {
+        "id": "prod_endek_bali",
+        "price": 280000,
+        "harga_pokok": 193200.0
+      },
+      {
+        "id": "prod_endek_bali_biru",
+        "price": 280000,
+        "harga_pokok": 193200.0
+      },
+      {
+        "id": "prod_endek_bali_ungu",
+        "price": 320000,
+        "harga_pokok": 220800.0
+      },
+      {
+        "id": "prod_grey_katun",
+        "price": 0,
+        "harga_pokok": 34000
+      },
+      {
+        "id": "prod_grey_sisa",
+        "price": 0,
+        "harga_pokok": 0
+      },
+      {
+        "id": "prod_jumputan_palembang",
+        "price": 145000,
+        "harga_pokok": 87000.0
+      },
+      {
+        "id": "prod_kombinasi_batik_lurik",
+        "price": 128000,
+        "harga_pokok": 0
+      },
+      {
+        "id": "prod_lurik_classic",
+        "price": 95000,
+        "harga_pokok": 58900.0
+      },
+      {
+        "id": "prod_pfp_katun",
+        "price": 0,
+        "harga_pokok": 41000
+      },
+      {
+        "id": "prod_songket_palembang",
+        "price": 450000,
+        "harga_pokok": 324000.0
+      },
+      {
+        "id": "prod_tenun_ikat",
+        "price": 225000,
+        "harga_pokok": 157500.0
+      },
+      {
+        "id": "prod_ulos_batak",
+        "price": 320000,
+        "harga_pokok": 217600.0
+      }
+    ],
+    "balances": [
+      {
+        "id": "bal_045ab39eaeb6",
+        "available_qty": 425.0,
+        "owned_qty": 550.0,
+        "reserved_qty": 50.0
+      },
+      {
+        "id": "bal_054643156c0d",
+        "available_qty": 0.0,
+        "owned_qty": 10.0,
+        "reserved_qty": 10.0
+      },
+      {
+        "id": "bal_0655cce08175",
+        "available_qty": 24.5,
+        "owned_qty": 24.5,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_09a889d36a8b",
+        "available_qty": 240.0,
+        "owned_qty": 240.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_2ad6d58a8a2e",
+        "available_qty": 78.03,
+        "owned_qty": 78.03,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_34b98cf78355",
+        "available_qty": 1.4,
+        "owned_qty": 1.4,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_40b870632bb4",
+        "available_qty": 135.0,
+        "owned_qty": 155.0,
+        "reserved_qty": 20.0
+      },
+      {
+        "id": "bal_41c2c5060d51",
+        "available_qty": 290.0,
+        "owned_qty": 320.0,
+        "reserved_qty": 30.0
+      },
+      {
+        "id": "bal_439d94a302da",
+        "available_qty": 160.0,
+        "owned_qty": 160.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_4e8a80ca4702",
+        "available_qty": 180.0,
+        "owned_qty": 180.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_7ba9c088fc46",
+        "available_qty": 52.89,
+        "owned_qty": 52.89,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_7ff772cec7d9",
+        "available_qty": 320.0,
+        "owned_qty": 340.0,
+        "reserved_qty": 20.0
+      },
+      {
+        "id": "bal_9445f24247a6",
+        "available_qty": 95.0,
+        "owned_qty": 95.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_a0a345b54ab3",
+        "available_qty": 580.0,
+        "owned_qty": 620.0,
+        "reserved_qty": 40.0
+      },
+      {
+        "id": "bal_ad4918c26e69",
+        "available_qty": 300.0,
+        "owned_qty": 300.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_bbc8632fbba2",
+        "available_qty": 25.0,
+        "owned_qty": 45.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_c5e8672a66c7",
+        "available_qty": 110.0,
+        "owned_qty": 110.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_cfdea569f0da",
+        "available_qty": 385.0,
+        "owned_qty": 410.0,
+        "reserved_qty": 25.0
+      },
+      {
+        "id": "bal_d91dafb32085",
+        "available_qty": 210.0,
+        "owned_qty": 210.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_e6edb57b6ca7",
+        "available_qty": 150.0,
+        "owned_qty": 150.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_ebb76a9bb617",
+        "available_qty": 210.0,
+        "owned_qty": 245.0,
+        "reserved_qty": 35.0
+      },
+      {
+        "id": "bal_f2bc6a7bbbe9",
+        "available_qty": 75.0,
+        "owned_qty": 75.0,
+        "reserved_qty": 0.0
+      },
+      {
+        "id": "bal_ff9c8c5ff45c",
+        "available_qty": 140.0,
+        "owned_qty": 140.0,
+        "reserved_qty": 0.0
+      }
+    ]
+  },
+  "scope": "Original bootstrap includes demo seeding/backfills. Idempotence of these snapshots only; every migration variant is not proven."
+}

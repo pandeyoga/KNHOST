@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/fase3_purchasing_test.py",
+    "database": "knhost_audit_native90_8618341d949044dcbf6ff0b639f5cac5",
+    "exit": 1,
+    "seconds": 149.61,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-fase3_purchasing_test.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "or transaction\n\n================================================================================\n📊 FASE 3 PURCHASING TEST SUMMARY\n================================================================================\nTotal tests run: 37\nTests passed: 30\nTests failed: 7\nSuccess rate: 81.1%\n\n❌ Failed Tests:\n  - Fase3: Create supplier:  {\"detail\":\"“Sukacita Textile” adalah badan usaha di dalam grup, dan pemasok bertipe “Entitas grup” untuk badan usaha ini SUDAH disiapkan otomatis. Pakai baris itu — jangan membuat pemasok kedua, karen\n  - Fase3: Create PO with supplier_id:  {\"detail\":\"“CV Cipta Sandang Textile” adalah badan usaha di dalam grup Anda, bukan pemasok luar — jadi Pesanan Pembelian (PO) biasa tidak bisa dipakai. Catat pembeliannya lewat Pembelian → Hutang Supp\n  - Fase3: Create PO with manual supplier:  {\"detail\":\"Item BTK-MEGA-001: Grade yang diharapkan wajib dipilih untuk setiap item (tidak ada nilai default) — pilihan: A, A1, A2, B, B1, C, BS.\"}\n  - Fase3: Create high-value PO (>100M):  {\"detail\":\"“CV Cipta Sandang Textile” adalah badan usaha di dalam grup Anda, bukan pemasok luar — jadi Pesanan Pembelian (PO) biasa tidak bisa dipakai. Catat pembeliannya lewat Pembelian → Hutang Supp\n  - Create PO to reject:  {\"detail\":\"Item BTK-MEGA-001: Grade yang diharapkan wajib dipilih untuk setiap item (tidak ada nilai default) — pilihan: A, A1, A2, B, B1, C, BS.\"}\n  - Fase3: Create low-value PO (<100M):  {\"detail\":\"Item BTK-MEGA-001: Grade yang diharapkan wajib dipilih untuk setiap item (tidak ada nilai default) — pilihan: A, A1, A2, B, B1, C, BS.\"}\n  - Fase3: Create kas_besar transaction:  {\"detail\":\"Badan usaha “some_entity” tidak ada, jadi data tidak bisa disimpan ke sana (field entity_id).\"}\n================================================================================\n"
+  }
+]

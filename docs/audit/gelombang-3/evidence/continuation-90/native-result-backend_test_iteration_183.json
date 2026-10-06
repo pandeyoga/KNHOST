@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_iteration_183.py",
+    "database": "knhost_audit_native90_da3c3de82dc44332aa8655ed239c1f5d",
+    "exit": 2,
+    "seconds": 48.38,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_iteration_183.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_da3c3de82dc44332aa8655ed239c1f5d backend_test_iteration_183.py\nTraceback (most recent call last):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\backend_test_iteration_183.py\", line 220, in <module>\n    sys.exit(main())\n             ^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\backend_test_iteration_183.py\", line 201, in main\n    tokens[role] = login(role)\n                   ^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\backend_test_iteration_183.py\", line 40, in login\n    r.raise_for_status()\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\models.py\", line 1167, in raise_for_status\n    raise HTTPError(http_error_msg, response=self)\nrequests.exceptions.HTTPError: 404 Client Error: Not Found for url: http://127.0.0.1:8017/auth/login\n================================================================================\nBACKEND TESTING - Iteration 183 - FASE F Additional Requirements\n================================================================================\n\nFATAL ERROR: HTTPError: 404 Client Error: Not Found for url: http://127.0.0.1:8017/auth/login\n"
+  }
+]

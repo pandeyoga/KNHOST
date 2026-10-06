@@ -1,0 +1,112 @@
+[
+  {
+    "id": ".TestA1GlobalStock::test_dashboard_has_global_fields",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestA1GlobalStock::test_dashboard_btk_mega_001",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestA1GlobalStock::test_products_endpoint_has_global_fields",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestA3PreviewAllocation::test_preview_allocation_endpoint_exists",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestB3Lots::test_total",
+    "status": "failure",
+    "message": "AssertionError: expected 34 got 29\nassert 29 == 34"
+  },
+  {
+    "id": ".TestB3Lots::test_source_receiving",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestB3Lots::test_source_makloon",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestB3Lots::test_stage_yarn",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestB3Lots::test_status_karantina",
+    "status": "failure",
+    "message": "AssertionError: 1\nassert 1 == 6"
+  },
+  {
+    "id": ".TestB3Lots::test_q_btk",
+    "status": "failure",
+    "message": "AssertionError: 8\nassert 8 == 13"
+  },
+  {
+    "id": ".TestAuthBaseline::test_me",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestFulfillmentPlanOptions::test_options_demo_order",
+    "status": "skipped",
+    "message": "demo order so_23cd0fac9eb6 not present in this preview DB"
+  },
+  {
+    "id": ".TestFulfillmentPlanOptions::test_options_as_salesadmin",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestFulfillmentPlanValidations::test_total_over_shortage",
+    "status": "skipped",
+    "message": "demo plan not available / no shortage"
+  },
+  {
+    "id": ".TestFulfillmentPlanValidations::test_all_zero",
+    "status": "skipped",
+    "message": "demo plan not available / no shortage"
+  },
+  {
+    "id": ".TestFulfillmentPlanValidations::test_stock_over_own_available",
+    "status": "skipped",
+    "message": "demo plan not available / no shortage"
+  },
+  {
+    "id": ".TestFulfillmentPlanValidations::test_wait_over_incoming",
+    "status": "skipped",
+    "message": "demo plan not available / no shortage"
+  },
+  {
+    "id": ".TestAdminBypassPO::test_admin_can_approve_own_po",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestAdminBypassPO::test_non_admin_creator_still_blocked",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestScenarioA_InterCoAndPR::test_A_full",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestScenarioB_StockPartialAndPR::test_B_partial",
+    "status": "passed",
+    "message": ""
+  },
+  {
+    "id": ".TestZCleanup::test_cleanup",
+    "status": "passed",
+    "message": ""
+  }
+]

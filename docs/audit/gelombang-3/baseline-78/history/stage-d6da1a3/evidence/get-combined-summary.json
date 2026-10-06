@@ -1,0 +1,8 @@
+{
+  "total": 637,
+  "executed": 588,
+  "successful": 538,
+  "exceptions": 0,
+  "remaining": 49,
+  "notes": "Distinct GET routes only; extra attempts are not additional routes. Resource hints are not proof of lifecycle/foreign-key coherence. All non200s need individual adjudication; no500/uncaught exceptions in this sweep."
+}

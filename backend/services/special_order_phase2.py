@@ -211,8 +211,21 @@ async def pricing_preview(od: Dict[str, Any], margin_pct: Optional[float] = None
             "customer_decision": od.get("customer_decision", "")}
 
 
+async def _sync_od_sku(od: Dict[str, Any], pricing: Dict[str, Any], pid_final: str) -> None:
+    if pid_final:
+        await db.products.update_one({"id": pid_final}, {"$set": {
+            "price": pricing["final_unit_price"], "harga_pokok": pricing["cost_price"],
+            "exclusive_customer_id": od.get("customer_id", ""), "exclusive_customer_name": od.get("customer_name", ""),
+            "special_order_id": od["id"], "special_order_number": od.get("number", ""), "updated_at": now_iso()}})
+    await db.special_orders.update_one({"id": od["id"]}, {"$set": {"pricing.sku_synced": True}})
+
+
 async def lock_price(od: Dict[str, Any], payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
     if (od.get("pricing") or {}).get("locked"):
+        # G3 D4-OD-LOCK-01 — kunci tercatat tapi SKU belum tersinkron (gagal di tengah) → retry MELANJUTKAN.
+        if (od.get("pricing") or {}).get("sku_synced") is False:
+            await _sync_od_sku(od, od["pricing"], od["pricing"].get("product_id") or od.get("linked_product_id") or "")
+            return await db.special_orders.find_one({"id": od["id"]}, {"_id": 0})
         raise ODError("Harga OD ini sudah dikunci.")
     if od.get("customer_decision") != "acc":
         raise ODError("Harga final hanya bisa dikunci setelah pelanggan ACC sample.")
@@ -225,7 +238,8 @@ async def lock_price(od: Dict[str, Any], payload: Dict[str, Any], actor: Dict[st
         raise ODError("Harga kontrak supplier pemenang belum ada — putuskan pemenang sample dengan harga dulu.")
     pricing = {**{k: pv[k] for k in ("cost_price", "margin_pct", "final_unit_price", "quantity", "unit", "total",
                                      "supplier_id", "supplier_name", "contract_number", "sample_number", "product_id", "product_sku")},
-               "locked": True, "locked_by": actor.get("name", ""), "locked_at": now_iso(), "note": (payload.get("note") or "").strip()}
+               "locked": True, "locked_by": actor.get("name", ""), "locked_at": now_iso(), "note": (payload.get("note") or "").strip(),
+               "sku_synced": False}
     # INV-ATOMIC-01 — klaim atomik OD (harga BELUM terkunci) sebelum produk/spec disentuh;
     # tulisan akhir finish_set mencabut kunci; dua kunci paralel → satu 409.
     from services import atomic_claim as _saga
@@ -240,11 +254,7 @@ async def lock_price(od: Dict[str, Any], payload: Dict[str, Any], actor: Dict[st
     if _res.matched_count == 0:
         raise ODError("Harga OD ini baru saja dikunci oleh pihak lain. Muat ulang.")
     pid_final = pv["product_id"] or od.get("linked_product_id") or ""
-    if pid_final:
-        await db.products.update_one({"id": pid_final}, {"$set": {
-            "price": pricing["final_unit_price"], "harga_pokok": pricing["cost_price"],
-            "exclusive_customer_id": od.get("customer_id", ""), "exclusive_customer_name": od.get("customer_name", ""),
-            "special_order_id": od["id"], "special_order_number": od.get("number", ""), "updated_at": now_iso()}})
+    await _sync_od_sku(od, pricing, pid_final)
     if payload.get("auto_po", True):
         fresh = await db.special_orders.find_one({"id": od["id"]}, {"_id": 0})
         try:

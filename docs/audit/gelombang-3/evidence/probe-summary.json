@@ -1,0 +1,130 @@
+[
+  {
+    "file": "alert-numeric90-results.json",
+    "observations": 38,
+    "controls": 33,
+    "differences": 5,
+    "limitations": []
+  },
+  {
+    "file": "assets-loans-lifecycle90-results.json",
+    "observations": 33,
+    "controls": 23,
+    "differences": 10,
+    "limitations": []
+  },
+  {
+    "file": "budget-ledger-policy90-results.json",
+    "observations": 214,
+    "controls": 207,
+    "differences": 7,
+    "limitations": []
+  },
+  {
+    "file": "cash-advance-lifecycle90-results.json",
+    "observations": 52,
+    "controls": 52,
+    "differences": 0,
+    "limitations": []
+  },
+  {
+    "file": "commercial-patch-bounds90-results.json",
+    "observations": 30,
+    "controls": 15,
+    "differences": 15,
+    "limitations": []
+  },
+  {
+    "file": "config-bank-oracles90-results.json",
+    "observations": 79,
+    "controls": 69,
+    "differences": 10,
+    "limitations": []
+  },
+  {
+    "file": "contra-bon-invariants90-results.json",
+    "observations": 40,
+    "controls": 39,
+    "differences": 1,
+    "limitations": []
+  },
+  {
+    "file": "hr-kpi-projection90-results.json",
+    "observations": 36,
+    "controls": 29,
+    "differences": 7,
+    "limitations": []
+  },
+  {
+    "file": "label-master-rules90-results.json",
+    "observations": 134,
+    "controls": 134,
+    "differences": 0,
+    "limitations": []
+  },
+  {
+    "file": "master-planning-oracles90-results.json",
+    "observations": 117,
+    "controls": 116,
+    "differences": 1,
+    "limitations": []
+  },
+  {
+    "file": "missing-resource-contract90-results.json",
+    "observations": 0,
+    "controls": 0,
+    "differences": 0,
+    "limitations": []
+  },
+  {
+    "file": "ocr-semantics90-results.json",
+    "observations": 67,
+    "controls": 67,
+    "differences": 0,
+    "limitations": [
+      {
+        "case": "ocr.preprocess_bad_pdf",
+        "unverified_dependency": "No module named 'fitz'"
+      },
+      {
+        "case": "ocr.pdf_text_layer",
+        "unverified_dependency": "No module named 'fitz'"
+      }
+    ]
+  },
+  {
+    "file": "price-approval-scope90-results.json",
+    "observations": 23,
+    "controls": 17,
+    "differences": 6,
+    "limitations": []
+  },
+  {
+    "file": "procurement-lifecycle90-results.json",
+    "observations": 72,
+    "controls": 67,
+    "differences": 5,
+    "limitations": []
+  },
+  {
+    "file": "quantity-provenance90-results.json",
+    "observations": 53,
+    "controls": 50,
+    "differences": 3,
+    "limitations": []
+  },
+  {
+    "file": "rnd-feedback-rules90-results.json",
+    "observations": 98,
+    "controls": 98,
+    "differences": 0,
+    "limitations": []
+  },
+  {
+    "file": "special-order-chain90-results.json",
+    "observations": 53,
+    "controls": 51,
+    "differences": 2,
+    "limitations": []
+  }
+]
