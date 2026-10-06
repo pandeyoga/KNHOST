@@ -64,6 +64,7 @@ function OvertimeCreateModal({ open, onClose, employees, onSubmit }) {
 
 export default function OvertimeView({ currentUser, selectedEntity }) {
   const [rows, setRows] = useState([]);
+  const [statusCounts, setStatusCounts] = useState({});
   const [q, setQ] = useState("");
   const shown = rows.filter((r) => !q.trim() || `${r.employee_name || ""} ${r.reason || ""} ${r.date || ""}`.toLowerCase().includes(q.trim().toLowerCase()));
   const [employees, setEmployees] = useState([]);
@@ -86,7 +87,11 @@ export default function OvertimeView({ currentUser, selectedEntity }) {
   }
   async function load() {
     setLoading(true);
-    try { const r = await axios.get(`${API}/hr/overtime`, { params: { ...params, ...(month ? { month } : {}), ...(status ? { status } : {}) } }); setRows(Array.isArray(r.data) ? r.data : []); setError(""); }
+    try {
+      axios.get(`${API}/hr/overtime`, { params: { ...params, ...(month ? { month } : {}) } })
+        .then((a) => setStatusCounts((Array.isArray(a.data) ? a.data : []).reduce((m, x) => ({ ...m, [x.status]: (m[x.status] || 0) + 1, total: m.total + 1 }), { total: 0 })))
+        .catch(() => setStatusCounts({}));
+      const r = await axios.get(`${API}/hr/overtime`, { params: { ...params, ...(month ? { month } : {}), ...(status ? { status } : {}) } }); setRows(Array.isArray(r.data) ? r.data : []); setError(""); }
     catch (e) { setError(e.response?.data?.detail || "Gagal memuat data lembur."); }
     finally { setLoading(false); }
   }
@@ -119,7 +124,7 @@ export default function OvertimeView({ currentUser, selectedEntity }) {
         </div>
         <div className="flex items-center gap-2 px-3 pb-2">
           <div className="w-[150px]"><KNSelect data-testid="overtime-filter-month" value={month} onValueChange={setMonth} className="field !py-1" options={monthOpts} /></div>
-          <OptionTabs testId="overtime-filter-status" value={status} onChange={setStatus} options={statusOpts} countOf={(v) => (v === (status || "") ? rows.length : undefined)} />
+          <OptionTabs testId="overtime-filter-status" value={status} onChange={setStatus} options={statusOpts} countOf={(v) => (v ? statusCounts[v] || 0 : statusCounts.total ?? rows.length)} />
           <SearchBox value={q} onChange={setQ} placeholder="Cari karyawan / alasan…" testId="overtime-search" />
         </div>
       </div>

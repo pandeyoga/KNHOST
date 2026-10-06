@@ -80,7 +80,7 @@ export default function DesignGalleryView({ selectedEntity }) {
         </div>
         <div className="mt-2.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7" data-testid="gallery-filters">
           <div className="col-span-full"><OptionTabs testId="gallery-filter-status" value={f.status} onChange={set("status")}
-            countOf={(v) => (v === (f.status || "") ? items.length : undefined)}
+            countOf={(v) => items.filter((g) => !v || g.status === v).length}
             options={[{ value: "", label: "Semua status ACC" }, ...ACC_STATUSES.map((s) => ({ value: s, label: DESIGN_STATUS_META[s].label }))]} /></div>
           <KNSelect data-testid="gallery-filter-category" className="field" value={f.cat} onValueChange={set("cat")} options={opts(options.cat, "Semua kategori pattern")} />
           <KNSelect data-testid="gallery-filter-dcategory" className="field" value={f.dcat} onValueChange={set("dcat")} options={opts(options.dcat, "Semua kategori design")} />

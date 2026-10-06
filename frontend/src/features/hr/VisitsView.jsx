@@ -37,6 +37,7 @@ function VisitsLog({ currentUser, selectedEntity }) {
   const [empFilter, setEmpFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [rows, setRows] = useState([]);
+  const [statusCounts, setStatusCounts] = useState({});
   const srch = useListSearch(rows, null, { testId: "visits", pageSize: 1000, placeholder: "Cari sales / pelanggan / hasil (halaman ini)…" });
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -57,6 +58,9 @@ function VisitsLog({ currentUser, selectedEntity }) {
     try {
       const q = { ...params, date_from: dateFrom, date_to: dateTo };
       if (empFilter) q.employee_id = empFilter;
+      axios.get(`${API}/hr/visits`, { params: q })
+        .then((a) => setStatusCounts((Array.isArray(a.data) ? a.data : a.data?.items || []).reduce((m, x) => ({ ...m, [x.status]: (m[x.status] || 0) + 1, total: m.total + 1 }), { total: 0 })))
+        .catch(() => setStatusCounts({}));
       if (statusFilter) q.status = statusFilter;
       // T-03 Lapis 4 — paginasi server (envelope).
       const r = await axios.get(`${API}/hr/visits`, { params: { ...q, page, page_size: PAGE_SIZE } });
@@ -107,7 +111,7 @@ function VisitsLog({ currentUser, selectedEntity }) {
               <div><label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Karyawan</label>
                 <KNSelect data-testid="visits-emp-filter" value={empFilter} onValueChange={setEmpFilter} className="field" searchable options={empOpts} /></div>
               <div><label className="block text-[10.5px] font-semibold text-[#6B6B73] mb-1">Status</label>
-                <OptionTabs testId="visits-status-filter" value={statusFilter} onChange={setStatusFilter} options={statusOpts} countOf={(v) => (v === (statusFilter || "") ? total : undefined)} /></div>
+                <OptionTabs testId="visits-status-filter" value={statusFilter} onChange={setStatusFilter} options={statusOpts} countOf={(v) => (v ? statusCounts[v] || 0 : statusCounts.total ?? total)} /></div>
             </div>
           </div>
           <div className="section-card">

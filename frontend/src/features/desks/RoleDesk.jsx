@@ -10,7 +10,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
 import usePagedRows from "@/hooks/usePagedRows";
-import { mdDesk, warehouseAdminDesk, myDesk, rowLink } from "../sales_admin/workDeskApi";
+import { mdDesk, warehouseAdminDesk, myDesk, rowLink, queueMeta } from "../sales_admin/workDeskApi";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 
 const DESKS = {
@@ -35,6 +35,7 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [focusId, setFocusId] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,7 +77,16 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
   const openItems = queues.reduce((s, q) => s + (q.count || 0), 0);
   const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
   const p = cfg.testPrefix;
-  const pgQ = usePagedRows(queues, { pageSize: 8, testId: `${p}-queues-pager` });
+  const oldestQ = queues.filter((q) => (q.count || 0) > 0)
+    .reduce((best, q) => (!best || (q.oldest_age_days || 0) > (best.oldest_age_days || 0) ? q : best), null);
+  const oldestRow = (oldestQ?.rows || []).reduce((best, r) => (!best || (r.age_days || 0) > (best.age_days || 0) ? r : best), null);
+  const ordered = focusId ? [...queues].sort((a, b) => (b.id === focusId) - (a.id === focusId)) : queues;
+  const pgQ = usePagedRows(ordered, { pageSize: 8, testId: `${p}-queues-pager` });
+
+  function openOldestQueue() {
+    setFocusId(oldestQ.id);
+    setTimeout(() => document.querySelector(`[data-testid="${p}-queue-${oldestQ.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
 
   return (
     <div data-testid={`${p}`} className="grid gap-4">
@@ -98,6 +108,22 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
           <Metric icon={Layers} label="Antrean" value={queues.filter((q) => q.count > 0).length} tone="rgba(0,88,204,.14)" testId={`${p}-metric-queues`} />
           <Metric icon={ShieldAlert} label="Umur Tertua" value={oldest > 0 ? `${oldest} hari` : "hari ini"} tone="rgba(255,59,48,.14)" testId={`${p}-metric-oldest`} />
         </section>
+        {oldestQ && (
+          <div data-testid={`${p}-oldest-card`} className="mx-3 mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-[#FFD9D6] bg-[#FFF6F5] px-3 py-2.5">
+            <ShieldAlert size={16} className="shrink-0 text-[#D93025]" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#D93025]">Paling lama menunggu</p>
+              <p className="text-[12.5px] font-semibold text-[#1C1C1E]" data-testid={`${p}-oldest-label`}>
+                {oldestQ.title || oldestQ.label || queueMeta(oldestQ.id).label} · {oldestQ.count} dokumen · {(oldestQ.oldest_age_days || 0) > 0 ? `${oldestQ.oldest_age_days} hari` : "hari ini"}
+              </p>
+              {oldestRow && <p className="truncate text-[11px] text-[#6B6B73]" data-testid={`${p}-oldest-doc`}>Tertua: {oldestRow.number || oldestRow.title} {oldestRow.title && oldestRow.number ? `— ${oldestRow.title}` : ""}</p>}
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <button type="button" className="secondary-button" data-testid={`${p}-oldest-open-queue`} onClick={openOldestQueue}>Buka antrean</button>
+              {oldestRow && <button type="button" className="primary-button" data-testid={`${p}-oldest-open-doc`} onClick={() => handleAction(oldestRow, oldestQ)}>Buka dokumen tertua</button>}
+            </div>
+          </div>
+        )}
         {(data?.not_my_desk || []).length > 0 && (
           <div data-testid={`${p}-not-mine`} className="mx-3 mb-3 rounded-lg border border-[#CBDFFF] bg-[#F2F7FF] px-3 py-2">
             <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#0058CC]">Bukan wewenang meja ini</p>
@@ -116,7 +142,8 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
         <>
         <div className="grid gap-3 xl:grid-cols-2">
           {pgQ.pageRows.map((q) => (
-            <DeskQueueCard key={q.id} queue={q} loading={loading} testPrefix={p} onAction={handleAction} />
+            <DeskQueueCard key={q.id === focusId ? `${q.id}-focus` : q.id} queue={q} loading={loading} testPrefix={p} onAction={handleAction}
+              defaultOpen={q.id === focusId ? true : undefined} />
           ))}
         </div>
         {queues.length > 8 && <div className="mt-2">{pgQ.pager}</div>}
