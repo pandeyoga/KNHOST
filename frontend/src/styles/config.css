@@ -357,7 +357,15 @@
 .cfg-health-toolbar { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
 .cfg-health-table td { vertical-align: top; font-size: .82rem; }
 .cfg-consumer-list { display: inline-flex; flex-direction: column; gap: 2px; font-size: .75rem; color: #047857; }
-.cfg-consumer-list code { color: #475569; }
+.cfg-consumer-list code { color: #475569; overflow-wrap: anywhere; }
+/* Tabel lebar (kode berkas panjang) tidak boleh luber keluar kartu — gulir di dalam bingkai. */
+.cfg-table-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); }
+.cfg-table-wrap .data-table { min-width: 860px; }
+.cfg-health-table th:nth-child(1) { width: 28%; }
+.cfg-health-table th:nth-child(2) { width: 12%; }
+.cfg-health-table th:nth-child(3) { width: 24%; }
+.cfg-health-table td:last-child { white-space: nowrap; text-align: right; }
+.cfg-health-table .cfg-inline-warn, .cfg-health-table .cfg-inline-err { align-items: flex-start; overflow-wrap: anywhere; }
 
 /* ── Daftar Dampak (ImpactPicker) ────────────────────────────────────────── */
 .cfg-impact-intro {

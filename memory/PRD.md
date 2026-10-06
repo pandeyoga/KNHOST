@@ -1,5 +1,12 @@
 # PRD — Kain Nusantara ERP (lanjutan dari repo github.com/kakjsbsbs/KN)
 
+## 2026-10-06 — Keluhan user: Pusat Pengaturan (Kesehatan Konfigurasi & Riwayat) masih cacat
+- Akar masalah 1: TIDAK ADA kelas dasar `.badge` di CSS → `badge-green/orange/red/muted/...` (±58 pemakaian, 40 via template `badge-${tone}`) tampil seperti stabilo tanpa padding. Fix global di `styles/components.css` (bentuk pill dasar pada kelas warna).
+- Akar masalah 2: tabel Kesehatan Konfigurasi & Riwayat tanpa pembungkus gulir → kolom kanan terpotong di layar sempit/zoom. Fix `.cfg-table-wrap` + lebar kolom (`styles/config.css`, `ConfigHealthPanel.jsx`, `ConfigDrawers.jsx`).
+- Akar masalah 3 (hanya di VPS): 4 "Referensi kode salah" = setting yang dibaca kode frontend; container backend produksi tak membawa `/app/frontend/src` → dianggap hilang. `services/config_health.py` kini menandai `consumers_unverified` (tidak dihitung salah). Simulasi tanpa frontend: OK 263 / NOT_USED 2.
+- Pelajaran: pemindaian UI sebelumnya hanya cek luber/teks, tidak cek bentuk komponen (padding badge) dan tidak dijalankan di lingkungan setara produksi.
+
+
 ## Sesi 2026-10-06 — Pemenuhan diputus Admin Sales · Override SO · Batal SO
 Permintaan user: "mekanisme saat ini biarkan admin sales yang memilih cara pemenuhan barang … sales seperti mengusulkan namun di tampilan tidak usah ada info stock cipta sandang dll … admin juga bisa override SO dari sales/di edit … harga/diskon persetujuan manager, admin dan finance … sebelum picking … notifikasi aplikasi saja … semua ada role dan akses yang bisa di-custom … pastikan bisa membatalkan SO".
 - Sales POS: badge PT pemilik/“transfer”, matriks kepemilikan, kartu ATP & tombol Minta Transfer disembunyikan bila tak punya izin `order.override` (`utils/sourcingVisibility.js`). Roll PT lain tetap jadi usulan (tanpa transfer otomatis).

@@ -155,6 +155,7 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
       {busy && !data ? <p className="cfg-hint">Memuat…</p> : null}
 
       {data ? (
+        <div className="cfg-table-wrap">
         <table className="data-table cfg-health-table" data-testid="cfg-health-table">
           <thead>
             <tr>
@@ -162,7 +163,7 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
               <th>Kelompok</th>
               <th>Status wiring</th>
               <th>Dibaca oleh kode</th>
-              <th> </th>
+              <th aria-label="Aksi" />
             </tr>
           </thead>
           <caption className="caption-bottom px-3 py-2">{rows.length > 30 && pgRows.pager}</caption>
@@ -201,6 +202,9 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
                       {(r.consumers_ok || []).slice(0, 2).map((c) => (
                         <code key={c}>{c}</code>
                       ))}
+                      {(r.consumers_unverified || []).map((c) => (
+                        <code key={c} title="Kode tampilan — tidak dibawa ke server ini, jadi tidak diperiksa di sini">{c} (tampilan)</code>
+                      ))}
                     </span>
                   ) : (
                     <span className="cfg-hint-sm">—</span>
@@ -221,6 +225,7 @@ export default function ConfigHealthPanel({ onOpenSetting }) {
             ) : null}
           </tbody>
         </table>
+        </div>
       ) : null}
 
       {schedApplied || schedPending ? (

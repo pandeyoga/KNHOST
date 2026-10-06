@@ -52,9 +52,13 @@ def _mentions(text: str, key: str) -> bool:
 
 def check_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
     key = entry["key"]
-    ok, stale, missing = [], [], []
+    ok, stale, missing, unverified = [], [], [], []
     for ref in entry["consumers"]:
         path = _resolve_path(ref)
+        # Server produksi (container backend) tidak membawa kode frontend → tidak bisa dicek, bukan "salah".
+        if path.startswith(FRONTEND) and not os.path.isdir(FRONTEND):
+            unverified.append(ref)
+            continue
         if not os.path.exists(path):
             missing.append(ref)
             continue
@@ -63,7 +67,7 @@ def check_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
         status = "NOT_USED"
     elif missing:
         status = "MISSING"
-    elif not ok:
+    elif not ok and not unverified:
         status = "STALE"
     else:
         status = "OK"
@@ -72,6 +76,7 @@ def check_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
         "registry_status": entry["status"], "not_used_reason": entry["not_used_reason"],
         "wiring_status": status, "risk": entry["risk"],
         "consumers_ok": ok, "consumers_stale": stale, "consumers_missing": missing,
+        "consumers_unverified": unverified,
         "consumer_count": len(entry["consumers"]),
     }
 

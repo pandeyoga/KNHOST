@@ -426,7 +426,11 @@
 .notice-bar.info    { background: rgba(0,88,204,0.08);   color: #0058CC; border: 1px solid rgba(0,88,204,0.22); }
 .notice-bar button  { margin-left: auto; border: 0; background: transparent; cursor: pointer; color: inherit; padding: 2px; }
 
-/* badge-green badge-purple badge-orange badge-blue */
+/* badge-green badge-purple badge-orange badge-blue — bentuk pill dasar (dulu tanpa padding: tampil seperti stabilo) */
+.badge-green, .badge-orange, .badge-purple, .badge-blue, .badge-muted, .badge-red, .badge-teal {
+  display: inline-flex; align-items: center; gap: 4px; width: fit-content; padding: 2px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap;
+}
 .badge-green  { background: rgba(52,199,89,0.12);  color: #1A7A3A; }
 .badge-orange { background: rgba(255,149,0,0.12);  color: #A05000; }
 .badge-purple { background: rgba(175,82,222,0.12); color: #6B1EA0; }

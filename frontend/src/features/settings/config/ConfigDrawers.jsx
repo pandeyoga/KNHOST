@@ -365,6 +365,7 @@ export function ChangeHistoryInline() {
         </p>
       ) : null}
       {rows && rows.length > 0 ? (
+        <div className="cfg-table-wrap">
         <table className="data-table" data-testid="cfg-history-inline">
           <thead>
             <tr>
@@ -393,6 +394,7 @@ export function ChangeHistoryInline() {
             ))}
           </tbody>
         </table>
+        </div>
       ) : null}
     </>
   );
