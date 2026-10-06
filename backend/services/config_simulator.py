@@ -189,21 +189,32 @@ def _bill_match(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:
     bill_p = _f(s.get("billed_price"), 108_000)
     tq = _f(c.get("purchasing.bill_qty_tolerance_percent"), 0)
     tp = _f(c.get("purchasing.bill_price_tolerance_percent"), 5)
-    dq = ((bill_q - recv_q) / recv_q * 100) if recv_q else 0
-    dp = ((bill_p - po_p) / po_p * 100) if po_p else 0
-    steps = [{"label": "Selisih qty", "value": f"{_num(dq)}% (toleransi {_num(tq)}%)"},
+    # G3 D4-SIM-01 — evaluator transaksi yang SAMA (vendor_bill_service.evaluate_match), basis diterima.
+    from services.vendor_bill_service import evaluate_match
+    mode = str(s.get("match_mode") or "received")
+    mode = mode if mode in ("received", "ordered") else "received"
+    ordered_q = _f(s.get("ordered_qty"), max(recv_q, bill_q))
+    already = _f(s.get("already_billed_qty"), 0)
+    po = {"items": [{"product_id": "SIM", "quantity": ordered_q, "received_qty": recv_q, "price": po_p}]}
+    res = evaluate_match(po, [{"product_id": "SIM", "billed_qty": bill_q, "quantity": bill_q, "price": bill_p}],
+                         mode, {"SIM": already}, tq, tp)
+    m = res["items"][0]["match"]
+    dp = m["price_variance_pct"]
+    base = recv_q if mode == "received" else ordered_q
+    steps = [{"label": "Basis pencocokan", "value": "qty diterima" if mode == "received" else "qty dipesan"},
+             {"label": "Sisa boleh ditagih", "value": f"{_num(m['qty_remaining'])} (basis {_num(base)})"},
+             {"label": "Qty ditagih", "value": f"{_num(bill_q)} (toleransi {_num(tq)}%)"},
              {"label": "Selisih harga", "value": f"{_num(dp)}% (toleransi {_num(tp)}%)"}]
-    bad = []
-    if abs(dq) > tq:
-        bad.append("qty")
-    if abs(dp) > tp:
-        bad.append("harga")
-    if not bad:
+    if mode == "received" and recv_q <= 0 and bill_q > 0:
+        return {"steps": steps, "verdict": "block",
+                "result": "DIBLOKIR — barang belum diterima, tagihan belum bisa dicocokkan (3-way match)"}
+    if res["match_status"] == "matched":
         return {"steps": steps, "result": "3-way match LOLOS — tagihan bisa langsung diproses",
                 "verdict": "ok"}
-    return {"steps": steps,
-            "result": f"Selisih {' & '.join(bad)} di luar toleransi → butuh keputusan berlabel",
-            "verdict": "block"}
+    msgs = " · ".join(m["messages"]) or "di luar toleransi"
+    if res["match_status"] == "blocked":
+        return {"steps": steps, "result": f"DIBLOKIR — {msgs}", "verdict": "block"}
+    return {"steps": steps, "result": f"Perlu persetujuan — {msgs}", "verdict": "warn"}
 
 
 def _qc_grade(c: Dict[str, Any], s: Dict[str, Any]) -> Dict[str, Any]:

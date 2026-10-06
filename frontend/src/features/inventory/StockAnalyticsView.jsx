@@ -157,7 +157,7 @@ export default function StockAnalyticsView({ currentUser, selectedEntity }) {
       {/* KPI row (klik untuk filter kelas) */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <KPICard testId="sa-kpi-total-value" icon={Boxes} label="Nilai Persediaan" color="#0058CC" loading={loading}
-          value={fmtShort(summary.total_on_hand_value)} sub={`${summary.sku_count ?? 0} SKU`}
+          value={fmtShort(summary.total_on_hand_value)} sub={`${summary.sku_count ?? 0} SKU · biaya penuh (landed ${fmtShort(summary.total_landed_value || 0)})`}
           active={classFilter === "all"} onClick={() => setClassFilter("all")} />
         <KPICard testId="sa-kpi-fast" icon={Flame} label="Fast Moving" color="#34C759" loading={loading}
           value={byClass.fast?.count ?? 0} sub={fmtShort(byClass.fast?.value)}

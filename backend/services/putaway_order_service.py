@@ -16,6 +16,19 @@ from services import warehouse_profile_service as whp
 from services.rfid_print_service import set_journey
 
 
+async def putaway_block_reason(r: Dict[str, Any]) -> Optional[str]:
+    """G3 D4-WMS-04 — resolver kelayakan putaway bersama (health, suggest, create). None = siap."""
+    if r.get("status") != "available":
+        return f"status_{r.get('status') or 'unknown'}"
+    if r.get("active_movement"):
+        return "active_movement"
+    if float(r.get("length_reserved") or 0) > 0:
+        return "reserved"
+    if (await identity_issue(r))[0] is not None:
+        return "tag_identity"
+    return None
+
+
 async def _rolls_ready(warehouse_id: str, scope_ids: List[str], limit: int = 2000) -> List[Dict[str, Any]]:
     """Roll di gudang transit yang siap putaway: tag_verified + routing store."""
     rolls = await db.inventory_rolls.find({
@@ -26,7 +39,7 @@ async def _rolls_ready(warehouse_id: str, scope_ids: List[str], limit: int = 200
         "status": "available", "active_movement": None,  # AX-08/WM-05
         "length_reserved": {"$not": {"$gt": 0}},
     }, {"_id": 0}).to_list(limit)
-    rolls = [r for r in rolls if (await identity_issue(r))[0] is None]  # G3 D4-TAG-01
+    rolls = [r for r in rolls if await putaway_block_reason(r) is None]  # G3 D4-TAG-01 / D4-WMS-04
     pids = list({r["product_id"] for r in rolls})
     prods = {p["id"]: p for p in await db.products.find(
         {"id": {"$in": pids}}, {"_id": 0, "id": 1, "sku": 1, "name": 1, "category": 1}).to_list(3000)}

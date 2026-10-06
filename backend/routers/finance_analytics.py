@@ -43,6 +43,72 @@ async def get_profitability(
                              actor.get("role"))
 
 
+@router.get("/finance/profitability/export.xlsx")
+async def export_profitability(
+    request: Request,
+    start: Optional[str] = Query(None),
+    end: Optional[str] = Query(None),
+    entity_id: Optional[str] = Query(None),
+):
+    """Excel: Realisasi (terkirim) vs Estimasi (nilai pesanan) berdampingan per pelanggan & produk."""
+    import io
+    from fastapi.responses import Response
+    from openpyxl import Workbook
+    from openpyxl.styles import Font
+    from core_utils import COST_SAFE_ROLES
+    actor = await require_permission(request, "accounting", "view")
+    scope = await _scope(request, "sales_orders", entity_id)
+    ent = entity_id if entity_id and entity_id != "all" else None
+    data = await prof.profitability(start=start, end=end, scope=scope, entity_id=ent)
+    cost_ok = actor.get("role") in COST_SAFE_ROLES
+
+    def _cell(v: Any) -> Any:
+        return "'" + v if isinstance(v, str) and v[:1] in ("=", "+", "-", "@", "\t", "\r") else v
+
+    def _sheet(ws, dim: str, label: str) -> None:
+        real = {r["key"]: r for r in data.get(dim, [])}
+        est = {r["key"]: r for r in (data.get("estimate") or {}).get(dim, [])}
+        head = [label, "Realisasi Pendapatan"] + (["Realisasi HPP", "Realisasi Marjin", "Realisasi Marjin %"] if cost_ok else []) \
+            + ["Estimasi Pendapatan"] + (["Estimasi HPP", "Estimasi Marjin"] if cost_ok else []) \
+            + ["Selisih Pendapatan (Realisasi − Estimasi)", "Pesanan Realisasi", "Pesanan Estimasi"]
+        ws.append(head)
+        for c in ws[1]:
+            c.font = Font(bold=True)
+        keys = sorted(set(real) | set(est), key=lambda k: -float((real.get(k) or est.get(k) or {}).get("revenue") or 0))
+        for k in keys:
+            r, e = real.get(k, {}), est.get(k, {})
+            row = [_cell(r.get("name") or e.get("name") or k), r.get("revenue", 0.0)]
+            if cost_ok:
+                row += [r.get("cogs", 0.0), r.get("margin", 0.0), r.get("margin_pct")]
+            row.append(e.get("revenue", 0.0))
+            if cost_ok:
+                row += [e.get("cogs", 0.0), e.get("margin", 0.0)]
+            row += [round(float(r.get("revenue", 0) or 0) - float(e.get("revenue", 0) or 0), 2),
+                    r.get("orders", 0), e.get("orders", 0)]
+            ws.append(row)
+        for col in ws.columns:
+            ws.column_dimensions[col[0].column_letter].width = 22
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Per Pelanggan"
+    _sheet(ws, "by_customer", "Pelanggan")
+    _sheet(wb.create_sheet("Per Produk"), "by_product", "Produk")
+    info = wb.create_sheet("Keterangan")
+    for row in (["Periode", f"{start or '-'} s/d {end or '-'}"],
+                ["Realisasi", data.get("metric_label", "")],
+                ["Estimasi", (data.get("estimate") or {}).get("label", "")],
+                ["Pesanan lama tanpa surat jalan", data.get("legacy_orders", 0)],
+                ["HPP/Marjin", "ditampilkan" if cost_ok else "disembunyikan untuk peran Anda"]):
+        info.append(row)
+    buf = io.BytesIO()
+    wb.save(buf)
+    name = f"profitabilitas_{start or 'awal'}_{end or 'akhir'}.xlsx"
+    return Response(content=buf.getvalue(),
+                    media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
 @router.get("/finance/cashflow-forecast")
 async def get_cashflow_forecast(
     request: Request,

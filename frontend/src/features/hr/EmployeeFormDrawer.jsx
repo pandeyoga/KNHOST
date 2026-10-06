@@ -160,6 +160,11 @@ export function EmployeeFormDrawer({ open, onClose, onSaved, editEmployee, depar
               <Field label="Status">
                 <KNSelect data-testid="employee-status-select" value={form.status} onValueChange={(v) => set("status", v)} className="field" placeholder="Pilih" options={STATUS_OPTIONS} />
               </Field>
+              {form.status !== "active" && (
+                <Field label="Tanggal Keluar (resmi)">
+                  <KNDatePicker data-testid="employee-separation-date-input" value={form.separation_date || ""} onChange={(v) => set("separation_date", v)} placeholder="Tanggal efektif keluar" />
+                </Field>
+              )}
               <Field label="Entitas (PT/CV)">
                 <KNSelect data-testid="employee-entity-select" value={form.entity_id} onValueChange={(v) => set("entity_id", v)} className="field" placeholder="Pilih entitas" options={entityOptions} />
               </Field>

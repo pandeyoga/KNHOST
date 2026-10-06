@@ -96,17 +96,24 @@ export default function WmsHealthDashboard({ selectedEntity }) {
                         : <span className="text-[#C7C7CC]">0</span>}
                     </td>
                     <td className="px-2 py-2 text-right font-semibold" style={{ color: w.red_reads_today ? "#B23B14" : "#C7C7CC" }}>{w.red_reads_today}</td>
-                    <td className="px-2 py-2 text-right font-semibold" style={{ color: w.putaway_ready ? "#0058CC" : "#C7C7CC" }}>{w.putaway_ready}</td>
+                    <td className="px-2 py-2 text-right font-semibold" style={{ color: w.putaway_ready ? "#0058CC" : "#C7C7CC" }} data-testid={`wms-health-putaway-${w.warehouse_id}`}
+                      title={w.putaway_blocked ? `Tertahan: ${Object.entries(w.putaway_blocked_by_reason || {}).map(([k, v]) => `${k} ${v}`).join(", ")}` : ""}>
+                      {w.putaway_ready}
+                      {w.putaway_blocked > 0 && <span className="ml-1 text-[10px] font-normal text-[#8C4A00]">+{w.putaway_blocked} tertahan</span>}
+                    </td>
                     <td className="px-2 py-2 text-right" style={{ color: w.pa_open ? "#FF9500" : "#C7C7CC" }}>{w.pa_open}</td>
                     <td className="px-2 py-2 text-right font-semibold" style={{ color: w.gate_exceptions ? "#6B219A" : "#C7C7CC" }}>{w.gate_exceptions}</td>
                     <td className="px-2 py-2 text-right" style={{ color: w.untagged ? "#FF9500" : "#C7C7CC" }}>{w.untagged}</td>
-                    <td className="px-2 py-2 text-right">
-                      {w.last_cc ? (
+                    <td className="px-2 py-2 text-right" data-testid={`wms-health-cc-${w.warehouse_id}`}>
+                      {w.last_cc && w.last_cc.accuracy_pct !== null && w.last_cc.accuracy_pct !== undefined ? (
                         <span className="font-bold" style={{ color: accColor(w.last_cc.accuracy_pct) }}>
                           {w.last_cc.accuracy_pct}%
                           <span className="ml-1 font-normal text-[10px] text-[#9A9BA3]">{w.last_cc.cc_number}</span>
                         </span>
-                      ) : <span className="text-[#C7C7CC]">—</span>}
+                      ) : <span className="text-[#C7C7CC]">N/A</span>}
+                      {w.latest_cc_status?.status === "open" && (
+                        <span className="block text-[9.5px] text-[#0058CC]" data-testid={`wms-health-cc-open-${w.warehouse_id}`}>hitung baru: berjalan</span>
+                      )}
                     </td>
                     <td className="px-2 py-2 text-right">
                       {w.devices_total === 0 ? <span className="text-[#C7C7CC]">—</span> : (

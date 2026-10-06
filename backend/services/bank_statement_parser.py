@@ -158,7 +158,20 @@ def parse_amount(raw: Any, style: str = "auto") -> Tuple[float, bool]:
         return 0.0, neg
 
 
+def strict_iso_date(s: Any) -> str:
+    """G3 D4-BANK-01 — 'YYYY-MM-DD' hanya bila tanggal kalender sah (2026-02-30/13-01 → "")."""
+    txt = str(s or "").strip()[:10]
+    try:
+        return datetime.strptime(txt, "%Y-%m-%d").strftime("%Y-%m-%d") if len(txt) == 10 else ""
+    except ValueError:
+        return ""
+
+
 def parse_date(raw: Any, fmt: str = "auto", year_hint: int = 0) -> str:
+    return strict_iso_date(_parse_date_loose(raw, fmt, year_hint))
+
+
+def _parse_date_loose(raw: Any, fmt: str = "auto", year_hint: int = 0) -> str:
     """Ubah teks tanggal menjadi `YYYY-MM-DD` ("" bila tidak terbaca).
 
     Mendukung `dd/mm/yyyy`, `dd-mm-yy`, `yyyy-mm-dd`, `yyyymmdd`, `yymmdd`,
@@ -413,7 +426,7 @@ def parse_csv(raw: str, fmt: Dict[str, Any], year_hint: int = 0) -> Tuple[List[D
 
 
 RE_MT940_61 = re.compile(
-    r"^:61:(?P<vdate>\d{6})(?P<edate>\d{4})?(?P<mark>[CD])R?(?P<amt>[\d.,]+)"
+    r"^:61:(?P<vdate>\d{6})(?P<edate>\d{4})?(?P<mark>R?[CD])(?P<funds>[A-Z])?(?P<amt>\d[\d.,]*)"
     r"(?P<code>[A-Z]\w{3})?(?P<rest>.*)$")
 
 
@@ -429,12 +442,23 @@ def parse_mt940(raw: str, fmt: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], Li
                 errors.append({"row": n, "reason": "Baris :61: tidak dikenal", "raw": line[:160]})
                 continue
             amt, _ = parse_amount(m.group("amt"), "id")
+            vdate = parse_date(m.group("vdate"), "yymmdd")
+            if not vdate or amt <= 0:
+                errors.append({"row": n, "reason": "Tanggal valuta tidak sah" if not vdate else "Nominal nol",
+                               "raw": line[:160]})
+                if cur:
+                    rows.append(cur)
+                cur = None
+                continue
             if cur:
                 rows.append(cur)
+            mark = m.group("mark")
+            # G3 D4-BANK-02 — RC = pembalikan kredit (uang keluar), RD = pembalikan debit (uang masuk).
+            direction = {"C": "in", "D": "out", "RC": "out", "RD": "in"}[mark]
             rest = (m.group("rest") or "").replace("//", " ").strip()
             cur = {
-                "row": n, "stmt_date": parse_date(m.group("vdate"), "yymmdd"),
-                "amount": amt, "direction": "in" if m.group("mark") == "C" else "out",
+                "row": n, "stmt_date": vdate, "reversal": mark.startswith("R"), "mark": mark,
+                "amount": amt, "direction": direction,
                 "description": rest, "ref": "", "external_id": "", "balance": 0.0,
                 "raw": line[:200],
             }
@@ -464,7 +488,7 @@ def parse_ofx(raw: str, fmt: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List
         dt = _ofx_tag(b, "DTPOSTED")[:8]
         name = _ofx_tag(b, "NAME")
         memo = _ofx_tag(b, "MEMO")
-        if amount <= 0 or not dt:
+        if amount <= 0 or not dt or not parse_date(dt, "yyyymmdd"):
             errors.append({"row": n, "reason": "STMTTRN tanpa nominal/tanggal sah", "raw": b[:160]})
             continue
         rows.append({

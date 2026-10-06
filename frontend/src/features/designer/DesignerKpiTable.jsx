@@ -118,7 +118,7 @@ export default function DesignerKpiTable({ items, onSelect, selected, loading = 
             const active = selected === r.designer;
             const busyReport = downloadingReport === r.designer;
             return (
-              <div key={r.designer} role="button" tabIndex={0}
+              <div key={r.designer_key || r.designer} role="button" tabIndex={0}
                 data-testid={`designer-kpi-row-${r.designer}`}
                 onClick={() => onSelect && onSelect(active ? "" : r.designer)}
                 onKeyDown={(e) => {

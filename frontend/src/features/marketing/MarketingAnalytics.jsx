@@ -68,9 +68,10 @@ export default function MarketingAnalytics({ selectedEntity = "all" }) {
           </div>
         </section>
       </div>
+      <p className="text-[10.5px] text-[#8E8E93] -mb-1" data-testid="mkt-breakdown-note">Per platform &amp; per akun: metrik post multi-kanal diatribusikan penuh ke tiap kanal (atribusi bersama) — angka tidak dapat dijumlah menjadi total.</p>
       <div className="grid gap-3 lg:grid-cols-3">
-        <Breakdown title="Per platform" testId="mkt-by-platform" rows={Object.entries(d.by_platform).map(([c, v]) => ({ key: c, head: <PlatformChip code={c} />, ...v, color: PLATFORM_STYLE[c]?.fg }))} />
-        <Breakdown title="Per akun" testId="mkt-by-account" rows={Object.entries(d.by_account).map(([id, v]) => ({ key: id, head: <span className="text-[11px]"><PlatformChip code={v.platform} small /> <b>@{v.handle}</b>{multi ? <span className="text-[#8E8E93]"> · {v.entity_name}</span> : null}</span>, ...v, color: PLATFORM_STYLE[v.platform]?.fg }))} empty="belum ada konten yang ditautkan ke akun" />
+        <Breakdown title="Per platform (atribusi bersama)" testId="mkt-by-platform" rows={Object.entries(d.by_platform).map(([c, v]) => ({ key: c, head: <PlatformChip code={c} />, ...v, color: PLATFORM_STYLE[c]?.fg }))} />
+        <Breakdown title="Per akun (atribusi bersama)" testId="mkt-by-account" rows={Object.entries(d.by_account).map(([id, v]) => ({ key: id, head: <span className="text-[11px]"><PlatformChip code={v.platform} small /> <b>@{v.handle}</b>{multi ? <span className="text-[#8E8E93]"> · {v.entity_name}</span> : null}</span>, ...v, color: PLATFORM_STYLE[v.platform]?.fg }))} empty="belum ada konten yang ditautkan ke akun" />
         <Breakdown title="Per badan usaha" testId="mkt-by-entity" rows={Object.entries(d.by_entity).map(([id, v]) => ({ key: id, head: <b className="text-[11px]">{v.entity_name}</b>, ...v, color: "#0F766E" }))} />
       </div>
       <section className="rounded-xl border border-[#EFF0F2] bg-white p-3" data-testid="mkt-an-top">

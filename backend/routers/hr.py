@@ -6,6 +6,7 @@ Config statutory: `system_settings` scope='hr'. Lihat ENTITY_REGISTRY.md + memor
 RBAC modul `hr`: view | create | update | delete | view_pii | manage_org | manage_settings.
 ESS `/hr/employees/me` hanya butuh autentikasi (karyawan lihat data SENDIRI penuh).
 """
+from datetime import datetime
 from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
@@ -26,7 +27,7 @@ EMP_UPDATE_FIELDS = {
     "name", "nik", "user_id", "dob", "gender", "phone", "email", "address", "city",
     "country", "country_code", "province", "province_code", "city_code", "district", "district_code", "postal_code",
     "department_id", "position_id", "shift_id", "device_user_id",
-    "employment_type", "join_date", "status",
+    "employment_type", "join_date", "status", "separation_date",
     "npwp", "ptkp_status", "bpjs_kes_enabled", "bpjs_kes_no", "bpjs_tk_enabled",
     "bpjs_tk_no", "jkk_risk_class", "bank_name", "bank_acc_no", "bank_acc_name",
     "base_salary", "allowances", "photo_url", "entity_id",
@@ -417,6 +418,7 @@ async def update_employee(employee_id: str, payload: GenericPatch, request: Requ
             updates["base_salary"] = round(float(updates["base_salary"] or 0), 2)
         except (ValueError, TypeError):
             updates["base_salary"] = 0.0
+    _apply_separation(emp, updates)
     updates["updated_at"] = now_iso()
     updated = await db.hr_employees.find_one_and_update(
         {"id": employee_id}, {"$set": updates},
@@ -438,12 +440,43 @@ async def deactivate_employee(employee_id: str, request: Request) -> Dict[str, A
     if not emp:
         raise HTTPException(status_code=404, detail="Karyawan tidak ditemukan")
     assert_entity_access(emp, "hr_employees", ctx)
+    sep = {"status": "resigned"}
+    _apply_separation(emp, sep)
     updated = await db.hr_employees.find_one_and_update(
-        {"id": employee_id}, {"$set": {"status": "resigned", "updated_at": now_iso()}},
+        {"id": employee_id}, {"$set": {**sep, "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     await audit(actor["name"], "hr_employee_deactivated", "hr_employee", employee_id,
-                {"status": "resigned"}, before={"status": emp.get("status")})
+                sep, before={"status": emp.get("status"), "separation_date": emp.get("separation_date")})
     return safe_doc(updated)
+
+
+def _apply_separation(emp: Dict[str, Any], updates: Dict[str, Any]) -> None:
+    """G3 D4-HR-02 — tanggal keluar RESMI. Aktif→nonaktif: isi `separation_date` (input HR, atau
+    `end_date` yang ada, atau hari ini WIB). Edit profil tidak mengubahnya. Rehire (nonaktif→aktif):
+    tanggal lama dipindah ke `separation_history`, `separation_date` dikosongkan."""
+    import re as _re
+    from services.analytics_time import now_wib
+    sd = updates.get("separation_date")
+    if sd not in (None, ""):
+        if not _re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(sd)):
+            raise HTTPException(status_code=400, detail="Tanggal keluar harus YYYY-MM-DD")
+        try:
+            datetime.strptime(str(sd), "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Tanggal keluar tidak valid")
+    was_active = (emp.get("status") or "active") == "active"
+    new_status = updates.get("status", emp.get("status") or "active")
+    if was_active and new_status != "active" and not sd:
+        updates["separation_date"] = str(emp.get("separation_date") or emp.get("end_date") or "")[:10] \
+            or now_wib().strftime("%Y-%m-%d")
+    elif not was_active and new_status == "active":
+        old = emp.get("separation_date")
+        if old:
+            updates["separation_history"] = [*(emp.get("separation_history") or []),
+                                             {"separation_date": old, "rehired_at": now_iso()}]
+        updates["separation_date"] = ""
+    elif "separation_date" in updates and sd in (None, ""):
+        updates.pop("separation_date")
 
 
 # ─── HR Settings (config statutory; system_settings scope='hr') ───────────────

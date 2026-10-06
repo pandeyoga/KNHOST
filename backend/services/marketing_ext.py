@@ -161,6 +161,10 @@ async def dashboard(scope: Dict[str, Any], month: str) -> Dict[str, Any]:
     top = sorted([r for r in cur if r["status"] == "published"], key=lambda r: _eng(r.get("metrics")), reverse=True)[:5]
     return {"month": month, "prev_month": _prev_month(month), "kpi": _kpi(cur), "kpi_prev": _kpi(prev), "trend": trend,
             "by_platform": by_platform, "by_account": by_account, "by_entity": by_entity,
+            # G3 D4-MKT-01 — metrik tersimpan per POST; per platform/akun = atribusi bersama (bukan
+            # pengukuran per kanal) sehingga TIDAK boleh dijumlah ulang menjadi total.
+            "breakdown_basis": "shared_post_attribution", "breakdown_additive": False,
+            "breakdown_note": "Reach/engagement per platform & akun = metrik post multi-kanal yang diatribusikan penuh ke tiap kanal; jangan dijumlah.",
             "top_posts": [{"id": r["id"], "title": r["title"], "platforms": r.get("platforms"), "metrics": r.get("metrics"), "publish_at": r.get("publish_at"),
                            "entity_name": names.get(r.get("entity_id"), ""), "accounts": r.get("accounts") or []} for r in top],
             "upcoming": upcoming, "overdue": overdue, "pipeline": {s: sum(1 for r in cur if r["status"] == s) for s in ("idea", "draft", "review", "approved", "scheduled", "published")}}

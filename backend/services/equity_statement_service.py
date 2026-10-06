@@ -48,12 +48,18 @@ async def equity_statement(start: Optional[str] = None, end: Optional[str] = Non
         "begin": round(begin_ce, 2), "movement": round(end_ce - begin_ce, 2), "end": round(end_ce, 2),
     })
 
+    # G3 D4-EQ-01 — KPI laba = laba P&L NON-penutup pada rentang & scope sama (tidak berubah oleh
+    # tutup buku); pergerakan saldo laba belum ditutup dilaporkan terpisah untuk roll-forward.
+    pl = await fs.income_statement(start=start, end=end, scope=scope)
+    period_income = round(float(pl.get("net_income", 0) or 0), 2)
     return {
         "period": {"start": start or "", "end": end or ""},
+        "period_operating_net_income": period_income,
+        "movement_unclosed_earnings": round(end_ce - begin_ce, 2),
         "components": components,
         "begin_total": round(begin_total, 2),
         "movement_total": round(end_total - begin_total, 2),
         "end_total": round(end_total, 2),
-        "net_income": round(end_ce - begin_ce, 2),
+        "net_income": period_income,
         "generated_at": now_iso(),
     }

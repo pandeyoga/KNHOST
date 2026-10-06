@@ -33,10 +33,15 @@ export function scoreBadge(s) {
   return { cls: "bg-[#FBEAE7] text-[#C0341D]", label: "Kurang" };
 }
 
-// Rekap rata-rata skor tertimbang dari array baris KPI.
+// Rekap rata-rata skor tertimbang (G3 D4-KPI-WEIGHT-01): bobot kosong = 1, bobot 0 tetap 0
+// (tidak dihitung); seluruh bobot 0 → null (belum dapat dinilai).
+const wOf = (r) => (r.weight === null || r.weight === undefined || r.weight === "" ? 1 : Math.max(Number(r.weight) || 0, 0));
 export function weightedAvg(rows) {
   if (!rows || rows.length === 0) return 0;
-  const tw = rows.reduce((a, r) => a + (Number(r.weight) || 1), 0) || 1;
-  const s = rows.reduce((a, r) => a + (Number(r.score) || 0) * (Number(r.weight) || 1), 0);
+  const tw = rows.reduce((a, r) => a + wOf(r), 0);
+  if (tw <= 0) return null;
+  const s = rows.reduce((a, r) => a + (Number(r.score) || 0) * wOf(r), 0);
   return Math.round((s / tw) * 10) / 10;
 }
+
+export const isCalendarMonth = (p) => /^\d{4}-(0[1-9]|1[0-2])$/.test(p || "");

@@ -16,6 +16,7 @@ from core_utils import safe_doc
 from entity_scope import EntityContext, resolve_list_scope
 from services.config_service import get_effective_settings
 from services.roll_service import PHYSICAL_STATUS_TO_BUCKET
+from services.analytics_time import WIB
 
 PHYSICAL_STATUSES = set(PHYSICAL_STATUS_TO_BUCKET.keys())
 
@@ -31,12 +32,22 @@ AGING_BUCKETS = [
 
 
 def _parse_ts(ts: Optional[str]) -> Optional[datetime]:
+    """G3 D4-STOCK-04 — selalu timezone-aware: date-only = tengah malam WIB, naif = UTC."""
     if not ts:
         return None
+    s = str(ts).strip()
     try:
-        return datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
-    except Exception:
+        if len(s) == 10:
+            return datetime.fromisoformat(s).replace(tzinfo=WIB)
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except (TypeError, ValueError):
         return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def _age_days(now: datetime, dt: datetime) -> int:
+    """Umur dalam hari kalender WIB."""
+    return (now.astimezone(WIB).date() - dt.astimezone(WIB).date()).days
 
 
 def _age_bucket(days: int) -> str:
@@ -87,7 +98,7 @@ async def product_sales_velocity(
         dt = _parse_ts(m.get("timestamp"))
         d = out.setdefault(pid, {"sold": 0.0, "avg_daily": 0.0, "last_sale_days": None})
         if dt:
-            days = (now - dt).days
+            days = _age_days(now, dt)
             if d["last_sale_days"] is None or days < d["last_sale_days"]:
                 d["last_sale_days"] = days
             if dt.timestamp() >= window_start:
@@ -116,6 +127,8 @@ async def compute_stock_analytics(
     # ── Master maps ──────────────────────────────────────────────────────────
     warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(200)}
     products = {p["id"]: p for p in await db.products.find({}, {"_id": 0}).to_list(2000)}
+    # G3 D4-STOCK-02 — filter kategori diterapkan SEBELUM roll/balance/movement (semua KPI & aging).
+    allowed = {pid for pid, p in products.items() if p.get("category") == category} if category else None
 
     # ── Balances (on_hand > 0), entity-scoped ─────────────────────────────────
     bal_query: Dict[str, Any] = {"on_hand_qty": {"$gt": 0}}
@@ -142,6 +155,8 @@ async def compute_stock_analytics(
     for m in movements:
         if m.get("movement_type") not in SALE_MOVEMENT_TYPES:
             continue
+        if allowed is not None and m.get("product_id") not in allowed:
+            continue
         key = (m.get("product_id"), m.get("warehouse_id"), m.get("owner_entity_id"))
         dt = _parse_ts(m.get("timestamp"))
         if dt and (key not in last_sale or dt > last_sale[key]):
@@ -157,19 +172,26 @@ async def compute_stock_analytics(
         resolve_list_scope("inventory_rolls", roll_query, ctx, entity_id), {"_id": 0}
     ).to_list(100000)
     # per (product, warehouse): nilai, umur roll tertua ; aging global per bucket
+    # G3 D4-STOCK-03 — nilai = BIAYA PENUH roll (`unit_cost` sudah memuat landed), dipecah dasar + landed.
     seg_value: Dict[tuple, float] = {}
+    seg_base: Dict[tuple, float] = {}
     seg_oldest_age: Dict[tuple, int] = {}
     aging: Dict[str, Dict[str, float]] = {name: {"qty": 0.0, "value": 0.0} for name, _, _ in AGING_BUCKETS}
     for r in rolls:
         if r.get("status") not in PHYSICAL_STATUSES:
             continue
+        if allowed is not None and r.get("product_id") not in allowed:
+            continue
         key = (r.get("product_id"), r.get("warehouse_id"), r.get("owner_entity_id"))
         length = float(r.get("length_remaining", 0) or 0)
-        cost = float(r.get("base_unit_cost", 0) or 0)
-        value = length * cost
+        base = float(r.get("base_unit_cost", 0) or 0)
+        full = float(r.get("unit_cost", 0) or 0) or base
+        base = min(base, full) if base > 0 else full
+        value = length * full
         seg_value[key] = seg_value.get(key, 0.0) + value
+        seg_base[key] = seg_base.get(key, 0.0) + length * base
         dt = _parse_ts(r.get("created_at")) or _parse_ts((r.get("acquired") or {}).get("date"))
-        age = (now - dt).days if dt else 9999
+        age = _age_days(now, dt) if dt else 9999
         if key not in seg_oldest_age or age > seg_oldest_age[key]:
             seg_oldest_age[key] = age
         b = _age_bucket(age)
@@ -181,7 +203,7 @@ async def compute_stock_analytics(
     for b in balances:
         pid = b.get("product_id")
         prod = products.get(pid, {})
-        if category and prod.get("category") != category:
+        if allowed is not None and pid not in allowed:
             continue
         wh = b.get("warehouse_id")
         key = (pid, wh, b.get("owner_entity_id"))
@@ -189,11 +211,12 @@ async def compute_stock_analytics(
         row = prod_rows.setdefault(pid, {
             "product_id": pid, "sku": prod.get("sku", ""), "product_name": prod.get("name", ""),
             "category": prod.get("category", ""), "unit": prod.get("base_unit", "meter"),
-            "on_hand_qty": 0.0, "value": 0.0, "warehouses": set(),
+            "on_hand_qty": 0.0, "value": 0.0, "value_base": 0.0, "warehouses": set(),
             "_last_sale": None, "_oldest_age": 0, "sold_window": 0.0,
         })
         row["on_hand_qty"] += on_hand
         row["value"] += seg_value.get(key, 0.0)
+        row["value_base"] += seg_base.get(key, 0.0)
         if wh in warehouses:
             row["warehouses"].add(warehouses[wh]["name"])
         row["sold_window"] += sold_window.get(key, 0.0)
@@ -205,18 +228,22 @@ async def compute_stock_analytics(
     rows: List[Dict[str, Any]] = []
     by_class = {c: {"count": 0, "qty": 0.0, "value": 0.0} for c in ("fast", "slow", "dead")}
     total_value = 0.0
+    total_base = 0.0
     never_sold_count = 0
     for row in prod_rows.values():
         last_sale_dt = row.pop("_last_sale")
         oldest_age = row.pop("_oldest_age")
         never_sold = last_sale_dt is None
-        days_since_sale = (now - last_sale_dt).days if last_sale_dt else None
+        days_since_sale = _age_days(now, last_sale_dt) if last_sale_dt else None
         signal_days = days_since_sale if days_since_sale is not None else oldest_age
         cls = _classify(signal_days, fast_max, slow_max, never_sold)
         avg_daily = row["sold_window"] / window if window > 0 else 0.0
         days_of_supply = round(row["on_hand_qty"] / avg_daily, 1) if avg_daily > 0 else None
         row["warehouses"] = sorted(row["warehouses"])
         row["value"] = round(row["value"], 2)
+        row["value_base"] = round(row["value_base"], 2)
+        row["value_landed"] = round(row["value"] - row["value_base"], 2)
+        total_base += row["value_base"]
         row["on_hand_qty"] = round(row["on_hand_qty"], 2)
         row["classification"] = cls
         row["never_sold"] = never_sold
@@ -252,6 +279,11 @@ async def compute_stock_analytics(
         "summary": {
             "sku_count": len(rows),
             "total_on_hand_value": round(total_value, 2),
+            "total_base_value": round(total_base, 2),
+            "total_landed_value": round(total_value - total_base, 2),
+            "cost_basis": "full_landed",
+            "cost_basis_label": "Biaya penuh roll (dasar + landed cost)",
+            "aging_filtered_by_category": bool(category),
             "by_class": by_class,
             "aging_buckets": [{"bucket": name, **aging[name]} for name, _, _ in AGING_BUCKETS],
             "dead_value": by_class["dead"]["value"],

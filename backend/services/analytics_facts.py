@@ -59,8 +59,27 @@ def attribute_sales(so: Dict[str, Any], customer: Dict[str, Any], users: Dict[st
     return [(owner, 1.0)]
 
 
+def _alloc(total: float, weights: List[float]) -> List[float]:
+    """G3 D4-AI-04 — bagi `total` ke bobot dalam SEN (largest remainder, seri → indeks terkecil):
+    Σ hasil == round(total, 2) persis, deterministik untuk replay."""
+    if not weights:
+        return []
+    cents = int(round(total * 100))
+    sw = sum(weights)
+    ws = weights if sw > 0 else [1.0] * len(weights)
+    sw = sum(ws)
+    raw = [cents * w / sw for w in ws]
+    base = [int(x // 1) if x >= 0 else -int((-x) // 1) for x in raw]
+    rem = cents - sum(base)
+    order = sorted(range(len(raw)), key=lambda i: (-(abs(raw[i] - base[i])), i))
+    step = 1 if rem >= 0 else -1
+    for i in order[:abs(rem)]:
+        base[i] += step
+    return [b / 100 for b in base]
+
+
 def build_rows(so: Dict[str, Any], customer: Dict[str, Any], products: Dict[str, Dict[str, Any]],
-               users: Dict[str, Dict[str, Any]], mode: str = "team_split") -> List[Dict[str, Any]]:
+               users: Dict[str, Dict[str, Any]], mode: str = "team_split", gen: str = "") -> List[Dict[str, Any]]:
     items = [it for it in (so.get("items") or []) if isinstance(it, dict)]
     if not items:
         return []
@@ -91,15 +110,26 @@ def build_rows(so: Dict[str, Any], customer: Dict[str, Any], products: Dict[str,
         "built_at": built,
     }
     rows: List[Dict[str, Any]] = []
-    for sales_id, split in attribute_sales(so, customer, users, mode):
+    shares = [(lt / s_lt) if s_lt else (1.0 / len(items)) for lt in line_totals]
+    gshares = [(lg / s_gross) if s_gross else sh for lg, sh in zip(line_gross, shares)]
+    line_net = _alloc(net_order, shares)
+    line_grs = _alloc(total_amount, gshares)
+    line_ppn = _alloc(ppn, shares)
+    attrs = attribute_sales(so, customer, users, mode)
+    splits = [sp for _, sp in attrs]
+    per_line = []
+    for idx, it in enumerate(items):
+        qty_base = _f(it.get("base_quantity")) or _f(it.get("quantity"))
+        per_line.append({
+            "net": _alloc(line_net[idx], splits), "gross": _alloc(line_grs[idx], splits),
+            "ppn": _alloc(line_ppn[idx], splits),
+            "cost": _alloc(round(_f(it.get("unit_cost")) * qty_base, 2), splits), "qty": qty_base})
+    for si, (sales_id, split) in enumerate(attrs):
         for idx, it in enumerate(items):
-            lt = line_totals[idx]
-            share = (lt / s_lt) if s_lt else (1.0 / len(items))
-            gross_share = (line_gross[idx] / s_gross) if s_gross else share
-            net_alloc = net_order * share * split
-            gross_alloc = total_amount * gross_share * split
+            pl = per_line[idx]
+            net_alloc, gross_alloc = pl["net"][si], pl["gross"][si]
             prod = products.get(it.get("product_id") or "") or {}
-            qty_base = _f(it.get("base_quantity")) or _f(it.get("quantity"))
+            qty_base = pl["qty"]
             rows.append({
                 **base,
                 "_id": f"{so['id']}:{idx}:{sales_id}",
@@ -114,11 +144,12 @@ def build_rows(so: Dict[str, Any], customer: Dict[str, Any], products: Dict[str,
                 "base_unit": it.get("base_unit") or prod.get("base_unit") or it.get("unit") or "",
                 "qty_base": round(qty_base * split, 4),
                 "rolls": round(_f(it.get("qty_rolls")) * split, 4),
-                "gross": round(gross_alloc, 2),
-                "net_alloc": round(net_alloc, 2),
+                "gross": gross_alloc,
+                "net_alloc": net_alloc,
                 "discount": round(gross_alloc - net_alloc, 2),
-                "ppn_alloc": round(ppn * share * split, 2),
-                "cost": round(_f(it.get("unit_cost")) * qty_base * split, 2),
+                "ppn_alloc": pl["ppn"][si],
+                "cost": pl["cost"][si],
+                "build_gen": gen,
             })
     return rows
 
@@ -136,20 +167,26 @@ async def _maps(orders: List[Dict[str, Any]]):
     return customers, products, users
 
 
-async def _write(orders: List[Dict[str, Any]], mode: str) -> int:
+async def _write(orders: List[Dict[str, Any]], mode: str, gen: str = "") -> int:
+    """G3 D4-AI-03 — upsert deterministik per `_id` (so:baris:sales) LALU pensiunkan baris basi SO itu.
+    Gagal di tengah → snapshot lama tetap ada (tidak pernah hapus-dulu-baru-isi); retry idempoten."""
     if not orders:
         return 0
+    from pymongo import ReplaceOne
+    gen = gen or now_iso()
     customers, products, users = await _maps(orders)
     rows: List[Dict[str, Any]] = []
     for o in orders:
-        rows.extend(build_rows(o, customers.get(o.get("customer_id") or "") or {}, products, users, mode))
-    await db.fact_sales_lines.delete_many({"so_id": {"$in": [o["id"] for o in orders]}})
+        rows.extend(build_rows(o, customers.get(o.get("customer_id") or "") or {}, products, users, mode, gen))
     if rows:
-        await db.fact_sales_lines.insert_many(rows, ordered=False)
+        await db.fact_sales_lines.bulk_write([ReplaceOne({"_id": r["_id"]}, r, upsert=True) for r in rows],
+                                             ordered=False)
+    await db.fact_sales_lines.delete_many({"so_id": {"$in": [o["id"] for o in orders]},
+                                           "_id": {"$nin": [r["_id"] for r in rows]}})
     return len(rows)
 
 
-async def _process(cursor_query: Dict[str, Any]) -> Tuple[int, int, str]:
+async def _process(cursor_query: Dict[str, Any], gen: str = "") -> Tuple[int, int, str]:
     mode = (await ai_policy())["sales_attribution"]
     n_so = n_rows = 0
     max_upd = ""
@@ -158,27 +195,35 @@ async def _process(cursor_query: Dict[str, Any]) -> Tuple[int, int, str]:
         batch.append(o)
         max_upd = max(max_upd, str(o.get("updated_at") or o.get("created_at") or ""))
         if len(batch) >= BATCH:
-            n_rows += await _write(batch, mode)
+            n_rows += await _write(batch, mode, gen)
             n_so += len(batch)
             batch = []
-    n_rows += await _write(batch, mode)
+    n_rows += await _write(batch, mode, gen)
     n_so += len(batch)
     return n_so, n_rows, max_upd
 
 
 async def rebuild_facts(date_from: Optional[str] = None) -> Dict[str, Any]:
-    """Bangun ulang fakta untuk pesanan bertanggal (WIB) ≥ `date_from` (YYYY-MM-DD); kosong = semua."""
+    """Bangun ulang fakta untuk pesanan bertanggal (WIB) ≥ `date_from` (YYYY-MM-DD); kosong = semua.
+    G3 D4-AI-03 — rebuild penuh: generasi baru di-upsert dulu; baris generasi lama (SO terhapus)
+    baru dipensiunkan SETELAH seluruh penggantian sukses. Error dicatat di state."""
     q: Dict[str, Any] = {}
     if date_from:
         q["created_at"] = {"$gte": wib_midnight_utc(datetime.fromisoformat(date_from).date())}
-    else:
-        await db.fact_sales_lines.delete_many({})
-    n_so, n_rows, max_upd = await _process(q)
+    gen = f"gen_{now_iso()}"
+    try:
+        n_so, n_rows, max_upd = await _process(q, gen)
+    except Exception as exc:
+        await db.ai_fact_state.update_one({"id": STATE_ID}, {"$set": {
+            "id": STATE_ID, "last_error": str(exc)[:300], "last_error_at": now_iso()}}, upsert=True)
+        raise
+    if not date_from:
+        await db.fact_sales_lines.delete_many({"build_gen": {"$ne": gen}})
     st = await db.ai_fact_state.find_one({"id": STATE_ID}, {"_id": 0}) or {}
     wm = max(st.get("watermark") or "", max_upd)
     await db.ai_fact_state.update_one({"id": STATE_ID}, {"$set": {
         "id": STATE_ID, "watermark": wm, "last_sync_at": now_iso(), "last_rebuild_at": now_iso(),
-        "last_rebuild_from": date_from or ""}}, upsert=True)
+        "last_rebuild_from": date_from or "", "last_error": ""}}, upsert=True)
     return {"orders": n_so, "rows": n_rows, "from": date_from or "", "watermark": wm}
 
 

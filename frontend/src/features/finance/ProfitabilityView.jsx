@@ -9,12 +9,12 @@ import {
   Legend, ResponsiveContainer,
 } from "recharts";
 import {
-  RefreshCw, TrendingUp, Coins, Percent, Boxes, Package, Layers3, Users, UserCog, Building2,
+  RefreshCw, TrendingUp, Coins, Percent, Boxes, Package, Layers3, Users, UserCog, Building2, Download,
 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import {
-  FC, NOW, ymd, compactIDR, entityParam, chartTooltip, fmtPct,
+  FC, NOW, ymd, compactIDR, entityParam, chartTooltip, fmtPct, saveBlob,
   KpiCard, Panel, EmptyState, formatCurrency,
 } from "./financeShared";
 
@@ -48,6 +48,17 @@ export default function ProfitabilityView({ selectedEntity }) {
 
   useEffect(() => { load(); }, [load]);
 
+  const [exporting, setExporting] = useState(false);
+  const doExport = async () => {
+    setExporting(true);
+    try {
+      const res = await axios.get(`${API}/finance/profitability/export.xlsx`, {
+        params: { ...entityParam(selectedEntity), start: range.start, end: range.end }, responseType: "blob",
+      });
+      saveBlob(res.data, `profitabilitas_${range.start}_${range.end}.xlsx`);
+    } catch { setError("Gagal mengunduh Excel profitabilitas."); } finally { setExporting(false); }
+  };
+
   const tot = data?.totals || {};
   const rows = useMemo(() => (data?.[dim] || []), [data, dim]);
   const topRows = useMemo(() => rows.slice(0, 8).map((r) => ({
@@ -75,6 +86,9 @@ export default function ProfitabilityView({ selectedEntity }) {
             onChange={(v) => setRange((r) => ({ ...r, end: v }))} /></div>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[10px] font-semibold text-[#6B219A] bg-[#F3EAFB] rounded-full px-2 py-1">Realisasi = barang terkirim · HPP snapshot saat kirim</span>
+          <button data-testid="prof-export-xlsx" className="btn-secondary !h-8 !px-3 text-[12px] inline-flex items-center gap-1" onClick={doExport} disabled={exporting}>
+            <Download size={13} />{exporting ? "Menyiapkan…" : "Excel Realisasi vs Estimasi"}
+          </button>
           <button data-testid="prof-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
         </div>
       </div>

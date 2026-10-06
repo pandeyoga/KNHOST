@@ -24,6 +24,8 @@ LATE = {"telat"}
 LEAVE = {"cuti", "izin"}
 ABSENT = {"alpha"}
 OFF = {"libur"}
+PAYROLL_ELIGIBLE = {"posted", "paying", "paid"}
+PAY_KEYS = ("employees", "gross", "net", "bpjs_emp", "bpjs_er", "pph21", "commission")
 
 
 def _cur_month() -> str:
@@ -131,43 +133,51 @@ async def hr_summary(ctx, entity_id: Optional[str], period: Optional[str] = None
         ],
     }
 
-    # ── Turnover (separations = status non-active pada periode; new hires periode) ──
-    separations = sum(1 for e in employees if (e.get("status") or "active") != "active"
-                      and (e.get("updated_at") or "")[:7] == sel)
+    # ── Turnover — G3 D4-HR-02: tanggal keluar RESMI (`separation_date`, atau `end_date` yang diisi HR),
+    # bukan `updated_at`. Nonaktif tanpa tanggal keluar TIDAK dihitung (ditandai). Rate = keluar / headcount aktif.
+    def _sep(e):
+        return str(e.get("separation_date") or e.get("end_date") or "")[:10]
+    inactive = [e for e in employees if (e.get("status") or "active") != "active"]
+    separations = sum(1 for e in inactive if _sep(e)[:7] == sel)
+    missing_sep = sum(1 for e in inactive if not _sep(e))
     hires_period = sum(1 for e in active if _join(e)[:7] == sel)
     base_hc = len(active) or 1
     turnover = {
         "period": sel, "separations": separations, "headcount": len(active),
         "new_hires": hires_period,
         "turnover_rate": round(separations / base_hc * 100, 1),
+        "missing_separation_date": missing_sep,
+        "basis": "separation_date",
     }
 
-    # ── Payroll cost (run periode terpilih) + tren ──
-    run = await db.hr_payroll_runs.find_one({**pay_scope, "period": sel}, {"_id": 0})
-    t = (run or {}).get("totals", {}) or {}
-    payroll = {
-        "period": sel, "has_run": bool(run),
-        "status": (run or {}).get("status", ""),
-        "employees": int(t.get("employees") or 0),
-        "gross": round(float(t.get("gross") or 0), 0),
-        "net": round(float(t.get("net") or 0), 0),
-        "bpjs_emp": round(float(t.get("bpjs_emp") or 0), 0),
-        "bpjs_er": round(float(t.get("bpjs_er") or 0), 0),
-        "bpjs_total": round(float(t.get("bpjs_emp") or 0) + float(t.get("bpjs_er") or 0), 0),
-        "pph21": round(float(t.get("pph21") or 0), 0),
-        "commission": round(float(t.get("commission") or 0), 0),
-    }
-    all_runs = await db.hr_payroll_runs.find(pay_scope, {"_id": 0, "period": 1, "totals": 1}).to_list(1000)
-    runs_by_period: Dict[str, Dict[str, Any]] = {}
+    # ── Payroll — G3 D4-HR-01: SEMUA run eligible (posted/dibayar) per periode dijumlah (multi-PT);
+    # draft/menunggu/void tidak dihitung. Kartu & tren memakai agregator yang sama.
+    all_runs = await db.hr_payroll_runs.find(pay_scope, {"_id": 0, "period": 1, "totals": 1, "status": 1,
+                                                        "entity_id": 1}).to_list(5000)
+    agg: Dict[str, Dict[str, float]] = {}
     for r in all_runs:
+        if r.get("status") not in PAYROLL_ELIGIBLE:
+            continue
         rt = r.get("totals", {}) or {}
-        runs_by_period[r.get("period", "")] = {
-            "gross": round(float(rt.get("gross") or 0), 0),
-            "net": round(float(rt.get("net") or 0), 0),
-            "bpjs_total": round(float(rt.get("bpjs_emp") or 0) + float(rt.get("bpjs_er") or 0), 0),
-            "pph21": round(float(rt.get("pph21") or 0), 0),
-            "employees": int(rt.get("employees") or 0),
-        }
+        a = agg.setdefault(r.get("period", ""), {**{k: 0.0 for k in PAY_KEYS}, "runs": 0})
+        for k in PAY_KEYS:
+            a[k] += float(rt.get(k) or 0)
+        a["runs"] += 1
+    cur = agg.get(sel) or {**{k: 0.0 for k in PAY_KEYS}, "runs": 0}
+    pending = sum(1 for r in all_runs if r.get("period") == sel and r.get("status") not in PAYROLL_ELIGIBLE)
+    payroll = {
+        "period": sel, "has_run": cur["runs"] > 0, "runs": int(cur["runs"]),
+        "status": "posted" if cur["runs"] else "", "unposted_runs": pending,
+        "employees": int(cur["employees"]),
+        "gross": round(cur["gross"], 0), "net": round(cur["net"], 0),
+        "bpjs_emp": round(cur["bpjs_emp"], 0), "bpjs_er": round(cur["bpjs_er"], 0),
+        "bpjs_total": round(cur["bpjs_emp"] + cur["bpjs_er"], 0),
+        "pph21": round(cur["pph21"], 0), "commission": round(cur["commission"], 0),
+    }
+    runs_by_period: Dict[str, Dict[str, Any]] = {
+        p: {"gross": round(a["gross"], 0), "net": round(a["net"], 0),
+            "bpjs_total": round(a["bpjs_emp"] + a["bpjs_er"], 0), "pph21": round(a["pph21"], 0),
+            "employees": int(a["employees"])} for p, a in agg.items()}
     trend_months = _month_range(sel, 6)
     payroll_trend = [{"period": m, **(runs_by_period.get(m) or {"gross": 0, "net": 0, "bpjs_total": 0, "pph21": 0, "employees": 0})}
                      for m in trend_months]

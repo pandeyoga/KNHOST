@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios, { API } from "../../services/apiClient";
 import { Target, TrendingUp } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
-import { scoreCls, scoreBadge } from "./kpiUtils";
+import { scoreCls, scoreBadge, weightedAvg } from "./kpiUtils";
 
 // ESS — kartu "KPI Saya" (karyawan lihat KPI sendiri). FASE H5 keputusan 4a.
 export function MyKpiCard() {
@@ -23,9 +23,7 @@ export function MyKpiCard() {
   const all = data?.all || [];
   const periods = data?.periods || [];
   const shown = period ? all.filter((r) => r.period === period) : (data?.latest || []);
-  const avg = period === data?.latest_period || !period ? (data?.latest_score ?? 0)
-    : Math.round((shown.reduce((a, r) => a + (Number(r.score) || 0) * (Number(r.weight) || 1), 0) /
-        (shown.reduce((a, r) => a + (Number(r.weight) || 1), 0) || 1)) * 10) / 10;
+  const avg = period === data?.latest_period || !period ? (data?.latest_score ?? null) : weightedAvg(shown);
   const badge = scoreBadge(avg);
 
   return (
@@ -47,7 +45,7 @@ export function MyKpiCard() {
           <div className="rounded-lg bg-[#F7F8FA] p-2.5 mb-2 flex items-center justify-between">
             <div>
               <p className="text-[10px] uppercase font-semibold text-[#9A9BA3]">Skor Rata-rata {period}</p>
-              <p className={`text-[22px] font-bold tabular-nums leading-tight ${scoreCls(avg)}`} data-testid="ess-kpi-score">{avg}</p>
+              <p className={`text-[22px] font-bold tabular-nums leading-tight ${scoreCls(avg)}`} data-testid="ess-kpi-score">{avg ?? "—"}</p>
             </div>
             <span className={`px-2 py-1 rounded text-[11px] font-semibold ${badge.cls}`}>{badge.label}</span>
           </div>

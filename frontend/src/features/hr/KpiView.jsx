@@ -4,7 +4,7 @@ import { Target, Plus, Pencil, Trash2, RefreshCw, BarChart3 } from "lucide-react
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import ConfirmModal from "../../components/ConfirmModal";
-import { lastMonths, curMonth, scoreCls, scoreBadge, weightedAvg } from "./kpiUtils";
+import { lastMonths, curMonth, scoreCls, scoreBadge, weightedAvg, isCalendarMonth } from "./kpiUtils";
 
 // FASE H5 — KPI Design (input KPI manual per karyawan/periode + rekap). Keputusan 2a.
 export default function KpiView({ currentUser, selectedEntity }) {
@@ -65,12 +65,12 @@ export default function KpiView({ currentUser, selectedEntity }) {
   async function save() {
     if (!editing && !form.employee_id) { setFErr("Pilih karyawan."); return; }
     if (!form.metric.trim()) { setFErr("Nama metrik wajib diisi."); return; }
-    if (!/^\d{4}-\d{2}$/.test(form.period)) { setFErr("Periode harus format YYYY-MM."); return; }
+    if (!isCalendarMonth(form.period)) { setFErr("Periode harus bulan kalender YYYY-MM (01–12)."); return; }
     setBusy(true); setFErr("");
     const payload = {
       period: form.period, metric: form.metric.trim(),
       target: parseFloat(form.target) || 0, actual: parseFloat(form.actual) || 0,
-      weight: parseFloat(form.weight) || 1, note: form.note,
+      weight: form.weight === "" ? 1 : parseFloat(form.weight), note: form.note,
     };
     if (form.score !== "" && !Number.isNaN(parseFloat(form.score))) payload.score = parseFloat(form.score);
     try {
@@ -116,7 +116,7 @@ export default function KpiView({ currentUser, selectedEntity }) {
       {/* Rekap */}
       <section className="grid gap-3 sm:grid-cols-3">
         <RecapCard icon={BarChart3} label="Total Entri KPI" value={rows.length} />
-        <RecapCard icon={Target} label="Rata-rata Skor (tertimbang)" value={avg} valueCls={scoreCls(avg)} suffix="" />
+        <RecapCard icon={Target} label="Rata-rata Skor (tertimbang)" value={avg ?? "—"} valueCls={scoreCls(avg)} suffix="" />
         <RecapCard icon={Target} label="Periode Aktif" value={period || "—"} small />
       </section>
 

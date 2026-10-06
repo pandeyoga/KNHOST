@@ -169,6 +169,8 @@ async def _src_fact_new(metrics, dims, grain, p: Period, filters, sc: Scope, w, 
     match: Dict[str, Any] = {"entity_id": {"$in": sc.entity_ids}, "is_live": True, "is_sample": False}
     if sc.sales_only:
         match["sales_id"] = sc.sales_only
+    # G3 D4-AI-02 — keputusan user: "baru" = pembelian PERTAMA di lini terpilih → scope lini SEBELUM grouping.
+    match.update(sc.line_q)
     fq = _match_filters("fact", filters, w)
     fmap = cat.SOURCE_DIMS["fact"]
     first = {fmap[d]: {"$first": f"${fmap[d]}"} for d in dims if d != "customer"}

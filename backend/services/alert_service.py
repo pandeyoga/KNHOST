@@ -120,8 +120,8 @@ async def _term_days_map(entity_id: str = "") -> Dict[str, int]:
 async def job_ap_due() -> Dict[str, Any]:
     bills = await db.vendor_bills.find(
         {"status": "posted"},
-        {"_id": 0, "id": 1, "bill_number": 1, "bill_date": 1, "grand_total": 1,
-         "supplier_id": 1, "supplier_name": 1, "entity_id": 1}).to_list(5000)
+        {"_id": 0, "id": 1, "bill_number": 1, "bill_date": 1, "grand_total": 1, "total_amount": 1,
+         "amount_paid": 1, "supplier_id": 1, "supplier_name": 1, "entity_id": 1}).to_list(5000)
     if not bills:
         return {"created": 0, "scanned": 0, "detail": "tidak ada tagihan supplier terposting"}
     sup_ids = [b.get("supplier_id") for b in bills if b.get("supplier_id")]
@@ -130,10 +130,21 @@ async def job_ap_due() -> Dict[str, Any]:
     sup_term = {s["id"]: s.get("payment_term_code", "") for s in sups}
     # Peta syarat bayar dihitung PER BADAN USAHA (baris global + override-nya).
     tmaps: Dict[str, Dict[str, int]] = {}
-    now = _now()
+    from services.analytics_time import now_wib, to_wib_date
+    from services.vendor_bill_service import bill_financials
+    today = now_wib().date()
     created, scanned = 0, 0
     for b in bills:
-        bd = _parse(b.get("bill_date"))
+        # G3 D4-ALERT-AMT-01 — saldo dari SSOT AP (grand − dibayar); lunas tidak diperingatkan.
+        fin = bill_financials(b)
+        if fin["outstanding"] <= 0.01:
+            continue
+        # G3 D4-ALERT-DATE-01 — jatuh tempo = TANGGAL kalender WIB, selisih hari kalender.
+        bds = to_wib_date(b.get("bill_date"))
+        try:
+            bd = datetime.strptime(bds, "%Y-%m-%d").date() if bds else None
+        except ValueError:
+            bd = None
         if not bd:
             continue
         ent = str(b.get("entity_id") or "")
@@ -141,7 +152,7 @@ async def job_ap_due() -> Dict[str, Any]:
             tmaps[ent] = await _term_days_map(ent)
         days = tmaps[ent].get(sup_term.get(b.get("supplier_id", ""), ""), 0)
         due = bd + timedelta(days=days)
-        left = (due - now).days
+        left = (due - today).days
         if left > AP_DUE_SOON_DAYS:
             continue
         scanned += 1
@@ -154,8 +165,9 @@ async def job_ap_due() -> Dict[str, Any]:
         note = await create_notification(
             notif_type="ap_due", ref=f"ap_due:{b.get('id')}",
             title=f"Tagihan supplier {when}: {b.get('bill_number', '')}",
-            body=(f"{b.get('supplier_name', '')} · {_rp(b.get('grand_total'))} · "
-                  f"jatuh tempo {due.date().isoformat()} (term {days} hari)."),
+            body=(f"{b.get('supplier_name', '')} · sisa {_rp(fin['outstanding'])}"
+                  + (f" dari {_rp(fin['grand_total'])}" if fin["amount_paid"] > 0.01 else "")
+                  + f" · jatuh tempo {due.isoformat()} (term {days} hari)."),
             severity=sev, link="vendor-bills", entity_id=b.get("entity_id"),
             recipient_role="manager", dedupe_scope="day",
         )

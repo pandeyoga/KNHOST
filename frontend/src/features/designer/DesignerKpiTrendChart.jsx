@@ -58,7 +58,7 @@ export default function DesignerKpiTrendChart({ params = {}, testId = "designer-
     if (!data) return [];
     return (data.months || []).map((_, i) => {
       const row = { month: labels[i] };
-      series.forEach((s) => { row[s.designer] = s.points?.[i]?.score ?? null; });
+      series.forEach((s) => { row[s.designer_key || s.designer] = s.points?.[i]?.score ?? null; });
       return row;
     });
   }, [data, labels, series]);
@@ -131,9 +131,9 @@ export default function DesignerKpiTrendChart({ params = {}, testId = "designer-
                 <Legend wrapperStyle={{ fontSize: 11.5, paddingTop: 6 }} iconType="plainline" />
                 {series.map((s, idx) => (
                   <Line
-                    key={s.designer}
+                    key={s.designer_key || s.designer}
                     type="monotone"
-                    dataKey={s.designer}
+                    dataKey={s.designer_key || s.designer}
                     name={s.designer}
                     stroke={PALETTE[idx % PALETTE.length]}
                     strokeWidth={2.2}
@@ -152,7 +152,7 @@ export default function DesignerKpiTrendChart({ params = {}, testId = "designer-
           <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1"
             data-testid={`${testId}-avg-legend`}>
             {series.map((s, idx) => (
-              <span key={s.designer} className="inline-flex items-center gap-1 text-[11px] text-[#4A4B52]">
+              <span key={s.designer_key || s.designer} className="inline-flex items-center gap-1 text-[11px] text-[#4A4B52]">
                 <span className="inline-block h-2 w-2 rounded-full"
                   style={{ background: PALETTE[idx % PALETTE.length] }} />
                 {s.designer}

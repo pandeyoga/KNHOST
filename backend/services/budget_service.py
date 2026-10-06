@@ -354,7 +354,9 @@ async def budget_vs_actual(scope: Optional[Dict[str, Any]], year: int,
     commitments = await _commitment_map(scope, year)
     rules = await get_rules(entity_id_for_rules) if entity_id_for_rules else \
         {"entity_id": "", **DEFAULT_RULES, "is_default": True}
-    warn_pct = float(rules.get("warn_threshold_pct", 85.0) or 85.0)
+    # G3 D4-BUD-THRESHOLD-01 — 0 adalah ambang sah; hanya None/missing yang memakai bawaan 85.
+    _wp = rules.get("warn_threshold_pct")
+    warn_pct = float(85.0 if _wp is None or _wp == "" else _wp)
 
     rows: List[Dict[str, Any]] = []
     tot = {"budget": 0.0, "committed": 0.0, "actual": 0.0}

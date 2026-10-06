@@ -353,9 +353,16 @@ async def import_lines(bank_account_id: str, entity_id: str, lines: List[Dict[st
     ent = entity_id or _stamp_entity(acc, active_entity)
     batch = new_id("stmtbatch")
     imported, skipped = 0, 0
-    for r in lines or []:
+    errors: List[Dict[str, Any]] = []
+    for i, r in enumerate(lines or [], start=1):
         doc = _line_doc(bank_account_id, ent, r, batch, format_id)
-        if doc["amount"] <= 0 or not doc["stmt_date"]:
+        # G3 D4-BANK-01 — semua jalur (berkas, input langsung, seed) lewat validator kalender ketat.
+        if not parser.strict_iso_date(doc["stmt_date"]):
+            errors.append({"row": r.get("row") or i, "reason": f"Tanggal tidak sah: {doc['stmt_date'] or '(kosong)'}"})
+            skipped += 1
+            continue
+        if doc["amount"] <= 0:
+            errors.append({"row": r.get("row") or i, "reason": "Nominal tidak sah / nol"})
             skipped += 1
             continue
         if await _dup_exists(bank_account_id, doc):
@@ -363,7 +370,7 @@ async def import_lines(bank_account_id: str, entity_id: str, lines: List[Dict[st
             continue
         await db.bank_statement_lines.insert_one(doc)
         imported += 1
-    return {"import_batch": batch, "imported": imported, "skipped": skipped}
+    return {"import_batch": batch, "imported": imported, "skipped": skipped, "line_errors": errors}
 
 
 async def import_raw(bank_account_id: str, raw: str, format_id: str = "",

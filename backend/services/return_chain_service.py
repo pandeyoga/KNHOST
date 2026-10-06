@@ -215,23 +215,28 @@ async def chain(doc_id: str, viewer_entity_ids: Optional[List[str]] = None,
                      + (f" (PO {p.get('po_number')})" if p.get("po_number") else "")),
         })
 
-    held: Dict[str, Dict[str, Any]] = {}
+    # G3 D4-RET-CHAIN-01 — kelompok per (pemilik, satuan): kg dan yard tidak pernah dijumlah.
+    held: Dict[str, Dict[str, Dict[str, Any]]] = {}
     for r in rolls:
         if r.get("status") in ("consumed", "damaged"):
             continue
         own = r.get("owner_entity_id", "")
-        row = held.setdefault(own, {"qty": 0.0, "rolls": 0, "unit": r.get("unit", "")})
+        unit = r.get("unit", "") or ""
+        row = held.setdefault(own, {}).setdefault(unit, {"qty": 0.0, "rolls": 0, "unit": unit})
         row["qty"] = round(row["qty"] + float(r.get("length_remaining") or 0), 2)
         row["rolls"] += 1
-    for own, row in held.items():
-        if row["qty"] <= 0.01:
+    for own, units in held.items():
+        groups = [g for g in units.values() if g["qty"] > 0.01]
+        if not groups:
             continue
+        txt = " + ".join(f"{g['qty']:g} {g['unit']}".strip() for g in groups)
+        n_rolls = sum(g["rolls"] for g in groups)
         steps.append({
             "stage": "kept", "stage_label": STAGE_LABEL["kept"],
             "doc_type": "", "doc_id": "", "number": "",
             "status": "held", "entity_id": own, "entity_name": names.get(own, own),
-            "amount": 0.0,
-            "note": (f"{row['qty']:g} {row['unit']} ({row['rolls']} roll) masih dipegang "
+            "amount": 0.0, "held_groups": groups,
+            "note": (f"{txt} ({n_rolls} roll) masih dipegang "
                      f"{names.get(own, own)} — bisa di-regrade & dijual lokal."),
         })
 

@@ -209,6 +209,7 @@ export default function HrAnalyticsView({ currentUser, selectedEntity }) {
                 <StatRow label="New Hire (periode)" value={String(tn.new_hires ?? 0)} icon={UserPlus} />
                 <StatRow label="Separations" value={String(tn.separations ?? 0)} />
                 <StatRow label="Turnover Rate" value={`${tn.turnover_rate ?? 0}%`} icon={TrendingUp} bold />
+                {tn.missing_separation_date > 0 && <p className="text-[10.5px] text-[#B7791F] mt-1" data-testid="hr-turnover-missing-sep">{tn.missing_separation_date} karyawan nonaktif belum diisi tanggal keluar — tidak dihitung dalam turnover.</p>}
                 {!hasPayroll && <p className="text-[10.5px] text-[#B7791F] mt-1">Statutory Rp0 karena belum ada run payroll periode {data?.period}.</p>}
               </div>
             )}

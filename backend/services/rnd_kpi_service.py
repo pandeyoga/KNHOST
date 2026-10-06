@@ -172,8 +172,19 @@ def _pct(part: int, whole: int) -> Optional[float]:
     return round(part / whole * 100, 1) if whole else None
 
 
-def _blank(name: str) -> Dict[str, Any]:
-    return {"designer": name, "rounds": 0, "submitted": 0, "assessed": 0,
+def designer_identity(sample: Dict[str, Any], rd: Dict[str, Any]) -> tuple:
+    """G3 D4-RND-01 — (kunci, label, legacy). Kunci = user_id pelaksana (stabil walau nama sama /
+    ganti nama); data lama tanpa id → kunci nama, ditandai `legacy_name_only` (tidak di-auto-join ke id)."""
+    name = designer_of(sample, rd)
+    uid = rd.get("performed_by_user_id") if str(rd.get("performed_by") or "").strip() else ""
+    if uid:
+        return f"u:{uid}", name, False
+    return f"n:{_norm(name)}", name, True
+
+
+def _blank(name: str, key: str = "", legacy: bool = False) -> Dict[str, Any]:
+    return {"designer": name, "designer_key": key or f"n:{_norm(name)}", "legacy_name_only": legacy,
+            "rounds": 0, "submitted": 0, "assessed": 0,
             "on_time": 0, "late_submitted": 0, "acc": 0, "revisi": 0, "tolak": 0,
             "overdue_now": 0, "overdue_critical": 0, "max_days_late": 0,
             "score_sum": 0.0, "score_n": 0, "days_sum": 0.0, "days_n": 0,
@@ -305,8 +316,9 @@ async def designer_kpi(query: Optional[Dict[str, Any]] = None, *, period: str = 
             ref = _ref_date(rd)
             if start and (ref is None or ref < start):
                 continue
-            who = designer_of(s, rd)
-            a = agg.setdefault(who, _blank(who))
+            who_key, who, legacy = designer_identity(s, rd)
+            a = agg.setdefault(who_key, _blank(who, who_key, legacy))
+            a["designer"] = who  # label = nama terbaru
             a["rounds"] += 1
             a["samples"].add(s.get("id") or s.get("number") or "")
             a["cost"] = round(a["cost"] + float(rd.get("cost") or 0), 2)
@@ -340,7 +352,8 @@ async def designer_kpi(query: Optional[Dict[str, Any]] = None, *, period: str = 
         rework = int(a["revisi"]) + int(a["tolak"])
         late_total = int(a["late_submitted"]) + int(a["overdue_now"])
         row: Dict[str, Any] = {
-            "designer": a["designer"],
+            "designer": a["designer"], "designer_key": a["designer_key"],
+            "legacy_name_only": a["legacy_name_only"],
             "samples": len([x for x in a["samples"] if x]),
             "rounds": a["rounds"], "submitted": a["submitted"], "assessed": a["assessed"],
             "acc": a["acc"], "revisi": a["revisi"], "tolak": a["tolak"],
@@ -369,8 +382,16 @@ async def designer_kpi(query: Optional[Dict[str, Any]] = None, *, period: str = 
             row.pop("score_sum"); row.pop("score_n"); row.pop("days_sum"); row.pop("days_n")
             row.pop("on_time"); row.pop("cost")
             items.append(row)
+    name_count: Dict[str, int] = {}
     for row in items:
-        ds = dict(dstats.get(_norm(row["designer"]), _design_blank()))
+        name_count[_norm(row["designer"])] = name_count.get(_norm(row["designer"]), 0) + 1
+    ds_used: set = set()
+    for row in items:
+        nk = _norm(row["designer"])
+        row["name_ambiguous"] = name_count.get(nk, 0) > 1
+        # nilai desain (kunci nama) hanya ditempel SEKALI agar tidak terhitung ganda pada nama kembar
+        ds = dict(dstats.get(nk, _design_blank())) if nk not in ds_used else dict(_design_blank())
+        ds_used.add(nk)
         ds.pop("designer", None)
         row.update(ds)
         row.update(compute_grade(row, w))
@@ -587,6 +608,7 @@ async def designer_kpi_trend(query: Optional[Dict[str, Any]] = None, *, months: 
     # buckets[month_key][designer] = agregat ringkas
     buckets: Dict[str, Dict[str, Dict[str, Any]]] = {k: {} for k in keys}
     designers: set = set()
+    labels: Dict[str, str] = {}
     for s in rows:
         for rd in (s.get("rounds") or []):
             ref = _ref_date(rd)
@@ -595,9 +617,10 @@ async def designer_kpi_trend(query: Optional[Dict[str, Any]] = None, *, months: 
             mk = _month_key(ref)
             if mk not in keyset:
                 continue
-            who = designer_of(s, rd)
-            designers.add(who)
-            a = buckets[mk].setdefault(who, _blank(who))
+            who_key, who_name, legacy = designer_identity(s, rd)
+            designers.add(who_key)
+            labels[who_key] = who_name
+            a = buckets[mk].setdefault(who_key, _blank(who_name, who_key, legacy))
             a["rounds"] += 1
             if rd.get("received_at"):
                 a["submitted"] += 1
@@ -616,15 +639,19 @@ async def designer_kpi_trend(query: Optional[Dict[str, Any]] = None, *, months: 
     # Desainer yang hanya punya nilai desain bulan itu tetap dapat titik grade.
     if metric == "grade":
         for mk in keys:
-            designers.update(dbuckets.get(mk, {}).keys())
+            for nm in dbuckets.get(mk, {}).keys():
+                if not any(_norm(labels.get(k, "")) == _norm(nm) for k in designers):
+                    designers.add(f"n:{_norm(nm)}")
+                    labels[f"n:{_norm(nm)}"] = nm
 
     series: List[Dict[str, Any]] = []
-    for who in designers:
+    for key in designers:
+        who = labels.get(key, key)
         points: List[Dict[str, Any]] = []
         vals: List[float] = []
         total_rounds = 0
         for k in keys:
-            a = buckets[k].get(who)
+            a = buckets[k].get(key)
             dsg = dbuckets.get(k, {}).get(who)
             if not a and not (metric == "grade" and dsg):
                 points.append({"month": k, "score": None, "avg_score": None,
@@ -648,7 +675,7 @@ async def designer_kpi_trend(query: Optional[Dict[str, Any]] = None, *, months: 
                            "grade_score": g["grade_score"], "rounds": int(a["rounds"])})
             if score is not None:
                 vals.append(float(score))
-        series.append({"designer": who, "points": points,
+        series.append({"designer": who, "designer_key": key, "points": points,
                        "rounds": total_rounds,
                        "avg": round(sum(vals) / len(vals), 1) if vals else None})
 
