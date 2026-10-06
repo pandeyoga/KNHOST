@@ -41,7 +41,7 @@ export function CheckoutItemCard({
             <p data-testid={`cart-item-special-${pid}`}
               className="mt-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold"
               style={{ background: srcMeta.bg, color: srcMeta.fg }}>
-              {srcMeta.label} {formatCurrency(unitPrice)}
+              {srcMeta.label} {sp?.source === "sampel_gratis" ? "Free" : formatCurrency(unitPrice)}
               {Number(sp.normal_price) > unitPrice && (
                 <span className="font-normal text-[#8E8E93] line-through">{formatCurrency(sp.normal_price)}</span>
               )}
@@ -100,7 +100,7 @@ export function CheckoutItemCard({
           </div>
           <div className="text-right">
             <p className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">Subtotal</p>
-            <p className="text-[12px] font-semibold tabular-nums">{formatCurrency(lineTotal)}{dp > 0 && <span className="ml-1 text-[10px] text-[#8E8E93] line-through">{formatCurrency(lineSubtotal)}</span>}</p>
+            <p className="text-[12px] font-semibold tabular-nums">{sp?.source === "sampel_gratis" && !(lineTotal > 0) ? "Free" : formatCurrency(lineTotal)}{dp > 0 && <span className="ml-1 text-[10px] text-[#8E8E93] line-through">{formatCurrency(lineSubtotal)}</span>}</p>
           </div>
         </div>
       )}

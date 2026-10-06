@@ -299,7 +299,7 @@ export default function CheckoutDrawer({
                               Dulu memakai `it.product.price` (harga umum) sehingga satu layar
                               menampilkan dua total berbeda dengan tombol keranjang. */}
                           <p className="shrink-0 text-right text-[12px] font-semibold tabular-nums">
-                            {formatCurrency(Number(linePrices[it.product.id]?.price ?? it.product.price ?? 0) * (it.quantity || 0))}
+                            {linePrices[it.product.id]?.source === "sampel_gratis" ? "Free" : formatCurrency(Number(linePrices[it.product.id]?.price ?? it.product.price ?? 0) * (it.quantity || 0))}
                             {linePrices[it.product.id]
                               && ["customer", "special_approval"].includes(linePrices[it.product.id].source) && (
                               <span data-testid={`step1-item-source-${it.product.id}`} className="block text-[9.5px] font-bold"
@@ -446,7 +446,7 @@ export default function CheckoutDrawer({
               credit={credit} creditBlocked={creditBlocked}
               hasBackorderLine={hasBackorderLine} allowBackorder={allowBackorder}
               requiresLotConfirmation={requiresLotConfirmation} mixedLotLines={mixedLotLines}
-              sampleCount={sampleCount}
+              sampleCount={sampleCount} sampleMode={sampleMode} sampleBilling={sampleBilling}
             />
           )}
         </div>

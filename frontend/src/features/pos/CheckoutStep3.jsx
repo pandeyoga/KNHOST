@@ -1,5 +1,6 @@
 // CheckoutDrawer — Step 3 (Review) dipisah agar file utama di bawah batas guardrail.
 // Murni presentational: render dari props (state & handler tetap di CheckoutDrawer).
+import { useState } from "react";
 import KNDatePicker from "@/components/KNDatePicker";
 import { Truck, PackageCheck, Receipt, ShieldAlert, ShieldCheck, CreditCard } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
@@ -11,8 +12,13 @@ export default function CheckoutStep3({
   selectedCustomer, addresses, selectedAddress, p, cart, pricedCart, paymentTerm,
   needsTaxInvoice, setNeedsTaxInvoice, credit, creditBlocked,
   hasBackorderLine, allowBackorder, requiresLotConfirmation, mixedLotLines, sampleCount = 0,
+  sampleMode = false, sampleBilling = "",
 }) {
   const today = new Date().toISOString().slice(0, 10);
+  const [pickDate, setPickDate] = useState(!!deliveryDate);
+  const freeSample = sampleMode && sampleBilling === "free";
+  // Sampel gratis: tampilkan "Free", bukan "Rp 0".
+  const money = (v, isFreeLine = freeSample) => (isFreeLine && !(Number(v) > 0) ? "Free" : formatCurrency(v));
   return (
     <div data-testid="checkout-step-3" className="space-y-3">
       {/* Order Pengambilan — metode pemenuhan (Kirim / Ambil di Gudang) */}
@@ -50,9 +56,26 @@ export default function CheckoutStep3({
             </div>); })()}
           <div className="mt-2.5 border-t border-[#F2F3F5] pt-2.5">
             <label className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Tanggal Pengiriman (opsional)</label>
-            <KNDatePicker data-testid="delivery-date-input" min={today}
-              value={deliveryDate || ""} onChange={setDeliveryDate} />
-            <p className="mt-1 text-[10px] text-[#6B6B73]">Kosongkan bila mengikuti jadwal gudang. Bila diisi: request tanggal kirim — tidak boleh tanggal yang sudah lewat.</p>
+            {sampleMode && (
+              <div className="mb-1.5 mt-1 grid grid-cols-2 gap-2" data-testid="sample-delivery-choice">
+                <button type="button" data-testid="sample-delivery-admin"
+                  onClick={() => { setPickDate(false); setDeliveryDate(""); }}
+                  className={`rounded-md border px-2 py-1.5 text-[11.5px] font-semibold ${!pickDate ? "border-[#0058CC] bg-[#EFF4FF] text-[#0058CC]" : "border-[#EFF0F2] bg-white text-[#6B6B73]"}`}>
+                  Disesuaikan Admin Sampel
+                </button>
+                <button type="button" data-testid="sample-delivery-pick" onClick={() => setPickDate(true)}
+                  className={`rounded-md border px-2 py-1.5 text-[11.5px] font-semibold ${pickDate ? "border-[#0058CC] bg-[#EFF4FF] text-[#0058CC]" : "border-[#EFF0F2] bg-white text-[#6B6B73]"}`}>
+                  Pilih tanggal
+                </button>
+              </div>
+            )}
+            {(!sampleMode || pickDate) && (
+              <KNDatePicker data-testid="delivery-date-input" min={today}
+                value={deliveryDate || ""} onChange={setDeliveryDate} />
+            )}
+            <p className="mt-1 text-[10px] text-[#6B6B73]" data-testid="delivery-date-hint">{sampleMode && !pickDate
+              ? "Tanggal kirim sampel dijadwalkan oleh Admin Sampel setelah sampel dipotong."
+              : "Kosongkan bila mengikuti jadwal gudang. Bila diisi: request tanggal kirim — tidak boleh tanggal yang sudah lewat."}</p>
           </div>
         </div>
       ) : (
@@ -69,19 +92,20 @@ export default function CheckoutStep3({
             const unit = it.unit || it.product?.base_unit || "";
             const price = Number(it.product?.price || 0);
             const disc = Number(it.discount_percent || 0);
+            const freeLine = !!it.is_sample && freeSample;
             return (
               <li key={it.product?.id} data-testid={`checkout-review-line-${it.product?.id}`} className="flex items-start justify-between gap-2 py-1">
                 <span className="min-w-0">
                   <span className="block truncate font-semibold">{it.product?.name}{it.is_sample ? <span data-testid={`checkout-review-sample-${it.product?.id}`} className="ml-1 rounded-full bg-[#FFF3D6] px-1.5 py-0.5 text-[9px] font-bold text-[#9A5B00]">SAMPEL</span> : null}</span>
-                  <span className="block text-[10.5px] text-white/60 tabular-nums">{it.quantity} {unit} × {formatCurrency(price)}{disc > 0 ? ` · disc ${disc}%` : ""}</span>
+                  <span className="block text-[10.5px] text-white/60 tabular-nums">{it.quantity} {unit}{freeLine && !(price > 0) ? " · Free" : ` × ${formatCurrency(price)}`}{disc > 0 ? ` · disc ${disc}%` : ""}</span>
                 </span>
-                <span className="shrink-0 tabular-nums">{formatCurrency(price * Number(it.quantity || 0) * (1 - disc / 100))}</span>
+                <span className="shrink-0 tabular-nums" data-testid={`checkout-review-line-total-${it.product?.id}`}>{money(price * Number(it.quantity || 0) * (1 - disc / 100), freeLine)}</span>
               </li>
             );
           })}
         </ul>
         <div className="mt-1.5 space-y-1 border-t border-white/15 pt-1.5 text-[11.5px]">
-          <Row label="Subtotal (bruto)" value={formatCurrency(p.gross)} />
+          <Row label="Subtotal (bruto)" value={money(p.gross)} />
           {p.discountTotal > 0 && <Row label="Diskon" value={`- ${formatCurrency(p.discountTotal)}`} />}
           {p.ppn > 0 && <Row label={`PPN ${p.ppnRate}%${p.dppNilaiLain ? " (DPP 11/12)" : ""}`} value={formatCurrency(p.ppn)} />}
           {p.isPkp === false && <Row label="PPN" value="Non-PKP (0)" muted />}
@@ -89,7 +113,7 @@ export default function CheckoutStep3({
         </div>
         <div className="mt-2 flex items-end justify-between border-t border-white/15 pt-2">
           <p className="text-[10.5px] font-bold uppercase tracking-wide text-white/70">Grand Total</p>
-          <p data-testid="cart-grand-total" className="text-[18px] font-bold">{formatCurrency(p.grand)}</p>
+          <p data-testid="cart-grand-total" className="text-[18px] font-bold">{money(p.grand)}</p>
         </div>
       </div>
 
