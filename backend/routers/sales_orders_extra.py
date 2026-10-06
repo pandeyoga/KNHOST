@@ -215,11 +215,11 @@ async def get_orders_stats(request: Request, entity_id: str = None,
     status_counts = {doc["_id"]: {"count": doc["count"], "total_amount": doc["total_amount"]}
                      for doc in await db.sales_orders.aggregate(pipeline).to_list(100)}
 
-    # Reserved qty across all products
+    # Reserved qty across all products — G3 D4-ORDER-01: tanpa batas 200 dokumen.
     reserved_orders = await db.sales_orders.find(
         {**scope, "status": {"$in": ["reserved", "waiting_approval", "approved"]}},
         {"_id": 0, "allocations": 1, "reservation_expires_at": 1}
-    ).to_list(200)
+    ).to_list(None)
 
     total_reserved_qty = sum(
         alloc.get("quantity", 0)
@@ -227,13 +227,17 @@ async def get_orders_stats(request: Request, entity_id: str = None,
         for alloc in order.get("allocations", [])
     )
 
-    # Expiring soon (within 24 hours)
-    expiring_soon = sum(
-        1 for order in reserved_orders
-        if order.get("reservation_expires_at") and
-        datetime.fromisoformat(order["reservation_expires_at"]) <
-        datetime.now(timezone.utc) + timedelta(hours=24)
-    )
+    # Expiring soon (dalam 24 jam ke depan, belum lewat)
+    _n = datetime.now(timezone.utc)
+
+    def _exp(o):
+        try:
+            dt = datetime.fromisoformat(str(o["reservation_expires_at"]).replace("Z", "+00:00"))
+            dt = dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+        except (TypeError, ValueError):
+            return False
+        return _n < dt < _n + timedelta(hours=24)
+    expiring_soon = sum(1 for order in reserved_orders if order.get("reservation_expires_at") and _exp(order))
 
     # KN-D18 — omzet dihitung di SERVER atas SELURUH pesanan ter-scope (bukan 20 baris
     # halaman pertama) dan memakai grand_total (setelah diskon & PPN) — sama dengan layar
@@ -241,16 +245,34 @@ async def get_orders_stats(request: Request, entity_id: str = None,
     _fulfilled = ["confirmed", "partially_picked", "picked", "partially_shipped", "shipped", "dispatched", "done"]
     _now = datetime.now(timezone.utc)
     revenue: Dict[str, Any] = {}
+    periods: Dict[str, Any] = {}
+    _gt = {"$ifNull": ["$grand_total", "$total_amount"]}
     for key, days in (("7d", 7), ("30d", 30), ("90d", 90)):
         cutoff = (_now - timedelta(days=days)).isoformat()
+        pscope = {**scope, "created_at": {"$gte": cutoff}}
         agg = await db.sales_orders.aggregate([
-            {"$match": {**scope, "status": {"$in": _fulfilled}, "created_at": {"$gte": cutoff}}},
-            {"$group": {"_id": None, "count": {"$sum": 1},
-                        "grand_total": {"$sum": {"$ifNull": ["$grand_total", "$total_amount"]}}}},
+            {"$match": {**pscope, "status": {"$in": _fulfilled}}},
+            {"$group": {"_id": None, "count": {"$sum": 1}, "grand_total": {"$sum": _gt}}},
         ]).to_list(1)
         row = agg[0] if agg else {}
-        revenue[key] = {"count": int(row.get("count", 0) or 0),
-                        "grand_total": round(float(row.get("grand_total", 0) or 0), 2)}
+        cnt = int(row.get("count", 0) or 0)
+        gt = round(float(row.get("grand_total", 0) or 0), 2)
+        revenue[key] = {"count": cnt, "grand_total": gt}
+        # G3 D4-ORDER-01 — seluruh widget periode dihitung di SERVER pada scope yang sama.
+        top = await db.sales_orders.aggregate([
+            {"$match": {**pscope, "status": {"$in": _fulfilled}}},
+            {"$group": {"_id": "$customer_id", "name": {"$first": "$customer_name"},
+                        "count": {"$sum": 1}, "revenue": {"$sum": _gt}}},
+            {"$sort": {"revenue": -1, "_id": 1}}, {"$limit": 5}]).to_list(5)
+        by_status = {d["_id"]: d["n"] for d in await db.sales_orders.aggregate([
+            {"$match": pscope}, {"$group": {"_id": "$status", "n": {"$sum": 1}}}]).to_list(100)}
+        periods[key] = {
+            "orders": sum(by_status.values()), "by_status": by_status,
+            "fulfilled_count": cnt, "revenue": gt,
+            "avg_order_value": round(gt / cnt, 2) if cnt else 0.0,
+            "top_customers": [{"customer_id": t["_id"], "name": t.get("name") or "", "count": t["count"],
+                               "revenue": round(float(t["revenue"] or 0), 2)} for t in top],
+        }
 
     return {
         "by_status": status_counts,
@@ -263,6 +285,10 @@ async def get_orders_stats(request: Request, entity_id: str = None,
         "backorder_count": await db.sales_orders.count_documents({**scope, "has_backorder": True}),
         "total_orders": await db.sales_orders.count_documents(scope),
         "revenue": revenue,
+        "periods": periods,
+        "pending_count": sum(int((status_counts.get(s) or {}).get("count", 0))
+                             for s in ("waiting_approval", "reserved", "approved")),
+        "avg_basis": "rata-rata = revenue status terpenuhi ÷ jumlah pesanan terpenuhi pada periode yang sama",
         "revenue_basis": "grand_total (setelah diskon & PPN) · status terpenuhi · seluruh pesanan ter-scope",
     }
 

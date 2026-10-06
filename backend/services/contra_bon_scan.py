@@ -20,9 +20,10 @@ def _round(n: Any) -> float:
 
 
 async def _live_contra_bons() -> List[Dict[str, Any]]:
-    """Kontrabon yang masih 'memegang' dokumen (semua kecuali `cancelled`)."""
+    """Kontrabon yang masih 'memegang' dokumen (semua kecuali `cancelled`).
+    G3 D4-CB-01 — SELURUH cursor dibaca (tanpa batas 2.000) agar duplikat di ekor terdeteksi."""
     return await db[COLL].find(
-        {"status": {"$in": list(svc.HOLDING_STATUSES)}}, {"_id": 0}).to_list(2000)
+        {"status": {"$in": list(svc.HOLDING_STATUSES)}}, {"_id": 0}).to_list(None)
 
 
 # ── INV-CB-01 ────────────────────────────────────────────────────────────────
@@ -238,7 +239,9 @@ async def stats() -> Dict[str, Any]:
     total = await db[COLL].count_documents({})
     paid = await db[COLL].count_documents({"status": "paid"})
     live = len(await _live_contra_bons())
+    live_total = await db[COLL].count_documents({"status": {"$in": list(svc.HOLDING_STATUSES)}})
     ded = 0
     async for cb in db[COLL].find({}, {"_id": 0, "deductions": 1}):
         ded += len(cb.get("deductions") or [])
-    return {"total": total, "paid": paid, "live": live, "deductions": ded}
+    return {"total": total, "paid": paid, "live": live, "deductions": ded,
+            "scanned": live, "live_total": live_total, "complete": live == live_total}

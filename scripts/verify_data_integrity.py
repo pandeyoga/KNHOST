@@ -3668,6 +3668,11 @@ async def layer_contra_bon_invariants(db):
         return
 
     st = await cbn.stats()
+    if not st.get("complete"):
+        results["fail"] += 1
+        line("FAIL", R, f"INV-CB: cakupan tidak lengkap — dipindai {st.get('scanned')} dari "
+                        f"{st.get('live_total')} kontrabon aktif", "gate tidak boleh hijau")
+        return
 
     # ── INV-CB-01 ───────────────────────────────────────────────────────────
     dup = await cbn.bills_in_multiple_contra_bons()

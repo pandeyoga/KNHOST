@@ -108,36 +108,18 @@ def test_cash_summary_kas_kecil(auth_hdrs):
 
 
 # ---------- 6. STOCK ATP FORMULA ----------
+# G3 D4-TEST-01 — rumus bisnis (keputusan user): ATP = tersedia + incoming(horizon) − permintaan tertunda.
+import sys as _sys  # noqa: E402
+_sys.path.insert(0, os.path.dirname(__file__))
+from atp_oracle import atp_mismatches  # noqa: E402
+
+
 def test_stock_atp_sum_matches(auth_hdrs):
     r = requests.get(f'{BASE_URL}/api/inventory/status-board?entity=ent_ksc', headers=auth_hdrs, timeout=30)
     assert r.status_code == 200, r.text
     rows = r.json()
-    assert isinstance(rows, list)
-    bad_row = []
-    bad_wh = []
-    for row in rows:
-        av = float(row.get('total_available') or 0)
-        inc = float(row.get('total_incoming') or 0)
-        rsv = float(row.get('total_reserved') or 0)
-        atp = float(row.get('total_atp') or 0)
-        expected = av + inc - rsv
-        if abs(expected - atp) >= 1:
-            bad_row.append({'sku': row.get('sku'), 'av': av, 'inc': inc,
-                            'rsv': rsv, 'atp': atp, 'expected_av+inc-rsv': expected})
-        # per entity/warehouse formula
-        for ent in row.get('by_entity', []):
-            for wh in ent.get('by_warehouse', []):
-                e = wh['available'] + wh['incoming'] - wh['reserved']
-                if abs(e - wh['atp']) >= 1:
-                    bad_wh.append({'sku': row.get('sku'), 'wh': wh['warehouse_id'],
-                                   'av': wh['available'], 'inc': wh['incoming'],
-                                   'rsv': wh['reserved'], 'atp': wh['atp'], 'expected': e})
-    print(f'ROWS={len(rows)}  row-level formula mismatches={len(bad_row)}  wh-level mismatches={len(bad_wh)}')
-    for b in bad_row[:5]:
-        print(' row:', b)
-    for b in bad_wh[:10]:
-        print(' wh :', b)
-    # Export for main agent
-    import json as _j
-    with open('/app/test_reports/iter149_atp_dump.json', 'w') as f:
-        _j.dump({'bad_row': bad_row, 'bad_wh': bad_wh}, f, indent=2, default=str)
+    assert isinstance(rows, list) and rows, 'status board kosong'
+    bad = atp_mismatches(rows)
+    assert not bad, f'{len(bad)} ATP mismatch: {bad[:5]}'
+    mutated = [{**rows[0], 'total_atp': float(rows[0].get('total_atp') or 0) + 7}] + rows[1:]
+    assert atp_mismatches(mutated), 'oracle harus GAGAL bila ATP dimutasi'

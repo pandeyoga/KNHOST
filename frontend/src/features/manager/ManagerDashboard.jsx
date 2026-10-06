@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -52,6 +52,8 @@ function KPICard({ icon: Icon, label, value, sub, color = "#007AFF", trend, load
 const fmt = new Intl.NumberFormat("id-ID");
 const fmtCur = (v) => `Rp ${fmt.format(v)}`;
 
+const SKIP_FUNNEL = ["cancelled", "expired"];
+
 export default function ManagerDashboard({ token, selectedEntity }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -63,14 +65,22 @@ export default function ManagerDashboard({ token, selectedEntity }) {
   const [utilization, setUtilization] = useState([]);
   const [aging, setAging] = useState([]);
   const [agingDays, setAgingDays] = useState(30);
+  const abortRef = useRef(null);
 
-  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  const genRef = useRef(0);
 
-  const load = async () => {
+  // G3 D4-FE-02 — generation guard + AbortController: respons/error/finally dari request lama
+  // (periode/aging/refresh sebelumnya atau setelah unmount) tidak boleh menyentuh state.
+  const load = useCallback(async () => {
+    const gen = ++genRef.current;
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     setLoading(true);
     // F0-E: laporan ter-scope per entitas aktif ('all' = oversight lintas-PT).
     const ent = selectedEntity || "all";
-    const cfg = { headers, params: { entity_id: ent } };
+    const cfg = { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      params: { entity_id: ent }, signal: ctrl.signal };
     try {
       const [sumRes, funnelRes, velRes, custRes, utilRes, agingRes] = await Promise.all([
         axios.get(`${API}/reports/summary`, cfg),
@@ -80,6 +90,7 @@ export default function ManagerDashboard({ token, selectedEntity }) {
         axios.get(`${API}/reports/warehouse-utilization`, cfg),
         axios.get(`${API}/reports/stock-aging?days_threshold=${agingDays}`, cfg),
       ]);
+      if (gen !== genRef.current) return;
       setSummary(sumRes.data);
       setFunnel(funnelRes.data);
       setVelocity(velRes.data);
@@ -88,16 +99,19 @@ export default function ManagerDashboard({ token, selectedEntity }) {
       setAging(Array.isArray(agingRes.data) ? agingRes.data : []);
       setError("");
     } catch (e) {
+      if (gen !== genRef.current || axios.isCancel?.(e) || e?.name === "CanceledError") return;
       setError(e.response?.data?.detail || "Gagal memuat dashboard. Periksa koneksi lalu coba lagi.");
     } finally {
-      setLoading(false);
+      if (gen === genRef.current) setLoading(false);
     }
-  };
+  }, [period, agingDays, selectedEntity, token]);
 
-  useEffect(() => { load(); }, [period, agingDays, selectedEntity]);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => () => { genRef.current += 1; abortRef.current?.abort(); }, []);
 
-  const funnelChartData = (funnel?.funnel || []).filter(f => !["cancelled", "expired"].includes(f.status));
-  const velocityData = (velocity?.velocity || []).slice(-14); // last 14 days
+  const funnelChartData = (funnel?.funnel || []).filter(f => !SKIP_FUNNEL.includes(f.status));
+  // G3 D4-FE-01 — grafik memakai SELURUH rentang periode terpilih (tanpa potong 14 hari).
+  const velocityData = velocity?.period_days === period ? (velocity?.velocity || []) : [];
   const utilizationData = utilization.map(w => ({
     name: w.warehouse_city || w.warehouse_name,
     on_hand: w.on_hand_qty,
@@ -141,7 +155,7 @@ export default function ManagerDashboard({ token, selectedEntity }) {
         {/* Order Velocity */}
         <div className="mt-5 rounded-xl border border-[#EFF0F2] bg-white p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[14px] font-bold">Kecepatan Pesanan — {period} hari terakhir</h3>
+            <h3 className="text-[14px] font-bold" data-testid="manager-velocity-title">Kecepatan Pesanan — {period} hari terakhir{velocityData.length ? ` (${velocityData[0].date} s/d ${velocityData[velocityData.length - 1].date})` : ""}</h3>
             <span className="text-[12px] text-[#6B6B73]">{velocity?.total_orders ?? 0} order total • Avg {velocity?.avg_per_day ?? 0}/hari</span>
           </div>
           {loading ? (
@@ -150,7 +164,7 @@ export default function ManagerDashboard({ token, selectedEntity }) {
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={velocityData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#EFF0F2" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={v => v.slice(5)} />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={v => v.slice(5)} minTickGap={8} />
                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
                 <Tooltip
                   formatter={(val, name) => [name === "total_amount" ? fmtCur(val) : val, name === "count" ? "Order" : "Revenue"]}

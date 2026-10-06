@@ -5,7 +5,7 @@ FASE G-4 menambahkan lapisan **relasi dokumen tersimpan** (`refs[]`):
 pencarian dokumen lintas jenis, dan backfill idempotent untuk data lama.
 """
 from typing import Any, Dict, List
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Body, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from pymongo import ReturnDocument
 from db import db
@@ -278,6 +278,41 @@ async def print_generated_document(doc_id: str, request: Request) -> HTMLRespons
         raise HTTPException(status_code=404, detail="Dokumen tidak ditemukan")
     await _assert_printable_entity(request, doc.get("source_id", ""))
     return HTMLResponse(content=doc.get("html") or "<p>Dokumen kosong.</p>")
+
+
+@router.post("/document-templates/{template_id}/preview", response_class=HTMLResponse)
+async def preview_template(template_id: str, request: Request,
+                           payload: Dict[str, Any] = Body(default_factory=dict)) -> HTMLResponse:
+    """G3 D4-DOC-01 — pratinjau TEMPLATE TERPILIH (id) atas dokumen sumber, tanpa side effect.
+
+    Jenis dokumen diambil dari template itu sendiri (bukan dipatok invoice). Template
+    override badan usaha lain ditolak; template nonaktif ditolak jelas; tidak ada
+    generated_documents / jurnal yang dibuat.
+    """
+    await require_permission(request, "template", "view")
+    await require_permission(request, "document", "view")
+    source_id = str(payload.get("source_id") or "").strip()
+    if not source_id:
+        raise HTTPException(status_code=400, detail="source_id (pesanan sumber) wajib diisi")
+    tmpl = await db.document_templates.find_one({"id": template_id}, {"_id": 0})
+    if not tmpl:
+        raise HTTPException(status_code=404, detail="Template tidak ditemukan")
+    if (tmpl.get("status") or "active") != "active":
+        raise HTTPException(status_code=409, detail="Template nonaktif — aktifkan dulu untuk pratinjau")
+    req_type = str(payload.get("document_type") or "").strip()
+    if req_type and req_type != tmpl.get("document_type"):
+        raise HTTPException(status_code=400, detail="document_type tidak cocok dengan template terpilih")
+    await _assert_printable_entity(request, source_id)
+    order = await db.sales_orders.find_one({"id": source_id}, {"_id": 0, "entity_id": 1})
+    if not order:
+        raise HTTPException(status_code=404, detail="Pesanan sumber tidak ditemukan")
+    from services.entity_master_service import GLOBAL_VALUES
+    t_ent = tmpl.get("entity_id")
+    if t_ent and t_ent not in GLOBAL_VALUES and t_ent != order.get("entity_id"):
+        raise HTTPException(status_code=400, detail="Template milik badan usaha lain dari pesanan sumber")
+    html_content = await render_order_html(source_id, tmpl.get("document_type") or "invoice",
+                                           template_override=tmpl)
+    return HTMLResponse(content=html_content)
 
 
 @router.get("/documents/preview/{order_id}")

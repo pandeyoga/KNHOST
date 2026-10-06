@@ -1,0 +1,30 @@
+name: frontend-lockfile
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-install:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Aktifkan Yarn sesuai packageManager (G3 V3-BUILD-01)
+        run: corepack enable && yarn --version
+      - name: Lockfile wajib ada & satu manager saja
+        run: |
+          test -f yarn.lock || { echo "yarn.lock tidak ada"; exit 1; }
+          test ! -f package-lock.json && test ! -f pnpm-lock.yaml || { echo "lockfile manager lain ditemukan"; exit 1; }
+      - name: Install beku (gagal bila lock berbeda dari package.json)
+        run: yarn install --frozen-lockfile --non-interactive
+      - name: Build smoke dari lock
+        run: CI=false yarn build

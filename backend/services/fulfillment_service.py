@@ -54,7 +54,7 @@ async def build_supply_index(
     bal_query: Dict[str, Any] = {}
     if product_ids:
         bal_query["product_id"] = {"$in": product_ids}
-    balances = await db.inventory_balances.find(bal_query, {"_id": 0}).to_list(20000)
+    balances = await db.inventory_balances.find(bal_query, {"_id": 0}).to_list(None)
 
     supply: Dict[str, Dict[str, Any]] = {}
 
@@ -105,7 +105,7 @@ async def build_supply_index(
     # on_order dari PO terbuka (qty - received_qty), per (produk, gudang, entitas)
     po_query: Dict[str, Any] = {"status": {"$in": OPEN_PO_STATUSES}}
     pos = await db.purchase_orders.find(po_query, {"_id": 0, "items": 1, "warehouse_id": 1, "entity_id": 1,
-                                                     "expected_delivery_date": 1}).to_list(2000)
+                                                     "expected_delivery_date": 1}).to_list(None)
     from services import atp_policy as _atp
     for po in pos:
         eid = po.get("entity_id") or DEFAULT_ENTITY_ID
@@ -300,7 +300,7 @@ async def status_board(
     """
     product_ids = [product_id] if product_id else None
     products_cur = await db.products.find(
-        {"id": product_id} if product_id else {}, {"_id": 0}).to_list(2000)
+        {"id": product_id} if product_id else {}, {"_id": 0}).to_list(None)
     products = {p["id"]: p for p in products_cur}
     warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(200)}
     entities = await _entity_map()
@@ -334,6 +334,7 @@ async def status_board(
                     "warehouse_name": warehouses.get(wid, {}).get("name", wid),
                     "warehouse_city": warehouses.get(wid, {}).get("city", ""),
                     **{k: wh[k] for k in ("on_hand", "available", "reserved", "incoming", "atp")},
+                    "pending_demand": round(float(wh.get("pending_demand") or 0), 2),
                 })
             by_wh.sort(key=lambda x: -x["available"])
             by_entity.append({
@@ -341,6 +342,7 @@ async def status_board(
                 "entity_name": _entity_label(entities, eid),
                 "on_hand": ent["on_hand"], "available": ent["available"],
                 "reserved": ent["reserved"], "incoming": ent["incoming"], "atp": ent["atp"],
+                "pending_demand": round(float(ent.get("pending_demand") or 0), 2),
                 "by_warehouse": by_wh,
             })
             for k in totals:

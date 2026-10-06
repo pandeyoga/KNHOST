@@ -27,5 +27,4 @@ frontend/node_modules/.cache/default-development/1.pack
 .work/
 
 /yarn.lock
-frontend/yarn.lock
 .emergent/cron/

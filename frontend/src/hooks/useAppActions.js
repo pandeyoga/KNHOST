@@ -613,11 +613,15 @@ export function useAppActions(state) {
 
   const previewTemplate = async (templateId, orderId) => {
     try {
-      const response = await axios.post(`${API}/document-templates/${templateId}/preview`, { document_type: "invoice", source_id: orderId, actor: user?.name || "Admin" }, { responseType: "text" });
+      // G3 D4-DOC-01 — pratinjau template TERPILIH (id); jenis dokumen ditentukan server dari template.
+      const response = await axios.post(`${API}/document-templates/${templateId}/preview`, { source_id: orderId }, { responseType: "text" });
       setPreviewHtml(response.data);
       setNotice("Preview template diperbarui.");
     } catch (error) {
-      setNotice(error.response?.data?.detail || "Preview template gagal. Pastikan ada order untuk preview.");
+      const raw = error.response?.data;
+      let detail = raw?.detail;
+      if (typeof raw === "string") { try { detail = JSON.parse(raw).detail; } catch { detail = ""; } }
+      setNotice(detail || "Preview template gagal. Pastikan ada order untuk preview.");
     }
   };
 

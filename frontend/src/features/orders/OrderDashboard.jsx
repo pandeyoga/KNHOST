@@ -6,77 +6,68 @@ import { getStage, stageMeta } from "../../utils/soStatus";
 function OrderDashboard({ orders = [], loading = false, summary = null }) {
   const [timeRange, setTimeRange] = useState("7d"); // 7d, 30d, 90d
   
-  // Calculate metrics
+  // G3 D4-ORDER-01 — SEMUA kartu & daftar periode dari agregat SERVER (scope entitas/sales/lini yang
+  // sama dengan daftar). Data lokal hanya cadangan sementara, diberi label "hanya pesanan termuat".
   const metrics = useMemo(() => {
     const now = new Date();
     const cutoffDays = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 90;
     const cutoffDate = new Date(now.getTime() - cutoffDays * 24 * 60 * 60 * 1000);
-    
+    const srv = summary?.periods?.[timeRange];
+    if (srv) {
+      const bs = srv.by_status || {};
+      const sum = (...ks) => ks.reduce((a, k) => a + (bs[k] || 0), 0);
+      return {
+        fromServer: true,
+        totalRevenue: srv.revenue,
+        fulfilledCount: srv.fulfilled_count,
+        totalOrders: srv.orders,
+        pendingOrders: summary.pending_count ?? 0,
+        expiringSoon: summary.expiring_soon_count ?? 0,
+        avgOrderValue: srv.avg_order_value,
+        topCustomers: srv.top_customers || [],
+        statusTotal: srv.orders,
+        statusCounts: {
+          waiting: sum("waiting_approval"), reserved: sum("reserved"), approved: sum("approved"),
+          confirmed: sum("confirmed", "partially_picked", "picked"),
+          dispatched: sum("partially_shipped", "shipped", "dispatched"),
+          done: sum("done"), cancelled: sum("cancelled"),
+        },
+        recentOrders: orders.slice(0, 10),
+      };
+    }
     const recentOrders = orders.filter(o => new Date(o.created_at) >= cutoffDate);
-    
     const FULFILLED_STATUSES = ["confirmed", "partially_picked", "picked",
       "partially_shipped", "shipped", "dispatched", "done"];
-    // KN-D18 — omzet dari agregat SERVER (grand_total setelah diskon & PPN, seluruh pesanan
-    // ter-scope); jumlah lokal atas halaman yang termuat hanya cadangan bila agregat belum tiba.
-    const serverRev = summary?.revenue?.[timeRange];
-    const localRevenue = recentOrders
-      .filter(o => FULFILLED_STATUSES.includes(o.status))
-      .reduce((sum, o) => sum + (o.grand_total ?? o.total_amount ?? 0), 0);
-    const totalRevenue = serverRev ? serverRev.grand_total : localRevenue;
-    const revenueFromServer = !!serverRev;
-    
-    const pendingOrders = orders.filter(o => 
-      ["waiting_approval", "reserved", "approved"].includes(o.status)
-    );
-    
-    const expiringSoon = orders.filter(o => {
-      if (!o.reservation_expires_at) return false;
-      const expiryDate = new Date(o.reservation_expires_at);
-      const hoursUntilExpiry = (expiryDate - now) / (1000 * 60 * 60);
-      return hoursUntilExpiry > 0 && hoursUntilExpiry < 24;
-    });
-    
-    // Top customers
+    const fulfilled = recentOrders.filter(o => FULFILLED_STATUSES.includes(o.status));
+    const totalRevenue = fulfilled.reduce((s, o) => s + (o.grand_total ?? o.total_amount ?? 0), 0);
     const customerOrders = {};
-    recentOrders.forEach(o => {
-      if (!customerOrders[o.customer_id]) {
-        customerOrders[o.customer_id] = {
-          name: o.customer_name,
-          count: 0,
-          revenue: 0
-        };
-      }
-      customerOrders[o.customer_id].count++;
-      customerOrders[o.customer_id].revenue += o.total_amount || 0;
+    fulfilled.forEach(o => {
+      const c = (customerOrders[o.customer_id] ||= { name: o.customer_name, count: 0, revenue: 0 });
+      c.count++;
+      c.revenue += o.grand_total ?? o.total_amount ?? 0;
     });
-    
-    const topCustomers = Object.values(customerOrders)
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
-    
-    // Orders by status
-    const statusCounts = {
-      waiting: orders.filter(o => o.status === "waiting_approval").length,
-      reserved: orders.filter(o => o.status === "reserved").length,
-      approved: orders.filter(o => o.status === "approved").length,
-      confirmed: orders.filter(o => ["confirmed", "partially_picked", "picked"].includes(o.status)).length,
-      dispatched: orders.filter(o => ["partially_shipped", "shipped", "dispatched"].includes(o.status)).length,
-      done: orders.filter(o => o.status === "done").length,
-      cancelled: orders.filter(o => o.status === "cancelled").length,
-    };
-    
+    const cnt = (f) => recentOrders.filter(f).length;
     return {
+      fromServer: false,
       totalRevenue,
-      revenueFromServer,
+      fulfilledCount: fulfilled.length,
       totalOrders: recentOrders.length,
-      pendingOrders: pendingOrders.length,
-      expiringSoon: expiringSoon.length,
-      avgOrderValue: recentOrders.length > 0 ? totalRevenue / recentOrders.length : 0,
-      topCustomers,
-      statusCounts,
-      recentOrders: orders.slice(0, 10)
+      pendingOrders: cnt(o => ["waiting_approval", "reserved", "approved"].includes(o.status)),
+      expiringSoon: cnt(o => { const h = (new Date(o.reservation_expires_at) - now) / 36e5; return h > 0 && h < 24; }),
+      avgOrderValue: fulfilled.length > 0 ? totalRevenue / fulfilled.length : 0,
+      topCustomers: Object.values(customerOrders).sort((a, b) => b.revenue - a.revenue).slice(0, 5),
+      statusTotal: recentOrders.length,
+      statusCounts: {
+        waiting: cnt(o => o.status === "waiting_approval"), reserved: cnt(o => o.status === "reserved"),
+        approved: cnt(o => o.status === "approved"),
+        confirmed: cnt(o => ["confirmed", "partially_picked", "picked"].includes(o.status)),
+        dispatched: cnt(o => ["partially_shipped", "shipped", "dispatched"].includes(o.status)),
+        done: cnt(o => o.status === "done"), cancelled: cnt(o => o.status === "cancelled"),
+      },
+      recentOrders: orders.slice(0, 10),
     };
   }, [orders, timeRange, summary]);
+  const scopeLabel = metrics.fromServer ? "seluruh pesanan ter-scope" : "sementara: hanya pesanan yang termuat";
   
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("id-ID", {
@@ -120,8 +111,8 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
             <p className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Revenue</p>
           </div>
           <p data-testid="order-dashboard-revenue" className="text-[18px] font-bold text-[#007AFF]">{formatCurrency(metrics.totalRevenue)}</p>
-          <p className="text-[10px] text-slate-500">{metrics.revenueFromServer ? "Setelah diskon & PPN · seluruh pesanan" : "Sementara: hanya pesanan yang termuat"}</p>
-          <p className="text-[10px] text-[#8E8E93] mt-1">{metrics.totalOrders} orders</p>
+          <p className="text-[10px] text-slate-500" data-testid="order-dashboard-scope">Setelah diskon & PPN · {scopeLabel}</p>
+          <p className="text-[10px] text-[#8E8E93] mt-1" data-testid="order-dashboard-count">{metrics.fulfilledCount} pesanan terpenuhi · {metrics.totalOrders} total periode</p>
         </div>
         
         <div className="section-card !p-3">
@@ -131,8 +122,8 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
             </div>
             <p className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Menunggu</p>
           </div>
-          <p className="text-[18px] font-bold text-[#FF9500]">{metrics.pendingOrders}</p>
-          <p className="text-[10px] text-[#8E8E93] mt-1">Butuh persetujuan</p>
+          <p className="text-[18px] font-bold text-[#FF9500]" data-testid="order-dashboard-pending">{metrics.pendingOrders}</p>
+          <p className="text-[10px] text-[#8E8E93] mt-1">Butuh persetujuan · semua tanggal</p>
         </div>
         
         <div className="section-card !p-3">
@@ -142,7 +133,7 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
             </div>
             <p className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Expiring</p>
           </div>
-          <p className="text-[18px] font-bold text-red-500">{metrics.expiringSoon}</p>
+          <p className="text-[18px] font-bold text-red-500" data-testid="order-dashboard-expiring">{metrics.expiringSoon}</p>
           <p className="text-[10px] text-[#8E8E93] mt-1">Expires &lt; 24h</p>
         </div>
         
@@ -153,8 +144,8 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
             </div>
             <p className="text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Rata-rata Pesanan</p>
           </div>
-          <p className="text-[18px] font-bold text-[#34C759]">{formatCurrency(metrics.avgOrderValue)}</p>
-          <p className="text-[10px] text-[#8E8E93] mt-1">Per pesanan</p>
+          <p className="text-[18px] font-bold text-[#34C759]" data-testid="order-dashboard-avg">{formatCurrency(metrics.avgOrderValue)}</p>
+          <p className="text-[10px] text-[#8E8E93] mt-1">Revenue ÷ {metrics.fulfilledCount} pesanan terpenuhi</p>
         </div>
       </div>
       
@@ -167,6 +158,7 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
               <Users size={14} className="text-[#007AFF]" />
               <h2>Top Customers</h2>
             </div>
+            <span className="text-[10.5px] text-[#6B6B73]">{timeRange} · {scopeLabel}</span>
           </div>
           <div className="section-body">
             {metrics.topCustomers.length === 0 ? (
@@ -174,7 +166,7 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
             ) : (
               <div className="space-y-2">
                 {metrics.topCustomers.map((customer, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2 rounded-md bg-[#FAFBFC] border border-[#EFF0F2]">
+                  <div key={customer.customer_id || idx} data-testid={`dashboard-top-customer-${idx}`} className="flex items-center justify-between p-2 rounded-md bg-[#FAFBFC] border border-[#EFF0F2]">
                     <div className="flex-1 min-w-0">
                       <p className="text-[11.5px] font-semibold truncate">{customer.name}</p>
                       <p className="text-[10px] text-[#6B6B73]">{customer.count} orders</p>
@@ -194,6 +186,7 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
               <TrendingUp size={14} className="text-[#007AFF]" />
               <h2>Status Distribution</h2>
             </div>
+            <span className="text-[10.5px] text-[#6B6B73]">{timeRange} · {metrics.statusTotal} pesanan</span>
           </div>
           <div className="section-body">
             <div className="space-y-2">
@@ -206,7 +199,7 @@ function OrderDashboard({ orders = [], loading = false, summary = null }) {
                 { label: "Selesai", count: metrics.statusCounts.done, color: "bg-green-600" },
                 { label: "Dibatalkan", count: metrics.statusCounts.cancelled, color: "bg-red-500" },
               ].map(({ label, count, color }) => {
-                const percentage = orders.length > 0 ? (count / orders.length) * 100 : 0;
+                const percentage = metrics.statusTotal > 0 ? (count / metrics.statusTotal) * 100 : 0;
                 return (
                   <div key={label} className="space-y-1">
                     <div className="flex items-center justify-between text-[11px]">

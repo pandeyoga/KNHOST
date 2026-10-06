@@ -31,13 +31,15 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
   const [priceTarget, setPriceTarget] = useState(null);
   const [requested, setRequested] = useState({});
 
-  const load = useCallback(async (keepError = false) => {
+  // G3 D4-PLAN-04 — error MUAT terpisah dari error EKSEKUSI; refresh tidak menghapus pesan eksekusi.
+  const [execError, setExecError] = useState("");
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fulfillmentPlan(orderId);
       setData(res);
       setPlan(Object.fromEntries((res.lines || []).map((ln) => [ln.product_id, initLine(ln)])));
-      if (!keepError) setError("");
+      setError("");
     } catch (e) { setError(apiErrorText(e, "Gagal memuat rencana pemenuhan.")); }
     finally { setLoading(false); }
   }, [orderId]);
@@ -63,7 +65,7 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
   const over = lines.find((ln) => total(plan[ln.product_id]) > ln.backorder_qty + 0.01);
 
   async function submit() {
-    setBusy(true); setError("");
+    setBusy(true); setExecError("");
     try {
       const body = {
         note,
@@ -75,7 +77,12 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
       };
       const res = await fulfillmentPlanDecide(orderId, body);
       onDecided?.(`${res?.order_number || orderNumber}: ${res?.decision?.summary || "rencana pemenuhan tercatat."}`);
-    } catch (e) { setError(apiErrorText(e, "Gagal menjalankan rencana pemenuhan.")); load(true); }
+    } catch (e) {
+      const done = e?.response?.data?.processed || e?.response?.data?.detail?.processed;
+      const base = apiErrorText(e, "Gagal menjalankan rencana pemenuhan.");
+      setExecError(`${base}${Array.isArray(done) && done.length ? ` · Sudah diproses: ${done.map((d) => d.summary || d.product_name || d.product_id || d).join(", ")}` : ""} · Data di bawah dimuat ulang — periksa sisa kekurangan sebelum mencoba lagi.`);
+      load();
+    }
     finally { setBusy(false); }
   }
 
@@ -99,7 +106,14 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
             </button>
           )}
         </div>
-        <ErrorNotice message={error} onDismiss={() => setError("")} testId="fulfill-error" />
+        {execError && (
+          <div data-testid="fulfill-exec-error" className="mt-2 rounded-lg border border-[#F5C2C0] bg-[#FDECEC] px-3 py-2 text-[11.5px] text-[#9B1C1C]">
+            <p className="font-bold">Proses pemenuhan belum tuntas</p>
+            <p>{execError}</p>
+            <button data-testid="fulfill-exec-error-dismiss" className="mt-1 text-[11px] font-semibold underline" onClick={() => setExecError("")}>Saya mengerti</button>
+          </div>
+        )}
+        <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="fulfill-error" />
         {notice && <p data-testid="fulfill-notice" className="mt-2 rounded-lg bg-[#EAF7EF] px-3 py-2 text-[11.5px] font-semibold text-[#1B7F4B]">{notice}</p>}
         {loading ? (
           <div className="py-10 text-center text-[12px] text-[#6B6B73]" data-testid="fulfill-loading">Menghitung kekurangan & sumber…</div>

@@ -64,13 +64,6 @@ def _clean_perms(perms: Any) -> Dict[str, List[str]]:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-def _clean_perms(perms: Any) -> Dict[str, List[str]]:
-    try:
-        return clean_permissions(perms)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-
 def _clean_label(label: str) -> str:
     clean = re.sub(r"\s+", " ", (label or "").strip())
     if len(clean) < 2 or len(clean) > 40:
