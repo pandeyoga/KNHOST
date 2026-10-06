@@ -1,0 +1,30 @@
+{
+  "summary": "Gelombang 3 Fase 03 — SEMUA pytest LULUS: test_g3_phase03.py 12/12 (DB_NAME=g3_audit_phase03), regresi test_g3_phase01+02+02b 65/65 (DB_NAME=g3_audit_phase02), test_g3_phase02_api 15/15. Smoke live API baru (test_g3_phase03_live.py) 16/16 LULUS pada preview URL: D4-FIN-01 (header X-Entity-Id=ent_ksc identik dengan ?entity_id=ent_ksc setelah mengabaikan generated_at; ?entity_id=all berbeda); D4-COMM-BOUNDS-01 PATCH /api/supplier-contracts/{id} tariff_rate=-5 → 422; PATCH /api/supplier-items/{id} last_price=-1 → 422 (Pydantic ge=0 lolos sebelum lookup id); D4-BUD-EDIT-01 POST /api/finance/budgets dua entri bulan 1 & 2 (TEST_<uuid>, year=2099, account_code=4-1000) via manager@ (admin & finance 403 budget.create di DB demo), PATCH budget#2 month=1 → 400, PATCH year=1900 → 400, kedua TEST_ budget DIHAPUS. Regresi: /api/home/sales (sales@) & /api/home/manager (manager@) 200; /api/finance/balance-sheet, /income-statement, /cash-flow (entity_id=all & ent_ksc) 200; /api/finance/profitability 200; /api/finance/cashflow-forecast 200; /api/ar/aging 200. Rencana pemenuhan ganda produk: POST /api/sales-admin/orders/{order_id}/fulfillment-plan dengan dua baris product_id sama → 400 (dup guard di fulfillment_plan_service._validate). Tidak ada data demo asli yang diubah; nilai kontrak supplier tidak diubah (uji 422 ditolak sebelum menyentuh DB). Fitur BELUM dikerjakan (V3-CF-01, V3-PO-01/02/03, D4-FIN-04, D4-CASH-01, D4-DATE-01) TIDAK diuji.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_g3_phase03.py",
+    "/app/backend/tests/test_g3_phase01.py",
+    "/app/backend/tests/test_g3_phase02.py",
+    "/app/backend/tests/test_g3_phase02b.py",
+    "/app/backend/tests/test_g3_phase02_api.py",
+    "/app/backend/tests/test_g3_phase03_live.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "SupplierContractPatch & SupplierItemPatch: Pydantic Field(ge=0) pada tariff_rate/last_price memberi 422 konsisten; validasi berjalan sebelum lookup id, aman.",
+    "budget_service.update_budget: deteksi duplikat kunci (year/month/dimension/key/entity) → ValueError → 400 di router; validasi year juga mengembalikan 400.",
+    "finance_analytics.get_finance_tower: resolve_list_scope benar — tanpa entity_id, scope mengambil active_entity_id dari X-Entity-Id. Satu-satunya perbedaan antara dua panggilan single-entity hanya generated_at (timestamp), isi laporan identik.",
+    "fulfillment_plan_service._validate: duplicate product_id guard memicu FulfillmentError → 400 di endpoint, tanpa efek samping (dicek via smoke).",
+    "Catatan konfigurasi (bukan bug): perm 'budget.create' pada DB demo saat ini hanya dimiliki role manager; admin & finance → 403. Konfirmasi apakah ini sesuai desain atau kebutuhan seed matriks izin."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_g3_phase03_live.py (dibuat baru, 16 tes smoke live)"
+  ],
+  "success_rate": {"backend": "100% (108/108: 12+65+15 pytest + 16 live)", "frontend": "n/a (backend only sesuai request)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345; manager@/finance@/sales@/salesadmin@kainnusantara.id / demo1234",
+  "seed_data_creation": "Dua anggaran TEST_<uuid> (ent_ksc, year=2099, bulan 1 & 2, account 4-1000) dibuat oleh test D4-BUD-EDIT-01 dan DIHAPUS pada tahap teardown (finally). Tidak ada data lain diciptakan.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Semua ID sesi fase 03 (D4-PLAN-01/02/03, D4-SALES-01/02/03, D4-FIN-01/02/03, D4-COA-01, D4-AI-01, D4-COMM-BOUNDS-01, D4-BUD-EDIT-01, D4-UOM-BF-01, V3-DATE-01) tercakup oleh test_g3_phase03.py (service) + test_g3_phase03_live.py (API). Jangan uji sebagai 'fixed': V3-CF-01, V3-PO-01/02/03, D4-FIN-04, D4-CASH-01, D4-DATE-01 (belum dikerjakan user). Perintah pengujian ulang: `cd /app/backend && DB_NAME=g3_audit_phase03 python -m pytest tests/test_g3_phase03.py -q -n 0`; `DB_NAME=g3_audit_phase02 python -m pytest tests/test_g3_phase01.py tests/test_g3_phase02.py tests/test_g3_phase02b.py -q -n 0`; `cd /app && python -m pytest backend/tests/test_g3_phase02_api.py -q -n0`; `cd /app && REACT_APP_BACKEND_URL=https://internal-pricing.preview.emergentagent.com python -m pytest backend/tests/test_g3_phase03_live.py -q -n0`."
+}

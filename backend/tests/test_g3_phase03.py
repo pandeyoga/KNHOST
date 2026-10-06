@@ -232,3 +232,77 @@ def test_fin03_revenue_excludes_included_ppn(monkeypatch):
     res = run(go())
     tot = res.get("totals") or res.get("summary") or {}
     assert round(float(tot.get("revenue", -1)), 2) == 900.9, tot
+
+
+
+# V3-PO-01/03 — tugas per baris, refresh, ditutup hanya sesudah approval & qty cocok
+def _patch_pvt(monkeypatch):
+    from services import po_variance_task_service as pvt
+    from services import notification_service as notif
+
+    async def tol(e):
+        return 2.0
+
+    async def owner(po):
+        return None
+
+    async def noop(*a, **k):
+        return None
+    monkeypatch.setattr(pvt, "_tolerance_pct", tol)
+    monkeypatch.setattr(pvt, "_responsible_user", owner)
+    monkeypatch.setattr(pvt, "audit", noop)
+    monkeypatch.setattr(notif, "create_notification", noop)
+    return pvt
+
+
+def test_po01_task_refreshes_and_legacy_lines_separate(monkeypatch):
+    pvt = _patch_pvt(monkeypatch)
+
+    async def go():
+        await db.purchase_orders.insert_one({"id": "po1", "status": "partial", "entity_id": "ent_A", "items": [
+            {"product_id": "p1", "quantity": 100, "received_qty": 90},
+            {"product_id": "p1", "quantity": 50, "received_qty": 40}]})
+        await pvt.ensure_for_po("po1")
+        n1 = await db.po_variance_tasks.count_documents({"po_id": "po1", "status": "open"})
+        await db.purchase_orders.update_one({"id": "po1"}, {"$set": {"items.0.received_qty": 95}})
+        await pvt.ensure_for_po("po1")
+        t0 = await db.po_variance_tasks.find_one({"line_key": "p1#0"}, {"_id": 0})
+        await db.purchase_orders.update_one({"id": "po1"}, {"$set": {"items.0.received_qty": 100}})
+        await pvt.ensure_for_po("po1")
+        t0b = await db.po_variance_tasks.find_one({"line_key": "p1#0"}, {"_id": 0})
+        return n1, t0, t0b
+    n1, t0, t0b = run(go())
+    assert n1 == 2
+    assert t0["received_qty"] == 95 and t0["short_qty"] == 5
+    assert t0b["status"] == "obsolete"
+
+
+def test_po03_amendment_task_closed_only_after_approval_and_qty_match(monkeypatch):
+    pvt = _patch_pvt(monkeypatch)
+
+    async def go():
+        await db.purchase_orders.insert_one({"id": "po2", "status": "waiting_approval", "items": [
+            {"product_id": "p1", "quantity": 960, "received_qty": 960}]})
+        await db.po_variance_tasks.insert_one({"id": "t1", "po_id": "po2", "product_id": "p1",
+                                               "line_key": "p1#0", "status": "pending_amendment"})
+        a = await pvt.close_amendment_tasks("po2", "x")
+        await db.purchase_orders.update_one({"id": "po2"}, {"$set": {"status": "pending", "items.0.quantity": 1000}})
+        b = await pvt.close_amendment_tasks("po2", "x")
+        await db.purchase_orders.update_one({"id": "po2"}, {"$set": {"items.0.quantity": 960}})
+        c = await pvt.close_amendment_tasks("po2", "x")
+        return a, b, c
+    assert run(go()) == (0, 0, 1)
+
+
+def test_po02_amend_qty_to_received_allowed_other_changes_locked():
+    from fastapi import HTTPException
+    from services.po_amendment_service import _assert_received_line_locked
+
+    class It:
+        product_id, unit, price, discount_percent = "p1", "meter", 0, 0
+        quantity = 960
+    old = [{"product_id": "p1", "quantity": 1000, "unit": "meter", "price": 10, "discount_percent": 0}]
+    _assert_received_line_locked("SKU", It(), old, 960.0)
+    It.quantity = 970
+    with pytest.raises(HTTPException):
+        _assert_received_line_locked("SKU", It(), old, 960.0)

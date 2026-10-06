@@ -880,6 +880,8 @@ async def approve_purchase_order(po_id: str, request: Request) -> Dict[str, Any]
         raise HTTPException(status_code=409, detail="PO baru saja disetujui/berubah oleh pihak lain. Muat ulang.")
     # Buat inbound task setelah PO disetujui penuh
     await _create_inbound_tasks_for_po(updated)
+    from services import po_variance_task_service as _pvt
+    await _pvt.close_amendment_tasks(po_id, actor["name"])  # G3 V3-PO-03 — baru selesai SESUDAH approval
     try:
         from services.notification_service import resolve_action
         await resolve_action("po_approve", po_id, outcome="disetujui penuh",

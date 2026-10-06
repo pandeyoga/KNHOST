@@ -10,6 +10,7 @@
 - Keputusan user Fase 02: asal tak terlacak → kebijakan retur penjualan + tanda Sales Admin; loading check per pengiriman; pasokan PO hanya informasi (FIFO); PA–SO saling mengunci.
 - Uji: tests/test_g3_phase02b.py 16/16 + phase02 21 + phase01 28 (DB_NAME=g3_audit_phase02, `-n 0`) + phase02_api 15 (dari /app) = 80/80; iteration_166 tanpa isu. Label FE baru belum terlihat visual (data demo tanpa backorder aktif / task picked).
 - Berikutnya: Fase 03 (22 ID: master data, procurement, harga, aturan komersial) → Fase 04 → Fase 05.
+- Fase 03 (2026-10-06): 18/22 implemented_pending_validation — `implementation/FASE-03-STATUS.md`. Open 4 (keputusan user sudah ada): V3-CF-01 (hanya bagian tunai di arus kas), D4-FIN-04 (realisasi = terkirim, HPP saat kirim), D4-CASH-01 (kolom tetap jenis kas), D4-DATE-01 (periode WIB). Uji: tests/test_g3_phase03.py 15/15 (DB_NAME=g3_audit_phase03, -n 0), iteration_167. Catatan: `_term_days` termin 0 eksplisit kini 0 hari.
 - Batasan: Mongo standalone (tanpa transaksi) → pola write-ahead marker / id deterministik / CAS; tidak ada sweeper crash.
 
 

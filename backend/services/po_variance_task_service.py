@@ -42,15 +42,28 @@ async def ensure_for_po(po_id: str, source_ref: str = "", actor_name: str = "Sis
     tol = await _tolerance_pct(po.get("entity_id") or "")
     owner = await _responsible_user(po)
     created: List[Dict[str, Any]] = []
-    for it in po.get("items") or []:
+    for idx, it in enumerate(po.get("items") or []):
         ordered = float(it.get("quantity") or 0)
         received = float(it.get("received_qty") or 0)
         short = round(ordered - received, 2)
-        if received <= 0 or short <= ordered * tol / 100 + 1e-6:
+        # G3 V3-PO-01 — identitas tugas = BARIS PO (line_id / indeks), bukan product_id; dua baris
+        # legacy produk sama memberi dua tugas. Tugas terbuka DIPERBARUI saat penerimaan berubah.
+        line_key = it.get("line_id") or f"{it.get('product_id')}#{idx}"
+        open_q = {"po_id": po_id, "status": "open",
+                  "$or": [{"line_key": line_key},
+                          {"line_key": {"$exists": False}, "product_id": it.get("product_id")}]}
+        within = received <= 0 or short <= ordered * tol / 100 + 1e-6
+        existing = await db.po_variance_tasks.find_one(open_q, {"_id": 0, "id": 1})
+        if existing:
+            upd = ({"status": "obsolete", "closed_reason": "selisih tertutup penerimaan berikutnya",
+                    "received_qty": received, "short_qty": max(short, 0.0), "updated_at": now_iso()} if within else
+                   {"line_key": line_key, "ordered_qty": ordered, "received_qty": received, "short_qty": short,
+                    "suggested_qty": received, "updated_at": now_iso()})
+            await db.po_variance_tasks.update_one({"id": existing["id"], "status": "open"}, {"$set": upd})
             continue
-        key = {"po_id": po_id, "product_id": it.get("product_id"), "status": "open"}
-        if await db.po_variance_tasks.find_one(key, {"_id": 1}):
+        if within:
             continue
+        key = {"po_id": po_id, "product_id": it.get("product_id"), "line_key": line_key, "status": "open"}
         task = {
             "id": new_id("pvt"), **key, "entity_id": po.get("entity_id"),
             "po_number": po.get("po_number"), "supplier_name": po.get("supplier_name"),
@@ -137,7 +150,12 @@ async def decide(task_id: str, decision: str, reason: str, actor: Dict[str, Any]
             follow = {"po_status": "closed_short"}
         else:
             # Amendment memakai alur amandemen PO + re-approval yang sudah ada; nilai tidak diubah di sini.
-            follow = {"next": "amend", "suggested_qty": task["received_qty"],
+            # G3 V3-PO-01 — saran qty dari PO TERKINI (bukan snapshot tugas yang bisa basi)
+            items = (po or {}).get("items") or []
+            live = next((i for n, i in enumerate(items)
+                         if (i.get("line_id") or f"{i.get('product_id')}#{n}") == task.get("line_key")), None) \
+                or next((i for i in items if i.get("product_id") == task.get("product_id")), {})
+            follow = {"next": "amend", "suggested_qty": float(live.get("received_qty") or task["received_qty"]),
                       "link": f"?view=purchase-orders&po={task['po_id']}&amend=1"}
     except HTTPException:
         await db.po_variance_tasks.update_one({"id": task_id}, {"$set": {"status": "open"}, "$unset": {"decision": ""}})
@@ -152,8 +170,24 @@ async def decide(task_id: str, decision: str, reason: str, actor: Dict[str, Any]
     return safe_doc(await db.po_variance_tasks.find_one({"id": task_id}, {"_id": 0}))
 
 
-async def close_amendment_tasks(po_id: str, actor_name: str) -> None:
-    """Dipanggil setelah amendment PO disetujui: tugas `pending_amendment` selesai."""
-    await db.po_variance_tasks.update_many(
-        {"po_id": po_id, "status": "pending_amendment"},
-        {"$set": {"status": "decided", "amended_at": now_iso(), "amended_by": actor_name}})
+async def close_amendment_tasks(po_id: str, actor_name: str) -> int:
+    """G3 V3-PO-03 — tugas `pending_amendment` selesai HANYA bila PO sudah disetujui (bukan
+    menunggu approval) DAN qty baris tugas itu kini = qty diterima (selisih benar-benar ditutup).
+    Amandemen catatan saja / baris lain tidak menutup tugas."""
+    po = await db.purchase_orders.find_one({"id": po_id}, {"_id": 0, "status": 1, "items": 1})
+    if not po or po.get("status") in ("waiting_approval", "draft", "rejected"):
+        return 0
+    closed = 0
+    async for t in db.po_variance_tasks.find({"po_id": po_id, "status": "pending_amendment"}, {"_id": 0}):
+        items = po.get("items") or []
+        it = next((i for n, i in enumerate(items)
+                   if (i.get("line_id") or f"{i.get('product_id')}#{n}") == t.get("line_key")), None) \
+            or (None if t.get("line_key") else next((i for i in items if i.get("product_id") == t.get("product_id")), None))
+        if not it or float(it.get("quantity") or 0) > float(it.get("received_qty") or 0) + 0.001:
+            continue
+        res = await db.po_variance_tasks.update_one(
+            {"id": t["id"], "status": "pending_amendment"},
+            {"$set": {"status": "decided", "amended_at": now_iso(), "amended_by": actor_name,
+                      "amended_qty": float(it.get("quantity") or 0)}})
+        closed += res.modified_count
+    return closed

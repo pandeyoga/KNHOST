@@ -100,8 +100,11 @@ def _assert_received_line_locked(sku: str, item_in, old_items, rq: float) -> Non
     if not old:
         return
     changed = []
-    if abs(float(item_in.quantity or 0) - float(old.get("quantity") or 0)) > 0.001:
-        changed.append(f"qty {float(old.get('quantity') or 0):g}→{float(item_in.quantity):g}")
+    new_q, old_q = float(item_in.quantity or 0), float(old.get("quantity") or 0)
+    # G3 V3-PO-02 (keputusan user) — qty boleh diamandemen TEPAT ke qty diterima (tutup selisih
+    # lewat re-approval); harga/satuan/diskon tetap terkunci.
+    if abs(new_q - old_q) > 0.001 and abs(new_q - rq) > 0.001:
+        changed.append(f"qty {old_q:g}→{new_q:g}")
     old_unit = str(old.get("unit") or "").strip().lower()
     new_unit = str(item_in.unit or old.get("unit") or "").strip().lower()
     if new_unit != old_unit:
