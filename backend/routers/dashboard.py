@@ -34,7 +34,7 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     # `apply_scope` hanya mengikat peran `sales`; sales_admin/finance/manager/
     # admin/warehouse tetap melihat keseluruhan pesanan seperti sebelumnya.
     order_scope = sales_ownership.apply_scope(scope, actor)
-    products_raw = await db.products.find({}, {"_id": 0}).to_list(3000)
+    products_raw = await db.products.find({}, {"_id": 0}).to_list(None)   # G3 D4-DASH-01 — tanpa batas 3.000
     # S#096 — HPP turunan pembelian (WAC roll) untuk layar Master Produk; diredaksi strip_cost_fields per peran.
     from services import costing_service as _cs
     for _p in products_raw:
@@ -74,7 +74,7 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     # (mis. roll yang kepemilikannya sudah dipindah lintas-PT via R3 ownership transfer),
     # sehingga KPI > Σbalances (drift 1 meter). Kini keduanya seragam per-entitas aktif.
     bal_scope = resolve_list_scope("inventory_balances", {}, ctx, entity_id)
-    bal_docs = await db.inventory_balances.find(bal_scope, {"_id": 0}).to_list(5000)
+    bal_docs = await db.inventory_balances.find(bal_scope, {"_id": 0}).to_list(None)   # G3 D4-DASH-01
     per_prod: Dict[str, Dict[str, float]] = {}
     total_available = 0.0
     total_reserved = 0.0

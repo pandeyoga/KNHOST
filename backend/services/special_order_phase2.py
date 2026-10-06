@@ -225,6 +225,13 @@ async def lock_price(od: Dict[str, Any], payload: Dict[str, Any], actor: Dict[st
         # G3 D4-OD-LOCK-01 — kunci tercatat tapi SKU belum tersinkron (gagal di tengah) → retry MELANJUTKAN.
         if (od.get("pricing") or {}).get("sku_synced") is False:
             await _sync_od_sku(od, od["pricing"], od["pricing"].get("product_id") or od.get("linked_product_id") or "")
+            fresh = await db.special_orders.find_one({"id": od["id"]}, {"_id": 0})
+            # Keputusan user 2026-10-06 — retry juga melanjutkan PO otomatis (auto_procure idempoten: PO ada → dilewati)
+            if payload.get("auto_po", True) and not fresh.get("linked_po_id"):
+                try:
+                    await auto_procure(fresh, actor, payload.get("warehouse_id") or "")
+                except Exception as exc:  # noqa: BLE001 — harga tetap terkunci; pengadaan bisa diulang
+                    await db.special_orders.update_one({"id": od["id"]}, {"$set": {"procurement_error": str(exc)}})
             return await db.special_orders.find_one({"id": od["id"]}, {"_id": 0})
         raise ODError("Harga OD ini sudah dikunci.")
     if od.get("customer_decision") != "acc":

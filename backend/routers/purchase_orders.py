@@ -404,7 +404,9 @@ async def _create_po_core(payload: PurchaseOrderCreate, actor: Dict[str, Any], *
                         f"'{supplier_name}' di menu Pemasok terlebih dahulu."))
     
     # Validate products and calculate total
-    products = {p["id"]: p for p in await db.products.find({}, {"_id": 0}).to_list(1000)}
+    # G3 D4-CAP-01 — hanya produk yang DIPESAN (bukan 1.000 master pertama) → SKU ke-1.001 tidak ditolak
+    _pids = list({it.product_id for it in payload.items if it.product_id})
+    products = {p["id"]: p for p in await db.products.find({"id": {"$in": _pids}}, {"_id": 0}).to_list(None)}
     # FASE F (PS-12) — jangan membelanjakan uang untuk barang yang spesifikasinya
     # belum sah (konsep/labdip/proofing) atau sudah dihentikan.
     from services import rnd_gate

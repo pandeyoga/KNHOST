@@ -345,10 +345,12 @@ async def act_setor_dari_karyawan(case: Dict[str, Any], p: Dict[str, Any],
     held = round(float(ex.get("held_amount") or r.get("amount") or 0), 2)
     settled = round(float(ex.get("settled_amount") or 0), 2)
     remaining = round(held - settled, 2)
-    if amount > remaining + EPS:
+    cust = case.get("customer_id") or p.get("customer_id") or ""
+    surplus = round(amount - remaining, 2) if amount > remaining + EPS else 0.0
+    if surplus and not cust:
         raise CaseActionError(
-            f"Setoran {_rp(amount)} melebihi sisa piutang karyawan {_rp(remaining)}. "
-            "Kelebihan setoran belum punya aturan — catat lewat kasus terpisah.")
+            f"Setoran {_rp(amount)} melebihi sisa piutang karyawan {_rp(remaining)} dan kasus tanpa pelanggan "
+            "— kelebihan tidak bisa dijadikan kredit toko.")
     emp = (p.get("employee_name") or ex.get("employee_name") or "karyawan")
     res = await _cash_txn(
         direction="in", amount=amount, category="setoran karyawan",
@@ -357,11 +359,39 @@ async def act_setor_dari_karyawan(case: Dict[str, Any], p: Dict[str, Any],
         cash_type=p.get("cash_type") or "kas_besar", ref_type="finance_case",
         ref_id=case["id"], contra=gl.ACC_PIUTANG_KARYAWAN,
         owner_entity_id=case.get("entity_id", ""), actor=actor.get("name", "system"))
-    new_settled = round(settled + amount, 2)
+    to_emp = round(amount - surplus, 2)
+    docs: List[Dict[str, Any]] = []
+    if to_emp > EPS:
+        res = await _cash_txn(
+            direction="in", amount=to_emp, category="setoran karyawan",
+            description=f"Setoran {emp} · {case['number']}",
+            entity_id=case.get("entity_id", ""), account_id=p.get("account_id", ""),
+            cash_type=p.get("cash_type") or "kas_besar", ref_type="finance_case",
+            ref_id=case["id"], contra=gl.ACC_PIUTANG_KARYAWAN,
+            owner_entity_id=case.get("entity_id", ""), actor=actor.get("name", "system"))
+        docs += res["documents"]
+    if surplus:
+        # Keputusan user 2026-10-06 — kelebihan setoran = KREDIT TOKO pelanggan (Dr Kas / Cr 2-1450),
+        # tercatat di buku saldo kredit toko yang sudah ada (satu jurnal dari transaksi kas).
+        from services import store_credit_service as sc
+        res2 = await _cash_txn(
+            direction="in", amount=surplus, category="kelebihan setoran karyawan",
+            description=f"Kelebihan setoran {emp} → kredit toko pelanggan · {case['number']}",
+            entity_id=case.get("entity_id", ""), account_id=p.get("account_id", ""),
+            cash_type=p.get("cash_type") or "kas_besar", ref_type="finance_case",
+            ref_id=case["id"], contra=gl.ACC_STORE_CREDIT,
+            owner_entity_id=case.get("entity_id", ""), actor=actor.get("name", "system"))
+        entry = await sc.issue(customer_id=cust, entity_id=case.get("entity_id", ""), amount=surplus,
+                               ref_type="finance_case_surplus", ref_id=res2["txn"]["id"],
+                               ref_number=case.get("number", ""), actor=actor,
+                               note=f"Kelebihan setoran karyawan · {case['number']}")
+        docs += res2["documents"] + [_doc("store_credit_entry", (entry or {}).get("id", ""), "",
+                                          f"Kredit toko +{_rp(surplus)}")]
+    new_settled = round(settled + to_emp, 2)
     left = round(held - new_settled, 2)
-    return {"documents": res["documents"], "amount": amount, "hold": left > EPS,
+    return {"documents": docs, "amount": amount, "hold": left > EPS,
             "next_action": "setor_dari_karyawan" if left > EPS else "",
-            "extra": {"employee_name": emp, "step": 2, "held_amount": held,
+            "extra": {"employee_name": emp, "step": 2, "held_amount": held, "surplus_to_credit": surplus,
                       "settled_amount": new_settled, "remaining_amount": max(left, 0.0)}}
 
 

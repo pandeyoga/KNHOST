@@ -1,10 +1,10 @@
 # PRD — Kain Nusantara ERP (lanjutan dari repo github.com/kakjsbsbs/KN)
 
-## 2026-10-06 — Gelombang 3 (audit 101 temuan) · Fase 01 sebagian
-- Paket diimpor ke `docs/audit/gelombang-3/` (baseline tidak ditimpa). Status per ID: `docs/audit/gelombang-3/implementation/FASE-01-STATUS.md`.
-- 16/23 ID Fase 01 divalidasi VALID & diperbaiki (implemented_pending_validation; D4-OD-LOCK-01 partially_fixed): V3-PROD-01/02, V3-AR-01, V3-BANK-01, V3-MKO-01, V3-MASTER-01, V3-CUT-01, D4-GL-01/02, D4-ASSET-01/02, D4-CLOSE-01, D4-CC-01, D4-BACKORDER-01, D4-OD-LOCK-01, D4-CASE-01.
-- Sisa Fase 01 (open): D4-CASE-02, D4-CASE-03, D4-INTERCO-01, D4-INTERCO-02, D4-CLOSE-02, D4-PA-02, D4-RFID-01. Lalu Fase 02–05 (78 ID).
-- Uji: `backend/tests/test_g3_phase01.py` (DB_NAME=g3_audit_phase01) 19 passed; iteration_162.
+## 2026-10-06 — Gelombang 3 (audit 101 temuan) · Fase 01 TUNTAS (23/23 ditelaah & diperbaiki)
+- Paket diimpor ke `docs/audit/gelombang-3/` (baseline tidak ditimpa). Status per ID: `docs/audit/gelombang-3/implementation/FASE-01-STATUS.md` (+ 4 keputusan bisnis terbuka).
+- 23/23 VALID; 22 implemented_pending_validation, D4-OD-LOCK-01 partially_fixed; D4-CASE-03 sebagian needs_business_decision.
+- Uji: `backend/tests/test_g3_phase01.py` (DB_NAME=g3_audit_phase01) 28 passed; iteration_162 & 163.
+- Berikutnya: Fase 02 (23 ID: RBAC, entitas/kepemilikan, RFID/WMS, alur antar-PT), lalu Fase 03–05.
 - Batasan: Mongo standalone (tanpa transaksi) → pola write-ahead marker / id deterministik / CAS; tidak ada sweeper crash.
 
 

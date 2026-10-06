@@ -1,0 +1,26 @@
+{
+  "summary": "Validasi independen 7 perbaikan Fase 01 (D4-CLOSE-02, D4-INTERCO-01, D4-INTERCO-02, D4-CASE-02, D4-CASE-03, D4-PA-02, D4-RFID-01) lewat uji fault-injection di DB uji terpisah (g3_audit_phase01). Baseline iteration_162 (19 passed) tetap hijau; menambah 9 uji baru menjadi 28 passed di tests/test_g3_phase01.py. Semua acceptance per ID TERPENUHI pada tingkat service. Backend tetap start bersih, DB uji di-drop setelah selesai.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_g3_phase01.py"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "closing_service.reclose_period: jalur orphan di _reclose_locked mengadopsi JE closing aktif yang sudah lahir sebelum fault (parent masih menunjuk JE lama) tanpa membuat JE ketiga — verified test_close02.",
+    "gl_service.post_intercompany_transfer: guard PER SISI (bukan OR) + ict_<tid> pair_id ditempel pada kedua sisi; retry setelah fault di sisi dst memposting HANYA sisi dst — verified test_interco01.",
+    "return_service._finish_return_transfer: push ownership_transfers memakai guard `transfer_id: {$ne: ...}` → replay tidak dobel; status transfer executing → completed idempoten — verified test_interco01_return.",
+    "roll_service.execute_ownership_transfer: unit_cost_snapshot distempel ke items transfer SEBELUM owner berpindah; gl_service._transfer_items_value_at_cost memakai snap bila ada, cost_source='roll_snapshot' — WAC basi di master tidak lagi mencemari JE at-cost (10m × 15 = 150, bukan 10) — verified test_interco02.",
+    "finance_case_service.resolve: saga claim atas finance_cases dengan precondition status + documents list → dua resolve paralel = tepat 1 yang menang + 1 CaseError; kalah TIDAK meninggalkan kas — verified test_case02.",
+    "finance_case_actions._cash_txn: id deterministik cash_case_<case>_<action>_<ndocs>_<n>; retry mengadopsi kas yang sama + jurnal yang sama (tetap 1 kas) — verified test_case02_cash_txn.",
+    "finance_case_actions.act_setor_dari_karyawan: menolak sebelum langkah 1 (status/step guard) tanpa menyentuh kas; held 80 − setor 40 → in_progress remaining 40; setor 40 lagi → resolved; setor di atas sisa ditolak — verified test_case03.",
+    "putaway_order_service._land_items: adopsi via last_pa_landed==order_id, mutasi ber-id deterministik mov_pa_<pa>_<roll>_<arah> + upsert → retry pasca-fault pada upsert mutasi menghasilkan tepat 2 mutasi per roll, PA selesai, saga_lock dilepas — verified test_pa02.",
+    "rfid_ingest_service.ingest: observasi duplikat dengan processed=False DIPROSES ulang (bukan dibuang); rread id deterministik rread_<obs> → retry event_id sama menyelesaikan pipeline tanpa dobel; event yang sudah processed=True tetap duplicate — verified test_rfid01."
+  ],
+  "updated_files": ["/app/backend/tests/test_g3_phase01.py (+9 uji: close02, interco01×2, interco02, case02×2, case03, pa02, rfid01)"],
+  "success_rate": {"backend": "100% (28/28 pytest Fase-01)", "frontend": "skipped (backend only)"},
+  "test_credentials": "N/A (service-level, DB_NAME=g3_audit_phase01 saja)",
+  "seed_data_creation": "Tidak ada data demo yang ditulis ke DB preview. DB uji g3_audit_phase01 di-drop setelah pytest selesai.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "File /app/backend/tests/test_g3_phase01.py sekarang berisi 28 uji fault-injection untuk Fase 01 (termasuk 7 ID yang baru selesai di iterasi 163). Jalankan: `cd /app/backend && DB_NAME=g3_audit_phase01 python -m pytest tests/test_g3_phase01.py -q`. Drop DB uji sesudah selesai. Pola `inject()` sudah mencakup koleksi Motor; untuk fault pada baris spesifik gunakan predikat `when` yang spesifik (lihat test_pa02 dan test_rfid01).",
+  "rca of the issue": "Tidak ada bug di 7 perbaikan. Setiap acceptance diverifikasi: (1) CLOSE-02 orphan-adopt bekerja (parent lama → JE lama di-void sebelum JE baru, kedua, retry mengadopsi JE baru, tidak membuat JE ketiga); (2) INTERCO-01 guard per-sisi + pair_id + idempotent push ke sales_returns; (3) INTERCO-02 snapshot cost at-roll dipakai (menolak WAC master basi); (4) CASE-02 saga claim + cash_case_<...> deterministik; (5) CASE-03 step/held/remaining enforcement; (6) PA-02 last_pa_landed adopt + mov_pa deterministik; (7) RFID-01 unfinished observations diproses ulang + rread_<obs> deterministik."
+}

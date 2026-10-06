@@ -53,7 +53,9 @@ async def get_rfq(rfq_id: str, request: Request) -> Dict[str, Any]:
 @router.get("/rfqs/{rfq_id}/compare")
 async def compare_rfq(rfq_id: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "rfq", "view")
-    return build_compare(await _get(rfq_id))
+    rfq = await _get(rfq_id)
+    assert_entity_access(rfq, "rfqs", await entity_ctx(request))   # G3 D4-RFQ-02
+    return build_compare(rfq)
 
 
 @router.post("/rfqs")
@@ -136,6 +138,7 @@ async def send_rfq(rfq_id: str, request: Request) -> Dict[str, Any]:
     """draft → open (penawaran mulai dikumpulkan)."""
     actor = await require_permission(request, "rfq", "update")
     rfq = await _get(rfq_id)
+    assert_entity_access(rfq, "rfqs", await entity_ctx(request))   # G3 D4-RFQ-02
     if rfq["status"] != "draft":
         raise HTTPException(status_code=400, detail=f"Hanya RFQ draft yang bisa dikirim (status: {rfq['status']})")
     await db.rfqs.update_one({"id": rfq_id}, {
@@ -150,6 +153,7 @@ async def submit_quote(rfq_id: str, payload: RFQQuoteSubmit, request: Request) -
     """Input penawaran 1 supplier (harga per baris). RFQ draft otomatis → open."""
     actor = await require_permission(request, "rfq", "update")
     rfq = await _get(rfq_id)
+    assert_entity_access(rfq, "rfqs", await entity_ctx(request))   # G3 D4-RFQ-02
     if rfq["status"] not in OPEN_STATUSES:
         raise HTTPException(status_code=400, detail=f"RFQ {rfq['status']} tidak menerima penawaran")
     sup = next((s for s in rfq.get("suppliers", []) if s["supplier_id"] == payload.supplier_id), None)
@@ -185,6 +189,7 @@ async def award(rfq_id: str, payload: RFQAward, request: Request) -> Dict[str, A
     """Award RFQ → buat PO (full / per-baris) + upsert supplier price-list."""
     actor = await require_permission(request, "rfq", "award")
     rfq = await _get(rfq_id)
+    assert_entity_access(rfq, "rfqs", await entity_ctx(request))   # G3 D4-RFQ-02
     if rfq["status"] == "awarded":
         raise HTTPException(status_code=409, detail="RFQ sudah di-award.")
     if rfq["status"] != "open":
@@ -205,6 +210,7 @@ async def award(rfq_id: str, payload: RFQAward, request: Request) -> Dict[str, A
 async def cancel_rfq(rfq_id: str, payload: RFQDecision, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "rfq", "update")
     rfq = await _get(rfq_id)
+    assert_entity_access(rfq, "rfqs", await entity_ctx(request))   # G3 D4-RFQ-02
     if rfq["status"] in ("awarded", "cancelled"):
         raise HTTPException(status_code=409, detail=f"RFQ sudah {rfq['status']}.")
     await db.rfqs.update_one({"id": rfq_id}, {

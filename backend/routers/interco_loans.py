@@ -70,6 +70,11 @@ async def create_loan(payload: IntercoLoanCreate, request: Request) -> Dict[str,
 @router.get("/interco/loans/{loan_id}")
 async def get_loan(loan_id: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "interco", "view")
+    return await _guard_loan(loan_id, request)
+
+
+async def _guard_loan(loan_id: str, request: Request) -> Dict[str, Any]:
+    """G3 D4-ICLOAN-01 — baca & MUTASI (cair/bayar/batal) wajib lolos lingkup entitas dokumen."""
     ctx = await entity_ctx(request)
     res = await svc.get_one(loan_id)
     if not res:
@@ -83,6 +88,7 @@ async def get_loan(loan_id: str, request: Request) -> Dict[str, Any]:
 @router.post("/interco/loans/{loan_id}/disburse")
 async def disburse_loan(loan_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "interco", "approve")
+    await _guard_loan(loan_id, request)
     try:
         res = await svc.disburse(loan_id, actor)
     except (svc.LoanError, money.IntercoMoneyError) as exc:
@@ -95,6 +101,7 @@ async def disburse_loan(loan_id: str, request: Request) -> Dict[str, Any]:
 @router.post("/interco/loans/{loan_id}/repay")
 async def repay_loan(loan_id: str, payload: IntercoLoanRepay, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "interco", "settle")
+    await _guard_loan(loan_id, request)
     try:
         res = await svc.repay(loan_id, actor, float(payload.amount or 0), payload.note)
     except (svc.LoanError, money.IntercoMoneyError) as exc:
@@ -109,6 +116,7 @@ async def repay_loan(loan_id: str, payload: IntercoLoanRepay, request: Request) 
 async def cancel_loan(loan_id: str, request: Request,
                       payload: IntercoLoanDecision = IntercoLoanDecision()) -> Dict[str, Any]:
     actor = await require_permission(request, "interco", "cancel")
+    await _guard_loan(loan_id, request)
     try:
         res = await svc.cancel(loan_id, actor, payload.reason)
     except (svc.LoanError, money.IntercoMoneyError) as exc:
