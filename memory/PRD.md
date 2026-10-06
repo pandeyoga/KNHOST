@@ -6,7 +6,7 @@
 - Uji: `backend/tests/test_g3_phase01.py` (DB_NAME=g3_audit_phase01) 28 passed; iteration_162 & 163.
 - Berikutnya: Fase 02 (23 ID: RBAC, entitas/kepemilikan, RFID/WMS, alur antar-PT), lalu Fase 03–05.
 - Keputusan user Fase 01 diterapkan: kelebihan setoran karyawan → kredit toko pelanggan; retry kunci harga OD juga membuat PO otomatis; transfer antar-PT pakai biaya aktual roll; kwitansi gagal dihapus+diarsip.
-- Fase 02 DIMULAI: 4/23 diperbaiki (D4-ICLOAN-01, D4-RFQ-02, D4-CAP-01, D4-DASH-01) — `implementation/FASE-02-STATUS.md`; uji `tests/test_g3_phase02.py`, `tests/test_g3_phase02_api.py` (iteration_164). Sisa 19 ID Fase 02 open.
+- Fase 02: 16/23 dikerjakan (13 implemented_pending_validation, 3 partially_fixed: D4-AI-05 live path, D4-PA-03 label frontend, D4-RET-POLICY-01 asal fisik) — `implementation/FASE-02-STATUS.md`; iteration_164 & 165 (64/64). Open 7: V3-WEIGHT-01, V3-WMS-02, D4-STOCK-01, D4-AI-06, D4-PLAN-05, D4-PA-01, D4-TAG-01. 3 keputusan bisnis Fase 02 menunggu user.
 - Batasan: Mongo standalone (tanpa transaksi) → pola write-ahead marker / id deterministik / CAS; tidak ada sweeper crash.
 
 

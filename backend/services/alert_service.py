@@ -295,7 +295,7 @@ async def job_ops_stalled() -> Dict[str, Any]:
             g["orders"].append(t["order_number"])
     created = 0
     now = _now()
-    for (wid, flow), g in groups.items():
+    for (wid, flow, _ent), g in groups.items():   # G3 D4-ALERT-WMS-01 — key kini 3-tuple
         age = (now - g["oldest"]).days if g["oldest"] else TASK_STALE_DAYS
         arah = "Outbound (pengiriman)" if flow == "outbound" else "Inbound (penerimaan)"
         note = await create_notification(
