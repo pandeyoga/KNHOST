@@ -350,6 +350,14 @@ async def complete_verify(session_id: str, scope_ids: List[str]) -> Dict[str, An
             if matched_rolls:
                 await set_journey(matched_rolls, "tag_verified", {"verify_session_id": session_id},
                                   only_from=[None, "received_transit", "tag_printed", "tag_verified", "cut_pending_tag"])
+                # G3 D4-TAG-01 — bukti verifikasi terikat ke tag yang TERBACA (aktif & tertaut)
+                epc_roll = {e["epc"]: e["roll_id"] for e in prog["expected"] if e["epc"] in set(prog["scanned_epcs"])}
+                async for t in db.rfid_tags.find({"epc": {"$in": list(epc_roll)}, "status": "active"},
+                                                 {"_id": 0, "id": 1, "epc": 1, "roll_id": 1}):
+                    if t.get("roll_id") == epc_roll.get(t["epc"]):
+                        await db.inventory_rolls.update_one(
+                            {"id": t["roll_id"], "rfid_tag_id": t["id"]},
+                            {"$set": {"journey.verified_tag_id": t["id"], "journey.verified_at": now_iso()}})
                 from services.roll_service import mark_cut_identity_verified
                 await mark_cut_identity_verified(matched_rolls, "rfid_verify", session_id)
     except Exception as e:

@@ -587,7 +587,8 @@ def test_ret_policy01_resolver_filters_by_order_entity():
     order = {"id": "so_1", "entity_id": "ent_MINE",
              "items": [{"product_id": "p_RET"}]}
     out = run(rps._linked_supplier_deadline(order, 14))
-    assert out["source"] == "none", f"PO entitas lain WAJIB ditolak sebagai proxy, got {out}"
+    # Batch akhir Fase 02: tanpa roll fisik yang terlacak → untraceable (bukan proxy PO terbaru)
+    assert out["source"] == "untraceable", f"PO entitas lain WAJIB ditolak sebagai proxy, got {out}"
     assert out.get("supplier_id") in ("", None)
 
     # Dengan PO entitas yang benar → ditemukan
@@ -600,5 +601,7 @@ def test_ret_policy01_resolver_filters_by_order_entity():
             "items": [{"product_id": "p_RET"}],
         })
     run(seed2())
+    run(db.inventory_rolls.insert_one({"id": "r_ret", "po_id": "po_mine", "product_id": "p_RET",
+                                       "reserved_ref": {"type": "sales_order", "id": "so_1"}}))
     out2 = run(rps._linked_supplier_deadline(order, 14))
     assert out2.get("supplier_id") == "sup_X", out2

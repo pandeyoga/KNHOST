@@ -524,6 +524,9 @@ async def pending_so_board(scope: Dict[str, Any]) -> List[Dict[str, Any]]:
     entities = {e["id"]: e for e in await db.business_entities.find({}, {"_id": 0}).to_list(100)}
     # cache incoming per (product, entity) agar tak query berulang
     incoming_cache: Dict[str, List[Dict[str, Any]]] = {}
+    # G3 D4-PLAN-05 — pasokan masuk = PERKIRAAN (tidak dicadangkan). Dibagi FIFO: SO tertua
+    # didahulukan; SO berikutnya hanya melihat SISA, jadi satu PO tidak dijanjikan dua kali.
+    remaining: Dict[str, List[Dict[str, Any]]] = {}
     rows: List[Dict[str, Any]] = []
     for so in sos:
         ent = so.get("entity_id", "")
@@ -535,7 +538,23 @@ async def pending_so_board(scope: Dict[str, Any]) -> List[Dict[str, Any]]:
             ck = f"{pid}|{ent}"
             if ck not in incoming_cache:
                 incoming_cache[ck] = await _incoming_supply(pid, ent)
-            match = _match_supply(qty, incoming_cache[ck])
+                remaining[ck] = [dict(i) for i in incoming_cache[ck]]
+            left = [i for i in remaining[ck] if i["qty"] > 0.01]
+            match = _match_supply(qty, left)
+            all_total = round(sum(i["qty"] for i in incoming_cache[ck]), 2)
+            match["incoming_total_all"] = all_total
+            match["incoming_claimed_by_older"] = round(all_total - match["incoming_total"], 2)
+            match["supply_is_forecast"] = True
+            match["coverage_label"] = {"covered": "Perkiraan tertutup (tidak dijamin)",
+                                       "partial": "Perkiraan tertutup sebagian (tidak dijamin)",
+                                       "uncovered": "Tidak ada pasokan tersisa"}[match["coverage"]]
+            need = qty
+            for i in left:
+                take = min(i["qty"], need)
+                i["qty"] = round(i["qty"] - take, 4)
+                need -= take
+                if need <= 0.01:
+                    break
             # E9.2 — sebutkan SIAPA yang menjanjikan: PO supplier atau PT sebelah.
             ic_rows = [i for i in incoming_cache[ck] if i.get("source") == "interco"]
             match["interco_promises"] = [{

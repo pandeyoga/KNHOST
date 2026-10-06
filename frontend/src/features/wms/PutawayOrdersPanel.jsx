@@ -10,6 +10,14 @@ import axios, { API } from "../../services/apiClient";
 
 const nf = new Intl.NumberFormat("id-ID");
 const q = (v) => nf.format(Math.round((v || 0) * 100) / 100);
+// G3 D4-PA-03 — total per satuan; meter/kg/yard tidak pernah dijumlah jadi satu angka
+const qtyLabel = (o) => {
+  const byUnit = o.qty_by_unit && Object.keys(o.qty_by_unit).length ? o.qty_by_unit : null;
+  if (byUnit) return Object.entries(byUnit).map(([u, v]) => `${q(v)} ${u}`).join(" + ");
+  const units = [...new Set((o.items || []).map((i) => i.unit || "meter"))];
+  if (units.length > 1) return units.map((u) => `${q((o.items || []).filter((i) => (i.unit || "meter") === u).reduce((s, i) => s + (i.qty || 0), 0))} ${u}`).join(" + ");
+  return `${q(o.total_qty)} ${units[0] || "m"}`;
+};
 const PA_STATUS = {
   open: ["#0058CC", "Terbuka"], in_transit: ["#FF9500", "Dalam Perjalanan"],
   completed: ["#1B7F4B", "Selesai"], completed_with_exception: ["#8C4A00", "Selesai + Exception"],
@@ -141,7 +149,7 @@ export default function PutawayOrdersPanel({ whId, selectedEntity }) {
                     <p className="text-[12.5px] font-bold">{o.pa_number}
                       {o.btg_number && <span className="ml-2 rounded bg-[#E6F6EC] px-1.5 py-0.5 text-[10px] font-bold text-[#1B7F4B]">BTG {o.btg_number}</span>}
                     </p>
-                    <p className="text-[11px] text-[#6B6B73]">{o.from_warehouse_name} → <b>{o.to_warehouse_name}</b> · {o.item_count} roll · {q(o.total_qty)} {o.items?.[0]?.unit || "m"}</p>
+                    <p className="text-[11px] text-[#6B6B73]">{o.from_warehouse_name} → <b>{o.to_warehouse_name}</b> · {o.item_count} roll · <span data-testid={`pa-qty-${o.id}`}>{qtyLabel(o)}</span></p>
                   </div>
                   <span className="rounded px-2 py-0.5 text-[10.5px] font-bold" style={{ color, background: `${color}18` }}>{label}</span>
                   {o.status === "open" && (

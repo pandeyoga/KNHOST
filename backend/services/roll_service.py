@@ -90,7 +90,8 @@ async def child_roll_no(parent_no: str) -> str:
     return await next_roll_no()
 
 
-async def insert_child_roll(child: Dict[str, Any], parent: Dict[str, Any]) -> Dict[str, Any]:
+async def insert_child_roll(child: Dict[str, Any], parent: Dict[str, Any],
+                            weight_basis: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
     """Simpan POTONGAN roll dengan nomor & satuannya SENDIRI (INV-ROLL-01).
 
     SATU pintu untuk semua jalur cut/split (reservasi parsial, kirim sebagian,
@@ -101,7 +102,7 @@ async def insert_child_roll(child: Dict[str, Any], parent: Dict[str, Any]) -> Di
     doc = dict(child)
     doc.pop("_id", None)
     # WM-02/WM-05 — reservasi panjang & klaim perpindahan milik INDUK, tidak ikut ke potongan.
-    for k in ("length_reservations", "length_reserved", "active_movement"):
+    for k in ("length_reservations", "length_reserved", "active_movement", "weight_split_children"):
         doc.pop(k, None)
     if doc.get("status") != "available":
         doc["earmarked_for"] = None  # pegging hanya bermakna pada roll available (INV roll-pegging)
@@ -116,14 +117,14 @@ async def insert_child_roll(child: Dict[str, Any], parent: Dict[str, Any]) -> Di
     # AX-07 — parent LANGSUNG selalu roll yang dipotong (salinan dict(parent) membawa kakek)
     doc["parent_roll_id"] = parent.get("id")
     doc["root_roll_id"] = parent.get("root_roll_id") or parent.get("id")
-    parent_w = _split_weight(doc, parent)
+    _split_weight(doc, parent, weight_basis)
     # WM-01 — potongan bersamaan dapat memilih nomor yang sama; ulangi dengan nomor baru supaya
     # induk yang sudah dikurangi tidak kehilangan potongannya (DuplicateKey = stok hilang).
     from pymongo.errors import DuplicateKeyError
     for _ in range(20):
         try:
             await db.inventory_rolls.insert_one(dict(doc))
-            await _set_parent_weight(parent, parent_w)
+            await apply_parent_split_weight(parent, doc)
             return doc
         except DuplicateKeyError as exc:
             if "roll_no" not in str(exc):
@@ -131,36 +132,51 @@ async def insert_child_roll(child: Dict[str, Any], parent: Dict[str, Any]) -> Di
             doc["roll_no"] = await child_roll_no(parent.get("roll_no") or "")
     doc["roll_no"] = await next_roll_no()
     await db.inventory_rolls.insert_one(dict(doc))
-    await _set_parent_weight(parent, parent_w)
+    await apply_parent_split_weight(parent, doc)
     return doc
 
 
-def _split_weight(doc: Dict[str, Any], parent: Dict[str, Any]) -> Optional[float]:
-    """W2-019 — konservasi berat saat split: hasil timbang induk TIDAK disalin utuh ke potongan.
-    Potongan mendapat estimasi proporsional panjang (provenance tercatat); sisa tetap di induk."""
-    pw = float(parent.get("weight_kg") or 0)
-    plen = float(parent.get("length_remaining") or 0)
+def _split_weight(doc: Dict[str, Any], parent: Dict[str, Any],
+                  basis: Optional[Dict[str, float]] = None) -> Optional[float]:
+    """W2-019 / G3 V3-WEIGHT-01 — potongan mendapat estimasi proporsional dari kepadatan berat
+    (berat ÷ panjang) satu snapshot konsisten induk SEBELUM dipotong; tidak disalin utuh."""
+    pw = float((basis or {}).get("w", parent.get("weight_kg")) or 0)
+    plen = float((basis or {}).get("len", parent.get("length_remaining")) or 0)
     clen = float(doc.get("length_remaining") or 0)
     if pw <= 0 or plen <= 0 or clen <= 0 or clen >= plen:
+        doc.pop("weight_provenance", None)
         return None
     cw = round(pw * clen / plen, 3)
     doc["weight_kg"] = cw
-    doc["weight_provenance"] = {"type": "estimated_proportional", "from_roll_id": parent.get("id"),
-                                "parent_weight_kg": pw, "parent_length": plen}
+    doc["weight_provenance"] = {"type": "estimated_proportional", "estimated": True,
+                                "from_roll_id": parent.get("id"), "parent_weight_kg": pw, "parent_length": plen}
     if isinstance(doc.get("secondary_measures"), dict) and "kg" in doc["secondary_measures"]:
         doc["secondary_measures"] = {**doc["secondary_measures"], "kg": cw}
-    return round(pw - cw, 3)
+    return cw
 
 
-async def _set_parent_weight(parent: Dict[str, Any], weight: Optional[float]) -> None:
-    if weight is None:
+async def apply_parent_split_weight(parent: Dict[str, Any], child: Dict[str, Any]) -> None:
+    """G3 V3-WEIGHT-01 — kurangi berat induk ATOMIK dari nilai live (bukan $set snapshot lama),
+    idempoten per potongan lewat `weight_split_children`."""
+    prov = child.get("weight_provenance") or {}
+    if prov.get("type") != "estimated_proportional" or prov.get("from_roll_id") != parent.get("id"):
         return
-    s: Dict[str, Any] = {"weight_kg": weight}
+    cw = float(child.get("weight_kg") or 0)
+    if cw <= 0:
+        return
+    new_w = {"$round": [{"$max": [0, {"$subtract": [{"$ifNull": ["$weight_kg", 0]}, cw]}]}, 3]}
+    s: Dict[str, Any] = {"weight_kg": new_w, "weight_estimated": True,
+                         "weight_split_children": {"$concatArrays": [
+                             {"$ifNull": ["$weight_split_children", []]}, [child["id"]]]}}
     if isinstance(parent.get("secondary_measures"), dict) and "kg" in parent["secondary_measures"]:
-        s["secondary_measures.kg"] = weight
-        parent["secondary_measures"] = {**parent["secondary_measures"], "kg": weight}
-    parent["weight_kg"] = weight
-    await db.inventory_rolls.update_one({"id": parent.get("id")}, {"$set": s})
+        s["secondary_measures.kg"] = new_w
+    upd = await db.inventory_rolls.find_one_and_update(
+        {"id": parent.get("id"), "weight_split_children": {"$ne": child["id"]}}, [{"$set": s}],
+        projection={"_id": 0, "weight_kg": 1, "secondary_measures": 1}, return_document=ReturnDocument.AFTER)
+    if upd:
+        parent["weight_kg"] = upd.get("weight_kg")
+        if "secondary_measures" in upd:
+            parent["secondary_measures"] = upd["secondary_measures"]
 
 
 # ── Taksonomi status (KN_15 §3.4) ────────────────────────────────────────────
@@ -263,6 +279,8 @@ async def rebuild_balance(product_id: str, warehouse_id: str, owner_entity_id: s
         bucket = (PHYSICAL_STATUS_TO_BUCKET.get(status)
                   or TRANSIT_STATUS_TO_BUCKET.get(status)
                   or OFFSITE_OWNED_STATUS_TO_BUCKET.get(status))
+        if bucket == "available_qty" and (r.get("active_movement") or {}).get("id"):
+            bucket = "hold_qty"  # G3 D4-PA-01 — diklaim perpindahan (PA): fisik ada, tidak tersedia dijual
         raw_len = float(r.get("length_remaining", 0) or 0)
         if bucket == "available_qty" and float(r.get("length_reserved") or 0) > 0 and raw_len > 0:
             # WM-02 — panjang yang dipesan (belum dipotong) masuk bucket status reservasinya.
@@ -554,7 +572,7 @@ async def _reserve_length(roll: Dict[str, Any], take: float, order_id: str,
     rsv = {"id": new_id("rsv"), "ref": dict(ref or {"type": "sales_order", "id": order_id}), "qty": take,
            "status": "reserved", "created_at": now_iso()}
     doc = await db.inventory_rolls.find_one_and_update(
-        {"id": roll["id"], "status": "available",
+        {"id": roll["id"], "status": "available", "active_movement": None,  # G3 D4-PA-01
          "$expr": {"$gte": [{"$subtract": ["$length_remaining", {"$ifNull": ["$length_reserved", 0]}]},
                             take - QTY_EPS]}},
         [{"$set": {"length_reservations": {"$concatArrays": [{"$ifNull": ["$length_reservations", []]}, [rsv]]},
@@ -597,7 +615,8 @@ async def confirm_cut(roll_id: str, reservation_id: str, actual_length: Optional
            "waste": waste, "mode": mode, "by": actor, "at": now_iso(), "note": note,
            "identity_verified": False}
     op = {"op": reservation_id, "child_id": f"roll_cut_{reservation_id}", "rsv": rsv, "cut": cut,
-          "actual": actual, "waste": waste}
+          "actual": actual, "waste": waste,
+          "weight_basis": {"w": float(parent.get("weight_kg") or 0), "len": float(parent.get("length_remaining") or 0)}}
     # CAS: reservasi masih ada & panjang fisik cukup; pull + kurangi + catat operasi potong DURABLE
     # (pending_cut_ops) dalam SATU update → gagal sesudahnya selalu bisa dilanjutkan, tidak pernah hilang.
     upd = await db.inventory_rolls.find_one_and_update(
@@ -629,7 +648,9 @@ async def _finish_cut(parent: Dict[str, Any], op: Dict[str, Any],
             "status": rsv.get("status") or "reserved", "reserved_ref": rsv["ref"], "earmarked_for": None,
             "is_remnant": False, "cut": cut, "journey": {"stage": "cut_pending_tag", "updated_at": now_iso()},
             "created_at": now_iso(), "updated_at": now_iso()})
-        child = await insert_child_roll(child, parent)
+        child = await insert_child_roll(child, parent, op.get("weight_basis"))
+    else:
+        await apply_parent_split_weight(parent, child)  # retry: selesaikan pengurangan berat yang tertunda
     base = {"product_id": parent["product_id"], "warehouse_id": parent["warehouse_id"],
             "owner_entity_id": parent.get("owner_entity_id"), "unit": parent.get("unit", "meter"),
             "lot": parent.get("lot", ""), "source_document": rsv["ref"]["id"], "timestamp": now_iso()}
@@ -753,7 +774,7 @@ async def pending_cuts(order_id: Optional[str] = None, scope_ids: Optional[List[
 
 async def _reserve_single_roll(roll_id: str, order_id: str) -> Optional[Dict[str, Any]]:
     return await db.inventory_rolls.find_one_and_update(
-        {"id": roll_id, "status": "available", "length_reserved": NO_LENGTH_RESERVED},
+        {"id": roll_id, "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
         {"$set": {"status": "reserved", "reserved_ref": {"type": "sales_order", "id": order_id},
                   "earmarked_for": None, "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER,
@@ -770,7 +791,8 @@ async def _split_roll(roll: Dict[str, Any], take: float, order_id: str) -> Optio
     # WM-01 — kurangi + bulatkan dalam SATU update atomik (pipeline). Dulu normalisasi
     # memakai nilai hasil baca terpisah sehingga bisa menimpa potongan konkuren lain.
     parent = await db.inventory_rolls.find_one_and_update(
-        {"id": roll["id"], "status": "available", "length_remaining": {"$gte": take - 0.001}},
+        {"id": roll["id"], "status": "available", "active_movement": None,
+         "length_remaining": {"$gte": take - 0.001}},
         [{"$set": {"length_remaining": {"$round": [{"$subtract": ["$length_remaining", take]}, 2]},
                    "length_initial": {"$round": [{"$subtract": ["$length_initial", take]}, 2]},
                    "updated_at": now_iso()}}],
@@ -814,6 +836,7 @@ async def _available_rolls_for_order(product_id: str, owner_entity_id: str, orde
     roll yang di-earmark untuk order/customer ini tetap masuk (diprioritaskan planner)."""
     rolls = await db.inventory_rolls.find(
         {"product_id": product_id, "owner_entity_id": owner_entity_id, "status": "available",
+         "active_movement": None,  # G3 D4-PA-01 — roll yang diklaim PA tidak boleh diambil SO
          "length_remaining": {"$gt": 0}}, {"_id": 0},
     ).to_list(10000)
     out = []
@@ -1459,7 +1482,7 @@ async def reserve_rolls_for_transfer(
     ref = {"type": "transfer", "id": transfer_id}
     q: Dict[str, Any] = {
         "product_id": product_id, "owner_entity_id": source_entity_id,
-        "status": "available", "length_reserved": NO_LENGTH_RESERVED, "length_remaining": {"$gt": 0}}
+        "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None, "length_remaining": {"$gt": 0}}
     wanted = [rid for rid in (roll_ids or []) if rid]
     if wanted:
         q["id"] = {"$in": wanted}
@@ -1500,7 +1523,7 @@ async def reserve_rolls_for_transfer(
         rlen = float(roll["length_remaining"])
         if rlen <= remaining + 0.01:
             updated = await db.inventory_rolls.find_one_and_update(
-                {"id": roll["id"], "status": "available", "length_reserved": NO_LENGTH_RESERVED},
+                {"id": roll["id"], "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
                 {"$set": {"status": "reserved", "reserved_ref": ref, "updated_at": now_iso()}},
                 projection={"_id": 0}, return_document=ReturnDocument.AFTER,
             )
@@ -1708,7 +1731,7 @@ async def resolve_stock_owner(product_id: str, warehouse_id: str, prefer_owner: 
                 raise HTTPException(status_code=403, detail="Anda tidak berwenang atas stok badan usaha ini.")
             return prefer_owner
     rolls = await db.inventory_rolls.find(
-        {"product_id": product_id, "warehouse_id": warehouse_id, "status": "available", "length_reserved": NO_LENGTH_RESERVED,
+        {"product_id": product_id, "warehouse_id": warehouse_id, "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None,
          "length_remaining": {"$gt": 0}},
         {"_id": 0, "owner_entity_id": 1, "length_remaining": 1},
     ).to_list(10000)
@@ -1738,7 +1761,7 @@ async def reserve_rolls_for_wh_transfer(
         # Operator memilih roll eksplisit (picker): pindahkan roll utuh, tanpa FEFO/split.
         # AX-04 — pilihan eksplisit divalidasi dimensi yang SAMA dengan jalur FEFO (termasuk owner)
         chosen = await db.inventory_rolls.find(
-            {"id": {"$in": list(roll_ids)}, "product_id": product_id, "status": "available", "length_reserved": NO_LENGTH_RESERVED,
+            {"id": {"$in": list(roll_ids)}, "product_id": product_id, "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None,
              "owner_entity_id": owner_entity_id, "length_remaining": {"$gt": 0}},
             {"_id": 0}).to_list(len(roll_ids))
         if len(chosen) != len(set(roll_ids)):
@@ -1749,7 +1772,7 @@ async def reserve_rolls_for_wh_transfer(
         out: List[Dict[str, Any]] = []
         for r in chosen:
             res = await db.inventory_rolls.update_one(
-                {"id": r["id"], "status": "available", "length_reserved": NO_LENGTH_RESERVED, "owner_entity_id": owner_entity_id,
+                {"id": r["id"], "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None, "owner_entity_id": owner_entity_id,
                  "warehouse_id": source_warehouse_id},
                 {"$set": {"status": "reserved", "reserved_ref": ref, "updated_at": now_iso()}})
             if not res.matched_count:
@@ -1764,7 +1787,7 @@ async def reserve_rolls_for_wh_transfer(
         return out
     rolls = await db.inventory_rolls.find(
         {"product_id": product_id, "warehouse_id": source_warehouse_id,
-         "owner_entity_id": owner_entity_id, "status": "available", "length_reserved": NO_LENGTH_RESERVED,
+         "owner_entity_id": owner_entity_id, "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None,
          "length_remaining": {"$gt": 0}}, {"_id": 0},
     ).to_list(10000)
     rolls.sort(key=lambda r: (r.get("created_at", ""), -float(r.get("length_remaining", 0))))
@@ -1782,7 +1805,7 @@ async def reserve_rolls_for_wh_transfer(
         rlen = float(roll["length_remaining"])
         if rlen <= remaining + 0.01:
             updated = await db.inventory_rolls.find_one_and_update(
-                {"id": roll["id"], "status": "available", "length_reserved": NO_LENGTH_RESERVED},
+                {"id": roll["id"], "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
                 {"$set": {"status": "reserved", "reserved_ref": ref, "updated_at": now_iso()}},
                 projection={"_id": 0}, return_document=ReturnDocument.AFTER,
             )
@@ -2049,7 +2072,8 @@ async def list_available_rolls(product_id: str, owner_entity_id: str = "",
                                skip: int = 0, limit: int = 0, warehouse_id: str = "") -> Dict[str, Any]:
     """Daftar roll available untuk PICKER (paginasi + FEFO). all_entities=True → lintas-entitas.
     Mengembalikan {items, total} (objek, bukan array telanjang) — khusus picker."""
-    q: Dict[str, Any] = {"product_id": product_id, "status": "available", "length_remaining": {"$gt": 0}}
+    q: Dict[str, Any] = {"product_id": product_id, "status": "available", "length_remaining": {"$gt": 0},
+                         "active_movement": None}
     if not all_entities and owner_entity_id:
         q["owner_entity_id"] = owner_entity_id
     if warehouse_id:
@@ -2145,7 +2169,7 @@ async def reserve_specific_rolls(roll_lines: List[Dict[str, Any]], ref: Dict[str
                                     detail=f"Qty roll {roll.get('roll_no', rid)} ({take}) melebihi sisa ({rlen}).")
             if take >= rlen - 0.01:
                 updated = await db.inventory_rolls.find_one_and_update(
-                    {"id": rid, "status": "available", "length_reserved": NO_LENGTH_RESERVED},
+                    {"id": rid, "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None},
                     {"$set": {"status": "reserved", "reserved_ref": ref, "earmarked_for": None,
                               "updated_at": now_iso()}},
                     projection={"_id": 0}, return_document=ReturnDocument.AFTER,
@@ -2156,7 +2180,7 @@ async def reserve_specific_rolls(roll_lines: List[Dict[str, Any]], ref: Dict[str
             else:
                 # CUT: kurangi parent + buat child reserved sebesar take (atomic pada parent)
                 upd = await db.inventory_rolls.find_one_and_update(
-                    {"id": rid, "status": "available", "length_reserved": NO_LENGTH_RESERVED, "length_remaining": {"$gte": take}},
+                    {"id": rid, "status": "available", "length_reserved": NO_LENGTH_RESERVED, "active_movement": None, "length_remaining": {"$gte": take}},
                     {"$set": {"length_remaining": round(rlen - take, 2),
                               "length_initial": round(float(roll.get("length_initial", rlen)) - take, 2),
                               "updated_at": now_iso()}},

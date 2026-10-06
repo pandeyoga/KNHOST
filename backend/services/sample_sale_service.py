@@ -199,7 +199,8 @@ async def cut_sample_task(task_id: str, payload: Dict[str, Any], actor: Dict[str
     # INV-ATOMIC-01 — klaim tugas SEBELUM roll dipotong / SO ditulis.
     await _saga.claim("wms_tasks", task_id, "sample_cut", precondition={"status": {"$in": ["created", "picking"]}}, actor=actor.get("name", ""))
     parent = await db.inventory_rolls.find_one_and_update(
-        {"id": roll["id"], "status": "available", "length_remaining": {"$gte": take - 0.001}},
+        {"id": roll["id"], "status": "available", "active_movement": None,
+         "length_remaining": {"$gte": take - 0.001}},
         {"$inc": {"length_remaining": -take, "length_initial": -take}, "$set": {"updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER)
     if not parent:

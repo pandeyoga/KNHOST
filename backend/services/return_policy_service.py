@@ -224,48 +224,71 @@ def _order_reference_date(order: Dict[str, Any]) -> str:
     return ""
 
 
+_PO_RECEIVED = ["receiving", "partial", "completed", "closed", "closed_short"]
+
+
+def _roll_po_id(r: Dict[str, Any]) -> str:
+    if r.get("po_id"):
+        return r["po_id"]
+    for acq in [r.get("acquired") or {}] + list(reversed(r.get("acquired_history") or [])):
+        if acq.get("via") in ("inbound", "grn", "goods_receipt", "purchase"):
+            pid = acq.get("po_id") or acq.get("ref_id") or ""
+            if pid.startswith("po"):
+                return pid
+    return ""
+
+
+async def physical_origin_po_ids(order_id: str) -> List[str]:
+    """G3 D4-RET-POLICY-01 — asal FISIK: roll yang memenuhi SO → GR → PO; roll potongan
+    ditelusuri lewat induknya. Asal disimpan di roll (bukan di tag), jadi re-tag tidak memutusnya."""
+    rolls = await db.inventory_rolls.find(
+        {"reserved_ref.type": "sales_order", "reserved_ref.id": order_id},
+        {"_id": 0, "id": 1, "po_id": 1, "acquired": 1, "acquired_history": 1, "parent_roll_id": 1}).to_list(2000)
+    out: List[str] = []
+    for r in rolls:
+        cur, hops = r, 0
+        pid = _roll_po_id(cur)
+        while not pid and cur.get("parent_roll_id") and hops < 10:
+            cur = await db.inventory_rolls.find_one(
+                {"id": cur["parent_roll_id"]},
+                {"_id": 0, "po_id": 1, "acquired": 1, "acquired_history": 1, "parent_roll_id": 1}) or {}
+            pid, hops = _roll_po_id(cur), hops + 1
+        if pid and pid not in out:
+            out.append(pid)
+    return out
+
+
 async def _linked_supplier_deadline(order: Dict[str, Any],
                                     window_fallback: int) -> Dict[str, Any]:
-    """Coba turunkan deadline dari window supplier asal barang (linked).
-
-    Best-effort: telusuri roll yang men-sumber SO ini (earmarked/reserved) →
-    supplier + tanggal terima; ambil window TERKETAT. Bila tak dapat → None.
-    """
-    order_id = order.get("id", "")
-    # Kumpulkan kandidat supplier dari PO yang produk-nya ada di order (best-effort).
-    product_ids = [it.get("product_id") for it in (order.get("items") or []) if it.get("product_id")]
-    if not product_ids:
-        return {"deadline": "", "supplier_id": "", "window_days": window_fallback, "source": "none"}
-
-    # Cari PO terbaru yang memuat produk-produk ini (sebagai proxy asal beli).
-    po = await db.purchase_orders.find_one(
-        {"items.product_id": {"$in": product_ids},
-         # G3 D4-RET-POLICY-01 — hanya PO entitas pesanan (asal beli PT lain bukan supplier yang sah)
-         **({"entity_id": order["entity_id"]} if order.get("entity_id") else {}),
-         "status": {"$in": ["receiving", "partial", "completed", "closed", "closed_short"]}},
-        {"_id": 0}, sort=[("created_at", -1)])
-    if not po or not po.get("supplier_id"):
-        return {"deadline": "", "supplier_id": "", "window_days": window_fallback, "source": "none"}
-
-    supplier = await db.suppliers.find_one({"id": po["supplier_id"]}, {"_id": 0})
-    if not supplier:
-        return {"deadline": "", "supplier_id": po.get("supplier_id", ""),
-                "window_days": window_fallback, "source": "none"}
-
-    resolved = resolve_supplier_return_policy(supplier, po)
-    win = int(resolved["policy"].get("window_days") or window_fallback)
-    receipt = po.get("last_received_at") or po.get("updated_at") or po.get("created_at")
-    return {
-        "deadline": compute_deadline(receipt, win),
-        "supplier_id": supplier.get("id", ""),
-        "supplier_name": supplier.get("name", ""),
-        "po_number": po.get("po_number", ""),
-        "receipt_date": receipt,
-        "window_days": win,
-        "origin_type": resolved.get("origin_type"),
-        "returnable_to_supplier": resolved.get("returnable_to_supplier"),
-        "source": "supplier_linked",
-    }
+    """Deadline dari window supplier asal FISIK barang (roll → GR → PO); ambil yang TERKETAT.
+    G3 D4-RET-POLICY-01: tidak lagi memakai "PO terbaru dengan produk sama" sebagai proxy.
+    Bila asal tidak terlacak → source `untraceable` (keputusan bisnis: pakai kebijakan retur
+    penjualan saja, retur ditandai untuk diperiksa Sales Admin)."""
+    po_ids = await physical_origin_po_ids(order.get("id", ""))
+    pos = await db.purchase_orders.find(
+        {"id": {"$in": po_ids}, "status": {"$in": _PO_RECEIVED}}, {"_id": 0}).to_list(200) if po_ids else []
+    best: Optional[Dict[str, Any]] = None
+    for po in pos:
+        supplier = await db.suppliers.find_one({"id": po.get("supplier_id")}, {"_id": 0}) if po.get("supplier_id") else None
+        if not supplier:
+            continue
+        resolved = resolve_supplier_return_policy(supplier, po)
+        win = int(resolved["policy"].get("window_days") or window_fallback)
+        receipt = po.get("last_received_at") or po.get("updated_at") or po.get("created_at")
+        cand = {
+            "deadline": compute_deadline(receipt, win),
+            "supplier_id": supplier.get("id", ""), "supplier_name": supplier.get("name", ""),
+            "po_number": po.get("po_number", ""), "receipt_date": receipt, "window_days": win,
+            "origin_type": resolved.get("origin_type"),
+            "returnable_to_supplier": resolved.get("returnable_to_supplier"),
+            "source": "supplier_linked", "origin_po_count": len(pos),
+        }
+        if best is None or (cand["deadline"] and (not best["deadline"] or cand["deadline"] < best["deadline"])):
+            best = cand
+    if best:
+        return best
+    return {"deadline": "", "supplier_id": "", "window_days": window_fallback, "source": "untraceable",
+            "origin_untraceable": True}
 
 
 async def check_sales_return_eligibility(order: Dict[str, Any],
@@ -324,6 +347,10 @@ async def check_sales_return_eligibility(order: Dict[str, Any],
         msg = (f"Di luar jendela retur ({window_days} hari). "
                f"Deadline {deadline[:10]}.")
         warnings.append(msg)
+    needs_admin_review = bool(supplier_linked.get("origin_untraceable"))
+    if needs_admin_review:
+        warnings.append("Asal barang tidak diketahui (roll tidak terlacak sampai PO) — batas retur memakai "
+                        "kebijakan retur penjualan saja; perlu diperiksa Sales Admin.")
 
     enforce = bool(policy.get("enforce_window"))
     blocked = bool(enforce and dl is not None and not within_window)
@@ -345,6 +372,8 @@ async def check_sales_return_eligibility(order: Dict[str, Any],
         "allowed_return_types": policy.get("allowed_return_types") or [],
         "allowed_outcomes": policy.get("allowed_outcomes") or [],
         "supplier_linked": supplier_linked or None,
+        "origin_untraceable": needs_admin_review,
+        "needs_admin_review": needs_admin_review,
         "warnings": warnings,
         "policy": snapshot_sales_policy(policy),
         "evaluated_at": now_iso(),

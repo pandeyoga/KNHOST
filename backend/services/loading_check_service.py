@@ -14,31 +14,59 @@ from core_utils import new_id, now_iso, safe_doc
 EXPECTED_STATUSES = ["reserved", "committed", "picked", "packed", "allocated"]
 
 
-async def _expected_rolls(order_id: str) -> List[Dict[str, Any]]:
-    rolls = await db.inventory_rolls.find({
-        "reserved_ref.type": "sales_order", "reserved_ref.id": order_id,
-        "status": {"$in": EXPECTED_STATUSES}, "length_remaining": {"$gt": 0},
-    }, {"_id": 0, "id": 1, "roll_no": 1, "rfid_tag_id": 1, "product_id": 1, "status": 1,
-        "length_remaining": 1}).to_list(2000)
-    return rolls
+def _open_q(order_id: str, warehouse_id: Optional[str]) -> Dict[str, Any]:
+    """G3 V3-WMS-02 — sesi per pengiriman (SO + gudang); sesi SO-lama (tanpa gudang) tetap menahan."""
+    q: Dict[str, Any] = {"kind": "loading_check", "order_id": order_id, "status": "open"}
+    if warehouse_id:
+        q["warehouse_id"] = {"$in": [warehouse_id, None]}
+    return q
 
 
-async def start(order_id: str, scope_ids: List[str], actor_name: str) -> Dict[str, Any]:
+def _result_for(so: Optional[Dict[str, Any]], warehouse_id: Optional[str]) -> Optional[Dict[str, Any]]:
+    so = so or {}
+    if warehouse_id and (so.get("loading_checks") or {}).get(warehouse_id):
+        return so["loading_checks"][warehouse_id]
+    lc = so.get("loading_check")
+    if lc and lc.get("warehouse_id") and lc["warehouse_id"] != warehouse_id:
+        return None  # hasil gudang lain tidak berlaku untuk pengiriman ini
+    return lc
+
+
+async def _save_result(order_id: str, warehouse_id: Optional[str], lc: Dict[str, Any]) -> None:
+    s: Dict[str, Any] = {"loading_check": lc}
+    if warehouse_id:
+        s[f"loading_checks.{warehouse_id}"] = lc
+    await db.sales_orders.update_one({"id": order_id}, {"$set": s})
+
+
+async def _expected_rolls(order_id: str, warehouse_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    q: Dict[str, Any] = {"reserved_ref.type": "sales_order", "reserved_ref.id": order_id,
+                         "status": {"$in": EXPECTED_STATUSES}, "length_remaining": {"$gt": 0}}
+    if warehouse_id:
+        q["warehouse_id"] = warehouse_id
+    return await db.inventory_rolls.find(q, {
+        "_id": 0, "id": 1, "roll_no": 1, "rfid_tag_id": 1, "product_id": 1, "status": 1,
+        "length_remaining": 1, "warehouse_id": 1}).to_list(2000)
+
+
+async def start(order_id: str, scope_ids: List[str], actor_name: str,
+                warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "id": 1, "number": 1,
                                                            "entity_id": 1})
     if not so:
         raise HTTPException(status_code=404, detail="SO tidak ditemukan")
     if so.get("entity_id") and so["entity_id"] not in scope_ids:
         raise HTTPException(status_code=403, detail="SO di luar entitas Anda")
-    existing = await db.rfid_verify_sessions.find_one(
-        {"kind": "loading_check", "order_id": order_id, "status": "open"}, {"_id": 0})
+    existing = await db.rfid_verify_sessions.find_one(_open_q(order_id, warehouse_id), {"_id": 0})
     if existing:
         return safe_doc(existing)
     from services.roll_service import assert_cut_identity_ready
-    await assert_cut_identity_ready(order_id)  # WM-02 — potong dikonfirmasi & tag anak terverifikasi
-    rolls = await _expected_rolls(order_id)
+    # WM-02 + G3 V3-WMS-02 — potong & tag anak hanya diperiksa untuk gudang pengiriman ini
+    await assert_cut_identity_ready(order_id, warehouse_id=warehouse_id or "")
+    rolls = await _expected_rolls(order_id, warehouse_id)
     if not rolls:
-        raise HTTPException(status_code=400, detail="Tidak ada roll ter-alokasi untuk SO ini (pick dulu).")
+        raise HTTPException(status_code=400, detail=(
+            "Tidak ada roll ter-alokasi untuk SO ini" + (" di gudang ini" if warehouse_id else "") + " (pick dulu)."))
     tag_ids = [r["rfid_tag_id"] for r in rolls if r.get("rfid_tag_id")]
     tags = {t["id"]: t for t in await db.rfid_tags.find(
         {"id": {"$in": tag_ids}, "status": "active"}, {"_id": 0}).to_list(2000)}
@@ -54,7 +82,7 @@ async def start(order_id: str, scope_ids: List[str], actor_name: str) -> Dict[st
     sess = {
         "id": new_id("rvs"), "kind": "loading_check", "order_id": order_id,
         "so_number": so.get("number", ""), "print_job_id": None,
-        "owner_entity_id": so.get("entity_id"), "warehouse_id": None,
+        "owner_entity_id": so.get("entity_id"), "warehouse_id": warehouse_id or None,
         "expected": expected, "scanned_epcs": [], "missing": [], "extra": [],
         "untagged_count": len(untagged), "untagged": untagged, "untagged_resolved": [], "scan_sources": [],
         # Peringatan dini: roll expected yang BELUM committed akan lolos check tapi
@@ -86,13 +114,14 @@ async def complete(session_id: str, scope_ids: List[str]) -> Dict[str, Any]:
     unresolved = [u for u in prog.get("untagged", []) if u["roll_id"] not in set(prog.get("untagged_resolved") or [])]
     # RF-07 — sesi berisi scan simulasi → 'simulated' (bukan bukti fisik; dispatch tetap terblokir)
     clean = evidence_result(prog, not prog["missing"] and not prog["extra"] and not unresolved)
-    manifest = await _manifest(prog["order_id"])  # RF-06 — hasil terikat roll+panjang saat check
+    wh = prog.get("warehouse_id")
+    manifest = await _manifest(prog["order_id"], wh)  # RF-06 — hasil terikat roll+panjang saat check
     now = now_iso()
-    await db.sales_orders.update_one({"id": prog["order_id"]}, {"$set": {"loading_check": {
-        "session_id": session_id, "result": clean,
+    await _save_result(prog["order_id"], wh, {
+        "session_id": session_id, "result": clean, "warehouse_id": wh,
         "matched": prog["matched_count"], "expected": prog["expected_count"],
         "missing": prog["missing"], "extra": prog["extra"], "untagged_unresolved": unresolved,
-        "scan_sources": prog.get("scan_sources") or [], "manifest": manifest, "checked_at": now}}})
+        "scan_sources": prog.get("scan_sources") or [], "manifest": manifest, "checked_at": now})
     await db.rfid_verify_sessions.update_one({"id": session_id}, _saga.finish_set({
         "status": "completed", "result": clean, "missing": prog["missing"],
         "extra": prog["extra"], "completed_at": now}))
@@ -126,9 +155,9 @@ async def scan_label(session_id: str, code: str, scope_ids: List[str], reason: s
     return await db.rfid_verify_sessions.find_one({"id": session_id}, {"_id": 0})
 
 
-async def _manifest(order_id: str) -> List[Dict[str, Any]]:
+async def _manifest(order_id: str, warehouse_id: Optional[str] = None) -> List[Dict[str, Any]]:
     return sorted(({"roll_id": r["id"], "length": round(float(r.get("length_remaining") or 0), 2)}
-                   for r in await _expected_rolls(order_id)), key=lambda x: x["roll_id"])
+                   for r in await _expected_rolls(order_id, warehouse_id)), key=lambda x: x["roll_id"])
 
 
 async def warehouse_policy(warehouse_id: Optional[str]) -> str:
@@ -136,16 +165,17 @@ async def warehouse_policy(warehouse_id: Optional[str]) -> str:
     return (wh or {}).get("loading_check_policy") or "optional"
 
 
-async def override(order_id: str, reason: str, actor: str) -> Dict[str, Any]:
+async def override(order_id: str, reason: str, actor: str, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     """RF-04 — pengecualian berizin (wms.approve): dispatch tanpa sweep RFID, tetap terikat manifest."""
     reason = (reason or "").strip()
     if len(reason) < 5:
         raise HTTPException(status_code=400, detail="Alasan override loading check wajib (min. 5 karakter).")
-    if await db.rfid_verify_sessions.find_one({"kind": "loading_check", "order_id": order_id, "status": "open"}, {"_id": 0, "id": 1}):
+    if await db.rfid_verify_sessions.find_one(_open_q(order_id, warehouse_id), {"_id": 0, "id": 1}):
         raise HTTPException(status_code=400, detail="Masih ada sesi loading check terbuka — selesaikan dulu.")
     lc = {"session_id": None, "result": "override", "reason": reason, "by": actor,
-          "manifest": await _manifest(order_id), "checked_at": now_iso()}
-    await db.sales_orders.update_one({"id": order_id}, {"$set": {"loading_check": lc}})
+          "warehouse_id": warehouse_id or None,
+          "manifest": await _manifest(order_id, warehouse_id), "checked_at": now_iso()}
+    await _save_result(order_id, warehouse_id, lc)
     return lc
 
 
@@ -166,11 +196,10 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
     """Blokir dispatch bila loading check terbuka / tidak bersih / basi (RF-06) / wajib tapi tidak ada (RF-04)."""
     if not order_id:
         return
-    if await db.rfid_verify_sessions.find_one({"kind": "loading_check", "order_id": order_id, "status": "open"},
-                                              {"_id": 0, "id": 1}):
+    if await db.rfid_verify_sessions.find_one(_open_q(order_id, warehouse_id), {"_id": 0, "id": 1}):
         raise HTTPException(status_code=400, detail="Final Loading Check masih berjalan — selesaikan dulu sebelum kirim.")
-    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "loading_check": 1})
-    lc = (so or {}).get("loading_check")
+    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "loading_check": 1, "loading_checks": 1})
+    lc = _result_for(so, warehouse_id)
     if not lc:
         if await warehouse_policy(warehouse_id) == "required":
             raise HTTPException(status_code=400, detail=(
@@ -194,20 +223,24 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
             " — ulangi check atau perbaiki muatan sebelum kirim."))
     # RF-06 — roll siap kirim sekarang harus subset manifest saat check (roll & panjang sama).
     checked = {m["roll_id"]: m["length"] for m in (lc.get("manifest") or [])}
-    changed = [m["roll_id"] for m in await _manifest(order_id) if checked.get(m["roll_id"]) != m["length"]]
+    changed = [m["roll_id"] for m in await _manifest(order_id, warehouse_id) if checked.get(m["roll_id"]) != m["length"]]
     if lc.get("manifest") is None or changed:
         raise HTTPException(status_code=400, detail=(
             "Alokasi/roll berubah sesudah Final Loading Check"
             + (f" ({len(changed)} roll baru/berubah)" if changed else " (hasil lama tanpa manifest)")
             + " — ulangi check sebelum kirim."))
 
-async def status_for_order(order_id: str) -> Dict[str, Any]:
-    open_sess = await db.rfid_verify_sessions.find_one(
-        {"kind": "loading_check", "order_id": order_id, "status": "open"}, {"_id": 0})
-    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "loading_check": 1})
-    last = (so or {}).get("loading_check")
+async def status_for_order(order_id: str, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
+    open_sess = await db.rfid_verify_sessions.find_one(_open_q(order_id, warehouse_id), {"_id": 0})
+    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "loading_check": 1, "loading_checks": 1})
+    last = _result_for(so, warehouse_id)
+    # G3 V3-WMS-02 — SO menampilkan agregat progres per pengiriman/gudang, bukan satu status global
+    by_wh = [{"warehouse_id": w, "result": r.get("result"), "matched": r.get("matched"),
+              "expected": r.get("expected"), "checked_at": r.get("checked_at")}
+             for w, r in ((so or {}).get("loading_checks") or {}).items()]
     log = []
     if last and last.get("session_id"):  # riwayat scan sesi terakhir (siapa, kapan, dari perangkat apa)
         done = await db.rfid_verify_sessions.find_one({"id": last["session_id"]}, {"_id": 0, "scan_log": 1})
         log = (done or {}).get("scan_log") or []
-    return {"open_session": safe_doc(open_sess) if open_sess else None, "last_result": last, "last_scan_log": log}
+    return {"open_session": safe_doc(open_sess) if open_sess else None, "last_result": last,
+            "last_scan_log": log, "by_warehouse": by_wh}

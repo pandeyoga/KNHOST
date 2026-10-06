@@ -7,7 +7,7 @@ import { ScanLine, Zap, CheckCircle, AlertTriangle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
 
-export const LoadingCheckPanel = ({ orderId, soNumber }) => {
+export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
   const [session, setSession] = useState(null);
   const [lastResult, setLastResult] = useState(null);
   const [epcInput, setEpcInput] = useState("");
@@ -17,23 +17,26 @@ export const LoadingCheckPanel = ({ orderId, soNumber }) => {
   const [labelReason, setLabelReason] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
   const [lastLog, setLastLog] = useState([]);
+  const [byWarehouse, setByWarehouse] = useState([]);
+  const whParams = warehouseId ? { params: { warehouse_id: warehouseId } } : {};
 
   const loadStatus = async () => {
     try {
-      const r = await axios.get(`${API}/outbound/so/${orderId}/loading-check`);
+      const r = await axios.get(`${API}/outbound/so/${orderId}/loading-check`, whParams);
       setSession(r.data.open_session);
       setLastResult(r.data.last_result);
       setLastLog(r.data.last_scan_log || []);
+      setByWarehouse(r.data.by_warehouse || []);
     } catch { /* noop */ }
   };
-  useEffect(() => { if (orderId) loadStatus(); }, [orderId]); // eslint-disable-line
+  useEffect(() => { if (orderId) loadStatus(); }, [orderId, warehouseId]); // eslint-disable-line
 
   const run = async (fn) => {
     setBusy(true); setError("");
     try { await fn(); } catch (e) { setError(apiErrorText(e, "Gagal")); } finally { setBusy(false); }
   };
   const start = () => run(async () => {
-    const r = await axios.post(`${API}/outbound/so/${orderId}/loading-check/start`);
+    const r = await axios.post(`${API}/outbound/so/${orderId}/loading-check/start`, null, whParams);
     setSession(r.data);
   });
   const scan = (epcs, source = "manual") => run(async () => {
@@ -50,7 +53,7 @@ export const LoadingCheckPanel = ({ orderId, soNumber }) => {
   });
   const override = () => run(async () => {
     if (overrideReason.trim().length < 5) throw new Error("Alasan override minimal 5 karakter.");
-    await axios.post(`${API}/outbound/so/${orderId}/loading-check/override`, { reason: overrideReason });
+    await axios.post(`${API}/outbound/so/${orderId}/loading-check/override`, { reason: overrideReason, warehouse_id: warehouseId || null });
     setOverrideReason(""); await loadStatus();
   });
   const untagged = session?.untagged || [];
@@ -60,8 +63,13 @@ export const LoadingCheckPanel = ({ orderId, soNumber }) => {
   return (
     <div data-testid="loading-check-panel" className="rounded-lg border border-[#D9D2F0] bg-[#F7F5FF] p-2.5 space-y-2">
       <p className="flex items-center gap-1.5 text-[11.5px] font-bold text-[#4B3B9E]">
-        <ScanLine size={13} /> Pemeriksaan Muat Akhir (handheld vs SO {soNumber || ""})
+        <ScanLine size={13} /> Pemeriksaan Muat Akhir (handheld vs SO {soNumber || ""}{warehouseId ? " · pengiriman gudang ini" : ""})
       </p>
+      {byWarehouse.length > 1 && (
+        <p data-testid="lc-by-warehouse" className="text-[10.5px] text-[#6B6B73]">
+          Progres per pengiriman: {byWarehouse.filter((w) => ["clean", "override"].includes(w.result)).length}/{byWarehouse.length} gudang lolos check
+        </p>
+      )}
       {error && <p data-testid="lc-error" className="rounded bg-[#FBE9E7] px-2 py-1 text-[11px] font-semibold text-[#C0341D]">{error}</p>}
 
       {lastResult && !session && (

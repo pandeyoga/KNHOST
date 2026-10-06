@@ -1184,7 +1184,7 @@ async def transfer_return_roll_ownership(return_id: str, roll_id: str,
     await _saga.claim("sales_returns", return_id, "transfer_ownership", actor=actor)
     # Reservasi roll SPESIFIK ini untuk transfer (agar execute_ownership_transfer memindah tepat roll ini).
     upd = await db.inventory_rolls.update_one(
-        {"id": roll_id, "status": "available"},
+        {"id": roll_id, "status": "available", "active_movement": None, "length_reserved": {"$not": {"$gt": 0}}},
         {"$set": {"status": "reserved", "reserved_ref": {"type": "transfer", "id": transfer_id},
                   "updated_at": now}})
     if upd.modified_count != 1:

@@ -401,7 +401,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                     if (maxShip <= 0) return null;
                     return (
                       <>
-                      <LoadingCheckPanel orderId={selectedTask.order_id} soNumber={selectedTask.so_number || selectedTask.order_number} />
+                      <LoadingCheckPanel orderId={selectedTask.order_id} warehouseId={selectedTask.warehouse_id} soNumber={selectedTask.so_number || selectedTask.order_number} />
                       <div data-testid="dispatch-panel" className="rounded-lg border border-[#BFE6CC] bg-[#F1FBF4] p-2.5 space-y-2">
                         <div className="flex items-center justify-between text-[10.5px]">
                           <span className="text-[#6B6B73]">Siap dikirim: <strong className="text-[#1C7A3E] tabular-nums">{formatQty(maxShip)} {selectedTask.unit}</strong></span>

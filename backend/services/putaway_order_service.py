@@ -24,7 +24,9 @@ async def _rolls_ready(warehouse_id: str, scope_ids: List[str], limit: int = 200
         "journey.stage": "tag_verified",
         "journey.routing": {"$ne": "cross_dock"},
         "status": "available", "active_movement": None,  # AX-08/WM-05
+        "length_reserved": {"$not": {"$gt": 0}},
     }, {"_id": 0}).to_list(limit)
+    rolls = [r for r in rolls if (await identity_issue(r))[0] is None]  # G3 D4-TAG-01
     pids = list({r["product_id"] for r in rolls})
     prods = {p["id"]: p for p in await db.products.find(
         {"id": {"$in": pids}}, {"_id": 0, "id": 1, "sku": 1, "name": 1, "category": 1}).to_list(3000)}
@@ -76,10 +78,37 @@ async def suggest(warehouse_from: str, scope_ids: List[str]) -> Dict[str, Any]:
 PA_ELIGIBLE_STATUS = "available"  # AX-08 — QC hold/quarantine/reserved tidak boleh diputaway
 
 
+async def identity_issue(r: Dict[str, Any]):
+    """G3 D4-TAG-01 — kesiapan identitas terikat ke tag AKTIF saat ini + bukti verifikasi tag itu.
+    Tag lama yang di-retire / tag baru yang belum dicetak-diverifikasi tidak lolos."""
+    tid = r.get("rfid_tag_id")
+    if not tid:
+        return "tidak punya tag RFID (tag dihapus/diganti) — cetak & verifikasi tag baru", None
+    tag = await db.rfid_tags.find_one({"id": tid}, {"_id": 0})
+    if not tag or tag.get("status") != "active":
+        return f"tag RFID berstatus {(tag or {}).get('status') or 'hilang'} — belum aktif/terverifikasi", None
+    if tag.get("roll_id") != r.get("id") or not tag.get("epc"):
+        return "tag RFID tidak tertaut benar ke roll ini", None
+    j = r.get("journey") or {}
+    if j.get("verified_tag_id"):
+        ok = j["verified_tag_id"] == tid
+    else:  # data lama tanpa verified_tag_id: tag tidak boleh lahir sesudah verifikasi terakhir
+        ok = not tag.get("created_at") or str(tag["created_at"]) <= str(j.get("updated_at") or "")
+    if not ok:
+        return "tag RFID saat ini belum diverifikasi (bukti verifikasi milik tag lama)", None
+    return None, tag
+
+
 async def _release_claims(roll_ids: List[str], order_id: str) -> None:
+    from services.roll_service import rebuild_balance
+    segs = {(r["product_id"], r["warehouse_id"], r.get("owner_entity_id")) async for r in db.inventory_rolls.find(
+        {"id": {"$in": roll_ids}, "active_movement.id": order_id},
+        {"_id": 0, "product_id": 1, "warehouse_id": 1, "owner_entity_id": 1})}
     await db.inventory_rolls.update_many(
         {"id": {"$in": roll_ids}, "active_movement.id": order_id, "status": PA_ELIGIBLE_STATUS},
         {"$unset": {"active_movement": ""}})
+    for pid, wid, own in segs:
+        await rebuild_balance(pid, wid, own)
 
 
 async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[str],
@@ -131,7 +160,10 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
         if not check["ok"]:
             violations.append(check["reason"])
             continue
-        tag = await db.rfid_tags.find_one({"id": r.get("rfid_tag_id")}, {"_id": 0, "epc": 1}) or {}
+        why, tag = await identity_issue(r)
+        if why:
+            violations.append(f"Roll {r.get('roll_no')}: {why}")
+            continue
         items.append({
             "roll_id": r["id"], "roll_no": r.get("roll_no", ""), "epc": tag.get("epc", ""),
             "sku": p.get("sku", ""), "product_name": p.get("name", ""),
@@ -179,6 +211,9 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
     except Exception:
         await _release_claims(claimed, order_id)
         raise
+    from services.roll_service import rebuild_balance
+    for pid in {i["product_id"] for i in items}:  # G3 D4-PA-01 — roll diklaim PA keluar dari ATP
+        await rebuild_balance(pid, warehouse_from, order["owner_entity_id"])
     await set_journey([i["roll_id"] for i in items], "putaway_assigned", {"putaway_order_id": order["id"]})
     return safe_doc(order)
 
@@ -213,19 +248,25 @@ async def dispatch(order_id: str, scope_ids: List[str]) -> Dict[str, Any]:
     await _saga.claim("putaway_orders", order_id, "putaway_dispatch", precondition={"status": "open"})
     moved: List[Dict[str, Any]] = []
     for it in order["items"]:
-        res = await db.inventory_rolls.update_one(
+        # G3 D4-TAG-01 — identitas diperiksa ulang sebelum efek (tag bisa diganti sesudah PA dibuat)
+        roll = await db.inventory_rolls.find_one({"id": it["roll_id"]}, {"_id": 0}) or {}
+        why, tag = await identity_issue(roll)
+        bad_identity = bool(why) or (tag or {}).get("epc", "").upper() != (it.get("epc") or "").upper()
+        # G3 D4-PA-01 — CAS juga menolak roll yang punya reservasi panjang (potong) live
+        res = None if bad_identity else await db.inventory_rolls.update_one(
             {"id": it["roll_id"], "active_movement.id": order_id, "status": PA_ELIGIBLE_STATUS,
-             "warehouse_id": order["from_warehouse_id"]},
+             "warehouse_id": order["from_warehouse_id"], "length_reserved": {"$not": {"$gt": 0}}},
             {"$set": {"status": "in_transit_transfer", "updated_at": now_iso()}})
-        if res.modified_count != 1:
+        if res is None or res.modified_count != 1:
             for m in moved:  # kompensasi: tidak ada PA setengah terkirim
                 await db.inventory_rolls.update_one(
                     {"id": m["roll_id"], "active_movement.id": order_id, "status": "in_transit_transfer"},
                     {"$set": {"status": PA_ELIGIBLE_STATUS}})
             await _saga.release("putaway_orders", order_id)
             raise HTTPException(status_code=409, detail=(
-                f"Roll {it['roll_no']} tidak lagi available untuk PA ini (dipesan/QC/berpindah). "
-                "Keluarkan roll itu atau buat PA baru."))
+                f"Roll {it['roll_no']} " + (f"identitasnya berubah: {why or 'EPC berbeda dari PA'}. " if bad_identity
+                                            else "tidak lagi available untuk PA ini (dipesan/QC/berpindah). ")
+                + "Keluarkan roll itu atau buat PA baru."))
         moved.append(it)
     for pid in {i["product_id"] for i in order["items"]}:
         await rebuild_balance(pid, order["from_warehouse_id"], order["owner_entity_id"])

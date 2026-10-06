@@ -59,6 +59,8 @@ async def plan_options(order: Dict[str, Any]) -> Dict[str, Any]:
             "product_id": pid, "product_name": b.get("product_name"), "sku": b.get("sku"),
             "unit": b.get("unit", "meter"), "backorder_qty": b["backorder_qty"],
             "incoming_total": round(float(b.get("incoming_total") or 0), 2),
+            "incoming_claimed_by_older": round(float(b.get("incoming_claimed_by_older") or 0), 2),
+            "supply_is_forecast": True,
             "promise_date": b.get("promise_date") or "", "coverage": b.get("coverage", ""),
             "own_available": round(float(by.get(buyer, 0.0)), 2),
             "own_by_warehouse": await _own_by_warehouse(pid, buyer),
@@ -96,7 +98,8 @@ def _validate(lines_in: List[Dict[str, Any]], opts: Dict[str, Any]) -> List[Dict
         if stock > ln["own_available"] + EPS:
             raise FulfillmentError(f"{nm}: stok sendiri hanya {ln['own_available']:g}.")
         if wait > ln["incoming_total"] + EPS:
-            raise FulfillmentError(f"{nm}: barang datang terjadwal hanya {ln['incoming_total']:g}.")
+            raise FulfillmentError(f"{nm}: perkiraan sisa barang datang untuk SO ini hanya {ln['incoming_total']:g} "
+                                   "(SO yang lebih lama didahulukan).")
         avail = {o["entity_id"]: o["available"] for o in ln["other_entities"]}
         for x in ic:
             if x["qty"] > avail.get(x["entity_id"], 0.0) + EPS:
@@ -156,8 +159,8 @@ async def _execute(order, plan, actor, note, done: List[Dict[str, Any]]) -> None
         if ln["wait"] > EPS:
             done.append({"mode": "wait", "product_id": ln["product_id"], "qty": ln["wait"],
                          "promise_date": ln["promise_date"],
-                         "summary": f"{ln['product_name']}: {ln['wait']:g} tunggu barang datang"
-                                    + (f" (janji {str(ln['promise_date'])[:10]})" if ln["promise_date"] else "")})
+                         "summary": f"{ln['product_name']}: {ln['wait']:g} tunggu barang datang (perkiraan, tidak dijamin)"
+                                    + (f" (perkiraan {str(ln['promise_date'])[:10]})" if ln["promise_date"] else "")})
 
 
 async def decide_plan(order_id: str, lines_in: List[Dict[str, Any]], actor: Dict[str, Any],

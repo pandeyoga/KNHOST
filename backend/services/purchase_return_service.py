@@ -425,7 +425,8 @@ async def ship_to_supplier(return_id: str, actor: str, notes: str = "",
                 continue
             if roll.get("status") == "available":
                 res = await db.inventory_rolls.update_one(
-                    {"id": rid, "status": "available", "length_reserved": {"$not": {"$gt": 0}}}, {"$set": {
+                    {"id": rid, "status": "available", "length_reserved": {"$not": {"$gt": 0}},
+                     "active_movement": None}, {"$set": {
                         "status": "quarantine",
                         "supplier_return_ref": {"type": "purchase_return", "id": return_id},
                         "updated_at": now}})

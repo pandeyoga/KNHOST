@@ -132,15 +132,17 @@ async def compute_stock_analytics(
         mv_query["warehouse_id"] = warehouse_id
     movements = await db.inventory_movements.find(
         resolve_list_scope("inventory_movements", mv_query, ctx, entity_id),
-        {"_id": 0, "product_id": 1, "warehouse_id": 1, "timestamp": 1, "quantity": 1, "movement_type": 1}
+        {"_id": 0, "product_id": 1, "warehouse_id": 1, "owner_entity_id": 1, "timestamp": 1, "quantity": 1,
+         "movement_type": 1}
     ).to_list(20000)
-    # seg key = (product, warehouse) → recency/velocity penjualan
+    # G3 D4-STOCK-01 — seg key = (product, warehouse, PEMILIK): balance per pemilik tidak
+    # boleh menambahkan agregat gabungan berkali-kali (nilai & velocity terhitung ganda).
     last_sale: Dict[tuple, datetime] = {}
     sold_window: Dict[tuple, float] = {}
     for m in movements:
         if m.get("movement_type") not in SALE_MOVEMENT_TYPES:
             continue
-        key = (m.get("product_id"), m.get("warehouse_id"))
+        key = (m.get("product_id"), m.get("warehouse_id"), m.get("owner_entity_id"))
         dt = _parse_ts(m.get("timestamp"))
         if dt and (key not in last_sale or dt > last_sale[key]):
             last_sale[key] = dt
@@ -161,7 +163,7 @@ async def compute_stock_analytics(
     for r in rolls:
         if r.get("status") not in PHYSICAL_STATUSES:
             continue
-        key = (r.get("product_id"), r.get("warehouse_id"))
+        key = (r.get("product_id"), r.get("warehouse_id"), r.get("owner_entity_id"))
         length = float(r.get("length_remaining", 0) or 0)
         cost = float(r.get("base_unit_cost", 0) or 0)
         value = length * cost
@@ -182,7 +184,7 @@ async def compute_stock_analytics(
         if category and prod.get("category") != category:
             continue
         wh = b.get("warehouse_id")
-        key = (pid, wh)
+        key = (pid, wh, b.get("owner_entity_id"))
         on_hand = float(b.get("on_hand_qty", 0) or 0)
         row = prod_rows.setdefault(pid, {
             "product_id": pid, "sku": prod.get("sku", ""), "product_name": prod.get("name", ""),

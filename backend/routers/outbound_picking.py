@@ -1,5 +1,5 @@
 """Outbound Picking router: scan-based picking with multi-warehouse support & escalation."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pymongo import ReturnDocument
 from db import db
@@ -484,12 +484,13 @@ from services import rfid_print_service as _rps
 
 
 @router.post("/outbound/so/{order_id}/loading-check/start")
-async def start_loading_check(order_id: str, request: Request) -> Dict[str, Any]:
+async def start_loading_check(order_id: str, request: Request, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     actor = await require_permission(request, "wms", "update")
     ctx = await entity_ctx(request)
-    sess = await _lc.start(order_id, _resolve_scope_ids(ctx, None), actor["name"])
+    sess = await _lc.start(order_id, _resolve_scope_ids(ctx, None), actor["name"], warehouse_id)
     await audit(actor["name"], "loading_check_started", "sales_order", order_id,
-                {"session_id": sess["id"], "expected": len(sess.get("expected", []))})
+                {"session_id": sess["id"], "expected": len(sess.get("expected", [])),
+                 "warehouse_id": warehouse_id})
     return sess
 
 
@@ -526,7 +527,8 @@ async def override_loading_check(order_id: str, payload: Dict[str, Any], request
     if not so:
         raise HTTPException(status_code=404, detail="SO tidak ditemukan")
     assert_entity_access(so, "sales_orders", await entity_ctx(request))
-    lc = await _lc.override(order_id, str(payload.get("reason") or ""), actor["name"])
+    lc = await _lc.override(order_id, str(payload.get("reason") or ""), actor["name"],
+                            payload.get("warehouse_id") or None)
     await audit(actor["name"], "loading_check_override", "sales_order", order_id,
                 {"reason": lc["reason"], "rolls": len(lc["manifest"])}, reason=lc["reason"])
     return lc
@@ -544,6 +546,6 @@ async def complete_loading_check(session_id: str, request: Request) -> Dict[str,
 
 
 @router.get("/outbound/so/{order_id}/loading-check")
-async def get_loading_check(order_id: str, request: Request) -> Dict[str, Any]:
+async def get_loading_check(order_id: str, request: Request, warehouse_id: Optional[str] = None) -> Dict[str, Any]:
     await require_permission(request, "wms", "view")
-    return await _lc.status_for_order(order_id)
+    return await _lc.status_for_order(order_id, warehouse_id)

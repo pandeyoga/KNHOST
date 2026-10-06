@@ -358,11 +358,14 @@ async def _src_stock(metrics, dims, grain, p, filters, sc: Scope, w, _s):
     if grain:
         w.append("Stok adalah posisi saat ini; tidak dipecah per waktu.")
     rem = {"$ifNull": ["$length_remaining", 0]}
+    # G3 D4-AI-05 — jalur live sama dengan snapshot: panjang ter-reservasi pada roll available = reserved
+    lres = {"$min": [rem, {"$ifNull": ["$length_reserved", 0]}]}
     res = await _group("inventory_rolls", pre, dims, "stock", "" if grain else None, {
         "qty": {"$sum": rem}, "rolls": {"$sum": 1},
         "value": {"$sum": {"$multiply": [rem, {"$ifNull": ["$unit_cost", 0]}]}},
-        "avail": {"$sum": {"$cond": [{"$eq": ["$status", "available"]}, rem, 0]}},
-        "reserved": {"$sum": {"$cond": [{"$in": ["$status", list(cat.RESERVED_ROLL_STATUSES)]}, rem, 0]}}})
+        "avail": {"$sum": {"$cond": [{"$eq": ["$status", "available"]}, {"$subtract": [rem, lres]}, 0]}},
+        "reserved": {"$sum": {"$cond": [{"$in": ["$status", list(cat.RESERVED_ROLL_STATUSES)]}, rem,
+                                         {"$cond": [{"$eq": ["$status", "available"]}, lres, 0]}]}}})
     return {k: {m: r[cat.METRICS[m]["agg"]] for m in metrics} for k, r in res.items()}
 
 
@@ -561,14 +564,26 @@ async def query_metrics(args: Dict[str, Any], user: Dict[str, Any], ctx: Any,
     labels = {d: await _labels(d, list({k[i] for k in keys})) for i, d in enumerate(dims) if d in cat.NAMED_DIMS}
     shares = bool(dims or grain)
     # KN-E34 — baris sudah per satuan; total/pembanding/porsi qty juga tidak boleh lintas satuan.
+    # G3 D4-AI-06 — dimensi produk tanpa dimensi satuan: satuan fisik dilacak dari master produk.
     ui = dims.index("unit") if "unit" in dims else None
-    mixed = ui is not None and len({k[ui] for k in keys}) > 1
+    pi = dims.index("product") if "product" in dims and ui is None else None
+    unit_map: Dict[Any, str] = {}
+    if pi is not None and any(m in cat.QTY_METRICS for m in shown):
+        async for pr in db.products.find({"id": {"$in": list({k[pi] for k in keys})}},
+                                         {"_id": 0, "id": 1, "base_unit": 1}):
+            unit_map[pr["id"]] = pr.get("base_unit") or ""
+
+    def unit_of(k):
+        return k[ui] if ui is not None else unit_map.get(k[pi], "") if pi is not None else None
+
+    mixed = (ui is not None or pi is not None) and len({unit_of(k) for k in keys}) > 1
     unit_tot: Dict[Any, Dict[str, float]] = {}
     if mixed:
         for k, cur in rows.items():
             for m in shown:
                 if m in cat.QTY_METRICS:
-                    unit_tot.setdefault(k[ui], {})[m] = unit_tot.get(k[ui], {}).get(m, 0.0) + float(cur.get(m) or 0)
+                    u = unit_of(k)
+                    unit_tot.setdefault(u, {})[m] = unit_tot.get(u, {}).get(m, 0.0) + float(cur.get(m) or 0)
         warnings.append("Total qty tidak ditampilkan karena lintas satuan; porsi dihitung per satuan.")
     out_rows: List[Dict[str, Any]] = []
     for k in keys:
@@ -590,7 +605,7 @@ async def query_metrics(args: Dict[str, Any], user: Dict[str, Any], ctx: Any,
                 dv, dp = _delta(cur.get(m), prev.get(m))
                 r[f"{m}_delta"], r[f"{m}_delta_pct"] = _rnd(m, dv), (round(dp, 2) if dp is not None else None)
             if shares and cat.METRICS[m]["additive"] and cat.METRICS[m]["unit"] != "pct":
-                t = (unit_tot.get(k[ui], {}).get(m) if mixed and m in cat.QTY_METRICS else tot.get(m)) or 0
+                t = (unit_tot.get(unit_of(k), {}).get(m) if mixed and m in cat.QTY_METRICS else tot.get(m)) or 0
                 r[f"{m}_share"] = round(cur[m] / t * 100, 2) if t and cur.get(m) is not None else None
         out_rows.append(r)
     sort = args.get("sort") or {}
@@ -605,6 +620,10 @@ async def query_metrics(args: Dict[str, Any], user: Dict[str, Any], ctx: Any,
     limit = max(1, min(int(limit), cat.ROW_RETURN_LIMIT))
     no_tot = {m for m in shown if mixed and m in cat.QTY_METRICS}
     totals = {m: (None if m in no_tot else _rnd(m, tot.get(m))) for m in shown}
+    if no_tot:
+        result_unit_totals = {u: {m: _rnd(m, v) for m, v in mt.items()} for u, mt in unit_tot.items()}
+    else:
+        result_unit_totals = None
     compare = None
     if cp:
         compare = {"period": cp.to_dict(), "totals": {m: (None if m in no_tot else _rnd(m, ptot.get(m))) for m in shown},
@@ -625,7 +644,8 @@ async def query_metrics(args: Dict[str, Any], user: Dict[str, Any], ctx: Any,
         "period": p.to_dict(),
         "entity_scope": {"mode": entity_scope, "entity_ids": sc.entity_ids},
         "columns": _columns(dims, grain, shown, bool(cp), shares),
-        "rows": out_rows[:limit], "totals": totals, "compare": compare, "row_count": len(out_rows),
+        "rows": out_rows[:limit], "totals": totals, "totals_by_unit": result_unit_totals,
+        "compare": compare, "row_count": len(out_rows),
         "truncated": len(out_rows) > limit, "warnings": list(dict.fromkeys(warnings)), "denied": denied,
         "source": cat.CATALOG_VERSION,
     }

@@ -8,31 +8,34 @@ Status tertinggi yang dipakai agent adalah `implemented_pending_validation`. Buk
 | D4-RFQ-02 | VALID | implemented_pending_validation | `routers/rfq.py` compare, send, quote, award, cancel kini memeriksa lingkup entitas (iteration_164) |
 | D4-CAP-01 | VALID | implemented_pending_validation | `routers/purchase_orders.py` hanya mengambil produk yang dipesan, tanpa batas 1.000 (iteration_164) |
 | D4-DASH-01 | VALID | implemented_pending_validation | `routers/dashboard.py` tanpa batas 3.000/5.000. Risiko performa di katalog sangat besar |
-| D4-PRICE-SCOPE-01 | VALID: mutasi ber-ID dan statistik tanpa lingkup entitas | implemented_pending_validation | `_get_or_404(id, request)` memeriksa `assert_entity_access` di **semua** handler ber-ID; `stats/summary` memakai `resolve_list_scope` |
-| D4-RFQ-01 | VALID: award memakai harga baris `available=False` | implemented_pending_validation | `rfq_service._price_of`: baris tak tersedia dihitung 0, sehingga award ditolak atau baris dilewati |
-| V3-MRES-01 | VALID: baca-bebas lalu insert tanpa klaim | implemented_pending_validation | kunci unik per (bahan, entitas) `material_reservation_locks` + id cadangan deterministik `mres_<pr>_<baris>` |
-| V3-MRES-02 | VALID: total dari daftar terpotong 500/2000/5000 | implemented_pending_validation | `material_reservation_service`: penjumlahan tanpa batas |
-| D4-WMS-03 | VALID: konsumen hanya membaca `rack.bins` lama | implemented_pending_validation | `routers/reporting.py` membaca `rack.levels[].bins` + legacy; saldo tanpa batas 1000 |
-| D4-ALERT-WMS-01 | VALID: grup tanpa entitas | implemented_pending_validation | `alert_service`: kunci grup memuat `entity_id` |
-| D4-SUPPLY-01 | VALID: status `partial` tidak dianggap PO terbuka | implemented_pending_validation | `roll_service.OPEN_PO_STATUSES` + `partial` (dipakai stock bucket dan sales stock) |
-| D4-GLOBAL-01 | VALID: qty dokumen mentah dilabeli base_unit | implemented_pending_validation | `sales_stock_service.apply_global` memakai `quantity_base` (PO terbuka proporsional; interco `quantity_base`) |
-| V3-RFID-01 | VALID: cache dwell memakai verdict passage lama | implemented_pending_validation | cache dwell hanya bila `passage_id` sama; passage baru dievaluasi ulang |
-| D4-AI-05 | VALID | partially_fixed | snapshot harian memecah roll `available` yang ber-`length_reserved` ke reserved. Jalur live tanpa snapshot **belum** diubah |
-| D4-PA-03 | VALID | partially_fixed | backend: satuan masuk kunci grup; order PA menyimpan `qty_by_unit` dan `mixed_units`. Label total di frontend **belum** diubah |
-| D4-RET-POLICY-01 | VALID | partially_fixed + needs_business_decision | resolver supplier dibatasi ke PO entitas pesanan. Pelacakan asal fisik roll (roll → GR → PO) **belum**. Perlu keputusan bila asal fisik tidak tersedia |
-| V3-WEIGHT-01 | belum dikerjakan | open | — |
-| V3-WMS-02 | belum dikerjakan. Kemungkinan perlu keputusan: sesi loading per shipment/gudang | open | — |
-| D4-STOCK-01 | belum dikerjakan (kunci agregasi perlu `owner_entity_id` di semua konsumen) | open | — |
-| D4-AI-06 | belum dikerjakan | open | — |
-| D4-PLAN-05 | belum dikerjakan. Kemungkinan perlu keputusan: pasokan masuk dicadangkan per SO | open | — |
-| D4-PA-01 | belum dikerjakan | open | — |
-| D4-TAG-01 | belum dikerjakan | open | — |
+| D4-PRICE-SCOPE-01 | VALID | implemented_pending_validation | `_get_or_404(id, request)` memeriksa `assert_entity_access` di semua handler ber-ID; `stats/summary` memakai `resolve_list_scope` |
+| D4-RFQ-01 | VALID | implemented_pending_validation | `rfq_service._price_of`: baris tak tersedia dihitung 0 |
+| V3-MRES-01 | VALID | implemented_pending_validation | kunci unik per (bahan, entitas) + id cadangan deterministik |
+| V3-MRES-02 | VALID | implemented_pending_validation | penjumlahan tanpa batas |
+| D4-WMS-03 | VALID | implemented_pending_validation | `routers/reporting.py` membaca `rack.levels[].bins` + legacy |
+| D4-ALERT-WMS-01 | VALID | implemented_pending_validation | kunci grup memuat `entity_id` |
+| D4-SUPPLY-01 | VALID | implemented_pending_validation | `OPEN_PO_STATUSES` + `partial` |
+| D4-GLOBAL-01 | VALID | implemented_pending_validation | `apply_global` memakai `quantity_base` |
+| V3-RFID-01 | VALID | implemented_pending_validation | cache dwell hanya bila `passage_id` sama |
+| D4-AI-05 | VALID | implemented_pending_validation | snapshot **dan** jalur live `analytics_engine._src_stock`: panjang ter-reservasi di roll available dihitung reserved |
+| D4-PA-03 | VALID | implemented_pending_validation | backend `qty_by_unit`/`mixed_units`; frontend `PutawayOrdersPanel` menampilkan total per satuan (`pa-qty-<id>`) |
+| D4-RET-POLICY-01 | VALID | implemented_pending_validation | `return_policy_service.physical_origin_po_ids`: roll yang memenuhi SO → `po_id`/riwayat GR → PO; roll potongan lewat `parent_roll_id`. Tanpa asal → `source: untraceable`, pakai kebijakan retur penjualan, `needs_admin_review: true` + peringatan |
+| V3-WEIGHT-01 | VALID | implemented_pending_validation | `roll_service`: berat potongan = kepadatan snapshot induk SEBELUM potong; induk dikurangi atomik (pipeline `$subtract`, idempoten via `weight_split_children`); `confirm_cut` menyimpan `weight_basis` di operasi tahan-retry |
+| V3-WMS-02 | VALID | implemented_pending_validation | `loading_check_service`: sesi per pengiriman (SO + gudang); guard potong hanya gudang itu; hasil di `sales_orders.loading_checks.<gudang>`; `dispatch_guard` membaca hasil gudangnya; status SO memuat `by_warehouse`. API `?warehouse_id=` + frontend `LoadingCheckPanel` |
+| D4-STOCK-01 | VALID | implemented_pending_validation | `stock_analytics_service`: kunci agregasi (produk, gudang, pemilik) |
+| D4-AI-06 | VALID | implemented_pending_validation | `analytics_engine.query_metrics`: dimensi produk tanpa dimensi satuan → satuan dari master produk; satuan campur → `totals` qty `null`, `totals_by_unit`, porsi per satuan |
+| D4-PLAN-05 | VALID | implemented_pending_validation | `stock_bucket_service.pending_so_board`: pasokan dibagi FIFO (SO tertua dulu), SO berikutnya melihat sisa; `supply_is_forecast`, `incoming_claimed_by_older`; label UI "Perkiraan … (tidak dijamin)"; validasi `wait` memakai sisa |
+| D4-PA-01 | VALID | implemented_pending_validation | Saling mengunci: semua jalur reservasi (SO qty/roll eksplisit/potong panjang, transfer, retur, sampel) menolak roll ber-`active_movement`; roll diklaim PA masuk `hold_qty` (keluar dari ATP); dispatch PA menolak roll dengan `length_reserved` live |
+| D4-TAG-01 | VALID | implemented_pending_validation | `putaway_order_service.identity_issue`: tag aktif saat ini + tertaut + `journey.verified_tag_id` = tag itu; dipakai di suggest/create/dispatch. Retire menghapus bukti verifikasi dan ditolak saat roll sedang berpindah. Verifikasi cetak menulis `verified_tag_id` |
 
-Rekap: 23 ID. 13 implemented_pending_validation, 3 partially_fixed, 7 open.
-Bukti uji: iteration_164 (4 ID pertama); iteration_165 (12 ID sesi ini): 64/64 lulus (28 Fase 01 + 21 Fase 02 service + 15 Fase 02 API).
-Regresi yang tertangkap reviewer dan sudah diperbaiki: loop `alert_service` masih membongkar kunci 2 elemen, padahal kunci D4-ALERT-WMS-01 sekarang 3 elemen. Akibatnya job notifikasi tugas tertunda crash. Sudah diperbaiki menjadi `(wid, flow, _ent)`.
+Rekap: 23 ID. 23 implemented_pending_validation. 0 partially_fixed. 0 open.
 
-Keputusan bisnis Fase 02 yang diperlukan:
-1. D4-RET-POLICY-01: bila asal fisik roll yang diretur tidak bisa dilacak sampai PO, apakah memakai PO terbaru entitas yang sama (berlaku sekarang) atau tanpa batas waktu retur ke supplier?
-2. V3-WMS-02: sesi loading check per SO (sekarang) atau per shipment/gudang?
-3. D4-PLAN-05: pasokan PO yang masuk dicadangkan per SO (satu PO tidak dijanjikan ke banyak SO) atau tetap hanya informasi?
+Keputusan bisnis (user, 2026-10-06):
+1. D4-RET-POLICY-01: asal tidak terlacak → kebijakan retur penjualan saja + tanda "asal tidak diketahui" untuk Sales Admin. Asal disimpan di roll, bukan di tag, jadi re-tag tidak memutus jejak.
+2. V3-WMS-02: sesi cek muat per pengiriman.
+3. D4-PLAN-05: hanya informasi; dibagi FIFO (SO tertua dulu).
+4. D4-PA-01: saling mengunci.
+
+Bukti uji batch akhir: `tests/test_g3_phase02b.py` 16/16 (service asli). Regresi: phase01 28/28, phase02 21/21, phase02_api 15/15.
+Catatan jujur: beberapa tes lama di `test_g3_phase02.py` (D4-PA-03 grouping, V3-RFID-01) mereplikasi logika, bukan memanggil service. Tes `D4-RET-POLICY-01` lama disesuaikan dengan perilaku baru (bukan lagi proxy PO).
+Batasan: data lama tanpa `journey.verified_tag_id` diterima bila tag lahir sebelum verifikasi terakhir (fallback); belum ada UI khusus untuk menampilkan `needs_admin_review` di layar retur selain daftar peringatan.

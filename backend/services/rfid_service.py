@@ -154,6 +154,15 @@ async def retire_tag(tag_id: str, scope_ids: List[str]) -> Dict[str, Any]:
         raise HTTPException(status_code=404, detail="Tag tidak ditemukan")
     if tag.get("owner_entity_id") not in scope_ids:
         raise HTTPException(status_code=403, detail="Tag di luar entitas Anda")
+    # G3 D4-TAG-01 — ganti identitas saat roll sedang berpindah ditolak sebelum efek
+    if tag.get("roll_id"):
+        moving = await db.inventory_rolls.find_one(
+            {"id": tag["roll_id"], "active_movement.id": {"$exists": True}}, {"_id": 0, "active_movement": 1})
+        if moving and (moving.get("active_movement") or {}).get("id"):
+            mv = moving["active_movement"]
+            raise HTTPException(status_code=409, detail=(
+                f"Roll sedang dalam perpindahan {mv.get('number') or mv['id']} — selesaikan/batalkan dulu "
+                "sebelum mengganti tag."))
     # Sesi 13 — CAS: hanya tag aktif yang bisa di-retire; kalah (sudah retired) → 409.
     won = await db.rfid_tags.find_one_and_update(
         {"id": tag_id, "status": "active"},
@@ -164,7 +173,8 @@ async def retire_tag(tag_id: str, scope_ids: List[str]) -> Dict[str, Any]:
     if tag.get("roll_id"):
         await db.inventory_rolls.update_one(
             {"id": tag["roll_id"], "rfid_tag_id": tag_id},
-            {"$set": {"rfid_tag_id": None, "tracking_mode": "barcode", "updated_at": now_iso()}})
+            {"$set": {"rfid_tag_id": None, "tracking_mode": "barcode", "updated_at": now_iso()},
+             "$unset": {"journey.verified_tag_id": ""}})  # G3 D4-TAG-01 — bukti verifikasi gugur
     return {"ok": True, "tag_id": tag_id}
 
 

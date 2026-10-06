@@ -70,7 +70,7 @@ export default function FulfillmentLineCard({ line, value, onChange, canSetPrice
         max={room(v.reorder)} onChange={(q) => onChange({ ...v, reorder: q })} hint="Membuat Permintaan Pembelian bertaut pesanan ini." />
       <QtyRow label="Tunggu barang datang" testId={`fulfill-wait-${pid}`} value={v.wait}
         max={Math.min(line.incoming_total, room(v.wait))} onChange={(q) => onChange({ ...v, wait: q })}
-        hint={line.incoming_total > 0 ? `Terjadwal masuk ${formatQty(line.incoming_total)}${line.promise_date ? ` · janji ${String(line.promise_date).slice(0, 10)}` : ""}` : "Tidak ada barang masuk terjadwal."} />
+        hint={line.incoming_total > 0 ? `Perkiraan sisa barang masuk untuk SO ini ${formatQty(line.incoming_total)}${line.incoming_claimed_by_older > 0 ? ` (${formatQty(line.incoming_claimed_by_older)} sudah untuk SO lebih lama)` : ""}${line.promise_date ? ` · perkiraan ${String(line.promise_date).slice(0, 10)}` : ""} — tidak dijamin` : line.incoming_claimed_by_older > 0 ? "Barang masuk terjadwal sudah diperkirakan untuk SO yang lebih lama." : "Tidak ada barang masuk terjadwal."} />
       <p data-testid={`fulfill-left-${pid}`} className={`mt-1 text-right text-[11px] font-semibold ${left < -0.005 ? "text-[#C0392B]" : left > 0.005 ? "text-[#8A5300]" : "text-[#1B7F4B]"}`}>
         {left < -0.005 ? `Melebihi kekurangan ${formatQty(-left)}` : left > 0.005 ? `Sisa tetap backorder: ${formatQty(left)} ${line.unit}` : "Terpenuhi penuh"}
       </p>

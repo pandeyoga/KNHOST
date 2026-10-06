@@ -9,8 +9,8 @@ import EntityBadge from "../../components/EntityBadge";
 import { formatQty } from "../../utils/formatters";
 
 const COVERAGE = {
-  covered: { label: "Terjamin", tone: "bg-[#E6F6EC] text-[#1B7F4B] border-[#BDE5CC]" },
-  partial: { label: "Sebagian", tone: "bg-[#FFF3DC] text-[#9A6700] border-[#EFD9A8]" },
+  covered: { label: "Perkiraan Tertutup", tone: "bg-[#E6F6EC] text-[#1B7F4B] border-[#BDE5CC]" },
+  partial: { label: "Perkiraan Sebagian", tone: "bg-[#FFF3DC] text-[#9A6700] border-[#EFD9A8]" },
   uncovered: { label: "Belum Ada Suplai", tone: "bg-[#FDEDE7] text-[#C0392B] border-[#F3C9BD]" },
 };
 
@@ -79,8 +79,13 @@ export default function PendingSoTab({ rows = [], entities = [], loading = false
                     <TruckIcon size={11} /> {cov.label}
                   </span>
                   <span className="block text-[10px] text-[#6B6B73] mt-0.5 tabular-nums">
-                    incoming {formatQty(r.incoming_total)}{r.uncovered_qty > 0 ? ` · kurang ${formatQty(r.uncovered_qty)}` : ""}
+                    perkiraan masuk {formatQty(r.incoming_total)}{r.uncovered_qty > 0 ? ` · kurang ${formatQty(r.uncovered_qty)}` : ""} · tidak dijamin
                   </span>
+                  {r.incoming_claimed_by_older > 0 && (
+                    <span data-testid={`sb-pending-claimed-${r.order_id}-${r.product_id}`} className="block text-[10px] text-[#8A5300]">
+                      {formatQty(r.incoming_claimed_by_older)} dari {formatQty(r.incoming_total_all)} sudah diperkirakan untuk SO yang lebih lama
+                    </span>
+                  )}
                   {/* E9.2 — sebut PT sebelah yang menjanjikan barangnya, supaya tidak
                       ada permintaan beli kedua untuk barang yang sudah di jalan. */}
                   {(r.interco_promises || []).map((ic) => (
