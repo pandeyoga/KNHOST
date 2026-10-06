@@ -1077,6 +1077,11 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 ## 2026-10-06 — Gelombang 3 Fase 05 TUNTAS (9/9 implemented_pending_validation) — seluruh Gelombang 3 selesai
 - Keputusan user (semua a): ATP = tersedia + incoming(horizon) − permintaan tertunda; rata-rata pesanan = revenue terpenuhi ÷ jumlah terpenuhi; grafik velocity mengikuti periode.
 - Rincian: docs/audit/gelombang-3/implementation/FASE-05-STATUS.md. Baru: POST /api/document-templates/{id}/preview, `periods`/`pending_count` di /sales-orders/stats/summary, workflow frontend-lockfile.yml, yarn.lock tidak lagi di-.gitignore.
+
+## 2026-10-06 — Laporan Penutupan Gelombang 3
+- docs/audit/gelombang-3/implementation/LAPORAN-PENUTUPAN.md: identitas commit, ringkasan per fase, perintah reproduksi, keputusan bisnis, tabel 101 temuan (cocok 1:1 dengan findings-tracker), batas uji, migrasi, permintaan validasi.
+- Eksekusi ulang di HEAD 72cb55e: service 111/111; live lulus (03b & 03c wajib seed terpisah).
+
 - Uji: test_g3_phase05.py 7/7, regresi Fase 01–04 104/104, iteration_171 (live 12/12 + frontend) lulus.
 
 
