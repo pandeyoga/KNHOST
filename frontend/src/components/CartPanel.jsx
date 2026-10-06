@@ -11,6 +11,7 @@ import axios, { API } from "../services/apiClient";
 import CartPanelBanners from "./CartPanelBanners";
 import { pickPrice } from "../hooks/useEffectivePrices";
 import { useEntityScope } from "../context/EntityScopeContext";
+import { canSeeSourcing } from "../utils/sourcingVisibility";
 
 export function CartPanel({
   cart,
@@ -259,9 +260,11 @@ export function CartPanel({
                         <div key={r.roll_id} className="flex items-center gap-1.5 text-[10.5px]">
                           <span className="font-semibold text-[#1C1C1E]">{r.roll_no}</span>
                           <span className="text-[#8E8E93]">· {formatQty(r.length)} {baseUnit}</span>
+                          {canSeeSourcing() && (
                           <span className={`ml-auto inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${r.is_cross_entity ? "bg-[#FFF3E0] text-[#9A5B00]" : "bg-[#EEF1F4] text-[#3C3C43]"}`}>
                             {r.owner_entity_name}{r.is_cross_entity ? " · transfer" : ""}
                           </span>
+                          )}
                         </div>
                       ))}
                     </div>

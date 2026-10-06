@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import axios, { API } from "../services/apiClient";
 import { Layers, ChevronLeft, ChevronRight, Check, Loader2, Building2, AlertTriangle } from "lucide-react";
 import { formatCurrency, formatQty } from "../utils/formatters";
+import { canSeeSourcing } from "../utils/sourcingVisibility";
 
 /** K-7 — umur roll (hari) sejak diterima; null bila tanggal tidak ada. */
 const rollAgeDays = (iso) => { if (!iso) return null; const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); return Number.isFinite(d) && d >= 0 ? d : null; };
@@ -22,7 +23,8 @@ export const dualLen = (qty, unit = "meter") => {
   return `${formatQty(m)} m ≈ ${formatQty(yd)} yd`;
 };
 
-export default function RollPicker({ productId, entityId, unitPrice = 0, baseUnit = "meter", onConfirm, warehouseId = "", confirmLabel = "" }) {
+export default function RollPicker({ productId, entityId, unitPrice = 0, baseUnit = "meter", onConfirm, warehouseId = "", confirmLabel = "", showOwner }) {
+  const ownerVisible = showOwner ?? canSeeSourcing();
   const [page, setPage] = useState(0);
   const [data, setData] = useState({ items: [], total: 0 });
   const [loading, setLoading] = useState(false);
@@ -125,7 +127,7 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-1">
                         <span className="text-[10.5px] text-[#6B6B73]">{r.warehouse_name}</span>
-                        {r.is_cross_entity ? (
+                        {!ownerVisible ? null : r.is_cross_entity ? (
                           <span data-testid={`roll-badge-cross-${r.id}`} className="inline-flex items-center gap-0.5 rounded-full bg-[#FFF3E0] px-1.5 py-0.5 text-[9px] font-bold text-[#9A5B00]">
                             <AlertTriangle size={9} /> {r.owner_entity_name} · transfer
                           </span>
@@ -161,9 +163,9 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
 
       {/* Footer summary */}
       <div className="border-t border-[#EFF0F2] bg-[#FAFBFC] px-3 py-2.5">
-        {hasCross && (
+        {hasCross && ownerVisible && (
           <p data-testid="roll-picker-cross-note" className="mb-1.5 flex items-start gap-1.5 rounded-md bg-[#FFF3E0] px-2 py-1.5 text-[10px] text-[#9A5B00]">
-            <AlertTriangle size={11} className="mt-0.5 shrink-0" /> Sebagian roll milik entitas lain — sistem akan otomatis membuat permintaan transfer antar-entitas saat pesanan dibuat.
+            <AlertTriangle size={11} className="mt-0.5 shrink-0" /> Sebagian roll milik entitas lain — dicatat sebagai usulan; Admin Sales yang memutuskan cara pemenuhannya.
           </p>
         )}
         <div className="flex items-center justify-between">

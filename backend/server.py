@@ -170,6 +170,8 @@ for module in [
 app.include_router(color_library.router)
 from routers import access_roles as _access_roles  # noqa: E402
 app.include_router(_access_roles.router)
+from routers import so_override as _so_override  # noqa: E402 — 2026-10 override SO Admin
+app.include_router(_so_override.router)
 from routers import product_media
 app.include_router(product_media.router)
 from routers import customer_feedback  # noqa: E402  — feedback/komplain pelanggan per SO (2026-09)

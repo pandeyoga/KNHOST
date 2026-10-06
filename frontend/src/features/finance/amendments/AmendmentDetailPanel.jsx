@@ -18,6 +18,7 @@ import {
   CheckCircle2, Link2, Loader2, Scale, ShieldAlert, UserCheck, XCircle,
 } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
+import { can } from "../../../config/roles";
 import AmendmentChangeList from "./AmendmentChangeList";
 import AmendmentImpactCard from "./AmendmentImpactCard";
 import { amendmentDetail, decideAmendment, errText, statusMeta } from "./amendmentApi";
@@ -96,10 +97,12 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
   const policy = amd.policy_snapshot || {};
   const pending = amd.status === "pending_approval";
   const isProposer = !!currentUser?.id && currentUser.id === amd.proposed_by_id;
-  const roleOk = currentUser?.role === "admin"
-    || currentUser?.role === (amd.required_role || policy.approver_role || "manager");
+  const permDecide = amd.approval_permission
+    ? can(currentUser?.permissions, ...amd.approval_permission.split(".")) : null;
+  const roleOk = permDecide ?? (currentUser?.role === "admin"
+    || currentUser?.role === (amd.required_role || policy.approver_role || "manager"));
   const dualBlocked = !!policy.dual_control && isProposer;
-  const canDecide = pending && APPROVER_ROLES.includes(currentUser?.role) && roleOk && !dualBlocked;
+  const canDecide = pending && (permDecide ?? APPROVER_ROLES.includes(currentUser?.role)) && roleOk && !dualBlocked;
 
   return (
     <aside className="section-card self-start" data-testid="amd-detail-panel">
@@ -191,7 +194,7 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
         {pending && (
           <div data-testid="amd-decision-box" className="rounded-md border border-[#FFE2B8] bg-[#FFF7EC] p-2.5 space-y-2">
             <p className="flex items-center gap-1 text-[10px] font-bold uppercase text-[#9A5B00]">
-              <ShieldAlert size={11} /> Keputusan diperlukan ({(amd.required_role || "manager").toUpperCase()})
+              <ShieldAlert size={11} /> Keputusan diperlukan ({amd.approval_permission ? "MANAGER / ADMIN / FINANCE" : (amd.required_role || "manager").toUpperCase()})
             </p>
             {dualBlocked && (
               <p data-testid="amd-dual-control-warning" className="rounded bg-white px-2 py-1.5 text-[10.5px] text-[#9B1C1C]">
@@ -199,13 +202,13 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
                 Minta rekan dengan wewenang yang sama untuk memutus.
               </p>
             )}
-            {!dualBlocked && !roleOk && (
+            {!dualBlocked && !roleOk && !amd.approval_permission && (
               <p data-testid="amd-role-warning" className="rounded bg-white px-2 py-1.5 text-[10.5px] text-[#9B1C1C]">
                 Amandemen ini harus diputus oleh {(amd.required_role || "manager").toUpperCase()}.
                 Peran Anda: {(currentUser?.role || "—").toUpperCase()}.
               </p>
             )}
-            {!APPROVER_ROLES.includes(currentUser?.role) && (
+            {!(permDecide ?? APPROVER_ROLES.includes(currentUser?.role)) && (
               <p data-testid="amd-noperm-warning" className="rounded bg-white px-2 py-1.5 text-[10.5px] text-[#6B6B73]">
                 Anda dapat memantau statusnya di sini, tetapi keputusan dilakukan oleh manager/admin.
               </p>

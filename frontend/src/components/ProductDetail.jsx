@@ -3,6 +3,7 @@ import { useState } from "react";
 import { XCircle, ShoppingBag, Printer } from "lucide-react";
 import { formatCurrency, formatQty } from "../utils/formatters";
 import LabelPrinterModal from "./LabelPrinterModal";
+import { canSeeSourcing } from "../utils/sourcingVisibility";
 
 export function ProductDetail({ product, breakdown, onClose, onAdd }) {
   const [showLabelModal, setShowLabelModal] = useState(false);
@@ -151,7 +152,7 @@ export function ProductDetail({ product, breakdown, onClose, onAdd }) {
           </div>
 
           {/* Ownership Matrix — Owner × Gudang × Lot (Roll-as-SSOT, KN_15 §8) */}
-          {(breakdown?.ownership_matrix || []).length > 0 && (
+          {canSeeSourcing() && (breakdown?.ownership_matrix || []).length > 0 && (
             <div className="mt-3 overflow-hidden rounded-md border border-[#E0E7FF]" data-testid="ownership-matrix">
               <div className="bg-[#EEF2FF] px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-wide text-[#4338CA]">
                 Kepemilikan per Entitas · Lot · Gudang

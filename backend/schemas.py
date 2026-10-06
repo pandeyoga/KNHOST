@@ -431,6 +431,32 @@ class SoReleaseRollsIn(BaseModel):
     reason: str = Field(..., min_length=5)
 
 
+class SoOverrideLineIn(BaseModel):
+    product_id: str
+    quantity: Optional[float] = None
+    price: Optional[float] = None
+    discount_percent: Optional[float] = None
+    remove: bool = False
+
+
+class SoOverrideAddIn(BaseModel):
+    product_id: str
+    quantity: float = Field(..., gt=0)
+
+
+class SoOverrideIn(BaseModel):
+    """2026-10 — override SO oleh Admin Sales/Manager/Admin (sebelum picking)."""
+    header: Dict[str, Optional[str]] = {}
+    lines: List[SoOverrideLineIn] = []
+    add_items: List[SoOverrideAddIn] = []
+    note: str = ""
+
+
+class SoCancelIn(BaseModel):
+    reason: str = ""
+
+
+
 class PRLineQtyIn(BaseModel):
     """AS-02 — MD/pembelian menaikkan qty beli baris PR yang lahir dari SO (tidak
     terkunci ke qty pesanan); alasan wajib, jejak di `qty_history`."""

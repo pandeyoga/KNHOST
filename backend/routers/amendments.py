@@ -151,8 +151,10 @@ async def detail(amd_id: str, request: Request) -> Dict[str, Any]:
 @router.post("/amendments/{amd_id}/decision")
 async def decide(amd_id: str, payload: AmendmentDecisionIn,
                  request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "finance_amendment", "approve")
     existing = await amd_svc.get_amendment(amd_id)
+    perm = (existing or {}).get("approval_permission") or "finance_amendment.approve"
+    module, _, action = perm.partition(".")
+    actor = await require_permission(request, module, action)
     if existing:
         await _guard_doc(request, actor, existing.get("doc_type", ""), existing.get("doc_id", ""))
     try:

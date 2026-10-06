@@ -18,6 +18,7 @@ import CheckoutStep3 from "./CheckoutStep3";
 import { SalesTeamEditor, salesTeamError, customerDefaultTeam } from "./SalesTeamEditor";
 import { useEffectivePrices, pickPrice, sourceMeta } from "../../hooks/useEffectivePrices";
 import { useEntityScope } from "../../context/EntityScopeContext";
+import { canSeeSourcing } from "../../utils/sourcingVisibility";
 
 const STEPS = [
   { n: 1, label: "Pelanggan & Alamat", icon: Users },
@@ -319,9 +320,11 @@ export default function CheckoutDrawer({
                                 <div key={r.roll_id} className="flex items-center gap-1.5 text-[10.5px]">
                                   <span className="font-semibold text-[#1C1C1E]">{r.roll_no}</span>
                                   <span className="text-[#8E8E93]">· {formatQty(r.length)} {it.product.base_unit || "meter"}</span>
+                                  {canSeeSourcing(user) && (
                                   <span className={`ml-auto inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${r.is_cross_entity ? "bg-[#FFF3E0] text-[#9A5B00]" : "bg-[#EEF1F4] text-[#3C3C43]"}`}>
                                     {r.owner_entity_name}{r.is_cross_entity ? " · transfer" : ""}
                                   </span>
+                                  )}
                                 </div>
                               ))}
                             </div>
@@ -413,10 +416,10 @@ export default function CheckoutDrawer({
                   <div className="flex items-start gap-2">
                     <AlertTriangle size={14} className="mt-0.5 shrink-0 text-[#A8221A]" />
                     <div>
-                      <p className="text-[11.5px] font-semibold text-[#8C4A00]">{formatQty(backorderQtyTotal)} unit dipenuhi dari stok gudang/entitas lain atau barang datang — admin yang mengatur pemenuhannya.</p>
+                      <p className="text-[11.5px] font-semibold text-[#8C4A00]">{formatQty(backorderQtyTotal)} unit belum tersedia langsung — Admin Sales yang mengatur pemenuhannya.</p>
                       <label className="mt-1.5 flex cursor-pointer items-center gap-2">
                         <input data-testid="allow-backorder-checkbox" type="checkbox" className="h-3.5 w-3.5 accent-[#0058CC]" checked={allowBackorder} onChange={(e) => setAllowBackorder(e.target.checked)} />
-                        <span className="text-[11.5px] font-medium text-[#1C1C1E]">Teruskan ke admin untuk dipenuhi (stok yang ada dicadangkan, sisanya menunggu transfer/PO)</span>
+                        <span className="text-[11.5px] font-medium text-[#1C1C1E]">Teruskan ke Admin Sales untuk dipenuhi</span>
                       </label>
                     </div>
                   </div>

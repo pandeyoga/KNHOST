@@ -14,7 +14,7 @@ from db import db
 from dependencies import require_permission, audit
 from core_utils import now_iso, new_id, safe_doc, DEFAULT_ENTITY_ID, strip_cost_fields, rupiah
 from schemas import (AllocationPreviewIn, RollReconcilePreviewIn, RepeatRestockIn, SoReallocateIn,
-                     SoReleaseRollsIn)
+                     SoReleaseRollsIn, SoCancelIn)
 from services import restock_service        # PS-21 — repeat/restock SO → PR
 from services import sales_ownership        # FASE E-8 (E8.4/US11) — "Pesanan Saya"
 from services import line_scope             # FASE L — pagar & penyaring lini produk
@@ -828,12 +828,14 @@ async def release_reservation(order_id: str, request: Request) -> Dict[str, Any]
 
 
 @router.post("/sales-orders/{order_id}/cancel")
-async def cancel_order(order_id: str, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "order", "update")
+async def cancel_order(order_id: str, request: Request, payload: Optional[SoCancelIn] = None) -> Dict[str, Any]:
+    actor = await require_permission(request, "order", "cancel")
     order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     if not order:
         raise HTTPException(status_code=404, detail="Order tidak ditemukan")
     assert_entity_access(order, "sales_orders", await entity_ctx(request))  # S#074 IDOR
+    sales_ownership.assert_may_open(order, actor)   # sales hanya membatalkan SO miliknya
+    reason = ((payload.reason if payload else "") or "").strip()
     if order["status"] in ["done", "cancelled", "expired", "partially_shipped", "shipped"]:
         raise HTTPException(status_code=409, detail="Order tidak bisa dibatalkan (sudah terkirim sebagian/penuh atau terminal)")
     # P16 (SALE-03) — Faktur Pajak aktif sudah/akan dilaporkan (NSFP); membatalkan SO diam-diam
@@ -853,7 +855,15 @@ async def cancel_order(order_id: str, request: Request) -> Dict[str, Any]:
     if order["status"] in ["reserved", "waiting_approval", "approved", "confirmed", "waiting_stock",
                             "partially_picked", "picked"]:
         await release_order_rolls(order_id)
-    result = await _transition(order_id, [order["status"]], "cancelled", actor["name"], "order_cancelled")
+    result = await _transition(order_id, [order["status"]], "cancelled", actor["name"], "order_cancelled",
+                               {"cancel_reason": reason, "cancelled_by": actor["name"], "cancelled_at": now_iso()})
+    # 2026-10 — dokumen pemenuhan (transfer/PR) dari keputusan Admin Sales TIDAK ikut batal otomatis:
+    # disebut di respons agar ditindaklanjuti, dan sales pemilik diberi tahu di aplikasi.
+    result["open_fulfillment_refs"] = sorted({p.get("ref_number") for d in (order.get("fulfillment_decisions") or [])
+                                              for p in (d.get("parts") or []) if p.get("ref_number")})
+    from services.so_override_service import notify_sales
+    await notify_sales(order, actor, f"{order.get('number')} dibatalkan oleh {actor['name']}",
+                       f"Alasan: {reason or '-'}")
     # S-4 (Gelombang 2) — batalkan task picking gudang yang masih aktif utk order ini
     # (antrean gudang bersih; barang order batal tidak ikut disiapkan).
     cancelled_tasks = await db.wms_tasks.update_many(

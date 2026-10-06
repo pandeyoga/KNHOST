@@ -10,6 +10,7 @@ import { ArrowRight } from "lucide-react";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 
 function renderValue(field, value) {
+  if (typeof value === "string" && value.trim() !== "" && Number.isNaN(Number(value))) return value;
   const n = Number(value || 0);
   if (field === "price") return formatCurrency(n);
   if (field === "discount_percent" || field === "order_discount_percent") return `${formatQty(n)}%`;

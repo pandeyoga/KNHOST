@@ -1,12 +1,15 @@
 import { ArrowLeftRight, Check } from "lucide-react";
 import { formatQty } from "../utils/formatters";
 import { modeMeta } from "../utils/fulfillment";
+import { canSeeSourcing } from "../utils/sourcingVisibility";
 
 /**
  * Info ketersediaan/fulfillment (ATP) per baris cart + tombol minta transfer inter-company.
  * Dipisah dari CartPanel agar file tetap ramping (compliance < 500 baris).
  */
 export function FulfillmentInfo({ line, loading, reqStatus, onRequestTransfer }) {
+  // 2026-10 — sales cukup memilih barang; alokasi/sumber stok diputus Admin Sales.
+  if (!canSeeSourcing()) return null;
   if (!line) {
     if (loading) {
       return <p className="mt-2 text-[10px] text-[#8E8E93]">Mengecek ketersediaan (ATP)…</p>;

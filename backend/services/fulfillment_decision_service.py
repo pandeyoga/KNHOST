@@ -154,6 +154,21 @@ async def _record(order: Dict[str, Any], decision: Dict[str, Any]) -> None:
              "status": "fulfillment_decision", "stage": decision["mode"],
              "timestamp": decision["at"], "user": decision["by"],
              "note": decision["summary"]}}})
+    # 2026-10 — keputusan Admin Sales = SUMBER resmi pemenuhan → tercatat sebagai amandemen SO.
+    from services import amendment_service as _amd
+    labels = {"stock": "Stok sendiri", "interco": "Transfer PT lain", "reorder": "PO supplier",
+              "wait": "Tunggu barang datang"}
+    changes = [{"product_id": p.get("product_id", ""),
+                "product_name": str(p.get("summary") or "").split(":")[0] or "Pesanan",
+                "field": "fulfillment", "label": labels.get(p.get("mode"), p.get("mode") or "Pemenuhan"),
+                "from": "Kekurangan",
+                "to": f"{float(p.get('qty') or 0):g}" + (f" · {p['ref_number']}" if p.get("ref_number") else "")}
+               for p in decision.get("parts") or []] or [
+        {"product_id": "", "product_name": "Pesanan", "field": "fulfillment", "label": "Pemenuhan",
+         "from": "Kekurangan", "to": decision.get("summary", "")}]
+    await _amd.record_event(order, "fulfillment_decision", "Keputusan pemenuhan Admin Sales", changes,
+                            {"name": decision.get("by", ""), "id": decision.get("by_id", "")},
+                            note=decision.get("note") or decision.get("summary", ""))
 
 
 async def decide(order_id: str, mode: str, actor: Dict[str, Any], *,

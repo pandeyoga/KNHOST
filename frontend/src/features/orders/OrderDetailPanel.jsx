@@ -1,6 +1,6 @@
 import { AskKnButton } from "../../components/AskKnButton";
 import { useEffect, useState } from "react";
-import { XCircle, Clock3, Truck, CreditCard, PackageX, ShieldAlert, Send, FileText, AlertTriangle, PackageCheck, ClipboardCheck, PackageSearch, Repeat, Unlock } from "lucide-react";
+import { XCircle, Clock3, Truck, CreditCard, PackageX, ShieldAlert, Send, FileText, AlertTriangle, PackageCheck, ClipboardCheck, PackageSearch, Repeat, Unlock, PencilLine } from "lucide-react";
 import { can } from "../../config/roles";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { StagePill, StageTimeline } from "../../components/SoStatusBadges";
@@ -25,6 +25,8 @@ import AmendmentTrailPanel from "../finance/amendments/AmendmentTrailPanel";
 import ReallocateRollsModal from "./ReallocateRollsModal";
 // AS-03 — Lepas reservasi SEBAGIAN per baris (Admin Sales, alasan wajib, status SO tetap).
 import ReleaseRollsModal from "./ReleaseRollsModal";
+import SalesOrderOverrideDialog from "./SalesOrderOverrideDialog";
+import CancelOrderDialog from "./CancelOrderDialog";
 import OrderFeedbackPanel from "./OrderFeedbackPanel";   // feedback/komplain pelanggan per SO
 // F1b — arti `price_source` yang di-snapshot pada baris SO (dari resolver harga).
 const PRICE_SOURCE_BADGE = {
@@ -55,6 +57,9 @@ export function OrderDetailPanel({
   const [issuingTax, setIssuingTax] = useState(false);
   const [reallocItem, setReallocItem] = useState(null);   // Ganti Roll (alokasi manual)
   const [releaseItem, setReleaseItem] = useState(null);   // AS-03 — Lepas roll sebagian
+  const [showOverride, setShowOverride] = useState(false);
+  const [showCancel, setShowCancel] = useState(false);
+  const [flash, setFlash] = useState("");
   const FULFILL_STATUSES = ["partially_picked", "picked", "partially_shipped", "shipped", "done"];
   const TAX_ELIGIBLE = ["confirmed", "partially_picked", "picked", "partially_shipped", "shipped", "done"];
   const taxEligible = sel?.is_pkp !== false && Number(sel?.ppn_amount) > 0 && TAX_ELIGIBLE.includes(sel?.status);
@@ -78,6 +83,10 @@ export function OrderDetailPanel({
   // "Perjalanan Pesanan" (E8.14) yang memang dirancang untuk sales.
   const canSeeShipments = can(perms, "wms", "view");
   const canTakeMoney = can(perms, "ar_receipt", "create");   // Finance
+  // 2026-10 — override SO (Admin Sales/Manager/Admin) & pembatalan ber-alasan — izin bisa diatur di matriks peran.
+  const canOverride = can(perms, "order", "override") && sel?.order_type !== "sample" &&
+    ["draft", "reserved", "waiting_approval", "approved", "waiting_stock", "confirmed"].includes(sel?.status);
+  const canCancel = can(perms, "order", "cancel");
   // Ganti Roll = KEPUTUSAN PEMENUHAN (izin inventory.pegging — Admin Sales/manajer/admin,
   // BUKAN sales lapangan), hanya sebelum pesanan dikonfirmasi/dipicking.
   const canReallocate = can(perms, "inventory", "pegging") &&
@@ -554,6 +563,12 @@ export function OrderDetailPanel({
         <SoApprovalsPanel order={sel} user={user} onRefresh={onRefresh} />
 
         <div className="flex flex-wrap gap-2">
+          {flash && <p data-testid="order-flash" className="w-full rounded-md bg-[#EAF7EF] px-2.5 py-1.5 text-[11px] font-semibold text-[#1B7F4B]">{flash}</p>}
+          {canOverride && (
+            <button data-testid={`override-order-button-${sel.id}`} className="secondary-button" onClick={() => setShowOverride(true)}>
+              <PencilLine size={13} /> Edit / Override SO
+            </button>
+          )}
           {sel.status === "reserved" && onSubmitForApproval && (
             <button data-testid={`submit-approval-button-${sel.id}`} className="primary-button" onClick={() => onSubmitForApproval(sel.id)}>
               <Send size={13} /> Ajukan untuk Persetujuan
@@ -584,8 +599,8 @@ export function OrderDetailPanel({
               <PackageCheck size={13} /> Tandai Diterima (Selesai)
             </button>
           )}
-          {!["done", "cancelled", "partially_shipped", "shipped"].includes(sel.status) && (
-            <button data-testid={`cancel-order-button-${sel.id}`} className="secondary-button text-red-600" onClick={() => onCancel(sel.id)}>
+          {canCancel && !["done", "cancelled", "expired", "partially_shipped", "shipped"].includes(sel.status) && (
+            <button data-testid={`cancel-order-button-${sel.id}`} className="secondary-button text-red-600" onClick={() => setShowCancel(true)}>
               <XCircle size={13} /> Batal
             </button>
           )}
@@ -610,6 +625,14 @@ export function OrderDetailPanel({
         <ReleaseRollsModal order={sel} item={releaseItem}
           onClose={() => setReleaseItem(null)}
           onDone={() => { setReleaseItem(null); onRefresh?.(); }} />
+      )}
+      {showOverride && (
+        <SalesOrderOverrideDialog order={sel} onClose={() => setShowOverride(false)}
+          onDone={(msg) => { setShowOverride(false); setFlash(msg); onRefresh?.(); }} />
+      )}
+      {showCancel && (
+        <CancelOrderDialog order={sel} onClose={() => setShowCancel(false)}
+          onDone={(msg) => { setShowCancel(false); setFlash(msg); onRefresh?.(); }} />
       )}
     </aside>
   );

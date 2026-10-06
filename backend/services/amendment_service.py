@@ -543,31 +543,8 @@ async def propose(doc_type: str, doc_id: str, reason_code: str,
             f"Koreksi sebesar {rupiah(abs_delta)} wajib disertai penjelasan tertulis "
             f"(ambang {rupiah(policy['require_note_above'])}).")
 
-    entity_id = pv["entity_id"]
-    number = await next_doc_number(AMD_COLL, "number", "AMD-", entity_id=entity_id or None)
-    now = now_iso()
-    amd: Dict[str, Any] = {
-        "id": new_id("amd"), "number": number, "entity_id": entity_id,
-        "doc_type": doc_type, "doc_id": doc_id, "doc_number": pv["doc_number"],
-        "reason_code": reason_code, "reason_label": reason["label"],
-        "affects_master": bool(reason.get("affects_master")),
-        "note": (note or "").strip(), "attachments": attachments or [],
-        "changes": pv["changes"], "before": pv["before"], "after": pv["after"],
-        "impact": pv["impact"], "method": pv["method"], "method_label": pv["method_label"],
-        "issued": pv["issued"], "issued_reason": pv["issued_reason"],
-        "policy_snapshot": policy, "explain": pv["explain"],
-        "requires_approval": pv["requires_approval"],
-        "required_role": pv["required_role"],
-        "status": "pending_approval" if pv["requires_approval"] else "approved",
-        "proposed_by": actor.get("name", ""), "proposed_by_id": actor.get("id", ""),
-        "proposed_at": now,
-        "decided_by": "", "decided_by_id": "", "decided_at": "", "decision_note": "",
-        "applied_at": "", "result_refs": [],
-        "refs": [],   # FASE G-4 — ditulis DUA ARAH lewat services/doc_refs_service
-        "payload": {"items": pv["_new_items"],
-                    "order_discount_percent": pv["_order_discount_percent"]},
-        "created_at": now, "updated_at": now,
-    }
+    amd = await _amd_doc(pv, reason_code, reason["label"], bool(reason.get("affects_master")),
+                         actor, note, attachments)
     await db[AMD_COLL].insert_one(dict(amd))
     # Tautkan amandemen ↔ dokumen yang diamandemen SEJAK DIUSULKAN (bukan setelah
     # disetujui): usulan yang masih menunggu pun harus terlihat saat menelusuri
@@ -585,6 +562,100 @@ async def propose(doc_type: str, doc_id: str, reason_code: str,
     return safe_doc(await db[AMD_COLL].find_one({"id": amd["id"]}, {"_id": 0}))
 
 
+async def _amd_doc(pv: Dict[str, Any], reason_code: str, reason_label: str, affects_master: bool,
+                   actor: Dict[str, Any], note: str = "",
+                   attachments: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    entity_id = pv["entity_id"]
+    now = now_iso()
+    return {
+        "id": new_id("amd"),
+        "number": await next_doc_number(AMD_COLL, "number", "AMD-", entity_id=entity_id or None),
+        "entity_id": entity_id, "doc_type": pv["doc_type"], "doc_id": pv["doc_id"],
+        "doc_number": pv["doc_number"], "reason_code": reason_code, "reason_label": reason_label,
+        "affects_master": affects_master,
+        "note": (note or "").strip(), "attachments": attachments or [],
+        "changes": pv["changes"], "before": pv["before"], "after": pv["after"],
+        "impact": pv["impact"], "method": pv["method"], "method_label": pv["method_label"],
+        "issued": pv["issued"], "issued_reason": pv["issued_reason"],
+        "policy_snapshot": pv["policy"], "explain": pv["explain"],
+        "requires_approval": pv["requires_approval"],
+        "required_role": pv["required_role"],
+        "status": "pending_approval" if pv["requires_approval"] else "approved",
+        "proposed_by": actor.get("name", ""), "proposed_by_id": actor.get("id", ""),
+        "proposed_at": now,
+        "decided_by": "", "decided_by_id": "", "decided_at": "", "decision_note": "",
+        "applied_at": "", "result_refs": [],
+        "refs": [],   # FASE G-4 — ditulis DUA ARAH lewat services/doc_refs_service
+        "payload": {"items": pv["_new_items"],
+                    "order_discount_percent": pv["_order_discount_percent"]},
+        "created_at": now, "updated_at": now,
+    }
+
+
+PRICE_EDIT_PERMISSION = "order.approve_price_edit"
+PRICE_EDIT_ROLES = ("manager", "admin", "finance")
+
+
+async def propose_price_edit(doc_id: str, changes: List[Dict[str, Any]], actor: Dict[str, Any],
+                             note: str = "") -> Dict[str, Any]:
+    """2026-10 — harga/diskon hasil override Admin SELALU menunggu pemegang izin
+    `order.approve_price_edit` (bawaan: manager · admin · finance), tanpa ambang."""
+    pv = await preview("sales_order", doc_id, changes, "admin_override_price")
+    pv.update({"requires_approval": True, "required_role": ""})
+    amd = await _amd_doc(pv, "admin_override_price", "Override harga/diskon oleh Admin", False, actor, note)
+    amd["approval_permission"] = PRICE_EDIT_PERMISSION
+    await db[AMD_COLL].insert_one(dict(amd))
+    from services import doc_refs_service as _refs
+    await _refs.safe_link(("doc_amendment", amd["id"]), ("sales_order", doc_id), "amends",
+                          note=amd["reason_label"])
+    for role in PRICE_EDIT_ROLES:
+        await _notify_approvers({**amd, "required_role": role})
+    return safe_doc(await db[AMD_COLL].find_one({"id": amd["id"]}, {"_id": 0}))
+
+
+async def record_event(order: Dict[str, Any], reason_code: str, reason_label: str,
+                       changes: List[Dict[str, Any]], actor: Dict[str, Any], note: str = "",
+                       before_total: Optional[float] = None,
+                       after_total: Optional[float] = None) -> Dict[str, Any]:
+    """Perubahan yang SUDAH berlaku (override Admin / keputusan pemenuhan) → amandemen
+    bernomor ber-status `auto_applied` supaya SO punya satu jejak koreksi."""
+    entity_id = order.get("entity_id") or ""
+    before = float(order.get("grand_total") or 0) if before_total is None else float(before_total or 0)
+    after = before if after_total is None else float(after_total or 0)
+    delta = round(after - before, 2)
+    now = now_iso()
+    ref = {"rel": "applied_to", "doc_type": "sales_order", "doc_id": order["id"],
+           "doc_number": order.get("number", ""), "note": reason_label}
+    amd: Dict[str, Any] = {
+        "id": new_id("amd"),
+        "number": await next_doc_number(AMD_COLL, "number", "AMD-", entity_id=entity_id or None),
+        "entity_id": entity_id, "doc_type": "sales_order", "doc_id": order["id"],
+        "doc_number": order.get("number", ""), "reason_code": reason_code, "reason_label": reason_label,
+        "affects_master": False, "note": (note or "").strip()[:400], "attachments": [],
+        "changes": changes, "before": {"grand_total": before}, "after": {"grand_total": after},
+        "impact": {"amount_before": before, "amount_after": after, "delta": delta,
+                   "delta_pct": round(delta / before * 100, 4) if before else 0.0},
+        "method": "re_derive", "method_label": "Dokumen dihitung ulang (belum terbit)",
+        "issued": False, "issued_reason": "", "policy_snapshot": {}, "explain": [],
+        "requires_approval": False, "required_role": "", "status": "auto_applied", "event": True,
+        "proposed_by": actor.get("name", ""), "proposed_by_id": actor.get("id", ""), "proposed_at": now,
+        "decided_by": actor.get("name", ""), "decided_by_id": actor.get("id", ""), "decided_at": now,
+        "decision_note": "", "applied_at": now, "result_refs": [ref], "refs": [ref], "payload": {},
+        "created_at": now, "updated_at": now,
+    }
+    await db[AMD_COLL].insert_one(dict(amd))
+    await db.sales_orders.update_one({"id": order["id"]}, {
+        "$set": {"last_amendment_id": amd["id"], "last_amendment_number": amd["number"]},
+        "$inc": {"amendment_count": 1},
+        "$push": {"timeline": timeline_entry(
+            "amended", f"Amandemen {amd['number']} — {reason_label}", actor.get("name", ""),
+            (note or "").strip()[:200])}})
+    from services import doc_refs_service as _refs
+    await _refs.safe_link(("doc_amendment", amd["id"]), ("sales_order", order["id"]), "amends",
+                          note=reason_label)
+    return safe_doc(amd)
+
+
 # ── Putusan ──────────────────────────────────────────────────────────────────
 async def decide(amd_id: str, action: str, actor: Dict[str, Any],
                  note: str = "") -> Dict[str, Any]:
@@ -599,7 +670,7 @@ async def decide(amd_id: str, action: str, actor: Dict[str, Any],
     policy = amd.get("policy_snapshot") or await policy_snapshot(amd.get("entity_id", ""))
     role = actor.get("role") or ""
     need = amd.get("required_role") or policy["approver_role"]
-    if role != "admin" and role != need:
+    if not amd.get("approval_permission") and role != "admin" and role != need:
         raise AmendmentError(
             f"Amandemen ini harus diputus oleh {need}. Peran Anda: {role or 'tidak dikenal'}.")
     from services import approval_matrix_service as _amx

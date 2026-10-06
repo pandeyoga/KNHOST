@@ -16,7 +16,7 @@ DEFAULT_PERMISSIONS = {
         "uom": ["view", "create", "update", "delete", "import", "export"],
         "template": ["view", "create", "update", "delete", "print", "import", "export"],
         "order": ["view", "create", "update", "delete", "approve", "confirm", "print",
-                  "deliver", "verify", "exact_cut"],
+                  "deliver", "verify", "exact_cut", "override", "cancel", "approve_price_edit"],
         "sample_order": ["view", "create", "approve_payment", "confirm", "cancel"],
         "wms": ["view", "create", "update", "scan", "dispatch", "print", "approve", "untagged_override"],
         "document": ["view", "create", "print"],
@@ -114,7 +114,7 @@ DEFAULT_PERMISSIONS = {
         "warehouse": ["view"],
         "uom": ["view"],
         "template": ["view"],
-        "order": ["view", "create", "update", "print"],
+        "order": ["view", "create", "update", "print", "cancel"],
         "sample_order": ["view", "create", "cancel"],
         # FASE G-1 — sales boleh MENGAJUKAN koreksi (bukan menyetujui).
         "finance_amendment": ["propose"],
@@ -168,7 +168,8 @@ DEFAULT_PERMISSIONS = {
         "warehouse": ["view", "create", "update", "export"],
         "uom": ["view"],
         "template": ["view"],
-        "order": ["view", "create", "update", "approve", "confirm", "print", "deliver", "verify", "exact_cut"],
+        "order": ["view", "create", "update", "approve", "confirm", "print", "deliver", "verify", "exact_cut",
+                  "override", "cancel", "approve_price_edit"],
         "sample_order": ["view", "create", "approve_payment", "confirm", "cancel"],
         "wms": ["view", "create", "update", "scan", "dispatch", "print", "approve", "untagged_override"],
         "document": ["view", "create", "print"],
@@ -276,7 +277,8 @@ DEFAULT_PERMISSIONS = {
         # tetap milik manajer: dulu satu-satunya gerbang adalah persetujuan nilai,
         # sehingga pemeriksaan rutin ikut menumpuk di meja manajer dan tidak ada catatan
         # siapa yang sudah memeriksa kelengkapannya.
-        "order": ["view", "create", "update", "confirm", "print", "deliver", "verify", "exact_cut"],
+        "order": ["view", "create", "update", "confirm", "print", "deliver", "verify", "exact_cut",
+                  "override", "cancel"],
         "document": ["view", "create", "print"],
         # `pegging` (menahan roll untuk pelanggan/pesanan tertentu) = KEPUTUSAN
         # PEMENUHAN, dicabut dari `sales` di E8.2 dan diberikan ke peran ini.
@@ -359,7 +361,7 @@ DEFAULT_PERMISSIONS = {
         # `IncentiveRatesEditor` yang memanggil katalog itu lewat `useUomConversions`.
         # HANYA `view`: menambah/mengubah baris satuan tetap milik admin.
         "uom": ["view"],
-        "order": ["view", "print"],            # tanpa create/update/confirm
+        "order": ["view", "print", "approve_price_edit"],   # 2026-10 — setujui harga/diskon override
         "document": ["view", "print"],
         "sales_return": ["view"],
         "ar_receipt": ["view", "create"],      # void → manajer
