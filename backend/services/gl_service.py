@@ -1301,13 +1301,14 @@ async def _transfer_items_value_at_cost(
         if not pid:
             continue
         wac = await wac_for_product(pid, entity_id=source_entity_id, use_cache=False)
-        unit_cost = float(wac.get("wac") or 0)
+        snap = it.get("unit_cost_snapshot")   # G3 D4-INTERCO-02 — biaya aktual roll yang dipindah
+        unit_cost = float(snap) if snap is not None else float(wac.get("wac") or 0)
         value = round(qty * unit_cost, 2)
         breakdown.append({
             "product_id": pid, "sku": it.get("sku", "") or wac.get("sku", ""),
             "name": it.get("product_name", "") or wac.get("name", ""),
             "qty": round(qty, 2), "unit_cost": round(unit_cost, 2), "value": value,
-            "cost_source": wac.get("source", "none"),
+            "cost_source": "roll_snapshot" if snap is not None else wac.get("source", "none"),
         })
         total += value
     return {"total": round(total, 2), "breakdown": breakdown}
@@ -1334,15 +1335,21 @@ async def post_intercompany_transfer(transfer: Dict[str, Any]) -> Dict[str, Any]
     if not (tid and src and dst) or src == dst:
         return {"posted": False, "reason": "invalid_transfer", "total": 0.0}
 
-    # Idempotent guard (cek dua-sisi terpisah)
+    # G3 D4-INTERCO-01 — guard PER SISI (bukan OR): satu sisi yang sudah ada tidak berarti selesai;
+    # sisi yang hilang diposting dengan nilai sisi yang ada, lalu pasangan ditautkan (idempoten).
     src_id = f"{tid}:src"
     dst_id = f"{tid}:dst"
-    if await _already_posted("inter_company_transfer", src_id) or \
-       await _already_posted("inter_company_transfer", dst_id):
+    q_act = {"source_type": "inter_company_transfer", "status": {"$ne": "void"}}
+    have_src = await db.journal_entries.find_one({**q_act, "source_id": src_id}, {"_id": 0})
+    have_dst = await db.journal_entries.find_one({**q_act, "source_id": dst_id}, {"_id": 0})
+    if have_src and have_dst and have_src.get("intercompany_pair_id") and have_dst.get("intercompany_pair_id"):
         return {"posted": False, "reason": "already_posted", "total": 0.0}
 
     valuation = await _transfer_items_value_at_cost(transfer, src)
     total = float(valuation["total"])
+    done = have_src or have_dst
+    if done:
+        total = round(sum(float(l.get("debit", 0) or 0) for l in done.get("lines") or []), 2)
     if total <= EPS:
         return {"posted": False, "reason": "zero_cost", "total": 0.0,
                 "breakdown": valuation["breakdown"]}
@@ -1354,16 +1361,14 @@ async def post_intercompany_transfer(transfer: Dict[str, Any]) -> Dict[str, Any]
     desc_dst = f"Transfer antar-PT {code} ← {src} (at-cost)"
 
     # Buku SOURCE: Dr IC-AR / Cr Persediaan
-    lines_src = _balanced_pair(ACC_IC_AR, ACC_PERSEDIAAN, total, desc_src)
-    je_src = await _insert_entry(
-        lines=lines_src, description=desc_src, date=date,
+    je_src = have_src or await _insert_entry(
+        lines=_balanced_pair(ACC_IC_AR, ACC_PERSEDIAAN, total, desc_src), description=desc_src, date=date,
         source_type="inter_company_transfer", source_id=src_id, entity_id=src,
         created_by="system", source_label=code,
     )
     # Buku DEST: Dr Persediaan / Cr IC-AP
-    lines_dst = _balanced_pair(ACC_PERSEDIAAN, ACC_IC_AP, total, desc_dst)
-    je_dst = await _insert_entry(
-        lines=lines_dst, description=desc_dst, date=date,
+    je_dst = have_dst or await _insert_entry(
+        lines=_balanced_pair(ACC_PERSEDIAAN, ACC_IC_AP, total, desc_dst), description=desc_dst, date=date,
         source_type="inter_company_transfer", source_id=dst_id, entity_id=dst,
         created_by="system", source_label=code,
     )

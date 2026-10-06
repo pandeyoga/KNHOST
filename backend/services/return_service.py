@@ -1147,9 +1147,13 @@ async def transfer_return_roll_ownership(return_id: str, roll_id: str,
         {"id": roll_id, "return_id": return_id, "origin_type": "return"}, {"_id": 0})
     if not roll:
         raise ValueError("Roll retur tidak ditemukan untuk dokumen ini")
+    # G3 D4-INTERCO-01 — percobaan sebelumnya sudah memindah kepemilikan tapi jurnal/riwayat belum tuntas
+    # → LANJUTKAN dokumen transfer yang sama (JE per sisi idempoten), jangan ditolak/diulang.
+    pending_x = await db.warehouse_transfers.find_one(
+        {"origin_sales_return_id": return_id, "origin_roll_id": roll_id, "status": "executing"}, {"_id": 0})
+    if pending_x:
+        return await _finish_return_transfer(pending_x, return_id, roll_id, actor)
     src = roll.get("owner_entity_id") or ""
-    if not dest_entity_id:
-        raise ValueError("Entitas tujuan wajib diisi")
     if dest_entity_id == src:
         raise ValueError("Entitas tujuan harus berbeda dari pemilik saat ini")
     dst_ent = await db.business_entities.find_one({"id": dest_entity_id}, {"_id": 0})
@@ -1195,34 +1199,54 @@ async def transfer_return_roll_ownership(return_id: str, roll_id: str,
         "source_entity_id": src, "dest_entity_id": dest_entity_id,
         "source_warehouse_id": roll.get("warehouse_id", ""),
         "dest_warehouse_id": roll.get("warehouse_id", ""),   # lokasi fisik tetap
-        "status": "completed",
-        "items": [{"product_id": roll["product_id"], "qty": qty, "quantity": qty}],
+        "status": "executing",
         "origin_sales_return_id": return_id, "origin_roll_id": roll_id,
         "notes": notes, "requested_by": actor,
         "approved_by": actor, "approved_at": now,
         "created_by": actor, "created_at": now, "updated_at": now,
     }
-    try:
-        moved = await execute_ownership_transfer(transfer)
-        je = await gl_service.post_intercompany_transfer(transfer)
-    except Exception:
-        # rollback reservasi bila gagal
-        await db.inventory_rolls.update_one(
-            {"id": roll_id, "reserved_ref.id": transfer_id},
-            {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}})
-        await _saga.release("sales_returns", return_id)
-        raise
-    transfer["ownership_moved"] = moved
-    transfer["je_intercompany"] = je
     from services import line_scope as _lines            # FASE L
     await _lines.stamp_doc(db, transfer)
-    await db.warehouse_transfers.insert_one(dict(transfer))
+    transfer["items"] = [{"product_id": roll["product_id"], "qty": qty, "quantity": qty}]
+    await db.warehouse_transfers.insert_one(dict(transfer))   # intent DURABLE sebelum efek
+    try:
+        moved = await execute_ownership_transfer(transfer)
+    except Exception:
+        # rollback reservasi bila gagal SEBELUM kepemilikan pindah
+        still_src = await db.inventory_rolls.find_one({"id": roll_id, "owner_entity_id": src}, {"_id": 1})
+        if still_src:
+            await db.inventory_rolls.update_one(
+                {"id": roll_id, "reserved_ref.id": transfer_id},
+                {"$set": {"status": "available", "reserved_ref": None, "updated_at": now_iso()}})
+            await db.warehouse_transfers.update_one({"id": transfer_id}, {"$set": {"status": "cancelled"}})
+        await _saga.release("sales_returns", return_id)
+        raise
+    await db.warehouse_transfers.update_one({"id": transfer_id}, {"$set": {"ownership_moved": moved}})
+    transfer["ownership_moved"] = moved
+    try:
+        return await _finish_return_transfer(transfer, return_id, roll_id, actor)
+    except Exception:
+        await _saga.release("sales_returns", return_id)   # kepemilikan sudah pindah: retry MELANJUTKAN
+        raise
+
+
+async def _finish_return_transfer(transfer: Dict[str, Any], return_id: str, roll_id: str,
+                                  actor: str) -> Dict[str, Any]:
+    from services import atomic_claim as _saga
+    transfer_id, src, dest_entity_id = transfer["id"], transfer["source_entity_id"], transfer["dest_entity_id"]
+    qty, now = float((transfer.get("items") or [{}])[0].get("qty") or 0), now_iso()
+    moved = transfer.get("ownership_moved")
+    je = await gl_service.post_intercompany_transfer(transfer)
+    transfer["je_intercompany"] = je
+    await db.warehouse_transfers.update_one({"id": transfer_id}, {"$set": {
+        "status": "completed", "je_intercompany": je, "updated_at": now}})
     fin = _saga.finish_set({"updated_at": now})
     fin["$push"] = {"ownership_transfers": {
         "transfer_id": transfer_id, "code": transfer["code"], "roll_id": roll_id,
         "from_entity": src, "to_entity": dest_entity_id, "qty": qty,
         "je_posted": je.get("posted"), "je_total": je.get("total", 0), "at": now}}
-    await db.sales_returns.update_one({"id": return_id}, fin)
+    await db.sales_returns.update_one({"id": return_id, "ownership_transfers.transfer_id": {"$ne": transfer_id}}, fin)
+    await _saga.release("sales_returns", return_id)
     updated_roll = await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0})
     return {"transfer_id": transfer_id, "code": transfer["code"], "from_entity": src,
             "to_entity": dest_entity_id, "qty": qty, "moved": moved, "je": je, "roll": updated_roll}

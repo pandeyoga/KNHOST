@@ -134,20 +134,39 @@ async def ingest(device: Dict[str, Any], epcs: Optional[List[str]] = None,
     obs = [{"_id": f"{device['id']}:{ev['event_id']}" if ev.get("event_id") else new_id("robs"),
             "device_id": device["id"], "epc": ev["epc"], "event_id": ev.get("event_id"),
             "captured_at": ev.get("captured_at"), "antenna": ev.get("antenna"), "rssi": ev.get("rssi"),
-            "batch_id": batch_id, "source": source, "received_at": now} for ev in evs]
+            "batch_id": batch_id, "source": source, "received_at": now, "processed": False} for ev in evs]
     dup_ids = set()
     if obs:
         try:
             await db.rfid_observations.insert_many(obs, ordered=False)
         except BulkWriteError as bwe:
             dup_ids = {obs[e["index"]]["_id"] for e in bwe.details.get("writeErrors", []) if e.get("code") == 11000}
+    if dup_ids:
+        # G3 D4-RFID-01 — observasi durable BELUM berarti pipeline selesai: event sama yang dulu gagal
+        # di tengah (processed=False) diproses ulang, bukan dibuang sebagai duplikat.
+        unfinished = {o["_id"] async for o in db.rfid_observations.find(
+            {"_id": {"$in": list(dup_ids)}, "processed": False}, {"_id": 1})}
+        dup_ids -= unfinished
     fresh = list(dict.fromkeys(o["epc"] for o in obs if o["_id"] not in dup_ids))
+    first_obs = {}
+    for o in obs:
+        if o["_id"] not in dup_ids:
+            first_obs.setdefault(o["epc"], o["_id"])
     passage = await _passage_for(device, now) if is_gate else None
     dwell_cut = (_ts(now) - timedelta(seconds=DWELL_S)).isoformat()
-    results, reads = [], []
+    results, reads, exits = [], [], []
     for raw in fresh:
-        prev = await db.rfid_reads.find_one({"device_id": device["id"], "epc": raw, "timestamp": {"$gte": dwell_cut}},
-                                            {"_id": 0}, sort=[("timestamp", -1)])
+        # read ber-id deterministik dari observasi → pemrosesan ulang mengadopsi read yang sudah durable
+        rid = f"rread_{first_obs[raw]}"
+        prev = await db.rfid_reads.find_one({"id": rid}, {"_id": 0}) or await db.rfid_reads.find_one(
+            {"device_id": device["id"], "epc": raw, "timestamp": {"$gte": dwell_cut}},
+            {"_id": 0}, sort=[("timestamp", -1)])
+        if prev and prev["id"] == rid:
+            reads.append(prev)          # efek lanjutan (insiden/passage/stamp) dilengkapi di bawah
+            results.append({"epc": raw, **{k: prev.get(k) for k in ("result", "code", "reason", "action")},
+                            "roll_no": prev.get("roll_no"), "sku": prev.get("sku"),
+                            "product_name": prev.get("product_name"), "read_id": rid})
+            continue
         if prev:  # tag diam / passage sama — bukan event bisnis baru (tanpa insiden baru)
             await db.rfid_reads.update_one({"id": prev["id"]}, {"$set": {"last_observed_at": now},
                                                                "$inc": {"observation_count": 1}})
@@ -166,7 +185,7 @@ async def ingest(device: Dict[str, Any], epcs: Optional[List[str]] = None,
         else:
             decision = {"result": "info", "code": "INVENTORY", "reason": "Pembacaan inventori (handheld/fixed reader).",
                         "action": ge.action_for("INVENTORY")}
-        read = {"id": new_id("rread"), "epc": raw, "tag_id": (tag or {}).get("id"), "roll_id": (roll or {}).get("id"),
+        read = {"id": f"rread_{first_obs[raw]}", "epc": raw, "tag_id": (tag or {}).get("id"), "roll_id": (roll or {}).get("id"),
                 "sku": (tag or {}).get("sku"), "product_name": (tag or {}).get("product_name"),
                 "roll_no": (roll or {}).get("roll_no"), "device_id": device["id"],
                 "device_name": device.get("name"), "device_type": device.get("type"), "read_type": read_type,
@@ -185,15 +204,20 @@ async def ingest(device: Dict[str, Any], epcs: Optional[List[str]] = None,
                 "last_seen_device_name": device.get("name"), "last_seen_location": device.get("location"),
                 "last_seen_warehouse_id": device.get("warehouse_id")}})
             if is_gate and direction == "out":
-                await ge.stamp_exit(roll["id"], decision, device, now)
-    if reads:
-        await db.rfid_reads.insert_many([dict(r) for r in reads])
-        from services import rfid_incident_service as inc  # FASE R6 — hanya event bisnis BARU
-        for r in reads:
-            if r["result"] == "red" and r["read_type"] in ("gate_in", "gate_out"):
-                await inc.create_from_read(r)
+                exits.append((roll["id"], decision))
+    new_reads = []
+    for r in reads:   # upsert per read: retry tidak menggandakan, hitungan passage hanya untuk yang BARU
+        res = await db.rfid_reads.update_one({"id": r["id"]}, {"$setOnInsert": dict(r)}, upsert=True)
+        if res.upserted_id is not None:
+            new_reads.append(r)
+    from services import rfid_incident_service as inc  # FASE R6 — dedupe di create_from_read
+    for r in reads:
+        if r["result"] == "red" and r["read_type"] in ("gate_in", "gate_out"):
+            await inc.create_from_read(r)
+    for roll_id, decision in exits:   # stamp SESUDAH read durable (bukan sebelumnya → REPLAY_EXIT palsu)
+        await ge.stamp_exit(roll_id, decision, device, now)
     if passage:
-        inc_ = {f"{k}_count": sum(1 for r in reads if r["result"] == k) for k in ("red", "green", "info")}
+        inc_ = {f"{k}_count": sum(1 for r in new_reads if r["result"] == k) for k in ("red", "green", "info")}
         p = await db.rfid_passages.find_one_and_update(
             {"id": passage["id"]},
             {"$set": {"last_at": now}, "$addToSet": {"epcs": {"$each": [r["epc"] for r in reads]},
@@ -202,6 +226,8 @@ async def ingest(device: Dict[str, Any], epcs: Optional[List[str]] = None,
         verdict = "red" if p["red_count"] else ("green" if p["green_count"] else "info")  # UX-01 red-dominant
         await db.rfid_passages.update_one({"id": p["id"]}, {"$set": {"verdict": verdict}})
         passage = {**p, "verdict": verdict}
+    if obs:
+        await db.rfid_observations.update_many({"_id": {"$in": [o["_id"] for o in obs]}}, {"$set": {"processed": True}})
     greens = sum(1 for r in results if r["result"] == "green")
     reds = sum(1 for r in results if r["result"] == "red")
     return {"device": {"id": device["id"], "code": device.get("code"), "direction": device.get("direction")},

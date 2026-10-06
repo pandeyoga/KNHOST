@@ -438,6 +438,27 @@ async def resolve(case_id: str, payload: Dict[str, Any], actor: Dict[str, Any],
                and amount <= float(pol["auto_charge_max"] or 0) + EPS)
     approver = "" if auto_ok else _assert_authority(action, amount, pol, actor)
 
+    # G3 D4-CASE-02 — KLAIM kasus sebelum efek samping: dua penyelesaian paralel → satu menang,
+    # yang kalah tidak meninggalkan kas. Gagal di tengah → kunci dilepas; retry mengadopsi kas
+    # ber-id deterministik (lihat finance_case_actions._cash_txn).
+    from fastapi import HTTPException as _HE
+    from services import atomic_claim as _saga
+    try:
+        await _saga.claim("finance_cases", case_id, "case_resolve",
+                          precondition={"status": {"$nin": ["resolved", "rejected"]},
+                                        "documents": case.get("documents") or []},
+                          actor=actor.get("name", ""))
+    except _HE as e:
+        raise CaseError("Kasus sedang/baru saja diselesaikan proses lain — muat ulang.") from e
+    try:
+        return await _resolve_claimed(case_id, case, pb, action, reason, payload, amount, auto_ok,
+                                      approver, actor, entity_ids)
+    finally:
+        await _saga.release("finance_cases", case_id)
+
+
+async def _resolve_claimed(case_id, case, pb, action, reason, payload, amount, auto_ok, approver,
+                           actor, entity_ids):
     try:
         res = await acts.execute(action["code"], case, {**payload, "amount": amount}, actor)
     except acts.CaseActionError as e:

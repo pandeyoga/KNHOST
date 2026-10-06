@@ -242,12 +242,16 @@ async def _land_items(order: Dict[str, Any], items: List[Dict[str, Any]], actor_
              "warehouse_id": order["from_warehouse_id"],
              "status": {"$in": [PA_ELIGIBLE_STATUS, "in_transit_transfer"]}},
             {"$set": {"warehouse_id": order["to_warehouse_id"], "bin_id": None,
-                      "status": PA_ELIGIBLE_STATUS, "updated_at": now},
+                      "status": PA_ELIGIBLE_STATUS, "updated_at": now, "last_pa_landed": order["id"]},
              "$unset": {"active_movement": ""}})
         if res.modified_count != 1:
-            item["status"] = "exception"
-            item["exception_reason"] = "Roll tidak lagi milik PA ini / status berubah"
-            continue
+            # G3 D4-PA-02 — percobaan sebelumnya sudah memindah roll ini untuk PA yang SAMA tapi mati
+            # sebelum tag/mutasi/saldo → ADOPSI efeknya dan lanjutkan langkah sisanya (idempoten).
+            if not await db.inventory_rolls.find_one({"id": item["roll_id"], "last_pa_landed": order["id"],
+                                                      "warehouse_id": order["to_warehouse_id"]}, {"_id": 1}):
+                item["status"] = "exception"
+                item["exception_reason"] = "Roll tidak lagi milik PA ini / status berubah"
+                continue
         await db.rfid_tags.update_one({"roll_id": item["roll_id"], "status": "active"},
                                       {"$set": {"warehouse_id": order["to_warehouse_id"]}})
         item["status"] = "arrived"
@@ -256,7 +260,8 @@ async def _land_items(order: Dict[str, Any], items: List[Dict[str, Any]], actor_
         for wh, mtype in ((order["from_warehouse_id"], "putaway_transfer_out"),
                           (order["to_warehouse_id"], "putaway_transfer_in")):
             movements.append({
-                "id": new_id("mov"), "product_id": item["product_id"], "warehouse_id": wh,
+                "id": f"mov_pa_{order['id']}_{item['roll_id']}_{mtype[-3:].strip('_')}",
+                "product_id": item["product_id"], "warehouse_id": wh,
                 "owner_entity_id": order["owner_entity_id"], "movement_type": mtype,
                 "quantity": item["qty"] if mtype.endswith("_in") else -item["qty"],
                 "unit": item["unit"], "lot": item.get("lot", ""), "roll_id": item["roll_id"],
@@ -265,8 +270,8 @@ async def _land_items(order: Dict[str, Any], items: List[Dict[str, Any]], actor_
             })
         segs.add((item["product_id"], order["from_warehouse_id"]))
         segs.add((item["product_id"], order["to_warehouse_id"]))
-    if movements:
-        await db.inventory_movements.insert_many(movements)
+    for mv in movements:   # id deterministik per (PA, roll, arah) → retry tidak menggandakan mutasi
+        await db.inventory_movements.update_one({"id": mv["id"]}, {"$setOnInsert": mv}, upsert=True)
     for pid, wid in segs:
         await rebuild_balance(pid, wid, order["owner_entity_id"])
     if landed:
@@ -297,6 +302,17 @@ async def confirm_arrival(order_id: str, scanned_epcs: Optional[List[str]],
     from services import atomic_claim as _saga
     await _saga.claim("putaway_orders", order_id, "putaway_confirm_arrival",
                       precondition={"status": {"$in": ["open", "in_transit"]}}, actor=actor_name)
+    try:
+        return await _confirm_arrival_claimed(order, order_id, scanned_epcs, scope_ids, actor_name,
+                                              manual_all, why, _saga)
+    except BaseException:
+        # G3 D4-PA-02 — gagal di tengah: kunci dilepas supaya retry lewat fitur asli bisa MELANJUTKAN
+        # (roll yang sudah dipindah untuk PA ini diadopsi oleh _land_items; mutasi ber-id deterministik).
+        await _saga.release("putaway_orders", order_id)
+        raise
+
+
+async def _confirm_arrival_claimed(order, order_id, scanned_epcs, scope_ids, actor_name, manual_all, why, _saga):
     scanned = {e.strip().upper() for e in (scanned_epcs or []) if e and e.strip()}
     candidates, exceptions = [], []
     for item in order["items"]:

@@ -394,6 +394,27 @@ async def reclose_period(closing_id: str, actor: Dict[str, Any]) -> Optional[Dic
     entity_id = rec["entity_id"]
     start, end = rec["start_date"], rec["end_date"]
     period_type = rec["period_type"]
+    try:
+        return await _reclose_locked(closing_id, rec, entity_id, start, end, period_type, actor, _saga)
+    except BaseException:
+        await _saga.release("period_closings", closing_id)   # G3 D4-CLOSE-02 — retry sah tidak terkunci
+        raise
+
+
+async def _reclose_locked(closing_id, rec, entity_id, start, end, period_type, actor, _saga):
+    # G3 D4-CLOSE-02 — percobaan sebelumnya sudah melahirkan JE penutup aktif baru tapi parent belum
+    # menunjuknya (ack hilang / update parent gagal) → ADOPSI, jangan void/insert ulang.
+    orphan = await db.journal_entries.find_one(
+        {"source_type": "closing", "source_id": closing_id, "status": {"$ne": "void"},
+         "id": {"$ne": rec.get("journal_entry_id")}}, {"_id": 0})
+    if orphan:
+        stmt = await fs.income_statement(start=start, end=end, scope={"entity_id": entity_id})
+        await _finish_reclose(closing_id, rec, entity_id, start, end, stmt, orphan,
+                              _residual_net(orphan.get("lines") or []), actor, _saga)
+        if rec.get("journal_entry_id"):
+            await db.journal_entries.update_one({"id": rec["journal_entry_id"], "status": {"$ne": "void"}},
+                                                {"$set": {"status": "void", "voided_at": now_iso()}})
+        return await db.period_closings.find_one({"id": closing_id}, {"_id": 0})
 
     if rec.get("journal_entry_id"):
         await db.journal_entries.update_one(
@@ -418,11 +439,16 @@ async def reclose_period(closing_id: str, actor: Dict[str, Any]) -> Optional[Dic
             created_by=actor.get("name", "system"),
             source_label=f"Tutup Ulang {rec['period_key']}",
         )
+    await _finish_reclose(closing_id, rec, entity_id, start, end, stmt, je, _residual_net(lines), actor, _saga)
+    return await db.period_closings.find_one({"id": closing_id}, {"_id": 0})
+
+
+async def _finish_reclose(closing_id, rec, entity_id, start, end, stmt, je, residual, actor, _saga) -> None:
     await db.period_closings.update_one(
         {"id": closing_id},
         _saga.finish_set({
             "net_income": stmt.get("net_income", 0),
-            "residual_net_income": _residual_net(lines),
+            "residual_net_income": residual,
             "journal_entry_id": je["id"] if je else None,
             "journal_entry_number": je["number"] if je else None,
             "stale": False, "stale_at": None, "stale_reason": "",
@@ -437,7 +463,6 @@ async def reclose_period(closing_id: str, actor: Dict[str, Any]) -> Optional[Dic
         {"$set": {"stale": True, "stale_at": now_iso(),
                   "stale_reason": f"Closing periode di dalamnya ditutup ulang ({rec.get('period_label', '')})",
                   "updated_at": now_iso()}})
-    return await db.period_closings.find_one({"id": closing_id}, {"_id": 0})
 
 
 async def status_for_date(date_iso: str, entity_id: str) -> Dict[str, Any]:

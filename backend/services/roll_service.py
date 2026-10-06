@@ -1552,6 +1552,20 @@ async def execute_ownership_transfer(transfer: Dict[str, Any]) -> Dict[str, Any]
         {"reserved_ref.id": transfer_id, "reserved_ref.type": "transfer", "status": "reserved"},
         {"_id": 0},
     ).to_list(10000)
+    # G3 D4-INTERCO-02 — SNAPSHOT biaya roll yang benar-benar berpindah SEBELUM kepemilikan pindah:
+    # JE at-cost memakai biaya aktual roll (bukan WAC live sumber yang sudah tidak memuat roll ini).
+    _cost: Dict[str, List[float]] = {}
+    for r in held:
+        q = float(r.get("length_remaining", 0) or 0)
+        c = _cost.setdefault(r["product_id"], [0.0, 0.0])
+        c[0] += q
+        c[1] += q * float(r.get("unit_cost") or r.get("base_unit_cost") or 0)
+    for it in transfer.get("items") or []:
+        c = _cost.get(it.get("product_id"))
+        if c and c[0] > 0 and c[1] > 0 and "unit_cost_snapshot" not in it:
+            it["unit_cost_snapshot"] = round(c[1] / c[0], 4)
+    if _cost:
+        await db.warehouse_transfers.update_one({"id": transfer_id}, {"$set": {"items": transfer.get("items") or []}})
     segments = set()
     moved = 0.0
     touched_lots: set = set()

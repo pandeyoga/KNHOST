@@ -10,6 +10,7 @@ Di sini uang benar-benar berpindah. Setiap fungsi `act_*`:
 
 Bentuk dokumen turunan: `{"kind","id","number","label"}`.
 """
+import contextvars
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -70,8 +71,24 @@ async def _cash_txn(*, direction: str, amount: float, category: str, description
     # kasusnya. `kas_besar` di sini hanya berarti "lewat bank", bukan "milik grup".
     from services.cash_entity_service import resolve_owner
     cash_owner = resolve_owner(entity_id, owner_entity_id, what="Kas kasus keuangan")
+    # G3 D4-CASE-02 — id kas DETERMINISTIK per (kasus, aksi, langkah, urutan) → retry/ack hilang
+    # MENGADOPSI kas + jurnal yang sudah ada, bukan membuat kas kedua.
+    op = _CASE_OP.get()
+    if op:
+        n = _CASE_OP_SEQ.get() + 1
+        _CASE_OP_SEQ.set(n)
+        cid = f"cash_case_{op}_{n}"
+        prior = await db.cash_transactions.find_one({"id": cid}, {"_id": 0})
+        if prior:
+            je = await gl.post_cash_transaction(prior)
+            je = je or await db.journal_entries.find_one(
+                {"source_type": "cash_transaction", "source_id": cid, "status": {"$ne": "void"}}, {"_id": 0})
+            out = [_doc("cash_transaction", prior["id"], prior.get("number", ""),
+                        f"Kas {'masuk' if direction == 'in' else 'keluar'} {_rp(amount)}")]
+            return {"txn": safe_doc(prior), "documents": out + _je_doc(je, f"Jurnal kas {prior.get('number', '')}")}
     doc = {
-        "id": new_id("cash"), "number": await _next_cash_number(entity_id),
+        "id": f"cash_case_{op}_{_CASE_OP_SEQ.get()}" if op else new_id("cash"),
+        "number": await _next_cash_number(entity_id),
         "cash_type": cash_type if cash_type in ("kas_besar", "kas_kecil") else "kas_besar",
         "direction": direction, "amount": amount, "category": category,
         "description": description,
@@ -312,16 +329,27 @@ async def act_akui_dipegang_karyawan(case: Dict[str, Any], p: Dict[str, Any],
         created_by=actor.get("name", "system"))
     docs += _je_doc(je, "Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang")
     return {"documents": docs, "amount": amount, "hold": True,
-            "extra": {"employee_name": emp, "step": 1},
+            "extra": {"employee_name": emp, "step": 1, "held_amount": amount, "settled_amount": 0.0},
             "next_action": "setor_dari_karyawan"}
 
 
 async def act_setor_dari_karyawan(case: Dict[str, Any], p: Dict[str, Any],
                                   actor: Dict[str, Any]) -> Dict[str, Any]:
-    """Langkah 2: karyawan menyetor → piutang karyawan kembali nol."""
+    """Langkah 2: karyawan menyetor → piutang karyawan berkurang (G3 D4-CASE-03: wajib sesudah langkah 1,
+    dibatasi sisa piutang; setoran sebagian membiarkan kasus tetap berjalan)."""
     amount = round(float(p.get("amount") or 0), 2)
-    emp = (p.get("employee_name") or (case.get("resolution") or {})
-           .get("extra", {}).get("employee_name") or "karyawan")
+    r = case.get("resolution") or {}
+    ex = r.get("extra") or {}
+    if case.get("status") != "in_progress" or ex.get("step") not in (1, 2):
+        raise CaseActionError("Setoran karyawan hanya bisa sesudah langkah 1 (akui uang dipegang karyawan) berhasil.")
+    held = round(float(ex.get("held_amount") or r.get("amount") or 0), 2)
+    settled = round(float(ex.get("settled_amount") or 0), 2)
+    remaining = round(held - settled, 2)
+    if amount > remaining + EPS:
+        raise CaseActionError(
+            f"Setoran {_rp(amount)} melebihi sisa piutang karyawan {_rp(remaining)}. "
+            "Kelebihan setoran belum punya aturan — catat lewat kasus terpisah.")
+    emp = (p.get("employee_name") or ex.get("employee_name") or "karyawan")
     res = await _cash_txn(
         direction="in", amount=amount, category="setoran karyawan",
         description=f"Setoran {emp} · {case['number']}",
@@ -329,8 +357,12 @@ async def act_setor_dari_karyawan(case: Dict[str, Any], p: Dict[str, Any],
         cash_type=p.get("cash_type") or "kas_besar", ref_type="finance_case",
         ref_id=case["id"], contra=gl.ACC_PIUTANG_KARYAWAN,
         owner_entity_id=case.get("entity_id", ""), actor=actor.get("name", "system"))
-    return {"documents": res["documents"], "amount": amount,
-            "extra": {"employee_name": emp, "step": 2}}
+    new_settled = round(settled + amount, 2)
+    left = round(held - new_settled, 2)
+    return {"documents": res["documents"], "amount": amount, "hold": left > EPS,
+            "next_action": "setor_dari_karyawan" if left > EPS else "",
+            "extra": {"employee_name": emp, "step": 2, "held_amount": held,
+                      "settled_amount": new_settled, "remaining_amount": max(left, 0.0)}}
 
 
 async def act_realokasi_pesanan(case: Dict[str, Any], p: Dict[str, Any],
@@ -530,12 +562,21 @@ EXECUTORS = {
 }
 
 
+_CASE_OP: contextvars.ContextVar = contextvars.ContextVar("case_op", default="")
+_CASE_OP_SEQ: contextvars.ContextVar = contextvars.ContextVar("case_op_seq", default=0)
+
+
 async def execute(action: str, case: Dict[str, Any], payload: Dict[str, Any],
                   actor: Dict[str, Any]) -> Dict[str, Any]:
     fn = EXECUTORS.get(action)
     if not fn:
         raise CaseActionError(f"Aksi '{action}' belum punya pelaksana")
+    t1 = _CASE_OP.set(f"{case['id']}_{action}_{len(case.get('documents') or [])}")
+    t2 = _CASE_OP_SEQ.set(0)
     try:
         return await fn(case, payload, actor)
     except HTTPException as e:                      # pesan service lain tetap tampil apa adanya
         raise CaseActionError(str(e.detail)) from e
+    finally:
+        _CASE_OP.reset(t1)
+        _CASE_OP_SEQ.reset(t2)
