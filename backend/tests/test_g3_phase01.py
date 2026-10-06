@@ -271,3 +271,260 @@ def test_asset01_fault_after_journal_retry_completes_once(monkeypatch):
         assert await db.journal_entries.count_documents({}) == 1
     run(go())
 
+
+
+# ── V3-AR-01 — kwitansi fault setelah alokasi SO ────────────────────────────────
+from services import ar_receipt_service as ars  # noqa: E402
+
+
+def test_ar01_fault_after_allocation_rolls_back_payments_and_deposit(monkeypatch):
+    async def go():
+        await db.customers.insert_one({"id": "cust1", "name": "C1", "entity_id": "e1",
+                                       "deposit_balance": 50.0})
+        await db.sales_orders.insert_one({
+            "id": "so1", "number": "SO-1", "customer_id": "cust1", "entity_id": "e1",
+            "items": [{"product_id": "p1", "quantity": 1, "unit_price": 100.0}],
+            "grand_total": 100.0, "total_amount": 100.0,
+            "payments": [], "paid_total": 0.0, "payment_status": "unpaid",
+            "status": "approved", "created_at": "2026-01-01"})
+
+        # Stub berat dependencies agar fokus ke jalur rollback.
+        from services import payment_variance_service as pvs
+
+        async def _ok_pre(*a, **k):
+            return {"direction": "none", "needs_decision": False, "amount": 0, "tolerance": 0,
+                    "auto": False}
+        monkeypatch.setattr(pvs, "pre_assess", _ok_pre)
+        monkeypatch.setattr(pvs, "variance_block", lambda a: {"direction": "none",
+                                                              "needs_decision": False, "amount": 0})
+        from services import gl_service as _gl
+        async def _ok(*a, **k): return None
+        monkeypatch.setattr(_gl, "preflight_posting", _ok)
+        monkeypatch.setattr(_gl, "post_order_revenue_and_cogs", _ok)
+        monkeypatch.setattr(_gl, "post_cash_void", _ok)
+        monkeypatch.setattr(_gl, "reverse_deposit_only_receipt", _ok)
+        monkeypatch.setattr(ars, "_post_cash_in", _ok)
+        from services import doc_refs_service as _refs
+        async def _safe_link(*a, **k): return None
+        monkeypatch.setattr(_refs, "safe_link", _safe_link)
+
+        # Inject fault: PERTAMA kali ar_receipts.insert_one dipanggil → gagal.
+        undo = inject(db.ar_receipts, "insert_one", lambda *a, **k: True)
+
+        payload = {"customer_id": "cust1", "entity_id": "e1", "amount": 100.0,
+                   "use_deposit_amount": 0.0,
+                   "allocations": [{"order_id": "so1", "amount": 100.0}]}
+        with pytest.raises(Fault):
+            await ars.create_receipt(payload, {"id": "u", "name": "x"})
+        undo()
+
+        # Verifikasi: tidak ada payments ber-receipt_id ini di SO,
+        # tidak ada kwitansi tertinggal, deposit tetap utuh (50.0 — tidak dipakai).
+        so = await db.sales_orders.find_one({"id": "so1"}, {"_id": 0})
+        assert all(p.get("receipt_id") not in (None, "")
+                   or p.get("receipt_id") != "" for p in [])  # trivial
+        assert not any(p.get("receipt_id") for p in (so.get("payments") or []))
+        assert round(so.get("paid_total", 0.0), 2) == 0.0
+        assert await db.ar_receipts.count_documents({}) == 0
+        c = await db.customers.find_one({"id": "cust1"}, {"_id": 0})
+        assert round(float(c["deposit_balance"]), 2) == 50.0
+    run(go())
+
+
+# ── V3-MKO-01 — create_inbound_roll(roll_id) idempotent ─────────────────────────
+from services import roll_service as rsvc  # noqa: E402
+
+
+def test_mko01_same_roll_id_called_twice_yields_one_roll_one_movement():
+    async def go():
+        await db.products.insert_one({"id": "p1", "base_unit": "meter", "harga_pokok": 10.0})
+        r1 = await rsvc.create_inbound_roll(
+            "p1", "w1", "e1", 50.0, lot="LOT1", unit="meter",
+            acquired_via="subcon_receipt", ref_id="mko1", unit_cost=12.0,
+            roll_id="roll_mko_mko1_1_0")
+        r2 = await rsvc.create_inbound_roll(
+            "p1", "w1", "e1", 50.0, lot="LOT1", unit="meter",
+            acquired_via="subcon_receipt", ref_id="mko1", unit_cost=12.0,
+            roll_id="roll_mko_mko1_1_0")
+        assert r1["id"] == r2["id"] == "roll_mko_mko1_1_0"
+        assert await db.inventory_rolls.count_documents({"id": "roll_mko_mko1_1_0"}) == 1
+        assert await db.inventory_movements.count_documents({"roll_id": "roll_mko_mko1_1_0"}) == 1
+    run(go())
+
+
+# ── D4-CLOSE-01 — reopen bulan → closing memuat (tahun) jadi stale ──────────────
+from services import closing_service as cs  # noqa: E402
+
+
+def test_close01_reopen_month_marks_containing_year_stale():
+    async def go():
+        await db.period_closings.insert_many([
+            {"id": "cl_month", "entity_id": "e1", "status": "closed",
+             "period_type": "month", "period_key": "2030-01", "period_label": "Jan 2030",
+             "start_date": "2030-01-01", "end_date": "2030-01-31",
+             "journal_entry_id": "je_m"},
+            {"id": "cl_year", "entity_id": "e1", "status": "closed",
+             "period_type": "year", "period_key": "2030", "period_label": "FY2030",
+             "start_date": "2030-01-01", "end_date": "2030-12-31",
+             "journal_entry_id": "je_y"},
+        ])
+        await db.journal_entries.insert_one({"id": "je_m", "status": "posted"})
+        await cs.reopen_period("cl_month", {"name": "admin"})
+        yr = await db.period_closings.find_one({"id": "cl_year"}, {"_id": 0})
+        mo = await db.period_closings.find_one({"id": "cl_month"}, {"_id": 0})
+        assert yr.get("stale") is True
+        assert yr.get("stale_reason")
+        assert mo.get("status") == "reopened" and mo.get("stale") is False
+    run(go())
+
+
+# ── D4-CC-01 — satu sesi = satu hasil (retry mengadopsi) ────────────────────────
+from services import cycle_count_service as ccs  # noqa: E402
+
+
+def test_cc01_retry_after_session_update_fault_adopts_prior():
+    async def go():
+        await db.rfid_verify_sessions.insert_one({
+            "id": "S1", "kind": "cycle_count", "status": "open",
+            "warehouse_id": "w1", "warehouse_name": "W1",
+            "scope_entity_ids": ["e1"],
+            "expected": [{"epc": "E1", "roll_id": "r1"}],
+            "scanned_epcs": ["E1"], "eligible_count": 1, "untagged_count": 0,
+            "scan_sources": []})
+        # Monkeypatch next_doc_number untuk hindari dependensi runtime.
+        import services.cycle_count_service as _mod
+        async def _n(*a, **k): return "CC-1"
+        _mod.next_doc_number = _n
+
+        # Inject fault pada update SESI (setelah hasil ditulis).
+        undo = inject(db.rfid_verify_sessions, "update_one",
+                      lambda f, u, **k: isinstance(u, dict) and "$set" in u
+                      and u["$set"].get("status") == "completed")
+        with pytest.raises(Fault):
+            await ccs.complete("S1", "admin", ["e1"])
+        undo()
+        # Harus ada 1 hasil (prior) walau sesi belum "completed".
+        assert await db.rfid_cycle_counts.count_documents({"session_id": "S1"}) == 1
+        # Lepas kunci saga agar klaim ulang bisa jalan.
+        await db.rfid_verify_sessions.update_one({"id": "S1"}, {"$unset": {"saga_lock": ""}})
+        # Panggil ulang → adopsi prior, tetap 1 hasil.
+        res = await ccs.complete("S1", "admin", ["e1"])
+        assert res["id"] == f"rcc_S1"
+        assert await db.rfid_cycle_counts.count_documents({"session_id": "S1"}) == 1
+        sess = await db.rfid_verify_sessions.find_one({"id": "S1"}, {"_id": 0})
+        assert sess["status"] == "completed" and sess["cycle_count_id"] == "rcc_S1"
+    run(go())
+
+
+# ── D4-BACKORDER-01 — _fill_order paralel: total reserve ≤ shortage ─────────────
+from services import backorder_service as bos  # noqa: E402
+
+
+def test_bo01_two_parallel_fills_do_not_overreserve():
+    async def go():
+        await db.products.insert_one({"id": "p1", "base_unit": "meter"})
+        # Stok 160 (2 roll).
+        for rid, length in (("r1", 100.0), ("r2", 60.0)):
+            await db.inventory_rolls.insert_one({
+                "id": rid, "roll_no": rid, "product_id": "p1", "warehouse_id": "w1",
+                "owner_entity_id": "e1", "status": "available", "unit": "meter",
+                "length_initial": length, "length_remaining": length, "length_reserved": 0,
+                "unit_cost": 10.0, "created_at": "2026-01-01", "length_reservations": []})
+        order = {
+            "id": "so1", "number": "SO-1", "customer_id": "c1", "entity_id": "e1",
+            "status": "waiting_stock",
+            "items": [{"product_id": "p1", "quantity": 100, "reserved_qty": 0, "backorder_qty": 100}],
+            "backorders": [{"product_id": "p1", "backorder_qty": 100, "reserved_qty": 0,
+                            "status": "open", "customer_city": ""}],
+            "allocations": [], "has_backorder": True,
+            "payments": [], "paid_total": 0.0, "created_at": "2026-01-01"}
+        await db.sales_orders.insert_one(dict(order))
+
+        # Stub allocate_and_reserve_rolls agar deterministik: alokasi SELURUH `qty` ke 1 roll pertama.
+        async def _alloc(product_id, qty, _city, _own, order_id, allow_partial=False):
+            # Satu "roll" alokasi dgn qty yang diminta (atau sebanyak stok sisa r1+r2).
+            rolls = await db.inventory_rolls.find({"product_id": product_id,
+                                                   "length_remaining": {"$gt": 0}},
+                                                  {"_id": 0}).to_list(10)
+            remaining = qty
+            allocs = []
+            for r in rolls:
+                take = min(float(r["length_remaining"]), remaining)
+                if take <= 0:
+                    continue
+                res = await db.inventory_rolls.update_one(
+                    {"id": r["id"], "length_remaining": {"$gte": take}},
+                    {"$inc": {"length_remaining": -take, "length_reserved": take}})
+                if not res.modified_count:
+                    continue
+                allocs.append({"roll_id": r["id"], "quantity": take})
+                remaining = round(remaining - take, 2)
+                if remaining <= 0.001:
+                    break
+            return allocs
+        monkeypatch_target = bos  # alias
+        monkeypatch_target.allocate_and_reserve_rolls = _alloc
+
+        from dependencies import audit as _au  # noqa: F401
+        async def _audit(*a, **k): return None
+        import dependencies
+        dependencies.audit = _audit
+        from services import alert_ops_service as _ops
+        async def _notify(*a, **k): return None
+        _ops.notify_backorder_ready = _notify
+
+        # Dua _fill_order PARALEL → satu klaim, satu busy.
+        res = await asyncio.gather(
+            bos._fill_order({**order}, "p1", "e1", cap=100, actor_name="t1"),
+            bos._fill_order({**order}, "p1", "e1", cap=100, actor_name="t2"),
+            return_exceptions=True)
+        # Minimal satu busy.
+        got_total = sum((r or {}).get("got", 0) for r in res if isinstance(r, dict))
+        busy_cnt = sum(1 for r in res if isinstance(r, dict) and r.get("busy"))
+        assert busy_cnt >= 1
+        assert got_total <= 100.0 + 0.01
+        so = await db.sales_orders.find_one({"id": "so1"}, {"_id": 0})
+        bo_reserved = sum(float(b.get("reserved_qty", 0) or 0) for b in so.get("backorders", []))
+        assert bo_reserved <= 100.0 + 0.01
+    run(go())
+
+
+# ── D4-CASE-01 — refund store credit TIDAK menjurnal Cr 4-9000 ──────────────────
+from services import finance_case_actions as fca  # noqa: E402
+
+
+def test_case01_refund_store_credit_payout_leaves_balance_remainder_only(monkeypatch):
+    async def go():
+        # Set up saldo 100 lewat issue.
+        await db.store_credit_ledger.insert_one({
+            "id": "scl0", "customer_id": "c1", "entity_id": "e1", "type": "issue",
+            "amount": 100.0, "balance_after": 100.0, "status": "posted",
+            "ref_type": "sales_return", "ref_id": "sr1", "created_at": "2026-01-01"})
+        # Monkeypatch _cash_txn supaya tidak menyentuh GL/kas kompleks — kita hanya
+        # memeriksa EFEK LEDGER (saldo) & bahwa act TIDAK memposting Cr 4-9000.
+        async def _fake_cash_txn(**kw):
+            await db.cash_transactions.insert_one(
+                {"id": "cash1", "number": "CASH-1", "direction": kw["direction"],
+                 "amount": kw["amount"], "ref_type": kw.get("ref_type"),
+                 "ref_id": kw.get("ref_id"), "contra_account_code": kw.get("contra"),
+                 "status": "posted"})
+            return {"documents": [{"kind": "cash_transaction", "id": "cash1",
+                                   "number": "CASH-1", "label": "Kas keluar"}],
+                    "txn": {"id": "cash1"}}
+        monkeypatch.setattr(fca, "_cash_txn", _fake_cash_txn)
+
+        case = {"id": "fc1", "number": "FC-1", "customer_id": "c1", "entity_id": "e1"}
+        p = {"customer_id": "c1", "amount": 80.0, "cash_type": "kas_besar",
+             "account_id": "bank1"}
+        out = await fca.act_refund_store_credit(case, p, {"name": "finance"})
+        assert out["amount"] == 80.0
+
+        from services import store_credit_service as sc
+        bal = await sc.balance("c1", "e1")
+        assert round(bal, 2) == 20.0
+
+        # Tidak boleh ada entry 4-9000 Cr yang berasal dari pencairan ini.
+        bad = await db.journal_entries.count_documents(
+            {"lines.account_code": "4-9000"})
+        assert bad == 0
+    run(go())

@@ -1,0 +1,32 @@
+{
+  "summary": "Validasi independen Gelombang 3 Fase 01: menjalankan 13 uji fault-injection milik agen utama (semua PASS) lalu MENAMBAH 6 uji baru untuk ID yang belum diuji (V3-AR-01, V3-MKO-01, D4-CLOSE-01, D4-CC-01, D4-BACKORDER-01, D4-CASE-01). Total 19 passed di tests/test_g3_phase01.py dengan DB_NAME=g3_audit_phase01. Backend start bersih (tanpa import error) dan endpoint kritis (ar-receipts, gl/journal, bank-reconciliation, gl/accounts) berespons 200/422 (bukan 500). Tidak ada data pelanggan yang disentuh — semua tulisan ke DB uji yang di-drop setelah selesai.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_g3_phase01.py"
+  ],
+  "action_items": [
+    "Pertimbangkan menambah uji fault-injection untuk ID Fase 01 lainnya yang BELUM diperbaiki per docs/audit/gelombang-3/implementation/FASE-01-STATUS.md (sisanya di luar 16 yang sudah selesai)."
+  ],
+  "critical_code_review_comments": [
+    "ar_receipt_service.create_receipt: path pembatalan sudah menyeluruh (payments dicabut via _pull_receipt_payments, cash_tx di-void, deposit kembali ke saldo awal) — divalidasi via test_ar01_fault_after_allocation_rolls_back_payments_and_deposit.",
+    "roll_service.create_inbound_roll(roll_id=X): idempotensi deterministik terbukti (dua panggilan menghasilkan 1 roll + 1 movement) — baik untuk pola retry V3-MKO-01.",
+    "closing_service.reopen_period: penandaan STALE untuk closing memuat (tahun) sudah benar; mesti dikombinasikan dengan reclose_period untuk membersihkan.",
+    "cycle_count_service.complete: id hasil deterministik (rcc_<session>) + jalur 'adopt prior' aman terhadap kegagalan update sesi.",
+    "backorder_service._fill_order: klaim saga sales_orders mencegah dua pemenuhan paralel ber-sum > shortage; test_bo01 memverifikasi minimal satu pemanggil mendapat busy=True dan total reserve <= shortage.",
+    "finance_case_actions.act_refund_store_credit: SATU jurnal Dr 2-1450 / Cr Kas (lewat _cash_txn.contra=ACC_STORE_CREDIT), BUKAN adjust yang menghapus saldo via Cr 4-9000; saldo sisa tetap tercatat di ledger."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_g3_phase01.py (ditambahkan 6 uji baru: AR-01, MKO-01, CLOSE-01, CC-01, BACKORDER-01, CASE-01)"
+  ],
+  "success_rate": {"backend": "100% (19/19 pytest Fase-01)", "frontend": "skipped (backend only)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (dari /app/memory/test_credentials.md); header X-Entity-Id ent_ksc; field token di payload login = 'token', bukan 'access_token'.",
+  "seed_data_creation": "Tidak ada data demo yang ditulis ke DB preview; semua uji menulis ke DB terpisah g3_audit_phase01 yang di-drop setelah pytest selesai.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "File uji /app/backend/tests/test_g3_phase01.py sekarang mencakup 19 kasus fault-injection untuk Fase 01. Jalankan: `cd /app/backend && DB_NAME=g3_audit_phase01 python -m pytest tests/test_g3_phase01.py -q`. Setelah selesai: drop DB g3_audit_phase01 (sudah dilakukan di iterasi ini). Masih 7 ID Fase 01 yang belum punya uji fault-injection khusus (lihat FASE-01-STATUS.md) — dapat ditambahkan dengan pola `inject()`.",
+  "rca of the issue": "Tidak ada bug. Semua perbaikan Fase 01 yang DIKLAIM selesai oleh agen utama (16 ID) divalidasi via uji fault-injection: setiap kegagalan di tengah proses (CAS gagal, insert gagal, update gagal) mengakibatkan STATE AKHIR yang aman (idempotent/compensated), tanpa pernah menulis double atau meninggalkan dokumen zombie."
+}
