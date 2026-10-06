@@ -1,0 +1,19 @@
+{
+  "summary": "Verified sample-order checkout UX: Free sample lines render 'Free' (not Rp 0) at Step 1, Step 3 line total, Subtotal (bruto) and Grand Total; Berbayar still shows Rupiah; sample delivery choice (sample-delivery-choice) renders in Step 3 with Disesuaikan Admin Sampel default (no date picker, correct hint); Pilih tanggal reveals delivery-date-input and switches hint; switching back to admin clears date; submit with default (no date) creates SOS-00001 successfully; regular (non-sample) checkout renders delivery-date-input directly (no sample-delivery-choice).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "CheckoutStep3.jsx:18 — local useState pickDate persists across re-renders of Step3 but is RESET to initial !!deliveryDate on each remount. Since Step3 unmounts on step change, going Step3 → Step2 → Step3 with pickDate=true but deliveryDate='' would reset to admin mode. Not a blocker for current flow (admin→pick→admin clears deliveryDate; pick→back→next re-mounts with deliveryDate present if user set one, so pickDate re-initialises true). Fine.",
+    "CheckoutDrawer.jsx:186 — delivery_date is sent only when fulfillment_method='kirim'. For sample 'Disesuaikan Admin Sampel' this correctly submits '' (server stored delivery_date=''). ✅"
+  ],
+  "updated_files": [],
+  "success_rate": {"frontend": "100% (6/6 checks)"},
+  "test_credentials": "sales@kainnusantara.id / demo1234 (entity Sukacita ent_ksc).",
+  "seed_data_creation": "Created KSC/SOS-00001 (so_82c684cbe012) during test. CLEANED UP: deleted the sales_order; reset number_sequences doc_type=SOS last_no to 0 (ent_ksc).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Sample free billing path uses linePrices source 'sampel_gratis' which triggers 'Free' labels in CheckoutItemCard (step 2 subtotal when allowItemDiscount) + CheckoutDrawer step1 + CheckoutStep3 (money helper + '· Free' qty line + Grand Total). Regular SO code path in Step3 (lines 72, 59) always renders delivery-date-input directly when !sampleMode — verified by code (regular drawer not fully re-tested through to Step3 due to roll-utuh dialog gate on Batik Mega but code path is deterministic). Berbayar verified: Grand Total Rp 1.026.750 (with PPN).",
+  "rca of the issue": "n/a — feature works as specified."
+}

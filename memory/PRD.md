@@ -1021,6 +1021,12 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - RoleDesk (Meja Saya / Meja MD / Meja Admin Gudang): kartu `<prefix>-oldest-card` "Paling lama menunggu" (antrean, jumlah, umur, dokumen tertua) + `<prefix>-oldest-open-queue` (antrean naik ke atas, terbuka, digulir) + `<prefix>-oldest-open-doc` (buka layar penanganan dokumen tertua).
 - Uji: iteration_159 lolos semua.
 
+## 2026-10-05 (lanjutan 6) — Checkout sampel: "Free" & tanggal kirim "Disesuaikan Admin Sampel"
+- Sampel gratis (`sample_billing=free`): baris keranjang, ringkasan Review, Subtotal & Grand Total menampilkan "Free" (bukan Rp 0). Berbayar tetap Rupiah.
+- Mode sampel + Kirim: pilihan `sample-delivery-admin` (DEFAULT, tanggal kosong → dijadwalkan Admin Sampel) / `sample-delivery-pick` (memunculkan date picker). Checkout reguler tidak berubah.
+- Uji: iteration_160 lolos 6/6; data uji dibersihkan (nomor SOS kembali 0).
+
+
 
 
 - BELUM: cari/paginasi di sisa daftar (Kebijakan Retur, Kendaraan, Lokasi/Tag RFID, Monitor Gerbang, Rekening, Transaksi Kas, Rekonsiliasi Bank, Kasus Keuangan, Antar Entitas Grup, Presensi, Slip Gaji, Kunjungan Sales, Buka Kunci Periode, Kategori Produk, Satuan, Inbox/Persetujuan Saya, Riwayat Persetujuan PO, Pengiriman); paginasi daftar panjang lain; penyeragaman filter di ±18 layar lain; T5.4/T5.5; T6.4 Label Alasan, T6.5 Rate Insentif, T6.7 aturan/template bank, T6.8 konfigurasi PPh, T6.12 master produk, T6.13.
