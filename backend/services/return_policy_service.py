@@ -240,6 +240,8 @@ async def _linked_supplier_deadline(order: Dict[str, Any],
     # Cari PO terbaru yang memuat produk-produk ini (sebagai proxy asal beli).
     po = await db.purchase_orders.find_one(
         {"items.product_id": {"$in": product_ids},
+         # G3 D4-RET-POLICY-01 — hanya PO entitas pesanan (asal beli PT lain bukan supplier yang sah)
+         **({"entity_id": order["entity_id"]} if order.get("entity_id") else {}),
          "status": {"$in": ["receiving", "partial", "completed", "closed", "closed_short"]}},
         {"_id": 0}, sort=[("created_at", -1)])
     if not po or not po.get("supplier_id"):

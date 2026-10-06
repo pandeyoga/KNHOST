@@ -46,11 +46,13 @@ async def suggest(warehouse_from: str, scope_ids: List[str]) -> Dict[str, Any]:
         {"_id": 0}).to_list(200)
     groups: Dict[str, Dict[str, Any]] = {}
     for r in rolls:
-        key = f"{r.get('owner_entity_id')}|{r.get('category') or '—'}|{(r.get('grade') or 'A').upper()}"
+        unit = r.get("unit", "meter")
+        # G3 D4-PA-03 — satuan masuk kunci grup: meter dan kg tidak pernah dijumlahkan jadi satu angka
+        key = f"{r.get('owner_entity_id')}|{r.get('category') or '—'}|{(r.get('grade') or 'A').upper()}|{unit}"
         g = groups.setdefault(key, {
             "owner_entity_id": r.get("owner_entity_id"), "category": r.get("category") or "",
             "grade": (r.get("grade") or "A").upper(),
-            "rolls": [], "qty": 0.0, "unit": r.get("unit", "meter"), "candidates": None})
+            "rolls": [], "qty": 0.0, "unit": unit, "candidates": None})
         g["rolls"].append({k: r.get(k) for k in (
             "id", "roll_no", "sku", "product_name", "category", "grade",
             "length_remaining", "unit", "lot", "rfid_tag_id")})
@@ -164,6 +166,10 @@ async def create_order(warehouse_from: str, warehouse_to: str, roll_ids: List[st
         "owner_entity_id": list(owners)[0],
         "items": items, "item_count": len(items),
         "total_qty": round(sum(i["qty"] for i in items), 2),
+        # G3 D4-PA-03 — total per satuan (meter/kg/yard tidak dijumlahkan jadi satu label)
+        "qty_by_unit": {u: round(sum(i["qty"] for i in items if (i.get("unit") or "meter") == u), 2)
+                        for u in {(i.get("unit") or "meter") for i in items}},
+        "mixed_units": len({(i.get("unit") or "meter") for i in items}) > 1,
         "status": "open", "btg_number": None,
         "created_at": now_iso(), "created_by": actor_name,
         "dispatched_at": None, "confirmed_at": None, "confirmed_by": None,

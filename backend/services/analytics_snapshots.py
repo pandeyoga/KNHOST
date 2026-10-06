@@ -12,11 +12,15 @@ _STOCK_KEYS = ("owner_entity_id", "warehouse_id", "product_id", "grade", "dye_lo
 
 async def snapshot_stock(day: str) -> int:
     rem = {"$ifNull": ["$length_remaining", 0]}
+    # G3 D4-AI-05 — roll `available` dengan length_reserved (reservasi panjang) dipecah: bagian ter-reservasi
+    # masuk reserved, sisanya available (sebelumnya seluruh panjang dihitung available).
+    lres = {"$min": [rem, {"$ifNull": ["$length_reserved", 0]}]}
     pipe = [{"$match": {"status": {"$in": list(cat.PHYSICAL_ROLL_STATUSES)}}},
             {"$group": {"_id": {k: f"${k}" for k in _STOCK_KEYS}, "qty": {"$sum": rem}, "rolls": {"$sum": 1},
                         "value": {"$sum": {"$multiply": [rem, {"$ifNull": ["$unit_cost", 0]}]}},
-                        "avail": {"$sum": {"$cond": [{"$eq": ["$status", "available"]}, rem, 0]}},
-                        "reserved": {"$sum": {"$cond": [{"$in": ["$status", list(cat.RESERVED_ROLL_STATUSES)]}, rem, 0]}}}}]
+                        "avail": {"$sum": {"$cond": [{"$eq": ["$status", "available"]}, {"$subtract": [rem, lres]}, 0]}},
+                        "reserved": {"$sum": {"$cond": [{"$in": ["$status", list(cat.RESERVED_ROLL_STATUSES)]}, rem,
+                                                         {"$cond": [{"$eq": ["$status", "available"]}, lres, 0]}]}}}}]
     rows = [{"date": day, **{k: r["_id"].get(k) or "" for k in _STOCK_KEYS},
              **{k: r[k] for k in ("qty", "rolls", "value", "avail", "reserved")}}
             async for r in db.inventory_rolls.aggregate(pipe)]

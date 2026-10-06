@@ -200,11 +200,13 @@ async def warehouse_utilization(request: Request,
         total_capacity = 0.0
         for zone in warehouse.get("zones", []):
             for rack in zone.get("racks", []):
-                for bin_ in rack.get("bins", []):
-                    total_capacity += float(bin_.get("capacity", 0))
+                # G3 D4-WMS-03 — struktur baru menyimpan bin di rack.levels[].bins (legacy: rack.bins)
+                bins = list(rack.get("bins") or []) + [b for lv in rack.get("levels") or [] for b in lv.get("bins") or []]
+                for bin_ in bins:
+                    total_capacity += float(bin_.get("capacity", 0) or 0)
         bal_scope = resolve_list_scope(
             "inventory_balances", {"warehouse_id": warehouse["id"]}, ctx, entity_id)
-        balances = await db.inventory_balances.find(bal_scope, {"_id": 0}).to_list(1000)
+        balances = await db.inventory_balances.find(bal_scope, {"_id": 0}).to_list(None)
         on_hand_total = sum(float(b.get("on_hand_qty", 0)) for b in balances)
         reserved_total = sum(float(b.get("reserved_qty", 0)) for b in balances)
         available_total = sum(float(b.get("available_qty", 0)) for b in balances)

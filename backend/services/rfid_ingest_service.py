@@ -167,7 +167,8 @@ async def ingest(device: Dict[str, Any], epcs: Optional[List[str]] = None,
                             "roll_no": prev.get("roll_no"), "sku": prev.get("sku"),
                             "product_name": prev.get("product_name"), "read_id": rid})
             continue
-        if prev:  # tag diam / passage sama — bukan event bisnis baru (tanpa insiden baru)
+        # G3 V3-RFID-01 — cache dwell hanya berlaku di passage YANG SAMA; passage baru wajib dievaluasi ulang
+        if prev and (prev.get("passage_id") or None) == ((passage or {}).get("id") or None):
             await db.rfid_reads.update_one({"id": prev["id"]}, {"$set": {"last_observed_at": now},
                                                                "$inc": {"observation_count": 1}})
             results.append({"epc": raw, "result": prev["result"], "code": prev.get("code"), "reason": prev["reason"],

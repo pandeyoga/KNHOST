@@ -170,7 +170,7 @@ from services.tolerances import QTY_EPS  # KN-A13 — toleransi bersama
 # KN-A11 — SATU definisi "PO masih terbuka / stok dalam perjalanan" untuk papan Stok/ATP,
 # Fulfillment Wizard, dan stock_bucket. `waiting_approval` sengaja TIDAK dihitung (belum
 # pasti dibeli); `receiving` dihitung karena sisa yang belum diterima memang masih di jalan.
-OPEN_PO_STATUSES = ["pending", "created", "approved", "sent", "receiving"]
+OPEN_PO_STATUSES = ["pending", "created", "approved", "sent", "receiving", "partial"]   # G3 D4-SUPPLY-01
 
 PHYSICAL_STATUS_TO_BUCKET = {
     "available": "available_qty",

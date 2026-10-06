@@ -283,7 +283,7 @@ async def job_ops_stalled() -> Dict[str, Any]:
     # Agregasi per (gudang, arah) agar tidak membanjiri bell dengan 1 notif per tugas.
     groups: Dict[tuple, Dict[str, Any]] = {}
     for t in tasks:
-        key = (t.get("warehouse_id", ""), t.get("flow_type", ""))
+        key = (t.get("warehouse_id", ""), t.get("flow_type", ""), t.get("entity_id") or "")   # G3 D4-ALERT-WMS-01
         g = groups.setdefault(key, {"count": 0, "oldest": None, "orders": [],
                                     "warehouse_name": t.get("warehouse_name", ""),
                                     "entity_id": t.get("entity_id")})

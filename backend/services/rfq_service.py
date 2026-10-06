@@ -297,6 +297,8 @@ async def award_rfq(rfq: Dict[str, Any], mode: str, full_supplier_id: str,
         s = sup_by_id.get(sid, {})
         for ln in s.get("lines", []):
             if ln["line_id"] == lid:
+                if ln.get("available") is False:   # G3 D4-RFQ-01 — supplier menyatakan tak bisa memasok
+                    return 0.0
                 return float(ln.get("price", 0) or 0)
         return 0.0
 

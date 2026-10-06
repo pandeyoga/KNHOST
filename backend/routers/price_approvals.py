@@ -114,10 +114,12 @@ async def get_effective_special_price(
     return None
 
 
-async def _get_or_404(approval_id: str) -> Dict[str, Any]:
+async def _get_or_404(approval_id: str, request: Optional[Request] = None) -> Dict[str, Any]:
     doc = safe_doc(await db.price_approvals.find_one({"id": approval_id}, {"_id": 0}))
     if not doc:
         raise HTTPException(status_code=404, detail="Pengajuan harga tidak ditemukan")
+    if request is not None:   # G3 D4-PRICE-SCOPE-01 — semua handler ber-ID ikut lingkup entitas detail
+        assert_entity_access(doc, "price_approvals", await entity_ctx(request))
     return doc
 
 
@@ -181,7 +183,8 @@ async def effective_price(
 @router.get("/price-approvals/stats/summary")
 async def price_approval_stats(request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "view")
-    base: Dict[str, Any] = {}
+    # G3 D4-PRICE-SCOPE-01 — statistik ikut lingkup entitas yang sama dengan daftar
+    base: Dict[str, Any] = resolve_list_scope("price_approvals", {}, await entity_ctx(request), None)
     if user.get("role") == "sales":
         base["requested_by"] = user.get("id")
     pipeline = [{"$match": base}] if base else []
@@ -253,7 +256,7 @@ async def create_price_approval(payload: PriceApprovalCreate, request: Request) 
 async def get_price_approval(approval_id: str, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "view")
     ctx = await entity_ctx(request)
-    doc = await _get_or_404(approval_id)
+    doc = await _get_or_404(approval_id, request)
     assert_entity_access(doc, "price_approvals", ctx)
     _ensure_owner_or_privileged(doc, user)
     return _decorate(doc)
@@ -262,7 +265,7 @@ async def get_price_approval(approval_id: str, request: Request) -> Dict[str, An
 @router.patch("/price-approvals/{approval_id}")
 async def patch_price_approval(approval_id: str, payload: GenericPatch, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "update")
-    doc = await _get_or_404(approval_id)
+    doc = await _get_or_404(approval_id, request)
     _ensure_owner_or_privileged(doc, user)
     if doc["status"] not in EDITABLE_STATUSES:
         raise HTTPException(status_code=409, detail=f"Pengajuan status '{doc['status']}' tidak dapat diubah")
@@ -296,7 +299,7 @@ async def patch_price_approval(approval_id: str, payload: GenericPatch, request:
 @router.delete("/price-approvals/{approval_id}")
 async def delete_price_approval(approval_id: str, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "delete")
-    doc = await _get_or_404(approval_id)
+    doc = await _get_or_404(approval_id, request)
     _ensure_owner_or_privileged(doc, user)
     if doc["status"] == "approved":
         raise HTTPException(status_code=409, detail="Pengajuan yang sudah disetujui tidak dapat dihapus")
@@ -310,7 +313,7 @@ async def delete_price_approval(approval_id: str, request: Request) -> Dict[str,
 @router.post("/price-approvals/{approval_id}/submit")
 async def submit_price_approval(approval_id: str, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "update")
-    doc = await _get_or_404(approval_id)
+    doc = await _get_or_404(approval_id, request)
     _ensure_owner_or_privileged(doc, user)
     if doc["status"] != "draft":
         raise HTTPException(status_code=409, detail="Hanya pengajuan draft yang dapat disubmit")
@@ -330,7 +333,7 @@ async def submit_price_approval(approval_id: str, request: Request) -> Dict[str,
 @router.post("/price-approvals/{approval_id}/approve")
 async def approve_price_approval(approval_id: str, payload: PriceApprovalDecision, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "approve")
-    doc = await _get_or_404(approval_id)
+    doc = await _get_or_404(approval_id, request)
     if doc["status"] not in DECIDABLE_STATUSES:
         raise HTTPException(status_code=409, detail=f"Status '{doc['status']}' tidak dapat disetujui")
     # PS-20 — Pemisahan tugas SATU SUMBER (ikut Pusat Pengaturan, bukan hardcode):
@@ -423,7 +426,7 @@ async def approve_price_approval(approval_id: str, payload: PriceApprovalDecisio
 @router.post("/price-approvals/{approval_id}/reject")
 async def reject_price_approval(approval_id: str, payload: PriceApprovalDecision, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "reject")
-    doc = await _get_or_404(approval_id)
+    doc = await _get_or_404(approval_id, request)
     if doc["status"] not in DECIDABLE_STATUSES:
         raise HTTPException(status_code=409, detail=f"Status '{doc['status']}' tidak dapat ditolak")
     if await matrix.sod_blocked(doc, user, doc.get("entity_id", "")):
@@ -465,7 +468,7 @@ async def revoke_price_approval(approval_id: str, payload: PriceApprovalDecision
     tercatat; harga kembali ke rantai normal (pelanggan → PT → umum).
     """
     user = await require_permission(request, "price_approval", "approve")
-    doc = await _get_or_404(approval_id)
+    doc = await _get_or_404(approval_id, request)
     ctx = await entity_ctx(request)
     assert_entity_access(doc, "price_approvals", ctx)
     if doc.get("status") != "approved":
@@ -515,7 +518,7 @@ async def revoke_price_approval(approval_id: str, payload: PriceApprovalDecision
 @router.post("/price-approvals/{approval_id}/attachments")
 async def upload_attachment(approval_id: str, request: Request, file: UploadFile = File(...)) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "update")
-    doc = await _get_or_404(approval_id)
+    doc = await _get_or_404(approval_id, request)
     _ensure_owner_or_privileged(doc, user)
     data = await file.read()
     try:
@@ -557,7 +560,7 @@ async def download_attachment(
             (b"authorization", f"Bearer {auth}".encode())
         ]
     user = await require_permission(request, "price_approval", "view")
-    doc = await _get_or_404(approval_id)
+    doc = await _get_or_404(approval_id, request)
     _ensure_owner_or_privileged(doc, user)
     att = next((a for a in (doc.get("attachments") or []) if a.get("id") == att_id and not a.get("is_deleted")), None)
     if not att:
@@ -575,7 +578,7 @@ async def download_attachment(
 @router.delete("/price-approvals/{approval_id}/attachments/{att_id}")
 async def delete_attachment(approval_id: str, att_id: str, request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "update")
-    doc = await _get_or_404(approval_id)
+    doc = await _get_or_404(approval_id, request)
     _ensure_owner_or_privileged(doc, user)
     res = await db.price_approvals.update_one(
         {"id": approval_id, "attachments.id": att_id},

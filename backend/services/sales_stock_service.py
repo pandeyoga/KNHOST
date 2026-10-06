@@ -42,6 +42,10 @@ async def apply_global(products: List[Dict[str, Any]], entity_id: str = "") -> N
             if pid not in idset:
                 continue
             open_qty = float(it.get("quantity", it.get("qty", 0)) or 0) - float(it.get("received_qty", 0) or 0)
+            # G3 D4-GLOBAL-01 — konversi ke satuan dasar produk lewat quantity_base (UOM beli ≠ base_unit)
+            q_doc = float(it.get("quantity", it.get("qty", 0)) or 0)
+            if it.get("quantity_base") and q_doc > 0:
+                open_qty = open_qty * float(it["quantity_base"]) / q_doc
             if open_qty > 0.01:
                 tgt = inc_so if (bound or it.get("source_so_id")) else inc_rs
                 tgt[pid] = tgt.get(pid, 0.0) + open_qty
@@ -50,7 +54,7 @@ async def apply_global(products: List[Dict[str, Any]], entity_id: str = "") -> N
                                                 {"_id": 0, "items": 1, "source_order_id": 1}):
         for it in d.get("items") or []:
             pid = it.get("product_id")
-            qty = float(it.get("quantity", it.get("qty", 0)) or 0)
+            qty = float(it.get("quantity_base") or it.get("quantity", it.get("qty", 0)) or 0)   # G3 D4-GLOBAL-01
             if pid in idset and qty > 0.01:
                 tgt = inc_so if d.get("source_order_id") else inc_rs
                 tgt[pid] = tgt.get(pid, 0.0) + qty

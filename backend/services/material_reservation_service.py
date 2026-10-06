@@ -17,7 +17,7 @@ async def _on_hand_available(product_id: str, entity_id: str, warehouse_id: str 
     q: Dict[str, Any] = {"product_id": product_id, "owner_entity_id": entity_id}
     if warehouse_id:
         q["warehouse_id"] = warehouse_id
-    rows = await db.inventory_balances.find(q, {"_id": 0, "available_qty": 1}).to_list(500)
+    rows = await db.inventory_balances.find(q, {"_id": 0, "available_qty": 1}).to_list(None)   # G3 V3-MRES-02
     return round(sum(float(r.get("available_qty") or 0) for r in rows), 3)
 
 
@@ -27,7 +27,7 @@ async def apply_to_products(products: List[Dict[str, Any]], entity_id: Optional[
     if entity_id and entity_id != "all":
         q["owner_entity_id"] = entity_id
     per: Dict[str, float] = {}
-    for m in await db.material_reservations.find(q, {"_id": 0, "product_id": 1, "qty": 1}).to_list(5000):
+    for m in await db.material_reservations.find(q, {"_id": 0, "product_id": 1, "qty": 1}).to_list(None):
         per[m["product_id"]] = per.get(m["product_id"], 0.0) + float(m.get("qty") or 0)
     for p in products:
         mk = round(per.get(p["id"], 0.0), 2)
@@ -41,7 +41,7 @@ async def reserved_by_others(product_id: str, entity_id: str, exclude_ref_id: st
     q: Dict[str, Any] = {"product_id": product_id, "owner_entity_id": entity_id, "status": ACTIVE}
     if exclude_ref_id:
         q["ref_id"] = {"$ne": exclude_ref_id}
-    rows = await db.material_reservations.find(q, {"_id": 0, "qty": 1}).to_list(2000)
+    rows = await db.material_reservations.find(q, {"_id": 0, "qty": 1}).to_list(None)
     return round(sum(float(r.get("qty") or 0) for r in rows), 3)
 
 
@@ -76,9 +76,25 @@ async def reserve_for_pr(pr_id: str, actor_name: str = "Sistem") -> List[Dict[st
         if not pid or need <= 0:
             continue
         entity_id = pr.get("entity_id") or ""
-        free = await free_for_commitment(pid, entity_id)
-        qty = round(min(need, free), 3)
-        doc = {"id": new_id("mres"), "product_id": pid, "owner_entity_id": entity_id,
+        # G3 V3-MRES-01 — baca-bebas + insert DISERIALKAN per (bahan, entitas) lewat kunci unik, dan satu
+        # baris PR = satu cadangan (id deterministik) → dua PR paralel tidak menjanjikan stok yang sama.
+        doc_id = f"mres_{pr_id}_{line_no}"
+        if await db.material_reservations.find_one({"id": doc_id, "status": ACTIVE}, {"_id": 1}):
+            continue
+        lock_id = f"{pid}:{entity_id}"
+        for _ in range(50):
+            try:
+                await db.material_reservation_locks.insert_one({"_id": lock_id, "at": now_iso()})
+                break
+            except Exception:  # noqa: BLE001 — DuplicateKey: pemegang lain sedang menghitung
+                import asyncio as _aio
+                await _aio.sleep(0.05)
+        else:
+            raise SourcingError("Cadangan bahan sedang dihitung proses lain — coba lagi.")
+        try:
+            free = await free_for_commitment(pid, entity_id)
+            qty = round(min(need, free), 3)
+            doc = {"id": doc_id, "product_id": pid, "owner_entity_id": entity_id,
                "ref_type": "purchase_requisition", "ref_id": pr_id, "pr_id": pr_id, "pr_number": pr.get("number"),
                "pr_line_no": line_no, "output_product_id": line["product_id"],
                "target_output_qty": pre.get("target_output_qty"), "recipe": pre.get("recipe"),
@@ -86,7 +102,9 @@ async def reserve_for_pr(pr_id: str, actor_name: str = "Sistem") -> List[Dict[st
                "source_ref_id": pr.get("source_ref_id") or "", "status": ACTIVE,
                "created_by": actor_name, "created_at": now_iso(), "history": [
                    {"at": now_iso(), "event": "reserved", "qty": qty, "by": actor_name}]}
-        await db.material_reservations.insert_one(dict(doc))
+            await db.material_reservations.insert_one(dict(doc))
+        finally:
+            await db.material_reservation_locks.delete_one({"_id": lock_id})
         out.append(doc)
     return out
 
