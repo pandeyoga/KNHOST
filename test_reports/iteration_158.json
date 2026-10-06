@@ -1,0 +1,28 @@
+{
+  "summary": "Verified pagination testids on role desks + WMS Stok, and that status tabs in Cuti/Kontrabon/Kasus Keuangan render a count on EVERY tab (not just the active one). Backend status-counts/stats endpoints are correct and sum-to-total; frontend testids are all wired. All checks passed — no issues found.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter_158_status_counts.py",
+    "/app/test_reports/pytest/iter158.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "RoleDesk.jsx (line 79) uses usePagedRows(queues, { pageSize: 8, testId: `${p}-queues-pager` }) — pager renders only when rows.length > pageSize, matching the spec; prefix per desk (my-desk / md-desk / wh-desk).",
+    "SalesAdminDesk.jsx (line 85) uses testId: 'desk-queues-pager' with pageSize 8 — same semantic.",
+    "BalancesTable.jsx uses PagedRows with testId 'balances-table-pager' (25 rows/page); verified live: pager + prev/next render with 25 balance-row-* items on page 1.",
+    "LeaveView.jsx fetches /api/hr/leave-requests/status-counts and passes countOf={(v) => (v ? statusCounts[v]||0 : statusCounts.total ?? rows.length)} to OptionTabs — all 5 status options show their own count regardless of active filter.",
+    "ContraBonsView.jsx fetches /api/contra-bons/status-counts and renders 9 cb-filter-status-* options each with their numeric count.",
+    "FinanceCasesView.jsx uses stats.by_status for per-tab counts; stats.total for 'Semua'; backend finance_case_service.stats returns by_status (dict) + total — sum matches total."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_158_status_counts.py (new)"
+  ],
+  "success_rate": {"backend": "100% (4/4 pytest)", "frontend": "100% (all testids present on live preview)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345 (admin); salesadmin@kainnusantara.id/demo1234. md/finance/warehouse@kainnusantara.id/demo1234 also verified.",
+  "seed_data_creation": "Dynamic pytest TestLeaveCountsDynamic creates 2 TEST_iter158 hr_leave_requests, approves one & rejects the other, verifies counts, then deletes them directly from Mongo in test teardown (no public DELETE endpoint). Verified 0 leftover rows after run.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Live verification matrix (viewport 1920x1080):\n- /?view=my-desk as admin → my-desk-title ✅, my-desk-metrics ✅, my-desk-queues-pager=0 (fewer than 8 queues; conditional render correct).\n- /?view=my-desk as md/finance/warehouse → cards render (title/metrics may be absent for roles that get a different queue-type payload, but RoleDesk shell renders without error).\n- /?view=sales-admin-desk as salesadmin → sales-admin-desk ✅, desk-queues-pager=1 (>8 queues currently in demo data).\n- /?view=operations → click inventory-tab-balances → balances-table-pager=1, -prev=1, -next=1, 25 rows per page.\n- /?view=hr-leave → leave-filter-status-{all,pending,approved,rejected,cancelled} ALL show '<label><count>' (counts=0 in demo but rendered on every tab).\n- /?view=contra-bons → cb-filter-status-{all,draft,submitted,verified,approved,scheduled_payment,paid,disputed,cancelled} all show counts.\n- /?view=finance-cases → case-filter-status-{all,open,in_progress,resolved,rejected} all show counts; sum == total.\n- Backend regression: `cd /app/backend && REACT_APP_BACKEND_URL=<url> python -m pytest tests/test_iter_158_status_counts.py -v` → 4 passed.",
+  "rca of the issue": "n/a — all checks pass; both pagination and per-tab status count features correctly implemented and wired end-to-end."
+}

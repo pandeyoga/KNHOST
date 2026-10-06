@@ -1011,4 +1011,10 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - Uji: iteration_157 (+ perbaikan: kartu konfigurasi PPh, cari Kategori/Satuan; dicek screenshot).
 - Sisa: paginasi Meja Saya/Admin Sales, Pusat Pengaturan (dikelompokkan per grup), Bagan Akun (dikelompokkan per tipe; sudah ada cari), Operasi WMS › Stok.
 
+## 2026-10-05 (lanjutan 4) — Paginasi meja kerja + jumlah tab status lengkap
+- Meja Saya (`RoleDesk`) & Meja Admin Sales: kartu antrean berhalaman 8/hal (`<prefix>-queues-pager`, `desk-queues-pager`). Operasi Gudang › Stok sudah berhalaman (`balances-table-pager`, 25/hal) — tidak diubah.
+- Jumlah di SETIAP tab: Cuti (endpoint baru GET `/api/hr/leave-requests/status-counts`), Kontrabon (`/contra-bons/status-counts`, label lama "(n)" diganti badge), Kasus Keuangan (`/finance-cases/stats` kini memuat `by_status`).
+- Uji: iteration_158 (backend 4/4, frontend lolos; `backend/tests/test_iter_158_status_counts.py`).
+
+
 - BELUM: cari/paginasi di sisa daftar (Kebijakan Retur, Kendaraan, Lokasi/Tag RFID, Monitor Gerbang, Rekening, Transaksi Kas, Rekonsiliasi Bank, Kasus Keuangan, Antar Entitas Grup, Presensi, Slip Gaji, Kunjungan Sales, Buka Kunci Periode, Kategori Produk, Satuan, Inbox/Persetujuan Saya, Riwayat Persetujuan PO, Pengiriman); paginasi daftar panjang lain; penyeragaman filter di ±18 layar lain; T5.4/T5.5; T6.4 Label Alasan, T6.5 Rate Insentif, T6.7 aturan/template bank, T6.8 konfigurasi PPh, T6.12 master produk, T6.13.
