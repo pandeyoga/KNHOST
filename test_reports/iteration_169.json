@@ -1,0 +1,40 @@
+{
+  "summary": "G3 Fase 03 — 4 temuan terakhir + penguatan V3-PO-02 LULUS. Pytest service: tests/test_g3_phase03.py 22/22 (DB_NAME=g3_audit_phase03), regresi test_g3_phase01+02+02b 65/65 (DB_NAME=g3_audit_phase01). Live API baru (tests/test_g3_phase03c_live.py) 10/10: (V3-CF-01) /api/finance/cash-flow method='journal_cash_classification' + allocation='pro_rata_cash_side' + reconciled=true pada data demo; (D4-FIN-04) /api/finance/profitability (admin) totals/by_customer/by_product/monthly realisasi + metric='realised_shipped' + legacy_orders + estimate.{label,totals,by_customer,by_product,monthly} — role finance TIDAK menerima cogs/margin/margin_pct di seluruh pohon (strip_cost_fields rekursif, termasuk 'estimate' & 'monthly'); (D4-CASH-01) /api/cash-transactions/summary opening dari bank_accounts.cash_type, semua bank_accounts punya cash_type (backfill startup), POST /api/bank-accounts account_type=cash → cash_type='kas_kecil' otomatis, cash_type='kas_sedang' → 400; (D4-DATE-01) /api/home/sales & /api/home/admin 200 dan period memuat bulan WIB (YYYY-MM); (V3-PO-02) POST /api/purchase-orders/po_TEST_variance01/amend dengan items[].quantity=received(60) → PO ber-status 'waiting_approval' dan approval_reason memuat 'qty_to_received' (meski nilai di bawah ambang). Frontend (setelah bash /app/scripts/rebuild_frontend.sh): /?view=profitability `prof-kpi-revenue` label 'PENDAPATAN (REALISASI · TERKIRIM)' + sub 'Estimasi nilai pesanan 52.4 jt'; /?view=bank-accounts kartu rekening menampilkan badge `bank-cash-type-<id>` (6 kartu terdeteksi: 3 Kas besar + 3 Kas kecil). Data TEST_ (po_TEST_variance01, 1 rekening TEST_bank_* nonaktif + sisa 1 rekening lama) dibersihkan.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Login", "issues": ["input email ber-type='text' (bukan 'email') — hanya catatan testing agent; selektor data-testid tersedia dan berjalan baik"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_g3_phase03.py",
+    "/app/backend/tests/test_g3_phase01.py",
+    "/app/backend/tests/test_g3_phase02.py",
+    "/app/backend/tests/test_g3_phase02b.py",
+    "/app/backend/tests/test_g3_phase03c_live.py"
+  ],
+  "action_items": [
+    "Catat: bundle frontend statis — setelah perubahan JSX wajib `bash /app/scripts/rebuild_frontend.sh` (sudah dijalankan di iterasi ini sehingga perubahan ProfitabilityView/BankAccountsView tampak di preview URL)."
+  ],
+  "critical_code_review_comments": [
+    "services/profitability_service.py: pemisahan realisasi (dari shipments, tanggal & HPP saat kirim) vs estimate (dari SO confirmed/reserved/dikirim per tanggal pesanan) sudah tegas; respons punya metric='realised_shipped' + estimate.{label,totals,by_*,monthly} + legacy_orders. Strip biaya oleh core_utils.strip_cost_fields rekursif, memastikan field cogs/margin tidak bocor ke role finance di seluruh pohon termasuk `estimate` dan `monthly` (diverifikasi lewat scan rekursif).",
+    "services/cash_flow_service.py.split_journal_cash: metode klasifikasi jurnal dengan alokasi pro-rata sisi kas sudah dipakai; respons /api/finance/cash-flow membawa 'method' & 'allocation' baru dan 'reconciled=true' pada data demo (|computed_end − end_cash| < 0.5).",
+    "services/bank_service.py: account_cash_type membaca `cash_type` master rekening (bukan dominasi transaksi aktif) → kolom tetap stabil; backfill_cash_type dijalankan di lifespan dan terbukti efektif (semua rekening di demo DB punya cash_type). create_account menolak cash_type invalid dengan ValueError → 400 di router. Baik.",
+    "routers/cash.py.cash_summary: opening_kecil & opening_besar dihitung dari master rekening via account_cash_type — konsisten dengan keputusan D4-CASH-01.",
+    "routers/purchase_orders.py & services/po_amendment_service.py (qty_to_received): penguatan V3-PO-02 bekerja — amandemen qty baris ber-penerimaan tepat ke received SELALU memicu waiting_approval (approval_reason memuat 'qty_to_received'), berapa pun nilainya, dan bila approval_chain kosong di-force ke level1 'manager'. Terverifikasi live pada PO po_TEST_variance01 (100→60 yard, received=60) dengan grand_total hanya Rp 1,55 jt tetap meminta persetujuan ulang.",
+    "frontend/src/features/finance/ProfitabilityView.jsx: KpiCard 'prof-kpi-revenue' label 'Pendapatan (Realisasi · terkirim)' + sub berisi `compactIDR(est.revenue)` — label & sub tampil benar setelah rebuild bundle.",
+    "frontend/src/features/finance/BankAccountsView.jsx: badge `bank-cash-type-${a.id}` hanya tampil bila `a.cash_type` ada; sebab backfill startup, semua rekening punya field ini sehingga badge tampil konsisten (Kas kecil/Kas besar).",
+    "Catatan kecil (bukan bug): seed_test_po_variance.py: PATCH is_active=False tidak menghapus akun TEST_bank — testing agent memakai PATCH karena endpoint DELETE /api/bank-accounts tidak tersedia (menyimpan jejak akuntansi). Perlu dibersihkan manual bila ingin bersih total; sudah dilakukan via db.bank_accounts.delete_many di akhir iterasi."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_g3_phase03c_live.py (dibuat baru, 10 tes live untuk iterasi 169)"
+  ],
+  "success_rate": {"backend": "100% (22+65 pytest + 10 live baru + 23 live dari iterasi sebelumnya)", "frontend": "100% (prof-kpi-revenue label+sub & bank-cash-type badges tampil setelah rebuild)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345; finance@/manager@/sales@kainnusantara.id / demo1234",
+  "seed_data_creation": "PO po_TEST_variance01 (KSC/TEST_PO-VAR-01) dibuat ulang untuk uji V3-PO-02 lalu DIBERSIHKAN via `python ../scripts/seed_test_po_variance.py --clear`. Satu rekening TEST_bank_* dibuat oleh test_create_bank_account_cash_defaults_kas_kecil + 1 rekening TEST_ sisa dari iterasi lain — kedua rekening TEST_* DIHAPUS lewat db.bank_accounts.delete_many di akhir iterasi.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Semua 4 temuan Fase 03 (V3-CF-01, D4-FIN-04, D4-CASH-01, D4-DATE-01) + penguatan V3-PO-02 teruji end-to-end service + API live + UI. Untuk regresi: (1) `cd /app/backend && DB_NAME=g3_audit_phase03 python -m pytest tests/test_g3_phase03.py -q -n0`; (2) `DB_NAME=g3_audit_phase01 python -m pytest tests/test_g3_phase01.py tests/test_g3_phase02.py tests/test_g3_phase02b.py -q -n0`; (3) `cd /app/backend && python ../scripts/seed_test_po_variance.py && cd /app && REACT_APP_BACKEND_URL=https://internal-pricing.preview.emergentagent.com python -m pytest backend/tests/test_g3_phase03c_live.py -q -n0 && cd /app/backend && python ../scripts/seed_test_po_variance.py --clear`. Sebelum uji UI untuk perubahan JSX, selalu `bash /app/scripts/rebuild_frontend.sh` lebih dulu."
+}

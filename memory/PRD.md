@@ -1058,6 +1058,16 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - Mode sampel + Kirim: pilihan `sample-delivery-admin` (DEFAULT, tanggal kosong → dijadwalkan Admin Sampel) / `sample-delivery-pick` (memunculkan date picker). Checkout reguler tidak berubah.
 - Uji: iteration_160 lolos 6/6; data uji dibersihkan (nomor SOS kembali 0).
 
+## 2026-10-06 — Gelombang 3 Fase 03 TUNTAS (22/22 implemented_pending_validation)
+- V3-CF-01 arus kas: hanya porsi tunai masuk aktivitas (pro-rata sisi searah kas), sisa = nonkas (`split_journal_cash`).
+- D4-FIN-04 profitabilitas: realisasi = surat jalan (tanggal kirim WIB, HPP snapshot roll); `estimate` = nilai pesanan terpisah; label UI diperbarui.
+- D4-CASH-01: `bank_accounts.cash_type` tetap + backfill sekali saat startup; ringkasan kas tak lagi bergantung transaksi aktif; badge jenis kas.
+- D4-DATE-01: periode Penjualan/Home/komisi WIB.
+- V3-PO-02: amandemen qty → qty diterima SELALU minta persetujuan ulang (keputusan user 1.a).
+- Uji: tests/test_g3_phase03.py 22/22, regresi Fase 01/02 65/65, iteration_169 (live 10/10 + frontend) lulus.
+- Berikutnya: Gelombang 3 Fase 04 (docs/audit/gelombang-3/prompts/FASE-04.md).
+
+
 
 
 
