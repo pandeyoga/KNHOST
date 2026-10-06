@@ -21,10 +21,12 @@ DEFAULT_TIERS = [
 
 
 def _in_period(value: Any, period: Optional[str]) -> bool:
-    """Cocokkan created_at dengan periode: YYYY-MM (bulan), YYYY-Qn (kuartal), YYYY (tahun)."""
+    """Cocokkan tanggal dengan periode: YYYY-MM (bulan), YYYY-Qn (kuartal), YYYY (tahun).
+    G3 D4-DATE-01 — timestamp (Z/+00/+07/naif=UTC) dikonversi ke tanggal WIB dulu; date-only apa adanya."""
     if not period:
         return True
-    v = str(value or "")[:10]
+    from services.analytics_time import to_wib_date
+    v = to_wib_date(value) or ""
     if len(v) < 7:
         return False
     ym, yr = v[:7], v[:4]
@@ -420,8 +422,8 @@ async def commission_history(
     sales_id: str, period_type: str = "month", anchor: str = None, count: int = 6, entity_id: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """Tren komisi `count` periode terakhir (untuk grafik multi-periode, S+5a)."""
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc)
+    from services.analytics_time import now_wib
+    now = now_wib()
     if not anchor:
         if period_type == "year":
             anchor = now.strftime("%Y")

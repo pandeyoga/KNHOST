@@ -73,6 +73,12 @@ async def lifespan(app: FastAPI):
         logging.getLogger("server").warning("[custom-roles] sync dilewati: %s", exc)
     from idempotency import ensure_indexes as _idem_idx
     await _idem_idx()
+    try:  # G3 D4-CASH-01 — isi jenis kas rekening lama sekali (idempotent)
+        from services.bank_service import backfill_cash_type
+        await backfill_cash_type()
+    except Exception as exc:  # noqa: BLE001
+        import logging
+        logging.getLogger("server").warning("[cash_type] backfill dilewati: %s", exc)
     # Sub-fase 1.7 — init object storage (best-effort; tak menggagalkan startup)
     try:
         from services.storage_service import init_storage

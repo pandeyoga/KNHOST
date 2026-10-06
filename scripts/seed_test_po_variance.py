@@ -24,7 +24,7 @@ async def main():
     po = copy.deepcopy(base)
     it = po["items"][0]
     it.update({"quantity": 100.0, "received_qty": 60.0})
-    po.update({"id": PO_ID, "po_number": "KSC/TEST_PO-VAR-01", "status": "partially_received",
+    po.update({"id": PO_ID, "po_number": "KSC/TEST_PO-VAR-01", "status": "partial",
                "items": [it], "amount_paid": 0, "payments": [], "notes": "TEST_ contoh selisih penerimaan"})
     for k in ("received_at", "completed_at", "closed_at"):
         po.pop(k, None)

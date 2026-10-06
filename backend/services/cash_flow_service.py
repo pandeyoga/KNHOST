@@ -52,6 +52,30 @@ async def _cash_codes(amap: Dict[str, Dict[str, Any]]) -> set:
     return CASH_CODES | {c for c, a in amap.items() if a.get("is_cash") or a.get("cash_equivalent")}
 
 
+def split_journal_cash(lines: List[Dict[str, Any]], cash: set) -> List[tuple]:
+    """G3 V3-CF-01 — pecah tiap lawan akun jadi (porsi kas, porsi nonkas).
+
+    Kas bersih jurnal C = Σ(debit−kredit) akun kas. Hanya lawan akun yang searah dengan C
+    (sisi yang dibayar/diterima tunai) yang menerima porsi kas, pro-rata nilainya; sisanya
+    + lawan akun berlawanan arah (mis. AP/AR yang menampung sisa) = nonkas. Σ porsi kas = C.
+    """
+    c = sum(float(ln.get("debit", 0) or 0) - float(ln.get("credit", 0) or 0)
+            for ln in lines if ln["account_code"] in cash)
+    eff: Dict[str, float] = {}
+    for ln in lines:
+        if ln["account_code"] in cash:
+            continue
+        code = ln["account_code"]
+        eff[code] = eff.get(code, 0.0) - (float(ln.get("debit", 0) or 0) - float(ln.get("credit", 0) or 0))
+    same = sum(v for v in eff.values() if v * c > 0)
+    ratio = (c / same) if abs(c) > EPS and abs(same) > EPS else 0.0
+    out = []
+    for code, v in eff.items():
+        cash_amt = v * ratio if v * c > 0 else 0.0
+        out.append((code, cash_amt, v - cash_amt))
+    return out
+
+
 async def cash_flow_statement(start: Optional[str] = None, end: Optional[str] = None,
                               scope: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """FN-04 — klasifikasi PER JURNAL: hanya jurnal yang menyentuh akun kas yang menghasilkan
@@ -81,17 +105,12 @@ async def cash_flow_statement(start: Optional[str] = None, end: Optional[str] = 
     noncash: Dict[str, float] = {}
     async for je in db.journal_entries.find(q, {"_id": 0, "lines": 1}):
         lines = [ln for ln in je.get("lines", []) if ln.get("account_code")]
-        touches_cash = any(ln["account_code"] in cash for ln in lines)
-        for ln in lines:
-            code = ln["account_code"]
-            if code in cash:
-                continue
-            eff = -(float(ln.get("debit", 0) or 0) - float(ln.get("credit", 0) or 0))
+        for code, cash_amt, noncash_amt in split_journal_cash(lines, cash):
             sec = _section(amap.get(code, {}).get("type", ""), code)
-            if touches_cash:
-                buckets[sec][code] = buckets[sec].get(code, 0.0) + eff
-            elif sec in ("investing", "financing"):
-                noncash[code] = noncash.get(code, 0.0) + eff
+            if abs(cash_amt) > 1e-9:
+                buckets[sec][code] = buckets[sec].get(code, 0.0) + cash_amt
+            if abs(noncash_amt) > 1e-9 and sec in ("investing", "financing"):
+                noncash[code] = noncash.get(code, 0.0) + noncash_amt
 
     def _lines(d: Dict[str, float]) -> List[Dict[str, Any]]:
         return sorted(({"code": c, "name": amap.get(c, {}).get("name", c), "amount": round(v, 2)}
@@ -113,6 +132,7 @@ async def cash_flow_statement(start: Optional[str] = None, end: Optional[str] = 
     return {
         "period": {"start": start or "", "end": end or ""},
         "method": "journal_cash_classification",
+        "allocation": "pro_rata_cash_side",
         "operating": {
             "label": "Arus Kas dari Aktivitas Operasi",
             "net_income": net_income,

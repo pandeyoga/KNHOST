@@ -194,6 +194,11 @@ export default function BankAccountsView({ selectedEntity, currentUser }) {
                     <div className="min-w-0">
                       <p className="font-bold text-[13px] text-[#1C1C1E] truncate">{a.name}</p>
                       <p className="text-[10px] text-[#9A9BA3] truncate">{a.account_type === "bank" ? `${a.bank_name || "Bank"} · ${a.account_number || "-"}` : "Kas tunai"}{a.is_active === false ? " · nonaktif" : ""}</p>
+                      {a.cash_type && (
+                        <span data-testid={`bank-cash-type-${a.id}`} className="inline-block mt-0.5 text-[9px] font-semibold rounded-full px-1.5 py-0.5 bg-[#F3EAFB] text-[#6B219A]">
+                          {a.cash_type === "kas_kecil" ? "Kas kecil" : "Kas besar"}
+                        </span>
+                      )}
                       {/* FASE E-7 (E7.4) — rekening tingkat grup sudah tidak sah lagi.
                           Ditandai TERANG-TERANGAN supaya dipetakan, bukan dipakai lagi. */}
                       {["all", "", null, undefined].includes(a.entity_id) && (

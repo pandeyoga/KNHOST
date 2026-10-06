@@ -54,13 +54,14 @@ export default function ProfitabilityView({ selectedEntity }) {
     ...r, short: r.name?.length > 16 ? `${r.name.slice(0, 15)}…` : r.name,
   })), [rows]);
   const monthly = data?.monthly || [];
-  const hasData = (tot.revenue || 0) !== 0 || rows.length > 0;
+  const est = data?.estimate?.totals || {};
+  const hasData = (tot.revenue || 0) !== 0 || rows.length > 0 || (est.revenue || 0) !== 0;
 
   return (
     <div data-testid="profitability-view">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-        <KpiCard testId="prof-kpi-revenue" label="Pendapatan (Realisasi)" value={formatCurrency(tot.revenue)} icon={TrendingUp} accent={FC.revenue} tone="text-[#1B7F4B]" />
-        <KpiCard testId="prof-kpi-cogs" label="HPP (WAC)" value={formatCurrency(tot.cogs)} icon={Coins} accent={FC.amber} tone="text-[#C77700]" sub={tot.landed_included ? `termasuk landed ${compactIDR(tot.cogs_landed || 0)}` : "tanpa landed cost"} />
+        <KpiCard testId="prof-kpi-revenue" label="Pendapatan (Realisasi · terkirim)" value={formatCurrency(tot.revenue)} icon={TrendingUp} accent={FC.revenue} tone="text-[#1B7F4B]" sub={`Estimasi nilai pesanan ${compactIDR(est.revenue || 0)}`} />
+        <KpiCard testId="prof-kpi-cogs" label="HPP (saat kirim)" value={formatCurrency(tot.cogs)} icon={Coins} accent={FC.amber} tone="text-[#C77700]" sub={tot.landed_included ? `termasuk landed ${compactIDR(tot.cogs_landed || 0)}` : "tanpa landed cost"} />
         <KpiCard testId="prof-kpi-margin" label="Marjin Kotor" value={formatCurrency(tot.margin)} icon={Boxes} accent={FC.net} tone={(tot.margin ?? 0) >= 0 ? "text-[#6B219A]" : "text-[#C0392B]"} />
         <KpiCard testId="prof-kpi-marginpct" label="Marjin %" value={fmtPct(tot.margin_pct)} icon={Percent} accent={FC.teal} sub={`${tot.orders || 0} pesanan · ${Number(tot.qty || 0).toLocaleString("id-ID")} unit`} />
       </div>
@@ -73,7 +74,7 @@ export default function ProfitabilityView({ selectedEntity }) {
           <KNDatePicker data-testid="prof-end" className="w-[170px] text-[12px]" clearable={false} min={range.start} value={range.end}
             onChange={(v) => setRange((r) => ({ ...r, end: v }))} /></div>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-[10px] font-semibold text-[#6B219A] bg-[#F3EAFB] rounded-full px-2 py-1">Basis Biaya: WAC (incl. landed)</span>
+          <span className="text-[10px] font-semibold text-[#6B219A] bg-[#F3EAFB] rounded-full px-2 py-1">Realisasi = barang terkirim · HPP snapshot saat kirim</span>
           <button data-testid="prof-refresh" className="icon-button" onClick={load} aria-label="Refresh"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
         </div>
       </div>

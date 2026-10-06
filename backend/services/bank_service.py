@@ -14,6 +14,34 @@ from db import db
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
 
 VALID_ACCOUNT_TYPES = {"bank", "cash"}
+CASH_TYPES = {"kas_kecil", "kas_besar"}
+
+
+def account_cash_type(acc: Dict[str, Any]) -> str:
+    """G3 D4-CASH-01 — jenis kas TETAP dari master rekening (bukan dari transaksi aktif)."""
+    ct = acc.get("cash_type")
+    if ct in CASH_TYPES:
+        return ct
+    return "kas_kecil" if acc.get("account_type") == "cash" else "kas_besar"
+
+
+async def backfill_cash_type() -> int:
+    """Isi `cash_type` rekening lama SEKALI (hanya yang belum punya): mayoritas jenis kas riwayat
+    transaksinya (termasuk void), bila tak ada riwayat → dari `account_type`."""
+    n = 0
+    async for acc in db.bank_accounts.find({"cash_type": {"$nin": list(CASH_TYPES)}}, {"_id": 0}):
+        counts = {ct: await db.cash_transactions.count_documents({"account_id": acc["id"], "cash_type": ct})
+                  for ct in CASH_TYPES}
+        if counts["kas_kecil"] or counts["kas_besar"]:
+            ct = "kas_kecil" if counts["kas_kecil"] > counts["kas_besar"] else "kas_besar"
+            src = "backfill_history"
+        else:
+            ct, src = account_cash_type(acc), "backfill_account_type"
+        res = await db.bank_accounts.update_one(
+            {"id": acc["id"], "cash_type": {"$nin": list(CASH_TYPES)}},
+            {"$set": {"cash_type": ct, "cash_type_source": src}})
+        n += res.modified_count
+    return n
 
 
 def _posted(txn: Dict[str, Any]) -> bool:
@@ -72,6 +100,8 @@ async def create_account(payload, actor: Dict[str, Any]) -> Dict[str, Any]:
         "id": new_id("bank"),
         "name": payload.name.strip(),
         "account_type": payload.account_type,
+        "cash_type": "",
+        "cash_type_source": "explicit",
         "bank_name": (payload.bank_name or "").strip(),
         "account_number": (payload.account_number or "").strip(),
         "entity_id": payload.entity_id or DEFAULT_ENTITY_ID,
@@ -82,6 +112,10 @@ async def create_account(payload, actor: Dict[str, Any]) -> Dict[str, Any]:
         "created_at": now_iso(),
         "updated_at": now_iso(),
     }
+    ct = getattr(payload, "cash_type", "") or ""
+    if ct and ct not in CASH_TYPES:
+        raise ValueError("cash_type harus 'kas_kecil' atau 'kas_besar'")
+    doc["cash_type"] = ct or account_cash_type(doc)
     from services import gl_service as _gl
     if doc["opening_balance"]:
         await _gl.preflight_posting(doc["entity_id"], now_iso())

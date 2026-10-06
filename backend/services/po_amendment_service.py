@@ -264,6 +264,22 @@ async def amend_po(po_id: str, payload, actor: Dict[str, Any]) -> Dict[str, Any]
     new_notes = payload.notes if payload.notes is not None else po.get("notes", "")
 
     appr = await _build_approval(entity_id, total_amount, sup["supplier_id"], items)
+    # G3 V3-PO-02 (keputusan user 2026-10-06) — qty baris ber-penerimaan yang diturunkan ke qty
+    # diterima SELALU butuh persetujuan ulang, berapa pun nilainya (di luar matriks ambang).
+    old_q = {it["product_id"]: float(it.get("quantity") or 0) for it in old_items}
+    qty_to_received = [it.get("sku") or it["product_id"] for it in items
+                       if received_map.get(it["product_id"], 0) > 0
+                       and abs(float(it.get("quantity") or 0) - old_q.get(it["product_id"], 0)) > 0.001
+                       and abs(float(it.get("quantity") or 0) - received_map[it["product_id"]]) <= 0.001]
+    if qty_to_received:
+        if not appr["approval_chain"]:
+            forced = await build_approval_chain("purchase_order", total_amount, entity_id,
+                                                force_level1_role="manager")
+            appr["approval_chain"] = forced["approval_chain"]
+            appr["required_role"] = (forced["approval_chain"][0]["required_role"]
+                                     if forced["approval_chain"] else "manager")
+        appr["needs_approval"] = True
+        appr["approval_reason"] = "+".join(x for x in (appr["approval_reason"], "qty_to_received") if x)
     needs_approval = appr["needs_approval"]
     approval_chain = appr["approval_chain"]
 

@@ -4,10 +4,11 @@ Reuse service existing (sales_force, customer credit, reorder, approvals).
 Payload SALES sengaja TANPA biaya/HPP (role tightening EPIC 1).
 """
 from calendar import monthrange
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from db import db
+from services.analytics_time import now_wib, wib_midnight_utc
 from services import sales_force_service as sf
 from services.customer_service import (
     compute_customer_credit,
@@ -18,15 +19,20 @@ from services.purchase_requisition_service import reorder_suggestions
 
 
 def _current_month() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m")
+    return now_wib().strftime("%Y-%m")  # G3 D4-DATE-01 — periode bisnis WIB
 
 
 def _today_prefix() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return now_wib().strftime("%Y-%m-%d")
+
+
+def _today_range() -> Dict[str, str]:
+    d = now_wib().date()
+    return {"$gte": wib_midnight_utc(d), "$lt": wib_midnight_utc(d + timedelta(days=1))}
 
 
 def _month_progress() -> tuple:
-    now = datetime.now(timezone.utc)
+    now = now_wib()
     return now.day, monthrange(now.year, now.month)[1]
 
 
@@ -354,7 +360,7 @@ async def admin_home(entity_id: Optional[str] = None,
     if entity_id and entity_id != "all":
         scope["entity_id"] = entity_id
     today_orders = await db.sales_orders.find(
-        {**scope, "created_at": {"$regex": f"^{_today_prefix()}"}}, {"_id": 0}
+        {**scope, "created_at": _today_range()}, {"_id": 0}
     ).to_list(4000)
     live_today = [o for o in today_orders if o.get("status") not in DEAD_STATUSES]
     today_sales = round(sum(_order_grand_total(o) for o in live_today), 2)

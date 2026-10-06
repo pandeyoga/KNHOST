@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 class BankAccountCreate(BaseModel):
     name: str                          # nama tampilan, mis. "BCA Operasional"
     account_type: str = "bank"         # bank | cash
+    cash_type: str = ""                # kas_kecil | kas_besar (kosong = dari account_type)
     bank_name: str = ""                # nama bank (kosong utk cash)
     account_number: str = ""           # no rekening
     entity_id: str = ""                # pemilik akun; kosong = DEFAULT

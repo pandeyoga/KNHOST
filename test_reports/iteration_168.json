@@ -1,0 +1,29 @@
+{
+  "summary": "G3 Fase 03 — V3-PO-01/02/03 LULUS. Pytest service (DB g3_audit_phase03): 15/15 lulus termasuk 3 tes baru po_variance (test_po01_task_refreshes_and_legacy_lines_separate, test_po03_amendment_task_closed_only_after_approval_and_qty_match, test_po02_amend_qty_to_received_allowed_other_changes_locked). Live API pada preview URL (test_g3_phase03b_live.py, 5 lulus / 2 skip): seed_test_po_variance.py menghasilkan PO KSC/TEST_PO-VAR-01 (po_TEST_variance01, terima 60/100) + 1 tugas selisih OPEN dengan line_key='<pid>#0'. Decide 'amend' (alasan >=5) → tugas pending_amendment. POST /api/purchase-orders/{id}/amend qty=70 → 400 ('terkunci' atau pesan qty) sesuai V3-PO-02 (hanya tepat ke qty diterima yang diperbolehkan). qty=60 (=received) → 200: amendment diterima, PO berstatus 'pending' (tidak memicu re-approval karena qty turun & harga/satuan/diskon tak diubah) dan close_amendment_tasks menutup tugas (status 'decided', decision 'amend') karena syarat V3-PO-03 terpenuhi (PO bukan waiting_approval + qty baris = received). Dua tes yang mengharapkan jalur waiting_approval di-skip (bukan kegagalan) karena amandemen qty turun tanpa dampak finansial memang tidak memicu re-approval di konfigurasi PO ini. Regresi: GET /api/purchase-orders list & detail 200. Seed dibersihkan (--clear). CATATAN PERBAIKAN: scripts/seed_test_po_variance.py sebelumnya menyetel status='partially_received' yang BUKAN status valid untuk PO di sistem (recompute_po_status memakai 'partial'); menyebabkan amend ditolak 400 'status partially_received tidak bisa diamandemen'. Diperbaiki ke 'partial' agar sesuai AMENDABLE_STATUSES dan alur produksi.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_g3_phase03.py",
+    "/app/backend/tests/test_g3_phase03b_live.py",
+    "/app/scripts/seed_test_po_variance.py"
+  ],
+  "action_items": [
+    "Opsional: pertimbangkan uji manual jalur re-approval dengan amendment yang menambah qty di PO lain untuk membuktikan close_amendment_tasks menunggu approval penuh (sudah dibuktikan di pytest service test_po03_amendment_task_closed_only_after_approval_and_qty_match)."
+  ],
+  "critical_code_review_comments": [
+    "po_variance_task_service.ensure_for_po: menggunakan line_key `<product_id>#<index>` memungkinkan dua baris produk sama di-track terpisah (V3-PO-01). Refresh menyetel task lama ke 'obsolete' saat received_qty berubah sehingga MD selalu melihat angka terkini.",
+    "po_variance_task_service.close_amendment_tasks: cek 'waiting_approval/draft/rejected' → return 0 sudah tepat; dipanggil dua kali (sesudah amend & sesudah approval penuh) untuk menutup segera saat approval tak diperlukan maupun setelah approve. Guard qty > received_qty + 0.001 benar; cocok dengan amend qty=received.",
+    "po_amendment_service._assert_received_line_locked: harga/satuan/diskon tetap terkunci; qty hanya boleh (a) sama dengan sebelumnya atau (b) tepat sama dengan received (V3-PO-02). qty=70 (>received 60, <quantity 100) ditolak 400 sebagaimana diharapkan.",
+    "BUG seed (diperbaiki): scripts/seed_test_po_variance.py menuliskan status 'partially_received' — status itu tidak dipakai PO (hanya makloon). Harus 'partial' agar PO masuk AMENDABLE_STATUSES."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_g3_phase03b_live.py (baru — 7 tes smoke V3-PO-01/02/03 pada preview URL)",
+    "/app/scripts/seed_test_po_variance.py (perbaikan: status 'partially_received' → 'partial')"
+  ],
+  "success_rate": {"backend": "100% (15/15 pytest + 5/5 non-skip live; 2 skip adalah jalur re-approval yang tidak terpicu desain)", "frontend": "n/a"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; manager@/md@kainnusantara.id/demo1234",
+  "seed_data_creation": "PO TEST_ (po_TEST_variance01 / KSC/TEST_PO-VAR-01) dibuat untuk uji dan dibersihkan di akhir via `python ../scripts/seed_test_po_variance.py --clear`.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "V3-PO-01/02/03 sudah diuji end-to-end (service + live). Untuk pengujian ulang: `cd /app/backend && DB_NAME=g3_audit_phase03 python -m pytest tests/test_g3_phase03.py -q -n 0`; lalu `cd /app/backend && python ../scripts/seed_test_po_variance.py && cd /app && REACT_APP_BACKEND_URL=https://internal-pricing.preview.emergentagent.com python -m pytest backend/tests/test_g3_phase03b_live.py -q -n 0 && cd /app/backend && python ../scripts/seed_test_po_variance.py --clear`. Jalur amandemen yang MEMICU re-approval (mis. qty naik atau harga berubah di PO lain) hanya diuji di pytest service — jalur live tidak memicu waiting_approval di PO uji ini karena qty turun & harga/satuan/diskon tetap. Tes iteration_167 (fase 03 lain) tidak diulang per instruksi."
+}

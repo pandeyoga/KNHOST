@@ -22,13 +22,14 @@ Keputusan user (2026-10-06): V3-CF-01 hanya bagian tunai masuk arus kas (sisanya
 | D4-FIN-02 | implemented_pending_validation | forecast kas memakai AR kanonis (`_eligible_outstanding`, `term_days`); termin 0 eksplisit tetap 0 (berlaku juga untuk aging) |
 | D4-FIN-03 | implemented_pending_validation | pendapatan per order = grand_total − ppn_amount dialokasikan proporsional ke baris |
 | V3-PO-01 | implemented_pending_validation | tugas selisih per baris (`line_key`), diperbarui saat penerimaan berubah, `obsolete` bila tertutup; saran qty dari PO terkini |
-| V3-PO-02 | implemented_pending_validation | baris ber-penerimaan boleh diamandemen qty TEPAT ke qty diterima; harga/satuan/diskon tetap terkunci |
+| V3-PO-02 | implemented_pending_validation | baris ber-penerimaan boleh diamandemen qty TEPAT ke qty diterima; harga/satuan/diskon tetap terkunci. Keputusan user (2026-10-06, opsi a): amandemen qty→qty diterima SELALU minta persetujuan ulang berapa pun nilainya (rantai dipaksa level-1 manager, `approval_reason` memuat `qty_to_received`) |
 | V3-PO-03 | implemented_pending_validation | tugas `pending_amendment` selesai hanya bila PO sudah disetujui DAN qty baris = qty diterima; dipanggil juga sesudah approval penuh |
-| V3-CF-01 | open | belum dikerjakan (keputusan sudah ada) |
-| D4-FIN-04 | open | belum dikerjakan (keputusan sudah ada) |
-| D4-CASH-01 | open | belum dikerjakan (keputusan sudah ada) |
-| D4-DATE-01 | open | belum dikerjakan (keputusan sudah ada) |
+| V3-CF-01 | implemented_pending_validation | `split_journal_cash`: kas bersih jurnal dialokasikan pro-rata HANYA ke lawan akun searah kas; sisanya + lawan berlawanan arah = nonkas (diungkap bila investasi/pendanaan). Fixture aset kas 40 + kredit 60 → CFI −40 / CFO 0 / nonkas −60. Field baru `allocation: pro_rata_cash_side`; `method` tetap |
+| D4-FIN-04 | implemented_pending_validation | profitabilitas: `totals/by_*/monthly` = REALISASI dari surat jalan (porsi nilai pesanan, tanggal kirim WIB, HPP snapshot roll saat dispatch; fallback WAC). Pesanan lama shipped/done tanpa surat jalan diakui per pesanan (`legacy_orders`). `estimate` = nilai pesanan (tanggal SO, WAC kini) terpisah. Label UI diperbarui |
+| D4-CASH-01 | implemented_pending_validation | `bank_accounts.cash_type` (kolom tetap). Backfill sekali saat startup (hanya yang kosong): mayoritas riwayat transaksi (termasuk void) → bila tak ada, dari `account_type` (cash→kas_kecil, bank→kas_besar), `cash_type_source` dicatat. Ringkasan kas memakai `account_cash_type`; saldo awal kas kecil per entitas ikut walau tanpa transaksi. Badge jenis kas di kartu rekening |
+| D4-DATE-01 | implemented_pending_validation | `sales_force._in_period` mengonversi timestamp ke tanggal WIB (`to_wib_date`); Home `_current_month/_today_prefix/_month_progress` = WIB; penjualan hari ini memakai rentang UTC dari batas WIB; anchor riwayat komisi WIB |
 
-Rekap: 22 ID — 18 implemented_pending_validation, 4 open.
+Rekap: 22 ID — 22 implemented_pending_validation, 0 open.
+Dampak tambahan: rekening tipe `cash` tanpa transaksi kas kecil kini dihitung saldo awalnya sebagai kas kecil (dulu kas besar) — selaras dengan jurnal saldo awal 1-1110. Rekonsiliasi bank `_book_query` ikut memakai `cash_type` rekening yang kini terisi.
 Bukti uji: `tests/test_g3_phase03.py` 15/15 (DB_NAME=g3_audit_phase03, `-n 0`); iteration_167 (12 tes service + 16 smoke API live lulus; V3-PO-01/02/03 ditambahkan sesudahnya, diuji pytest service saja). Regresi Fase 01/02: 65/65 + 15/15.
 Dampak ke konsumen lain: `customer_service._term_days` dipakai ±21 tempat — termin 0 eksplisit kini 0 hari (sebelumnya 30).

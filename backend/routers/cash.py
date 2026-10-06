@@ -98,15 +98,19 @@ async def cash_summary(request: Request, entity_id: str = None) -> Dict[str, Any
         v["out"] = round(v["out"], 2)
 
     # Saldo = saldo awal rekening + masuk − keluar (dulu saldo awal diabaikan).
-    accounts = await db.bank_accounts.find({"entity_id": {"$in": list(entities)}},
-                                           {"_id": 0, "id": 1, "opening_balance": 1}).to_list(500)
-    kecil_ids = {r.get("account_id") for r in kecil_q if r.get("account_id")}
-    open_kecil = sum(float(a.get("opening_balance") or 0) for a in accounts if a["id"] in kecil_ids)
-    open_besar = sum(float(a.get("opening_balance") or 0) for a in accounts if a["id"] not in kecil_ids)
-    for eid, v in per_entity.items():
-        ob = sum(float(a.get("opening_balance") or 0) for a in accounts
-                 if a["id"] in kecil_ids and any(r.get("account_id") == a["id"] and r.get("entity_id") == eid for r in kecil_q))
-        v["balance"] = round(v["balance"] + ob, 2)
+    # G3 D4-CASH-01 — jenis saldo awal dari master rekening (`cash_type`), bukan dari transaksi aktif.
+    from services.bank_service import account_cash_type
+    accounts = await db.bank_accounts.find(
+        {"entity_id": {"$in": list(entities)}},
+        {"_id": 0, "id": 1, "entity_id": 1, "opening_balance": 1, "cash_type": 1, "account_type": 1}).to_list(None)
+    kecil_accs = [a for a in accounts if account_cash_type(a) == "kas_kecil"]
+    open_kecil = sum(float(a.get("opening_balance") or 0) for a in kecil_accs)
+    open_besar = sum(float(a.get("opening_balance") or 0) for a in accounts if account_cash_type(a) == "kas_besar")
+    for a in kecil_accs:
+        ob = float(a.get("opening_balance") or 0)
+        if abs(ob) > 0.005:
+            v = per_entity.setdefault(a["entity_id"], {"in": 0.0, "out": 0.0, "balance": 0.0})
+            v["balance"] = round(v["balance"] + ob, 2)
     return {
         "scope": entity_id or ("all" if ctx.view_all else ctx.active_entity_id),
         "kas_kecil": _agg(kecil_q, open_kecil),

@@ -306,3 +306,192 @@ def test_po02_amend_qty_to_received_allowed_other_changes_locked():
     It.quantity = 970
     with pytest.raises(HTTPException):
         _assert_received_line_locked("SKU", It(), old, 960.0)
+
+
+
+# V3-CF-01 — jurnal campuran kas/nonkas
+def _cf_accounts(monkeypatch):
+    from services import financial_statement_service as fs
+
+    async def amap(scope=None):
+        return {"1-1100": {"type": "asset", "name": "Bank"}, "1-1110": {"type": "asset", "name": "Kas Kecil"},
+                "1-2100": {"type": "asset", "name": "Mesin"}, "1-2200": {"type": "asset", "name": "Kendaraan"},
+                "1-2900": {"type": "asset", "name": "Akum. Susut"}, "1-1200": {"type": "asset", "name": "Piutang"},
+                "2-1100": {"type": "liability", "name": "Utang"}, "4-1000": {"type": "income", "name": "Penjualan"},
+                "6-1000": {"type": "expense", "name": "Penyusutan"}}
+    monkeypatch.setattr(fs, "_accounts_map", amap)
+
+
+def _je(i, lines, date="2026-03-10"):
+    return {"id": f"je{i}", "status": "posted", "date": date,
+            "lines": [{"account_code": c, "debit": d, "credit": k} for c, d, k in lines]}
+
+
+def _cf(lines_list):
+    from services import cash_flow_service as cfs
+
+    async def go():
+        await db.journal_entries.insert_many([_je(i, ln) for i, ln in enumerate(lines_list)])
+        return await cfs.cash_flow_statement("2026-03-01", "2026-03-31")
+    return run(go())
+
+
+def test_cf01_mixed_asset_cash_and_credit(monkeypatch):
+    _cf_accounts(monkeypatch)
+    r = _cf([[("1-2100", 100, 0), ("1-1100", 0, 40), ("2-1100", 0, 60)]])
+    assert r["investing"]["total"] == -40.0
+    assert r["operating"]["total"] == 0.0
+    assert {l["code"]: l["amount"] for l in r["noncash_disclosure"]["lines"]} == {"1-2100": -60.0}
+    assert r["net_change"] == -40.0 and r["reconciled"]
+
+
+def test_cf01_other_fixtures(monkeypatch):
+    _cf_accounts(monkeypatch)
+    r = _cf([
+        [("1-2100", 100, 0), ("2-1100", 0, 100)],                      # aset penuh kredit
+        [("1-2200", 50, 0), ("1-1100", 0, 50)],                        # aset penuh tunai
+        [("1-1110", 30, 0), ("1-1100", 0, 30)],                        # bank → kas kecil
+        [("6-1000", 10, 0), ("1-2900", 0, 10)],                        # penyusutan
+        [("1-1200", 200, 0), ("4-1000", 0, 200)],                      # jual kredit
+        [("1-1100", 200, 0), ("1-1200", 0, 200)],                      # pelunasan
+        [("1-2100", 60, 0), ("1-2200", 40, 0), ("1-1100", 0, 50), ("2-1100", 0, 50)],  # campuran 2 aset
+    ])
+    inv = {l["code"]: l["amount"] for l in r["investing"]["lines"]}
+    assert inv == {"1-2200": -70.0, "1-2100": -30.0}
+    assert r["investing"]["total"] == -100.0
+    assert r["operating"]["total"] == 200.0  # hanya pelunasan piutang
+    nc = {l["code"]: l["amount"] for l in r["noncash_disclosure"]["lines"]}
+    assert nc == {"1-2100": -130.0, "1-2200": -20.0, "1-2900": 10.0}
+    assert r["net_change"] == 100.0 and r["reconciled"]
+
+
+# D4-FIN-04 — realisasi = terkirim; estimasi terpisah
+def test_fin04_reserved_is_estimate_only_partial_shipment_realised(monkeypatch):
+    from services import profitability_service as ps
+
+    async def wac(pid, entity_id=None):
+        return {"wac": 3.0, "wac_base": 3.0, "wac_landed": 0.0}
+    monkeypatch.setattr(ps, "wac_for_product", wac)
+
+    async def go():
+        await db.sales_orders.insert_many([
+            {"id": "oR", "status": "reserved", "entity_id": "ent_A", "grand_total": 100.0, "ppn_amount": 0,
+             "created_at": "2026-03-01T03:00:00+00:00",
+             "items": [{"product_id": "p1", "quantity": 10, "line_total": 100.0}]},
+            {"id": "oP", "status": "partially_shipped", "entity_id": "ent_A", "grand_total": 200.0, "ppn_amount": 0,
+             "created_at": "2026-02-20T03:00:00+00:00",
+             "items": [{"product_id": "p1", "quantity": 10, "line_total": 200.0}]}])
+        await db.shipments.insert_one({"id": "sh1", "order_id": "oP", "product_id": "p1", "qty": 5,
+                                       "status": "dispatched", "created_at": "2026-02-28T18:00:00+00:00",
+                                       "rolls": [{"length": 5, "unit_cost": 4.0, "extended_cost": 20.0}]})
+        return await ps.profitability("2026-02-01", "2026-03-31")
+    r = run(go())
+    assert r["totals"]["revenue"] == 100.0 and r["totals"]["cogs"] == 20.0
+    assert [m["month"] for m in r["monthly"]] == ["2026-03"]   # 28 Feb 18:00 UTC = 1 Mar WIB
+    assert r["estimate"]["totals"]["revenue"] == 300.0 and r["estimate"]["totals"]["cogs"] == 60.0
+
+
+# D4-CASH-01 — jenis kas tetap dari master rekening
+def test_cash01_opening_type_stable_after_void(monkeypatch):
+    from routers import cash as cash_router
+    from services import bank_service as bs
+
+    class Ctx:
+        view_all, active_entity_id = False, "ent_A"
+
+    async def perm(*a, **k):
+        return {"role": "admin"}
+
+    async def ctx(req):
+        return Ctx()
+
+    async def pending(_db):
+        return {}
+    monkeypatch.setattr(cash_router, "require_permission", perm)
+    monkeypatch.setattr(cash_router, "entity_ctx", ctx)
+    monkeypatch.setattr(cash_router, "resolve_scope_ids", lambda c, e=None: ["ent_A"])
+    monkeypatch.setattr(cash_router.cash_entity_service, "group_cash_pending", pending)
+
+    async def go():
+        await db.bank_accounts.insert_many([
+            {"id": "a1", "entity_id": "ent_A", "account_type": "bank", "opening_balance": 1000},
+            {"id": "a2", "entity_id": "ent_A", "account_type": "cash", "opening_balance": 50},
+            {"id": "a3", "entity_id": "ent_A", "account_type": "bank", "opening_balance": 500}])
+        await db.cash_transactions.insert_one({"id": "t1", "account_id": "a1", "entity_id": "ent_A",
+                                               "cash_type": "kas_kecil", "direction": "out", "amount": 10,
+                                               "status": "posted"})
+        n = await bs.backfill_cash_type()
+        n2 = await bs.backfill_cash_type()
+        before = await cash_router.cash_summary(None, None)
+        await db.cash_transactions.update_one({"id": "t1"}, {"$set": {"status": "void"}})
+        after = await cash_router.cash_summary(None, None)
+        types = {a["id"]: a["cash_type"] async for a in db.bank_accounts.find({}, {"_id": 0})}
+        return n, n2, before, after, types
+    n, n2, before, after, types = run(go())
+    assert (n, n2) == (3, 0)
+    assert types == {"a1": "kas_kecil", "a2": "kas_kecil", "a3": "kas_besar"}
+    for s in (before, after):
+        assert s["kas_kecil"]["opening"] == 1050.0 and s["kas_besar"]["opening"] == 500.0
+    assert after["kas_kecil_per_entity"]["ent_A"]["balance"] == 1050.0
+
+
+# D4-DATE-01 — periode WIB
+def test_date01_in_period_uses_wib():
+    from services.sales_force_service import _in_period
+    assert _in_period("2026-09-30T18:00:00+00:00", "2026-10") is True
+    assert _in_period("2026-09-30T18:00:00+00:00", "2026-09") is False
+    assert _in_period("2026-09-30T16:59:59Z", "2026-09") is True
+    assert _in_period("2026-12-31T18:00:00+00:00", "2027") is True
+    assert _in_period("2026-12-31T18:00:00+00:00", "2027-Q1") is True
+    assert _in_period("2026-10-01T00:30:00+07:00", "2026-10") is True
+    assert _in_period("2026-10-01", "2026-10") is True
+
+
+def test_date01_home_default_month_wib(monkeypatch):
+    from datetime import datetime
+    from services import home_service as hs
+    from services.analytics_time import WIB
+    monkeypatch.setattr(hs, "now_wib", lambda: datetime(2026, 10, 1, 1, 0, tzinfo=WIB))
+    assert hs._current_month() == "2026-10" and hs._today_prefix() == "2026-10-01"
+    assert hs._today_range() == {"$gte": "2026-09-30T17:00:00+00:00", "$lt": "2026-10-01T17:00:00+00:00"}
+
+
+# V3-PO-02 — amandemen qty → qty diterima selalu minta persetujuan ulang
+def test_po02_qty_to_received_forces_reapproval(monkeypatch):
+    from services import po_amendment_service as pas
+    import dependencies
+
+    async def items(payload, old_items, received_map, *a, **k):
+        return [{**old_items[0], "quantity": 960}]
+
+    async def pricing(raw, *a, **k):
+        return {"items": raw, "total_amount": 9600, "grand_total": 9600, "items_discount_total": 0,
+                "order_discount_percent": 0, "order_discount_amount": 0, "discount_total": 0,
+                "net_subtotal": 9600, "dpp": 9600, "ppn_rate": 0, "ppn_mode": "", "is_pkp": False, "ppn_amount": 0}
+
+    async def appr(*a, **k):
+        return {"approval_chain": [], "needs_approval": False, "required_role": None,
+                "approval_reason": "", "price_deviation": {"flagged": False}}
+
+    async def noop(*a, **k):
+        return None
+    monkeypatch.setattr(pas, "_build_items", items)
+    monkeypatch.setattr(pas, "compute_order_pricing", pricing)
+    monkeypatch.setattr(pas, "_build_approval", appr)
+    monkeypatch.setattr(dependencies, "audit", noop)
+
+    class P:
+        reason, items, supplier_id, supplier_name, supplier_contact = "tutup selisih", [1], None, None, None
+        warehouse_id, expected_delivery_date, notes, order_discount_percent, tax_mode = None, None, None, None, None
+        amended_by = "t"
+
+    async def go():
+        await db.purchase_orders.insert_one({"id": "po9", "status": "partial", "entity_id": "ent_A",
+                                             "updated_at": "x", "items": [
+                                                 {"product_id": "p1", "sku": "S1", "quantity": 1000,
+                                                  "received_qty": 960, "price": 10}]})
+        return await pas.amend_po("po9", P(), {"name": "t", "id": "u"})
+    res = run(go())
+    po = res["po"]
+    assert res["needs_approval"] is True and po["status"] == "waiting_approval"
+    assert po["approval_chain"] and "qty_to_received" in po["approval_reason"]
