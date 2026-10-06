@@ -836,6 +836,8 @@ async def cancel_order(order_id: str, request: Request, payload: Optional[SoCanc
     assert_entity_access(order, "sales_orders", await entity_ctx(request))  # S#074 IDOR
     sales_ownership.assert_may_open(order, actor)   # sales hanya membatalkan SO miliknya
     reason = ((payload.reason if payload else "") or "").strip()
+    if len(reason) < 5:
+        raise HTTPException(status_code=400, detail="Alasan pembatalan wajib diisi (minimal 5 karakter).")
     if order["status"] in ["done", "cancelled", "expired", "partially_shipped", "shipped"]:
         raise HTTPException(status_code=409, detail="Order tidak bisa dibatalkan (sudah terkirim sebagian/penuh atau terminal)")
     # P16 (SALE-03) — Faktur Pajak aktif sudah/akan dilaporkan (NSFP); membatalkan SO diam-diam

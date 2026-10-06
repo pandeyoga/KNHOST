@@ -1,0 +1,38 @@
+{
+  "summary": "Verified SO Override + Cancel + Price-Amendment approval + hidden sourcing (POS) for new iteration. Backend pytest 9/9 pass (new /app/backend/tests/test_iter_so_override.py). Frontend: salesadmin override-order dialog opens with all required testids (override-address/term/method/delivery-date/notes/reason/add-search + per-line override-line/qty/price/disc/remove for both products), submits successfully with order-flash; cancel-order dialog enforces >=5 char reason (confirm disabled at 3 chars) then cancels SO. Sales POS roll-picker shows ZERO roll-badge-cross-*, roll-badge-own-*, roll-picker-cross-note, request-transfer-* and cart-item-fulfillment-* — hidden sourcing works. Existing manual_so_override_check.py script still passes end-to-end (sales 403, salesadmin override, price amendment pending_approval=order.approve_price_edit, sales decide 403, finance decide applied, trail has auto_applied + applied, cancel OK).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/sales-orders/{id}/cancel", "issue": "Empty/missing reason is accepted (returns 200). Frontend enforces >=5 chars but backend does not. Review states 'alasan wajib' — consider rejecting empty reason server-side."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter_so_override.py",
+    "/app/test_reports/pytest/iter_so_override.xml",
+    "/app/backend/tests/manual_so_override_check.py"
+  ],
+  "action_items": [
+    "(Optional) enforce non-empty reason in cancel_order to match FE validation (>=5 chars) for defense-in-depth."
+  ],
+  "critical_code_review_comments": [
+    "cancel_order (sales_orders_extra.py:838) accepts empty reason — FE-only validation. Add server-side length check for consistency."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter_so_override.py"
+  ],
+  "success_rate": {
+    "backend": "100% (9/9 pytest + manual script OK)",
+    "frontend": "100% (override dialog, cancel dialog, sales POS hidden sourcing all verified)"
+  },
+  "test_credentials": "sales@kainnusantara.id/demo1234; sales2@kainnusantara.id/demo1234; salesadmin@kainnusantara.id/demo1234; finance@kainnusantara.id/demo1234; manager@kainnusantara.id/demo1234; admin@kainnusantara.id/demo12345. Header X-Entity-Id: ent_ksc.",
+  "seed_data_creation": "Created ~8 TEST_ sales orders during pytest + FE run (KSC/SO-00005..00024). All cancelled by the tests' teardown and additional cleanup sweep (status: cancelled). No lingering open SO. Amendments auto_applied + price amendment approved remain for audit trail.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend route /api/sales-orders/{id}/override, /cancel, /override-context all stable. Price amendments use approval_permission='order.approve_price_edit' and are approvable by finance OR manager (NOT sales/salesadmin). Fulfillment-plan decision records 'auto_applied' amendments via amendment_service.record_event. Frontend selectors used: override-order-button-<soId>, so-override-dialog, override-{address,term,method,delivery-date,notes,reason}, override-{line,qty,price,disc,remove}-<pid>, override-add-search, so-override-submit, order-flash, cancel-order-button-<soId>, cancel-order-dialog, cancel-order-reason, cancel-order-confirm (confirm disabled when reason<5 chars). Sales POS roll-picker never shows cross-PT badges — hidden sourcing confirmed.",
+  "rca of the issue": "n/a — feature set working as specified; only soft improvement is server-side reason length validation."
+}

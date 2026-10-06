@@ -1,6 +1,7 @@
 # Test Credentials
 # Agent writes here when creating/modifying auth credentials (admin accounts, test users).
 # Testing agent reads this before auth tests. Fork/continuation agents read on startup.
+OVERRIDE & BATAL SO (2026-10-06): izin `order.override` (admin, manager, salesadmin@), `order.cancel` (admin, manager, salesadmin, sales — sales hanya SO miliknya, alasan wajib ≥5), `order.approve_price_edit` (admin, manager, finance@). API: GET/POST /api/sales-orders/{id}/override-context|override, POST /api/sales-orders/{id}/cancel {reason}.
 
 DATA DEMO 2026-10-05 (seed ulang ala VPS: import_master_produk_kn + import_stok_awal_kn + seed_demo_lengkap_kn + seed_demo_transaksi_kn + seed_demo_harga_internal_kn; data lama DIHAPUS).
 Admin: admin@kainnusantara.id / demo12345. Akun demo lain sandi `demo1234` (@kainnusantara.id): md, manager, finance, salesadmin (Sukacita), salesadmin.kanda, salesadmin.cst, sales, sales2, sales.kanda, sales.cst, warehouse, warehouse.soreang, warehouse.rancamalang, whadmin, designer, sampleadmin, driver.

@@ -1,5 +1,16 @@
 # PRD — Kain Nusantara ERP (lanjutan dari repo github.com/kakjsbsbs/KN)
 
+## Sesi 2026-10-06 — Pemenuhan diputus Admin Sales · Override SO · Batal SO
+Permintaan user: "mekanisme saat ini biarkan admin sales yang memilih cara pemenuhan barang … sales seperti mengusulkan namun di tampilan tidak usah ada info stock cipta sandang dll … admin juga bisa override SO dari sales/di edit … harga/diskon persetujuan manager, admin dan finance … sebelum picking … notifikasi aplikasi saja … semua ada role dan akses yang bisa di-custom … pastikan bisa membatalkan SO".
+- Sales POS: badge PT pemilik/“transfer”, matriks kepemilikan, kartu ATP & tombol Minta Transfer disembunyikan bila tak punya izin `order.override` (`utils/sourcingVisibility.js`). Roll PT lain tetap jadi usulan (tanpa transfer otomatis).
+- Keputusan pemenuhan Admin Sales (`fulfillment_decision_service._record`) → amandemen `auto_applied` "Keputusan pemenuhan Admin Sales".
+- Override SO: `GET /api/sales-orders/{id}/override-context`, `POST /api/sales-orders/{id}/override` (`services/so_override_service.py`, `routers/so_override.py`). Header + qty/hapus/tambah langsung berlaku (reservasi disesuaikan, task gudang SO confirmed dibuat ulang) + amandemen `auto_applied`; harga/diskon → amandemen pending `approval_permission=order.approve_price_edit`. Terkunci bila picking dimulai/terbit/sampel. Sales diberi notifikasi in-app.
+- Batal SO: izin `order.cancel`, alasan wajib (≥5), `open_fulfillment_refs` (transfer/PR tidak ikut batal otomatis), notifikasi sales. UI: `override-order-button-<id>`, `so-override-dialog`, `cancel-order-dialog`.
+- Izin baru (bisa diatur di Matriks Izin): `order.override` (admin, manager, sales_admin), `order.cancel` (+sales, hanya SO miliknya), `order.approve_price_edit` (admin, manager, finance).
+- Tes: test_reports/iteration_161.json (backend 9/9, frontend 100%); `backend/tests/test_iter_so_override.py`.
+- Backlog: override di layar mobile Admin Sales; pembatalan otomatis transfer/PR terkait saat SO batal; ganti roll untuk SO confirmed.
+
+
 ## Sesi W2-P08 (2026-10-04, repo pandeyoga/KNHOST) — Gelombang 2: kebutuhan klien W2-REQ-01..09 selesai implementasi
 Permintaan user: "lanjutkan development … selesaikan semua penemuan & perbaikan gelombang 2 … review lagi gelombang 1 dan 2, selesaikan yang tidak butuh keputusan/eksternal info, lalu report."
 - REQ-09 pembulatan roll eksplisit + izin `order.exact_cut`; REQ-08 roll tanpa tag diblokir saat dispatch, pengecualian izin `wms.untagged_override` + alasan + audit; REQ-06 tugas keputusan selisih PO (`/api/po-variance-tasks`) + notifikasi MD/Finance; REQ-04 angka grup di papan stok sales; REQ-05 ganti entitas pembeli dari form PO (draft dipertahankan); REQ-07 reservasi bahan makloon (`material_reservations`, `/api/material-reservations`); REQ-02 preview/batch/rollback master (`/api/master-governance/*`, koreksi nama tanpa ubah SKU). REQ-01/03 dari sesi sebelumnya.
