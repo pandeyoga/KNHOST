@@ -6,7 +6,10 @@
 - Uji: `backend/tests/test_g3_phase01.py` (DB_NAME=g3_audit_phase01) 28 passed; iteration_162 & 163.
 - Berikutnya: Fase 02 (23 ID: RBAC, entitas/kepemilikan, RFID/WMS, alur antar-PT), lalu Fase 03–05.
 - Keputusan user Fase 01 diterapkan: kelebihan setoran karyawan → kredit toko pelanggan; retry kunci harga OD juga membuat PO otomatis; transfer antar-PT pakai biaya aktual roll; kwitansi gagal dihapus+diarsip.
-- Fase 02: 16/23 dikerjakan (13 implemented_pending_validation, 3 partially_fixed: D4-AI-05 live path, D4-PA-03 label frontend, D4-RET-POLICY-01 asal fisik) — `implementation/FASE-02-STATUS.md`; iteration_164 & 165 (64/64). Open 7: V3-WEIGHT-01, V3-WMS-02, D4-STOCK-01, D4-AI-06, D4-PLAN-05, D4-PA-01, D4-TAG-01. 3 keputusan bisnis Fase 02 menunggu user.
+- Fase 02 TUNTAS (2026-10-06): 23/23 implemented_pending_validation — `implementation/FASE-02-STATUS.md`. Batch akhir: V3-WEIGHT-01 (berat potong atomik), V3-WMS-02 (loading check per pengiriman SO+gudang), D4-STOCK-01 (kunci pemilik), D4-AI-06 (tanpa grand total lintas satuan), D4-PLAN-05 (pasokan = perkiraan, FIFO SO tertua), D4-PA-01 (PA vs SO saling mengunci; klaim PA → hold_qty), D4-TAG-01 (kesiapan = tag aktif terverifikasi saat ini), D4-AI-05 live, D4-PA-03 label FE, D4-RET-POLICY-01 asal fisik roll→GR→PO (tak terlacak → kebijakan retur jual + needs_admin_review).
+- Keputusan user Fase 02: asal tak terlacak → kebijakan retur penjualan + tanda Sales Admin; loading check per pengiriman; pasokan PO hanya informasi (FIFO); PA–SO saling mengunci.
+- Uji: tests/test_g3_phase02b.py 16/16 + phase02 21 + phase01 28 (DB_NAME=g3_audit_phase02, `-n 0`) + phase02_api 15 (dari /app) = 80/80; iteration_166 tanpa isu. Label FE baru belum terlihat visual (data demo tanpa backorder aktif / task picked).
+- Berikutnya: Fase 03 (22 ID: master data, procurement, harga, aturan komersial) → Fase 04 → Fase 05.
 - Batasan: Mongo standalone (tanpa transaksi) → pola write-ahead marker / id deterministik / CAS; tidak ada sweeper crash.
 
 
