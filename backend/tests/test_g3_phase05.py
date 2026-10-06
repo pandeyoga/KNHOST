@@ -62,6 +62,9 @@ def test_yarn_lock_not_gitignored():
     assert "frontend/yarn.lock" not in [x.strip() for x in gi]
     assert (BACKEND.parent / "frontend" / "yarn.lock").exists()
     assert not (BACKEND.parent / "frontend" / "package-lock.json").exists()
+    # salinan untuk build VPS (platform tidak mem-push *.lock) harus identik
+    assert (BACKEND.parent / "deploy" / "frontend-yarnlock.txt").read_bytes() == \
+        (BACKEND.parent / "frontend" / "yarn.lock").read_bytes()
 
 
 # D4-CB-01 — duplikat di awal/tengah/akhir > 2.000 kontrabon terdeteksi

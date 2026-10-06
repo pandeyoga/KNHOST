@@ -22,7 +22,9 @@ jobs:
         run: corepack enable && yarn --version
       - name: Lockfile wajib ada & satu manager saja
         run: |
-          test -f yarn.lock || { echo "yarn.lock tidak ada"; exit 1; }
+          # Platform tidak mem-push *.lock; salinan kanonis ada di deploy/frontend-yarnlock.txt (dipakai Dockerfile).
+          if [ ! -f yarn.lock ]; then cp ../deploy/frontend-yarnlock.txt yarn.lock || { echo "lockfile tidak ada"; exit 1; }; fi
+          cmp -s yarn.lock ../deploy/frontend-yarnlock.txt || { echo "deploy/frontend-yarnlock.txt beda dari yarn.lock"; exit 1; }
           test ! -f package-lock.json && test ! -f pnpm-lock.yaml || { echo "lockfile manager lain ditemukan"; exit 1; }
       - name: Install beku (gagal bila lock berbeda dari package.json)
         run: yarn install --frozen-lockfile --non-interactive
