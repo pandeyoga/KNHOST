@@ -165,10 +165,7 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
     setWizard({ presetSupplierId: supplierId });
   };
 
-  const statusOptions = useMemo(() => STATUS_FILTERS.map((s) => ({
-    ...s,
-    label: s.value && counts[s.value] ? `${s.label} (${counts[s.value]})` : s.label,
-  })), [counts]);
+  const statusOptions = useMemo(() => STATUS_FILTERS, []);
   const filterOn = !!(fStatus || q);
 
   return (
@@ -276,7 +273,7 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
             <div className="min-w-[210px]">
               <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Status</label>
               <OptionTabs testId="cb-filter-status" value={fStatus} onChange={setFStatus}
-                options={statusOptions} countOf={(v) => (v === (fStatus || "") ? rows.length : undefined)} />
+                options={statusOptions} countOf={(v) => (v ? counts[v] || 0 : counts.all ?? Object.entries(counts).filter(([k]) => k !== "total").reduce((s, [, n]) => s + (Number(n) || 0), 0))} />
             </div>
             <div className="min-w-[240px]">
               <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">

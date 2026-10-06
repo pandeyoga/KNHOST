@@ -65,6 +65,21 @@ async def my_leave_balance(request: Request, year: Optional[int] = Query(None)) 
 
 
 # ═══════════════════ LEAVE — HRD ════════════════════════════════
+@router.get("/hr/leave-requests/status-counts")
+async def leave_status_counts(request: Request, entity_id: Optional[str] = Query(None),
+                              month: Optional[str] = Query(None)) -> Dict[str, int]:
+    """Jumlah pengajuan cuti per status (lingkup & bulan sama dengan daftar) untuk tab status."""
+    await require_permission(request, "hr", "view")
+    ctx = await entity_ctx(request)
+    scope = resolve_list_scope("hr_leave_requests", {}, ctx, entity_id)
+    rows = await lv.list_leaves(scope, None, None, month)
+    out: Dict[str, int] = {}
+    for r in rows:
+        out[r.get("status") or ""] = out.get(r.get("status") or "", 0) + 1
+    out["total"] = len(rows)
+    return out
+
+
 @router.get("/hr/leave-requests")
 async def list_leave_requests(request: Request, entity_id: Optional[str] = Query(None),
                               status: Optional[str] = Query(None),

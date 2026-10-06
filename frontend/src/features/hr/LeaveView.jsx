@@ -79,6 +79,7 @@ function LeaveCreateModal({ open, onClose, employees, onSubmit }) {
 export default function LeaveView({ currentUser, selectedEntity }) {
   const [tab, setTab] = useState("requests");
   const [rows, setRows] = useState([]);
+  const [statusCounts, setStatusCounts] = useState({});
   const [q, setQ] = useState("");
   const shown = rows.filter((r) => !q.trim() || `${r.employee_name || ""} ${r.reason || ""} ${r.leave_type || ""}`.toLowerCase().includes(q.trim().toLowerCase()));
   const [balances, setBalances] = useState([]);
@@ -108,6 +109,8 @@ export default function LeaveView({ currentUser, selectedEntity }) {
   }
   async function loadRequests() {
     setLoading(true);
+    axios.get(`${API}/hr/leave-requests/status-counts`, { params: { ...params, ...(month ? { month } : {}) } })
+      .then((r) => setStatusCounts(r.data || {})).catch(() => setStatusCounts({}));
     try { const r = await axios.get(`${API}/hr/leave-requests`, { params: { ...params, ...(month ? { month } : {}), ...(status ? { status } : {}) } }); setRows(Array.isArray(r.data) ? r.data : []); setError(""); }
     catch (e) { setError(e.response?.data?.detail || "Gagal memuat pengajuan cuti."); }
     finally { setLoading(false); }
@@ -189,7 +192,7 @@ export default function LeaveView({ currentUser, selectedEntity }) {
         <div className="section-card">
           <div className="flex items-center gap-2 px-3 py-2 border-b border-[#EFF0F2]">
             <div className="w-[150px]"><KNSelect data-testid="leave-filter-month" value={month} onValueChange={setMonth} className="field !py-1" options={monthOpts} /></div>
-            <OptionTabs testId="leave-filter-status" value={status} onChange={setStatus} options={statusOpts} countOf={(v) => (v === (status || "") ? rows.length : undefined)} />
+            <OptionTabs testId="leave-filter-status" value={status} onChange={setStatus} options={statusOpts} countOf={(v) => (v ? statusCounts[v] || 0 : statusCounts.total ?? rows.length)} />
             <SearchBox value={q} onChange={setQ} placeholder="Cari karyawan / alasan…" testId="leave-search" />
           </div>
           <div className="grid grid-cols-[1.5fr_1fr_1.2fr_70px_100px_1.3fr] px-3 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">

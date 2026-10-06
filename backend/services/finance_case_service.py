@@ -244,6 +244,7 @@ async def stats(entity_ids: Optional[List[str]] = None) -> Dict[str, Any]:
         "in_progress": len([r for r in rows if r["status"] == "in_progress"]),
         "resolved": len([r for r in rows if r["status"] == "resolved"]),
         "rejected": len([r for r in rows if r["status"] == "rejected"]),
+        "by_status": {s: len([r for r in rows if r["status"] == s]) for s in {r["status"] for r in rows}},
         "overdue": len([r for r in open_rows if r["overdue"]]),
         "money_at_stake": _round(sum(r.get("amount") or 0 for r in open_rows)),
         "oldest_age_hours": max([r["age_hours"] for r in open_rows], default=0),

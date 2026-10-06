@@ -289,7 +289,7 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
         <div className="min-w-[190px]">
           <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Status</label>
           <OptionTabs testId="case-filter-status" value={fStatus}
-            onChange={setFStatus} options={STATUS_FILTERS} countOf={(v) => (v === (fStatus || "") ? cases.length : undefined)} />
+            onChange={setFStatus} options={STATUS_FILTERS} countOf={(v) => (v ? stats?.by_status?.[v] ?? 0 : stats?.total ?? cases.length)} />
         </div>
         <div className="min-w-[230px]">
           <label className="mb-1 block text-[11px] font-semibold text-[#6B6B73]">Jenis kasus</label>

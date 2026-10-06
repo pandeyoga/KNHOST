@@ -15,6 +15,7 @@ import { ClipboardList, RefreshCw, ShieldAlert, Inbox, Layers } from "lucide-rea
 import ErrorNotice from "../../components/ErrorNotice";
 import { formatCurrency } from "../../utils/formatters";
 import DeskQueueCard from "./DeskQueueCard";
+import usePagedRows from "@/hooks/usePagedRows";
 import VerifyOrderDialog from "./VerifyOrderDialog";
 import FulfillmentDecisionDialog from "./FulfillmentDecisionDialog";
 import { confirmOrder, rowLink, salesAdminDesk } from "./workDeskApi";
@@ -81,6 +82,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
   const moneyQueues = queues.filter((q) => q.value_kind !== "qty");
   const totalMoney = moneyQueues.reduce((s, q) => s + (q.total_value || 0), 0);
   const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
+  const pgQ = usePagedRows(queues, { pageSize: 8, testId: "desk-queues-pager" });
 
   return (
     <div data-testid="sales-admin-desk" className="grid gap-4">
@@ -149,12 +151,15 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
           Belum ada antrean untuk badan usaha yang sedang Anda lihat.
         </div>
       ) : (
+        <>
         <div className="grid gap-3 xl:grid-cols-2">
-          {queues.map((q) => (
+          {pgQ.pageRows.map((q) => (
             <DeskQueueCard key={q.id} queue={q} busyRef={busyRef} loading={loading}
                            testPrefix="desk" onAction={handleAction} />
           ))}
         </div>
+        {queues.length > 8 && <div className="mt-2">{pgQ.pager}</div>}
+        </>
       )}
 
       {verifyRow && (

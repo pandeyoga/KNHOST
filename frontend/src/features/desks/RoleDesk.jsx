@@ -9,6 +9,7 @@ import { Inbox, Palette, RefreshCw, ShieldAlert, Warehouse, Layers, BellRing } f
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
+import usePagedRows from "@/hooks/usePagedRows";
 import { mdDesk, warehouseAdminDesk, myDesk, rowLink } from "../sales_admin/workDeskApi";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 
@@ -75,6 +76,7 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
   const openItems = queues.reduce((s, q) => s + (q.count || 0), 0);
   const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
   const p = cfg.testPrefix;
+  const pgQ = usePagedRows(queues, { pageSize: 8, testId: `${p}-queues-pager` });
 
   return (
     <div data-testid={`${p}`} className="grid gap-4">
@@ -111,11 +113,14 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
           <Inbox size={26} className="mx-auto mb-2 text-[#D6D6DB]" /> Belum ada antrean untuk badan usaha yang sedang Anda lihat.
         </div>
       ) : (
+        <>
         <div className="grid gap-3 xl:grid-cols-2">
-          {queues.map((q) => (
+          {pgQ.pageRows.map((q) => (
             <DeskQueueCard key={q.id} queue={q} loading={loading} testPrefix={p} onAction={handleAction} />
           ))}
         </div>
+        {queues.length > 8 && <div className="mt-2">{pgQ.pager}</div>}
+        </>
       )}
     </div>
   );
