@@ -30,15 +30,23 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
   const [rollCode, setRollCode] = useState("");
   const [rollInfo, setRollInfo] = useState(null);
 
-  /** Cari roll fisik dari kode scan → jumlah/lot/batch/bin diturunkan dari master roll (tidak diketik). */
+  /** Cari roll fisik dari kode scan/ketik → jumlah/lot/batch/bin diturunkan dari master roll (tidak diketik).
+   *  Roll yang benar untuk tugas ini adalah roll yang DICADANGKAN untuk pesanannya (status reserved/
+   *  committed/…), jadi pencarian tidak dibatasi status "available"; kelayakan dicek sama seperti server. */
+  const SHIPPABLE = ["committed", "packed", "picked", "reserved"];
   const resolveRoll = async (code) => {
     const q = String(code || "").trim();
     if (!q) return;
     try {
-      const res = await axios.get(`${API}/inventory/rolls`, { params: { q, status: "available", limit: 5, ...(selectedTask?.product_id ? { product_id: selectedTask.product_id } : {}) } });
+      const res = await axios.get(`${API}/inventory/rolls`, { params: { q, limit: 20, ...(selectedTask?.product_id ? { product_id: selectedTask.product_id } : {}) } });
       const list = Array.isArray(res.data) ? res.data : (res.data?.items || []);
-      const roll = list.find(r => String(r.roll_no || "").toLowerCase() === q.toLowerCase() || r.id === q) || list[0];
-      if (!roll) { setRollInfo(null); setError(`Roll "${q}" tidak ditemukan / tidak tersedia untuk produk tugas ini.`); return; }
+      const roll = list.find(r => String(r.roll_no || "").toLowerCase() === q.toLowerCase() || r.id === q);
+      if (!roll) { setRollInfo(null); setError(`Roll "${q}" tidak ditemukan untuk produk tugas ini (${selectedTask?.sku || selectedTask?.product_name || "-"}).`); return; }
+      const problems = [];
+      if (selectedTask?.warehouse_id && roll.warehouse_id !== selectedTask.warehouse_id) problems.push(`ada di gudang ${roll.warehouse_name || roll.warehouse_id}, bukan ${selectedTask.warehouse_name || "gudang tugas"}`);
+      if (selectedTask?.entity_id && roll.owner_entity_id && roll.owner_entity_id !== selectedTask.entity_id) problems.push(`milik ${roll.owner_entity_name || roll.owner_entity_id}`);
+      if ((roll.reserved_ref || {}).id !== selectedTask?.order_id || !SHIPPABLE.includes(roll.status)) problems.push(`belum dicadangkan untuk pesanan ini (status ${roll.status || "-"})`);
+      if (problems.length) { setRollInfo(null); setError(`Roll ${roll.roll_no || q} tidak bisa diambil: ${problems.join("; ")}.`); return; }
       setRollInfo(roll);
       setScanData({ actual_qty: Number(roll.length_remaining) || 0, batch: roll.batch || "", lot: roll.lot || "", roll_id: roll.id, bin_id: roll.bin_id || roll.location_code || "" });
       setError("");
