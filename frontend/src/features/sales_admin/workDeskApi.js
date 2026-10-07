@@ -163,6 +163,28 @@ export function ageTone(days) {
   return { cls: BADGE_TONE.mute, label: "hari ini" };
 }
 
+/** Tanggal + jam WIB ringkas, mis. "06 Okt 14.05". */
+export function fmtWhen(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso).slice(0, 10);
+  return d.toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jakarta" });
+}
+
+/** Perkiraan tanggal masuk antrean dari umur (hari) bila server tidak mengirim waktu persis. */
+export function sinceFromAge(days) {
+  const d = new Date(Date.now() - Number(days || 0) * 86400000);
+  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", timeZone: "Asia/Jakarta" });
+}
+
+/** Tujuan tombol aksi Pelacak SO: tahap gudang → Barang Keluar, selain itu → detail SO. */
+export function soTrackerLink(r) {
+  if ((r.owner_roles || []).some((x) => x === "warehouse_admin" || x === "warehouse")) {
+    return { view: "wms-outbound", nav_id: "wms-operations", focus_type: "sales_order", focus_id: r.id, number: r.number };
+  }
+  return { ...ROW_TARGET.sales_order, focus_id: r.id, number: r.number };
+}
+
 // ─── TUJUAN NAVIGASI SATU BARIS ─────────────────────────────────────────────
 // Meja kerja bukan tempat mengerjakan SEGALA hal; ia tempat MENEMUKAN pekerjaan
 // lalu melompat ke layar yang memang menanganinya. Peta ini membuat lompatan itu

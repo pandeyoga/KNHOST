@@ -17,8 +17,9 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { formatCurrency } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
+import SoTrackerCard from "../sales_admin/SoTrackerCard";
 import WaitingBoardsStrip from "../../components/WaitingBoardsStrip";
-import { financeDesk, issueTaxInvoice, rowLink } from "../sales_admin/workDeskApi";
+import { financeDesk, issueTaxInvoice, rowLink, soTrackerLink } from "../sales_admin/workDeskApi";
 import ARReceiptModal from "../crm/ARReceiptModal";
 
 export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpenDocument }) {
@@ -132,6 +133,8 @@ export default function FinanceDesk({ currentUser, selectedEntity = "all", onOpe
           </div>
         )}
       </section>
+
+      <SoTrackerCard desk="finance" selectedEntity={selectedEntity} testPrefix="fin-desk" onOpen={(r) => onOpenDocument?.(soTrackerLink(r))} />
 
       {loading && !desk ? (
         <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]"

@@ -8,6 +8,8 @@ import { Scissors, RefreshCw, Inbox, Layers, ShieldAlert } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
+import SoTrackerCard from "../sales_admin/SoTrackerCard";
+import { soTrackerLink } from "../sales_admin/workDeskApi";
 import { sampleDesk, approveSamplePayment, confirmSampleOrder } from "./sampleApi";
 
 export default function SampleAdminDesk({ currentUser, selectedEntity = "all", onOpenDocument }) {
@@ -74,6 +76,7 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
           </div>
         )}
       </section>
+      <SoTrackerCard desk="sample_admin" selectedEntity={selectedEntity} testPrefix="sample-desk" onOpen={(r) => onOpenDocument?.(soTrackerLink(r))} />
       {loading && !data ? <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]" data-testid="sample-desk-loading">Menyusun antrean…</div>
         : (
           <div className="grid gap-3 xl:grid-cols-2">

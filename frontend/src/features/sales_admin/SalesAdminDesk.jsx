@@ -15,10 +15,10 @@ import { ClipboardList, RefreshCw, ShieldAlert, Inbox, Layers } from "lucide-rea
 import ErrorNotice from "../../components/ErrorNotice";
 import { formatCurrency } from "../../utils/formatters";
 import DeskQueueCard from "./DeskQueueCard";
-import usePagedRows from "@/hooks/usePagedRows";
+import SoTrackerCard from "./SoTrackerCard";
 import VerifyOrderDialog from "./VerifyOrderDialog";
 import FulfillmentDecisionDialog from "./FulfillmentDecisionDialog";
-import { confirmOrder, rowLink, salesAdminDesk } from "./workDeskApi";
+import { confirmOrder, rowLink, salesAdminDesk, soTrackerLink } from "./workDeskApi";
 import { apiErrorText } from "../../utils/apiError";
 
 export default function SalesAdminDesk({ currentUser, selectedEntity = "all", onOpenDocument }) {
@@ -82,7 +82,6 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
   const moneyQueues = queues.filter((q) => q.value_kind !== "qty");
   const totalMoney = moneyQueues.reduce((s, q) => s + (q.total_value || 0), 0);
   const oldest = Math.max(0, ...queues.map((q) => q.oldest_age_days || 0));
-  const pgQ = usePagedRows(queues, { pageSize: 8, testId: "desk-queues-pager" });
 
   return (
     <div data-testid="sales-admin-desk" className="grid gap-4">
@@ -139,6 +138,8 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
         )}
       </section>
 
+      <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix="desk" onOpen={(r) => onOpenDocument?.(soTrackerLink(r))} />
+
       {loading && !desk ? (
         <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]"
              data-testid="desk-loading">
@@ -153,12 +154,11 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
       ) : (
         <>
         <div className="grid gap-3 xl:grid-cols-2">
-          {pgQ.pageRows.map((q) => (
+          {queues.map((q) => (
             <DeskQueueCard key={q.id} queue={q} busyRef={busyRef} loading={loading}
                            testPrefix="desk" onAction={handleAction} />
           ))}
         </div>
-        {queues.length > 8 && <div className="mt-2">{pgQ.pager}</div>}
         </>
       )}
 

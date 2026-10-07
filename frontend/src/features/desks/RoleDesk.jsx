@@ -9,8 +9,8 @@ import { Inbox, Palette, RefreshCw, ShieldAlert, Warehouse, Layers, BellRing } f
 import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
-import usePagedRows from "@/hooks/usePagedRows";
-import { mdDesk, warehouseAdminDesk, myDesk, rowLink, queueMeta } from "../sales_admin/workDeskApi";
+import SoTrackerCard from "../sales_admin/SoTrackerCard";
+import { mdDesk, warehouseAdminDesk, myDesk, rowLink, queueMeta, soTrackerLink } from "../sales_admin/workDeskApi";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 
 const DESKS = {
@@ -81,7 +81,6 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
     .reduce((best, q) => (!best || (q.oldest_age_days || 0) > (best.oldest_age_days || 0) ? q : best), null);
   const oldestRow = (oldestQ?.rows || []).reduce((best, r) => (!best || (r.age_days || 0) > (best.age_days || 0) ? r : best), null);
   const ordered = focusId ? [...queues].sort((a, b) => (b.id === focusId) - (a.id === focusId)) : queues;
-  const pgQ = usePagedRows(ordered, { pageSize: 8, testId: `${p}-queues-pager` });
 
   function openOldestQueue() {
     setFocusId(oldestQ.id);
@@ -132,6 +131,8 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
         )}
       </section>
 
+      <SoTrackerCard desk={desk} selectedEntity={selectedEntity} testPrefix={p} onOpen={(r) => onOpenDocument?.(soTrackerLink(r))} />
+
       {loading && !data ? (
         <div className="section-card py-14 text-center text-[12px] text-[#6B6B73]" data-testid={`${p}-loading`}>Menyusun antrean…</div>
       ) : queues.length === 0 ? (
@@ -141,12 +142,11 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
       ) : (
         <>
         <div className="grid gap-3 xl:grid-cols-2">
-          {pgQ.pageRows.map((q) => (
+          {ordered.map((q) => (
             <DeskQueueCard key={q.id === focusId ? `${q.id}-focus` : q.id} queue={q} loading={loading} testPrefix={p} onAction={handleAction}
               defaultOpen={q.id === focusId ? true : undefined} />
           ))}
         </div>
-        {queues.length > 8 && <div className="mt-2">{pgQ.pager}</div>}
         </>
       )}
     </div>

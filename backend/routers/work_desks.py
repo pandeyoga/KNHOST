@@ -194,6 +194,16 @@ async def fulfillment_plan_decide(order_id: str, payload: FulfillmentPlanIn, req
 # ═══════════════════════════════════════════════════════════════════════════
 # MEJA MD & MEJA ADMIN GUDANG — Sesi #087
 # ═══════════════════════════════════════════════════════════════════════════
+@router.get("/desks/so-tracker")
+async def desk_so_tracker(request: Request, desk: str = Query("me"), entity_id: str = Query("")) -> Dict[str, Any]:
+    """SO aktif + tahap berikutnya + pemilik tahap; `can_act` bila peran meja ini pemiliknya."""
+    from dependencies import current_user
+    from services import so_tracker_service as sot
+    actor = await current_user(request)
+    _, scope, _ = await _scope(request, entity_id or None)
+    return await sot.so_tracker(sot.desk_for(desk), actor, scope)
+
+
 @router.get("/md/desk")
 async def md_desk(request: Request, entity_id: str = Query("")) -> Dict[str, Any]:
     """Antrean MD: permintaan desain, sample/labdip, PR bahan, SPK tanpa acuan."""

@@ -20,23 +20,24 @@ import { useState } from "react";
 import { ChevronDown, Inbox } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { RevisionBadge } from "../../components/RevisionProgress";
-import { ageTone, badgeClass, badgeLabel, queueMeta } from "./workDeskApi";
+import { ageTone, badgeClass, badgeLabel, queueMeta, fmtWhen, sinceFromAge } from "./workDeskApi";
 import Collapse from "../../components/Collapse";
-import SeeAllModal, { SeeAllFooter } from "../../components/SeeAllModal";
+import usePagedRows from "@/hooks/usePagedRows";
 
-const PREVIEW_ROWS = 5;
+// Permintaan pemilik 2026-10: tiap kartu = 5 baris per halaman + paginasi DI kartu (tanpa pop-up).
+const PAGE_ROWS = 5;
 
 export default function DeskQueueCard({
   queue, onAction, busyRef = "", testPrefix = "desk", rowTestPrefix, defaultOpen, loading = false,
 }) {
   const [open, setOpen] = useState(
     defaultOpen === undefined ? (queue?.count || 0) > 0 : defaultOpen);
-  const [showAll, setShowAll] = useState(false);
   const meta = queueMeta(queue?.id);
   const Icon = meta.icon;
   const isQty = queue?.value_kind === "qty";
   const rows = Array.isArray(queue?.rows) ? queue.rows : [];
-  const visible = rows.slice(0, PREVIEW_ROWS);
+  const pg = usePagedRows(rows, { pageSize: PAGE_ROWS, testId: `${testPrefix}-pager-${queue?.id}` });
+  const visible = pg.pageRows;
   const oldest = ageTone(queue?.oldest_age_days);
 
   // Ringkasan: qty → angka + satuan; count → jumlah dokumen; selain itu SELALU rupiah.
@@ -119,7 +120,7 @@ export default function DeskQueueCard({
               Antrean ini bersih — tidak ada yang perlu ditindak.
             </div>
           ) : (
-            <div className="divide-y divide-[#F4F5F7] border-t border-[#EFF0F2]">
+            <div className="divide-y divide-[#F4F5F7] border-t border-[#EFF0F2] min-h-[290px]">
               {visible.map((row, i) => (
                 <QueueRow key={`${row.ref_type}-${row.ref_id}-${row.number || i}`}
                           row={row} queue={queue}
@@ -130,26 +131,9 @@ export default function DeskQueueCard({
             </div>
           )}
 
-          {/* Jujur soal pemotongan: kartu = cuplikan, pop-up = semuanya. */}
-          <SeeAllFooter shown={visible.length} total={rows.length} label="baris"
-            accent={meta.tone} onClick={() => setShowAll(true)}
-            testId={`${testPrefix}-see-all-${queue?.id}`} />
+          {rows.length > PAGE_ROWS && <div className="border-t border-[#EFF0F2] px-3 py-1.5">{pg.pager}</div>}
         </div>
       </Collapse>
-
-      <SeeAllModal open={showAll} onClose={() => setShowAll(false)}
-        title={queue?.label} subtitle={queue?.hint} icon={Icon} accent={meta.tone}
-        rows={rows}
-        rowText={(r) => `${r.number || ""} ${r.title || ""} ${r.subtitle || ""}`}
-        renderRow={(row, i) => (
-          <QueueRow key={`${row.ref_type}-${row.ref_id}-${row.number || i}`}
-                    row={row} queue={queue}
-                    isQty={isQty} busy={busyRef === row.ref_id}
-                    testPrefix={`${testPrefix}-modal`}
-                    onAction={() => onAction?.(row, queue)} />
-        )}
-        emptyText="Tidak ada baris antrean yang cocok dengan pencarian."
-        testId={`${testPrefix}-see-all-modal-${queue?.id}`} />
     </section>
   );
 }
@@ -186,6 +170,11 @@ function QueueRow({ row, queue, isQty, busy, onAction, testPrefix }) {
         {row.subtitle && (
           <p className="truncate text-[10.5px] text-[#8E8E93]">{row.subtitle}</p>
         )}
+        <p className="text-[10px] text-[#6B6B73]" data-testid={`${testPrefix}-time-${row.ref_id}`}>
+          {row.at || row.created_at || row.updated_at
+            ? `Masuk ${fmtWhen(row.at || row.created_at || row.updated_at)}`
+            : `Masuk ± ${sinceFromAge(row.age_days)}`} · menunggu {age.label}
+        </p>
       </div>
 
       <span data-testid={`${testPrefix}-value-${row.ref_id}`}
