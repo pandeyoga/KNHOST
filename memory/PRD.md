@@ -1082,6 +1082,13 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - docs/audit/gelombang-3/implementation/LAPORAN-PENUTUPAN.md: identitas commit, ringkasan per fase, perintah reproduksi, keputusan bisnis, tabel 101 temuan (cocok 1:1 dengan findings-tracker), batas uji, migrasi, permintaan validasi.
 - Eksekusi ulang di HEAD 72cb55e: service 111/111; live lulus (03b & 03c wajib seed terpisah).
 
+## 2026-10-07 — Barang Keluar input manual + Pelacak SO di semua meja
+- Fix: OutboundScanInterface mencari roll yang DICADANGKAN untuk pesanan (bukan status available), cocok persis, pesan alasan penolakan.
+- Baru: GET /api/desks/so-tracker?desk= (services/so_tracker_service.py) + SoTrackerCard di Meja Admin Sales/Finance/MD/Gudang/Sampel/Saya: SO aktif (done/batal hilang), tahap berikutnya, pemilik tahap, tombol aksi hanya bila wewenang meja, info "Menunggu <peran>", waktu Dibuat/Diperbarui WIB, 5 baris/halaman.
+- DeskQueueCard: 5 baris + paginasi per kartu (tanpa pop-up "Lihat semua"), info waktu per baris (± dari umur); pager tingkat halaman dihapus.
+- deploy/frontend-yarnlock.txt disinkronkan dengan frontend/yarn.lock (+ tes kesamaan). Uji: iteration_172 lulus.
+
+
 - Uji: test_g3_phase05.py 7/7, regresi Fase 01–04 104/104, iteration_171 (live 12/12 + frontend) lulus.
 
 
