@@ -861,13 +861,15 @@
         "LN-041-T01",
         "LN-041-T02"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -2969,8 +2971,10 @@
       "scenario": "Diberikan receiving tiga LOT, ketika MDQ memilih dua roll dari LOT berbeda, maka hanya roll terpilih menjadi sumber pengujian dan konsumsi; receiving bruto seluruh roll tidak berubah.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16 (belum ber-SHA): SPK po_receipt 3 roll dari 3 LOT; MDQ (mdquality@) inspect+mdq-cut 2 roll LOT berbeda → hanya 2 roll −0,25 yd & 2 mutasi mdq_cut; roll ke-3 utuh; length_initial ketiga roll tetap. tests/test_l04_ln041_mdq_select.py::test_t01 PASS; testing agent iteration_189.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,
@@ -2984,8 +2988,10 @@
       "scenario": "Diberikan warna tidak sesuai namun keputusan manusia menerima, ketika dicatat dengan hak yang tepat, maka hasil uji dan keputusan akhir terpisah serta dapat diaudit tanpa engine keputusan otomatis.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16 (belum ber-SHA): warna beda_shade → baris ditahan (kebijakan bawaan tahan); MDQ release-hold ber-alasan → color_result tetap beda_shade, md_quality_decision{action:release,by,role,at} terpisah + audit inspection_hold_released; sales.kanda ditolak. test_t02 PASS.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,
@@ -3029,8 +3035,10 @@
       "scenario": "Diberikan label lama 100 dan saldo 99,75, ketika reprint label diperintahkan, maka EPC sama, teks qty terkini dan histori cetak jelas; read RFID mengambil saldo dari ERP.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16 (belum ber-SHA): cetak label (browser & antrean printer) dicatat append-only di roll_label_prints {epc, qty saldo ERP saat cetak, print_seq, reprint, channel, by, at}; saldo 150→149,75 → lookup label_outdated=true, current_qty 149,75; reprint → qty 149,75, epc & roll_id sama, tanpa roll/tag baru; mark-printed ulang tidak menggandakan histori. tests/test_comm04_ln042t03_regression.py + smoke_comm04_ln042t03.py PASS (iteration_189).",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,

@@ -26,7 +26,7 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
     if (!code) return;
     setBusy(true);
     try {
-      const { data } = await axios.get(`${API}/rfid/lookup`, { params: { code } });
+      const { data } = await axios.get(`${API}/rfid/lookup`, { params: { code, record: false } });
       await reprintRollLabel(data.roll, data.product_name);
       const { data: p } = await axios.post(`${API}/rfid/rolls/${data.roll.id}/label-prints`, { channel: "browser" });
       setMsg(`Label ${data.roll?.roll_no} dicetak (cetak ke-${p.print_seq}${p.reprint ? ", ulang" : ""}) · qty terkini ${p.qty} ${p.unit || ""}${p.epc ? ` · EPC tetap ${p.epc}` : ""}.`);

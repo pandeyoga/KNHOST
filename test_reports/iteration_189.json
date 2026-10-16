@@ -1,0 +1,42 @@
+{
+  "summary": "Tested COMM-04 (marketing campaign cost -> Beban Pemasaran GL) and LN-042-T03 (roll label reprint keeps the same EPC and prints the current qty), backend and frontend, plus the LN-041/MDQ regression. Backend: all 17 new pytest cases pass against the public URL. The requested files pass when run one at a time: test_l04_ln041_mdq_select (2), test_l04_mdq_cut (4), test_l04_mdq_cut_edge (6), test_saga_lock_registry (1); smoke_comm04_ln042t03.py prints ALL PASS. Frontend: the campaign costs modal loads and shows the budget summary. Recording a cost works, realized/remaining update, an empty amount shows its error, and the 390px layout is fine. The RFID Tags reprint shows 'cetak ke-N' and 'qty terkini'. CRITICAL UI BUG: voiding a cost from the UI does not work. Clicking the submit button in the void modal ('Batalkan biaya') reloads the whole page to /? and lands on admin-home. No API call is sent.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/rfid/lookup (called from RfidTagsView.reprintByCode)", "issue": "The frontend reprint calls lookup without record=false. Every label reprint therefore writes a roll_scans row and overwrites roll.last_scan, so reprints are logged as fake 'scans' in the roll's trail."},
+      {"endpoint": "POST /api/marketing/campaigns/{cid}/costs", "issue": "There is no idempotency key or duplicate guard. A double submit (the UI busy flag only covers one tab) or a client retry posts two journal entries."},
+      {"endpoint": "tests/smoke_comm04_ln042t03.py", "issue": "MongoClient('mongodb://localhost:27017')['test_database'] is hardcoded. It should use MONGO_URL/DB_NAME from the env."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CampaignCostsModal > VoidCostModal", "issue": "VoidCostModal is rendered inside the outer FormModal's children, so it sits inside the outer <form>. That gives a nested <form>. Clicking mkt-cost-void-submit does a native GET submit to '/?', which reloads the whole page (navigations seen: '/?' then '/?view=admin-home'). mktApi.voidCost is never called, so a user cannot void a cost from the UI. The same thing happens with a short reason and with a valid one. Voiding through the API works and the row then shows 'batal (pembalik JE…)' correctly.", "selector": "[data-testid=mkt-cost-void-submit]", "priority": "CRITICAL"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Campaign costs modal", "issues": ["mkt-cost-date uses the browser's native <input type=date> instead of the shadcn calendar/date picker.", "On mobile the user must first tap the 'mobile-force-desktop' button to reach ?view=mkt-campaigns (the mobile shell has no marketing campaigns). After that the modal fits 390px with no horizontal overflow."]},
+      {"screen": "RFID Tags", "issues": ["The KPI card says 'Roll Belum Ber-tag 5000' but the tab says 'Belum Ber-tag (500)' (the list is capped). This can confuse users; show the full count or say the list is truncated."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_comm04_ln042t03_regression.py", "/app/test_reports/pytest/pytest_comm04_ln042t03.xml", "/app/backend/tests/smoke_comm04_ln042t03.py", "/app/backend/tests/test_l04_ln041_mdq_select.py"],
+  "action_items": [
+    "CRITICAL: fix the nested form in frontend/src/features/marketing/CampaignCostsModal.jsx. Render <VoidCostModal> outside the outer <FormModal>: return <>…<FormModal/>{voiding && <VoidCostModal/>}</>, or use a portal. Then rebuild the static bundle and confirm that void from the UI calls POST /costs/{id}/void and the row shows 'batal'.",
+    "Make RfidTagsView.reprintByCode call /rfid/lookup with params {code, record:false} so a reprint is not recorded as a scan.",
+    "Optional: add an idempotency key or client request id to POST /marketing/campaigns/{cid}/costs.",
+    "Optional: replace the native date input in the cost form with the shadcn date picker."
+  ],
+  "critical_code_review_comments": [
+    "Nested-form risk: FormModal wraps children in a <form> whenever onSubmit is passed. Any FormModal opened inside another FormModal's children has the same bug. Audit other features that nest modals.",
+    "marketing_cost_service.record_cost: if post_cash_durable fails, the compensation sets the cash txn to void and deletes the cost row, but the MCC number is already used (gap). Acceptable, but log it.",
+    "void_cost: when the saga claim fails it raises 409. Concurrent voids gave exactly one 200 and one 409, with exactly one reversal JE.",
+    "list_costs caps rows at 500 (to_list(500)), but realized_by_campaign aggregates everything. With more than 500 costs the modal's list and its realized total would disagree."
+  ],
+  "updated_files": ["/app/backend/tests/test_comm04_ln042t03_regression.py"],
+  "success_rate": {"backend": "100% (17/17 new + 13/13 regression + smoke ALL PASS)", "frontend": "~85% (void from UI broken; everything else passes)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345, manager@/sales@/sales.kanda@ demo1234 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None left behind. TEST_T1 / TEST_UI campaigns, their costs, cash txns and JEs, roll_label_prints, the rfid tag and print jobs created on roll_e0ca983743fe (RL-00001), and the UI-created roll_scans were all deleted. The roll document was restored from a snapshot.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "No ent_ksc roll has an RFID tag in the seed data. To get a non-null EPC, test_comm04_ln042t03_regression.py creates an rfid_tag print job on an untagged roll and calls mark-printed (this encodes the tag), then restores the roll. RFID Tags view key is ?view=cs-rfid-tags (not rfid-tags); reprint buttons are in the 'Belum Ber-tag' tab (rfid-untagged-reprint-<rollId>). At 390px the app shows the mobile shell; click mobile-force-desktop to reach the desktop views. Retest UI void (mkt-cost-void-submit) after the nested-form fix.",
+  "rca of the issue": "Repro: open ?view=mkt-campaigns, click 'Biaya', record a cost, click 'Batalkan', type a reason, click 'Batalkan biaya'. The page reloads to /? and then admin-home; no POST is made. Cause: CampaignCostsModal renders {voiding && <VoidCostModal/>} as a child of <FormModal onSubmit=...>, which wraps its children in <form>. VoidCostModal's own FormModal adds another <form> inside it. The form-ancestor count of the reason input is 2. The browser's native submit of the nested form is not reliably prevented, so a GET navigation happens. Fix: move VoidCostModal outside the outer FormModal (fragment sibling) or portal it to document.body."
+}

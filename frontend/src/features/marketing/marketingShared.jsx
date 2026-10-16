@@ -60,7 +60,7 @@ export const mktApi = {
   createCampaign: (b) => axios.post(`${API}/marketing/campaigns`, b).then((r) => r.data),
   updateCampaign: (id, b) => axios.patch(`${API}/marketing/campaigns/${id}`, b).then((r) => r.data),
   costs: (id) => axios.get(`${API}/marketing/campaigns/${id}/costs`).then((r) => r.data),
-  recordCost: (id, b) => axios.post(`${API}/marketing/campaigns/${id}/costs`, b).then((r) => r.data),
+  recordCost: (id, b, key) => axios.post(`${API}/marketing/campaigns/${id}/costs`, b, { headers: key ? { "Idempotency-Key": key } : {} }).then((r) => r.data),
   voidCost: (id, costId, b) => axios.post(`${API}/marketing/campaigns/${id}/costs/${costId}/void`, b).then((r) => r.data),
   assets: (q) => axios.get(`${API}/marketing/assets`, { params: { q } }).then((r) => r.data),
   analytics: (params) => axios.get(`${API}/marketing/analytics`, { params }).then((r) => r.data),

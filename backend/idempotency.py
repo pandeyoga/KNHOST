@@ -21,7 +21,8 @@ TTL_DAYS = 7
 IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        "/api/rfid/lookup", "/api/rfid/roll-scans", "/api/rfid/print-jobs",
                        "/api/hr/visits", "/api/sales-orders", "/api/price-approvals",
-                       "/api/ar-receipts", "/api/sales-returns", "/api/special-orders")
+                       "/api/ar-receipts", "/api/sales-returns", "/api/special-orders",
+                       "/api/marketing/campaigns/")
 
 
 async def _session_user_id(request: Request) -> str:

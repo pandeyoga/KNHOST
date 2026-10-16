@@ -4,25 +4,29 @@ import { Wallet, Ban } from "lucide-react";
 import FormModal from "../../components/FormModal";
 import { Field } from "../rnd/RndField";
 import KNSelect from "../../components/KNSelect";
+import KNDatePicker from "../../components/KNDatePicker";
 import { mktApi, fmtN } from "./marketingShared";
 
 const errText = (e, fb) => { const d = e.response?.data?.detail; return (typeof d === "string" ? d : d?.message) || fb; };
 const today = () => new Date().toISOString().slice(0, 10);
+const newKey = () => `mcc-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
 export default function CampaignCostsModal({ campaign, canPost, onClose, onChanged }) {
   const [data, setData] = useState(null);
   const [f, setF] = useState({ date: today(), description: "", amount: "", cash_type: "kas_besar", vendor_name: "" });
   const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
   const [voiding, setVoiding] = useState(null);
+  const [idemKey, setIdemKey] = useState(newKey);
   const load = () => mktApi.costs(campaign.id).then(setData).catch((e) => setErr(errText(e, "Gagal memuat biaya.")));
   useEffect(() => { load(); }, [campaign.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const submit = async () => {
     setBusy(true); setErr("");
-    try { await mktApi.recordCost(campaign.id, { ...f, amount: Number(f.amount || 0) }); setF((s) => ({ ...s, description: "", amount: "", vendor_name: "" })); await load(); onChanged(); }
+    try { await mktApi.recordCost(campaign.id, { ...f, amount: Number(f.amount || 0) }, idemKey); setIdemKey(newKey()); setF((s) => ({ ...s, description: "", amount: "", vendor_name: "" })); await load(); onChanged(); }
     catch (e) { setErr(errText(e, "Gagal mencatat biaya.")); } finally { setBusy(false); }
   };
   return (
+    <>
     <FormModal open title={`Biaya kampanye · ${campaign.name}`} subtitle="Biaya dijurnal saat uang keluar: Dr Beban Pemasaran / Cr Kas-Bank. Anggaran tidak dijurnal." icon={Wallet}
       onClose={onClose} onSubmit={canPost ? submit : undefined} busy={busy} error={err} submitLabel="Catat & posting biaya" testId="mkt-costs-modal" submitTestId="mkt-cost-submit" cancelTestId="mkt-costs-close">
       <div className="grid gap-3">
@@ -30,8 +34,9 @@ export default function CampaignCostsModal({ campaign, canPost, onClose, onChang
         {canPost && <CostForm f={f} set={set} />}
         <CostList rows={data?.costs || []} canPost={canPost} onVoid={setVoiding} />
       </div>
-      {voiding && <VoidCostModal campaignId={campaign.id} cost={voiding} onClose={() => setVoiding(null)} onDone={() => { setVoiding(null); load(); onChanged(); }} />}
     </FormModal>
+    {voiding && <VoidCostModal campaignId={campaign.id} cost={voiding} onClose={() => setVoiding(null)} onDone={() => { setVoiding(null); load(); onChanged(); }} />}
+    </>
   );
 }
 
@@ -53,7 +58,7 @@ function BudgetSummary({ data }) {
 function CostForm({ f, set }) {
   return (
     <div className="grid gap-2 rounded-xl border border-[#EFF0F2] p-3 sm:grid-cols-2" data-testid="mkt-cost-form">
-      <Field label="Tanggal keluar *"><input type="date" className="field w-full" value={f.date} onChange={(e) => set("date", e.target.value)} data-testid="mkt-cost-date" /></Field>
+      <Field label="Tanggal keluar *"><KNDatePicker value={f.date} onChange={(v) => set("date", v)} clearable={false} data-testid="mkt-cost-date" /></Field>
       <Field label="Nominal (Rp) *"><input type="number" min="0" className="field w-full" value={f.amount} onChange={(e) => set("amount", e.target.value)} data-testid="mkt-cost-amount" /></Field>
       <Field label="Uraian *"><input className="field w-full" value={f.description} onChange={(e) => set("description", e.target.value)} placeholder="mis. Iklan Instagram minggu 1" data-testid="mkt-cost-description" /></Field>
       <Field label="Vendor / penerima"><input className="field w-full" value={f.vendor_name} onChange={(e) => set("vendor_name", e.target.value)} data-testid="mkt-cost-vendor" /></Field>

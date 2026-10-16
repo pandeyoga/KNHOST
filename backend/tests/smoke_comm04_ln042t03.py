@@ -5,7 +5,7 @@ import requests
 from pymongo import MongoClient
 
 B = os.environ.get("BASE", "http://localhost:8001") + "/api"
-db = MongoClient("mongodb://localhost:27017")["test_database"]
+db = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
 ok_all = True
 
 
