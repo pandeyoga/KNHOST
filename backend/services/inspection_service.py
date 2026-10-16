@@ -541,6 +541,19 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any],
         ref_type, ref_number = "sales_return", ret.get("number", "")
         customer = (ret.get("customer_id", ""), ret.get("customer_name", ""))
         lines = _lines_from_return_items(ret)
+        if kind == KIND_REPLACEMENT:
+            # L05 LN-050-T02 — SPK pengganti memeriksa ROLL PENGGANTI (dipilih/scan), bukan barang returnya.
+            rids = [str(x) for x in (payload.get("roll_ids") or []) if x]
+            if not rids:
+                raise InspectionError("Pilih/scan roll PENGGANTI yang mau diperiksa (bukan roll returnya).")
+            returned = {str(it.get("roll_id")) for it in ret.get("items") or [] if it.get("roll_id")}
+            rolls = await db.inventory_rolls.find({"$or": [{"id": {"$in": rids}}, {"roll_no": {"$in": rids}}],
+                                                   "owner_entity_id": entity_id}, {"_id": 0}).to_list(len(rids) * 2)
+            if returned & {r["id"] for r in rolls}:
+                raise InspectionError("Roll retur tidak boleh diperiksa sebagai barang pengganti.")
+            if len({r["id"] for r in rolls}) != len(set(rids)):
+                raise InspectionError("Sebagian roll pengganti tidak ditemukan / di luar badan usaha ini.")
+            lines = await _lines_from_rolls(rolls)
         line_code = line_code or str(ret.get("line_code") or "")
     elif kind == KIND_RETURN_SUPPLIER:
         if not ref_id:
@@ -777,6 +790,11 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
         if not roll:
             raise InspectionError("Roll pada baris ini sudah tidak ada di gudang.")
         from services import qc_inspection_service as qc
+        hdr = await _form_header(doc, roll)
+        try:
+            qc.normalize_interval_defects(payload.get("defects") or [], payload.get("inspect_length_yard"))
+        except qc.IntervalError as exc:
+            raise InspectionError(str(exc)) from exc
         result = await qc.inspect_roll(
             safe_doc(roll), [d for d in (payload.get("defects") or [])],
             payload.get("gsm_actual"), payload.get("width_actual"),
@@ -790,10 +808,17 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
             baseline_sample_number=doc.get("baseline_sample_number", ""),
             color_action=pol["color"], handfeel_action=pol["handfeel"],
             inspection_id=doc.get("id", ""), inspection_number=doc.get("number", ""),
-            quality_from_roll=(part == "qc"))
+            quality_from_roll=(part == "qc"),
+            inspect_length_yard=payload.get("inspect_length_yard"),
+            header=hdr)
         # RINGKASAN, bukan sumber angka: disalin dari hasil pemanggilan di atas.
         patch.update({
             "points_snapshot": result.get("points"),
+            # L05 LN-051/052 — kejadian per interval, form & versi aturan disalin ke baris (riwayat tidak berubah
+            # walau roll diinspeksi ulang / aturan grade diganti).
+            "defects": (result.get("roll") or {}).get("inspection", {}).get("defects", []),
+            "inspect_form": (result.get("roll") or {}).get("inspection", {}).get("form"),
+            "grade_rule": (result.get("roll") or {}).get("inspection", {}).get("rule"),
             "grade_before": result.get("grade_before", line.get("grade_before", "")),
             "grade_after": result.get("grade", ""),
             "gsm_actual": (result.get("roll") or {}).get("inspection", {}).get("gsm_actual"),
@@ -895,6 +920,19 @@ async def create_random_check(payload: Dict[str, Any], actor: Dict[str, Any],
     from services import roll_hold_service as rh
     if not entity_id or entity_id == "all":
         raise InspectionError("Pilih satu badan usaha dulu — random check milik satu badan usaha.")
+    scan = str(payload.get("scan_code") or "").strip()
+    if scan:   # L05 LN-050-T03 — random dimulai dari SCAN roll fisik: identitas & lokasi dari hasil scan sah
+        tag = await db.rfid_tags.find_one({"epc": scan.upper(), "status": {"$ne": "void"}}, {"_id": 0, "roll_id": 1})
+        q = {"id": tag["roll_id"]} if tag and tag.get("roll_id") else {"$or": [{"roll_no": scan}, {"id": scan}]}
+        roll = await db.inventory_rolls.find_one(q, {"_id": 0})
+        if not roll:
+            raise InspectionError(f"Kode '{scan}' tidak dikenali sebagai roll.")
+        if roll.get("owner_entity_id") != entity_id:
+            raise InspectionError("Roll hasil scan di luar badan usaha/cakupan Anda — tidak bisa di-random check.")
+        if roll.get("status") != "available" or roll.get("earmarked_for"):
+            raise InspectionError(f"Roll {roll.get('roll_no')} berstatus '{roll.get('status')}' / sudah dipesan — tidak bisa di-random check.")
+        payload = {**payload, "warehouse_id": roll["warehouse_id"], "count": 1, "product_id": roll["product_id"],
+                   "_roll_id": roll["id"]}
     wh_id = str(payload.get("warehouse_id") or "").strip()
     if not wh_id:
         raise InspectionError("Pilih gudang yang mau di-random check.")
@@ -904,6 +942,8 @@ async def create_random_check(payload: Dict[str, Any], actor: Dict[str, Any],
                            "earmarked_for": {"$in": [None, ""]}}
     if payload.get("product_id"):
         flt["product_id"] = str(payload["product_id"])
+    if payload.get("_roll_id"):
+        flt["id"] = payload["_roll_id"]
     picked = await db.inventory_rolls.aggregate(
         [{"$match": flt}, {"$sample": {"size": count}}, {"$project": {"_id": 0}}]).to_list(count)
     if not picked:
@@ -923,7 +963,8 @@ async def create_random_check(payload: Dict[str, Any], actor: Dict[str, Any],
                          ref_doc_number=wh.get("code") or wh.get("name", ""),
                          lines=await _lines_from_rolls(held), assigned=assigned,
                          remark=str(payload.get("remark") or "") or
-                         f"Random check {len(held)} roll — roll DITAHAN sampai SPK diputuskan.")
+                         (f"Random check dari scan {scan} — roll DITAHAN sampai SPK diputuskan." if scan else
+                          f"Random check {len(held)} roll — roll DITAHAN sampai SPK diputuskan."))
     await db.inventory_rolls.update_many({"id": {"$in": [r["id"] for r in held]}},
                                          {"$set": {"random_check_id": doc["id"]}})
     return doc
@@ -1056,6 +1097,22 @@ async def reject_hold(ins_id: str, line_id: str, reason: str, actor: Dict[str, A
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Daftar & statistik
 # ═══════════════════════════════════════════════════════════════════════════════
+async def _form_header(doc: Dict[str, Any], roll: Dict[str, Any]) -> Dict[str, Any]:
+    """LN-051/T03 — header form dari SUMBER (dokumen, roll, produk), bukan ketikan ulang."""
+    prod = await db.products.find_one({"id": roll.get("product_id")}, {"_id": 0, "name": 1, "sku": 1, "fabric_type": 1,
+                                                                     "category": 1, "color": 1, "color_name": 1,
+                                                                     "supplier": 1, "supplier_color": 1}) or {}
+    cust = doc.get("customer") or {}
+    sup = doc.get("supplier") or {}
+    return {"customer_name": cust.get("name") if isinstance(cust, dict) else cust,
+            "supplier_name": (sup.get("name") if isinstance(sup, dict) else sup) or prod.get("supplier"),
+            "fabric_type": roll.get("fabric_type") or prod.get("fabric_type") or (prod.get("category") or "").lower(),
+            "article": prod.get("name"), "sku": prod.get("sku"), "roll_no": roll.get("roll_no"),
+            "color_internal": prod.get("color_name") or prod.get("color"),
+            "color_supplier": prod.get("supplier_color") or roll.get("supplier_color"),
+            "inspected_date": now_iso()[:10], "source_kind": doc.get("kind"), "source_ref": doc.get("ref_doc_number")}
+
+
 async def list_inspections(scope: Dict[str, Any], *, kind: str = "", status: str = "",
                            assigned_to: str = "", q: str = "", hold_only: bool = False,
                            skip: int = 0, limit: int = 200) -> Tuple[List[Dict[str, Any]], int]:

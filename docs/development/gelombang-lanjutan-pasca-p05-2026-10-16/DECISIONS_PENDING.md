@@ -176,13 +176,15 @@ Dampak: Validasi akhir requirement yang tergantung item ini; tidak memblok semua
 
 ## DES-01 — Urutan tag dan pemotongan MD Quality
 
-Jenis: design_review. Status: **pending**. Requirement: LN-042.
+Jenis: design_review. Status: **resolved**. Requirement: LN-042.
 
 Usulan: receiving bruto → identitas/tag → potongan MDQ tercatat → saldo bersih/reprint teks. Qty SSOT ERP, EPC identitas.
 
 - Tinjau SOP urutan tag, pengukuran, pemakaian dan reprint; boleh pilih urutan operasional lain asalkan identitas dan saldo tetap benar.
 
 Dampak: Validasi akhir requirement yang tergantung item ini; tidak memblok semua fase.
+
+Jawaban tercatat: Disetujui owner 2026-10-16 (chat sesi E1): urutan receiving bruto → identitas/tag → potong MDQ 0,25 yd tercatat sebagai pemakaian → saldo bersih & reprint teks (EPC sama, qty terkini). Qty SSOT ERP, EPC identitas. Roll kg: potong wajib berat aktual, tanpa itu transaksi diblok. Tambahan: susut/hilang bahan di mitra boleh sebagian panjang roll (roll dipecah) seperti retur sebagian.
 
 ## DES-02 — Penamaan dan pengelompokan dokumen per leg
 

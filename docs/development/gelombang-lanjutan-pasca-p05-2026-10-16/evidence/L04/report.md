@@ -117,3 +117,12 @@ Belum ada SHA GitHub untuk sesi ini, jadi semua requirement maksimal `in_progres
 - **DES-01:** aturan kg↔yard (LN-042-T02 cabang konversi produk).
 - **KLX-01:** LOT supplier vs internal (LN-040).
 - **Kunci OpenAI:** dibutuhkan untuk OCR sungguhan (LN-040-T01).
+
+## Sesi 4 — penutupan L04 (2026-10-16)
+- **DES-01 → resolved:** owner menyetujui urutan SOP: receiving bruto → tag/identitas → potong MDQ tercatat → saldo bersih & reprint (EPC sama).
+  - Untuk roll kg, potongan wajib memakai berat aktual; tanpa itu transaksi diblok (LN-042-T02, `test_kg_requires_actual_data`).
+- **Susut sebagian roll (keputusan owner):** `material-loss` menerima `partial: [{roll_id, qty}]`.
+  - Roll dipecah DI MITRA (`split_off_from_ref(keep_in_bucket=True)`): roll anak tetap berstatus subcon, lalu roll anak itulah yang dicatat susut, mengikuti aturan toleransi dan persetujuan yang sudah ada.
+  - Semua masukan divalidasi dulu sebelum ada roll yang dipecah. UI memakai kolom qty yang sama dengan retur.
+  - Bukti: `test_session3_partial_return_notif_budget.py::test_partial_loss_splits_child_at_partner`.
+- **Mobile P05 (MKO dari HP):** diverifikasi di 390px. Lihat iteration_194.

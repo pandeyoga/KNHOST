@@ -63,8 +63,7 @@ export default function MakloonReturnMaterial({ mkoId, step, canAct, canLoss, ca
     setBusy(true);
     try {
       const sel = rolls.filter((r) => picked[r.id]);
-      const body = kind === "loss" ? { reason: reason.trim(), roll_ids: ids }
-        : { reason: reason.trim(), roll_ids: sel.filter((r) => partQty(r) == null).map((r) => r.id), partial: sel.filter((r) => partQty(r) != null).map((r) => ({ roll_id: r.id, qty: partQty(r) })) };
+      const body = { reason: reason.trim(), roll_ids: sel.filter((r) => partQty(r) == null).map((r) => r.id), partial: sel.filter((r) => partQty(r) != null).map((r) => ({ roll_id: r.id, qty: partQty(r) })) };
       await axios.post(`${API}/makloon-orders/${mkoId}/steps/${step.seq}/${kind === "loss" ? "material-loss" : "return-material"}`, body);
       setOpen(false); setReason(""); await onDone?.();
     } catch (e) { onError?.(e.response?.data?.detail || (kind === "loss" ? "Gagal mencatat susut." : "Gagal mencatat retur bahan.")); }
@@ -98,7 +97,7 @@ export default function MakloonReturnMaterial({ mkoId, step, canAct, canLoss, ca
             ))}
             {!rolls.length && <p className="text-[#6B6B73]">Memuat roll…</p>}
           </div>
-          <p data-testid={`mko-return-summary-${step.seq}`}>Dipilih {ids.length}/{rolls.length} roll · {formatQty(qty)} {step.input_unit}. Roll yang tidak dipilih tetap tercatat di mitra.{badPart.length > 0 && <b className="block text-[#B4231F]" data-testid={`mko-return-partial-error-${step.seq}`}> Qty sebagian tidak valid untuk {badPart.map((r) => r.roll_no || r.id).join(", ")} — isi angka &gt; 0 dan lebih kecil dari panjang roll, atau kosongkan untuk seluruh roll.</b>}{splitCount > 0 && ` ${splitCount} roll dikembalikan sebagian: dipecah jadi roll baru, sisanya tetap di mitra (susut hanya untuk roll utuh).`}</p>
+          <p data-testid={`mko-return-summary-${step.seq}`}>Dipilih {ids.length}/{rolls.length} roll · {formatQty(qty)} {step.input_unit}. Roll yang tidak dipilih tetap tercatat di mitra.{badPart.length > 0 && <b className="block text-[#B4231F]" data-testid={`mko-return-partial-error-${step.seq}`}> Qty sebagian tidak valid untuk {badPart.map((r) => r.roll_no || r.id).join(", ")} — isi angka &gt; 0 dan lebih kecil dari panjang roll, atau kosongkan untuk seluruh roll.</b>}{splitCount > 0 && ` ${splitCount} roll diproses sebagian: dipecah jadi roll baru (retur → masuk gudang; susut → dicatat hilang), sisanya tetap di mitra.`}</p>
           {canLoss && <p className="text-[#6B6B73]" data-testid={`mko-loss-tolerance-${step.seq}`}>Toleransi susut wajar (kontrak mitra × proses): <b>{tol ?? "—"}%</b> dari bahan dikirim → dibebankan perusahaan. Kelebihannya butuh persetujuan lalu diklaim ke mitra.</p>}
           {canLoss && canTol && (
             <div className="flex flex-wrap items-center gap-1.5" data-testid={`mko-tol-editor-${step.seq}`}>
@@ -116,7 +115,7 @@ export default function MakloonReturnMaterial({ mkoId, step, canAct, canLoss, ca
               placeholder="Keterangan retur (mis. no. SJ retur mitra)" value={reason} onChange={(e) => setReason(e.target.value)} />
             {canAct && <button data-testid={`mko-return-submit-${step.seq}`} disabled={busy || reason.trim().length < 5 || !ids.length || badPart.length > 0} onClick={() => submit("return")}
               className="primary-button !py-1.5 text-[11.5px]">{busy ? "Menyimpan…" : "Simpan Retur"}</button>}
-            {canLoss && <button data-testid={`mko-loss-submit-${step.seq}`} disabled={busy || reason.trim().length < 5 || !ids.length} onClick={() => submit("loss")}
+            {canLoss && <button data-testid={`mko-loss-submit-${step.seq}`} disabled={busy || reason.trim().length < 5 || !ids.length || badPart.length > 0} onClick={() => submit("loss")}
               className="secondary-button !py-1.5 text-[11.5px] !text-[#A8221A]">Catat Susut / Hilang</button>}
             <button data-testid={`mko-return-cancel-${step.seq}`} onClick={() => setOpen(false)} className="secondary-button !py-1.5 text-[11.5px]">Batal</button>
           </div>

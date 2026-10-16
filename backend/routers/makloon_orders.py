@@ -303,6 +303,7 @@ class MaterialReturnIn(BaseModel):
 class MaterialLossIn(BaseModel):
     reason: str = Field(..., max_length=300)
     roll_ids: Optional[List[str]] = None
+    partial: Optional[List[PartialReturnIn]] = None   # L04 — susut sebagian panjang roll (roll dipecah di mitra)
 
 
 class LossDecisionIn(BaseModel):
@@ -345,7 +346,9 @@ async def material_loss_ep(mko_id: str, seq: int, payload: MaterialLossIn, reque
     actor = await require_permission(request, "makloon_order", "record_loss")
     ctx = await entity_ctx(request)
     await _assert_access(mko_id, ctx)
-    order = await mls.record_loss(mko_id, seq, roll_ids=payload.roll_ids, reason=payload.reason, actor=actor)
+    partial = [p.model_dump() for p in payload.partial] if payload.partial is not None else None
+    order = await mls.record_loss(mko_id, seq, roll_ids=payload.roll_ids, reason=payload.reason, actor=actor,
+                                  partial=partial)
     await audit(actor.get("name", ""), "material_loss_recorded", "makloon_orders", mko_id,
                 {"step_seq": seq, "roll_ids": payload.roll_ids, "reason": payload.reason})
     return order

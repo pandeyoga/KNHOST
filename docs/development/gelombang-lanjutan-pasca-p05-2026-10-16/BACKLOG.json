@@ -937,13 +937,15 @@
         "LN-050-T02",
         "LN-050-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L05/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -959,13 +961,15 @@
         "LN-051-T02",
         "LN-051-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L05/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -983,13 +987,15 @@
         "LN-052-T02",
         "LN-052-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L05/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -2110,10 +2116,10 @@
       "questions": [
         "Tinjau SOP urutan tag, pengukuran, pemakaian dan reprint; boleh pilih urutan operasional lain asalkan identitas dan saldo tetap benar."
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Disetujui owner 2026-10-16 (chat sesi E1): urutan receiving bruto → identitas/tag → potong MDQ 0,25 yd tercatat sebagai pemakaian → saldo bersih & reprint teks (EPC sama, qty terkini). Qty SSOT ERP, EPC identitas. Roll kg: potong wajib berat aktual, tanpa itu transaksi diblok. Tambahan: susut/hilang bahan di mitra boleh sebagian panjang roll (roll dipecah) seperti retur sebagian.",
+      "answer_ref": "evidence/L04/report.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-16",
       "affected_requirements": [
         "LN-042"
       ],
@@ -3028,8 +3034,10 @@
       "scenario": "Diberikan roll basis kg dan potong 0,25 yard, ketika aturan konversi tersedia, maka kg berkurang sesuai aturan/berat aktual yang tercatat; bila belum ada, transaksi diblok dengan alasan jelas dan bukan mengurangi 0,25 kg otomatis.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
+      "actual_result": "Lokal: roll kg + potong MDQ tanpa berat aktual → 400/409 \"kg\" dan saldo tidak berubah (tidak mengurangi 0,25 kg otomatis); dengan berat aktual → kg berkurang sesuai berat. tests/test_l04_mdq_cut.py::test_kg_requires_actual_data PASS. DES-01 resolved.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,
@@ -3126,8 +3134,10 @@
       "scenario": "Diberikan roll retur berbeda dari roll pengganti, ketika inspect pengganti selesai, maka inspection_id, source_type dan daftar roll menunjuk pengganti serta status QC retur tidak berubah keliru.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L05/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16: SPK kind=replacement kini WAJIB roll pengganti (roll_ids/no. roll); roll retur ditolak sebagai pengganti; baris SPK = roll pengganti; sales_returns.inspection_id tidak disentuh (hanya return_customer). Uji end-to-end menunggu alur tukar barang L09.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,
@@ -3141,8 +3151,10 @@
       "scenario": "Diberikan random scan roll, ketika form dibuka, maka identitas dan lokasi berasal dari hasil scan sah; roll di luar scope user ditolak.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L05/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16: POST /inspections/random-check {scan_code} → roll/gudang dari hasil scan (no. roll/EPC); roll badan usaha lain ditolak \"di luar cakupan\"; kode tak dikenal ditolak. tests/test_l05_interval_form.py::test_ln050_t03 PASS.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,
@@ -3156,8 +3168,10 @@
       "scenario": "Diberikan satu roll basis kg, ketika diinspect 124 yard, maka stok tetap dalam kg dan posisi cacat dalam yard; tidak tampil 124 kg karena salah label.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L05/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16: roll kg diinspeksi 124 yard → unit & saldo roll tetap kg; form menyimpan stock_unit kg, inspect_length_yard 124, posisi cacat yard. test_t01 PASS.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,
@@ -3171,8 +3185,10 @@
       "scenario": "Diberikan roll 165 yard dengan beberapa cacat pada interval yang sama, ketika disimpan/dibuka/print, maka seluruh kejadian dan interval setelah 150 tetap ada, bukan tertimpa/terpotong.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L05/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16: roll 165 yd, 2 cacat di interval 45–60 + 3 kejadian di 150–165 → 3 baris tersimpan apa adanya (tidak digabung), 11 interval, from/to yard benar; interval di luar panjang ditolak 400. test_t02 PASS.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,
@@ -3231,8 +3247,10 @@
       "scenario": "Diberikan KLX-02 belum diputuskan, ketika testing dilakukan, maka hasil formula kandidat diberi status belum tervalidasi dan tidak dianggap bukti kelulusan final.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L05/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16: setiap hasil menyimpan grade_rule {version 4point_sum_v1, status candidate_unvalidated, pending_decision KLX-02, thresholds, grades} + raw_defects_input; UI menandai rumus kandidat. Bukan bukti final sampai KLX-02.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,

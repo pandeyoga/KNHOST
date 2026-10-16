@@ -75,3 +75,30 @@ def test_campaign_bill_notifies_finance_and_budget_summary():
         DB.vendor_bills.delete_many({"id": {"$in": bills}})
         DB.notifications.delete_many({"ref": {"$in": [f"mkt_bill:{b}" for b in bills]}})
         DB.mkt_campaigns.delete_one({"id": c["id"]})
+
+
+def test_partial_loss_splits_child_at_partner(adm):  # noqa: F811
+    mko = _create(adm, 60, "LN043-PLOSS")
+    assert requests.post(f"{B}/makloon-orders/{mko['id']}/issue", json={"step_seq": 1, "doc_uom": "yard", "doc_qty": 60},
+                         headers=adm, timeout=60).status_code == 200
+    assert requests.post(f"{B}/makloon-orders/{mko['id']}/cancel", json={"reason": "TEST_P05ACC batal susut"},
+                         headers=adm, timeout=60).status_code == 200
+    rolls = requests.get(f"{B}/makloon-orders/{mko['id']}/steps/1/partner-rolls", headers=adm, timeout=30).json()["rolls"]
+    big = max(rolls, key=lambda r: r["length_remaining"])
+    url = f"{B}/makloon-orders/{mko['id']}/steps/1/material-loss"
+    assert requests.post(url, json={"reason": "TEST_P05ACC lebih", "partial": [{"roll_id": big["id"], "qty": big["length_remaining"] + 1}]},
+                         headers=adm, timeout=60).status_code == 400
+    assert requests.post(url, json={"reason": "TEST_P05ACC dobel", "roll_ids": [big["id"]], "partial": [{"roll_id": big["id"], "qty": 1}]},
+                         headers=adm, timeout=60).status_code == 400
+    n0 = DB.inventory_rolls.count_documents({"split_from_roll_id": big["id"]})
+    r = requests.post(url, json={"reason": "TEST_P05ACC hilang sebagian", "partial": [{"roll_id": big["id"], "qty": 0.4}]},
+                      headers=adm, timeout=60)
+    assert r.status_code == 200, r.text[:300]
+    loss = r.json()["steps"][0]["material_losses"][-1]
+    assert loss["qty"] == pytest.approx(0.4) and DB.inventory_rolls.count_documents({"split_from_roll_id": big["id"]}) == n0 + 1
+    parent = DB.inventory_rolls.find_one({"id": big["id"]}, {"_id": 0})
+    assert parent["status"] == "subcon" and parent["length_remaining"] == pytest.approx(big["length_remaining"] - 0.4, abs=0.01)
+    led = requests.get(f"{B}/makloon-orders/{mko['id']}/material-ledger", headers=adm, timeout=30).json()
+    st = led["steps"][0]
+    assert st["reconciled"] is True and st["lost"] + st["loss_pending_approval"] >= 0.4 - 0.01
+    assert st["at_partner"] + st["lost"] == pytest.approx(60, abs=0.05)

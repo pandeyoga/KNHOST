@@ -144,7 +144,7 @@ async def move_rolls_by_ref(ref_id: str, to_status: str,
 
 
 async def split_off_from_ref(ref_id: str, roll_id: str, take: float, to_status: str = "available",
-                             movement_type: str = "bucket_move") -> Optional[Dict[str, Any]]:
+                             movement_type: str = "bucket_move", keep_in_bucket: bool = False) -> Optional[Dict[str, Any]]:
     """L04 — keluarkan SEBAGIAN panjang satu roll dari bucket `ref_id` sebagai roll anak beridentitas sendiri.
     Induk tetap di bucket (sisa). Atomik: guard panjang induk; gagal guard → None."""
     from pymongo import ReturnDocument
@@ -161,8 +161,10 @@ async def split_off_from_ref(ref_id: str, roll_id: str, take: float, to_status: 
     if not parent:
         return None
     child = {k: v for k, v in before.items() if k != "_id"}
-    child.update({"id": new_id("roll"), "length_initial": take, "length_remaining": take, "status": to_status,
-                  "bucket_ref": None, "split_from_roll_id": roll_id, "is_remnant": False,
+    child.update({"id": new_id("roll"), "length_initial": take, "length_remaining": take,
+                  "status": before.get("status") if keep_in_bucket else to_status,
+                  "bucket_ref": before.get("bucket_ref") if keep_in_bucket else None,
+                  "split_from_roll_id": roll_id, "is_remnant": False,
                   "created_at": now_iso(), "updated_at": now_iso()})
     child = await insert_child_roll(child, before)
     await db.inventory_movements.insert_one({

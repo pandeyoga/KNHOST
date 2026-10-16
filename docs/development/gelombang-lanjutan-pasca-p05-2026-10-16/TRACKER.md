@@ -4,7 +4,7 @@ Dihasilkan dari BACKLOG.json. Ubah status pada BACKLOG, lalu render ulang; janga
 
 Baseline: `64d81f29577dae4daa86ddc64689dec7243804f2`. Kandidat final: `belum ditetapkan`.
 
-Requirement tervalidasi: **0/56**. Acceptance PASS: **0/230**. Keputusan pending: **24/24**.
+Requirement tervalidasi: **0/56**. Acceptance PASS: **0/230**. Keputusan pending: **23/24**.
 
 Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan seluruh sumber tidak berarti code coverage 100 persen. Status awal not_started adalah sengaja, karena paket belum mengimplementasikan perubahan.
 
@@ -14,7 +14,7 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | L01 Custom role, master data, grade, dan konfigurasi visibilitas | in_progress | 0/6 | 0/23 | DATA-01, DES-04, KLX-01 | [Buka](phases/L01.md) |
 | L02 Penjualan, alokasi roll, harga khusus dan konsistensi Finance | not_started | 0/5 | 0/15 | KLX-03 | [Buka](phases/L02.md) |
 | L03 Special Order, Designer, uji kain dan rute supplier/makloon | not_started | 0/5 | 0/27 | — | [Buka](phases/L03.md) |
-| L04 Receiving, RFID identity, MD Quality, UOM dan material makloon | in_progress | 0/4 | 0/10 | DES-01, KLX-01 | [Buka](phases/L04.md) |
+| L04 Receiving, RFID identity, MD Quality, UOM dan material makloon | in_progress | 0/4 | 0/10 | KLX-01 | [Buka](phases/L04.md) |
 | L05 Meja QC dan form inspect tiga sumber | not_started | 0/3 | 0/9 | KLX-02 | [Buka](phases/L05.md) |
 | L06 Sampel, Admin Cutting dan penjualan ecer | not_started | 0/3 | 0/9 | — | [Buka](phases/L06.md) |
 | L07 Picking, transit, multi-SO dispatch dan perjalanan antar lokasi | not_started | 0/3 | 0/7 | DES-02 | [Buka](phases/L07.md) |
@@ -50,9 +50,9 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-041 | L04 | MD Quality memilih roll dan mencatat dua indikator | in_progress | evidence/L04/report.md |
 | LN-042 | L04 | Pemotongan 0,25 yard, identitas tag dan konversi kg | in_progress | evidence/L04/report.md |
 | LN-043 | L04 | Komitmen greige, issue, hasil fisik dan sisa bahan makloon | in_progress | evidence/L04/report.md |
-| LN-050 | L05 | Permintaan QC dan sumber antrean | not_started | belum ada |
-| LN-051 | L05 | Form inspect sesuai kertas tanpa ambigu satuan | not_started | belum ada |
-| LN-052 | L05 | Kamus cacat, perhitungan skor dan grade tervalidasi | not_started | belum ada |
+| LN-050 | L05 | Permintaan QC dan sumber antrean | in_progress | evidence/L05/report.md |
+| LN-051 | L05 | Form inspect sesuai kertas tanpa ambigu satuan | in_progress | evidence/L05/report.md |
+| LN-052 | L05 | Kamus cacat, perhitungan skor dan grade tervalidasi | in_progress | evidence/L05/report.md |
 | LN-060 | L06 | Tiga jenis sampel dan catalogue terurai | not_started | belum ada |
 | LN-061 | L06 | Cutting lintas lokasi/entitas dan Admin Cutting | not_started | belum ada |
 | LN-062 | L06 | Ecer berbayar, sisa roll dan mutasi potong | not_started | belum ada |

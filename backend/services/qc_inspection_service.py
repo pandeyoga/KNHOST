@@ -50,6 +50,43 @@ def compute_points(defects: List[Dict[str, Any]]) -> float:
     return round(total, 2)
 
 
+# ─── L05 LN-051/052 — form inspect per interval 15 yard (tanpa batas 150) + versi aturan ──────
+INTERVAL_YARD = 15.0
+MIN_INTERVALS = 10           # form kertas: 0–150 yard; roll lebih panjang → interval berlanjut
+RULE_VERSION = "4point_sum_v1"
+# KLX-02 (kode cacat, rumus & ambang grade client) BELUM diputuskan → hasil = kandidat, bukan bukti final.
+RULE_STATUS = "candidate_unvalidated"
+
+
+class IntervalError(ValueError):
+    pass
+
+
+def interval_count(inspect_length_yard: Optional[float]) -> int:
+    import math
+    n = math.ceil(float(inspect_length_yard or 0) / INTERVAL_YARD - 1e-9)
+    return max(MIN_INTERVALS, n)
+
+
+def normalize_interval_defects(defects: List[Dict[str, Any]], inspect_length_yard: Optional[float]) -> List[Dict[str, Any]]:
+    """Setiap kejadian disimpan apa adanya (tidak digabung/ditimpa). `interval` = indeks 0-based (0 = 0–15 yd)."""
+    n = interval_count(inspect_length_yard)
+    out = []
+    for d in defects or []:
+        pv, cnt = int(d.get("point_value", 0) or 0), int(d.get("count", 0) or 0)
+        if pv not in VALID_POINTS or cnt <= 0:
+            continue
+        row: Dict[str, Any] = {"point_value": pv, "count": cnt, "note": d.get("note", ""),
+                               "code": str(d.get("code") or "").strip().upper()[:20]}
+        if d.get("interval") not in (None, ""):
+            iv = int(d["interval"])
+            if iv < 0 or iv >= n:
+                raise IntervalError(f"Interval {iv + 1} di luar panjang inspect ({n} interval × 15 yard).")
+            row.update({"interval": iv, "from_yard": iv * INTERVAL_YARD, "to_yard": (iv + 1) * INTERVAL_YARD})
+        out.append(row)
+    return out
+
+
 def grade_from_points(points: float, th: Dict[str, float]) -> str:
     """Poin defect → grade AKTIF dari master (L01 LN-012). Batas per grade = `max_points` di master,
     atau ambang Settings lama (`a_max`, `a1_max`, `a2_max`, `b_max`). Grade aktif terburuk = sisa."""
@@ -132,6 +169,8 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
                        color_action: str = "tahan", handfeel_action: str = "peringatkan",
                        inspection_id: str = "", inspection_number: str = "",
                        quality_from_roll: bool = False,
+                       inspect_length_yard: Optional[float] = None,
+                       header: Optional[Dict[str, Any]] = None,
                        ) -> Dict[str, Any]:
     """Catat inspeksi 4-point pada 1 roll → hitung poin & grade → update roll.
 
@@ -183,11 +222,7 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
     points = compute_points(defects)
     grade = grade_from_points(points, th)
 
-    norm_defects = [{
-        "point_value": int(d.get("point_value", 0) or 0),
-        "count": int(d.get("count", 0) or 0),
-        "note": d.get("note", ""),
-    } for d in (defects or []) if int(d.get("point_value", 0) or 0) in VALID_POINTS and int(d.get("count", 0) or 0) > 0]
+    norm_defects = normalize_interval_defects(defects, inspect_length_yard)
 
     # ─── FASE I — banding terhadap sample yang di-ACC + kebijakan tahan/peringatkan ──
     prev = roll.get("inspection") or {}
@@ -205,9 +240,19 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
         hold, qc_warnings = quality_hold(color_res, hand_res, color_action, handfeel_action,
                                          baseline_sample_number, actor)
 
+    import domain_registry as _dr
+    form = {   # LN-051 — satuan stok TIDAK diubah; posisi cacat selalu yard
+        "inspect_length_yard": (round(float(inspect_length_yard), 2) if inspect_length_yard not in (None, "") else None),
+        "interval_yard": INTERVAL_YARD, "intervals": interval_count(inspect_length_yard),
+        "stock_qty": float(roll.get("length_remaining") or 0), "stock_unit": roll.get("unit", ""),
+        "header": {k: v for k, v in (header or {}).items() if v not in (None, "")},
+    }
+    rule = {"version": RULE_VERSION, "status": RULE_STATUS, "pending_decision": "KLX-02",
+            "thresholds": th, "grades": [g["value"] for g in _dr.GRADES if g.get("active", True) is not False]}
     inspection = {
         "points": points, "grade": grade,
-        "defects": norm_defects,
+        "defects": norm_defects, "form": form, "rule": rule,
+        "raw_defects_input": [dict(d) for d in (defects or [])],
         "gsm_actual": (float(gsm_actual) if gsm_actual not in (None, "") else None),
         "width_actual": (float(width_actual) if width_actual not in (None, "") else None),
         "thresholds": th, "note": note or "",

@@ -146,8 +146,33 @@ async def _execute(order: Dict[str, Any], step: Dict[str, Any], loss: Dict[str, 
                 + (f"potong tagihan jasa {bill_id} {claim_value:,.0f}" if settle == "potong_bon" else f"klaim mitra {claim_value:,.0f}")})
 
 
+async def _split_partial_losses(step: Dict[str, Any], partial: List[Dict[str, Any]], pending: set) -> List[str]:
+    """L04 (keputusan owner 2026-10-16) — susut SEBAGIAN panjang roll: potong jadi roll anak yang tetap di mitra
+    (bucket sama), lalu roll anak itulah yang dicatat susut. Validasi semua dulu sebelum memecah."""
+    plan = []
+    for p in partial:
+        rid, q = str(p.get("roll_id") or ""), round(float(p.get("qty") or 0), 2)
+        r = await db.inventory_rolls.find_one({"id": rid, "bucket_ref.id": step["issue_ref"], "status": "subcon"},
+                                              {"_id": 0, "length_remaining": 1})
+        if not r or rid in pending:
+            raise HTTPException(status_code=409, detail="Roll yang dipilih tidak (lagi) berada di mitra atau sedang menunggu persetujuan.")
+        if q <= 0 or q > float(r["length_remaining"]) + EPS:
+            raise HTTPException(status_code=400, detail=f"Qty susut sebagian harus > 0 dan ≤ sisa roll {r['length_remaining']:g}.")
+        plan.append((rid, q, q >= float(r["length_remaining"]) - EPS))
+    out = []
+    for rid, q, whole in plan:
+        if whole:
+            out.append(rid)
+            continue
+        child = await sb.split_off_from_ref(step["issue_ref"], rid, q, movement_type="subcon_split", keep_in_bucket=True)
+        if not child:
+            raise HTTPException(status_code=409, detail="Roll berubah bersamaan — muat ulang lalu coba lagi.")
+        out.append(child["id"])
+    return out
+
+
 async def record_loss(mko_id: str, seq: int, *, roll_ids: Optional[List[str]], reason: str,
-                      actor: Dict[str, Any]) -> Dict[str, Any]:
+                      actor: Dict[str, Any], partial: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     if len((reason or "").strip()) < 5:
         raise HTTPException(status_code=400, detail="Keterangan susut/hilang wajib (min. 5 karakter).")
     name = actor.get("name", "")
@@ -158,10 +183,16 @@ async def record_loss(mko_id: str, seq: int, *, roll_ids: Optional[List[str]], r
             raise HTTPException(status_code=409, detail=f"Langkah {seq} tidak punya bahan yang masih di mitra.")
         pending = {r for x in step.get("material_losses") or [] if x["status"] == "pending_approval" for r in x["roll_ids"]}
         q: Dict[str, Any] = {"bucket_ref.id": step["issue_ref"], "status": "subcon"}
-        if roll_ids is not None:
-            if not roll_ids:
+        ids = list(roll_ids) if roll_ids is not None else None
+        if partial is not None:
+            pids = [str(p.get("roll_id") or "") for p in partial]
+            if len(set(pids + (ids or []))) != len(pids) + len(ids or []):
+                raise HTTPException(status_code=400, detail="Satu roll hanya boleh muncul sekali (pilih utuh ATAU sebagian).")
+            ids = (ids or []) + await _split_partial_losses(step, partial, pending)
+        if ids is not None:
+            if not ids:
                 raise HTTPException(status_code=400, detail="Pilih minimal satu roll yang susut/hilang.")
-            q["id"] = {"$in": list(roll_ids)}
+            q["id"] = {"$in": ids}
         rolls = [r for r in await db.inventory_rolls.find(q, {"_id": 0, "id": 1, "length_remaining": 1}).to_list(5000)
                  if r["id"] not in pending]
         if not rolls:

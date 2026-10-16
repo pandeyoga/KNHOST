@@ -400,6 +400,8 @@ class RollDefectInput(BaseModel):
     point_value: int                  # 1..4 (severity 4-point)
     count: int = 0                    # jumlah defect pada nilai poin ini
     note: str = ""
+    interval: Optional[int] = None    # L05 LN-051 — indeks interval 15 yard (0 = 0–15); None = tanpa posisi
+    code: str = ""                    # L05 — kode cacat (kamus final menunggu KLX-02)
 
 
 class RollInspectionInput(BaseModel):

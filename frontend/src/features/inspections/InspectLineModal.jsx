@@ -18,6 +18,7 @@ import KNSelect from "../../components/KNSelect";
 import QtyDual from "../../components/QtyDual";
 import MdqCutBox from "./MdqCutBox";
 import { apiText, inspectLine, INS_COLOR_LABEL, INS_HANDFEEL_LABEL } from "./inspectionsApi";
+import IntervalDefectGrid from "./IntervalDefectGrid";
 
 // Nilai poin 4-point yang sah (D-01): 1 · 2 · 3 · 4 — makin panjang cacatnya, makin besar.
 const POINT_ROWS = [
@@ -35,6 +36,8 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
   const showQuality = part !== "qc";
   const showQc = part !== "md_quality";
   const [counts, setCounts] = useState(KOSONG);
+  const [ivRows, setIvRows] = useState([]);
+  const [inspectLen, setInspectLen] = useState("");
   const [form, setForm] = useState({
     gsm_actual: "", width_actual: "", color_result: "", handfeel_result: "",
     handfeel_score: "", delta_e: "", remark: "",
@@ -47,6 +50,8 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
   useEffect(() => {
     if (!open || !line) return;
     setCounts(KOSONG);
+    setIvRows([]);
+    setInspectLen("");
     setForm({
       gsm_actual: line.gsm_actual ?? "",
       width_actual: line.width_actual ?? "",
@@ -62,8 +67,9 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
 
   const previewPoints = useMemo(
-    () => POINT_ROWS.reduce((sum, r) => sum + (Number(counts[r.value]) || 0) * r.value, 0),
-    [counts]);
+    () => POINT_ROWS.reduce((sum, r) => sum + (Number(counts[r.value]) || 0) * r.value, 0)
+      + ivRows.reduce((s, r) => s + (Number(r.count) || 0) * Number(r.point_value || 0), 0),
+    [counts, ivRows]);
 
   const colorOptions = (meta?.color_results || []).length
     ? meta.color_results
@@ -85,10 +91,12 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
     try {
       const defects = POINT_ROWS
         .filter((r) => Number(counts[r.value]) > 0)
-        .map((r) => ({ point_value: r.value, count: Number(counts[r.value]) }));
+        .map((r) => ({ point_value: r.value, count: Number(counts[r.value]) }))
+        .concat(ivRows.filter((r) => Number(r.count) > 0).map((r) => ({ ...r, count: Number(r.count), interval: r.interval === "" ? null : r.interval })));
       const fresh = await inspectLine(doc.id, line.id, {
         part,
         defects,
+        inspect_length_yard: inspectLen === "" ? null : Number(inspectLen),
         gsm_actual: form.gsm_actual === "" ? null : Number(form.gsm_actual),
         width_actual: form.width_actual === "" ? null : Number(form.width_actual),
         color_result: form.color_result,
@@ -136,7 +144,9 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
         {/* Cacat 4-point — hanya untuk baris yang menunjuk ROLL fisik */}
         {line.roll_id && showQc ? (
           <div>
-            <span className="field-label">Cacat 4-point (jumlah per nilai poin)</span>
+            <IntervalDefectGrid length={inspectLen} setLength={setInspectLen} rows={ivRows} setRows={setIvRows}
+              stockUnit={line.unit} stockQty={line.quantity} />
+            <span className="field-label mt-2 block">Ringkasan cepat tanpa posisi (jumlah per nilai poin)</span>
             <div className="grid gap-2 sm:grid-cols-4">
               {POINT_ROWS.map((r) => (
                 <label key={r.value} className="block">
@@ -151,7 +161,8 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
             </div>
             <p data-testid="ins-points-preview" className="mt-1 text-[11px] text-[#6B6B73]">
               Perkiraan poin: <strong className="tabular-nums">{previewPoints}</strong>{" "}
-              — grade akhir dihitung server dari ambang yang berlaku, bukan di layar ini.
+              — grade akhir dihitung server dari ambang yang berlaku, bukan di layar ini. Rumus & ambang
+              masih <b>kandidat (KLX-02 belum diputuskan)</b>; hasil disimpan beserta versi aturannya.
             </p>
           </div>
         ) : !showQc ? null : (

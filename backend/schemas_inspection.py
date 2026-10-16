@@ -26,6 +26,7 @@ class InspectionCreate(BaseModel):
     bagian: str = ""
     baseline_sample_id: str = ""
     remark: str = ""
+    roll_ids: List[str] = []    # L05 LN-050-T02 — roll PENGGANTI (kind=replacement)
 
 
 class InspectionAssign(BaseModel):
@@ -43,6 +44,7 @@ class InspectionLineInspect(BaseModel):
     defects: List[RollDefectInput] = []
     gsm_actual: Optional[float] = None
     width_actual: Optional[float] = None
+    inspect_length_yard: Optional[float] = None   # L05 LN-051 — panjang diinspeksi (yard), tanpa batas 150
     color_result: str = ""          # sesuai | beda_shade | tolak
     handfeel_result: str = ""       # sesuai | beda | tolak
     handfeel_score: Optional[float] = None    # 1..5
@@ -58,10 +60,11 @@ class InspectionLineInspect(BaseModel):
 
 class RandomCheckCreate(BaseModel):
     """P05 IMP-16 — random check QC atas roll yang sudah di stok (roll ditahan selama dicek)."""
-    warehouse_id: str
+    warehouse_id: str = ""
     product_id: str = ""
     count: int = Field(3, ge=1, le=30)
     remark: str = ""
+    scan_code: str = ""     # L05 LN-050-T03 — mulai dari scan roll fisik (QR/roll no/EPC)
 
 
 class InspectionFinish(BaseModel):

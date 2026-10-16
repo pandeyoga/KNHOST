@@ -31,6 +31,8 @@ export default function InspectionFormModal({ open, onClose, onCreated, meta, or
   const [err, setErr] = useState("");
 
   const perluTugas = kind === "po_receipt";
+  const [replRolls, setReplRolls] = useState("");
+  const replList = replRolls.split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean);
 
   useEffect(() => {
     if (!open || perluTugas) { setRefs([]); return; }
@@ -77,8 +79,10 @@ export default function InspectionFormModal({ open, onClose, onCreated, meta, or
         task_id: perluTugas ? taskId : "",
         assigned_to: assignee,
         remark,
+        ...(kind === "replacement" ? { roll_ids: replList } : {}),
       });
       onCreated?.(doc);
+      setReplRolls("");
       setRefId(""); setTaskId(""); setAssignee(""); setRemark("");
     } catch (e) {
       setErr(apiText(e, "Gagal membuat SPK inspeksi."));
@@ -92,7 +96,7 @@ export default function InspectionFormModal({ open, onClose, onCreated, meta, or
       subtitle="Pilih apa yang diperiksa, lalu tugaskan petugas Bagian Inspect"
       icon={ClipboardCheck} size="md" testId="ins-create-modal"
       onSubmit={simpan} submitLabel="Terbitkan SPK" busy={busy} error={err}
-      submitDisabled={perluTugas ? !taskId : (!refId || spkBerjalan)}
+      submitDisabled={perluTugas ? !taskId : (!refId || spkBerjalan || (kind === "replacement" && !replList.length))}
       submitTestId="ins-create-submit"
     >
       {/* `min-w-0` di kedua tingkat: anak grid bawaannya `min-width:auto`, jadi satu
@@ -104,6 +108,16 @@ export default function InspectionFormModal({ open, onClose, onCreated, meta, or
             options={kindOptions} className="field" placeholder="Pilih jenis" />
         </label>
 
+        {kind === "replacement" && (
+          <label className="block min-w-0">
+            <span className="field-label">Roll PENGGANTI yang diperiksa (scan / ketik no. roll)</span>
+            <textarea data-testid="ins-replacement-rolls" className="field" rows={2} value={replRolls}
+              onChange={(e) => setReplRolls(e.target.value)} placeholder="Pisahkan dengan spasi / koma / Enter" />
+            <span className="mt-1 block text-[10.5px] text-[#6B6B73]" data-testid="ins-replacement-note">
+              {replList.length} roll · QC pengganti tidak mengubah status QC barang returnya.
+            </span>
+          </label>
+        )}
         {perluTugas ? (
           <label className="block">
             <span className="field-label">Tugas penerimaan yang belum punya SPK</span>
