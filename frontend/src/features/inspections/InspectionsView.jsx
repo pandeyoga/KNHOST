@@ -142,7 +142,7 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
 
       {/* Kepala + aksi */}
       <div className="section-card">
-        <div className="section-head">
+        <div className="section-head max-sm:!flex-col max-sm:!items-start max-sm:gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <ClipboardCheck size={15} className="text-[#1F6FEB]" />
             <div className="min-w-0">

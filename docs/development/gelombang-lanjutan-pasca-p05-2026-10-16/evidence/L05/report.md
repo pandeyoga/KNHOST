@@ -42,8 +42,20 @@ Belum ber-SHA. Acceptance tetap `not_run`; hasil lokal dicatat di `actual_result
   - Butuh field SO, jenis SPK `sales_order` dari roll alokasi terbaru, dan pagar di dispatch.
   - Ini dikerjakan berikutnya.
 
+## Mobile
+- Meja QC (`inspections`) kini termasuk workspace responsif, sehingga QC/MD Quality langsung tiba di sana dari HP.
+- Admin/manager mendapat tab "QC" di MobileOpsApp (`mobile-open-inspections`).
+- Header disusun bertumpuk di layar ≤640px.
+
+## Perbaikan dari review (iteration_194–195)
+- Membuka ulang baris yang sudah diinspeksi kini memuat hasil tersimpan (sebelumnya form kosong bisa menimpa data).
+- Cacat tidak sah (poin di luar 1–4 atau jumlah negatif) ditolak 400.
+- Interval direset bila panjang roll diperpendek.
+- Grade bertanda "kandidat" di detail SPK.
+- Roll pengganti yang terjual/terpakai ditolak.
+
 ## Bukti
-- `backend/tests/test_l05_interval_form.py` (4 tes).
+- `backend/tests/test_l05_interval_form.py` (4 tes) dan `test_l05_replacement_extra_t1.py` (14 tes); iteration_194–195.
 - Regresi: `test_l04_ln041_mdq_select.py`.
 
 ## Blocker

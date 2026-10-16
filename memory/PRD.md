@@ -1195,3 +1195,8 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - GET /api/marketing/campaigns/budget-summary + CampaignBudgetChart (recharts) + peringatan ≥80% / lewat anggaran.
 - Foto SJ dari HP: wizard GRN otomatis memanggil /read sesudah unggah (bila OCR aktif); GrnOcrDraft menampilkan draf roll (roll ragu kuning); hitung buta dihormati.
 - Testing iteration_192/193 lulus setelah perbaikan.
+
+## Sesi 2026-10-16 bagian 4 (E1) — tutup L04, mulai L05
+- DES-01 resolved (owner): urutan receiving bruto → tag → potong MDQ → saldo bersih/reprint. Susut sebagian roll di mitra (roll anak tetap subcon lalu dicatat susut).
+- L05: form inspect per interval 15 yd tanpa batas 150 (IntervalDefectGrid), header dari sumber, versi aturan kandidat (KLX-02 pending), random check dari scan roll (scope entitas), SPK pengganti wajib roll pengganti, Meja QC responsif di HP.
+- Belum: LN-050-T01 (Request QC di checkout SO + pagar dispatch), LN-052 final (butuh KLX-02).

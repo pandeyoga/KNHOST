@@ -94,3 +94,26 @@ def test_defect_validation(ins, bad):
     r = requests.post(f"{BASE}/inspections/{ins}/lines/ln1/inspect",
                       json={"part": "qc", "inspect_length_yard": 100, "defects": [bad]}, headers=_h(), timeout=30)
     assert r.status_code in (400, 422), f"{bad} -> {r.status_code} {r.text[:200]}"
+
+
+# iter195 — replacement: sold/consumed roll rejected; id + roll_no of same roll accepted
+@pytest.mark.parametrize("status", ["sold", "consumed"])
+def test_replacement_rejects_sold_consumed(ret, status):
+    rid, rolls = ret
+    DB.inventory_rolls.update_one({"id": rolls[1]["id"]}, {"$set": {"status": status}})
+    try:
+        r = requests.post(f"{BASE}/inspections", json={"kind": "replacement", "ref_doc_id": rid, "roll_ids": [rolls[1]["id"]]},
+                          headers=_h(), timeout=30)
+        assert r.status_code == 400, r.text[:300]
+        assert "terjual" in r.text.lower() or "terpakai" in r.text.lower()
+    finally:
+        DB.inventory_rolls.update_one({"id": rolls[1]["id"]}, {"$set": {"status": rolls[1]["status"]}})
+
+
+def test_replacement_id_and_rollno_same_roll(ret):
+    rid, rolls = ret
+    r = requests.post(f"{BASE}/inspections", json={"kind": "replacement", "ref_doc_id": rid,
+                                                   "roll_ids": [rolls[1]["id"], rolls[1]["roll_no"]]}, headers=_h(), timeout=30)
+    assert r.status_code in (200, 201), r.text[:300]
+    lines = r.json().get("lines") or r.json().get("inspection", {}).get("lines") or []
+    assert len([ln for ln in lines if ln.get("roll_id") == rolls[1]["id"]]) == 1
