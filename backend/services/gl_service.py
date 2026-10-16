@@ -1812,9 +1812,13 @@ async def post_vendor_bill(bill: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     # F-10 — basis biaya/GRIR = harga beli neto (grand − PPN), BUKAN DPP Nilai Lain (11/12)
     net = round(grand - ppn, 2)
     num = bill.get("bill_number", bid)
+    # COMM-04 lanjutan — tagihan vendor kampanye (tanpa PO): Dr Beban Pemasaran, bukan GR-IR.
+    is_campaign = bill.get("bill_type") == "campaign_expense"
+    debit_acc = (bill.get("expense_account_code") or ACC_BEBAN_PEMASARAN) if is_campaign else ACC_GRIR
     lines: List[Dict[str, Any]] = [
-        {"account_code": ACC_GRIR, "debit": net, "credit": 0.0,
-         "description": f"Tagihan supplier {num}"}]
+        {"account_code": debit_acc, "debit": net, "credit": 0.0,
+         "description": (f"Biaya kampanye {bill.get('campaign_name', '')} {num}" if is_campaign
+                         else f"Tagihan supplier {num}")}]
     if ppn > EPS:
         lines.append({"account_code": ACC_PPN_IN, "debit": ppn, "credit": 0.0,
                       "description": f"PPN Masukan {num}"})

@@ -22,6 +22,7 @@ import MakloonClaimPanel from "./makloon/MakloonClaimPanel";
 import MakloonPartialReceipts from "./makloon/MakloonPartialReceipts";
 import MakloonReturnMaterial, { MakloonReturnHistory } from "./makloon/MakloonReturnMaterial";
 import MakloonLossList from "./makloon/MakloonLossList";
+import MakloonMaterialLedger from "./makloon/MakloonMaterialLedger";
 import { can } from "../../config/roles";
 import { recordService } from "./makloon/makloonApi";
 import { MKO_STATUS } from "./mkoStatus";
@@ -156,6 +157,7 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
           </ul>
         </div>
       )}
+      <MakloonMaterialLedger mkoId={data.id} version={data.updated_at} />
       {/* T7 — hasil kurang dari estimasi: SPK "Sebagian" sampai klaim selisih diputus. */}
       {data.completion_hold?.message && (
         <div className="rounded-lg border border-[#F3C6BF] bg-[#FDECEA] px-3 py-2"

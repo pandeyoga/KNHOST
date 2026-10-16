@@ -178,6 +178,63 @@ async def void_campaign_cost(cid: str, cost_id: str, payload: CostVoidBody, requ
     return doc
 
 
+class CampaignBillBody(BaseModel):
+    supplier_id: str = ""
+    supplier_invoice_no: str = ""
+    bill_date: str = ""
+    due_date: str = ""
+    description: str = ""
+    amount: float = 0
+    ppn_amount: float = 0
+    expense_account_code: str = ""
+
+
+async def _campaign_bill_or_404(cid: str, bill_id: str) -> Dict[str, Any]:
+    bill = await db.vendor_bills.find_one({"id": bill_id, "campaign_id": cid, "bill_type": mcost.BILL_TYPE}, {"_id": 0})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Tagihan vendor kampanye tidak ditemukan")
+    return bill
+
+
+@router.get("/marketing/vendor-options")
+async def campaign_vendor_options(request: Request) -> List[Dict[str, Any]]:
+    """Daftar vendor (supplier) ringkas untuk form tagihan kampanye — id & nama saja."""
+    await require_permission(request, "marketing", "update")
+    ctx = await entity_ctx(request)
+    scope = resolve_list_scope("suppliers", {}, ctx)
+    q = {"$and": [{"$or": [scope, {"entity_id": "all"}]}, {"group_entity_id": {"$in": [None, ""]}},
+                  {"status": {"$nin": ["inactive", "blocked"]}}]}
+    return await db.suppliers.find(q, {"_id": 0, "id": 1, "name": 1}).sort("name", 1).to_list(1000)
+
+
+@router.post("/marketing/campaigns/{cid}/vendor-bills")
+async def create_campaign_vendor_bill(cid: str, payload: CampaignBillBody, request: Request) -> Dict[str, Any]:
+    """Tagihan vendor kampanye tanpa PO → menunggu persetujuan Finance/Manager (belum berjurnal)."""
+    user = await require_permission(request, "marketing", "update")
+    bill = await mcost.create_campaign_bill(await _campaign_or_404(cid, request), payload.model_dump(), user)
+    await audit(user.get("name", ""), "mkt_campaign_bill_created", "vendor_bill", bill["id"],
+                {"campaign_id": cid, "bill_number": bill["bill_number"], "grand_total": bill["grand_total"]})
+    return bill
+
+
+@router.post("/marketing/campaigns/{cid}/vendor-bills/{bill_id}/approve")
+async def approve_campaign_vendor_bill(cid: str, bill_id: str, request: Request) -> Dict[str, Any]:
+    """Setujui → posted: Dr Beban Pemasaran (+PPN Masukan) / Cr Hutang Usaha; bayar lewat Vendor Bill."""
+    user = await require_any_permission(request, [("accounting", "view"), ("vendor_bill", "approve")])
+    await _campaign_or_404(cid, request)
+    return await mcost.approve_campaign_bill(await _campaign_bill_or_404(cid, bill_id), user)
+
+
+@router.post("/marketing/campaigns/{cid}/vendor-bills/{bill_id}/reject")
+async def reject_campaign_vendor_bill(cid: str, bill_id: str, payload: CostVoidBody, request: Request) -> Dict[str, Any]:
+    user = await require_any_permission(request, [("accounting", "view"), ("vendor_bill", "approve")])
+    await _campaign_or_404(cid, request)
+    out = await mcost.reject_campaign_bill(await _campaign_bill_or_404(cid, bill_id), payload.reason, user)
+    await audit(user.get("name", ""), "mkt_campaign_bill_rejected", "vendor_bill", bill_id,
+                {"campaign_id": cid}, reason=payload.reason)
+    return out
+
+
 # ─── Post ────────────────────────────────────────────────────────────────────
 @router.get("/marketing/posts")
 async def list_posts(request: Request, entity_id: Optional[str] = None, month: str = "", from_date: str = "", to_date: str = "",

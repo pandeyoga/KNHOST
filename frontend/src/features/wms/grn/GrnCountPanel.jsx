@@ -5,16 +5,22 @@ import useDomainEnums from "../../../hooks/useDomainEnums";
 import { ErrorBox, inputCls } from "./GrnBits";
 import { errText, grnApi } from "./grnApi";
 import PackingChecklist from "./GrnPackingChecklist";
+import useIntentKey from "../../../hooks/useIntentKey";
 
 function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
   const [raw, setRaw] = useState("");
   const [m, setM] = useState({ length: "", weight_kg: "", lot: "", grade: "A" });
   const [seq, setSeq] = useState(null);
   const t = ln.target || {};
-  const scan = async () => { if (raw.trim() && await run(() => grnApi.post(grn.id, `lines/${ln.line_no}/scan-label`, { raw: raw.trim() }))) setRaw(""); };
+  const intent = useIntentKey(`grn-${grn.id}-${ln.line_no}`);
+  const scan = async () => {
+    const body = { raw: raw.trim() };
+    if (body.raw && await run(() => grnApi.post(grn.id, `lines/${ln.line_no}/scan-label`, body, intent.keyFor({ scan: body })))) { intent.done(); setRaw(""); }
+  };
   const add = async () => {
-    const ok = await run(() => grnApi.post(grn.id, `lines/${ln.line_no}/rolls`, { length: Number(m.length || 0), weight_kg: Number(m.weight_kg || 0), lot: m.lot, grade: m.grade, expected_seq: seq }));
-    if (ok) { setM((x) => ({ ...x, length: "", weight_kg: "" })); setSeq(null); }
+    const body = { length: Number(m.length || 0), weight_kg: Number(m.weight_kg || 0), lot: m.lot, grade: m.grade, expected_seq: seq };
+    const ok = await run(() => grnApi.post(grn.id, `lines/${ln.line_no}/rolls`, body, intent.keyFor({ roll: body })));
+    if (ok) { intent.done(); setM((x) => ({ ...x, length: "", weight_kg: "" })); setSeq(null); }
   };
   const editable = canCount && grn.status === "counting";
   const sisa = ln.role === "byproduct";

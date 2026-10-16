@@ -656,16 +656,6 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
         raise HTTPException(status_code=400, detail="Gudang sumber bahan wajib diisi")
     input_pid = step["input_product_id"]
     input_qty = round(float(step["input_qty"] or 0), 2)
-    await _assert_source_stock(input_pid, wh, order["entity_id"], input_qty, step)
-    # W2-REQ-07 — bahan yang sudah dicadangkan untuk PR/MKO LAIN tidak boleh dipakai di sini.
-    from services import material_reservation_service as _mres
-    _held = await _mres.reserved_by_others(input_pid, order["entity_id"], exclude_ref_id=mko_id)
-    if _held > 0:
-        _free = await _mres.free_for_commitment(input_pid, order["entity_id"], exclude_ref_id=mko_id)
-        if _free + 0.01 < input_qty:
-            raise HTTPException(status_code=409, detail=(
-                f"Bahan {step.get('input_name') or input_pid}: {_held:g} sudah dicadangkan untuk order lain; "
-                f"bebas {_free:g}, butuh {input_qty:g} untuk langkah {seq}."))
 
     # FASE D (PS-08/D-07) — mitra boleh memakai satuan sendiri (kg/bale/roll):
     # konversi ke satuan dasar + SIMPAN JEJAK. Bila diisi, qty dokumen menang.
@@ -690,6 +680,18 @@ async def issue_step(mko_id: str, seq: int, *, from_warehouse_id: str = "",
                 if step.get(k) is not None:
                     step[k] = round(float(step.get(k) or 0) * ratio, 3)
         step["input_qty"] = input_qty
+
+    await _assert_source_stock(input_pid, wh, order["entity_id"], input_qty, step)
+    # L04 LN-043 — dicek SESUDAH konversi dokumen: issue parsial memakai qty yang benar-benar dikirim.
+    # W2-REQ-07 — bahan yang sudah dicadangkan untuk PR/MKO LAIN tidak boleh dipakai di sini.
+    from services import material_reservation_service as _mres
+    _held = await _mres.reserved_by_others(input_pid, order["entity_id"], exclude_ref_id=mko_id)
+    if _held > 0:
+        _free = await _mres.free_for_commitment(input_pid, order["entity_id"], exclude_ref_id=mko_id)
+        if _free + 0.01 < input_qty:
+            raise HTTPException(status_code=409, detail=(
+                f"Bahan {step.get('input_name') or input_pid}: {_held:g} sudah dicadangkan untuk order lain; "
+                f"bebas {_free:g}, butuh {input_qty:g} untuk langkah {seq}."))
 
     ref = {"type": "subcon", "id": step["issue_ref"], "makloon_id": step.get("makloon_id"),
            "makloon_name": step.get("makloon_name"), "mko_id": mko_id, "mko_number": order.get("mko_number"),

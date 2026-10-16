@@ -52,7 +52,7 @@ export default function Campaigns({ currentUser }) {
           </div>
         ))}
       </div>
-      {costing && <CampaignCostsModal campaign={costing} canPost={canPostCost} onClose={() => setCosting(null)} onChanged={load} />}
+      {costing && <CampaignCostsModal campaign={costing} canPost={canPostCost} canCreateBill={canEdit} canApproveBill={canPostCost} currentUserId={currentUser?.id} onClose={() => setCosting(null)} onChanged={load} />}
       {editing && <CampaignForm campaign={editing.id ? editing : null} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
     </div>
   );

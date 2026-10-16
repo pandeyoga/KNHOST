@@ -135,6 +135,19 @@ async def get_order(mko_id: str, request: Request) -> Dict[str, Any]:
     return data
 
 
+@router.get("/makloon-orders/{mko_id}/material-ledger")
+async def get_material_ledger(mko_id: str, request: Request) -> Dict[str, Any]:
+    """L04 LN-043 — forecast · cadangan · dikirim/di mitra · terpakai · kembali · susut per MKO (hanya-baca)."""
+    await require_permission(request, "makloon_order", "view")
+    ctx = await entity_ctx(request)
+    order = await db.makloon_orders.find_one({"id": mko_id}, {"_id": 0, "timeline": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order makloon tidak ditemukan")
+    assert_entity_access(order, "makloon_orders", ctx)
+    from services.makloon_material_ledger import material_ledger
+    return await material_ledger(order)
+
+
 @router.post("/makloon-orders/{mko_id}/issue")
 async def issue_order_step(mko_id: str, payload: MakloonIssueIn, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "makloon_order", "issue")

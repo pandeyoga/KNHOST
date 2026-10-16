@@ -63,7 +63,7 @@ export const grnApi = {
   },
   fileBlob: (id, page) => axios.get(`${GRN}/${id}/files/${page}`, { responseType: "blob" }).then((r) => r.data),
   deleteFile: (id, page, v) => axios.delete(`${GRN}/${id}/files/${page}`, { params: { expected_version: v } }).then((r) => r.data),
-  post: (id, path, body) => axios.post(`${GRN}/${id}/${path}`, body).then((r) => r.data),
+  post: (id, path, body, idemKey) => axios.post(`${GRN}/${id}/${path}`, body, idemKey ? { headers: { "Idempotency-Key": idemKey } } : undefined).then((r) => r.data),
   patch: (id, path, body) => axios.patch(`${GRN}/${id}/${path}`, body).then((r) => r.data),
   del: (id, path, params) => axios.delete(`${GRN}/${id}/${path}`, { params }).then((r) => r.data),
 };

@@ -22,7 +22,7 @@ IDEMPOTENT_PREFIXES = ("/api/inbound/", "/api/outbound/", "/api/wms/tasks/",
                        "/api/rfid/lookup", "/api/rfid/roll-scans", "/api/rfid/print-jobs",
                        "/api/hr/visits", "/api/sales-orders", "/api/price-approvals",
                        "/api/ar-receipts", "/api/sales-returns", "/api/special-orders",
-                       "/api/marketing/campaigns/")
+                       "/api/marketing/campaigns/", "/api/goods-receipts/")
 
 
 async def _session_user_id(request: Request) -> str:

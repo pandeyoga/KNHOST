@@ -37,15 +37,22 @@ async def realized_by_campaign(campaign_ids: List[str]) -> Dict[str, float]:
     rows = await db[COLL].aggregate([
         {"$match": {"campaign_id": {"$in": campaign_ids}, "status": "posted"}},
         {"$group": {"_id": "$campaign_id", "total": {"$sum": "$amount"}}}]).to_list(len(campaign_ids) or 1)
-    return {r["_id"]: _r(r["total"]) for r in rows}
+    out = {r["_id"]: _r(r["total"]) for r in rows}
+    for cid, v in (await bills_realized_by_campaign(campaign_ids)).items():
+        out[cid] = _r(out.get(cid, 0) + v)
+    return out
 
 
 async def list_costs(campaign: Dict[str, Any]) -> Dict[str, Any]:
     rows = await db[COLL].find({"campaign_id": campaign["id"]}, {"_id": 0}).sort("created_at", -1).to_list(500)
-    realized = _r(sum(r["amount"] for r in rows if r.get("status") == "posted"))
-    budget = _r(campaign.get("budget"))
-    return {"campaign_id": campaign["id"], "budget": budget, "realized": realized,
-            "remaining": _r(budget - realized), "over_budget": budget > 0 and realized > budget, "costs": rows}
+    bills = await campaign_bills(campaign["id"])
+    direct = _r(sum(r["amount"] for r in rows if r.get("status") == "posted"))
+    billed = _r(sum(bill_expense(b) for b in bills if b.get("status") in ("posted", "paid")))
+    pending = _r(sum(bill_expense(b) for b in bills if b.get("status") == "pending_approval"))
+    realized, budget = _r(direct + billed), _r(campaign.get("budget"))
+    return {"campaign_id": campaign["id"], "budget": budget, "realized": realized, "realized_direct": direct,
+            "realized_bills": billed, "pending_bills": pending, "remaining": _r(budget - realized),
+            "over_budget": budget > 0 and realized > budget, "costs": rows, "bills": bills}
 
 
 async def record_cost(campaign: Dict[str, Any], payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
@@ -125,3 +132,112 @@ async def void_cost(cost: Dict[str, Any], reason: str, actor: Dict[str, Any]) ->
             "updated_at": now_iso()}
     await db[COLL].update_one({"id": cost["id"]}, _saga.finish_set(sets))
     return {**cost, **sets}
+
+
+# ─── Tagihan vendor kampanye (tanpa PO) — keputusan owner 2026-10-16 ─────────────────────────
+# Diakui saat DISETUJUI: Dr Beban Pemasaran (+PPN Masukan) / Cr Hutang Usaha; dibayar lewat alur
+# Vendor Bill biasa (Dr Hutang / Cr Kas). Dibuat Marketing/Admin, disetujui Finance/Manager (SoD).
+BILL_TYPE = "campaign_expense"
+BILL_APPROVER_ROLES = ("finance", "manager", "admin")
+
+
+async def campaign_bills(campaign_id: str) -> List[Dict[str, Any]]:
+    keep = {"_id": 0, "id": 1, "bill_number": 1, "supplier_name": 1, "supplier_invoice_no": 1, "bill_date": 1,
+            "due_date": 1, "status": 1, "grand_total": 1, "ppn_amount": 1, "amount_paid": 1, "notes": 1,
+            "created_by": 1, "created_by_id": 1, "approved_by": 1, "rejection_reason": 1, "cancel_reason": 1}
+    return await db.vendor_bills.find({"campaign_id": campaign_id, "bill_type": BILL_TYPE}, keep) \
+        .sort("created_at", -1).to_list(500)
+
+
+def bill_expense(b: Dict[str, Any]) -> float:
+    return _r(float(b.get("grand_total") or 0) - float(b.get("ppn_amount") or 0))
+
+
+async def bills_realized_by_campaign(campaign_ids: List[str]) -> Dict[str, float]:
+    rows = await db.vendor_bills.aggregate([
+        {"$match": {"campaign_id": {"$in": campaign_ids}, "bill_type": BILL_TYPE, "status": {"$in": ["posted", "paid"]}}},
+        {"$group": {"_id": "$campaign_id", "total": {"$sum": {"$subtract": [
+            {"$ifNull": ["$grand_total", 0]}, {"$ifNull": ["$ppn_amount", 0]}]}}}}]).to_list(len(campaign_ids) or 1)
+    return {r["_id"]: _r(r["total"]) for r in rows}
+
+
+async def create_campaign_bill(campaign: Dict[str, Any], payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+    from core_utils import timeline_entry
+    from services.vendor_bill_service import ACTIVE_BILL_STATUSES, next_bill_number
+    entity_id = campaign.get("entity_id", "")
+    amount, ppn = _r(payload.get("amount")), _r(payload.get("ppn_amount"))
+    desc = (payload.get("description") or "").strip()
+    inv_no = (payload.get("supplier_invoice_no") or "").strip()
+    if amount <= 0 or ppn < 0:
+        raise HTTPException(status_code=400, detail="Nominal tagihan harus lebih dari 0 (PPN tidak boleh negatif).")
+    if len(desc) < 3:
+        raise HTTPException(status_code=400, detail="Uraian tagihan wajib diisi (min. 3 karakter).")
+    sup = await db.suppliers.find_one({"id": payload.get("supplier_id") or ""}, {"_id": 0})
+    if not sup:
+        raise HTTPException(status_code=400, detail="Pilih vendor (supplier) yang terdaftar.")
+    from services import group_partner_service as _grp
+    await _grp.assert_supplier_not_group_entity(sup, doc_label="Tagihan vendor kampanye")
+    if inv_no and await db.vendor_bills.find_one({"supplier_id": sup["id"], "supplier_invoice_no": inv_no,
+                                                  "status": {"$in": list(ACTIVE_BILL_STATUSES)}}, {"_id": 1}):
+        raise HTTPException(status_code=409, detail=f"No. invoice vendor '{inv_no}' sudah pernah ditagihkan.")
+    expense_acc = await _expense_account(payload.get("expense_account_code", ""), entity_id)
+    num, now, grand = await next_bill_number(), now_iso(), _r(amount + ppn)
+    bill = {
+        "id": new_id("vbill"), "bill_number": num, "bill_type": BILL_TYPE, "supplier_invoice_no": inv_no,
+        "po_id": "", "po_number": "", "supplier_id": sup["id"], "supplier_name": sup.get("name", ""),
+        "supplier_npwp": sup.get("npwp", ""), "entity_id": entity_id,
+        "campaign_id": campaign["id"], "campaign_name": campaign.get("name", ""), "expense_account_code": expense_acc,
+        "bill_date": payload.get("bill_date") or now, "due_date": payload.get("due_date") or "",
+        "items": [{"product_id": "", "product_name": desc, "quantity": 1, "billed_qty": 1, "unit": "jasa",
+                   "price": amount, "subtotal": amount}],
+        "total_amount": amount, "net_subtotal": amount, "dpp": amount, "ppn_amount": ppn, "grand_total": grand,
+        "discount_total": 0.0, "match_status": "not_applicable", "match_exceptions": [],
+        "status": "pending_approval", "approval_required": True, "required_approval_role": "finance",
+        "approval_status": "pending", "approved_by": "", "approved_at": "",
+        "amount_paid": 0.0, "outstanding": grand, "payment_status": "unpaid", "payments": [],
+        "notes": desc, "created_by": actor.get("name", ""), "created_by_id": actor.get("id", ""),
+        "timeline": [timeline_entry("created", "Tagihan vendor kampanye dibuat", actor.get("name", ""),
+                                    f"{campaign.get('name', '')} · Rp {grand:,.0f} · menunggu persetujuan Finance/Manager")],
+        "created_at": now, "updated_at": now,
+    }
+    await db.vendor_bills.insert_one(dict(bill))
+    return bill
+
+
+async def approve_campaign_bill(bill: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+    from routers.vendor_bills import _post_bill
+    from services import approval_matrix_service as _amx
+    if actor.get("role") not in BILL_APPROVER_ROLES:
+        raise HTTPException(status_code=403, detail="Persetujuan tagihan kampanye hanya Finance/Manager/Admin.")
+    if bill.get("status") != "pending_approval":
+        raise HTTPException(status_code=409, detail=f"Tagihan berstatus '{bill.get('status')}', tidak menunggu persetujuan.")
+    if bill.get("created_by_id") == actor.get("id") and not await _amx.admin_override(
+            "vendor_bill_approve", actor, bill, bill.get("entity_id", "")):
+        raise HTTPException(status_code=403, detail="Pemisahan tugas (SoD): pembuat tagihan tidak boleh menyetujui sendiri.")
+    try:
+        await gl.preflight_posting(bill.get("entity_id", ""), bill.get("bill_date") or now_iso())
+    except gl.ClosedPeriodError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    await db.vendor_bills.update_one({"id": bill["id"], "status": "pending_approval"}, {"$set": {
+        "approval_status": "approved", "approved_by": actor.get("name", ""), "approved_at": now_iso()}})
+    out = await _post_bill(bill["id"], actor, note=f"disetujui oleh {actor.get('role')}")
+    if not await db.journal_entries.find_one({"source_type": "vendor_bill", "source_id": bill["id"]}, {"_id": 1}):
+        await gl.post_vendor_bill(out)   # _post_bill best-effort → pastikan jurnal ada (idempoten)
+    return out
+
+
+async def reject_campaign_bill(bill: Dict[str, Any], reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+    from core_utils import timeline_entry
+    if actor.get("role") not in BILL_APPROVER_ROLES:
+        raise HTTPException(status_code=403, detail="Penolakan tagihan kampanye hanya Finance/Manager/Admin.")
+    if len((reason or "").strip()) < 5:
+        raise HTTPException(status_code=400, detail="Alasan penolakan wajib diisi (min. 5 karakter).")
+    out = await db.vendor_bills.find_one_and_update(
+        {"id": bill["id"], "status": "pending_approval"},
+        {"$set": {"status": "cancelled", "approval_status": "rejected", "rejected_by": actor.get("name", ""),
+                  "rejection_reason": reason.strip(), "rejected_at": now_iso(), "updated_at": now_iso()},
+         "$push": {"timeline": timeline_entry("rejected", "Tagihan ditolak", actor.get("name", ""), reason.strip())}},
+        projection={"_id": 0}, return_document=True)
+    if not out:
+        raise HTTPException(status_code=409, detail="Tagihan sudah diproses orang lain. Muat ulang.")
+    return out
