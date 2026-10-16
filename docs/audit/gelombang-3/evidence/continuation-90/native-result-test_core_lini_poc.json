@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_lini_poc.py",
+    "database": "knhost_audit_native90_1c97cb73a02f4af6a2928a9482d31649",
+    "exit": 1,
+    "seconds": 65.32,
+    "pass_log_tokens": 40,
+    "fail_log_tokens": 2,
+    "log": "continuation-90\\native-test_core_lini_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": " L2 — daftar produk Dewi TIDAK memuat lini woven/knit\n  [PASS] daftar Dewi memuat produk printing\n  [PASS] L4 — produk TANPA lini tetap terlihat (tidak ada layar mendadak kosong)\n  [PASS] pagar benar-benar menyempitkan daftar (20 → 12)\n  [PASS] alamat langsung produk woven ditolak 403 (bukan hanya UI disaring)\n  [PASS] `?line=woven` dari akun printing tidak membocorkan produk woven\n\n── L2b. Membuat SO berisi kain woven → 403 ber-kalimat Indonesia ──\n  [PASS] ada pelanggan uji dengan alamat kirim\n  [PASS] SO berisi kain woven ditolak 403\n  [PASS] pesan menyebut lini dokumen & lini akun + cara memperbaikinya\n  [PASS] tidak ada SO setengah jadi yang tertinggal\n\n── L5. Snapshot lini pada baris dokumen yang sudah terbit ──\n  [PASS] ada SO ber-snapshot lini (hasil migrasi)\n  [FAIL] lini master produk dipindah ke `denim8fdee1` ATAU ditolak pagar varian (induk ber-SKU)\n         → dapat 404: {\"detail\":\"Induk produk tidak ditemukan.\"}\n  [PASS] baris SO SO-0001 TETAP lini `printing` (snapshot, bukan join)\n  [PASS] turunan `line_codes[]` kepala dokumen juga tidak berubah\n\n── L7. Lini khusus satu badan usaha tidak bocor ke badan usaha lain ──\n  [PASS] lini khusus CV Kanda Suka dibuat\n  [PASS] baris itu dimiliki CV Kanda Suka\n  [PASS] lini itu terlihat DI CV Kanda Suka\n  [PASS] lini itu TIDAK bocor ke PT Kain Suka Cita\n  [PASS] baris GLOBAL tetap terlihat di kedua badan usaha\n\n── L9. Bersih-bersih (POC harus bisa dijalankan berulang) ──\n  [PASS] data uji dibersihkan (7 dokumen · 9 jejak audit)\n  [PASS] tidak ada baris master uji yang tertinggal\n  [PASS] tidak ada produk uji yang tertinggal\n\n====================================================================================\n  HASIL: 39 PASS · 1 FAIL\n====================================================================================\n"
+  }
+]

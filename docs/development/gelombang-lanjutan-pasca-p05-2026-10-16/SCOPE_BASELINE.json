@@ -1,0 +1,1878 @@
+{
+  "revision": "1.3",
+  "purpose": "Inventory lingkup rilis paket. Jangan dirender ulang dari tracker untuk menghilangkan kebutuhan. Perubahan lingkup memerlukan revisi terdokumentasi dan persetujuan owner.",
+  "phases": {
+    "L00": [],
+    "L01": [
+      "L00"
+    ],
+    "L02": [
+      "L01"
+    ],
+    "L03": [
+      "L01",
+      "L02",
+      "L04"
+    ],
+    "L04": [
+      "L01"
+    ],
+    "L05": [
+      "L01",
+      "L04"
+    ],
+    "L06": [
+      "L01",
+      "L02",
+      "L04"
+    ],
+    "L07": [
+      "L01",
+      "L02",
+      "L04"
+    ],
+    "L08": [
+      "L01",
+      "L04",
+      "L05",
+      "L07"
+    ],
+    "L09": [
+      "L02",
+      "L08"
+    ],
+    "L10": [
+      "L01",
+      "L04",
+      "L07",
+      "L08"
+    ],
+    "L11": [
+      "L01",
+      "L02",
+      "L03",
+      "L05",
+      "L09",
+      "L10"
+    ],
+    "L12": [
+      "L01",
+      "L04",
+      "L07",
+      "L10"
+    ],
+    "L13": [
+      "L00",
+      "L01"
+    ],
+    "L14": [
+      "L02",
+      "L03",
+      "L04",
+      "L05",
+      "L06",
+      "L07",
+      "L08",
+      "L09",
+      "L10",
+      "L11",
+      "L12",
+      "L13"
+    ]
+  },
+  "requirements": {
+    "LN-001": {
+      "phase": "L00",
+      "acceptance_ids": [
+        "LN-001-T01",
+        "LN-001-T02"
+      ],
+      "pending_decisions": []
+    },
+    "LN-002": {
+      "phase": "L00",
+      "acceptance_ids": [
+        "LN-002-T01",
+        "LN-002-T02"
+      ],
+      "pending_decisions": []
+    },
+    "LN-003": {
+      "phase": "L00",
+      "acceptance_ids": [
+        "LN-003-T01",
+        "LN-003-T02"
+      ],
+      "pending_decisions": []
+    },
+    "LN-010": {
+      "phase": "L01",
+      "acceptance_ids": [
+        "LN-010-T01",
+        "LN-010-T02",
+        "LN-010-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-011": {
+      "phase": "L01",
+      "acceptance_ids": [
+        "LN-011-T01",
+        "LN-011-T02",
+        "LN-011-T03"
+      ],
+      "pending_decisions": [
+        "DATA-01"
+      ]
+    },
+    "LN-012": {
+      "phase": "L01",
+      "acceptance_ids": [
+        "LN-012-T01",
+        "LN-012-T02",
+        "LN-012-T03",
+        "LN-012-T04",
+        "LN-012-T05"
+      ],
+      "pending_decisions": []
+    },
+    "LN-013": {
+      "phase": "L01",
+      "acceptance_ids": [
+        "LN-013-T01",
+        "LN-013-T02"
+      ],
+      "pending_decisions": [
+        "DES-04"
+      ]
+    },
+    "LN-014": {
+      "phase": "L01",
+      "acceptance_ids": [
+        "LN-014-T01",
+        "LN-014-T02"
+      ],
+      "pending_decisions": [
+        "KLX-01"
+      ]
+    },
+    "LN-020": {
+      "phase": "L02",
+      "acceptance_ids": [
+        "LN-020-T01",
+        "LN-020-T02",
+        "LN-020-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-021": {
+      "phase": "L02",
+      "acceptance_ids": [
+        "LN-021-T01",
+        "LN-021-T02",
+        "LN-021-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-022": {
+      "phase": "L02",
+      "acceptance_ids": [
+        "LN-022-T01",
+        "LN-022-T02",
+        "LN-022-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-023": {
+      "phase": "L02",
+      "acceptance_ids": [
+        "LN-023-T01",
+        "LN-023-T02",
+        "LN-023-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-024": {
+      "phase": "L02",
+      "acceptance_ids": [
+        "LN-024-T01",
+        "LN-024-T02",
+        "LN-024-T03"
+      ],
+      "pending_decisions": [
+        "KLX-03"
+      ]
+    },
+    "LN-030": {
+      "phase": "L03",
+      "acceptance_ids": [
+        "LN-030-T01",
+        "LN-030-T02",
+        "LN-030-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-031": {
+      "phase": "L03",
+      "acceptance_ids": [
+        "LN-031-T01",
+        "LN-031-T02"
+      ],
+      "pending_decisions": []
+    },
+    "LN-032": {
+      "phase": "L03",
+      "acceptance_ids": [
+        "LN-032-T01",
+        "LN-032-T02",
+        "LN-032-T03",
+        "LN-032-T04"
+      ],
+      "pending_decisions": []
+    },
+    "LN-040": {
+      "phase": "L04",
+      "acceptance_ids": [
+        "LN-040-T01",
+        "LN-040-T02"
+      ],
+      "pending_decisions": [
+        "KLX-01"
+      ]
+    },
+    "LN-041": {
+      "phase": "L04",
+      "acceptance_ids": [
+        "LN-041-T01",
+        "LN-041-T02"
+      ],
+      "pending_decisions": []
+    },
+    "LN-042": {
+      "phase": "L04",
+      "acceptance_ids": [
+        "LN-042-T01",
+        "LN-042-T02",
+        "LN-042-T03"
+      ],
+      "pending_decisions": [
+        "DES-01"
+      ]
+    },
+    "LN-043": {
+      "phase": "L04",
+      "acceptance_ids": [
+        "LN-043-T01",
+        "LN-043-T02",
+        "LN-043-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-050": {
+      "phase": "L05",
+      "acceptance_ids": [
+        "LN-050-T01",
+        "LN-050-T02",
+        "LN-050-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-051": {
+      "phase": "L05",
+      "acceptance_ids": [
+        "LN-051-T01",
+        "LN-051-T02",
+        "LN-051-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-052": {
+      "phase": "L05",
+      "acceptance_ids": [
+        "LN-052-T01",
+        "LN-052-T02",
+        "LN-052-T03"
+      ],
+      "pending_decisions": [
+        "KLX-02"
+      ]
+    },
+    "LN-060": {
+      "phase": "L06",
+      "acceptance_ids": [
+        "LN-060-T01",
+        "LN-060-T02",
+        "LN-060-T03",
+        "LN-060-T04"
+      ],
+      "pending_decisions": []
+    },
+    "LN-061": {
+      "phase": "L06",
+      "acceptance_ids": [
+        "LN-061-T01",
+        "LN-061-T02",
+        "LN-061-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-062": {
+      "phase": "L06",
+      "acceptance_ids": [
+        "LN-062-T01",
+        "LN-062-T02"
+      ],
+      "pending_decisions": []
+    },
+    "LN-070": {
+      "phase": "L07",
+      "acceptance_ids": [
+        "LN-070-T01",
+        "LN-070-T02"
+      ],
+      "pending_decisions": []
+    },
+    "LN-071": {
+      "phase": "L07",
+      "acceptance_ids": [
+        "LN-071-T01",
+        "LN-071-T02"
+      ],
+      "pending_decisions": [
+        "DES-02"
+      ]
+    },
+    "LN-072": {
+      "phase": "L07",
+      "acceptance_ids": [
+        "LN-072-T01",
+        "LN-072-T02",
+        "LN-072-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-080": {
+      "phase": "L08",
+      "acceptance_ids": [
+        "LN-080-T01",
+        "LN-080-T02",
+        "LN-080-T03",
+        "LN-080-T04"
+      ],
+      "pending_decisions": []
+    },
+    "LN-081": {
+      "phase": "L08",
+      "acceptance_ids": [
+        "LN-081-T01",
+        "LN-081-T02",
+        "LN-081-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-082": {
+      "phase": "L08",
+      "acceptance_ids": [
+        "LN-082-T01",
+        "LN-082-T02",
+        "LN-082-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-083": {
+      "phase": "L08",
+      "acceptance_ids": [
+        "LN-083-T01",
+        "LN-083-T02",
+        "LN-083-T03"
+      ],
+      "pending_decisions": [
+        "KLR-08",
+        "KLR-09"
+      ]
+    },
+    "LN-090": {
+      "phase": "L09",
+      "acceptance_ids": [
+        "LN-090-T01",
+        "LN-090-T02",
+        "LN-090-T03"
+      ],
+      "pending_decisions": [
+        "KLR-03",
+        "KLR-04",
+        "KLR-05"
+      ]
+    },
+    "LN-091": {
+      "phase": "L09",
+      "acceptance_ids": [
+        "LN-091-T01",
+        "LN-091-T02",
+        "LN-091-T03"
+      ],
+      "pending_decisions": [
+        "KLR-10",
+        "KLR-11"
+      ]
+    },
+    "LN-092": {
+      "phase": "L09",
+      "acceptance_ids": [
+        "LN-092-T01",
+        "LN-092-T02",
+        "LN-092-T03"
+      ],
+      "pending_decisions": [
+        "KLR-01",
+        "KLR-02",
+        "KLR-06",
+        "KLR-07"
+      ]
+    },
+    "LN-093": {
+      "phase": "L09",
+      "acceptance_ids": [
+        "LN-093-T01",
+        "LN-093-T02",
+        "LN-093-T03",
+        "LN-093-T04"
+      ],
+      "pending_decisions": [
+        "KLR-09"
+      ]
+    },
+    "LN-100": {
+      "phase": "L10",
+      "acceptance_ids": [
+        "LN-100-T01",
+        "LN-100-T02",
+        "LN-100-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-101": {
+      "phase": "L10",
+      "acceptance_ids": [
+        "LN-101-T01",
+        "LN-101-T02",
+        "LN-101-T03"
+      ],
+      "pending_decisions": [
+        "OPS-01"
+      ]
+    },
+    "LN-102": {
+      "phase": "L10",
+      "acceptance_ids": [
+        "LN-102-T01",
+        "LN-102-T02",
+        "LN-102-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-110": {
+      "phase": "L11",
+      "acceptance_ids": [
+        "LN-110-T01",
+        "LN-110-T02",
+        "LN-110-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-111": {
+      "phase": "L11",
+      "acceptance_ids": [
+        "LN-111-T01",
+        "LN-111-T02",
+        "LN-111-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-112": {
+      "phase": "L11",
+      "acceptance_ids": [
+        "LN-112-T01",
+        "LN-112-T02",
+        "LN-112-T03"
+      ],
+      "pending_decisions": [
+        "DES-03"
+      ]
+    },
+    "LN-113": {
+      "phase": "L11",
+      "acceptance_ids": [
+        "LN-113-T01",
+        "LN-113-T02",
+        "LN-113-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-120": {
+      "phase": "L12",
+      "acceptance_ids": [
+        "LN-120-T01",
+        "LN-120-T02",
+        "MW-INT-01",
+        "MW-INT-02",
+        "MW-INT-03",
+        "MW-INT-04",
+        "MW-INT-05",
+        "MW-INT-06",
+        "MW-INT-07",
+        "MW-INT-08",
+        "MW-INT-09",
+        "MW-INT-10",
+        "MW-INT-11",
+        "MW-INT-12"
+      ],
+      "pending_decisions": [
+        "HW-01"
+      ]
+    },
+    "LN-121": {
+      "phase": "L12",
+      "acceptance_ids": [
+        "LN-121-T01",
+        "LN-121-T02",
+        "LN-121-T03",
+        "MW-HH-01",
+        "MW-HH-02",
+        "MW-HH-03",
+        "MW-HH-04",
+        "MW-HH-05",
+        "MW-HH-06",
+        "MW-HH-07",
+        "MW-HH-08",
+        "MW-HH-09",
+        "MW-HH-10",
+        "MW-HH-11",
+        "MW-HH-12",
+        "MW-RD-01",
+        "MW-RD-02",
+        "MW-RD-03",
+        "MW-RD-04",
+        "MW-RD-05",
+        "MW-RD-06",
+        "MW-RD-07",
+        "MW-RD-08",
+        "MW-RD-09",
+        "MW-RD-10",
+        "MW-RD-11",
+        "MW-RD-12"
+      ],
+      "pending_decisions": [
+        "HW-01"
+      ]
+    },
+    "LN-122": {
+      "phase": "L12",
+      "acceptance_ids": [
+        "LN-122-T01",
+        "LN-122-T02",
+        "LN-122-T03",
+        "MW-PR-01",
+        "MW-PR-02",
+        "MW-PR-03",
+        "MW-PR-04",
+        "MW-PR-05",
+        "MW-PR-06",
+        "MW-PR-07",
+        "MW-PR-08",
+        "MW-PR-09",
+        "MW-PR-10",
+        "MW-PR-11",
+        "MW-PR-12"
+      ],
+      "pending_decisions": [
+        "HW-01"
+      ]
+    },
+    "LN-130": {
+      "phase": "L13",
+      "acceptance_ids": [
+        "LN-130-T01",
+        "LN-130-T02",
+        "LN-130-T03"
+      ],
+      "pending_decisions": [
+        "HW-02"
+      ]
+    },
+    "LN-131": {
+      "phase": "L13",
+      "acceptance_ids": [
+        "LN-131-T01",
+        "LN-131-T02",
+        "LN-131-T03"
+      ],
+      "pending_decisions": [
+        "HR-01"
+      ]
+    },
+    "LN-140": {
+      "phase": "L14",
+      "acceptance_ids": [
+        "LN-140-T01",
+        "LN-140-T02"
+      ],
+      "pending_decisions": []
+    },
+    "LN-141": {
+      "phase": "L14",
+      "acceptance_ids": [
+        "LN-141-T01",
+        "LN-141-T02",
+        "LN-141-T03"
+      ],
+      "pending_decisions": []
+    },
+    "LN-142": {
+      "phase": "L14",
+      "acceptance_ids": [
+        "LN-142-T01",
+        "LN-142-T02"
+      ],
+      "pending_decisions": [
+        "UAT-01"
+      ]
+    },
+    "LN-033": {
+      "phase": "L03",
+      "acceptance_ids": [
+        "LN-033-T01",
+        "LN-033-T02",
+        "LN-033-T03",
+        "LN-033-T04",
+        "LN-033-T05",
+        "LN-033-T06",
+        "LN-033-T07",
+        "LN-033-T08",
+        "LN-033-T09",
+        "LN-033-T10"
+      ],
+      "pending_decisions": []
+    },
+    "LN-143": {
+      "phase": "L14",
+      "acceptance_ids": [
+        "LN-143-T01",
+        "LN-143-T02",
+        "LN-143-T03",
+        "LN-143-T04",
+        "LN-143-T05",
+        "LN-143-T06",
+        "LN-143-T07",
+        "LN-143-T08"
+      ],
+      "pending_decisions": []
+    },
+    "LN-015": {
+      "phase": "L01",
+      "acceptance_ids": [
+        "LN-015-T01",
+        "LN-015-T02",
+        "LN-015-T03",
+        "LN-015-T04",
+        "LN-015-T05",
+        "LN-015-T06",
+        "LN-015-T07",
+        "LN-015-T08"
+      ],
+      "pending_decisions": []
+    },
+    "LN-034": {
+      "phase": "L03",
+      "acceptance_ids": [
+        "LN-034-T01",
+        "LN-034-T02",
+        "LN-034-T03",
+        "LN-034-T04",
+        "LN-034-T05",
+        "LN-034-T06",
+        "LN-034-T07",
+        "LN-034-T08"
+      ],
+      "pending_decisions": []
+    }
+  },
+  "acceptance": {
+    "LN-001-T01": {
+      "requirement": "LN-001",
+      "phase": "L00",
+      "requires_hardware": false
+    },
+    "LN-001-T02": {
+      "requirement": "LN-001",
+      "phase": "L00",
+      "requires_hardware": false
+    },
+    "LN-002-T01": {
+      "requirement": "LN-002",
+      "phase": "L00",
+      "requires_hardware": false
+    },
+    "LN-002-T02": {
+      "requirement": "LN-002",
+      "phase": "L00",
+      "requires_hardware": false
+    },
+    "LN-003-T01": {
+      "requirement": "LN-003",
+      "phase": "L00",
+      "requires_hardware": false
+    },
+    "LN-003-T02": {
+      "requirement": "LN-003",
+      "phase": "L00",
+      "requires_hardware": false
+    },
+    "LN-010-T01": {
+      "requirement": "LN-010",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-010-T02": {
+      "requirement": "LN-010",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-010-T03": {
+      "requirement": "LN-010",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-011-T01": {
+      "requirement": "LN-011",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-011-T02": {
+      "requirement": "LN-011",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-011-T03": {
+      "requirement": "LN-011",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-012-T01": {
+      "requirement": "LN-012",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-012-T02": {
+      "requirement": "LN-012",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-012-T03": {
+      "requirement": "LN-012",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-012-T04": {
+      "requirement": "LN-012",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-013-T01": {
+      "requirement": "LN-013",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-013-T02": {
+      "requirement": "LN-013",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-014-T01": {
+      "requirement": "LN-014",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-014-T02": {
+      "requirement": "LN-014",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-020-T01": {
+      "requirement": "LN-020",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-020-T02": {
+      "requirement": "LN-020",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-020-T03": {
+      "requirement": "LN-020",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-021-T01": {
+      "requirement": "LN-021",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-021-T02": {
+      "requirement": "LN-021",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-021-T03": {
+      "requirement": "LN-021",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-022-T01": {
+      "requirement": "LN-022",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-022-T02": {
+      "requirement": "LN-022",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-022-T03": {
+      "requirement": "LN-022",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-023-T01": {
+      "requirement": "LN-023",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-023-T02": {
+      "requirement": "LN-023",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-023-T03": {
+      "requirement": "LN-023",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-024-T01": {
+      "requirement": "LN-024",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-024-T02": {
+      "requirement": "LN-024",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-024-T03": {
+      "requirement": "LN-024",
+      "phase": "L02",
+      "requires_hardware": false
+    },
+    "LN-030-T01": {
+      "requirement": "LN-030",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-030-T02": {
+      "requirement": "LN-030",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-030-T03": {
+      "requirement": "LN-030",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-031-T01": {
+      "requirement": "LN-031",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-031-T02": {
+      "requirement": "LN-031",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-032-T01": {
+      "requirement": "LN-032",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-032-T02": {
+      "requirement": "LN-032",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-032-T03": {
+      "requirement": "LN-032",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-040-T01": {
+      "requirement": "LN-040",
+      "phase": "L04",
+      "requires_hardware": false
+    },
+    "LN-040-T02": {
+      "requirement": "LN-040",
+      "phase": "L04",
+      "requires_hardware": false
+    },
+    "LN-041-T01": {
+      "requirement": "LN-041",
+      "phase": "L04",
+      "requires_hardware": false
+    },
+    "LN-041-T02": {
+      "requirement": "LN-041",
+      "phase": "L04",
+      "requires_hardware": false
+    },
+    "LN-042-T01": {
+      "requirement": "LN-042",
+      "phase": "L04",
+      "requires_hardware": false
+    },
+    "LN-042-T02": {
+      "requirement": "LN-042",
+      "phase": "L04",
+      "requires_hardware": false
+    },
+    "LN-042-T03": {
+      "requirement": "LN-042",
+      "phase": "L04",
+      "requires_hardware": false
+    },
+    "LN-043-T01": {
+      "requirement": "LN-043",
+      "phase": "L04",
+      "requires_hardware": false
+    },
+    "LN-043-T02": {
+      "requirement": "LN-043",
+      "phase": "L04",
+      "requires_hardware": false
+    },
+    "LN-043-T03": {
+      "requirement": "LN-043",
+      "phase": "L04",
+      "requires_hardware": false
+    },
+    "LN-050-T01": {
+      "requirement": "LN-050",
+      "phase": "L05",
+      "requires_hardware": false
+    },
+    "LN-050-T02": {
+      "requirement": "LN-050",
+      "phase": "L05",
+      "requires_hardware": false
+    },
+    "LN-050-T03": {
+      "requirement": "LN-050",
+      "phase": "L05",
+      "requires_hardware": false
+    },
+    "LN-051-T01": {
+      "requirement": "LN-051",
+      "phase": "L05",
+      "requires_hardware": false
+    },
+    "LN-051-T02": {
+      "requirement": "LN-051",
+      "phase": "L05",
+      "requires_hardware": false
+    },
+    "LN-051-T03": {
+      "requirement": "LN-051",
+      "phase": "L05",
+      "requires_hardware": false
+    },
+    "LN-052-T01": {
+      "requirement": "LN-052",
+      "phase": "L05",
+      "requires_hardware": false
+    },
+    "LN-052-T02": {
+      "requirement": "LN-052",
+      "phase": "L05",
+      "requires_hardware": false
+    },
+    "LN-052-T03": {
+      "requirement": "LN-052",
+      "phase": "L05",
+      "requires_hardware": false
+    },
+    "LN-060-T01": {
+      "requirement": "LN-060",
+      "phase": "L06",
+      "requires_hardware": false
+    },
+    "LN-060-T02": {
+      "requirement": "LN-060",
+      "phase": "L06",
+      "requires_hardware": false
+    },
+    "LN-060-T03": {
+      "requirement": "LN-060",
+      "phase": "L06",
+      "requires_hardware": false
+    },
+    "LN-061-T01": {
+      "requirement": "LN-061",
+      "phase": "L06",
+      "requires_hardware": false
+    },
+    "LN-061-T02": {
+      "requirement": "LN-061",
+      "phase": "L06",
+      "requires_hardware": false
+    },
+    "LN-061-T03": {
+      "requirement": "LN-061",
+      "phase": "L06",
+      "requires_hardware": false
+    },
+    "LN-062-T01": {
+      "requirement": "LN-062",
+      "phase": "L06",
+      "requires_hardware": false
+    },
+    "LN-062-T02": {
+      "requirement": "LN-062",
+      "phase": "L06",
+      "requires_hardware": false
+    },
+    "LN-070-T01": {
+      "requirement": "LN-070",
+      "phase": "L07",
+      "requires_hardware": false
+    },
+    "LN-070-T02": {
+      "requirement": "LN-070",
+      "phase": "L07",
+      "requires_hardware": false
+    },
+    "LN-071-T01": {
+      "requirement": "LN-071",
+      "phase": "L07",
+      "requires_hardware": false
+    },
+    "LN-071-T02": {
+      "requirement": "LN-071",
+      "phase": "L07",
+      "requires_hardware": false
+    },
+    "LN-072-T01": {
+      "requirement": "LN-072",
+      "phase": "L07",
+      "requires_hardware": false
+    },
+    "LN-072-T02": {
+      "requirement": "LN-072",
+      "phase": "L07",
+      "requires_hardware": false
+    },
+    "LN-072-T03": {
+      "requirement": "LN-072",
+      "phase": "L07",
+      "requires_hardware": false
+    },
+    "LN-080-T01": {
+      "requirement": "LN-080",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-080-T02": {
+      "requirement": "LN-080",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-080-T03": {
+      "requirement": "LN-080",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-080-T04": {
+      "requirement": "LN-080",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-081-T01": {
+      "requirement": "LN-081",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-081-T02": {
+      "requirement": "LN-081",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-081-T03": {
+      "requirement": "LN-081",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-082-T01": {
+      "requirement": "LN-082",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-082-T02": {
+      "requirement": "LN-082",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-082-T03": {
+      "requirement": "LN-082",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-083-T01": {
+      "requirement": "LN-083",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-083-T02": {
+      "requirement": "LN-083",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-083-T03": {
+      "requirement": "LN-083",
+      "phase": "L08",
+      "requires_hardware": false
+    },
+    "LN-090-T01": {
+      "requirement": "LN-090",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-090-T02": {
+      "requirement": "LN-090",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-090-T03": {
+      "requirement": "LN-090",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-091-T01": {
+      "requirement": "LN-091",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-091-T02": {
+      "requirement": "LN-091",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-091-T03": {
+      "requirement": "LN-091",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-092-T01": {
+      "requirement": "LN-092",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-092-T02": {
+      "requirement": "LN-092",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-092-T03": {
+      "requirement": "LN-092",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-093-T01": {
+      "requirement": "LN-093",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-093-T02": {
+      "requirement": "LN-093",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-093-T03": {
+      "requirement": "LN-093",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-093-T04": {
+      "requirement": "LN-093",
+      "phase": "L09",
+      "requires_hardware": false
+    },
+    "LN-100-T01": {
+      "requirement": "LN-100",
+      "phase": "L10",
+      "requires_hardware": false
+    },
+    "LN-100-T02": {
+      "requirement": "LN-100",
+      "phase": "L10",
+      "requires_hardware": false
+    },
+    "LN-100-T03": {
+      "requirement": "LN-100",
+      "phase": "L10",
+      "requires_hardware": false
+    },
+    "LN-101-T01": {
+      "requirement": "LN-101",
+      "phase": "L10",
+      "requires_hardware": false
+    },
+    "LN-101-T02": {
+      "requirement": "LN-101",
+      "phase": "L10",
+      "requires_hardware": false
+    },
+    "LN-101-T03": {
+      "requirement": "LN-101",
+      "phase": "L10",
+      "requires_hardware": false
+    },
+    "LN-102-T01": {
+      "requirement": "LN-102",
+      "phase": "L10",
+      "requires_hardware": false
+    },
+    "LN-102-T02": {
+      "requirement": "LN-102",
+      "phase": "L10",
+      "requires_hardware": false
+    },
+    "LN-102-T03": {
+      "requirement": "LN-102",
+      "phase": "L10",
+      "requires_hardware": false
+    },
+    "LN-110-T01": {
+      "requirement": "LN-110",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-110-T02": {
+      "requirement": "LN-110",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-110-T03": {
+      "requirement": "LN-110",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-111-T01": {
+      "requirement": "LN-111",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-111-T02": {
+      "requirement": "LN-111",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-111-T03": {
+      "requirement": "LN-111",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-112-T01": {
+      "requirement": "LN-112",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-112-T02": {
+      "requirement": "LN-112",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-112-T03": {
+      "requirement": "LN-112",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-113-T01": {
+      "requirement": "LN-113",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-113-T02": {
+      "requirement": "LN-113",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-113-T03": {
+      "requirement": "LN-113",
+      "phase": "L11",
+      "requires_hardware": false
+    },
+    "LN-120-T01": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": false
+    },
+    "LN-120-T02": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": false
+    },
+    "LN-121-T01": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": false
+    },
+    "LN-121-T02": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": false
+    },
+    "LN-121-T03": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "LN-122-T01": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": false
+    },
+    "LN-122-T02": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": false
+    },
+    "LN-122-T03": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "LN-130-T01": {
+      "requirement": "LN-130",
+      "phase": "L13",
+      "requires_hardware": true
+    },
+    "LN-130-T02": {
+      "requirement": "LN-130",
+      "phase": "L13",
+      "requires_hardware": true
+    },
+    "LN-130-T03": {
+      "requirement": "LN-130",
+      "phase": "L13",
+      "requires_hardware": true
+    },
+    "LN-131-T01": {
+      "requirement": "LN-131",
+      "phase": "L13",
+      "requires_hardware": false
+    },
+    "LN-131-T02": {
+      "requirement": "LN-131",
+      "phase": "L13",
+      "requires_hardware": false
+    },
+    "LN-131-T03": {
+      "requirement": "LN-131",
+      "phase": "L13",
+      "requires_hardware": false
+    },
+    "LN-140-T01": {
+      "requirement": "LN-140",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-140-T02": {
+      "requirement": "LN-140",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-141-T01": {
+      "requirement": "LN-141",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-141-T02": {
+      "requirement": "LN-141",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-141-T03": {
+      "requirement": "LN-141",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-142-T01": {
+      "requirement": "LN-142",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-142-T02": {
+      "requirement": "LN-142",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "MW-HH-01": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-HH-02": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-HH-03": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-HH-04": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-HH-05": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-HH-06": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-HH-07": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-HH-08": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-HH-09": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-HH-10": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-HH-11": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-HH-12": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-01": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-02": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-03": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-04": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-05": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-06": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-07": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-08": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-09": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-10": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-11": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-RD-12": {
+      "requirement": "LN-121",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-01": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-02": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-03": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-04": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-05": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-06": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-07": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-08": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-09": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-10": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-11": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-PR-12": {
+      "requirement": "LN-122",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-01": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-02": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-03": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-04": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-05": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-06": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-07": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-08": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-09": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-10": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-11": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "MW-INT-12": {
+      "requirement": "LN-120",
+      "phase": "L12",
+      "requires_hardware": true
+    },
+    "LN-012-T05": {
+      "requirement": "LN-012",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-032-T04": {
+      "requirement": "LN-032",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-060-T04": {
+      "requirement": "LN-060",
+      "phase": "L06",
+      "requires_hardware": false
+    },
+    "LN-033-T01": {
+      "requirement": "LN-033",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-033-T02": {
+      "requirement": "LN-033",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-033-T03": {
+      "requirement": "LN-033",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-033-T04": {
+      "requirement": "LN-033",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-033-T05": {
+      "requirement": "LN-033",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-033-T06": {
+      "requirement": "LN-033",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-033-T07": {
+      "requirement": "LN-033",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-033-T08": {
+      "requirement": "LN-033",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-033-T09": {
+      "requirement": "LN-033",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-033-T10": {
+      "requirement": "LN-033",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-143-T01": {
+      "requirement": "LN-143",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-143-T02": {
+      "requirement": "LN-143",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-143-T03": {
+      "requirement": "LN-143",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-143-T04": {
+      "requirement": "LN-143",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-143-T05": {
+      "requirement": "LN-143",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-143-T06": {
+      "requirement": "LN-143",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-143-T07": {
+      "requirement": "LN-143",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-143-T08": {
+      "requirement": "LN-143",
+      "phase": "L14",
+      "requires_hardware": false
+    },
+    "LN-015-T01": {
+      "requirement": "LN-015",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-015-T02": {
+      "requirement": "LN-015",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-015-T03": {
+      "requirement": "LN-015",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-015-T04": {
+      "requirement": "LN-015",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-015-T05": {
+      "requirement": "LN-015",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-015-T06": {
+      "requirement": "LN-015",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-015-T07": {
+      "requirement": "LN-015",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-015-T08": {
+      "requirement": "LN-015",
+      "phase": "L01",
+      "requires_hardware": false
+    },
+    "LN-034-T01": {
+      "requirement": "LN-034",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-034-T02": {
+      "requirement": "LN-034",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-034-T03": {
+      "requirement": "LN-034",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-034-T04": {
+      "requirement": "LN-034",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-034-T05": {
+      "requirement": "LN-034",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-034-T06": {
+      "requirement": "LN-034",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-034-T07": {
+      "requirement": "LN-034",
+      "phase": "L03",
+      "requires_hardware": false
+    },
+    "LN-034-T08": {
+      "requirement": "LN-034",
+      "phase": "L03",
+      "requires_hardware": false
+    }
+  },
+  "decisions": [
+    "KLR-01",
+    "KLR-02",
+    "KLR-03",
+    "KLR-04",
+    "KLR-05",
+    "KLR-06",
+    "KLR-07",
+    "KLR-08",
+    "KLR-09",
+    "KLR-10",
+    "KLR-11",
+    "KLX-01",
+    "KLX-02",
+    "KLX-03",
+    "DATA-01",
+    "DES-01",
+    "DES-02",
+    "DES-03",
+    "DES-04",
+    "OPS-01",
+    "HW-01",
+    "HW-02",
+    "HR-01",
+    "UAT-01"
+  ]
+}

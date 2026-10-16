@@ -1,0 +1,3584 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_804d13135bb742b2866d9e9ae0f8ddd9",
+  "observations": [
+    {
+      "id": "SIM90-ar_penalty-0",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-ar_penalty-1",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-ar_penalty-2",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-ar_bucket-3",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-pricing-4",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-pricing-5",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-commission_cap-6",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-commission_cap-7",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-commission_discount-8",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-commission_discount-9",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-commission_discount-10",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-commission_discount-11",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-receiving_over-12",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-receiving_over-13",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-receiving_over-14",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-bill_match-15",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-bill_match-16",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-qc_grade-17",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-qc_grade-18",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-qc_grade-19",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-stock_class-20",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-stock_class-21",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-stock_class-22",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-reorder-23",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-uom_variance-24",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-uom_variance-25",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-uom_variance-26",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-uom_variance-27",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-lot_enforce-28",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-lot_enforce-29",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-lot_enforce-30",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-lot_enforce-31",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-lot_number-32",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-makloon_variance-33",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-makloon_variance-34",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-makloon_variance-35",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-payroll_bpjs-36",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-payroll_overtime-37",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-payroll_pph21-38",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-payroll_pph21-39",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-min_cut-40",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-min_cut-41",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-po_supplier-42",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-po_supplier-43",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-interco-44",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-interco-45",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-quotation-46",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-quotation-47",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-currency-48",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-fiscal_year-49",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-price_deviation-50",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-price_deviation-51",
+      "expected": "block",
+      "actual": "block",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-approval-52",
+      "expected": "ok",
+      "actual": "ok",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-approval-53",
+      "expected": "warn",
+      "actual": "warn",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-public-tax-excluded-True-12",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-public-tax-included-True-12",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-public-tax-excluded-True-0",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-public-tax-excluded-False-12",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-zero-receipt-real-matcher-control",
+      "expected": "blocked",
+      "actual": "blocked",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "SIM90-zero-receipt-public-verdict",
+      "expected": "block",
+      "actual": "ok",
+      "note": "No goods received, billed10 at positive price, zero tolerance: the original bill matcher blocks; public simulation reports 3-way match passed.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "BANK90-date-preview-2026-02-28",
+      "expected": 1,
+      "actual": 1,
+      "note": "Calendar validity checked independently with datetime.date, not parser output.",
+      "status": "pass"
+    },
+    {
+      "id": "BANK90-date-persistence-2026-02-28",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "BANK90-date-preview-2026-02-30",
+      "expected": 0,
+      "actual": 1,
+      "note": "Calendar validity checked independently with datetime.date, not parser output.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "BANK90-date-persistence-2026-02-30",
+      "expected": 0,
+      "actual": 1,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "BANK90-date-preview-2026-99-99",
+      "expected": 0,
+      "actual": 1,
+      "note": "Calendar validity checked independently with datetime.date, not parser output.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "BANK90-date-persistence-2026-99-99",
+      "expected": 0,
+      "actual": 1,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "BANK90-date-preview-2026-13-01",
+      "expected": 0,
+      "actual": 1,
+      "note": "Calendar validity checked independently with datetime.date, not parser output.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "BANK90-date-persistence-2026-13-01",
+      "expected": 0,
+      "actual": 1,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "BANK90-mt940-C",
+      "expected": "in",
+      "actual": "in",
+      "note": "Primary bank MT940 specification: RC reverses credit => debit; RD reverses debit => credit.",
+      "status": "pass"
+    },
+    {
+      "id": "BANK90-mt940-D",
+      "expected": "out",
+      "actual": "out",
+      "note": "Primary bank MT940 specification: RC reverses credit => debit; RD reverses debit => credit.",
+      "status": "pass"
+    },
+    {
+      "id": "BANK90-mt940-RC",
+      "expected": "out",
+      "actual": "not_parsed",
+      "note": "Primary bank MT940 specification: RC reverses credit => debit; RD reverses debit => credit.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "BANK90-mt940-RD",
+      "expected": "in",
+      "actual": "not_parsed",
+      "note": "Primary bank MT940 specification: RC reverses credit => debit; RD reverses debit => credit.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "BANK90-mt940-reversal-net",
+      "expected": 0,
+      "actual": -100.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "BANK90-nominal-id-1.234,56",
+      "expected": 1234.56,
+      "actual": 1234.56,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "BANK90-nominal-en-1,234.56",
+      "expected": 1234.56,
+      "actual": 1234.56,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "BANK90-nominal-id-(1.234,56)",
+      "expected": 1234.56,
+      "actual": 1234.56,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "BANK90-nominal-auto-1,234.56",
+      "expected": 1234.56,
+      "actual": 1234.56,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "BANK90-nominal-auto-1.234,56",
+      "expected": 1234.56,
+      "actual": 1234.56,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "BANK90-nominal-en--1234.56",
+      "expected": 1234.56,
+      "actual": 1234.56,
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "context": {
+    "sim-0": {
+      "simulator": "ar_penalty",
+      "label": "Hitung denda keterlambatan",
+      "inputs": [
+        {
+          "name": "outstanding",
+          "label": "Sisa tagihan",
+          "type": "money",
+          "default": 10000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "days_late",
+          "label": "Hari keterlambatan",
+          "type": "int",
+          "default": 45,
+          "unit": "hari"
+        }
+      ],
+      "sample": {
+        "outstanding": 1000,
+        "days_late": 7
+      },
+      "config_used": {
+        "ar.denda_rate_pct_per_month": 2,
+        "ar.grace_days": 7
+      },
+      "steps": [
+        {
+          "label": "Sisa tagihan lewat jatuh tempo",
+          "value": "Rp 1.000"
+        },
+        {
+          "label": "Hari keterlambatan",
+          "value": "7 hari"
+        },
+        {
+          "label": "Masa tenggang",
+          "value": "7 hari"
+        },
+        {
+          "label": "Hari kena denda",
+          "value": "0 hari"
+        },
+        {
+          "label": "Bunga denda",
+          "value": "2% per bulan (prorata 30 hari)"
+        }
+      ],
+      "result": "Estimasi denda Rp 0",
+      "verdict": "ok"
+    },
+    "sim-1": {
+      "simulator": "ar_penalty",
+      "label": "Hitung denda keterlambatan",
+      "inputs": [
+        {
+          "name": "outstanding",
+          "label": "Sisa tagihan",
+          "type": "money",
+          "default": 10000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "days_late",
+          "label": "Hari keterlambatan",
+          "type": "int",
+          "default": 45,
+          "unit": "hari"
+        }
+      ],
+      "sample": {
+        "outstanding": 1000,
+        "days_late": 30
+      },
+      "config_used": {
+        "ar.denda_rate_pct_per_month": 2,
+        "ar.grace_days": 0
+      },
+      "steps": [
+        {
+          "label": "Sisa tagihan lewat jatuh tempo",
+          "value": "Rp 1.000"
+        },
+        {
+          "label": "Hari keterlambatan",
+          "value": "30 hari"
+        },
+        {
+          "label": "Masa tenggang",
+          "value": "0 hari"
+        },
+        {
+          "label": "Hari kena denda",
+          "value": "30 hari"
+        },
+        {
+          "label": "Bunga denda",
+          "value": "2% per bulan (prorata 30 hari)"
+        }
+      ],
+      "result": "Estimasi denda Rp 20",
+      "verdict": "warn"
+    },
+    "sim-2": {
+      "simulator": "ar_penalty",
+      "label": "Hitung denda keterlambatan",
+      "inputs": [
+        {
+          "name": "outstanding",
+          "label": "Sisa tagihan",
+          "type": "money",
+          "default": 10000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "days_late",
+          "label": "Hari keterlambatan",
+          "type": "int",
+          "default": 45,
+          "unit": "hari"
+        }
+      ],
+      "sample": {
+        "outstanding": 1000,
+        "days_late": 90
+      },
+      "config_used": {
+        "ar.denda_rate_pct_per_month": 2,
+        "ar.grace_days": 0
+      },
+      "steps": [
+        {
+          "label": "Sisa tagihan lewat jatuh tempo",
+          "value": "Rp 1.000"
+        },
+        {
+          "label": "Hari keterlambatan",
+          "value": "90 hari"
+        },
+        {
+          "label": "Masa tenggang",
+          "value": "0 hari"
+        },
+        {
+          "label": "Hari kena denda",
+          "value": "90 hari"
+        },
+        {
+          "label": "Bunga denda",
+          "value": "2% per bulan (prorata 30 hari)"
+        }
+      ],
+      "result": "Estimasi denda Rp 60",
+      "verdict": "block"
+    },
+    "sim-3": {
+      "simulator": "ar_bucket",
+      "label": "Tentukan kolom umur piutang",
+      "inputs": [
+        {
+          "name": "days_late",
+          "label": "Hari keterlambatan",
+          "type": "int",
+          "default": 45,
+          "unit": "hari"
+        }
+      ],
+      "sample": {
+        "days_late": 31
+      },
+      "config_used": {
+        "ar.aging_buckets": [
+          30,
+          60,
+          90
+        ]
+      },
+      "steps": [
+        {
+          "label": "Hari keterlambatan",
+          "value": "31 hari"
+        },
+        {
+          "label": "Ambang kelompok",
+          "value": "30, 60, 90"
+        }
+      ],
+      "result": "Masuk kolom '31–60 hari'",
+      "verdict": "ok"
+    },
+    "sim-4": {
+      "simulator": "pricing",
+      "label": "Hitung diskon & dasar pajak",
+      "inputs": [
+        {
+          "name": "subtotal",
+          "label": "Subtotal bruto",
+          "type": "money",
+          "default": 10000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "item_discount_pct",
+          "label": "Diskon baris",
+          "type": "pct",
+          "default": 5,
+          "unit": "%"
+        },
+        {
+          "name": "order_discount_pct",
+          "label": "Diskon order",
+          "type": "pct",
+          "default": 2,
+          "unit": "%"
+        }
+      ],
+      "sample": {
+        "subtotal": 10000000,
+        "item_discount_pct": 5,
+        "order_discount_pct": 2
+      },
+      "config_used": {
+        "sales.allow_item_discount": false,
+        "sales.allow_order_discount": false
+      },
+      "steps": [
+        {
+          "label": "Subtotal bruto",
+          "value": "Rp 10.000.000"
+        },
+        {
+          "label": "Diskon baris 5%",
+          "value": "DIABAIKAN (diskon baris dimatikan)"
+        },
+        {
+          "label": "Diskon order 2%",
+          "value": "DIABAIKAN (diskon order dimatikan)"
+        }
+      ],
+      "result": "Dasar pajak (netto) Rp 10.000.000",
+      "verdict": "warn"
+    },
+    "sim-5": {
+      "simulator": "pricing",
+      "label": "Hitung diskon & dasar pajak",
+      "inputs": [
+        {
+          "name": "subtotal",
+          "label": "Subtotal bruto",
+          "type": "money",
+          "default": 10000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "item_discount_pct",
+          "label": "Diskon baris",
+          "type": "pct",
+          "default": 5,
+          "unit": "%"
+        },
+        {
+          "name": "order_discount_pct",
+          "label": "Diskon order",
+          "type": "pct",
+          "default": 2,
+          "unit": "%"
+        }
+      ],
+      "sample": {
+        "subtotal": 10000000,
+        "item_discount_pct": 5,
+        "order_discount_pct": 2
+      },
+      "config_used": {
+        "sales.allow_item_discount": true,
+        "sales.allow_order_discount": true
+      },
+      "steps": [
+        {
+          "label": "Subtotal bruto",
+          "value": "Rp 10.000.000"
+        },
+        {
+          "label": "Diskon baris 5%",
+          "value": "Rp 500.000"
+        },
+        {
+          "label": "Diskon order 2%",
+          "value": "Rp 190.000"
+        }
+      ],
+      "result": "Dasar pajak (netto) Rp 9.310.000",
+      "verdict": "ok"
+    },
+    "sim-6": {
+      "simulator": "commission_cap",
+      "label": "Uji batas komisi vs margin",
+      "inputs": [
+        {
+          "name": "line_margin",
+          "label": "Margin baris",
+          "type": "money",
+          "default": 1000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "commission",
+          "label": "Komisi hasil hitung",
+          "type": "money",
+          "default": 700000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "line_margin": 100,
+        "commission": 60
+      },
+      "config_used": {
+        "commission.default_margin_cap_pct": 50
+      },
+      "steps": [
+        {
+          "label": "Margin baris",
+          "value": "Rp 100"
+        },
+        {
+          "label": "Komisi hasil hitung",
+          "value": "Rp 60"
+        },
+        {
+          "label": "Batas 50% dari margin",
+          "value": "Rp 50"
+        }
+      ],
+      "result": "Komisi dibayar Rp 50 (dipotong batas margin)",
+      "verdict": "warn"
+    },
+    "sim-7": {
+      "simulator": "commission_cap",
+      "label": "Uji batas komisi vs margin",
+      "inputs": [
+        {
+          "name": "line_margin",
+          "label": "Margin baris",
+          "type": "money",
+          "default": 1000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "commission",
+          "label": "Komisi hasil hitung",
+          "type": "money",
+          "default": 700000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "line_margin": 100,
+        "commission": 40
+      },
+      "config_used": {
+        "commission.default_margin_cap_pct": 50
+      },
+      "steps": [
+        {
+          "label": "Margin baris",
+          "value": "Rp 100"
+        },
+        {
+          "label": "Komisi hasil hitung",
+          "value": "Rp 40"
+        },
+        {
+          "label": "Batas 50% dari margin",
+          "value": "Rp 50"
+        }
+      ],
+      "result": "Komisi dibayar Rp 40 (tidak terkena batas)",
+      "verdict": "ok"
+    },
+    "sim-8": {
+      "simulator": "commission_discount",
+      "label": "Uji pemotongan komisi karena diskon",
+      "inputs": [
+        {
+          "name": "discount",
+          "label": "Diskon baris",
+          "type": "pct",
+          "default": 15,
+          "unit": "%"
+        },
+        {
+          "name": "commission",
+          "label": "Komisi awal",
+          "type": "money",
+          "default": 1000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "quantity",
+          "label": "Qty",
+          "type": "decimal",
+          "default": 100,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "discount": 15,
+        "commission": 1000000,
+        "quantity": 100
+      },
+      "config_used": {
+        "commission.discount_threshold": 10,
+        "commission.discount_mechanic": "cutoff"
+      },
+      "steps": [
+        {
+          "label": "Diskon baris",
+          "value": "15%"
+        },
+        {
+          "label": "Ambang",
+          "value": "10%"
+        },
+        {
+          "label": "Komisi sebelum mekanik",
+          "value": "Rp 1.000.000"
+        },
+        {
+          "label": "Mekanik",
+          "value": "Komisi hangus"
+        }
+      ],
+      "result": "Komisi dibayar Rp 0",
+      "verdict": "warn"
+    },
+    "sim-9": {
+      "simulator": "commission_discount",
+      "label": "Uji pemotongan komisi karena diskon",
+      "inputs": [
+        {
+          "name": "discount",
+          "label": "Diskon baris",
+          "type": "pct",
+          "default": 15,
+          "unit": "%"
+        },
+        {
+          "name": "commission",
+          "label": "Komisi awal",
+          "type": "money",
+          "default": 1000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "quantity",
+          "label": "Qty",
+          "type": "decimal",
+          "default": 100,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "discount": 15,
+        "commission": 1000000,
+        "quantity": 100
+      },
+      "config_used": {
+        "commission.discount_threshold": 10,
+        "commission.discount_mechanic": "potong_rp",
+        "commission.discount_potong_rp": 100
+      },
+      "steps": [
+        {
+          "label": "Diskon baris",
+          "value": "15%"
+        },
+        {
+          "label": "Ambang",
+          "value": "10%"
+        },
+        {
+          "label": "Komisi sebelum mekanik",
+          "value": "Rp 1.000.000"
+        },
+        {
+          "label": "Mekanik",
+          "value": "Kurangi Rp 100 × 100 satuan"
+        }
+      ],
+      "result": "Komisi dibayar Rp 990.000",
+      "verdict": "warn"
+    },
+    "sim-10": {
+      "simulator": "commission_discount",
+      "label": "Uji pemotongan komisi karena diskon",
+      "inputs": [
+        {
+          "name": "discount",
+          "label": "Diskon baris",
+          "type": "pct",
+          "default": 15,
+          "unit": "%"
+        },
+        {
+          "name": "commission",
+          "label": "Komisi awal",
+          "type": "money",
+          "default": 1000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "quantity",
+          "label": "Qty",
+          "type": "decimal",
+          "default": 100,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "discount": 15,
+        "commission": 1000000,
+        "quantity": 100
+      },
+      "config_used": {
+        "commission.discount_threshold": 10,
+        "commission.discount_mechanic": "tier_factor"
+      },
+      "steps": [
+        {
+          "label": "Diskon baris",
+          "value": "15%"
+        },
+        {
+          "label": "Ambang",
+          "value": "10%"
+        },
+        {
+          "label": "Komisi sebelum mekanik",
+          "value": "Rp 1.000.000"
+        },
+        {
+          "label": "Mekanik",
+          "value": "Kalikan faktor 0,5"
+        }
+      ],
+      "result": "Komisi dibayar Rp 500.000",
+      "verdict": "warn"
+    },
+    "sim-11": {
+      "simulator": "commission_discount",
+      "label": "Uji pemotongan komisi karena diskon",
+      "inputs": [
+        {
+          "name": "discount",
+          "label": "Diskon baris",
+          "type": "pct",
+          "default": 15,
+          "unit": "%"
+        },
+        {
+          "name": "commission",
+          "label": "Komisi awal",
+          "type": "money",
+          "default": 1000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "quantity",
+          "label": "Qty",
+          "type": "decimal",
+          "default": 100,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "discount": 5,
+        "commission": 1000000,
+        "quantity": 100
+      },
+      "config_used": {
+        "commission.discount_threshold": 10
+      },
+      "steps": [
+        {
+          "label": "Diskon baris",
+          "value": "5%"
+        },
+        {
+          "label": "Ambang",
+          "value": "10%"
+        },
+        {
+          "label": "Komisi sebelum mekanik",
+          "value": "Rp 1.000.000"
+        }
+      ],
+      "result": "Komisi utuh Rp 1.000.000 (di bawah ambang)",
+      "verdict": "ok"
+    },
+    "sim-12": {
+      "simulator": "receiving_over",
+      "label": "Uji penerimaan melebihi PO",
+      "inputs": [
+        {
+          "name": "po_qty",
+          "label": "Qty PO",
+          "type": "decimal",
+          "default": 1000,
+          "unit": "satuan"
+        },
+        {
+          "name": "received_total",
+          "label": "Total diterima",
+          "type": "decimal",
+          "default": 1030,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "po_qty": 100,
+        "received_total": 102
+      },
+      "config_used": {
+        "purchasing.receive_tolerance_percent": 2,
+        "receiving.block_over_remaining": true
+      },
+      "steps": [
+        {
+          "label": "Qty PO",
+          "value": "100"
+        },
+        {
+          "label": "Toleransi +2%",
+          "value": "maks 102"
+        },
+        {
+          "label": "Total diterima",
+          "value": "102"
+        },
+        {
+          "label": "Tolak bila lebih?",
+          "value": "Ya"
+        }
+      ],
+      "result": "Diterima normal (masih dalam toleransi)",
+      "verdict": "ok"
+    },
+    "sim-13": {
+      "simulator": "receiving_over",
+      "label": "Uji penerimaan melebihi PO",
+      "inputs": [
+        {
+          "name": "po_qty",
+          "label": "Qty PO",
+          "type": "decimal",
+          "default": 1000,
+          "unit": "satuan"
+        },
+        {
+          "name": "received_total",
+          "label": "Total diterima",
+          "type": "decimal",
+          "default": 1030,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "po_qty": 100,
+        "received_total": 103
+      },
+      "config_used": {
+        "purchasing.receive_tolerance_percent": 2,
+        "receiving.block_over_remaining": true
+      },
+      "steps": [
+        {
+          "label": "Qty PO",
+          "value": "100"
+        },
+        {
+          "label": "Toleransi +2%",
+          "value": "maks 102"
+        },
+        {
+          "label": "Total diterima",
+          "value": "103"
+        },
+        {
+          "label": "Tolak bila lebih?",
+          "value": "Ya"
+        }
+      ],
+      "result": "DITOLAK — melebihi PO + toleransi. Butuh Eskalasi.",
+      "verdict": "block"
+    },
+    "sim-14": {
+      "simulator": "receiving_over",
+      "label": "Uji penerimaan melebihi PO",
+      "inputs": [
+        {
+          "name": "po_qty",
+          "label": "Qty PO",
+          "type": "decimal",
+          "default": 1000,
+          "unit": "satuan"
+        },
+        {
+          "name": "received_total",
+          "label": "Total diterima",
+          "type": "decimal",
+          "default": 1030,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "po_qty": 100,
+        "received_total": 103
+      },
+      "config_used": {
+        "purchasing.receive_tolerance_percent": 2,
+        "receiving.block_over_remaining": false
+      },
+      "steps": [
+        {
+          "label": "Qty PO",
+          "value": "100"
+        },
+        {
+          "label": "Toleransi +2%",
+          "value": "maks 102"
+        },
+        {
+          "label": "Total diterima",
+          "value": "103"
+        },
+        {
+          "label": "Tolak bila lebih?",
+          "value": "Tidak (terima + tandai)"
+        }
+      ],
+      "result": "Diterima dengan tanda 'lebih dari PO' (+1)",
+      "verdict": "warn"
+    },
+    "sim-15": {
+      "simulator": "bill_match",
+      "label": "Uji 3-way match tagihan supplier",
+      "inputs": [
+        {
+          "name": "received_qty",
+          "label": "Qty diterima",
+          "type": "decimal",
+          "default": 1000,
+          "unit": "satuan"
+        },
+        {
+          "name": "billed_qty",
+          "label": "Qty ditagih",
+          "type": "decimal",
+          "default": 1010,
+          "unit": "satuan"
+        },
+        {
+          "name": "po_price",
+          "label": "Harga PO",
+          "type": "money",
+          "default": 100000,
+          "unit": "Rp"
+        },
+        {
+          "name": "billed_price",
+          "label": "Harga ditagih",
+          "type": "money",
+          "default": 108000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "received_qty": 100,
+        "billed_qty": 100,
+        "po_price": 100,
+        "billed_price": 100
+      },
+      "config_used": {
+        "purchasing.bill_qty_tolerance_percent": 0,
+        "purchasing.bill_price_tolerance_percent": 5
+      },
+      "steps": [
+        {
+          "label": "Selisih qty",
+          "value": "0% (toleransi 0%)"
+        },
+        {
+          "label": "Selisih harga",
+          "value": "0% (toleransi 5%)"
+        }
+      ],
+      "result": "3-way match LOLOS — tagihan bisa langsung diproses",
+      "verdict": "ok"
+    },
+    "sim-16": {
+      "simulator": "bill_match",
+      "label": "Uji 3-way match tagihan supplier",
+      "inputs": [
+        {
+          "name": "received_qty",
+          "label": "Qty diterima",
+          "type": "decimal",
+          "default": 1000,
+          "unit": "satuan"
+        },
+        {
+          "name": "billed_qty",
+          "label": "Qty ditagih",
+          "type": "decimal",
+          "default": 1010,
+          "unit": "satuan"
+        },
+        {
+          "name": "po_price",
+          "label": "Harga PO",
+          "type": "money",
+          "default": 100000,
+          "unit": "Rp"
+        },
+        {
+          "name": "billed_price",
+          "label": "Harga ditagih",
+          "type": "money",
+          "default": 108000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "received_qty": 100,
+        "billed_qty": 101,
+        "po_price": 100,
+        "billed_price": 110
+      },
+      "config_used": {
+        "purchasing.bill_qty_tolerance_percent": 0,
+        "purchasing.bill_price_tolerance_percent": 5
+      },
+      "steps": [
+        {
+          "label": "Selisih qty",
+          "value": "1% (toleransi 0%)"
+        },
+        {
+          "label": "Selisih harga",
+          "value": "10% (toleransi 5%)"
+        }
+      ],
+      "result": "Selisih qty & harga di luar toleransi → butuh keputusan berlabel",
+      "verdict": "block"
+    },
+    "sim-17": {
+      "simulator": "qc_grade",
+      "label": "Tentukan grade dari poin cacat",
+      "inputs": [
+        {
+          "name": "points",
+          "label": "Poin cacat 4-point",
+          "type": "decimal",
+          "default": 25,
+          "unit": "poin"
+        }
+      ],
+      "sample": {
+        "points": 20
+      },
+      "config_used": {
+        "qc.grade_thresholds.a_max": 20,
+        "qc.grade_thresholds.b_max": 40
+      },
+      "steps": [
+        {
+          "label": "Inspeksi 4-Point",
+          "value": "Aktif"
+        },
+        {
+          "label": "Poin cacat",
+          "value": "20"
+        },
+        {
+          "label": "Ambang A / B",
+          "value": "≤20 / ≤40"
+        }
+      ],
+      "result": "Grade A",
+      "verdict": "ok"
+    },
+    "sim-18": {
+      "simulator": "qc_grade",
+      "label": "Tentukan grade dari poin cacat",
+      "inputs": [
+        {
+          "name": "points",
+          "label": "Poin cacat 4-point",
+          "type": "decimal",
+          "default": 25,
+          "unit": "poin"
+        }
+      ],
+      "sample": {
+        "points": 21
+      },
+      "config_used": {
+        "qc.grade_thresholds.a_max": 20,
+        "qc.grade_thresholds.b_max": 40
+      },
+      "steps": [
+        {
+          "label": "Inspeksi 4-Point",
+          "value": "Aktif"
+        },
+        {
+          "label": "Poin cacat",
+          "value": "21"
+        },
+        {
+          "label": "Ambang A / B",
+          "value": "≤20 / ≤40"
+        }
+      ],
+      "result": "Grade B",
+      "verdict": "warn"
+    },
+    "sim-19": {
+      "simulator": "qc_grade",
+      "label": "Tentukan grade dari poin cacat",
+      "inputs": [
+        {
+          "name": "points",
+          "label": "Poin cacat 4-point",
+          "type": "decimal",
+          "default": 25,
+          "unit": "poin"
+        }
+      ],
+      "sample": {
+        "points": 41
+      },
+      "config_used": {
+        "qc.grade_thresholds.a_max": 20,
+        "qc.grade_thresholds.b_max": 40
+      },
+      "steps": [
+        {
+          "label": "Inspeksi 4-Point",
+          "value": "Aktif"
+        },
+        {
+          "label": "Poin cacat",
+          "value": "41"
+        },
+        {
+          "label": "Ambang A / B",
+          "value": "≤20 / ≤40"
+        }
+      ],
+      "result": "Grade C",
+      "verdict": "block"
+    },
+    "sim-20": {
+      "simulator": "stock_class",
+      "label": "Klasifikasi Fast/Slow/Dead",
+      "inputs": [
+        {
+          "name": "days_since_sale",
+          "label": "Hari sejak terjual",
+          "type": "int",
+          "default": 45,
+          "unit": "hari"
+        }
+      ],
+      "sample": {
+        "days_since_sale": 30
+      },
+      "config_used": {
+        "inventory.stock_analytics.fast_max_days": 30,
+        "inventory.stock_analytics.slow_max_days": 90
+      },
+      "steps": [
+        {
+          "label": "Hari sejak terakhir terjual",
+          "value": "30 hari"
+        },
+        {
+          "label": "Ambang Fast / Slow",
+          "value": "≤30 / ≤90 hari"
+        }
+      ],
+      "result": "Klasifikasi: Cepat Laku (Fast)",
+      "verdict": "ok"
+    },
+    "sim-21": {
+      "simulator": "stock_class",
+      "label": "Klasifikasi Fast/Slow/Dead",
+      "inputs": [
+        {
+          "name": "days_since_sale",
+          "label": "Hari sejak terjual",
+          "type": "int",
+          "default": 45,
+          "unit": "hari"
+        }
+      ],
+      "sample": {
+        "days_since_sale": 31
+      },
+      "config_used": {
+        "inventory.stock_analytics.fast_max_days": 30,
+        "inventory.stock_analytics.slow_max_days": 90
+      },
+      "steps": [
+        {
+          "label": "Hari sejak terakhir terjual",
+          "value": "31 hari"
+        },
+        {
+          "label": "Ambang Fast / Slow",
+          "value": "≤30 / ≤90 hari"
+        }
+      ],
+      "result": "Klasifikasi: Lambat (Slow)",
+      "verdict": "warn"
+    },
+    "sim-22": {
+      "simulator": "stock_class",
+      "label": "Klasifikasi Fast/Slow/Dead",
+      "inputs": [
+        {
+          "name": "days_since_sale",
+          "label": "Hari sejak terjual",
+          "type": "int",
+          "default": 45,
+          "unit": "hari"
+        }
+      ],
+      "sample": {
+        "days_since_sale": 91
+      },
+      "config_used": {
+        "inventory.stock_analytics.fast_max_days": 30,
+        "inventory.stock_analytics.slow_max_days": 90
+      },
+      "steps": [
+        {
+          "label": "Hari sejak terakhir terjual",
+          "value": "91 hari"
+        },
+        {
+          "label": "Ambang Fast / Slow",
+          "value": "≤30 / ≤90 hari"
+        }
+      ],
+      "result": "Klasifikasi: Mati (Dead)",
+      "verdict": "block"
+    },
+    "sim-23": {
+      "simulator": "reorder",
+      "label": "Hitung titik pesan ulang",
+      "inputs": [
+        {
+          "name": "sold_qty",
+          "label": "Terjual di jendela",
+          "type": "decimal",
+          "default": 900,
+          "unit": "satuan"
+        },
+        {
+          "name": "lead_time_days",
+          "label": "Lead time supplier",
+          "type": "int",
+          "default": 14,
+          "unit": "hari"
+        }
+      ],
+      "sample": {
+        "sold_qty": 900,
+        "lead_time_days": 14
+      },
+      "config_used": {
+        "inventory.reorder.velocity_window_days": 90,
+        "inventory.reorder.safety_days": 7
+      },
+      "steps": [
+        {
+          "label": "Terjual dalam 90 hari",
+          "value": "900"
+        },
+        {
+          "label": "Rata-rata harian",
+          "value": "10 / hari"
+        },
+        {
+          "label": "Lead time + cadangan",
+          "value": "14 + 7 hari"
+        }
+      ],
+      "result": "Titik pesan ulang ≈ 210",
+      "verdict": "ok"
+    },
+    "sim-24": {
+      "simulator": "uom_variance",
+      "label": "Uji selisih konversi satuan",
+      "inputs": [
+        {
+          "name": "expected",
+          "label": "Qty harapan",
+          "type": "decimal",
+          "default": 47.25,
+          "unit": ""
+        },
+        {
+          "name": "actual",
+          "label": "Qty aktual",
+          "type": "decimal",
+          "default": 48.5,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "expected": 100,
+        "actual": 101
+      },
+      "config_used": {
+        "uom.warn_pct": 2,
+        "uom.block_pct": 5,
+        "uom.allow_override": true
+      },
+      "steps": [
+        {
+          "label": "Harapan",
+          "value": "100"
+        },
+        {
+          "label": "Aktual",
+          "value": "101"
+        },
+        {
+          "label": "Selisih",
+          "value": "1%"
+        },
+        {
+          "label": "Ambang warn / block",
+          "value": "2% / 5%"
+        }
+      ],
+      "result": "Diterima tanpa peringatan",
+      "verdict": "ok"
+    },
+    "sim-25": {
+      "simulator": "uom_variance",
+      "label": "Uji selisih konversi satuan",
+      "inputs": [
+        {
+          "name": "expected",
+          "label": "Qty harapan",
+          "type": "decimal",
+          "default": 47.25,
+          "unit": ""
+        },
+        {
+          "name": "actual",
+          "label": "Qty aktual",
+          "type": "decimal",
+          "default": 48.5,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "expected": 100,
+        "actual": 103
+      },
+      "config_used": {
+        "uom.warn_pct": 2,
+        "uom.block_pct": 5,
+        "uom.allow_override": true
+      },
+      "steps": [
+        {
+          "label": "Harapan",
+          "value": "100"
+        },
+        {
+          "label": "Aktual",
+          "value": "103"
+        },
+        {
+          "label": "Selisih",
+          "value": "3%"
+        },
+        {
+          "label": "Ambang warn / block",
+          "value": "2% / 5%"
+        }
+      ],
+      "result": "Diterima dengan peringatan kuning",
+      "verdict": "warn"
+    },
+    "sim-26": {
+      "simulator": "uom_variance",
+      "label": "Uji selisih konversi satuan",
+      "inputs": [
+        {
+          "name": "expected",
+          "label": "Qty harapan",
+          "type": "decimal",
+          "default": 47.25,
+          "unit": ""
+        },
+        {
+          "name": "actual",
+          "label": "Qty aktual",
+          "type": "decimal",
+          "default": 48.5,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "expected": 100,
+        "actual": 106
+      },
+      "config_used": {
+        "uom.warn_pct": 2,
+        "uom.block_pct": 5,
+        "uom.allow_override": true
+      },
+      "steps": [
+        {
+          "label": "Harapan",
+          "value": "100"
+        },
+        {
+          "label": "Aktual",
+          "value": "106"
+        },
+        {
+          "label": "Selisih",
+          "value": "6%"
+        },
+        {
+          "label": "Ambang warn / block",
+          "value": "2% / 5%"
+        }
+      ],
+      "result": "DITOLAK — kecuali override berizin + alasan",
+      "verdict": "block"
+    },
+    "sim-27": {
+      "simulator": "uom_variance",
+      "label": "Uji selisih konversi satuan",
+      "inputs": [
+        {
+          "name": "expected",
+          "label": "Qty harapan",
+          "type": "decimal",
+          "default": 47.25,
+          "unit": ""
+        },
+        {
+          "name": "actual",
+          "label": "Qty aktual",
+          "type": "decimal",
+          "default": 48.5,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "expected": 100,
+        "actual": 106
+      },
+      "config_used": {
+        "uom.warn_pct": 2,
+        "uom.block_pct": 5,
+        "uom.allow_override": false
+      },
+      "steps": [
+        {
+          "label": "Harapan",
+          "value": "100"
+        },
+        {
+          "label": "Aktual",
+          "value": "106"
+        },
+        {
+          "label": "Selisih",
+          "value": "6%"
+        },
+        {
+          "label": "Ambang warn / block",
+          "value": "2% / 5%"
+        }
+      ],
+      "result": "DITOLAK (override dimatikan)",
+      "verdict": "block"
+    },
+    "sim-28": {
+      "simulator": "lot_enforce",
+      "label": "Uji kewajiban nomor lot",
+      "inputs": [
+        {
+          "name": "has_supplier_lot",
+          "label": "Lot supplier terisi?",
+          "type": "bool",
+          "default": false,
+          "unit": ""
+        },
+        {
+          "name": "has_dye_lot",
+          "label": "Dye lot terisi?",
+          "type": "bool",
+          "default": false,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "has_supplier_lot": false,
+        "has_dye_lot": false
+      },
+      "config_used": {
+        "lot.enforcement_mode": "off"
+      },
+      "steps": [
+        {
+          "label": "Ketegasan",
+          "value": "off"
+        },
+        {
+          "label": "Field wajib",
+          "value": "Lot Supplier, Dye Lot"
+        },
+        {
+          "label": "Yang kosong",
+          "value": "Lot Supplier, Dye Lot"
+        }
+      ],
+      "result": "Penerimaan lanjut normal",
+      "verdict": "ok"
+    },
+    "sim-29": {
+      "simulator": "lot_enforce",
+      "label": "Uji kewajiban nomor lot",
+      "inputs": [
+        {
+          "name": "has_supplier_lot",
+          "label": "Lot supplier terisi?",
+          "type": "bool",
+          "default": false,
+          "unit": ""
+        },
+        {
+          "name": "has_dye_lot",
+          "label": "Dye lot terisi?",
+          "type": "bool",
+          "default": false,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "has_supplier_lot": false,
+        "has_dye_lot": false
+      },
+      "config_used": {
+        "lot.enforcement_mode": "warn"
+      },
+      "steps": [
+        {
+          "label": "Ketegasan",
+          "value": "warn"
+        },
+        {
+          "label": "Field wajib",
+          "value": "Lot Supplier, Dye Lot"
+        },
+        {
+          "label": "Yang kosong",
+          "value": "Lot Supplier, Dye Lot"
+        }
+      ],
+      "result": "Lanjut dengan peringatan (Lot Supplier, Dye Lot kosong)",
+      "verdict": "warn"
+    },
+    "sim-30": {
+      "simulator": "lot_enforce",
+      "label": "Uji kewajiban nomor lot",
+      "inputs": [
+        {
+          "name": "has_supplier_lot",
+          "label": "Lot supplier terisi?",
+          "type": "bool",
+          "default": false,
+          "unit": ""
+        },
+        {
+          "name": "has_dye_lot",
+          "label": "Dye lot terisi?",
+          "type": "bool",
+          "default": false,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "has_supplier_lot": false,
+        "has_dye_lot": false
+      },
+      "config_used": {
+        "lot.enforcement_mode": "block"
+      },
+      "steps": [
+        {
+          "label": "Ketegasan",
+          "value": "block"
+        },
+        {
+          "label": "Field wajib",
+          "value": "Lot Supplier, Dye Lot"
+        },
+        {
+          "label": "Yang kosong",
+          "value": "Lot Supplier, Dye Lot"
+        }
+      ],
+      "result": "DITOLAK — Lot Supplier, Dye Lot wajib diisi",
+      "verdict": "block"
+    },
+    "sim-31": {
+      "simulator": "lot_enforce",
+      "label": "Uji kewajiban nomor lot",
+      "inputs": [
+        {
+          "name": "has_supplier_lot",
+          "label": "Lot supplier terisi?",
+          "type": "bool",
+          "default": false,
+          "unit": ""
+        },
+        {
+          "name": "has_dye_lot",
+          "label": "Dye lot terisi?",
+          "type": "bool",
+          "default": false,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "has_supplier_lot": true,
+        "has_dye_lot": true
+      },
+      "config_used": {
+        "lot.enforcement_mode": "block"
+      },
+      "steps": [
+        {
+          "label": "Ketegasan",
+          "value": "block"
+        },
+        {
+          "label": "Field wajib",
+          "value": "Lot Supplier, Dye Lot"
+        },
+        {
+          "label": "Yang kosong",
+          "value": "tidak ada"
+        }
+      ],
+      "result": "Penerimaan lanjut normal",
+      "verdict": "ok"
+    },
+    "sim-32": {
+      "simulator": "lot_number",
+      "label": "Contoh nomor lot",
+      "inputs": [
+        {
+          "name": "sequence",
+          "label": "Urutan ke-",
+          "type": "int",
+          "default": 7,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "sequence": 7
+      },
+      "config_used": {
+        "lot.number_format": "LOT-YYMM-####"
+      },
+      "steps": [
+        {
+          "label": "Pola",
+          "value": "LOT-YYMM-####"
+        },
+        {
+          "label": "Urutan",
+          "value": "7"
+        }
+      ],
+      "result": "Contoh nomor lot: LOT-2607-0007",
+      "verdict": "ok"
+    },
+    "sim-33": {
+      "simulator": "makloon_variance",
+      "label": "Uji selisih hasil makloon",
+      "inputs": [
+        {
+          "name": "sent_qty",
+          "label": "Dikirim",
+          "type": "decimal",
+          "default": 1000,
+          "unit": "satuan"
+        },
+        {
+          "name": "returned_qty",
+          "label": "Kembali",
+          "type": "decimal",
+          "default": 950,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "sent_qty": 1000,
+        "returned_qty": 950
+      },
+      "config_used": {
+        "makloon.default_shrinkage_pct": 5,
+        "makloon.variance_tolerance_pct": 3,
+        "makloon.auto_claim": true
+      },
+      "steps": [
+        {
+          "label": "Dikirim ke mitra",
+          "value": "1.000"
+        },
+        {
+          "label": "Susut standar 5%",
+          "value": "estimasi kembali 950"
+        },
+        {
+          "label": "Kembali",
+          "value": "950"
+        },
+        {
+          "label": "Selisih",
+          "value": "0% (toleransi 3%)"
+        }
+      ],
+      "result": "Masih wajar — tidak ada klaim",
+      "verdict": "ok"
+    },
+    "sim-34": {
+      "simulator": "makloon_variance",
+      "label": "Uji selisih hasil makloon",
+      "inputs": [
+        {
+          "name": "sent_qty",
+          "label": "Dikirim",
+          "type": "decimal",
+          "default": 1000,
+          "unit": "satuan"
+        },
+        {
+          "name": "returned_qty",
+          "label": "Kembali",
+          "type": "decimal",
+          "default": 950,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "sent_qty": 1000,
+        "returned_qty": 900
+      },
+      "config_used": {
+        "makloon.default_shrinkage_pct": 5,
+        "makloon.variance_tolerance_pct": 3,
+        "makloon.auto_claim": true
+      },
+      "steps": [
+        {
+          "label": "Dikirim ke mitra",
+          "value": "1.000"
+        },
+        {
+          "label": "Susut standar 5%",
+          "value": "estimasi kembali 950"
+        },
+        {
+          "label": "Kembali",
+          "value": "900"
+        },
+        {
+          "label": "Selisih",
+          "value": "-5,26% (toleransi 3%)"
+        }
+      ],
+      "result": "Klaim OTOMATIS terbuka (menunggu persetujuan)",
+      "verdict": "block"
+    },
+    "sim-35": {
+      "simulator": "makloon_variance",
+      "label": "Uji selisih hasil makloon",
+      "inputs": [
+        {
+          "name": "sent_qty",
+          "label": "Dikirim",
+          "type": "decimal",
+          "default": 1000,
+          "unit": "satuan"
+        },
+        {
+          "name": "returned_qty",
+          "label": "Kembali",
+          "type": "decimal",
+          "default": 950,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "sent_qty": 1000,
+        "returned_qty": 900
+      },
+      "config_used": {
+        "makloon.default_shrinkage_pct": 5,
+        "makloon.variance_tolerance_pct": 3,
+        "makloon.auto_claim": false
+      },
+      "steps": [
+        {
+          "label": "Dikirim ke mitra",
+          "value": "1.000"
+        },
+        {
+          "label": "Susut standar 5%",
+          "value": "estimasi kembali 950"
+        },
+        {
+          "label": "Kembali",
+          "value": "900"
+        },
+        {
+          "label": "Selisih",
+          "value": "-5,26% (toleransi 3%)"
+        }
+      ],
+      "result": "Selisih tercatat, klaim harus dibuat MANUAL",
+      "verdict": "warn"
+    },
+    "sim-36": {
+      "simulator": "payroll_bpjs",
+      "label": "Hitung iuran BPJS",
+      "inputs": [
+        {
+          "name": "salary",
+          "label": "Gaji bruto",
+          "type": "money",
+          "default": 8000000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "salary": 8000000
+      },
+      "config_used": {},
+      "steps": [
+        {
+          "label": "Gaji bruto",
+          "value": "Rp 8.000.000"
+        },
+        {
+          "label": "BPJS Kesehatan (karyawan) 0%",
+          "value": "Rp 0"
+        },
+        {
+          "label": "BPJS Kesehatan (perusahaan) 0%",
+          "value": "Rp 0"
+        },
+        {
+          "label": "JHT (karyawan) 0%",
+          "value": "Rp 0"
+        },
+        {
+          "label": "JHT (perusahaan) 0%",
+          "value": "Rp 0"
+        },
+        {
+          "label": "Jaminan Pensiun (karyawan) 0%",
+          "value": "Rp 0"
+        },
+        {
+          "label": "Jaminan Pensiun (perusahaan) 0%",
+          "value": "Rp 0"
+        },
+        {
+          "label": "JKM (perusahaan) 0%",
+          "value": "Rp 0"
+        }
+      ],
+      "result": "Total potongan karyawan Rp 0",
+      "verdict": "ok"
+    },
+    "sim-37": {
+      "simulator": "payroll_overtime",
+      "label": "Hitung upah lembur",
+      "inputs": [
+        {
+          "name": "salary",
+          "label": "Gaji bulanan",
+          "type": "money",
+          "default": 5000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "overtime_hours",
+          "label": "Jam lembur",
+          "type": "decimal",
+          "default": 4,
+          "unit": "jam"
+        }
+      ],
+      "sample": {
+        "salary": 1730000,
+        "overtime_hours": 4
+      },
+      "config_used": {
+        "hr.overtime.hours_divisor": 173,
+        "hr.overtime.multiplier": 1.5
+      },
+      "steps": [
+        {
+          "label": "Gaji bulanan",
+          "value": "Rp 1.730.000"
+        },
+        {
+          "label": "Dibagi 173 jam",
+          "value": "Rp 10.000/jam"
+        },
+        {
+          "label": "Pengali 1,5× × 4 jam",
+          "value": "Rp 60.000"
+        }
+      ],
+      "result": "Upah lembur Rp 60.000",
+      "verdict": "ok"
+    },
+    "sim-38": {
+      "simulator": "payroll_pph21",
+      "label": "Metode PPh 21",
+      "inputs": [
+        {
+          "name": "gross",
+          "label": "Bruto bulanan",
+          "type": "money",
+          "default": 8000000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "gross": 8000000
+      },
+      "config_used": {
+        "hr.ter_enabled": true
+      },
+      "steps": [
+        {
+          "label": "Bruto bulanan",
+          "value": "Rp 8.000.000"
+        },
+        {
+          "label": "Metode",
+          "value": "TER (Tarif Efektif Rata-rata)"
+        }
+      ],
+      "result": "PPh 21 dihitung dari tabel TER per kategori PTKP karyawan",
+      "verdict": "ok"
+    },
+    "sim-39": {
+      "simulator": "payroll_pph21",
+      "label": "Metode PPh 21",
+      "inputs": [
+        {
+          "name": "gross",
+          "label": "Bruto bulanan",
+          "type": "money",
+          "default": 8000000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "gross": 8000000
+      },
+      "config_used": {
+        "hr.ter_enabled": false
+      },
+      "steps": [
+        {
+          "label": "Bruto bulanan",
+          "value": "Rp 8.000.000"
+        },
+        {
+          "label": "Metode",
+          "value": "Perhitungan lama (PTKP tahunan)"
+        }
+      ],
+      "result": "PPh 21 dihitung dari PTKP tahunan — tabel PTKP menjadi relevan",
+      "verdict": "warn"
+    },
+    "sim-40": {
+      "simulator": "min_cut",
+      "label": "Uji minimum potong kain",
+      "inputs": [
+        {
+          "name": "qty",
+          "label": "Qty diminta",
+          "type": "decimal",
+          "default": 0.3,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "qty": 0.3
+      },
+      "config_used": {
+        "inventory.min_cut_qty": 0.5
+      },
+      "steps": [
+        {
+          "label": "Qty diminta",
+          "value": "0,3"
+        },
+        {
+          "label": "Minimum potong",
+          "value": "0,5"
+        }
+      ],
+      "result": "DITOLAK — minimum potong 0,5",
+      "verdict": "block"
+    },
+    "sim-41": {
+      "simulator": "min_cut",
+      "label": "Uji minimum potong kain",
+      "inputs": [
+        {
+          "name": "qty",
+          "label": "Qty diminta",
+          "type": "decimal",
+          "default": 0.3,
+          "unit": "satuan"
+        }
+      ],
+      "sample": {
+        "qty": 0.5
+      },
+      "config_used": {
+        "inventory.min_cut_qty": 0.5
+      },
+      "steps": [
+        {
+          "label": "Qty diminta",
+          "value": "0,5"
+        },
+        {
+          "label": "Minimum potong",
+          "value": "0,5"
+        }
+      ],
+      "result": "Diterima",
+      "verdict": "ok"
+    },
+    "sim-42": {
+      "simulator": "po_supplier",
+      "label": "Uji kewajiban supplier master",
+      "inputs": [
+        {
+          "name": "has_supplier_master",
+          "label": "PO pilih supplier terdaftar?",
+          "type": "bool",
+          "default": false,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "has_supplier_master": false
+      },
+      "config_used": {
+        "purchasing.require_supplier_master": true
+      },
+      "steps": [
+        {
+          "label": "PO memilih supplier terdaftar?",
+          "value": "Tidak"
+        },
+        {
+          "label": "Wajib supplier master?",
+          "value": "Ya"
+        }
+      ],
+      "result": "DITOLAK — PO wajib memilih supplier master",
+      "verdict": "block"
+    },
+    "sim-43": {
+      "simulator": "po_supplier",
+      "label": "Uji kewajiban supplier master",
+      "inputs": [
+        {
+          "name": "has_supplier_master",
+          "label": "PO pilih supplier terdaftar?",
+          "type": "bool",
+          "default": false,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "has_supplier_master": false
+      },
+      "config_used": {
+        "purchasing.require_supplier_master": false
+      },
+      "steps": [
+        {
+          "label": "PO memilih supplier terdaftar?",
+          "value": "Tidak"
+        },
+        {
+          "label": "Wajib supplier master?",
+          "value": "Tidak"
+        }
+      ],
+      "result": "PO boleh dibuat",
+      "verdict": "ok"
+    },
+    "sim-44": {
+      "simulator": "interco",
+      "label": "Uji kewajiban transfer antar entitas",
+      "inputs": [
+        {
+          "name": "uses_other_entity_stock",
+          "label": "Pakai stok entitas lain?",
+          "type": "bool",
+          "default": true,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "uses_other_entity_stock": true
+      },
+      "config_used": {
+        "inventory.intercompany_transfer_required": true
+      },
+      "steps": [
+        {
+          "label": "Memakai stok entitas lain?",
+          "value": "Ya"
+        },
+        {
+          "label": "Wajib transfer dulu?",
+          "value": "Ya"
+        }
+      ],
+      "result": "DITOLAK — buat Transaksi Antar-Entitas dulu sebelum menjual",
+      "verdict": "block"
+    },
+    "sim-45": {
+      "simulator": "interco",
+      "label": "Uji kewajiban transfer antar entitas",
+      "inputs": [
+        {
+          "name": "uses_other_entity_stock",
+          "label": "Pakai stok entitas lain?",
+          "type": "bool",
+          "default": true,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "uses_other_entity_stock": false
+      },
+      "config_used": {
+        "inventory.intercompany_transfer_required": true
+      },
+      "steps": [
+        {
+          "label": "Memakai stok entitas lain?",
+          "value": "Tidak"
+        },
+        {
+          "label": "Wajib transfer dulu?",
+          "value": "Ya"
+        }
+      ],
+      "result": "Pesanan boleh lanjut",
+      "verdict": "ok"
+    },
+    "sim-46": {
+      "simulator": "quotation",
+      "label": "Alur penawaran",
+      "inputs": [],
+      "sample": {},
+      "config_used": {
+        "sales.quotation_enabled": true
+      },
+      "steps": [
+        {
+          "label": "Penawaran aktif?",
+          "value": "Ya"
+        }
+      ],
+      "result": "Sales membuat Penawaran dulu, lalu dikonversi menjadi pesanan",
+      "verdict": "ok"
+    },
+    "sim-47": {
+      "simulator": "quotation",
+      "label": "Alur penawaran",
+      "inputs": [],
+      "sample": {},
+      "config_used": {
+        "sales.quotation_enabled": false
+      },
+      "steps": [
+        {
+          "label": "Penawaran aktif?",
+          "value": "Tidak"
+        }
+      ],
+      "result": "Alur langsung ke pesanan — endpoint penawaran ditolak (400)",
+      "verdict": "ok"
+    },
+    "sim-48": {
+      "simulator": "currency",
+      "label": "Format tampilan uang",
+      "inputs": [
+        {
+          "name": "amount",
+          "label": "Nominal",
+          "type": "money",
+          "default": 1250000,
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "amount": 1250000
+      },
+      "config_used": {
+        "finance.base_currency": "IDR"
+      },
+      "steps": [
+        {
+          "label": "Mata uang",
+          "value": "IDR"
+        }
+      ],
+      "result": "Angka 1.250.000 ditampilkan sebagai Rp 1.250.000",
+      "verdict": "ok"
+    },
+    "sim-49": {
+      "simulator": "fiscal_year",
+      "label": "Tentukan tahun buku",
+      "inputs": [
+        {
+          "name": "period",
+          "label": "Periode (YYYY-MM)",
+          "type": "text",
+          "default": "2026-07",
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "period": "2026-10"
+      },
+      "config_used": {
+        "finance.fiscal_year_end_month": 12
+      },
+      "steps": [
+        {
+          "label": "Bulan tutup tahun buku",
+          "value": "12"
+        },
+        {
+          "label": "Periode diuji",
+          "value": "2026-10"
+        }
+      ],
+      "result": "Masuk tahun buku 2026 (2026-01 s/d 2026-12)",
+      "verdict": "ok"
+    },
+    "sim-50": {
+      "simulator": "price_deviation",
+      "label": "Uji deviasi harga beli",
+      "inputs": [
+        {
+          "name": "reference_price",
+          "label": "Harga acuan",
+          "type": "money",
+          "default": 100000,
+          "unit": "Rp"
+        },
+        {
+          "name": "po_price",
+          "label": "Harga di PO",
+          "type": "money",
+          "default": 115000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "reference_price": 100,
+        "po_price": 110
+      },
+      "config_used": {
+        "purchasing.price_deviation_approval_percent": 10
+      },
+      "steps": [
+        {
+          "label": "Harga acuan",
+          "value": "Rp 100"
+        },
+        {
+          "label": "Harga PO",
+          "value": "Rp 110"
+        },
+        {
+          "label": "Deviasi",
+          "value": "10% (ambang 10%)"
+        }
+      ],
+      "result": "Tidak perlu persetujuan harga",
+      "verdict": "ok"
+    },
+    "sim-51": {
+      "simulator": "price_deviation",
+      "label": "Uji deviasi harga beli",
+      "inputs": [
+        {
+          "name": "reference_price",
+          "label": "Harga acuan",
+          "type": "money",
+          "default": 100000,
+          "unit": "Rp"
+        },
+        {
+          "name": "po_price",
+          "label": "Harga di PO",
+          "type": "money",
+          "default": 115000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "reference_price": 100,
+        "po_price": 111
+      },
+      "config_used": {
+        "purchasing.price_deviation_approval_percent": 10
+      },
+      "steps": [
+        {
+          "label": "Harga acuan",
+          "value": "Rp 100"
+        },
+        {
+          "label": "Harga PO",
+          "value": "Rp 111"
+        },
+        {
+          "label": "Deviasi",
+          "value": "11% (ambang 10%)"
+        }
+      ],
+      "result": "WAJIB persetujuan — harga naik melebihi ambang",
+      "verdict": "block"
+    },
+    "sim-52": {
+      "simulator": "approval",
+      "label": "Uji rantai persetujuan",
+      "inputs": [
+        {
+          "name": "amount",
+          "label": "Nilai dokumen",
+          "type": "money",
+          "default": 600000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "doc_type",
+          "label": "Jenis dokumen",
+          "type": "text",
+          "default": "purchase_order",
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "amount": 100,
+        "doc_type": "purchase_order"
+      },
+      "config_used": {
+        "approval.extra_levels": {}
+      },
+      "steps": [
+        {
+          "label": "Jenis dokumen",
+          "value": "purchase_order"
+        },
+        {
+          "label": "Nilai",
+          "value": "Rp 100"
+        }
+      ],
+      "result": "Hanya level pertama (Approval Rules) yang berlaku",
+      "verdict": "ok"
+    },
+    "sim-53": {
+      "simulator": "approval",
+      "label": "Uji rantai persetujuan",
+      "inputs": [
+        {
+          "name": "amount",
+          "label": "Nilai dokumen",
+          "type": "money",
+          "default": 600000000,
+          "unit": "Rp"
+        },
+        {
+          "name": "doc_type",
+          "label": "Jenis dokumen",
+          "type": "text",
+          "default": "purchase_order",
+          "unit": ""
+        }
+      ],
+      "sample": {
+        "amount": 100,
+        "doc_type": "purchase_order"
+      },
+      "config_used": {
+        "approval.extra_levels": {
+          "purchase_order": [
+            {
+              "role": "admin",
+              "min_amount": 100
+            }
+          ]
+        }
+      },
+      "steps": [
+        {
+          "label": "Jenis dokumen",
+          "value": "purchase_order"
+        },
+        {
+          "label": "Nilai",
+          "value": "Rp 100"
+        },
+        {
+          "label": "Jenjang admin",
+          "value": "aktif bila ≥ Rp 100"
+        }
+      ],
+      "result": "Rantai persetujuan: Level 1 (Approval Rules) → admin",
+      "verdict": "warn"
+    },
+    "tax-excluded-12-True": {
+      "simulator": "tax",
+      "label": "Hitung PPN faktur",
+      "inputs": [
+        {
+          "name": "subtotal",
+          "label": "Subtotal pesanan",
+          "type": "money",
+          "default": 10000000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "subtotal": 10000000
+      },
+      "config_used": {
+        "tax.ppn_rate": 12,
+        "tax.dpp_nilai_lain": true,
+        "tax.ppn_mode": "excluded",
+        "tax.efaktur_enabled": true
+      },
+      "steps": [
+        {
+          "label": "Subtotal yang diketik sales",
+          "value": "Rp 10.000.000"
+        },
+        {
+          "label": "Tarif PPN",
+          "value": "12%"
+        },
+        {
+          "label": "DPP Nilai Lain (11/12)",
+          "value": "Ya"
+        },
+        {
+          "label": "Tarif efektif",
+          "value": "11%"
+        },
+        {
+          "label": "DPP",
+          "value": "Rp 9.166.667"
+        },
+        {
+          "label": "PPN",
+          "value": "Rp 1.100.000"
+        }
+      ],
+      "result": "Grand total Rp 11.100.000 (PPN Rp 1.100.000)",
+      "verdict": "ok",
+      "resolved": [
+        {
+          "key": "tax.ppn_rate",
+          "label": "Tarif PPN",
+          "value": 12,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.dpp_nilai_lain",
+          "label": "Pakai DPP Nilai Lain (11/12)",
+          "value": true,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.ppn_mode",
+          "label": "Cara menghitung PPN dari harga",
+          "value": "excluded",
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.efaktur_enabled",
+          "label": "Terbitkan Faktur Pajak (PKP)",
+          "value": true,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        }
+      ],
+      "context": {}
+    },
+    "tax-included-12-True": {
+      "simulator": "tax",
+      "label": "Hitung PPN faktur",
+      "inputs": [
+        {
+          "name": "subtotal",
+          "label": "Subtotal pesanan",
+          "type": "money",
+          "default": 10000000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "subtotal": 11100000
+      },
+      "config_used": {
+        "tax.ppn_rate": 12,
+        "tax.dpp_nilai_lain": true,
+        "tax.ppn_mode": "included",
+        "tax.efaktur_enabled": true
+      },
+      "steps": [
+        {
+          "label": "Subtotal yang diketik sales",
+          "value": "Rp 11.100.000"
+        },
+        {
+          "label": "Tarif PPN",
+          "value": "12%"
+        },
+        {
+          "label": "DPP Nilai Lain (11/12)",
+          "value": "Ya"
+        },
+        {
+          "label": "Tarif efektif",
+          "value": "11%"
+        },
+        {
+          "label": "Harga jual (dipisah dari total)",
+          "value": "Rp 10.000.000"
+        },
+        {
+          "label": "DPP",
+          "value": "Rp 9.166.667"
+        },
+        {
+          "label": "PPN",
+          "value": "Rp 1.100.000"
+        }
+      ],
+      "result": "Grand total Rp 11.100.000 (PPN Rp 1.100.000)",
+      "verdict": "ok",
+      "resolved": [
+        {
+          "key": "tax.ppn_rate",
+          "label": "Tarif PPN",
+          "value": 12,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.dpp_nilai_lain",
+          "label": "Pakai DPP Nilai Lain (11/12)",
+          "value": true,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.ppn_mode",
+          "label": "Cara menghitung PPN dari harga",
+          "value": "included",
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.efaktur_enabled",
+          "label": "Terbitkan Faktur Pajak (PKP)",
+          "value": true,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        }
+      ],
+      "context": {}
+    },
+    "tax-excluded-0-True": {
+      "simulator": "tax",
+      "label": "Hitung PPN faktur",
+      "inputs": [
+        {
+          "name": "subtotal",
+          "label": "Subtotal pesanan",
+          "type": "money",
+          "default": 10000000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "subtotal": 1000
+      },
+      "config_used": {
+        "tax.ppn_rate": 0,
+        "tax.dpp_nilai_lain": false,
+        "tax.ppn_mode": "excluded",
+        "tax.efaktur_enabled": true
+      },
+      "steps": [
+        {
+          "label": "Subtotal yang diketik sales",
+          "value": "Rp 1.000"
+        },
+        {
+          "label": "Status PKP",
+          "value": "Non-PKP / tarif 0 → tanpa PPN"
+        }
+      ],
+      "result": "Grand total Rp 1.000 (tanpa PPN)",
+      "verdict": "ok",
+      "resolved": [
+        {
+          "key": "tax.ppn_rate",
+          "label": "Tarif PPN",
+          "value": 0,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.dpp_nilai_lain",
+          "label": "Pakai DPP Nilai Lain (11/12)",
+          "value": false,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.ppn_mode",
+          "label": "Cara menghitung PPN dari harga",
+          "value": "excluded",
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.efaktur_enabled",
+          "label": "Terbitkan Faktur Pajak (PKP)",
+          "value": true,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        }
+      ],
+      "context": {}
+    },
+    "tax-excluded-12-False": {
+      "simulator": "tax",
+      "label": "Hitung PPN faktur",
+      "inputs": [
+        {
+          "name": "subtotal",
+          "label": "Subtotal pesanan",
+          "type": "money",
+          "default": 10000000,
+          "unit": "Rp"
+        }
+      ],
+      "sample": {
+        "subtotal": 1000
+      },
+      "config_used": {
+        "tax.ppn_rate": 12,
+        "tax.dpp_nilai_lain": false,
+        "tax.ppn_mode": "excluded",
+        "tax.efaktur_enabled": false
+      },
+      "steps": [
+        {
+          "label": "Subtotal yang diketik sales",
+          "value": "Rp 1.000"
+        },
+        {
+          "label": "Status PKP",
+          "value": "Non-PKP / tarif 0 → tanpa PPN"
+        }
+      ],
+      "result": "Grand total Rp 1.000 (tanpa PPN)",
+      "verdict": "ok",
+      "resolved": [
+        {
+          "key": "tax.ppn_rate",
+          "label": "Tarif PPN",
+          "value": 12,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.dpp_nilai_lain",
+          "label": "Pakai DPP Nilai Lain (11/12)",
+          "value": false,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.ppn_mode",
+          "label": "Cara menghitung PPN dari harga",
+          "value": "excluded",
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        },
+        {
+          "key": "tax.efaktur_enabled",
+          "label": "Terbitkan Faktur Pajak (PKP)",
+          "value": false,
+          "source_layer": "hypothetical",
+          "source_label": "Simulasi (belum disimpan)",
+          "hypothetical": true
+        }
+      ],
+      "context": {}
+    },
+    "zero-receipt": {
+      "public": {
+        "simulator": "bill_match",
+        "label": "Uji 3-way match tagihan supplier",
+        "inputs": [
+          {
+            "name": "received_qty",
+            "label": "Qty diterima",
+            "type": "decimal",
+            "default": 1000,
+            "unit": "satuan"
+          },
+          {
+            "name": "billed_qty",
+            "label": "Qty ditagih",
+            "type": "decimal",
+            "default": 1010,
+            "unit": "satuan"
+          },
+          {
+            "name": "po_price",
+            "label": "Harga PO",
+            "type": "money",
+            "default": 100000,
+            "unit": "Rp"
+          },
+          {
+            "name": "billed_price",
+            "label": "Harga ditagih",
+            "type": "money",
+            "default": 108000,
+            "unit": "Rp"
+          }
+        ],
+        "sample": {
+          "received_qty": 0,
+          "billed_qty": 10,
+          "po_price": 100,
+          "billed_price": 100
+        },
+        "config_used": {
+          "purchasing.bill_qty_tolerance_percent": 0,
+          "purchasing.bill_price_tolerance_percent": 5
+        },
+        "steps": [
+          {
+            "label": "Selisih qty",
+            "value": "0% (toleransi 0%)"
+          },
+          {
+            "label": "Selisih harga",
+            "value": "0% (toleransi 5%)"
+          }
+        ],
+        "result": "3-way match LOLOS — tagihan bisa langsung diproses",
+        "verdict": "ok",
+        "resolved": [
+          {
+            "key": "purchasing.bill_qty_tolerance_percent",
+            "label": "Toleransi qty tagihan supplier",
+            "value": 0,
+            "source_layer": "hypothetical",
+            "source_label": "Simulasi (belum disimpan)",
+            "hypothetical": true
+          },
+          {
+            "key": "purchasing.bill_price_tolerance_percent",
+            "label": "Toleransi harga tagihan supplier",
+            "value": 5,
+            "source_layer": "hypothetical",
+            "source_label": "Simulasi (belum disimpan)",
+            "hypothetical": true
+          }
+        ],
+        "context": {}
+      },
+      "original_matcher": {
+        "items": [
+          {
+            "line_id": "L",
+            "product_id": "P",
+            "quantity": 10,
+            "billed_qty": 10,
+            "price": 100,
+            "sku": "",
+            "product_name": "",
+            "ordered_qty": 10.0,
+            "received_qty": 0.0,
+            "already_billed_qty": 0.0,
+            "remaining_qty": 0.0,
+            "po_price": 100.0,
+            "match": {
+              "qty_status": "over_billed",
+              "price_status": "ok",
+              "qty_remaining": 0.0,
+              "price_variance_pct": 0.0,
+              "messages": [
+                "Tagih 10 melebihi sisa yang boleh ditagih 0 (diterima) + toleransi 0%"
+              ]
+            }
+          }
+        ],
+        "match_status": "blocked",
+        "exceptions": [
+          {
+            "product_id": "P",
+            "sku": "",
+            "product_name": "",
+            "type": "qty_over_billed",
+            "detail": "Tagih 10 melebihi sisa yang boleh ditagih 0 (diterima) + toleransi 0%"
+          }
+        ],
+        "within_tolerance": false
+      }
+    },
+    "bank-date-2026-02-28": {
+      "preview": {
+        "format": {
+          "id": "bsf_aec505c53cf3",
+          "name": "Template tanpa nama",
+          "bank_code": "generic",
+          "file_kind": "csv"
+        },
+        "detected": false,
+        "rows": [
+          {
+            "row": 1,
+            "stmt_date": "2026-02-28",
+            "amount": 100.0,
+            "direction": "in",
+            "description": "Synthetic 2026-02-28",
+            "ref": "",
+            "external_id": "",
+            "balance": 0.0,
+            "raw": "2026-02-28,Synthetic 2026-02-28,100,CR",
+            "counterparty": "Synthetic -02-28",
+            "desc_key": "synthetic"
+          }
+        ],
+        "total": 1,
+        "errors": [],
+        "error_count": 0,
+        "sum_in": 100.0,
+        "sum_out": 0.0
+      },
+      "import_http": 200,
+      "import_response": {
+        "import_batch": "stmtbatch_7bf18a617b9c",
+        "imported": 1,
+        "skipped": 0,
+        "format_id": "bsf_e7005e921995",
+        "format_name": "Template tanpa nama",
+        "detected": false,
+        "parsed": 1,
+        "errors": [],
+        "error_count": 0
+      },
+      "persisted": 1
+    },
+    "bank-date-2026-02-30": {
+      "preview": {
+        "format": {
+          "id": "bsf_363ddea061a7",
+          "name": "Template tanpa nama",
+          "bank_code": "generic",
+          "file_kind": "csv"
+        },
+        "detected": false,
+        "rows": [
+          {
+            "row": 1,
+            "stmt_date": "2026-02-30",
+            "amount": 100.0,
+            "direction": "in",
+            "description": "Synthetic 2026-02-30",
+            "ref": "",
+            "external_id": "",
+            "balance": 0.0,
+            "raw": "2026-02-30,Synthetic 2026-02-30,100,CR",
+            "counterparty": "Synthetic -02-30",
+            "desc_key": "synthetic"
+          }
+        ],
+        "total": 1,
+        "errors": [],
+        "error_count": 0,
+        "sum_in": 100.0,
+        "sum_out": 0.0
+      },
+      "import_http": 200,
+      "import_response": {
+        "import_batch": "stmtbatch_057e2c4b4960",
+        "imported": 1,
+        "skipped": 0,
+        "format_id": "bsf_5e1afd38b882",
+        "format_name": "Template tanpa nama",
+        "detected": false,
+        "parsed": 1,
+        "errors": [],
+        "error_count": 0
+      },
+      "persisted": 1
+    },
+    "bank-date-2026-99-99": {
+      "preview": {
+        "format": {
+          "id": "bsf_d0caa7c4f8d2",
+          "name": "Template tanpa nama",
+          "bank_code": "generic",
+          "file_kind": "csv"
+        },
+        "detected": false,
+        "rows": [
+          {
+            "row": 1,
+            "stmt_date": "2026-99-99",
+            "amount": 100.0,
+            "direction": "in",
+            "description": "Synthetic 2026-99-99",
+            "ref": "",
+            "external_id": "",
+            "balance": 0.0,
+            "raw": "2026-99-99,Synthetic 2026-99-99,100,CR",
+            "counterparty": "Synthetic -99-99",
+            "desc_key": "synthetic"
+          }
+        ],
+        "total": 1,
+        "errors": [],
+        "error_count": 0,
+        "sum_in": 100.0,
+        "sum_out": 0.0
+      },
+      "import_http": 200,
+      "import_response": {
+        "import_batch": "stmtbatch_ebd07bde7e5f",
+        "imported": 1,
+        "skipped": 0,
+        "format_id": "bsf_278db4f54a39",
+        "format_name": "Template tanpa nama",
+        "detected": false,
+        "parsed": 1,
+        "errors": [],
+        "error_count": 0
+      },
+      "persisted": 1
+    },
+    "bank-date-2026-13-01": {
+      "preview": {
+        "format": {
+          "id": "bsf_0eeaaf815d0c",
+          "name": "Template tanpa nama",
+          "bank_code": "generic",
+          "file_kind": "csv"
+        },
+        "detected": false,
+        "rows": [
+          {
+            "row": 1,
+            "stmt_date": "2026-13-01",
+            "amount": 100.0,
+            "direction": "in",
+            "description": "Synthetic 2026-13-01",
+            "ref": "",
+            "external_id": "",
+            "balance": 0.0,
+            "raw": "2026-13-01,Synthetic 2026-13-01,100,CR",
+            "counterparty": "Synthetic -13-01",
+            "desc_key": "synthetic"
+          }
+        ],
+        "total": 1,
+        "errors": [],
+        "error_count": 0,
+        "sum_in": 100.0,
+        "sum_out": 0.0
+      },
+      "import_http": 200,
+      "import_response": {
+        "import_batch": "stmtbatch_81097208be13",
+        "imported": 1,
+        "skipped": 0,
+        "format_id": "bsf_8090a36efac7",
+        "format_name": "Template tanpa nama",
+        "detected": false,
+        "parsed": 1,
+        "errors": [],
+        "error_count": 0
+      },
+      "persisted": 1
+    },
+    "mt940-C": {
+      "format": {
+        "id": "bsf_ee8ef1fdfdc6",
+        "name": "Template tanpa nama",
+        "bank_code": "generic",
+        "file_kind": "mt940"
+      },
+      "detected": false,
+      "rows": [
+        {
+          "row": 1,
+          "stmt_date": "2026-10-06",
+          "amount": 100.0,
+          "direction": "in",
+          "description": "NONREF LOCAL C",
+          "ref": "",
+          "external_id": "",
+          "balance": 0.0,
+          "raw": ":61:261006C100,00NTRFNONREF",
+          "counterparty": "NONREF LOCAL C",
+          "desc_key": "nonref local"
+        }
+      ],
+      "total": 1,
+      "errors": [],
+      "error_count": 0,
+      "sum_in": 100.0,
+      "sum_out": 0.0
+    },
+    "mt940-D": {
+      "format": {
+        "id": "bsf_dd2b9637c8e8",
+        "name": "Template tanpa nama",
+        "bank_code": "generic",
+        "file_kind": "mt940"
+      },
+      "detected": false,
+      "rows": [
+        {
+          "row": 1,
+          "stmt_date": "2026-10-06",
+          "amount": 100.0,
+          "direction": "out",
+          "description": "NONREF LOCAL D",
+          "ref": "",
+          "external_id": "",
+          "balance": 0.0,
+          "raw": ":61:261006D100,00NTRFNONREF",
+          "counterparty": "NONREF LOCAL D",
+          "desc_key": "nonref local"
+        }
+      ],
+      "total": 1,
+      "errors": [],
+      "error_count": 0,
+      "sum_in": 0.0,
+      "sum_out": 100.0
+    },
+    "mt940-RC": {
+      "format": {
+        "id": "bsf_eedd63996569",
+        "name": "Template tanpa nama",
+        "bank_code": "generic",
+        "file_kind": "mt940"
+      },
+      "detected": false,
+      "rows": [],
+      "total": 0,
+      "errors": [
+        {
+          "row": 1,
+          "reason": "Baris :61: tidak dikenal",
+          "raw": ":61:261006RC100,00NTRFNONREF"
+        }
+      ],
+      "error_count": 1,
+      "sum_in": 0.0,
+      "sum_out": 0.0
+    },
+    "mt940-RD": {
+      "format": {
+        "id": "bsf_f82d6bd4b9c5",
+        "name": "Template tanpa nama",
+        "bank_code": "generic",
+        "file_kind": "mt940"
+      },
+      "detected": false,
+      "rows": [],
+      "total": 0,
+      "errors": [
+        {
+          "row": 1,
+          "reason": "Baris :61: tidak dikenal",
+          "raw": ":61:261006RD100,00NTRFNONREF"
+        }
+      ],
+      "error_count": 1,
+      "sum_in": 0.0,
+      "sum_out": 0.0
+    },
+    "mt940-mixed": {
+      "preview": {
+        "format": {
+          "id": "bsf_7088ca15d3fc",
+          "name": "Template tanpa nama",
+          "bank_code": "generic",
+          "file_kind": "mt940"
+        },
+        "detected": false,
+        "rows": [
+          {
+            "row": 1,
+            "stmt_date": "2026-10-06",
+            "amount": 100.0,
+            "direction": "out",
+            "description": "DEBIT LOCAL DEBIT LOCAL REVERSAL",
+            "ref": "",
+            "external_id": "",
+            "balance": 0.0,
+            "raw": ":61:261006D100,00NTRFDEBIT",
+            "counterparty": "DEBIT LOCAL DEBIT LOCAL REVERSAL",
+            "desc_key": "debit local debit local reversal"
+          }
+        ],
+        "total": 1,
+        "errors": [
+          {
+            "row": 3,
+            "reason": "Baris :61: tidak dikenal",
+            "raw": ":61:261006RD100,00NTRFREVERSAL"
+          }
+        ],
+        "error_count": 1,
+        "sum_in": 0.0,
+        "sum_out": 100.0
+      },
+      "import_http": 200,
+      "import_response": {
+        "import_batch": "stmtbatch_b988bc8ad696",
+        "imported": 1,
+        "skipped": 0,
+        "format_id": "bsf_b0d702886bd6",
+        "format_name": "Template tanpa nama",
+        "detected": false,
+        "parsed": 1,
+        "errors": [
+          {
+            "row": 3,
+            "reason": "Baris :61: tidak dikenal",
+            "raw": ":61:261006RD100,00NTRFREVERSAL"
+          }
+        ],
+        "error_count": 1
+      }
+    }
+  },
+  "harness_errors": [],
+  "primary_spec": "https://www.unicredit.ro/content/dam/cee2020-pws-ro/DocumentePDF/DocumenteCIB/MT94x_General_V1.1.pdf"
+}

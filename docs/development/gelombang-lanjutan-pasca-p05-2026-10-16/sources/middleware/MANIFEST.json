@@ -1,0 +1,107 @@
+{
+  "project": "ERP Kain Nussantara",
+  "it_producer": "PT Kubus Teknologi Indonesia",
+  "document_version": "1.0",
+  "contract_version": "2.0.0",
+  "issued_at": "2026-10-13",
+  "reader_runtime": "Android agent on-device; no operational PC gateway",
+  "scope": "Documentation only; no APK/connector implementation or deployed API certification",
+  "erp_notes_snapshot": "f59b8a60d7b7e078888c537ca93c046afae460a9",
+  "files": [
+    {
+      "path": "00_PANDUAN_PAKET.md",
+      "bytes": 3205,
+      "sha256": "75d271f2ee26291daaae648abd66989c74f1f17b969dad37d160aa7ab4389533"
+    },
+    {
+      "path": "01_ARSITEKTUR_BERSAMA.md",
+      "bytes": 9345,
+      "sha256": "5c404c6cd5ec22097b7b46aaa7e8427ea1282f9ff598c863c0230c73eb45ea30"
+    },
+    {
+      "path": "02_MODUL_HANDHELD_C72.md",
+      "bytes": 12334,
+      "sha256": "bf189c0c1d8800a2ad06e8b23c7cec8e6047a7e11edfc773274bdd03acec6f03"
+    },
+    {
+      "path": "03_MODUL_READER_ANDROID_UR300.md",
+      "bytes": 13407,
+      "sha256": "8fade22cea93fac5ee8af03386037353a9e254d793421527f98d5f3745ebc022"
+    },
+    {
+      "path": "04_MODUL_PRINTER_CP30EN.md",
+      "bytes": 11995,
+      "sha256": "3a9d6be8d95bac77b701a26af20fd0d65873d2613c7e53c86112eecab076e140"
+    },
+    {
+      "path": "05_KONTRAK_API_TARGET.md",
+      "bytes": 17492,
+      "sha256": "dbde4d1fb4e62ee37e1fc08618f6857e6e5bd5e983eb9bcb71f380797fecfc4f"
+    },
+    {
+      "path": "06_PERSIAPAN_COMMISSIONING.md",
+      "bytes": 5772,
+      "sha256": "c2c7c1b8601c368c09f326b5a4d1d3608636ce3d49171c7f1609780f66b7edd1"
+    },
+    {
+      "path": "07_UAT_DAN_SERAH_TERIMA.md",
+      "bytes": 5249,
+      "sha256": "a3e6e255df83e4d6dce9948956d835854d56895c8c55579b2386968afb80769f"
+    },
+    {
+      "path": "08_KETERKAITAN_DOKUMEN_SISTEM.md",
+      "bytes": 4722,
+      "sha256": "5686a97e6146481838585c96113a1dce99b77902d00e75732674bd9a717534b5"
+    },
+    {
+      "path": "catatan-erp/ERP_GAP_NOTES.md",
+      "bytes": 7340,
+      "sha256": "8a33cfef0a95c62a1b9d696761297e58ca4ba4276f048ce7d6022c451978179b"
+    },
+    {
+      "path": "commissioning/HARDWARE_PROFILE_TEMPLATE.json",
+      "bytes": 1023,
+      "sha256": "1e652b21a54d72863d99cf0a9ead67b581e823eed381b4fe53b36e5d9b956016"
+    },
+    {
+      "path": "kontrak/CONTRACT_EXAMPLES.json",
+      "bytes": 3171,
+      "sha256": "02005e5d5c4227df3660163e93eb50861daa9faa90e12665dbccd7e0e06dd8c1"
+    },
+    {
+      "path": "kontrak/OPENAPI_RFID_V2.json",
+      "bytes": 200056,
+      "sha256": "b19d938cc959e16eb334995b4ddf1ff07ef4a4931e6f0fd10d554ea58f62712c"
+    },
+    {
+      "path": "QA_DOKUMENTASI.json",
+      "bytes": 872,
+      "sha256": "33340731fe5e1463dd4fb23eb8fc389d04abc6fa2f7a028b078313e0d6bccca9"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3205,
+      "sha256": "75d271f2ee26291daaae648abd66989c74f1f17b969dad37d160aa7ab4389533"
+    },
+    {
+      "path": "Spesifikasi_Middleware_RFID_ERP_Kain_Nussantara_2026-10-13.pdf",
+      "bytes": 216082,
+      "sha256": "606d86c5eed98ef6a4c261e1d1c0fcd093f0bb8f0ff8575065ecfd4609c6e892"
+    },
+    {
+      "path": "uat/TRACEABILITY_RACC.json",
+      "bytes": 1867,
+      "sha256": "f60f81d12ae7989477106f24fcf809917873a06b13ba610ac094fcd21f4cce1a"
+    },
+    {
+      "path": "uat/UAT_SCENARIOS.md",
+      "bytes": 15948,
+      "sha256": "eaf82d0d1df359274ca09d53b450313281f48a2b51b0059f268ed89ff2b528c3"
+    },
+    {
+      "path": "uat/UAT_TRACKER.csv",
+      "bytes": 10803,
+      "sha256": "f5a1f9f0c11c732102206aba0c1730eb888391bf54f34d7c993788864209ec40"
+    }
+  ]
+}

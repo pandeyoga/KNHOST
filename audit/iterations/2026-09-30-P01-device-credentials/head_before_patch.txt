@@ -1,0 +1,92 @@
+[
+ {
+  "invariant": "issue returns key once",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "invariant": "list as warehouse has no key/hash",
+  "pass": false,
+  "detail": [
+   "api_key"
+  ]
+ },
+ {
+  "invariant": "list as admin has no key/hash",
+  "pass": false,
+  "detail": [
+   "api_key"
+  ]
+ },
+ {
+  "invariant": "device-health has no key/hash",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "invariant": "update response has no key/hash",
+  "pass": false,
+  "detail": [
+   "api_key"
+  ]
+ },
+ {
+  "invariant": "non-regenerate re-issue does not reveal existing key",
+  "pass": false,
+  "detail": 200
+ },
+ {
+  "invariant": "enabled device heartbeat accepted",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "invariant": "offline-but-enabled can reconnect",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "invariant": "disabled rejected on /rfid/heartbeat",
+  "pass": false,
+  "detail": 200
+ },
+ {
+  "invariant": "disabled rejected on /rfid/ingest",
+  "pass": false,
+  "detail": 200
+ },
+ {
+  "invariant": "disabled rejected on /rfid/device-jobs/pending",
+  "pass": false,
+  "detail": 400
+ },
+ {
+  "invariant": "disabled rejected on /rfid/device-jobs/x/ack",
+  "pass": false,
+  "detail": 404
+ },
+ {
+  "invariant": "heartbeat does not re-enable disabled device",
+  "pass": false,
+  "detail": {
+   "enabled": null,
+   "status": "online"
+  }
+ },
+ {
+  "invariant": "rotation invalidates old key",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "invariant": "rotated key works",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "invariant": "viewer cannot issue key",
+  "pass": true,
+  "detail": ""
+ }
+]
+SUMMARY pass=7 fail=9

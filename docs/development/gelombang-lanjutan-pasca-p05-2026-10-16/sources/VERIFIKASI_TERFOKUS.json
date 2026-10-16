@@ -1,0 +1,49 @@
+{
+  "source_commit": "64d81f29577dae4daa86ddc64689dec7243804f2",
+  "scope": "Isolated replay of original functions with in-memory boundary substitutes; no live ERP/device tests.",
+  "fixture_only": true,
+  "cases": [
+    {
+      "id": "RFID-01",
+      "result": "PASS",
+      "original_function": "generate_rfid_zpl",
+      "observed": "Same EPC payload at qty 100 and 99.75; human-readable qty changes. This does not execute a physical printer."
+    },
+    {
+      "id": "LOG-01",
+      "result": "PASS",
+      "original_function": "create_delivery",
+      "observed": "Satu pengiriman hanya untuk Surat Jalan dari SATU pesanan.",
+      "interpretation": "Current delivery service blocks multiple SO in one delivery."
+    },
+    {
+      "id": "LOG-02",
+      "result": "PASS",
+      "original_function": "create_delivery",
+      "observed": "Several SJ for the same SO pass the tested guards. Remaining delivery workflow was not executed."
+    },
+    {
+      "id": "PRICE-01",
+      "result": "PASS",
+      "original_function": "request_special_price",
+      "observed": {
+        "code": "SO_LOCKED",
+        "message": "Harga khusus hanya bisa diajukan sebelum pesanan disetujui (tahap Dipesan)."
+      },
+      "interpretation": "SO-specific special-price request blocks confirmed SO. A separate price-amendment path exists and is reviewed statically."
+    },
+    {
+      "id": "QC-01",
+      "result": "PASS",
+      "original_function": "compute_points",
+      "fixture": {
+        "one_point_occurrences": 2,
+        "four_point_occurrences": 3
+      },
+      "observed": 14.0,
+      "interpretation": "Current calculation is weighted total points. This does NOT validate the client inspection formula or grade thresholds."
+    }
+  ],
+  "total": 5,
+  "result": "PASS"
+}

@@ -1,0 +1,4185 @@
+{
+  "commit": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_c27006eb7ba74e1986692945c3370661",
+  "results": [
+    {
+      "id": "D4-PA-02-normal-movement-control",
+      "expected": {
+        "status": "completed",
+        "roll_wh": "NORMAL-TO",
+        "tag_wh": "NORMAL-TO",
+        "from_qty": 0,
+        "to_qty": 10,
+        "movement_count": 2
+      },
+      "actual": {
+        "status": "completed",
+        "roll_wh": "NORMAL-TO",
+        "tag_wh": "NORMAL-TO",
+        "from_qty": 0.0,
+        "to_qty": 10.0,
+        "movement_count": 2
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-PA-02-normal-btg-control",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-PA-01-whole-exclusive-claim",
+      "expected": 0,
+      "actual": 10.0,
+      "note": "A successful PA claim must prevent conflicting sales allocation or explicitly coordinate/rebind it. Original public SO creator and allocator are used, not a mock. Subsequent approval/picking/shipping is not claimed tested.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-01-whole-dispatch-guard-control",
+      "expected": 409,
+      "actual": 409,
+      "note": "The dispatch guard correctly rejects the now reserved roll, but reservation has already claimed a PA-owned roll.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-PA-01-partial-exclusive-claim",
+      "expected": 0,
+      "actual": 6.0,
+      "note": "A successful PA claim must prevent conflicting sales allocation or explicitly coordinate/rebind it. Original public SO creator and allocator are used, not a mock. Subsequent approval/picking/shipping is not claimed tested.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-01-partial-dispatch-blocked",
+      "expected": 409,
+      "actual": 200,
+      "note": "The partial reservation leaves status available with length_reserved6. Dispatch checks status only, so succeeds despite the simultaneous SO length reservation.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-01-partial-source-location-retained",
+      "expected": "PARTIAL-FROM",
+      "actual": "PARTIAL-TO",
+      "note": "Original sales allocation still points to PARTIAL-FROM while the reserved parent roll has moved to PARTIAL-TO.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-01-rmwhole-exclusive-claim",
+      "expected": 0,
+      "actual": 10.0,
+      "note": "Original public explicit-roll SO path also reserves a roll owned by an open PA; partial uses explicit exact_cut permission and choice.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-01-rmwhole-quantity-control",
+      "expected": 10,
+      "actual": 10.0,
+      "note": "Original roll-mode allocation quantity is correct; do not mislabel this as a partial-qty overcount.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-PA-01-rmwhole-dispatch-guard",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-PA-01-rmpart-exclusive-claim",
+      "expected": 0,
+      "actual": 6.0,
+      "note": "Original public explicit-roll SO path also reserves a roll owned by an open PA; partial uses explicit exact_cut permission and choice.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-01-rmpart-quantity-control",
+      "expected": 6,
+      "actual": 6.0,
+      "note": "Original roll-mode allocation quantity is correct; do not mislabel this as a partial-qty overcount.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-PA-01-rmpart-dispatch-guard",
+      "expected": 409,
+      "actual": 200,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-02-fault-control",
+      "expected": 500,
+      "actual": 500,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-PA-02-immediate-lock-control",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-PA-02-inspect-durable-roll-effect",
+      "expected": true,
+      "actual": false,
+      "note": "The roll has moved and lost active_movement. The admin effect scan only examines source_ref/created_at, so reports no effect for this existing roll update.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-02-retry-parent-finalized",
+      "expected": "completed",
+      "actual": "completed_with_exception",
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-02-retry-tag-location",
+      "expected": "RECOVERY-TO",
+      "actual": "RECOVERY-FROM",
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-02-retry-audit-pair",
+      "expected": 2,
+      "actual": 0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-02-retry-destination-balance",
+      "expected": 10,
+      "actual": 0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-02-retry-source-balance",
+      "expected": 0,
+      "actual": 10.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-02-roll-is-at-destination-control",
+      "expected": "RECOVERY-TO",
+      "actual": "RECOVERY-TO",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-PA-03-input-base-units-control",
+      "expected": [
+        "meter",
+        "yard"
+      ],
+      "actual": [
+        "meter",
+        "yard"
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-PA-03-mixed-group-validity",
+      "expected": true,
+      "actual": false,
+      "note": "Two products in one owner/category/grade group use base units meter and yard. A single metre total must normalize10yard to9.144m or separate units, not sum20.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-PA-03-document-labelled-total",
+      "expected": 19.144,
+      "actual": 20.0,
+      "note": "Actual frontend labels total_qty with items[0].unit, so20 native mixed units is an invalid labelled total. Per-roll quantities remain correct.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-WMS-04-ready-normal-control",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-WMS-04-reserved-suggestion-control",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-WMS-04-reserved-ready-kpi",
+      "expected": 0,
+      "actual": 1,
+      "note": "The same original reserved roll is counted as ready on Warehouse Health but excluded by the actual PA suggestion and rejected by PA creation.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-WMS-04-create-reserved-guard-control",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-RFID-01-fault-control",
+      "expected": 500,
+      "actual": 500,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-RFID-01-original-exit-stamp-control",
+      "expected": "pa_7287e1da23b7",
+      "actual": "pa_7287e1da23b7",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-RFID-01-retry-business-read",
+      "expected": 1,
+      "actual": 0,
+      "note": "Event-ID dedupe treats the committed raw observation as processed even though the corresponding business read was never inserted.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-RFID-01-retry-decision-count",
+      "expected": 1,
+      "actual": 0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-RFID-01-fresh-event-recovery-verdict",
+      "expected": "MOVEMENT_OUT",
+      "actual": "REPLAY_EXIT",
+      "note": "Gate_exit was stamped green before the failed read insertion; a new event is rejected REPLAY_EXIT, and creates a red incident instead of recovering the original green decision.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-RFID-01-stock-unchanged-control",
+      "expected": "in_transit_transfer",
+      "actual": "in_transit_transfer",
+      "note": "RFID ingest correctly does not post stock movement; this is decision/event durability, not RFID reducing quantities.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-RFID-01-normal-dedupe-control",
+      "expected": {
+        "code": "MOVEMENT_OUT",
+        "reads": 1,
+        "duplicates": 1
+      },
+      "actual": {
+        "code": "MOVEMENT_OUT",
+        "reads": 1,
+        "duplicates": 1
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-RFID-01-red-read-durable-control",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-RFID-01-red-incident-recovery",
+      "expected": 1,
+      "actual": 0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-RFID-01-red-passage-recovery",
+      "expected": "red",
+      "actual": "info",
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-RFID-01-red-latch-recovery",
+      "expected": true,
+      "actual": false,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CC-01-normal-count-control",
+      "expected": {
+        "accuracy": 100,
+        "results": 1,
+        "retry_http": 400
+      },
+      "actual": {
+        "accuracy": 100.0,
+        "results": 1,
+        "retry_http": 400
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CC-01-fault-control",
+      "expected": 500,
+      "actual": 500,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CC-01-first-result-persisted-control",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CC-01-inspect-count-effect",
+      "expected": true,
+      "actual": false,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CC-01-one-session-one-result",
+      "expected": 1,
+      "actual": 2,
+      "note": "Admin recovery succeeds, but completion creates a second independent CC number/result for the exact same session. Original startup indexes do not prevent duplicates by session_id.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-TAG-01-retire-removes-current-tag-control",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-TAG-01-retired-putaway-rejected",
+      "expected": true,
+      "actual": false,
+      "note": "The original verified roll was validly retired through the public API. Journey verification stays true, so PA accepts a roll with no current live tag and snapshots empty EPC. This is an original lifecycle counterexample, not an arbitrary tagless fixture.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-TAG-01-pending-print-control",
+      "expected": "pending_print",
+      "actual": "pending_print",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-TAG-01-new-unverified-identity-rejected",
+      "expected": true,
+      "actual": false,
+      "note": "New tag is pending_print and has never been verified; journey from the retired identity remains tag_verified and allows a new PA.",
+      "status": "observed_difference"
+    }
+  ],
+  "contexts": {
+    "indexes": {
+      "created": 212,
+      "existed": 0,
+      "failed": 0,
+      "unique": {
+        "created": 25,
+        "failed": []
+      }
+    },
+    "cycle_indexes": {},
+    "normal_pa": {
+      "roll": {
+        "id": "roll_a67324913ca3",
+        "product_id": "NORMAL",
+        "owner_entity_id": "A",
+        "ownership_type": "internal",
+        "consignor_ref": null,
+        "warehouse_id": "NORMAL-TO",
+        "bin_id": null,
+        "lot": "A/LOT-2610-0001",
+        "lot_id": "lot_0db60ee22eb4",
+        "supplier_lot": "SUP-NORMAL",
+        "dye_lot": "DYE-NORMAL",
+        "batch": "AUDIT-NORMAL",
+        "roll_no": "RL-00001",
+        "length_initial": 10.0,
+        "length_remaining": 10.0,
+        "unit": "meter",
+        "grade": "A",
+        "stage": "finished",
+        "fabric_type": "woven",
+        "line_code": "",
+        "status": "available",
+        "tracking_mode": "rfid",
+        "earmarked_for": null,
+        "secondary_measures": null,
+        "location_type": "warehouse_bin",
+        "reserved_ref": null,
+        "base_unit_cost": 10.0,
+        "unit_cost": 10.0,
+        "landed_cost_total": 0.0,
+        "acquired": {
+          "via": "manual_inbound",
+          "ref_id": "",
+          "date": "2026-10-05T19:03:12.776570+00:00"
+        },
+        "rfid_tag_id": "rtag_56d5c268dbd4",
+        "is_remnant": false,
+        "created_at": "2026-10-05T19:03:12.776570+00:00",
+        "updated_at": "2026-10-05T19:03:13.565217+00:00",
+        "created_by": "System",
+        "created_by_name": "System",
+        "journey": {
+          "print_job_id": "rpj_826457e9272f",
+          "stage": "stored",
+          "updated_at": "2026-10-05T19:03:13.565217+00:00",
+          "verify_session_id": "rvs_350c8c76ca0f",
+          "routing": "store",
+          "routing_by": "Audit User A",
+          "putaway_order_id": "pa_8d456239ecf6"
+        }
+      },
+      "tag": {
+        "id": "rtag_56d5c268dbd4",
+        "epc": "E27A185994A6B945058CB8DD",
+        "roll_id": "roll_a67324913ca3",
+        "product_id": "NORMAL",
+        "sku": "AUDIT-NORMAL",
+        "product_name": "Audit fabric NORMAL",
+        "roll_no": "RL-00001",
+        "lot": "A/LOT-2610-0001",
+        "owner_entity_id": "A",
+        "warehouse_id": "NORMAL-TO",
+        "status": "active",
+        "last_seen_at": null,
+        "last_seen_device_id": null,
+        "last_seen_device_name": null,
+        "last_seen_location": null,
+        "last_seen_warehouse_id": null,
+        "encoded_at": "2026-10-05T19:03:12.966794+00:00",
+        "encoded_by": "Audit User A",
+        "activated_at": "2026-10-05T19:03:13.068136+00:00"
+      },
+      "balances": [
+        {
+          "warehouse_id": "NORMAL-FROM",
+          "owner_entity_id": "A",
+          "product_id": "NORMAL",
+          "id": "bal_726f887c039a",
+          "rebuild_ticket": 3,
+          "atp_qty": 0.0,
+          "available_qty": 0.0,
+          "blocked_qty": 0.0,
+          "committed_qty": 0.0,
+          "damaged_qty": 0.0,
+          "hold_qty": 0.0,
+          "in_transit_inbound_qty": 0.0,
+          "in_transit_intercompany_qty": 0.0,
+          "in_transit_qty": 0.0,
+          "in_transit_sales_qty": 0.0,
+          "in_transit_transfer_qty": 0.0,
+          "incoming_qty": 0.0,
+          "on_hand_qty": 0.0,
+          "on_hand_roll_count": 0,
+          "on_order_qty": 0.0,
+          "owned_qty": 0.0,
+          "packed_qty": 0.0,
+          "pending_demand_qty": 0.0,
+          "picked_qty": 0.0,
+          "projection_valid": true,
+          "quarantine_qty": 0.0,
+          "rebuild_applied": 3,
+          "reserved_qty": 0.0,
+          "roll_count": 0,
+          "roll_counts": {
+            "available_qty": 0,
+            "reserved_qty": 0,
+            "committed_qty": 0,
+            "picked_qty": 0,
+            "packed_qty": 0,
+            "hold_qty": 0,
+            "wip_qty": 0,
+            "quarantine_qty": 0,
+            "blocked_qty": 0,
+            "damaged_qty": 0,
+            "in_transit_inbound_qty": 0,
+            "in_transit_transfer_qty": 0,
+            "in_transit_intercompany_qty": 0,
+            "in_transit_sales_qty": 0,
+            "subcon_qty": 0
+          },
+          "subcon_qty": 0.0,
+          "unconvertible_roll_count": 0,
+          "updated_at": "2026-10-05T19:03:13.543330+00:00",
+          "wip_qty": 0.0
+        },
+        {
+          "warehouse_id": "NORMAL-TO",
+          "owner_entity_id": "A",
+          "product_id": "NORMAL",
+          "id": "bal_25b750886f36",
+          "rebuild_ticket": 1,
+          "atp_qty": 10.0,
+          "available_qty": 10.0,
+          "blocked_qty": 0.0,
+          "committed_qty": 0.0,
+          "damaged_qty": 0.0,
+          "hold_qty": 0.0,
+          "in_transit_inbound_qty": 0.0,
+          "in_transit_intercompany_qty": 0.0,
+          "in_transit_qty": 0.0,
+          "in_transit_sales_qty": 0.0,
+          "in_transit_transfer_qty": 0.0,
+          "incoming_qty": 0.0,
+          "on_hand_qty": 10.0,
+          "on_hand_roll_count": 1,
+          "on_order_qty": 0.0,
+          "owned_qty": 10.0,
+          "packed_qty": 0.0,
+          "pending_demand_qty": 0.0,
+          "picked_qty": 0.0,
+          "projection_valid": true,
+          "quarantine_qty": 0.0,
+          "rebuild_applied": 1,
+          "reserved_qty": 0.0,
+          "roll_count": 1,
+          "roll_counts": {
+            "available_qty": 1,
+            "reserved_qty": 0,
+            "committed_qty": 0,
+            "picked_qty": 0,
+            "packed_qty": 0,
+            "hold_qty": 0,
+            "wip_qty": 0,
+            "quarantine_qty": 0,
+            "blocked_qty": 0,
+            "damaged_qty": 0,
+            "in_transit_inbound_qty": 0,
+            "in_transit_transfer_qty": 0,
+            "in_transit_intercompany_qty": 0,
+            "in_transit_sales_qty": 0,
+            "subcon_qty": 0
+          },
+          "subcon_qty": 0.0,
+          "unconvertible_roll_count": 0,
+          "updated_at": "2026-10-05T19:03:13.553822+00:00",
+          "wip_qty": 0.0
+        }
+      ],
+      "movements": [
+        {
+          "id": "mov_4399db703029",
+          "product_id": "NORMAL",
+          "warehouse_id": "NORMAL-FROM",
+          "owner_entity_id": "A",
+          "movement_type": "putaway_transfer_out",
+          "quantity": -10.0,
+          "unit": "meter",
+          "lot": "A/LOT-2610-0001",
+          "roll_id": "roll_a67324913ca3",
+          "qty_rolls": 1,
+          "source_document": "PA00001",
+          "reference_id": "pa_8d456239ecf6",
+          "reason": "gate-in scan",
+          "created_by": "Audit User A",
+          "timestamp": "2026-10-05T19:03:13.522438+00:00",
+          "lot_id": "lot_0db60ee22eb4"
+        },
+        {
+          "id": "mov_7939bf99983b",
+          "product_id": "NORMAL",
+          "warehouse_id": "NORMAL-TO",
+          "owner_entity_id": "A",
+          "movement_type": "putaway_transfer_in",
+          "quantity": 10.0,
+          "unit": "meter",
+          "lot": "A/LOT-2610-0001",
+          "roll_id": "roll_a67324913ca3",
+          "qty_rolls": 1,
+          "source_document": "PA00001",
+          "reference_id": "pa_8d456239ecf6",
+          "reason": "gate-in scan",
+          "created_by": "Audit User A",
+          "timestamp": "2026-10-05T19:03:13.522438+00:00",
+          "lot_id": "lot_0db60ee22eb4"
+        }
+      ],
+      "order": {
+        "id": "pa_8d456239ecf6",
+        "pa_number": "PA00001",
+        "from_warehouse_id": "NORMAL-FROM",
+        "from_warehouse_name": "Audit NORMAL-FROM",
+        "to_warehouse_id": "NORMAL-TO",
+        "to_warehouse_name": "Audit NORMAL-TO",
+        "owner_entity_id": "A",
+        "items": [
+          {
+            "roll_id": "roll_a67324913ca3",
+            "roll_no": "RL-00001",
+            "epc": "E27A185994A6B945058CB8DD",
+            "sku": "AUDIT-NORMAL",
+            "product_name": "Audit fabric NORMAL",
+            "category": "woven",
+            "grade": "A",
+            "product_id": "NORMAL",
+            "lot": "A/LOT-2610-0001",
+            "qty": 10.0,
+            "unit": "meter",
+            "status": "arrived"
+          }
+        ],
+        "item_count": 1,
+        "total_qty": 10.0,
+        "status": "completed",
+        "btg_number": "BTG00001",
+        "created_at": "2026-10-05T19:03:13.365264+00:00",
+        "created_by": "Audit User A",
+        "dispatched_at": "2026-10-05T19:03:13.473131+00:00",
+        "confirmed_at": "2026-10-05T19:03:13.567455+00:00",
+        "confirmed_by": "Audit User A",
+        "updated_at": "2026-10-05T19:03:13.567455+00:00",
+        "arrived_count": 1,
+        "exception_count": 0
+      }
+    },
+    "whole_reservation": {
+      "order": {
+        "id": "so_ab2cb0013e7f",
+        "number": "A/SO-00001",
+        "status": "reserved",
+        "entity_id": "A",
+        "customer_id": "CUSTOMER-WHOLE",
+        "customer_name": "Synthetic audit customer WHOLE",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR-WHOLE",
+          "city": "Jakarta",
+          "address": "Synthetic local audit"
+        },
+        "shipping_address_id": "ADDR-WHOLE",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "WHOLE",
+            "sku": "AUDIT-WHOLE",
+            "product_name": "Audit fabric WHOLE",
+            "quantity": 10.0,
+            "unit": "meter",
+            "price": 100.0,
+            "discount_percent": 0.0,
+            "qty_rolls": null,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 1000.0,
+            "discount_amount": 0.0,
+            "line_total": 1000.0,
+            "base_unit": "meter",
+            "base_quantity": 10.0,
+            "category": "woven",
+            "line_code": "",
+            "unit_cost": 10.0,
+            "reserved_qty": 10.0,
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_16e8afb0320e",
+            "product_id": "WHOLE",
+            "warehouse_id": "WHOLE-FROM",
+            "warehouse_name": "Audit WHOLE-FROM",
+            "warehouse_city": "Jakarta",
+            "owner_entity_id": "A",
+            "quantity": 10.0,
+            "lot": "A/LOT-2610-0002",
+            "lots": [
+              "A/LOT-2610-0002"
+            ],
+            "dye_lot": "DYE-WHOLE",
+            "dye_lots": [
+              "DYE-WHOLE"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "10.0 dari Lot A/LOT-2610-0002 (FEFO) · Audit WHOLE-FROM — lot tunggal.",
+            "policy_lot_selection": "fefo",
+            "dye_lot_strict": false,
+            "rolls": [
+              {
+                "roll_id": "roll_c22e89fe9613",
+                "roll_no": "RL-00002",
+                "lot": "A/LOT-2610-0002",
+                "dye_lot": "DYE-WHOLE",
+                "length": 10.0
+              }
+            ],
+            "status": "allocated"
+          }
+        ],
+        "total_amount": 1000.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 1000.0,
+        "dpp": 1000.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 1000.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": null,
+        "approval_amount": 1000.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-08T19:03:14.285408+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-05T19:03:14.293241+00:00",
+        "updated_at": "2026-10-05T19:03:14.293241+00:00",
+        "stage": "Reserved",
+        "sub_status": [
+          "siap_disahkan"
+        ]
+      },
+      "allocations": [
+        {
+          "id": "alloc_16e8afb0320e",
+          "product_id": "WHOLE",
+          "warehouse_id": "WHOLE-FROM",
+          "warehouse_name": "Audit WHOLE-FROM",
+          "warehouse_city": "Jakarta",
+          "owner_entity_id": "A",
+          "quantity": 10.0,
+          "lot": "A/LOT-2610-0002",
+          "lots": [
+            "A/LOT-2610-0002"
+          ],
+          "dye_lot": "DYE-WHOLE",
+          "dye_lots": [
+            "DYE-WHOLE"
+          ],
+          "lot_mode": "single",
+          "allocation_explanation": "10.0 dari Lot A/LOT-2610-0002 (FEFO) · Audit WHOLE-FROM — lot tunggal.",
+          "policy_lot_selection": "fefo",
+          "dye_lot_strict": false,
+          "rolls": [
+            {
+              "roll_id": "roll_c22e89fe9613",
+              "roll_no": "RL-00002",
+              "lot": "A/LOT-2610-0002",
+              "dye_lot": "DYE-WHOLE",
+              "length": 10.0
+            }
+          ],
+          "status": "allocated"
+        }
+      ],
+      "before_dispatch": {
+        "id": "roll_c22e89fe9613",
+        "product_id": "WHOLE",
+        "owner_entity_id": "A",
+        "ownership_type": "internal",
+        "consignor_ref": null,
+        "warehouse_id": "WHOLE-FROM",
+        "bin_id": null,
+        "lot": "A/LOT-2610-0002",
+        "lot_id": "lot_8dda97af3ae3",
+        "supplier_lot": "SUP-WHOLE",
+        "dye_lot": "DYE-WHOLE",
+        "batch": "AUDIT-WHOLE",
+        "roll_no": "RL-00002",
+        "length_initial": 10.0,
+        "length_remaining": 10.0,
+        "unit": "meter",
+        "grade": "A",
+        "stage": "finished",
+        "fabric_type": "woven",
+        "line_code": "",
+        "status": "reserved",
+        "tracking_mode": "rfid",
+        "earmarked_for": null,
+        "secondary_measures": null,
+        "location_type": "warehouse_bin",
+        "reserved_ref": {
+          "type": "sales_order",
+          "id": "so_ab2cb0013e7f"
+        },
+        "base_unit_cost": 10.0,
+        "unit_cost": 10.0,
+        "landed_cost_total": 0.0,
+        "acquired": {
+          "via": "manual_inbound",
+          "ref_id": "",
+          "date": "2026-10-05T19:03:13.629630+00:00"
+        },
+        "rfid_tag_id": "rtag_cc068bed468f",
+        "is_remnant": false,
+        "created_at": "2026-10-05T19:03:13.629630+00:00",
+        "updated_at": "2026-10-05T19:03:14.251808+00:00",
+        "created_by": "System",
+        "created_by_name": "System",
+        "journey": {
+          "print_job_id": "rpj_86527f38197d",
+          "stage": "putaway_assigned",
+          "updated_at": "2026-10-05T19:03:14.036784+00:00",
+          "verify_session_id": "rvs_6ba9310600da",
+          "routing": "store",
+          "routing_by": "Audit User A",
+          "putaway_order_id": "pa_ee0e48361ca2"
+        },
+        "active_movement": {
+          "type": "putaway",
+          "id": "pa_ee0e48361ca2",
+          "number": "PA00002",
+          "claimed_at": "2026-10-05T19:03:14.030264+00:00"
+        }
+      },
+      "dispatch": {
+        "http": 409,
+        "body": {
+          "detail": "Roll RL-00002 tidak lagi available untuk PA ini (dipesan/QC/berpindah). Keluarkan roll itu atau buat PA baru."
+        }
+      },
+      "after": {
+        "roll": {
+          "id": "roll_c22e89fe9613",
+          "product_id": "WHOLE",
+          "owner_entity_id": "A",
+          "ownership_type": "internal",
+          "consignor_ref": null,
+          "warehouse_id": "WHOLE-FROM",
+          "bin_id": null,
+          "lot": "A/LOT-2610-0002",
+          "lot_id": "lot_8dda97af3ae3",
+          "supplier_lot": "SUP-WHOLE",
+          "dye_lot": "DYE-WHOLE",
+          "batch": "AUDIT-WHOLE",
+          "roll_no": "RL-00002",
+          "length_initial": 10.0,
+          "length_remaining": 10.0,
+          "unit": "meter",
+          "grade": "A",
+          "stage": "finished",
+          "fabric_type": "woven",
+          "line_code": "",
+          "status": "reserved",
+          "tracking_mode": "rfid",
+          "earmarked_for": null,
+          "secondary_measures": null,
+          "location_type": "warehouse_bin",
+          "reserved_ref": {
+            "type": "sales_order",
+            "id": "so_ab2cb0013e7f"
+          },
+          "base_unit_cost": 10.0,
+          "unit_cost": 10.0,
+          "landed_cost_total": 0.0,
+          "acquired": {
+            "via": "manual_inbound",
+            "ref_id": "",
+            "date": "2026-10-05T19:03:13.629630+00:00"
+          },
+          "rfid_tag_id": "rtag_cc068bed468f",
+          "is_remnant": false,
+          "created_at": "2026-10-05T19:03:13.629630+00:00",
+          "updated_at": "2026-10-05T19:03:14.251808+00:00",
+          "created_by": "System",
+          "created_by_name": "System",
+          "journey": {
+            "print_job_id": "rpj_86527f38197d",
+            "stage": "putaway_assigned",
+            "updated_at": "2026-10-05T19:03:14.036784+00:00",
+            "verify_session_id": "rvs_6ba9310600da",
+            "routing": "store",
+            "routing_by": "Audit User A",
+            "putaway_order_id": "pa_ee0e48361ca2"
+          },
+          "active_movement": {
+            "type": "putaway",
+            "id": "pa_ee0e48361ca2",
+            "number": "PA00002",
+            "claimed_at": "2026-10-05T19:03:14.030264+00:00"
+          }
+        },
+        "tag": {
+          "id": "rtag_cc068bed468f",
+          "epc": "E2E49E35104EC24FB5BCE18F",
+          "roll_id": "roll_c22e89fe9613",
+          "product_id": "WHOLE",
+          "sku": "AUDIT-WHOLE",
+          "product_name": "Audit fabric WHOLE",
+          "roll_no": "RL-00002",
+          "lot": "A/LOT-2610-0002",
+          "owner_entity_id": "A",
+          "warehouse_id": "WHOLE-FROM",
+          "status": "active",
+          "last_seen_at": null,
+          "last_seen_device_id": null,
+          "last_seen_device_name": null,
+          "last_seen_location": null,
+          "last_seen_warehouse_id": null,
+          "encoded_at": "2026-10-05T19:03:13.710363+00:00",
+          "encoded_by": "Audit User A",
+          "activated_at": "2026-10-05T19:03:13.761976+00:00"
+        },
+        "balances": [
+          {
+            "warehouse_id": "WHOLE-FROM",
+            "owner_entity_id": "A",
+            "product_id": "WHOLE",
+            "id": "bal_3a0a49a25e6a",
+            "rebuild_ticket": 2,
+            "atp_qty": 0.0,
+            "available_qty": 0.0,
+            "blocked_qty": 0.0,
+            "committed_qty": 0.0,
+            "damaged_qty": 0.0,
+            "hold_qty": 0.0,
+            "in_transit_inbound_qty": 0.0,
+            "in_transit_intercompany_qty": 0.0,
+            "in_transit_qty": 0.0,
+            "in_transit_sales_qty": 0.0,
+            "in_transit_transfer_qty": 0.0,
+            "incoming_qty": 0.0,
+            "on_hand_qty": 10.0,
+            "on_hand_roll_count": 1,
+            "on_order_qty": 0.0,
+            "owned_qty": 10.0,
+            "packed_qty": 0.0,
+            "pending_demand_qty": 0.0,
+            "picked_qty": 0.0,
+            "projection_valid": true,
+            "quarantine_qty": 0.0,
+            "rebuild_applied": 2,
+            "reserved_qty": 10.0,
+            "roll_count": 0,
+            "roll_counts": {
+              "available_qty": 0,
+              "reserved_qty": 1,
+              "committed_qty": 0,
+              "picked_qty": 0,
+              "packed_qty": 0,
+              "hold_qty": 0,
+              "wip_qty": 0,
+              "quarantine_qty": 0,
+              "blocked_qty": 0,
+              "damaged_qty": 0,
+              "in_transit_inbound_qty": 0,
+              "in_transit_transfer_qty": 0,
+              "in_transit_intercompany_qty": 0,
+              "in_transit_sales_qty": 0,
+              "subcon_qty": 0
+            },
+            "subcon_qty": 0.0,
+            "unconvertible_roll_count": 0,
+            "updated_at": "2026-10-05T19:03:14.271204+00:00",
+            "wip_qty": 0.0
+          }
+        ],
+        "movements": [],
+        "order": {
+          "id": "pa_ee0e48361ca2",
+          "pa_number": "PA00002",
+          "from_warehouse_id": "WHOLE-FROM",
+          "from_warehouse_name": "Audit WHOLE-FROM",
+          "to_warehouse_id": "WHOLE-TO",
+          "to_warehouse_name": "Audit WHOLE-TO",
+          "owner_entity_id": "A",
+          "items": [
+            {
+              "roll_id": "roll_c22e89fe9613",
+              "roll_no": "RL-00002",
+              "epc": "E2E49E35104EC24FB5BCE18F",
+              "sku": "AUDIT-WHOLE",
+              "product_name": "Audit fabric WHOLE",
+              "category": "woven",
+              "grade": "A",
+              "product_id": "WHOLE",
+              "lot": "A/LOT-2610-0002",
+              "qty": 10.0,
+              "unit": "meter",
+              "status": "pending"
+            }
+          ],
+          "item_count": 1,
+          "total_qty": 10.0,
+          "status": "open",
+          "btg_number": null,
+          "created_at": "2026-10-05T19:03:14.035268+00:00",
+          "created_by": "Audit User A",
+          "dispatched_at": null,
+          "confirmed_at": null,
+          "confirmed_by": null
+        }
+      }
+    },
+    "partial_arrival": {
+      "http": 200,
+      "body": {
+        "id": "pa_607c49cf54c0",
+        "pa_number": "PA00003",
+        "from_warehouse_id": "PARTIAL-FROM",
+        "from_warehouse_name": "Audit PARTIAL-FROM",
+        "to_warehouse_id": "PARTIAL-TO",
+        "to_warehouse_name": "Audit PARTIAL-TO",
+        "owner_entity_id": "A",
+        "items": [
+          {
+            "roll_id": "roll_9a090f7b1c75",
+            "roll_no": "RL-00003",
+            "epc": "E26686560EC942474898F9FB",
+            "sku": "AUDIT-PARTIAL",
+            "product_name": "Audit fabric PARTIAL",
+            "category": "woven",
+            "grade": "A",
+            "product_id": "PARTIAL",
+            "lot": "A/LOT-2610-0003",
+            "qty": 10.0,
+            "unit": "meter",
+            "status": "arrived"
+          }
+        ],
+        "item_count": 1,
+        "total_qty": 10.0,
+        "status": "completed",
+        "btg_number": "BTG00002",
+        "created_at": "2026-10-05T19:03:14.944740+00:00",
+        "created_by": "Audit User A",
+        "dispatched_at": "2026-10-05T19:03:15.220964+00:00",
+        "confirmed_at": "2026-10-05T19:03:15.310641+00:00",
+        "confirmed_by": "Audit User A",
+        "updated_at": "2026-10-05T19:03:15.310641+00:00",
+        "arrived_count": 1,
+        "exception_count": 0
+      }
+    },
+    "partial_reservation": {
+      "order": {
+        "id": "so_fd067c20850e",
+        "number": "A/SO-00002",
+        "status": "reserved",
+        "entity_id": "A",
+        "customer_id": "CUSTOMER-PARTIAL",
+        "customer_name": "Synthetic audit customer PARTIAL",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR-PARTIAL",
+          "city": "Jakarta",
+          "address": "Synthetic local audit"
+        },
+        "shipping_address_id": "ADDR-PARTIAL",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "PARTIAL",
+            "sku": "AUDIT-PARTIAL",
+            "product_name": "Audit fabric PARTIAL",
+            "quantity": 6.0,
+            "unit": "meter",
+            "price": 100.0,
+            "discount_percent": 0.0,
+            "qty_rolls": null,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 600.0,
+            "discount_amount": 0.0,
+            "line_total": 600.0,
+            "base_unit": "meter",
+            "base_quantity": 6.0,
+            "category": "woven",
+            "line_code": "",
+            "unit_cost": 10.0,
+            "reserved_qty": 6.0,
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_54e030d8476e",
+            "product_id": "PARTIAL",
+            "warehouse_id": "PARTIAL-FROM",
+            "warehouse_name": "Audit PARTIAL-FROM",
+            "warehouse_city": "Jakarta",
+            "owner_entity_id": "A",
+            "quantity": 6.0,
+            "lot": "A/LOT-2610-0003",
+            "lots": [
+              "A/LOT-2610-0003"
+            ],
+            "dye_lot": "DYE-PARTIAL",
+            "dye_lots": [
+              "DYE-PARTIAL"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "6.0 dari Lot A/LOT-2610-0003 (FEFO) · Audit PARTIAL-FROM — lot tunggal.",
+            "policy_lot_selection": "fefo",
+            "dye_lot_strict": false,
+            "rolls": [
+              {
+                "roll_id": "roll_9a090f7b1c75",
+                "roll_no": "RL-00003",
+                "reservation_id": "rsv_1a5d4f94faa7",
+                "pending_cut": true,
+                "lot": "A/LOT-2610-0003",
+                "dye_lot": "DYE-PARTIAL",
+                "length": 6.0
+              }
+            ],
+            "status": "allocated"
+          }
+        ],
+        "total_amount": 600.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 600.0,
+        "dpp": 600.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 600.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": null,
+        "approval_amount": 600.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-08T19:03:15.122690+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-05T19:03:15.133097+00:00",
+        "updated_at": "2026-10-05T19:03:15.133097+00:00",
+        "stage": "Reserved",
+        "sub_status": [
+          "siap_disahkan"
+        ]
+      },
+      "allocations": [
+        {
+          "id": "alloc_54e030d8476e",
+          "product_id": "PARTIAL",
+          "warehouse_id": "PARTIAL-FROM",
+          "warehouse_name": "Audit PARTIAL-FROM",
+          "warehouse_city": "Jakarta",
+          "owner_entity_id": "A",
+          "quantity": 6.0,
+          "lot": "A/LOT-2610-0003",
+          "lots": [
+            "A/LOT-2610-0003"
+          ],
+          "dye_lot": "DYE-PARTIAL",
+          "dye_lots": [
+            "DYE-PARTIAL"
+          ],
+          "lot_mode": "single",
+          "allocation_explanation": "6.0 dari Lot A/LOT-2610-0003 (FEFO) · Audit PARTIAL-FROM — lot tunggal.",
+          "policy_lot_selection": "fefo",
+          "dye_lot_strict": false,
+          "rolls": [
+            {
+              "roll_id": "roll_9a090f7b1c75",
+              "roll_no": "RL-00003",
+              "reservation_id": "rsv_1a5d4f94faa7",
+              "pending_cut": true,
+              "lot": "A/LOT-2610-0003",
+              "dye_lot": "DYE-PARTIAL",
+              "length": 6.0
+            }
+          ],
+          "status": "allocated"
+        }
+      ],
+      "before_dispatch": {
+        "id": "roll_9a090f7b1c75",
+        "product_id": "PARTIAL",
+        "owner_entity_id": "A",
+        "ownership_type": "internal",
+        "consignor_ref": null,
+        "warehouse_id": "PARTIAL-FROM",
+        "bin_id": null,
+        "lot": "A/LOT-2610-0003",
+        "lot_id": "lot_67454b5ab6d2",
+        "supplier_lot": "SUP-PARTIAL",
+        "dye_lot": "DYE-PARTIAL",
+        "batch": "AUDIT-PARTIAL",
+        "roll_no": "RL-00003",
+        "length_initial": 10.0,
+        "length_remaining": 10.0,
+        "unit": "meter",
+        "grade": "A",
+        "stage": "finished",
+        "fabric_type": "woven",
+        "line_code": "",
+        "status": "available",
+        "tracking_mode": "rfid",
+        "earmarked_for": null,
+        "secondary_measures": null,
+        "location_type": "warehouse_bin",
+        "reserved_ref": null,
+        "base_unit_cost": 10.0,
+        "unit_cost": 10.0,
+        "landed_cost_total": 0.0,
+        "acquired": {
+          "via": "manual_inbound",
+          "ref_id": "",
+          "date": "2026-10-05T19:03:14.429842+00:00"
+        },
+        "rfid_tag_id": "rtag_26f2ec5f5fa6",
+        "is_remnant": false,
+        "created_at": "2026-10-05T19:03:14.429842+00:00",
+        "updated_at": "2026-10-05T19:03:15.083847+00:00",
+        "created_by": "System",
+        "created_by_name": "System",
+        "journey": {
+          "print_job_id": "rpj_5ac327158c85",
+          "stage": "putaway_assigned",
+          "updated_at": "2026-10-05T19:03:14.947767+00:00",
+          "verify_session_id": "rvs_8f81cd35dc08",
+          "routing": "store",
+          "routing_by": "Audit User A",
+          "putaway_order_id": "pa_607c49cf54c0"
+        },
+        "active_movement": {
+          "type": "putaway",
+          "id": "pa_607c49cf54c0",
+          "number": "PA00003",
+          "claimed_at": "2026-10-05T19:03:14.942497+00:00"
+        },
+        "length_reservations": [
+          {
+            "id": "rsv_1a5d4f94faa7",
+            "ref": {
+              "type": "sales_order",
+              "id": "so_fd067c20850e"
+            },
+            "qty": 6.0,
+            "status": "reserved",
+            "created_at": "2026-10-05T19:03:15.083847+00:00"
+          }
+        ],
+        "length_reserved": 6.0
+      },
+      "dispatch": {
+        "http": 200,
+        "body": {
+          "id": "pa_607c49cf54c0",
+          "pa_number": "PA00003",
+          "from_warehouse_id": "PARTIAL-FROM",
+          "from_warehouse_name": "Audit PARTIAL-FROM",
+          "to_warehouse_id": "PARTIAL-TO",
+          "to_warehouse_name": "Audit PARTIAL-TO",
+          "owner_entity_id": "A",
+          "items": [
+            {
+              "roll_id": "roll_9a090f7b1c75",
+              "roll_no": "RL-00003",
+              "epc": "E26686560EC942474898F9FB",
+              "sku": "AUDIT-PARTIAL",
+              "product_name": "Audit fabric PARTIAL",
+              "category": "woven",
+              "grade": "A",
+              "product_id": "PARTIAL",
+              "lot": "A/LOT-2610-0003",
+              "qty": 10.0,
+              "unit": "meter",
+              "status": "pending"
+            }
+          ],
+          "item_count": 1,
+          "total_qty": 10.0,
+          "status": "in_transit",
+          "btg_number": null,
+          "created_at": "2026-10-05T19:03:14.944740+00:00",
+          "created_by": "Audit User A",
+          "dispatched_at": "2026-10-05T19:03:15.220964+00:00",
+          "confirmed_at": null,
+          "confirmed_by": null,
+          "updated_at": "2026-10-05T19:03:15.220964+00:00"
+        }
+      },
+      "after": {
+        "roll": {
+          "id": "roll_9a090f7b1c75",
+          "product_id": "PARTIAL",
+          "owner_entity_id": "A",
+          "ownership_type": "internal",
+          "consignor_ref": null,
+          "warehouse_id": "PARTIAL-TO",
+          "bin_id": null,
+          "lot": "A/LOT-2610-0003",
+          "lot_id": "lot_67454b5ab6d2",
+          "supplier_lot": "SUP-PARTIAL",
+          "dye_lot": "DYE-PARTIAL",
+          "batch": "AUDIT-PARTIAL",
+          "roll_no": "RL-00003",
+          "length_initial": 10.0,
+          "length_remaining": 10.0,
+          "unit": "meter",
+          "grade": "A",
+          "stage": "finished",
+          "fabric_type": "woven",
+          "line_code": "",
+          "status": "available",
+          "tracking_mode": "rfid",
+          "earmarked_for": null,
+          "secondary_measures": null,
+          "location_type": "warehouse_bin",
+          "reserved_ref": null,
+          "base_unit_cost": 10.0,
+          "unit_cost": 10.0,
+          "landed_cost_total": 0.0,
+          "acquired": {
+            "via": "manual_inbound",
+            "ref_id": "",
+            "date": "2026-10-05T19:03:14.429842+00:00"
+          },
+          "rfid_tag_id": "rtag_26f2ec5f5fa6",
+          "is_remnant": false,
+          "created_at": "2026-10-05T19:03:14.429842+00:00",
+          "updated_at": "2026-10-05T19:03:15.308599+00:00",
+          "created_by": "System",
+          "created_by_name": "System",
+          "journey": {
+            "print_job_id": "rpj_5ac327158c85",
+            "stage": "stored",
+            "updated_at": "2026-10-05T19:03:15.308599+00:00",
+            "verify_session_id": "rvs_8f81cd35dc08",
+            "routing": "store",
+            "routing_by": "Audit User A",
+            "putaway_order_id": "pa_607c49cf54c0"
+          },
+          "length_reservations": [
+            {
+              "id": "rsv_1a5d4f94faa7",
+              "ref": {
+                "type": "sales_order",
+                "id": "so_fd067c20850e"
+              },
+              "qty": 6.0,
+              "status": "reserved",
+              "created_at": "2026-10-05T19:03:15.083847+00:00"
+            }
+          ],
+          "length_reserved": 6.0
+        },
+        "tag": {
+          "id": "rtag_26f2ec5f5fa6",
+          "epc": "E26686560EC942474898F9FB",
+          "roll_id": "roll_9a090f7b1c75",
+          "product_id": "PARTIAL",
+          "sku": "AUDIT-PARTIAL",
+          "product_name": "Audit fabric PARTIAL",
+          "roll_no": "RL-00003",
+          "lot": "A/LOT-2610-0003",
+          "owner_entity_id": "A",
+          "warehouse_id": "PARTIAL-TO",
+          "status": "active",
+          "last_seen_at": null,
+          "last_seen_device_id": null,
+          "last_seen_device_name": null,
+          "last_seen_location": null,
+          "last_seen_warehouse_id": null,
+          "encoded_at": "2026-10-05T19:03:14.536072+00:00",
+          "encoded_by": "Audit User A",
+          "activated_at": "2026-10-05T19:03:14.619765+00:00"
+        },
+        "balances": [
+          {
+            "owner_entity_id": "A",
+            "product_id": "PARTIAL",
+            "warehouse_id": "PARTIAL-FROM",
+            "id": "bal_bfd68cb87bba",
+            "rebuild_ticket": 4,
+            "atp_qty": 0.0,
+            "available_qty": 0.0,
+            "blocked_qty": 0.0,
+            "committed_qty": 0.0,
+            "damaged_qty": 0.0,
+            "hold_qty": 0.0,
+            "in_transit_inbound_qty": 0.0,
+            "in_transit_intercompany_qty": 0.0,
+            "in_transit_qty": 0.0,
+            "in_transit_sales_qty": 0.0,
+            "in_transit_transfer_qty": 0.0,
+            "incoming_qty": 0.0,
+            "on_hand_qty": 0.0,
+            "on_hand_roll_count": 0,
+            "on_order_qty": 0.0,
+            "owned_qty": 0.0,
+            "packed_qty": 0.0,
+            "pending_demand_qty": 0.0,
+            "picked_qty": 0.0,
+            "projection_valid": true,
+            "quarantine_qty": 0.0,
+            "rebuild_applied": 4,
+            "reserved_qty": 0.0,
+            "roll_count": 0,
+            "roll_counts": {
+              "available_qty": 0,
+              "reserved_qty": 0,
+              "committed_qty": 0,
+              "picked_qty": 0,
+              "packed_qty": 0,
+              "hold_qty": 0,
+              "wip_qty": 0,
+              "quarantine_qty": 0,
+              "blocked_qty": 0,
+              "damaged_qty": 0,
+              "in_transit_inbound_qty": 0,
+              "in_transit_transfer_qty": 0,
+              "in_transit_intercompany_qty": 0,
+              "in_transit_sales_qty": 0,
+              "subcon_qty": 0
+            },
+            "subcon_qty": 0.0,
+            "unconvertible_roll_count": 0,
+            "updated_at": "2026-10-05T19:03:15.307308+00:00",
+            "wip_qty": 0.0
+          },
+          {
+            "warehouse_id": "PARTIAL-TO",
+            "product_id": "PARTIAL",
+            "owner_entity_id": "A",
+            "id": "bal_6b3fb5f79eff",
+            "rebuild_ticket": 1,
+            "atp_qty": 4.0,
+            "available_qty": 4.0,
+            "blocked_qty": 0.0,
+            "committed_qty": 0.0,
+            "damaged_qty": 0.0,
+            "hold_qty": 0.0,
+            "in_transit_inbound_qty": 0.0,
+            "in_transit_intercompany_qty": 0.0,
+            "in_transit_qty": 0.0,
+            "in_transit_sales_qty": 0.0,
+            "in_transit_transfer_qty": 0.0,
+            "incoming_qty": 0.0,
+            "on_hand_qty": 10.0,
+            "on_hand_roll_count": 1,
+            "on_order_qty": 0.0,
+            "owned_qty": 10.0,
+            "packed_qty": 0.0,
+            "pending_demand_qty": 0.0,
+            "picked_qty": 0.0,
+            "projection_valid": true,
+            "quarantine_qty": 0.0,
+            "rebuild_applied": 1,
+            "reserved_qty": 6.0,
+            "roll_count": 1,
+            "roll_counts": {
+              "available_qty": 1,
+              "reserved_qty": 0,
+              "committed_qty": 0,
+              "picked_qty": 0,
+              "packed_qty": 0,
+              "hold_qty": 0,
+              "wip_qty": 0,
+              "quarantine_qty": 0,
+              "blocked_qty": 0,
+              "damaged_qty": 0,
+              "in_transit_inbound_qty": 0,
+              "in_transit_transfer_qty": 0,
+              "in_transit_intercompany_qty": 0,
+              "in_transit_sales_qty": 0,
+              "subcon_qty": 0
+            },
+            "subcon_qty": 0.0,
+            "unconvertible_roll_count": 0,
+            "updated_at": "2026-10-05T19:03:15.285176+00:00",
+            "wip_qty": 0.0
+          }
+        ],
+        "movements": [
+          {
+            "id": "mov_526dfe9ceab3",
+            "product_id": "PARTIAL",
+            "warehouse_id": "PARTIAL-FROM",
+            "owner_entity_id": "A",
+            "movement_type": "putaway_transfer_out",
+            "quantity": -10.0,
+            "unit": "meter",
+            "lot": "A/LOT-2610-0003",
+            "roll_id": "roll_9a090f7b1c75",
+            "qty_rolls": 1,
+            "source_document": "PA00003",
+            "reference_id": "pa_607c49cf54c0",
+            "reason": "gate-in scan",
+            "created_by": "Audit User A",
+            "timestamp": "2026-10-05T19:03:15.266039+00:00",
+            "lot_id": "lot_67454b5ab6d2"
+          },
+          {
+            "id": "mov_6b98cdf651d4",
+            "product_id": "PARTIAL",
+            "warehouse_id": "PARTIAL-TO",
+            "owner_entity_id": "A",
+            "movement_type": "putaway_transfer_in",
+            "quantity": 10.0,
+            "unit": "meter",
+            "lot": "A/LOT-2610-0003",
+            "roll_id": "roll_9a090f7b1c75",
+            "qty_rolls": 1,
+            "source_document": "PA00003",
+            "reference_id": "pa_607c49cf54c0",
+            "reason": "gate-in scan",
+            "created_by": "Audit User A",
+            "timestamp": "2026-10-05T19:03:15.266039+00:00",
+            "lot_id": "lot_67454b5ab6d2"
+          }
+        ],
+        "order": {
+          "id": "pa_607c49cf54c0",
+          "pa_number": "PA00003",
+          "from_warehouse_id": "PARTIAL-FROM",
+          "from_warehouse_name": "Audit PARTIAL-FROM",
+          "to_warehouse_id": "PARTIAL-TO",
+          "to_warehouse_name": "Audit PARTIAL-TO",
+          "owner_entity_id": "A",
+          "items": [
+            {
+              "roll_id": "roll_9a090f7b1c75",
+              "roll_no": "RL-00003",
+              "epc": "E26686560EC942474898F9FB",
+              "sku": "AUDIT-PARTIAL",
+              "product_name": "Audit fabric PARTIAL",
+              "category": "woven",
+              "grade": "A",
+              "product_id": "PARTIAL",
+              "lot": "A/LOT-2610-0003",
+              "qty": 10.0,
+              "unit": "meter",
+              "status": "arrived"
+            }
+          ],
+          "item_count": 1,
+          "total_qty": 10.0,
+          "status": "completed",
+          "btg_number": "BTG00002",
+          "created_at": "2026-10-05T19:03:14.944740+00:00",
+          "created_by": "Audit User A",
+          "dispatched_at": "2026-10-05T19:03:15.220964+00:00",
+          "confirmed_at": "2026-10-05T19:03:15.310641+00:00",
+          "confirmed_by": "Audit User A",
+          "updated_at": "2026-10-05T19:03:15.310641+00:00",
+          "arrived_count": 1,
+          "exception_count": 0
+        }
+      }
+    },
+    "rmwhole_reservation": {
+      "so": {
+        "id": "so_518995aa4527",
+        "number": "A/SO-00003",
+        "status": "reserved",
+        "entity_id": "A",
+        "customer_id": "CUSTOMER-RMWHOLE",
+        "customer_name": "Synthetic audit customer RMWHOLE",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR-RMWHOLE",
+          "city": "Jakarta",
+          "address": "Synthetic local audit"
+        },
+        "shipping_address_id": "ADDR-RMWHOLE",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "RMWHOLE",
+            "sku": "AUDIT-RMWHOLE",
+            "product_name": "Audit fabric RMWHOLE",
+            "quantity": 10.0,
+            "unit": "meter",
+            "price": 100.0,
+            "discount_percent": 0.0,
+            "qty_rolls": 1,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 1000.0,
+            "discount_amount": 0.0,
+            "line_total": 1000.0,
+            "base_unit": "meter",
+            "base_quantity": 10.0,
+            "category": "woven",
+            "line_code": "",
+            "unit_cost": 10.0,
+            "reserved_qty": 10.0,
+            "purchase_mode": "roll",
+            "roll_lines": [
+              {
+                "roll_id": "roll_8204d6234b7d",
+                "take_qty": 10.0
+              }
+            ],
+            "roll_rounding": {
+              "target_qty": 10.0,
+              "final_qty": 10.0,
+              "delta": 0.0,
+              "choice": "exact",
+              "roll_count": 1,
+              "cut": false,
+              "confirmed_by": "Audit User A",
+              "confirmed_at": "2026-10-05T19:03:15.831348+00:00"
+            },
+            "intercompany": [],
+            "intercompany_pending_qty": 0.0,
+            "linked_transfer_ids": [],
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_f6e966a8ed2b",
+            "product_id": "RMWHOLE",
+            "warehouse_id": "RMWHOLE-FROM",
+            "warehouse_name": "Audit RMWHOLE-FROM",
+            "warehouse_city": "Jakarta",
+            "owner_entity_id": "A",
+            "quantity": 10.0,
+            "lot": "A/LOT-2610-0004",
+            "lots": [
+              "A/LOT-2610-0004"
+            ],
+            "dye_lot": "DYE-RMWHOLE",
+            "dye_lots": [
+              "DYE-RMWHOLE"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "Pilihan roll manual (1 roll) — allocated.",
+            "rolls": [
+              {
+                "roll_id": "roll_8204d6234b7d",
+                "roll_no": "RL-00004",
+                "lot": "A/LOT-2610-0004",
+                "dye_lot": "DYE-RMWHOLE",
+                "length": 10.0
+              }
+            ],
+            "status": "allocated",
+            "selection": "manual_roll"
+          }
+        ],
+        "total_amount": 1000.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 1000.0,
+        "dpp": 1000.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 1000.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": null,
+        "approval_amount": 1000.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-08T19:03:15.862241+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-05T19:03:15.867240+00:00",
+        "updated_at": "2026-10-05T19:03:15.867240+00:00",
+        "stage": "Reserved",
+        "sub_status": [
+          "siap_disahkan"
+        ]
+      },
+      "pa": {
+        "id": "pa_5ef3094b3620",
+        "pa_number": "PA00004",
+        "from_warehouse_id": "RMWHOLE-FROM",
+        "from_warehouse_name": "Audit RMWHOLE-FROM",
+        "to_warehouse_id": "RMWHOLE-TO",
+        "to_warehouse_name": "Audit RMWHOLE-TO",
+        "owner_entity_id": "A",
+        "items": [
+          {
+            "roll_id": "roll_8204d6234b7d",
+            "roll_no": "RL-00004",
+            "epc": "E2004213F6F08B4F0CABB38E",
+            "sku": "AUDIT-RMWHOLE",
+            "product_name": "Audit fabric RMWHOLE",
+            "category": "woven",
+            "grade": "A",
+            "product_id": "RMWHOLE",
+            "lot": "A/LOT-2610-0004",
+            "qty": 10.0,
+            "unit": "meter",
+            "status": "pending"
+          }
+        ],
+        "item_count": 1,
+        "total_qty": 10.0,
+        "status": "open",
+        "btg_number": null,
+        "created_at": "2026-10-05T19:03:15.734099+00:00",
+        "created_by": "Audit User A",
+        "dispatched_at": null,
+        "confirmed_at": null,
+        "confirmed_by": null
+      },
+      "dispatch": {
+        "http": 409,
+        "body": {
+          "detail": "Roll RL-00004 tidak lagi available untuk PA ini (dipesan/QC/berpindah). Keluarkan roll itu atau buat PA baru."
+        }
+      },
+      "after": {
+        "roll": {
+          "id": "roll_8204d6234b7d",
+          "product_id": "RMWHOLE",
+          "owner_entity_id": "A",
+          "ownership_type": "internal",
+          "consignor_ref": null,
+          "warehouse_id": "RMWHOLE-FROM",
+          "bin_id": null,
+          "lot": "A/LOT-2610-0004",
+          "lot_id": "lot_34b964bce209",
+          "supplier_lot": "SUP-RMWHOLE",
+          "dye_lot": "DYE-RMWHOLE",
+          "batch": "AUDIT-RMWHOLE",
+          "roll_no": "RL-00004",
+          "length_initial": 10.0,
+          "length_remaining": 10.0,
+          "unit": "meter",
+          "grade": "A",
+          "stage": "finished",
+          "fabric_type": "woven",
+          "line_code": "",
+          "status": "reserved",
+          "tracking_mode": "rfid",
+          "earmarked_for": null,
+          "secondary_measures": null,
+          "location_type": "warehouse_bin",
+          "reserved_ref": {
+            "type": "sales_order",
+            "id": "so_518995aa4527"
+          },
+          "base_unit_cost": 10.0,
+          "unit_cost": 10.0,
+          "landed_cost_total": 0.0,
+          "acquired": {
+            "via": "manual_inbound",
+            "ref_id": "",
+            "date": "2026-10-05T19:03:15.364181+00:00"
+          },
+          "rfid_tag_id": "rtag_5ded975bde3f",
+          "is_remnant": false,
+          "created_at": "2026-10-05T19:03:15.364181+00:00",
+          "updated_at": "2026-10-05T19:03:15.839302+00:00",
+          "created_by": "System",
+          "created_by_name": "System",
+          "journey": {
+            "print_job_id": "rpj_6a63ba9cf09c",
+            "stage": "putaway_assigned",
+            "updated_at": "2026-10-05T19:03:15.735099+00:00",
+            "verify_session_id": "rvs_ae867574f782",
+            "routing": "store",
+            "routing_by": "Audit User A",
+            "putaway_order_id": "pa_5ef3094b3620"
+          },
+          "active_movement": {
+            "type": "putaway",
+            "id": "pa_5ef3094b3620",
+            "number": "PA00004",
+            "claimed_at": "2026-10-05T19:03:15.732099+00:00"
+          }
+        },
+        "tag": {
+          "id": "rtag_5ded975bde3f",
+          "epc": "E2004213F6F08B4F0CABB38E",
+          "roll_id": "roll_8204d6234b7d",
+          "product_id": "RMWHOLE",
+          "sku": "AUDIT-RMWHOLE",
+          "product_name": "Audit fabric RMWHOLE",
+          "roll_no": "RL-00004",
+          "lot": "A/LOT-2610-0004",
+          "owner_entity_id": "A",
+          "warehouse_id": "RMWHOLE-FROM",
+          "status": "active",
+          "last_seen_at": null,
+          "last_seen_device_id": null,
+          "last_seen_device_name": null,
+          "last_seen_location": null,
+          "last_seen_warehouse_id": null,
+          "encoded_at": "2026-10-05T19:03:15.428807+00:00",
+          "encoded_by": "Audit User A",
+          "activated_at": "2026-10-05T19:03:15.478112+00:00"
+        },
+        "balances": [
+          {
+            "warehouse_id": "RMWHOLE-FROM",
+            "product_id": "RMWHOLE",
+            "owner_entity_id": "A",
+            "id": "bal_2850ddf9636d",
+            "rebuild_ticket": 2,
+            "atp_qty": 0.0,
+            "available_qty": 0.0,
+            "blocked_qty": 0.0,
+            "committed_qty": 0.0,
+            "damaged_qty": 0.0,
+            "hold_qty": 0.0,
+            "in_transit_inbound_qty": 0.0,
+            "in_transit_intercompany_qty": 0.0,
+            "in_transit_qty": 0.0,
+            "in_transit_sales_qty": 0.0,
+            "in_transit_transfer_qty": 0.0,
+            "incoming_qty": 0.0,
+            "on_hand_qty": 10.0,
+            "on_hand_roll_count": 1,
+            "on_order_qty": 0.0,
+            "owned_qty": 10.0,
+            "packed_qty": 0.0,
+            "pending_demand_qty": 0.0,
+            "picked_qty": 0.0,
+            "projection_valid": true,
+            "quarantine_qty": 0.0,
+            "rebuild_applied": 2,
+            "reserved_qty": 10.0,
+            "roll_count": 0,
+            "roll_counts": {
+              "available_qty": 0,
+              "reserved_qty": 1,
+              "committed_qty": 0,
+              "picked_qty": 0,
+              "packed_qty": 0,
+              "hold_qty": 0,
+              "wip_qty": 0,
+              "quarantine_qty": 0,
+              "blocked_qty": 0,
+              "damaged_qty": 0,
+              "in_transit_inbound_qty": 0,
+              "in_transit_transfer_qty": 0,
+              "in_transit_intercompany_qty": 0,
+              "in_transit_sales_qty": 0,
+              "subcon_qty": 0
+            },
+            "subcon_qty": 0.0,
+            "unconvertible_roll_count": 0,
+            "updated_at": "2026-10-05T19:03:15.849240+00:00",
+            "wip_qty": 0.0
+          }
+        ],
+        "movements": [],
+        "order": {
+          "id": "pa_5ef3094b3620",
+          "pa_number": "PA00004",
+          "from_warehouse_id": "RMWHOLE-FROM",
+          "from_warehouse_name": "Audit RMWHOLE-FROM",
+          "to_warehouse_id": "RMWHOLE-TO",
+          "to_warehouse_name": "Audit RMWHOLE-TO",
+          "owner_entity_id": "A",
+          "items": [
+            {
+              "roll_id": "roll_8204d6234b7d",
+              "roll_no": "RL-00004",
+              "epc": "E2004213F6F08B4F0CABB38E",
+              "sku": "AUDIT-RMWHOLE",
+              "product_name": "Audit fabric RMWHOLE",
+              "category": "woven",
+              "grade": "A",
+              "product_id": "RMWHOLE",
+              "lot": "A/LOT-2610-0004",
+              "qty": 10.0,
+              "unit": "meter",
+              "status": "pending"
+            }
+          ],
+          "item_count": 1,
+          "total_qty": 10.0,
+          "status": "open",
+          "btg_number": null,
+          "created_at": "2026-10-05T19:03:15.734099+00:00",
+          "created_by": "Audit User A",
+          "dispatched_at": null,
+          "confirmed_at": null,
+          "confirmed_by": null
+        }
+      }
+    },
+    "rmpart_reservation": {
+      "so": {
+        "id": "so_f4773e88d590",
+        "number": "A/SO-00004",
+        "status": "reserved",
+        "entity_id": "A",
+        "customer_id": "CUSTOMER-RMPART",
+        "customer_name": "Synthetic audit customer RMPART",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR-RMPART",
+          "city": "Jakarta",
+          "address": "Synthetic local audit"
+        },
+        "shipping_address_id": "ADDR-RMPART",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "RMPART",
+            "sku": "AUDIT-RMPART",
+            "product_name": "Audit fabric RMPART",
+            "quantity": 6.0,
+            "unit": "meter",
+            "price": 100.0,
+            "discount_percent": 0.0,
+            "qty_rolls": 1,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 600.0,
+            "discount_amount": 0.0,
+            "line_total": 600.0,
+            "base_unit": "meter",
+            "base_quantity": 6.0,
+            "category": "woven",
+            "line_code": "",
+            "unit_cost": 10.0,
+            "reserved_qty": 6.0,
+            "purchase_mode": "roll",
+            "roll_lines": [
+              {
+                "roll_id": "roll_58ffd917da5c",
+                "take_qty": 6.0
+              }
+            ],
+            "roll_rounding": {
+              "target_qty": 6.0,
+              "final_qty": 6.0,
+              "delta": 0.0,
+              "choice": "exact_cut",
+              "roll_count": 1,
+              "cut": true,
+              "confirmed_by": "Audit User A",
+              "confirmed_at": "2026-10-05T19:03:16.380532+00:00"
+            },
+            "intercompany": [],
+            "intercompany_pending_qty": 0.0,
+            "linked_transfer_ids": [],
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_0374dea6f387",
+            "product_id": "RMPART",
+            "warehouse_id": "RMPART-FROM",
+            "warehouse_name": "Audit RMPART-FROM",
+            "warehouse_city": "Jakarta",
+            "owner_entity_id": "A",
+            "quantity": 6.0,
+            "lot": "A/LOT-2610-0005",
+            "lots": [
+              "A/LOT-2610-0005"
+            ],
+            "dye_lot": "DYE-RMPART",
+            "dye_lots": [
+              "DYE-RMPART"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "Pilihan roll manual (1 roll) — allocated.",
+            "rolls": [
+              {
+                "roll_id": "roll_58ffd917da5c",
+                "roll_no": "RL-00005",
+                "lot": "A/LOT-2610-0005",
+                "dye_lot": "DYE-RMPART",
+                "length": 6.0,
+                "pending_cut": true,
+                "reservation_id": "rsv_9b88090db0ea"
+              }
+            ],
+            "status": "allocated",
+            "selection": "manual_roll"
+          }
+        ],
+        "total_amount": 600.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 600.0,
+        "dpp": 600.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 600.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": null,
+        "approval_amount": 600.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-08T19:03:16.425656+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-05T19:03:16.434702+00:00",
+        "updated_at": "2026-10-05T19:03:16.434702+00:00",
+        "stage": "Reserved",
+        "sub_status": [
+          "siap_disahkan"
+        ]
+      },
+      "pa": {
+        "id": "pa_6846d467875a",
+        "pa_number": "PA00005",
+        "from_warehouse_id": "RMPART-FROM",
+        "from_warehouse_name": "Audit RMPART-FROM",
+        "to_warehouse_id": "RMPART-TO",
+        "to_warehouse_name": "Audit RMPART-TO",
+        "owner_entity_id": "A",
+        "items": [
+          {
+            "roll_id": "roll_58ffd917da5c",
+            "roll_no": "RL-00005",
+            "epc": "E2A9E2FA07043140ACA21E5E",
+            "sku": "AUDIT-RMPART",
+            "product_name": "Audit fabric RMPART",
+            "category": "woven",
+            "grade": "A",
+            "product_id": "RMPART",
+            "lot": "A/LOT-2610-0005",
+            "qty": 10.0,
+            "unit": "meter",
+            "status": "pending"
+          }
+        ],
+        "item_count": 1,
+        "total_qty": 10.0,
+        "status": "open",
+        "btg_number": null,
+        "created_at": "2026-10-05T19:03:16.278998+00:00",
+        "created_by": "Audit User A",
+        "dispatched_at": null,
+        "confirmed_at": null,
+        "confirmed_by": null
+      },
+      "dispatch": {
+        "http": 200,
+        "body": {
+          "id": "pa_6846d467875a",
+          "pa_number": "PA00005",
+          "from_warehouse_id": "RMPART-FROM",
+          "from_warehouse_name": "Audit RMPART-FROM",
+          "to_warehouse_id": "RMPART-TO",
+          "to_warehouse_name": "Audit RMPART-TO",
+          "owner_entity_id": "A",
+          "items": [
+            {
+              "roll_id": "roll_58ffd917da5c",
+              "roll_no": "RL-00005",
+              "epc": "E2A9E2FA07043140ACA21E5E",
+              "sku": "AUDIT-RMPART",
+              "product_name": "Audit fabric RMPART",
+              "category": "woven",
+              "grade": "A",
+              "product_id": "RMPART",
+              "lot": "A/LOT-2610-0005",
+              "qty": 10.0,
+              "unit": "meter",
+              "status": "pending"
+            }
+          ],
+          "item_count": 1,
+          "total_qty": 10.0,
+          "status": "in_transit",
+          "btg_number": null,
+          "created_at": "2026-10-05T19:03:16.278998+00:00",
+          "created_by": "Audit User A",
+          "dispatched_at": "2026-10-05T19:03:16.520680+00:00",
+          "confirmed_at": null,
+          "confirmed_by": null,
+          "updated_at": "2026-10-05T19:03:16.520680+00:00"
+        }
+      },
+      "after": {
+        "roll": {
+          "id": "roll_58ffd917da5c",
+          "product_id": "RMPART",
+          "owner_entity_id": "A",
+          "ownership_type": "internal",
+          "consignor_ref": null,
+          "warehouse_id": "RMPART-FROM",
+          "bin_id": null,
+          "lot": "A/LOT-2610-0005",
+          "lot_id": "lot_3f1d2d554424",
+          "supplier_lot": "SUP-RMPART",
+          "dye_lot": "DYE-RMPART",
+          "batch": "AUDIT-RMPART",
+          "roll_no": "RL-00005",
+          "length_initial": 10.0,
+          "length_remaining": 10.0,
+          "unit": "meter",
+          "grade": "A",
+          "stage": "finished",
+          "fabric_type": "woven",
+          "line_code": "",
+          "status": "in_transit_transfer",
+          "tracking_mode": "rfid",
+          "earmarked_for": null,
+          "secondary_measures": null,
+          "location_type": "warehouse_bin",
+          "reserved_ref": null,
+          "base_unit_cost": 10.0,
+          "unit_cost": 10.0,
+          "landed_cost_total": 0.0,
+          "acquired": {
+            "via": "manual_inbound",
+            "ref_id": "",
+            "date": "2026-10-05T19:03:15.943112+00:00"
+          },
+          "rfid_tag_id": "rtag_c04f11de5ddc",
+          "is_remnant": false,
+          "created_at": "2026-10-05T19:03:15.943112+00:00",
+          "updated_at": "2026-10-05T19:03:16.522937+00:00",
+          "created_by": "System",
+          "created_by_name": "System",
+          "journey": {
+            "print_job_id": "rpj_1b79041db6a3",
+            "stage": "putaway_in_transit",
+            "updated_at": "2026-10-05T19:03:16.522937+00:00",
+            "verify_session_id": "rvs_b517a96a40dd",
+            "routing": "store",
+            "routing_by": "Audit User A",
+            "putaway_order_id": "pa_6846d467875a"
+          },
+          "active_movement": {
+            "type": "putaway",
+            "id": "pa_6846d467875a",
+            "number": "PA00005",
+            "claimed_at": "2026-10-05T19:03:16.277970+00:00"
+          },
+          "length_reservations": [
+            {
+              "id": "rsv_9b88090db0ea",
+              "ref": {
+                "type": "sales_order",
+                "id": "so_f4773e88d590"
+              },
+              "qty": 6.0,
+              "status": "reserved",
+              "created_at": "2026-10-05T19:03:16.391419+00:00"
+            }
+          ],
+          "length_reserved": 6.0
+        },
+        "tag": {
+          "id": "rtag_c04f11de5ddc",
+          "epc": "E2A9E2FA07043140ACA21E5E",
+          "roll_id": "roll_58ffd917da5c",
+          "product_id": "RMPART",
+          "sku": "AUDIT-RMPART",
+          "product_name": "Audit fabric RMPART",
+          "roll_no": "RL-00005",
+          "lot": "A/LOT-2610-0005",
+          "owner_entity_id": "A",
+          "warehouse_id": "RMPART-FROM",
+          "status": "active",
+          "last_seen_at": null,
+          "last_seen_device_id": null,
+          "last_seen_device_name": null,
+          "last_seen_location": null,
+          "last_seen_warehouse_id": null,
+          "encoded_at": "2026-10-05T19:03:16.005886+00:00",
+          "encoded_by": "Audit User A",
+          "activated_at": "2026-10-05T19:03:16.063698+00:00"
+        },
+        "balances": [
+          {
+            "warehouse_id": "RMPART-FROM",
+            "owner_entity_id": "A",
+            "product_id": "RMPART",
+            "id": "bal_6a44506c295a",
+            "rebuild_ticket": 3,
+            "atp_qty": 0.0,
+            "available_qty": 0.0,
+            "blocked_qty": 0.0,
+            "committed_qty": 0.0,
+            "damaged_qty": 0.0,
+            "hold_qty": 0.0,
+            "in_transit_inbound_qty": 0.0,
+            "in_transit_intercompany_qty": 0.0,
+            "in_transit_qty": 10.0,
+            "in_transit_sales_qty": 0.0,
+            "in_transit_transfer_qty": 10.0,
+            "incoming_qty": 0.0,
+            "on_hand_qty": 0.0,
+            "on_hand_roll_count": 0,
+            "on_order_qty": 0.0,
+            "owned_qty": 10.0,
+            "packed_qty": 0.0,
+            "pending_demand_qty": 0.0,
+            "picked_qty": 0.0,
+            "projection_valid": true,
+            "quarantine_qty": 0.0,
+            "rebuild_applied": 3,
+            "reserved_qty": 0.0,
+            "roll_count": 0,
+            "roll_counts": {
+              "available_qty": 0,
+              "reserved_qty": 0,
+              "committed_qty": 0,
+              "picked_qty": 0,
+              "packed_qty": 0,
+              "hold_qty": 0,
+              "wip_qty": 0,
+              "quarantine_qty": 0,
+              "blocked_qty": 0,
+              "damaged_qty": 0,
+              "in_transit_inbound_qty": 0,
+              "in_transit_transfer_qty": 1,
+              "in_transit_intercompany_qty": 0,
+              "in_transit_sales_qty": 0,
+              "subcon_qty": 0
+            },
+            "subcon_qty": 0.0,
+            "unconvertible_roll_count": 0,
+            "updated_at": "2026-10-05T19:03:16.506665+00:00",
+            "wip_qty": 0.0
+          }
+        ],
+        "movements": [],
+        "order": {
+          "id": "pa_6846d467875a",
+          "pa_number": "PA00005",
+          "from_warehouse_id": "RMPART-FROM",
+          "from_warehouse_name": "Audit RMPART-FROM",
+          "to_warehouse_id": "RMPART-TO",
+          "to_warehouse_name": "Audit RMPART-TO",
+          "owner_entity_id": "A",
+          "items": [
+            {
+              "roll_id": "roll_58ffd917da5c",
+              "roll_no": "RL-00005",
+              "epc": "E2A9E2FA07043140ACA21E5E",
+              "sku": "AUDIT-RMPART",
+              "product_name": "Audit fabric RMPART",
+              "category": "woven",
+              "grade": "A",
+              "product_id": "RMPART",
+              "lot": "A/LOT-2610-0005",
+              "qty": 10.0,
+              "unit": "meter",
+              "status": "pending"
+            }
+          ],
+          "item_count": 1,
+          "total_qty": 10.0,
+          "status": "in_transit",
+          "btg_number": null,
+          "created_at": "2026-10-05T19:03:16.278998+00:00",
+          "created_by": "Audit User A",
+          "dispatched_at": "2026-10-05T19:03:16.520680+00:00",
+          "confirmed_at": null,
+          "confirmed_by": null,
+          "updated_at": "2026-10-05T19:03:16.520680+00:00"
+        }
+      }
+    },
+    "pa_recovery": {
+      "first": {
+        "http": 500,
+        "body": "Internal Server Error"
+      },
+      "before": {
+        "roll": {
+          "id": "roll_68c0eaa185c5",
+          "product_id": "RECOVERY",
+          "owner_entity_id": "A",
+          "ownership_type": "internal",
+          "consignor_ref": null,
+          "warehouse_id": "RECOVERY-TO",
+          "bin_id": null,
+          "lot": "A/LOT-2610-0006",
+          "lot_id": "lot_9f270b9ff77f",
+          "supplier_lot": "SUP-RECOVERY",
+          "dye_lot": "DYE-RECOVERY",
+          "batch": "AUDIT-RECOVERY",
+          "roll_no": "RL-00006",
+          "length_initial": 10.0,
+          "length_remaining": 10.0,
+          "unit": "meter",
+          "grade": "A",
+          "stage": "finished",
+          "fabric_type": "woven",
+          "line_code": "",
+          "status": "available",
+          "tracking_mode": "rfid",
+          "earmarked_for": null,
+          "secondary_measures": null,
+          "location_type": "warehouse_bin",
+          "reserved_ref": null,
+          "base_unit_cost": 10.0,
+          "unit_cost": 10.0,
+          "landed_cost_total": 0.0,
+          "acquired": {
+            "via": "manual_inbound",
+            "ref_id": "",
+            "date": "2026-10-05T19:03:16.571826+00:00"
+          },
+          "rfid_tag_id": "rtag_c98222ce52c8",
+          "is_remnant": false,
+          "created_at": "2026-10-05T19:03:16.571826+00:00",
+          "updated_at": "2026-10-05T19:03:17.049303+00:00",
+          "created_by": "System",
+          "created_by_name": "System",
+          "journey": {
+            "print_job_id": "rpj_e4baeb4e5786",
+            "stage": "putaway_in_transit",
+            "updated_at": "2026-10-05T19:03:17.007387+00:00",
+            "verify_session_id": "rvs_a0ce20229372",
+            "routing": "store",
+            "routing_by": "Audit User A",
+            "putaway_order_id": "pa_a34b13ef7210"
+          }
+        },
+        "tag": {
+          "id": "rtag_c98222ce52c8",
+          "epc": "E22F3E65014AF7480F9F68EF",
+          "roll_id": "roll_68c0eaa185c5",
+          "product_id": "RECOVERY",
+          "sku": "AUDIT-RECOVERY",
+          "product_name": "Audit fabric RECOVERY",
+          "roll_no": "RL-00006",
+          "lot": "A/LOT-2610-0006",
+          "owner_entity_id": "A",
+          "warehouse_id": "RECOVERY-FROM",
+          "status": "active",
+          "last_seen_at": null,
+          "last_seen_device_id": null,
+          "last_seen_device_name": null,
+          "last_seen_location": null,
+          "last_seen_warehouse_id": null,
+          "encoded_at": "2026-10-05T19:03:16.636796+00:00",
+          "encoded_by": "Audit User A",
+          "activated_at": "2026-10-05T19:03:16.689806+00:00"
+        },
+        "balances": [
+          {
+            "owner_entity_id": "A",
+            "product_id": "RECOVERY",
+            "warehouse_id": "RECOVERY-FROM",
+            "id": "bal_2d97e0635559",
+            "rebuild_ticket": 2,
+            "atp_qty": 0.0,
+            "available_qty": 0.0,
+            "blocked_qty": 0.0,
+            "committed_qty": 0.0,
+            "damaged_qty": 0.0,
+            "hold_qty": 0.0,
+            "in_transit_inbound_qty": 0.0,
+            "in_transit_intercompany_qty": 0.0,
+            "in_transit_qty": 10.0,
+            "in_transit_sales_qty": 0.0,
+            "in_transit_transfer_qty": 10.0,
+            "incoming_qty": 0.0,
+            "on_hand_qty": 0.0,
+            "on_hand_roll_count": 0,
+            "on_order_qty": 0.0,
+            "owned_qty": 10.0,
+            "packed_qty": 0.0,
+            "pending_demand_qty": 0.0,
+            "picked_qty": 0.0,
+            "projection_valid": true,
+            "quarantine_qty": 0.0,
+            "rebuild_applied": 2,
+            "reserved_qty": 0.0,
+            "roll_count": 0,
+            "roll_counts": {
+              "available_qty": 0,
+              "reserved_qty": 0,
+              "committed_qty": 0,
+              "picked_qty": 0,
+              "packed_qty": 0,
+              "hold_qty": 0,
+              "wip_qty": 0,
+              "quarantine_qty": 0,
+              "blocked_qty": 0,
+              "damaged_qty": 0,
+              "in_transit_inbound_qty": 0,
+              "in_transit_transfer_qty": 1,
+              "in_transit_intercompany_qty": 0,
+              "in_transit_sales_qty": 0,
+              "subcon_qty": 0
+            },
+            "subcon_qty": 0.0,
+            "unconvertible_roll_count": 0,
+            "updated_at": "2026-10-05T19:03:16.988893+00:00",
+            "wip_qty": 0.0
+          }
+        ],
+        "movements": [],
+        "order": {
+          "id": "pa_a34b13ef7210",
+          "pa_number": "PA00006",
+          "from_warehouse_id": "RECOVERY-FROM",
+          "from_warehouse_name": "Audit RECOVERY-FROM",
+          "to_warehouse_id": "RECOVERY-TO",
+          "to_warehouse_name": "Audit RECOVERY-TO",
+          "owner_entity_id": "A",
+          "items": [
+            {
+              "roll_id": "roll_68c0eaa185c5",
+              "roll_no": "RL-00006",
+              "epc": "E22F3E65014AF7480F9F68EF",
+              "sku": "AUDIT-RECOVERY",
+              "product_name": "Audit fabric RECOVERY",
+              "category": "woven",
+              "grade": "A",
+              "product_id": "RECOVERY",
+              "lot": "A/LOT-2610-0006",
+              "qty": 10.0,
+              "unit": "meter",
+              "status": "pending"
+            }
+          ],
+          "item_count": 1,
+          "total_qty": 10.0,
+          "status": "in_transit",
+          "btg_number": null,
+          "created_at": "2026-10-05T19:03:16.921799+00:00",
+          "created_by": "Audit User A",
+          "dispatched_at": "2026-10-05T19:03:17.005268+00:00",
+          "confirmed_at": null,
+          "confirmed_by": null,
+          "updated_at": "2026-10-05T19:03:17.005268+00:00",
+          "saga_lock": {
+            "action": "putaway_confirm_arrival",
+            "by": "Audit User A",
+            "started_at": "2026-10-05T19:03:17.048035+00:00",
+            "token": "lk_fa89dbe2672f"
+          }
+        }
+      },
+      "recovery": {
+        "inspect": {
+          "collection": "putaway_orders",
+          "id": "pa_a34b13ef7210",
+          "status": "in_transit",
+          "lock": {
+            "action": "putaway_confirm_arrival",
+            "by": "Audit User A",
+            "started_at": "2026-10-05T17:03:17.121726+00:00",
+            "token": "lk_fa89dbe2672f"
+          },
+          "active": false,
+          "effects": []
+        },
+        "release": {
+          "released": true,
+          "collection": "putaway_orders",
+          "id": "pa_a34b13ef7210",
+          "lock": {
+            "action": "putaway_confirm_arrival",
+            "by": "Audit User A",
+            "started_at": "2026-10-05T17:03:17.121726+00:00",
+            "token": "lk_fa89dbe2672f"
+          },
+          "effects": []
+        }
+      },
+      "retry": {
+        "id": "pa_a34b13ef7210",
+        "pa_number": "PA00006",
+        "from_warehouse_id": "RECOVERY-FROM",
+        "from_warehouse_name": "Audit RECOVERY-FROM",
+        "to_warehouse_id": "RECOVERY-TO",
+        "to_warehouse_name": "Audit RECOVERY-TO",
+        "owner_entity_id": "A",
+        "items": [
+          {
+            "roll_id": "roll_68c0eaa185c5",
+            "roll_no": "RL-00006",
+            "epc": "E22F3E65014AF7480F9F68EF",
+            "sku": "AUDIT-RECOVERY",
+            "product_name": "Audit fabric RECOVERY",
+            "category": "woven",
+            "grade": "A",
+            "product_id": "RECOVERY",
+            "lot": "A/LOT-2610-0006",
+            "qty": 10.0,
+            "unit": "meter",
+            "status": "exception",
+            "exception_reason": "Roll tidak lagi milik PA ini / status berubah"
+          }
+        ],
+        "item_count": 1,
+        "total_qty": 10.0,
+        "status": "exception",
+        "btg_number": null,
+        "created_at": "2026-10-05T19:03:16.921799+00:00",
+        "created_by": "Audit User A",
+        "dispatched_at": "2026-10-05T19:03:17.005268+00:00",
+        "confirmed_at": "2026-10-05T19:03:17.258059+00:00",
+        "confirmed_by": "Audit User A",
+        "updated_at": "2026-10-05T19:03:17.258059+00:00",
+        "arrived_count": 0,
+        "exception_count": 1
+      },
+      "accept": {
+        "id": "pa_a34b13ef7210",
+        "pa_number": "PA00006",
+        "from_warehouse_id": "RECOVERY-FROM",
+        "from_warehouse_name": "Audit RECOVERY-FROM",
+        "to_warehouse_id": "RECOVERY-TO",
+        "to_warehouse_name": "Audit RECOVERY-TO",
+        "owner_entity_id": "A",
+        "items": [
+          {
+            "roll_id": "roll_68c0eaa185c5",
+            "roll_no": "RL-00006",
+            "epc": "E22F3E65014AF7480F9F68EF",
+            "sku": "AUDIT-RECOVERY",
+            "product_name": "Audit fabric RECOVERY",
+            "category": "woven",
+            "grade": "A",
+            "product_id": "RECOVERY",
+            "lot": "A/LOT-2610-0006",
+            "qty": 10.0,
+            "unit": "meter",
+            "status": "exception",
+            "exception_reason": "Roll tidak lagi milik PA ini / status berubah"
+          }
+        ],
+        "item_count": 1,
+        "total_qty": 10.0,
+        "status": "completed_with_exception",
+        "btg_number": null,
+        "created_at": "2026-10-05T19:03:16.921799+00:00",
+        "created_by": "Audit User A",
+        "dispatched_at": "2026-10-05T19:03:17.005268+00:00",
+        "confirmed_at": "2026-10-05T19:03:17.258059+00:00",
+        "confirmed_by": "Audit User A",
+        "updated_at": "2026-10-05T19:03:17.308978+00:00",
+        "arrived_count": 0,
+        "exception_count": 1
+      },
+      "after": {
+        "roll": {
+          "id": "roll_68c0eaa185c5",
+          "product_id": "RECOVERY",
+          "owner_entity_id": "A",
+          "ownership_type": "internal",
+          "consignor_ref": null,
+          "warehouse_id": "RECOVERY-TO",
+          "bin_id": null,
+          "lot": "A/LOT-2610-0006",
+          "lot_id": "lot_9f270b9ff77f",
+          "supplier_lot": "SUP-RECOVERY",
+          "dye_lot": "DYE-RECOVERY",
+          "batch": "AUDIT-RECOVERY",
+          "roll_no": "RL-00006",
+          "length_initial": 10.0,
+          "length_remaining": 10.0,
+          "unit": "meter",
+          "grade": "A",
+          "stage": "finished",
+          "fabric_type": "woven",
+          "line_code": "",
+          "status": "available",
+          "tracking_mode": "rfid",
+          "earmarked_for": null,
+          "secondary_measures": null,
+          "location_type": "warehouse_bin",
+          "reserved_ref": null,
+          "base_unit_cost": 10.0,
+          "unit_cost": 10.0,
+          "landed_cost_total": 0.0,
+          "acquired": {
+            "via": "manual_inbound",
+            "ref_id": "",
+            "date": "2026-10-05T19:03:16.571826+00:00"
+          },
+          "rfid_tag_id": "rtag_c98222ce52c8",
+          "is_remnant": false,
+          "created_at": "2026-10-05T19:03:16.571826+00:00",
+          "updated_at": "2026-10-05T19:03:17.255101+00:00",
+          "created_by": "System",
+          "created_by_name": "System",
+          "journey": {
+            "print_job_id": "rpj_e4baeb4e5786",
+            "stage": "gate_exception",
+            "updated_at": "2026-10-05T19:03:17.255101+00:00",
+            "verify_session_id": "rvs_a0ce20229372",
+            "routing": "store",
+            "routing_by": "Audit User A",
+            "putaway_order_id": "pa_a34b13ef7210",
+            "exception_reason": "EPC tidak terbaca / roll berubah saat konfirmasi tiba"
+          }
+        },
+        "tag": {
+          "id": "rtag_c98222ce52c8",
+          "epc": "E22F3E65014AF7480F9F68EF",
+          "roll_id": "roll_68c0eaa185c5",
+          "product_id": "RECOVERY",
+          "sku": "AUDIT-RECOVERY",
+          "product_name": "Audit fabric RECOVERY",
+          "roll_no": "RL-00006",
+          "lot": "A/LOT-2610-0006",
+          "owner_entity_id": "A",
+          "warehouse_id": "RECOVERY-FROM",
+          "status": "active",
+          "last_seen_at": null,
+          "last_seen_device_id": null,
+          "last_seen_device_name": null,
+          "last_seen_location": null,
+          "last_seen_warehouse_id": null,
+          "encoded_at": "2026-10-05T19:03:16.636796+00:00",
+          "encoded_by": "Audit User A",
+          "activated_at": "2026-10-05T19:03:16.689806+00:00"
+        },
+        "balances": [
+          {
+            "owner_entity_id": "A",
+            "product_id": "RECOVERY",
+            "warehouse_id": "RECOVERY-FROM",
+            "id": "bal_2d97e0635559",
+            "rebuild_ticket": 2,
+            "atp_qty": 0.0,
+            "available_qty": 0.0,
+            "blocked_qty": 0.0,
+            "committed_qty": 0.0,
+            "damaged_qty": 0.0,
+            "hold_qty": 0.0,
+            "in_transit_inbound_qty": 0.0,
+            "in_transit_intercompany_qty": 0.0,
+            "in_transit_qty": 10.0,
+            "in_transit_sales_qty": 0.0,
+            "in_transit_transfer_qty": 10.0,
+            "incoming_qty": 0.0,
+            "on_hand_qty": 0.0,
+            "on_hand_roll_count": 0,
+            "on_order_qty": 0.0,
+            "owned_qty": 10.0,
+            "packed_qty": 0.0,
+            "pending_demand_qty": 0.0,
+            "picked_qty": 0.0,
+            "projection_valid": true,
+            "quarantine_qty": 0.0,
+            "rebuild_applied": 2,
+            "reserved_qty": 0.0,
+            "roll_count": 0,
+            "roll_counts": {
+              "available_qty": 0,
+              "reserved_qty": 0,
+              "committed_qty": 0,
+              "picked_qty": 0,
+              "packed_qty": 0,
+              "hold_qty": 0,
+              "wip_qty": 0,
+              "quarantine_qty": 0,
+              "blocked_qty": 0,
+              "damaged_qty": 0,
+              "in_transit_inbound_qty": 0,
+              "in_transit_transfer_qty": 1,
+              "in_transit_intercompany_qty": 0,
+              "in_transit_sales_qty": 0,
+              "subcon_qty": 0
+            },
+            "subcon_qty": 0.0,
+            "unconvertible_roll_count": 0,
+            "updated_at": "2026-10-05T19:03:16.988893+00:00",
+            "wip_qty": 0.0
+          }
+        ],
+        "movements": [],
+        "order": {
+          "id": "pa_a34b13ef7210",
+          "pa_number": "PA00006",
+          "from_warehouse_id": "RECOVERY-FROM",
+          "from_warehouse_name": "Audit RECOVERY-FROM",
+          "to_warehouse_id": "RECOVERY-TO",
+          "to_warehouse_name": "Audit RECOVERY-TO",
+          "owner_entity_id": "A",
+          "items": [
+            {
+              "roll_id": "roll_68c0eaa185c5",
+              "roll_no": "RL-00006",
+              "epc": "E22F3E65014AF7480F9F68EF",
+              "sku": "AUDIT-RECOVERY",
+              "product_name": "Audit fabric RECOVERY",
+              "category": "woven",
+              "grade": "A",
+              "product_id": "RECOVERY",
+              "lot": "A/LOT-2610-0006",
+              "qty": 10.0,
+              "unit": "meter",
+              "status": "exception",
+              "exception_reason": "Roll tidak lagi milik PA ini / status berubah"
+            }
+          ],
+          "item_count": 1,
+          "total_qty": 10.0,
+          "status": "completed_with_exception",
+          "btg_number": null,
+          "created_at": "2026-10-05T19:03:16.921799+00:00",
+          "created_by": "Audit User A",
+          "dispatched_at": "2026-10-05T19:03:17.005268+00:00",
+          "confirmed_at": "2026-10-05T19:03:17.258059+00:00",
+          "confirmed_by": "Audit User A",
+          "updated_at": "2026-10-05T19:03:17.308978+00:00",
+          "arrived_count": 0,
+          "exception_count": 1
+        }
+      }
+    },
+    "mixed_units": {
+      "suggestion": {
+        "warehouse_from": {
+          "id": "UOM-FROM",
+          "name": "Audit UOM-FROM"
+        },
+        "ready_count": 2,
+        "groups": [
+          {
+            "owner_entity_id": "A",
+            "category": "woven",
+            "grade": "A",
+            "rolls": [
+              {
+                "id": "roll_a8dd38292c40",
+                "roll_no": "RL-00007",
+                "sku": "AUDIT-METERS",
+                "product_name": "Audit fabric METERS",
+                "category": "woven",
+                "grade": "A",
+                "length_remaining": 10.0,
+                "unit": "meter",
+                "lot": "A/LOT-2610-0007",
+                "rfid_tag_id": "rtag_59a09298beb6"
+              },
+              {
+                "id": "roll_f85546cd4312",
+                "roll_no": "RL-00008",
+                "sku": "AUDIT-YARDS",
+                "product_name": "Audit fabric YARDS",
+                "category": "woven",
+                "grade": "A",
+                "length_remaining": 10.0,
+                "unit": "yard",
+                "lot": "A/LOT-2610-0008",
+                "rfid_tag_id": "rtag_8e509d76da9e"
+              }
+            ],
+            "qty": 20.0,
+            "unit": "meter",
+            "candidates": [
+              {
+                "warehouse_id": "NORMAL-TO",
+                "warehouse_name": "Audit NORMAL-TO",
+                "site_id": "AUDIT",
+                "same_site": true,
+                "rules_mode": "none"
+              },
+              {
+                "warehouse_id": "WHOLE-TO",
+                "warehouse_name": "Audit WHOLE-TO",
+                "site_id": "AUDIT",
+                "same_site": true,
+                "rules_mode": "none"
+              },
+              {
+                "warehouse_id": "PARTIAL-TO",
+                "warehouse_name": "Audit PARTIAL-TO",
+                "site_id": "AUDIT",
+                "same_site": true,
+                "rules_mode": "none"
+              },
+              {
+                "warehouse_id": "RMWHOLE-TO",
+                "warehouse_name": "Audit RMWHOLE-TO",
+                "site_id": "AUDIT",
+                "same_site": true,
+                "rules_mode": "none"
+              },
+              {
+                "warehouse_id": "RMPART-TO",
+                "warehouse_name": "Audit RMPART-TO",
+                "site_id": "AUDIT",
+                "same_site": true,
+                "rules_mode": "none"
+              },
+              {
+                "warehouse_id": "RECOVERY-TO",
+                "warehouse_name": "Audit RECOVERY-TO",
+                "site_id": "AUDIT",
+                "same_site": true,
+                "rules_mode": "none"
+              },
+              {
+                "warehouse_id": "UOM-TO",
+                "warehouse_name": "Audit UOM-TO",
+                "site_id": "AUDIT",
+                "same_site": true,
+                "rules_mode": "none"
+              }
+            ]
+          }
+        ]
+      },
+      "order": {
+        "id": "pa_b5ac13cbd4fd",
+        "pa_number": "PA00007",
+        "from_warehouse_id": "UOM-FROM",
+        "from_warehouse_name": "Audit UOM-FROM",
+        "to_warehouse_id": "UOM-TO",
+        "to_warehouse_name": "Audit UOM-TO",
+        "owner_entity_id": "A",
+        "items": [
+          {
+            "roll_id": "roll_a8dd38292c40",
+            "roll_no": "RL-00007",
+            "epc": "E25029165001BF4B478DB3D4",
+            "sku": "AUDIT-METERS",
+            "product_name": "Audit fabric METERS",
+            "category": "woven",
+            "grade": "A",
+            "product_id": "METERS",
+            "lot": "A/LOT-2610-0007",
+            "qty": 10.0,
+            "unit": "meter",
+            "status": "pending"
+          },
+          {
+            "roll_id": "roll_f85546cd4312",
+            "roll_no": "RL-00008",
+            "epc": "E27D030297C2A546758401BD",
+            "sku": "AUDIT-YARDS",
+            "product_name": "Audit fabric YARDS",
+            "category": "woven",
+            "grade": "A",
+            "product_id": "YARDS",
+            "lot": "A/LOT-2610-0008",
+            "qty": 10.0,
+            "unit": "yard",
+            "status": "pending"
+          }
+        ],
+        "item_count": 2,
+        "total_qty": 20.0,
+        "status": "open",
+        "btg_number": null,
+        "created_at": "2026-10-05T19:03:18.074756+00:00",
+        "created_by": "Audit User A",
+        "dispatched_at": null,
+        "confirmed_at": null,
+        "confirmed_by": null
+      },
+      "frontend_contract": "PutawayOrdersPanel.jsx: g.qty/g.unit and o.total_qty/o.items[0].unit",
+      "DOM_verified": false
+    },
+    "ready_metric": {
+      "before": {
+        "totals": {
+          "open_incidents": 0,
+          "red_reads_today": 0,
+          "putaway_ready": 1,
+          "pa_open": 4,
+          "gate_exceptions": 1,
+          "untagged": 0,
+          "devices_stale": 0
+        },
+        "warehouses": [
+          {
+            "warehouse_id": "RECOVERY-TO",
+            "warehouse_name": "Audit RECOVERY-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 1,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "METRIC-FROM",
+            "warehouse_name": "Audit METRIC-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 1,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "NORMAL-FROM",
+            "warehouse_name": "Audit NORMAL-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "NORMAL-TO",
+            "warehouse_name": "Audit NORMAL-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "WHOLE-FROM",
+            "warehouse_name": "Audit WHOLE-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "WHOLE-TO",
+            "warehouse_name": "Audit WHOLE-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 1,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "PARTIAL-FROM",
+            "warehouse_name": "Audit PARTIAL-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "PARTIAL-TO",
+            "warehouse_name": "Audit PARTIAL-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "RMWHOLE-FROM",
+            "warehouse_name": "Audit RMWHOLE-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "RMWHOLE-TO",
+            "warehouse_name": "Audit RMWHOLE-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 1,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "RMPART-FROM",
+            "warehouse_name": "Audit RMPART-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "RMPART-TO",
+            "warehouse_name": "Audit RMPART-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 1,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "RECOVERY-FROM",
+            "warehouse_name": "Audit RECOVERY-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "UOM-FROM",
+            "warehouse_name": "Audit UOM-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "UOM-TO",
+            "warehouse_name": "Audit UOM-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 1,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "METRIC-TO",
+            "warehouse_name": "Audit METRIC-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          }
+        ]
+      },
+      "after": {
+        "totals": {
+          "open_incidents": 0,
+          "red_reads_today": 0,
+          "putaway_ready": 1,
+          "pa_open": 4,
+          "gate_exceptions": 1,
+          "untagged": 0,
+          "devices_stale": 0
+        },
+        "warehouses": [
+          {
+            "warehouse_id": "RECOVERY-TO",
+            "warehouse_name": "Audit RECOVERY-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 1,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "METRIC-FROM",
+            "warehouse_name": "Audit METRIC-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 1,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "NORMAL-FROM",
+            "warehouse_name": "Audit NORMAL-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "NORMAL-TO",
+            "warehouse_name": "Audit NORMAL-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "WHOLE-FROM",
+            "warehouse_name": "Audit WHOLE-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "WHOLE-TO",
+            "warehouse_name": "Audit WHOLE-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 1,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "PARTIAL-FROM",
+            "warehouse_name": "Audit PARTIAL-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "PARTIAL-TO",
+            "warehouse_name": "Audit PARTIAL-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "RMWHOLE-FROM",
+            "warehouse_name": "Audit RMWHOLE-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "RMWHOLE-TO",
+            "warehouse_name": "Audit RMWHOLE-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 1,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "RMPART-FROM",
+            "warehouse_name": "Audit RMPART-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "RMPART-TO",
+            "warehouse_name": "Audit RMPART-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 1,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "RECOVERY-FROM",
+            "warehouse_name": "Audit RECOVERY-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "UOM-FROM",
+            "warehouse_name": "Audit UOM-FROM",
+            "roles": [
+              "transit"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "UOM-TO",
+            "warehouse_name": "Audit UOM-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 1,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          },
+          {
+            "warehouse_id": "METRIC-TO",
+            "warehouse_name": "Audit METRIC-TO",
+            "roles": [
+              "storage"
+            ],
+            "open_incidents": 0,
+            "red_reads_today": 0,
+            "putaway_ready": 0,
+            "pa_open": 0,
+            "gate_exceptions": 0,
+            "untagged": 0,
+            "last_cc": null,
+            "devices_total": 0,
+            "devices_stale": 0
+          }
+        ]
+      },
+      "suggest": {
+        "warehouse_from": {
+          "id": "METRIC-FROM",
+          "name": "Audit METRIC-FROM"
+        },
+        "ready_count": 0,
+        "groups": []
+      },
+      "create": {
+        "http": 400,
+        "body": {
+          "detail": "Roll RL-00009 berstatus reserved — putaway hanya untuk roll available (lolos QC, tidak dipesan)"
+        }
+      }
+    },
+    "rfid_recovery": {
+      "first": {
+        "http": 500,
+        "body": "Internal Server Error"
+      },
+      "replay": {
+        "http": 200,
+        "body": {
+          "device": {
+            "id": "rdev_d02e284b7ccd",
+            "code": "DEV-242F5",
+            "direction": "out"
+          },
+          "accepted": 0,
+          "duplicates": 1,
+          "count": 0,
+          "green": 0,
+          "red": 0,
+          "results": [],
+          "passage": {
+            "id": "rpsg_f1ebee434ab6",
+            "verdict": "info",
+            "red_count": 0,
+            "green_count": 0,
+            "started_at": "2026-10-05T19:03:19.532817+00:00",
+            "last_at": "2026-10-05T19:03:19.617269+00:00"
+          }
+        }
+      },
+      "fresh": {
+        "http": 200,
+        "body": {
+          "device": {
+            "id": "rdev_d02e284b7ccd",
+            "code": "DEV-242F5",
+            "direction": "out"
+          },
+          "accepted": 1,
+          "duplicates": 0,
+          "count": 1,
+          "green": 0,
+          "red": 1,
+          "results": [
+            {
+              "epc": "E2A0179B77BFE143268D1373",
+              "result": "red",
+              "code": "REPLAY_EXIT",
+              "reason": "Roll sudah keluar untuk PA00008 (2026-10-05T19:03:19.532817+00:00) — keluar ulang ditahan.",
+              "action": "Tahan & panggil supervisor — roll sudah pernah keluar dengan dokumen ini.",
+              "roll_no": "RL-00010",
+              "sku": "AUDIT-EVENT",
+              "product_name": "Audit fabric EVENT",
+              "read_id": "rread_e4909d6a57bd"
+            }
+          ],
+          "passage": {
+            "id": "rpsg_f1ebee434ab6",
+            "verdict": "red",
+            "red_count": 1,
+            "green_count": 0,
+            "started_at": "2026-10-05T19:03:19.532817+00:00",
+            "last_at": "2026-10-05T19:03:19.661772+00:00"
+          }
+        }
+      },
+      "observations": [
+        {
+          "device_id": "rdev_d02e284b7ccd",
+          "epc": "E2A0179B77BFE143268D1373",
+          "event_id": "AUDIT-LOST-READ",
+          "captured_at": null,
+          "antenna": null,
+          "rssi": null,
+          "batch_id": null,
+          "source": "device",
+          "received_at": "2026-10-05T19:03:19.532817+00:00"
+        },
+        {
+          "device_id": "rdev_d02e284b7ccd",
+          "epc": "E2A0179B77BFE143268D1373",
+          "event_id": "AUDIT-NEW-READ",
+          "captured_at": null,
+          "antenna": null,
+          "rssi": null,
+          "batch_id": null,
+          "source": "device",
+          "received_at": "2026-10-05T19:03:19.661772+00:00"
+        }
+      ],
+      "reads": [
+        {
+          "id": "rread_e4909d6a57bd",
+          "epc": "E2A0179B77BFE143268D1373",
+          "tag_id": "rtag_acf472210187",
+          "roll_id": "roll_1fb567c88614",
+          "sku": "AUDIT-EVENT",
+          "product_name": "Audit fabric EVENT",
+          "roll_no": "RL-00010",
+          "device_id": "rdev_d02e284b7ccd",
+          "device_name": "Synthetic gate",
+          "device_type": "gate",
+          "read_type": "gate_out",
+          "warehouse_id": "EVENT-FROM",
+          "location": "",
+          "owner_entity_id": "A",
+          "result": "red",
+          "code": "REPLAY_EXIT",
+          "reason": "Roll sudah keluar untuk PA00008 (2026-10-05T19:03:19.532817+00:00) — keluar ulang ditahan.",
+          "action": "Tahan & panggil supervisor — roll sudah pernah keluar dengan dokumen ini.",
+          "movement": {
+            "type": "putaway",
+            "id": "pa_7287e1da23b7",
+            "number": "PA00008",
+            "source_wh": "EVENT-FROM",
+            "dest_wh": "EVENT-TO"
+          },
+          "passage_id": "rpsg_f1ebee434ab6",
+          "source": "device",
+          "observation_count": 1,
+          "timestamp": "2026-10-05T19:03:19.661772+00:00"
+        }
+      ],
+      "incidents": [
+        {
+          "id": "rinc_d0e8b4456530",
+          "read_id": "rread_e4909d6a57bd",
+          "epc": "E2A0179B77BFE143268D1373",
+          "dedupe_key": "E2A0179B77BFE143268D1373|rdev_d02e284b7ccd",
+          "roll_id": "roll_1fb567c88614",
+          "roll_no": "RL-00010",
+          "sku": "AUDIT-EVENT",
+          "product_name": "Audit fabric EVENT",
+          "device_id": "rdev_d02e284b7ccd",
+          "device_name": "Synthetic gate",
+          "read_type": "gate_out",
+          "warehouse_id": "EVENT-FROM",
+          "owner_entity_id": "A",
+          "reason": "Roll sudah keluar untuk PA00008 (2026-10-05T19:03:19.532817+00:00) — keluar ulang ditahan.",
+          "severity": "high",
+          "status": "open",
+          "hits": 1,
+          "created_at": "2026-10-05T19:03:19.735318+00:00",
+          "last_at": "2026-10-05T19:03:19.735318+00:00",
+          "ack_by": null,
+          "ack_at": null,
+          "resolved_by": null,
+          "resolved_at": null,
+          "notes": []
+        }
+      ]
+    },
+    "rfid_red_recovery": {
+      "first": {
+        "http": 500,
+        "body": "Internal Server Error"
+      },
+      "same_event": {
+        "http": 200,
+        "body": {
+          "device": {
+            "id": "rdev_0f2d391bb76d",
+            "code": "DEV-CC7FC",
+            "direction": "out"
+          },
+          "accepted": 0,
+          "duplicates": 1,
+          "count": 0,
+          "green": 0,
+          "red": 0,
+          "results": [],
+          "passage": {
+            "id": "rpsg_8149636a2e0e",
+            "verdict": "info",
+            "red_count": 0,
+            "green_count": 0,
+            "started_at": "2026-10-05T19:03:20.563263+00:00",
+            "last_at": "2026-10-05T19:03:20.605264+00:00"
+          }
+        }
+      },
+      "fresh_event": {
+        "http": 200,
+        "body": {
+          "device": {
+            "id": "rdev_0f2d391bb76d",
+            "code": "DEV-CC7FC",
+            "direction": "out"
+          },
+          "accepted": 1,
+          "duplicates": 0,
+          "count": 1,
+          "green": 0,
+          "red": 1,
+          "results": [
+            {
+              "epc": "000000000000000000009999",
+              "result": "red",
+              "code": "UNKNOWN_EPC",
+              "reason": "EPC tidak dikenal / tag tidak aktif.",
+              "action": "Tahan barang — tag tidak dikenal; panggil supervisor untuk cek fisik.",
+              "roll_no": null,
+              "sku": null,
+              "product_name": null,
+              "duplicate": true,
+              "read_id": "rread_edcaa9d4260f"
+            }
+          ],
+          "passage": {
+            "id": "rpsg_8149636a2e0e",
+            "verdict": "info",
+            "red_count": 0,
+            "green_count": 0,
+            "started_at": "2026-10-05T19:03:20.563263+00:00",
+            "last_at": "2026-10-05T19:03:20.636346+00:00"
+          }
+        }
+      },
+      "gate_status": {
+        "server_time": "2026-10-05T19:03:20.669003+00:00",
+        "verdict_ttl_s": 30,
+        "device": {
+          "id": "rdev_0f2d391bb76d",
+          "code": "DEV-CC7FC",
+          "name": "Synthetic red gate",
+          "status": "online",
+          "enabled": true,
+          "direction": "out",
+          "last_heartbeat": "2026-10-05T19:03:20.630936+00:00",
+          "heartbeat_age_s": 0
+        },
+        "passage": {
+          "id": "rpsg_8149636a2e0e",
+          "device_id": "rdev_0f2d391bb76d",
+          "device_name": "Synthetic red gate",
+          "warehouse_id": "EVENTCTRL-FROM",
+          "direction": "out",
+          "started_at": "2026-10-05T19:03:20.563263+00:00",
+          "last_at": "2026-10-05T19:03:20.636346+00:00",
+          "epcs": [],
+          "read_ids": [],
+          "red_count": 0,
+          "green_count": 0,
+          "info_count": 0,
+          "verdict": "info",
+          "acknowledged_at": null,
+          "reads": [],
+          "age_s": 0,
+          "expired": false
+        },
+        "latched": false
+      },
+      "DOM_verified": false,
+      "hardware_verified": false
+    },
+    "cycle_recovery": {
+      "first": {
+        "http": 500,
+        "body": "Internal Server Error"
+      },
+      "recovery": {
+        "inspect": {
+          "collection": "rfid_verify_sessions",
+          "id": "rvs_7be1dbb7ea5b",
+          "status": "open",
+          "lock": {
+            "action": "cycle_count_complete",
+            "by": "Audit User A",
+            "started_at": "2026-10-05T17:03:21.683282+00:00",
+            "token": "lk_e43aa68140d3"
+          },
+          "active": false,
+          "effects": []
+        },
+        "release": {
+          "released": true,
+          "collection": "rfid_verify_sessions",
+          "id": "rvs_7be1dbb7ea5b",
+          "lock": {
+            "action": "cycle_count_complete",
+            "by": "Audit User A",
+            "started_at": "2026-10-05T17:03:21.683282+00:00",
+            "token": "lk_e43aa68140d3"
+          },
+          "effects": []
+        }
+      },
+      "retry": {
+        "id": "rcc_54e4e20566a8",
+        "cc_number": "CC00003",
+        "session_id": "rvs_7be1dbb7ea5b",
+        "warehouse_id": "COUNTFAIL-FROM",
+        "scope_entity_ids": [
+          "A"
+        ],
+        "warehouse_name": "Audit COUNTFAIL-FROM",
+        "expected_count": 1,
+        "found_count": 1,
+        "missing_count": 0,
+        "extra_count": 0,
+        "accuracy_pct": 100.0,
+        "simulated": false,
+        "eligible_count": 1,
+        "tagged_count": 1,
+        "untagged_count": 0,
+        "tag_coverage_pct": 100.0,
+        "read_recall_pct": 100.0,
+        "extra_rate_pct": 0.0,
+        "unresolved_count": 0,
+        "untagged_items": [],
+        "missing_items": [],
+        "extra_items": [],
+        "created_at": "2026-10-05T19:03:21.811210+00:00",
+        "created_by": "Audit User A"
+      },
+      "counts": [
+        {
+          "id": "rcc_8fcc621f616f",
+          "cc_number": "CC00002",
+          "session_id": "rvs_7be1dbb7ea5b",
+          "warehouse_id": "COUNTFAIL-FROM",
+          "scope_entity_ids": [
+            "A"
+          ],
+          "warehouse_name": "Audit COUNTFAIL-FROM",
+          "expected_count": 1,
+          "found_count": 1,
+          "missing_count": 0,
+          "extra_count": 0,
+          "accuracy_pct": 100.0,
+          "simulated": false,
+          "eligible_count": 1,
+          "tagged_count": 1,
+          "untagged_count": 0,
+          "tag_coverage_pct": 100.0,
+          "read_recall_pct": 100.0,
+          "extra_rate_pct": 0.0,
+          "unresolved_count": 0,
+          "untagged_items": [],
+          "missing_items": [],
+          "extra_items": [],
+          "created_at": "2026-10-05T19:03:21.673963+00:00",
+          "created_by": "Audit User A"
+        },
+        {
+          "id": "rcc_54e4e20566a8",
+          "cc_number": "CC00003",
+          "session_id": "rvs_7be1dbb7ea5b",
+          "warehouse_id": "COUNTFAIL-FROM",
+          "scope_entity_ids": [
+            "A"
+          ],
+          "warehouse_name": "Audit COUNTFAIL-FROM",
+          "expected_count": 1,
+          "found_count": 1,
+          "missing_count": 0,
+          "extra_count": 0,
+          "accuracy_pct": 100.0,
+          "simulated": false,
+          "eligible_count": 1,
+          "tagged_count": 1,
+          "untagged_count": 0,
+          "tag_coverage_pct": 100.0,
+          "read_recall_pct": 100.0,
+          "extra_rate_pct": 0.0,
+          "unresolved_count": 0,
+          "untagged_items": [],
+          "missing_items": [],
+          "extra_items": [],
+          "created_at": "2026-10-05T19:03:21.811210+00:00",
+          "created_by": "Audit User A"
+        }
+      ]
+    },
+    "retired_identity": {
+      "retire": {
+        "http": 200,
+        "body": {
+          "ok": true,
+          "tag_id": "rtag_e25c8ca7e783"
+        }
+      },
+      "roll": {
+        "id": "roll_917575291b9d",
+        "product_id": "RETIRED",
+        "owner_entity_id": "A",
+        "ownership_type": "internal",
+        "consignor_ref": null,
+        "warehouse_id": "RETIRED-FROM",
+        "bin_id": null,
+        "lot": "A/LOT-2610-0014",
+        "lot_id": "lot_24cbf3c38bcf",
+        "supplier_lot": "SUP-RETIRED",
+        "dye_lot": "DYE-RETIRED",
+        "batch": "AUDIT-RETIRED",
+        "roll_no": "RL-00014",
+        "length_initial": 10.0,
+        "length_remaining": 10.0,
+        "unit": "meter",
+        "grade": "A",
+        "stage": "finished",
+        "fabric_type": "woven",
+        "line_code": "",
+        "status": "available",
+        "tracking_mode": "barcode",
+        "earmarked_for": null,
+        "secondary_measures": null,
+        "location_type": "warehouse_bin",
+        "reserved_ref": null,
+        "base_unit_cost": 10.0,
+        "unit_cost": 10.0,
+        "landed_cost_total": 0.0,
+        "acquired": {
+          "via": "manual_inbound",
+          "ref_id": "",
+          "date": "2026-10-05T19:03:21.858566+00:00"
+        },
+        "rfid_tag_id": null,
+        "is_remnant": false,
+        "created_at": "2026-10-05T19:03:21.858566+00:00",
+        "updated_at": "2026-10-05T19:03:22.163656+00:00",
+        "created_by": "System",
+        "created_by_name": "System",
+        "journey": {
+          "print_job_id": "rpj_1c88452d7336",
+          "stage": "tag_verified",
+          "updated_at": "2026-10-05T19:03:22.124615+00:00",
+          "verify_session_id": "rvs_b161b579840f",
+          "routing": "store",
+          "routing_by": "Audit User A"
+        }
+      },
+      "pa": {
+        "http": 200,
+        "body": {
+          "id": "pa_fc4d4b42d689",
+          "pa_number": "PA00010",
+          "from_warehouse_id": "RETIRED-FROM",
+          "from_warehouse_name": "Audit RETIRED-FROM",
+          "to_warehouse_id": "RETIRED-TO",
+          "to_warehouse_name": "Audit RETIRED-TO",
+          "owner_entity_id": "A",
+          "items": [
+            {
+              "roll_id": "roll_917575291b9d",
+              "roll_no": "RL-00014",
+              "epc": "",
+              "sku": "AUDIT-RETIRED",
+              "product_name": "Audit fabric RETIRED",
+              "category": "woven",
+              "grade": "A",
+              "product_id": "RETIRED",
+              "lot": "A/LOT-2610-0014",
+              "qty": 10.0,
+              "unit": "meter",
+              "status": "pending"
+            }
+          ],
+          "item_count": 1,
+          "total_qty": 10.0,
+          "status": "open",
+          "btg_number": null,
+          "created_at": "2026-10-05T19:03:22.222641+00:00",
+          "created_by": "Audit User A",
+          "dispatched_at": null,
+          "confirmed_at": null,
+          "confirmed_by": null
+        }
+      }
+    },
+    "pending_identity": {
+      "print_job": {
+        "id": "rpj_16ede4a9a35f",
+        "kind": "rfid_tag",
+        "job_number": "PJ00016",
+        "warehouse_id": "PENDINGTAG-FROM",
+        "warehouse_name": "Audit PENDINGTAG-FROM",
+        "owner_entity_id": "A",
+        "status": "queued",
+        "items": [
+          {
+            "roll_id": "roll_e892bf1b3ef9",
+            "roll_no": "RL-00015",
+            "tag_id": "rtag_00b1e69aa43a",
+            "epc": "E2A9B7AA58B5374BEBB2F540",
+            "sku": "AUDIT-PENDINGTAG",
+            "product_name": "Audit fabric PENDINGTAG",
+            "lot": "A/LOT-2610-0015",
+            "qty": 10.0,
+            "unit": "meter",
+            "zpl": "^XA\n^CI28\n^RS8\n^RFW,H^FDE2A9B7AA58B5374BEBB2F540^FS\n^FO20,15^A0N,28,28^FH_^FDAudit fabric PENDINGTAG^FS\n^FO20,50^A0N,24,24^FH_^FDSKU: AUDIT-PENDINGTAG^FS\n^FO20,80^A0N,24,24^FH_^FDRoll: RL-00015  Lot: A/LOT-2610-0015^FS\n^FO20,110^A0N,24,24^FH_^FDQty: 10 meter^FS\n^FO20,140^BY2^BCN,50,Y,N,N^FH_^FDRL-00015^FS\n^FO20,196^A0N,18,18^FDEPC E2A9-B7AA-58B5-374B-EBB2-F540^FS\n^XZ"
+          }
+        ],
+        "item_count": 1,
+        "created_at": "2026-10-05T19:03:22.674223+00:00",
+        "created_by": "Audit User A",
+        "printed_at": null,
+        "verified_at": null
+      },
+      "roll": {
+        "id": "roll_e892bf1b3ef9",
+        "product_id": "PENDINGTAG",
+        "owner_entity_id": "A",
+        "ownership_type": "internal",
+        "consignor_ref": null,
+        "warehouse_id": "PENDINGTAG-FROM",
+        "bin_id": null,
+        "lot": "A/LOT-2610-0015",
+        "lot_id": "lot_2ff1203ae215",
+        "supplier_lot": "SUP-PENDINGTAG",
+        "dye_lot": "DYE-PENDINGTAG",
+        "batch": "AUDIT-PENDINGTAG",
+        "roll_no": "RL-00015",
+        "length_initial": 10.0,
+        "length_remaining": 10.0,
+        "unit": "meter",
+        "grade": "A",
+        "stage": "finished",
+        "fabric_type": "woven",
+        "line_code": "",
+        "status": "available",
+        "tracking_mode": "rfid",
+        "earmarked_for": null,
+        "secondary_measures": null,
+        "location_type": "warehouse_bin",
+        "reserved_ref": null,
+        "base_unit_cost": 10.0,
+        "unit_cost": 10.0,
+        "landed_cost_total": 0.0,
+        "acquired": {
+          "via": "manual_inbound",
+          "ref_id": "",
+          "date": "2026-10-05T19:03:22.266668+00:00"
+        },
+        "rfid_tag_id": "rtag_00b1e69aa43a",
+        "is_remnant": false,
+        "created_at": "2026-10-05T19:03:22.266668+00:00",
+        "updated_at": "2026-10-05T19:03:22.666364+00:00",
+        "created_by": "System",
+        "created_by_name": "System",
+        "journey": {
+          "print_job_id": "rpj_cc1b9e2b74ef",
+          "stage": "tag_verified",
+          "updated_at": "2026-10-05T19:03:22.578776+00:00",
+          "verify_session_id": "rvs_26bae519848e",
+          "routing": "store",
+          "routing_by": "Audit User A"
+        }
+      },
+      "tag": {
+        "id": "rtag_00b1e69aa43a",
+        "epc": "E2A9B7AA58B5374BEBB2F540",
+        "roll_id": "roll_e892bf1b3ef9",
+        "product_id": "PENDINGTAG",
+        "sku": "AUDIT-PENDINGTAG",
+        "product_name": "Audit fabric PENDINGTAG",
+        "roll_no": "RL-00015",
+        "lot": "A/LOT-2610-0015",
+        "owner_entity_id": "A",
+        "warehouse_id": "PENDINGTAG-FROM",
+        "status": "pending_print",
+        "last_seen_at": null,
+        "last_seen_device_id": null,
+        "last_seen_device_name": null,
+        "last_seen_location": null,
+        "last_seen_warehouse_id": null,
+        "encoded_at": "2026-10-05T19:03:22.664249+00:00",
+        "encoded_by": "Audit User A"
+      },
+      "pa": {
+        "http": 200,
+        "body": {
+          "id": "pa_288ba888e1de",
+          "pa_number": "PA00011",
+          "from_warehouse_id": "PENDINGTAG-FROM",
+          "from_warehouse_name": "Audit PENDINGTAG-FROM",
+          "to_warehouse_id": "PENDINGTAG-TO",
+          "to_warehouse_name": "Audit PENDINGTAG-TO",
+          "owner_entity_id": "A",
+          "items": [
+            {
+              "roll_id": "roll_e892bf1b3ef9",
+              "roll_no": "RL-00015",
+              "epc": "E2A9B7AA58B5374BEBB2F540",
+              "sku": "AUDIT-PENDINGTAG",
+              "product_name": "Audit fabric PENDINGTAG",
+              "category": "woven",
+              "grade": "A",
+              "product_id": "PENDINGTAG",
+              "lot": "A/LOT-2610-0015",
+              "qty": 10.0,
+              "unit": "meter",
+              "status": "pending"
+            }
+          ],
+          "item_count": 1,
+          "total_qty": 10.0,
+          "status": "open",
+          "btg_number": null,
+          "created_at": "2026-10-05T19:03:22.728215+00:00",
+          "created_by": "Audit User A",
+          "dispatched_at": null,
+          "confirmed_at": null,
+          "confirmed_by": null
+        }
+      }
+    }
+  },
+  "harness_errors": [],
+  "external_connections": []
+}

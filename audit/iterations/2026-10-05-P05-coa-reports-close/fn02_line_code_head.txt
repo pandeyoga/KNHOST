@@ -1,0 +1,2 @@
+HEAD 39c387b..HEAD: tagih produk A (PO 10 @100, lini woven) -> warning {'qty_status': 'ok', 'price_status': 'price_variance', 'qty_remaining': 20.0, 'price_variance_pct': -88.89, 'messages': ['Harga 100 menyimpang -88.89% dari harga PO 900 (toleransi ±5%)']}
+HEAD line_key a/b: woven woven

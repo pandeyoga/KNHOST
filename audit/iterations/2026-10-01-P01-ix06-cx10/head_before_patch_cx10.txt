@@ -1,0 +1,63 @@
+[
+ {
+  "id": "CX-10",
+  "invariant": "control: signed version carries esign block",
+  "pass": true,
+  "detail": "{'code': 'IWLY9B0E', 'signers': 'Signer Versi 1', 'people': [{'name': 'Signer Versi 1', 'role': 'Direktur', 'at': '2026-09-30 16:23:53'}], 'signed_at': '2026-09-30 16:23:53', 'hash_short': '64359bcbcfb533ed1b221f00…', 'verify_url': 'https://knhost-audit.preview.emergentagent.com/verify-document/IWLY"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "control: verify on unchanged doc = current",
+  "pass": false,
+  "detail": "None"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "changed doc does NOT carry old signature",
+  "pass": false,
+  "detail": "{'code': 'IWLY9B0E', 'signers': 'Signer Versi 1', 'people': [{'name': 'Signer Versi 1', 'role': 'Direktur', 'at': '2026-09-30 16:23:53'}], 'signed_at': '2026-09-30 16:23:53', 'hash_short': '64359bcbcfb533ed1b221f00…', 'verify_url': 'https://knhost-audit.preview.emergentagent.com/verify-document/IWLY"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "changed doc marked esign_superseded",
+  "pass": false,
+  "detail": "None"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "old QR reports superseded (verifies old artifact only)",
+  "pass": false,
+  "detail": "None"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "new version gets NEW verification code",
+  "pass": false,
+  "detail": "['IWLY9B0E', 'IWLY9B0E']"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "old code not mixed with new signer",
+  "pass": false,
+  "detail": "[{'name': 'Signer Versi 1', 'role': 'Direktur', 'signed_at': '2026-09-30T16:23:53.402827+00:00'}, {'name': 'Signer Versi 2', 'role': 'Direktur', 'signed_at': '2026-09-30T16:23:53.484851+00:00'}]"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "new PDF carries only new-version signature",
+  "pass": false,
+  "detail": "{'code': 'IWLY9B0E', 'signers': 'Signer Versi 1, Signer Versi 2', 'people': [{'name': 'Signer Versi 1', 'role': 'Direktur', 'at': '2026-09-30 16:23:53'}, {'name': 'Signer Versi 2', 'role': 'Direktur', 'at': '2026-09-30 16:23:53'}], 'signed_at': '2026-09-30 16:23:53', 'hash_short': '2e1c44d583e292247"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "signed snapshot stored immutably with old content",
+  "pass": false,
+  "detail": "False"
+ },
+ {
+  "id": "CX-10",
+  "invariant": "script error",
+  "pass": false,
+  "detail": "KeyError('content_hash')"
+ }
+]
+SUMMARY pass=1 fail=9

@@ -1,0 +1,18 @@
+{
+  "commit": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "file": "frontend/src/features/sales_admin/FulfillmentDecisionDialog.jsx",
+  "results": [
+    {
+      "id": "D4-PLAN-04-error-erased",
+      "expected": "Interco failed; stock30 already executed and persisted",
+      "actual": "",
+      "error_transitions": [
+        "",
+        "Interco failed; stock30 already executed and persisted",
+        ""
+      ],
+      "status": "observed_difference",
+      "note": "Execute original submit and load functions with controlled failed POST and successful refresh. Catch sets error, refresh load resets it. Function-level JS, not browser rendering."
+    }
+  ]
+}

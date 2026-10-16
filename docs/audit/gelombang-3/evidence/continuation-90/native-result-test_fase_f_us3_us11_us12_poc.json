@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_fase_f_us3_us11_us12_poc.py",
+    "database": "knhost_audit_native90_e1425edd9cc34f2d9852fbecc3611dac",
+    "exit": 1,
+    "seconds": 71.45,
+    "pass_log_tokens": 28,
+    "fail_log_tokens": 3,
+    "log": "continuation-90\\native-test_fase_f_us3_us11_us12_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "'ownership_transfer_out', 'production_consume', 'production_output', 'subcon_consume', 'subcon_issue', 'subcon_receipt', 'subcon_receipt_byproduct']\n    · tipe mutasi tersedia: ['inbound_receiving', 'initial_stock', 'outbound_dispatch', 'ownership_transfer_out', 'production_consume', 'production_output', 'subcon_consume', 'subcon_issue', 'subcon_receipt', 'subcon_receipt_byproduct']\n  [PASS] SEMUA tipe mutasi pada data punya label Indonesia di peta UI\n  [PASS] label Indonesia tersedia: 'Ambil Bahan Sample (R&D)'\n  [PASS] label Indonesia tersedia: 'Penerimaan Barang'\n  [PASS] label Indonesia tersedia: 'Pengiriman Keluar'\n  [PASS] label Indonesia tersedia: 'Hasil Produksi'\n  [PASS] label Indonesia tersedia: 'Konsumsi Produksi'\n  [PASS] label Indonesia tersedia: 'Terima dari Makloon'\n\n=== US12 — Jejak Dokumen: kontrak supplier → md_sample → md_spec ===\n  [PASS] GET /supplier-contracts 200\n  [FAIL] ada kontrak supplier yang punya refs ke md_sample — seed_rnd decide seharusnya membentuk kontrak + refs\n\n=== INV-GATE-01 — POC tidak boleh meninggalkan residu ===\n  [PASS] stok (roll/saldo/mutasi/lot) dipulihkan eksak\n  [PASS] nol residu pada `sales_orders`\n  [PASS] nol residu pada `inventory_movements`\n\n==========================================================================\nHASIL: PASS 27 / FAIL 2\n\nRINCIAN GAGAL:\n  · ADA mutasi bertipe sample_issue yang terlihat warehouse :: tipe yang ada: ['inbound_receiving', 'initial_stock', 'outbound_dispatch', 'ownership_transfer_out', 'production_consume', 'production_output', 'subcon_consume', 'subcon_issue', 'subcon_receipt', 'subcon_receipt_byproduct']\n  · ada kontrak supplier yang punya refs ke md_sample :: seed_rnd decide seharusnya membentuk kontrak + refs\n==========================================================================\n"
+  }
+]

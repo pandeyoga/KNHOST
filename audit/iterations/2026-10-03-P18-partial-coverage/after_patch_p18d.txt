@@ -1,0 +1,53 @@
+  [poc-stock] snapshot 69 dokumen stok dari 4 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (69 dokumen, 4 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "APAR-01",
+  "invariant": "3-way: tagihan qty > diterima (151 > 150) ditolak/ditandai tak cocok, tidak langsung posted",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"vbill_396c9ee5bda1\",\"bill_number\":\"VB-00007\",\"supplier_invoice_no\":\"TEST_P18D_3cf6bb-OVR\",\"po_id\":\"po_001\",\"po_number\":\"PO-00001\",\"supplier_id\":\"sup_a146')"
+ },
+ {
+  "id": "APAR-01",
+  "invariant": "bill 10 yd dari penerimaan PO-00001 → posted, jurnal AP ada",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"vbill_13328874f524\",\"bill_number\":\"VB-00008\",\"supplier_invoice_no\":\"TEST_P18D_3cf6bb-INV\",\"po_id\":\"po_001\",\"po_nu', 'posted', 1831500.0)"
+ },
+ {
+  "id": "APAR-01",
+  "invariant": "bayar 2× (setengah + sisa) → status paid, amount_paid = grand_total",
+  "pass": true,
+  "detail": "(200, 200, '{\"id\":\"vbill_13328874f524\",\"bill_number\":\"VB-00008\",\"supplier_invoice_no\":\"TEST_P18D_3cf6bb-INV\",\"po', 'paid')"
+ },
+ {
+  "id": "APAR-01",
+  "invariant": "kas pembayaran bill tak bisa di-void dari layar kas (409, harus lewat bill)",
+  "pass": true,
+  "detail": "409"
+ },
+ {
+  "id": "APAR-01",
+  "invariant": "batal pembayaran ke-2: peran tanpa izin 403, tanpa alasan 400; sukses → bill posted, outstanding = sisa, kas void, net jurnal kas itu = 0",
+  "pass": true,
+  "detail": "(403, 400, 200, '{\"id\":\"vbill_13328874f524\",\"bill_number\":\"VB-00008\",\"supplier_invoice_no\":\"TEST_P18D_3cf6bb-INV\",\"po_id\":\"po_001\",\"po_nu', 'posted', 915750.0, 'void', {})"
+ },
+ {
+  "id": "APAR-01",
+  "invariant": "batal ulang 409; batal paralel 3× pembayaran-1 → tepat 1 sukses, amount_paid = 0 (tak negatif)",
+  "pass": true,
+  "detail": "(409, [200, 409, 409], 0.0)"
+ },
+ {
+  "id": "APAR-01",
+  "invariant": "bayar ulang penuh sesudah pembatalan → paid; hanya 1 pembayaran aktif = grand_total; net kas semua pembayaran = −grand_total",
+  "pass": true,
+  "detail": "(200, 'paid', 1)"
+ },
+ {
+  "id": "APAR-05",
+  "invariant": "status pembayaran PO tersinkron dengan bill (payment_status bukan 'paid' saat bill dibuka lagi)",
+  "pass": true,
+  "detail": "unpaid"
+ }
+]
+pass=8 fail=0

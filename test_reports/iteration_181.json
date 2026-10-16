@@ -1,0 +1,39 @@
+{
+  "summary": "RETEST + regression P05 IMP-16 (MD Quality vs QC) + verifikasi code path pelepasan sisa cadangan MKO. Backend 28/29 pytest pass (1 skipped: GET /api/inventory/rolls/{id} tidak tersedia). Frontend: role landing baru md_quality/qc dari iteration_180 sudah diperbaiki — dua-duanya mendarat di ?view=inspections dengan sidebar 'Gudang & Logistik → Operasi Gudang' yang benar. MDQ (Lestari Wulandari): hanya tab 'Dokumen Inspeksi (INS)' (tanpa 'Antrean QC Kedatangan'), tanpa ins-random-check-button, tanpa 'Random check stok' button. QC (Mulyadi): dua tab (Antrean QC Kedatangan + Dokumen Inspeksi), ins-random-check-button hadir (count=1), 'Random check stok' button hadir. Backend regression: file test_p05_imp16_md_quality_qc.py di-refresh dengan ID entitas/SPK/line baru pasca DB restore (ENT_CST=ent_5ead31bdf16c, PO_RECEIPT_SPK_ID=ins_a290aaab19c3, PO_RECEIPT_LINE_ID=insl_ac0bbf3b65a2). Verifikasi code MKO: _release_leftover_reservation dipanggil di receive_step (line 1257) dan record_service_step (line 901). Alur issue/receive end-to-end tidak dieksekusi — semua MKO yang 'in_process' di DB saat ini sudah consumed penuh (qty 200/200, 300/300) jadi tak ada sisa leftover yang bisa diamati di runtime; cukup dibuktikan via code inspection + regression test_p05_restock_material_revalidation.py lulus 3/3. Random check SPK aktif di DB (ent_ksc): KSC/INS-00001 & KSC/INS-00002 (status 'done/Diterima seluruhnya' — hasil random check iteration test, 1 Ditahan masing-masing).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/inventory/rolls/{id}", "issue": "Endpoint individual roll non-200 — verifikasi roll hold post-random-check hanya via doc.lines (sudah di-skip di test)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p05_imp16_md_quality_qc.py",
+    "/app/backend/tests/test_p05_restock_material_revalidation.py",
+    "/app/test_reports/pytest/iter181.xml"
+  ],
+  "action_items": [
+    "Opsional: tambahkan test E2E backend yang menjalankan issue→receive hingga MKO completed untuk mengobservasi pelepasan sisa cadangan pada 'release' status di /api/material-reservations. Butuh seeding MKO draft dengan reservation.required_qty > qty-yang-benar-benar-diterima."
+  ],
+  "critical_code_review_comments": [
+    "backend/services/makloon_order_service.py:901 & :1257 — _release_leftover_reservation dipanggil setelah replace_one/update_one di receive_step & record_service_step; hanya aktif saat order.status == COMPLETED. Konsisten.",
+    "backend/services/makloon_order_service.py:1329-1340 — release() dengan alasan 'MKO selesai — sisa cadangan bahan dikembalikan ke stok bebas' + timeline event 'reservation_released'. Sesuai spec.",
+    "frontend/src/config/navMeta.js ROLE_HOME_REGISTRY — md_quality & qc kini terdaftar (view=inspections, navId=wms-operations). Verified via Playwright test ini.",
+    "frontend/src/config/roles.js ROLE_NAV — md_quality: {inherit:null, add:[home, hr-my-profile, gudang, wms-operations, inspections, document-center, doc-trace]}; qc idem + qc-inspection. Hasil sidebar sesuai keinginan test.",
+    "backend/tests/test_p05_imp16_md_quality_qc.py — konstanta ENT_CST/PO_RECEIPT_SPK_ID/PO_RECEIPT_LINE_ID hard-coded; akan putus setiap DB restore. Pertimbangkan fixture dinamis yang query CST/INS-00001 by number & entitas pemiliknya."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p05_imp16_md_quality_qc.py"
+  ],
+  "success_rate": {"backend": "97% (28/29 pass, 1 skipped)", "frontend": "100% untuk role landing/menu/testid presence md_quality & qc"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; mdquality@/qc@kainnusantara.id/demo1234. Semua terverifikasi login via Playwright.",
+  "seed_data_creation": "Tidak ada SPK baru; test ulang-pakai PO SPK CST/INS-00001 (ins_a290aaab19c3) di ent_5ead31bdf16c. State line insl_ac0bbf3b65a2 akhir test: md_quality_decision.action=release, hold=false (reusable). Dua SPK random check lama (KSC/INS-00001 & 00002) status done, satu line ditahan tiap SPK.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "IMP-16 end-to-end lulus di backend+frontend. Untuk uji runtime pelepasan sisa cadangan MKO: seed MKO draft dengan reservation qty >> yang akan di-receive, lalu issue+receive step → completed → GET /api/material-reservations?ref_id=<mkoId> harus status='released' dgn release_reason='MKO selesai...'. Alternatif: unit-test langsung services/makloon_order_service._release_leftover_reservation dengan dict order mock.",
+  "rca of the issue": "Iteration_180 gagal karena ID entitas/SPK hard-coded tidak cocok dengan DB restore. Perbaikan: perbarui ENT_CST=ent_5ead31bdf16c, PO_RECEIPT_SPK_ID=ins_a290aaab19c3, PO_RECEIPT_LINE_ID=insl_ac0bbf3b65a2 (ditemukan via GET /api/inspections?kind=po_receipt + X-Entity-Id ent_5ead31bdf16c). Pelajaran: pakai fixture dinamis alih-alih konstanta ID."
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_store_credit.py",
+    "database": "knhost_audit_native90_6a040d96f46d4f0f93679b3120a04a03",
+    "exit": 0,
+    "seconds": 46.76,
+    "pass_log_tokens": 2,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_store_credit.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_6a040d96f46d4f0f93679b3120a04a03 test_store_credit.py\n================================================================================\nR5.2 STORE CREDIT BACKEND API TEST\n================================================================================\n\n--- Authentication Test ---\n✅ PASS: Auth - Login\n   User: Budi Santoso\n\n--- GET Endpoints ---\n✅ PASS: GET /store-credit (summary)\n   Returned 0 customers\n\n⚠️  No store credit data found. This is expected if DB was just reseeded.\n   Store credit is issued when sales returns are settled with outcome='store_credit'\n\n================================================================================\nSTORE CREDIT TEST SUMMARY\n================================================================================\nTests Run: 2\nTests Passed: 2\nTests Failed: 0\nSuccess Rate: 100.0%\n================================================================================\n"
+  }
+]

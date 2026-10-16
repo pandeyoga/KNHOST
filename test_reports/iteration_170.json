@@ -1,0 +1,42 @@
+{
+  "summary": "G3 Fase 04 (24 temuan + ekspor xlsx Profitabilitas) + regresi Fase 01-03 LULUS. Pytest service: tests/test_g3_phase04.py 17/17 (DB_NAME=g3_audit_phase04); regresi test_g3_phase01+02+02b+03 87/87 (DB_NAME=g3_audit_phase01) — tak ada rerun yang dibutuhkan (test_bo01_two_parallel_fills tidak flaky kali ini). Live API baru (tests/test_g3_phase04_live.py) 12/12: (ekspor xlsx) admin menerima 3 sheet (Per Pelanggan/Per Produk/Keterangan) dengan kolom Realisasi + Estimasi berdampingan termasuk Realisasi HPP/Marjin/Marjin % + Estimasi HPP/Marjin + Selisih Pendapatan + Pesanan Realisasi/Estimasi; role finance menerima xlsx TANPA kolom HPP/Marjin dan Keterangan menegaskan 'disembunyikan untuk peran Anda'. (D4-STOCK-03) /api/inventory/stock-analytics summary punya total_base_value + total_landed_value + cost_basis='full_landed'. (D4-WMS-04/02) /api/wms/health-dashboard totals punya putaway_pending/ready/blocked, dan per-warehouse row punya putaway_blocked_by_reason + latest_cc_status (terpisah dari last_cc, tak tertimpa sesi open). (D4-HR-01/02) /api/hr/analytics/summary.turnover.missing_separation_date + payroll.runs/unposted_runs terisi; PATCH /api/hr/employees/{id} payload {data:{status:'resigned', separation_date:'2026-02-28'}} tersimpan 200; separation_date '2026-02-30' → 400 (ValueError pada _apply_separation). (D4-KPI-PERIOD-01/WEIGHT-01) POST /api/hr/kpi period '2026-99' → 400; weight 0 tersimpan 0.0. (D4-SIM-01) POST /api/config/simulate simulator='bill_match' received_qty=0 billed_qty=10 → verdict='block' ('DIBLOKIR — barang belum diterima'). (D4-BANK-01) POST /api/bank-reconciliation/import stmt_date '2026-13-01' ditolak (400/403/404 bukan 500/200); preview MT940 generic 200 OK dengan field 'rows'/'errors'. (D4-EQ-01) /api/finance/equity-changes net_income == period_operating_net_income + movement_unclosed_earnings tersedia. (D4-MKT-01) /api/marketing/dashboard breakdown_additive=false, breakdown_basis='shared_post_attribution'. Frontend (setelah bash /app/scripts/rebuild_frontend.sh): /?view=profitability `prof-export-xlsx` FOUND (teks 'Excel Realisasi vs Estimasi'); /?view=mkt-analytics `mkt-breakdown-note` FOUND dengan teks lengkap 'atribusi bersama — angka tidak dapat dijumlah'; /?view=cs-bi-hrd HR analytics memuat (hr-turnover-missing-sep hanya tampil bila ada missing — pada demo DB tidak ada data nonaktif tanpa separation_date, sesuai spesifikasi 'bila ada'). Elemen data-testid `employee-separation-date-input` dan `wms-health-cc-open-<wh>` ada di sumber JSX dan di-render kondisional (status nonaktif / sesi CC open). Data TEST_: karyawan TEST_FASE04_SEP dan KPI TEST_* dibersihkan oleh test (verified: db kosong setelah run). D4-RET-CHAIN-01 belum punya unit test dan tidak diuji live di iterasi ini (sesuai catatan agent-to-agent).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_g3_phase04.py",
+    "/app/backend/tests/test_g3_phase01.py",
+    "/app/backend/tests/test_g3_phase02.py",
+    "/app/backend/tests/test_g3_phase02b.py",
+    "/app/backend/tests/test_g3_phase03.py",
+    "/app/backend/tests/test_g3_phase04_live.py"
+  ],
+  "action_items": [
+    "Opsional: tambahkan unit test fixture linked-roll untuk D4-RET-CHAIN-01 (kelompok pemilik+satuan, held_groups) — saat ini hanya telaah kode.",
+    "Catat: bundle frontend statis — setelah perubahan JSX wajib `bash /app/scripts/rebuild_frontend.sh` (sudah dijalankan di iterasi ini sehingga perubahan ProfitabilityView / MarketingAnalytics / WmsHealthDashboard / EmployeeFormDrawer / HrAnalyticsView tampak di preview URL)."
+  ],
+  "critical_code_review_comments": [
+    "routers/finance_analytics.py.export_profitability: pemisahan admin vs finance via COST_SAFE_ROLES bekerja — kolom HPP/Marjin hanya ditambahkan ke header + baris saat cost_ok=True. Keterangan sheet jujur menampilkan 'ditampilkan'/'disembunyikan untuk peran Anda'. Guard anti-formula injection `_cell` menambahkan apostrof pada string yang diawali =, +, -, @ — baik.",
+    "services/stock_analytics_service: summary.cost_basis='full_landed' + value_base/value_landed per baris + total_base_value/total_landed_value konsisten dengan keputusan user (nilai persediaan biaya penuh dirinci dasar+landed).",
+    "services/wms_health_service: putaway_blocked_by_reason berada di LEVEL ROW (per-warehouse), bukan totals — konsisten (akumulasi per gudang punya makna; agregat lintas gudang akan menyesatkan). latest_cc_status terpisah dari last_cc (last_cc tetap hitungan selesai terakhir, latest_cc_status menampilkan status sesi berjalan). Sesuai D4-WMS-02.",
+    "routers/hr.py._apply_separation: validasi tanggal invalid '2026-02-30' sudah lewat jalur strict date → 400 (bukan 500). Field 'separation_history' saat rehire ditambahkan tetap konsisten. Catatan: endpoint PATCH wajib pakai body {data:{...}} karena schema GenericPatch — konsisten di seluruh HR tetapi perlu didokumentasikan di API help agar klien eksternal tidak salah tebak.",
+    "schemas_hr_kpi.KpiInput: weight ber-constraint ge=0, period validator melempar ValueError untuk '2026-99' → 400 di endpoint. Rata-rata /api/hr/kpi/me mengabaikan bobot 0 (service kpi.my_kpi).",
+    "services/config_simulator._bill_match: cabang `recv_q <= 0 and bill_q > 0` → verdict='block' + pesan 'DIBLOKIR — barang belum diterima' bersih. Memakai evaluate_match transaksi yang sama (SSOT). Baik.",
+    "services/bank_recon_service.import_lines & bank_statement_parser.strict_iso_date: stmt_date invalid '2026-13-01' langsung ditolak (per baris lewat line_errors untuk import_lines; per impor untuk import_raw). Response preview memakai field 'rows' + 'errors' (bukan 'lines'/'line_errors') — perlu konsistensi penamaan dengan import_lines (minor).",
+    "services/equity_statement_service: net_income + period_operating_net_income + movement_unclosed_earnings terpisah — net_income tetap diset ke period_operating_net_income (laba P&L non-penutup) sesuai D4-EQ-01. Diverifikasi live |net_income − period_operating_net_income| < 0.5.",
+    "services/marketing_ext: breakdown_additive=False + breakdown_basis='shared_post_attribution' hard-coded di response dashboard — konsisten dengan keputusan user (atribusi bersama tak dapat dijumlah).",
+    "frontend ProfitabilityView.jsx: tombol prof-export-xlsx memanggil endpoint ekspor xlsx dan membawa window-location download — bekerja. Teks tombol 'Excel Realisasi vs Estimasi' deskriptif."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_g3_phase04_live.py (dibuat baru, 12 tes live untuk iterasi 170)"
+  ],
+  "success_rate": {"backend": "100% (17 phase04 pytest + 87 regresi phase01-03 + 12 live baru)", "frontend": "100% (prof-export-xlsx, mkt-breakdown-note tampil; wms-health & hr-turnover-missing-sep testids ada di sumber & kondisional sesuai spec)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345; finance@kainnusantara.id / demo1234 (lihat /app/memory/test_credentials.md)",
+  "seed_data_creation": "Tidak ada seed data persisten yang ditinggalkan. Karyawan TEST_FASE04_SEP + KPI TEST_FASE04_weight0 dibuat oleh test lalu dihapus (verified: db.hr_employees & db.hr_kpi tak punya TEST_ setelah run).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fase 04 selesai end-to-end: 17 service test + 87 regresi + 12 live baru. Untuk retest: (1) `cd /app/backend && DB_NAME=g3_audit_phase04 python -m pytest tests/test_g3_phase04.py -q -n0`; (2) `DB_NAME=g3_audit_phase01 python -m pytest tests/test_g3_phase01.py tests/test_g3_phase02.py tests/test_g3_phase02b.py tests/test_g3_phase03.py -q -n0`; (3) `cd /app && REACT_APP_BACKEND_URL=https://internal-pricing.preview.emergentagent.com python -m pytest backend/tests/test_g3_phase04_live.py -q -n0`. Sebelum uji UI, selalu `bash /app/scripts/rebuild_frontend.sh`. Catatan: PATCH /api/hr/employees/{id} butuh body {data:{...}} (GenericPatch wrapper). D4-RET-CHAIN-01 belum ada unit test (held_groups) — perlu fixture linked-roll."
+}

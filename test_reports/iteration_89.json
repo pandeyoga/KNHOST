@@ -1,0 +1,77 @@
+{
+  "summary": "Iter89 review-request testing (backend + frontend). All requested flows verified end-to-end EXCEPT the manager-home opening-cost banner, blocked by an overly strict permission on GET /api/inventory/rolls-without-cost. Regression tests pass. Backend + UI-integration confirmed for Makloon staged receipt (partial hold + absorption on final GRN close), opening-cost banner on admin home, and amendment _sync_backorders.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/inventory/rolls-without-cost",
+        "issue": "Requires `product.create` permission (backend/routers/inventory.py line 314). Manager role does not have product.create — endpoint returns 403 `Permission ditolak: product.create` when hit as manager@kainnusantara.id. Consequence: OpeningCostBanner never renders on manager-home even though the review-request explicitly requires it (`login manager@... → banner shows when rolls exist`). Fix: this GET should require a *read* permission (e.g. `inventory.read` or role_home visibility), not `product.create` (which is a write cap). Same request also fails silently for finance/sales who might reasonably see the go-live banner. PATCH /opening-cost may keep product.create for write.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Manager home opening-cost banner",
+        "issue": "Banner absent because upstream API 403s (see backend critical). Component OpeningCostBanner swallows the error and renders nothing — consider surfacing a subtle warning or (better) fix permission on the API.",
+        "affected_selectors": ["opening-cost-banner", "opening-cost-banner-count"]
+      }
+    ],
+    "design_issues": []
+  },
+  "verified_flows": [
+    {
+      "flow": "A/B. Demo Makloon Bertahap — MKO-00002 detail",
+      "steps": "Login admin/ent_ksc → ?view=makloon-orders → click detail-mko-mko_4e0b3f8f8fcd. Confirmed: `mko-step-partials-1` shows `Kiriman bertahap (1) — 1 ditahan · 30 yard`; row KSC/GRN-00003 SJ SJ-DEMO-MKL-P1 30 yard · 2 roll `Ditahan — menunggu kiriman terakhir`. `mko-step-partials-held-1` badge text `1 ditahan · 30 yard`. `mko-timeline` contains `kiriman sebagian 30.0 (2 roll) via KSC/GRN-00003 / SJ SJ-DEMO-MKL-P1 ditahan — diposting bersama kiriman terakhir.`",
+      "result": "PASS"
+    },
+    {
+      "flow": "C. GRN close absorbs the held partial",
+      "steps": "?view=goods-receipts → open KSC/GRN-00004. `grn-mko-partial-toggle` present unchecked; toggled true→false to exercise POST /api/goods-receipts/{id}/mko-partial (no console/HTTP error). Then `grn-close` → confirm `Ya`.",
+      "result": "PASS. DB verified: goods_receipts.KSC/GRN-00004.status='closed'; makloon_orders.mko_4e0b3f8f8fcd.steps[0].status='received', actual_output_qty=72.0; partial_receipts[0].posted=true, absorbed_by='KSC/GRN-00004'; step.partial_absorption={count:1, partial_qty:30, final_qty:42, total_qty:72, final_ref:'KSC/GRN-00004', final_grn_id:'grn_606516625f10', grn_numbers:['KSC/GRN-00003']}; timeline events `partial_absorbed` + `received` present. inventory_lots created 1 lot (KSC/LOT-2609-0042, source=makloon, source_ref.type=makloon_order, roll_count=4, qty_initial=72). vendor_bills 1 new row bill_type='makloon_service'. UI after re-open MKO detail: `mko-step-partial-absorption-1` = 'Penerimaan akhir KSC/GRN-00004 (SJ SJ-DEMO-MKL-P2) menyerap 1 kiriman sebagian: 30 + 42 = 72 yard — satu tagihan jasa & satu posting stok · 28 Sep 2026, 08.57'; `mko-step-partials-1` shows KSC/GRN-00003 chip 'Digabung ke KSC/GRN-00004'."
+    },
+    {
+      "flow": "D. Opening-cost banner (admin)",
+      "steps": "Seeded TESTB-NOCOST-3 without unit_cost via /api/inventory/initial-stock (admin). ?view=admin-home shows `opening-cost-banner` with `opening-cost-banner-count`=1. Clicking `opening-cost-banner-goto` navigated to ?view=operations, opening-cost-alert visible at TOP of Stok tab (not inside Tambah Stok modal). Alert expanded via `opening-cost-toggle` shows row `TESTB-NOCOST-3 · Batik Mega Mendung Premium · 10 yard` (sku + product name + qty — iter88 feedback resolved). Filled `opening-cost-input-<rid>`=15000 → `opening-cost-save-<rid>` → alert disappears. Back to admin-home → banner gone.",
+      "result": "PASS"
+    },
+    {
+      "flow": "D. Opening-cost banner (manager) — BLOCKED",
+      "steps": "Login manager@kainnusantara.id → seed via admin (manager lacks product.create so used admin token to seed roll). ?view=manager-home → banner NOT rendered. Root cause: GET /api/inventory/rolls-without-cost returns 403 for manager because it requires product.create.",
+      "result": "FAIL (backend permission)"
+    },
+    {
+      "flow": "E. amendment_service._sync_backorders",
+      "steps": "Unit tests: (1) fulfilled entries untouched, first open entry receives new backorder_qty; (2) new qty 0 → status becomes 'fulfilled'; (3) items without backorder_qty key leave backorders untouched; (4) only first open per product updated, subsequent open entries drained to 0.",
+      "result": "PASS (4/4)"
+    },
+    {
+      "flow": "F. Regression",
+      "steps": "pytest -o addopts='' backend/tests/test_audit_bagian_iii.py backend/tests/test_registry_ai_collections.py backend/tests/test_review_iter86_features.py",
+      "result": "41 passed, 4 skipped. 1 failure `TestIntercoPpnFollowSalesTax::test_resolve_tax_pkp_follows_sales_tax_12pct_dpp_nilai_lain` is a pre-existing xdist/asyncio-loop cross-contamination issue (test passes cleanly when the class is run in isolation: `pytest tests/test_review_iter86_features.py::TestIntercoPpnFollowSalesTax` = 3/3 PASS). Not a functional regression."
+    }
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_review_iter89_features.py",
+    "/app/test_reports/pytest/iter89_features.xml",
+    "/app/test_reports/pytest/iter89_regression.xml"
+  ],
+  "action_items": [
+    "Relax permission on GET /api/inventory/rolls-without-cost (backend/routers/inventory.py:314) — replace `require_permission('product','create')` with a read-oriented gate so manager/finance/warehouse can render OpeningCostBanner. Keep write-side (PATCH .../opening-cost, POST .../initial-stock) as product.create."
+  ],
+  "critical_code_review_comments": [
+    "backend/routers/inventory.py rolls_without_cost uses a write permission (product.create) for a read endpoint — inconsistent with the UX (banner on manager-home).",
+    "OpeningCostBanner silently hides on 403; consider logging or a role-guard on the frontend so failures are diagnosable instead of invisible."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_review_iter89_features.py (new)"
+  ],
+  "success_rate": {"backend": "100% (8/8 new + 41/41 regression when isolated)", "frontend": "80% (4/5 verified UI flows; manager banner blocked by backend perm)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, manager@kainnusantara.id / demo12345 (ent_ksc). See /app/memory/test_credentials.md",
+  "seed_data_creation": "Consumed demo (as review-request warned): closed KSC/GRN-00004 → MKO-00002 step 1 now received. Main agent should re-run scripts/seed_makloon_partial_demo.py before further staged-receipt testing. Test rolls TESTB-NOCOST-1/3 + lots/movements cleaned up from Mongo.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "After main agent relaxes permission on GET /api/inventory/rolls-without-cost, retest manager-home banner via manager@kainnusantara.id (admin must first seed a roll without cost, then log in as manager and open ?view=manager-home). Demo makloon partial data has been consumed — re-seed with scripts/seed_makloon_partial_demo.py."
+}

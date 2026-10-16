@@ -1,0 +1,62 @@
+{
+ "account": "sales.kanda@kainnusantara.id",
+ "endpoints_200": 190,
+ "denied": 204,
+ "leaking_endpoints": 7,
+ "leaks": {
+  "/api/customers": {
+   "lot": [
+    "enforce_single_dye_lot",
+    "lot_policy"
+   ]
+  },
+  "/api/dashboard": {
+   "lot": [
+    "enforce_single_dye_lot",
+    "lot_mode",
+    "lot_policy",
+    "lot_selection"
+   ]
+  },
+  "/api/enums": {
+   "grade": [
+    "grade",
+    "grade_change_source"
+   ],
+   "lot": [
+    "lot_source",
+    "lot_status"
+   ]
+  },
+  "/api/rnd/reports/my-kpi": {
+   "grade": [
+    "avg_grade",
+    "grade_bands"
+   ]
+  },
+  "/api/sales-orders": {
+   "lot": [
+    "lot_mode",
+    "lot_selection"
+   ]
+  },
+  "/api/settings": {
+   "grade": [
+    "grade_thresholds"
+   ],
+   "lot": [
+    "lot_mode",
+    "lot_selection"
+   ]
+  },
+  "/api/settings/effective": {
+   "grade": [
+    "grade_thresholds"
+   ],
+   "lot": [
+    "lot_mode",
+    "lot_selection"
+   ]
+  }
+ }
+}

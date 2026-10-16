@@ -1,0 +1,35 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "pytest_counts": {
+    "error": 173,
+    "failure": 484,
+    "passed": 1539,
+    "skipped": 76
+  },
+  "pytest_total": 2272,
+  "pytest_triage_hints": {
+    "assertion_or_contract_needs_review": 335,
+    "fixture_credentials_or_auth_contract": 59,
+    "fixture_or_upstream_precondition_needs_review": 88,
+    "harness_environment_or_collection": 15,
+    "async_fixture_loop": 85,
+    "fixture_login_rate_limit": 75
+  },
+  "delta_tests": {
+    "passed": 14,
+    "failure": 3,
+    "skipped": 5
+  },
+  "get_sweep": {
+    "total": 638,
+    "executed": 589,
+    "successful": 539,
+    "exceptions": 0,
+    "remaining": 49
+  },
+  "probes": 209,
+  "probe_differences": 122,
+  "probe_controls_pass": 70,
+  "old_fault_counterexamples": 17,
+  "limitations": "Test nonpass categories are automated hints, not all independently adjudicated. Function-level JS is not full browser rendering. GET success is not numeric correctness. RFID/printer hardware and production data not exercised."
+}

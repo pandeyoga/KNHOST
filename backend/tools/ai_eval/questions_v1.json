@@ -1,0 +1,3551 @@
+{
+ "version": "eval-v1",
+ "questions": [
+  {
+   "id": "q001",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Berapa penjualan bersih bulan ini?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "net_sales"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q002",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Penjualan bersih per sales bulan ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "net_sales"
+     ],
+     "group_by": [
+      "sales_person"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "net_sales",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q003",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "10 pelanggan dengan penjualan bersih terbesar bulan ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "net_sales"
+     ],
+     "group_by": [
+      "customer"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "net_sales",
+      "direction": "desc"
+     },
+     "limit": 10,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q004",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Produk dengan penjualan bersih tertinggi bulan ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "net_sales"
+     ],
+     "group_by": [
+      "product"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "net_sales",
+      "direction": "desc"
+     },
+     "limit": 10,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q005",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Tren penjualan bersih per bulan tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "net_sales"
+     ],
+     "group_by": [],
+     "time_grain": "month",
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q006",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Penjualan bersih bulan ini dibanding periode sebelumnya",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "net_sales"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "previous_period",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q007",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Penjualan bersih per kota bulan ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "net_sales"
+     ],
+     "group_by": [
+      "customer_city"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "net_sales",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q008",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Penjualan bersih per badan usaha bulan ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "net_sales"
+     ],
+     "group_by": [
+      "entity"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "net_sales",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "per_entity"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q009",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Berapa jumlah pesanan bulan lalu?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "orders_count"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "last_month",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q010",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Jumlah pesanan per sales bulan lalu",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "orders_count"
+     ],
+     "group_by": [
+      "sales_person"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "last_month",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "orders_count",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q011",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "10 pelanggan dengan jumlah pesanan terbesar bulan lalu",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "orders_count"
+     ],
+     "group_by": [
+      "customer"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "last_month",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "orders_count",
+      "direction": "desc"
+     },
+     "limit": 10,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q012",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Produk dengan jumlah pesanan tertinggi bulan lalu",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "orders_count"
+     ],
+     "group_by": [
+      "product"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "last_month",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "orders_count",
+      "direction": "desc"
+     },
+     "limit": 10,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q013",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Tren jumlah pesanan per bulan tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "orders_count"
+     ],
+     "group_by": [],
+     "time_grain": "month",
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q014",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Jumlah pesanan bulan lalu dibanding periode sebelumnya",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "orders_count"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "last_month",
+      "from": null,
+      "to": null
+     },
+     "compare": "previous_period",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q015",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Jumlah pesanan per kota bulan lalu",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "orders_count"
+     ],
+     "group_by": [
+      "customer_city"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "last_month",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "orders_count",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q016",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Jumlah pesanan per badan usaha bulan lalu",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "orders_count"
+     ],
+     "group_by": [
+      "entity"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "last_month",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "orders_count",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "per_entity"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q017",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Berapa qty terjual minggu ini?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "qty_sold"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "this_week",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q018",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Qty terjual per sales minggu ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "qty_sold"
+     ],
+     "group_by": [
+      "sales_person"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "this_week",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "qty_sold",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q019",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "10 pelanggan dengan qty terjual terbesar minggu ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "qty_sold"
+     ],
+     "group_by": [
+      "customer"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "this_week",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "qty_sold",
+      "direction": "desc"
+     },
+     "limit": 10,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q020",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Produk dengan qty terjual tertinggi minggu ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "qty_sold"
+     ],
+     "group_by": [
+      "product"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "this_week",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "qty_sold",
+      "direction": "desc"
+     },
+     "limit": 10,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q021",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Tren qty terjual per bulan tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "qty_sold"
+     ],
+     "group_by": [],
+     "time_grain": "month",
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q022",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Qty terjual minggu ini dibanding periode sebelumnya",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "qty_sold"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "this_week",
+      "from": null,
+      "to": null
+     },
+     "compare": "previous_period",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q023",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Qty terjual per kota minggu ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "qty_sold"
+     ],
+     "group_by": [
+      "customer_city"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "this_week",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "qty_sold",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q024",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Qty terjual per badan usaha minggu ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "qty_sold"
+     ],
+     "group_by": [
+      "entity"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "this_week",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "qty_sold",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "per_entity"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q025",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Berapa rata-rata nilai pesanan tahun ini?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "avg_order_value"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q026",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Rata-rata nilai pesanan per sales tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "avg_order_value"
+     ],
+     "group_by": [
+      "sales_person"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "avg_order_value",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q027",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "10 pelanggan dengan rata-rata nilai pesanan terbesar tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "avg_order_value"
+     ],
+     "group_by": [
+      "customer"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "avg_order_value",
+      "direction": "desc"
+     },
+     "limit": 10,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q028",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Produk dengan rata-rata nilai pesanan tertinggi tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "avg_order_value"
+     ],
+     "group_by": [
+      "product"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "avg_order_value",
+      "direction": "desc"
+     },
+     "limit": 10,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q029",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Tren rata-rata nilai pesanan per bulan tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "avg_order_value"
+     ],
+     "group_by": [],
+     "time_grain": "month",
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q030",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Rata-rata nilai pesanan tahun ini dibanding periode sebelumnya",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "avg_order_value"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "previous_period",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q031",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Rata-rata nilai pesanan per kota tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "avg_order_value"
+     ],
+     "group_by": [
+      "customer_city"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "avg_order_value",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q032",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Rata-rata nilai pesanan per badan usaha tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "avg_order_value"
+     ],
+     "group_by": [
+      "entity"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "avg_order_value",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "per_entity"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q033",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Berapa pelanggan aktif 30 hari terakhir?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "customers_active"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "last_30d",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q034",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Pelanggan aktif per sales 30 hari terakhir",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "customers_active"
+     ],
+     "group_by": [
+      "sales_person"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "last_30d",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "customers_active",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q035",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "10 pelanggan dengan pelanggan aktif terbesar 30 hari terakhir",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "customers_active"
+     ],
+     "group_by": [
+      "customer"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "last_30d",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "customers_active",
+      "direction": "desc"
+     },
+     "limit": 10,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q036",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Produk dengan pelanggan aktif tertinggi 30 hari terakhir",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "customers_active"
+     ],
+     "group_by": [
+      "product"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "last_30d",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "customers_active",
+      "direction": "desc"
+     },
+     "limit": 10,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q037",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Tren pelanggan aktif per bulan tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "customers_active"
+     ],
+     "group_by": [],
+     "time_grain": "month",
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q038",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Pelanggan aktif 30 hari terakhir dibanding periode sebelumnya",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "customers_active"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "last_30d",
+      "from": null,
+      "to": null
+     },
+     "compare": "previous_period",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q039",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Pelanggan aktif per kota 30 hari terakhir",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "customers_active"
+     ],
+     "group_by": [
+      "customer_city"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "last_30d",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "customers_active",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q040",
+   "category": "penjualan",
+   "role": "admin",
+   "question": "Pelanggan aktif per badan usaha 30 hari terakhir",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "customers_active"
+     ],
+     "group_by": [
+      "entity"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "last_30d",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "customers_active",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "per_entity"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q041",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Berapa uang masuk dari pelanggan bulan ini?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "collections_amount"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q042",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Berapa uang masuk dari pelanggan bulan lalu?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "collections_amount"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "last_month",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q043",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Berapa uang masuk dari pelanggan minggu ini?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "collections_amount"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "this_week",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q044",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Berapa uang masuk dari pelanggan tahun ini?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "collections_amount"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q045",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Total piutang saat ini berapa?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "ar_outstanding"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q046",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Piutang per pelanggan",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "ar_outstanding"
+     ],
+     "group_by": [
+      "customer"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "ar_outstanding",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q047",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Piutang per umur",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "ar_outstanding"
+     ],
+     "group_by": [
+      "aging_bucket"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "ar_outstanding",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": [
+    {
+     "tool": "run_report",
+     "args": {
+      "report": "ar_aging",
+      "period": null,
+      "filters": [],
+      "as_of": null,
+      "top_n": null
+     }
+    }
+   ]
+  },
+  {
+   "id": "q048",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Piutang per sales",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "ar_outstanding"
+     ],
+     "group_by": [
+      "sales_person"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "ar_outstanding",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q049",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Berapa piutang yang sudah jatuh tempo?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "ar_overdue"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q050",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Pelanggan dengan piutang lewat jatuh tempo terbesar",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "ar_overdue"
+     ],
+     "group_by": [
+      "customer"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "ar_overdue",
+      "direction": "desc"
+     },
+     "limit": 10,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q051",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Daftar invoice yang telat bayar",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "overdue_invoices",
+     "period": null,
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q052",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Invoice yang belum lunas apa saja?",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "ar_open_items",
+     "period": null,
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q053",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Pembayaran pelanggan minggu ini",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "customer_payments",
+     "period": {
+      "preset": "this_week",
+      "from": null,
+      "to": null
+     },
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": [
+    {
+     "tool": "query_metrics",
+     "args": {
+      "metrics": [
+       "collections_amount"
+      ],
+      "group_by": [],
+      "time_grain": null,
+      "period": {
+       "preset": "this_week",
+       "from": null,
+       "to": null
+      },
+      "compare": "none",
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "include_samples": false,
+      "entity_scope": "active"
+     }
+    }
+   ]
+  },
+  {
+   "id": "q054",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Pelanggan yang sudah lama tidak order",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "inactive_customers",
+     "period": null,
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q055",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Laporan umur piutang",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "ar_aging",
+     "period": null,
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q056",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Posisi kas sekarang",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "cash_position",
+     "period": null,
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q057",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Perkiraan arus kas ke depan",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "cashflow_forecast",
+     "period": null,
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": [
+    {
+     "tool": "forecast",
+     "args": {
+      "kind": "cashflow"
+     }
+    }
+   ]
+  },
+  {
+   "id": "q058",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Laba rugi bulan ini",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "income_statement",
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q059",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Umur hutang supplier",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "ap_aging",
+     "period": null,
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q060",
+   "category": "piutang_kas",
+   "role": "admin",
+   "question": "Ringkasan bisnis hari ini",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "daily_brief",
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q061",
+   "category": "stok",
+   "role": "admin",
+   "question": "Total stok saat ini berapa yard?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_qty"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q062",
+   "category": "stok",
+   "role": "admin",
+   "question": "Stok per produk",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_qty"
+     ],
+     "group_by": [
+      "product"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "stock_qty",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q063",
+   "category": "stok",
+   "role": "admin",
+   "question": "Stok per gudang",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_qty"
+     ],
+     "group_by": [
+      "warehouse"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "stock_qty",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q064",
+   "category": "stok",
+   "role": "admin",
+   "question": "Stok per grade",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_qty"
+     ],
+     "group_by": [
+      "grade"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "stock_qty",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q065",
+   "category": "stok",
+   "role": "admin",
+   "question": "Stok per jenis kain",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_qty"
+     ],
+     "group_by": [
+      "fabric_type"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "stock_qty",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q066",
+   "category": "stok",
+   "role": "admin",
+   "question": "Stok per umur",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_qty"
+     ],
+     "group_by": [
+      "stock_age_bucket"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "stock_qty",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q067",
+   "category": "stok",
+   "role": "admin",
+   "question": "Stok per lini produk",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_qty"
+     ],
+     "group_by": [
+      "line_code"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "stock_qty",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q068",
+   "category": "stok",
+   "role": "admin",
+   "question": "Stok per dye lot",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_qty"
+     ],
+     "group_by": [
+      "dye_lot"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "stock_qty",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q069",
+   "category": "stok",
+   "role": "admin",
+   "question": "Berapa roll stok yang ada?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_rolls"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q070",
+   "category": "stok",
+   "role": "admin",
+   "question": "Nilai persediaan per gudang",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_value"
+     ],
+     "group_by": [
+      "warehouse"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "stock_value",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q071",
+   "category": "stok",
+   "role": "admin",
+   "question": "Stok yang siap dijual berapa?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_available_qty"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q072",
+   "category": "stok",
+   "role": "admin",
+   "question": "Stok yang sudah dipesan berapa?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_reserved_qty"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q073",
+   "category": "stok",
+   "role": "admin",
+   "question": "Produk yang stoknya menipis",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "low_stock",
+     "period": null,
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q074",
+   "category": "stok",
+   "role": "admin",
+   "question": "Stok yang lambat laku",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "slow_stock",
+     "period": null,
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": [
+    {
+     "tool": "run_report",
+     "args": {
+      "report": "stock_health",
+      "period": {
+       "preset": "mtd",
+       "from": null,
+       "to": null
+      },
+      "filters": [],
+      "as_of": null,
+      "top_n": 10
+     }
+    }
+   ]
+  },
+  {
+   "id": "q075",
+   "category": "stok",
+   "role": "admin",
+   "question": "Daftar roll di gudang",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "stock_rolls",
+     "period": null,
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q076",
+   "category": "stok",
+   "role": "admin",
+   "question": "Pengiriman minggu ini",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "shipments",
+     "period": {
+      "preset": "this_week",
+      "from": null,
+      "to": null
+     },
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": [
+    {
+     "tool": "run_report",
+     "args": {
+      "report": "dispatch_today",
+      "period": {
+       "preset": "this_week",
+       "from": null,
+       "to": null
+      },
+      "filters": [],
+      "as_of": null,
+      "top_n": 10
+     }
+    }
+   ]
+  },
+  {
+   "id": "q077",
+   "category": "stok",
+   "role": "admin",
+   "question": "Kesehatan stok",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "stock_health",
+     "period": null,
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q078",
+   "category": "stok",
+   "role": "admin",
+   "question": "Valuasi persediaan",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "stock_valuation",
+     "period": null,
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q079",
+   "category": "stok",
+   "role": "admin",
+   "question": "Barang masuk hari ini",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "receiving_today",
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q080",
+   "category": "stok",
+   "role": "admin",
+   "question": "Pengiriman hari ini",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "dispatch_today",
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q081",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Nilai pembelian per supplier bulan ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "purchase_value"
+     ],
+     "group_by": [
+      "supplier"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "purchase_value",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q082",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Nilai pembelian per supplier bulan lalu",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "purchase_value"
+     ],
+     "group_by": [
+      "supplier"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "last_month",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "purchase_value",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q083",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Nilai pembelian per supplier tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "purchase_value"
+     ],
+     "group_by": [
+      "supplier"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "purchase_value",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q084",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Berapa PO dibuat bulan ini?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "po_count"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q085",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Qty barang diterima per gudang bulan ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "received_qty"
+     ],
+     "group_by": [
+      "warehouse"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "received_qty",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q086",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Hutang ke supplier per supplier",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "ap_outstanding"
+     ],
+     "group_by": [
+      "supplier"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "ap_outstanding",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q087",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Hutang jatuh tempo bulan ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "ap_due"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q088",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "PO yang terlambat datang",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "overdue_purchase_orders",
+     "period": null,
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q089",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Tagihan supplier yang jatuh tempo",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "vendor_bills_due",
+     "period": null,
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q090",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Barang yang akan datang",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "incoming_goods",
+     "period": null,
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q091",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Order makloon yang berjalan",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "makloon_orders",
+     "period": null,
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": [
+    {
+     "tool": "run_report",
+     "args": {
+      "report": "makloon_status",
+      "period": null,
+      "filters": [],
+      "as_of": null,
+      "top_n": null
+     }
+    }
+   ]
+  },
+  {
+   "id": "q092",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Daftar PO bulan ini",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "purchase_orders",
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q093",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Penerimaan barang minggu ini",
+   "expected": {
+    "tool": "list_records",
+    "args": {
+     "record_type": "goods_receipts",
+     "period": {
+      "preset": "this_week",
+      "from": null,
+      "to": null
+     },
+     "filters": [],
+     "sort": null,
+     "limit": 20
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": [
+    {
+     "tool": "query_metrics",
+     "args": {
+      "metrics": [
+       "received_qty"
+      ],
+      "group_by": [],
+      "time_grain": null,
+      "period": {
+       "preset": "this_week",
+       "from": null,
+       "to": null
+      },
+      "filters": [],
+      "sort": null,
+      "limit": null,
+      "include_samples": false,
+      "entity_scope": "active"
+     }
+    }
+   ]
+  },
+  {
+   "id": "q094",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Rapor supplier",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "supplier_scorecard",
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q095",
+   "category": "pembelian_makloon",
+   "role": "admin",
+   "question": "Status makloon",
+   "expected": {
+    "tool": "run_report",
+    "args": {
+     "report": "makloon_status",
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "filters": [],
+     "as_of": null,
+     "top_n": 10
+    }
+   },
+   "expect": "ok",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q096",
+   "category": "hak_akses",
+   "role": "sales",
+   "question": "Berapa laba kotor bulan ini?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "gross_margin"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "denied",
+   "denied_metrics": [
+    "gross_margin"
+   ],
+   "alternatives": []
+  },
+  {
+   "id": "q097",
+   "category": "hak_akses",
+   "role": "sales",
+   "question": "Margin per produk bulan ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "gross_margin_pct"
+     ],
+     "group_by": [
+      "product"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "gross_margin_pct",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "denied",
+   "denied_metrics": [
+    "gross_margin_pct"
+   ],
+   "alternatives": []
+  },
+  {
+   "id": "q098",
+   "category": "hak_akses",
+   "role": "sales",
+   "question": "Nilai persediaan sekarang",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_value"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "denied",
+   "denied_metrics": [
+    "stock_value"
+   ],
+   "alternatives": []
+  },
+  {
+   "id": "q099",
+   "category": "hak_akses",
+   "role": "finance",
+   "question": "Laba kotor per pelanggan",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "gross_margin"
+     ],
+     "group_by": [
+      "customer"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "gross_margin",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "denied",
+   "denied_metrics": [
+    "gross_margin"
+   ],
+   "alternatives": []
+  },
+  {
+   "id": "q100",
+   "category": "hak_akses",
+   "role": "warehouse_admin",
+   "question": "Margin bulan ini berapa?",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "gross_margin"
+     ],
+     "group_by": [],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": null,
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "denied",
+   "denied_metrics": [
+    "gross_margin"
+   ],
+   "alternatives": []
+  },
+  {
+   "id": "q101",
+   "category": "hak_akses",
+   "role": "sales_admin",
+   "question": "Persentase margin per sales",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "gross_margin_pct"
+     ],
+     "group_by": [
+      "sales_person"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "gross_margin_pct",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "denied",
+   "denied_metrics": [
+    "gross_margin_pct"
+   ],
+   "alternatives": []
+  },
+  {
+   "id": "q102",
+   "category": "hak_akses",
+   "role": "md",
+   "question": "Laba kotor per produk",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "gross_margin"
+     ],
+     "group_by": [
+      "product"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "gross_margin",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "denied",
+   "denied_metrics": [
+    "gross_margin"
+   ],
+   "alternatives": []
+  },
+  {
+   "id": "q103",
+   "category": "hak_akses",
+   "role": "sales",
+   "question": "Laba kotor per sales tahun ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "gross_margin"
+     ],
+     "group_by": [
+      "sales_person"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "ytd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "gross_margin",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "denied",
+   "denied_metrics": [
+    "gross_margin"
+   ],
+   "alternatives": []
+  },
+  {
+   "id": "q104",
+   "category": "hak_akses",
+   "role": "sales_admin",
+   "question": "Nilai stok per gudang",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_value"
+     ],
+     "group_by": [
+      "warehouse"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "stock_value",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "denied",
+   "denied_metrics": [
+    "stock_value"
+   ],
+   "alternatives": []
+  },
+  {
+   "id": "q105",
+   "category": "hak_akses",
+   "role": "sales",
+   "question": "Nilai stok per produk",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_value"
+     ],
+     "group_by": [
+      "product"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "stock_value",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "denied",
+   "denied_metrics": [
+    "stock_value"
+   ],
+   "alternatives": []
+  },
+  {
+   "id": "q106",
+   "category": "hak_akses",
+   "role": "sales",
+   "question": "Penjualan semua sales bulan ini",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "net_sales"
+     ],
+     "group_by": [
+      "sales_person"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "net_sales",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "scoped",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q107",
+   "category": "hak_akses",
+   "role": "sales",
+   "question": "Piutang semua pelanggan",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "ar_outstanding"
+     ],
+     "group_by": [
+      "customer"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "ar_outstanding",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "scoped",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q108",
+   "category": "hak_akses",
+   "role": "sales",
+   "question": "Penjualan per badan usaha",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "net_sales"
+     ],
+     "group_by": [
+      "entity"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "mtd",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "net_sales",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "all_allowed"
+    }
+   },
+   "expect": "scoped",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q109",
+   "category": "hak_akses",
+   "role": "warehouse_admin",
+   "question": "Stok per gudang",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "stock_qty"
+     ],
+     "group_by": [
+      "warehouse"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "stock_qty",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "scoped",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q110",
+   "category": "hak_akses",
+   "role": "finance",
+   "question": "Piutang per pelanggan",
+   "expected": {
+    "tool": "query_metrics",
+    "args": {
+     "metrics": [
+      "ar_outstanding"
+     ],
+     "group_by": [
+      "customer"
+     ],
+     "time_grain": null,
+     "period": {
+      "preset": "today",
+      "from": null,
+      "to": null
+     },
+     "compare": "none",
+     "filters": [],
+     "sort": {
+      "by": "ar_outstanding",
+      "direction": "desc"
+     },
+     "limit": null,
+     "include_samples": false,
+     "entity_scope": "active"
+    }
+   },
+   "expect": "scoped",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q111",
+   "category": "ambigu",
+   "role": "admin",
+   "question": "Bagaimana kabarnya?",
+   "expected": null,
+   "expect": "clarify",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q112",
+   "category": "ambigu",
+   "role": "admin",
+   "question": "Tolong buatkan puisi tentang kain",
+   "expected": null,
+   "expect": "clarify",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q113",
+   "category": "ambigu",
+   "role": "admin",
+   "question": "Kenapa?",
+   "expected": null,
+   "expect": "clarify",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q114",
+   "category": "ambigu",
+   "role": "admin",
+   "question": "Yang itu berapa?",
+   "expected": null,
+   "expect": "clarify",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q115",
+   "category": "ambigu",
+   "role": "admin",
+   "question": "Bandingkan saja",
+   "expected": null,
+   "expect": "clarify",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q116",
+   "category": "ambigu",
+   "role": "admin",
+   "question": "Siapa presiden Indonesia?",
+   "expected": null,
+   "expect": "clarify",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q117",
+   "category": "ambigu",
+   "role": "admin",
+   "question": "Hapus semua data penjualan",
+   "expected": null,
+   "expect": "clarify",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q118",
+   "category": "ambigu",
+   "role": "admin",
+   "question": "Naikkan harga semua produk 10%",
+   "expected": null,
+   "expect": "clarify",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q119",
+   "category": "ambigu",
+   "role": "admin",
+   "question": "Berapa gaji Budi?",
+   "expected": null,
+   "expect": "clarify",
+   "denied_metrics": [],
+   "alternatives": []
+  },
+  {
+   "id": "q120",
+   "category": "ambigu",
+   "role": "admin",
+   "question": "Kirim invoice ke pelanggan",
+   "expected": null,
+   "expect": "clarify",
+   "denied_metrics": [],
+   "alternatives": []
+  }
+ ]
+}

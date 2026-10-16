@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_tax_invoices.py",
+    "database": "knhost_audit_native90_086c7441631c4885ba4bc0210a63327a",
+    "exit": 0,
+    "seconds": 103.56,
+    "pass_log_tokens": 10,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_tax_invoices.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "631c4885ba4bc0210a63327a backend_test_tax_invoices.py\n======================================================================\nBackend API Test — Sub-fase 1.9 Faktur Pajak Jual\n======================================================================\n\n🔐 Testing login: admin@kainnusantara.id\n  ✅ [PASS] Login admin@kainnusantara.id (role: admin)\n\n📋 Testing GET /api/tax-invoices\n  ✅ [PASS] GET /api/tax-invoices returned 3 invoices\n  ✅ [PASS] Seeded invoice FKT-00001 found\n  ℹ️    FKT-00001: DPP=9212500.0, PPN=1105500.0, Total=11155500.0\n  ✅ [PASS] FKT-00001 has all required fields (DPP, PPN, Total)\n\n📊 Testing dashboard metrics\n  ℹ️  Products count: 19\n  ℹ️  Warehouses count: 3\n  ℹ️  Dashboard shows 19 products (expected 7)\n  ✅ [PASS] Dashboard shows 3 warehouses (as expected)\n\n📝 Testing POST /api/sales-orders/{order_id}/tax-invoice\n  ℹ️  Found eligible order: SO-0004 (status: confirmed)\n  ✅ [PASS] Tax invoice issued: KSC/FKT-00004 for order SO-0004\n  ℹ️    Tax invoice ID: fkt_16574f34a79b\n\n📄 Testing GET /api/tax-invoices/{fkt_id}/document\n  ✅ [PASS] Tax invoice document endpoint returns HTML (content-type: text/html; charset=utf-8)\n\n======================================================================\nTesting other user roles login\n======================================================================\n\n🔐 Testing login: sales@kainnusantara.id\n  ✅ [PASS] Login sales@kainnusantara.id (role: sales)\n\n🔐 Testing login: manager@kainnusantara.id\n  ✅ [PASS] Login manager@kainnusantara.id (role: manager)\n\n🔐 Testing login: warehouse@kainnusantara.id\n  ✅ [PASS] Login warehouse@kainnusantara.id (role: warehouse)\n\n======================================================================\nTEST SUMMARY\n======================================================================\n✅ PASSED: 10\n❌ FAILED: 0\n"
+  }
+]

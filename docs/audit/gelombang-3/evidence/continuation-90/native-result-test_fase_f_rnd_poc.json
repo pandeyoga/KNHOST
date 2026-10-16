@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_fase_f_rnd_poc.py",
+    "database": "knhost_audit_native90_a9144f07440344a78c9a666e96c4ae34",
+    "exit": 1,
+    "seconds": 55.48,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_fase_f_rnd_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "ti (foto hasil) terunggah — HTTP 200 labdip-a.png\n  ✓ setor hasil TANPA catatan DITOLAK — {\"detail\":\"Catatan/penjelasan hasil WAJIB diisi saat menutup round.\"}\n  ✗ hasil round 1 supplier A tersimpan dengan bukti + hasil ukur — HTTP 422 {\"detail\":\"Pilih PELAKSANA (dikerjakan oleh) — akun yang benar-benar mengerjakan sample ini. Penginput dicatat terpisah.\"}\nTraceback (most recent call last):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\run_isolated.py\", line 25, in <module>\n    try:runpy.run_path(str(script),run_name='__main__')\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\native_runner.py\", line 59, in <module>\n    exec(compile(target.read_text(encoding='utf-8-sig'),str(original_path),'exec'),namespace)\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\test_fase_f_rnd_poc.py\", line 870, in <module>\n    sys.exit(__import__('poc_stock_guard').with_journal_cleanup(main))\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\poc_stock_guard.py\", line 335, in with_journal_cleanup\n    return fn()\n           ^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-data-audit-latest-2026-10-05\\backend\\test_fase_f_rnd_poc.py\", line 411, in main\n    got = next(r for r in sub_a.json()[\"rounds\"] if r[\"id\"] == r_a[\"id\"])\n                          ~~~~~~~~~~~~^^^^^^^^^^\nKeyError: 'rounds'\n"
+  }
+]

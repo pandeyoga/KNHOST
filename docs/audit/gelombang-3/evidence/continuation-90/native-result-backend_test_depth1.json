@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_depth1.py",
+    "database": "knhost_audit_native90_57185413e484422698c60cc2f06f2bbc",
+    "exit": 1,
+    "seconds": 50.92,
+    "pass_log_tokens": 30,
+    "fail_log_tokens": 7,
+    "log": "continuation-90\\native-backend_test_depth1.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "n: PRET-00003\n  ✅ [PASS] Return PRET-00003 status is 'pending_approval'\n  ℹ️  \n=== TEST 1B.5: Create and Reject Return ===\n  ✅ [PASS] Created return PRET-00004 for reject test\n  ❌ [FAIL] Reject return failed: 403 {\"detail\":\"Permission ditolak: purchase_return.reject\"}\n  ℹ️  \n=== TEST 1C.1: Pay PO ===\n  ℹ️  Testing payment for KSC/PO-00015, outstanding=31468500.0\n  ❌ [FAIL] Pay PO failed: 403 {\"detail\":\"Permission ditolak: purchase_order.update\"}\n  ℹ️  \n=== TEST 1C.2: Payables Summary ===\n  ✅ [PASS] GET payables/summary successful\n  ✅ [PASS] total_outstanding=437807000.0\n  ✅ [PASS] Aging bucket '0-30' present: 344257000.0\n  ✅ [PASS] Aging bucket '31-60' present: 93550000.0\n  ✅ [PASS] Aging bucket '61-90' present: 0.0\n  ✅ [PASS] Aging bucket '>90' present: 0.0\n  ✅ [PASS] by_supplier has 4 entries\n  ✅ [PASS] purchase_orders has 10 entries\n  ❌ [FAIL] PO-00002 (fully paid) should not be in payables list\n  ℹ️  \n=== TEST 1C.3: Permissions ===\n  ✅ [PASS] Sales can view payables (GET)\n  ✅ [PASS] Sales cannot pay PO (403)\n  ✅ [PASS] Warehouse can view purchase returns\n  ✅ [PASS] Warehouse cannot approve return (403)\n\n======================================================================\n  HASIL: 29 PASS | 6 FAIL\n======================================================================\n\n❌ FAILED TESTS:\n   - Create PO failed: 403 {\"detail\":\"Permission ditolak: purchase_order.create\"}\n   - Approve PRET-00001 failed: 403 {\"detail\":\"Permission ditolak: purchase_return.approve\"}\n   - Submit PRET-00002 failed: 403 {\"detail\":\"Permission ditolak: purchase_return.update\"}\n   - Reject return failed: 403 {\"detail\":\"Permission ditolak: purchase_return.reject\"}\n   - Pay PO failed: 403 {\"detail\":\"Permission ditolak: purchase_order.update\"}\n   - PO-00002 (fully paid) should not be in payables list\n"
+  }
+]

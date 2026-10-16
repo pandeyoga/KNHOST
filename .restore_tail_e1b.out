@@ -1,0 +1,23 @@
+=== [5/7] seed_realistic Fri Oct 16 05:57:06 UTC 2026
+[bootstrap] kebersihan data: 34 record dirapikan {'customers': 5, 'suppliers': 6, 'users': 14, 'hr_employees': 2, 'makloons': 7}
+✅ Fondasi bootstrap ditanam ulang (akun md@/wh.admin@: 0/2)
+
+📋 Summary:
+  - 14 Users (admin, sales, manager, warehouse×2)
+  - 18 Products (Batik, Tenun, Lurik, Songket, Ulos, Jumputan, Endek)
+  - 5 Customers
+  - 4 Warehouses (Jakarta, Bandung, Surabaya)
+  - 16 Purchase Orders (PO-00001 → PO-00006)
+  - 10 Sales Orders (SO-0001 → SO-0009)
+  - 17 Inbound tasks · 8 Outbound tasks
+  - 18 inventory balances · 25 movements
+  - 43 inventory rolls (Roll-as-SSOT)
+  - 9 audit logs
+  - 3 Work Order produksi in-house (BOM + HPP)
+SEED_EXIT=0
+=== [6/7] VERIFIKASI FONDASI (gagal berisik, bukan gate merah menyesatkan) Fri Oct 16 05:57:47 UTC 2026
+  OK   expense_categories        8 dok   — kategori pengeluaran petty cash (POC FASE E-4 memeriksanya)
+  OK   gl_accounts              76 dok   — bagan akun baku (COA) — semua jurnal bergantung padanya
+  OK   uoms                      8 dok   — master satuan (FASE U: CM·INCH·KG·MTR·PANEL·PCS·RLL·YRD)
+  fondasi LENGKAP.
+=== [7/7] rebuild frontend Fri Oct 16 05:57:48 UTC 2026

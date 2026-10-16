@@ -1,0 +1,42 @@
+{
+  "summary": "Uji Pemenuhan Nyata E2E (POS checkout → rencana pemenuhan → cleanup). 3/3 pytest passed (/app/backend/tests/test_iter153_real_fulfillment_e2e.py).\n\nScenario A (ent_kanda, 0 stok DNM-BDG-001): TEST_ customer dibuat, POST /api/sales-orders qty 250 allow_backorder → KANDA/SO-00005 backorder_qty=250 (benar — Kanda tidak punya stok). GET /sales-admin/orders/{id}/fulfillment-plan → own_available=0, other_entities[ent_ksc].available=300. **POST plan {interco:[{ent_ksc,150}], reorder:100} GAGAL 400** dengan pesan: \"Barang DNM-BDG-001 belum punya harga internal di kontrak aktif untuk pasangan PT ini. Buat kontrak internal (partner_kind='entity') dengan harga tetap sebelum menerbitkan transaksi.\" Fallback: POST plan {reorder:250} → 200, decision.scope='full', mode='reorder', ref_number='PR-00010' (PR dibuat & tertaut).\n\nScenario B (ent_ksc, JMP-PLB-001): TEST_ customer dibuat; SO1 qty 100 → reserved=100; SO2 qty 200 allow_backorder → reserved=110 backorder=90. Cancel SO1 → own_available=100 (sesuai spec). POST plan {stock:50, reorder:20} → 200, decision.scope='partial', summary 'Sebagian — JMP: 50 dari stok sendiri; JMP: 20 PO ke supplier (PR-00011)'. SO2 setelah plan: reserved=160, backorder=40 (stok 50 kurangi backorder; reorder TIDAK kurangi backorder — sesuai desain). sales_orders.fulfillment_decisions persisted.\n\nCleanup: PR-00010 & PR-00011 cancel OK; semua TEST_ SO cancel OK; TEST_ customers di-drop lewat Mongo. Balance akhir: DNM-BDG-001 KSC available=300.0, JMP-PLB-001 KSC available=210.0 (kembali ke baseline). Residue 1x SO uji sebelumnya (so_67562fef8213 / PR-00009) ditemukan & dibersihkan manual sebelum rerun.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/sales-admin/orders/{id}/fulfillment-plan (mode interco)",
+        "issue": "Transfer antar-PT ent_kanda ← ent_ksc untuk DNM-BDG-001 ditolak 400: 'Barang belum punya harga internal di kontrak aktif untuk pasangan PT ini (partner_kind=entity).' Fitur pemenuhan interco pada preview DB TIDAK DAPAT DIJALANKAN sampai supplier_contracts (atau koleksi harga internal setara) memuat entri partner_kind='entity' pair ent_ksc↔ent_kanda untuk produk uji. Error berasal dari _take_from_other_entity (fulfillment_decision_service) yang menerbitkan interco_transaction → svc interco mengecek internal price. Lihat backend/services/interco_service.py (fungsi price lookup) & services/fulfillment_decision_service.py _take_from_other_entity.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "cleanup rollups",
+        "issue": "Pengujian iterasi sebelumnya (jalankan paralel xdist loadscope) meninggalkan SO so_67562fef8213 (KSC/SO-00057, 160 ter-reserve) + PR-00009 karena tracker STATE per-worker. Perbaiki dengan menjalankan file ini dengan -n 0 (sudah dibatasi di dokumen) atau mengubah xdist strategy. Residue dibersihkan manual."
+      }
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter153_real_fulfillment_e2e.py",
+    "/app/test_reports/pytest/iter153_results.xml"
+  ],
+  "action_items": [
+    "Seed/benihkan kontrak harga internal untuk pasangan ent_ksc↔ent_kanda (dan ent_ksc↔ent_676da7a83682 jika relevan) agar jalur transfer PT lain pada rencana pemenuhan BISA diuji end-to-end di preview DB. Saat ini seluruh plan 'interco' terblokir di seed demo.",
+    "Pertimbangkan menampilkan pesan error lebih ramah / tombol 'buat kontrak internal' di FulfillmentDecisionDialog bila POST plan menerima pesan 'belum punya harga internal' (saat ini hanya toast error teks).",
+    "Dokumentasikan di memory/test_credentials.md bahwa interco di preview demo butuh seed harga kontrak."
+  ],
+  "critical_code_review_comments": [
+    "fulfillment_plan_service.decide_plan: urutan eksekusi stock → interco (per entity) → reorder → wait dan toleransi EPS 0.01 benar; validasi stock>own, wait>incoming, interco>other_avail, total>backorder lengkap.",
+    "fulfillment_plan_service._execute: ketika interco gagal setelah stock sudah dieksekusi, modul mengangkat FulfillmentError dgn ringkasan 'bagian yang SUDAH dijalankan & tercatat' — bagus. Tapi bila interco adalah PART PERTAMA dan gagal (seperti kasus kami), tidak ada partial commit (langsung raise), decision tidak dicatat — benar.",
+    "fulfillment_plan_service._planned mem-track planned_qty kumulatif per produk untuk mencegah double-plan — tapi tidak dipakai sebagai batas atas di _validate. Resiko: Admin Sales bisa planning 2× bila dibuka 2 tab. Pertimbangkan menolak total+planned>backorder_awal.",
+    "work_desks POST /fulfillment-plan hanya memanggil _assert_may_choose_source saat ada interco; untuk reorder/wait-only path tidak diperlukan — benar."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter153_real_fulfillment_e2e.py"],
+  "success_rate": {"backend": "100% (3/3) dengan 1 fallback karena blocker interco kontrak harga"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (kanda* users tidak ada di preview DB — pakai admin).",
+  "seed_data_creation": "Transient TEST_ customer × 2 (dihapus); SO × 3 (semua cancelled); PR × 2 (cancelled). Tidak ada data uji residual.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Jalankan dengan `pytest backend/tests/test_iter153_real_fulfillment_e2e.py -n 0 -s` (serial, karena STATE dict dipakai lintas-kelas). File test juga melakukan verifikasi balance akhir (DNM 300 / JMP 210) + hapus customer via Mongo. Scenario A interco MASIH diblokir seed demo preview DB; perlu seed kontrak harga internal partner_kind=entity antara ent_ksc dan ent_kanda untuk menguji jalur interco end-to-end. Users kanda* (salesadmin.kanda@) tidak ada di preview DB — pakai admin@.",
+  "rca of the issue": "Scenario A blocker (interco contract missing): _take_from_other_entity membuat interco_transaction via services/interco_service yang mencari harga internal via supplier_contracts (atau entity_prices) partner_kind='entity' untuk produk+pasangan. Seed preview DB tidak membuat entri ini untuk DNM-BDG-001, sehingga transfer dari ent_ksc ke ent_kanda tak bisa diterbitkan. Mitigasi: (a) buat seed script seed_interco_price_demo.py yang menambahkan supplier_contracts {partner_kind:'entity', source_entity:'ent_ksc', target_entity:'ent_kanda', product_id:'prod_denim_selvedge', price:…, active:true}; atau (b) jatuhkan guard harga saat qty transfer=0 nilai (dampak akuntansi nol di preview)."
+}

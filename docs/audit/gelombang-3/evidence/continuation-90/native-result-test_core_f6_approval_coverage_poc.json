@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_f6_approval_coverage_poc.py",
+    "database": "knhost_audit_native90_0fc19a86ec36486db8f2d546c9ba53b8",
+    "exit": 1,
+    "seconds": 58.06,
+    "pass_log_tokens": 41,
+    "fail_log_tokens": 3,
+    "log": "continuation-90\\native-test_core_f6_approval_coverage_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "orang ['MKO-00003']\n  [PASS] umur tunggu tiap baris tidak negatif\n\n▶ G5 — BUKTI-MERAH: suntik 1 transfer menunggu → angka WAJIB bergerak\n  [PASS] total backlog naik TEPAT 1 setelah dokumen menunggu dibuat 27 → 28\n  [PASS] kenaikan terjadi di baris `transfer` (bukan di baris lain) transfer 1 → 2\n  [PASS] dokumennya muncul di daftar 'paling lama menunggu' KSC/TRF-POCF6 · fixture POC F-6\n  [PASS] barisnya punya layar tujuan nyata + umur tunggu terhitung view=operations umur=278h\n  [PASS] KPI beranda ikut bergerak (bukan angka mati) kpi=28 backlog=28\n  [PASS] dokumen dihapus → total kembali seperti awal 27 == 27\n\n▶ G6 — ANTI DOBEL-HITUNG (harga langganan sudah terhitung lewat harga khusus)\n  [PASS] tiap harga langganan yang menunggu punya `price_approval_id` 1/1\n  [PASS] pasangannya memang sudah dihitung baris antrean `price` 1/1\n  [PASS] total TIDAK ikut bertambah karena harga langganan (nol dobel-hitung)\n  [PASS] tak ada satu dokumen pun yang dihitung dua antrean 27 dokumen unik\n\n▶ G7 — angka tersaring badan usaha (bukan angka grup yang dipakai ulang)\n  [PASS] angka satu PT ≤ angka gabungan KSC=25 gabungan=27\n  [PASS] PT utama memang punya antrean (uji tidak kosong palsu) KSC=25\n\n▶ G8 — penjaga INV-APPR-01 terbukti bisa MEMERAH\n  [PASS] self-test penjaga antrean LULUS (15 kasus bukti-merah)   HIJAU — penjaga terbukti menuduh pintu tanpa antrean.\n  [FAIL] penjaga antrean HIJAU pada kode & data saat ini\n\n▶ G9 — nol residu setelah POC (DIUKUR, bukan diklaim)\n  [FAIL] seluruh koleksi tersentuh kembali ke jumlah awal (INV-GATE-01) {'audit_logs': (66, 69), 'sessions': (4, 7)}\n\n==============================================================================\n  HASIL: 40 PASS · 2 FAIL dari 42 pemeriksaan\n==============================================================================\n"
+  }
+]

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="11" time="5.374" timestamp="2026-10-16T11:58:01.089939+00:00" hostname="agent-env-32930a03-c845-43a2-ad36-0416e4bb58c5"><testcase classname="tests.test_l01_dataset_edge.TestDatasetEdge" name="test_template_download" time="4.379" /><testcase classname="tests.test_l01_dataset_edge.TestDatasetEdge" name="test_empty_file_400" time="0.008" /><testcase classname="tests.test_l01_dataset_edge.TestDatasetEdge" name="test_semicolon_csv" time="0.014" /><testcase classname="tests.test_l01_dataset_edge.TestDatasetEdge" name="test_reimport_after_rollback_reactivates_supplier_item" time="0.067" /><testcase classname="tests.test_l01_dataset_edge.TestDatasetEdge" name="test_rollback_twice_409" time="0.043" /><testcase classname="tests.test_l01_dataset_edge.TestDatasetEdge" name="test_manager_access" time="0.503" /><testcase classname="tests.test_l01_dataset_edge.TestRecapFilters" name="test_future_range_empty" time="0.011" /><testcase classname="tests.test_l01_dataset_edge.TestRecapFilters" name="test_partner_filter" time="0.022" /><testcase classname="tests.test_l01_dataset_edge.TestDatasetLifo" name="test_rollback_older_batch_while_newer_committed_409" time="0.076" /><testcase classname="tests.test_l01_dataset_edge.TestDatasetLifo" name="test_existing_inactive_supplier_item_reactivated_then_restored" time="0.036" /><testcase classname="tests.test_l01_dataset_edge.TestDatasetLifo" name="test_two_skus_same_supplier_article_code_no_500" time="0.046"><failure message="AssertionError: dry-run ok but commit 500 (dup supplier_sku)&#10;assert (500 != 500 or 0 &gt; 0)&#10; +  where 500 = &lt;Response [500]&gt;.status_code">self = &lt;test_l01_dataset_edge.TestDatasetLifo object at 0xfd15930e2750&gt;
+adm = {'Authorization': 'Bearer 3xv0L34HCc_YDkceeAJ-6XGzXom-PwoWOyds4ugzrZ4'}
+
+    def test_two_skus_same_supplier_article_code_no_500(self, adm):
+        """Iteration 187 bug: dry-run says ok but commit hits uq_supplier_sku (supplier_id, supplier_sku) → 500."""
+        s = DB.suppliers.find_one({"code": "SUP-00002"}, {"_id": 0})
+        ps = [p for p in DB.products.find({"sku": {"$regex": "^KNKNT0007"}}, {"_id": 0, "id": 1, "sku": 1}).limit(50)
+              if not DB.supplier_items.find_one({"product_id": p["id"], "supplier_id": s["id"]})][:2]
+        if len(ps) &lt; 2:
+            pytest.skip("need 2 free SKUs")
+        code = f"TEST-DUP-{uuid.uuid4().hex[:6]}"
+        body = HDR + "".join(f",,{p['sku']},,,,,{s['code']},{code},,W{i},C{i},\n" for i, p in enumerate(ps))
+        u = _upload(adm, body.encode()).json()
+        c = requests.post(f"{BASE}/api/client-dataset/batches/{u['id']}/commit", headers=adm, timeout=60)
+        requests.post(f"{BASE}/api/client-dataset/batches/{u['id']}/rollback", headers=adm, timeout=60)
+        left_active = DB.supplier_items.count_documents({"supplier_sku": code, "status": "active"})
+        DB.supplier_items.delete_many({"supplier_sku": code})
+&gt;       assert c.status_code != 500 or u["report"]["summary"]["error"] &gt; 0, "dry-run ok but commit 500 (dup supplier_sku)"
+E       AssertionError: dry-run ok but commit 500 (dup supplier_sku)
+E       assert (500 != 500 or 0 &gt; 0)
+E        +  where 500 = &lt;Response [500]&gt;.status_code
+
+tests/test_l01_dataset_edge.py:150: AssertionError</failure></testcase></testsuite></testsuites>

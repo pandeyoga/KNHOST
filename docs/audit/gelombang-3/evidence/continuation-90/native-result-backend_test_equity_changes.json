@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_equity_changes.py",
+    "database": "knhost_audit_native90_0a30a5b978d34919bcc7684d6eee39e6",
+    "exit": 0,
+    "seconds": 48.12,
+    "pass_log_tokens": 18,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-backend_test_equity_changes.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "es.py\n\n======================================================================\n  BACKEND API TEST — Laporan Perubahan Ekuitas\n======================================================================\n  ✅ [PASS] Login admin@kainnusantara.id\n  ℹ️  \n=== TEST 1: Equity Changes Endpoint Structure ===\n  ✅ [PASS] GET /api/finance/equity-changes returns 200\n  ✅ [PASS] Response contains all required fields: ['period', 'components', 'begin_total', 'movement_total', 'end_total', 'net_income']\n  ✅ [PASS] Period correct: 2026-01-01 to 2026-12-31\n  ✅ [PASS] Found 3 equity components\n  ✅ [PASS] All components have required fields (code, name, begin, movement, end)\n  ℹ️  \n=== TEST 2: Verify Calculations ===\n  ✅ [PASS] movement_total (656012879.56) == end_total - begin_total (656012879.56)\n  ✅ [PASS] All 3 components have correct movement calculations\n  ℹ️  \n=== TEST 3: Verify P&L Component ===\n  ✅ [PASS] Found __pl__ component: Laba (Rugi) Periode Berjalan\n  ✅ [PASS] __pl__ component name is appropriate: 'Laba (Rugi) Periode Berjalan'\n  ℹ️  \n=== TEST 4: Reconciliation with Balance Sheet ===\n  ✅ [PASS] GET /api/finance/balance-sheet returns 200\n  ✅ [PASS] RECONCILIATION PASSED: Balance sheet equity_total (656012879.56) == equity-changes end_total (656012879.56)\n  ℹ️  \n=== TEST 5: CSV Export ===\n  ✅ [PASS] GET /api/finance/equity-changes/export.csv returns 200\n  ✅ [PASS] Content-Type is CSV: text/csv; charset=utf-8\n  ✅ [PASS] CSV content starts with 'Laporan Perubahan Ekuitas'\n  ✅ [PASS] CSV has 8 lines\n  ℹ️  \n=== TEST 6: Auth Protection ===\n  ✅ [PASS] Unauthenticated request returns 401 (correct)\n\n======================================================================\n  HASIL: 17 PASS | 0 FAIL\n======================================================================\n\n✅ SEMUA TEST BACKEND LULUS\n"
+  }
+]

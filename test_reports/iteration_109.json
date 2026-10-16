@@ -1,0 +1,24 @@
+{
+  "summary": "Iter109 covers IX-06 payroll scope, CX-10 versioned e-sign, P02 core roll, and PG01/IX-15 QC sampling. All four repro scripts pass (IX-06 11/11, CX-10 10/10, P02 13/13, PG01/IX-15 13/13). All prior-session regression scripts pass (RF12/RF13 16/16, P01 scope batch1 22/22, batch2 13/13, test_iter108_regression 12/12). Frontend UI validated: Settings Hub `cfg-scope-type` present with Global+Entitas options for admin & manager; QC inspection modal exposes qc-plan-panel with mode toggles, coverage indicators, allocation inputs and qc-submit-decision testids; PublicVerify page renders `pv-status-current` for a fresh signature and `pv-status-superseded` after content mutation. Test-created signature retained (verification_code=B0L68V4G on so_3ace832d4b45); SO customer_name restored to original 'Tekstil Medan Jaya'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/audit/iterations/2026-10-01-P01-ix06-cx10/repro_ix06.py",
+    "/app/audit/iterations/2026-10-01-P01-ix06-cx10/repro_cx10.py",
+    "/app/audit/iterations/2026-10-01-P02-core-roll/repro_p02.py",
+    "/app/audit/iterations/2026-10-01-P06-qc-sampling/repro_pg01_ix15.py",
+    "/app/backend/tests/test_iter108_regression.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Warehouse role redirected away from ?view=settings-hub — expected (no settings.write). Finance similarly redirected; task statement mentions single-entity users seeing 'khusus peran lintas PT' label on disabled Global option — currently not exercised because only cross-entity roles reach the Settings Hub route. If product intends non-cross-entity users with settings.write to see the disabled Global option, no such role exists in seed. Confirm scope with product agent; not a blocker."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, manager@kainnusantara.id / demo12345, warehouse@kainnusantara.id / demo12345, finance@kainnusantara.id / demo12345",
+  "seed_data_creation": "Created ephemeral e-sign verification_code B0L68V4G on so_3ace832d4b45 for PublicVerify UI check. Signed snapshot is immutable by design; SO customer_name was toggled to '[TESTMOD]' briefly to trigger superseded state and restored to 'Tekstil Medan Jaya' immediately.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All P01(IX-06/CX-10), P02(core roll), P06(QC sampling) invariants green and older P01 regressions still green. Frontend Settings Hub cfg-scope-type is a Radix Select — open the button, options are role=option. PublicVerify page uses pv-status-current/pv-status-superseded testids. Warehouse/Finance users cannot reach ?view=settings-hub in current seed, so the 'Global disabled' UI assertion for non-cross-entity users cannot be exercised here.",
+  "rca of the issue": "N/A — no failures observed."
+}

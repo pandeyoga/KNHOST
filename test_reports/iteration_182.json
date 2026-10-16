@@ -1,0 +1,26 @@
+{
+  "summary": "P05 DEC-13/ACC-34 + ACC-33 + IMP-16 + Restock revalidation testing. Backend pytest (3 files) hijau total 45 passed + 1 skipped (sesuai target 17+28 lulus, 1 skip). UI E2E flow Cancel MKO sesudah issue + Return Material terverifikasi end-to-end via MKO-00018 (dibuat lewat API dengan pola MKO-00017 ent_ksc, 50 yard, issued). Alur UI yang diuji: klik mko-cancel-button -> modal mko-cancel-modal (teks: 'Cadangan bahan yang belum dikirim dilepas. Bahan yang sudah dikirim tetap tercatat di mitra (WIP tetap) sampai retur bahan dicatat.') -> konfirmasi -> status pill 'Dibatalkan', step menampilkan mko-await-return-1 ('Menunggu Retur Bahan') dan tombol receive-step-1 TIDAK muncul; buka mko-return-open-1 -> mko-return-reason-1 (submit disabled saat <5 chars, enabled >=5 chars) -> submit -> step berubah ke mko-step-returned-1 ('Retur 50 yard dicatat ...'), receive button tetap hilang.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "MakloonOrderDetailPanel @390px", "issues": ["Pada viewport 390px rute ?view=makloon-orders membawa user ke mobile home dashboard, bukan ke detail panel. Detail MKO memang dirancang desktop; tidak ada entry point mobile untuk flow cancel/return. Konfirmasi dengan main agent apakah ini intensional atau perlu dukungan mobile."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p05_acceptance_acc31_33_34.py",
+    "/app/backend/tests/test_p05_imp16_md_quality_qc.py",
+    "/app/backend/tests/test_p05_restock_material_revalidation.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": ["/app/scripts/setup_test_mko_ui.py (helper baru untuk fixture UI; aman tidak mengubah logic app)"],
+  "success_rate": {"backend": "100% (45 passed, 1 skipped)", "frontend": "100% (cancel modal + await-return + return-material submit, UI testid semua tersedia)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (akun demo lain demo1234 per /app/memory/test_credentials.md)",
+  "seed_data_creation": "Dibuat sementara MKO TEST_P05ACC_UI (MKO-00018, mko_eefe36385fbf) + 1 material_reservation; sudah dibersihkan dari DB di akhir testing. restock_source product_template dikembalikan ke nilai semula.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "P05 flow (DEC-13/ACC-34 cancel-after-issue + return-material) selesai & stabil. Playbook UI testid: mko-cancel-button, mko-cancel-modal{-message,-cancel,-confirm}, mko-await-return-<seq>, mko-return-open-<seq>, mko-return-reason-<seq>, mko-return-submit-<seq>, mko-step-returned-<seq>. receive-step-<seq> benar-benar disembunyikan setelah cancel. API POST /api/makloon-orders/{id}/cancel + /steps/{seq}/return-material bekerja; validasi reason >=5, idempoten 409.",
+  "rca of the issue": "N/A — tidak ada bug ditemukan."
+}

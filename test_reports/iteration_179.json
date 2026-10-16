@@ -1,0 +1,30 @@
+{
+  "summary": "P05 E2E (ACC-30/32/35) tested against preview backend + static-build frontend. Backend: 12/12 pytest passed (added 2 new tests: md@ dapat edit restock-source + PO manual makloon-only ditolak 409; existing 10 di-retain). Backend coverage: GET /api/restock-sources (counts mapped=3, unmapped=27), supplier-only (ALICE KNIT) menolak makloon 400 'hanya dari supplier', makloon-only (RIVERA RIB) menolak purchase 400 'makloon', AUDIA KNIT both tanpa route_reason 400 → dengan reason 200 + restock_route.routes[0].reason terisi, BAMBU KNIT unmapped 400 'belum diatur', PUT /product-templates/{id}/restock-source: sales.kanda 403, md@ 200 (dengan restore), POST /purchase-orders item makloon-only (RIVERA RIB) → 409 (via check_lines), MKO MKO-00005 ent_kanda punya tepat 1 material_reservations active & qty+shortage=required_qty, GET /api/sales/keep-pending (salesadmin.kanda) memuat 'makloon_orders' + 'MKO-', POST /api/rnd/samples SKU existing (admin, X-Entity-Id ent_ksc, sample_types=[handfeel]) → purpose='revalidation' + product_id/sku sama + md_specs & products TIDAK bertambah, retry sama → 422 menyebut nomor sample, labdip untuk SKU sama → 200, GET /api/rnd/labdip-history?type_code= → summary.samples ≥ 2, proofing ditolak, product_id palsu ditolak 'tidak ditemukan'. UI (admin ent_ksc, viewport 1920): ?view=rnd-samples → rnd-sample-create-button → modal sample-form-modal muncul; sample-mode-existing + sample-mode-new keduanya ada; existing-sku-section + existing-sku-select + existing-sku-history-empty terlihat setelah pilih handfeel; pilih SKU BTK-MEGA-001 lalu sample-form-save → sample baru KSC/SMP-00014 muncul di kolom Draf dengan badge rnd-sample-card-existing-smp_dc99841ba863 'uji SKU BTK-MEGA-001' + chip 'Pengajuan awal'; mode-new tetap menampilkan sample-spec-fabric/gramasi/lebar/sku/price/notes (SampleSpecFields utuh). UI (md@ ent_kanda): ?view=md-products → catalog-restock-toggle → restock-source-panel; restock-counts tampil '3 diatur · 27 belum diatur'; filter restock-filter-unmapped/mapped/all + search bekerja; rows restock-row-{tplId} + restock-mode-{tplId} + restock-note-{tplId} + restock-save-{tplId} + restock-unmapped-{tplId} untuk setiap artikel. Code review ditemukan pr-route-reason input di PurchaseRequisitions.jsx:416. Test sample uji dibersihkan.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p05_restock_material_revalidation.py",
+    "/app/test_reports/pytest/p05_iter179.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "pytest.ini default addopts memakai `-n 2 --dist=loadscope`; test TestExistingSkuRevalidation.test_create_keeps_identity_and_no_duplicate pernah gagal flaky (summary.samples=1 bukan 2) saat berjalan paralel dengan TestRestockRoute meskipun entitas berbeda — kemungkinan cache atau race pada `labdip_history` scope. Saat dijalankan serial (12/12) selalu lulus. Perlu diselidiki apakah ada state shared (cache rnd_sample_service) yang bisa menyebabkan ketidakstabilan di produksi.",
+    "`labdip-history` default `type_code='labdip'` — jika klien mengirim string kosong, service dengan benar menginterpretasikannya sebagai 'semua jenis'. UI (ExistingSkuSection) perlu dicek apakah mengirim type_code kosong atau type_code sesuai jenis sample yang dipilih (handfeel/labdip/proofing) agar riwayat yang ditampilkan konsisten.",
+    "Error untuk PO antar-entitas memakai status 409 dengan pesan panjang; validator ini jalan SEBELUM restock-route check. Jadi pengujian 'PO manual makloon-only' hanya reliabel bila supplier non-grup dipakai. Pertimbangkan reorder validasi (restock-route dulu) agar pesan konsisten.",
+    "`shipment_no` vs `number` naming inconsistency (dari iterasi 178) belum diperbaiki."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p05_restock_material_revalidation.py"
+  ],
+  "success_rate": {"backend": "100% (12/12)", "frontend": "100% selectors ditemukan; semua alur UI terverifikasi"},
+  "test_credentials": "admin@kainnusantara.id/demo12345 (ent_ksc), md@/manager@/salesadmin.kanda@/sales.kanda@kainnusantara.id/demo1234. Lihat /app/memory/test_credentials.md P05.",
+  "seed_data_creation": "Tidak ada seed baru. Data uji selama iterasi: PR berawalan 'TEST_P05' + md_samples brief 'TEST_P05' dihapus di fixture cleanup. Sample UI KSC/SMP-00014 (smp_dc99841ba863) dihapus manual via mongosh. Restock-source BAMBU KNIT dikembalikan ke 'belum diatur' setelah uji md@.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "P05 ACC-30/32/35 lulus (IMP-17/18/19). Nomor sample bertambah: KSC/SMP-00013/14 pernah dibuat lalu dihapus (SMP-00014 cleaned). MKO-00005 ent_kanda tetap aktif dengan reservasi 300 kg (jangan dihapus — dipakai assertion). Sumber restock di ent_kanda: 3 diatur (ALICE/RIVERA/AUDIA), 27 belum diatur (termasuk BAMBU KNIT). IMP-16 (MD Quality vs QC) menunggu DEC-06 — belum diuji. Pytest default pakai xdist 2 workers; test revalidation stabil secara serial tapi pernah flaky paralel.",
+  "rca of the issue": "N/A — tidak ada bug. Hanya catatan: PO antar-entitas memvalidasi grup-supplier SEBELUM restock-route, jadi assertion test perlu memilih supplier luar (bukan Kanda/Cipta Sandang/Sukacita) agar menerima 409 dari restock-route guard, bukan dari intra-group guard."
+}

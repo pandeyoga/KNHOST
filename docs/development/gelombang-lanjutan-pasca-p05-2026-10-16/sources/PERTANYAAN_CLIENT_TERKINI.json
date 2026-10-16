@@ -1,0 +1,199 @@
+{
+  "date": "2026-10-16",
+  "return_topics": 11,
+  "supporting_topics": 3,
+  "questions": [
+    {
+      "id": "KLR-01",
+      "group": "Retur",
+      "title": "Cutloss: bagian kain yang diterima kembali oleh customer",
+      "context": "Contoh: satu roll 120 yard diperiksa QC. Yard ke-46 sampai ke-60 cacat, yaitu 15 yard; yard ke-1–45 baik (45 yard), dan yard ke-61–120 baik (60 yard).",
+      "questions": [
+        "Dalam kasus ini, apakah customer menerima hanya yard 61–120 sebanyak 60 yard dan memperoleh pengembalian nilai setara 60 yard; atau menerima dua potong baik, yaitu 1–45 dan 61–120 sebanyak 105 yard, dan memperoleh pengembalian nilai setara 15 yard?",
+        "Apakah ada cara lain atau keputusan berbeda per kasus? Jika customer menerima dua potong, apakah bentuk dua potong itu harus disetujui customer terlebih dahulu?",
+        "Untuk pilihan pertama, 45 yard yang masih baik ikut tertahan di perusahaan. Apakah itu memang yang dimaksud cutloss?"
+      ],
+      "origin": [
+        "R-01"
+      ]
+    },
+    {
+      "id": "KLR-02",
+      "group": "Retur",
+      "title": "Cutloss: dasar perhitungan nilai kompensasi",
+      "context": "Setelah bagian yang dikembalikan dan qty kompensasi disepakati, nilai uangnya masih perlu dipastikan. Angka kompensasi tidak otomatis berarti seluruhnya dibayar tunai, karena pengurangan tagihan lebih dahulu serta pilihan refund/saldo sudah disepakati.",
+      "questions": [
+        "Apakah nilai kompensasi dihitung dari qty yang disetujui dikalikan harga transaksi awal setelah diskon/harga khusus, atau menggunakan nilai lain yang disepakati?",
+        "Mohon satu contoh angka lengkap dari kasus 120 yard tadi: harga awal, qty yang dikompensasi dan nilai akhir. Jika berbeda karena jenis cacat/kondisi, mohon jelaskan dasar kesepakatannya."
+      ],
+      "origin": [
+        "R-01"
+      ]
+    },
+    {
+      "id": "KLR-03",
+      "group": "Retur",
+      "title": "Tukar barang: jumlah pengganti mengikuti roll atau yard/kg?",
+      "context": "Warna dan grade pengganti tetap sama sesuai keputusan yang sudah diberikan. Namun panjang/berat setiap roll tidak selalu sama.",
+      "questions": [
+        "Jika dua roll yang disetujui untuk ditukar totalnya 195 yard, kewajiban penggantinya dua roll atau 195 yard?",
+        "Patokan qty tersebut berasal dari qty yang dahulu dikirim, qty yang benar-benar kembali, atau qty yang disetujui setelah pemeriksaan? Mohon contoh bila qty pengiriman awal dan qty yang kembali berbeda."
+      ],
+      "origin": [
+        "R-04"
+      ]
+    },
+    {
+      "id": "KLR-04",
+      "group": "Retur",
+      "title": "Tukar barang: perlakuan qty pengganti yang lebih atau kurang",
+      "context": "Contoh sementara: kewajiban pengganti sudah ditetapkan 195 yard. Roll pengganti yang tersedia tidak selalu tepat 195 yard.",
+      "questions": [
+        "Jika roll pengganti total 205 yard, apakah tambahan 10 yard dibayar customer, dibebaskan, atau diputus per kasus?",
+        "Jika pengganti total 190 yard, apakah kekurangan lima yard harus dikirim kemudian, diselesaikan menjadi nilai yang dapat direfund/menjadi saldo, atau ditutup dengan kesepakatan tertentu?"
+      ],
+      "origin": [
+        "R-04",
+        "R-05"
+      ]
+    },
+    {
+      "id": "KLR-05",
+      "group": "Retur",
+      "title": "Tukar barang: harga yang dipakai untuk menilai selisih",
+      "context": "Pertanyaan ini berlaku bila kelebihan/kekurangan qty pengganti memang dinilai uang. Bukan menanyakan ulang aturan harga SO normal.",
+      "questions": [
+        "Selisih qty memakai harga transaksi asal setelah diskon/harga khusus, harga yang berlaku saat penggantian, atau harga khusus yang disepakati kembali?",
+        "Jika harga saat ini berbeda dari harga awal, apakah qty yang sekadar mengganti kewajiban lama tetap menggunakan nilai lama, dan hanya selisihnya yang dinilai? Mohon contoh supaya tagihan tidak dihitung dua kali."
+      ],
+      "origin": [
+        "R-05"
+      ]
+    },
+    {
+      "id": "KLR-06",
+      "group": "Retur",
+      "title": "Discount tanpa barang kembali: bagaimana syarat pemeriksaannya?",
+      "context": "Penjelasan sebelumnya menyebut discount untuk kain cacat yang tetap dipakai customer. Aturan terbaru menyebut keputusan kompensasi final sesudah QC inspect dan QC retur dilakukan di Rancamalang. Untuk barang yang tidak kembali, cara memenuhi syarat ini belum jelas.",
+      "questions": [
+        "Apakah discount tanpa pengembalian barang merupakan pengecualian pemeriksaan fisik di Rancamalang dan boleh diputus berdasarkan foto/video serta bukti lain?",
+        "Atau tetap perlu barang/bagian contoh dikirim ke Rancamalang untuk diperiksa? Jika demikian, bagian apa yang dikirim sementara sisanya tetap digunakan customer?"
+      ],
+      "origin": [
+        "R-11",
+        "R-13",
+        "RT-13"
+      ]
+    },
+    {
+      "id": "KLR-07",
+      "group": "Retur",
+      "title": "Discount: nilai potongan berlaku untuk bagian mana?",
+      "context": "Barang tetap pada customer, sehingga tidak ada stok retur masuk untuk keseluruhan barang itu. Besarnya koreksi nilai belum dijelaskan.",
+      "questions": [
+        "Discount ditentukan sebagai persentase, nominal rupiah, atau nilai per yard/kg?",
+        "Potongan berlaku hanya pada qty yang cacat, satu roll, atau seluruh item/tagihan yang disepakati? Mohon satu contoh qty, harga awal dan nilai discount akhir."
+      ],
+      "origin": [
+        "RT-19",
+        "RT-13"
+      ]
+    },
+    {
+      "id": "KLR-08",
+      "group": "Retur",
+      "title": "Syarat klaim bila hangtag hilang atau kain sudah dipotong customer",
+      "context": "Catatan sebelumnya menyebut kondisi ini kebanyakan ditolak, tetapi bisa berakhir cutloss/discount. Belum ada aturan yang membedakan kasusnya.",
+      "questions": [
+        "Bagaimana perlakuan untuk: hangtag hilang tetapi roll masih utuh; hangtag ada tetapi kain sudah dipotong; dan hangtag hilang sekaligus kain sudah dipotong?",
+        "Untuk masing-masing kondisi, apakah ditolak, tetap dapat diperiksa, atau hanya diperbolehkan penyelesaian tertentu? Bukti pengganti apa yang dapat dipakai jika hangtag hilang?"
+      ],
+      "origin": [
+        "RT-09"
+      ]
+    },
+    {
+      "id": "KLR-09",
+      "group": "Retur",
+      "title": "Batas 21 hari: pengajuan harus masuk kapan?",
+      "context": "Tanggal awal sudah jelas: customer dari SJ penjualan terkait; supplier dari penerimaan gudang asal, per receiving. Yang perlu dipastikan adalah kejadian apa yang harus masih berada dalam 21 hari.",
+      "questions": [
+        "Jika customer mengajukan pada hari ke-20 tetapi barang baru diterima di Jakarta atau Rancamalang pada hari ke-24, apakah klaim tetap dalam batas waktu?",
+        "Untuk supplier, apakah batas 21 hari berlaku sampai pengajuan klaim dikirim, sampai barang diberangkatkan, atau sampai barang diterima supplier? Perjalanan Jakarta–Rancamalang tidak boleh menimbulkan asumsi tanggal yang berbeda."
+      ],
+      "origin": [
+        "RT-06",
+        "RT-07"
+      ]
+    },
+    {
+      "id": "KLR-10",
+      "group": "Retur",
+      "title": "Pengurangan tagihan: hanya SO asal atau termasuk tagihan lain?",
+      "context": "Sudah disepakati nilai retur mengurangi tagihan terlebih dahulu; kelebihannya boleh direfund atau menjadi saldo. Belum ditentukan cakupan tagihan yang dikurangi.",
+      "questions": [
+        "Jika SO asal retur sudah lunas, tetapi customer masih berutang pada SO lain di entitas yang sama, apakah nilai retur harus digunakan melunasi tagihan lain itu terlebih dahulu?",
+        "Atau pengurangan wajib hanya untuk tagihan SO asal, sehingga customer boleh memilih refund/saldo walaupun mempunyai tagihan lain?"
+      ],
+      "origin": [
+        "R-08"
+      ]
+    },
+    {
+      "id": "KLR-11",
+      "group": "Retur",
+      "title": "Siapa menanggung ongkir retur, perjalanan QC dan penggantian?",
+      "context": "Barang dapat diterima di Jakarta, lalu dikirim ke Rancamalang untuk QC; pengganti kemudian dikirim ke customer. Ini dapat melibatkan beberapa perjalanan.",
+      "questions": [
+        "Siapa menanggung biaya pengembalian dari customer, perjalanan Jakarta–Rancamalang untuk QC, dan pengiriman pengganti?",
+        "Apakah perlakuannya berbeda bila klaim diterima atau ditolak? Jika melibatkan Sukacita dan CST, apakah ada ketentuan pembagian biaya internal atau diputus per kasus?"
+      ],
+      "origin": [
+        "alur_logistik_retur"
+      ]
+    },
+    {
+      "id": "KLX-01",
+      "group": "Pendukung yang masih tertunda",
+      "title": "Kode LOT supplier dan LOT internal KN",
+      "context": "Ada kemungkinan SJ pabrik menulis LOT 234 sementara KN menyebut kelompok yang sama LOT A. Ini masih perlu konfirmasi client.",
+      "questions": [
+        "Apakah memang ada dua kode untuk kelompok yang sama, atau LOT A hanya contoh dan cukup memakai kode pabrik?",
+        "Jika LOT pabrik yang sama datang pada SJ berikutnya untuk artikel/warna yang sama, apakah nama LOT KN tetap sama atau baru?",
+        "Jika KN mempunyai nama sendiri, bagaimana urutan penamaannya dan kapan mulai dari awal lagi? Mohon contoh praktik yang dipakai."
+      ],
+      "origin": [
+        "klarifikasi_LOT_16_Oktober"
+      ]
+    },
+    {
+      "id": "KLX-02",
+      "group": "Pendukung yang masih tertunda",
+      "title": "Kode cacat dan cara menghitung hasil inspect",
+      "context": "Form inspect sudah disepakati satu baris per roll dan posisi cacat per 15 yard. Kode cacat, hitungan nilai akhir dan ambang grade belum lengkap.",
+      "questions": [
+        "Mohon daftar kode cacat beserta arti, bobot poin dan cara mencatat jumlah kejadiannya pada tiap interval.",
+        "Mohon satu contoh roll yang sudah selesai diperiksa: panjang inspect, temuan per interval, langkah perhitungan angka hasil akhir, kemudian alasan masuk Grade A/A1/B atau grade aktif lainnya.",
+        "Apakah penentuan grade hanya memakai jumlah poin atau juga panjang/lebar kain? Jika ada kriteria tambahan, mohon ditunjukkan pada contoh tersebut."
+      ],
+      "origin": [
+        "formula_inspect_tertunda"
+      ]
+    },
+    {
+      "id": "KLX-03",
+      "group": "Pendukung yang masih tertunda",
+      "title": "Cutoff dan jadwal pembayaran pembelian antar-entitas",
+      "context": "Barang/transaksi antar-entitas berlangsung lebih dahulu dan pembayaran dijadwalkan akhir bulan. Pembayaran penuh per transaksi tanpa netting sudah disepakati.",
+      "questions": [
+        "Tanggal cutoff dan tanggal pembayaran sebenarnya kapan?",
+        "Transaksi masuk periode pembayaran berdasarkan tanggal invoice, penerimaan barang, atau acuan lain?",
+        "Transaksi setelah cutoff dibayar periode berikutnya atau ada ketentuan lain? Mohon contoh dua transaksi di sekitar cutoff."
+      ],
+      "origin": [
+        "cutoff_interco_tertunda"
+      ]
+    }
+  ],
+  "not_sent": true
+}

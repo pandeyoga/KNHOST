@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_notifikasi_alamat_poc.py",
+    "database": "knhost_audit_native90_fa90b351429e40eab391e636a6305e35",
+    "exit": 0,
+    "seconds": 57.44,
+    "pass_log_tokens": 36,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_core_notifikasi_alamat_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "=\"all\"\n  [PASS] job dijalankan DUA KALI → tiap orang tetap satu pesan (dedupe per orang)  (4 → 4)\n\nN5 · notifikasi ber-ENTITAS (PT-A tidak melihat milik PT-B)\n  [PASS] membaca dalam konteks PT-A TIDAK memunculkan notifikasi PT-B\n  [PASS] …tetapi dalam konteks PT-B notifikasi itu memang terlihat (bukti pagarnya menyaring, bukan menyembunyikan semuanya)\n\nN6 · alamat mengikuti IZIN, bukan nama peran\n  [PASS] sebelum diubah: manajer termasuk penerima  (4 orang)\n  [PASS] sesudah izin DICABUT dari layar Matriks Izin: manajer berhenti menerima — tanpa satu baris kode pun diubah  (4 → 1 orang)\n  [PASS] matriks izin dipulihkan (nol residu izin)  (4 orang)\n\nN7 · penyelesai TIDAK pernah jatuh ke \"kirim ke semua\"\n  [PASS] izin yang tak dipegang siapa pun → NOL penerima, bukan siaran  (0 penerima)\n  [PASS] divisi yang tidak ada → NOL penerima\n  [PASS] badan usaha yang bukan penugasan siapa pun → NOL penerima (pagar entitas ikut berlaku pada ALAMAT, bukan hanya pada pembacaan)\n\nN8 · nol residu\n  [PASS] koleksi notifikasi dipulihkan PERSIS ke jumlah semula  (83 → 83)\n  [PASS] dokumen PO custom uji dibersihkan  (sisa 0)\n  · jejak dibuang={'audit_logs': 2, 'sessions': 1}\n  [PASS] koleksi jejak `audit_logs` kembali PERSIS seperti sebelum POC (INV-GATE-01 tidak boleh memerah karena POC ini)  (66 → 66)\n  [PASS] koleksi jejak `sessions` kembali PERSIS seperti sebelum POC (INV-GATE-01 tidak boleh memerah karena POC ini)  (4 → 4)\n  [PASS] matriks izin tidak ditinggalkan dalam keadaan tercabut\n  [PASS] baris matriks izin `permission_settings/default` kembali seperti sebelum POC  (semula=ada)\n\n==============================================================================\n  HASIL: 35 PASS · 0 FAIL dari 35 pemeriksaan\n==============================================================================\n"
+  }
+]

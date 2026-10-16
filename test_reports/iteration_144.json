@@ -1,0 +1,36 @@
+{
+  "summary": "Iter144 retest after iter143 fixes. All 4 fixes verified end-to-end. Backend regression: 6 pass + 1 non-blocking skip (iter143 suite). New iter144 pytest (2/2 pass) confirms preview-roll-reconcile no longer 403s for sales when all_entities=true (downgrades silently). Frontend: RollReconcileSheet opens with reconcile-option-*, modal-card sticky header/footer verified under scroll, mobile tabbar 6 tabs single-row + unread pill, nested KNSelect z-index 100000 > modal 1002.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/sales-orders (roll-mode)", "issue": "test_07 roll-mode blocked check still skipped (same as iter143) — /api/inventory/rolls/available response shape mismatch in test probe; not blocking (block/approve/backorder paths proven in qty mode and e2e UI)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter144_roll_reconcile_sales.py",
+    "/app/backend/tests/test_iter143_makloon_po_variance.py",
+    "/app/test_reports/pytest/iter144_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "sales_orders_extra.preview_roll_reconcile correctly derives all_ent from ctx.is_cross_entity and silently downgrades for non-cross-entity roles — fixes iter143 open item; no 403 regression for admin/manager.",
+    ".modal-card sticky header (top:-22px, bg #fff, z:5) & footer (bottom:-22px, bg #fff, z:5) correctly occlude scrolled form content; max-height 90vh, overflow-y auto.",
+    "Mobile (390x844) manager session: mobile-tabbar height 55px, 6 children all at identical y=790 (single row); mobile-unread 39x20 red pill (bg #FF3B30, border-radius 999px) in top-right header area — no overlap with buttons.",
+    "overlayStack: KNSelect listbox z-index 100000 safely renders above modal-overlay z-index 1002 — regression safe."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter144_roll_reconcile_sales.py"
+  ],
+  "success_rate": {"backend": "8/9 pass (+1 skip) ~89%", "frontend": "100% on tested flows"},
+  "test_credentials": "admin@/sales@/manager@kainnusantara.id / demo12345, entity ent_ksc",
+  "seed_data_creation": "None persisted. Cart line created during FIX1 flow was cleared via 'Kosongkan'. iter143 pytest fixture auto-handles reservation seed + SO cleanup + config reset.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "To reproduce fix1: login sales@ → ?view=sales&entity=ent_ksc → click product tile BTK-MEGA-001 (text selector) → quickview-qty-input 150 → quickview-add-button → RollReconcileSheet with reconcile-option-* opens. Backend: pytest tests/test_iter144_roll_reconcile_sales.py -v (needs REACT_APP_BACKEND_URL in env).",
+  "rca of the issue": "N/A — all issues from iter143 resolved."
+}

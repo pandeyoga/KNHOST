@@ -1,0 +1,3147 @@
+[
+  {
+    "script": "audit/iterations/2026-09-30-P01-device-credentials/repro_rf12_rf13.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 3.77,
+    "log": "test-logs\\extended-00-repro_rf12_rf13.log",
+    "cases": [
+      {
+        "invariant": "issue returns key once",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "invariant": "list as warehouse has no key/hash",
+        "pass": true,
+        "detail": []
+      },
+      {
+        "invariant": "list as admin has no key/hash",
+        "pass": true,
+        "detail": []
+      },
+      {
+        "invariant": "device-health has no key/hash",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "invariant": "update response has no key/hash",
+        "pass": true,
+        "detail": []
+      },
+      {
+        "invariant": "non-regenerate re-issue does not reveal existing key",
+        "pass": true,
+        "detail": 409
+      },
+      {
+        "invariant": "enabled device heartbeat accepted",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "invariant": "offline-but-enabled can reconnect",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "invariant": "disabled rejected on /rfid/heartbeat",
+        "pass": true,
+        "detail": 403
+      },
+      {
+        "invariant": "disabled rejected on /rfid/ingest",
+        "pass": true,
+        "detail": 403
+      },
+      {
+        "invariant": "disabled rejected on /rfid/device-jobs/pending",
+        "pass": true,
+        "detail": 403
+      },
+      {
+        "invariant": "disabled rejected on /rfid/device-jobs/x/ack",
+        "pass": true,
+        "detail": 403
+      },
+      {
+        "invariant": "heartbeat does not re-enable disabled device",
+        "pass": true,
+        "detail": {
+          "enabled": false,
+          "status": "offline"
+        }
+      },
+      {
+        "invariant": "rotation invalidates old key",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "invariant": "rotated key works",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "invariant": "viewer cannot issue key",
+        "pass": true,
+        "detail": ""
+      }
+    ],
+    "tail": "\"rotated key works\",\n  \"pass\": true,\n  \"detail\": \"\"\n },\n {\n  \"invariant\": \"viewer cannot issue key\",\n  \"pass\": true,\n  \"detail\": \"\"\n }\n]\nSUMMARY pass=16 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-09-30-P01-scope-batch1/repro_p01_scope.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 7.37,
+    "log": "test-logs\\extended-01-repro_p01_scope.log",
+    "cases": [
+      {
+        "id": "GN-03",
+        "invariant": "ledger own entity (control) 200",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "GN-03",
+        "invariant": "ledger of entity B denied",
+        "pass": true,
+        "detail": 404
+      },
+      {
+        "id": "GN-03",
+        "invariant": "reconcile txn of entity B denied",
+        "pass": true,
+        "detail": 404
+      },
+      {
+        "id": "GN-03",
+        "invariant": "reconcile own txn (control) 200",
+        "pass": true,
+        "detail": 200
+      },
+      {
+        "id": "IX-05",
+        "invariant": "signatures of entity B source denied, no metadata",
+        "pass": true,
+        "detail": 404
+      },
+      {
+        "id": "IX-05",
+        "invariant": "signatures of own source (control) visible",
+        "pass": true,
+        "detail": 200
+      },
+      {
+        "id": "IX-05",
+        "invariant": "create e-sign request on entity B source denied",
+        "pass": true,
+        "detail": 404
+      },
+      {
+        "id": "IX-07",
+        "invariant": "PUT settings scope=B denied",
+        "pass": true,
+        "detail": 403
+      },
+      {
+        "id": "IX-07",
+        "invariant": "settings B unchanged after denial",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "IX-07",
+        "invariant": "single-entity user cannot write global scope",
+        "pass": true,
+        "detail": 403
+      },
+      {
+        "id": "IX-10",
+        "invariant": "list with entity_id=B denied",
+        "pass": true,
+        "detail": 403
+      },
+      {
+        "id": "IX-10",
+        "invariant": "default list excludes B rows",
+        "pass": true,
+        "detail": 200
+      },
+      {
+        "id": "IX-10",
+        "invariant": "active with entity_id=B denied",
+        "pass": true,
+        "detail": 403
+      },
+      {
+        "id": "IX-10",
+        "invariant": "approve B request denied & unchanged",
+        "pass": true,
+        "detail": [
+          404,
+          "pending"
+        ]
+      },
+      {
+        "id": "IX-10",
+        "invariant": "reject B request denied & unchanged",
+        "pass": true,
+        "detail": [
+          404,
+          "pending"
+        ]
+      },
+      {
+        "id": "GN-01",
+        "invariant": "second cookie user does not receive first user's cached response",
+        "pass": true,
+        "detail": [
+          404,
+          404,
+          null
+        ]
+      },
+      {
+        "id": "GN-01",
+        "invariant": "same user same payload is replayed (control)",
+        "pass": true,
+        "detail": 404
+      },
+      {
+        "id": "GN-01",
+        "invariant": "same key different payload -> 409",
+        "pass": true,
+        "detail": 409
+      },
+      {
+        "id": "GN-01",
+        "invariant": "anonymous replay rejected (401, no cached body)",
+        "pass": true,
+        "detail": 401
+      },
+      {
+        "id": "GN-02",
+        "invariant": "sales cannot subscribe",
+        "pass": true,
+        "detail": "error"
+      },
+      {
+        "id": "GN-02",
+        "invariant": "expired session rejected on WS",
+        "pass": true,
+        "detail": {
+          "type": "error",
+          "msg": "unauthorized"
+        }
+      },
+      {
+        "id": "GN-02",
+        "invariant": "manager subscribe (control) gets snapshot",
+        "pass": true,
+        "detail": "snapshot"
+      }
+    ],
+    "tail": "zed\"\n  }\n },\n {\n  \"id\": \"GN-02\",\n  \"invariant\": \"manager subscribe (control) gets snapshot\",\n  \"pass\": true,\n  \"detail\": \"snapshot\"\n }\n]\nSUMMARY pass=22 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-09-30-P01-scope-batch2/repro_p01_batch2.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 1,
+    "seconds": 6.47,
+    "log": "test-logs\\extended-02-repro_p01_batch2.log",
+    "cases": [
+      {
+        "id": "AX-04",
+        "invariant": "owner A transfer cannot reserve roll of B",
+        "pass": true,
+        "detail": "['HTTPException', 'available']"
+      },
+      {
+        "id": "AX-04",
+        "invariant": "explicit A roll reserved (control)",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "AX-04",
+        "invariant": "explicit pick rebuilds balance projection",
+        "pass": true,
+        "detail": "{'reserved_before': 50.0, 'reserved_after': 60.0}"
+      },
+      {
+        "id": "AX-06",
+        "invariant": "multi-owner print job rejected before encode side effects",
+        "pass": true,
+        "detail": "['HTTPException', 0, 0]"
+      },
+      {
+        "id": "GN-04",
+        "invariant": "sample of A cannot take material from roll of B",
+        "pass": true,
+        "detail": "[\"RndError('Roll tidak ditemukan.')\", {'length_remaining': 10.0}]"
+      },
+      {
+        "id": "CX-02",
+        "invariant": "store credit cannot be allocated to order of other customer/entity",
+        "pass": true,
+        "detail": "['HTTPException', 400]"
+      },
+      {
+        "id": "GN-10",
+        "invariant": "POS best-sellers for scope A excludes B orders",
+        "pass": true,
+        "detail": "7"
+      },
+      {
+        "id": "GN-16",
+        "invariant": "digest of A-only user excludes entity B notifications",
+        "pass": true,
+        "detail": "1"
+      },
+      {
+        "id": "GN-16",
+        "invariant": "scheduled AI report is private (recipient_role empty)",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "RF-09",
+        "invariant": "multi-entity count session is scannable by its creator scope",
+        "pass": false,
+        "detail": "HTTPException(status_code=404, detail='Sesi verifikasi tidak ditemukan')"
+      },
+      {
+        "id": "RF-08",
+        "invariant": "A-only user cannot complete A+B session",
+        "pass": true,
+        "detail": "HTTPException(status_code=404, detail='Sesi cycle count tidak ditemukan')"
+      },
+      {
+        "id": "RF-08",
+        "invariant": "A-only history excludes A+B count",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "RF-08",
+        "invariant": "A-only detail of A+B count denied",
+        "pass": true,
+        "detail": ""
+      }
+    ],
+    "tail": "\n  \"detail\": \"['HTTPException', 0, 0]\"\n },\n {\n  \"id\": \"GN-04\",\n  \"invariant\": \"sample of A cannot take material from roll of B\",\n  \"pass\": true,\n  \"detail\": \"[\\\"RndError('Roll tidak ditemukan.')\\\", {'length_remaining': 10.0}]\"\n },\n {\n  \"id\": \"CX-02\",\n  \"invariant\": \"store credit cannot be allocated to order of other customer/entity\",\n  \"pass\": true,\n  \"detail\": \"['HTTPException', 400]\"\n },\n {\n  \"id\": \"GN-10\",\n  \"invariant\": \"POS best-sellers for scope A excludes B orders\",\n  \"pass\": true,\n  \"detail\": \"7\"\n },\n {\n  \"id\": \"GN-16\",\n  \"invariant\": \"digest of A-only user excludes entity B notifications\",\n  \"pass\": true,\n  \"detail\": \"1\"\n },\n {\n  \"id\": \"GN-16\",\n  \"invariant\": \"scheduled AI report is private (recipient_role empty)\",\n  \"pass\": true,\n  \"detail\": \"\"\n },\n {\n  \"id\": \"RF-09\",\n  \"invariant\": \"multi-entity count session is scannable by its creator scope\",\n  \"pass\": false,\n  \"detail\": \"HTTPException(status_code=404, detail='Sesi verifikasi tidak ditemukan')\"\n },\n {\n  \"id\": \"RF-08\",\n  \"invariant\": \"A-only user cannot complete A+B session\",\n  \"pass\": true,\n  \"detail\": \"HTTPException(status_code=404, detail='Sesi cycle count tidak ditemukan')\"\n },\n {\n  \"id\": \"RF-08\",\n  \"invariant\": \"A-only history excludes A+B count\",\n  \"pass\": true,\n  \"detail\": \"\"\n },\n {\n  \"id\": \"RF-08\",\n  \"invariant\": \"A-only detail of A+B count denied\",\n  \"pass\": true,\n  \"detail\": \"\"\n }\n]\nSUMMARY pass=12 fail=1\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-01-P01-ix06-cx10/repro_cx10.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 5.6,
+    "log": "test-logs\\extended-03-repro_cx10.log",
+    "cases": [
+      {
+        "id": "CX-10",
+        "invariant": "control: signed version carries esign block",
+        "pass": true,
+        "detail": "{'code': 'GPJI51J2', 'signers': 'Signer Versi 1', 'people': [{'name': 'Signer Versi 1', 'role': 'Direktur', 'at': '2026-10-05 14:08:07'}], 'signed_at': '2026-10-05 14:08:07', 'hash_short': '30de6daea8ba998ea75c2cde…', 'verify_url': 'http://127.0.0.1:8009/verify-document/GPJI51J2', 'qr_src': 'data:im"
+      },
+      {
+        "id": "CX-10",
+        "invariant": "control: verify on unchanged doc = current",
+        "pass": true,
+        "detail": "current"
+      },
+      {
+        "id": "CX-10",
+        "invariant": "changed doc does NOT carry old signature",
+        "pass": true,
+        "detail": "None"
+      },
+      {
+        "id": "CX-10",
+        "invariant": "changed doc marked esign_superseded",
+        "pass": true,
+        "detail": "{'message': 'Isi dokumen berubah setelah ditandatangani — tanda tangan lama tidak berlaku untuk versi ini.', 'last_signed_at': '2026-10-05 14:08:07'}"
+      },
+      {
+        "id": "CX-10",
+        "invariant": "old QR reports superseded (verifies old artifact only)",
+        "pass": true,
+        "detail": "superseded"
+      },
+      {
+        "id": "CX-10",
+        "invariant": "new version gets NEW verification code",
+        "pass": true,
+        "detail": "['GPJI51J2', '69A1IK15']"
+      },
+      {
+        "id": "CX-10",
+        "invariant": "old code not mixed with new signer",
+        "pass": true,
+        "detail": "[{'name': 'Signer Versi 1', 'role': 'Direktur', 'signed_at': '2026-10-05T14:08:07.447779+00:00'}]"
+      },
+      {
+        "id": "CX-10",
+        "invariant": "new PDF carries only new-version signature",
+        "pass": true,
+        "detail": "{'code': '69A1IK15', 'signers': 'Signer Versi 2', 'people': [{'name': 'Signer Versi 2', 'role': 'Direktur', 'at': '2026-10-05 14:08:07'}], 'signed_at': '2026-10-05 14:08:07', 'hash_short': 'c86d636ae118dfc01a5e80e9…', 'verify_url': 'http://127.0.0.1:8009/verify-document/69A1IK15', 'qr_src': 'data:im"
+      },
+      {
+        "id": "CX-10",
+        "invariant": "signed snapshot stored immutably with old content",
+        "pass": true,
+        "detail": "True"
+      },
+      {
+        "id": "CX-10",
+        "invariant": "content hash stable across prints (no print timestamp)",
+        "pass": true,
+        "detail": "['c86d636ae118', 'c86d636ae118']"
+      }
+    ],
+    "tail": "nvariant\": \"content hash stable across prints (no print timestamp)\",\n  \"pass\": true,\n  \"detail\": \"['c86d636ae118', 'c86d636ae118']\"\n }\n]\nSUMMARY pass=10 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-01-P01-ix06-cx10/repro_ix06.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 4.93,
+    "log": "test-logs\\extended-04-repro_ix06.log",
+    "cases": [
+      {
+        "id": "IX-06",
+        "invariant": "A-only edit (default layer) succeeds on A",
+        "pass": true,
+        "detail": "200 A=2.75"
+      },
+      {
+        "id": "IX-06",
+        "invariant": "A-only edit does NOT change B",
+        "pass": true,
+        "detail": "B before=1.5 after=1.5"
+      },
+      {
+        "id": "IX-06",
+        "invariant": "PUT response == reload (same scope)",
+        "pass": true,
+        "detail": "resp=2.75 reload=2.75"
+      },
+      {
+        "id": "IX-06",
+        "invariant": "A-only cannot write global baseline",
+        "pass": true,
+        "detail": "403 B=1.5"
+      },
+      {
+        "id": "IX-06",
+        "invariant": "A-only cannot write entity layer of B via Pusat Pengaturan",
+        "pass": true,
+        "detail": "403 B=1.5"
+      },
+      {
+        "id": "IX-06",
+        "invariant": "A-only cannot write global via Pusat Pengaturan",
+        "pass": true,
+        "detail": "403 B=1.5"
+      },
+      {
+        "id": "IX-06",
+        "invariant": "A-only can still write own entity layer via Pusat Pengaturan (control)",
+        "pass": true,
+        "detail": "200 {\"saved\":[{\"id\":\"cfgv_86a13fa61eb4\",\"key\":\"hr.overtime.multiplier\",\"scope_type\":\"entity\",\"scope_id\":\"ent_ksc\",\"value\":2.75,\"prev_value\":2.75,\"prev_sou"
+      },
+      {
+        "id": "IX-06",
+        "invariant": "admin global edit changes inheriting B",
+        "pass": true,
+        "detail": "200 B=1.9"
+      },
+      {
+        "id": "IX-06",
+        "invariant": "admin global edit keeps A override",
+        "pass": true,
+        "detail": "A=2.75"
+      },
+      {
+        "id": "IX-06",
+        "invariant": "invalid value rejected 400",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "IX-06",
+        "invariant": "unknown leaf rejected 400",
+        "pass": true,
+        "detail": "400"
+      }
+    ],
+    "tail": "ass\": true,\n  \"detail\": \"400\"\n },\n {\n  \"id\": \"IX-06\",\n  \"invariant\": \"unknown leaf rejected 400\",\n  \"pass\": true,\n  \"detail\": \"400\"\n }\n]\nSUMMARY pass=11 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-01-P06-qc-sampling/repro_pg01_ix15.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 8.86,
+    "log": "test-logs\\extended-05-repro_pg01_ix15.log",
+    "cases": [
+      {
+        "id": "PG01",
+        "invariant": "default plan = Cek semua (all rolls required)",
+        "pass": true,
+        "detail": "{'mode': 'all', 'sample_pct': None, 'sample_min': None, 'planned_by': None, 'planned_at': None, 'total_rolls': 3, 'inspected_rolls': 0, 'required_rolls': 3, 'coverage_pct': 0.0, 'met': False}"
+      },
+      {
+        "id": "PG01",
+        "invariant": "Cek semua: decision blocked while rolls uninspected",
+        "pass": true,
+        "detail": "Inspeksi belum memenuhi rencana 'Cek semua': 0/3 roll wajib diinspeksi."
+      },
+      {
+        "id": "PG01",
+        "invariant": "blocked decision leaves task qc_pending (no mutation)",
+        "pass": true,
+        "detail": "qc_pending"
+      },
+      {
+        "id": "PG01",
+        "invariant": "invalid plan ('xyz', 10, 1) rejected",
+        "pass": true,
+        "detail": "Mode QC harus 'all' (Cek semua) atau 'sampling'."
+      },
+      {
+        "id": "PG01",
+        "invariant": "invalid plan ('sampling', 0, 1) rejected",
+        "pass": true,
+        "detail": "Persentase sampel harus 1–100%."
+      },
+      {
+        "id": "PG01",
+        "invariant": "invalid plan ('sampling', 10, 0) rejected",
+        "pass": true,
+        "detail": "Minimal roll sampel harus ≥ 1."
+      },
+      {
+        "id": "PG01",
+        "invariant": "Sampling 34% of 3 rolls → 2 required, plan recorded",
+        "pass": true,
+        "detail": "{'mode': 'sampling', 'sample_pct': 34.0, 'sample_min': 1, 'planned_by': 'Audit QC', 'planned_at': '2026-10-05T14:08:21.826584+00:00', 'total_rolls': 3, 'inspected_rolls': 0, 'required_rolls': 2, 'coverage_pct': 0.0, 'met': False}"
+      },
+      {
+        "id": "PG01",
+        "invariant": "Sampling: 1/2 inspected still blocked",
+        "pass": true,
+        "detail": "Inspeksi belum memenuhi rencana 'Sampling': 1/2 roll wajib diinspeksi."
+      },
+      {
+        "id": "IX-15",
+        "invariant": "partial decision (4 of 30) rejected before mutation",
+        "pass": true,
+        "detail": "Keputusan QC wajib mencakup seluruh qty karantina (30.0); sisa 26.0 belum diputuskan."
+      },
+      {
+        "id": "PG01",
+        "invariant": "Sampling met: full decision succeeds",
+        "pass": true,
+        "detail": "completed"
+      },
+      {
+        "id": "PG01",
+        "invariant": "coverage recorded on task (mode, 2/3, applies to uninspected)",
+        "pass": true,
+        "detail": "{'mode': 'sampling', 'sample_pct': 34.0, 'sample_min': 1, 'planned_by': 'Audit QC', 'planned_at': '2026-10-05T14:08:21.826584+00:00', 'total_rolls': 3, 'inspected_rolls': 2, 'required_rolls': 2, 'coverage_pct': 66.7, 'met': True, 'decision_applies_to_uninspected': True}"
+      },
+      {
+        "id": "IX-15",
+        "invariant": "no residual quarantine after terminal task",
+        "pass": true,
+        "detail": "residual check"
+      },
+      {
+        "id": "PG01",
+        "invariant": "plan locked after task leaves qc_pending",
+        "pass": true,
+        "detail": ""
+      }
+    ],
+    "tail": ": \"residual check\"\n },\n {\n  \"id\": \"PG01\",\n  \"invariant\": \"plan locked after task leaves qc_pending\",\n  \"pass\": true,\n  \"detail\": \"\"\n }\n]\nSUMMARY pass=13 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-02-P14-coverage-uat/repro_p14b_cases.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 7.63,
+    "log": "test-logs\\extended-06-repro_p14b_cases.log",
+    "cases": [
+      {
+        "id": "PRET-04",
+        "invariant": "rantai submit→approve→ship→supplier-reject→goods-back sukses",
+        "pass": true,
+        "detail": "{'submit': 200, 'approve': 200, 'ship': 200, 'reject': 200, 'goods_back': 200}"
+      },
+      {
+        "id": "PRET-04",
+        "invariant": "roll kembali available dengan panjang utuh",
+        "pass": true,
+        "detail": "available 19.01"
+      },
+      {
+        "id": "PRET-04",
+        "invariant": "status supplier goods_back tanpa nota debit/AP credit",
+        "pass": true,
+        "detail": "{'supplier_status': 'goods_back', 'debit_note_number': '', 'ap_credit_amount': None, 'outcome': None}"
+      },
+      {
+        "id": "PRET-04",
+        "invariant": "tidak ada jurnal settlement untuk retur ditolak",
+        "pass": true,
+        "detail": "jurnal ref=0 total Δ=0"
+      },
+      {
+        "id": "PRET-04",
+        "invariant": "goods-back ulang ditolak (idempoten, tanpa mutasi kedua)",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "DESIGN-01",
+        "invariant": "permintaan → desain Studio tertaut oleh desainer yang ditugaskan",
+        "pass": true,
+        "detail": "200"
+      },
+      {
+        "id": "DESIGN-01",
+        "invariant": "status permintaan mengikuti desain: diajukan → revisi → disetujui",
+        "pass": false,
+        "detail": "in_progress→delivered→delivered→delivered http 200/403/400/403"
+      },
+      {
+        "id": "DESIGN-01",
+        "invariant": "desainer tidak bisa ACC desainnya sendiri",
+        "pass": true,
+        "detail": "403"
+      },
+      {
+        "id": "DESIGN-01",
+        "invariant": "nilai ACC tersimpan & lebih dari satu versi/riwayat revisi",
+        "pass": false,
+        "detail": "{'status': 'pending_approval', 'score': None, 'version': 1}"
+      },
+      {
+        "id": "DESIGN",
+        "invariant": "eksekusi skenario",
+        "pass": false,
+        "detail": "KeyError('id')"
+      },
+      {
+        "id": "AUTH-03",
+        "invariant": "role custom: customer.view diizinkan (200)",
+        "pass": true,
+        "detail": "200"
+      },
+      {
+        "id": "AUTH-03",
+        "invariant": "role custom: customer.update ditolak 403 tanpa mutasi",
+        "pass": true,
+        "detail": "403"
+      },
+      {
+        "id": "AUTH-03",
+        "invariant": "role custom: modul lain (accounting) ditolak",
+        "pass": true,
+        "detail": "403"
+      },
+      {
+        "id": "AUTH-05",
+        "invariant": "eksekusi skenario",
+        "pass": false,
+        "detail": "KeyError('matrix')"
+      },
+      {
+        "id": "SALE-02",
+        "invariant": "premis N/A: belum ada laci kas/shift kasir (buka ulang kasus bila dibangun)",
+        "pass": true,
+        "detail": "{'shift_close': False, 'split_tender': False}"
+      },
+      {
+        "id": "SALE-02",
+        "invariant": "premis N/A: checkout POS membuat Sales Order (pembayaran via Penerimaan Piutang)",
+        "pass": true,
+        "detail": ""
+      }
+    ],
+    "tail": "SALE-02\",\n  \"invariant\": \"premis N/A: checkout POS membuat Sales Order (pembayaran via Penerimaan Piutang)\",\n  \"pass\": true,\n  \"detail\": \"\"\n }\n]\npass=12 fail=4\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-02-P14-coverage-uat/repro_p14_history.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 75.49,
+    "log": "test-logs\\extended-07-repro_p14_history.log",
+    "cases": [
+      {
+        "id": "AUDIT-01",
+        "invariant": "riwayat akun GL: nilai lama → baru per field",
+        "pass": true,
+        "detail": "{'field': 'name', 'from': 'TEST_P14_8bd898 Lama', 'to': 'TEST_P14_8bd898 Baru'}"
+      },
+      {
+        "id": "AUDIT-01",
+        "invariant": "riwayat akun GL: sidik isi utuh (integrity ok)",
+        "pass": true,
+        "detail": "ok"
+      },
+      {
+        "id": "AUDIT-01",
+        "invariant": "riwayat akun GL: pelaku & sumber tercatat",
+        "pass": true,
+        "detail": "user_admin_01"
+      },
+      {
+        "id": "AUDIT-01",
+        "invariant": "baris audit yang diubah sesudahnya terdeteksi (mismatch)",
+        "pass": true,
+        "detail": "mismatch"
+      },
+      {
+        "id": "AUDIT-01",
+        "invariant": "riwayat pelanggan: nilai lama → baru",
+        "pass": true,
+        "detail": "200 {'field': 'pic_name', 'from': 'Pak Hendra', 'to': 'Test_p14_8bd898 Pic'}"
+      },
+      {
+        "id": "AUDIT-01",
+        "invariant": "riwayat supplier: nilai lama → baru hanya field yang diubah",
+        "pass": true,
+        "detail": "200 diff=[{'field': 'notes', 'from': '', 'to': 'TEST_P14_8bd898 supplier'}]"
+      },
+      {
+        "id": "AUDIT-01",
+        "invariant": "riwayat product: nilai lama → baru hanya field yang diubah",
+        "pass": false,
+        "detail": "400 diff=None"
+      },
+      {
+        "id": "AUDIT-01",
+        "invariant": "riwayat bank_account: nilai lama → baru hanya field yang diubah",
+        "pass": true,
+        "detail": "200 diff=[{'field': 'note', 'from': '', 'to': 'TEST_P14_8bd898 bank_account'}]"
+      },
+      {
+        "id": "AUDIT-02",
+        "invariant": "karyawan uji tersedia",
+        "pass": false,
+        "detail": "tidak ada karyawan bergaji"
+      },
+      {
+        "id": "AUTH-01",
+        "invariant": "login sandi salah ditolak 401",
+        "pass": true,
+        "detail": "401"
+      },
+      {
+        "id": "AUTH-01",
+        "invariant": "login valid → /auth/me 200",
+        "pass": true,
+        "detail": "200/200"
+      },
+      {
+        "id": "AUDIT-01",
+        "invariant": "sales tanpa audit.view ditolak 403 pada riwayat",
+        "pass": true,
+        "detail": "403"
+      },
+      {
+        "id": "AUTH-01",
+        "invariant": "token dicabut setelah logout → 401",
+        "pass": true,
+        "detail": "401"
+      },
+      {
+        "id": "OPS-01",
+        "invariant": "seluruh indeks INDEX_SPECS ada di DB sesudah bootstrap",
+        "pass": true,
+        "detail": "[]"
+      },
+      {
+        "id": "RF-09",
+        "invariant": "sesi cycle count multi-entitas dapat discan oleh scope pembuatnya",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "RF-08",
+        "invariant": "user A-saja tidak dapat memindai sesi A+B",
+        "pass": true,
+        "detail": "403"
+      },
+      {
+        "id": "AUDIT-03",
+        "invariant": "pemindai secret: 0 temuan (exit 0)",
+        "pass": true,
+        "detail": "verify_no_secrets: 0 temuan"
+      },
+      {
+        "id": "AUDIT-03",
+        "invariant": "workflow CI menjalankan pemindai secret",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "AUDIT-03",
+        "invariant": "pre-commit hook memblokir bila secret terdeteksi",
+        "pass": true,
+        "detail": ""
+      }
+    ],
+    "tail": "  \"detail\": \"\"\n },\n {\n  \"id\": \"AUDIT-03\",\n  \"invariant\": \"pre-commit hook memblokir bila secret terdeteksi\",\n  \"pass\": true,\n  \"detail\": \"\"\n }\n]\npass=17 fail=2\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P17-planned-coverage/repro_p17a.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 11.12,
+    "log": "test-logs\\extended-08-repro_p17a.log",
+    "cases": [
+      {
+        "id": "GRN-04",
+        "invariant": "3 baris (2 tugas) sesuai SJ → rekonsiliasi tanpa pemblokir",
+        "pass": true,
+        "detail": "[]"
+      },
+      {
+        "id": "GRN-04",
+        "invariant": "GRN closed; semua baris terposting done",
+        "pass": true,
+        "detail": "closed"
+      },
+      {
+        "id": "GRN-04",
+        "invariant": "dua baris SJ ke tugas yang sama diposting SEKALI sebagai satu grup",
+        "pass": true,
+        "detail": "[{'lines': [1], 'status': 'done', 'result_ref': 'wms_test_p17a_aab877_0', 'remainder': {'created': False, 'reason': 'fulfilled', 'remaining': 0.0}}, {'lines': [2, 3], 'status': 'done', 'result_ref': 'wms_test_p17a_aab877_1', 'remainder': {'created': True, 'task_id': 'wms_c00068a3e8f5', 'remaining': "
+      },
+      {
+        "id": "GRN-04",
+        "invariant": "PO received_qty: A 60, B 70 (50+20)",
+        "pass": true,
+        "detail": "{'prod_songket_palembang': 60.0, 'prod_jumputan_palembang': 70.0}"
+      },
+      {
+        "id": "GRN-04",
+        "invariant": "baris penuh tidak membentuk tugas sisa",
+        "pass": true,
+        "detail": "{'created': False, 'reason': 'fulfilled', 'remaining': 0.0}"
+      },
+      {
+        "id": "GRN-04",
+        "invariant": "baris parsial → tepat SATU tugas sisa expected 50, remainder_of tugas asal",
+        "pass": true,
+        "detail": "({'created': True, 'task_id': 'wms_c00068a3e8f5', 'remaining': 50.0}, [('wms_c00068a3e8f5', 50.0)])"
+      },
+      {
+        "id": "GRN-04",
+        "invariant": "ensure_remainder_task ulang idempoten (exists, tidak menggandakan)",
+        "pass": true,
+        "detail": "{'created': False, 'reason': 'exists', 'task_id': 'wms_c00068a3e8f5', 'remaining': 50.0}"
+      },
+      {
+        "id": "GRN-04",
+        "invariant": "close ulang ditolak 409; roll GRN tetap 4",
+        "pass": true,
+        "detail": "409 rolls=4"
+      },
+      {
+        "id": "GRN-04",
+        "invariant": "kiriman sisa lunas → tanpa tugas sisa baru, PO B 120, tak ada tugas aktif",
+        "pass": true,
+        "detail": "({'created': False, 'reason': 'po_closed'}, {'prod_songket_palembang': 60.0, 'prod_jumputan_palembang': 120.0})"
+      },
+      {
+        "id": "GRN-04",
+        "invariant": "Σ panjang roll dari 2 GRN = Σ received PO (180)",
+        "pass": true,
+        "detail": "180.0"
+      }
+    ],
+    "tail": "g': 120.0})\"\n },\n {\n  \"id\": \"GRN-04\",\n  \"invariant\": \"Σ panjang roll dari 2 GRN = Σ received PO (180)\",\n  \"pass\": true,\n  \"detail\": \"180.0\"\n }\n]\npass=10 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P17-planned-coverage/repro_p17b.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 5.63,
+    "log": "test-logs\\extended-09-repro_p17b.log",
+    "cases": [
+      {
+        "id": "GRN-06",
+        "invariant": "berat netto beda >toleransi → weight_mismatch (tidak memblokir)",
+        "pass": true,
+        "detail": "['weight_mismatch', 'not_on_dn']"
+      },
+      {
+        "id": "GRN-06",
+        "invariant": "barang dihitung tanpa qty di SJ → not_on_dn memblokir",
+        "pass": true,
+        "detail": "['weight_mismatch', 'not_on_dn']"
+      },
+      {
+        "id": "GRN-06",
+        "invariant": "tutup ditolak selama not_on_dn terbuka (BLOCKERS_OPEN)",
+        "pass": true,
+        "detail": "400 {\"detail\":{\"code\":\"BLOCKERS_OPEN\",\"keys\":[\"L2:not_on_dn\"],\"message\":\"1 selisih pemblokir belum diselesaikan: baris 2 not"
+      },
+      {
+        "id": "GRN-06",
+        "invariant": "aksi override di luar daftar ditolak 400",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "GRN-06",
+        "invariant": "penghitung gudang tidak bisa override selisih (403)",
+        "pass": true,
+        "detail": "403"
+      },
+      {
+        "id": "GRN-06",
+        "invariant": "override approver tersimpan (aksi, alasan, oleh)",
+        "pass": true,
+        "detail": "{'action': 'accept_note', 'reason': 'TEST_P17A_6187bf supplier kirim lebih', 'by': 'Budi Santoso', 'at': '2026-10-05T14:10:02.696434+00:00'}"
+      },
+      {
+        "id": "GRN-06",
+        "invariant": "sesudah override GRN closed, stok B 15 diterima sesuai hitung (bukan SJ)",
+        "pass": true,
+        "detail": "{'prod_songket_palembang': 60.0, 'prod_jumputan_palembang': 15.0}"
+      },
+      {
+        "id": "GRN-06",
+        "invariant": "override tercatat di audit dengan alasan",
+        "pass": true,
+        "detail": "True"
+      }
+    ],
+    "tail": "an_palembang': 15.0}\"\n },\n {\n  \"id\": \"GRN-06\",\n  \"invariant\": \"override tercatat di audit dengan alasan\",\n  \"pass\": true,\n  \"detail\": \"True\"\n }\n]\npass=8 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P17-planned-coverage/repro_p17c.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 8.21,
+    "log": "test-logs\\extended-10-repro_p17c.log",
+    "cases": [
+      {
+        "id": "PROD-04",
+        "invariant": "rencana bahan menandai komponen kurang (batik cukup, lurik kurang)",
+        "pass": true,
+        "detail": "(320.0, 580.0, {'prod_batik_mega': True, 'prod_lurik_classic': False})"
+      },
+      {
+        "id": "PROD-04",
+        "invariant": "selesai WO ditolak 400 sebelum mutasi; stok & status tetap, tanpa kunci",
+        "pass": true,
+        "detail": "400 {\"detail\":\"Stok bahan Lurik Klasik Solo tidak cukup: butuh 600 yard, tersedia 580 (roll ditahan QC/dipesan tidak dihitun"
+      },
+      {
+        "id": "PROD-04",
+        "invariant": "shortage komponen ke-2 saat konsumsi → 409 'Tidak ada stok yang berubah'",
+        "pass": true,
+        "detail": "HTTPException(status_code=409, detail='Stok bahan prod_lurik_classic tidak cukup saat dikonsumsi: butuh 600, terambil 580 (dipakai proses lain/ditahan QC). Tidak ada stok yang berubah.')"
+      },
+      {
+        "id": "PROD-04",
+        "invariant": "konsumsi batik dibalik penuh: panjang tiap roll & saldo identik snapshot",
+        "pass": true,
+        "detail": "{'prod_lurik_classic': -0.0, 'prod_batik_mega': -0.0}"
+      },
+      {
+        "id": "PROD-04",
+        "invariant": "WO tetap released tanpa kunci/completion, tanpa roll output & jurnal",
+        "pass": true,
+        "detail": "released"
+      },
+      {
+        "id": "PROD-06",
+        "invariant": "crash sesudah konsumsi: tahap 'consumed' tersimpan, kunci tertahan + failed_at",
+        "pass": true,
+        "detail": "consumed"
+      },
+      {
+        "id": "PROD-06",
+        "invariant": "operator menekan Selesai lagi → 409 SAGA_IN_PROGRESS (tidak menggandakan)",
+        "pass": true,
+        "detail": "409"
+      },
+      {
+        "id": "PROD-06",
+        "invariant": "admin melihat efek hilir; lepas tanpa pengakuan efek 409, dengan pengakuan 200",
+        "pass": true,
+        "detail": "([{'collection': 'inventory_movements', 'count': 2, 'samples': ['mov_122244bdf2f9', 'mov_b5f080c8e925']}], 409, 200)"
+      },
+      {
+        "id": "PROD-06",
+        "invariant": "ulang melanjutkan dari 'consumed': bahan terpakai SEKALI (batik 5, lurik 10), 1 roll output, completed",
+        "pass": true,
+        "detail": "(200, {'prod_lurik_classic': 10.0, 'prod_batik_mega': 5.0}, 1)"
+      },
+      {
+        "id": "PROD-06",
+        "invariant": "dibunuh di tengah: stage 'consuming', batik terambil sebagian, kunci aktif tanpa failed_at",
+        "pass": true,
+        "detail": "({'prod_batik_mega': 4.0}, 'consuming')"
+      },
+      {
+        "id": "PROD-06",
+        "invariant": "kunci yang masih 'aktif' tidak bisa dilepas (409)",
+        "pass": true,
+        "detail": "409"
+      },
+      {
+        "id": "PROD-06",
+        "invariant": "sesudah lepas kunci, ulang membalik sisa konsumsi lama lalu konsumsi penuh SEKALI",
+        "pass": true,
+        "detail": "(200, 200, {'prod_lurik_classic': 8.0, 'prod_batik_mega': 4.0})"
+      },
+      {
+        "id": "PROD-06",
+        "invariant": "jejak pembalikan tercatat (mutasi production_consume_reversal)",
+        "pass": true,
+        "detail": "1"
+      }
+    ],
+    "tail": "\n },\n {\n  \"id\": \"PROD-06\",\n  \"invariant\": \"jejak pembalikan tercatat (mutasi production_consume_reversal)\",\n  \"pass\": true,\n  \"detail\": \"1\"\n }\n]\npass=13 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P17-planned-coverage/repro_p17d.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 3.93,
+    "log": "test-logs\\extended-11-repro_p17d.log",
+    "cases": [
+      {
+        "id": "COMM-04",
+        "invariant": "akrual komisi 1.000.000: Dr Beban 6-5000 / Cr Hutang Insentif 2-1500",
+        "pass": true,
+        "detail": "1000000.0"
+      },
+      {
+        "id": "COMM-04",
+        "invariant": "posting ulang tanpa perubahan komisi tidak membuat jurnal baru",
+        "pass": true,
+        "detail": "None"
+      },
+      {
+        "id": "COMM-04",
+        "invariant": "reversal: komisi turun ke 600.000 → jurnal koreksi -400.000, saldo 2-1500 = 600.000",
+        "pass": true,
+        "detail": "('incentive_accrual_adj', 600000.0, 600000.0)"
+      },
+      {
+        "id": "COMM-04",
+        "invariant": "koreksi idempoten (klik ulang tidak menggandakan)",
+        "pass": true,
+        "detail": "600000.0"
+      },
+      {
+        "id": "COMM-04",
+        "invariant": "settlement payroll: komisi slip 750.000 → akrual di-true-up dulu, 2-1500 periode = 0",
+        "pass": true,
+        "detail": "0.0"
+      },
+      {
+        "id": "COMM-04",
+        "invariant": "beban insentif periode = komisi dibayar (750.000), tanpa beban ganda",
+        "pass": true,
+        "detail": "-750000.0"
+      },
+      {
+        "id": "COMM-04",
+        "invariant": "semua jurnal komisi seimbang",
+        "pass": true,
+        "detail": "[]"
+      }
+    ],
+    "tail": "ss\": true,\n  \"detail\": \"-750000.0\"\n },\n {\n  \"id\": \"COMM-04\",\n  \"invariant\": \"semua jurnal komisi seimbang\",\n  \"pass\": true,\n  \"detail\": \"[]\"\n }\n]\npass=7 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P17-planned-coverage/repro_p17e.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 5.21,
+    "log": "test-logs\\extended-12-repro_p17e.log",
+    "cases": [
+      {
+        "id": "COMM-05",
+        "invariant": "6 penetapan harga bersamaan (5 manual + 1 impor) semuanya tersimpan",
+        "pass": true,
+        "detail": "[200, 200, 200, 200, 200, 200]"
+      },
+      {
+        "id": "COMM-05",
+        "invariant": "tepat SATU record harga yang berlaku sesudah balapan",
+        "pass": true,
+        "detail": "[(560000.0, '')]"
+      },
+      {
+        "id": "COMM-05",
+        "invariant": "harga efektif = record terakhir dibuat (sumber kanonik)",
+        "pass": false,
+        "detail": "(170200.0, 'cpr_fd61c019ea29', 'cpr_612294717466')"
+      },
+      {
+        "id": "COMM-05",
+        "invariant": "hapus menang atas ubah bersamaan: record nonaktif",
+        "pass": true,
+        "detail": "(400, 200, 'inactive')"
+      },
+      {
+        "id": "COMM-05",
+        "invariant": "ubah record yang sudah dihapus ditolak (bukan menulis diam-diam)",
+        "pass": true,
+        "detail": "(400, 560000.0)"
+      },
+      {
+        "id": "COMM-05",
+        "invariant": "sesudah hapus, harga efektif bukan record yang dihapus",
+        "pass": true,
+        "detail": "('customer', 'cpr_fd61c019ea29')"
+      },
+      {
+        "id": "COMM-05",
+        "invariant": "hapus ganda bersamaan: satu efek (satu jejak audit nonaktif)",
+        "pass": true,
+        "detail": "(200, 200, 1)"
+      }
+    ],
+    "tail": " \"id\": \"COMM-05\",\n  \"invariant\": \"hapus ganda bersamaan: satu efek (satu jejak audit nonaktif)\",\n  \"pass\": true,\n  \"detail\": \"(200, 200, 1)\"\n }\n]\npass=6 fail=1\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P17-planned-coverage/repro_p17f.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 3.4,
+    "log": "test-logs\\extended-13-repro_p17f.log",
+    "cases": [
+      {
+        "id": "DESIGN-02",
+        "invariant": "barang supplier A diacu ke sample yang DIMENANGKAN A (bukan sample terbaru milik B)",
+        "pass": true,
+        "detail": "{'baseline_sample_id': 'smp_test_p17f_ed07fd_A', 'baseline_sample_number': 'TEST_P17F_ed07fd/SMP-A', 'baseline_contract_id': 'sct_A', 'baseline_round_no': 2, 'baseline_supplier_id': 'sup_A', 'baseline_color': 'Merah A (RA)'}"
+      },
+      {
+        "id": "DESIGN-02",
+        "invariant": "acuan membawa kontrak & round ACC pemenang",
+        "pass": true,
+        "detail": "{'baseline_sample_id': 'smp_test_p17f_ed07fd_A', 'baseline_sample_number': 'TEST_P17F_ed07fd/SMP-A', 'baseline_contract_id': 'sct_A', 'baseline_round_no': 2, 'baseline_supplier_id': 'sup_A', 'baseline_color': 'Merah A (RA)'}"
+      },
+      {
+        "id": "DESIGN-02",
+        "invariant": "barang supplier B → sample B",
+        "pass": true,
+        "detail": "{'baseline_sample_id': 'smp_test_p17f_ed07fd_B', 'baseline_sample_number': 'TEST_P17F_ed07fd/SMP-B', 'baseline_contract_id': 'sct_B', 'baseline_round_no': 2, 'baseline_supplier_id': 'sup_B', 'baseline_color': 'Merah B (RB)'}"
+      },
+      {
+        "id": "DESIGN-02",
+        "invariant": "supplier tanpa sample sendiri → acuan standar terbaru yang disetujui (B), bukan yang dibatalkan",
+        "pass": true,
+        "detail": "{'baseline_sample_id': 'smp_test_p17f_ed07fd_B', 'baseline_sample_number': 'TEST_P17F_ed07fd/SMP-B', 'baseline_contract_id': 'sct_B', 'baseline_round_no': 2, 'baseline_supplier_id': 'sup_B', 'baseline_color': 'Merah B (RB)'}"
+      },
+      {
+        "id": "DESIGN-02",
+        "invariant": "sample badan usaha lain tidak dipakai sebagai acuan",
+        "pass": true,
+        "detail": "{}"
+      },
+      {
+        "id": "DESIGN-02",
+        "invariant": "SPK inspeksi menyimpan acuan sample A + tautan dokumen 'references'",
+        "pass": true,
+        "detail": "('TEST_P17F_ed07fd/SMP-A', True)"
+      }
+    ],
+    "tail": "iant\": \"SPK inspeksi menyimpan acuan sample A + tautan dokumen 'references'\",\n  \"pass\": true,\n  \"detail\": \"('TEST_P17F_ed07fd/SMP-A', True)\"\n }\n]\npass=6 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P17-planned-coverage/repro_p17g.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 4.71,
+    "log": "test-logs\\extended-14-repro_p17g.log",
+    "cases": [
+      {
+        "id": "DESIGN-05",
+        "invariant": "ambil bahan 2,5: biaya = unit_cost × qty, cost_total sample naik sebesar itu",
+        "pass": true,
+        "detail": "(200, 305250.0, 305250.0)"
+      },
+      {
+        "id": "DESIGN-05",
+        "invariant": "stok: roll berkurang 2,5 + mutasi sample_issue -2,5 ber-referensi sample",
+        "pass": true,
+        "detail": "(137.5, -2.5)"
+      },
+      {
+        "id": "DESIGN-05",
+        "invariant": "GL: Dr 6-7000 Beban Sample / Cr 1-1300 Persediaan = biaya bahan",
+        "pass": true,
+        "detail": "{'6-7000': 305250.0, '1-1300': -305250.0}"
+      },
+      {
+        "id": "DESIGN-05",
+        "invariant": "dua ambil bersamaan pada roll sama: hasil roll = Σ yang sukses (tanpa lost update)",
+        "pass": true,
+        "detail": "(200, 200, 135.5, 3)"
+      },
+      {
+        "id": "DESIGN-05",
+        "invariant": "rekonsiliasi: Σ biaya bahan = Σ jurnal; cost_total = biaya round + bahan",
+        "pass": true,
+        "detail": "(549450.0, 549450.0, 549450.0, 0.0)"
+      },
+      {
+        "id": "DESIGN-05",
+        "invariant": "ambil melebihi sisa roll ditolak 400 tanpa efek",
+        "pass": true,
+        "detail": "400"
+      }
+    ],
+    "tail": "450.0, 0.0)\"\n },\n {\n  \"id\": \"DESIGN-05\",\n  \"invariant\": \"ambil melebihi sisa roll ditolak 400 tanpa efek\",\n  \"pass\": true,\n  \"detail\": \"400\"\n }\n]\npass=6 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P17-planned-coverage/repro_p17h.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 3.85,
+    "log": "test-logs\\extended-15-repro_p17h.log",
+    "cases": [
+      {
+        "id": "OPS-03",
+        "invariant": "dry-run: 3 akan dibuat, 1 error (sales tak dikenal), tanpa menulis",
+        "pass": true,
+        "detail": "(3, ['Baris 5: sales dengan email tidakada@kainnusantara.id tidak ditemukan'])"
+      },
+      {
+        "id": "OPS-03",
+        "invariant": "impor terputus: 2 baris pertama masuk",
+        "pass": true,
+        "detail": "{'total': 2, 'created': 2, 'updated': 0, 'errors': [], 'dry_run': False, 'entity_id': 'ent_ksc'}"
+      },
+      {
+        "id": "OPS-03",
+        "invariant": "lanjut dengan file penuh: hanya sisa baris yang dibuat (1), 2 diperbarui, 1 error",
+        "pass": true,
+        "detail": "{'total': 4, 'created': 1, 'updated': 2, 'errors': ['Baris 5: sales dengan email tidakada@kainnusantara.id tidak ditemukan'], 'dry_run': False, 'entity_id': 'ent_ksc'}"
+      },
+      {
+        "id": "OPS-03",
+        "invariant": "impor ulang idempoten: 0 dibuat, jumlah tetap 3, kode unik sesuai file",
+        "pass": true,
+        "detail": "({'total': 4, 'created': 0, 'updated': 3, 'errors': ['Baris 5: sales dengan email tidakada@kainnusantara.id tidak ditemukan'], 'dry_run': False, 'entity_id': 'ent_ksc'}, ['TEST_P17H_76009C-C1', 'TEST_P17H_76009C-C2', 'TEST_P17H_76009C-C3'])"
+      },
+      {
+        "id": "OPS-03",
+        "invariant": "rekonsiliasi: Σ created seluruh run = jumlah pelanggan baru = baris valid file",
+        "pass": true,
+        "detail": "3"
+      },
+      {
+        "id": "OPS-03",
+        "invariant": "tiap run impor (bukan dry-run) tercatat di audit",
+        "pass": true,
+        "detail": "3"
+      }
+    ],
+    "tail": "\n  \"detail\": \"3\"\n },\n {\n  \"id\": \"OPS-03\",\n  \"invariant\": \"tiap run impor (bukan dry-run) tercatat di audit\",\n  \"pass\": true,\n  \"detail\": \"3\"\n }\n]\npass=6 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P17-planned-coverage/repro_p17i.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 1,
+    "seconds": 27.67,
+    "log": "test-logs\\extended-16-repro_p17i.log",
+    "cases": [],
+    "tail": "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\asyncio\\base_events.py\", line 691, in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\agent-regression-copies\\audit\\iterations\\2026-10-03-P17-planned-coverage\\repro_p17i.py\", line 80, in main\n    await db.business_entities.replace_one({\"id\": ARC}, snap)\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\concurrent\\futures\\thread.py\", line 59, in run\n    result = self.fn(*self.args, **self.kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\pymongo\\collection.py\", line 968, in replace_one\n    common.validate_ok_for_replace(replacement)\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\pymongo\\common.py\", line 600, in validate_ok_for_replace\n    validate_is_mapping(\"replacement\", replacement)\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\pymongo\\common.py\", line 542, in validate_is_mapping\n    raise TypeError(\nTypeError: replacement must be an instance of dict, bson.son.SON, or any other type that inherits from collections.Mapping\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P17-planned-coverage/repro_p17j.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 3.6,
+    "log": "test-logs\\extended-17-repro_p17j.log",
+    "cases": [
+      {
+        "id": "OCR-REAL",
+        "invariant": "eksekusi skenario",
+        "pass": false,
+        "detail": "OSError('cannot open resource')"
+      }
+    ],
+    "tail": "oll & saldo.\u001b[0m\n[\n {\n  \"id\": \"OCR-REAL\",\n  \"invariant\": \"eksekusi skenario\",\n  \"pass\": false,\n  \"detail\": \"OSError('cannot open resource')\"\n }\n]\npass=0 fail=1\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P18-partial-coverage/repro_p18a.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": "timeout",
+    "seconds": 240.08,
+    "log": "test-logs\\extended-18-repro_p18a.log",
+    "cases": [],
+    "tail": ""
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P18-partial-coverage/repro_p18b.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 12.18,
+    "log": "test-logs\\extended-19-repro_p18b.log",
+    "cases": [
+      {
+        "id": "MASTER-01",
+        "invariant": "UOM terpakai: ganti kode/faktor/hapus alias terpakai ('yard') → 409; ganti nama → 200",
+        "pass": false,
+        "detail": "(403, 403, 403, 403, '{\"detail\":\"Permission ditolak: uom.update\"}')"
+      },
+      {
+        "id": "MASTER-01",
+        "invariant": "produk dipakai SO: ubah nama/harga 200 tapi baris SO tetap snapshot; ganti SKU 409; base_unit beda induk 400",
+        "pass": false,
+        "detail": "(200, 403, 403, 403, 'Endek Bali Rangrang')"
+      },
+      {
+        "id": "P18B",
+        "invariant": "eksekusi",
+        "pass": false,
+        "detail": "TypeError(\"'NoneType' object is not subscriptable\")"
+      },
+      {
+        "id": "MASTER-02",
+        "invariant": "master berlapis (semua jenis): override & ubah di KSC tidak mengubah Kanda maupun baris global",
+        "pass": false,
+        "detail": "{'lulus': [], 'gagal': [('payment-terms', 'override', 403, '{\"detail\":\"Permission ditolak: settings.manage\"}'), ('document-templates', 'override', 403, '{\"detail\":\"Permission ditolak: settings.manage\"}'), ('product-lines', 'override', 403, '{\"detail\":\"Permission ditolak: settings.manage\"}'), ('proce"
+      },
+      {
+        "id": "MASTER-03",
+        "invariant": "master berlapis: lepas override (DELETE) → KSC kembali ke nilai global",
+        "pass": false,
+        "detail": "[]"
+      },
+      {
+        "id": "MASTER-03",
+        "invariant": "config global → override KSC (Kanda tetap global) → clear KSC = ikut global; clear lapisan Global ditolak 400",
+        "pass": false,
+        "detail": "{'lulus': [], 'gagal': [('tax.dpp_nilai_lain', 403, 403, 403, 403, True, True, True, True, True), ('tax.efaktur_enabled', 403, 403, 403, 403, True, True, True, True, True), ('finance.fiscal_year_end_month', 403, 403, 403, 403, 12, 12, 12, 12, 12), ('sales.allow_item_discount', 403, 403, 403, 403, Fa"
+      },
+      {
+        "id": "MASTER-02",
+        "invariant": "config override KSC tidak terbaca di Kanda",
+        "pass": false,
+        "detail": "[]"
+      },
+      {
+        "id": "MASTER-04",
+        "invariant": "satuan tak dikenal di SO/PO, termin tak dikenal, base_unit produk tak dikenal → 4xx tanpa dokumen baru",
+        "pass": true,
+        "detail": "{'so': (400, '{\"detail\":\"Konversi unit \\'parsec\\' → \\'yard\\' tidak tersedia untuk produk ENK-BALI-001. Tamba'), 'po': (403, '{\"detail\":\"Permission ditolak: purchase_order.create\"}'), 'term': (403, '{\"detail\":\"Permission ditolak: purchase_order.create\"}'), 'prod': (403, '{\"detail\":\"Permission ditolak"
+      },
+      {
+        "id": "MASTER-04",
+        "invariant": "alias sah 'yd' diterima & dihitung setara yard (base_quantity = qty)",
+        "pass": true,
+        "detail": "(200, 1.0)"
+      },
+      {
+        "id": "MASTER-05",
+        "invariant": "prasyarat: SO dibuat untuk pelanggan duplikat",
+        "pass": true,
+        "detail": "(200, '{\"id\":\"so_a53660745177\",\"number\":\"KSC/SO-00012\",\"status\":\"reserved\",\"entity_id\":\"ent_ksc\",\"customer_id\":\"cust_19cdc04300')"
+      },
+      {
+        "id": "MASTER-05",
+        "invariant": "preview menghitung referensi (SO); sales 403; tanpa alasan 400; lintas PT ditolak",
+        "pass": false,
+        "detail": "(403, '{\"detail\":\"Permission ditolak: customer.delete\"}', 403, 400, 403)"
+      },
+      {
+        "id": "MASTER-05",
+        "invariant": "merge: SO pindah ke target, sumber status merged + merged_into, alamat sumber ditambahkan, pemilik target tetap",
+        "pass": false,
+        "detail": "(403, '{\"detail\":\"Permission ditolak: customer.delete\"}')"
+      },
+      {
+        "id": "MASTER-05",
+        "invariant": "merge ulang 409 (idempoten), 0 dokumen tersisa di sumber, SO baru ke pelanggan merged ditolak",
+        "pass": false,
+        "detail": "(403, 1, 200, '{\"id\":\"so_037b09c64120\",\"number\":\"KSC/SO-00013\",\"status\":\"reserved\",\"entity_id\":\"ent_ksc\",\"customer_')"
+      },
+      {
+        "id": "COMM-01",
+        "invariant": "duplikat pelanggan digabung dengan jejak audit (alasan) & owner target dipertahankan",
+        "pass": false,
+        "detail": "False"
+      }
+    ],
+    "tail": "  \"invariant\": \"duplikat pelanggan digabung dengan jejak audit (alasan) & owner target dipertahankan\",\n  \"pass\": false,\n  \"detail\": \"False\"\n }\n]\npass=3 fail=11\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P18-partial-coverage/repro_p18c.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 6.36,
+    "log": "test-logs\\extended-20-repro_p18c.log",
+    "cases": [
+      {
+        "id": "QC-04",
+        "invariant": "retur DIRECT disetujui: roll keluar stok (returned_supplier), Nota Debit, AP PO berkurang = grand_total, jurnal posted",
+        "pass": true,
+        "detail": "(200, 200, '{\"id\":\"pret_65180a0b2f5e\",\"number\":\"PRET-00004\",\"supplier_id\":\"sup_ca61c20a1701\",\"supplier_name\":\"Cirebon Craft\",\"po_id\":\"po_001\",\"po_number\":\"PO-0000', 'returned_supplier', 13500000.0, 13500000.0)"
+      },
+      {
+        "id": "PRET-02",
+        "invariant": "reverse: retur cancelled, roll kembali available panjang utuh, AP pulih, net jurnal per akun = 0",
+        "pass": true,
+        "detail": "(200, '{\"id\":\"pret_65180a0b2f5e\",\"number\":\"PRET-00004\",\"supplier_id\":\"sup_ca61c20a1701\",\"supplier_name\":\"Cirebon Craft\",\"po_id\"', 'cancelled', 'available', 0.0, {})"
+      },
+      {
+        "id": "PRET-02",
+        "invariant": "reverse ulang idempoten (no-op, tanpa jurnal/stok ganda)",
+        "pass": true,
+        "detail": "(200, 2)"
+      },
+      {
+        "id": "PRET-02",
+        "invariant": "retry (retur baru roll yang sama) sukses sekali: AP berkurang satu kali, roll keluar lagi",
+        "pass": true,
+        "detail": "(200, 13500000.0)"
+      },
+      {
+        "id": "PRET-03",
+        "invariant": "RMA ber-PPN → refund: grand_total = net + PPN, kas masuk = jurnal Dr Kas = grand_total, PPN masukan dibalik",
+        "pass": false,
+        "detail": "{'steps': [404, 404, 404], 'err': '{\"detail\":\"Retur tidak ditemukan\"}', 'gross': 0.0, 'ppn': None, 'cash': None, 'kas_je': 0, 'ppn_je': 0}"
+      },
+      {
+        "id": "P18C",
+        "invariant": "eksekusi pret03",
+        "pass": false,
+        "detail": "AttributeError(\"'NoneType' object has no attribute 'get'\")"
+      },
+      {
+        "id": "PRET-05",
+        "invariant": "qty retur > sisa roll → ditolak 400 saat dibuat (tidak dipotong diam-diam), roll utuh",
+        "pass": true,
+        "detail": "(400, 400, 135.0, 'roll_d06c4840a4c3', [('ROLL-001', None, 300), ('ROLL-002', None, 200), ('ROLL-003', None, 80), ('ROLL-010', None, 250), ('ROLL-011', None, 400), ('ROLL-020', None, 150), ('ROLL-021', None, 300), ('ROLL-V01', None, 240), ('ROLL-V02', None, 160), ('ROLL-V03', None, 150), ('ROLL-V04'"
+      },
+      {
+        "id": "PRET-05",
+        "invariant": "periode tertutup → approve 4xx, retur tetap pending, roll & AP tak berubah, tanpa jurnal",
+        "pass": true,
+        "detail": "(400, '{\"detail\":\"Periode 2026-10 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-10-05 memerlukan izin \\'Buka Periode\\' ', 'pending_approval')"
+      },
+      {
+        "id": "PRET-05",
+        "invariant": "periode dibuka → approve ulang sukses, roll berkurang tepat 5, satu jurnal",
+        "pass": true,
+        "detail": "(200, 130.0)"
+      },
+      {
+        "id": "PRET-06",
+        "invariant": "multi-item parsial: approve 3× bersamaan → tepat 1 sukses; roll A −12.5, roll B −7 (sekali), satu jurnal",
+        "pass": true,
+        "detail": "{'codes': [200, 409, 409], 'la': 130.0, 'lb': 140.0, 'a': 117.5, 'b': 133.0, 'movs': 0}"
+      },
+      {
+        "id": "PRET-06",
+        "invariant": "roll milik PT lain di retur KSC → ditolak (create/approve 4xx), roll PT lain utuh",
+        "pass": true,
+        "detail": "(200, 400, '{\"detail\":\"Roll retur BTK-MEGA-001 tidak ditemukan, bukan milik badan usaha retur, atau bukan barang baris ini.\"}')"
+      }
+    ],
+    "tail": "tail\": \"(200, 400, '{\\\"detail\\\":\\\"Roll retur BTK-MEGA-001 tidak ditemukan, bukan milik badan usaha retur, atau bukan barang baris ini.\\\"}')\"\n }\n]\npass=9 fail=2\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P18-partial-coverage/repro_p18d.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 4.58,
+    "log": "test-logs\\extended-21-repro_p18d.log",
+    "cases": [
+      {
+        "id": "APAR-01",
+        "invariant": "3-way: tagihan qty > diterima (151 > 150) ditolak/ditandai tak cocok, tidak langsung posted",
+        "pass": true,
+        "detail": "(403, '{\"detail\":\"Permission ditolak: vendor_bill.create\"}')"
+      },
+      {
+        "id": "P18D",
+        "invariant": "eksekusi",
+        "pass": false,
+        "detail": "AttributeError(\"'NoneType' object has no attribute 'get'\")"
+      }
+    ],
+    "tail": "},\n {\n  \"id\": \"P18D\",\n  \"invariant\": \"eksekusi\",\n  \"pass\": false,\n  \"detail\": \"AttributeError(\\\"'NoneType' object has no attribute 'get'\\\")\"\n }\n]\npass=1 fail=1\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P18-partial-coverage/repro_p18e.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 6.53,
+    "log": "test-logs\\extended-22-repro_p18e.log",
+    "cases": [
+      {
+        "id": "INV-03",
+        "invariant": "expected dibekukan saat item ditambah (cutoff) & submit mencatat selisih −2",
+        "pass": true,
+        "detail": "(320.0, 320.0, 200)"
+      },
+      {
+        "id": "INV-03",
+        "invariant": "stok bergerak sesudah dihitung (retur 1 yd) → approve 409, stok tidak disesuaikan",
+        "pass": false,
+        "detail": "(404, 320.0, 320.0, 200, '{\"id\":\"cc_25eef4c553ac\",\"entity_id\":\"ent_ksc\",\"warehouse_id\":\"wh_jakarta\",\"warehouse_name\":\"Gudang Jakarta Utara\",\"wareh')"
+      },
+      {
+        "id": "INV-03",
+        "invariant": "hitung ulang (reopen): sesi open, expected = stok terkini, item wajib dihitung lagi (submit 400)",
+        "pass": false,
+        "detail": "(400, '{\"detail\":\"Hanya sesi yang sudah disubmit/ditolak yang bisa dibuka kembali\"}', 400)"
+      },
+      {
+        "id": "INV-03",
+        "invariant": "approve 3× bersamaan → tepat 1 sukses, stok turun tepat 2 (sekali), sesi approved",
+        "pass": false,
+        "detail": "([400, 400, 400], 320.0, 318.0, 'approved')"
+      },
+      {
+        "id": "INV-03",
+        "invariant": "sesi approved tidak bisa dibuka ulang (400)",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "INV-03",
+        "invariant": "staf gudang (tanpa approve_count) tidak bisa membuka ulang sesi (403)",
+        "pass": true,
+        "detail": "403"
+      }
+    ],
+    "tail": "\n  \"id\": \"INV-03\",\n  \"invariant\": \"staf gudang (tanpa approve_count) tidak bisa membuka ulang sesi (403)\",\n  \"pass\": true,\n  \"detail\": \"403\"\n }\n]\npass=3 fail=3\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P18-partial-coverage/repro_p18f.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 5.2,
+    "log": "test-logs\\extended-23-repro_p18f.log",
+    "cases": [
+      {
+        "id": "INV-04",
+        "invariant": "approve antar-PT → completed, 2 buku berjurnal seimbang; Persediaan sumber turun = naik di tujuan; IC-AR (1-1250) = IC-AP; roll milik tujuan",
+        "pass": false,
+        "detail": "{'res': (403, '{\"detail\":\"Permission ditolak: order.create\"}'), 'ap': (403, '{\"detail\":\"Permission ditolak: transfer.approve\"}'), 'src': {}, 'dst': {}, 'moved': 1}"
+      },
+      {
+        "id": "INV-04",
+        "invariant": "approve ulang ditolak & jurnal tidak bertambah (idempoten)",
+        "pass": true,
+        "detail": "(403, 0)"
+      },
+      {
+        "id": "INV-04",
+        "invariant": "neraca saldo kedua PT tetap seimbang sesudah transfer",
+        "pass": false,
+        "detail": "{'ent_ksc': (200, 0.0), 'ent_kanda': (403, 0.0)}"
+      },
+      {
+        "id": "DOC-02",
+        "invariant": "ekspor CSV Laba-Rugi = sumber JSON (laba bersih & jumlah baris akun sama)",
+        "pass": true,
+        "detail": "(200, '-21805620.44', -21805620.44, 7, 7)"
+      },
+      {
+        "id": "DOC-02",
+        "invariant": "ekspor CSV Neraca memuat total aset sumber",
+        "pass": true,
+        "detail": "None"
+      },
+      {
+        "id": "DOC-02",
+        "invariant": "hak akses ekspor: desainer 403; finance KSC-saja minta PT lain 403 (laporan & harga pelanggan)",
+        "pass": false,
+        "detail": "(200, 403, 400)"
+      },
+      {
+        "id": "DOC-02",
+        "invariant": "ekspor daftar (inspeksi) berhasil dengan tipe unduhan & nama berkas",
+        "pass": false,
+        "detail": "(403, 'application/json')"
+      }
+    ],
+    "tail": "\"invariant\": \"ekspor daftar (inspeksi) berhasil dengan tipe unduhan & nama berkas\",\n  \"pass\": false,\n  \"detail\": \"(403, 'application/json')\"\n }\n]\npass=3 fail=4\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-P19-uat-receiving/repro_p19_receiving.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 11.0,
+    "log": "test-logs\\extended-24-repro_p19_receiving.log",
+    "cases": [
+      {
+        "id": "GRN-01",
+        "invariant": "PO dibuat & 1 tugas inbound terbentuk",
+        "pass": true,
+        "detail": "('KSC/PO-00016', 'pending', 1)"
+      },
+      {
+        "id": "GRN-01",
+        "invariant": "GRN closed bernomor KSC/GRN-",
+        "pass": true,
+        "detail": "KSC/GRN-00001"
+      },
+      {
+        "id": "GRN-01",
+        "invariant": "1 roll 50 berstatus karantina (bukan ATP)",
+        "pass": true,
+        "detail": "[('RL-00056', 'quarantine', 50.0)]"
+      },
+      {
+        "id": "GRN-01",
+        "invariant": "balance: quarantine +50, available tetap",
+        "pass": true,
+        "detail": "({'available_qty': 425.0, 'quarantine_qty': 75.0, 'blocked_qty': 0.0, 'on_hand_qty': 550.0}, {'available_qty': 425.0, 'quarantine_qty': 125.0, 'blocked_qty': 0.0, 'on_hand_qty': 600.0})"
+      },
+      {
+        "id": "GRN-01",
+        "invariant": "jurnal GRN posted & seimbang (Dr Persediaan / Cr GRNI)",
+        "pass": true,
+        "detail": "(None, 'goods_receipt', (5000000.0, 5000000.0, [('1-1300', 5000000.0, 0.0), ('2-1150', 0.0, 5000000.0)]))"
+      },
+      {
+        "id": "GRN-01",
+        "invariant": "tugas inbound qc_pending",
+        "pass": true,
+        "detail": "qc_pending"
+      },
+      {
+        "id": "QC-04",
+        "invariant": "inspeksi 4-point tersimpan (grade BS)",
+        "pass": true,
+        "detail": "{\"roll\":{\"id\":\"roll_babf094ea08e\",\"roll_no\":\"RL-00056\",\"product_id\":\"prod_batik_mega\",\"owner_entity_id\":\"ent_ksc\",\"ownership_type\":\"internal\",\"consignor_ref\":null,\"warehouse_id\":\"wh_jakarta\",\"bin_id\":"
+      },
+      {
+        "id": "QC-04",
+        "invariant": "reject semua → roll returned_supplier & Purchase Return otomatis",
+        "pass": true,
+        "detail": "('returned_supplier', {'id': 'pret_575a21d3ab27', 'number': 'PRET-00004', 'supplier_name': 'Cirebon Craft'}, 'rejected')"
+      },
+      {
+        "id": "QC-04",
+        "invariant": "balance: quarantine kembali, on_hand tidak bertambah",
+        "pass": true,
+        "detail": "({'available_qty': 425.0, 'quarantine_qty': 75.0, 'blocked_qty': 0.0, 'on_hand_qty': 550.0}, {'available_qty': 425.0, 'quarantine_qty': 75.0, 'blocked_qty': 0.0, 'on_hand_qty': 550.0})"
+      },
+      {
+        "id": "QC-04",
+        "invariant": "approve retur → Nota Debit terbit",
+        "pass": true,
+        "detail": "('approved', 'DN-00001', 'approved')"
+      },
+      {
+        "id": "QC-04",
+        "invariant": "hutang PO berkurang sebesar nilai retur (termasuk PPN) — retur penuh → sisa hutang 0",
+        "pass": true,
+        "detail": "(5550000.0, 5550000.0, 'settled_by_return', 5000000.0, 550000.0, 5550000.0)"
+      },
+      {
+        "id": "QC-04",
+        "invariant": "jurnal retur posted & seimbang",
+        "pass": true,
+        "detail": "(5550000.0, 5550000.0, [('2-1150', 5550000.0, 0.0), ('1-1300', 0.0, 5000000.0), ('1-1500', 0.0, 550000.0)])"
+      },
+      {
+        "id": "QC-04",
+        "invariant": "PO diretur penuh → status bayar 'settled_by_return' (Lunas lewat retur), outstanding 0",
+        "pass": true,
+        "detail": "('settled_by_return', {'total_amount': 5550000.0, 'gross_total': 5000000.0, 'discount_total': 0.0, 'net_subtotal': 5000000.0, 'dpp': 4583333.33, 'ppn_rate': 12.0, 'ppn_amount': 550000.0, 'grand_total': 5550000.0, 'received_value': 5000000.0, 'returned_amount': 5550000.0, 'amount_paid': 0.0, 'outstanding': 0.0, 'payment_status': 'settled_by_return'})"
+      },
+      {
+        "id": "QC-04",
+        "invariant": "chip filter ?payment=settled_by_return memuat PO ini (unpaid tidak); by_payment terhitung",
+        "pass": true,
+        "detail": "(1, {'by_status': {'completed': 1}, 'by_payment': {'unpaid': 12, 'settled_by_return': 1}, 'total': 1})"
+      },
+      {
+        "id": "QC-04",
+        "invariant": "retur dibalik → status bayar kembali 'unpaid' & outstanding pulih",
+        "pass": true,
+        "detail": "(200, '{\"id\":\"pret_575a21d3ab27\",\"number\":\"PRET-00004\",\"supplier_id\":\"sup_ca61c20a1701\",\"supplier_name\":\"Cirebon Craft\",\"po_id\":\"po_408043fc6afa\",\"po_number\"', 'unpaid', 5550000.0)"
+      },
+      {
+        "id": "QC-04",
+        "invariant": "variasi ACCEPT semua → roll available, keluar karantina",
+        "pass": true,
+        "detail": "('available', 'passed')"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "3 roll karantina",
+        "pass": true,
+        "detail": "['quarantine', 'quarantine', 'quarantine']"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "rencana sampling 30% dari 3 roll → wajib 1 roll",
+        "pass": true,
+        "detail": "{'mode': 'sampling', 'sample_pct': 30.0, 'sample_min': 1, 'planned_by': 'Budi Santoso', 'planned_at': '2026-10-05T14:15:48.453770+00:00', 'total_rolls': 3, 'inspected_rolls': 0, 'required_rolls': 1, 'coverage_pct': 0.0, 'met': False}"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "1/3 diinspeksi → cakupan sampling terpenuhi",
+        "pass": true,
+        "detail": "{'mode': 'sampling', 'sample_pct': 30.0, 'sample_min': 1, 'planned_by': 'Budi Santoso', 'planned_at': '2026-10-05T14:15:48.453770+00:00', 'total_rolls': 3, 'inspected_rolls': 1, 'required_rolls': 1, 'coverage_pct': 33.3, 'met': True}"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "hold tanpa alasan memadai → 400",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "hold → status blocked, quarantine −50, blocked +50",
+        "pass": true,
+        "detail": "({'available_qty': 465.0, 'quarantine_qty': 225.0, 'blocked_qty': 0.0, 'on_hand_qty': 740.0}, {'available_qty': 465.0, 'quarantine_qty': 175.0, 'blocked_qty': 50.0, 'on_hand_qty': 740.0})"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "keputusan QC ditolak selama ada roll DITAHAN",
+        "pass": true,
+        "detail": "{\"detail\":\"Roll RL-00059 sedang DITAHAN — lepas tahanan dulu sebelum keputusan QC.\"}"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "release oleh sales (tanpa wms.approve) → 403",
+        "pass": true,
+        "detail": "403"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "release → kembali quarantine; balance pulih",
+        "pass": true,
+        "detail": "('quarantine', {'available_qty': 465.0, 'quarantine_qty': 225.0, 'blocked_qty': 0.0, 'on_hand_qty': 740.0}, {'available_qty': 465.0, 'quarantine_qty': 225.0, 'blocked_qty': 0.0, 'on_hand_qty': 740.0})"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "release roll yang tidak ditahan → 400",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "roll belum diinspeksi tetap karantina sebelum keputusan",
+        "pass": true,
+        "detail": "['quarantine', 'quarantine', 'quarantine']"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "keputusan sampel berlaku ke sisa lot: 3 roll available; 2 roll tak-terinspeksi ditandai qc_via_sampling",
+        "pass": true,
+        "detail": "[('available', False), ('available', True), ('available', True)]"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "hold roll available → available −50 (keluar ATP); release → pulih",
+        "pass": true,
+        "detail": "({'available_qty': 615.0, 'quarantine_qty': 75.0, 'blocked_qty': 0.0, 'on_hand_qty': 740.0}, {'available_qty': 565.0, 'quarantine_qty': 75.0, 'blocked_qty': 50.0, 'on_hand_qty': 740.0}, {'available_qty': 615.0, 'quarantine_qty': 75.0, 'blocked_qty': 0.0, 'on_hand_qty': 740.0})"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "genealogy roll: asal GRN, sampling, keputusan QC, tahan/lepas",
+        "pass": true,
+        "detail": "Diterima dari pembelian (PO KSC/PO-00018) | Asal penerimaan GRN KSC/GRN-00003 | Tag RFID di-encode — EPC E204DC2C1C450D4292809B76 | Diterima ke gudang (karantina/stok) (PO_KSC/PO-00018) | DITAHAN oleh Budi Santoso: TEST_P19_fd4a61 cek shading (quarantine → blocked) | Tahanan DILEPAS oleh Budi Santos"
+      },
+      {
+        "id": "QC-06",
+        "invariant": "genealogy roll terinspeksi memuat event Inspeksi 4-point",
+        "pass": true,
+        "detail": "['Diterima dari pembelian (PO KSC/PO-00018)', 'Asal penerimaan GRN KSC/GRN-00003', 'Tag RFID di-encode — EPC E22171C107E3F84DC39D4BD1', 'Diterima ke gudang (karantina/stok) (PO_KSC/PO-00018)', 'Inspeksi 4-point oleh Budi Santoso: 2.0 poin → grade A', 'Grade A → A (Inspeksi QC (4-point))']"
+      }
+    ],
+    "tail": "dang (karantina/stok) (PO_KSC/PO-00018)', 'Inspeksi 4-point oleh Budi Santoso: 2.0 poin → grade A', 'Grade A → A (Inspeksi QC (4-point))']\"\n }\n]\npass=30 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-03-WM02-identity-CX05-panel/repro_followup.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 7.37,
+    "log": "test-logs\\extended-25-repro_followup.log",
+    "cases": [
+      {
+        "id": "WM-02b",
+        "invariant": "picker menampilkan induk dengan panjang bebas 70 (fisik 100, dipesan 30)",
+        "pass": true,
+        "detail": "{'id': 'audit_fu_ad31e8_r0', 'roll_no': 'R-audit_fu_ad31e8-0', 'lot': 'L1', 'dye_lot': 'L1', 'length_remaining': 70.0, 'physical_length': 100.0, 'length_reserved': 30.0, 'warehouse_id': 'wh_jakarta', 'warehouse_name': 'Gudang Jakarta Utara', 'warehouse_city': 'Jakarta', 'owner_entity_id': 'ent_ksc',"
+      },
+      {
+        "id": "WM-02b",
+        "invariant": "beli 20 dari roll (mode per roll) → tanpa roll baru, dipesan 50",
+        "pass": true,
+        "detail": "{'rolls': 1, 'reserved': 50.0}"
+      },
+      {
+        "id": "WM-02b",
+        "invariant": "beli melebihi panjang bebas ditolak",
+        "pass": true,
+        "detail": "(400, 'Qty roll R-audit_fu_ad31e8-0 (60.0) melebihi panjang bebas (50.0).')"
+      },
+      {
+        "id": "WM-02a",
+        "invariant": "dispatch sebelum potong → 409",
+        "pass": true,
+        "detail": "(409, '1 reservasi potong belum dikonfirmasi (roll induk R-audit_fu_ad31e8-0). Potong fisik & konfirmasi dulu.')"
+      },
+      {
+        "id": "WM-02a",
+        "invariant": "loading check dengan roll anak belum ber-tag → 409",
+        "pass": true,
+        "detail": "(409, 'Roll anak R-audit_fu_ad31e8-0-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
+      },
+      {
+        "id": "WM-02a",
+        "invariant": "dispatch dengan roll anak belum ber-tag → 409",
+        "pass": true,
+        "detail": "(409, 'Roll anak R-audit_fu_ad31e8-0-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
+      },
+      {
+        "id": "WM-02a",
+        "invariant": "verifikasi tanpa tag tidak mengesahkan identitas",
+        "pass": true,
+        "detail": "0"
+      },
+      {
+        "id": "WM-02a",
+        "invariant": "setelah tag baru terverifikasi → dispatch berhasil",
+        "pass": true,
+        "detail": "30.0"
+      },
+      {
+        "id": "WM-02a",
+        "invariant": "complete_verify mengesahkan identitas roll anak (statis)",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "CX-05",
+        "invariant": "LPJ 130 atas uang muka 100 → Cr Uang Muka 100 + Cr 2-1650 Hutang Reimburse 30",
+        "pass": true,
+        "detail": "[('1-1400', 100.0), ('2-1650', 30.0)]"
+      }
+    ],
+    "tail": ": Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))\npass=10 fail=0 crashed=1\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-04-label-reimburse-poline-badge/repro_followup2.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 5.8,
+    "log": "test-logs\\extended-26-repro_followup2.log",
+    "cases": [],
+    "tail": "): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))\npass=0 fail=0 crashed=1\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-04-P20-partial-api/repro_p20a.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 6.67,
+    "log": "test-logs\\extended-27-repro_p20a.log",
+    "cases": [
+      {
+        "id": "GRN-05",
+        "invariant": "periode tertutup → tutup GRN 400 NOT_POSTABLE; GRN tetap reconcile, roll masih 'receiving', saldo & jurnal tak berubah",
+        "pass": true,
+        "detail": "(400, '{\"detail\":{\"code\":\"NOT_POSTABLE\",\"errors\":[\"Periode 2026-10 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-10-05 memerlukan izin \\'Buka Periode\\' yang di', 'reconcile', ['receiving'], {'available_qty': 425.0, 'quarantine_qty': 75.0, 'on_hand_qty': 550.0}, {'available_qty': 425.0, 'quarantine_qty': 75.0, 'on_hand_qty': 550.0})"
+      },
+      {
+        "id": "GRN-05",
+        "invariant": "jurnal GR gagal → GRN 'closing' (bukan closed), baris posted.status=failed, gl_posting failed, tanpa jurnal",
+        "pass": true,
+        "detail": "(200, 'closing', {'status': 'failed', 'at': '2026-10-05T14:16:07.580363+00:00', 'error': 'Stok diterima, tetapi jurnal penerimaan gagal: Akun 2-1150 nonaktif', 'result_ref': ''}, 'failed')"
+      },
+      {
+        "id": "GRN-05",
+        "invariant": "stok fisik tercatat sekali (1 roll, karantina +30)",
+        "pass": true,
+        "detail": "(1, {'available_qty': 425.0, 'quarantine_qty': 75.0, 'on_hand_qty': 550.0}, {'available_qty': 425.0, 'quarantine_qty': 105.0, 'on_hand_qty': 580.0})"
+      },
+      {
+        "id": "GRN-05",
+        "invariant": "tutup ulang saat akun masih nonaktif → tetap closing, roll tidak bertambah",
+        "pass": true,
+        "detail": "(200, '{\"grn\":{\"id\":\"grn_7456d9f55b64\",\"entity_id\":\"ent_ksc\",\"number\":\"KSC/GRN-00001\",\"status\":\"closing\",\"version\":9,\"partner_t')"
+      },
+      {
+        "id": "GRN-05",
+        "invariant": "penyebab dibereskan → tutup ulang: GRN closed, tepat 1 jurnal GR 3.000.000 (Dr 1-1300 / Cr 2-1150)",
+        "pass": true,
+        "detail": "(200, '{\"grn\":{\"id\":\"grn_7456d9f55b64\",\"entity_id\":\"ent_ksc\",\"number\":\"KSC/GRN-00001\",\"status\":\"closed\",\"version\":10,\"partner_type\":\"supplier\",\"partner_id\":\"', 'closed', 1, {'1-1300': 3000000.0, '2-1150': -3000000.0})"
+      },
+      {
+        "id": "GRN-05",
+        "invariant": "pemulihan tanpa stok ganda: tetap 1 roll, karantina +30 (bukan +60), PO received_qty = 30",
+        "pass": true,
+        "detail": "({'available_qty': 425.0, 'quarantine_qty': 105.0, 'on_hand_qty': 580.0}, {'available_qty': 425.0, 'quarantine_qty': 105.0, 'on_hand_qty': 580.0}, 30.0)"
+      },
+      {
+        "id": "GRN-05",
+        "invariant": "tutup GRN yang sudah closed → 4xx, tanpa jurnal/stok tambahan",
+        "pass": true,
+        "detail": "(409, '{\"detail\":{\"code\":\"BAD_STATUS\",\"message\":\"Tutup penerimaan hanya bisa saat status reconcile, closing')"
+      },
+      {
+        "id": "PRET-01",
+        "invariant": "PO non-PPN: ppn 0, grand_total = 2.000.000",
+        "pass": true,
+        "detail": "('non_ppn', 0.0, 2000000.0)"
+      },
+      {
+        "id": "PRET-01",
+        "invariant": "retur dibuat: ppn_rate 0, ppn 0, grand_total = total = 8 × 100.000",
+        "pass": true,
+        "detail": "(0.0, 0.0, 800000.0, 800000.0)"
+      },
+      {
+        "id": "PRET-01",
+        "invariant": "stok: roll 20 → 12, available −8 & on_hand −8 (sekali)",
+        "pass": true,
+        "detail": "(12.0, {'available_qty': 445.0, 'quarantine_qty': 105.0, 'on_hand_qty': 600.0}, {'available_qty': 437.0, 'quarantine_qty': 105.0, 'on_hand_qty': 592.0})"
+      },
+      {
+        "id": "PRET-01",
+        "invariant": "PO: returned_amount +800.000; outstanding = 2.000.000 − 800.000; status bayar belum lunas",
+        "pass": true,
+        "detail": "(800000.0, 1200000.0, 'unpaid')"
+      },
+      {
+        "id": "PRET-01",
+        "invariant": "jurnal: tepat 1, seimbang, Dr 2-1150 800.000 / Cr 1-1300 800.000, TANPA baris PPN (1-1500)",
+        "pass": true,
+        "detail": "(1, 'posted', {'2-1150': 800000.0, '1-1300': -800000.0})"
+      },
+      {
+        "id": "PRET-01",
+        "invariant": "nilai persediaan keluar (Cr 1-1300) = qty mutasi × harga PO",
+        "pass": true,
+        "detail": "(8.0, {'2-1150': 800000.0, '1-1300': -800000.0})"
+      },
+      {
+        "id": "PRET-01",
+        "invariant": "reverse: 20 yd kembali available (roll asal + potongan anak), saldo pulih, returned_amount pulih, net jurnal 0",
+        "pass": true,
+        "detail": "(200, [{'length_remaining': 12.0, 'status': 'available'}, {'length_remaining': 8.0, 'status': 'available'}], {'available_qty': 445.0, 'quarantine_qty': 105.0, 'on_hand_qty': 600.0}, {'available_qty': 445.0, 'quarantine_qty': 105.0, 'on_hand_qty': 600.0}, 0.0, {})"
+      }
+    ],
+    "tail": ": 445.0, 'quarantine_qty': 105.0, 'on_hand_qty': 600.0}, {'available_qty': 445.0, 'quarantine_qty': 105.0, 'on_hand_qty': 600.0}, 0.0, {})\"\n }\n]\npass=14 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-04-P20-partial-api/repro_p20b.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 8.41,
+    "log": "test-logs\\extended-28-repro_p20b.log",
+    "cases": [
+      {
+        "id": "PROD-02",
+        "invariant": "jurnal overhead gagal → complete ditolak 4xx berpesan jelas (bukan 500), WO tetap released, kunci tercatat gagal",
+        "pass": true,
+        "detail": "(400, '{\"detail\":\"Akun 5-1100 nonaktif\"}', 'released', 'Akun 5-1100 nonaktif')"
+      },
+      {
+        "id": "PROD-02",
+        "invariant": "efek fisik tercatat SEKALI sebelum gagal: bahan −4, 1 roll output, tahap 'output', tanpa jurnal",
+        "pass": true,
+        "detail": "(425.0, 421.0, 1, 'output')"
+      },
+      {
+        "id": "PROD-02",
+        "invariant": "complete ulang saat kunci gagal belum dilepas → 409, tidak ada konsumsi/output tambahan",
+        "pass": true,
+        "detail": "(409, '{\"detail\":{\"code\":\"SAGA_IN_PROGRESS\",\"message\":\"Aksi \\'complete\\' atas dokumen ini sedang/pernah berjalan (mulai 2026-10-0')"
+      },
+      {
+        "id": "PROD-02",
+        "invariant": "lepas kunci (admin, alasan) → retry: WO completed, tetap 1 roll output 4, bahan −4 (bukan −8)",
+        "pass": true,
+        "detail": "(200, '{\"released\":true,\"collection\":\"mfg_work_orders\",\"id\":\"wo_4acd68020d4a\",\"lock\":{\"action\":\"complete\",\"by\":\"Budi Santoso\",\"', 200, '{\"id\":\"wo_4acd68020d4a\",\"wo_number\":\"WO-00004\",\"entity_id\":\"ent_ksc\",\"bom_id\":\"bom_a47cf4774c46\",\"bom_name\":\"TEST_P20B_d', 'completed', 1)"
+      },
+      {
+        "id": "PROD-02",
+        "invariant": "tepat 1 jurnal overhead 20.000 (Dr 1-1300 / Cr 5-1100); HPP output = bahan + overhead",
+        "pass": true,
+        "detail": "({'1-1300': 20000.0, '5-1100': -20000.0}, 488400.0, 508400.0)"
+      },
+      {
+        "id": "PROD-02",
+        "invariant": "complete ke-3 (sudah completed) idempoten: tanpa output/jurnal tambahan",
+        "pass": true,
+        "detail": "200"
+      },
+      {
+        "id": "PROD-05",
+        "invariant": "langkah MKO sudah di-issue: WIP (1-1350) bertambah sebesar nilai bahan",
+        "pass": true,
+        "detail": "('MKO-00002', 1030000.0)"
+      },
+      {
+        "id": "PROD-05",
+        "invariant": "kiriman sebagian 30 → GRN closed, langkah tetap issued, kiriman DITAHAN (tanpa stok/tagihan)",
+        "pass": true,
+        "detail": "('closed', 'issued', 0)"
+      },
+      {
+        "id": "PROD-05",
+        "invariant": "batal kiriman sebagian: alasan pendek 400; sukses → partial kosong, GRN cancelled",
+        "pass": true,
+        "detail": "(400, 200, '{\"id\":\"mko_fe669817ca07\",\"mko_number\":\"MKO-00002\",\"entity_id\":\"ent_ksc\",\"mode\":\"process_only\",\"material_product_id\":\"pro')"
+      },
+      {
+        "id": "PROD-05",
+        "invariant": "kiriman akhir menyerap kiriman sebagian: langkah received, 4 roll = 72 (bukan 102), actual_output 72",
+        "pass": true,
+        "detail": "('closed', 'received', 4, [15.0, 15.0, 21.0, 21.0], 72.0)"
+      },
+      {
+        "id": "PROD-05",
+        "invariant": "tepat 1 tagihan jasa makloon untuk langkah ini (kiriman sebagian tak membuat tagihan sendiri)",
+        "pass": true,
+        "detail": "[('VBM-00007', 500000.0, 1)]"
+      },
+      {
+        "id": "PROD-05",
+        "invariant": "biaya: WIP langkah ter-clear (net 1-1350 = 0); nilai roll output = bahan + jasa (±1)",
+        "pass": true,
+        "detail": "({'1-1300': 500000.0, '2-1100': -500000.0}, 1530000.0, 1030000.0, 500000.0, 1530000.0)"
+      },
+      {
+        "id": "PROD-05",
+        "invariant": "GRN kiriman sebagian tertaut ke tagihan akhir; tidak bisa dibatalkan lagi (409)",
+        "pass": true,
+        "detail": "{'status': 'closed'}"
+      },
+      {
+        "id": "PROD-05",
+        "invariant": "retur/klaim potong bon > sisa tagihan ditolak 400 tanpa jurnal",
+        "pass": true,
+        "detail": "(400, '{\"detail\":\"Potongan Rp 500.001 melebihi sisa tagihan Rp 500.000.\"}')"
+      },
+      {
+        "id": "PROD-05",
+        "invariant": "klaim potong bon 50.000: sales tak bisa menyetujui (403); disetujui → tagihan jasa −50.000, 1 jurnal klaim seimbang",
+        "pass": true,
+        "detail": "(403, 200, '{\"id\":\"mko_fe669817ca07\",\"mko_number\":\"MKO-00002\",\"entity_id\":\"ent_ksc\",\"mode\":\"process_only\",\"material_product_id\":\"pro', 450000.0, 1)"
+      },
+      {
+        "id": "PROD-05",
+        "invariant": "setujui ulang → 400, potongan tidak ganda",
+        "pass": true,
+        "detail": "400"
+      }
+    ],
+    "tail": "pro', 450000.0, 1)\"\n },\n {\n  \"id\": \"PROD-05\",\n  \"invariant\": \"setujui ulang → 400, potongan tidak ganda\",\n  \"pass\": true,\n  \"detail\": \"400\"\n }\n]\npass=16 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-04-P20-partial-api/repro_p20c.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 5.15,
+    "log": "test-logs\\extended-29-repro_p20c.log",
+    "cases": [
+      {
+        "id": "APAR-05",
+        "invariant": "jurnal nota kredit gagal (akun 4-1000 nonaktif) → retur & CN ber-gl_status 'failed' + pesan, tanpa jurnal",
+        "pass": true,
+        "detail": "(200, 'refund_settled', 'failed', 'Akun 4-1000 nonaktif')"
+      },
+      {
+        "id": "SALE-05",
+        "invariant": "nota kredit dari baris SO asli: harga neto per yd, PPN = rasio faktur SO asal, gross = net + PPN",
+        "pass": true,
+        "detail": "(925000.0, 925000.0, 101750.0, 101750.0, 'ar', 185000.0)"
+      },
+      {
+        "id": "SALE-05",
+        "invariant": "pengurang piutang: sisa tagihan SO turun tepat sebesar nota kredit (subledger), tercatat sebagai baris 'credit_note'",
+        "pass": true,
+        "detail": "(5571200.0, 4544450.0, 1026750.0)"
+      },
+      {
+        "id": "SALE-05",
+        "invariant": "barang retur masuk karantina 5 (sekali)",
+        "pass": true,
+        "detail": "[{'length_remaining': 5.0, 'status': 'quarantine'}]"
+      },
+      {
+        "id": "APAR-05",
+        "invariant": "settle ulang sesudah akun aktif → gl_status posted, tepat 1 jurnal (settle ke-3 tidak menggandakan)",
+        "pass": true,
+        "detail": "(200, 'posted', 1)"
+      },
+      {
+        "id": "SALE-05",
+        "invariant": "jurnal: Dr 4-1000 net, Dr 2-1200 PPN, Cr 1-1200 gross; piutang GL turun = subledger; stok & HPP dibalik seimbang",
+        "pass": true,
+        "detail": "{'4-1000': 925000.0, '2-1200': 101750.0, '1-1200': -1026750.0, '1-1300': 610102.75, '5-1000': -610102.75}"
+      },
+      {
+        "id": "SALE-05",
+        "invariant": "roll tidak bertambah karena settle ulang",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "SALE-05",
+        "invariant": "reversal: retur cancelled, CN void, net jurnal 0, roll retur dihapus, sisa tagihan SO pulih",
+        "pass": true,
+        "detail": "(200, '{\"id\":\"sret_5d6c44c5dde6\",\"number\":\"SRET-00003\",\"order_id\":\"so_001\",\"order_number\":\"SO-0001\",\"customer_id\":\"cust_toko_ka', 'cancelled', {}, 5571200.0, 5571200.0)"
+      },
+      {
+        "id": "APAR-02",
+        "invariant": "kwitansi 1.250.000 dialokasikan 1.000.000 → sisa tagihan −1.000.000, kelebihan 250.000 masuk deposit",
+        "pass": true,
+        "detail": "(200, '{\"id\":\"arc_5c0b9a9648af\",\"number\":\"KSC/AR-00007\",\"customer_id\":\"cust_toko_kain\",\"customer_name\":\"Toko Kain Sejahtera\",\"entity_id\":\"ent_ksc\",\"receipt_date\":\"2026', 5571200.0, 4571200.0, 0.0, 250000.0)"
+      },
+      {
+        "id": "APAR-02",
+        "invariant": "pakai deposit melebihi saldo → 400, tanpa mutasi",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "APAR-02",
+        "invariant": "deposit 250.000 dipakai melunasi → sisa tagihan −1.250.000 total, deposit kembali ke awal, tanpa kas baru",
+        "pass": true,
+        "detail": "(200, '{\"id\":\"arc_62ae9fd1f332\",\"number\":\"KSC/AR-00008\",\"customer_id\":\"cust_toko_kain\",\"customer_name\":\"Toko Kain Sejahtera\",\"e', 0.0)"
+      },
+      {
+        "id": "APAR-02",
+        "invariant": "void kwitansi pertama selagi depositnya sudah dipakai → 409 berpesan jelas, TANPA efek parsial (SO, kas, kunci utuh)",
+        "pass": true,
+        "detail": "(409, '{\"detail\":\"Kelebihan bayar Rp 250.000 dari kwitansi KSC/AR-00007 sudah dipakai sebagai deposit. Batalkan dulu kwitansi yang memakai deposit tersebut, lalu batal', 4321200.0, 'posted', None)"
+      },
+      {
+        "id": "APAR-02",
+        "invariant": "void berurutan (pemakaian deposit lalu kwitansi) → sisa tagihan & deposit kembali persis, kas kwitansi void, net jurnal kas 0",
+        "pass": true,
+        "detail": "(200, '{\"id\":\"arc_62ae9fd1f332\",\"number\":\"KSC/AR-00008\",\"customer_id\":\"cust_toko_kain\",\"customer_name\":\"Tok', 200, '{\"id\":\"arc_5c0b9a9648af\",\"number\":\"KSC/AR-00007\",\"customer_id\":\"cust_toko_kain\",\"customer_name\":\"Tok', 5571200.0, 5571200.0, 0.0, 'void')"
+      }
+    ],
+    "tail": "5c0b9a9648af\\\",\\\"number\\\":\\\"KSC/AR-00007\\\",\\\"customer_id\\\":\\\"cust_toko_kain\\\",\\\"customer_name\\\":\\\"Tok', 5571200.0, 5571200.0, 0.0, 'void')\"\n }\n]\npass=13 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-04-P20-partial-api/repro_p20d.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 5.12,
+    "log": "test-logs\\extended-30-repro_p20d.log",
+    "cases": [
+      {
+        "id": "GL-01",
+        "invariant": "neraca saldo KSC seimbang (Σ debit = Σ kredit)",
+        "pass": true,
+        "detail": "(1129065299.56, 1129065299.56)"
+      },
+      {
+        "id": "GL-01",
+        "invariant": "setiap jurnal semua sumber (19 jenis) seimbang per dokumen",
+        "pass": true,
+        "detail": "({'landed_cost': 1, 'finance_case': 2, 'fixed_asset_depreciation': 18, 'interco_return': 1, 'interco_transaction': 4, 'cash_transaction': 13, 'vendor_bill': 6, 'contra_bon_deduction': 1, 'penalty': 1, 'production_output': 1, 'subcon_receipt': 5, 'subcon_service': 6, 'subcon_issue': 6, 'inventory_opening': 1, 'interco_settlement': 1, 'shipment_revenue': 2, 'shipment_cogs': 2, 'advance_reclass': 1, "
+      },
+      {
+        "id": "GL-01",
+        "invariant": "neraca saldo API = agregasi langsung baris jurnal DB (tanpa akun hilang/ganda)",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "GL-01",
+        "invariant": "saldo awal rekening baru 1.000.000 → TB bertambah tepat Dr kas/bank & Cr 3-2900 (ekuitas saldo awal)",
+        "pass": true,
+        "detail": "('1-1100', {'1-1100': 1000000.0, '3-2900': -1000000.0})"
+      },
+      {
+        "id": "GL-01",
+        "invariant": "jurnal manual 250.000 → TB bergeser tepat dua akun, tetap seimbang",
+        "pass": true,
+        "detail": "('KSC/JE-00076', {'6-1100': 250000.0, '1-1110': -250000.0})"
+      },
+      {
+        "id": "GL-01",
+        "invariant": "jurnal timpang ditolak 400, TB tidak berubah",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "GL-01",
+        "invariant": "TB per akhir bulan lalu tidak memuat posting hari ini (saldo awal & jurnal uji)",
+        "pass": true,
+        "detail": "(None, None, -578818500.0)"
+      },
+      {
+        "id": "GL-01",
+        "invariant": "rekonsiliasi persediaan: GL 1-1300 vs subledger roll terbaca (selisih dilaporkan, tidak error)",
+        "pass": true,
+        "detail": "['rows', 'total_difference', 'rounding_tolerance', 'reconciled', 'as_of']"
+      },
+      {
+        "id": "GL-05",
+        "invariant": "[bulan_lalu 2026-09-30] Σ per-PT = gross; konsolidasi = gross + eliminasi (pendapatan/aset/kewajiban/ekuitas)",
+        "pass": true,
+        "detail": "({'revenue': 29029129.56, 'assets': 201088400.0, 'liabilities': 67279400.0, 'equity': 133809000.0}, {'revenue': 29029129.56, 'cogs': 14522000.0, 'opex': 40751142.88, 'expense': 55273142.88, 'gross_profit': 14507129.56, 'net_income': -26244013.32, 'assets': 201088400.0, 'liabilities': 67279400.0, 'equity': 133809000.0}, {'revenue': -3270800.0, 'cogs': -1221000.0, 'opex': 0.0, 'expense': -1221000.0,"
+      },
+      {
+        "id": "GL-05",
+        "invariant": "[bulan_lalu] eliminasi seimbang (Δaset = Δkewajiban + Δekuitas) & neraca konsolidasi balanced",
+        "pass": true,
+        "detail": "({'revenue': -3270800.0, 'cogs': -1221000.0, 'opex': 0.0, 'expense': -1221000.0, 'gross_profit': -2049800.0, 'net_income': -2049800.0, 'assets': 0.0, 'liabilities': 0.0, 'equity': 0.0}, True)"
+      },
+      {
+        "id": "GL-05",
+        "invariant": "[hari_ini 2026-10-05] Σ per-PT = gross; konsolidasi = gross + eliminasi (pendapatan/aset/kewajiban/ekuitas)",
+        "pass": true,
+        "detail": "({'revenue': 29029129.56, 'assets': 738381194.68, 'liabilities': 54916708.0, 'equity': 683464486.68}, {'revenue': 29029129.56, 'cogs': 14522000.0, 'opex': 40751142.88, 'expense': 55273142.88, 'gross_profit': 14507129.56, 'net_income': -26244013.32, 'assets': 738381194.68, 'liabilities': 54916708.0, 'equity': 683464486.68}, {'revenue': -3270800.0, 'cogs': -1221000.0, 'opex': 0.0, 'expense': -122100"
+      },
+      {
+        "id": "GL-05",
+        "invariant": "[hari_ini] eliminasi seimbang (Δaset = Δkewajiban + Δekuitas) & neraca konsolidasi balanced",
+        "pass": true,
+        "detail": "({'revenue': -3270800.0, 'cogs': -1221000.0, 'opex': 0.0, 'expense': -1221000.0, 'gross_profit': -2049800.0, 'net_income': -2049800.0, 'assets': -3792500.0, 'liabilities': -1742700.0, 'equity': -2049800.0}, True)"
+      },
+      {
+        "id": "GL-05",
+        "invariant": "buku PT ent_ksc: TB seimbang (eliminasi tidak menyentuh buku PT)",
+        "pass": true,
+        "detail": "(1129065299.56, 1129065299.56)"
+      },
+      {
+        "id": "GL-05",
+        "invariant": "buku PT ent_kanda: TB seimbang (eliminasi tidak menyentuh buku PT)",
+        "pass": true,
+        "detail": "(99636480.88, 99636480.88)"
+      },
+      {
+        "id": "GL-05",
+        "invariant": "setiap entri eliminasi seimbang",
+        "pass": true,
+        "detail": "[('Auto G-6: Eliminasi antar-PT KSC/IC-00001', True), ('Auto G-6: Eliminasi antar-PT KSC/IC-00002', True), ('Auto G-6: Eliminasi antar-PT KSC/IC-00004', True)]"
+      }
+    ],
+    "tail": "i antar-PT KSC/IC-00001', True), ('Auto G-6: Eliminasi antar-PT KSC/IC-00002', True), ('Auto G-6: Eliminasi antar-PT KSC/IC-00004', True)]\"\n }\n]\npass=15 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-04-P20-partial-api/repro_p20e.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 2.85,
+    "log": "test-logs\\extended-31-repro_p20e.log",
+    "cases": [
+      {
+        "id": "RUN",
+        "invariant": "eksekusi hr01",
+        "pass": false,
+        "detail": "TypeError(\"'NoneType' object is not subscriptable\")"
+      },
+      {
+        "id": "RUN",
+        "invariant": "eksekusi hr03_hr05",
+        "pass": false,
+        "detail": "AssertionError('POST http://127.0.0.1:8009/api/hr/payroll/runs → 400 {\"detail\":\"Tidak ada karyawan aktif pada entitas ini.\"}')"
+      }
+    ],
+    "tail": "etail\": \"AssertionError('POST http://127.0.0.1:8009/api/hr/payroll/runs → 400 {\\\"detail\\\":\\\"Tidak ada karyawan aktif pada entitas ini.\\\"}')\"\n }\n]\npass=0 fail=2\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-04-P20-partial-api/repro_p20f.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 10.92,
+    "log": "test-logs\\extended-32-repro_p20f.log",
+    "cases": [
+      {
+        "id": "DESIGN-04",
+        "invariant": "sebelum dipindah: A (penerima tugas) bisa unggah ke desainnya; B ditolak 403 (permintaan & desain)",
+        "pass": true,
+        "detail": "(200, 403, '{\"detail\":\"Anda tidak bisa mengubah desain ini — permintaan KSC/DSR-00006 kini ditugaskan ke Sari Melati.\"}')"
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "sesudah dipindah ke B: A ditolak 403 membuka permintaan (berisi nama pelanggan) & berkas referensinya; daftar A bersih",
+        "pass": true,
+        "detail": "(200, 403, 403)"
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "A tidak lagi bisa menulis desain itu (unggah, berkas berjenis, ajukan, colorway, ubah) → semua 403",
+        "pass": true,
+        "detail": "{'upload': 403, 'kind': 403, 'submit': 403, 'colorway': 403, 'update': 403}"
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "B (penerima baru) membuka permintaan & referensi, bisa unggah ke desain, tugas muncul di daftarnya",
+        "pass": true,
+        "detail": "(200, 200, 200)"
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "galeri bersama tetap terbaca A tetapi TANPA PII pelanggan (nama/id pelanggan tidak ikut di dokumen desain)",
+        "pass": true,
+        "detail": "[]"
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "admin/manager (rnd.manage) tetap bisa menulis desain mana pun",
+        "pass": true,
+        "detail": "200"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "PO 600 jt → rantai 2 tingkat (manager → direksi/admin), menunggu tingkat 1",
+        "pass": true,
+        "detail": "('waiting_approval', [{'level': 1, 'required_role': 'manager', 'label': 'Persetujuan', 'status': 'pending', 'approved_by': '', 'approved_by_id': '', 'approved_at': ''}, {'level': 2, 'required_role': 'admin', 'label': 'Direksi', 'status': 'pending', 'approved_by': '', 'approved_by_id': '', 'approved_at': ''}])"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "dua manajer menyetujui tingkat 1 bersamaan → tepat 1×200 + 1×409; lanjut ke tingkat 2",
+        "pass": true,
+        "detail": "[409, 200]"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "penyetuju tingkat 1 tak bisa menandatangani tingkat 2 (403)",
+        "pass": true,
+        "detail": "(403, '{\"detail\":\"Approval PO butuh role minimal \\'admin\\'. Role Anda: \\'manager\\'.\"}')"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "amandemen saat tingkat 2 menunggu → versi naik, rantai diulang dari tingkat 1 (persetujuan lama gugur)",
+        "pass": true,
+        "detail": "(200, '{\"id\":\"po_46f00c5816f5\",\"po_number\":\"KSC/PO-00016\",\"pr_id\":\"\",\"pr_number\":\"\",\"source\":\"manual\",\"source_so_ids\":[],\"sales', 2)"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "keputusan atas versi basi (v1) — setujui maupun tolak — ditolak 409 tanpa mengubah PO",
+        "pass": true,
+        "detail": "(409, 409)"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "setujui vs tolak bersamaan → tepat satu menang, status akhir konsisten dengan pemenangnya",
+        "pass": true,
+        "detail": "([409, 200], 'rejected', 1)"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "disetujui penuh (2 tingkat, orang berbeda) → pending + task inbound; tolak terlambat 409, status tetap",
+        "pass": true,
+        "detail": "(200, 409, 'pending', 1)"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "dua amandemen bersamaan → 1×200 + 1×409; versi naik tepat 1 (tak ada amandemen yang menimpa diam-diam)",
+        "pass": true,
+        "detail": "([200, 409], 2)"
+      }
+    ],
+    "tail": "en bersamaan → 1×200 + 1×409; versi naik tepat 1 (tak ada amandemen yang menimpa diam-diam)\",\n  \"pass\": true,\n  \"detail\": \"([200, 409], 2)\"\n }\n]\npass=14 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-04-P21-partial-api/repro_p21.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 19.33,
+    "log": "test-logs\\extended-33-repro_p21.log",
+    "cases": [
+      {
+        "id": "DESIGN-04",
+        "invariant": "desainer A (penerima awal) bisa buka & unggah",
+        "pass": true,
+        "detail": "(200, 200)"
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "sebelum dipindah: desainer B ditolak membuka permintaan",
+        "pass": true,
+        "detail": "403"
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "admin memindahkan penugasan A → B",
+        "pass": true,
+        "detail": "{\"id\":\"dsr_3e83eca35b6e\",\"number\":\"KSC/DSR-00006\",\"entity_id\":\"ent_ksc\",\"line_code\":\"\",\"source\":\"internal\",\"so_id\":\"\",\"so_number\":\"\",\"customer_id\":\"\",\"customer_name\":\"\",\"requested_by\":\"Budi Santoso\",\""
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "sesudah pindah: A ditolak buka detail (brief/PII), B boleh",
+        "pass": true,
+        "detail": "(403, 200)"
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "daftar A tidak lagi memuat permintaan, daftar B memuat",
+        "pass": true,
+        "detail": "(3, 1)"
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "sesudah pindah: A ditolak unggah/ubah desain, B boleh unggah",
+        "pass": true,
+        "detail": "(403, 403, 200)"
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "B diganti peran (→ sales) dengan token lama: buka & unggah ditolak seketika",
+        "pass": true,
+        "detail": "(403, 403)"
+      },
+      {
+        "id": "DESIGN-04",
+        "invariant": "B dinonaktifkan: token lama ditolak (401/403)",
+        "pass": true,
+        "detail": "401"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "tingkat 1 (manajer) disetujui → menunggu tingkat 2 (admin)",
+        "pass": true,
+        "detail": "{\"id\":\"po_test_p21_43249b\",\"po_number\":\"TEST_P21_43249b-PO\",\"supplier_name\":\"Solo Weave\",\"supplier_contact\":\"Pak Joko | 085012300003\",\"warehouse_id\":\"wh_bandung\",\"status\":\"waiting_approval\",\"items\":[{"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "manajer yang sama mengirim ulang (keputusan ganda/basi) ditolak",
+        "pass": true,
+        "detail": "403"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "admin menyetujui versi basi (v1, PO kini v2) → 409 tanpa perubahan",
+        "pass": true,
+        "detail": "(409, 'waiting_approval')"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "3 admin menyetujui tingkat akhir bersamaan → tepat 1 sukses, sisanya 409/403",
+        "pass": true,
+        "detail": "[409, 200, 409]"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "disetujui penuh sekali: status pending, tugas penerimaan tidak ganda",
+        "pass": true,
+        "detail": "('pending', 2, 2)"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "tolak sesudah disetujui penuh (keputusan basi) → 409",
+        "pass": true,
+        "detail": "409"
+      },
+      {
+        "id": "DOC-03",
+        "invariant": "jejak: 2 tingkat ditandatangani 2 orang berbeda",
+        "pass": true,
+        "detail": "['user_manager_01', 'user_test_p21_43249b_admin_1']"
+      },
+      {
+        "id": "DOC-04",
+        "invariant": "jadwal sales berjalan dengan hak akses pemilik: total = laporan langsung sales",
+        "pass": true,
+        "detail": "('ok', 0.0, 0.0)"
+      },
+      {
+        "id": "DOC-04",
+        "invariant": "lingkup sales lebih sempit dari admin (bukan data semua sales)",
+        "pass": true,
+        "detail": "(0.0, 0.0)"
+      },
+      {
+        "id": "DOC-04",
+        "invariant": "hasil jadwal milik sales: manajer 404 (riwayat & ekspor), admin 200",
+        "pass": true,
+        "detail": "r_6f9c085146"
+      },
+      {
+        "id": "DOC-04",
+        "invariant": "manajer tidak bisa menjalankan/mengubah/hapus jadwal sales",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "DOC-04",
+        "invariant": "sales tidak bisa menjadwalkan template di luar perannya (peringkat semua sales)",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "DOC-05",
+        "invariant": "notifikasi laporan hanya untuk pemilik (recipient_user, bukan siaran peran)",
+        "pass": true,
+        "detail": "{'recipient_user': 'user_sales_01', 'recipient_role': ''}"
+      },
+      {
+        "id": "DOC-05",
+        "invariant": "pemilik melihat notifikasinya; manajer/finance/admin lain tidak",
+        "pass": true,
+        "detail": "(True, False, False)"
+      },
+      {
+        "id": "DOC-05",
+        "invariant": "pemilik dinonaktifkan: laporan tidak dikirim (run error, 0 notifikasi baru)",
+        "pass": true,
+        "detail": "Pemilik jadwal tidak aktif atau tidak lagi boleh memakai asisten."
+      },
+      {
+        "id": "DOC-05",
+        "invariant": "pemilik diganti peran gudang: laporan tidak dikirim (run error, 0 notifikasi baru)",
+        "pass": true,
+        "detail": "Gagal: Template tidak ditemukan untuk peran Anda."
+      },
+      {
+        "id": "DOC-05",
+        "invariant": "pemilik dicabut dari badan usaha jadwal: laporan tidak dikirim (run error, 0 notifikasi baru)",
+        "pass": true,
+        "detail": "Pemilik jadwal tidak lagi punya akses ke badan usaha jadwal ini."
+      },
+      {
+        "id": "OPS-04",
+        "invariant": "kunci saga yang menggantung terlihat di Kunci Saga (SO & PO — PO dulu tak terdaftar)",
+        "pass": true,
+        "detail": "[]"
+      },
+      {
+        "id": "OPS-04",
+        "invariant": "aksi baru atas dokumen terkunci ditolak 409 SAGA_IN_PROGRESS (tidak menulis dua kali)",
+        "pass": true,
+        "detail": "(409, '{\"detail\":{\"code\":\"SAGA_IN_PROGRESS\",\"message\":\"Aksi \\'simulasi_crash\\' atas dokumen ini sedang/pernah berjalan (mulai 202')"
+      },
+      {
+        "id": "OPS-04",
+        "invariant": "inspeksi: kunci basi (tidak aktif) + efek hilir yang sudah terposting terukur",
+        "pass": true,
+        "detail": "(False, {'journal_entries': 1})"
+      },
+      {
+        "id": "OPS-04",
+        "invariant": "lepas kunci tanpa mengakui efek hilir ditolak; dengan pengakuan diterima",
+        "pass": true,
+        "detail": "(409, 200, '{\"released\":true,\"collection\":\"sales_orders\",\"id\":\"so_005\",\"lock\":{\"action\":\"simulasi_crash\",\"by\":\"TEST_P21_43249b\",\"started_at\":\"2026-10-05T13:56:54.998263+00:')"
+      },
+      {
+        "id": "OPS-04",
+        "invariant": "kunci PO yang menggantung kini bisa dilepas admin",
+        "pass": true,
+        "detail": "{\"released\":true,\"collection\":\"purchase_orders\",\"id\":\"po_91fe5bda7ea9\",\"lock\":{\"action\":\"simulasi_crash\",\"by\":\"TEST_P21_43249b\",\"started_at\":\"2026-10-05T13:56:5"
+      },
+      {
+        "id": "OPS-04",
+        "invariant": "sesudah lepas: tidak ada kunci tersisa di dokumen",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "OPS-02",
+        "invariant": "semua job ber-efek bisnis sukses saat dijalankan",
+        "pass": true,
+        "detail": "{}"
+      },
+      {
+        "id": "OPS-02",
+        "invariant": "putaran ke-2 (retry) tanpa efek baru di dokumen bisnis/notifikasi",
+        "pass": false,
+        "detail": "{'finance_case_scan': {'notifications': 1}}"
+      },
+      {
+        "id": "OPS-02",
+        "invariant": "harness",
+        "pass": false,
+        "detail": "NotADirectoryError(20, 'The directory name is invalid', None, 267, None)"
+      },
+      {
+        "id": "OPS-03",
+        "invariant": "dry-run produk: 4 akan dibuat, 1 error, tanpa menulis",
+        "pass": true,
+        "detail": "{'total': 5, 'created': 4, 'updated': 0, 'errors': ['Baris 6: SKU wajib diisi'], 'dry_run': True}"
+      },
+      {
+        "id": "OPS-03",
+        "invariant": "impor produk terputus (2) → lanjut file penuh: hanya sisa dibuat, ulang idempoten",
+        "pass": true,
+        "detail": "(2, 2, 2, 0, 4)"
+      },
+      {
+        "id": "OPS-03",
+        "invariant": "migrasi stok awal terputus → ulang semua baris: baris lama 409 (no. roll unik), sisa dibuat",
+        "pass": true,
+        "detail": "([200, 200], [409, 409, 200, 200], 4)"
+      },
+      {
+        "id": "OPS-03",
+        "invariant": "rekonsiliasi: Σ roll = saldo per produk, 1 mutasi per roll",
+        "pass": true,
+        "detail": "(True, 4)"
+      }
+    ],
+    "tail": ",\n {\n  \"id\": \"OPS-03\",\n  \"invariant\": \"rekonsiliasi: Σ roll = saldo per produk, 1 mutasi per roll\",\n  \"pass\": true,\n  \"detail\": \"(True, 4)\"\n }\n]\npass=36 fail=2\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-05-P05-coa-reports-close/repro_followup3.py",
+    "adaptation": "Original assertions unchanged; /app paths, local DB/HTTP env and explicit relative frontend.env read point to this suite environment. Initial connection-refused evidence preserved.",
+    "exit_code": 0,
+    "seconds": 5.04,
+    "log": "test-logs\\extended-34-repro_followup3.log",
+    "cases": [
+      {
+        "id": "FN-02",
+        "invariant": "produk B tidak tertukar dgn produk A berlini sama (sisa = qty baris B)",
+        "pass": true,
+        "detail": "('matched', {'qty_status': 'ok', 'price_status': 'ok', 'qty_remaining': 20.0, 'price_variance_pct': 0.0, 'messages': []})"
+      },
+      {
+        "id": "FN-02",
+        "invariant": "konteks tagihan memberi id baris unik per baris PO",
+        "pass": true,
+        "detail": "['L1', 'L2', 'L3', 'L4']"
+      },
+      {
+        "id": "FN-02",
+        "invariant": "produk ganda ditandai same_product_lines=2",
+        "pass": true,
+        "detail": ""
+      },
+      {
+        "id": "FN-02",
+        "invariant": "line_id tersimpan permanen di PO",
+        "pass": true,
+        "detail": "{'items': [{'line_id': 'L1'}, {'line_id': 'L2'}, {'line_id': 'L3'}, {'line_id': 'L4'}]}"
+      },
+      {
+        "id": "FN-02",
+        "invariant": "tagihan dgn pilihan baris PO diterima & cocok",
+        "pass": true,
+        "detail": "(200, '{\"id\":\"vbill_2e324b336f94\",\"bill_number\":\"VB-00007\",\"supplier_invoice_no\":\"\",\"po_id\":\"audit_f3_d90520_po\",\"po_number\":\"PO-audit_f3_d90520\",\"supplier_id\":\"sup_ca61c20a1701\",\"supplier_name\":\"Cirebon Cra')"
+      },
+      {
+        "id": "FN-02",
+        "invariant": "sisa tagih per baris: A 0, B 20 (tidak ikut berkurang), C1 5, C2 0",
+        "pass": true,
+        "detail": "{'L1': 0.0, 'L2': 20.0, 'L3': 5.0, 'L4': 0.0}"
+      },
+      {
+        "id": "FN-02",
+        "invariant": "produk di >1 baris tanpa po_line_id → 400",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "FN-02",
+        "invariant": "tagih ulang baris C2 yang sudah penuh → over-billed",
+        "pass": true,
+        "detail": "(200, 'blocked')"
+      },
+      {
+        "id": "LABEL",
+        "invariant": "roll anak memuat nama produk & no. roll induk untuk label",
+        "pass": true,
+        "detail": "{'id': 'audit_f3_d90520_kid', 'roll_no': 'R-audit_f3_d90520-1', 'product_id': 'prod_batik_mega', 'warehouse_id': 'wh_jakarta', 'length_remaining': 10.0, 'unit': 'meter', 'parent_roll_id': 'audit_f3_d90520_par', 'cut': {}, 'rfid_tag_id': None, 'product_name': 'Batik Mega Mendung Premium', 'sku': 'BTK"
+      },
+      {
+        "id": "REIMB",
+        "invariant": "hanya hutang terbuka dihitung (yang dibayar tidak)",
+        "pass": true,
+        "detail": "{'audit_f3_d90520 Sari': {'employee': 'audit_f3_d90520 Sari', 'outstanding': 70.0, 'count': 1, 'oldest_days': 45, 'aging': {'0-7': 0.0, '8-14': 0.0, '15-30': 0.0, '>30': 70.0}}, 'audit_f3_d90520 Andi': {'employee': 'audit_f3_d90520 Andi', 'outstanding': 150.0, 'count': 2, 'oldest_days': 20, 'aging':"
+      },
+      {
+        "id": "REIMB",
+        "invariant": "umur 0-7 / 15-30 per karyawan",
+        "pass": true,
+        "detail": "{'employee': 'audit_f3_d90520 Andi', 'outstanding': 150.0, 'count': 2, 'oldest_days': 20, 'aging': {'0-7': 100.0, '8-14': 0.0, '15-30': 50.0, '>30': 0.0}}"
+      },
+      {
+        "id": "REIMB",
+        "invariant": "hutang terlama (>30) Sari 45 hari",
+        "pass": true,
+        "detail": "{'employee': 'audit_f3_d90520 Sari', 'outstanding': 70.0, 'count': 1, 'oldest_days': 45, 'aging': {'0-7': 0.0, '8-14': 0.0, '15-30': 0.0, '>30': 70.0}}"
+      },
+      {
+        "id": "REIMB",
+        "invariant": "role gudang tidak boleh melihat laporan (403)",
+        "pass": true,
+        "detail": "403"
+      }
+    ],
+    "tail": "0, '>30': 70.0}}\"\n },\n {\n  \"id\": \"REIMB\",\n  \"invariant\": \"role gudang tidak boleh melihat laporan (403)\",\n  \"pass\": true,\n  \"detail\": \"403\"\n }\n]\npass=13 fail=0\n",
+    "prior_environment_attempt": {
+      "script": "audit/iterations/2026-10-05-P05-coa-reports-close/repro_followup3.py",
+      "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+      "exit_code": 1,
+      "seconds": 4.91,
+      "log": "test-logs\\extended-34-repro_followup3.log",
+      "tail": "-10-05-P05-coa-reports-close\\repro_followup3.py\", line 32, in main\n    s.post(f\"{base}/auth/login\", json={\"email\": \"admin@kainnusantara.id\", \"password\": \"demo12345\"}, timeout=20)\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\sessions.py\", line 712, in post\n    return self.request(\"POST\", url, data=data, json=json, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\sessions.py\", line 651, in request\n    resp = self.send(prep, **send_kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\sessions.py\", line 784, in send\n    r = adapter.send(request, **kwargs)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\requests\\adapters.py\", line 729, in send\n    raise ConnectionError(e, request=request)\nrequests.exceptions.ConnectionError: HTTPConnectionPool(host='127.0.0.1', port=8006): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(\"HTTPConnection(host='127.0.0.1', port=8006): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it\"))\n"
+    }
+  },
+  {
+    "script": "audit/iterations/2026-10-09-P16-close-coverage/repro_p16.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 14.66,
+    "log": "test-logs\\extended-35-repro_p16.log",
+    "cases": [
+      {
+        "id": "INV-02",
+        "invariant": "buat transfer 1 roll → waiting_approval, roll reserved ber-ref wh_transfer",
+        "pass": true,
+        "detail": "200 reserved {\"id\":\"trn_bd9d83ddfc75\",\"code\":\"KSC/TRF-00005\",\"transfer_kind\":\"intra_entity\",\"entity_id\":\"ent_ksc\",\"source_warehouse_i"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "panjang bebas gudang asal berkurang tepat sepanjang roll",
+        "pass": true,
+        "detail": "160.0→150.0 L=10.0"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "roll yang sudah dipesan tidak bisa dipesan transfer lain (409)",
+        "pass": true,
+        "detail": "409"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "POST /status approved|rejected|cancelled|completed dari waiting_approval → 400, roll tetap reserved",
+        "pass": true,
+        "detail": "{'approved': 400, 'rejected': 400, 'cancelled': 400, 'completed': 400} roll=reserved"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "DELETE ?reason dari waiting_approval → cancelled, roll available di wh_jakarta tanpa reserved_ref",
+        "pass": true,
+        "detail": "200 available"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "alasan batal tersimpan di dokumen & audit log",
+        "pass": true,
+        "detail": "TEST_P16_2a1115 batal audit=True"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "batal ulang ditolak 400",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "panjang bebas gudang asal pulih setelah batal",
+        "pass": true,
+        "detail": "160.0 vs 160.0"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "approve 200; lompat approved→dispatched & /status cancelled ditolak 400",
+        "pass": true,
+        "detail": "200/400/400"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "picking→staging→dispatched 200; roll in_transit_transfer + mutasi transfer_out −L",
+        "pass": true,
+        "detail": "{'picking': 200, 'staging': 200, 'dispatched': 200} in_transit_transfer mov=True"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "completed → roll available di wh_bandung, bin dikosongkan, last_transfer dari wh_jakarta, owner tetap",
+        "pass": true,
+        "detail": "200 available wh_bandung"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "stok asal −L dan tujuan +L; total panjang produk tetap (tidak ada roll ganda/hilang)",
+        "pass": true,
+        "detail": "jkt 160.0→150.0 bdg 0→10.0 total 160.0→160.0"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "inventory_balances dibangun ulang dari roll: on_hand asal −L, in_transit saat jalan, tujuan +L",
+        "pass": true,
+        "detail": "{'jkt': [160.0, 10.0, 150.0], 'bdg': [None, 10.0]}"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "transfer selesai tidak bisa dibatalkan (400)",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "jejak audit lengkap per tahap (created/approved/status_changed)",
+        "pass": true,
+        "detail": "['transfer_approved', 'transfer_created', 'transfer_status_changed']"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "batal sesudah dispatched → roll available di gudang asal + mutasi transfer_cancelled menyeimbangkan transfer_out",
+        "pass": true,
+        "detail": "200 available wh_bandung [{'movement_type': 'transfer_out', 'quantity': -10.0}, {'movement_type': 'transfer_cancelled', 'quantity': 10.0}]"
+      },
+      {
+        "id": "INV-02",
+        "invariant": "tolak → roll available tanpa ref",
+        "pass": true,
+        "detail": "200 available"
+      },
+      {
+        "id": "INV-04",
+        "invariant": "transfer antar-PT dibuat & roll entitas asal dipesan",
+        "pass": true,
+        "detail": "200 {\"id\":\"trn_3a335fdfd16f\",\"code\":\"KSC/TRF-00010\",\"transfer_kind\":\"inter_entity\",\"entity_id\":\"ent_ksc\",\"source_entity_id\":\"ent_ksc\",\"dest_entity_id\":\"en held=1"
+      },
+      {
+        "id": "INV-04",
+        "invariant": "/status cancelled ditolak 400; DELETE melepas semua roll, tanpa jurnal antar-PT",
+        "pass": true,
+        "detail": "400/200 left=0 je=0"
+      },
+      {
+        "id": "INV-04",
+        "invariant": "panjang bebas entitas asal pulih",
+        "pass": true,
+        "detail": "180.0 vs 180.0"
+      },
+      {
+        "id": "SALE-01",
+        "invariant": "SO dibuat & stok dipesan (reserved_qty = qty)",
+        "pass": true,
+        "detail": "200 reserved"
+      },
+      {
+        "id": "SALE-01",
+        "invariant": "total = qty×harga; PPN 12%×DPP(11/12); grand = net + PPN",
+        "pass": true,
+        "detail": "{'net': 2800000.0, 'dpp': 2566666.67, 'ppn': 308000.0, 'grand': 3108000.0}"
+      },
+      {
+        "id": "SALE-01",
+        "invariant": "Faktur Pajak dari SO terkonfirmasi: DPP/PPN/grand = SO",
+        "pass": true,
+        "detail": "200/200 {\"id\":\"fkt_b6f509c4e4ba\",\"number\":\"KSC/FKT-00004\",\"nsfp\":\"\",\"kode_transaksi\":\"04\",\"status\":\"normal\",\"replaces_id\":null,\""
+      },
+      {
+        "id": "SALE-01",
+        "invariant": "pick → potong → verifikasi label → kirim: SO shipped + surat jalan",
+        "pass": false,
+        "detail": "[400] picked"
+      },
+      {
+        "id": "SALE-01",
+        "invariant": "jurnal pengakuan: Piutang = grand, Pendapatan = net, PPN Keluaran = PPN SO",
+        "pass": false,
+        "detail": "{'ar': 0.0, 'rev': 0.0, 'ppn': 0.0} vs grand=3108000.0"
+      },
+      {
+        "id": "SALE-01",
+        "invariant": "HPP terposting; tak ada sisa reservasi; roll terkirim in_transit_sales Σ=10; panjang bebas −10",
+        "pass": false,
+        "detail": "cogs=0 held=1 lres=0 sold=[{'length_remaining': 10.0, 'status': 'committed'}] free 255.0→245.0"
+      },
+      {
+        "id": "SALE-01",
+        "invariant": "sisa tagihan: outstanding = grand, lalu grand − 1.000.000 setelah penerimaan AR",
+        "pass": true,
+        "detail": "3108000.0 → 2108000.0 rc=200 {\"id\":\"arc_f9b10d2e062a\",\"number\":\"KSC/AR-00007\",\"customer_id\":\"cust_toko_kain\",\"customer_name\":\"Toko Kain Sejahtera\",\"e"
+      },
+      {
+        "id": "SALE-01",
+        "invariant": "dokumen Faktur: subtotal, PPN, grand total = SO",
+        "pass": true,
+        "detail": "{'Subtotal': 'Rp 2.800.000', 'PPN 12.0%': 'Rp 308.000', 'Grand Total': 'Rp 3.108.000'}"
+      },
+      {
+        "id": "SALE-01",
+        "invariant": "kiriman parsial: status partially_shipped, Piutang = porsi baris terkirim, baris lain tetap dipesan",
+        "pass": false,
+        "detail": "partially_picked ar=0.0 exp=1554000.0 res=1"
+      },
+      {
+        "id": "SALE-03",
+        "invariant": "SO terkirim sebagian tidak bisa dibatalkan (409)",
+        "pass": false,
+        "detail": "200"
+      },
+      {
+        "id": "SALE-01",
+        "invariant": "setelah kiriman terakhir: shipped, Σ Piutang = grand, Σ PPN = PPN SO (tanpa selisih pembulatan)",
+        "pass": false,
+        "detail": "cancelled {'ar': 0.0, 'rev': 0.0, 'ppn': 0.0} grand=2740312.5 je=0"
+      },
+      {
+        "id": "SALE-03",
+        "invariant": "SO reserved dibatalkan → panjang bebas pulih persis, tidak ada reservasi tersisa",
+        "pass": true,
+        "detail": "{'wh_jakarta': 290.0, 'wh_surabaya': 210.0}→{'wh_jakarta': 286.0, 'wh_surabaya': 210.0}→{'wh_jakarta': 290.0, 'wh_surabaya': 210.0} left=0 200"
+      },
+      {
+        "id": "SALE-03",
+        "invariant": "SO dengan Faktur Pajak aktif: batal ditolak 409 (faktur pajak dibatalkan dulu) — tidak ada faktur aktif untuk SO batal",
+        "pass": true,
+        "detail": "fkt=200 cancel=409 {\"detail\":\"Pesanan ini sudah punya Faktur Pajak aktif (KSC/FKT-00005). Batalkan Faktur Pajak tersebut dulu (menu Faktur Pajak → Batalkan, alasan wajib so=confirmed active=1"
+      },
+      {
+        "id": "SALE-03",
+        "invariant": "setelah faktur pajak dibatalkan: SO batal 200, reservasi lepas, tugas gudang batal",
+        "pass": true,
+        "detail": "fc=200 {\"id\":\"fkt_3c21a146b5db\",\"number\":\"KSC/FKT-00005\",\"nsfp\":\"\",\"kode_transaksi\":\"04\",\"status\":\"batal\",\" cx=200 left=0 tasks=0"
+      },
+      {
+        "id": "DESIGN",
+        "invariant": "eksekusi skenario",
+        "pass": false,
+        "detail": "KeyError('id')"
+      }
+    ],
+    "tail": "atal\\\",\\\" cx=200 left=0 tasks=0\"\n },\n {\n  \"id\": \"DESIGN\",\n  \"invariant\": \"eksekusi skenario\",\n  \"pass\": false,\n  \"detail\": \"KeyError('id')\"\n }\n]\npass=28 fail=7\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-09-P16-close-coverage/repro_p16b.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 7.33,
+    "log": "test-logs\\extended-36-repro_p16b.log",
+    "cases": [
+      {
+        "id": "AUTH-04",
+        "invariant": "arsip entitas yang masih punya operasi berjalan tanpa force → 409 + daftar blocker, status tetap aktif",
+        "pass": true,
+        "detail": "409 {\"detail\":{\"message\":\"Badan usaha masih terpakai — belum bisa diarsipkan.\",\"blockers\":[\"1 pengguna masih ber-badan-usaha utama di sini — pindahkan dulu (Citra L"
+      },
+      {
+        "id": "AUTH-04",
+        "invariant": "force tanpa alasan ditolak 400",
+        "pass": true,
+        "detail": "400"
+      },
+      {
+        "id": "AUTH-04",
+        "invariant": "force + alasan (admin) → archived",
+        "pass": true,
+        "detail": "200 {\"id\":\"ent_kanda\",\"code\":\"KANDA\",\"name\":\"CV Kanda Suka\",\"short_name\":\"Kanda\",\"legal_name\":\"CV Kanda Suka\",\"type\":\"CV\",\"i"
+      },
+      {
+        "id": "AUTH-04",
+        "invariant": "dokumen berjalan milik entitas terarsip tidak bisa diubah lewat konteks entitas itu, entitas lain, maupun 'all'",
+        "pass": true,
+        "detail": "hdr=403 ksc=404 all=404 status=reserved {\"detail\":\"Data tidak ditemukan untuk entitas ini\"}"
+      },
+      {
+        "id": "AUTH-04",
+        "invariant": "entitas terarsip tetap terbaca admin lewat ?status=archived",
+        "pass": true,
+        "detail": "200"
+      },
+      {
+        "id": "AUTH-04",
+        "invariant": "aktifkan kembali → tulis ke dokumennya pulih",
+        "pass": true,
+        "detail": "200/200 {\"id\":\"so_9c2c30962e8b\",\"number\":\"KANDA/SO-00001\",\"customer_id\":\"cust_moda_surabaya\",\"customer_name\""
+      },
+      {
+        "id": "MASTER-05",
+        "invariant": "produk dinonaktifkan: soft (status inactive), stok/roll tidak berubah",
+        "pass": true,
+        "detail": "200"
+      },
+      {
+        "id": "MASTER-05",
+        "invariant": "produk nonaktif ditolak untuk SO baru",
+        "pass": true,
+        "detail": "400 {\"detail\":\"1 produk belum boleh masuk Pesanan Penjualan: Ulos Batak Ragidup (ULS-BTK-001) — produksi. Selesaikan dulu al"
+      },
+      {
+        "id": "MASTER-05",
+        "invariant": "produk nonaktif ditolak untuk PO baru",
+        "pass": true,
+        "detail": "400 {\"detail\":\"1 produk belum boleh masuk Purchase Order: Ulos Batak Ragidup (ULS-BTK-001) — produksi. Selesaikan dulu alur R&D (Spesifikasi → Sample → Ri"
+      },
+      {
+        "id": "MASTER-05",
+        "invariant": "supplier nonaktif ditolak untuk PO baru; PO lamanya tetap ada",
+        "pass": true,
+        "detail": "del=200 po=400 {\"detail\":\"Supplier “Cirebon Craft” sudah dinonaktifkan — PO baru tidak bisa dibuat. Aktifkan kembali di Master Supplier bila memang masih dipakai.\"} lama=4"
+      },
+      {
+        "id": "MASTER-01",
+        "invariant": "UOM yang dipakai dokumen tidak bisa dinonaktifkan (409), status tetap",
+        "pass": true,
+        "detail": "409 {\"detail\":\"Satuan MTR masih dipakai 2 dokumen (inventory_movements 1, products 1). Nonaktifkan hanya setelah dokumen itu"
+      },
+      {
+        "id": "MASTER-01",
+        "invariant": "peran sales tidak bisa menonaktifkan produk (403)",
+        "pass": true,
+        "detail": "403"
+      }
+    ],
+    "tail": "umen itu\"\n },\n {\n  \"id\": \"MASTER-01\",\n  \"invariant\": \"peran sales tidak bisa menonaktifkan produk (403)\",\n  \"pass\": true,\n  \"detail\": \"403\"\n }\n]\npass=12 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-09-P16-close-coverage/repro_p16c.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 7.25,
+    "log": "test-logs\\extended-37-repro_p16c.log",
+    "cases": [
+      {
+        "id": "GRN-03",
+        "invariant": "GRN dibuat & siap hitung (review) dengan SJ + baris target tugas PO",
+        "pass": true,
+        "detail": "200 review"
+      },
+      {
+        "id": "GRN-03",
+        "invariant": "versi basi ditolak 409 STATE_CHANGED",
+        "pass": true,
+        "detail": "409 {\"detail\":{\"code\":\"STATE_CHANGED\",\"message\":\"Kedatangan barang ini sudah diubah orang lain. Muat ulang layar.\"}}"
+      },
+      {
+        "id": "GRN-03",
+        "invariant": "konteks entitas lain tidak bisa membaca/membatalkan GRN (403/404), status tetap",
+        "pass": true,
+        "detail": "404/404 review"
+      },
+      {
+        "id": "GRN-03",
+        "invariant": "surat jalan yang sama (beda huruf/tanda baca) dari supplier sama ditolak 409 DN_DUPLICATE",
+        "pass": true,
+        "detail": "start=200 dup=409 {\"detail\":{\"code\":\"DN_DUPLICATE\",\"existing_number\":\"KSC/GRN-00001\",\"message\":\"Surat jalan test_p16c_8ba735/sj1 dari Palembang Silk House sudah dicatat"
+      },
+      {
+        "id": "GRN-02",
+        "invariant": "batal saat counting → cancelled, kunci SJ dilepas, tugas PO bebas lagi",
+        "pass": true,
+        "detail": "200 cancelled task_lock=None"
+      },
+      {
+        "id": "GRN-02",
+        "invariant": "batal ulang tidak menambah efek: status, versi, roll & mutasi tetap",
+        "pass": true,
+        "detail": "200 v 6→6"
+      },
+      {
+        "id": "GRN-02",
+        "invariant": "setelah GRN batal, SJ yang sama boleh dihitung di kedatangan lain",
+        "pass": true,
+        "detail": "200 {\"id\":\"grn_7d4a02d85d4b\",\"entity_id\":\"ent_ksc\",\"number\":\"KSC/GRN-00002\",\"status\":\"counting\",\"version\":5,\"partner_type\":\""
+      }
+    ],
+    "tail": "\"id\\\":\\\"grn_7d4a02d85d4b\\\",\\\"entity_id\\\":\\\"ent_ksc\\\",\\\"number\\\":\\\"KSC/GRN-00002\\\",\\\"status\\\":\\\"counting\\\",\\\"version\\\":5,\\\"partner_type\\\":\\\"\"\n }\n]\npass=7 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-09-P16-close-coverage/repro_p16d.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 8.09,
+    "log": "test-logs\\extended-38-repro_p16d.log",
+    "cases": [
+      {
+        "id": "COMM-03",
+        "invariant": "harga khusus disetujui → harga baris SO = harga khusus & total dihitung ulang",
+        "pass": true,
+        "detail": "200/200 price=192375.0 net=384750.0"
+      },
+      {
+        "id": "COMM-03",
+        "invariant": "harga khusus lingkup pesanan TIDAK bisa dipakai SO lain lewat price_approval_id (400)",
+        "pass": true,
+        "detail": "400 {\"detail\":\"Harga khusus untuk Tenun Ikat Garuda Premium tidak berlaku (belum disetujui / kadaluarsa / qty di bawah minimum)\"}"
+      },
+      {
+        "id": "COMM-03",
+        "invariant": "harga khusus lingkup pesanan tidak muncul sebagai harga efektif standing",
+        "pass": true,
+        "detail": "200 {\"has_special\":false}"
+      },
+      {
+        "id": "COMM-03",
+        "invariant": "standing kedaluwarsa ditolak; di bawah min qty ditolak; berlaku & qty cukup → harga khusus",
+        "pass": true,
+        "detail": "400/400/200"
+      }
+    ],
+    "tail": "nt\": \"standing kedaluwarsa ditolak; di bawah min qty ditolak; berlaku & qty cukup → harga khusus\",\n  \"pass\": true,\n  \"detail\": \"400/400/200\"\n }\n]\npass=4 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-09-P16-close-coverage/repro_p16e.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 5.74,
+    "log": "test-logs\\extended-39-repro_p16e.log",
+    "cases": [
+      {
+        "id": "DOC-02",
+        "invariant": "preview faktur (admin) memuat nomor SO, pelanggan & grand total sumber",
+        "pass": true,
+        "detail": "200 len=1960"
+      },
+      {
+        "id": "DOC-02",
+        "invariant": "dokumen tersimpan & tampilan cetak = hasil generate",
+        "pass": true,
+        "detail": "200"
+      },
+      {
+        "id": "DOC-02",
+        "invariant": "pengguna entitas lain tidak bisa preview/cetak dokumen KSC (403/404)",
+        "pass": true,
+        "detail": "404/404"
+      },
+      {
+        "id": "DOC-02",
+        "invariant": "peran tanpa izin dokumen (desainer) ditolak 403",
+        "pass": true,
+        "detail": "403"
+      },
+      {
+        "id": "DOC-02",
+        "invariant": "sales bukan pemilik: bila detail SO ditolak, preview dokumennya juga ditolak (tidak bocor harga nego)",
+        "pass": true,
+        "detail": "detail=200 doc=200 as=sales@kainnusantara.id"
+      }
+    ],
+    "tail": "tolak, preview dokumennya juga ditolak (tidak bocor harga nego)\",\n  \"pass\": true,\n  \"detail\": \"detail=200 doc=200 as=sales@kainnusantara.id\"\n }\n]\npass=5 fail=0\n"
+  },
+  {
+    "script": "audit/iterations/2026-10-09-P16-close-coverage/repro_p16f.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 4.98,
+    "log": "test-logs\\extended-40-repro_p16f.log",
+    "cases": [
+      {
+        "id": "QC-05",
+        "invariant": "6 baris diisi bersamaan oleh 2 inspector → keenam hasil tersimpan (tanpa lost update)",
+        "pass": true,
+        "detail": "http=[200, 200, 200, 200, 200, 200] tersimpan=6/6"
+      },
+      {
+        "id": "QC-05",
+        "invariant": "riwayat mencatat 6 pemeriksaan & ringkasan menghitung 6 baris diperiksa",
+        "pass": true,
+        "detail": "{'summary': {'lines': 6, 'rolls': None, 'measure': None, 'unit': '', 'points_total': 0.0, 'grade_after_counts': {}, 'inspected': 6, 'color_mismatch': 0, 'handfeel_mismatch': 0, 'hold': 0, 'rejected': 0}}"
+      },
+      {
+        "id": "QC-05",
+        "invariant": "baris yang sama diisi bersamaan → satu hasil utuh tersimpan (bukan campuran), 6 baris lain tetap",
+        "pass": true,
+        "detail": "[200, 200] tolak / TEST_P16F_12fa32 tolak"
+      }
+    ],
+    "tail": "n → satu hasil utuh tersimpan (bukan campuran), 6 baris lain tetap\",\n  \"pass\": true,\n  \"detail\": \"[200, 200] tolak / TEST_P16F_12fa32 tolak\"\n }\n]\npass=3 fail=0\n"
+  }
+]

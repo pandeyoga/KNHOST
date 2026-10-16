@@ -1,0 +1,223 @@
+{
+ "tag": "TEST_P08B_616649",
+ "passed": 36,
+ "total": 36,
+ "results": [
+  {
+   "id": "REQ09-A-1",
+   "invariant": "urutan A: round_down mengikuti prefix FEFO (bukan hard-code 905)",
+   "pass": true,
+   "detail": "down=900.0 up=1005.0"
+  },
+  {
+   "id": "REQ09-A-2",
+   "invariant": "tanpa pilihan / pilihan salah → 422",
+   "pass": true,
+   "detail": "422"
+  },
+  {
+   "id": "REQ09-A-3",
+   "invariant": "pilihan tidak cocok arah delta → 422",
+   "pass": true,
+   "detail": "422"
+  },
+  {
+   "id": "REQ09-A-4",
+   "invariant": "pilihan eksplisit (round_up / exact bila pas) → final, qty faktur = total roll",
+   "pass": true,
+   "detail": "{'target_qty': 905.0, 'final_qty': 1005.0, 'delta': 100.0, 'choice': 'round_up', 'roll_count': 10, 'cut': False, 'confirmed_by': 'admin', 'confirmed_at': '2026-10-05T14:08:24.785587+00:00'}"
+  },
+  {
+   "id": "REQ09-A-5",
+   "invariant": "qty baris ≠ total final → 422",
+   "pass": true,
+   "detail": "422"
+  },
+  {
+   "id": "REQ09-A-6",
+   "invariant": "exact_cut tanpa izin order.exact_cut → 403",
+   "pass": true,
+   "detail": "403"
+  },
+  {
+   "id": "REQ09-A-7",
+   "invariant": "exact_cut dengan izin → lolos, cut tercatat",
+   "pass": true,
+   "detail": "{'target_qty': 905.0, 'final_qty': 905.0, 'delta': 0.0, 'choice': 'exact_cut', 'roll_count': 10, 'cut': True, 'confirmed_by': 'admin', 'confirmed_at': '2026-10-05T14:08:24.815178+00:00'}"
+  },
+  {
+   "id": "REQ09-B-1",
+   "invariant": "urutan B: round_down mengikuti prefix FEFO (bukan hard-code 905)",
+   "pass": true,
+   "detail": "down=805.0 up=905.0"
+  },
+  {
+   "id": "REQ09-B-2",
+   "invariant": "tanpa pilihan / pilihan salah → 422",
+   "pass": true,
+   "detail": "422"
+  },
+  {
+   "id": "REQ09-B-3",
+   "invariant": "pilihan tidak cocok arah delta → 422",
+   "pass": true,
+   "detail": "422"
+  },
+  {
+   "id": "REQ09-B-4",
+   "invariant": "pilihan eksplisit (round_up / exact bila pas) → final, qty faktur = total roll",
+   "pass": true,
+   "detail": "{'target_qty': 905.0, 'final_qty': 905.0, 'delta': 0.0, 'choice': 'exact', 'roll_count': 9, 'cut': False, 'confirmed_by': 'admin', 'confirmed_at': '2026-10-05T14:08:24.850300+00:00'}"
+  },
+  {
+   "id": "REQ09-B-5",
+   "invariant": "qty baris ≠ total final → 422",
+   "pass": true,
+   "detail": "422"
+  },
+  {
+   "id": "REQ09-UI-1",
+   "invariant": "preview memberi can_exact_cut sesuai izin (sales=false, admin=true)",
+   "pass": true,
+   "detail": "200 200"
+  },
+  {
+   "id": "REQ08-1",
+   "invariant": "dispatch tanpa loading check ditolak bila ada roll tanpa tag (gudang optional)",
+   "pass": true,
+   "detail": "400"
+  },
+  {
+   "id": "REQ08-2",
+   "invariant": "pengecualian roll tanpa tag tanpa alasan → 422",
+   "pass": true,
+   "detail": "422"
+  },
+  {
+   "id": "REQ08-3",
+   "invariant": "pengecualian tanpa izin wms.untagged_override → 403 (peran gudang)",
+   "pass": true,
+   "detail": "403"
+  },
+  {
+   "id": "REQ08-4",
+   "invariant": "dengan izin + alasan → lolos, jejak di sesi & audit",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "REQ06-1",
+   "invariant": "PO 1000 terima 960 → 1 tugas MD (idempoten saat retry)",
+   "pass": true,
+   "detail": "1 0"
+  },
+  {
+   "id": "REQ06-2",
+   "invariant": "assignee = pembuat PO; PO ber-DP → Finance diberi tahu",
+   "pass": true,
+   "detail": "user_admin_01"
+  },
+  {
+   "id": "REQ06-3",
+   "invariant": "notifikasi Finance dibuat",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "REQ06-4",
+   "invariant": "keputusan tanpa alasan → 422",
+   "pass": true,
+   "detail": "422"
+  },
+  {
+   "id": "REQ06-5",
+   "invariant": "short-close → PO closed_short, nilai & pembayaran TIDAK berubah",
+   "pass": true,
+   "detail": "closed_short"
+  },
+  {
+   "id": "REQ06-6",
+   "invariant": "retry keputusan sama idempoten",
+   "pass": true,
+   "detail": "decided"
+  },
+  {
+   "id": "REQ06-7",
+   "invariant": "amend → menunggu amendment (nilai PO tidak diubah di tugas)",
+   "pass": true,
+   "detail": "pending_amendment"
+  },
+  {
+   "id": "REQ07-1",
+   "invariant": "dua kebutuhan bersamaan tidak memakai bahan yang sama (700 + sisa 300, kurang 200)",
+   "pass": true,
+   "detail": "[700, 300.0]"
+  },
+  {
+   "id": "REQ07-2",
+   "invariant": "bahan bebas untuk order #2 = 300 (reservasi #1 dihormati saat issue)",
+   "pass": true,
+   "detail": "300.0"
+  },
+  {
+   "id": "REQ07-3",
+   "invariant": "cancel melepas reservasi (available untuk komitmen naik)",
+   "pass": true,
+   "detail": "700.0"
+  },
+  {
+   "id": "REQ07-4",
+   "invariant": "PR→MKO memindah reservasi; issue mengonsumsi (tanpa ubah balance fisik)",
+   "pass": true,
+   "detail": "consumed"
+  },
+  {
+   "id": "REQ04-1",
+   "invariant": "sales: angka grup tersedia (global_total), tanpa rincian owner lain & tanpa biaya",
+   "pass": true,
+   "detail": "rows=19 leak=0 cost=0"
+  },
+  {
+   "id": "REQ04-2",
+   "invariant": "total grup ≥ entitas saya (tidak dihitung dua kali)",
+   "pass": true,
+   "detail": "0"
+  },
+  {
+   "id": "REQ05-1",
+   "invariant": "backend tetap memakai entitas aktif (X-Entity-Id) — konteks PO tidak dibuang",
+   "pass": true,
+   "detail": "UI: POBuyerEntitySwitch; lihat IMPLEMENTATION.md"
+  },
+  {
+   "id": "REQ02-1",
+   "invariant": "preview mendeteksi stage tidak kanonik 'Grey' → 'grey' tanpa mengubah data",
+   "pass": true,
+   "detail": "[{'product_id': 'prod_test_p08b_616649_gov', 'sku': 'TEST_P08B_616649-SKU', 'name': 'TEST_P08B_616649 kain', 'field': 'stage', 'from': 'Grey', 'to': 'grey', 'reason': 'normalisasi nilai'}]"
+  },
+  {
+   "id": "REQ02-2",
+   "invariant": "eksekusi dengan preview basi → 409",
+   "pass": true,
+   "detail": "409"
+  },
+  {
+   "id": "REQ02-3",
+   "invariant": "apply batch → stage kanonik, SKU tetap",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "REQ02-4",
+   "invariant": "rollback mengembalikan snapshot persis",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "id": "REQ02-5",
+   "invariant": "koreksi nama: SKU tetap, histori nama tercatat",
+   "pass": true,
+   "detail": "200"
+  }
+ ]
+}

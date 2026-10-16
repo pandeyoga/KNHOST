@@ -1,0 +1,1 @@
+{"candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084", "database": "knhost_audit_22086143d22d41d6ab19897688dab1db", "pid": 111268, "port": 8006, "expected": {"eligible_orders": 30, "revenue": 3000, "average": 100}, "fixture": "Synthetic documents; original application and rendering. Not production data or full sales lifecycle."}

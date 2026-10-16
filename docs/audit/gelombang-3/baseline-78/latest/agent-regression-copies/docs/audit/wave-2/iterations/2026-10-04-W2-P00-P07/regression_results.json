@@ -1,0 +1,157 @@
+{
+ "tag": "TEST_W2_eb76dd",
+ "passed": 25,
+ "total": 25,
+ "results": [
+  {
+   "id": "W2-006",
+   "invariant": "owner otomatis tetap A walau hanya B punya stok (tanpa fallback)",
+   "pass": true,
+   "detail": "ent_ksc"
+  },
+  {
+   "id": "W2-006",
+   "invariant": "tanpa prefer & tanpa stok sah -> 400, bukan owner B",
+   "pass": true,
+   "detail": "400"
+  },
+  {
+   "id": "W2-006",
+   "invariant": "explicit owner B oleh user A-only -> 403",
+   "pass": true,
+   "detail": "403"
+  },
+  {
+   "id": "W2-008",
+   "invariant": "transfer A memilih roll B ditolak tanpa efek",
+   "pass": true,
+   "detail": "(409, 'available')"
+  },
+  {
+   "id": "W2-008",
+   "invariant": "daftar campuran A+B all-or-none",
+   "pass": true,
+   "detail": "(409, 'available')"
+  },
+  {
+   "id": "W2-009",
+   "invariant": "reservasi eksplisit langsung merefresh projection (reserved 20, available 0)",
+   "pass": true,
+   "detail": "{'available_qty': 0.0, 'reserved_qty': 20.0}"
+  },
+  {
+   "id": "W2-007",
+   "invariant": "reject saat approval memegang kunci tidak menulis rejected (predikat router)",
+   "pass": true,
+   "detail": "submitted"
+  },
+  {
+   "id": "W2-007",
+   "invariant": "reject_session memakai predikat status+saga_lock & 409 bila kalah",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "W2-019",
+   "invariant": "split QC menjaga total berat 3 kg (1.2 + 1.8) dgn provenance estimasi",
+   "pass": true,
+   "detail": "(1.2, 1.8)"
+  },
+  {
+   "id": "W2-014",
+   "invariant": "reject 10 m (roll 3 kg) -> qty retur 3 kg (bukan 10 kg)",
+   "pass": true,
+   "detail": "3.0"
+  },
+  {
+   "id": "W2-014",
+   "invariant": "reject parsial 4 m -> 1.2 kg proporsional berat terukur",
+   "pass": true,
+   "detail": "1.2"
+  },
+  {
+   "id": "W2-014",
+   "invariant": "kontrol meter/meter tidak berubah",
+   "pass": true,
+   "detail": "10"
+  },
+  {
+   "id": "W2-012",
+   "invariant": "6 red read bersamaan -> 1 insiden open, hits=6",
+   "pass": true,
+   "detail": "[('rinc_721ed1dd1c74', 6)]"
+  },
+  {
+   "id": "W2-011",
+   "invariant": "ack vs resolve bersamaan tidak memundurkan resolved",
+   "pass": true,
+   "detail": "(200, 409, 'resolved')"
+  },
+  {
+   "id": "W2-011",
+   "invariant": "ack setelah resolved ditolak",
+   "pass": true,
+   "detail": "400"
+  },
+  {
+   "id": "W2-012",
+   "invariant": "read merah sesudah insiden ditutup membuat insiden open baru",
+   "pass": true,
+   "detail": "1"
+  },
+  {
+   "id": "W2-017",
+   "invariant": "dua pemakaian deposit 80 dari saldo 100: satu menang, lainnya 409 tanpa receipt/efek",
+   "pass": true,
+   "detail": "([200, 409], 1, 100.0)"
+  },
+  {
+   "id": "W2-016",
+   "invariant": "void sumber deposit yg sudah terpakai -> 409 tanpa membalik kas/receipt",
+   "pass": true,
+   "detail": "(409, 'posted', 'posted')"
+  },
+  {
+   "id": "W2-016",
+   "invariant": "kontrol: deposit masih utuh -> void sukses, deposit ditarik tepat sekali",
+   "pass": true,
+   "detail": "(200, 0.0)"
+  },
+  {
+   "id": "W2-018",
+   "invariant": "void dgn snapshot lama tidak menimpa pembayaran baru 60",
+   "pass": true,
+   "detail": "([{'receipt_id': 'TEST_W2_eb76dd_rcB', 'amount': 60.0}], 60.0)"
+  },
+  {
+   "id": "W2-023",
+   "invariant": "akun beban 6-1000 ditolak sebagai sumber pembayaran gaji",
+   "pass": true,
+   "detail": "(400, 0)"
+  },
+  {
+   "id": "W2-022",
+   "invariant": "pay_run mencatat cash_transactions (ref payroll_run) setelah jurnal",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "id": "W2-021",
+   "invariant": "neraca saldo 50.001 jurnal tidak terpotong",
+   "pass": true,
+   "detail": "50001.0"
+  },
+  {
+   "id": "W2-021",
+   "invariant": "buku besar 50.001 baris tidak terpotong",
+   "pass": true,
+   "detail": "50001.0"
+  },
+  {
+   "id": "W2-021",
+   "invariant": "saldo rekening dari 5.001 mutasi (bukan 5.000)",
+   "pass": true,
+   "detail": "5001"
+  }
+ ]
+}

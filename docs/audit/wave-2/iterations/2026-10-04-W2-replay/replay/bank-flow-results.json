@@ -1,0 +1,95 @@
+{
+  "database": "knhost_audit_97f63f9406994f9da089aee51381b00b",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "mode": "Actual bank account/reconciliation services; cash transactions seeded directly for arithmetic and capacity, not payment lifecycle",
+  "results": [
+    {
+      "id": "W2-BANK-E01",
+      "kind": "wave1_extension",
+      "label": "FN-08 opening bank balance has no journal",
+      "observed": [
+        100.0,
+        0
+      ],
+      "expected": [
+        100,
+        0
+      ]
+    },
+    {
+      "id": "W2-BANK-C01",
+      "kind": "control",
+      "label": "Bank opening plus in minus out excludes void",
+      "observed": [
+        115.0,
+        2
+      ],
+      "expected": [
+        115,
+        2
+      ]
+    },
+    {
+      "id": "W2-BANK-C02",
+      "kind": "control",
+      "label": "Reconciled balance includes only matched inflow",
+      "observed": [
+        120.0,
+        1
+      ],
+      "expected": [
+        120,
+        1
+      ]
+    },
+    {
+      "id": "W2-BANK-E02",
+      "kind": "wave1_extension",
+      "label": "FN-08 changing opening shifts balance without GL",
+      "observed": [
+        215.0,
+        0
+      ],
+      "expected": [
+        215,
+        0
+      ]
+    },
+    {
+      "id": "W2-BANK-C03",
+      "kind": "control",
+      "label": "At5000 boundary bank balance exact",
+      "observed": 5000.0,
+      "expected": 5000
+    },
+    {
+      "id": "W2-BANK-C04",
+      "kind": "control",
+      "label": "Independent collection contains5001 posted inflows",
+      "observed": 5001,
+      "expected": 5001
+    },
+    {
+      "id": "W2-BANK-F01",
+      "kind": "defect",
+      "label": "W2-021 bank ledger truncates total and reconciled balance",
+      "observed": [
+        5000.0,
+        5000.0,
+        5000
+      ],
+      "expected": [
+        5000,
+        5000,
+        5000
+      ]
+    },
+    {
+      "id": "W2-BANK-F02",
+      "kind": "defect",
+      "label": "W2-021 bank overview repeats truncated balance",
+      "observed": 5000.0,
+      "expected": 5000
+    }
+  ]
+}

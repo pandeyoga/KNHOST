@@ -1,0 +1,36 @@
+FAIL [RF-01] generate_epc kanonik 24 hex tanpa pemisah :: E26B-D6DF-8DAE-E644-48B7-91BA
+FAIL [RF-01] EPC chip (^RFW) == EPC database :: E2F7349B30C54445C19FCDB0 vs E2F7-349B-30C5-4445-C19F-CDB0
+FAIL [RF-01] raw reader & bentuk berpemisah/lowercase → roll yang sama (1 hasil) :: [{'epc': 'E2F7-349B-30C5-4445-C19F-CDB0', 'result': 'info', 'reason': 'Pembacaan inventori (handheld/fixed reader).', 'roll_no': 'AUDIT_P8_138124-1', 'sku': 'BTK-MEGA-001', 'product_name': 'Batik Mega Mendung Premium'}, {'epc': 'E2F7--349-B-30-C5-4-445--C19F', 'result': 'red', 'reason': 'EPC tidak d
+FAIL [RF-01] representasi lain dari EPC aktif → 409 (bukan tag kedua) :: 200
+FAIL [RF-01] custom EPC berpemisah/lowercase disimpan kanonik :: E27C-CA3F-E8FC-AC43-5087-83F9
+PASS [RF-01] indeks unik EPC tag hidup ada
+FAIL [RF-11] teks bebas tidak menyisipkan perintah ZPL (^FD/^XZ/~) :: ^XA
+^RS8
+^RFW,H^FDE2FB19AF8B2425408DBE0D1F^FS
+^FO20,15^A0N,28,28^FDKain ^FS^FO0,0^FDINJECTED
+baris~DG ñ^FS
+^FO20,50^A0N,24,24^FDSKU: S^XZ~JA^FS
+^FO20,80^A0N,24,24^FDRoll: AUDIT_P8_138124-11  Lot: ^FS
+
+FAIL [RF-11] newline dibuang dari field :: 
+FAIL [RF-11] custom EPC invalid (23 char) ditolak 400 :: 200
+FAIL [RF-11] custom EPC invalid (25 char) ditolak 400 :: 200
+FAIL [RF-11] custom EPC invalid (32 char) ditolak 400 :: 200
+FAIL [RF-11] custom EPC invalid (24 char) ditolak 400 :: 200
+FAIL [RF-11] ZPL menolak EPC >24 hex (tanpa potong diam-diam) :: 
+FAIL [RF-14] job queued: journey BUKAN tag_printed :: {'stage': 'tag_printed', 'print_job_id': 'rpj_14484bc06055', 'updated_at': '2026-10-01T08:53:57.138828+00:00'}
+FAIL [RF-14] job queued: tag belum aktif (pending_print) :: active
+FAIL [RF-14] verifikasi job queued ditolak 400 :: 200
+FAIL [RF-15] dua pull paralel tidak berbagi job :: ({'rpj_14484bc06055'}, {'rpj_14484bc06055'})
+FAIL [RF-14] bagian RF-14 crash :: KeyError('lease')
+FAIL [RF-10] dua batch scan paralel → union terjaga :: ['E245-B76B-BCF2-9C46-E781-68B9']
+FAIL [RF-10] endpoint complete print menolak sesi loading_check :: (200, 'completed')
+PASS [RF-10] endpoint scan print menolak sesi loading_check
+PASS [RF-10] sesi tak dikenal → 404
+FAIL [RF-10] bagian RF-10 crash :: HTTPException(status_code=400, detail='Sesi sudah selesai')
+FAIL [IX-12] attach gagal → 409, roll dihapus, tag TIDAK aktif :: (409, True, {'status': 'active'})
+PASS [IX-12] counter tugas tidak bertambah
+FAIL [IX-12] retry cleanup: tag yatim (crash di antara hapus roll & retire) → retired :: {'status': 'active'}
+FAIL [UX-02] tidak ada href mentah ke /zpl :: 
+FAIL [UX-02] unduh via apiClient blob + revokeObjectURL :: 
+{"pass": 4, "fail": 24}

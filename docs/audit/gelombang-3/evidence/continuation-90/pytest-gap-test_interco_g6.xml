@@ -1,0 +1,673 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="12" failures="0" skipped="0" tests="13" time="17.722" timestamp="2026-10-06T12:16:45.690448+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="test_00_cleanup" time="0.032" /><testcase classname="" name="test_01_login_returns_token_and_cookie" time="4.106"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase><testcase classname="" name="test_02_meta" time="0.002"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase><testcase classname="" name="test_03_summary_initial_zero" time="0.002"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase><testcase classname="" name="test_04_create_transaction_at_cost_pair" time="0.003"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase><testcase classname="" name="test_05_fixed_price_without_contract_rejected" time="0.002"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase><testcase classname="" name="test_06_summary_after_create" time="0.002"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase><testcase classname="" name="test_07_accounts_pair_balances" time="0.003"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase><testcase classname="" name="test_08_gl_entries_balanced_and_correct_accounts" time="0.005"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase><testcase classname="" name="test_09_ship_receive_invoice_cycle" time="0.005"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase><testcase classname="" name="test_10_partial_settlement" time="0.002"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase><testcase classname="" name="test_11_full_settlement_marks_settled" time="0.002"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase><testcase classname="" name="test_12_list_settlements" time="0.002"><error message="failed on setup with &quot;requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError(&quot;HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it&quot;))&quot;">..\..\integration_env\Lib\site-packages\urllib3\connection.py:239: in _new_conn
+    sock = connection.create_connection(
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:85: in create_connection
+    raise err
+..\..\integration_env\Lib\site-packages\urllib3\util\connection.py:73: in create_connection
+    sock.connect(sa)
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\repro\run_isolated.py:19: in connect
+    return old(self,address)
+           ^^^^^^^^^^^^^^^^^
+E   ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:793: in urlopen
+    response = self._make_request(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:499: in _make_request
+    conn.request(
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:567: in request
+    self.endheaders()
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1381: in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1141: in _send_output
+    self.send(msg)
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\http\client.py:1085: in send
+    self.connect()
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:398: in connect
+    self.sock = self._new_conn()
+                ^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\urllib3\connection.py:254: in _new_conn
+    raise NewConnectionError(
+E   urllib3.exceptions.NewConnectionError: HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+..\..\integration_env\Lib\site-packages\requests\adapters.py:696: in send
+    resp = conn.urlopen(
+..\..\integration_env\Lib\site-packages\urllib3\connectionpool.py:847: in urlopen
+    retries = retries.increment(
+..\..\integration_env\Lib\site-packages\urllib3\util\retry.py:555: in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))
+
+During handling of the above exception, another exception occurred:
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_interco_g6.py:19: in client
+    r = s.post(f"{BASE}/api/auth/login", json=LOGIN)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:712: in post
+    return self.request("POST", url, data=data, json=json, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:651: in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\sessions.py:784: in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\integration_env\Lib\site-packages\requests\adapters.py:729: in send
+    raise ConnectionError(e, request=request)
+E   requests.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=8001): Max retries exceeded with url: /api/auth/login (Caused by NewConnectionError("HTTPConnection(host='localhost', port=8001): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it"))</error></testcase></testsuite></testsuites>

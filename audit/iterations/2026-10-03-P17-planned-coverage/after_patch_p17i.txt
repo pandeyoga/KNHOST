@@ -1,0 +1,45 @@
+[
+ {
+  "id": "ARCHIVE-RO",
+  "invariant": "badan usaha diarsipkan (force + alasan)",
+  "pass": true,
+  "detail": "{\"id\":\"ent_d1772c5f5ced\",\"code\":\"CST\",\"name\":\"CV Cipta Sandang Textile\",\"short_name\":\"Cipta Sandang\",\"legal_name\":\"CV Cipta Sandang Textile\",\"type\":\"C"
+ },
+ {
+  "id": "ARCHIVE-RO",
+  "invariant": "konteks admin memuat daftar badan usaha terarsip (untuk pemilih 'baca saja')",
+  "pass": true,
+  "detail": "['ent_d1772c5f5ced']"
+ },
+ {
+  "id": "ARCHIVE-RO",
+  "invariant": "GET data entitas terarsip dengan X-Entity-Id-nya → 200 & berisi dokumennya",
+  "pass": true,
+  "detail": "(200, 1)"
+ },
+ {
+  "id": "ARCHIVE-RO",
+  "invariant": "isi baca terarsip tidak bercampur data badan usaha lain",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "ARCHIVE-RO",
+  "invariant": "tulis (POST/PATCH) ke entitas terarsip ditolak 403/409, data tidak berubah",
+  "pass": true,
+  "detail": "(403, 403)"
+ },
+ {
+  "id": "ARCHIVE-RO",
+  "invariant": "pengguna yang tidak pernah ditugaskan di entitas itu tetap 403",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "ARCHIVE-RO",
+  "invariant": "aktifkan kembali berhasil",
+  "pass": true,
+  "detail": "200"
+ }
+]
+pass=7 fail=0

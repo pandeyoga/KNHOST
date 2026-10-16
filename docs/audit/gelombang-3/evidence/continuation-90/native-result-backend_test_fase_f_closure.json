@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_fase_f_closure.py",
+    "database": "knhost_audit_native90_603d8f40598d43c5b0824b652d4e74a6",
+    "exit": 1,
+    "seconds": 52.49,
+    "pass_log_tokens": 43,
+    "fail_log_tokens": 2,
+    "log": "continuation-90\\native-backend_test_fase_f_closure.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "urns 200\n  ❌ [FAIL] Found contract with md_sample reference — \n  ✅ [PASS] GET /documents/ref-types returns 200\n  ✅ [PASS] md_spec has Indonesian label\n  ✅ [PASS] md_sample has Indonesian label\n\n=== Deterministic Document Numbers ===\n  ✅ [PASS] Supplier contracts have deterministic numbers\n  ✅ [PASS] md_specs have deterministic numbers (KSC/SPEC-)\n  ✅ [PASS] md_samples have deterministic numbers (KSC/SMP-)\n\n=== Major Endpoints Regression ===\n  ✅ [PASS] GET /sales-orders returns 200 with data\n  ✅ [PASS] GET /purchase-orders returns 200 with data\n  ✅ [PASS] GET /inventory/balances returns 200 with data\n  ✅ [PASS] GET /inventory/rolls returns 200 with data\n  ✅ [PASS] GET /inventory/movements returns 200 with data\n  ✅ [PASS] GET /wms/tasks returns 200 with data\n  ✅ [PASS] GET /transfers returns 200 with data\n  ✅ [PASS] GET /cycle-count/sessions returns 200 with data\n  ✅ [PASS] GET /uom-conversions/catalog returns 200 with data\n  ✅ [PASS] GET /uom-conversions/rules returns 200 with data\n  ✅ [PASS] GET /uom-conversions/usage returns 200 with data\n  ✅ [PASS] GET /purchase-returns returns 200 with data\n  ✅ [PASS] GET /products returns 200 with data\n  ✅ [PASS] GET /onboarding returns 200 with data\n  ✅ [PASS] GET /rnd/meta returns 200 with data\n  ✅ [PASS] GET /rnd/specs returns 200 with data\n  ✅ [PASS] GET /rnd/samples returns 200 with data\n  ✅ [PASS] GET /supplier-contracts returns 200 with data\n  ✅ [PASS] GET /documents/ref-types returns 200 with data\n\n================================================================================\nRESULTS: ✅ 43 PASSED / ❌ 2 FAILED (Total: 45)\n\n❌ FAILURES:\n  • sample_issue filter returns exactly 1 movement :: Count: 0\n  • Found contract with md_sample reference :: \n================================================================================\n"
+  }
+]

@@ -1,0 +1,245 @@
+{
+ "generated_at": "2026-10-16T06:26:15.654841+00:00",
+ "commit": "0026fcbc71246685dd56d9b2af1be89266718ad3",
+ "read_only": true,
+ "stock": [
+  {
+   "owner": "ent_84e1d5053311",
+   "warehouse": "wh_3852e6f9c6f6",
+   "unit": "kg",
+   "status": "available",
+   "qty": 3160.27,
+   "rolls": 108
+  },
+  {
+   "owner": "ent_84e1d5053311",
+   "warehouse": "wh_3852e6f9c6f6",
+   "unit": "kg",
+   "status": "subcon",
+   "qty": 300.0,
+   "rolls": 13
+  },
+  {
+   "owner": "ent_84e1d5053311",
+   "warehouse": "wh_3852e6f9c6f6",
+   "unit": "yard",
+   "status": "available",
+   "qty": 1142453.62,
+   "rolls": 9843
+  },
+  {
+   "owner": "ent_84e1d5053311",
+   "warehouse": "wh_3852e6f9c6f6",
+   "unit": "yard",
+   "status": "reserved",
+   "qty": 836.21,
+   "rolls": 6
+  },
+  {
+   "owner": "ent_84e1d5053311",
+   "warehouse": "wh_5adbaf01d4a0",
+   "unit": "yard",
+   "status": "available",
+   "qty": 3817.81,
+   "rolls": 76
+  },
+  {
+   "owner": "ent_84e1d5053311",
+   "warehouse": "wh_790cb25d9069",
+   "unit": "kg",
+   "status": "available",
+   "qty": 375.19,
+   "rolls": 23
+  },
+  {
+   "owner": "ent_84e1d5053311",
+   "warehouse": "wh_d93ec3d045e0",
+   "unit": "kg",
+   "status": "available",
+   "qty": 248325.25,
+   "rolls": 10293
+  },
+  {
+   "owner": "ent_84e1d5053311",
+   "warehouse": "wh_d93ec3d045e0",
+   "unit": "kg",
+   "status": "in_transit_sales",
+   "qty": 241.82,
+   "rolls": 12
+  },
+  {
+   "owner": "ent_84e1d5053311",
+   "warehouse": "wh_d93ec3d045e0",
+   "unit": "kg",
+   "status": "subcon",
+   "qty": 200.0,
+   "rolls": 8
+  },
+  {
+   "owner": "ent_kanda",
+   "warehouse": "wh_3a309c32f501",
+   "unit": "kg",
+   "status": "available",
+   "qty": 68772.6,
+   "rolls": 2753
+  },
+  {
+   "owner": "ent_kanda",
+   "warehouse": "wh_3a309c32f501",
+   "unit": "kg",
+   "status": "in_transit_transfer",
+   "qty": 250.65,
+   "rolls": 10
+  },
+  {
+   "owner": "ent_kanda",
+   "warehouse": "wh_3a309c32f501",
+   "unit": "kg",
+   "status": "reserved",
+   "qty": 1655.27,
+   "rolls": 66
+  },
+  {
+   "owner": "ent_kanda",
+   "warehouse": "wh_3a309c32f501",
+   "unit": "yard",
+   "status": "available",
+   "qty": 3537.54,
+   "rolls": 71
+  },
+  {
+   "owner": "ent_kanda",
+   "warehouse": "wh_790cb25d9069",
+   "unit": "kg",
+   "status": "available",
+   "qty": 327.73,
+   "rolls": 20
+  },
+  {
+   "owner": "ent_ksc",
+   "warehouse": "wh_790cb25d9069",
+   "unit": "kg",
+   "status": "available",
+   "qty": 454.73,
+   "rolls": 27
+  },
+  {
+   "owner": "ent_ksc",
+   "warehouse": "wh_jakarta",
+   "unit": "kg",
+   "status": "available",
+   "qty": 60791.9,
+   "rolls": 2432
+  },
+  {
+   "owner": "ent_ksc",
+   "warehouse": "wh_jakarta",
+   "unit": "kg",
+   "status": "reserved",
+   "qty": 51.33,
+   "rolls": 2
+  },
+  {
+   "owner": "ent_ksc",
+   "warehouse": "wh_jakarta",
+   "unit": "yard",
+   "status": "available",
+   "qty": 1315335.29,
+   "rolls": 20703
+  },
+  {
+   "owner": "ent_ksc",
+   "warehouse": "wh_jakarta",
+   "unit": "yard",
+   "status": "in_transit_sales",
+   "qty": 962.02,
+   "rolls": 8
+  }
+ ],
+ "commitments": [
+  {
+   "entity": "",
+   "unit": "",
+   "active_material_reserved": 800.0
+  }
+ ],
+ "ar_by_entity": {
+  "ent_kanda": {
+   "so": 6,
+   "grand_total": 106665380.0,
+   "paid": 0.0,
+   "unpaid_so": 6,
+   "partial_so": 0
+  },
+  "ent_ksc": {
+   "so": 3,
+   "grand_total": 44307725.7,
+   "paid": 27373077.5,
+   "unpaid_so": 1,
+   "partial_so": 1
+  },
+  "ent_84e1d5053311": {
+   "so": 2,
+   "grand_total": 31350495.9,
+   "paid": 5700794.0,
+   "unpaid_so": 1,
+   "partial_so": 1
+  }
+ },
+ "ap_by_entity": {
+  "ent_84e1d5053311": {
+   "bills": 1,
+   "grand_total": 28860000.0,
+   "outstanding": 28860000.0
+  }
+ },
+ "integrity_dry_run": {
+  "rolls_total": 46493,
+  "orphan_rolls": [],
+  "orphan_rolls_count": 0,
+  "duplicate_active_epc": {},
+  "duplicate_roll_no_per_owner": {},
+  "negative_qty_rolls": [],
+  "balance_vs_roll_mismatch": [],
+  "balance_vs_roll_mismatch_count": 0,
+  "unbalanced_journal_entries": []
+ },
+ "master": {
+  "grades_on_rolls": [
+   "A",
+   "A1",
+   "B",
+   "B1",
+   "BS",
+   "C"
+  ],
+  "stages_on_products": [
+   "byproduct",
+   "finished",
+   "grey",
+   "pfd",
+   "pfp",
+   "remnant",
+   "yarn"
+  ],
+  "roles_on_users": [
+   "admin",
+   "designer",
+   "driver",
+   "finance",
+   "manager",
+   "md",
+   "md_quality",
+   "qc",
+   "sales",
+   "sales_admin",
+   "sample_admin",
+   "warehouse",
+   "warehouse_admin"
+  ],
+  "custom_roles": 0,
+  "restock_source_mapped_templates": 3,
+  "customer_grade_rules": 0,
+  "rolls_with_supplier_lot": 46493
+ }
+}

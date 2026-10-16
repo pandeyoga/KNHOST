@@ -1,0 +1,255 @@
+{
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_21de6dc70f054edabdda744812448ddd",
+  "mode": "Actual GRN services -> QC ASGI -> return approval service; synthetic fixtures and full indexes",
+  "results": [
+    {
+      "id": "W2-Q-C01",
+      "kind": "control",
+      "label": "Full accept from real GRN",
+      "observed": [
+        200,
+        10.0,
+        {
+          "available": 10.0
+        }
+      ],
+      "expected_reproduction": [
+        200,
+        10,
+        {
+          "available": 10
+        }
+      ]
+    },
+    {
+      "id": "W2-Q-C02",
+      "kind": "control",
+      "label": "Repeat QC denied",
+      "observed": [
+        400,
+        {
+          "available": 10.0
+        }
+      ],
+      "expected_reproduction": [
+        400,
+        {
+          "available": 10
+        }
+      ]
+    },
+    {
+      "id": "W2-Q-C03",
+      "kind": "control",
+      "label": "Mixed accept/damage conserves length",
+      "observed": [
+        200,
+        {
+          "available": 6.0,
+          "damaged": 4.0
+        }
+      ],
+      "expected_reproduction": [
+        200,
+        {
+          "available": 6,
+          "damaged": 4
+        }
+      ]
+    },
+    {
+      "id": "W2-Q-C04",
+      "kind": "control",
+      "label": "Invalid QC payload leaves quarantine",
+      "observed": [
+        400,
+        {
+          "quarantine": 10.0
+        }
+      ],
+      "expected_reproduction": [
+        400,
+        {
+          "quarantine": 10
+        }
+      ]
+    },
+    {
+      "id": "W2-Q-C05",
+      "kind": "control",
+      "label": "Invalid QC payload leaves quarantine",
+      "observed": [
+        422,
+        {
+          "quarantine": 10.0
+        }
+      ],
+      "expected_reproduction": [
+        422,
+        {
+          "quarantine": 10
+        }
+      ]
+    },
+    {
+      "id": "W2-Q-C06",
+      "kind": "control",
+      "label": "Invalid QC payload leaves quarantine",
+      "observed": [
+        400,
+        {
+          "quarantine": 10.0
+        }
+      ],
+      "expected_reproduction": [
+        400,
+        {
+          "quarantine": 10
+        }
+      ]
+    },
+    {
+      "id": "W2-Q-C07",
+      "kind": "control",
+      "label": "Invalid QC payload leaves quarantine",
+      "observed": [
+        400,
+        {
+          "quarantine": 10.0
+        }
+      ],
+      "expected_reproduction": [
+        400,
+        {
+          "quarantine": 10
+        }
+      ]
+    },
+    {
+      "id": "W2-Q-C08",
+      "kind": "control",
+      "label": "Full QC reject creates return without second stock consumption",
+      "observed": [
+        200,
+        {
+          "returned_supplier": 10.0
+        },
+        10.0,
+        100.0,
+        true
+      ],
+      "expected_reproduction": [
+        200,
+        {
+          "returned_supplier": 10
+        },
+        10,
+        100,
+        true
+      ]
+    },
+    {
+      "id": "W2-Q-C09",
+      "kind": "control",
+      "label": "Approve QC return preserves already returned stock",
+      "observed": [
+        {
+          "returned_supplier": 10.0
+        },
+        100.0
+      ],
+      "expected_reproduction": [
+        {
+          "returned_supplier": 10
+        },
+        100
+      ]
+    },
+    {
+      "id": "W2-Q-C10",
+      "kind": "control",
+      "label": "Weight PO receives3kg as10meter physical roll",
+      "observed": [
+        3.0,
+        "kg",
+        {
+          "quarantine": 10.0
+        }
+      ],
+      "expected_reproduction": [
+        3,
+        "kg",
+        {
+          "quarantine": 10
+        }
+      ]
+    },
+    {
+      "id": "W2-Q-F01",
+      "kind": "defect",
+      "label": "QC base quantity incorrectly reused as purchase unit quantity",
+      "observed": [
+        200,
+        10.0,
+        "kg",
+        100000.0,
+        {
+          "returned_supplier": 10.0
+        }
+      ],
+      "expected_reproduction": [
+        200,
+        10,
+        "kg",
+        100000,
+        {
+          "returned_supplier": 10
+        }
+      ]
+    },
+    {
+      "id": "W2-Q-F02",
+      "kind": "defect",
+      "label": "Wrong QC return amount reaches PO return ledger",
+      "observed": 100000.0,
+      "expected_reproduction": 100000
+    },
+    {
+      "id": "W2-Q-C11",
+      "kind": "control",
+      "label": "Whole roll acceptance preserves actual weight",
+      "observed": [
+        200,
+        3.0
+      ],
+      "expected_reproduction": [
+        200,
+        3
+      ]
+    },
+    {
+      "id": "W2-Q-F03",
+      "kind": "defect",
+      "label": "QC split duplicates actual weight across child and parent",
+      "observed": [
+        200,
+        {
+          "available": 6.0,
+          "damaged": 4.0
+        },
+        6.0,
+        6.0
+      ],
+      "expected_reproduction": [
+        200,
+        {
+          "available": 6,
+          "damaged": 4
+        },
+        6,
+        6
+      ]
+    }
+  ]
+}

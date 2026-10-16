@@ -1,0 +1,23 @@
+{
+  "summary": "P02 retest (iteration 175) — all 7 previously SKIPPED/new review items PASSED. Verified: (1) Rak W01/Level 2 single_sku rule rejects foreign SKU (400 + 'khusus satu SKU'), accepts same SKU, and suggest/evaluate consistently exclude W01-L2-01 for other-SKU rolls. (2) Rak W01/Level 3 grades=[A] rejects grade BS (400, evaluate blocks mentions Grade), accepts A; suggest excludes L3 for BS roll. (3) PATCH /api/warehouses/wh_bandung storage_rules {mode:combined, grades:['A']} + POST /api/transfers from wh_jakarta -> wh_bandung with grade-B roll returns 400 with 'grade' in message; the roll remains status=available (reservation released via saga). (4) placement_rules.warehouse_violations(wh_tangerang, {owner_entity_id:ent_ksc,...}, {category:Kain}) returns non-empty list indicating dedicated/other-entity block. (5) Concurrent putaway race: set empty W01-L4-01 capacity_rolls=1 via PUT structure, two threads POST /api/inventory/putaway in parallel -> exactly one 200 and one 409 (bin lock + capacity enforcement). (6) POST /api/inventory/rolls/{id}/fix-location with valid reason increments db.location_corrections by exactly +1 (restored). (7) Direct DB status mutation to 'in_transit_transfer' and 'consumed' makes POST /api/inventory/putaway return 400 for both. All mutations restored; seed_p02_kn.py re-run.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_p02_retest.py",
+    "/app/test_reports/pytest/p02_retest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "GET /api/warehouses/{id} did NOT return the full raw `zones` tree in a shape usable for direct re-submission via PUT /structure (returned 409 LOCATION_IN_USE because several bins appeared 'missing'). The decoration layer (whscope.decorate) likely strips/alters bin-level fields. Workaround used: read zones directly from Mongo. Main agent should verify GET /warehouses/{id} returns zones faithfully so an admin UI PUT-after-GET flow doesn't accidentally lose bins. Reproduction: GET zones -> PUT identical zones -> 409.",
+    "placement_rules.evaluate_pure() returns 'Bin tujuan bukan di gudang roll ini — pindah gudang lewat transfer/PA.' only when roll already has a warehouse_id. OK for current flows.",
+    "transfers.create: compensation on exception correctly calls release_wh_transfer_rolls(transfer_id); verified by observing status=available after 400 rejection."
+  ],
+  "updated_files": ["/app/backend/tests/test_p02_retest.py"],
+  "success_rate": {"backend": "100% (7/7 passed)", "frontend": "not tested (backend only per request)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345, whadmin@/warehouse@ sandi demo1234",
+  "seed_data_creation": "Dijalankan `cd /app/backend && python scripts/seed_p02_kn.py` setelah tests — cap_set=6 (W-OVER-01 + 5x W01-L1), rules W01-L2 single_sku & W01-L3 grades=[A] diterapkan ulang (idempoten).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_p02_retest.py berjalan serial (-n 0 wajib karena memakai roll yang sama across tests dan race test memanipulasi zones). WH-TGR dedicated untuk ent_kanda — pakai untuk uji sharing_mode. Jika PUT /structure 409 LOCATION_IN_USE padahal zones utuh, baca zones langsung dari Mongo (bukan dari GET /api/warehouses/{id}).",
+  "rca of the issue": "N/A — semua lulus. Catatan: GET /api/warehouses/{id} tidak idempoten terhadap PUT /structure untuk zones.bins (bins hilang di roundtrip). Mitigasi di test: baca zones dari Mongo langsung."
+}

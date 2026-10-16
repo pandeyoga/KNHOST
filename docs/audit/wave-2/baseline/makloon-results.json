@@ -1,0 +1,129 @@
+{
+  "commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_a1bfcafc4f5347348ab53d049a32aa5a",
+  "level": "real Mongo + service; F01/F02 via ASGI HTTP; no application lifespan",
+  "scenarios": [
+    {
+      "id": "W2-M-C01",
+      "kind": "control",
+      "observed": {
+        "status": "completed",
+        "step_status": "received",
+        "quantity": 10.0,
+        "roll_value": 120.0,
+        "journal_value": 120.0,
+        "warehouses": [
+          "WH"
+        ],
+        "roll_count": 1
+      }
+    },
+    {
+      "id": "W2-M-C02",
+      "kind": "control",
+      "observed": {
+        "http_status": 409,
+        "unchanged": true
+      }
+    },
+    {
+      "id": "W2-M-F01",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "status": "completed",
+        "step_status": "received",
+        "quantity": 9.5,
+        "roll_value": 114.0,
+        "journal_value": 120.0,
+        "warehouses": [
+          "WH"
+        ],
+        "roll_count": 1
+      }
+    },
+    {
+      "id": "W2-M-F02",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "status": "completed",
+        "step_status": "received",
+        "quantity": 10.0,
+        "roll_value": 120.0,
+        "journal_value": 120.0,
+        "warehouses": [
+          "NONEXISTENT-WAREHOUSE"
+        ],
+        "roll_count": 1
+      }
+    },
+    {
+      "id": "W2-M-C03",
+      "kind": "control",
+      "observed": {
+        "http_status": 400,
+        "status": "in_process",
+        "step_status": "issued",
+        "quantity": 0,
+        "roll_value": 0,
+        "journal_value": 0,
+        "warehouses": [],
+        "roll_count": 0
+      }
+    },
+    {
+      "id": "W2-M-C04",
+      "kind": "control",
+      "observed": {
+        "status": "completed",
+        "step_status": "received",
+        "quantity": 10.0,
+        "roll_value": 120.0,
+        "journal_value": 120.0,
+        "warehouses": [
+          "WH",
+          "WH"
+        ],
+        "roll_count": 2
+      }
+    },
+    {
+      "id": "W2-M-C05",
+      "kind": "control",
+      "observed": {
+        "partials": 0,
+        "grn_status": "cancelled"
+      }
+    },
+    {
+      "id": "W2-M-C06",
+      "kind": "control",
+      "observed": {
+        "http_status": 404
+      }
+    },
+    {
+      "id": "W2-M-F03",
+      "kind": "defect",
+      "observed": {
+        "receipt_warehouses": [
+          "WH",
+          "WH2"
+        ],
+        "output_rolls": [
+          {
+            "warehouse_id": "WH2",
+            "lot": "A/LOT-2609-0013",
+            "length_remaining": 4.0
+          },
+          {
+            "warehouse_id": "WH2",
+            "lot": "A/LOT-2609-0014",
+            "length_remaining": 6.0
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "method": "Original AST function bodies, bounded query dependency model, synthetic fixtures; no Mongo/HTTP/browser/production.",
+  "results": [
+    {
+      "id": "V3-01",
+      "kind": "defect",
+      "observed": {
+        "requested": 10,
+        "applied": 150.0,
+        "balance": -50.0
+      },
+      "meaning": "Store-credit customer lock does not enforce allocation sum <= requested/balance: explicit allocation150 passes requested10 against balance100."
+    },
+    {
+      "id": "V3-02",
+      "kind": "defect",
+      "observed": {
+        "credit_customer": "C",
+        "credit_entity": "A",
+        "paid_customer": "OTHER",
+        "paid_entity": "B",
+        "applied": 50.0
+      },
+      "meaning": "Explicit redemption omits customer_id/entity_id arguments to _apply_to_order; original validator bypasses its optional guards."
+    },
+    {
+      "id": "V3-03",
+      "kind": "defect",
+      "observed": {
+        "order_paid": 50.0,
+        "credit_balance": 100.0,
+        "customer_locked": false,
+        "redemptions": 0
+      },
+      "meaning": "GL failure after AR mutation leaves payment applied, credit unspent and customer lock released."
+    },
+    {
+      "id": "V3-C1",
+      "kind": "control",
+      "observed": {
+        "wrong_customer_rejected_when_passed": true
+      },
+      "meaning": "Shared validator works when caller supplies customer and entity context."
+    },
+    {
+      "id": "V3-04",
+      "kind": "defect",
+      "observed": {
+        "cash_entries": 2,
+        "cash_sum": 200.0,
+        "approved_amount": 100
+      },
+      "meaning": "Disbursement inserts cash before GL and before final status, no operation claim; failure then retry creates two cash transactions."
+    },
+    {
+      "id": "V3-05",
+      "kind": "defect",
+      "observed": {
+        "advance": 100,
+        "settlement_count": 2,
+        "expense_posted": 200.0
+      },
+      "meaning": "A settled cash advance accepts another settlement; both independently expense full original advance without residual/uniqueness control."
+    },
+    {
+      "id": "V3-06",
+      "kind": "defect",
+      "observed": {
+        "line_direction": "out",
+        "txn_direction": "in",
+        "line_bank": "BANK1",
+        "txn_bank": "BANK2",
+        "result": "matched"
+      },
+      "meaning": "Manual bank match validates amounts/access but not direction/account compatibility."
+    },
+    {
+      "id": "V3-07",
+      "kind": "defect",
+      "observed": {
+        "txn_amount": 100,
+        "reconciled_amount": 120.0
+      },
+      "meaning": "Split validates each duplicate txn against original available100; two60 entries reconcile120."
+    },
+    {
+      "id": "V3-08",
+      "kind": "defect",
+      "observed": {
+        "original_second_paid": 100,
+        "new_second_paid": 50.0,
+        "new_second_seq": 3,
+        "targeted_payment_seq": 2
+      },
+      "meaning": "Insert rescheduled remainder renumbers original second line to3 while receipt still targets seq2; original second becomes unpaid by50."
+    },
+    {
+      "id": "V3-09",
+      "kind": "defect",
+      "observed": {
+        "scope": [
+          "A"
+        ],
+        "foreign_elimination": [
+          "B",
+          "C"
+        ],
+        "assets": 70.0,
+        "balanced": true
+      },
+      "meaning": "All eliminations are applied regardless consolidation entity scope; report can remain balanced while wrong."
+    },
+    {
+      "id": "V3-10",
+      "kind": "defect",
+      "observed": {
+        "stored_hash": "OLD_HASH",
+        "current_document_amount": 999,
+        "valid": true
+      },
+      "meaning": "Public verification asserts valid from signature existence without recomputing current document hash; changed content cannot be detected here."
+    },
+    {
+      "id": "V3-12",
+      "kind": "defect",
+      "observed": {
+        "new_document_amount": 999,
+        "signature_attached": true
+      },
+      "meaning": "PDF attachment reuses signed metadata for changed document without matching its hash; complements V3-10."
+    },
+    {
+      "id": "V3-13",
+      "kind": "defect",
+      "observed": {
+        "parent_status": "done",
+        "other_delivery_status": "in_transit"
+      },
+      "meaning": "Parent special order becomes done on first delivery callback without checking other deliveries. Parent transition has CAS but no completeness invariant."
+    },
+    {
+      "id": "V3-11",
+      "kind": "defect",
+      "observed": {
+        "original_net": 300,
+        "full_return_net": 400.0
+      },
+      "meaning": "Full return of same product sold on two lines10@10 and10@20 refunds20@20=400 instead of300; pricing map last product line wins."
+    }
+  ]
+}

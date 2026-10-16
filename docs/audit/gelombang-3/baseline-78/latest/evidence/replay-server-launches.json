@@ -1,0 +1,20 @@
+[
+  {
+    "database": "knhost_data_audit_latest_core",
+    "port": 8007,
+    "group": "core",
+    "pid": 112832
+  },
+  {
+    "database": "knhost_data_audit_latest_w2",
+    "port": 8008,
+    "group": "w2",
+    "pid": 95044
+  },
+  {
+    "database": "knhost_data_audit_latest_extended",
+    "port": 8009,
+    "group": "extended",
+    "pid": 82004
+  }
+]

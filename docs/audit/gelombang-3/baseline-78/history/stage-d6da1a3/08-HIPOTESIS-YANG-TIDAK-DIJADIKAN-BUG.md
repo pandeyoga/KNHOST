@@ -1,0 +1,9 @@
+# Kontrol terhadap false positive
+
+1. **Profitability cost per-entitas:** hipotesis WAC menggunakan entitasNone pada semuaSO tidakvalid. Service memakai `o.entity_id` untuksetiapSO dan cache perproduk/entitas. Tidak dicatat sebagaibug.
+2. **HPP tersembunyi menjadiRp0 bagi finance:** APIfinance memang meredaksi biaya dan genericformatter(undefined) mengembalikanRp0. Namun `frontend/src/config/hubTabs.js:146` membatasi tabprofitabilitas kepadaadmin/manager yangmendapatcost. Jadi jalur UIrolefinance normal belumterbukti dapatmencapaitab tersebut. Catatan tidakdimasukkan ke tracker temuanvalid; jika navigation/customrole kelak berubah, gunakan metadata availability dan N/A policy. Repro disimpan sebagai bukti hipotesis, bukan acceptancebugconfirmed.
+3. **Lastcyclecount0%:** hasilactual adalah accuracy tidaktersedia ketika countbaruopen dipilih. Tidak ada bukti angka0% literal ditampilkan; JSX memasangsuffix% padafieldyangmissing. Temuan hanya menyangkut measured-vs-open dan penanganannull.
+4. **Marketing perplatform pasti harus50/50:** tidak dapatdisimpulkan. Datayangdisimpan hanya aggregatereachpost. Equalallocation bukan actualmeasurement; sharedattribution dapatvalid bila nonadditive dan dijelaskan. Temuan adalah kontrak/label/sumber yangbelum jelas.
+5. **Losing concurrentdeposit400 berarti doubleuse:** tidakvalid; satu200/satu400 menolak pemakaian kedua. Oracle409terlalu spesifik. FailurewindowV3-AR-01 terpisah tetapvalid.
+6. **Jumlahparse/function/testcase=coverage100%:** tidakvalid. Branch, parameter, role, data-state, hardware dan UIrender membutuhkan bukti tersendiri.
+7. **Turnover memakai termination_date yangsudahdidukung:** schema belum menyediakan effective separationdate kanonis. Probe menjelaskan tanggalbisnis; rekomendasi memerlukan penambahan event/source, bukan sekadar membaca field yangdianggap sudahada.

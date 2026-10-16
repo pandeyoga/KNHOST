@@ -1,0 +1,39 @@
+[
+ {
+  "id": "DESIGN-02",
+  "invariant": "barang supplier A diacu ke sample yang DIMENANGKAN A (bukan sample terbaru milik B)",
+  "pass": true,
+  "detail": "{'baseline_sample_id': 'smp_test_p17f_e0fc0b_A', 'baseline_sample_number': 'TEST_P17F_e0fc0b/SMP-A', 'baseline_contract_id': 'sct_A', 'baseline_round_no': 2, 'baseline_supplier_id': 'sup_A', 'baseline_color': 'Merah A (RA)'}"
+ },
+ {
+  "id": "DESIGN-02",
+  "invariant": "acuan membawa kontrak & round ACC pemenang",
+  "pass": true,
+  "detail": "{'baseline_sample_id': 'smp_test_p17f_e0fc0b_A', 'baseline_sample_number': 'TEST_P17F_e0fc0b/SMP-A', 'baseline_contract_id': 'sct_A', 'baseline_round_no': 2, 'baseline_supplier_id': 'sup_A', 'baseline_color': 'Merah A (RA)'}"
+ },
+ {
+  "id": "DESIGN-02",
+  "invariant": "barang supplier B → sample B",
+  "pass": true,
+  "detail": "{'baseline_sample_id': 'smp_test_p17f_e0fc0b_B', 'baseline_sample_number': 'TEST_P17F_e0fc0b/SMP-B', 'baseline_contract_id': 'sct_B', 'baseline_round_no': 2, 'baseline_supplier_id': 'sup_B', 'baseline_color': 'Merah B (RB)'}"
+ },
+ {
+  "id": "DESIGN-02",
+  "invariant": "supplier tanpa sample sendiri → acuan standar terbaru yang disetujui (B), bukan yang dibatalkan",
+  "pass": true,
+  "detail": "{'baseline_sample_id': 'smp_test_p17f_e0fc0b_B', 'baseline_sample_number': 'TEST_P17F_e0fc0b/SMP-B', 'baseline_contract_id': 'sct_B', 'baseline_round_no': 2, 'baseline_supplier_id': 'sup_B', 'baseline_color': 'Merah B (RB)'}"
+ },
+ {
+  "id": "DESIGN-02",
+  "invariant": "sample badan usaha lain tidak dipakai sebagai acuan",
+  "pass": true,
+  "detail": "{}"
+ },
+ {
+  "id": "DESIGN-02",
+  "invariant": "SPK inspeksi menyimpan acuan sample A + tautan dokumen 'references'",
+  "pass": true,
+  "detail": "('TEST_P17F_e0fc0b/SMP-A', True)"
+ }
+]
+pass=6 fail=0

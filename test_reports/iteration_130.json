@@ -1,0 +1,30 @@
+{
+  "summary": "P19 UAT focused validation. Primary focus on the two UI fixes (FIX-1 Cycle Count product-select, FIX-2 floating help button + main pb-24) and spot-checks on HR-06 PII redaction and GL-06 balance. Other UAT cases listed as NOT TESTED/PARTIAL in this iteration due to scope — primary targets of P19 (the two fixes) are validated. FIX-1 PASS: cc-add-product-select no longer has empty option; first option = cc-add-product-select-option-prod_batik_mega (20 real options); click Tambah without product shows 'Pilih produk dulu'; selecting first option then Tambah adds cc-item-cci_* row. FIX-2 PASS (desktop): help-tours-button visible, panel opens, backdrop (tour-menu-backdrop) click closes panel, <main id='main-content'> computed padding-bottom = 104px (>= 96px). HR-06(a) PASS: logged test_p19_hrview@kainnusantara.id and opened employee EMP-00043 — GAJI POKOK=•••, TOTAL TUNJANGAN=•••, BANK=•••, NIK=•••, NPWP=•••, PTKP=— (fully redacted; API returns base_salary null, UI shows masked bullet pattern). GL-06 smoke: Total Debit Rp 1.129.065.300 = Total Kredit Rp 1.129.065.300, STATUS BUKU = Seimbang.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CycleCount (create session)", "issue": "cc-warehouse-select KNSelect still contains an explicit empty first option (data-testid=cc-warehouse-select-option-empty, label 'Pilih Gudang'); same anti-pattern that was removed from cc-add-product-select was NOT removed here. Automated clicking of first option silently selects empty value and 'Buat Sesi' responds 'Pilih gudang'. Recommend removing the leading empty entry here as well (CycleCount.jsx line 240-243).", "selector": "[data-testid=\"cc-warehouse-select\"]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Mobile shell for admin/warehouse (<768px)", "issues": ["On mobile viewport (390px), warehouse@/admin@ land in a role-specific mobile shell (Persetujuan/Masuk tabs) that does NOT render help-tours-button at all. If product intent is 'icon-only help button on mobile', the main-shell mobile variant was not reachable in these roles — needs clarification. On desktop (1920) the icon+label works correctly."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional: apply the same 'remove empty first option' fix to cc-warehouse-select in CycleCount.jsx (currently 'Pilih Gudang' empty option still at index 0; placeholder already covers the UX).",
+    "Clarify intended help-tours-button behaviour on mobile: in current build it is rendered only within the desktop App shell and the mobile role shells (warehouse mobile HP shell, admin approval mobile shell) do not include it."
+  ],
+  "critical_code_review_comments": [
+    "CycleCount.jsx line 240-243: inconsistent fix — product select cleaned (FIX-1) but warehouse select still has empty-value first option which is the same bug class.",
+    "TourMenu.jsx line 87: label hidden via 'hidden md:inline' assumes main shell is in use on mobile; however App.js routes mobile viewports for warehouse/admin to a separate HP/mobile approval shell that bypasses TourMenu rendering."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend UAT run)", "frontend": "FIX-1 PASS, FIX-2 PASS (desktop), HR-06(a) PASS, GL-06 smoke PASS; other 10 UAT cases NOT TESTED this iteration"},
+  "test_credentials": "admin@/manager@/warehouse@/designer@/sales@/salesadmin@/finance@/md@kainnusantara.id all demo12345; test_p19_hrview@kainnusantara.id/demo12345 verified working",
+  "seed_data_creation": "Created TEST_P19 CC cycle-count session (status open, 1 item prod_batik_mega) at Gudang Jakarta Utara via UI as admin — DB snapshot restore by main agent will clean up.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "P19 cases NOT exercised in this iteration: GRN-01, QC-04, QC-06, PROD-06 (double-click idempotency), INV-06 (scan location exception/undo), SALE-06 (backorder + delivery proof + recovery), APAR-06 (bank reconciliation + payment proof upload), HR-06(b) sales ESS leave + HR-06(c) manager approval, COMM-06 (per-role dashboards & global search), DESIGN-06 (upload+preview+revision+notification+mobile 390), DOC-06 (random search empty state + corrupt file upload OCR), OPS-06 (OpenAI test connection). The help-tours-button is a KNOWN overlap source on bottom-right action buttons; after FIX-2 the <main> pb is 104px which should push action rows above the floating button on desktop — spot-check next iteration with customer-merge-submit on Customer 360 (iter_129 issue). admin-integrations view route not found at ?view=admin-integrations; look for route under settings-hub children.",
+  "rca of the issue": "FIX-1 regression root cause (observed iter 129): cc-add-product-select had an empty-string first option so Playwright [role=option] first click selected empty value → POST never fires an item. P19 fix at CycleCount.jsx removed that first entry from the products array literal and added validator 'Pilih produk dulu'. Verified working. FIX-2: TourMenu previously had no outside-click dismissal and <main> had no bottom padding, causing bottom-right action buttons to sit beneath the floating help bubble. P19 added fixed backdrop (tour-menu-backdrop) with onClick close and set 'pb-24' on <main id='main-content'> in App.js (confirmed getComputedStyle().paddingBottom=104px)."
+}

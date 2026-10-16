@@ -1,0 +1,160 @@
+{
+ "finance-desk|fin-desk-siap_faktur_pajak-action-so_004": "no-dialog",
+ "finance-desk|fin-desk-uang_masuk-action-so_001": {
+  "w": 560,
+  "h": 595,
+  "issues": []
+ },
+ "finance-desk|fin-desk-uang_masuk-action-so_003": {
+  "w": 560,
+  "h": 595,
+  "issues": []
+ },
+ "warehouse-admin-desk|wh-desk-action-shp_11851dcdb1b7": {
+  "w": 720,
+  "h": 720,
+  "issues": []
+ },
+ "warehouse-admin-desk|wh-desk-action-shp_afa59fdc9b31": "err",
+ "warehouse-admin-desk|wh-desk-action-shp_58a2a8f24050": "err",
+ "sales|bestseller-add-prod_batik_mega": "err",
+ "sales|bestseller-add-prod_lurik_classic": "err",
+ "sales|bestseller-add-prod_tenun_ikat": "no-dialog",
+ "special-orders|create-special-order-btn": {
+  "w": 896,
+  "h": 728,
+  "issues": [
+   "1 select bawaan tanpa gaya"
+  ]
+ },
+ "returns|create-return-btn": {
+  "w": 896,
+  "h": 426,
+  "issues": [
+   "3 select bawaan tanpa gaya"
+  ]
+ },
+ "return-policies|create-policy-button": {
+  "w": 896,
+  "h": 564,
+  "issues": [
+   "1 select bawaan tanpa gaya"
+  ]
+ },
+ "customers-master|toggle-admin-create-form-button": {
+  "w": 672,
+  "h": 669,
+  "issues": []
+ },
+ "color-library|color-create-btn": "no-dialog",
+ "color-library|color-labdip-col_kn_blk_01": "err",
+ "color-library|color-labdip-col_kn_blu_01": "err",
+ "md-uoms|toggle-admin-create-form-button": {
+  "w": 672,
+  "h": 402,
+  "issues": [
+   "1 select bawaan tanpa gaya"
+  ]
+ },
+ "md-uoms|uom-config-redirect-key-receiving.supplier_uom_input_mode": "no-dialog",
+ "md-uoms|uom-rule-add": "err",
+ "rfq|rfq-create-button": {
+  "w": 720,
+  "h": 618,
+  "issues": []
+ },
+ "purchasing|create-po-button": "no-dialog",
+ "blanket-po|blanket-create-button": {
+  "w": 760,
+  "h": 736,
+  "issues": []
+ },
+ "makloon-orders|create-makloon-order-button": "no-dialog",
+ "vendor-bills|create-vendor-bill-button": {
+  "w": 920,
+  "h": 256,
+  "issues": []
+ },
+ "landed-cost|create-landed-cost-button": {
+  "w": 940,
+  "h": 635,
+  "issues": []
+ },
+ "purchase-returns|create-return-button": {
+  "w": 896,
+  "h": 449,
+  "issues": [
+   "3 select bawaan tanpa gaya"
+  ]
+ },
+ "purchase-returns|return-submit-pret_48a41f8c777a": "no-dialog",
+ "suppliers|create-supplier-button": {
+  "w": 896,
+  "h": 728,
+  "issues": [
+   "3 select bawaan tanpa gaya"
+  ]
+ },
+ "makloons|create-makloon-button": "no-dialog",
+ "process-recipes|create-recipe-button": "no-dialog",
+ "operations|add-stock-button": {
+  "w": 896,
+  "h": 403,
+  "issues": [
+   "3 select bawaan tanpa gaya"
+  ]
+ },
+ "inspections|ins-create-button": {
+  "w": 672,
+  "h": 434,
+  "issues": [
+   "1 select bawaan tanpa gaya"
+  ]
+ },
+ "inventory-lots|lot-create-open": {
+  "w": 620,
+  "h": 411,
+  "issues": []
+ },
+ "inventory-lots|lot-config-redirect-key-lot.auto_create_on_receiving": "no-dialog",
+ "production|wo-add-button": "no-dialog",
+ "wms-locations|lp-add-zone": "no-dialog",
+ "logistics|logistics-create-button": {
+  "w": 720,
+  "h": 720,
+  "issues": []
+ },
+ "logistics|dispatch-create-any": {
+  "w": 720,
+  "h": 720,
+  "issues": []
+ },
+ "logistics|dispatch-create-shp_21ac5e6fb827": {
+  "w": 720,
+  "h": 720,
+  "issues": []
+ },
+ "cs-rfid-devices|rfid-seed-devices": "no-dialog",
+ "cs-rfid-devices|rfid-add-device": "no-dialog",
+ "bank-accounts|bank-add-toggle": "no-dialog",
+ "cash-management|create-cash-button": {
+  "w": 672,
+  "h": 406,
+  "issues": [
+   "3 select bawaan tanpa gaya"
+  ]
+ },
+ "bank-reconciliation|recon-charge-stmtline_32c5e0fc6201": "no-dialog",
+ "bank-reconciliation|recon-interest-stmtline_02bbdda8eb93": "no-dialog",
+ "bank-reconciliation|recon-charge-stmtline_865b1dd94796": "no-dialog",
+ "payment-plans|penalty-pay-pnl_8808a3a1d217": {
+  "w": 460,
+  "h": 271,
+  "issues": []
+ },
+ "input-tax|it-create-button": {
+  "w": 620,
+  "h": 386,
+  "issues": []
+ }
+}

@@ -1,0 +1,95 @@
+{
+  "tag": "TEST_P08_9a5f61",
+  "results": [
+    {
+      "id": "W2-025",
+      "invariant": "riwayat labdip woven-only tidak memuat sample printing",
+      "pass": true,
+      "detail": "(200, {'TEST_P08_9a5f61_HW'})"
+    },
+    {
+      "id": "W2-025",
+      "invariant": "akun tanpa batas lini tetap melihat keduanya (kontrol)",
+      "pass": true,
+      "detail": "{'TEST_P08_9a5f61_HP', 'TEST_P08_9a5f61_HW'}"
+    },
+    {
+      "id": "W2-025",
+      "invariant": "endpoint turunan baru (required-tests) ikut ditolak lintas lini",
+      "pass": true,
+      "detail": "403"
+    },
+    {
+      "id": "W2-REQ-01",
+      "invariant": "daftar pelaksana memuat MD woven, tidak memuat MD printing",
+      "pass": true,
+      "detail": "(200, 8)"
+    },
+    {
+      "id": "W2-REQ-01",
+      "invariant": "setor tanpa pelaksana ditolak 422 tanpa mutasi",
+      "pass": true,
+      "detail": "(422, '{\"detail\":\"Pilih PELAKSANA (dikerjakan oleh) — akun yang benar-benar mengerjakan sample ini. Penginput dicatat terpisah.\"}')"
+    },
+    {
+      "id": "W2-REQ-01",
+      "invariant": "pelaksana di luar lini sample ditolak 422",
+      "pass": true,
+      "detail": "(422, '{\"detail\":\"Pelaksana TEST_P08_9a5f61 md 1 di luar lini sample ini.\"}')"
+    },
+    {
+      "id": "W2-REQ-01",
+      "invariant": "admin menginput untuk MD woven → performed_by=MD, recorded_by=admin",
+      "pass": true,
+      "detail": "(200, 'TEST_P08_9a5f61 md 0', 'Budi Santoso')"
+    },
+    {
+      "id": "W2-REQ-03",
+      "invariant": "woven wajib labdip+handfeel (dari master lini); handfeel terdeteksi kurang",
+      "pass": true,
+      "detail": "{\"required\":[\"labdip\",\"handfeel\"],\"acc\":[\"labdip\"],\"missing\":[\"handfeel\"]}"
+    },
+    {
+      "id": "W2-REQ-03",
+      "invariant": "keputusan tanpa alasan override → 422, status tetap",
+      "pass": true,
+      "detail": "(422, '{\"detail\":\"Uji wajib belum ACC: handfeel. Keputusan sample tetap boleh dilanjutkan, tetapi alasan override wajib diisi (min. 5 huruf) dan akan tercata')"
+    },
+    {
+      "id": "W2-REQ-03",
+      "invariant": "dengan alasan → diputus + override & timeline tercatat",
+      "pass": true,
+      "detail": "(200, {'missing': ['handfeel'], 'required': ['labdip', 'handfeel'], 'reason': 'Handfeel disetujui pelanggan langsung', 'by': 'Budi Santoso', 'at': '2026-10-04T16:51:30.666306+00:00', 'action': 'Keputusan sample'})"
+    },
+    {
+      "id": "W2-REQ-03",
+      "invariant": "semua uji wajib ACC → diputus tanpa alasan & tanpa override",
+      "pass": true,
+      "detail": "(200, '{\"id\":\"TEST_P08_9a5f61_S3\",\"number\":\"TEST_P08_9a5f61_S3\",\"title\":\"TEST_P08_9a5f61_S3\",\"entity_id\":\"ent_ksc\",\"line_code\":\"woven\",\"status\":\"decided\",\"sa')"
+    },
+    {
+      "id": "W2-REQ-03",
+      "invariant": "spesifikasi printing tanpa sample → uji wajib lini terdeteksi kurang",
+      "pass": true,
+      "detail": "{\"required\":[\"proofing\",\"labdip\"],\"acc\":[],\"missing\":[\"proofing\",\"labdip\"]}"
+    },
+    {
+      "id": "W2-REQ-03",
+      "invariant": "ACC spesifikasi tanpa alasan → 422, status tetap review",
+      "pass": true,
+      "detail": "(422, '{\"detail\":\"Uji wajib belum ACC: proofing, labdip. ACC spesifikasi tetap boleh dilanjutkan, tetapi alasan override wajib diisi (min. 5 huruf) dan akan ')"
+    },
+    {
+      "id": "W2-REQ-03",
+      "invariant": "rilis tanpa alasan override → 422, lifecycle tetap",
+      "pass": true,
+      "detail": "(422, '{\"detail\":\"Uji wajib belum ACC: proofing, labdip. Rilis produk tetap boleh dilanjutkan, tetapi alasan override wajib diisi (min. 5 huruf) dan akan ter')"
+    },
+    {
+      "id": "W2-REQ-03",
+      "invariant": "spesifikasi legacy tanpa lini & tanpa sample → tidak ada uji wajib",
+      "pass": true,
+      "detail": "{\"required\":[],\"acc\":[],\"missing\":[]}"
+    }
+  ]
+}

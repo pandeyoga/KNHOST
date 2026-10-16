@@ -1,0 +1,26 @@
+{
+  "summary": "Iter 322 — Verified WM-02 Reservation-without-Cut, P03 Durable Posting, and P06 Remaining Receiving (AX-08/WM-03/04/05/09, IX-09). All three repro scripts under audit/iterations/2026-10-02-*/repro_*.py pass on current head: WM-02 11/11, P03 43/43, P06 12/12 (total 66/66 invariants). UI at ?view=wms-locations&entity=ent_ksc renders both new tabs (lp-tab-cuts 'Antrean Potong' and lp-tab-pa 'Perintah Simpan ke Rak (Antar Gedung)') and their panels (pending-cuts-panel, Putaway Orders). Demo entity ent_ksc currently has 0 pending cuts and 0 in-flight PA orders so no per-row testids present in this snapshot — expected empty state, structure is correct.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/audit/iterations/2026-10-02-P02-wm02-reservation/repro_wm02.py",
+    "/app/audit/iterations/2026-10-02-P03-durable-posting/repro_p03.py",
+    "/app/audit/iterations/2026-10-02-P06-receiving/repro_p06.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "roll_service.confirm_cut correctly conserves length (parent -= actual+waste, child = actual) and marks reservation consumed; child born with status=reserved, rfid_tag_id=None, parent_roll_id set — invariants hold. Double-cut on same reservation returns 404 with clear message.",
+    "putaway_order_service.confirm_arrival gate: requires scanned_epcs OR manual_all with reason >=10 chars; body missing both -> 400; manual_all with short reason -> 400; both branches produce inventory_movements putaway_transfer_out/in pair keyed to PA id (reference_id) — good idempotency test passes on retry accept-exception.",
+    "gl_service durable posting: cash_transaction_void journal source_type set correctly; derived (ref_type filled) void -> 409 as expected; unbalanced manual journal rejected; ar-receipts repost idempotent; bank opening_balance -> bank_opening_balance journal; PATCH -> bank_opening_adjustment; seed accounts without prior journal rejected 400.",
+    "inspection_service.reopen for sales_return clears sales_returns.inspect_done_at and appends inspect_reopen_history — verified.",
+    "PendingCutsPanel and PutawayOrdersPanel data-testids match spec (pending-cut-actual/waste/confirm-<rid>, pa-confirm-manual-<id>)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (66/66 invariants across WM-02, P03, P06)", "frontend": "100% structural (tabs+panels render; no live rows in demo to click)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (from /app/memory/test_credentials.md); entity ent_ksc",
+  "seed_data_creation": "None — repro scripts create/cleanup their own audit_* synthetic data internally.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "To exercise pending-cut-confirm-<rid> and pa-confirm-manual-<id> buttons live in UI, tester needs to first create a partial-length SO reservation and a putaway order for ent_ksc via API (or run repro_wm02.py / repro_p06.py without cleanup). Current demo state has zero pending cuts and zero PA — tabs and panels render correctly, empty-state messages are appropriate. Backend invariants fully covered by the three official repro scripts; re-run with: cd /app/backend && python /app/audit/iterations/2026-10-02-P02-wm02-reservation/repro_wm02.py && python /app/audit/iterations/2026-10-02-P03-durable-posting/repro_p03.py && python /app/audit/iterations/2026-10-02-P06-receiving/repro_p06.py",
+  "rca_of_the_issue": "N/A — feature verification only. All targeted invariants hold: (a) WM-02 partial reservation books length on parent (length_reserved, length_reservations[]) without child roll birth; child born only on confirm_cut with actual+waste conservation; double-cut returns 404; SO cancel releases reservation without fragmenting roll; at_dispatch auto-cut path works. (b) P03 cash/AR/bank/fixed-asset/store-credit/cash-advance/bank-recon show durable behavior — successful side effect + posted GL, failure paths compensated or 409/400 with clear reasons; unbalanced manual journal rejected. (c) P06 PA rejects quarantine/reserved rolls on create (400); dup PA for same roll -> 400/409; dispatch flips to in_transit_transfer; confirm-arrival needs scanned_epcs or manual_all+long-reason else 400; scanned_epcs=[] -> all-exception; resolve-exception accept writes exactly one putaway_transfer_out/in pair with reference_id=PA id and is idempotent. IX-09 reopen clears sales_returns.inspect_done_at with history."
+}

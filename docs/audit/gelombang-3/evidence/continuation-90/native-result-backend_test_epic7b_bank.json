@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_epic7b_bank.py",
+    "database": "knhost_audit_native90_9e043e89bf7d4475b7a7f00dd6d12e52",
+    "exit": 1,
+    "seconds": 47.73,
+    "pass_log_tokens": 4,
+    "fail_log_tokens": 2,
+    "log": "continuation-90\\native-backend_test_epic7b_bank.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_9e043e89bf7d4475b7a7f00dd6d12e52 backend_test_epic7b_bank.py\n============================================================\nEPIC7-B: Kas & Bank Module - Backend API Tests\n============================================================\n  ✅ [PASS] Login admin@kainnusantara.id\n  ✅ [PASS] Login manager@kainnusantara.id\n  ✅ [PASS] Login sales@kainnusantara.id\n\n=== TEST: List Bank Accounts (Admin) ===\n  ❌ [FAIL] GET /api/bank-accounts returned 403, expected 200\n\n❌ CRITICAL: List accounts failed. Cannot proceed.\n\n============================================================\nRESULTS: ✅ PASS 3 | ❌ FAIL 1\n============================================================\n\n❌ FAILED TESTS:\n  - GET /api/bank-accounts returned 403, expected 200\n"
+  }
+]

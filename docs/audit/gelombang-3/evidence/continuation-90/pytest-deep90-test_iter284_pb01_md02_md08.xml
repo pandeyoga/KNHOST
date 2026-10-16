@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="13" time="2.533" timestamp="2026-10-06T14:03:11.253581+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="test_pb01_blanket_create_ok" time="0.647"><failure message="AssertionError: {&quot;detail&quot;:&quot;Supplier tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter284_pb01_md02_md08.py:56: in test_pb01_blanket_create_ok
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Supplier tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_pb01_blanket_inherits_supplier_term_when_missing" time="0.035"><failure message="AssertionError: {&quot;detail&quot;:&quot;Supplier tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter284_pb01_md02_md08.py:70: in test_pb01_blanket_inherits_supplier_term_when_missing
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Supplier tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_pb01_blanket_invalid_term_code" time="0.033"><failure message="assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter284_pb01_md02_md08.py:80: in test_pb01_blanket_invalid_term_code
+    assert r.status_code == 400
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_pb01_blanket_invalid_tax_mode" time="0.037"><failure message="assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter284_pb01_md02_md08.py:86: in test_pb01_blanket_invalid_tax_mode
+    assert r.status_code == 400
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_pb01_call_off_excluded" time="0.032"><failure message="KeyError: 'id'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter284_pb01_md02_md08.py:92: in test_pb01_call_off_excluded
+    cleanup_ids["blanket_ids"].append(b["id"])
+                                      ^^^^^^^
+E   KeyError: 'id'</failure></testcase><testcase classname="" name="test_pb01_call_off_included" time="0.031"><failure message="AssertionError: assert None is True&#10; +  where None = &lt;built-in method get of dict object at 0x0000024681422740&gt;('price_includes_ppn')&#10; +    where &lt;built-in method get of dict object at 0x0000024681422740&gt; = {'detail': 'Supplier tidak ditemukan'}.get">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter284_pb01_md02_md08.py:117: in test_pb01_call_off_included
+    assert b.get("price_includes_ppn") is True
+E   AssertionError: assert None is True
+E    +  where None = &lt;built-in method get of dict object at 0x0000024681422740&gt;('price_includes_ppn')
+E    +    where &lt;built-in method get of dict object at 0x0000024681422740&gt; = {'detail': 'Supplier tidak ditemukan'}.get</failure></testcase><testcase classname="" name="test_md02_yarn_create_ok" time="0.070" /><testcase classname="" name="test_md02_yarn_invalid_material" time="0.030" /><testcase classname="" name="test_md02_enums" time="0.040" /><testcase classname="" name="test_md08_products_have_supplier_codes" time="0.158" /><testcase classname="" name="test_md08_dashboard_has_supplier_codes" time="0.080" /><testcase classname="" name="test_color_library_labdip_overdue" time="0.045"><failure message="AssertionError: {'id': 'col_kn_wht_01', 'code': 'KN-WHT-01', 'name': 'Putih Susu', 'hex': '#F7F5EF', ...}&#10;assert ((0 or 0)) &gt;= 1&#10; +  where 0 = &lt;built-in method get of dict object at 0x000002468180B7C0&gt;('labdip_overdue_count')&#10; +    where &lt;built-in method get of dict object at 0x000002468180B7C0&gt; = {'id': 'col_kn_wht_01', 'code': 'KN-WHT-01', 'name': 'Putih Susu', 'hex': '#F7F5EF', ...}.get">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter284_pb01_md02_md08.py:223: in test_color_library_labdip_overdue
+    assert (wht.get("labdip_overdue_count") or 0) &gt;= 1, wht
+E   AssertionError: {'id': 'col_kn_wht_01', 'code': 'KN-WHT-01', 'name': 'Putih Susu', 'hex': '#F7F5EF', ...}
+E   assert ((0 or 0)) &gt;= 1
+E    +  where 0 = &lt;built-in method get of dict object at 0x000002468180B7C0&gt;('labdip_overdue_count')
+E    +    where &lt;built-in method get of dict object at 0x000002468180B7C0&gt; = {'id': 'col_kn_wht_01', 'code': 'KN-WHT-01', 'name': 'Putih Susu', 'hex': '#F7F5EF', ...}.get</failure></testcase><testcase classname="" name="test_zzz_cleanup" time="0.032" /></testsuite></testsuites>

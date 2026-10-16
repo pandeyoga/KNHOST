@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/hr_analytics_test.py",
+    "database": "knhost_audit_native90_147cfbf2efd14cf1a670f4a05abd8de7",
+    "exit": 1,
+    "seconds": 47.64,
+    "pass_log_tokens": 8,
+    "fail_log_tokens": 7,
+    "log": "continuation-90\\native-hr_analytics_test.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "f1a670f4a05abd8de7 hr_analytics_test.py\n\n======================================================================\n  BACKEND API TEST — FASE H6 (HR Analytics Dashboard / BI SDM)\n  Testing iteration_90 fixes\n======================================================================\n  ℹ️  \n=== TEST US4: Backend RBAC ===\n  ✅ [PASS] Login admin@kainnusantara.id\n  ✅ [PASS] Login manager@kainnusantara.id\n  ✅ [PASS] Login sales@kainnusantara.id\n  ✅ [PASS] US4: Sales user GET /hr/analytics/summary -> 403 (correct)\n  ✅ [PASS] US4: Manager user GET /hr/analytics/summary -> 200 (correct)\n  ℹ️  US4: Manager response period = 2026-10\n  ✅ [PASS] US4: Admin user GET /hr/analytics/summary?entity_id=all -> 200\n  ❌ [FAIL] FIX-1: Expected default period '2026-06', got '2026-10'\n  ❌ [FAIL] FIX-1: Attendance rate = 0.0% (dashboard appears empty)\n  ❌ [FAIL] FIX-1: Payroll net = 0.0 (no payroll data)\n  ℹ️  \n=== TEST US2: Period Switching ===\n  ❌ [FAIL] US2: Expected period '2026-07', got '2026-10'\n  ℹ️  US2: Tren Lembur 2026-07 shows 0.0 jam (expected ~4.5)\n  ❌ [FAIL] US2: Expected period '2026-08', got '2026-10'\n  ✅ [PASS] US2: Attendance rate 2026-08 = 0% (no attendance data, expected)\n  ❌ [FAIL] US2: Expected period '2026-06', got '2026-10'\n  ℹ️  US2: Attendance rate 2026-06 = 0.0% (expected 100%)\n\n======================================================================\n  HASIL: 7 PASS | 6 FAIL\n======================================================================\n\n❌ FAILED TESTS:\n   - FIX-1: Expected default period '2026-06', got '2026-10'\n   - FIX-1: Attendance rate = 0.0% (dashboard appears empty)\n   - FIX-1: Payroll net = 0.0 (no payroll data)\n   - US2: Expected period '2026-07', got '2026-10'\n   - US2: Expected period '2026-08', got '2026-10'\n   - US2: Expected period '2026-06', got '2026-10'\n"
+  }
+]

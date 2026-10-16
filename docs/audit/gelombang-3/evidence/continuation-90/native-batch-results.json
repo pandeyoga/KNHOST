@@ -1,0 +1,112 @@
+[
+  {
+    "script": "backend/test_g2_payment_poc.py",
+    "database": "knhost_audit_native90_batch_replays",
+    "exit": 1,
+    "seconds": 41.13,
+    "log": "native-batch-test_g2_payment_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "note": "Unchanged assertions; fixture reset between scripts on a shared imported app. A defect requires an independent isolated reproduction."
+  },
+  {
+    "script": "backend/test_g3_variance_poc.py",
+    "database": "knhost_audit_native90_batch_replays",
+    "exit": 1,
+    "seconds": 43.56,
+    "log": "native-batch-test_g3_variance_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "note": "Unchanged assertions; fixture reset between scripts on a shared imported app. A defect requires an independent isolated reproduction."
+  },
+  {
+    "script": "backend/test_g7_contrabon_poc.py",
+    "database": "knhost_audit_native90_batch_replays",
+    "exit": 1,
+    "seconds": 32.92,
+    "log": "native-batch-test_g7_contrabon_poc.log",
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "note": "Unchanged assertions; fixture reset between scripts on a shared imported app. A defect requires an independent isolated reproduction."
+  },
+  {
+    "script": "backend/test_g8_bank_poc.py",
+    "database": "knhost_audit_native90_batch_replays",
+    "exit": 1,
+    "seconds": 40.6,
+    "log": "native-batch-test_g8_bank_poc.log",
+    "pass_log_tokens": 4,
+    "fail_log_tokens": 1,
+    "note": "Unchanged assertions; fixture reset between scripts on a shared imported app. A defect requires an independent isolated reproduction."
+  },
+  {
+    "script": "backend/test_core_makloon_lini_poc.py",
+    "database": "knhost_audit_native90_batch_replays",
+    "exit": 0,
+    "seconds": 6.77,
+    "log": "native-batch-test_core_makloon_lini_poc.log",
+    "pass_log_tokens": 36,
+    "fail_log_tokens": 1,
+    "note": "Unchanged assertions; fixture reset between scripts on a shared imported app. A defect requires an independent isolated reproduction."
+  },
+  {
+    "script": "backend/test_core_dua_satuan_poc.py",
+    "database": "knhost_audit_native90_batch_replays",
+    "exit": 1,
+    "seconds": 15.23,
+    "log": "native-batch-test_core_dua_satuan_poc.log",
+    "pass_log_tokens": 23,
+    "fail_log_tokens": 6,
+    "note": "Unchanged assertions; fixture reset between scripts on a shared imported app. A defect requires an independent isolated reproduction."
+  },
+  {
+    "script": "backend/test_core_e0_isolation_poc.py",
+    "database": "knhost_audit_native90_batch_replays",
+    "exit": 0,
+    "seconds": 6.07,
+    "log": "native-batch-test_core_e0_isolation_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "note": "Unchanged assertions; fixture reset between scripts on a shared imported app. A defect requires an independent isolated reproduction."
+  },
+  {
+    "script": "backend/test_core_e3_write_guard_poc.py",
+    "database": "knhost_audit_native90_batch_replays",
+    "exit": 0,
+    "seconds": 4.57,
+    "log": "native-batch-test_core_e3_write_guard_poc.log",
+    "pass_log_tokens": 27,
+    "fail_log_tokens": 1,
+    "note": "Unchanged assertions; fixture reset between scripts on a shared imported app. A defect requires an independent isolated reproduction."
+  },
+  {
+    "script": "backend/test_core_design_request_poc.py",
+    "database": "knhost_audit_native90_batch_replays",
+    "exit": 2,
+    "seconds": 7.81,
+    "log": "native-batch-test_core_design_request_poc.log",
+    "pass_log_tokens": 55,
+    "fail_log_tokens": 1,
+    "note": "Unchanged assertions; fixture reset between scripts on a shared imported app. A defect requires an independent isolated reproduction."
+  },
+  {
+    "script": "backend/test_core_sampling_poc.py",
+    "database": "knhost_audit_native90_batch_replays",
+    "exit": 1,
+    "seconds": 4.76,
+    "log": "native-batch-test_core_sampling_poc.log",
+    "pass_log_tokens": 13,
+    "fail_log_tokens": 1,
+    "note": "Unchanged assertions; fixture reset between scripts on a shared imported app. A defect requires an independent isolated reproduction."
+  },
+  {
+    "script": "backend/backend_test_iteration_183.py",
+    "database": "knhost_audit_native90_batch_replays",
+    "exit": 1,
+    "seconds": 6.01,
+    "log": "native-batch-backend_test_iteration_183.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "note": "Unchanged assertions; fixture reset between scripts on a shared imported app. A defect requires an independent isolated reproduction."
+  }
+]

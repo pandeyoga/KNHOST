@@ -1,0 +1,1728 @@
+{
+  "version": "tpl-v1",
+  "templates": [
+    {
+      "id": "daily_brief",
+      "title": "Laporan hari ini",
+      "group": "Harian",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin",
+        "finance"
+      ],
+      "prompt": "Buatkan laporan hari ini.",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "daily_brief",
+            "period": {
+              "preset": "today",
+              "from": null,
+              "to": null
+            },
+            "filters": [],
+            "as_of": null,
+            "top_n": null
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "summary_cards",
+          "from": "s1.kpi"
+        },
+        {
+          "kind": "table",
+          "from": "s1.top_customers"
+        },
+        {
+          "kind": "table",
+          "from": "s1.alerts"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": {
+        "cron_wib": "0 7 * * 1-6",
+        "channel": "whatsapp",
+        "note": "Kirim ke pemilik & manajer 07.00"
+      }
+    },
+    {
+      "id": "sales_today_vs_yesterday",
+      "title": "Penjualan hari ini vs kemarin",
+      "group": "Harian",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin",
+        "sales"
+      ],
+      "prompt": "Berapa penjualan hari ini dibanding kemarin?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "net_sales",
+              "orders_count",
+              "customers_active"
+            ],
+            "group_by": [],
+            "time_grain": null,
+            "period": {
+              "preset": "today",
+              "from": null,
+              "to": null
+            },
+            "compare": "previous_period",
+            "filters": [],
+            "sort": {
+              "by": null,
+              "direction": "desc"
+            },
+            "limit": null,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "summary_cards",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "receiving_today",
+      "title": "Barang masuk hari ini",
+      "group": "Harian",
+      "roles": [
+        "admin",
+        "manager",
+        "warehouse_admin",
+        "warehouse",
+        "md"
+      ],
+      "prompt": "Barang apa saja yang masuk hari ini?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "receiving_today",
+            "period": {
+              "preset": "today",
+              "from": null,
+              "to": null
+            },
+            "filters": [],
+            "as_of": null,
+            "top_n": null
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1.receipts"
+        },
+        {
+          "kind": "table",
+          "from": "s1.discrepancies"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "dispatch_today",
+      "title": "Pengiriman hari ini",
+      "group": "Harian",
+      "roles": [
+        "admin",
+        "manager",
+        "warehouse_admin",
+        "warehouse",
+        "admin",
+        "manager",
+        "sales_admin"
+      ],
+      "prompt": "Pengiriman apa saja hari ini dan mana yang tertunda?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "dispatch_today",
+            "period": {
+              "preset": "today",
+              "from": null,
+              "to": null
+            },
+            "filters": [],
+            "as_of": null,
+            "top_n": null
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1.shipments"
+        },
+        {
+          "kind": "table",
+          "from": "s1.pending"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "pending_approvals",
+      "title": "Menunggu persetujuan",
+      "group": "Harian",
+      "roles": [
+        "admin",
+        "manager"
+      ],
+      "prompt": "Dokumen apa saja yang menunggu persetujuan saya?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "list_records",
+          "args": {
+            "record_type": "pending_approvals",
+            "period": null,
+            "filters": [],
+            "sort": {
+              "by": null,
+              "direction": "desc"
+            },
+            "limit": 50
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "none",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "top_products",
+      "title": "Produk terlaris",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin",
+        "sales"
+      ],
+      "prompt": "Produk apa yang penjualannya tertinggi bulan ini?",
+      "params": [
+        {
+          "name": "period",
+          "default": "mtd"
+        }
+      ],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "net_sales",
+              "qty_sold",
+              "orders_count"
+            ],
+            "group_by": [
+              "product"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare": "previous_period",
+            "filters": [],
+            "sort": {
+              "by": "net_sales",
+              "direction": "desc"
+            },
+            "limit": 10,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "hbar",
+          "from": "s1",
+          "x": "product",
+          "y": [
+            "net_sales"
+          ]
+        },
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "top_customers",
+      "title": "Pelanggan terbesar",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin",
+        "sales"
+      ],
+      "prompt": "Siapa 10 pelanggan dengan pembelian terbesar bulan ini?",
+      "params": [
+        {
+          "name": "period",
+          "default": "mtd"
+        }
+      ],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "net_sales",
+              "orders_count",
+              "avg_order_value"
+            ],
+            "group_by": [
+              "customer"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare": "previous_period",
+            "filters": [],
+            "sort": {
+              "by": "net_sales",
+              "direction": "desc"
+            },
+            "limit": 10,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "hbar",
+          "from": "s1",
+          "x": "customer",
+          "y": [
+            "net_sales"
+          ]
+        },
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "sales_ranking",
+      "title": "Ranking sales person",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin"
+      ],
+      "prompt": "Tampilkan ranking sales bulan ini beserta pencapaian target.",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "net_sales",
+              "sales_target",
+              "target_achievement_pct",
+              "orders_count",
+              "customers_active",
+              "collections_amount"
+            ],
+            "group_by": [
+              "sales_person"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare": "none",
+            "filters": [],
+            "sort": {
+              "by": "net_sales",
+              "direction": "desc"
+            },
+            "limit": 50,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "combo",
+          "from": "s1",
+          "x": "sales_person",
+          "y": [
+            "net_sales",
+            "sales_target"
+          ]
+        },
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": {
+        "cron_wib": "0 8 * * 1",
+        "channel": "whatsapp",
+        "note": "Senin pagi ke manajer penjualan"
+      }
+    },
+    {
+      "id": "target_vs_actual",
+      "title": "Target vs realisasi",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin",
+        "sales"
+      ],
+      "prompt": "Bagaimana pencapaian target saya bulan ini?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "target_vs_actual",
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "filters": [],
+            "as_of": null,
+            "top_n": null
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "summary_cards",
+          "from": "s1.kpi"
+        },
+        {
+          "kind": "table",
+          "from": "s1.detail"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "sales_trend_12m",
+      "title": "Tren penjualan 12 bulan",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin",
+        "sales"
+      ],
+      "prompt": "Tampilkan tren penjualan 12 bulan terakhir.",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "net_sales",
+              "orders_count"
+            ],
+            "group_by": [],
+            "time_grain": "month",
+            "period": {
+              "preset": "last_12m",
+              "from": null,
+              "to": null
+            },
+            "compare": "same_period_last_year",
+            "filters": [],
+            "sort": {
+              "by": null,
+              "direction": "desc"
+            },
+            "limit": null,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "line",
+          "from": "s1",
+          "x": "date",
+          "y": [
+            "net_sales"
+          ]
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "sales_by_line",
+      "title": "Penjualan per lini & kategori",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin",
+        "md"
+      ],
+      "prompt": "Berapa penjualan per lini produk dan kategori bulan ini?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "net_sales",
+              "qty_sold"
+            ],
+            "group_by": [
+              "line_code",
+              "category"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare": "none",
+            "filters": [],
+            "sort": {
+              "by": "net_sales",
+              "direction": "desc"
+            },
+            "limit": 50,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "stacked_bar",
+          "from": "s1",
+          "x": "line_code",
+          "y": [
+            "net_sales"
+          ]
+        },
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "sales_by_city",
+      "title": "Penjualan per kota",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin"
+      ],
+      "prompt": "Kota mana yang penjualannya paling besar bulan ini?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "net_sales",
+              "customers_active"
+            ],
+            "group_by": [
+              "customer_city"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare": "none",
+            "filters": [],
+            "sort": {
+              "by": "net_sales",
+              "direction": "desc"
+            },
+            "limit": 15,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "hbar",
+          "from": "s1",
+          "x": "customer_city",
+          "y": [
+            "net_sales"
+          ]
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "why_sales_changed",
+      "title": "Kenapa penjualan naik/turun",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin"
+      ],
+      "prompt": "Kenapa penjualan bulan ini berubah dibanding bulan lalu?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "analyze_change",
+          "args": {
+            "metric": "net_sales",
+            "dimension": "customer",
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare_to": "previous_period",
+            "filters": [],
+            "top_n": 5
+          }
+        },
+        {
+          "tool": "analyze_change",
+          "args": {
+            "metric": "net_sales",
+            "dimension": "product",
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare_to": "previous_period",
+            "filters": [],
+            "top_n": 5
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "hbar",
+          "from": "s1",
+          "x": "customer",
+          "y": [
+            "delta"
+          ]
+        },
+        {
+          "kind": "chart",
+          "type": "hbar",
+          "from": "s2",
+          "x": "product",
+          "y": [
+            "delta"
+          ]
+        }
+      ],
+      "narrative": "sol",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "new_customers",
+      "title": "Pelanggan baru",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin",
+        "sales"
+      ],
+      "prompt": "Siapa pelanggan baru bulan ini?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "new_customers",
+              "net_sales"
+            ],
+            "group_by": [
+              "sales_person"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare": "previous_period",
+            "filters": [],
+            "sort": {
+              "by": "new_customers",
+              "direction": "desc"
+            },
+            "limit": 50,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "inactive_customers",
+      "title": "Pelanggan tidak aktif",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin",
+        "sales"
+      ],
+      "prompt": "Pelanggan mana yang tidak order lebih dari 60 hari?",
+      "params": [
+        {
+          "name": "days",
+          "default": 60
+        }
+      ],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "list_records",
+          "args": {
+            "record_type": "inactive_customers",
+            "period": null,
+            "filters": [],
+            "sort": {
+              "by": "last_order_value",
+              "direction": "desc"
+            },
+            "limit": 50
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "discounts",
+      "title": "Diskon terbesar",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin"
+      ],
+      "prompt": "Pesanan mana yang diskonnya terbesar bulan ini, dan per sales berapa?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "discount_total",
+              "gross_sales",
+              "net_sales"
+            ],
+            "group_by": [
+              "sales_person"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare": "none",
+            "filters": [],
+            "sort": {
+              "by": "discount_total",
+              "direction": "desc"
+            },
+            "limit": 20,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "returns",
+      "title": "Retur & komplain",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager",
+        "sales_admin"
+      ],
+      "prompt": "Berapa retur bulan ini dan produk apa yang paling banyak diretur?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "returns_value"
+            ],
+            "group_by": [
+              "product"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare": "previous_period",
+            "filters": [],
+            "sort": {
+              "by": "returns_value",
+              "direction": "desc"
+            },
+            "limit": 10,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "hbar",
+          "from": "s1",
+          "x": "product",
+          "y": [
+            "returns_value"
+          ]
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "margin_by_product",
+      "title": "Laba kotor per produk",
+      "group": "Penjualan",
+      "roles": [
+        "admin",
+        "manager"
+      ],
+      "prompt": "Produk mana yang margin kotornya paling besar dan paling kecil bulan ini?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "net_sales",
+              "gross_margin",
+              "gross_margin_pct"
+            ],
+            "group_by": [
+              "product"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare": "none",
+            "filters": [],
+            "sort": {
+              "by": "gross_margin",
+              "direction": "desc"
+            },
+            "limit": 20,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "hbar",
+          "from": "s1",
+          "x": "product",
+          "y": [
+            "gross_margin"
+          ]
+        },
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "ar_due",
+      "title": "Piutang jatuh tempo",
+      "group": "Keuangan",
+      "roles": [
+        "admin",
+        "manager",
+        "finance",
+        "sales_admin",
+        "sales"
+      ],
+      "prompt": "Piutang mana yang sudah lewat jatuh tempo?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "ar_aging",
+            "period": null,
+            "filters": [],
+            "as_of": null,
+            "top_n": 20
+          }
+        },
+        {
+          "tool": "list_records",
+          "args": {
+            "record_type": "overdue_invoices",
+            "period": null,
+            "filters": [],
+            "sort": {
+              "by": "days_overdue",
+              "direction": "desc"
+            },
+            "limit": 50
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "stacked_bar",
+          "from": "s1.buckets",
+          "x": "sales_person",
+          "y": [
+            "b1_30",
+            "b31_60",
+            "b61_90",
+            "b90_plus"
+          ]
+        },
+        {
+          "kind": "table",
+          "from": "s2"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "collections_week",
+      "title": "Penagihan minggu ini",
+      "group": "Keuangan",
+      "roles": [
+        "admin",
+        "manager",
+        "finance",
+        "sales_admin"
+      ],
+      "prompt": "Berapa uang masuk dari pelanggan minggu ini dan siapa yang jatuh tempo minggu depan?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "collections_amount"
+            ],
+            "group_by": [
+              "sales_person"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "this_week",
+              "from": null,
+              "to": null
+            },
+            "compare": "previous_period",
+            "filters": [],
+            "sort": {
+              "by": "collections_amount",
+              "direction": "desc"
+            },
+            "limit": 50,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        },
+        {
+          "tool": "list_records",
+          "args": {
+            "record_type": "ar_open_items",
+            "period": null,
+            "filters": [],
+            "sort": {
+              "by": "due_date",
+              "direction": "asc"
+            },
+            "limit": 50
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1"
+        },
+        {
+          "kind": "table",
+          "from": "s2"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "ap_due",
+      "title": "Hutang jatuh tempo",
+      "group": "Keuangan",
+      "roles": [
+        "admin",
+        "manager",
+        "finance"
+      ],
+      "prompt": "Tagihan supplier apa saja yang jatuh tempo 14 hari ke depan?",
+      "params": [
+        {
+          "name": "days_ahead",
+          "default": 14
+        }
+      ],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "list_records",
+          "args": {
+            "record_type": "vendor_bills_due",
+            "period": null,
+            "filters": [],
+            "sort": {
+              "by": "due_date",
+              "direction": "asc"
+            },
+            "limit": 50
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "cash_position",
+      "title": "Posisi kas & bank",
+      "group": "Keuangan",
+      "roles": [
+        "admin",
+        "manager",
+        "finance"
+      ],
+      "prompt": "Berapa posisi kas dan bank hari ini?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "cash_position",
+            "period": null,
+            "filters": [],
+            "as_of": null,
+            "top_n": null
+          }
+        },
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "cashflow_forecast",
+            "period": null,
+            "filters": [],
+            "as_of": null,
+            "top_n": null
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "summary_cards",
+          "from": "s1.kpi"
+        },
+        {
+          "kind": "chart",
+          "type": "combo",
+          "from": "s2.weeks",
+          "x": "week",
+          "y": [
+            "inflow",
+            "outflow"
+          ]
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "pnl_month",
+      "title": "Ringkasan laba rugi",
+      "group": "Keuangan",
+      "roles": [
+        "admin",
+        "manager",
+        "finance"
+      ],
+      "prompt": "Ringkasan laba rugi bulan ini dibanding bulan lalu.",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "income_statement",
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "filters": [],
+            "as_of": null,
+            "top_n": null
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1.statement"
+        }
+      ],
+      "narrative": "sol",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "low_stock",
+      "title": "Stok menipis",
+      "group": "Stok",
+      "roles": [
+        "admin",
+        "manager",
+        "warehouse_admin",
+        "warehouse",
+        "admin",
+        "manager",
+        "sales_admin",
+        "md"
+      ],
+      "prompt": "Produk apa yang stoknya di bawah titik pesan ulang?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "list_records",
+          "args": {
+            "record_type": "low_stock",
+            "period": null,
+            "filters": [],
+            "sort": {
+              "by": "days_of_cover",
+              "direction": "asc"
+            },
+            "limit": 50
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "slow_stock",
+      "title": "Stok lambat & mati",
+      "group": "Stok",
+      "roles": [
+        "admin",
+        "manager",
+        "warehouse_admin",
+        "warehouse",
+        "admin",
+        "manager",
+        "md"
+      ],
+      "prompt": "Stok mana yang tidak bergerak lebih dari 90 hari dan berapa nilainya?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "stock_health",
+            "period": null,
+            "filters": [],
+            "as_of": null,
+            "top_n": 30
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "bar",
+          "from": "s1.aging",
+          "x": "stock_age_bucket",
+          "y": [
+            "stock_qty"
+          ]
+        },
+        {
+          "kind": "table",
+          "from": "s1.dead_items"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "stock_value_wh",
+      "title": "Nilai persediaan per gudang",
+      "group": "Stok",
+      "roles": [
+        "admin",
+        "manager",
+        "finance"
+      ],
+      "prompt": "Berapa nilai persediaan per gudang dan per lini?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "stock_value",
+              "stock_rolls"
+            ],
+            "group_by": [
+              "warehouse",
+              "line_code"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "today",
+              "from": null,
+              "to": null
+            },
+            "compare": "none",
+            "filters": [],
+            "sort": {
+              "by": "stock_value",
+              "direction": "desc"
+            },
+            "limit": 50,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "stacked_bar",
+          "from": "s1",
+          "x": "warehouse",
+          "y": [
+            "stock_value"
+          ]
+        },
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "stock_by_dyelot",
+      "title": "Stok per dye lot",
+      "group": "Stok",
+      "roles": [
+        "admin",
+        "manager",
+        "warehouse_admin",
+        "warehouse",
+        "admin",
+        "manager",
+        "sales_admin",
+        "sales"
+      ],
+      "prompt": "Berapa stok tersedia per dye lot untuk produk ini?",
+      "params": [
+        {
+          "name": "product",
+          "required": true,
+          "resolve": "product"
+        }
+      ],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "stock_available_qty",
+              "stock_rolls"
+            ],
+            "group_by": [
+              "dye_lot",
+              "warehouse"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "today",
+              "from": null,
+              "to": null
+            },
+            "compare": "none",
+            "filters": [],
+            "sort": {
+              "by": "stock_available_qty",
+              "direction": "desc"
+            },
+            "limit": 100,
+            "include_samples": false,
+            "entity_scope": "active"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "none",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "po_overdue",
+      "title": "PO terlambat",
+      "group": "Pembelian",
+      "roles": [
+        "admin",
+        "manager",
+        "md",
+        "warehouse_admin"
+      ],
+      "prompt": "PO mana yang sudah lewat perkiraan kedatangan?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "list_records",
+          "args": {
+            "record_type": "overdue_purchase_orders",
+            "period": null,
+            "filters": [],
+            "sort": {
+              "by": "days_late",
+              "direction": "desc"
+            },
+            "limit": 50
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "incoming_week",
+      "title": "Kedatangan minggu ini",
+      "group": "Pembelian",
+      "roles": [
+        "admin",
+        "manager",
+        "warehouse_admin",
+        "warehouse",
+        "md"
+      ],
+      "prompt": "Barang apa yang dijadwalkan datang minggu ini?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "list_records",
+          "args": {
+            "record_type": "incoming_goods",
+            "period": {
+              "preset": "this_week",
+              "from": null,
+              "to": null
+            },
+            "filters": [],
+            "sort": {
+              "by": "eta",
+              "direction": "asc"
+            },
+            "limit": 100
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "none",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "supplier_performance",
+      "title": "Performa supplier",
+      "group": "Pembelian",
+      "roles": [
+        "admin",
+        "manager",
+        "md"
+      ],
+      "prompt": "Bagaimana performa supplier 3 bulan terakhir (ketepatan & selisih kiriman)?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "supplier_scorecard",
+            "period": {
+              "preset": "last_90d",
+              "from": null,
+              "to": null
+            },
+            "filters": [],
+            "as_of": null,
+            "top_n": 20
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1.ranking"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "makloon_status",
+      "title": "Makloon berjalan & susut",
+      "group": "Pembelian",
+      "roles": [
+        "admin",
+        "manager",
+        "md"
+      ],
+      "prompt": "Order makloon apa yang masih berjalan dan berapa susutnya?",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "makloon_status",
+            "period": {
+              "preset": "last_90d",
+              "from": null,
+              "to": null
+            },
+            "filters": [],
+            "as_of": null,
+            "top_n": null
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "table",
+          "from": "s1.open_orders"
+        },
+        {
+          "kind": "table",
+          "from": "s1.shrinkage"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "weekly_executive",
+      "title": "Ringkasan mingguan eksekutif",
+      "group": "Eksekutif",
+      "roles": [
+        "admin",
+        "manager"
+      ],
+      "prompt": "Buatkan ringkasan eksekutif minggu lalu.",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "weekly_executive",
+            "period": {
+              "preset": "last_week",
+              "from": null,
+              "to": null
+            },
+            "filters": [],
+            "as_of": null,
+            "top_n": null
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "summary_cards",
+          "from": "s1.kpi"
+        },
+        {
+          "kind": "table",
+          "from": "s1.highlights"
+        }
+      ],
+      "narrative": "sol",
+      "schedule_suggestion": {
+        "cron_wib": "0 7 * * 1",
+        "channel": "whatsapp",
+        "note": "Senin 07.00 ke pemilik"
+      }
+    },
+    {
+      "id": "entity_comparison",
+      "title": "Perbandingan antar entitas",
+      "group": "Eksekutif",
+      "roles": [
+        "admin",
+        "manager"
+      ],
+      "prompt": "Bandingkan penjualan, margin, dan piutang antar entitas bulan ini.",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "query_metrics",
+          "args": {
+            "metrics": [
+              "net_sales",
+              "gross_margin_pct",
+              "ar_overdue",
+              "orders_count"
+            ],
+            "group_by": [
+              "entity"
+            ],
+            "time_grain": null,
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "compare": "previous_period",
+            "filters": [],
+            "sort": {
+              "by": null,
+              "direction": "desc"
+            },
+            "limit": 10,
+            "include_samples": false,
+            "entity_scope": "per_entity"
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "chart",
+          "type": "bar",
+          "from": "s1",
+          "x": "entity",
+          "y": [
+            "net_sales"
+          ]
+        },
+        {
+          "kind": "table",
+          "from": "s1"
+        }
+      ],
+      "narrative": "luna",
+      "schedule_suggestion": null
+    },
+    {
+      "id": "hr_today",
+      "title": "Kehadiran & lembur",
+      "group": "SDM",
+      "roles": [
+        "admin",
+        "manager"
+      ],
+      "prompt": "Ringkasan kehadiran hari ini dan lembur bulan ini.",
+      "params": [],
+      "mode": "recipe",
+      "steps": [
+        {
+          "tool": "run_report",
+          "args": {
+            "report": "hr_summary",
+            "period": {
+              "preset": "mtd",
+              "from": null,
+              "to": null
+            },
+            "filters": [],
+            "as_of": null,
+            "top_n": null
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "kind": "summary_cards",
+          "from": "s1.kpi"
+        }
+      ],
+      "narrative": "none",
+      "schedule_suggestion": null
+    }
+  ]
+}

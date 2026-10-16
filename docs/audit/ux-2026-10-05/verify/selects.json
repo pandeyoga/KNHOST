@@ -1,0 +1,1370 @@
+[
+ {
+  "view": "orders",
+  "select": "Semua Status (24)",
+  "option": "Tahap: Dipesan (grup)",
+  "before": 40,
+  "after": 40,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "orders",
+  "select": "Semua Status (24)",
+  "option": "Tahap: Diproses (grup)",
+  "before": 40,
+  "after": 2,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "hr-visits",
+  "select": "visits-emp-filter",
+  "option": "Agus Setiawan (EMP-00016)",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "hr-visits",
+  "select": "visits-emp-filter",
+  "option": "Slamet Riyadi (EMP-00015)",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "hr-visits",
+  "select": "visits-status-filter",
+  "option": "Berjalan",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "hr-visits",
+  "select": "visits-status-filter",
+  "option": "Selesai",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "md-categories",
+  "select": "category-base-unit-input",
+  "option": "Yard (yd)",
+  "before": 12,
+  "after": 12,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "md-categories",
+  "select": "category-base-unit-input",
+  "option": "Centimeter (cm)",
+  "before": 12,
+  "after": 12,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "md-categories",
+  "select": "category-status-input",
+  "option": "Nonaktif",
+  "before": 12,
+  "after": 12,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "md-uoms",
+  "select": "uom-calc-product",
+  "option": "TNI-GRGD-001 — Tenun Ikat Garuda Premium",
+  "before": 17,
+  "after": 17,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "md-uoms",
+  "select": "uom-calc-product",
+  "option": "LRK-CLSC-001 — Lurik Klasik Solo (dasar:",
+  "before": 17,
+  "after": 17,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "md-uoms",
+  "select": "uom-calc-unit",
+  "option": "Yard (yd)",
+  "before": 17,
+  "after": 17,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "md-uoms",
+  "select": "uom-calc-unit",
+  "option": "Centimeter (cm)",
+  "before": 17,
+  "after": 17,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "md-uoms",
+  "select": "uom-filter-dimension",
+  "option": "Panjang",
+  "before": 17,
+  "after": 9,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "md-uoms",
+  "select": "uom-filter-dimension",
+  "option": "Berat",
+  "before": 9,
+  "after": 7,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "md-uoms",
+  "select": "uom-filter-kind",
+  "option": "Faktor tetap (fisika/standar)",
+  "before": 17,
+  "after": 16,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "md-uoms",
+  "select": "uom-filter-kind",
+  "option": "Ukuran kemasan (roll/bal/cone/box)",
+  "before": 16,
+  "after": 3,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "color-library",
+  "select": "color-family-filter",
+  "option": "Abu",
+  "before": 28,
+  "after": 2,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "color-library",
+  "select": "color-family-filter",
+  "option": "Biru",
+  "before": 2,
+  "after": 4,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "color-library",
+  "select": "color-system-filter",
+  "option": "KN (Internal)",
+  "before": 28,
+  "after": 22,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "color-library",
+  "select": "color-system-filter",
+  "option": "TCX",
+  "before": 22,
+  "after": 5,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "color-library",
+  "select": "color-status-filter",
+  "option": "Nonaktif",
+  "before": 28,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "color-library",
+  "select": "color-status-filter",
+  "option": "Semua",
+  "before": 0,
+  "after": 28,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "pricelist",
+  "select": "pl-entity-select",
+  "option": "Kanda Fabric",
+  "before": 40,
+  "after": 40,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "pricelist",
+  "select": "pl-entity-select",
+  "option": "Cipta Sandang",
+  "before": 40,
+  "after": 40,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "reorder",
+  "select": "reorder-warehouse",
+  "option": "Gudang Jakarta Utara",
+  "before": 8,
+  "after": 8,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "reorder",
+  "select": "reorder-warehouse",
+  "option": "Gudang Surabaya Rungkut",
+  "before": 8,
+  "after": 8,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "cs-price-list",
+  "select": "cpl-entity-select",
+  "option": "Kanda Fabric",
+  "before": 20,
+  "after": 20,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-price-list",
+  "select": "cpl-entity-select",
+  "option": "Cipta Sandang",
+  "before": 20,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "cs-price-list",
+  "select": "cpl-customer-select",
+  "option": "Fashion Bandung Kencana · CUST-0004",
+  "before": 20,
+  "after": 20,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-price-list",
+  "select": "cpl-customer-select",
+  "option": "Butik Bali Indah · CUST-0002",
+  "before": 20,
+  "after": 20,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "customers-crm",
+  "select": "customer-filter-segment",
+  "option": "Retail",
+  "before": 4,
+  "after": 2,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "customers-crm",
+  "select": "customer-filter-segment",
+  "option": "Wholesale",
+  "before": 2,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "customers-crm",
+  "select": "customer-filter-credit",
+  "option": "Sehat",
+  "before": 4,
+  "after": 2,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "customers-crm",
+  "select": "customer-filter-credit",
+  "option": "Perhatian",
+  "before": 2,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "customers-crm",
+  "select": "customer-filter-sales",
+  "option": "Ayu Permatasari",
+  "before": 4,
+  "after": 1,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "customers-crm",
+  "select": "customer-filter-sales",
+  "option": "Bima Saputra",
+  "before": 1,
+  "after": 2,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "contra-bons",
+  "select": "cb-filter-status",
+  "option": "Draf",
+  "before": 3,
+  "after": 1,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "contra-bons",
+  "select": "cb-filter-status",
+  "option": "Diajukan (1)",
+  "before": 1,
+  "after": 1,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "supplier-items",
+  "select": "supplier-items-supplier-filter",
+  "option": "CV Cipta Sandang Textile",
+  "before": 7,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "supplier-items",
+  "select": "supplier-items-supplier-filter",
+  "option": "Kanda Fabric",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "process-recipes",
+  "select": "recipe-proc-filter",
+  "option": "Tenun (Weaving)",
+  "before": 2,
+  "after": 1,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "process-recipes",
+  "select": "recipe-proc-filter",
+  "option": "Rajut (Knitting)",
+  "before": 1,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "inventory-lots",
+  "select": "lot-filter-source",
+  "option": "Penerimaan barang (GR)",
+  "before": 20,
+  "after": 20,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "inventory-lots",
+  "select": "lot-filter-source",
+  "option": "Hasil makloon",
+  "before": 20,
+  "after": 20,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "inventory-lots",
+  "select": "lot-filter-status",
+  "option": "Karantina",
+  "before": 20,
+  "after": 20,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "inventory-lots",
+  "select": "lot-filter-status",
+  "option": "Dirilis (siap pakai)",
+  "before": 20,
+  "after": 20,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "inventory-lots",
+  "select": "lot-filter-stage",
+  "option": "Benang (Yarn)",
+  "before": 20,
+  "after": 20,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "inventory-lots",
+  "select": "lot-filter-stage",
+  "option": "Grey / Greige (Kain Mentah)",
+  "before": 20,
+  "after": 20,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "inventory-lots",
+  "select": "lot-filter-warehouse",
+  "option": "Gudang Jakarta Utara",
+  "before": 20,
+  "after": 20,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "inventory-lots",
+  "select": "lot-filter-warehouse",
+  "option": "Gudang Bandung Kopo",
+  "before": 20,
+  "after": 20,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "production",
+  "select": "wo-status-filter",
+  "option": "Draf",
+  "before": 3,
+  "after": 1,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "production",
+  "select": "wo-status-filter",
+  "option": "Dirilis",
+  "before": 1,
+  "after": 1,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "md-warehouses",
+  "select": "wh-lc-policy-wh_bandung",
+  "option": "wajib sebelum kirim",
+  "before": 3,
+  "after": 3,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "md-warehouses",
+  "select": "wh-lc-policy-wh_jakarta",
+  "option": "wajib sebelum kirim",
+  "before": 3,
+  "after": 3,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "md-warehouses",
+  "select": "wh-lc-policy-wh_surabaya",
+  "option": "wajib sebelum kirim",
+  "before": 3,
+  "after": 3,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-rfid-lokasi",
+  "select": "rfid-loc-wh",
+  "option": "Gudang Bandung Kopo",
+  "before": 47,
+  "after": 13,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "cs-rfid-lokasi",
+  "select": "rfid-loc-wh",
+  "option": "Gudang Jakarta Utara",
+  "before": 13,
+  "after": 20,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "cs-rfid-lokasi",
+  "select": "rfid-loc-reader",
+  "option": "RDR-JKT-01 · Zone A · Gudang Jakarta Uta",
+  "before": 47,
+  "after": 47,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "cs-rfid-lokasi",
+  "select": "rfid-loc-reader",
+  "option": "RDR-SBY-01 · Zone A · Gudang Surabaya Ru",
+  "before": 47,
+  "after": 47,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "wms-locations",
+  "select": "lp-warehouse",
+  "option": "Gudang Jakarta Utara",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "wms-locations",
+  "select": "lp-warehouse",
+  "option": "Gudang Surabaya Rungkut",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "cs-rfid-gate",
+  "select": "rfid-gate-wh",
+  "option": "Gudang Bandung Kopo",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-rfid-gate",
+  "select": "rfid-gate-wh",
+  "option": "Gudang Jakarta Utara",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-rfid-gate",
+  "select": "rfid-gate-select",
+  "option": "GATE-BDG-OUT · KELUAR · Gudang Bandung K",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-rfid-gate",
+  "select": "rfid-gate-select",
+  "option": "GATE-JKT-IN · MASUK · Gudang Jakarta Uta",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-rfid-gate",
+  "select": "rfid-gate-roll",
+  "option": "RL-00055 · BTK-MEGA-001 · E213A118B989ED",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-rfid-gate",
+  "select": "rfid-gate-roll",
+  "option": "RL-00054 · PFP-KTN-001 · E2248930DBCDC24",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "bank-reconciliation",
+  "select": "recon-account-select",
+  "option": "Kas Kecil KSC",
+  "before": 6,
+  "after": 1,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "bank-reconciliation",
+  "select": "recon-account-select",
+  "option": "Kas Besar / Bank KSC",
+  "before": 1,
+  "after": 1,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "bank-reconciliation",
+  "select": "recon-filter-status",
+  "option": "Perlu keputusan",
+  "before": 6,
+  "after": 2,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "bank-reconciliation",
+  "select": "recon-filter-status",
+  "option": "Tercocok",
+  "before": 2,
+  "after": 3,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "finance-cases",
+  "select": "case-filter-status",
+  "option": "Baru",
+  "before": 3,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "finance-cases",
+  "select": "case-filter-status",
+  "option": "Sedang ditangani",
+  "before": 0,
+  "after": 2,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "finance-cases",
+  "select": "case-filter-type",
+  "option": "Dana masuk tak dikenal",
+  "before": 3,
+  "after": 1,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "finance-cases",
+  "select": "case-filter-type",
+  "option": "Pembayaran dobel (dibayar dua kali)",
+  "before": 1,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "chart-of-accounts",
+  "select": "coa-filter-type",
+  "option": "Aset",
+  "before": 76,
+  "after": 23,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "chart-of-accounts",
+  "select": "coa-filter-type",
+  "option": "Kewajiban",
+  "before": 23,
+  "after": 16,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "general-ledger",
+  "select": "gl-journal-source-filter",
+  "option": "Manual",
+  "before": 20,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "general-ledger",
+  "select": "gl-journal-source-filter",
+  "option": "Penjualan",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "interco-transactions",
+  "select": "interco-filter-status",
+  "option": "Draf",
+  "before": 4,
+  "after": 4,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "interco-transactions",
+  "select": "interco-filter-status",
+  "option": "Dikonfirmasi",
+  "before": 4,
+  "after": 4,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "interco-transactions",
+  "select": "interco-filter-role",
+  "option": "Sebagai Penjual",
+  "before": 4,
+  "after": 4,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "interco-transactions",
+  "select": "interco-filter-role",
+  "option": "Sebagai Pembeli",
+  "before": 4,
+  "after": 4,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "expense-categories",
+  "select": "excat-account-office_supplies",
+  "option": "6-1100 · Beban BPJS (Perusahaan)",
+  "before": 8,
+  "after": 8,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "expense-categories",
+  "select": "excat-account-office_supplies",
+  "option": "6-2000 · Beban Sewa",
+  "before": 8,
+  "after": 8,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "expense-categories",
+  "select": "excat-account-atk",
+  "option": "6-1100 · Beban BPJS (Perusahaan)",
+  "before": 8,
+  "after": 8,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "expense-categories",
+  "select": "excat-account-atk",
+  "option": "6-2000 · Beban Sewa",
+  "before": 8,
+  "after": 8,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "expense-categories",
+  "select": "excat-account-lunch_snack_entertainment",
+  "option": "6-1100 · Beban BPJS (Perusahaan)",
+  "before": 8,
+  "after": 8,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "expense-categories",
+  "select": "excat-account-lunch_snack_entertainment",
+  "option": "6-2000 · Beban Sewa",
+  "before": 8,
+  "after": 8,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "expense-categories",
+  "select": "excat-account-fotocopy_printing_jilid_materai",
+  "option": "6-1100 · Beban BPJS (Perusahaan)",
+  "before": 8,
+  "after": 8,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "expense-categories",
+  "select": "excat-account-fotocopy_printing_jilid_materai",
+  "option": "6-2000 · Beban Sewa",
+  "before": 8,
+  "after": 8,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "hr-employees",
+  "select": "employee-filter-dept",
+  "option": "Gudang & Operasional",
+  "before": 15,
+  "after": 4,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "hr-employees",
+  "select": "employee-filter-dept",
+  "option": "Keuangan & Admin",
+  "before": 4,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "hr-employees",
+  "select": "employee-filter-status",
+  "option": "Aktif",
+  "before": 15,
+  "after": 15,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "hr-employees",
+  "select": "employee-filter-status",
+  "option": "Nonaktif",
+  "before": 15,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "hr-overtime",
+  "select": "overtime-filter-month",
+  "option": "2026-10",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "hr-overtime",
+  "select": "overtime-filter-month",
+  "option": "2026-09",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "hr-overtime",
+  "select": "overtime-filter-status",
+  "option": "Menunggu",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "hr-overtime",
+  "select": "overtime-filter-status",
+  "option": "Disetujui",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "hr-leave",
+  "select": "leave-filter-month",
+  "option": "2026-10",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "hr-leave",
+  "select": "leave-filter-month",
+  "option": "2026-09",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "hr-leave",
+  "select": "leave-filter-status",
+  "option": "Menunggu",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "hr-leave",
+  "select": "leave-filter-status",
+  "option": "Disetujui",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "hr-payroll-runs",
+  "select": "payroll-create-entity",
+  "option": "Kanda Fabric",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "hr-payroll-runs",
+  "select": "payroll-create-entity",
+  "option": "CV Cipta Sandang Textile",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "hr-payroll-runs",
+  "select": "payroll-create-period",
+  "option": "2026-09",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "hr-payroll-runs",
+  "select": "payroll-create-period",
+  "option": "2026-08",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "cs-kpi",
+  "select": "kpi-period-filter",
+  "option": "2026-09",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-kpi",
+  "select": "kpi-period-filter",
+  "option": "2026-08",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-kpi",
+  "select": "kpi-emp-filter",
+  "option": "Agus Setiawan",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-kpi",
+  "select": "kpi-emp-filter",
+  "option": "Slamet Riyadi",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "rnd-labdip",
+  "select": "sample-gallery-filter-status-labdip",
+  "option": "Draf",
+  "before": 1,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "rnd-labdip",
+  "select": "sample-gallery-filter-status-labdip",
+  "option": "Terkirim ke supplier",
+  "before": 0,
+  "after": 1,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "rnd-labdip",
+  "select": "sample-gallery-filter-supplier-labdip",
+  "option": "Cirebon Craft",
+  "before": 1,
+  "after": 1,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "rnd-labdip",
+  "select": "sample-gallery-filter-supplier-labdip",
+  "option": "NTT Weaving Co",
+  "before": 1,
+  "after": 1,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "rnd-labdip",
+  "select": "sample-gallery-filter-result-labdip",
+  "option": "Sudah ada ACC",
+  "before": 1,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "rnd-labdip",
+  "select": "sample-gallery-filter-result-labdip",
+  "option": "Hasil terakhir: revisi",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "rnd-labdip",
+  "select": "sample-gallery-filter-score-labdip",
+  "option": "Belum dinilai",
+  "before": 1,
+  "after": 1,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "rnd-labdip",
+  "select": "sample-gallery-filter-score-labdip",
+  "option": "≥ 70",
+  "before": 1,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "designer-kpi",
+  "select": "designer-kpi-period",
+  "option": "30 hari terakhir",
+  "before": 2,
+  "after": 2,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "designer-kpi",
+  "select": "designer-kpi-period",
+  "option": "90 hari terakhir",
+  "before": 2,
+  "after": 2,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "designer-kpi",
+  "select": "designer-kpi-trend-months",
+  "option": "6 bulan terakhir",
+  "before": 2,
+  "after": 2,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "designer-kpi",
+  "select": "designer-kpi-trend-months",
+  "option": "12 bulan terakhir",
+  "before": 2,
+  "after": 2,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "designer-kpi",
+  "select": "design-score-trend-months",
+  "option": "6 bulan terakhir",
+  "before": 2,
+  "after": 2,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "designer-kpi",
+  "select": "design-score-trend-months",
+  "option": "12 bulan terakhir",
+  "before": 2,
+  "after": 2,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-design-gallery",
+  "select": "gallery-filter-status",
+  "option": "ACC · Berkas Final",
+  "before": 11,
+  "after": 11,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "cs-design-gallery",
+  "select": "gallery-filter-status",
+  "option": "Final Diserahkan",
+  "before": 11,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "cs-design-gallery",
+  "select": "gallery-filter-category",
+  "option": "Bunga",
+  "before": 11,
+  "after": 8,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "cs-design-gallery",
+  "select": "gallery-filter-dcategory",
+  "option": "Allover",
+  "before": 11,
+  "after": 8,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "cs-design-gallery",
+  "select": "gallery-filter-tag",
+  "option": "klasik",
+  "before": 11,
+  "after": 3,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "cs-design-gallery",
+  "select": "gallery-filter-tag",
+  "option": "monokrom",
+  "before": 3,
+  "after": 3,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "rnd-designs",
+  "select": "design-date-nav-field",
+  "option": "Update terakhir",
+  "before": 7,
+  "after": 7,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "rnd-designs",
+  "select": "rnd-filter-status",
+  "option": "Draf",
+  "before": 7,
+  "after": 2,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "rnd-designs",
+  "select": "rnd-filter-status",
+  "option": "Diajukan",
+  "before": 2,
+  "after": 2,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "rnd-designs",
+  "select": "rnd-filter-hold",
+  "option": "Sedang ditahan",
+  "before": 7,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "rnd-designs",
+  "select": "rnd-filter-hold",
+  "option": "Tidak ditahan",
+  "before": 0,
+  "after": 7,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "rnd-designs",
+  "select": "rnd-filter-proofing",
+  "option": "Belum proofing",
+  "before": 7,
+  "after": 7,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "rnd-designs",
+  "select": "rnd-filter-proofing",
+  "option": "Proofing berjalan",
+  "before": 7,
+  "after": 0,
+  "changed": true,
+  "empty": true
+ },
+ {
+  "view": "mkt-calendar",
+  "select": "mkt-filter-platform",
+  "option": "Instagram",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "mkt-calendar",
+  "select": "mkt-filter-platform",
+  "option": "TikTok",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "mkt-calendar",
+  "select": "mkt-filter-status",
+  "option": "Ide",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "mkt-calendar",
+  "select": "mkt-filter-status",
+  "option": "Draf",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "document-center",
+  "select": "dc-doctype-select",
+  "option": "Penawaran",
+  "before": 24,
+  "after": 24,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "document-center",
+  "select": "dc-doctype-select",
+  "option": "Pesanan Pembelian",
+  "before": 24,
+  "after": 12,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "document-center",
+  "select": "dc-entity-select",
+  "option": "Sukacita Textile",
+  "before": 24,
+  "after": 24,
+  "changed": false,
+  "empty": false
+ },
+ {
+  "view": "document-center",
+  "select": "dc-entity-select",
+  "option": "Kanda Fabric",
+  "before": 24,
+  "after": 2,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "cs-stock-analytics",
+  "select": "sa-warehouse-filter",
+  "option": "Gudang Bandung Kopo",
+  "before": 16,
+  "after": 4,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "cs-stock-analytics",
+  "select": "sa-warehouse-filter",
+  "option": "Gudang Jakarta Utara",
+  "before": 4,
+  "after": 9,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "cs-stock-analytics",
+  "select": "sa-category-filter",
+  "option": "Barang Sisa",
+  "before": 16,
+  "after": 1,
+  "changed": true,
+  "empty": false
+ },
+ {
+  "view": "documents",
+  "select": "label-product-selector",
+  "option": "BTK-MEGA-001 - Batik Mega Mendung Premiu",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ },
+ {
+  "view": "documents",
+  "select": "label-product-selector",
+  "option": "TNI-GRGD-001 - Tenun Ikat Garuda Premium",
+  "before": 0,
+  "after": 0,
+  "changed": false,
+  "empty": true
+ }
+]

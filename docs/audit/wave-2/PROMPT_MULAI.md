@@ -1,0 +1,9 @@
+# Prompt awal untuk agent development
+
+Saya ingin Anda mengerjakan perbaikan KNHOST Gelombang2 dari paket `docs/audit/wave-2/`. Baca README.md, WORKFLOW.md, tracker.json, requirements-tracker.json, phase-tracker.json dan WAVE1_COORDINATION.md. Patuhi instruksi repo yang berlaku. Mulai dari P00, rekonsiliasi terhadap kode terbaru dan perbaikan Gelombang1; lanjutkan fase sesuai dependensi sampai lingkup yang dapat dikerjakan selesai. Jangan hanya membuat rencana atau menandai ticket selesai tanpa implementasi dan bukti.
+
+Gunakan kartu findings dan prompt fase untuk seluruh25 temuan. Seluruh sembilan kebutuhan klien juga termasuk lingkup, tetapi needs_validation/policy_required bukan otomatis bug: validasi fitur yang sudah ada dan minta keputusan hanya ketika perubahan memang bergantung pada kebijakan yang belum jelas. Sampling wajib mengikuti lini untuk SKU hasil MD; bahan standar dapat dibuat langsung. Semua roll harus bertag baik store maupun cross-dock. Jangan menafsirkan C/H.
+
+Pertahankan baseline tanpa perubahan. Siapkan iterasi dengan tools/prepare_iteration.py dan jalankan reproducer pada salinannya. Assertion reproducer historis mengharapkan cacat; tulis regression dengan hasil bisnis benar. Perbaikan harus mencakup akar masalah, caller relevan, concurrency/retry, nilai dan rekonsiliasi yang terdampak. Jangan mengulang perbaikan Wave1 atau mengklaim semua flow tercover. Review RFID12 mengoreksi enam kasus menjadi observasi kebijakan; jangan patch kebijakan global yang belum disepakati.
+
+Update tracker aktif per ID dengan commit dan evidence. Tandai ready_for_validation setelah bukti lengkap; biarkan auditor menentukan verified_fixed. Catat batas browser/hardware, migrasi dan kebutuhan data Finance. Serahkan laporan sesuai templates/HANDOFF.md dengan SHA kandidat, daftar ID, hasil test, perubahan data/config dan pekerjaan tersisa. Jalankan tools/check_package.py sebelum menyerahkan.

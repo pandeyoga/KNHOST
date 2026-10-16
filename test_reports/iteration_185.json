@@ -1,0 +1,48 @@
+{
+  "summary": "L01 follow-up testing: (1) masking SKU/name for Sales, (2) settling a material-loss claim by deducting from the partner's service bill (potong tagihan jasa mitra), (3) editable tolerance for contracts and MKO steps. Backend: 4 requested files + new test_l01_sku_mask_settle_tol.py (12 tests). Frontend: admin MKO tolerance editor and loss recording, manager approval with 'Potong tagihan jasa' and 'Tagih ganti rugi', admin contract inline tolerance, sales.kanda POS on desktop and mobile 390x844. Core flows work. Bugs found: grade/LOT still leak through product names in two cases, and the inline-edit pencil in the contract list is covered by the status pill.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/sales/stock-summary, /api/sales-orders (+detail restock_requests[].items[]), /api/inventory/rolls (as sales.kanda)", "issue": "Grade suffix is not removed from product_name when the object has no grade/sku key next to it. Examples: stock-summary product_name='ALICE KNIT (94139 - 45) 10 A', SO restock_requests item 'RIVERA RIB BW A', rolls 'LYFLEX ACTIVE HITAM A'. Cause: field_visibility._grade_of() only looks at grade/variant_attrs/*sku* keys in the same dict. Fix: when a dict has product_id plus a name key, look up the product's grade (cached map product_id->grade) or strip known grade codes from the grade master.", "priority": "HIGH"},
+      {"endpoint": "GET /api/products (as sales)", "issue": "27 KN products named '<ARTIKEL> <grade> LOT <lot>' (e.g. admin 'BAMBU KNIT B - 1 A LOT B', 'BAMBU KNIT A - 1 A LOT A', 'CHIKITA KNIT BEIGE A LOT B'). _strip_grade only strips a trailing ' <grade>'. For 'LOT A' it wrongly cuts the LOT code and leaves grade 'A' ('BAMBU KNIT A - 1 A LOT'). For 'LOT B' nothing is stripped, so both grade A and LOT B are visible to Sales. Need to handle the ' <grade> LOT <lot>' / ' LOT <x>' pattern (hide lot when lot is hidden, hide grade when grade is hidden).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "makloon_loss_service._deduct", "issue": "Bills with status draft/pending_approval can also be deducted. The claim is posted Dr 2-1100 Hutang right away and grand_total drops, and later _post_bill posts Cr Hutang on the already reduced grand_total. AP ends up understated by the claim (counted twice). Either limit deductible bills to posted/approved, or don't reduce grand_total for unposted bills."},
+      {"endpoint": "set_step_tolerance", "issue": "Doesn't take the atomic_claim lock used by record/decide loss. A loss already pending_approval keeps its within_qty from the old tolerance after the tolerance changes (no recompute), so approval uses a stale split. Recompute pending losses or block the change while a loss is pending."},
+      {"endpoint": "PATCH /api/supplier-contracts/{id}", "issue": "tolerance_pct cannot be cleared back to 'kebijakan' (null) once set: patch ignores None, and the inline UI rejects empty input."},
+      {"endpoint": "post_makloon_material_loss / timeline", "issue": "When settled by deduction (potong_bon), the timeline note still says 'klaim mitra <amount>' instead of 'potong tagihan jasa'. The Dr 2-1100 JE line has no supplier/bill reference for AP subledger reconciliation."},
+      {"endpoint": "vendor_bills.outstanding (stored)", "issue": "_deduct updates grand_total/net_amount but not the stored 'outstanding' field (set at creation). Readers that use the stored field will show the old outstanding amount."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ContractsView row (Kontrak Mitra & Supplier)", "issue": "At 1920px the Status column (grid 120px) holds pill + trace icon + Hentikan + delete. It overflows left over the SUSUT/TOL. column, so the 'Aktif' pill sits on top of the pencil (elementFromPoint = status-pill). A real click on contract-tol-edit-<id> is blocked (Playwright timeout); it only worked via dispatch_event. Also overlaps at 1366px. Fix: widen the last grid column (e.g. 220-240px) or make the actions wrap.", "selector": "[data-testid^=contract-tol-edit-]", "priority": "HIGH"},
+      {"component": "MakloonReturnMaterial tolerance editor", "issue": "Typing a non-number (e.g. 'abc') and clicking Simpan fails silently: no client-side validation, a NaN/null request gets 422, and no visible message appears. Also, typing before partner-rolls finishes loading is overwritten when tolEdit is reset to the loaded value. Saving does not call onDone, so the step chip 'Toleransi x%' and the timeline stay stale until reload.", "selector": "[data-testid=mko-tol-input-1]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "POS product quick view (sales)", "issues": ["Still shows the 'Grade —' label in the variant line for roles that may not see grade. Hide the label entirely."]},
+      {"screen": "Mobile catalog bestseller cards", "issues": ["Masked SKU 'KNKNT0052-•-NVYX-••-XX-••' wraps onto 2 lines on 390px cards. Cosmetic."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l01_sku_mask_settle_tol.py", "/app/backend/tests/test_l01_material_loss.py", "/app/test_reports/pytest/test_l01_sku_mask_settle_tol.xml", "/app/test_reports/pytest/test_l01_material_loss.xml"],
+  "action_items": [
+    "Strip the grade suffix from name keys even without a sku/grade sibling key (stock-summary, SO restock_requests items, inventory rolls). Look up by product_id.",
+    "Handle product names that contain '<grade> LOT <lot>' (27 BAMBU/CHIKITA... products) for both grade and lot hiding.",
+    "Fix the ContractsView grid so the Status/actions column no longer covers the tolerance pencil (contract-tol-edit-<id>).",
+    "Limit potong_bon to posted/approved bills (or handle draft bills correctly) to avoid understating AP.",
+    "Optional: validate NaN in the MKO tolerance editor and refresh the order after saving; recompute or block pending losses when tolerance changes; let contract tolerance be reset to policy."
+  ],
+  "critical_code_review_comments": [
+    "field_visibility._grade_of/_strip_grade only work in the same dict and only on a trailing token. This is fragile for nested items and 'LOT' naming.",
+    "makloon_loss_service._execute potong_bon: if gl.post_makloon_material_loss or replace_one fails after _deduct + consume, the bill stays deducted and the stock consumed with no compensation (best-effort only).",
+    "set_step_tolerance has no lock; parallel record_loss could read either value.",
+    "MakloonLossList: bill dropdown shows all open bills, even ones whose remaining amount is below the estimated claim (backend then returns 409). Show the estimated claim or filter."
+  ],
+  "updated_files": ["/app/backend/tests/test_l01_material_loss.py (skip within-tolerance test when only 1 roll was issued; test depended on the data)", "/app/backend/tests/test_l01_sku_mask_settle_tol.py (new)"],
+  "success_rate": {"backend": "~95% (material_loss 7/8 + 1 data-dependent skip/fail fixed; grade_visibility 14/14; sales_field_hidden 8/8; p05_acc 17/17; new file 10/12 - 2 failures = real masking leaks)", "frontend": "~85% (all flows work; contract pencil covered by status pill)"},
+  "seed_data_creation": "Ran restore_local_demo.sh once (material stock was used up). Created test MKOs MKO-00010 (potong_bon, posted) and MKO-00011 (tagih_ganti, posted) plus pytest MKOs, all cancelled and closed. Test vendor bill vb_test_ui185 inserted and deleted. Contract sct_3315b88e3c67 tolerance reset to null.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run per file with -n0, PYTHONPATH=/app/backend, REACT_APP_BACKEND_URL=http://localhost:8001. test_l01_material_loss fails with 'bebas 0' after repeated runs; run restore_local_demo.sh (~1 min here). Contracts list: use dispatch_event('click') on contract-tol-edit-* until the overlap is fixed. Sales POS is ?view=sales&entity=ent_kanda (desktop); on mobile use bottom nav 'Katalog' (mobile-catalog, bestseller-add-<id>). MKO detail: ?view=makloon-orders&entity=ent_ksc → mko-row-<id>.",
+  "rca of the issue": "Name leak: redact() computes the grade per dict from grade/variant_attrs/sku keys. Lightweight dicts {product_id, product_name, qty} have none, so grade='' and nothing is stripped. Names with 'LOT' put the grade before 'LOT x', so the endswith check misses it or cuts the wrong token. Contract pencil: grid-cols last track is 120px; content wider than that with justify-end overflows left onto the previous column's pencil button."
+}

@@ -1,0 +1,241 @@
+{
+  "commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_34a4f9ad5e4c4d2aa41709f02425a85d",
+  "level": "ASGI HTTP plus direct incident service race; Motor/Mongo; isolated synthetic fixtures; no app lifespan or physical device",
+  "scenarios": [
+    {
+      "id": "W2-R-C01",
+      "kind": "control",
+      "observed": {
+        "http": 401
+      }
+    },
+    {
+      "id": "W2-R-C02",
+      "kind": "control",
+      "observed": {
+        "http": 401
+      }
+    },
+    {
+      "id": "W2-R-C03",
+      "kind": "control",
+      "observed": {
+        "http": 400
+      }
+    },
+    {
+      "id": "W2-R-C04",
+      "kind": "control",
+      "observed": {
+        "http": 200,
+        "result": "red"
+      }
+    },
+    {
+      "id": "W2-R-C05",
+      "kind": "control",
+      "observed": {
+        "http": 200,
+        "result": "red"
+      }
+    },
+    {
+      "id": "W2-R-C06",
+      "kind": "control",
+      "observed": {
+        "http": 200,
+        "count": 1,
+        "reads_delta": 1
+      }
+    },
+    {
+      "id": "W2-R-E01",
+      "kind": "wave1_extension",
+      "observed": {
+        "http": 200,
+        "reads": 2,
+        "incidents": 1,
+        "hits_before": 1,
+        "hits_after": 2
+      },
+      "related": "RF-16"
+    },
+    {
+      "id": "W2-R-E02",
+      "kind": "wave1_extension",
+      "observed": {
+        "http": 200,
+        "result": "green",
+        "gate_warehouse": "WX",
+        "roll_warehouse": "WA",
+        "document": null
+      },
+      "related": "RF-02"
+    },
+    {
+      "id": "W2-R-E03",
+      "kind": "wave1_extension",
+      "observed": {
+        "http": 200,
+        "result": "green",
+        "gate_warehouse": "WX",
+        "destination_document": null
+      },
+      "related": "RF-03"
+    },
+    {
+      "id": "W2-R-C07",
+      "kind": "control",
+      "observed": {
+        "result": "green"
+      }
+    },
+    {
+      "id": "W2-R-C08",
+      "kind": "control",
+      "observed": {
+        "result": "red"
+      }
+    },
+    {
+      "id": "W2-R-E04",
+      "kind": "wave1_extension",
+      "observed": {
+        "http": 200,
+        "status_after": "online"
+      },
+      "related": "RF-13"
+    },
+    {
+      "id": "W2-R-E05",
+      "kind": "wave1_extension",
+      "observed": {
+        "http": 200,
+        "submitted": 501,
+        "acknowledged": 500,
+        "last_persisted": 0
+      },
+      "related": "RF-16"
+    },
+    {
+      "id": "W2-R-F01",
+      "kind": "defect",
+      "observed": {
+        "http": 200,
+        "caller_scope": [
+          "A"
+        ],
+        "foreign_read_owner": "B"
+      }
+    },
+    {
+      "id": "W2-R-F02",
+      "kind": "defect",
+      "observed": {
+        "http": 200,
+        "caller_scope": [
+          "A"
+        ],
+        "foreign_incident_owner": "B"
+      }
+    },
+    {
+      "id": "W2-R-F03",
+      "kind": "defect",
+      "observed": {
+        "http": 200,
+        "caller_scope": [
+          "A"
+        ],
+        "foreign_owner": "B",
+        "status": "acknowledged"
+      }
+    },
+    {
+      "id": "W2-R-F04",
+      "kind": "defect",
+      "observed": {
+        "http": 200,
+        "foreign_owner": "B",
+        "status": "resolved"
+      }
+    },
+    {
+      "id": "W2-R-F05",
+      "kind": "defect",
+      "observed": {
+        "http": 200,
+        "caller_scope": [
+          "A"
+        ],
+        "foreign_warehouses": [
+          "WB"
+        ]
+      }
+    },
+    {
+      "id": "W2-R-F06",
+      "kind": "defect",
+      "observed": {
+        "http": 200,
+        "caller_scope": [
+          "A"
+        ],
+        "foreign_devices": [
+          "B-OUT"
+        ]
+      }
+    },
+    {
+      "id": "W2-R-C09",
+      "kind": "control",
+      "observed": {
+        "http": 200,
+        "foreign_owners": []
+      }
+    },
+    {
+      "id": "W2-R-F07",
+      "kind": "defect",
+      "observed": {
+        "http": 200,
+        "foreign_count": 1
+      }
+    },
+    {
+      "id": "W2-R-C10",
+      "kind": "control",
+      "observed": {
+        "http": [
+          200,
+          200,
+          400
+        ],
+        "final_status": "resolved"
+      }
+    },
+    {
+      "id": "W2-R-F08",
+      "kind": "defect",
+      "observed": {
+        "http_ack": 200,
+        "http_resolve": 200,
+        "final_status": "acknowledged",
+        "resolved_at_present": true,
+        "ack_at_present": true
+      }
+    },
+    {
+      "id": "W2-R-F09",
+      "kind": "defect",
+      "observed": {
+        "open_incidents": 2,
+        "hits": [
+          1,
+          1
+        ]
+      }
+    }
+  ]
+}

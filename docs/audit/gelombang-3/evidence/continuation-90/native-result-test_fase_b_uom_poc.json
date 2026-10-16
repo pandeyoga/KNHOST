@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_fase_b_uom_poc.py",
+    "database": "knhost_audit_native90_5e3b4f85bb014a1186306f0558653dad",
+    "exit": 1,
+    "seconds": 67.83,
+    "pass_log_tokens": 2,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_fase_b_uom_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "n bersih ─────────────────────\n✅ US-8a migrasi berjalan tanpa error  ·  Ringkasan: changed=21 · aturan_total=15 · item_tanpa_aturan=0\n✅ US-8b jalan kedua → changed=0 (idempoten)  ·  Ringkasan: changed=0 · aturan_total=15 · item_tanpa_aturan=0\n✅ US-8c invarian INV-UOM-01..04 PASS  ·   INV-UOM-01: 15 aturan konversi sah (15  |  INV-UOM-02: 32 baris dokumen berjejak k |  INV-UOM-03: toleransi sah (peringatan 2 |  INV-UOM-04: 0 penerimaan dengan cek sel\n\n── US-9 · Jejak konversi dapat diaudit (D-07) ─────────────────────\n✅ US-9a endpoint pemakaian konversi mengembalikan jejak dokumen nyata  ·  20 jejak\n✅ US-9b jejak mencakup lebih dari satu jenis dokumen (PO/PR/GR)  ·  jenis: ['Permintaan Pembelian', 'Pesanan Pembelian']\n✅ US-9c setiap jejak menyebut satuan dokumen, satuan dasar, faktor & sumber  ·  PR-00004 800.0 yard → 800.0 yard (same_unit)\n\n==============================================================================\n  HASIL: 42 PASS · 7 FAIL\n==============================================================================\n   ❌ US-6c PO menyimpan jejak konversi satuan beli (roll) → satuan dasar — HTTP 409 · None None → None None · sumber=None\n   ❌ US-6d PO memakai faktor master produk (bukan menebak) — faktor=None sumber=None jalur=None\n   ❌ US-6e PO dengan satuan tanpa aturan ditolak 400 (bukan diam-diam 1:1) — HTTP 409: {\"detail\":\"“CV Kanda Suka” adalah badan usaha di dalam grup Anda, bukan pemasok luar — jadi Pesanan Pembelian \n   ❌ US-7d dengan alasan override → penerimaan lanjut & selisih tercatat — HTTP 400 · selisih None% · alasan=None\n   ❌ US-7e tugas penerimaan ditandai perlu ditinjau (needs_review) — needs_review=None\n   ❌ US-7f jejak konversi penerimaan tersimpan — None None → None None\n   ❌ US-7g selisih di luar toleransi tercatat di audit log — 0 entri audit\n"
+  }
+]

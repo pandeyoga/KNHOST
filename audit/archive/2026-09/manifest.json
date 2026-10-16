@@ -1,0 +1,443 @@
+[
+  {
+    "path": "archive/2026-09/00_MULAI_DI_SINI.md",
+    "source_sha256": "2eda38c1f35c7297b15664d14088495b6d23bd3fa4adb6481981ba9fc42c1039",
+    "published_sha256": "ad0cefb60d550d6d31671fa94248713b78bb41d1539e0f703573209ebb0c1157",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/01_TEMUAN_AUDIT_KNHOST.md",
+    "source_sha256": "ff98a55c515713e50ae9698e27fbb6ca3710d5cd82b03022a6452f3add92bf9f",
+    "published_sha256": "5c75f132d0bcc3402479cfad03f4938281bf4f604257b1210dc72faee8d1abc3",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/02_RFID_WMS_FINANCE_FIT_GAP.md",
+    "source_sha256": "64f9fa820401842be4efc8873b958cf00b7677ca008e52153426017096bb1c34",
+    "published_sha256": "33b79a043e983777eefb66b58b6d4dae1b6d11701fe3745d7a53544b2eec4c3c",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/03_PROMPT_PERBAIKAN_AGENT.md",
+    "source_sha256": "7f630397eafd8603b09baef58bdc942e368574972067b25a86e644dc81e051e9",
+    "published_sha256": "e893e06403428fe88455b6edd7506e6e395959eafaab3848f1e8e6bf9607e49d",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/04_CAKUPAN_DAN_VERIFIKASI.md",
+    "source_sha256": "bb4add557f203cd09aeb1cda75d181d18b3cf77355a4a125854368e8d63bc99a",
+    "published_sha256": "9209e7cc59d4ae7aba824811935ad1dec692b5c04f9ede34e9b7ff4c1672c251",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/05_REGISTER_BERKAS_DAN_ENDPOINT.md",
+    "source_sha256": "d3d7db00090fc669a1e4d811541875d759b503e2253945e427131b07ccff6839",
+    "published_sha256": "616aa27ea7758674dbaa0b572a2eb62a181b5729c9f6c3a4079da4bf16ff0a65",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/06_BUKTI_REPRODUKSI_DAN_PEMERIKSAAN.md",
+    "source_sha256": "f66c66288cab8ce7e4cd3a07e4cd46ef42ab2ec8c4009d76979bb9e593b9a69b",
+    "published_sha256": "8dc715c709d80c99521b1d2e82ab4ebca0962790e9706b51d3185c64109ef8be",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/07_REVIEW_ASTRA_MULAI_DI_SINI.md",
+    "source_sha256": "37bc5c4f70cce3f6300a239d0133c9015b9fc205d6f3990202f68880e84c70ed",
+    "published_sha256": "ec20d53ef790af243034c1959d6d7192132735d45b9755598c06e25729b43d45",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/08_VALIDASI_65_TEMUAN.md",
+    "source_sha256": "33dfdde7f2db3052b5c9fd7177556fe79daf5de1f71c0ef3dd2afbbd693bdd19",
+    "published_sha256": "4cc2cc1f6da0b83fc271de37818220c9b4294d8c280ec7f005d4fa1539c41169",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/09_AKAR_MASALAH_DAN_FLOW.md",
+    "source_sha256": "3c7693a4313deebd1ae57816289430a23d9ccb1fba2ecb67acf7b98fe6877c36",
+    "published_sha256": "4c21e1c93e47d02272324c19283e44ea823330242a83cbd105ca6d7115db1c5a",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/10_BLUEPRINT_RFID_WMS_ENTERPRISE.md",
+    "source_sha256": "33edb748cd3160bd182f27f7a2df582c192768a987cf157e8328367ec5187d5a",
+    "published_sha256": "afb222f592b464b6989d4cd0ddd8dafc0912c4ab4435a75aa525d06154fed1ff",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/11_PROMPT_PERBAIKAN_TERVALIDASI.md",
+    "source_sha256": "10a11ff361d9131e9b5f640fa57c06caa5c1904c84f88642c091dc306b86511c",
+    "published_sha256": "2d70d9ed8158e68a9251460db4b21fca015ec9be5da3e1b5fb1395013771136c",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/12_BUKTI_VALIDASI_FLOW.md",
+    "source_sha256": "b09c8ddb52aa788e10b75fb8254e60d5d4c60d6015c8e32a666a73415d1a42ca",
+    "published_sha256": "44d5e6fed43cfd4076b14b66fec417f07f982361b1da7ca549920f3240b63789",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/13_AUDIT_LANJUTAN_FLOW.md",
+    "source_sha256": "2f8823576acf97fd151ff1f00714e57b53893e89604a88b91d33026e3a33cbfc",
+    "published_sha256": "ad13b02a75f05afddb7fa7b08b03bcd04ab7b7c0e59215946f2cca2ed004ed3c",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/14_STATUS_CAKUPAN_DAN_SISA.md",
+    "source_sha256": "f7a91a441c457de6562a2769596504b48fb4e7e56b5d2284ac5b62dec224ad77",
+    "published_sha256": "8eec8bdd6ce2d447b1095a548e45afe44321ceb6f2a42f5f6a6bafe7a24f64da",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/15_PROMPT_PERBAIKAN_LANJUTAN.md",
+    "source_sha256": "862ebcf23991948e9e5a8a237a5574a2a59ab0f62372b70adc0167ccc6bebc78",
+    "published_sha256": "b0a4e7e98f5b2b0369a3c634a0686088039b125e31befb87ccd54fa7a61b5c42",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/16_BUKTI_UJI_LANJUTAN.md",
+    "source_sha256": "c1f3f5e105e08f452fea48bf6bf1bd841c9af128cde750bf6dd09f6405360900",
+    "published_sha256": "b35a4d7cc8a3ef0e7100e03ca1337aa7dd91adde87f73928df28c46f5336d5bc",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/17_REGISTER_FUNGSI_BACKEND.md",
+    "source_sha256": "382e73ec9f2a71c1acf446fe42390b64827d5cb0088f5e50554d99be63449262",
+    "published_sha256": "d5a899b3bc0407ddf6ca3dc301b418fea147855f7bfa100080e8461e4c9db6c0",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/18_HASIL_PENGUJIAN_INTEGRASI.md",
+    "source_sha256": "b412100595169a637b1f9519b30ed52b000b178af13dbe3b61fb5b28679b3942",
+    "published_sha256": "144a03b76cbd83379b24b42c75602cc2144e3a7a9f2510ebabdbec68d6e65b0d",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/19_TEMUAN_INTEGRASI_LANJUTAN.md",
+    "source_sha256": "80c56223b38e8aedf18b5dcbd71c5355f0c6dedad7031ed485f72403987f321c",
+    "published_sha256": "014f8fa2cf6ebcced9865b06a08a20997e1d2d7d30f6c74931c8c5f66589707a",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/20_PROMPT_PERBAIKAN_INTEGRASI.md",
+    "source_sha256": "f750e9e8f27e4f85434986cff12daa559cb4383c2eadf784767d4ea2eb29f566",
+    "published_sha256": "f558f6dc9f0444b42c87b90bf1c5c3b527250f504fdf64d5bce34be7db5945ba",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/21_CAKUPAN_RUNTIME_DAN_ENDPOINT.md",
+    "source_sha256": "f304fe61ae81de46ebb4f59e20d242dab1763d03f7ecfc4ffa9c295241f46065",
+    "published_sha256": "5488cb7403123fbf86297f4daeb57fe089fb4745ab13edf78cdd116fadeabb69",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/22_AUDIT_PERIODE_SCOPE_DAN_INSPEKSI.md",
+    "source_sha256": "e55ca2d9d433a2eb3ea5a4df7b28dadac470a9a52617b8a28d66dcc9bddc627e",
+    "published_sha256": "37147b9df71121f4651331a13b04122be20a91a01166039b3ac7e0682c1ae88c",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/23_PROMPT_PERBAIKAN_PERIODE_SCOPE_INSPEKSI.md",
+    "source_sha256": "5823841b87cca2edac73420c6af4b09aa139b1db4a76d8f4c18576636a43e8ed",
+    "published_sha256": "7750a0e544925ebe58a65055efc59c1075e4fe62a09d4a5ff2df7a7265508bf3",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/24_AUDIT_PRODUKSI_PENERIMAAN_RFID.md",
+    "source_sha256": "7f4a5b4a27a2fc6f4d4dac592f6f6d397e08c0dadfb2dabf6544c2123f8c5ed7",
+    "published_sha256": "4aa6702188f45a5d26af2c3ded21deb9ef2c94559dae9a52348254059aa5ac91",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/25_PROMPT_PRODUKSI_PENERIMAAN_RFID.md",
+    "source_sha256": "84b329601006a5013c1aae5dcc12c1174cff0474d1604d40ad5edb99d6348175",
+    "published_sha256": "5e6904c16f5e8bb106967926fe92214a195628a0ee88282be5906101f28bd17f",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/26_AUDIT_GRN_FINANCE_QC_DAN_PROMPT.md",
+    "source_sha256": "c82f39d3e5eb71c685150c05f20f64b96e2001164d37aa54ff1b40bdd7cfeac4",
+    "published_sha256": "b3bdc502a9fdd3b208b561901b1b95e4ec321bea0b787e6010608a20d236f037",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/27_MATRIKS_CAKUPAN_FLOW.md",
+    "source_sha256": "b0f87539b8117765532765c39314cbd1da57513f9c751f86a26e3b4a3c7ca180",
+    "published_sha256": "a778e242c9d554c5c2a810e8a3d0711d9e4040a03389cbb34083f5faccea5faf",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/28_AUDIT_RETUR_BELI_DAN_PROMPT.md",
+    "source_sha256": "ec43fb35d7830e4587687a097bbf34a7471de14a4a0b496bbbbc464ed021cc2b",
+    "published_sha256": "76db603977443669133028c1fcb4eeabcf10c7d568c748c0aa87d063252c4c1e",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/29_CHECKLIST_SKENARIO_COVERAGE.md",
+    "source_sha256": "e8fefff0d87e2c09a8036a2b4d02a74d22e8549a0ff01a12b1a1cbe94f9abde3",
+    "published_sha256": "ff7686d6c19f7dc29b60ab93ee1a589943d08389a234aed55daa2c8ed1948780",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/execution_coverage_round4.json",
+    "source_sha256": "4b21ad23ecb882a15592bee7cdc1f76c54945203ee4783c1aa4967d15f5f1292",
+    "published_sha256": "7b666059302defe6d799761cdaff9cc76304c5cf8dcb9658259012d64cea7e7a",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/existing_unit_tests.log",
+    "source_sha256": "916545a9578d1ef0662d17d29c8f6b2274fc8624b1cf6c4050c9a6d3a4d15054",
+    "published_sha256": "ad7788050d8193ed2298394f6f629a7937c1bf5df0fd2faef996f7c1bd2eeeb2",
+    "workstation_paths_redacted": true,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/existing_unit_tests.xml",
+    "source_sha256": "60144b2a33ea4bff8c1a6c73d162e753ffce5e0b04ad4b6a1c0127941ecd05b2",
+    "published_sha256": "2a7be8851c884014021447599facc1dceb186132f4baeeb032ed21ab213e3f03",
+    "workstation_paths_redacted": true,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_dependencies.json",
+    "source_sha256": "76e2bec7cdad1d4d1d2260eb88d1d1fb8a3b009a5f9be570bd500f561f5985f9",
+    "published_sha256": "5b1c79b56d4843cb3a25cfe658f2769560fb436573be8e964e70a4e25f020d61",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_rfid_wms_finance.json",
+    "source_sha256": "7a850b3ca3dd11b97095afbaa16d4e15d3d741fb01f0331bbc5189e550858585",
+    "published_sha256": "773608f62d0c8c38386d19b0a947210c94c0a323da5fa0850fed90c1ce759ed8",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_rfid_wms_finance.py",
+    "source_sha256": "ae8bc8ac0c9f1a552ffc2e913d12a918dedebfaf9091d1bc63020acb9cdafaa5",
+    "published_sha256": "3295b9d40f7635106df41e7b2e1a356b8f679558bd5d1e441f5d94eb7bcf49e7",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round4.json",
+    "source_sha256": "1cc563dae24911cc98e8b1f761298b83836b2e37d3823ddcc31f57372796853e",
+    "published_sha256": "358102a7cfe1376b29e272c40cf7130c342eef8728f41f8a11135753b10da29b",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round4.py",
+    "source_sha256": "341ab68bbc7bb54b03db21724e303960a858dc951613972152af2c1576baea88",
+    "published_sha256": "4555fff3d5ee38644576df9ccad75122aa424b6d13333cacd41dc45c8ee4e1be",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round5.json",
+    "source_sha256": "487b769ec3b4eb5873ff38a3f9f9e1f0968a36b0960e62d1eff6dfebc21225b0",
+    "published_sha256": "a438fec8f722406788c488f8e47114238094a9c76a3b74d9e8bd78c1e18cde41",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round5.py",
+    "source_sha256": "8eafeae8cc47f3ed86bd900e1c88f2713aa3a9097d437eeece6e28b31a84ceec",
+    "published_sha256": "8eafeae8cc47f3ed86bd900e1c88f2713aa3a9097d437eeece6e28b31a84ceec",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round6.json",
+    "source_sha256": "46d1534c1e3474e662cb3682988b3c51d067e1c1a99c6af27e2567c8bb42f9b2",
+    "published_sha256": "9d0ffb9394825f4d8f4d76dd17e805c3f9d0d119cf198b3bbbe07ba611ae7e8d",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round6.log",
+    "source_sha256": "b9965c118b86ee7718896d01342e352dd6b46c2e6f8d2988de564d9254b56b2b",
+    "published_sha256": "f7ce07944dd4547f2ed2951725ff67930788d636a03701a0abcf773dd2d1e13f",
+    "workstation_paths_redacted": true,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round6.py",
+    "source_sha256": "a7d09338259c40318ffbebd1a8f8e25e3eb3e3ec9437ae505ed0fdc77f93bd7a",
+    "published_sha256": "a7d09338259c40318ffbebd1a8f8e25e3eb3e3ec9437ae505ed0fdc77f93bd7a",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round7.json",
+    "source_sha256": "9dc87ab523fecb1c1cbaf28527f3a6acbfc8dcd17e941b15cb7b4ca36f7977b4",
+    "published_sha256": "44a5bb5551cea089cd2286d4aa56f304dc341a35fcbabdea05f7f8e5f3998bd2",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round7.log",
+    "source_sha256": "4aa3b7b19933c8b23b209719d3a7d6896641dbb969f111ec9b478021de4c1236",
+    "published_sha256": "e536ea2518477bb3bbdaf4e16c80c424d752cec78f6116b9f5990d7a420f1423",
+    "workstation_paths_redacted": true,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round7.py",
+    "source_sha256": "f3a540bf4c4ee3dc3918217e9bad328f944fee2813d8af9b052ff99ba6c0b060",
+    "published_sha256": "f3a540bf4c4ee3dc3918217e9bad328f944fee2813d8af9b052ff99ba6c0b060",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round8.json",
+    "source_sha256": "5f5962b0e58fa3dcf8b83a0738bdff93ce05d87d31b6833510b538fe32a1dcb0",
+    "published_sha256": "c21a50d1e36094765c3dbd039b55bdbe3eed3c975920a47321c1f1bc608f7669",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round8.log",
+    "source_sha256": "a60f6c29b5b06f04445009ea05a51ae5849cfb39fa8ac3bf4f7655184886f428",
+    "published_sha256": "a5945d439d846db68e8bac7112bf6f2a850998095a46f118cc00bd43ec375754",
+    "workstation_paths_redacted": true,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/integration_round8.py",
+    "source_sha256": "ef8d47d73be04866ab2a6702991b7558ee61edf72a37375807ebe0bfcd857c5a",
+    "published_sha256": "ef8d47d73be04866ab2a6702991b7558ee61edf72a37375807ebe0bfcd857c5a",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/pytest-audit.ini",
+    "source_sha256": "aaabed120d2fb059160bb38bf8843dc0bbb6abca5f013dffb5228bfffb9a3404",
+    "published_sha256": "aaabed120d2fb059160bb38bf8843dc0bbb6abca5f013dffb5228bfffb9a3404",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/README.md",
+    "source_sha256": "da588c3a39e887e0d512b5b9344c2ed15b9bf89751c36c100f3389abda842f18",
+    "published_sha256": "640f92b2d40c0521522c44d5f777f3c9eecb17f465cd93b7c9d3e8af860da0b8",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/requirements-audit.lock",
+    "source_sha256": "0fd4fc72a2ebac70737f2c09d1737954d8b812e13e09a1cf0ff2407ebfaaeabc",
+    "published_sha256": "e786ea8d460e20d8d5ce4fc2fa3fd9e7e2afd0035fa0518569c42753b2d7b53e",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/route_no_permissions_round4.json",
+    "source_sha256": "1abff8b5446639ae230175c6317e13f684fe43fdedd1a39e6b641e230f8aedb8",
+    "published_sha256": "bb77595f577bcaab22ad7d2103527ecdddd2f3d1a9504971cc69edd3d8b54ef6",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/route_sweep_round4.json",
+    "source_sha256": "e272a273211626a58fd9eafe8907c4d5d2073896aaecb6c2cc7fd12810433e6c",
+    "published_sha256": "ceb9ffb8e2738f980715958073fc3ba845bc95cf40d1744688c03ba62fcb2629",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/route_sweep_round4.py",
+    "source_sha256": "15f72cbe30f3b893a6bd525f1678b41e22a4ef78cc235347494b19945b14926a",
+    "published_sha256": "f25e0aed6bb007a787968d732767c767aa16fe41190e28b903dea46ea5c6d366",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/run_existing_unit_tests.py",
+    "source_sha256": "2aa95c035698bd1062676612757385509848ca96e61b2ea7591628330f424958",
+    "published_sha256": "2aa95c035698bd1062676612757385509848ca96e61b2ea7591628330f424958",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/service_imports_round4.json",
+    "source_sha256": "61e79a59e577ce9df7fccc8695d1a3fff9a2b24d7373d34682bbaca9ec85ea1e",
+    "published_sha256": "90e1cd7396ba0e318aa26544e322e98e879413d2d8128b5af6ab4da79ee7663e",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/integration_repro/test_inventory_round4.json",
+    "source_sha256": "de15e5e2632a8d04f2e97166c5be2057e66929031567405b025be55ab263e921",
+    "published_sha256": "611b107f4056ccf22130b67f3d9e8ade5e49b328e5023a95b5acb435b6c4bc09",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/review_repro/README.md",
+    "source_sha256": "c5923f469528aa476179946d8ddef10b47d510b4db8eecaff77892c9f5b5a0f8",
+    "published_sha256": "9c872c0f720be9661d900f42b26841b6ce08007f9c534cf770003eccd75013ee",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/review_repro/review2_flow_proofs.json",
+    "source_sha256": "b6e355e7a9301d2f48edd991d017ed690df19e5fca21360a6c8101922d4a785c",
+    "published_sha256": "0c7414e0eb4500b9feb30e05d6efd860c6c52a76021eaebf3daf98484cd7a474",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/review_repro/review2_flow_proofs.py",
+    "source_sha256": "a65c74e85f695029c9e4c2dab2e1d678a720f718eb57401d8ff691c697585097",
+    "published_sha256": "78db097d73621db4e4719cac38e2cbec7d491f9e728839c263745f93f284ecaa",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/review_repro/review3_proofs.json",
+    "source_sha256": "1d9f628bd780ca9e18a200fd88f612aa2a85f0f88b806ccf236d8d0f5640916c",
+    "published_sha256": "59c22b393aa947cf003b620f29b4337147f2083d777056d5be9cca277fd26a1b",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  },
+  {
+    "path": "archive/2026-09/review_repro/review3_proofs.py",
+    "source_sha256": "9ec27a1429cfe4bd1b91fe9d8784202d9ab9bc7339d226660629729819bfe468",
+    "published_sha256": "76d25b64d531e3883722c64a144f0ccc355d53283af136e04d1a4065936846d3",
+    "workstation_paths_redacted": false,
+    "publication_normalization": "UTF-8, LF line endings, trailing whitespace removed, single final newline"
+  }
+]

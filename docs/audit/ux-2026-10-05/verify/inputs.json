@@ -1,0 +1,136 @@
+{
+ "my-desk": [],
+ "home": [],
+ "my-approvals": [],
+ "purchase-approval": [],
+ "rnd-reports": [],
+ "designer-kpi": [],
+ "rnd-divisions": [],
+ "mkt-analytics": [],
+ "mkt-campaigns": [],
+ "mkt-accounts": [],
+ "cs-bi-hrd": [],
+ "document-center": [
+  {
+   "ph": "Nomor / pihak / status…",
+   "w": 563,
+   "testid": "dc-search"
+  }
+ ],
+ "documents": [],
+ "scheduler": [],
+ "admin": [
+  {
+   "ph": "Masukkan Anthropic API key (sk-ant-…)",
+   "w": 560,
+   "testid": "integrations-apikey"
+  },
+  {
+   "ph": "Masukkan Gemini API key (AIza…) dari aistudio.google.com",
+   "w": 560,
+   "testid": "gemini-apikey"
+  },
+  {
+   "ph": "sk-… dari platform.openai.com/api-keys",
+   "w": 560,
+   "testid": "openai-apikey"
+  }
+ ],
+ "permission-matrix": [],
+ "approval-rules": [],
+ "domain-registry": [],
+ "doc-templates-basic": [],
+ "hr-my-profile": [],
+ "pdf-templates": [
+  {
+   "ph": "mis. SURAT PESANAN",
+   "w": 410,
+   "testid": "pdf-title-override"
+  }
+ ],
+ "cs-pajak": [],
+ "input-tax": [],
+ "chart-of-accounts": [],
+ "approval-inbox": [],
+ "financial-statements": [],
+ "profitability": [],
+ "cashflow-forecast": [],
+ "closing": [],
+ "period-unlock": [],
+ "budget": [],
+ "consolidation": [],
+ "interco-transactions": [],
+ "qc-inspection": [],
+ "goods-receipts": [
+  {
+   "ph": "Nomor GRN / SJ / mitra",
+   "w": 256,
+   "testid": "grn-search"
+  }
+ ],
+ "production": [],
+ "logistics": [],
+ "cs-rfid-lokasi": [],
+ "cs-rfid-gate": [],
+ "cs-rfid-tags": [],
+ "hr-overtime": [],
+ "hr-live-tracking": [],
+ "hr-leave": [],
+ "hr-attendance": [],
+ "hr-attendance-setup": [],
+ "hr-payslips": [],
+ "cs-kpi": [],
+ "expense-categories": [],
+ "settlements": [],
+ "cash-advances": [],
+ "vehicle-logs": [],
+ "finance-tower": [],
+ "bi-finance": [],
+ "bank-accounts": [],
+ "cash-management": [],
+ "bank-reconciliation": [],
+ "finance-cases": [],
+ "md-desk": [],
+ "warehouse-admin-desk": [],
+ "finance-desk": [],
+ "sales-admin-desk": [],
+ "reorder": [],
+ "rfq": [],
+ "blanket-po": [],
+ "contra-bons": [
+  {
+   "ph": "KSC/CB-00001 atau Solo Weave",
+   "w": 240,
+   "testid": "cb-filter-q"
+  }
+ ],
+ "landed-cost": [],
+ "return-policies": [],
+ "internal-requests": [],
+ "hr-visits": [],
+ "sample-orders": [],
+ "md-categories": [
+  {
+   "ph": "mis. Batik",
+   "w": 330,
+   "testid": "category-name-input"
+  },
+  {
+   "ph": "auto dari nama (BATIK)",
+   "w": 330,
+   "testid": "category-code-input"
+  },
+  {
+   "ph": "Deskripsi singkat",
+   "w": 330,
+   "testid": "category-description-input"
+  }
+ ],
+ "md-uoms": [
+  {
+   "ph": "Qty",
+   "w": 489,
+   "testid": "uom-calc-qty"
+  }
+ ]
+}

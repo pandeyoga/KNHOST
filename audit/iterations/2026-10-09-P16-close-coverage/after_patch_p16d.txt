@@ -1,0 +1,27 @@
+[
+ {
+  "id": "COMM-03",
+  "invariant": "harga khusus disetujui → harga baris SO = harga khusus & total dihitung ulang",
+  "pass": true,
+  "detail": "200/200 price=192375.0 net=384750.0"
+ },
+ {
+  "id": "COMM-03",
+  "invariant": "harga khusus lingkup pesanan TIDAK bisa dipakai SO lain lewat price_approval_id (400)",
+  "pass": true,
+  "detail": "400 {\"detail\":\"Harga khusus untuk Tenun Ikat Garuda Premium tidak berlaku (belum disetujui / kadaluarsa / qty di bawah minimum)\"}"
+ },
+ {
+  "id": "COMM-03",
+  "invariant": "harga khusus lingkup pesanan tidak muncul sebagai harga efektif standing",
+  "pass": true,
+  "detail": "200 {\"has_special\":false}"
+ },
+ {
+  "id": "COMM-03",
+  "invariant": "standing kedaluwarsa ditolak; di bawah min qty ditolak; berlaku & qty cukup → harga khusus",
+  "pass": true,
+  "detail": "400/400/200"
+ }
+]
+pass=4 fail=0

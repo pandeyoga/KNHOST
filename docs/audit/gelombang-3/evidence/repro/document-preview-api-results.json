@@ -1,0 +1,111 @@
+{
+  "commit": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_0d314287c488400db7073c22746d8351",
+  "results": [
+    {
+      "id": "D4-DOC-01-existing-template-control",
+      "expected": {
+        "http": 200,
+        "exists": true
+      },
+      "actual": {
+        "http": 200,
+        "exists": true
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-DOC-01-preview-contract",
+      "expected": 200,
+      "actual": 404,
+      "note": "A real original-created template and an accessible SO are present. No registered POST endpoint exists at the UI preview path. This is not empty data/auth failure.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-DOC-01-alternative-renderer-control",
+      "expected": {
+        "http": 200,
+        "html": true
+      },
+      "actual": {
+        "http": 200,
+        "html": true
+      },
+      "note": "Existing GET document preview renderer works for this read-state fixture. It does not accept selected template ID, so merely repointing the button is insufficient.",
+      "status": "pass"
+    }
+  ],
+  "fixture_scope": "Original public template creation/listing; SO is an explicit valid read-state fixture, not whole SO producer/fulfillment proof",
+  "template": {
+    "document_type": "surat_jalan",
+    "name": "Audit Surat Jalan Template",
+    "header": "AUDIT SELECTED TEMPLATE",
+    "footer": "Dokumen dibuat otomatis oleh sistem.",
+    "columns": [
+      "sku",
+      "quantity"
+    ],
+    "logo_url": "",
+    "paper_size": "A4",
+    "orientation": "portrait",
+    "margin_mm": 12,
+    "signature_left": "Dibuat Oleh",
+    "signature_right": "Disetujui Oleh",
+    "section_order": [
+      "header",
+      "customer",
+      "items",
+      "allocation",
+      "signature",
+      "footer"
+    ],
+    "id": "tmpl_437b60725d91",
+    "status": "active",
+    "created_by": "Audit User A",
+    "created_at": "2026-10-05T15:58:17.052372+00:00"
+  },
+  "order": {
+    "id": "SO-DOC",
+    "number": "SO-DOC",
+    "entity_id": "A",
+    "customer_id": "CDOC",
+    "customer_name": "Synthetic customer",
+    "status": "confirmed",
+    "order_date": "2026-10-05T15:58:16.931867+00:00",
+    "created_at": "2026-10-05T15:58:16.931867+00:00",
+    "subtotal": 100,
+    "total_amount": 100,
+    "grand_total": 100,
+    "discount_amount": 0,
+    "tax_amount": 0,
+    "paid_total": 0,
+    "items": [
+      {
+        "product_id": "PDOC",
+        "sku": "PDOC",
+        "product_name": "Preview fabric",
+        "quantity": 1,
+        "base_quantity": 1,
+        "unit": "meter",
+        "unit_price": 100,
+        "line_total": 100,
+        "subtotal": 100
+      }
+    ]
+  },
+  "original_request": {
+    "document_type": "invoice",
+    "source_id": "SO-DOC",
+    "actor": "Audit User A"
+  },
+  "missing_response": {
+    "http": 404,
+    "body": {
+      "detail": "Not Found"
+    }
+  },
+  "alternative_http": 200,
+  "external_connections": [],
+  "harness_errors": []
+}

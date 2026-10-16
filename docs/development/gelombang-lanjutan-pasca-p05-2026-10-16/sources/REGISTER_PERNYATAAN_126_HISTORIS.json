@@ -1,0 +1,2802 @@
+{
+  "schema_version": 1,
+  "project": "ERP Kain Nussantara",
+  "it_producer": "PT Kubus Teknologi Indonesia",
+  "date": "2026-10-15",
+  "source_commit": "6be5af70db5b0dedba6f1ce17b0a2f40f23ee046",
+  "source_scope": "Snapshot main fetched 2026-10-14; no fresh remote fetch or live production verification in this consolidation",
+  "status_semantics": {
+    "J": "Arah jelas; bukan bukti implemented/UAT/approval massal",
+    "S": "Arah sebagian jelas; parameter/data/keputusan tertunda",
+    "K": "Makna/konflik/pilihan belum diputuskan"
+  },
+  "counts": {
+    "total": 126,
+    "J": 99,
+    "S": 19,
+    "K": 8
+  },
+  "domain_counts": {
+    "AK": {
+      "J": 7
+    },
+    "MD": {
+      "J": 10,
+      "S": 1
+    },
+    "SO": {
+      "J": 12
+    },
+    "SL": {
+      "J": 12
+    },
+    "SM": {
+      "J": 10
+    },
+    "RT": {
+      "J": 11,
+      "S": 6,
+      "K": 2
+    },
+    "QC": {
+      "J": 8,
+      "S": 3,
+      "K": 1
+    },
+    "WM": {
+      "J": 11,
+      "S": 5
+    },
+    "IC": {
+      "J": 3,
+      "S": 1,
+      "K": 1
+    },
+    "RP": {
+      "J": 4,
+      "S": 1,
+      "K": 2
+    },
+    "RF": {
+      "J": 6,
+      "S": 2
+    },
+    "HR": {
+      "J": 2,
+      "K": 2
+    },
+    "DG": {
+      "J": 3
+    }
+  },
+  "implementation_changed": false,
+  "unanswered_are_deferred": true,
+  "source_note": "Owner decisions, client statements, temporary interpretations and technical plan items remain distinguished through origin/current_support. Sources are not instructions to change ERP automatically.",
+  "mappings": {
+    "initial_memo_12": {
+      "1": [
+        "AK-01",
+        "AK-02",
+        "AK-03",
+        "MD-06"
+      ],
+      "2": [
+        "MD-01",
+        "MD-03",
+        "MD-04",
+        "MD-08"
+      ],
+      "3": [
+        "MD-05",
+        "MD-06",
+        "MD-07",
+        "SO-08",
+        "SO-09"
+      ],
+      "4": [
+        "SL-01",
+        "IC-01"
+      ],
+      "5": [
+        "IC-02"
+      ],
+      "6": [
+        "SL-08"
+      ],
+      "7": [
+        "MD-09",
+        "MD-10"
+      ],
+      "8": [
+        "WM-11"
+      ],
+      "9": [
+        "SL-05",
+        "SL-06",
+        "SL-07"
+      ],
+      "10": [
+        "WM-13",
+        "WM-05"
+      ],
+      "11": [
+        "WM-12",
+        "RF-01"
+      ],
+      "12": [
+        "MD-01",
+        "MD-02"
+      ]
+    },
+    "meeting_requirements_35": {
+      "1": [
+        "RP-01"
+      ],
+      "2": [
+        "SL-02"
+      ],
+      "3": [
+        "SL-03"
+      ],
+      "4": [
+        "AK-04",
+        "AK-05",
+        "SL-04"
+      ],
+      "5": [
+        "SL-05"
+      ],
+      "6": [
+        "SL-06"
+      ],
+      "7": [
+        "SO-01",
+        "SO-03",
+        "SO-04",
+        "SO-06"
+      ],
+      "8": [
+        "SO-02"
+      ],
+      "9": [
+        "SM-01",
+        "SM-02",
+        "SM-03",
+        "SM-04"
+      ],
+      "10": [
+        "SM-07"
+      ],
+      "11": [
+        "SL-09",
+        "SL-10"
+      ],
+      "12": [
+        "MD-01",
+        "MD-02",
+        "AK-04"
+      ],
+      "13": [
+        "MD-03",
+        "MD-04"
+      ],
+      "14": [
+        "MD-05",
+        "MD-08"
+      ],
+      "15": [
+        "MD-08"
+      ],
+      "16": [
+        "QC-01",
+        "QC-05"
+      ],
+      "17": [
+        "MD-07"
+      ],
+      "18": [
+        "MD-10"
+      ],
+      "19": [
+        "MD-09"
+      ],
+      "20": [
+        "AK-03",
+        "WM-09"
+      ],
+      "21": [
+        "WM-10"
+      ],
+      "22": [
+        "WM-03",
+        "WM-04"
+      ],
+      "23": [
+        "WM-01"
+      ],
+      "24": [
+        "WM-06",
+        "WM-07"
+      ],
+      "25": [
+        "WM-08"
+      ],
+      "26": [
+        "WM-05",
+        "IC-01"
+      ],
+      "27": [
+        "WM-14"
+      ],
+      "28": [
+        "WM-15"
+      ],
+      "29": [
+        "WM-02"
+      ],
+      "30": [
+        "HR-01"
+      ],
+      "31": [
+        "HR-03"
+      ],
+      "32": [
+        "HR-03",
+        "HR-04"
+      ],
+      "33": [
+        "HR-03"
+      ],
+      "34": [
+        "HR-03"
+      ],
+      "35": [
+        "HR-02"
+      ]
+    },
+    "owner_answers_22": {
+      "1": [
+        "AK-01",
+        "AK-02",
+        "AK-03",
+        "AK-06",
+        "AK-07"
+      ],
+      "2": [
+        "SO-03",
+        "SO-04",
+        "SO-05",
+        "SO-06",
+        "SO-07"
+      ],
+      "3": [
+        "SO-10"
+      ],
+      "4": [
+        "AK-06",
+        "SO-07"
+      ],
+      "5": [
+        "SO-11",
+        "SO-12"
+      ],
+      "6": [
+        "RT-04",
+        "RT-05"
+      ],
+      "7": [
+        "RT-01",
+        "RT-02",
+        "RT-03"
+      ],
+      "8": [
+        "RT-06",
+        "RT-07",
+        "RT-08"
+      ],
+      "9": [
+        "RT-09",
+        "RT-10",
+        "RT-11"
+      ],
+      "10": [
+        "SL-09",
+        "RT-12",
+        "RT-13",
+        "RT-14",
+        "RT-15",
+        "RT-19"
+      ],
+      "11": [
+        "RT-17"
+      ],
+      "12": [
+        "QC-02",
+        "QC-03",
+        "QC-04",
+        "QC-07"
+      ],
+      "13": [
+        "QC-05"
+      ],
+      "14": [
+        "IC-03",
+        "IC-04",
+        "IC-05"
+      ],
+      "15": [
+        "AK-04",
+        "AK-05",
+        "MD-02"
+      ],
+      "16": [
+        "SM-04",
+        "SM-05",
+        "SM-06",
+        "SM-09",
+        "SM-10"
+      ],
+      "17": [
+        "SM-01",
+        "SM-02",
+        "SM-03"
+      ],
+      "18": [
+        "QC-06",
+        "QC-10"
+      ],
+      "19": [
+        "QC-11"
+      ],
+      "20": [
+        "MD-11",
+        "QC-06",
+        "QC-12"
+      ],
+      "21": [
+        "RP-02",
+        "RP-03",
+        "RP-04",
+        "RP-05"
+      ],
+      "22": [
+        "RP-04",
+        "RP-06",
+        "RP-07"
+      ]
+    },
+    "latest_client": {
+      "2 — ecer": [
+        "SM-08"
+      ],
+      "4–6 — paper, PIC, customer ACC": [
+        "AK-07",
+        "SO-08",
+        "SO-09",
+        "SO-10"
+      ],
+      "7 — satu dari Indra/Laila": [
+        "AK-06"
+      ],
+      "8 — harga kain": [
+        "SO-11",
+        "SO-12"
+      ],
+      "9 — Tasik/Tamim dan buku per entitas": [
+        "SL-11",
+        "WM-09",
+        "IC-01"
+      ],
+      "3a–3b — batas customer/supplier": [
+        "RT-06",
+        "RT-07",
+        "RT-08"
+      ],
+      "3c–3d — kondisi dan approval retur": [
+        "RT-09",
+        "RT-10",
+        "RT-11"
+      ],
+      "3e — cutloss/discount dan pertanyaan saldo belum terjawab": [
+        "RT-12",
+        "RT-13",
+        "RT-16",
+        "RT-19"
+      ],
+      "3f — tukar dan QC sebelum kirim": [
+        "RT-14",
+        "RT-15",
+        "QC-08",
+        "QC-09"
+      ],
+      "4a — yard/kg, 0,25 yard dan pertanyaan GSM": [
+        "SL-12",
+        "QC-02",
+        "QC-07"
+      ],
+      "7a — resep catalogue, ganti warna dan lokasi": [
+        "SM-04",
+        "SM-05",
+        "SM-06",
+        "SM-09",
+        "SM-10"
+      ],
+      "11 — grade dan BS": [
+        "MD-11",
+        "QC-12",
+        "RT-18"
+      ],
+      "12 — larangan grade saat trial": [
+        "AK-05"
+      ]
+    }
+  },
+  "superseded": [
+    {
+      "previous": "Semua SKU harus melewati tiga uji.",
+      "active": "Uji mengikuti lini dan pengembangan; bahan greige/benang tidak wajib semua uji.",
+      "ids": [
+        "MD-06"
+      ]
+    },
+    {
+      "previous": "Greige, PFD dan PFP semuanya tidak tampil untuk dijual.",
+      "active": "Greige tetap tidak dijual; PFD/PFP dapat dijual dengan daftar/policy yang sesuai.",
+      "ids": [
+        "MD-02",
+        "AK-04"
+      ]
+    },
+    {
+      "previous": "Harga semua grade selain BS sama.",
+      "active": "Pemilik mengoreksi: harga dapat berbeda menurut grade.",
+      "ids": [
+        "SL-09",
+        "RT-19"
+      ]
+    },
+    {
+      "previous": "ACC PIC dianggap harus menjadi lapisan baru sesudah ACC customer paper.",
+      "active": "PIC memakai ACC desain internal existing; designer checklist paper per round. Sales mempunyai penanda pada detail Pesanan Khusus, bukan syarat internal tambahan.",
+      "ids": [
+        "AK-07",
+        "SO-08"
+      ]
+    },
+    {
+      "previous": "Indra hanya daily, Laila hanya custom.",
+      "active": "Keduanya boleh ACC internal/daily maupun custom; salah satu cukup.",
+      "ids": [
+        "AK-06"
+      ]
+    },
+    {
+      "previous": "Harga design adalah tambahan biaya jasa.",
+      "active": "Client memperjelas yang dimaksud harga kain custom, bukan tambahan design fee.",
+      "ids": [
+        "SO-11",
+        "SO-12"
+      ]
+    },
+    {
+      "previous": "Catalogue memakai 1 meter per warna.",
+      "active": "Client mengubah menjadi 1 yard per warna + 2 yard salah satu warna soft.",
+      "ids": [
+        "SM-04",
+        "SM-05"
+      ]
+    },
+    {
+      "previous": "2 kg dianggap sama dengan 2,5 yard.",
+      "active": "Angka 2,5 yard diabaikan; panjang dan berat tidak memiliki konversi tetap universal.",
+      "ids": [
+        "SM-03",
+        "QC-07"
+      ]
+    },
+    {
+      "previous": "Semua pemotongan penjualan mengikuti batas sample.",
+      "active": "Ecer berbayar adalah penjualan yang dipotong; bisa melebihi batas sample standar.",
+      "ids": [
+        "SM-08"
+      ]
+    },
+    {
+      "previous": "Grade hanya lima di seluruh source, atau C selalu menjadi BS.",
+      "active": "Registry tujuh grade; keluaran QC otomatis lima. C dikenali sebagai grade valid sebelum alias lama.",
+      "ids": [
+        "MD-11",
+        "QC-12"
+      ]
+    },
+    {
+      "previous": "Approval retur melalui WA harus menjadi proses target ERP.",
+      "active": "WA adalah kondisi saat ini; proses target masih perlu dipilih.",
+      "ids": [
+        "RT-10",
+        "RT-11"
+      ]
+    },
+    {
+      "previous": "Lemari sama dengan rak.",
+      "active": "Lemari unit terpisah berisi rak; bahasa label boleh berbeda jika arti fisiknya konsisten.",
+      "ids": [
+        "WM-01"
+      ]
+    },
+    {
+      "previous": "Sumber restock adalah larangan mutlak jalur lain.",
+      "active": "Arahan terbaru: default per master yang dapat dipilih pada transaksi, bukan rules wajib.",
+      "ids": [
+        "MD-09"
+      ]
+    },
+    {
+      "previous": "Checkout perlu tambahan toleransi qty/ACC otomatis atas pembulatan.",
+      "active": "Gunakan pembulatan existing; Admin Sales memilih roll/qty/harga final secara manual.",
+      "ids": [
+        "SL-07"
+      ]
+    },
+    {
+      "previous": "Harga custom induk belum mempunyai acuan grade.",
+      "active": "Harga Grade A induk; tanpa induk ditentukan PIC Special Order.",
+      "ids": [
+        "SO-12"
+      ]
+    }
+  ],
+  "records": [
+    {
+      "id": "AK-01",
+      "domain": "AK",
+      "title": "Nama staf diwakili role dan penugasan",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Dina, Laila, Indra, Wiwi dan Rita adalah orang/PIC; nama mereka tidak menjadi aturan program.",
+      "intended_application": "Pekerjaan labdip, printing, desain dan persetujuan diberikan kepada akun melalui role, authority dan assignment yang dapat diatur. Pergantian staf tidak memerlukan perubahan kode bisnis.",
+      "current_support": "Custom role dan penugasan sudah memiliki fondasi. Belum terbukti seluruh pemeriksaan layar mendukung role turunan secara konsisten.",
+      "pending": "",
+      "references": [
+        "backend/services/custom_role_service.py",
+        "backend/role_registry.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "AK-02",
+      "domain": "AK",
+      "title": "UI pengaturan role empat tingkat",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pengaturan perlu jelas: Modul > Menu > Submenu/Tab > Aktivitas.",
+      "intended_application": "Pohon navigasi menampilkan tempat aktivitas berada; pengguna memberi hak lihat, tambah, ubah, setujui atau aktivitas lain yang memang tersedia. Ringkasan hak efektif memperjelas hasil konfigurasi.",
+      "current_support": "Panel role sudah menyediakan resource/action dan preset; bentuk empat tingkat penuh merupakan arah perbaikan UI, bukan fitur yang sudah dinyatakan selesai.",
+      "pending": "",
+      "references": [
+        "backend/access_modules.py",
+        "frontend/src/features/settings/entities/RoleAdvancedPanel.jsx"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "AK-03",
+      "domain": "AK",
+      "title": "Hak aktivitas dan cakupan data",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Seluruh kewenangan tindakan harus dapat diatur melalui custom role dan access management; cakupan entitas/lokasi/lini tetap mengikuti penugasan.",
+      "intended_application": "Terapkan aturan global ini pada master, customer, PO, retur, Finance, WMS, R&D dan Special Order. User berwenang dipilih dari konfigurasi, bukan ditanyakan satu per satu atau ditanam sebagai nama/peran tetap.",
+      "current_support": "Backend mempunyai permission per tindakan. Beberapa UI masih memeriksa nama role tetap, misalnya tombol persetujuan retur; belum dapat dinyatakan seluruh jalur sudah fully customized.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "latest_owner_reply": "SEMUA yang bersifat siapa berwenang harus dibuatkan di akses dan role management.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "AK-04",
+      "domain": "AK",
+      "title": "Konfigurasi POS mengikuti role dinamis",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pemilik meminta konfigurasi katalog/POS per role, termasuk stage, kategori, LOT, grade dan atribut terkait.",
+      "intended_application": "Pisahkan aturan produk yang boleh muncul, kolom yang boleh terlihat, dan tindakan yang boleh dilakukan. Pilihan role berasal dari master role, termasuk role buatan sendiri.",
+      "current_support": "Konfigurasi stage tersembunyi sudah ada; policy lengkap semua atribut untuk semua custom role belum terbukti tersedia.",
+      "pending": "",
+      "references": [
+        "backend/services/product_exclusivity.py",
+        "backend/config_catalog_ops.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "AK-05",
+      "domain": "AK",
+      "title": "Grade tidak terlihat oleh Sales, termasuk trial",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Client secara eksplisit melarang Sales melihat grade, termasuk saat trial.",
+      "intended_application": "Kebijakan default Sales menutup grade pada daftar, detail, filter, pemilihan dan keluaran yang diberikan kepadanya. Admin Sales tetap dapat memakai grade untuk alokasi sesuai authority.",
+      "current_support": "Ada agregasi komersial di P04, tetapi Quick View dan facet masih memperlihatkan grade pada jalur yang dibaca; belum dapat dianggap tuntas.",
+      "pending": "",
+      "references": [
+        "frontend/src/components/ProductQuickView.jsx",
+        "frontend/src/features/pos/FacetRail.jsx"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "AK-06",
+      "domain": "AK",
+      "title": "Satu ACC dari kelompok PIC cukup",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Indra dan Laila sama-sama boleh ACC desain internal/daily maupun custom; salah satu cukup.",
+      "intended_application": "Keduanya menjadi anggota kelompok approver yang sah. Satu keputusan pada versi aktif melanjutkan pekerjaan sekali; klik kedua tidak membuat pekerjaan atau sample ganda.",
+      "current_support": "ACC desain oleh satu akun sudah ada. Konfigurasi kelompok dan perilaku dua klik bersamaan belum divalidasi sebagai alur lengkap.",
+      "pending": "",
+      "references": [
+        "backend/services/design_studio_service.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "AK-07",
+      "domain": "AK",
+      "title": "Arti klik ACC PIC",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Klik PIC Designer adalah ACC internal desain existing; PIC Special Order menangani authority Pesanan Khusus. Keduanya tidak disamakan dengan keputusan customer atas hasil kain.",
+      "intended_application": "Pertahankan flow designer/ACC yang sudah ada. Designer mencentang print paper per round. Sales mencatat ACC customer pada detail Pesanan Khusus sebagai penanda/reminder; hasil proofing tetap diulang sampai customer ACC.",
+      "current_support": "Design Studio memiliki ACC internal dan callback proofing; OD memiliki keputusan customer. Tambahan yang diminta terutama checklist/label/interface, bukan lapisan approval internal baru.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "SO-PIC",
+      "latest_owner_reply": "Persetujuan internal. Paper print dichecklist designer; PIC designer dan PIC Special Order menggunakan ACC yang berhubungan dengan desain/Pesanan Khusus.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "MD-01",
+      "domain": "MD",
+      "title": "Jenis kain berbeda dari tahap barang",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Woven/knitting/printing dan greige/PFD/PFP/finished tidak boleh tercampur menjadi satu klasifikasi.",
+      "intended_application": "Simpan lini/jenis dan tahap barang sebagai dimensi berbeda. Benang dan bahan baku tetap mempunyai identitas item sendiri; filter dan proses menggunakan atribut yang tepat.",
+      "current_support": "Registry lini dan process stage tersedia; pemetaan master nyata perlu dilengkapi client.",
+      "pending": "",
+      "references": [
+        "backend/services/master_registry.py",
+        "backend/domain_registry.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "MD-02",
+      "domain": "MD",
+      "title": "Greige tidak dijual; PFD/PFP dapat dijual",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Arahan terbaru: greige tidak dibeli customer, PFD/PFP boleh dibeli dan dipisahkan dari daftar finished.",
+      "intended_application": "Gunakan stage dan konfigurasi katalog per role untuk memisahkan pilihan. Transaksi dapat memakai SO biasa; tidak ada keputusan yang mengharuskan modul penjualan baru.",
+      "current_support": "Filter stage tersedia, tetapi default kode masih menyembunyikan PFD/PFP bersama greige. Konfigurasi aktif produksi tidak diperiksa.",
+      "pending": "",
+      "references": [
+        "backend/services/product_exclusivity.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "MD-03",
+      "domain": "MD",
+      "title": "Dataset bahan dan supplier dari client",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Client menyiapkan data greige/PFD/PFP serta kode, nama item dan warna versi supplier.",
+      "intended_application": "Impor menjadi master yang ditinjau, dengan relasi item internal ke supplier, bukan menimpa identitas internal menggunakan nama supplier.",
+      "current_support": "Pemilik menegaskan dataset final masih belum tersedia; belum melakukan impor atau menganggap data contoh sebagai master final.",
+      "pending": "Menunggu dataset bahan dan supplier dari client; tidak ditanyakan ulang sekarang.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "latest_owner_reply": "MD-03 belum.",
+      "discussion_state": "awaiting_client_data"
+    },
+    {
+      "id": "MD-04",
+      "domain": "MD",
+      "title": "Nama dan kode warna mempunyai acuan jelas",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Kode warna internal, supplier dan referensi customer perlu dapat dibedakan serta ditelusuri.",
+      "intended_application": "Warna internal menjadi referensi stabil; alias/kode supplier terikat supplier dan produk terkait. Brief warna customer tetap terkait request/sample yang disetujui, tanpa menggabungkan warna hanya karena namanya mirip.",
+      "current_support": "Struktur master dan relasi supplier sudah menjadi scope P01; kebersihan dataset nyata belum divalidasi dalam konsolidasi ini.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "MD-05",
+      "domain": "MD",
+      "title": "Tambah, ubah dan nonaktifkan master secara jelas",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Master yang tidak digunakan lagi dinonaktifkan; kewenangan pengelolaan berasal dari custom role/access.",
+      "intended_application": "Sediakan tambah/edit/nonaktif sesuai izin. Master dan relasi transaksi lama tetap dapat ditelusuri; tidak membutuhkan keputusan nama staf tertentu.",
+      "current_support": "Lifecycle merupakan bagian P01. Jawaban ini menyelesaikan pilihan nonaktif, tanpa menyatakan seluruh UI/permission sudah lulus validasi.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "latest_owner_reply": "Ya dinonaktifkan. Siapa yang bisa dari custom role dan access.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "MD-06",
+      "domain": "MD",
+      "title": "R&D wajib mengikuti asal SKU dan lini",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "SKU hasil MD wajib melewati uji yang relevan; greige/benang tidak otomatis wajib melewati semua uji.",
+      "intended_application": "Pilih kewajiban labdip, proofing dan handfeel sesuai lini/jenis pengembangan. Persetujuan hasil, spesifikasi dan pelepasan master merupakan rangkaian yang saling terkait.",
+      "current_support": "Jenis sampling dapat dipilih per lini dan pemilik menyatakan model ini sudah benar. Tidak ada aturan bahwa semua SKU wajib ketiga uji.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "MD-07",
+      "domain": "MD",
+      "title": "Pengujian existing product tanpa SKU duplikat",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Barang yang sudah labdip dapat diuji handfeel atau sebaliknya tanpa otomatis membuat master baru.",
+      "intended_application": "Buat R&D dengan referensi produk existing. Bila identitas/spesifikasi produknya tetap sama, simpan hasil baru dan riwayat persetujuannya pada acuan yang sesuai.",
+      "current_support": "Termasuk P05; laporan penerapan dan jalur R&D existing tersedia. Status fase tidak membuktikan seluruh kasus selesai UAT.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "MD-08",
+      "domain": "MD",
+      "title": "Detail dan filter master lengkap",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Produk/varian perlu memperlihatkan supplier, warna supplier, jenis, tahap dan filter yang relevan.",
+      "intended_application": "Halaman detail menjelaskan sumber informasi; tambah/edit memakai field yang sama. Filter lini/tahap/supplier membantu MD menemukan item tanpa mengubah identitas transaksi.",
+      "current_support": "P01 mencakup master, alias dan filter; data supplier asli tetap menjadi ketergantungan.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "MD-09",
+      "domain": "MD",
+      "title": "Sumber restock per artikel",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Sumber restock di master adalah default yang dapat dikonfigurasi, bukan larangan mutlak jalur lain.",
+      "intended_application": "Master mengusulkan supplier/makloon/keduanya. Petugas berwenang tetap dapat memilih jalur sesuai transaksi tanpa menjadikan default sebagai aturan wajib.",
+      "current_support": "Field restock_source tersedia. check_lines saat ini menolak supplier-only lewat makloon dan sebaliknya; perilaku tersebut berbeda dari arahan terbaru.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "latest_owner_reply": "Bisa dikonfigurasi per master data, bukan rules wajib namun default saja.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "MD-10",
+      "domain": "MD",
+      "title": "Greige committed berbeda dari sudah dikeluarkan",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Yield, rasio dan toleransi digunakan untuk estimasi/forecast; sumber qty aktual tetap fisik yang diterima/dikeluarkan.",
+      "intended_application": "Gunakan perkiraan untuk rencana kebutuhan dan tampilan forecast. Receiving hasil makloon menggunakan qty/roll aktual; reservasi, issue dan hasil tidak mengurangi stok fisik dua kali.",
+      "current_support": "Order Makloon sudah memiliki input susut, toleransi dan override yield; actual_output_qty dan roll hasil diterima terpisah. Data rasio asli tidak sedang diminta kepada pemilik dalam klarifikasi ini.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "latest_owner_reply": "Cek apakah di sistem ada input rasio yield/toleransi. Data asli SSOT dari fisik; yield rasio toleransi estimasi/forecast saja.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "MD-11",
+      "domain": "MD",
+      "title": "Grade dapat dikelola tanpa perubahan program",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Client memakai A/A1/B, mengakui BS, dan ingin menambah grade sendiri pada masa depan.",
+      "intended_application": "Master grade yang dapat dikelola perlu membawa status aktif, urutan, harga/eligibility dan kaitan aturan QC. Grade lama tetap disimpan untuk sejarah.",
+      "current_support": "Registry kode berisi A/A1/A2/B/B1/C/BS; fungsi QC otomatis menghasilkan A/A1/A2/B/BS. CRUD grade dinamis belum terlihat pada master registry.",
+      "pending": "",
+      "references": [
+        "backend/domain_registry.py",
+        "backend/services/master_registry.py",
+        "backend/services/qc_inspection_service.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SO-01",
+      "domain": "SO",
+      "title": "Request custom melalui Pesanan Khusus",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Catatan customer tentang custom PO merujuk flow Pesanan Khusus/Special Order yang sudah ada.",
+      "intended_application": "Sales merekam keinginan customer, spesifikasi dan referensi pada OD; proses desain/R&D diselesaikan sebelum pemenuhan barang final. Tidak membuat modul paralel hanya karena istilah customer berbeda.",
+      "current_support": "OD, permintaan desain, spesifikasi dan sample tertaut tersedia.",
+      "pending": "",
+      "references": [
+        "backend/services/special_order_routing.py",
+        "frontend/src/features/sales/CreateSpecialOrderForm.jsx"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SO-02",
+      "domain": "SO",
+      "title": "Lebih dari satu produk dalam Special Order",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Satu Special Order dapat memuat beberapa produk.",
+      "intended_application": "Setiap baris mempunyai sumber produk/desain, spesifikasi, sample, keputusan dan pemenuhan yang dapat ditelusuri. Persetujuan sebuah baris tidak otomatis mengesahkan baris lainnya.",
+      "current_support": "Form yang diperiksa masih memakai satu custom_item; multi-produk merupakan target P06, bukan fitur yang sudah tervalidasi.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SO-03",
+      "domain": "SO",
+      "title": "Custom warna dari induk produk existing",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Special Order dapat memilih produk master sebagai induk lalu membuat warna yang belum tersedia.",
+      "intended_application": "Isi spesifikasi dasar dari induk, catat warna yang diminta dan hasil R&D baru. Produk existing tanpa perubahan dipesan sebagai barang biasa.",
+      "current_support": "Pemilihan template artikel sudah ada; hubungan induk, hasil akhir dan seluruh policy reuse belum terbukti lengkap.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SO-04",
+      "domain": "SO",
+      "title": "Pakai desain approved yang belum menjadi produk",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Motif yang sudah ACC belum tentu mempunyai master produk.",
+      "intended_application": "Pilih desain beserta versi ACC sebagai sumber OD, lalu lanjutkan proofing/spesifikasi untuk hasil kain baru. Tidak menduplikasi pekerjaan menggambar bila artwork dapat dipakai.",
+      "current_support": "Galeri dan versi desain tersedia. Pemilih sumber yang lengkap pada form OD masih perlu diselaraskan dengan alur existing.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SO-05",
+      "domain": "SO",
+      "title": "Perlakuan desain berstatus HOLD",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "HOLD yang dimaksud ada pada desain, bukan SO penjualan normal. Pelepas HOLD adalah PIC Designer.",
+      "intended_application": "Pesanan Khusus dapat merujuk desain existing; bila desain masih HOLD, PIC Designer melepasnya melalui flow desain/permission. Tidak membuat arti HOLD baru pada SO biasa.",
+      "current_support": "Desain mempunyai on_hold, histori, aksi hold/release-hold dengan izin rnd.hold. Selama HOLD, proofing/aktivasi dibatasi pada jalur yang diperiksa.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "SO-HOLD",
+      "latest_owner_reply": "HOLD pada DESIGN existing; siapa melepas adalah PIC Designer.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "SO-06",
+      "domain": "SO",
+      "title": "Empat skenario memakai sumber berbeda pada flow yang sama",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "File motif customer dikirim via email di luar ERP; ERP menyimpan upload/referensi desain. Desain baru memakai flow existing; modifikasi sumber lama diberi label redesign.",
+      "intended_application": "Skenario 1: file siap → pekerjaan designer/round → checklist paper → ACC desain internal. Skenario 2: brief → desain baru pada flow yang sama. Skenario 4: desain lama sebagai sumber → redesign dengan label dan relasi asal.",
+      "current_support": "Permintaan desain, versi/round, galeri dan ACC tersedia. Label redesign serta checklist paper adalah tambahan yang diminta; tidak ada permintaan mengintegrasikan pengiriman email.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "latest_owner_reply": "Skenario 2 sudah jelas. Skenario 4 sama dengan 2 tetapi redesign dari yang sudah ada; beri label redesign.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "SO-07",
+      "domain": "SO",
+      "title": "Label asal desain internal atau Special Order",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Daily diinterpretasikan sebagai kebutuhan internal; desain untuk Special Order perlu label/filter tersendiri.",
+      "intended_application": "Simpan asal pekerjaan dan hubungan ke OD/customer bila ada. Filter membedakan antrian internal dan custom; kelompok PIC yang sah tetap sama sesuai keputusan terbaru.",
+      "current_support": "Ada relasi permintaan desain ke OD; keseragaman label/filter pada seluruh layar belum dinyatakan selesai.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SO-08",
+      "domain": "SO",
+      "title": "Paper disetujui sebelum proofing kain",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Print paper adalah aktivitas pada round desain, dicentang designer. ACC PIC tetap ACC desain internal yang sudah ada.",
+      "intended_application": "Tampilkan checklist paper dan label pada round, serta penanda ACC Sales/customer di detail Pesanan Khusus untuk memperjelas posisi proses. Tidak menambahkan syarat bahwa PIC baru boleh ACC setelah customer ACC. ACC kain setelah proofing tetap syarat melanjutkan produksi.",
+      "current_support": "Design Studio dan OD sudah mempunyai ACC/keputusan masing-masing. Kode sebelumnya tidak membuktikan checklist paper dan indikator tambahan ini sudah tersedia.",
+      "pending": "",
+      "references": [
+        "backend/services/design_studio_service.py",
+        "backend/services/special_order_phase2.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "latest_owner_reply": "Tidak ada perubahan flow designer; mungkin tambahan checklist print paper dan label. Sales ACC di detail SO sebagai tambahan/reminder, yang diperlukan interfacenya.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "SO-09",
+      "domain": "SO",
+      "title": "Customer memutuskan, Sales mencatat",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Istilah Sales ACC/tidak ACC pada catatan berarti keputusan customer yang direkam melalui Sales.",
+      "intended_application": "Riwayat menyimpan pemberi keputusan customer, akun pencatat, bukti, waktu dan versi/round terkait. Keputusan PIC internal tidak disamakan dengan penerimaan customer.",
+      "current_support": "OD sudah menyimpan acc/revisi/tolak dan riwayat customer decision. Pembagian pencatat pada tahap paper masih terkait AK-07.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SO-10",
+      "domain": "SO",
+      "title": "Reproofing mengulang hasil dari artwork yang sama",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Revisi hasil proofing pada OD yang sama tetap menggunakan artwork yang sama; ganti motif membuat OD baru.",
+      "intended_application": "Jika customer meminta revisi, buat round sample baru dengan kaitan ke round sebelumnya dan tunggu ACC customer. Produksi mengikuti hasil yang disetujui.",
+      "current_support": "Aksi revisi sudah membuat sample baru. Aksi tolak pada kode membatalkan OD; user yang ingin mengulang harus memakai revisi, bukan tolak.",
+      "pending": "",
+      "references": [
+        "backend/services/special_order_phase2.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SO-11",
+      "domain": "SO",
+      "title": "Harga design yang dimaksud adalah harga kain",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Client memperjelas tidak sedang meminta biaya jasa desain tambahan pada customer.",
+      "intended_application": "Harga komersial dicatat sebagai harga kain custom per satuan yang benar. Skor kinerja desain tidak diperlakukan sebagai nominal uang atau biaya tambahan.",
+      "current_support": "Harga OD dan nilai/score desain merupakan hal berbeda di sistem.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SO-12",
+      "domain": "SO",
+      "title": "Harga custom mengikuti induk produk",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Harga Pesanan Khusus dari induk menggunakan harga Grade A; bila tidak ada induk, PIC Special Order menentukan harga.",
+      "intended_application": "Gunakan referensi harga Grade A induk pada penetapan harga custom. Untuk desain tanpa induk, beri aktivitas penetapan harga pada role PIC Special Order melalui access management.",
+      "current_support": "Pricing preview OD saat ini berbasis biaya sample dan margin; kesesuaian dengan arahan harga Grade A/PIC perlu diselaraskan. Arah bisnisnya sudah dijawab.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "SO-PRICE",
+      "latest_owner_reply": "Ingat Special Order: harga Grade A, jika tidak ada induk maka PIC Special Order.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "SL-01",
+      "domain": "SL",
+      "title": "Sales melihat ketersediaan gabungan entitas",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Sales perlu mengetahui total tersedia, reserved dan akan datang tanpa mengetahui pemilik barang.",
+      "intended_application": "Tampilkan agregat komersial yang konsisten. Stok fisik, stok sudah dialokasikan dan incoming dibedakan; incoming tidak dihitung lagi sebagai stok fisik tersedia.",
+      "current_support": "Agregasi komersial merupakan bagian P04. Akurasi semua metrik/frontend bukan hasil pengujian ulang dalam dokumen ini.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SL-02",
+      "domain": "SL",
+      "title": "Keep berarti SO belum diverifikasi",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Keep adalah barang dalam SO yang belum diverifikasi.",
+      "intended_application": "Sediakan daftar/detail jumlah dan pesanan terkait untuk Sales. Istilah ini tidak otomatis menetapkan masa kedaluwarsa atau membuat seluruh Keep menjadi reservasi keras.",
+      "current_support": "P04 mencakup Keep; aturan expiry otomatis tidak pernah disepakati dalam catatan.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SL-03",
+      "domain": "SL",
+      "title": "Pending ditampilkan per produk dan sumber pemenuhan",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pending menunggu backorder, restock PR/PO atau transaksi antar entitas.",
+      "intended_application": "Daftar dimulai dari produk, qty dan kebutuhan customer, kemudian menelusur ke SO serta sumber PR/PO/intercompany/makloon yang sesuai. Total satu produk tidak digandakan karena memiliki beberapa dokumen sumber.",
+      "current_support": "P04 memuat Pending dan penyajian per produk; kecocokan semua sumber pada data nyata belum dibuktikan ulang.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SL-04",
+      "domain": "SL",
+      "title": "Sales melihat warna; Admin Sales mengalokasikan detail",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pada POV Sales, varian yang ditampilkan adalah warna; LOT, grade dan asal tidak dibuka secara default.",
+      "intended_application": "Admin Sales memilih persediaan konkret sesuai authority. Kebijakan role AK-04 mengatur detail lain; larangan grade Sales pada AK-05 tetap berlaku.",
+      "current_support": "Ada view komersial dan alokasi terpisah; jalur detail/facet perlu diselaraskan dengan kebijakan role.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SL-05",
+      "domain": "SL",
+      "title": "Roll picker untuk Admin Sales",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pemenuhan/edit harus dapat memilih roll fisik secara jelas.",
+      "intended_application": "Picker memperlihatkan identitas roll, panjang/berat aktual, lokasi, status dan atribut yang diizinkan. Alokasi menunjuk roll yang sama sampai picking/dispatch atau substitusi tercatat.",
+      "current_support": "Roll picker merupakan scope P04; keberadaan helper tidak membuktikan semua jalur edit sudah benar.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SL-06",
+      "domain": "SL",
+      "title": "SO menampilkan satuan dan rincian roll",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Detail/list SO perlu menunjukkan qty beserta satuan, jumlah roll dan rincian tiap roll.",
+      "intended_application": "Tampilkan misalnya 10 roll/1.005 yard, lalu daftar kode roll dan qty aktual. Produk kg tetap kg untuk transaksi; angka panjang inspeksi tidak menggantikan qty stok kg.",
+      "current_support": "Fondasi roll dan qty ada; konsistensi semua tampilan dan export memerlukan validasi terpisah.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SL-07",
+      "domain": "SL",
+      "title": "Pemenuhan roll utuh tidak selalu sama dengan yard pesanan",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Genapkan atas/bawah dipilih pada checkout POS; customer dikonfirmasi dalam praktik. Admin Sales tetap menentukan roll, qty dan harga final.",
+      "intended_application": "Pertahankan pilihan existing. Admin Sales dapat mengganti isi SO/roll sehingga qty ikut berubah; tidak menambah fitur toleransi variance atau ACC customer otomatis. Dampak piutang ditelusuri pada penjelasan AR.",
+      "current_support": "Flow checkout dan perubahan alokasi tersedia. Jurnal piutang mengikuti dispatch; laporan umur piutang memiliki dasar SO sehingga dapat tampil lebih awal.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "latest_owner_reply": "Mekanisme existing benar. Tidak perlu tambahan toleransi; keputusan manual Admin Sales, termasuk harga final. Periksa kapan AR muncul.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "SL-08",
+      "domain": "SL",
+      "title": "Qty receiving mengikuti fisik per roll",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Penerimaan mengikuti qty fisik; PO direvisi dan invoice/pembayaran disesuaikan ketika PO ditutup.",
+      "intended_application": "Selama masih terbuka, tampilkan qty diterima dan sisa. Saat ditutup, finalisasi qty/nilai dan koreksi dokumen/tagihan sesuai proses existing. Seluruh hak tindakan mengikuti role/access management.",
+      "current_support": "Receiving aktual tersedia. Penutupan PO dan kesesuaian semua dokumen Finance masih perlu validasi implementasi; tidak ada pertanyaan nama approver tambahan.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "PO-VARIANCE",
+      "latest_owner_reply": "PO direvisi dan invoice/pembayaran disesuaikan ketika sudah ditutup. Semua wewenang di akses dan role management.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "SL-09",
+      "domain": "SL",
+      "title": "Harga dapat berbeda antar grade",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pemilik mengoreksi catatan awal: artikel yang sama dengan grade berbeda mempunyai harga berbeda.",
+      "intended_application": "Gunakan grade sebagai konteks aturan harga dan penilaian terkait. Turun grade tidak otomatis mengubah invoice lama atau refund customer sebesar selisih harga katalog.",
+      "current_support": "Aturan harga/grade ada pada beberapa flow; konsistensi lintas retur, valuation dan ledger belum dinyatakan tuntas.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SL-10",
+      "domain": "SL",
+      "title": "Rekomendasi grade berdasarkan kebutuhan customer",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Customer memiliki batas grade minimum: boleh diberi yang lebih tinggi, tidak boleh yang lebih rendah.",
+      "intended_application": "Pada manajemen customer, set batas grade. Jika A, B tidak boleh; jika B, A boleh. Urutan kualitas mengikuti master grade yang dikonfigurasi. Hak mengubahnya berasal dari role/access.",
+      "current_support": "Customer grade rule sudah memakai daftar allowed/preferred. Daftar [B] saat ini tidak otomatis menerima A; kebutuhan minimum-grade perlu diwakili dengan daftar yang diperluas atau UI konfigurasi yang sesuai.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "latest_owner_reply": "Management customer sudah ada; konfigurasi grade boleh naik, tidak boleh turun; authority bisa dikonfigurasi.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "SL-11",
+      "domain": "SL",
+      "title": "Tasik dan Tamim berada dalam entitas Kanda",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Outlet mempunyai admin/helper dan stok lokal; Sales dapat bergiliran. Finance terpisah per Kanda, Sukacita dan CST.",
+      "intended_application": "Modelkan outlet/lokasi di bawah badan usaha yang benar. Rolling Sales adalah assignment operasional, bukan pemindahan kepemilikan atau pencampuran buku antar badan usaha.",
+      "current_support": "Entitas dan lokasi merupakan dimensi berbeda di ERP. Mapping outlet, pengguna dan stok aktual masih perlu diisi sesuai data operasional.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SL-12",
+      "domain": "SL",
+      "title": "Satuan transaksi umum yard atau kg",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Client menyatakan penjualan/operasional umum memakai yard atau kg; meter dipakai dalam konteks MD dengan pabrik.",
+      "intended_application": "Batasi pilihan unit pada konteks yang tepat. Tetap pertahankan konversi dan histori meter bila dokumen supplier/MD memerlukannya; jangan menghapus meter dari seluruh sistem.",
+      "current_support": "Layanan konversi unit tersedia; penerapan pilihan unit kontekstual pada semua form belum dinyatakan lengkap.",
+      "pending": "",
+      "references": [
+        "backend/services/uom_service.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SM-01",
+      "domain": "SM",
+      "title": "Tiga jenis sampel",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Jenis komersial adalah hanger, catalogue dan standar/normal; cutting normal sama dengan standar.",
+      "intended_application": "Sales memilih jenis yang jelas. Jenis menentukan resep/batas dan flow kerja; istilah cutting sebagai aktivitas tidak menjadi jenis keempat.",
+      "current_support": "Flow sampel/pemotongan tersedia; tipe komersial lengkap merupakan scope P07.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SM-02",
+      "domain": "SM",
+      "title": "Batas sampel standar",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Standar woven maksimal 5 yard; knitting maksimal 2 kg. Ini batas maksimum, bukan kewajiban selalu sebanyak itu.",
+      "intended_application": "Validasi menurut lini dan unit. Qty lebih kecil sah; pembelian ecer berbayar tidak dibatasi memakai aturan sampel ini.",
+      "current_support": "Batas woven 5 yard dan knitting 2 kg terlihat pada kode sample sale.",
+      "pending": "",
+      "references": [
+        "backend/services/sample_sale_service.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SM-03",
+      "domain": "SM",
+      "title": "Batas hanger",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Jawaban pemilik menerima hanger woven 0,5 yard atau knitting 2 kg; angka 2,5 yard diabaikan.",
+      "intended_application": "Gunakan batas hanger sesuai jenis kain, tanpa mengonversi 2 kg menjadi panjang tetap. Jangan menerapkan angka 2,5 yard sebagai rumus.",
+      "current_support": "Kesepakatan bisnis ada; pemeriksaan kode sebelumnya belum membuktikan validasi per jenis hanger lengkap.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SM-04",
+      "domain": "SM",
+      "title": "Resep potong catalogue yang terbaru",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Catalogue memakai 1 yard setiap warna ditambah 2 yard dari satu warna soft; bukan 1 meter.",
+      "intended_application": "Pisahkan komponen per warna dan tambahan handfeel. Contoh empat warna memakai 6 yard bahan: 1 yard per warna dan tambahan 2 yard salah satunya.",
+      "current_support": "Request potong per produk/qty sudah ada. Resep catalogue multi-komponen belum dinyatakan selesai di P07.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SM-05",
+      "domain": "SM",
+      "title": "Operator mengganti warna tambahan catalogue",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pilihan awal warna soft boleh dibuat sistem lalu diubah petugas sampel.",
+      "intended_application": "Ubah hanya komponen tambahan 2 yard dan reservasinya; komponen dasar 1 yard pada warna awal tetap dipertahankan. Simpan roll/warna aktual yang dipotong.",
+      "current_support": "Belum ada bukti alur catalogue lengkap yang mendukung penggantian ini; konsep alokasi/pemotongan dapat dipakai kembali.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SM-06",
+      "domain": "SM",
+      "title": "Hasil produksi catalogue dan cakupan warna",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Catalogue menggunakan warna yang tersedia saat permintaan; artikel dengan 9 warna tetapi hanya 5 tersedia memakai 5 warna itu.",
+      "intended_application": "Ambil 1 yard masing-masing warna tersedia dan tambahan 2 yard warna soft. Tidak menambahkan modul hitung hasil produksi buku catalogue atau syarat jumlah batch/paket yang tidak diminta.",
+      "current_support": "Istilah batch/paket adalah pertanyaan saya tentang berapa buku dari bahan potong, bukan istilah wajib pada ERP. Pertanyaan itu tidak dijadikan penghambat kebutuhan sekarang.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "SAMPLE-CATALOGUE",
+      "latest_owner_reply": "Hanya barang tersedia: 9 warna, yang tersedia 5 maka hanya 5. Maksud batch/paket apa?",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "SM-07",
+      "domain": "SM",
+      "title": "Setelah cutting kembali ke Admin Cutting",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Potongan tidak langsung dikirim oleh gudang; diproses dahulu oleh Admin Cutting lalu dikirim.",
+      "intended_application": "Tampilkan serah-terima hasil potong, pekerjaan finishing/penyiapan dan pelepasan kirim. Identitas request dan bahan aktual tetap terhubung hingga pengiriman.",
+      "current_support": "Scope handoff ini tercantum P07; tracker belum menyatakan fase selesai.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SM-08",
+      "domain": "SM",
+      "title": "Ecer berbayar berbeda dari sampel",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Jual ecer memotong dari roll, berbayar dan boleh melebihi 5 yard/2 kg.",
+      "intended_application": "Gunakan penjualan biasa dengan pemenuhan potong yang tersedia. Catat pendapatan, qty terjual, roll asal dan sisa; jangan memasukkannya sebagai sample gratis atau menaikkan semua batas sample.",
+      "current_support": "SO reguler memiliki reservasi parsial dan konfirmasi cutting yang dapat dipakai sebagai fondasi; kecocokan UI ecer lengkap masih perlu uji.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "SM-09",
+      "domain": "SM",
+      "title": "Kemampuan sample per lokasi",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Lokasi dapat dikonfigurasi untuk jenis penjualan/sample yang boleh ditangani, dengan pemisahan entitas.",
+      "intended_application": "Konfigurasi menentukan hanger/catalogue/standar/ecer yang dilayani per lokasi. Asal persediaan, pemilik dan entitas dokumen tetap benar; tidak hardcode seluruh pekerjaan hanya pada satu gudang.",
+      "current_support": "Scope lokasi dan transaksi entitas sudah mempunyai fondasi; penerapan konfigurasi kemampuan per lokasi pada seluruh jalur sample belum dibuktikan lengkap.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "SAMPLE-LOCATIONS",
+      "latest_owner_reply": "Di mana bisa jual apa bisa dikonfigurasi, aware entitas agar tidak masalah di Finance.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "SM-10",
+      "domain": "SM",
+      "title": "Catalogue ketika warna tersebar antar lokasi",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Permintaan sample yang membutuhkan barang entitas lain memakai backorder seperti SO.",
+      "intended_application": "Buat kebutuhan tertunda dan pemenuhan antar entitas yang sah sebelum mengeluarkan bahan. Transfer fisik tanpa transaksi pemilik tidak menggantikan pembelian internal.",
+      "current_support": "Backorder/SO dan intercompany tersedia sebagai fondasi. Tidak mengklaim semua jenis sample sudah otomatis terhubung ke jalur tersebut.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "SAMPLE-LOCATIONS",
+      "latest_owner_reply": "Jika sample ada di entitas lain maka backorder sama seperti logic Sales Order.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "RT-01",
+      "domain": "RT",
+      "title": "Identitas unik setiap roll dan potongan",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "0001 hanyalah contoh; setiap unit kain fisik harus dapat dikenali secara unik sepanjang waktu.",
+      "intended_application": "Pisahkan identitas roll dari SKU, warna dan LOT. Retur dan perpindahan tetap menunjuk sumber fisik; satu identitas tidak dipakai untuk dua potongan berbeda.",
+      "current_support": "ERP mempunyai roll_no, parent/root dan provenance retur. Belum terbukti semua kombinasi retur menyimpan pemetaan satu-ke-satu ke fisik.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RT-02",
+      "domain": "RT",
+      "title": "Nomor potongan mengadopsi induk RTN",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pemilik meminta contoh RTN-0001 menghasilkan RTN-0001-1, -2 dan seterusnya untuk potongannya.",
+      "intended_application": "Berikan identitas sendiri pada tiap potongan dengan hubungan root/parent yang eksplisit. Nomor urut tetap unik, termasuk saat ada dua pemotongan bersamaan.",
+      "current_support": "Helper child roll sudah membuat suffix dan relasi parent/root; sistem retur juga membuat roll RTN baru. Kelengkapan root-sequence lintas pemotongan masih perlu verifikasi teknis.",
+      "pending": "",
+      "references": [
+        "backend/services/roll_service.py",
+        "backend/services/return_service.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RT-03",
+      "domain": "RT",
+      "title": "Qty dan grade dapat berubah saat retur",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Retur tidak harus mengubah artikel/warna; hasil fisik dapat mempunyai qty lebih kecil dan grade turun.",
+      "intended_application": "Ukur qty aktual, simpan hasil inspeksi dan riwayat grade. Status ex-retur/provenance tidak disamakan dengan grade; kain ex-retur bisa tetap Grade A.",
+      "current_support": "Restock retur membuat data roll dan quarantine/provenance; ketepatan tiap source roll perlu divalidasi per kasus.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RT-04",
+      "domain": "RT",
+      "title": "Retur tidak dikirim lagi ke customer asal",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Larangan melekat pada kain fisik yang diretur beserta turunannya, bukan seluruh artikel/warna.",
+      "intended_application": "Pada alokasi/substitusi/dispatch, telusuri asal fisik dan cegah pengiriman ke customer asal. Roll lain dari artikel yang sama tetap dapat memenuhi pesanan.",
+      "current_support": "Data provenance memberi fondasi. Enforcement lengkap seluruh jalur belum terbukti hanya dari adanya histori retur.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RT-05",
+      "domain": "RT",
+      "title": "Toggle pengecualian larangan retur",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Pemilik menyetujui aturan dapat dikonfigurasi dan ada toggle pengecualian.",
+      "intended_application": "Konfigurasi menjelaskan apakah larangan aktif, siapa memberi pengecualian dan keputusan apa yang direkam. Mengubah toggle bukan otomatis memberi semua user hak override.",
+      "current_support": "Arah konfigurasi disetujui; detail authority dan cakupan belum final.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "prior_pending_text": "Apakah toggle mematikan larangan global atau hanya mengizinkan pengecualian per transaksi? Role mana yang boleh mengubah/mengesahkannya dan apakah wajib alasan?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RT-06",
+      "domain": "RT",
+      "title": "Batas klaim customer 21 hari dari SJ",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Client menetapkan 21 hari dari SJ untuk sisi customer.",
+      "intended_application": "Kebijakan menggunakan tanggal SJ customer sebagai acuan dan menampilkan deadline. Deadline supplier dipantau terpisah.",
+      "current_support": "Layanan policy mempunyai jumlah hari/tanggal acuan, tetapi fallback tanggal dan default kode belum sama dengan bukti konfigurasi aktif 21 hari.",
+      "pending": "",
+      "references": [
+        "backend/services/return_policy_service.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RT-07",
+      "domain": "RT",
+      "title": "Tanggal awal batas supplier masih ambigu",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Untuk supplier, batas 21 hari dihitung dari tanggal diterima gudang dan deadline berlaku per receiving.",
+      "intended_application": "Gunakan tanggal receiving terkait, bukan tanggal PO atau satu tanggal terakhir untuk semua penerimaan. Klaim customer tetap dinilai terpisah.",
+      "current_support": "Policy supplier saat ini mengambil last_received_at pada PO dengan fallback lain; belum membuktikan deadline granular per receiving sudah tersedia.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "RETURN-DATES",
+      "latest_owner_reply": "Dari pabrik tanggal diterima di gudang, deadline per receiving.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "RT-08",
+      "domain": "RT",
+      "title": "Klaim customer tidak gugur karena supplier kedaluwarsa",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pada contoh customer masih dalam 21 hari tetapi perusahaan sudah melewati batas supplier, client menjawab diterima.",
+      "intended_application": "Evaluasi kelayakan customer terpisah dari kesempatan menagih supplier. Sistem memperlihatkan risiko perusahaan menanggung klaim, bukan langsung menolak customer.",
+      "current_support": "Policy memiliki opsi mengaitkan window supplier dengan batas customer; konfigurasi/hasil efektif perlu diselaraskan, bukan diasumsikan sudah benar.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RT-09",
+      "domain": "RT",
+      "title": "Hangtag hilang atau barang sudah cutting",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Client menyebut kebanyakan ditolak, atau dapat berakhir cutloss/discount.",
+      "intended_application": "Catat kondisi fisik/tag dan bukti klaim; tampilkan pilihan keputusan sesuai authority. Pernyataan ini belum cukup untuk menolak otomatis setiap kasus.",
+      "current_support": "Retur mendukung catatan dan approval, tetapi matriks pengecualian belum disahkan.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "RETURN-AUTHORITY",
+      "prior_pending_text": "Kasus mana yang ditolak mutlak, boleh cutloss atau discount? Siapa boleh memberi pengecualian dan bukti apa yang wajib?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RT-10",
+      "domain": "RT",
+      "title": "Approval regional via WA adalah keadaan saat ini",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Sales saat ini mengajukan ke Lydia/Stefan di Jakarta atau Calvin di Bandung, lalu Finance menerima informasi.",
+      "intended_application": "Rekam pemberi persetujuan, bukti dan akun pencatat bila approval tetap di luar ERP. Jika approver memakai ERP, kelola sebagai role; nama staf tidak ditanam dalam program.",
+      "current_support": "Client mengonfirmasi proses sekarang via WA; belum menetapkan proses target wajib tetap offline.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "RETURN-AUTHORITY",
+      "prior_pending_text": "Ke depan tetap WA dengan pencatatan Finance, atau approver masuk ERP? Siapa boleh mencatat bukti, dan siapa memberi ACC komersial final?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RT-11",
+      "domain": "RT",
+      "title": "ACC teknis berbeda dari penyelesaian komersial",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Catatan awal menugaskan MD Quality menilai kelayakan; client kemudian menyebut pimpinan regional dan Finance.",
+      "intended_application": "MD Quality/QC menilai barang dan bukti. Penyelesaian tukar, refund, saldo, discount/cutloss menunjuk pemberi wewenang komersial yang jelas.",
+      "current_support": "Ada approval retur dan QC; urutan authority lintas peran belum disepakati lengkap.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "RETURN-AUTHORITY",
+      "prior_pending_text": "Apakah ACC pimpinan menggantikan atau mengikuti penilaian MD Quality? Finance menyetujui keputusan atau hanya mengeksekusi pembayaran?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RT-12",
+      "domain": "RT",
+      "title": "Cutloss mengembalikan bagian kain yang dipotong",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Client menjelaskan bagian cacat yang dipotong kembali ke perusahaan dan nilainya dibayarkan sebagai kerugian.",
+      "intended_application": "Pisahkan qty bagian kembali, kompensasi customer dan disposition hasil retur. Jangan otomatis menganggap seluruh roll atau seluruh invoice direfund.",
+      "current_support": "Fondasi retur parsial/penyelesaian ada; dasar nilai dan jurnal final tetap masuk RT-19.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RT-13",
+      "domain": "RT",
+      "title": "Discount dapat tanpa barang kembali",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Barang cacat tetapi masih dipakai customer dapat diberi discount dan tetap berada di customer.",
+      "intended_application": "Buat penyelesaian nilai yang merujuk transaksi asli tanpa menambah stok gudang seolah ada retur fisik. Status komplain dan nilai koreksi dapat ditelusuri.",
+      "current_support": "Kemampuan negosiasi/penyelesaian perlu dipetakan ke pilihan dokumen existing; catatan ini belum membuktikan semua posting benar.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RT-14",
+      "domain": "RT",
+      "title": "Tukar tetap artikel yang sama",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Client menyatakan tukar barang tidak boleh mengganti artikel.",
+      "intended_application": "Pengganti menunjuk artikel yang sama dengan sumber fisik lain yang layak. Perubahan warna dan grade tidak boleh ditentukan dari aturan artikel saja.",
+      "current_support": "Retur/penggantian tersedia; pembatas artikel perlu diperiksa pada seluruh jalur pembuatan pengganti.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RT-15",
+      "domain": "RT",
+      "title": "Warna dan grade pengganti belum final",
+      "clarity": "K",
+      "clarity_label": "Butuh penjelasan/keputusan",
+      "statement": "Warna masih akan dipastikan client; jawaban grade menyebut tidak ganti grade tetapi juga contoh A1 diganti A.",
+      "intended_application": "Tahan aturan substitusi sampai pilihan final jelas. Lebih bagus dalam Grade A dapat berarti hasil inspect roll, bukan perubahan grade formal.",
+      "current_support": "Contoh percakapan tidak cukup mengesahkan upgrade A1 ke A. Kalimat Grade B tidak dikirim dalam konteks tukar juga belum berarti seluruh penjualan B dilarang.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "RETURN-EXCHANGE",
+      "prior_pending_text": "Apakah tukar wajib warna sama? Apakah A1→A boleh? Grade B dilarang untuk pengganti saja atau seluruh penjualan; siapa menyetujui pengecualian?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RT-16",
+      "domain": "RT",
+      "title": "Refund atau saldo customer",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Pemilik menjelaskan sistem mempunyai saldo/kredit yang dapat dipakai order berikutnya.",
+      "intended_application": "Keputusan pengembalian uang, pembentukan saldo dan penggunaan saldo perlu mempunyai authority terpisah serta referensi klaim yang sama.",
+      "current_support": "Store credit dan permission redemption ada. Client tidak menjawab pertanyaan siapa yang boleh menggunakannya.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "RETURN-FINANCE",
+      "prior_pending_text": "Pemilihan refund/saldo dan pemakaian saldo pada SO boleh dilakukan Sales, hanya Finance, atau Sales mengajukan lalu Finance menyetujui?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RT-17",
+      "domain": "RT",
+      "title": "Tujuan kain setelah QC",
+      "clarity": "K",
+      "clarity_label": "Butuh penjelasan/keputusan",
+      "statement": "Pilihan awal adalah retur pabrik, kembali ke gudang, turun grade, atau kembali ke entitas pemilik pertama.",
+      "intended_application": "Pisahkan keputusan grade, lokasi fisik dan kepemilikan. Masing-masing menghasilkan dokumen berbeda; perubahan gudang tidak otomatis membalik transaksi antar entitas.",
+      "current_support": "Inspection, supplier return dan intercompany return mempunyai fondasi, tetapi SOP penentu tujuan belum dijawab.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "RETURN-DISPOSITION",
+      "prior_pending_text": "Siapa menentukan tujuan setelah QC? Kembali ke entitas pertama berarti retur kepemilikan/tagihan antar PT atau hanya fisik ditaruh di gudangnya?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RT-18",
+      "domain": "RT",
+      "title": "BS dibuang dengan pencatatan fisik",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Client mengakui BS dan menyebut sisa pabrik BS dibuang.",
+      "intended_application": "Bedakan hasil inspeksi BS dari tindakan disposal yang benar-benar dilakukan. Catat qty, roll, waktu dan pelaksana agar stok tidak hilang hanya karena mengganti label grade.",
+      "current_support": "Mekanisme adjustment/write-off ada dalam ERP; policy approval dan penilaian kerugian tetap terkait Finance, bukan otomatis bernilai nol.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RT-19",
+      "domain": "RT",
+      "title": "Nilai retur, turun grade dan kerugian",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Pemilik meminta dampak Finance jelas karena harga per grade berbeda dan barang retur dapat turun grade.",
+      "intended_application": "Pisahkan nilai kompensasi customer, nilai persediaan setelah inspeksi, klaim supplier/intercompany dan pembayaran aktual. Penurunan harga jual tidak otomatis menjadi jurnal sebesar selisihnya.",
+      "current_support": "Modul Finance tersedia, tetapi catatan belum menetapkan policy nilai/jurnal untuk semua skenario ini.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "RETURN-FINANCE",
+      "prior_pending_text": "Finance perlu mengesahkan basis refund/cutloss/discount, penilaian kembali/disposal, pajak/koreksi dokumen dan tanggungan selisih antar entitas.",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "QC-01",
+      "domain": "QC",
+      "title": "MD Quality berbeda dari QC cacat/grade",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "MD Quality menilai kesesuaian hasil terhadap acuan; QC memeriksa cacat/grade pada retur, random check dan kebutuhan lain.",
+      "intended_application": "Pisahkan jenis pemeriksaan, pelaksana dan hasil. Hasil handfeel/warna tidak otomatis menggantikan data cacat/grade, begitu pula sebaliknya.",
+      "current_support": "Pemisahan termasuk P05 dan jalur MD Quality tersedia; pembagian wewenang penanganan pengecualian tetap terkait QC-05.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "QC-02",
+      "domain": "QC",
+      "title": "Potongan MD Quality 0,25 yard selebar kain",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Client memperjelas 1/4 yard berarti panjang 0,25 yard selebar kain, termasuk barang yang dijual kg.",
+      "intended_application": "Catat panjang potongan dan sumber roll. Untuk menentukan ukuran fisik pemotongan tidak diperlukan GSM; panjang dan berat adalah pengukuran berbeda.",
+      "current_support": "Cut/roll dan unit dapat dicatat, tetapi ini belum membuktikan konsumsi kg untuk seluruh potongan sudah diselesaikan.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "QC-03",
+      "domain": "QC",
+      "title": "Frekuensi dan pemakaian potongan MD Quality",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Sampling MD Quality dilakukan pada barang supplier/makloon baru datang; potongan untuk pengujian internal, tidak dikirim ke pihak lain, menjadi pemakaian/waste jika habis.",
+      "intended_application": "Receiving diukur sebelum potong. Catat sumber roll dan konsumsi pengujian terpisah; ini bukan form QC inspect cacat.",
+      "current_support": "PO receipt/makloon output dipisahkan sebagai MD Quality di kode. Frekuensi per LOT/per warna/per roll belum dinyatakan ulang secara tegas.",
+      "pending": "Tujuan potongan sudah jelas. Titik sampling per LOT/warna/roll tetap dicatat belum final; tidak dimintakan jawaban lagi sebelum konteksnya dijelaskan.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "MDQ-SAMPLING",
+      "latest_owner_reply": "MD Quality ketika PO supplier/makloon datang; tidak dikirim ke pihak lain dan habis/waste sesudah pengujian.",
+      "discussion_state": "partly_resolved_deferred_detail"
+    },
+    {
+      "id": "QC-04",
+      "domain": "QC",
+      "title": "Receiving diukur sebelum potongan MD Quality",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pemilik menegaskan qty penerimaan dicatat sebelum pemotongan.",
+      "intended_application": "Receiving mencerminkan fisik datang dan dibandingkan SJ; potongan berikutnya menjadi pemakaian/pengeluaran tersendiri. Selisih karena sampling tidak dicatat sebagai supplier mengirim kurang.",
+      "current_support": "Receiving, MD Quality dan pemakaian perlu terhubung; konsolidasi ini bukan uji posting aktual.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "QC-05",
+      "domain": "QC",
+      "title": "Master pembanding dan keputusan tidak sesuai",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "MD Quality memiliki dua indikator, warna/labdip dan handfeel, masing-masing sesuai/tidak sesuai. Manusia memutuskan terima atau retur.",
+      "intended_application": "Gunakan dua input penilaian yang jelas dan catat keputusan akhir. Diskusi owner dilakukan di praktik di luar ERP; tidak menambah workflow persetujuan owner. Penolakan yang perlu mengeluarkan barang dilanjutkan dengan dokumen retur existing.",
+      "current_support": "Pemisahan MD Quality tersedia, dengan hasil warna/handfeel dan keputusan hold/release/reject. Pilihan existing lebih rinci dari biner; reject pemeriksaan tidak otomatis berarti supplier return sudah terkirim.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "MDQ-MASTER",
+      "latest_owner_reply": "Keputusan full human. Dua indikator MD Quality: warna/labdip dan handfeel; bahas owner di praktik, ERP input keputusan terima/retur saja.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "QC-06",
+      "domain": "QC",
+      "title": "Panjang inspect selalu yard",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Satu baris inspect mewakili satu roll; QTY mesin dan interval selalu yard walau unit master/stok kg.",
+      "intended_application": "Simpan panjang inspect, berat aktual dan unit stok sebagai data berbeda yang menunjuk roll sama. Hasil grade ditujukan untuk roll itu.",
+      "current_support": "Konfirmasi ini menjadi acuan pemetaan form; bukan izin mengganti angka kg dengan angka yard.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "QC-07",
+      "domain": "QC",
+      "title": "Pemakaian kg akibat pemotongan panjang",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Sampling/cutting harus mengurangi stok dalam unit yang benar, termasuk panjang yard pada produk knitting kg.",
+      "intended_application": "Gunakan aturan konversi produk/unit yang sah dan simpan qty potong serta qty pengurangan stok. Tidak menganggap 0,25 yard = 0,25 kg; bila faktor tidak tersedia, tampilkan kekurangan data daripada mengarang angka.",
+      "current_support": "UOM mempunyai konversi tetap, per produk, rule global dan GSM/lebar. Ketersediaan aturan tidak membuktikan setiap produk kg sudah memiliki faktor yard↔kg yang valid.",
+      "pending": "",
+      "references": [
+        "backend/services/uom_service.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "MDQ-SAMPLING",
+      "latest_owner_reply": "Regardless knitting/satuan, yang penting qty berkurang terkonversi benar.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "QC-08",
+      "domain": "QC",
+      "title": "QC sebelum kirim sesuai kebutuhan",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Tidak semua kiriman melewati QC; Sales dapat meminta dan sebagian customer wajib QC dahulu.",
+      "intended_application": "Kaitkan kebutuhan QC dengan SO/customer dan roll yang benar-benar dialokasikan. Jika roll diganti, status pemeriksaan roll lama tidak otomatis berlaku untuk penggantinya.",
+      "current_support": "Random check sudah ada tetapi memilih stok available tertentu; keberadaannya belum membuktikan gate QC untuk roll SO/reserved lengkap.",
+      "pending": "",
+      "references": [
+        "backend/services/inspection_service.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "QC-09",
+      "domain": "QC",
+      "title": "Daftar customer dan standar QC sebelum kirim",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Kewajiban QC dapat berbeda menurut customer.",
+      "intended_application": "Konfigurasi customer wajib QC dan hasil minimum yang diterima; permintaan manual Sales tetap dimungkinkan sesuai authority.",
+      "current_support": "Kebutuhan bisnis sudah jelas, tetapi data customer dan kriteria kelulusan belum diberikan.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "prior_pending_text": "Customer mana wajib QC? Pemeriksaan full roll atau sampling, dan hasil apa yang cukup untuk melepas kiriman? Siapa boleh menerima pengecualian?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "QC-10",
+      "domain": "QC",
+      "title": "Pemetaan kolom form inspect",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Client meminta UI/input menyerupai form fisik; satu roll dan yard sudah dikonfirmasi.",
+      "intended_application": "Tautkan No ke identitas roll, warna ke acuan yang benar, lalu simpan panjang, interval, temuan, grade, perbaikan dan keterangan sebagai data terstruktur.",
+      "current_support": "Peta per kolom sudah dibuat; arti Customer, caption Knitting/Woven, Periode dan sumber warna belum final.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "QC-FORM",
+      "prior_pending_text": "Pada foto, Customer berisi pelanggan atau artikel? Caption Knitting/Woven berisi jenis atau nama artikel? Periode tanggal inspect atau periode laporan; warna internal atau supplier?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "QC-11",
+      "domain": "QC",
+      "title": "Kode cacat, interval dan rumus skor",
+      "clarity": "K",
+      "clarity_label": "Butuh penjelasan/keputusan",
+      "statement": "Foto mempunyai interval 15 yard, kode cacat dan angka hasil; rumus belum dijelaskan.",
+      "intended_application": "Gunakan kamus cacat dan rumus yang disahkan, simpan data mentah serta metode. Interval harus dapat melanjutkan panjang di atas 120 yard; jangan menebak angka merah sebagai jumlah poin atau skor luas.",
+      "current_support": "Kode saat ini menjumlah poin×jumlah temuan; itu belum membuktikan sama dengan perhitungan form client.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [
+        "backend/services/qc_inspection_service.py"
+      ],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "QC-FORM",
+      "prior_pending_text": "Jelaskan satu roll contoh lengkap: arti kode/angka per sel, cara memperoleh angka merah, formula, lebar/unit bila dipakai, dan daftar kode tambahan tulisan tangan.",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "QC-12",
+      "domain": "QC",
+      "title": "Ambang grade dan riwayat grade lama",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Grade dan aturan penilaiannya dapat dikonfigurasi, bukan ditetapkan sebagai daftar/ambang baru oleh pembahasan ini.",
+      "intended_application": "Gunakan konfigurasi grade aktif, ranking dan ambang; tetap simpan histori. Rumus inspect foto yang belum dijelaskan tetap terpisah pada QC-11.",
+      "current_support": "Backend membaca qc.grade_thresholds, tetapi registry grade dan beberapa pilihan UI masih tetap. Konfigurasi ambang tidak dengan sendirinya menyediakan CRUD grade lengkap.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "QC-GRADE",
+      "latest_owner_reply": "Ini bisa dikonfigurasikan.",
+      "discussion_state": "resolved_direction"
+    },
+    {
+      "id": "WM-01",
+      "domain": "WM",
+      "title": "Hierarki fisik mempunyai lemari dan rak terpisah",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Lokasi > Gudang > Zona > Lemari > Rak; lemari adalah unit fisik tersendiri yang berisi rak.",
+      "intended_application": "Setiap roll/penempatan menunjuk alamat paling rinci yang benar. Istilah bin/cabinet/rack dapat berbeda selama relasi dan maksud fisiknya sama.",
+      "current_support": "P02 mengerjakan alamat dan kabinet. Perbedaan label saja bukan alasan membuat struktur duplikat.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "WM-02",
+      "domain": "WM",
+      "title": "Stok dapat ditelusuri pada semua tingkat alamat",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "WMS perlu melihat qty per lokasi, gudang, zona, lemari dan rak.",
+      "intended_application": "Dashboard mengagregasikan stok tanpa menggandakan roll; pisahkan unit, status, pemilik dan stok dalam transit/hold sesuai konteks.",
+      "current_support": "Struktur alamat dan agregasi tersedia sebagai fondasi; dashboard lengkap termasuk P08 yang belum dinyatakan selesai.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "WM-03",
+      "domain": "WM",
+      "title": "Putaway tetap dapat diakses",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pemilik melaporkan fitur putaway tidak terlihat/hilang pada UI.",
+      "intended_application": "Pastikan akses menu dan tugas menaruh barang dari staging/receiving ke alamat simpan dalam gudang yang sama tersedia sesuai role, dengan scan/konfirmasi.",
+      "current_support": "P02 mencakup pemulihan putaway. Observasi menu hilang tidak berarti seluruh service putaway sebelumnya tidak ada.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "WM-04",
+      "domain": "WM",
+      "title": "Putaway berbeda dari transfer antar gudang",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Putaway/perpindahan internal tetap di gudang sama; transfer melibatkan gudang berbeda.",
+      "intended_application": "Transfer mempunyai keluar, in-transit dan penerimaan tujuan; putaway menunjuk perpindahan alamat internal. Pemilihan istilah dapat mengikuti ERP asal maknanya konsisten.",
+      "current_support": "Kedua jalur mempunyai fondasi existing/P02–P03; tidak perlu menyatukannya sebagai satu status sederhana.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "WM-05",
+      "domain": "WM",
+      "title": "Bandung ke Jakarta dahulu, kemudian customer",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Barang untuk customer Jakarta bisa berasal dari gudang Bandung dan diterima di Jakarta sebelum dikirim.",
+      "intended_application": "Tautkan transfer ke kebutuhan SO, pertahankan komitmen roll/qty, terima aktual di Jakarta, lalu picking/dispatch customer dari Jakarta.",
+      "current_support": "P03 mencakup transfer untuk SO. Jangan menggandakan fulfillment atau menganggap customer sudah menerima pada transfer pertama.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "WM-06",
+      "domain": "WM",
+      "title": "Gudang shared, dedicated dan transit",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Gudang dapat multi-entitas, khusus satu entitas atau transit; dapat dibatasi jenis barang seperti woven-only.",
+      "intended_application": "Aturan lokasi diterapkan saat penerimaan, putaway dan transfer. Barang di gedung shared tetap mempunyai pemilik yang jelas, tidak menjadi milik gudang.",
+      "current_support": "Rules WMS dan pemeriksaan tujuan termasuk P02/P03; parameter data aktual belum semuanya diberikan.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "WM-07",
+      "domain": "WM",
+      "title": "Aturan lemari/rak dan parameter pembatas",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Lemari dan rak membawa atribut referensi penyimpanan produk.",
+      "intended_application": "Gunakan kategori/owner/tahap yang relevan dan jelaskan konflik aturan induk-anak. Parameter kapasitas atau pengecualian hanya diisi bila bisnis memerlukannya.",
+      "current_support": "Rule-based placement termasuk P02; batas fisik dan hard/soft rule belum seluruhnya disepakati.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "prior_pending_text": "Berikan matriks gudang/zona/lemari/rak: barang/entitas yang diizinkan, aturan wajib vs peringatan, serta siapa boleh menerima pengecualian.",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "WM-08",
+      "domain": "WM",
+      "title": "Perubahan struktur menjaga barang dan tugas aktif",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Plan WMS memasukkan integritas alamat saat struktur diedit/dihapus.",
+      "intended_application": "Alamat yang berisi stok/tugas tidak hilang tanpa penyelesaian referensi. Pemindahan atau nonaktif mengikuti proses yang tercatat.",
+      "current_support": "Tercantum sebagai IMP-25 pada plan; ini pengamanan implementasi, bukan keputusan untuk menghapus histori.",
+      "pending": "",
+      "references": [],
+      "origin": "Rancangan teknis dalam plan yang sudah dibahas",
+      "question_group": ""
+    },
+    {
+      "id": "WM-09",
+      "domain": "WM",
+      "title": "Visibilitas admin gudang per lokasi",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Admin Bandung tidak perlu melihat aktivitas Jakarta walaupun entitas sama.",
+      "intended_application": "Scope berlaku pada daftar, detail, tugas dan notifikasi yang terkait gudang. Akses lintas lokasi diberikan melalui assignment/authority yang sah.",
+      "current_support": "P01 memuat scope lokasi; evidence mencatat notifikasi belum seluruhnya berpagar lokasi.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "WM-10",
+      "domain": "WM",
+      "title": "OCR membaca qty setiap roll",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "SJ memuat jumlah roll dan panjang/qty per roll; OCR perlu membantu mengambil keduanya.",
+      "intended_application": "Hasil ekstraksi menjadi kandidat penerimaan per roll yang ditinjau petugas. Total diverifikasi terhadap baris; jangan membagi total menjadi rata-rata yang menghilangkan variasi panjang.",
+      "current_support": "P03 memuat OCR/receiving; kualitas pada berbagai format SJ client tetap memerlukan contoh nyata dan pengujian.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "WM-11",
+      "domain": "WM",
+      "title": "LOT pabrik dan LOT internal mempunyai jejak",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Pemilik meminta sumber LOT, tempat input dan aturan perubahan dijelaskan; istilah C/H tidak boleh diasumsikan.",
+      "intended_application": "Bedakan identitas LOT supplier dan label/LOT internal. Pemetaan mempertahankan penerimaan, supplier dan riwayat, sehingga rename tidak memutus provenance.",
+      "current_support": "LOT ada dalam produk/roll/receiving; aturan relabel 123→A pada catatan lama belum menjadi SOP final.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "LOT",
+      "prior_pending_text": "Apakah alias LOT internal ditetapkan per penerimaan, per supplier, atau per artikel-warna? Siapa boleh mengubah setelah stok dipakai; C/H dibiarkan belum terdefinisi.",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "WM-12",
+      "domain": "WM",
+      "title": "Semua barang ditag, termasuk transit",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Tidak ada barang tanpa tag: pembelian untuk stok disimpan, pembelian untuk SO dapat langsung melalui gudang transit.",
+      "intended_application": "Receiving dan tagging tetap dilakukan pada kedua jalur. Stok reguler menjalani putaway; barang SO yang siap dikirim tidak dipaksa masuk-rak lalu dikeluarkan lagi bila SOP transit mengizinkan.",
+      "current_support": "Tagging/transit/fulfillment mempunyai fondasi; kesiapan end-to-end dengan perangkat nyata belum divalidasi.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "WM-13",
+      "domain": "WM",
+      "title": "Satu SO beberapa gudang dan SJ untuk driver",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "SO bisa berisi woven/knitting/printing dari gudang berbeda; driver perlu dokumen tanpa kembali ke kantor lain.",
+      "intended_application": "Picking/packing dibagi berdasarkan gudang asal dan barang aktual; SJ dihasilkan/diakses pada titik pelepasan sesuai kewenangan. Dokumen internal tidak harus semuanya diserahkan ke customer.",
+      "current_support": "ERP mempunyai picking dan dokumen fulfillment. Satu SJ gabungan versus beberapa SJ per gudang belum diputuskan sebagai SOP.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "DISPATCH",
+      "prior_pending_text": "Barang disatukan dahulu atau driver mengambil beberapa gudang? Gunakan SJ per gudang/pengiriman atau konsolidasi; siapa cetak dan kapan driver menerima dokumen?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "WM-14",
+      "domain": "WM",
+      "title": "Transfer parsial, selisih dan pembatalan",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Plan memasukkan penerimaan transfer aktual dan selisih, tidak hanya menyalin qty terkirim.",
+      "intended_application": "Catat roll yang benar-benar diterima, sisa in-transit, variance dan tindak lanjut. Pembatalan sesudah barang keluar memerlukan penyelesaian fisik yang tepat.",
+      "current_support": "P03 mencakup partial receipt/variance; SOP penanggung jawab dan penutupan kasus belum lengkap.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Pertanyaan WMS dan rincian plan",
+      "question_group": "TRANSFER",
+      "prior_pending_text": "Siapa menyetujui selisih/hilang/rusak dan kapan transfer ditutup? Bagaimana barang sudah keluar jika permintaan dibatalkan?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "WM-15",
+      "domain": "WM",
+      "title": "Stock opname memiliki aturan pelaksanaan",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Pemilik meminta mekanisme opname diperiksa; plan mencakup identitas, qty dan alamat.",
+      "intended_application": "Bandingkan hasil hitung/scan fisik dengan snapshot, perlihatkan perbedaan dan sahkan adjustment. RFID terbaca tidak otomatis membuktikan panjang/berat roll benar.",
+      "current_support": "Opname menjadi scope P08; kebijakan freeze, blind count dan approval belum dipilih.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "OPNAME",
+      "prior_pending_text": "Perlu freeze atau transaksi tetap berjalan dengan cutoff? Siapa count/recount/approve, toleransi apa dan bagaimana selisih qty/tag/alamat diselesaikan?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "WM-16",
+      "domain": "WM",
+      "title": "Reprint label tidak menggandakan identitas fisik",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Tag/label mendukung identitas roll yang unik dan dapat ditelusuri.",
+      "intended_application": "Reprint/retag menunjuk roll yang sama dan menonaktifkan kaitan tag lama bila memang diganti. Pencetakan tidak boleh menciptakan stok/roll baru secara tidak sengaja.",
+      "current_support": "Merupakan prinsip integrasi pada dokumentasi RFID; perlu uji dengan printer/tag nyata.",
+      "pending": "",
+      "references": [],
+      "origin": "Turunan teknis identitas unik dan dokumentasi middleware",
+      "question_group": ""
+    },
+    {
+      "id": "IC-01",
+      "domain": "IC",
+      "title": "Pemenuhan SO melalui pembelian antar entitas",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Entitas A dapat membeli barang entitas B untuk memenuhi SO A.",
+      "intended_application": "Barang dapat dilihat Sales sebagai ketersediaan gabungan, tetapi dokumen pembelian/penjualan internal dan perubahan pemilik tetap jelas. Transfer fisik antar gudang tidak selalu sama dengan perubahan pemilik.",
+      "current_support": "Intercompany dan warehouse transfer mempunyai jalur tersendiri; seluruh kombinasi fisik/ownership tidak dinyatakan lulus UAT pada register ini.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "IC-02",
+      "domain": "IC",
+      "title": "Workspace MD tidak mengaburkan entitas dokumen",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "MD menangani kategori tertentu dan perlu melakukan pembelian tanpa sulit berpindah entitas berulang kali.",
+      "intended_application": "Antrian dapat menggabungkan kebutuhan yang diizinkan; saat membuat PO atau order makloon, entitas pembeli, supplier, lokasi tujuan dan authority harus eksplisit.",
+      "current_support": "Konteks entitas dan role ada. Bentuk kerja lintas entitas serta delegation yang diinginkan belum sepenuhnya disepakati.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "",
+      "prior_pending_text": "MD boleh membuat PO untuk entitas mana saja dalam satu workspace, atau hanya mengajukan ke admin entitas? Siapa approver dan apakah satu PO boleh lintas lokasi dalam entitas yang sama?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "IC-03",
+      "domain": "IC",
+      "title": "Barang/kepemilikan diproses sebelum pembayaran",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Client menyebut transfer entitas terlebih dahulu lalu membayar pada akhir bulan.",
+      "intended_application": "Proses perpindahan/fulfillment sesuai dokumen; saldo antar PT tetap tercatat sampai dibayar. Tidak perlu memaksa seluruh transaksi tunai sebelum barang bergerak.",
+      "current_support": "Piutang/utang intercompany dan pembayaran tertunda didukung sebagai fondasi.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "IC-04",
+      "domain": "IC",
+      "title": "Pembayaran penuh per transaksi tanpa netting",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pemilik memilih pelunasan penuh per transaksi dan tidak melakukan netting agar pencatatan sederhana.",
+      "intended_application": "Pembayaran dialokasikan ke transaksi yang diselesaikan dengan jejak yang jelas. Pilihan ini untuk settlement normal antar entitas, bukan izin menghapus dokumen reversal/retur yang diperlukan.",
+      "current_support": "ERP memiliki mekanisme settlement, termasuk alternatif netting; keberadaannya tidak berarti alternatif itu disetujui untuk workflow ini.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "IC-05",
+      "domain": "IC",
+      "title": "Cutoff pembayaran antar entitas",
+      "clarity": "K",
+      "clarity_label": "Butuh penjelasan/keputusan",
+      "statement": "Pemilik menyatakan harus ada cutoff, detail belum diberikan.",
+      "intended_application": "Periode yang masuk pelunasan dan due date memakai kalender/aturan yang disahkan; jangan menebak semua transaksi bulan berjalan selalu dibayar tanggal terakhir.",
+      "current_support": "Konsep pembayaran tertunda tersedia; aturan kalender bisnis masih menunggu.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "INTERCO-CUTOFF",
+      "prior_pending_text": "Tanggal cutoff berapa, transaksi sampai tanggal mana masuk siklus itu, tanggal bayar kapan, dan bagaimana hari libur atau transaksi setelah cutoff?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RP-01",
+      "domain": "RP",
+      "title": "Meja User membuka detail proses terkait",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Setiap list data pada Meja User dapat diklik untuk melihat detail yang berkaitan dengan langkah pekerjaan.",
+      "intended_application": "Navigasi membawa user ke objek sumber dan tindakan yang boleh dikerjakan. Status/qty pada ringkasan konsisten dengan detail serta scope akses.",
+      "current_support": "IMP-01/P08 memasukkan queue drilldown; belum dinyatakan selesai pada tracker.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RP-02",
+      "domain": "RP",
+      "title": "Satu menu export dengan pilihan dataset",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Client meminta menu khusus untuk menarik data berbagai domain, termasuk Sales dan Desain.",
+      "intended_application": "Sediakan dataset bisnis yang dipahami user dan hubungan yang sah. Semua data berarti cakupan bisnis sesuai hak akses, bukan membuka seluruh collection teknis mentah.",
+      "current_support": "Ada export per modul. Rancangan export terpadu dan perbandingan enterprise sudah didokumentasikan; bukan fitur yang sudah selesai.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RP-03",
+      "domain": "RP",
+      "title": "Filter, kolom pilihan, preview dan AND/OR",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Export perlu periode, user terkait, kolom bebas dipilih, preview dan kelompok kondisi AND/OR.",
+      "intended_application": "Builder menampilkan field yang diizinkan, filter sesuai tipe data dan preview hasil dengan pengaturan yang sama seperti file. Simpan template bila rancangan tersebut disetujui pada pembahasan lanjut.",
+      "current_support": "Kebutuhan utama jelas. Detail UX/template dan implementasi belum disahkan hanya dari riset.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RP-04",
+      "domain": "RP",
+      "title": "Join data dengan granularitas yang benar",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Client ingin menggabungkan data seperti desain, designer, OD dan penjualan.",
+      "intended_application": "Hubungan terkontrol dan definisi satu baris mencegah nilai SO berulang karena banyak item, versi atau pengiriman. User tidak perlu menulis nama collection/join bebas yang tidak dipahami.",
+      "current_support": "Riset Odoo, Business Central dan NetSuite tersedia; relasi laporan target masih perlu contoh.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "REPORTS",
+      "prior_pending_text": "Laporan gabungan pertama yang wajib apa, satu baris mewakili apa dan kolom akhirnya apa? Jika satu SO punya dua pengiriman/dua versi desain, hasil yang diinginkan bagaimana?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RP-05",
+      "domain": "RP",
+      "title": "Definisi data penjualan dan periode",
+      "clarity": "K",
+      "clarity_label": "Butuh penjelasan/keputusan",
+      "statement": "Kata penjualan belum memilih SO, pengiriman, invoice, pembayaran atau ringkasan sebagai sumber laporan.",
+      "intended_application": "Setiap dataset menjelaskan sumber, tanggal, status yang dihitung dan dampak retur/pembatalan. Kalkulasi benar pada sumber yang keliru tetap menghasilkan laporan yang salah.",
+      "current_support": "Analitik/export existing mempunyai beberapa sumber; kebutuhan laporan meeting belum memilih arti final.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "REPORTS",
+      "prior_pending_text": "Untuk laporan Sales, periode berdasarkan tanggal apa? Omzet order, barang dikirim, invoice atau pembayaran; termasuk pajak/retur/pending atau tidak?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RP-06",
+      "domain": "RP",
+      "title": "Nilai dan revisi designer",
+      "clarity": "K",
+      "clarity_label": "Butuh penjelasan/keputusan",
+      "statement": "Client ingin data designer, nilai dan jumlah revisi; istilah ini masih mempunyai beberapa arti.",
+      "intended_application": "Bedakan skor desain, biaya/nilai penjualan, revisi artwork dan round proofing. Tanggal penugasan, serah hasil dan ACC tidak saling menggantikan.",
+      "current_support": "KPI/score dan versi desain tersedia; definisi report yang dipilih belum disepakati.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "REPORTS",
+      "prior_pending_text": "Nilai yang diinginkan skor atau uang? Revisi artwork dan reproofing dihitung terpisah atau yang mana; periode mengikuti penugasan, hasil atau ACC?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RP-07",
+      "domain": "RP",
+      "title": "Hak export sama ketatnya dengan layar",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Export dan preview mengikuti custom role serta larangan tampilan seperti grade untuk Sales.",
+      "intended_application": "Batasi dataset, baris, kolom dan relasi yang dapat diambil. Filter/join tidak boleh menjadi jalan membaca grade atau entitas yang tidak diizinkan.",
+      "current_support": "Merupakan implikasi hak akses yang sudah diminta dan rancangan export; perlu diterapkan/diuji menyeluruh saat fitur dibangun.",
+      "pending": "",
+      "references": [],
+      "origin": "Turunan teknis kebijakan akses dan rancangan export",
+      "question_group": ""
+    },
+    {
+      "id": "RF-01",
+      "domain": "RF",
+      "title": "Tiga perangkat masuk lingkup RFID",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Perangkat yang disebut pemilik: reader Chainway UR300, handheld C72 dan printer CP30EN.",
+      "intended_application": "Dokumentasi memuat peran reader/gate, operasi handheld dan pencetakan/tagging. Jangan mengabaikan printer dari integrasi.",
+      "current_support": "Tercakup dalam paket spesifikasi middleware; unit fisik dan firmware belum diuji dalam sesi ini.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RF-02",
+      "domain": "RF",
+      "title": "Middleware dibuat sendiri dengan tiga modul",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pemilik memilih middleware custom untuk ketiga perangkat.",
+      "intended_application": "Pisahkan adapter/modul reader, handheld dan printer, dengan kontrak identitas/job/event bersama. Ini tidak berarti membuat tiga ERP atau tiga sumber stok yang bersaing.",
+      "current_support": "Arsitektur dan dokumentasi sudah disiapkan; tidak ada pernyataan bahwa aplikasi perangkat telah dibangun/dioperasikan.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RF-03",
+      "domain": "RF",
+      "title": "Reader berjalan pada Android perangkat",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "UR300 dimaksudkan memakai Android native sendiri sehingga tidak bergantung laptop/PC harian.",
+      "intended_application": "Agent reader berjalan pada perangkat dan berkomunikasi dengan ERP sesuai kontrak. Kebutuhan mesin lain untuk deploy/pemeliharaan dibedakan dari operasi gate sehari-hari.",
+      "current_support": "Arah arsitektur jelas; akses SDK, kemampuan firmware aktual dan uji start/recovery pada unit belum diverifikasi.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RF-04",
+      "domain": "RF",
+      "title": "Handheld menjalankan tugas gudang",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "C72 merupakan handheld RFID dalam integrasi.",
+      "intended_application": "Modul handheld menghubungkan scan dengan tugas ERP yang ditugaskan, seperti penerimaan, putaway, picking, transfer atau opname sesuai scope. Scan tidak langsung mengubah stok tanpa proses sah.",
+      "current_support": "Dokumentasi handheld telah disiapkan; rincian operasi diuji sesuai fase implementasi, bukan dianggap aktif seluruhnya.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RF-05",
+      "domain": "RF",
+      "title": "Printer memproses job label dan tag",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "CP30EN termasuk scope; identitas label/tag harus cocok dengan roll ERP.",
+      "intended_application": "Job print, encoding bila didukung unit, verifikasi hasil dan retry/reprint menunjuk satu identitas yang sama. Status sukses perlu bukti yang sesuai kemampuan printer.",
+      "current_support": "Spesifikasi modul printer ada; SKU/opsi RFID, SDK, koneksi dan kemampuan unit aktual belum diuji.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "RFID-DEVICE",
+      "prior_pending_text": "Sediakan unit/datasheet/SDK dan opsi hardware tepat. Verifikasi apakah unit meng-encode RFID sendiri, jalur koneksinya dan bagaimana membaca bukti hasil.",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RF-06",
+      "domain": "RF",
+      "title": "Kontrak diasumsikan tersedia hanya untuk dokumen middleware",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pemilik meminta dokumentasi middleware ditulis seolah seluruh kontrak ERP sudah tersedia.",
+      "intended_application": "Spesifikasi middleware dapat memakai kontrak final sebagai baseline. Kekurangan ERP dicatat terpisah agar pelaksana tidak harus menafsirkan pekerjaan ERP dari dokumen adapter.",
+      "current_support": "Ini asumsi penulisan yang disetujui; bukan bukti seluruh endpoint ERP telah diimplementasikan.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "RF-07",
+      "domain": "RF",
+      "title": "Pemetaan kontrak aktual dan uji perangkat",
+      "clarity": "S",
+      "clarity_label": "Sebagian jelas",
+      "statement": "Sebelum integrasi nyata, kontrak dokumentasi perlu cocok dengan endpoint dan unit perangkat aktual.",
+      "intended_application": "Cocokkan job/event, autentikasi perangkat, identitas roll/tag, retry, dedup dan bukti acknowledgement. Uji offline/reconnect dan pemulihan pada setiap jenis perangkat.",
+      "current_support": "Kebutuhan ada dalam rancangan; belum ada hasil UAT hardware yang menunjukkan seluruhnya lolos.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Prasyarat teknis dokumentasi middleware",
+      "question_group": "RFID-DEVICE",
+      "prior_pending_text": "Tetapkan penanggung jawab endpoint ERP, akses environment uji, SDK/firmware dan perangkat nyata. Konfirmasi mismatch kontrak sebagai pekerjaan ERP terpisah.",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "RF-08",
+      "domain": "RF",
+      "title": "Hasil reader tidak otomatis berarti barang keluar",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Gate/handheld membaca identitas fisik, sedangkan ERP menentukan transaksi yang sah.",
+      "intended_application": "Cocokkan hasil baca dengan tugas/manifest dan tangani pembacaan berulang atau tag di luar konteks. Dedup tidak menghapus transaksi sah, dan read ganda tidak menggandakan pengeluaran stok.",
+      "current_support": "Prinsip ini tercakup pada spesifikasi integrasi; parameter gate nyata dan perilaku lapangan memerlukan uji perangkat.",
+      "pending": "",
+      "references": [],
+      "origin": "Rancangan middleware dan integritas transaksi RFID",
+      "question_group": ""
+    },
+    {
+      "id": "HR-01",
+      "domain": "HR",
+      "title": "Absensi langsung tanpa laptop harian",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pemilik ingin fingerprint mengirim data ke ERP tanpa perantara laptop/PC harian.",
+      "intended_application": "Gunakan perangkat/protokol yang dapat mengirim event ke endpoint layanan yang disepakati. Koneksi internet/jaringan dan layanan penerima tetap diperlukan.",
+      "current_support": "Tercantum pada P09. Kemampuan ini belum dibuktikan dengan perangkat yang sudah dipilih.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "HR-02",
+      "domain": "HR",
+      "title": "Model dan firmware absensi belum final",
+      "clarity": "K",
+      "clarity_label": "Butuh penjelasan/keputusan",
+      "statement": "F34 sulit ditemukan dan F18 dipandang lebih ke door access; belum ada model final yang disetujui.",
+      "intended_application": "Pilihan ditentukan oleh dukungan push/protokol pada varian dan firmware nyata, fungsi attendance serta ketersediaan unit untuk uji; bukan kesamaan merek semata.",
+      "current_support": "Tidak ada dasar menganggap model tertentu sudah kompatibel dalam register ini.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "ATTENDANCE",
+      "prior_pending_text": "Perangkat/varian yang akan dibeli apa, firmware/protokolnya apa, dan dapatkah vendor menyediakan bukti direct push serta unit uji?",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "HR-03",
+      "domain": "HR",
+      "title": "Pisahkan log punch dari hasil attendance",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Plan menyimpan log mentah perangkat, pemetaan ID pegawai dan hasil olahan kehadiran secara terpisah.",
+      "intended_application": "Event offline/retry dapat didedup dan dipantau tanpa menghilangkan punch asli. Identitas perangkat/pegawai dan pengecualian dapat direkonsiliasi.",
+      "current_support": "Merupakan rancangan P09, belum implementasi yang dikonfirmasi berjalan.",
+      "pending": "",
+      "references": [],
+      "origin": "Rancangan teknis P09 yang sudah disiapkan",
+      "question_group": ""
+    },
+    {
+      "id": "HR-04",
+      "domain": "HR",
+      "title": "Aturan shift, telat, lembur dan koreksi",
+      "clarity": "K",
+      "clarity_label": "Butuh penjelasan/keputusan",
+      "statement": "Data kehadiran masuk tidak dengan sendirinya menentukan hasil absensi atau payroll.",
+      "intended_application": "Perhitungan menggunakan shift, jadwal, punch lintas hari, cuti dan koreksi yang disahkan HR. Data hilang tidak otomatis dianggap hadir atau mangkir.",
+      "current_support": "Plan membedakan log dan attendance; parameter HR perusahaan belum diberikan.",
+      "pending": "Pembahasan ditunda sampai penjelasan lengkap sistem/konteks dipahami. Tidak dimintakan keputusan baru pada tahap ini.",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": "ATTENDANCE",
+      "prior_pending_text": "Berikan jadwal/shift, batas telat, aturan lembur, punch ganda/hilang, lintas hari, hari libur dan role yang boleh mengoreksi.",
+      "discussion_state": "explain_existing_first_deferred",
+      "latest_owner_reply": "Pemilik meminta penjelasan penuh terlebih dahulu dan belum memberikan keputusan baru untuk butir ini."
+    },
+    {
+      "id": "DG-01",
+      "domain": "DG",
+      "title": "Format identitas project yang profesional",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Dokumen memakai ERP Kain Nussantara dan Produksi IT PT Kubus Teknologi Indonesia.",
+      "intended_application": "Gunakan bahasa operasional dan teknis yang jelas; hilangkan label developer manusia/AI. Istilah antar modul konsisten dan perbedaan label dijelaskan maknanya.",
+      "current_support": "Paket dokumen middleware dan catatan menggunakan identitas tersebut.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "DG-02",
+      "domain": "DG",
+      "title": "Perbaikan bertahap dengan bukti",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Temuan dibagi gelombang/domain/fase; pelaksana menandai selesai lalu pemilik meminta validasi ulang.",
+      "intended_application": "Simpan status, commit dan bukti penerapan. Selesai mengerjakan tidak sama dengan telah divalidasi; masalah baru dan dampak lintas modul tetap dicatat.",
+      "current_support": "Backlog/tracker dan catatan gelombang tersedia. Daftar ini meregistrasi pernyataan bisnis, bukan menggantikan seluruh temuan audit kode.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    },
+    {
+      "id": "DG-03",
+      "domain": "DG",
+      "title": "Acuan fase 5 dan batas snapshot",
+      "clarity": "J",
+      "clarity_label": "Jelas",
+      "statement": "Pemilik menyatakan pengembangan sampai P05 berada pada main.",
+      "intended_application": "Penilaian dokumen ini mengacu snapshot main yang sudah diperiksa. P01–P04 tertulis implemented_pending_validation, P05 in_progress pada tracker; perbedaan laporan itu perlu bukti sebelum menyebut semua tuntas.",
+      "current_support": "Snapshot diambil 14 Oktober pada commit 6be5af70db5b0dedba6f1ce17b0a2f40f23ee046; tidak ada fetch remote baru atau UAT produksi pada konsolidasi ini.",
+      "pending": "",
+      "references": [],
+      "origin": "Percakapan pemilik dan client",
+      "question_group": ""
+    }
+  ],
+  "pending_groups": [
+    {
+      "group": "MD-03",
+      "ids": [
+        "MD-03"
+      ],
+      "original_quote": null
+    },
+    {
+      "group": "RT-05",
+      "ids": [
+        "RT-05"
+      ],
+      "original_quote": null
+    },
+    {
+      "group": "RETURN-AUTHORITY",
+      "ids": [
+        "RT-09",
+        "RT-10",
+        "RT-11"
+      ],
+      "original_quote": "sales retur (bisa cutloss, tuker barang, discount). sales retur --> md quality yg acc ok atau gak (acc by hangtag pabrik ada atau gak, pembelian dari sisi cust maupun sisi pabrik sudah 21 hari belum, barangnya utuh / sudah dicutting) --> barang datang ke gudang --> qc --> retur pabrik (dengan data hasil qc / inspect) -- bisa retur pabrik, bisa masuk gudang masing2 or grade b, bisa diretur ke entitas pemilik pertama\n\nKlarifikasi client terbaru:\n3c. most of all ditolak, atau paling cutloss / discount\n3d. sales ajuin ke lydia/stefan di jkt, calvin di bdg. kalau di acc baru info finance\n\nPertanyaan pemilik:\n3d. untuk sales ajuin ke ci & ko lydia/stefan/calvin itu mereka tidak menggunakan system yaa mba, by wa saja ? lalu sales info manual ke finance dan finnance baru acc di system ?\n\nJawaban client:\n3d. saat ini iya betul begitu"
+    },
+    {
+      "group": "RETURN-EXCHANGE",
+      "ids": [
+        "RT-15"
+      ],
+      "original_quote": "sales retur (bisa cutloss, tuker barang, discount). sales retur --> md quality yg acc ok atau gak (acc by hangtag pabrik ada atau gak, pembelian dari sisi cust maupun sisi pabrik sudah 21 hari belum, barangnya utuh / sudah dicutting) --> barang datang ke gudang --> qc --> retur pabrik (dengan data hasil qc / inspect) -- bisa retur pabrik, bisa masuk gudang masing2 or grade b, bisa diretur ke entitas pemilik pertama\n\nKlarifikasi client terbaru:\n3f. tukar barang kan karena reject lah bisa dibilang, jadi gabisa tuker artikel, kalau warna selama ini bisa, tp ini sy lg make sure dulu harusnya mah gak boleh dong\n\nJawaban lanjutan client:\n3f. ganti grade ya gak bisa. misal grade b udah pasti gak dikirim, atau dia dapet grade a1, tuker jadi grade a. udah pasti begitu, ganti grade ngga sih, tp ganti roll yg lebih  bagus ga walaupun sama2 grade A, tp pasti ada yg jelek dan bagus di dalam grade A tsb, balik ke roll dan customernya masing2. terus ga, sebelum kirim ke cust kan gak ada proses qc, tp sales bisa request untuk qc dulu sebelum kirim, bahkan ada bbrp cust yg memang pasti qc dulu, gitu2 tergantung"
+    },
+    {
+      "group": "RETURN-FINANCE",
+      "ids": [
+        "RT-16",
+        "RT-19"
+      ],
+      "original_quote": "sales retur (bisa cutloss, tuker barang, discount). sales retur --> md quality yg acc ok atau gak (acc by hangtag pabrik ada atau gak, pembelian dari sisi cust maupun sisi pabrik sudah 21 hari belum, barangnya utuh / sudah dicutting) --> barang datang ke gudang --> qc --> retur pabrik (dengan data hasil qc / inspect) -- bisa retur pabrik, bisa masuk gudang masing2 or grade b, bisa diretur ke entitas pemilik pertama\n\nKlarifikasi client:\n3e. cutloss, barang yg dicut balik lalu dibayarkan uangnya, iya sbg kerugian. kalau discount lebih ke barangnya cacat tp ttp bisa dipakai customer. jadi barang ttg dicust tp kita kasih disc\n\nPertanyaan pemilik yang belum dijawab client:\n3e. ini sudah ada mekanisme saldo mba di system misal customer a beli barang dengan value 100 juta, lalu retur misalkan berati 100juta ini bisa kembali dibayarkan ke customer atau menjadi saldo di system yang bisa dipakai sebagai order selanjutnya. nah untuk ini yang mau ngatur pembayaran pakai saldo mau dari salesnya juga atau finance saja ?"
+    },
+    {
+      "group": "RETURN-DISPOSITION",
+      "ids": [
+        "RT-17"
+      ],
+      "original_quote": "sales retur (bisa cutloss, tuker barang, discount). sales retur --> md quality yg acc ok atau gak (acc by hangtag pabrik ada atau gak, pembelian dari sisi cust maupun sisi pabrik sudah 21 hari belum, barangnya utuh / sudah dicutting) --> barang datang ke gudang --> qc --> retur pabrik (dengan data hasil qc / inspect) -- bisa retur pabrik, bisa masuk gudang masing2 or grade b, bisa diretur ke entitas pemilik pertama"
+    },
+    {
+      "group": "MDQ-SAMPLING",
+      "ids": [
+        "QC-03"
+      ],
+      "original_quote": "alur md quality - barang yg datang akan ada beberapa lot dari pabrik, masing2 lot tsb dipotong 1/4 yard --> sesuai master akan diinput tapi kalau gak sesuai akan dibahas ke owner lalu retur ke pabrik atau terima --> indikator inputnya sesuai dan tidak sesuai aja ga\n\nKlarifikasi client terbaru:\n4a. kita gak ada satuan meter, semua yard / kg. meter itu urusan md ke pabrik, di luar itu hanya yard/kg. 0.25 yard. selebar kain potongnya. sebenernya yard itu kan satuan panjang, kalau kg kan berat ya. kita jual knit per kg, tp kalau potong sample ya bisa diukur 0.25 yard itu semananya kain, kebayang gak?"
+    },
+    {
+      "group": "QC-09",
+      "ids": [
+        "QC-09"
+      ],
+      "original_quote": null
+    },
+    {
+      "group": "QC-FORM",
+      "ids": [
+        "QC-10",
+        "QC-11"
+      ],
+      "original_quote": "data hasil inspect <- ini dari QC, dibuatkan sama seperti ini di sesuai dengan form fisik, inputnya juga seperti itu di erp *ui untuk usernya sama, detail perhitungan nya seperti itu"
+    },
+    {
+      "group": "WM-07",
+      "ids": [
+        "WM-07"
+      ],
+      "original_quote": null
+    },
+    {
+      "group": "LOT",
+      "ids": [
+        "WM-11"
+      ],
+      "original_quote": null
+    },
+    {
+      "group": "DISPATCH",
+      "ids": [
+        "WM-13"
+      ],
+      "original_quote": null
+    },
+    {
+      "group": "TRANSFER",
+      "ids": [
+        "WM-14"
+      ],
+      "original_quote": null
+    },
+    {
+      "group": "OPNAME",
+      "ids": [
+        "WM-15"
+      ],
+      "original_quote": null
+    },
+    {
+      "group": "IC-02",
+      "ids": [
+        "IC-02"
+      ],
+      "original_quote": null
+    },
+    {
+      "group": "INTERCO-CUTOFF",
+      "ids": [
+        "IC-05"
+      ],
+      "original_quote": "trf entitas - trf entitas dulu, baru bayar di akhir bulan"
+    },
+    {
+      "group": "REPORTS",
+      "ids": [
+        "RP-04",
+        "RP-05",
+        "RP-06"
+      ],
+      "original_quote": "buatkan satu fitur export all data khusus di menu khusus export laporan, dimana ini bisa mengambil semua collection data yang ada misalkan data penjualan, data designer dll, lalu bisa di filter berdasarkan sesuaian dari datanya misalkan kalau data sales bisa export dengan filter periodenya, lalu ditambah sales personya, designer misalkan data designya lalu nilainya berapa revisi dll lalu di filter dengan periodenya dan siapa designernya. kurang lebih seperti itu, seperti advanced export dengan filter yang lengkap sekalian ada pilihan kolom data apa yang ingin di export beserta dengan preview datanya yang muncul bagaimana/apa saja, kolom bisa bebas dipilih. lalu bisa join juga intinya seperti advance yang ada tarik data di erp enterpise (join, or, and dll)"
+    },
+    {
+      "group": "RFID-DEVICE",
+      "ids": [
+        "RF-05",
+        "RF-07"
+      ],
+      "original_quote": null
+    },
+    {
+      "group": "ATTENDANCE",
+      "ids": [
+        "HR-02",
+        "HR-04"
+      ],
+      "original_quote": null
+    }
+  ],
+  "revision": "owner-reply-2026-10-15",
+  "owner_reply_recording": "Field latest_owner_reply/owner_reply pada changes adalah ringkasan/parafrase jawaban, bukan transkrip verbatim.",
+  "supersedes_clarification_register": "../master-statements/REGISTER_PERNYATAAN.json",
+  "global_decision": "Seluruh authority melalui custom role/access; tidak meminta nama staf approver per aktivitas.",
+  "development_authorization": "Dokumentasi/analisis saja; source dan konfigurasi ERP tidak diubah.",
+  "deferred_ids": [
+    "RT-05",
+    "RT-09",
+    "RT-10",
+    "RT-11",
+    "RT-15",
+    "RT-16",
+    "RT-17",
+    "RT-19",
+    "QC-09",
+    "QC-10",
+    "QC-11",
+    "WM-07",
+    "WM-11",
+    "WM-13",
+    "WM-14",
+    "WM-15",
+    "IC-02",
+    "IC-05",
+    "RP-04",
+    "RP-05",
+    "RP-06",
+    "RF-05",
+    "RF-07",
+    "HR-02",
+    "HR-04"
+  ],
+  "changes": [
+    {
+      "id": "AK-07",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "Persetujuan internal. Paper print dichecklist designer; PIC designer dan PIC Special Order menggunakan ACC yang berhubungan dengan desain/Pesanan Khusus.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "AK-03",
+      "previous_clarity": "J",
+      "new_clarity": "J",
+      "owner_reply": "SEMUA yang bersifat siapa berwenang harus dibuatkan di akses dan role management.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "SO-06",
+      "previous_clarity": "J",
+      "new_clarity": "J",
+      "owner_reply": "Skenario 2 sudah jelas. Skenario 4 sama dengan 2 tetapi redesign dari yang sudah ada; beri label redesign.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "SO-08",
+      "previous_clarity": "J",
+      "new_clarity": "J",
+      "owner_reply": "Tidak ada perubahan flow designer; mungkin tambahan checklist print paper dan label. Sales ACC di detail SO sebagai tambahan/reminder, yang diperlukan interfacenya.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "MD-03",
+      "previous_clarity": "S",
+      "new_clarity": "S",
+      "owner_reply": "MD-03 belum.",
+      "processing": "awaiting_client_data"
+    },
+    {
+      "id": "MD-05",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "Ya dinonaktifkan. Siapa yang bisa dari custom role dan access.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "MD-09",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "Bisa dikonfigurasi per master data, bukan rules wajib namun default saja.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "MD-10",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "Cek apakah di sistem ada input rasio yield/toleransi. Data asli SSOT dari fisik; yield rasio toleransi estimasi/forecast saja.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "SO-05",
+      "previous_clarity": "K",
+      "new_clarity": "J",
+      "owner_reply": "HOLD pada DESIGN existing; siapa melepas adalah PIC Designer.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "SO-12",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "Ingat Special Order: harga Grade A, jika tidak ada induk maka PIC Special Order.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "SL-07",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "Mekanisme existing benar. Tidak perlu tambahan toleransi; keputusan manual Admin Sales, termasuk harga final. Periksa kapan AR muncul.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "SL-08",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "PO direvisi dan invoice/pembayaran disesuaikan ketika sudah ditutup. Semua wewenang di akses dan role management.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "SL-10",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "Management customer sudah ada; konfigurasi grade boleh naik, tidak boleh turun; authority bisa dikonfigurasi.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "SM-06",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "Hanya barang tersedia: 9 warna, yang tersedia 5 maka hanya 5. Maksud batch/paket apa?",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "SM-09",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "Di mana bisa jual apa bisa dikonfigurasi, aware entitas agar tidak masalah di Finance.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "SM-10",
+      "previous_clarity": "K",
+      "new_clarity": "J",
+      "owner_reply": "Jika sample ada di entitas lain maka backorder sama seperti logic Sales Order.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "RT-07",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "Dari pabrik tanggal diterima di gudang, deadline per receiving.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "QC-03",
+      "previous_clarity": "S",
+      "new_clarity": "S",
+      "owner_reply": "MD Quality ketika PO supplier/makloon datang; tidak dikirim ke pihak lain dan habis/waste sesudah pengujian.",
+      "processing": "partly_resolved_deferred_detail"
+    },
+    {
+      "id": "QC-07",
+      "previous_clarity": "S",
+      "new_clarity": "J",
+      "owner_reply": "Regardless knitting/satuan, yang penting qty berkurang terkonversi benar.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "QC-05",
+      "previous_clarity": "K",
+      "new_clarity": "J",
+      "owner_reply": "Keputusan full human. Dua indikator MD Quality: warna/labdip dan handfeel; bahas owner di praktik, ERP input keputusan terima/retur saja.",
+      "processing": "resolved_direction"
+    },
+    {
+      "id": "QC-12",
+      "previous_clarity": "K",
+      "new_clarity": "J",
+      "owner_reply": "Ini bisa dikonfigurasikan.",
+      "processing": "resolved_direction"
+    }
+  ]
+}

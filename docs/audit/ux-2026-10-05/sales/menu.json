@@ -1,0 +1,140 @@
+[
+ {
+  "nav": "nav-zone-kerja",
+  "view": "sales-home",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-home",
+  "view": "sales-home",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-approval-inbox",
+  "view": "price-approvals",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-zone-modul",
+  "view": "price-approvals",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-my-desk",
+  "view": "my-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-tanya-kn",
+  "view": "tanya-kn",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-sales",
+  "view": "sales",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-special-orders",
+  "error": "Locator.click: Timeout 3000ms exceeded.\nCall log:\nwaiting for locator(\"[data-tes"
+ },
+ {
+  "nav": "nav-sales-orders",
+  "error": "Locator.click: Timeout 3000ms exceeded.\nCall log:\nwaiting for locator(\"[data-tes"
+ },
+ {
+  "nav": "nav-sample-orders",
+  "view": "sample-orders",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-customers-crm",
+  "view": "customers-crm",
+  "hub_tabs": [
+   "customers-crm",
+   "hr-visits"
+  ]
+ },
+ {
+  "nav": "nav-products-pricing",
+  "view": "md-products",
+  "hub_tabs": [
+   "md-products",
+   "cs-price-list"
+  ]
+ },
+ {
+  "nav": "nav-rnd-hub",
+  "view": "rnd-samples",
+  "hub_tabs": [
+   "rnd-samples",
+   "rnd-labdip",
+   "rnd-handfeel",
+   "rnd-proofing"
+  ]
+ },
+ {
+  "nav": "nav-marketing-hub",
+  "view": "mkt-calendar",
+  "hub_tabs": [
+   "mkt-calendar",
+   "mkt-analytics",
+   "mkt-campaigns",
+   "mkt-accounts"
+  ]
+ },
+ {
+  "nav": "nav-stock-atp",
+  "view": "inventory-board",
+  "hub_tabs": [
+   "inventory-board",
+   "inventory-lots"
+  ]
+ },
+ {
+  "nav": "nav-logistics",
+  "view": "logistics",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-petty-cash",
+  "view": "cash-advances",
+  "hub_tabs": [
+   "cash-advances",
+   "settlements"
+  ]
+ },
+ {
+  "nav": "nav-vehicle-logs",
+  "view": "vehicle-logs",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-zone-alat",
+  "view": "vehicle-logs",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-document-center",
+  "view": "document-center",
+  "hub_tabs": [
+   "document-center",
+   "doc-trace",
+   "documents"
+  ]
+ },
+ {
+  "nav": "nav-zone-akun",
+  "view": "document-center",
+  "hub_tabs": [
+   "document-center",
+   "doc-trace",
+   "documents"
+  ]
+ },
+ {
+  "nav": "nav-hr-my-profile",
+  "view": "hr-my-profile",
+  "hub_tabs": []
+ }
+]

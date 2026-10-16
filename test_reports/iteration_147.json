@@ -1,0 +1,84 @@
+{
+  "summary": "AUDIT-ONLY (no source changes). Scope: numbers audit across admin/sales/manager/warehouse home + sales-force + AR aging + PO/SO/VB/Kas + stock buckets; create-form layout check for Pelanggan/PO/Makloon/Vendor Bill/Transaksi Kas; role-menu check for warehouse, sales_admin, md. Collected via live APIs under ent_ksc with independent pymongo recompute. Found several NUMBER DISCREPANCIES (home AR vs AR Aging; bank saldo ignores opening_balance; vendor_bills paid overshoots total; leaderboard total exceeds entity-scoped SO sum; monthly SO per-sales = 0 but target shown; 22/24 ent_ksc SOs have no sales_id). ROLE MENUS: md@kainnusantara.id DOES NOT EXIST in users (0 users with role='md') — spec cannot be verified. warehouse@ sees all expected Gudang items incl. RFID (3 tabs, no Perangkat) + Eskalasi Gudang + Antar Entitas (Grup) ✓. salesadmin@ sees Meja Admin Sales standalone + Antar Entitas (Grup) ✓. FORMS: Transaksi Kas modal still has 3 native <select> (iter146 regression — not fixed) and dialog width ~1880px (unconstrained). Other 4 forms look clean.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "/api/home/admin vs /api/ar/aging", "issue": "AR outstanding mismatch: /api/home/admin ar.outstanding=468,874,760.5 but /api/ar/aging totals.total=442,999,760.5 (Δ 25,875,000.00 = exactly the ent_kanda SO 'reserved' row 25,875,000). /api/home/admin appears to include cross-entity SOs (leaderboard-style) while /api/ar/aging is entity-scoped. Same card label shows two different numbers.", "priority": "HIGH"},
+      {"endpoint": "/api/sales/leaderboard", "issue": "With X-Entity-Id=ent_ksc the leaderboard sums total_sales=542,873,160.5 across sales_users, but DB sum of all SO.total_amount for ent_ksc = 457,205,550 (Δ 85,667,610.5). Includes ent_kanda SOs (35,375,000) and still has 50M unaccounted → either multi-entity leak OR double counting (e.g. special_orders joined). Entity scoping likely broken.", "priority": "HIGH"},
+      {"endpoint": "/api/cash-transactions/summary", "issue": "Saldo per rekening IGNORES bank_accounts.opening_balance. kas_kecil balance returned 7,750,000 (= 10,000,000 in - 2,250,000 out) but expected 9,750,000 (+ opening 2,000,000). bank_bca_ksc expected 34,987,800 (opening 50M + in 12.46M - out 27.47M). Any card showing 'Saldo Kas Kecil / Kas Besar' underreports opening balances.", "priority": "HIGH"},
+      {"endpoint": "/api/vendor-bills (status=paid aggregation)", "issue": "For 3 'paid' bills: Σtotal_amount = 27,750,000 but Σamount_paid = 30,802,500 (paid > total by 3,052,500). Either seed is wrong (bills paid > billed) or amount_paid double-aggregated from cash_transactions. Any 'Dibayar / Terbayar' KPI will be incorrect.", "priority": "HIGH"},
+      {"endpoint": "/api/home/sales (as sales@)", "issue": "target.amount=0 and achievement_pct=0 for user_sales_01 whose sales_targets record exists (period 2026-10, target_sales_amount=250,000,000). The target lookup appears to only check target_collection_amount OR filters by sales_id vs user id mismatch. Monthly target card shows 0 while targets table shows 250M.", "priority": "HIGH"},
+      {"endpoint": "/api/sales-orders data integrity", "issue": "22 of 24 ent_ksc SOs have NO `sales_id` field; leaderboard/outstanding-per-sales must be falling back to customer.assigned_sales_id, which can misattribute reassigned customers. Also monthly SO-per-sales aggregation on sales_user_id returns [] (field doesn't exist on any SO). Impacts 'outstanding customer dari sales person' and MTD sales per sales.", "priority": "HIGH"},
+      {"endpoint": "/api/cash-transactions", "issue": "7 cash_transactions (sum 63.74M in + 3.33M out) have NO account_id. They are still bucketed by `cash_type` in summary → saldo for a specific rekening cannot be reconstructed; group_cash view and bank_reconciliation will show gaps.", "priority": "HIGH"},
+      {"endpoint": "/api/stock/buckets", "issue": "prod_batik_mega totals.atp_qty = -234 while available 310 + incoming 800 - reserved 496.03 - committed 87 = +526.97. ATP formula in dashboard totals seems to double-subtract reservations or miscount quarantine (80) + committed. Negative ATP displayed to user is suspect.", "priority": "HIGH"},
+      {"endpoint": "Seed/bootstrap", "issue": "User role 'md' not in DB (users.distinct('role') = admin, designer, driver, finance, manager, sales, sales_admin, warehouse). md@kainnusantara.id login fails ('Email atau password tidak sesuai'). Spec requires MD-specific Meja MD + menu checks — impossible to verify.", "priority": "CRITICAL"},
+      {"endpoint": "DB: sales_invoices/ar_payments empty", "issue": "collections sales_invoices, ar_payments, customer_payments all empty but AR Aging + /api/home/admin collected_mtd=756,500 and overdue=5,571,200 are non-zero. AR is derived purely from sales_orders fields (no invoice ledger). This conflates 'penjualan belum tertagih' with 'faktur belum dibayar' — numbers in 'Collected MTD' card and penalty_issued=49,579.56 come from a non-existent invoice ledger."}
+    ],
+    "minor": [
+      {"endpoint": "/api/stock/atp", "issue": "GET without product_id returns 422 (requires query param). UI pages that preview totals via this endpoint may show 'request failed' silently."},
+      {"endpoint": "sales/leaderboard as sales@", "issue": "Returns 403; sales/ar aging also 403 → sales user cannot verify own numbers against leaderboard."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CashTransactionCreateModal", "issue": "Dialog contains 3 native <select> elements (Jenis Kas, Arah, Kategori) — inconsistent with shadcn Select used elsewhere; iter146 flagged same, not fixed.", "selector": "[role=dialog] select on ?view=cash-management → create-cash-button", "priority": "MEDIUM"},
+      {"component": "CashTransactionCreateModal", "issue": "Dialog width ≈1880px (nearly full viewport on 1920). Should be constrained (max-w-lg/xl). Fields render stretched with huge whitespace on the right of 'Entitas'.", "selector": "[role=dialog] on ?view=cash-management", "priority": "LOW"},
+      {"component": "CustomerCreateForm (Pelanggan)", "issue": "'Pilih provinsi.' validation text shown BEFORE user interacts; appears as pre-filled error. Should only show after submit/touch.", "selector": "?view=customers-crm → customer-create-button, provinsi helper", "priority": "LOW"},
+      {"component": "Warehouse menu — Pembelian group", "issue": "Warehouse role shows 'Hutang Pemasok' + 'Pengadaan' under Pembelian group. Warehouse should likely only see Pengadaan (receive side); Hutang Pemasok is finance scope.", "selector": "sidebar nav-group-pembelian for warehouse@", "priority": "MEDIUM"},
+      {"component": "Warehouse menu — Riset & Sampel", "issue": "nav-rnd-hub item is visible to warehouse role; may be intentional, but spec listed only Gudang hub + RFID + Eskalasi + Antar Entitas (Grup). Please confirm.", "selector": "sidebar nav-rnd-hub for warehouse@", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Beranda Admin (Home KPI cards)", "issue": "'AR Outstanding' uses leaderboard formula (SO total − collected across entities) while screen context is a single entity (ent_ksc). Shows 468.87M instead of entity-scoped 442.99M (per /api/ar/aging). Users switching entities get mismatched headlines vs AR Aging page.", "affected_selectors": ["home-ar-outstanding", "ar-aging-total"]},
+      {"flow": "Meja Saya sales (sales@ monthly target vs achievement)", "issue": "'Target' card = 0 even though sales_targets has 250M for user_sales_01 period 2026-10. Achievement % therefore meaningless.", "affected_selectors": ["sales-desk-target-amount", "sales-desk-achievement-pct"]},
+      {"flow": "Kas & Bank saldo per rekening", "issue": "Saldo per card doesn't add opening_balance; kas_kecil = 7.75M (should be 9.75M); other accounts similarly skewed.", "affected_selectors": ["cash-kas-kecil-balance", "cash-kas-besar-balance"]},
+      {"flow": "Tagihan Supplier totals", "issue": "'Dibayar' aggregation can exceed 'Total Tagihan' because amount_paid > total_amount on paid bills. 'Hutang Jatuh Tempo' calculation downstream also affected.", "affected_selectors": ["vendor-bill-totals-paid", "vendor-bill-totals-total"]},
+      {"flow": "Stok & ATP → Dashboard", "issue": "atp_qty negative while incoming (800) exists; ATP card indicator will suggest shortage although 800 incoming would cover.", "affected_selectors": ["stock-buckets-prod_batik_mega-atp"]}
+    ],
+    "design_issues": [
+      {"screen": "Pelanggan modal", "issues": ["Form OK; label 'ISI CEPAT DARI KODE POS' + 'Pilih provinsi.' helper rendered before any interaction (pre-shown validator)."]},
+      {"screen": "Cash Transaksi modal", "issues": ["Dialog over-wide (1880px); native selects break design language."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/audit_numbers.py",
+    "/app/test_reports/audit_numbers_dump.json",
+    "/app/test_reports/iter147-sidebar-WAREHOUSE.jpeg",
+    "/app/test_reports/iter147-sidebar-SALES_ADMIN.jpeg",
+    "/app/test_reports/iter147-warehouse-expanded.jpeg",
+    "/app/test_reports/iter147-wh-rfid-hub.jpeg",
+    "/app/test_reports/iter147-wh-escalations.jpeg",
+    "/app/test_reports/iter147-form-customers-crm.jpeg",
+    "/app/test_reports/iter147-form-purchase-orders.jpeg",
+    "/app/test_reports/iter147-form-makloon-orders.jpeg",
+    "/app/test_reports/iter147-form-vendor-bills.jpeg",
+    "/app/test_reports/iter147-form-cash-management.jpeg"
+  ],
+  "action_items": [
+    "Create md@kainnusantara.id (role='md') in bootstrap/seed so MD menus (Meja MD) can be tested/used; current users collection has 0 docs with role='md'.",
+    "Fix entity scoping on /api/sales/leaderboard and /api/home/admin AR calc to respect X-Entity-Id (currently sums across all entities, diverging from /api/ar/aging).",
+    "Include bank_accounts.opening_balance in /api/cash-transactions/summary balances (kas_kecil & kas_besar).",
+    "Investigate vendor_bills.amount_paid aggregation for 'paid' bills — 30.80M paid vs 27.75M total; cap at total or fix seed/overpayment logic.",
+    "Fix /api/home/sales target lookup for user_sales_01 (period 2026-10): target_sales_amount=250M is in DB but target.amount returns 0.",
+    "Backfill sales_id on sales_orders (22/24 ent_ksc docs missing). Decide canonical source (SO.sales_id vs customer.assigned_sales_id) and document it.",
+    "Review ATP formula in /api/stock/buckets — currently returns -234 for a product with 800 incoming; verify double-subtraction of reserved/committed.",
+    "Replace native <select> in Transaksi Kas create modal with shadcn Select; constrain dialog width (max-w-xl).",
+    "Delay 'Pilih provinsi.' validation helper in Pelanggan form until field is touched/submit attempted.",
+    "Decide whether warehouse should see Hutang Pemasok + Riset & Sampel menu items (currently visible)."
+  ],
+  "critical_code_review_comments": [
+    "AR numbers are derived from sales_orders (no sales_invoices/ar_payments ledger). This conflates sales vs billing — any 'faktur' KPI is fictitious. Needs an invoice/payment ledger or explicit relabeling.",
+    "Entity scoping is inconsistent: some endpoints honour X-Entity-Id (ar/aging, home/admin partially), others sum across all entities (sales/leaderboard). Add a single scoping helper used everywhere.",
+    "cash_transactions schema inconsistency: some docs have account_id null; summary buckets by cash_type (kas_kecil/kas_besar) which masks the untagged. Enforce account_id required.",
+    "sales_orders lack sales_user_id/sales_id consistently; downstream analytics compensate with customer.assigned_sales_id fallback — document this assumption.",
+    "Opening balance on bank_accounts is never consulted by summary endpoint — breaks reconciliation."
+  ],
+  "updated_files": [
+    "/app/backend/tests/audit_numbers.py (new audit script)"
+  ],
+  "success_rate": {"backend": "70%", "frontend": "88%"},
+  "test_credentials": "admin@/sales@/warehouse@/salesadmin@/finance@/manager@ all demo12345 OK; md@kainnusantara.id DOES NOT EXIST (login 'Email atau password tidak sesuai').",
+  "seed_data_creation": "None (read-only audit).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Audit expected-vs-actual dump at /app/test_reports/audit_numbers_dump.json; recompute script at /app/backend/tests/audit_numbers.py (reads MONGO_URL+REACT_APP_BACKEND_URL from envs). Period under test is 2026-10 (server clock in future). Key gaps to retest after main-agent fixes: (1) home/admin AR vs ar/aging total parity, (2) leaderboard entity scoping, (3) cash summary with opening_balance, (4) vendor-bills paid ≤ total invariant, (5) /api/home/sales target lookup for user_sales_01, (6) md user bootstrap, (7) ATP formula sanity for prod_batik_mega, (8) cash modal shadcn migration. Previous iter146 action items still pending: Supplier/PurchaseReturn/ApprovalRule/DocTemplateBasic/Cash still use native <select>; hr-employees modal height; navMeta.js duplicate escalations key.",
+  "rca of the issue": "Primary RCA — number mismatches are rooted in (a) MISSING invoice/payment ledgers (sales_invoices/ar_payments/customer_payments empty) which forces AR/collection numbers to be derived heuristically from sales_orders and cash_transactions, and (b) inconsistent entity scoping across routers. Reproduce: run `cd /app/backend && python tests/audit_numbers.py` after logging X-Entity-Id=ent_ksc — compare `/api/home/admin` → ar.outstanding (468,874,760.5) vs `/api/ar/aging` → totals.total (442,999,760.5); the delta 25,875,000 matches ent_kanda SO reserved=25,875,000, confirming cross-entity leak. Mitigation: introduce a single scoping decorator in backend routers that enforces X-Entity-Id; add proper invoice/payment ledgers before trusting AR/collection KPIs; seed md user via bootstrap; add opening_balance in cash summary; enforce amount_paid ≤ total_amount at vendor_bills payment write time."
+}

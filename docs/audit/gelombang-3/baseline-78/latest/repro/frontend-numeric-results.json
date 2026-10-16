@@ -1,0 +1,42 @@
+{
+  "commit": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "file": "frontend/src/features/manager/ManagerDashboard.jsx",
+  "mode": "Unmodified candidate JS expressions/functions extracted by Babel; mocked transport controls response scheduling; React browser rendering is not tested.",
+  "results": [
+    {
+      "id": "D4-FE-01-chart-7",
+      "expected": 7,
+      "actual": 7,
+      "status": "pass",
+      "note": "Execute the original velocityData expression with n input days."
+    },
+    {
+      "id": "D4-FE-01-chart-30",
+      "expected": 30,
+      "actual": 14,
+      "status": "observed_difference",
+      "note": "Execute the original velocityData expression with n input days."
+    },
+    {
+      "id": "D4-FE-01-chart-90",
+      "expected": 90,
+      "actual": 14,
+      "status": "observed_difference",
+      "note": "Execute the original velocityData expression with n input days."
+    },
+    {
+      "id": "D4-FE-02-after-current-period-response",
+      "expected": 90,
+      "actual": 90,
+      "status": "pass",
+      "note": ""
+    },
+    {
+      "id": "D4-FE-02-stale-period-overwrite",
+      "expected": 90,
+      "actual": 30,
+      "status": "observed_difference",
+      "note": "Actual UI-consumed total_orders: same entity A, period30 then90; old30 finishes last. App.js remounts by selectedEntity, not period. The earlier entity-switch hypothesis is withdrawn because the remount invalidates that shared-setter scenario."
+    }
+  ]
+}

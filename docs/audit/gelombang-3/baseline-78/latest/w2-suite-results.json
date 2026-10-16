@@ -1,0 +1,452 @@
+[
+  {
+    "script": "docs/audit/wave-2/iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 17.18,
+    "log": "test-logs\\w2-00-regression_w2.log",
+    "cases": [
+      {
+        "id": "W2-006",
+        "invariant": "owner otomatis tetap A walau hanya B punya stok (tanpa fallback)",
+        "pass": true
+      },
+      {
+        "id": "W2-006",
+        "invariant": "tanpa prefer & tanpa stok sah -> 400, bukan owner B",
+        "pass": true
+      },
+      {
+        "id": "W2-006",
+        "invariant": "explicit owner B oleh user A-only -> 403",
+        "pass": true
+      },
+      {
+        "id": "W2-008",
+        "invariant": "transfer A memilih roll B ditolak tanpa efek",
+        "pass": true
+      },
+      {
+        "id": "W2-008",
+        "invariant": "daftar campuran A+B all-or-none",
+        "pass": true
+      },
+      {
+        "id": "W2-009",
+        "invariant": "reservasi eksplisit langsung merefresh projection (reserved 20, available 0)",
+        "pass": true
+      },
+      {
+        "id": "W2-007",
+        "invariant": "reject saat approval memegang kunci tidak menulis rejected (predikat router)",
+        "pass": true
+      },
+      {
+        "id": "W2-007",
+        "invariant": "reject_session memakai predikat status+saga_lock & 409 bila kalah",
+        "pass": true
+      },
+      {
+        "id": "W2-019",
+        "invariant": "split QC menjaga total berat 3 kg (1.2 + 1.8) dgn provenance estimasi",
+        "pass": true
+      },
+      {
+        "id": "W2-014",
+        "invariant": "reject 10 m (roll 3 kg) -> qty retur 3 kg (bukan 10 kg)",
+        "pass": true
+      },
+      {
+        "id": "W2-014",
+        "invariant": "reject parsial 4 m -> 1.2 kg proporsional berat terukur",
+        "pass": true
+      },
+      {
+        "id": "W2-014",
+        "invariant": "kontrol meter/meter tidak berubah",
+        "pass": true
+      },
+      {
+        "id": "W2-012",
+        "invariant": "6 red read bersamaan -> 1 insiden open, hits=6",
+        "pass": true
+      },
+      {
+        "id": "W2-011",
+        "invariant": "ack vs resolve bersamaan tidak memundurkan resolved",
+        "pass": true
+      },
+      {
+        "id": "W2-011",
+        "invariant": "ack setelah resolved ditolak",
+        "pass": true
+      },
+      {
+        "id": "W2-012",
+        "invariant": "read merah sesudah insiden ditutup membuat insiden open baru",
+        "pass": true
+      },
+      {
+        "id": "W2-017",
+        "invariant": "dua pemakaian deposit 80 dari saldo 100: satu menang, lainnya 409 tanpa receipt/efek",
+        "pass": true
+      },
+      {
+        "id": "W2-016",
+        "invariant": "void sumber deposit yg sudah terpakai -> 409 tanpa membalik kas/receipt",
+        "pass": true
+      },
+      {
+        "id": "W2-016",
+        "invariant": "kontrol: deposit masih utuh -> void sukses, deposit ditarik tepat sekali",
+        "pass": true
+      },
+      {
+        "id": "W2-018",
+        "invariant": "void dgn snapshot lama tidak menimpa pembayaran baru 60",
+        "pass": true
+      },
+      {
+        "id": "W2-023",
+        "invariant": "akun beban 6-1000 ditolak sebagai sumber pembayaran gaji",
+        "pass": true
+      },
+      {
+        "id": "W2-022",
+        "invariant": "pay_run mencatat cash_transactions (ref payroll_run) setelah jurnal",
+        "pass": true
+      },
+      {
+        "id": "W2-021",
+        "invariant": "neraca saldo 50.001 jurnal tidak terpotong",
+        "pass": true
+      },
+      {
+        "id": "W2-021",
+        "invariant": "buku besar 50.001 baris tidak terpotong",
+        "pass": true
+      },
+      {
+        "id": "W2-021",
+        "invariant": "saldo rekening dari 5.001 mutasi (bukan 5.000)",
+        "pass": true
+      }
+    ],
+    "tail": "ca saldo 50.001 jurnal tidak terpotong\nPASS W2-021 — buku besar 50.001 baris tidak terpotong\nPASS W2-021 — saldo rekening dari 5.001 mutasi (bukan 5.000)\n25/25\n"
+  },
+  {
+    "script": "docs/audit/wave-2/iterations/2026-10-04-W2-P00-P07/regression_w2_http.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 5.4,
+    "log": "test-logs\\w2-01-regression_w2_http.log",
+    "cases": [
+      {
+        "id": "W2-010",
+        "invariant": "user A-only tidak melihat raw read owner B (filter warehouse dipaksa caller)",
+        "pass": true
+      },
+      {
+        "id": "W2-010",
+        "invariant": "tanpa filter apa pun tetap tanpa row B",
+        "pass": true
+      },
+      {
+        "id": "W2-025",
+        "invariant": "woven-only membuka sample woven (kontrol)",
+        "pass": true
+      },
+      {
+        "id": "W2-025",
+        "invariant": "woven-only DITOLAK membuka sample printing",
+        "pass": true
+      },
+      {
+        "id": "W2-025",
+        "invariant": "patch sample printing ditolak tanpa mutasi",
+        "pass": true
+      },
+      {
+        "id": "W2-004",
+        "invariant": "cancel generik tagihan jasa makloon ditolak 409, status tetap posted, tanpa kunci tertinggal",
+        "pass": true
+      }
+    ],
+    "tail": "025 — patch sample printing ditolak tanpa mutasi\nPASS W2-004 — cancel generik tagihan jasa makloon ditolak 409, status tetap posted, tanpa kunci tertinggal\n6/6\n"
+  },
+  {
+    "script": "docs/audit/wave-2/iterations/2026-10-04-W2-P08-decisions/regression_p08_fase1.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 9.16,
+    "log": "test-logs\\w2-02-regression_p08_fase1.log",
+    "cases": [
+      {
+        "id": "W2-025",
+        "invariant": "riwayat labdip woven-only tidak memuat sample printing ",
+        "pass": true
+      },
+      {
+        "id": "W2-025",
+        "invariant": "akun tanpa batas lini tetap melihat keduanya (kontrol) ",
+        "pass": true
+      },
+      {
+        "id": "W2-025",
+        "invariant": "endpoint turunan baru (required-tests) ikut ditolak lintas lini ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-01",
+        "invariant": "daftar pelaksana memuat MD woven, tidak memuat MD printing ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-01",
+        "invariant": "setor tanpa pelaksana ditolak 422 tanpa mutasi ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-01",
+        "invariant": "pelaksana di luar lini sample ditolak 422 ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-01",
+        "invariant": "admin menginput untuk MD woven → performed_by=MD, recorded_by=admin ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-03",
+        "invariant": "woven wajib labdip+handfeel (dari master lini); handfeel terdeteksi kurang ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-03",
+        "invariant": "keputusan tanpa alasan override → 422, status tetap ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-03",
+        "invariant": "dengan alasan → diputus + override & timeline tercatat ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-03",
+        "invariant": "semua uji wajib ACC → diputus tanpa alasan & tanpa override ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-03",
+        "invariant": "spesifikasi printing tanpa sample → uji wajib lini terdeteksi kurang ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-03",
+        "invariant": "ACC spesifikasi tanpa alasan → 422, status tetap review ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-03",
+        "invariant": "rilis tanpa alasan override → 422, lifecycle tetap ",
+        "pass": true
+      },
+      {
+        "id": "W2-REQ-03",
+        "invariant": "spesifikasi legacy tanpa lini & tanpa sample → tidak ada uji wajib ",
+        "pass": true
+      }
+    ],
+    "tail": "ASS W2-REQ-03 rilis tanpa alasan override → 422, lifecycle tetap \nPASS W2-REQ-03 spesifikasi legacy tanpa lini & tanpa sample → tidak ada uji wajib \n15/15 pass\n"
+  },
+  {
+    "script": "docs/audit/wave-2/iterations/2026-10-04-W2-P08-decisions/regression_p08_fase2_6.py",
+    "adaptation": "Only /app path changed to candidate checkout; bootstrap supplies isolated Mongo, disabled dotenv, blocked external sockets; UTF-8 read mode",
+    "exit_code": 0,
+    "seconds": 12.45,
+    "log": "test-logs\\w2-03-regression_p08_fase2_6.log",
+    "cases": [
+      {
+        "id": "REQ09-A-1",
+        "invariant": "urutan A: round_down mengikuti prefix FEFO (bukan hard-code 905) ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-A-2",
+        "invariant": "tanpa pilihan / pilihan salah → 422 ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-A-3",
+        "invariant": "pilihan tidak cocok arah delta → 422 ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-A-4",
+        "invariant": "pilihan eksplisit (round_up / exact bila pas) → final, qty faktur = total roll ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-A-5",
+        "invariant": "qty baris ≠ total final → 422 ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-A-6",
+        "invariant": "exact_cut tanpa izin order.exact_cut → 403 ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-A-7",
+        "invariant": "exact_cut dengan izin → lolos, cut tercatat ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-B-1",
+        "invariant": "urutan B: round_down mengikuti prefix FEFO (bukan hard-code 905) ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-B-2",
+        "invariant": "tanpa pilihan / pilihan salah → 422 ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-B-3",
+        "invariant": "pilihan tidak cocok arah delta → 422 ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-B-4",
+        "invariant": "pilihan eksplisit (round_up / exact bila pas) → final, qty faktur = total roll ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-B-5",
+        "invariant": "qty baris ≠ total final → 422 ",
+        "pass": true
+      },
+      {
+        "id": "REQ09-UI-1",
+        "invariant": "preview memberi can_exact_cut sesuai izin (sales=false, admin=true) ",
+        "pass": true
+      },
+      {
+        "id": "REQ08-1",
+        "invariant": "dispatch tanpa loading check ditolak bila ada roll tanpa tag (gudang optional) ",
+        "pass": true
+      },
+      {
+        "id": "REQ08-2",
+        "invariant": "pengecualian roll tanpa tag tanpa alasan → 422 ",
+        "pass": true
+      },
+      {
+        "id": "REQ08-3",
+        "invariant": "pengecualian tanpa izin wms.untagged_override → 403 (peran gudang) ",
+        "pass": true
+      },
+      {
+        "id": "REQ08-4",
+        "invariant": "dengan izin + alasan → lolos, jejak di sesi & audit ",
+        "pass": true
+      },
+      {
+        "id": "REQ06-1",
+        "invariant": "PO 1000 terima 960 → 1 tugas MD (idempoten saat retry) ",
+        "pass": true
+      },
+      {
+        "id": "REQ06-2",
+        "invariant": "assignee = pembuat PO; PO ber-DP → Finance diberi tahu ",
+        "pass": true
+      },
+      {
+        "id": "REQ06-3",
+        "invariant": "notifikasi Finance dibuat ",
+        "pass": true
+      },
+      {
+        "id": "REQ06-4",
+        "invariant": "keputusan tanpa alasan → 422 ",
+        "pass": true
+      },
+      {
+        "id": "REQ06-5",
+        "invariant": "short-close → PO closed_short, nilai & pembayaran TIDAK berubah ",
+        "pass": true
+      },
+      {
+        "id": "REQ06-6",
+        "invariant": "retry keputusan sama idempoten ",
+        "pass": true
+      },
+      {
+        "id": "REQ06-7",
+        "invariant": "amend → menunggu amendment (nilai PO tidak diubah di tugas) ",
+        "pass": true
+      },
+      {
+        "id": "REQ07-1",
+        "invariant": "dua kebutuhan bersamaan tidak memakai bahan yang sama (700 + sisa 300, kurang 200) ",
+        "pass": true
+      },
+      {
+        "id": "REQ07-2",
+        "invariant": "bahan bebas untuk order #2 = 300 (reservasi #1 dihormati saat issue) ",
+        "pass": true
+      },
+      {
+        "id": "REQ07-3",
+        "invariant": "cancel melepas reservasi (available untuk komitmen naik) ",
+        "pass": true
+      },
+      {
+        "id": "REQ07-4",
+        "invariant": "PR→MKO memindah reservasi; issue mengonsumsi (tanpa ubah balance fisik) ",
+        "pass": true
+      },
+      {
+        "id": "REQ04-1",
+        "invariant": "sales: angka grup tersedia (global_total), tanpa rincian owner lain & tanpa biaya ",
+        "pass": true
+      },
+      {
+        "id": "REQ04-2",
+        "invariant": "total grup ≥ entitas saya (tidak dihitung dua kali) ",
+        "pass": true
+      },
+      {
+        "id": "REQ05-1",
+        "invariant": "backend tetap memakai entitas aktif (X-Entity-Id) — konteks PO tidak dibuang ",
+        "pass": true
+      },
+      {
+        "id": "REQ02-1",
+        "invariant": "preview mendeteksi stage tidak kanonik 'Grey' → 'grey' tanpa mengubah data ",
+        "pass": true
+      },
+      {
+        "id": "REQ02-2",
+        "invariant": "eksekusi dengan preview basi → 409 ",
+        "pass": true
+      },
+      {
+        "id": "REQ02-3",
+        "invariant": "apply batch → stage kanonik, SKU tetap ",
+        "pass": true
+      },
+      {
+        "id": "REQ02-4",
+        "invariant": "rollback mengembalikan snapshot persis ",
+        "pass": true
+      },
+      {
+        "id": "REQ02-5",
+        "invariant": "koreksi nama: SKU tetap, histori nama tercatat ",
+        "pass": true
+      }
+    ],
+    "tail": "apply batch → stage kanonik, SKU tetap \nPASS REQ02-4 rollback mengembalikan snapshot persis \nPASS REQ02-5 koreksi nama: SKU tetap, histori nama tercatat \n36/36\n"
+  }
+]

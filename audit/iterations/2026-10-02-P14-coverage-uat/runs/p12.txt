@@ -1,0 +1,142 @@
+# 2026-10-02-P12-payroll-hr-marketing/repro_p12.py (1s)
+[
+ {
+  "id": "HR-02",
+  "invariant": "2 jam hari kerja = 3,5× upah sejam & overlap absensi+pengajuan dihitung sekali",
+  "pass": true,
+  "detail": "overtime=3500.0 min=120"
+ },
+ {
+  "id": "IX-04",
+  "invariant": "absensi flagged/belum approved tidak dibayar",
+  "pass": true,
+  "detail": "120"
+ },
+ {
+  "id": "IX-04",
+  "invariant": "setelah approval dihitung satu kali",
+  "pass": true,
+  "detail": "min=240 amt=7000.0"
+ },
+ {
+  "id": "HR-02",
+  "invariant": "hari istirahat 10 jam (5 hari kerja) = 23× upah sejam",
+  "pass": true,
+  "detail": "30000.0"
+ },
+ {
+  "id": "HR-02",
+  "invariant": "duplikat pengajuan tanggal sama tidak dibayar dua kali",
+  "pass": true,
+  "detail": "30000.0"
+ },
+ {
+  "id": "IX-03",
+  "invariant": "shift 22–06 tepat jadwal: std 480, lembur 0",
+  "pass": true,
+  "detail": "{'work_min': 480, 'late_min': 0, 'early_leave_min': 0, 'overtime_min': 0, 'std_min': 480}"
+ },
+ {
+  "id": "IX-03",
+  "invariant": "lintas tahun, keluar +60 mnt → lembur 60",
+  "pass": true,
+  "detail": "{'work_min': 540, 'late_min': 0, 'early_leave_min': 0, 'overtime_min': 60, 'std_min': 480}"
+ },
+ {
+  "id": "IX-03",
+  "invariant": "clock-out sebelum masuk → tanpa lembur",
+  "pass": true,
+  "detail": "{'work_min': 0, 'late_min': 480, 'early_leave_min': 0, 'overtime_min': 0, 'std_min': 480}"
+ },
+ {
+  "id": "IX-03",
+  "invariant": "shift siang tetap (std 540, lembur 60)",
+  "pass": true,
+  "detail": "{'work_min': 600, 'late_min': 0, 'early_leave_min': 0, 'overtime_min': 60, 'std_min': 540}"
+ },
+ {
+  "id": "HR-01",
+  "invariant": "masa biasa tetap TER (10 jt kategori A = 2%)",
+  "pass": true,
+  "detail": "200000.0"
+ },
+ {
+  "id": "HR-01",
+  "invariant": "Desember = PPh setahun Pasal 17 − potongan sebelumnya (800.000)",
+  "pass": true,
+  "detail": "pph21=800000.0 annual={'tax_gross': 120000000.0, 'biaya_jabatan': 6000000.0, 'pension_deduction': 0.0, 'neto': 114000000.0, 'ptkp': 54000000.0, 'pkp': 60000000.0, 'annual_tax': 3000000.0, 'prior_withheld': 2200000.0, 'months': 12}"
+ },
+ {
+  "id": "HR-01",
+  "invariant": "berhenti Juni: rekonsiliasi bagian tahun → lebih potong dikembalikan (−850.000)",
+  "pass": true,
+  "detail": "pph21=-850000.0 net=10850000.0"
+ },
+ {
+  "id": "HR-01",
+  "invariant": "karyawan berhenti pada periode itu ikut payroll masa terakhir",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "IX-01",
+  "invariant": "override jatah 0 bertahan setelah recompute",
+  "pass": true,
+  "detail": "{'employee_id': 'audit_p12_00ea20_elv', 'entity_id': 'ent_ksc', 'year': 2031, 'entitlement': 0, 'used': 0, 'pending': 0, 'remaining': 0, 'updated_at': '2026-10-02T19:21:58.126398+00:00', 'id': 'lbal_b4947f848807', 'entitlement_override': True}"
+ },
+ {
+  "id": "IX-01",
+  "invariant": "jatah negatif ditolak",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "HR-03",
+  "invariant": "dua pengajuan 10 hari dengan jatah 12 → yang kedua ditolak (pending dihitung)",
+  "pass": true,
+  "detail": "Saldo cuti 2030 tidak cukup (sisa 2 hari setelah pengajuan yang menunggu, diminta 10 hari)."
+ },
+ {
+  "id": "HR-03",
+  "invariant": "pengajuan bertabrakan tanggal ditolak",
+  "pass": true,
+  "detail": "Tanggal bertabrakan dengan pengajuan cuti KSC/LV-00007."
+ },
+ {
+  "id": "HR-03",
+  "invariant": "approved tidak melebihi jatah",
+  "pass": true,
+  "detail": "{'employee_id': 'audit_p12_00ea20_elv', 'entity_id': 'ent_ksc', 'year': 2030, 'entitlement': 12, 'used': 10, 'pending': 0, 'remaining': 2, 'updated_at': '2026-10-02T19:21:58.158626+00:00', 'id': 'lbal_bd4d37811889', 'entitlement_override': True}"
+ },
+ {
+  "id": "HR-03",
+  "invariant": "cuti lintas tahun dibebankan per tahun tanggal kerja (2030: +2, 2031: 3)",
+  "pass": true,
+  "detail": "2030=12 2031=3"
+ },
+ {
+  "id": "HR-03",
+  "invariant": "cancel satu cuti tidak menghapus absensi request lain",
+  "pass": true,
+  "detail": "kept=True gone=False"
+ },
+ {
+  "id": "MK-01",
+  "invariant": "update reach tidak menghapus likes",
+  "pass": true,
+  "detail": "{'likes': 10.0, 'reach': 100.0, 'recorded_at': '2026-10-02T19:21:58.202163+00:00'}"
+ },
+ {
+  "id": "MK-01",
+  "invariant": "likes 0 eksplisit mengganti nilai",
+  "pass": true,
+  "detail": "{'likes': 0.0, 'reach': 100.0, 'recorded_at': '2026-10-02T19:21:58.203935+00:00'}"
+ },
+ {
+  "id": "MK-01",
+  "invariant": "dua update field berbeda bersamaan tidak saling menimpa",
+  "pass": true,
+  "detail": "{'likes': 0.0, 'reach': 100.0, 'recorded_at': '2026-10-02T19:21:58.206444+00:00', 'shares': 5.0, 'comments': 7.0}"
+ }
+]
+pass=23 fail=0

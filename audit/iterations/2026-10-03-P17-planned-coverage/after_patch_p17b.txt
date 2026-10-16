@@ -1,0 +1,53 @@
+  [poc-stock] snapshot 81 dokumen stok dari 2 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (81 dokumen, 2 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "GRN-06",
+  "invariant": "berat netto beda >toleransi → weight_mismatch (tidak memblokir)",
+  "pass": true,
+  "detail": "['weight_mismatch', 'not_on_dn']"
+ },
+ {
+  "id": "GRN-06",
+  "invariant": "barang dihitung tanpa qty di SJ → not_on_dn memblokir",
+  "pass": true,
+  "detail": "['weight_mismatch', 'not_on_dn']"
+ },
+ {
+  "id": "GRN-06",
+  "invariant": "tutup ditolak selama not_on_dn terbuka (BLOCKERS_OPEN)",
+  "pass": true,
+  "detail": "400 {\"detail\":{\"code\":\"BLOCKERS_OPEN\",\"keys\":[\"L2:not_on_dn\"],\"message\":\"1 selisih pemblokir belum diselesaikan: baris 2 not"
+ },
+ {
+  "id": "GRN-06",
+  "invariant": "aksi override di luar daftar ditolak 400",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "GRN-06",
+  "invariant": "penghitung gudang tidak bisa override selisih (403)",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "GRN-06",
+  "invariant": "override approver tersimpan (aksi, alasan, oleh)",
+  "pass": true,
+  "detail": "{'action': 'accept_note', 'reason': 'TEST_P17A_0ae723 supplier kirim lebih', 'by': 'Budi Santoso', 'at': '2026-10-03T10:27:46.225665+00:00'}"
+ },
+ {
+  "id": "GRN-06",
+  "invariant": "sesudah override GRN closed, stok B 15 diterima sesuai hitung (bukan SJ)",
+  "pass": true,
+  "detail": "{'prod_songket_palembang': 60.0, 'prod_jumputan_palembang': 15.0}"
+ },
+ {
+  "id": "GRN-06",
+  "invariant": "override tercatat di audit dengan alasan",
+  "pass": true,
+  "detail": "True"
+ }
+]
+pass=8 fail=0

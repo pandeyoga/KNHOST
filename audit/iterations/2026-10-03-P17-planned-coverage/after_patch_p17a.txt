@@ -1,0 +1,65 @@
+  [poc-stock] snapshot 81 dokumen stok dari 2 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (81 dokumen, 2 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "GRN-04",
+  "invariant": "3 baris (2 tugas) sesuai SJ → rekonsiliasi tanpa pemblokir",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "GRN-04",
+  "invariant": "GRN closed; semua baris terposting done",
+  "pass": true,
+  "detail": "closed"
+ },
+ {
+  "id": "GRN-04",
+  "invariant": "dua baris SJ ke tugas yang sama diposting SEKALI sebagai satu grup",
+  "pass": true,
+  "detail": "[{'lines': [1], 'status': 'done', 'result_ref': 'wms_test_p17a_d99bb5_0', 'remainder': {'created': False, 'reason': 'fulfilled', 'remaining': 0.0}}, {'lines': [2, 3], 'status': 'done', 'result_ref': 'wms_test_p17a_d99bb5_1', 'remainder': {'created': True, 'task_id': 'wms_52903a722c4e', 'remaining': "
+ },
+ {
+  "id": "GRN-04",
+  "invariant": "PO received_qty: A 60, B 70 (50+20)",
+  "pass": true,
+  "detail": "{'prod_songket_palembang': 60.0, 'prod_jumputan_palembang': 70.0}"
+ },
+ {
+  "id": "GRN-04",
+  "invariant": "baris penuh tidak membentuk tugas sisa",
+  "pass": true,
+  "detail": "{'created': False, 'reason': 'fulfilled', 'remaining': 0.0}"
+ },
+ {
+  "id": "GRN-04",
+  "invariant": "baris parsial → tepat SATU tugas sisa expected 50, remainder_of tugas asal",
+  "pass": true,
+  "detail": "({'created': True, 'task_id': 'wms_52903a722c4e', 'remaining': 50.0}, [('wms_52903a722c4e', 50.0)])"
+ },
+ {
+  "id": "GRN-04",
+  "invariant": "ensure_remainder_task ulang idempoten (exists, tidak menggandakan)",
+  "pass": true,
+  "detail": "{'created': False, 'reason': 'exists', 'task_id': 'wms_52903a722c4e', 'remaining': 50.0}"
+ },
+ {
+  "id": "GRN-04",
+  "invariant": "close ulang ditolak 409; roll GRN tetap 4",
+  "pass": true,
+  "detail": "409 rolls=4"
+ },
+ {
+  "id": "GRN-04",
+  "invariant": "kiriman sisa lunas → tanpa tugas sisa baru, PO B 120, tak ada tugas aktif",
+  "pass": true,
+  "detail": "({'created': False, 'reason': 'po_closed'}, {'prod_songket_palembang': 60.0, 'prod_jumputan_palembang': 120.0})"
+ },
+ {
+  "id": "GRN-04",
+  "invariant": "Σ panjang roll dari 2 GRN = Σ received PO (180)",
+  "pass": true,
+  "detail": "180.0"
+ }
+]
+pass=10 fail=0

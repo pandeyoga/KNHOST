@@ -1,0 +1,83 @@
+[
+ {
+  "view": "operations",
+  "chip": "Bandung",
+  "before": 36,
+  "after": 18,
+  "changed": false,
+  "before_sig": "KSC/TRF-00003 · Permintaan transfer song|1 hari|Setujui|SO-CC-00002 · Opname Bandung — Spot Chec",
+  "after_sig": "KSC/TRF-00003 · Permintaan transfer song|1 hari|Setujui|SO-CC-00002 · Opname Bandung — Spot Chec"
+ },
+ {
+  "view": "operations",
+  "chip": "Jakarta",
+  "before": 36,
+  "after": 23,
+  "changed": false,
+  "before_sig": "KSC/TRF-00003 · Permintaan transfer song|1 hari|Setujui|SO-CC-00002 · Opname Bandung — Spot Chec",
+  "after_sig": "KSC/TRF-00003 · Permintaan transfer song|1 hari|Setujui|SO-CC-00002 · Opname Bandung — Spot Chec"
+ },
+ {
+  "view": "returns",
+  "chip": "Retur",
+  "before": 1,
+  "after": 1,
+  "changed": false,
+  "before_sig": "SRET-00001\tSO-0001\tToko Kain Sejahtera\tR",
+  "after_sig": "SRET-00001\tSO-0001\tToko Kain Sejahtera\tR"
+ },
+ {
+  "view": "returns",
+  "chip": "Barang Sisa (BS)",
+  "before": 1,
+  "after": 0,
+  "changed": true,
+  "before_sig": "SRET-00001\tSO-0001\tToko Kain Sejahtera\tR",
+  "after_sig": ""
+ },
+ {
+  "view": "rnd-samples",
+  "chip": "Handfeel",
+  "before": 4,
+  "after": 1,
+  "changed": true,
+  "before_sig": "KSC/SMP-00001\nPengajuan awal\n\nLabdip\nHan|Pengajuan awal|Labdip\nHandfeel|Cirebon Craft, NTT Weaving Co\n4 rnd",
+  "after_sig": "Pengajuan awal\nKSC/SMP-00001\nbelum dinil"
+ },
+ {
+  "view": "rnd-samples",
+  "chip": "Labdip",
+  "before": 4,
+  "after": 1,
+  "changed": true,
+  "before_sig": "KSC/SMP-00001\nPengajuan awal\n\nLabdip\nHan|Pengajuan awal|Labdip\nHandfeel|Cirebon Craft, NTT Weaving Co\n4 rnd",
+  "after_sig": "Pengajuan awal\nKSC/SMP-00001\nbelum dinil"
+ },
+ {
+  "view": "sales",
+  "chip": "Batik",
+  "before": 12,
+  "after": 3,
+  "changed": true,
+  "before_sig": "A\nHarga khusus\n\nBTK-MEGA-001\n\nBatik Mega|A\nHarga pelanggan\n\nTNI-GRGD-001\n\nTenun I|A\n\nLRK-CLSC-001\n\nLurik Klasik Solo\n\nLu",
+  "after_sig": "A\nHarga khusus\n\nBTK-MEGA-001\n\nBatik Mega|A\n\nBTK-MEGA-002\n\nBatik Mega Mendung Prem|A\n\nBTK-MEGA-003\n\nBatik Mega Mendung Pr"
+ },
+ {
+  "view": "sales",
+  "chip": "B",
+  "before": 12,
+  "after": 3,
+  "changed": true,
+  "before_sig": "A\nHarga khusus\n\nBTK-MEGA-001\n\nBatik Mega|A\nHarga pelanggan\n\nTNI-GRGD-001\n\nTenun I|A\n\nLRK-CLSC-001\n\nLurik Klasik Solo\n\nLu",
+  "after_sig": "B\n\nJMP-PLB-001\n\nJumputan Palembang Pelan|B\n\nBNG-KTN-SISA\n\nBenang Katun Sisa (per |B\n\nGREY-KTN-SISA\n\nKain Grey Katun Sisa"
+ },
+ {
+  "view": "design-requests",
+  "chip": "Revisi ≥ 1",
+  "before": 8,
+  "after": 2,
+  "changed": true,
+  "before_sig": "KSC/DSR-00004\t\nMotif kawung modern (bung|Revisi ke-1|KSC/DSR-00003\t\nArtwork printing motif pa|Pengajuan awal",
+  "after_sig": "KSC/DSR-00004\t\nMotif kawung modern (bung|Revisi ke-1"
+ }
+]

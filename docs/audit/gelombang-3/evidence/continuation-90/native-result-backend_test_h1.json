@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_h1.py",
+    "database": "knhost_audit_native90_cb9a27e269b440c3905ecdb1374fa713",
+    "exit": 1,
+    "seconds": 52.32,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_h1.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "ESS - CLOCK-IN/OUT\n======================================================================\nℹ️ Testing ESS endpoints (warehouse user)...\nℹ️ Test #23: GET hr/attendance/me (ESS - my attendance)\n✅   PASSED (status: 200)\nℹ️   Employee: Eko Prasetyo\nℹ️   Shift: Shift Reguler (08:00-17:00)\nℹ️   Today record: hadir\nℹ️ \nAttempting clock-in (may 409 if already done today)...\nℹ️ Test #24: POST hr/attendance/clock-in (ESS)\n❌   FAILED - Expected 200, got 409\n❌   Response: {'detail': 'Anda sudah clock-in hari ini.'}\nℹ️   Clock-in may have failed due to existing record (409 expected)\n\n======================================================================\nPHASE 11: RBAC - PERMISSION TESTS\n======================================================================\nℹ️ Testing RBAC - sales should NOT be able to manage attendance...\nℹ️ Test #25: POST hr/shifts as SALES (should 403)\n✅   PASSED (status: 403)\nℹ️ Test #26: POST hr/geofences as SALES (should 403)\n✅   PASSED (status: 403)\nℹ️ Test #27: GET hr/shifts as SALES (should 200 - view only)\n❌   FAILED - Expected 200, got 403\n❌   Response: {'detail': 'Permission ditolak: hr.view'}\nℹ️ Test #28: POST hr/shifts as MANAGER (should 200)\n✅   PASSED (status: 200)\n\n======================================================================\nH1 ATTENDANCE MODULE - TEST SUMMARY\n======================================================================\nTotal Tests: 28\n✅ Passed: 26\n❌ Failed: 2\nSuccess Rate: 92.9%\n\n======================================================================\nFAILURES:\n======================================================================\n1. POST hr/attendance/clock-in (ESS): Expected 200, got 409\n2. GET hr/shifts as SALES (should 200 - view only): Expected 200, got 403\n======================================================================\n"
+  }
+]

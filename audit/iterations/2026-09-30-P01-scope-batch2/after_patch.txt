@@ -1,0 +1,81 @@
+[
+ {
+  "id": "AX-04",
+  "invariant": "owner A transfer cannot reserve roll of B",
+  "pass": true,
+  "detail": "['HTTPException', 'available']"
+ },
+ {
+  "id": "AX-04",
+  "invariant": "explicit A roll reserved (control)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "AX-04",
+  "invariant": "explicit pick rebuilds balance projection",
+  "pass": true,
+  "detail": "{'reserved_before': 50.0, 'reserved_after': 60.0}"
+ },
+ {
+  "id": "AX-06",
+  "invariant": "multi-owner print job rejected before encode side effects",
+  "pass": true,
+  "detail": "['HTTPException', 0, 0]"
+ },
+ {
+  "id": "GN-04",
+  "invariant": "sample of A cannot take material from roll of B",
+  "pass": true,
+  "detail": "[\"RndError('Roll tidak ditemukan.')\", {'length_remaining': 10.0}]"
+ },
+ {
+  "id": "CX-02",
+  "invariant": "store credit cannot be allocated to order of other customer/entity",
+  "pass": true,
+  "detail": "['HTTPException', 400]"
+ },
+ {
+  "id": "GN-10",
+  "invariant": "POS best-sellers for scope A excludes B orders",
+  "pass": true,
+  "detail": "7"
+ },
+ {
+  "id": "GN-16",
+  "invariant": "digest of A-only user excludes entity B notifications",
+  "pass": true,
+  "detail": "2"
+ },
+ {
+  "id": "GN-16",
+  "invariant": "scheduled AI report is private (recipient_role empty)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "RF-09",
+  "invariant": "multi-entity count session is scannable by its creator scope",
+  "pass": true,
+  "detail": "None"
+ },
+ {
+  "id": "RF-08",
+  "invariant": "A-only user cannot complete A+B session",
+  "pass": true,
+  "detail": "HTTPException(status_code=404, detail='Sesi cycle count tidak ditemukan')"
+ },
+ {
+  "id": "RF-08",
+  "invariant": "A-only history excludes A+B count",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "RF-08",
+  "invariant": "A-only detail of A+B count denied",
+  "pass": true,
+  "detail": ""
+ }
+]
+SUMMARY pass=13 fail=0

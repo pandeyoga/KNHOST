@@ -1,0 +1,23 @@
+{
+  "summary": "Verified 2026-10 admin-bypass & fulfillment-plan features. Backend: 9/9 pytest cases pass (auth baseline, GET /api/sales-admin/orders/{id}/fulfillment-plan as admin and salesadmin with correct shape; POST plan validations 400 for total>shortage, all-zero, stock>own, wait>incoming; admin can approve own PO (SoD bypass OK); non-admin manager still 403/SoD-blocked). Live probing of demo order so_23cd0fac9eb6 confirmed shortage=235, own_available=85, incoming_total=400 per spec. Admin PO approve on PO with chain=[level 1, manager] succeeded (status pending, approval_status=approved) with no SoD block. Frontend smoke: login as admin, Meja Admin Sales loads, 'Pemenuhan' button opens fulfill-dialog with all required testids (fulfill-dialog, fulfill-line-<pid>, fulfill-short-<pid>, fulfill-stock-<pid>, fulfill-stock-<pid>-max, fulfill-reorder-<pid>, fulfill-reorder-<pid>-max, fulfill-wait-<pid>, fulfill-wait-<pid>-max, fulfill-left-<pid>, fulfill-note, fulfill-cancel, fulfill-submit). Submit disabled when all zero (observed Rp-less 'Jalankan rencana' with disabled styling). The fulfill-ic-<pid>-<entityId> row is conditionally rendered only when other_entities has stock (demo SO had none) — behaviour consistent with spec. fulfill-history row renders only when past decisions exist. Code-review of backend/services/sales_order_helpers.py reserve_roll_mode_item (lines 123-181) confirms cross-entity roll selections now populate result['proposals'] (no auto warehouse_transfers / auto_from_order creation).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_admin_bypass_and_fulfillment_plan.py",
+    "/app/test_reports/pytest/pytest_admin_bypass.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "sales_order_helpers.reserve_roll_mode_item correctly removes auto-transfer path and emits proposals[]; verified at lines 150-181.",
+    "approval_matrix_service.evaluate() sets admin_bypass=True and sod_blocked() short-circuits for admin — matches request.",
+    "purchase_orders.approve route (around lines 775-870) iterates every pending level when actor is admin — single admin approve clears multi-level chains.",
+    "fulfillment_plan router has required-permission guard order.confirm and uses _assert_may_choose_source only when interco present (good)."
+  ],
+  "updated_files": ["/app/backend/tests/test_admin_bypass_and_fulfillment_plan.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, manager@..., salesadmin@... — demo12345 (as per /app/memory/test_credentials.md).",
+  "seed_data_creation": "Transient PO per test (created and cancelled). No residual data expected; both PO cancel calls were issued post-assertion.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Admin PO approve for SoD bypass requires total_amount > 100M to actually require approval (approval_rules thresholds). The demo product prod_batik_mega has supplier price list that overrides unit_price — use quantity=1000 to exceed threshold. External (non-group) supplier required for standard PO (e.g., sup_4e23bdaf03d7). Fulfillment plan demo order: so_23cd0fac9eb6."
+}

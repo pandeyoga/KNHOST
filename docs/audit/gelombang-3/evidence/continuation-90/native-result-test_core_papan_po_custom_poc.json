@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_papan_po_custom_poc.py",
+    "database": "knhost_audit_native90_0985d0a5ff0746b48862adacb1b4b67d",
+    "exit": 1,
+    "seconds": 58.61,
+    "pass_log_tokens": 35,
+    "fail_log_tokens": 3,
+    "log": "continuation-90\\native-test_core_papan_po_custom_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "knya seragam)\n  [PASS] sesudah pesannya DIBACA, job keadaan tetap tidak menagih lagi (penagihan berulang milik `approval_reminder`) 0\n  [PASS] pengingat harian tetap terkirim (satu pemilik penagihan) matched=15 · tertua=60 hari\n  [PASS] pengingat menyebut dokumen TERTUA yang nyata (tidak disembunyikan) oldest=SORD-POC-0099 60 hari\n  [PASS] pengingat harian: maksimal SATU per orang per hari [1]\n\n▶ P6 — C1/C2: peran ber-label & badan usaha disebut\n  [PASS] baris papan mengirim `role` (bahan label peran) role='manager'\n  [PASS] baris papan mengirim `entity_id` (bahan badge) entity_id='ent_ksc'\n  [PASS] AdminHome.jsx memakai `roleLabel()` (bukan kode peran mentah `manager`)\n  [PASS] AdminHome.jsx menampilkan `<EntityBadge/>` (INV-UI-02: id `ent_*` dilarang)\n  [PASS] A3: nama layar tujuan TIDAK lagi ditebak di frontend (nol fallback)\n  [PASS] B5: papan punya keadaan 'tidak bisa dibaca' (kegagalan ≠ kabar baik)\n  [PASS] B5.2: AdminHome.jsx menilai 'tidak bisa dibaca' SEBELUM 'daftar kosong' urutan cabang benar\n  [PASS] B5.2: ManagerHome.jsx menilai 'tidak bisa dibaca' SEBELUM 'daftar kosong' urutan cabang benar\n  [PASS] B5.2: Dasbor Manajer punya `manager-home-approvals-unreadable`\n  [PASS] B5.2: Dasbor Manajer punya `manager-home-late-unreadable`\n\n▶ P7 — nol residu setelah POC (DIUKUR, bukan diklaim)\n  [FAIL] seluruh koleksi tersentuh kembali ke jumlah awal (INV-GATE-01) {'notifications': (83, 85), 'audit_logs': (66, 67), 'sessions': (4, 5)}\n  [PASS] BUKTI-MERAH: pengukur residu MEMERAH saat 1 dokumen sengaja nyangkut\n  [FAIL] sentinel ikut dibersihkan (POC ini nol residu)\n\n==============================================================================\n  HASIL: 34 PASS · 2 FAIL dari 36 pemeriksaan\n==============================================================================\n"
+  }
+]

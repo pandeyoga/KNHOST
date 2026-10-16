@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_group_cash_migration_poc.py",
+    "database": "knhost_audit_native90_30019a5549ca4b16b4be548efac5cac0",
+    "exit": 1,
+    "seconds": 61.44,
+    "pass_log_tokens": 35,
+    "fail_log_tokens": 5,
+    "log": "continuation-90\\native-test_core_group_cash_migration_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "eds_entity_mapping` (tetap terlihat)\n  [FAIL] poc_e7e_12 dibuatkan kasus keuangan `salah_entitas`  \n  [PASS] poc_e7e_13 tetap tingkat grup (tidak ditebak) entity_id='all'\n  [PASS] poc_e7e_13 ditandai `needs_entity_mapping` (tetap terlihat)\n  [FAIL] poc_e7e_13 dibuatkan kasus keuangan `salah_entitas`  \n\n▶ G4 — cermin rekening per badan usaha; rekening grup TIDAK dihapus\n  [PASS] cermin rekening untuk KSC dibuat bank_kas_besar_grup_poc_ksc · Kas Besar Grup — Sukacita\n  [PASS] cermin KSC bersaldo awal 0 (saldo awal tetap di rekening lama)\n  [PASS] cermin rekening untuk Kanda dibuat bank_kas_besar_grup_poc_kanda · Kas Besar Grup — Kanda Fabric\n  [PASS] cermin Kanda bersaldo awal 0 (saldo awal tetap di rekening lama)\n  [PASS] rekening grup TIDAK dihapus (riwayat rekonsiliasi menunjuk id-nya)\n  [PASS] rekening grup BELUM dinonaktifkan selama 2 baris belum terbukti pemiliknya is_active=True\n\n▶ G5 — IDEMPOTENT: `--apply` kedua tidak menggandakan apa pun\n  [PASS] `--apply` kedua selesai tanpa galat rc=0\n  [PASS] jumlah cermin rekening tetap 2\n  [PASS] jumlah kasus keuangan tetap (dedup by source.id) 0\n\n▶ G6 — setelah keputusan orang, rekening grup dinonaktifkan\n  [PASS] `--apply` setelah keputusan selesai tanpa galat rc=0\n  [PASS] rekening grup dinonaktifkan (bukan dihapus) — utang migrasi tertutup is_active=False retired_by=E7e\n  [PASS] nol transaksi kas tingkat grup tersisa sisa=0\n\n▶ G7 — nol residu setelah POC\n  [FAIL] transaksi POC hilang seluruhnya\n  [FAIL] rekening grup POC & cerminnya hilang seluruhnya\n  [PASS] jumlah transaksi tingkat grup kembali seperti sebelum POC 0\n\n==============================================================================\n  HASIL: 34 PASS · 4 FAIL dari 38 pemeriksaan\n==============================================================================\n"
+  }
+]

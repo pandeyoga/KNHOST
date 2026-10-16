@@ -1,0 +1,27 @@
+{
+  "summary": "GRN Fase 2 (backend without OCR) verified. Ran sequential pytest -n0 on tests/test_inbound_complete_characterization.py + tests/test_grn_phase0.py + tests/test_wms_advance_expected.py + tests/test_grn_phase2.py — 22/22 PASSED in 11.49s. test_grn_phase2.py covers 6 scenarios: (1) full flow matches legacy golden fingerprint (task_status/qty/rolls/PO delta/GL/lots), (2) blind_count enforced by API — warehouse sees blind:true, no declared/read/converted/recon/checks/files/discrepancies, GET /files/{page} → 403; admin sees everything, (3) partial delivery discrepancies + close creates exactly ONE remainder task with remainder_of pointer & expected_qty = ordered − received, (4) duplicate DN normalization (case/space/dot/slash/dash) → 409 DN_DUPLICATE, cancel of first clears the block, (5) receiving.mode='grn' → legacy scan-label/complete return 409 GRN_MODE on fresh task; mode restored to legacy afterwards, (6) entity isolation via X-Entity-Id returns 403/404. Zero residue verified post-run: 0 wms_tasks with id prefix wms_grn2_/wms_char_/wms_grn0_, 0 wms_tasks with remainder_of, goods_receipts collection empty, 0 inventory_rolls with grn_id, 0 wms_tasks with grn_active_id, receiving.mode config unset (effective = legacy default). Frontend smoke: warehouse login (Gudang preset) → ?view=operations&entity=ent_ksc → Sukacita/Gudang scope active, Barang Masuk tab renders 19 inbound tasks (data-testid inbound-task-*), task panel opens on click for KSC/PO-00015 (SKU/supplier/scan-label input all rendered), 0 console errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_grn_phase2.py",
+    "/app/backend/tests/test_inbound_complete_characterization.py",
+    "/app/backend/tests/test_grn_phase0.py",
+    "/app/backend/tests/test_wms_advance_expected.py",
+    "/app/test_reports/pytest/iter66_grn_phase2.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fase 2 implementation is behaviour-preserving on the golden legacy path (test_full_flow_matches_legacy_golden passes with byte-for-byte fingerprint match).",
+    "Anti-duplicate DN normalization + entity isolation + blind-count contract + GRN_MODE guard all covered by dedicated tests and pass.",
+    "close_grn.ensure_remainder_task correctly emits exactly one remainder task with remainder_of pointer + expected_qty = ordered − received (assertion in test_partial_delivery_discrepancies_and_single_remainder).",
+    "receiving.mode config toggle is honoured by legacy scan-label / complete endpoints (409 GRN_MODE); test always restores mode to legacy in teardown — good hygiene."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (22/22)", "frontend": "smoke pass (0 console errors, inbound list + task panel functional)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 · warehouse@kainnusantara.id / demo12345 · manager@kainnusantara.id / demo12345 · finance@kainnusantara.id / demo12345 · X-Entity-Id: ent_ksc",
+  "seed_data_creation": "None. All tests create ephemeral GRNs/rolls/tasks and clean up in finally/teardown. Post-run residue check: 0 across all six sentinel collections.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fase 2 GREEN — GRN backend (create → manual-entry/dn → lines → start-count → scan-label/rolls → finish-count → resolve → close) plus cancel, blind-count, duplicate DN guard, remainder task, legacy guard (GRN_MANAGED/GRN_MODE), entity isolation are all covered by test_grn_phase2.py (6 tests). Fase 3 next per /app/memory/grn_ocr/Prompt_Implementasi_GRN_OCR_SJ.md. Legacy test_fase_sl_* still reference stale seed IDs — pre-existing, not a regression.",
+  "rca of the issue": "N/A — no bugs found; all 22 Fase 1+2 backend tests pass, frontend smoke clean, zero residue."
+}

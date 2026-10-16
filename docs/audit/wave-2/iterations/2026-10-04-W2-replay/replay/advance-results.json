@@ -1,0 +1,145 @@
+{
+  "database": "knhost_audit_3b74ac39a42d4b019ef848f764ea796b",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "mode": "Actual services+Mongo+GL; synthetic admin context; one read barrier for concurrency, no bank transfers",
+  "results": [
+    {
+      "id": "W2-CA-C01",
+      "kind": "control",
+      "label": "Three real approval stages",
+      "observed": [
+        "pending_pimpinan",
+        "pending_finance",
+        "approved"
+      ],
+      "expected_reproduction": [
+        "pending_pimpinan",
+        "pending_finance",
+        "approved"
+      ]
+    },
+    {
+      "id": "W2-CA-C02",
+      "kind": "control",
+      "label": "One approved advance gives one cash transaction",
+      "observed": [
+        "disbursed",
+        [
+          1,
+          100000.0
+        ]
+      ],
+      "expected_reproduction": [
+        "disbursed",
+        [
+          1,
+          100000
+        ]
+      ]
+    },
+    {
+      "id": "W2-CA-C03",
+      "kind": "control",
+      "label": "Sequential disburse retry rejected",
+      "observed": [
+        409,
+        [
+          1,
+          100000.0
+        ]
+      ],
+      "expected_reproduction": [
+        409,
+        [
+          1,
+          100000
+        ]
+      ]
+    },
+    {
+      "id": "W2-CA-C04",
+      "kind": "control",
+      "label": "Full settlement posts balanced expense journal",
+      "observed": [
+        "posted_to_gl",
+        100000.0,
+        100000.0
+      ],
+      "expected_reproduction": [
+        "posted_to_gl",
+        100000,
+        100000
+      ]
+    },
+    {
+      "id": "W2-CA-C05",
+      "kind": "control",
+      "label": "Repeated same settlement rejected",
+      "observed": 409,
+      "expected_reproduction": 409
+    },
+    {
+      "id": "W2-CA-E01",
+      "kind": "wave1_extension",
+      "label": "CX-05 second settlement credits advance again",
+      "observed": [
+        2,
+        200000.0,
+        [
+          1,
+          100000.0
+        ]
+      ],
+      "expected_reproduction": [
+        2,
+        200000,
+        [
+          1,
+          100000
+        ]
+      ]
+    },
+    {
+      "id": "W2-CA-E02",
+      "kind": "wave1_extension",
+      "label": "CX-05 residual20k yet parent settled",
+      "observed": [
+        "settled",
+        20000.0,
+        [
+          1,
+          100000.0
+        ]
+      ],
+      "expected_reproduction": [
+        "settled",
+        20000,
+        [
+          1,
+          100000
+        ]
+      ]
+    },
+    {
+      "id": "W2-CA-E03",
+      "kind": "wave1_extension",
+      "label": "CX-04 concurrent callers each disburse100k",
+      "observed": [
+        "disbursed",
+        "disbursed",
+        [
+          2,
+          200000.0
+        ]
+      ],
+      "expected_reproduction": [
+        "disbursed",
+        "disbursed",
+        [
+          2,
+          200000
+        ]
+      ]
+    }
+  ]
+}

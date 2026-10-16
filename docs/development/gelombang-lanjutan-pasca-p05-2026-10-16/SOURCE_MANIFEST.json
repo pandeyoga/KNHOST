@@ -1,0 +1,330 @@
+{
+  "scope": "Frozen historical sources and planned scope inventory; mutable BACKLOG/status and rendered documents are not hash-locked.",
+  "files": [
+    {
+      "path": "sources/01_Analisis_Jawaban_dan_Keadaan_Sistem.md",
+      "bytes": 36096,
+      "sha256": "bc061685ded7f8c3955df9d6cdf7c9bf83204d40bdb348b4ac8e3a5b51983157"
+    },
+    {
+      "path": "sources/02_Alur_Logistik_Transit_dan_Dokumen.md",
+      "bytes": 14486,
+      "sha256": "d74ef3c725b417ec62bb950238f9eddcb56dfb893e64a81366f981dc1350cc6c"
+    },
+    {
+      "path": "sources/03_Rancangan_Export_dan_Rapor_Staf.md",
+      "bytes": 17199,
+      "sha256": "9deb3c9985968b1924cfed285cb9e6cad841221880758e527de7e1b9a48d0d04"
+    },
+    {
+      "path": "sources/05_Bukti_Source_dan_Verifikasi.md",
+      "bytes": 10184,
+      "sha256": "7e12bab5b63b94b8b83a03f7ef013c8591ef762cf58a4723e1c37a192863cc37"
+    },
+    {
+      "path": "sources/08_Pemrosesan_Jawaban_Retur_dan_Flow_Terkini.md",
+      "bytes": 13202,
+      "sha256": "b4f627ad11b5676444de60ecd3d4b8afb1e1a9403e97bbb55dc573ddc9cbb169"
+    },
+    {
+      "path": "sources/09_Pertanyaan_Client_Retur_dan_Pendukung.md",
+      "bytes": 10789,
+      "sha256": "c149a06e0c5744426882ad03e33f949effbdc274490e8ed77d530f92c601be78"
+    },
+    {
+      "path": "sources/KEPUTUSAN_RETUR_SETELAH_JAWABAN_PEMILIK.json",
+      "bytes": 5136,
+      "sha256": "9ff871781985dc2c1948b1e62d3e399db22a50228dc1b97156042aac92a102ac"
+    },
+    {
+      "path": "sources/middleware/00_PANDUAN_PAKET.md",
+      "bytes": 3205,
+      "sha256": "75d271f2ee26291daaae648abd66989c74f1f17b969dad37d160aa7ab4389533"
+    },
+    {
+      "path": "sources/middleware/01_ARSITEKTUR_BERSAMA.md",
+      "bytes": 9345,
+      "sha256": "5c404c6cd5ec22097b7b46aaa7e8427ea1282f9ff598c863c0230c73eb45ea30"
+    },
+    {
+      "path": "sources/middleware/02_MODUL_HANDHELD_C72.md",
+      "bytes": 12334,
+      "sha256": "bf189c0c1d8800a2ad06e8b23c7cec8e6047a7e11edfc773274bdd03acec6f03"
+    },
+    {
+      "path": "sources/middleware/03_MODUL_READER_ANDROID_UR300.md",
+      "bytes": 13407,
+      "sha256": "8fade22cea93fac5ee8af03386037353a9e254d793421527f98d5f3745ebc022"
+    },
+    {
+      "path": "sources/middleware/04_MODUL_PRINTER_CP30EN.md",
+      "bytes": 11995,
+      "sha256": "3a9d6be8d95bac77b701a26af20fd0d65873d2613c7e53c86112eecab076e140"
+    },
+    {
+      "path": "sources/middleware/05_KONTRAK_API_TARGET.md",
+      "bytes": 17492,
+      "sha256": "dbde4d1fb4e62ee37e1fc08618f6857e6e5bd5e983eb9bcb71f380797fecfc4f"
+    },
+    {
+      "path": "sources/middleware/06_PERSIAPAN_COMMISSIONING.md",
+      "bytes": 5772,
+      "sha256": "c2c7c1b8601c368c09f326b5a4d1d3608636ce3d49171c7f1609780f66b7edd1"
+    },
+    {
+      "path": "sources/middleware/07_UAT_DAN_SERAH_TERIMA.md",
+      "bytes": 5249,
+      "sha256": "a3e6e255df83e4d6dce9948956d835854d56895c8c55579b2386968afb80769f"
+    },
+    {
+      "path": "sources/middleware/08_KETERKAITAN_DOKUMEN_SISTEM.md",
+      "bytes": 4722,
+      "sha256": "5686a97e6146481838585c96113a1dce99b77902d00e75732674bd9a717534b5"
+    },
+    {
+      "path": "sources/middleware/catatan-erp/ERP_GAP_NOTES.md",
+      "bytes": 7340,
+      "sha256": "8a33cfef0a95c62a1b9d696761297e58ca4ba4276f048ce7d6022c451978179b"
+    },
+    {
+      "path": "sources/middleware/commissioning/HARDWARE_PROFILE_TEMPLATE.json",
+      "bytes": 1023,
+      "sha256": "1e652b21a54d72863d99cf0a9ead67b581e823eed381b4fe53b36e5d9b956016"
+    },
+    {
+      "path": "sources/middleware/kontrak/CONTRACT_EXAMPLES.json",
+      "bytes": 3171,
+      "sha256": "02005e5d5c4227df3660163e93eb50861daa9faa90e12665dbccd7e0e06dd8c1"
+    },
+    {
+      "path": "sources/middleware/kontrak/OPENAPI_RFID_V2.json",
+      "bytes": 200056,
+      "sha256": "b19d938cc959e16eb334995b4ddf1ff07ef4a4931e6f0fd10d554ea58f62712c"
+    },
+    {
+      "path": "sources/middleware/MANIFEST.json",
+      "bytes": 3634,
+      "sha256": "cd7aa1f57b4d225e2d1ade600d3a99ea118a5025020b7857413a982741814132"
+    },
+    {
+      "path": "sources/middleware/QA_DOKUMENTASI.json",
+      "bytes": 872,
+      "sha256": "33340731fe5e1463dd4fb23eb8fc389d04abc6fa2f7a028b078313e0d6bccca9"
+    },
+    {
+      "path": "sources/middleware/README.md",
+      "bytes": 3205,
+      "sha256": "75d271f2ee26291daaae648abd66989c74f1f17b969dad37d160aa7ab4389533"
+    },
+    {
+      "path": "sources/middleware/uat/TRACEABILITY_RACC.json",
+      "bytes": 1867,
+      "sha256": "f60f81d12ae7989477106f24fcf809917873a06b13ba610ac094fcd21f4cce1a"
+    },
+    {
+      "path": "sources/middleware/uat/UAT_SCENARIOS.md",
+      "bytes": 15948,
+      "sha256": "eaf82d0d1df359274ca09d53b450313281f48a2b51b0059f268ed89ff2b528c3"
+    },
+    {
+      "path": "sources/middleware/uat/UAT_TRACKER.csv",
+      "bytes": 10803,
+      "sha256": "f5a1f9f0c11c732102206aba0c1730eb888391bf54f34d7c993788864209ec40"
+    },
+    {
+      "path": "sources/old-phases/P00.md",
+      "bytes": 4447,
+      "sha256": "265eb9e8e11c2b80edec22f031f339a33af32d60cac17962d57a250c12e50b73"
+    },
+    {
+      "path": "sources/old-phases/P01.md",
+      "bytes": 5199,
+      "sha256": "53e7d42b0214d57bdea611352983a4faad115112c11cb083bde0efe84e6a8f92"
+    },
+    {
+      "path": "sources/old-phases/P02.md",
+      "bytes": 5643,
+      "sha256": "4f427115670708341da89b237875195fc87fd62ffb9cb76ce7ff2d101f344f03"
+    },
+    {
+      "path": "sources/old-phases/P03.md",
+      "bytes": 4953,
+      "sha256": "7b85c8dc47bb10cbd5b58f98f02b3c528752407de33415756e50bcca9a3ae26b"
+    },
+    {
+      "path": "sources/old-phases/P04.md",
+      "bytes": 5329,
+      "sha256": "b64abea9e57b82b4e18607aa0f11ce89ce837a643e97bf5e3d9f0d446b22a462"
+    },
+    {
+      "path": "sources/old-phases/P05.md",
+      "bytes": 5250,
+      "sha256": "ff9510c08f8c8f4dd50219bdd76b8ac9c85d526486c9c9d08d1c3c5877c90b36"
+    },
+    {
+      "path": "sources/old-phases/P06.md",
+      "bytes": 4537,
+      "sha256": "aa6ed653c0f16217586b308d8ceedeeceeb805a2259f496f95cc3f19615c8b62"
+    },
+    {
+      "path": "sources/old-phases/P07.md",
+      "bytes": 4185,
+      "sha256": "13f3a368516e67ce5e72d93d323e51f616d012bf4fd90a175ab78e6683cae202"
+    },
+    {
+      "path": "sources/old-phases/P08.md",
+      "bytes": 4985,
+      "sha256": "36434770349a8346b861f067220835c07b6c019d5e8602842e54a29b7b13570e"
+    },
+    {
+      "path": "sources/old-phases/P09.md",
+      "bytes": 5406,
+      "sha256": "b83329d61304ece2422b25e243b4d387bd513dc15c6fe360185888ad72977ae4"
+    },
+    {
+      "path": "sources/old-phases/P10.md",
+      "bytes": 4506,
+      "sha256": "e3476225093b8334e6d6735366a99691a5291165d122a2f4746105cd13dff50d"
+    },
+    {
+      "path": "sources/P05_REPORT_SNAPSHOT.md",
+      "bytes": 8473,
+      "sha256": "a149bce22cb6cae96cf4cff931bf81118bf707b4cf6c7d4fac0849e4f3825cc2"
+    },
+    {
+      "path": "sources/PERTANYAAN_CLIENT_TERKINI.json",
+      "bytes": 11080,
+      "sha256": "062b1102526223c4c08e8cab0cdb92741610bd1aa8d1daecd7a49221889e08b6"
+    },
+    {
+      "path": "sources/PLAN_LAMA_ACCEPTANCE_MATRIX.md",
+      "bytes": 25434,
+      "sha256": "5b1fc94937c2dba934ec79e62c479e4c91a3c9124953be5b7d467fb886db2725"
+    },
+    {
+      "path": "sources/PLAN_LAMA_BACKLOG_SNAPSHOT.json",
+      "bytes": 61779,
+      "sha256": "eb7de67c702bb75b109882d6828bc42baa6fee637e08a7fa120b384b0ab969b0"
+    },
+    {
+      "path": "sources/PLAN_LAMA_DEVELOPMENT_PLAN.md",
+      "bytes": 14840,
+      "sha256": "0b1d0cf3675d7ca742eb3e4958c8bbf16f1eba5af9c7ee5b1441f9aa64addff4"
+    },
+    {
+      "path": "sources/PLAN_LAMA_TRACKER_SNAPSHOT.md",
+      "bytes": 13750,
+      "sha256": "ce25fd27412063878c98653f6cb9354014dd4de86e98f5a2ebf376c8a35b9b6d"
+    },
+    {
+      "path": "sources/README.md",
+      "bytes": 1737,
+      "sha256": "b8d403b5e6b61697d3d1801d609c67e7f7be73741c09a4d9482ae407a4ee8704"
+    },
+    {
+      "path": "sources/REGISTER_JAWABAN_2026_10_16.json",
+      "bytes": 6133,
+      "sha256": "21e44558336ede8c45ae20846c670a87a5f975a7c37439811cbed194bec69d75"
+    },
+    {
+      "path": "sources/REGISTER_PERNYATAAN_126_HISTORIS.json",
+      "bytes": 139674,
+      "sha256": "a49d6baf4b21157aba2d3217977e4a02602d40addbf735df210591e3f08b951d"
+    },
+    {
+      "path": "sources/rfid-plan/ACCEPTANCE_RFID.md",
+      "bytes": 8231,
+      "sha256": "77482defaba1f27d799e64e401a1565d6ece06d67f072c98f116b0592af1f8eb"
+    },
+    {
+      "path": "sources/rfid-plan/API_CONTRACT.md",
+      "bytes": 9045,
+      "sha256": "152e479472fbaa51f1ab66400c25f0a8cd87cd04afdfd9b5a3ec639533429d30"
+    },
+    {
+      "path": "sources/rfid-plan/CHANGELOG.md",
+      "bytes": 1494,
+      "sha256": "3b5ba7b5b7462980bedca14fcba47fc340e5920d6aca349859bb1e358dc8009d"
+    },
+    {
+      "path": "sources/rfid-plan/DEVELOPMENT_PLAN_RFID.md",
+      "bytes": 15930,
+      "sha256": "04cbf5265dd425c4efc93865b621e14a5ccb212c1db06dc8743faca62805fcf2"
+    },
+    {
+      "path": "sources/rfid-plan/evidence/README.md",
+      "bytes": 648,
+      "sha256": "80f48b02df0cc497c4afa9c2441f3128ff95b4eead6a73902c43ab9bade9732c"
+    },
+    {
+      "path": "sources/rfid-plan/INTEGRATION_WITH_MAIN_PLAN.md",
+      "bytes": 1800,
+      "sha256": "fb244509c3941140d548e8acc853fdf48d0e6f3e0fdd6af1d447cd6c8a9a449a"
+    },
+    {
+      "path": "sources/rfid-plan/MANIFEST.json",
+      "bytes": 2881,
+      "sha256": "3e671836b8d7877b1ce6dba048cad210ca45c99ceb1bb0604910af8742639804"
+    },
+    {
+      "path": "sources/rfid-plan/PRINTER_CP30EN_PLAN.md",
+      "bytes": 10810,
+      "sha256": "265724438cf8215511491a651634217ebfb84b82ce793a8aadbf7b6c3e40e3a7"
+    },
+    {
+      "path": "sources/rfid-plan/prompts/RF-P.md",
+      "bytes": 3909,
+      "sha256": "05339e4be80de28b6b7e06b9873c1da335d4bcb988645d665fd4ff61950768bb"
+    },
+    {
+      "path": "sources/rfid-plan/prompts/RF00.md",
+      "bytes": 3229,
+      "sha256": "e136b53cf7ca737c9b8792fce11b5232a454e1b41881fd63adea12271180c7e6"
+    },
+    {
+      "path": "sources/rfid-plan/prompts/RF01.md",
+      "bytes": 3618,
+      "sha256": "e77bc2434a9196bd5d5c9159a489e4a1a9da3368139b910339e622855b282507"
+    },
+    {
+      "path": "sources/rfid-plan/prompts/RF02.md",
+      "bytes": 3074,
+      "sha256": "f5de8edd585ca5e3a3c1b2f5bbe72380ac3ec86a7179dbfa58ba3fab21cc4813"
+    },
+    {
+      "path": "sources/rfid-plan/prompts/RF03.md",
+      "bytes": 3232,
+      "sha256": "80da9ef536e58065da3d13ccb5366fa9d4e0d4f0d207487073e172fcec8b4111"
+    },
+    {
+      "path": "sources/rfid-plan/prompts/RF04.md",
+      "bytes": 3148,
+      "sha256": "825cdf99e129399abcea63eae71ce04ed8938dd68e7fc7e0441adc810ea62554"
+    },
+    {
+      "path": "sources/rfid-plan/README.md",
+      "bytes": 1732,
+      "sha256": "8cfff7ff9d06e3df80622560739a95d771e1a7992e35476b5a529a41845ab008"
+    },
+    {
+      "path": "sources/rfid-plan/RFID_BACKLOG.json",
+      "bytes": 18241,
+      "sha256": "27687728d0ab1462c95a5f8ea750432b4e2b056ae98e725817e785bafff73136"
+    },
+    {
+      "path": "sources/rfid-plan/TRACKER.md",
+      "bytes": 4032,
+      "sha256": "be6247e25ce232662adba309f11488e214ade9e3251be264543742c2e6379ccb"
+    },
+    {
+      "path": "sources/VERIFIKASI_TERFOKUS.json",
+      "bytes": 1825,
+      "sha256": "a8ec0da1d80fb28869203fbf8eec8bc8fdc1cc9da73fc9d3e48aa2035a18c9b4"
+    },
+    {
+      "path": "SCOPE_BASELINE.json",
+      "bytes": 40972,
+      "sha256": "a1089eefa62e9b89e0d41ea49dd9ce47cd3e01e9529701ba4de0907e1dc1da5d"
+    }
+  ]
+}

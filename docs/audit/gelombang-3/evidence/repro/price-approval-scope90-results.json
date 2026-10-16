@@ -1,0 +1,173 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_072664669987482f9fe4b104609e2be1",
+  "observations": [
+    {
+      "id": "price.create_own",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.create_draft",
+      "expected": "draft",
+      "actual": "draft",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.patch_zero",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.patch_empty",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.patch_valid",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.submit_requires_evidence",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.upload_evidence",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.submit_with_evidence",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.submit_twice",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.approve_distinct_actor",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.effective_min_met",
+      "expected": 85.0,
+      "actual": 85.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.effective_min_unmet",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.delete_approved_guard",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.patch_approved_guard",
+      "expected": 409,
+      "actual": 409,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.foreign_create_rejected",
+      "expected": true,
+      "actual": true,
+      "note": "403",
+      "status": "pass"
+    },
+    {
+      "id": "price.foreign_get_control",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.list_scope_control",
+      "expected": [
+        "pra_6e9f4c74eebd"
+      ],
+      "actual": [
+        "pra_6e9f4c74eebd"
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "price.stats_scope",
+      "expected": 1,
+      "actual": 2,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "price.foreign_patch_rejected",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "price.foreign_submit_rejected",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "price.foreign_approve_rejected",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    },
+    {
+      "id": "price.foreign_effective_hidden",
+      "expected": false,
+      "actual": true,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "price.foreign_delete_rejected",
+      "expected": true,
+      "actual": false,
+      "note": "200",
+      "status": "observed_difference"
+    }
+  ],
+  "harness_errors": [],
+  "scope": "Original ASGI routes, actual local A/B master/entity records and explicitly assigned A-only sales capabilities; no external action."
+}

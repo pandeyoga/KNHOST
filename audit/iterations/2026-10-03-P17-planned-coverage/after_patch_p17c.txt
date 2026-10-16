@@ -1,0 +1,83 @@
+  [poc-stock] snapshot 236 dokumen stok dari 5 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (236 dokumen, 5 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "PROD-04",
+  "invariant": "rencana bahan menandai komponen kurang (batik cukup, lurik kurang)",
+  "pass": true,
+  "detail": "(320.0, 580.0, {'prod_batik_mega': True, 'prod_lurik_classic': False})"
+ },
+ {
+  "id": "PROD-04",
+  "invariant": "selesai WO ditolak 400 sebelum mutasi; stok & status tetap, tanpa kunci",
+  "pass": true,
+  "detail": "400 {\"detail\":\"Stok bahan Lurik Klasik Solo tidak cukup: butuh 600 yard, tersedia 580 (roll ditahan QC/dipesan tidak dihitun"
+ },
+ {
+  "id": "PROD-04",
+  "invariant": "shortage komponen ke-2 saat konsumsi → 409 'Tidak ada stok yang berubah'",
+  "pass": true,
+  "detail": "HTTPException(status_code=409, detail='Stok bahan prod_lurik_classic tidak cukup saat dikonsumsi: butuh 600, terambil 580 (dipakai proses lain/ditahan QC). Tidak ada stok yang berubah.')"
+ },
+ {
+  "id": "PROD-04",
+  "invariant": "konsumsi batik dibalik penuh: panjang tiap roll & saldo identik snapshot",
+  "pass": true,
+  "detail": "{'prod_lurik_classic': -0.0, 'prod_batik_mega': -0.0}"
+ },
+ {
+  "id": "PROD-04",
+  "invariant": "WO tetap released tanpa kunci/completion, tanpa roll output & jurnal",
+  "pass": true,
+  "detail": "released"
+ },
+ {
+  "id": "PROD-06",
+  "invariant": "crash sesudah konsumsi: tahap 'consumed' tersimpan, kunci tertahan + failed_at",
+  "pass": true,
+  "detail": "consumed"
+ },
+ {
+  "id": "PROD-06",
+  "invariant": "operator menekan Selesai lagi → 409 SAGA_IN_PROGRESS (tidak menggandakan)",
+  "pass": true,
+  "detail": "409"
+ },
+ {
+  "id": "PROD-06",
+  "invariant": "admin melihat efek hilir; lepas tanpa pengakuan efek 409, dengan pengakuan 200",
+  "pass": true,
+  "detail": "([{'collection': 'inventory_movements', 'count': 2, 'samples': ['mov_632148f9c74a', 'mov_04b3057234c4']}], 409, 200)"
+ },
+ {
+  "id": "PROD-06",
+  "invariant": "ulang melanjutkan dari 'consumed': bahan terpakai SEKALI (batik 5, lurik 10), 1 roll output, completed",
+  "pass": true,
+  "detail": "(200, {'prod_batik_mega': 5.0, 'prod_lurik_classic': 10.0}, 1)"
+ },
+ {
+  "id": "PROD-06",
+  "invariant": "dibunuh di tengah: stage 'consuming', batik terambil sebagian, kunci aktif tanpa failed_at",
+  "pass": true,
+  "detail": "({'prod_batik_mega': 4.0}, 'consuming')"
+ },
+ {
+  "id": "PROD-06",
+  "invariant": "kunci yang masih 'aktif' tidak bisa dilepas (409)",
+  "pass": true,
+  "detail": "409"
+ },
+ {
+  "id": "PROD-06",
+  "invariant": "sesudah lepas kunci, ulang membalik sisa konsumsi lama lalu konsumsi penuh SEKALI",
+  "pass": true,
+  "detail": "(200, 200, {'prod_batik_mega': 4.0, 'prod_lurik_classic': 8.0})"
+ },
+ {
+  "id": "PROD-06",
+  "invariant": "jejak pembalikan tercatat (mutasi production_consume_reversal)",
+  "pass": true,
+  "detail": "1"
+ }
+]
+pass=13 fail=0

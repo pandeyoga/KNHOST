@@ -1,0 +1,21 @@
+{
+  "summary": "Iter97 verified the master-produk KN import from TEST_MIGRASI_MASTER_PRODUK.xlsx. 14/14 backend regression tests pass: 30 templates + 268 products + 325 entity_prices with import_batch=MIGRASI_MASTER_PRODUK_KN; every Excel VARIAN SKU present in DB; SKU format ARTIKEL(9)-ASAL(1)-WARNA(4)-GRADE(2)-CUSTOMER(2)-LOT(2); price ranges correct (knit kg 40–45k, woven/printing yard 18–25k); lebar=LEBAR_CM/100, roll factor=QTY_PER_ROLL; printing X-asal SKUs flagged needs_review; ent_ksc entity_prices present; grades A/A1/A2/B/B1/C/BS registered; default axes = origin/color/grade/customer/lot; API search RIVERA & KNKNT0067 & KNKNT0007 works; seeded BTK-MEGA-001 regression OK; script re-run idempotent (still 30 templates). Auto article codes on POST /api/product-templates: line_code=knit→KNKNT0068, woven→KNWVN0073, printing→KNPRT0179 (matches spec). Frontend (1920x1080) as admin → md-products&entity=ent_ksc: RIVERA search shows single card '18 varian · Asal × Warna × Grade × Kode Customer × Lot · Rp 41.000 - Rp 45.000'; detail page shows 18 unique KNKNT0067 SKUs, header '18 SKU', 'Rp 41.000 – Rp 45.000', 'Lebar 1.52 m', 'Gramasi 270 gsm'. No regressions.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter97_master_produk_import.py",
+    "/app/test_reports/pytest/iter97.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "import_master_produk_kn.py: uses random.Random(sku).randint for deterministic mock price — good. Idempotent update path preserves template id, but overwrites entity_ids each run (fine for now).",
+    "variant_axes.py: grade_sku_code left-pads with X (A→XA, A1→A1, BS→BS). Consistent with import script's variant_codes assumption."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter97_master_produk_import.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (X-Entity-Id: ent_ksc)",
+  "seed_data_creation": "None. Ephemeral TEST_AUTO_* templates created to verify auto-code endpoint were deleted immediately.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Regression suite /app/backend/tests/test_iter97_master_produk_import.py validates all 268 imported SKUs against Excel + price/unit ranges + counts + idempotency. Run via `pytest backend/tests/test_iter97_master_produk_import.py -v -p xdist -n 1`. Do NOT delete imported products (import_batch=MIGRASI_MASTER_PRODUK_KN)."
+}

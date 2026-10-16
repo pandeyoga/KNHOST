@@ -1,0 +1,74 @@
+{
+  "database": "knhost_audit_c1cbe3e277e64dfd8f5f3049e84b7a26",
+  "mode": "Original imported services, real Mongo; deterministic scheduling barrier only for split; no GL stubs",
+  "results": [
+    {
+      "id": "I4-RF01",
+      "observed": {
+        "raw_result": "red",
+        "raw_reason": "EPC tidak dikenal / tag tidak aktif.",
+        "formatted_result": "info"
+      }
+    },
+    {
+      "id": "I4-RF02",
+      "observed": {
+        "result": "green",
+        "reason": "Keluar untuk putaway PA-1."
+      }
+    },
+    {
+      "id": "I4-RF03",
+      "observed": {
+        "after_heartbeat": "online"
+      }
+    },
+    {
+      "id": "I4-WM01",
+      "observed": {
+        "initial_qty": 100,
+        "final_qty": 140.0,
+        "lengths": [
+          70.0,
+          40.0,
+          30.0
+        ]
+      }
+    },
+    {
+      "id": "I4-RF04",
+      "observed": {
+        "untagged": 1,
+        "result": "clean",
+        "dispatch_allowed": true
+      }
+    },
+    {
+      "id": "I4-FN02",
+      "observed": {
+        "bank_direction": "out",
+        "cash_direction": "in",
+        "bank_account": "BANK1",
+        "cash_account": "BANK2",
+        "result": "matched"
+      }
+    },
+    {
+      "id": "I4-FN03",
+      "observed": {
+        "cash_amount": 100,
+        "reconciled": 120.0
+      }
+    },
+    {
+      "id": "I4-FN01",
+      "observed": {
+        "requested": 10,
+        "payment_sum": 150.0,
+        "credit_balance": -50.0,
+        "journal_count": 1
+      }
+    }
+  ],
+  "external_network_attempts_blocked": []
+}

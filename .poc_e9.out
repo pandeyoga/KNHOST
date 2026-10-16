@@ -1,0 +1,73 @@
+==============================================================================
+  POC FASE E-9 — RANTAI JUAL → BELI INTERNAL ANTAR-PT → RETUR BERANTAI
+==============================================================================
+
+[96m[1mLANGKAH 0 — Persiapan (bersihkan sisa POC lama · master produk POC)[0m
+  [poc-stock] snapshot 1 dokumen stok dari 1 koleksi — akan dipulihkan di CLEANUP.
+  ✅ [PASS] Lingkungan POC bersih & produk uji siap (sisa lama dihapus: {'po': 0, 'so': 0, 'sret': 0, 'ict': 0, 'icr': 0, 'pret': 0})
+  ℹ  Data uji: pemasok Toba Craft (sup_b8d907eadca8) · pelanggan Butik Bali Indah (cust_butik_bali) alamat addr_002
+
+[96m[1mLANGKAH 1 — Entitas B (CV Kanda Suka) beli dari supplier Toba Craft[0m
+  ✅ [PASS] PO KANDA/PO-00013 ke Toba Craft terbit (40 yard · status pending)
+  ✅ [PASS] Barang diterima gudang wh_tangerang & lolos QC — roll milik Entitas B lahir dengan jejak supplier & PO
+
+[96m[1mLANGKAH 2 — Customer A pesan di Entitas A, stoknya KOSONG → menunggu stok[0m
+  ✅ [PASS] KSC/SO-00011 berstatus MENUNGGU STOK dengan backorder 25 yard (stok Entitas A memang nol)
+
+[96m[1mLANGKAH 3 — Entitas A beli internal dari Entitas B (E9.2) lalu barang berpindah (E9.1)[0m
+  ✅ [PASS] Kontrak harga internal KANDA/SCT-00003 aktif (Rp 120,000/yard)
+  ✅ [PASS] Dokumen kembar terbit: KANDA/IC-00007 (B) ↔ KSC/IC-00007 (A) · status confirmed
+  ✅ [PASS] E9.2 · US24 — layar pesanan menyebut asalnya: “diambil dari Kanda Fabric lewat KSC/IC-00007”
+  ✅ [PASS] E9.2 — Papan Pending SO: covered · dijanjikan 37 yard dari Kanda Fabric lewat KSC/IC-00007
+  ✅ [PASS] Tugas gudang KANDA/TRF-00003 disetujui — kepemilikan roll pindah B → A
+  ✅ [PASS] E9.1 · US23 — KSC/SO-00011 otomatis terpenuhi begitu barang antar-PT masuk (status reserved · backorder 0) — TANPA alokasi manual
+  ℹ  Utang Entitas A ke Entitas B sebelum retur: Rp 7,680,000
+  ✅ [PASS] E9.1 — Admin Sales diberi tahu & pesanannya disebut: “Barang dari Kanda Fabric masuk — 1 pesanan terpenuhi otomatis…” (tautan pending-so)
+
+[96m[1mLANGKAH 4 — Customer A retur ke Entitas A (inspeksi → karantina → roll RTN)[0m
+  ✅ [PASS] KSC/SO-00011 berstatus confirmed — barang sudah jadi hak pelanggan
+  ✅ [PASS] Retur pelanggan SRET-00004 terbit (10 yard · pending_approval)
+  ✅ [PASS] Retur diselesaikan (nota kredit terbit) — barang masuk KARANTINA, bukan langsung stok
+  ✅ [PASS] E9.5 — roll retur 6e76ee MEWARISI jejak asal: supplier Toba Craft · KANDA/PO-00013
+  ✅ [PASS] E9.3 — roll retur tahu asalnya pembelian internal KANDA/IC-00007 → jalur at-cost akan diblokir
+
+[96m[1mLANGKAH 5 — Entitas A retur ke Entitas B (rambu E9.3 + pilihan roll E9.4)[0m
+  ✅ [PASS] Roll retur dilepas dari karantina (grade B) — siap ditindak
+  ✅ [PASS] E9.3 · US25 — pindah kepemilikan at-cost DITOLAK dengan tuntunan: “Barang ini berasal dari pembelian internal KANDA/IC-00007 (Kanda Fabric → Sukacita Textile), jadi pengembalian…”
+  ✅ [PASS] E9.4 · US26 — kandidat teratas adalah roll hasil retur pelanggan (KSC/LOT-2609-0034 · grade B · 10 yard)
+  ✅ [PASS] E9.4 — layar menyebut 10 yard berasal dari retur pelanggan (bukan stok biasa)
+  ✅ [PASS] Retur antar-PT KSC/ICR-00003 ↔ KANDA/ICR-00003 terbit (draf)
+  ✅ [PASS] E9.6 — retur antar-PT membawa asal returnya: SRET-00004
+  ✅ [PASS] Tugas gudang retur KSC/TRF-00006 selesai — kepemilikan roll kembali ke Entitas B
+  ✅ [PASS] E9.4 — roll hasil retur pelanggan (lot KANDA/LOT-2609-0005) kini milik Entitas B — bukan roll bagus dari stok Entitas A
+  ✅ [PASS] E9.4 — roll BAGUS 12 yard (grade A) TETAP di Entitas A — tidak ikut terkirim balik
+  ✅ [PASS] E9.5 — jejak supplier & PO TETAP UTUH setelah dua kali pindah kepemilikan
+  ✅ [PASS] E9.5 — riwayat perolehan tersimpan (3 langkah, termasuk penerimaan GRN) — `acquired` tidak lagi menghapus jejak
+  ✅ [PASS] E9.5/E5.3 — riwayat menyebut NAMA badan usaha (Kanda Fabric, Sukacita) tanpa satu pun id teknis `ent_*`
+  ✅ [PASS] E9-uang — utang Entitas A ke Entitas B turun TEPAT sebesar nilai retur (Rp 7,680,000 → Rp 6,480,000; retur Rp 1,200,000)
+  ✅ [PASS] E9.4-uang — barang yang kembali sudah bernilai Rp 0 (dihapus-bukukan saat retur pelanggan), jadi TIDAK ada jurnal barang palsu; selisih dengan nilai retur dicatat jujur sebagai Rp 1,200,000
+  ✅ [PASS] E9.6-jejak — nota kredit CN-00002 tertaut dua arah sejak lahir (ke pesanan & ke retur pelanggan)
+
+[96m[1mLANGKAH 6 — Entitas B meretur barang itu ke supplier ASLINYA (Toba Craft)[0m
+  ✅ [PASS] E9.5 · US28 — roll yang kembali dari Entitas A MUNCUL sebagai kandidat retur ke supplier aslinya (Toba Craft · KANDA/PO-00013)
+  ✅ [PASS] Retur beli PRET-00004 terbit ke Toba Craft (status pending_approval)
+  ✅ [PASS] E9.6 — retur beli menyebut retur antar-PT asalnya (KANDA/ICR-00003) langsung di dokumen yang baru terbit
+
+[96m[1mLANGKAH 7 — Jejak Retur: satu layar untuk seluruh rantai (E9.6 · US29)[0m
+  ✅ [PASS] E9.6 — dibuka dari retur pelanggan: rantai utuh (sales_return → interco_return → purchase_return → kept)
+  ✅ [PASS] E9.6 — dibuka dari retur antar-PT: rantai utuh (sales_return → interco_return → purchase_return → kept)
+  ✅ [PASS] E9.6 — dibuka dari retur beli: rantai utuh (sales_return → interco_return → purchase_return → kept)
+  ✅ [PASS] E9.6 — ringkasan sekali baca: “Retur Pelanggan SRET-00004 → Retur Antar-PT KSC/ICR-00003 → Retur ke Supplier PRET-00004 → disimpan Kanda Fabric”
+  ✅ [PASS] E9.6 — layar juga menjawab barangnya di mana: 10 yard di Kanda Fabric (asal Toba Craft · KANDA/PO-00013)
+  ✅ [PASS] E9.6b — pemegang retur beli (peran gudang, tanpa izin retur jual) BISA membuka rantai dokumennya sendiri (4 langkah)
+  ✅ [PASS] E9.6c/E5.3 — sales Entitas A melihat TAHAPNYA (PRET-00004) tetapi tidak melihat supplier & nilai milik badan usaha lain
+  ✅ [PASS] E9.6c/E5.3 — nol id teknis `ent_*` & nol nama supplier tetangga di respons rantai untuk sales Entitas A
+
+[96m[1mCLEANUP — POC tidak boleh meninggalkan jejak[0m
+  [92m[poc-stock] stok dipulihkan EKSAK (1 dokumen, 1 koleksi) — nol residu roll & saldo.[0m
+  ✅ [PASS] Nol residu (dihapus: {'po': 1, 'so': 1, 'sret': 1, 'ict': 2, 'icr': 2, 'pret': 1})
+  ✅ [PASS] Nol residu jejak (dihapus 4 baris audit & sesi POC · notifikasi kembali seperti semula)
+
+==============================================================================
+  HASIL: [92m44 PASS[0m · [91m0 FAIL[0m dari 44 pemeriksaan
+==============================================================================

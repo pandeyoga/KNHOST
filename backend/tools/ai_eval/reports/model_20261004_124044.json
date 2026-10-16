@@ -1,0 +1,229 @@
+{
+ "summary": {
+  "mode": "model",
+  "n": 7,
+  "p50_ms": 4217,
+  "tool_pct": 100.0,
+  "args_pct": 100.0,
+  "args_strict_pct": 85.7,
+  "routed_n": 0,
+  "alternative_n": 6,
+  "numbers_pct": 100.0
+ },
+ "rows": [
+  {
+   "id": "q047",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "ar_aging",
+    "period": null,
+    "filters": [],
+    "as_of": "2026-10-04",
+    "top_n": null
+   },
+   "error": null,
+   "routed_template": null,
+   "matched": "alternative",
+   "unmatched": [],
+   "ms": 4217,
+   "answer": "**Piutang Sukacita per 4 Okt 2026 sebesar Rp 34.707.850.** Dari jumlah itu, Rp 5.571.200 sudah lewat jatuh tempo.\n\n- Belum jatuh tempo: **Rp 29.136.650** (83,95%).\n- Lewat jatuh tempo 1–30 hari: **Rp 5.571.200** (16,05%). Seluruhnya berasal dari Toko Kain Sejahtera.\n\n```kn-table\n{\"result_id\":\"r_4258"
+  },
+  {
+   "id": "q053",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "collections_amount"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "matched": "alternative",
+   "unmatched": [],
+   "ms": 3633,
+   "answer": "Pembayaran pelanggan yang masuk minggu ini di **Sukacita** sebesar **Rp 5.577.800**.\n\nPeriode 28 Sep–4 Okt 2026 (WIB) · Entitas Sukacita · Definisi: jumlah penerimaan pelanggan berstatus *posted*.\n\n```kn-followups\n[\"Tampilkan rincian pembayaran pelanggan minggu ini\", \"Bandingkan dengan minggu lalu\"]"
+  },
+  {
+   "id": "q057",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "forecast",
+    "run_report"
+   ],
+   "args": {
+    "kind": "cashflow",
+    "horizon_weeks": 4,
+    "product_ids": [],
+    "limit": null
+   },
+   "error": null,
+   "routed_template": null,
+   "matched": "alternative",
+   "unmatched": [],
+   "ms": 7149,
+   "answer": "**Perkiraan arus kas Sukacita untuk 0–30 hari ke depan defisit Rp 13.278.670.** Ini perkiraan berdasarkan piutang dan hutang yang jatuh tempo, bukan saldo kas akhir.\n\n- Perkiraan uang masuk: Rp 29.136.650; uang keluar: Rp 42.415.320.\n- Tagihan yang **sudah lewat jatuh tempo** tercatat terpisah: pote"
+  },
+  {
+   "id": "q074",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "stock_health",
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": "2026-10-04",
+    "top_n": 10
+   },
+   "error": null,
+   "routed_template": null,
+   "matched": "alternative",
+   "unmatched": [],
+   "ms": 4998,
+   "answer": "**Tidak ada stok Sukacita yang tercatat tidak bergerak lebih dari 90 hari** dalam laporan kesehatan stok per 4 Okt 2026. Ini berdasarkan umur dan pergerakan stok, bukan ukuran kecepatan penjualan produk.\n\n- Seluruh stok fisik yang tercatat berada di kelompok umur 0–30 hari: **4.452,42 yard** dan **2"
+  },
+  {
+   "id": "q076",
+   "category": "stok",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "list_records"
+   ],
+   "args": {
+    "record_type": "shipments",
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": 20
+   },
+   "error": null,
+   "routed_template": null,
+   "matched": "expected",
+   "unmatched": [],
+   "ms": 3450,
+   "answer": "**Tidak ada pengiriman tercatat minggu ini** untuk Sukacita.\n\n- Daftar pengiriman pada periode 28 Sep–4 Okt 2026 kosong.\n- Ini menunjukkan tidak ada catatan pengiriman dalam data yang tersedia, bukan memastikan tidak ada barang yang keluar dari gudang.\n\nPeriode 28 Sep–4 Okt 2026 (WIB) · Entitas Suka"
+  },
+  {
+   "id": "q091",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "makloon_status",
+    "period": {
+     "preset": "mtd",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": null,
+    "top_n": 10
+   },
+   "error": null,
+   "routed_template": null,
+   "matched": "alternative",
+   "unmatched": [],
+   "ms": 3366,
+   "answer": "Ada **2 order makloon berjalan** dalam laporan untuk entitas aktif Sukacita: MKO-00002 berstatus dalam proses dan MKO-00003 berstatus diterima sebagian.\n\n```kn-table\n{\"result_id\":\"r_67941d2045\",\"columns\":[\"number\",\"material\",\"status\",\"qty\",\"unit\"],\"title\":\"Order makloon berjalan\"}\n```\n\nPeriode tidak"
+  },
+  {
+   "id": "q093",
+   "category": "pembelian_makloon",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics",
+    "list_records"
+   ],
+   "args": {
+    "metrics": [
+     "received_qty"
+    ],
+    "group_by": [
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "previous_period",
+    "filters": [],
+    "sort": {
+     "by": "received_qty",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "matched": "alternative",
+   "unmatched": [],
+   "ms": 5467,
+   "answer": "Penerimaan barang Sukacita minggu ini tercatat **261,62 yard dan 1,4 kg**. Kedua satuan tersebut tidak dijumlahkan.\n\n- Daftar dokumen kedatangan barang (GRN) untuk minggu ini tidak menampilkan baris, sehingga rincian pemasok dan nomor penerimaan belum tersedia dari hasil tersebut.\n- Pembanding mingg"
+  }
+ ]
+}

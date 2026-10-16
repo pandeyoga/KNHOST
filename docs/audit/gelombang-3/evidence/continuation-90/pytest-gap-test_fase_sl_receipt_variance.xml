@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="6" time="6.003" timestamp="2026-10-06T12:16:52.505001+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="test_po_detail_has_receipt_variances" time="0.764"><failure message="AssertionError: {&quot;detail&quot;:&quot;Purchase Order tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_receipt_variance.py:50: in test_po_detail_has_receipt_variances
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Purchase Order tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_po_list_row_carries_variances" time="0.078"><failure message="assert None is not None">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_receipt_variance.py:66: in test_po_list_row_carries_variances
+    assert row is not None
+E   assert None is not None</failure></testcase><testcase classname="" name="test_billing_context_exposes_variances_for_finance" time="0.718"><failure message="AssertionError: {&quot;detail&quot;:&quot;Purchase Order tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_receipt_variance.py:72: in test_billing_context_exposes_variances_for_finance
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Purchase Order tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_po_board_row_has_variance_summary" time="0.742"><failure message="AssertionError: PO-00014 harus ada di papan&#10;assert None is not None">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_receipt_variance.py:84: in test_po_board_row_has_variance_summary
+    assert row is not None, "PO-00014 harus ada di papan"
+E   AssertionError: PO-00014 harus ada di papan
+E   assert None is not None</failure></testcase><testcase classname="" name="test_po_board_row_without_variance_is_none" time="0.105" /><testcase classname="" name="test_scan_label_stats_report" time="0.952"><failure message="assert (True and [])&#10; +  where True = isinstance([], list)">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-gap-copies\test_fase_sl_receipt_variance.py:105: in test_scan_label_stats_report
+    assert isinstance(rows, list) and rows
+E   assert (True and [])
+E    +  where True = isinstance([], list)</failure></testcase></testsuite></testsuites>

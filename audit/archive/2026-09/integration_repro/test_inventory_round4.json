@@ -1,0 +1,3955 @@
+[
+  {
+    "file": "backend/backend_test.py",
+    "test_functions": 22,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_360_panels.py",
+    "test_functions": 5,
+    "imports": [
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_bi_finance.py",
+    "test_functions": 10,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_crm_enforcements.py",
+    "test_functions": 16,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_depth1.py",
+    "test_functions": 11,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_depth3_enhancements.py",
+    "test_functions": 6,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_dyelot.py",
+    "test_functions": 6,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_e4.py",
+    "test_functions": 9,
+    "imports": [
+      "datetime",
+      "os",
+      "pymongo",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_epic7b_bank.py",
+    "test_functions": 10,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_equity_changes.py",
+    "test_functions": 6,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_f0a_entity_context.py",
+    "test_functions": 9,
+    "imports": [
+      "os",
+      "requests",
+      "sys",
+      "traceback",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_f6_approval_retirement.py",
+    "test_functions": 10,
+    "imports": [
+      "os",
+      "requests",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_fase4.py",
+    "test_functions": 1,
+    "imports": [
+      "os",
+      "requests",
+      "subprocess",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_fase_b.py",
+    "test_functions": 1,
+    "imports": [
+      "os",
+      "requests",
+      "sys",
+      "traceback",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_fase_b_uom.py",
+    "test_functions": 10,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_fase_c_lot.py",
+    "test_functions": 18,
+    "imports": [
+      "datetime",
+      "os",
+      "re",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_fase_f_closure.py",
+    "test_functions": 7,
+    "imports": [
+      "os",
+      "re",
+      "requests",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_fase_f_endpoints.py",
+    "test_functions": 9,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_fase_f_final.py",
+    "test_functions": 3,
+    "imports": [
+      "os",
+      "requests",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_fase_f_write_flows.py",
+    "test_functions": 11,
+    "imports": [
+      "datetime",
+      "json",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_g4_comprehensive.py",
+    "test_functions": 1,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_g6.py",
+    "test_functions": 10,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_h1.py",
+    "test_functions": 1,
+    "imports": [
+      "os",
+      "requests",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_ica_directional.py",
+    "test_functions": 8,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys",
+      "traceback"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_iteration_183.py",
+    "test_functions": 4,
+    "imports": [
+      "os",
+      "requests",
+      "sys",
+      "traceback"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_landed_cost.py",
+    "test_functions": 1,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "json",
+      "motor",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_m0_color.py",
+    "test_functions": 21,
+    "imports": [
+      "os",
+      "requests",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_p4.py",
+    "test_functions": 7,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_p5_p2.py",
+    "test_functions": 10,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_pdf_fase3.py",
+    "test_functions": 1,
+    "imports": [
+      "os",
+      "requests",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_phase2_forms.py",
+    "test_functions": 10,
+    "imports": [
+      "os",
+      "requests",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_po_timeline_approval.py",
+    "test_functions": 8,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_qc.py",
+    "test_functions": 7,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_qc_4point.py",
+    "test_functions": 12,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_r1_05_06.py",
+    "test_functions": 1,
+    "imports": [
+      "os",
+      "requests",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_r5_4b.py",
+    "test_functions": 7,
+    "imports": [
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_r6_3_budget.py",
+    "test_functions": 7,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/backend_test_tax_invoices.py",
+    "test_functions": 4,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/fase3_purchasing_test.py",
+    "test_functions": 22,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/hr_analytics_test.py",
+    "test_functions": 2,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/r0_return_policy_test.py",
+    "test_functions": 16,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/test_audit_2026_09_02_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "os",
+      "pymongo",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_audit_temuan_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "PIL",
+      "io",
+      "os",
+      "pymongo",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_approval_reminder_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "_common",
+      "asyncio",
+      "dotenv",
+      "httpx",
+      "os",
+      "pathlib",
+      "pymongo",
+      "re",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_design_request_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "datetime",
+      "importlib",
+      "os",
+      "pymongo",
+      "requests",
+      "subprocess",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_dua_satuan_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "core_utils",
+      "dotenv",
+      "json",
+      "os",
+      "pathlib",
+      "poc_stock_guard",
+      "pymongo",
+      "re",
+      "requests",
+      "services",
+      "shutil",
+      "subprocess",
+      "sys",
+      "tempfile",
+      "traceback",
+      "typing",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_e0_isolation_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "db",
+      "entity_scope",
+      "os",
+      "pathlib",
+      "re",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_e1e2_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "core_utils",
+      "db",
+      "httpx",
+      "os",
+      "services",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_e3_write_guard_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "dotenv",
+      "os",
+      "pymongo",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_e4_master_layers_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "dotenv",
+      "os",
+      "pymongo",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_e4_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "datetime",
+      "os",
+      "pymongo",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_e5_visibility_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "db",
+      "json",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_e7_interco_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "httpx",
+      "os",
+      "poc_stock_guard",
+      "pymongo",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_e8_desk_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "copy",
+      "dotenv",
+      "httpx",
+      "motor",
+      "os",
+      "pathlib",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_e8_roles_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "httpx",
+      "importlib",
+      "json",
+      "motor",
+      "os",
+      "pathlib",
+      "re",
+      "role_registry",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_f67_workflow_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "_common",
+      "dotenv",
+      "httpx",
+      "importlib",
+      "os",
+      "pathlib",
+      "pymongo",
+      "subprocess",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_f6_approval_coverage_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "_common",
+      "dotenv",
+      "httpx",
+      "os",
+      "pathlib",
+      "pymongo",
+      "re",
+      "subprocess",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_group_cash_migration_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "_common",
+      "dotenv",
+      "os",
+      "pathlib",
+      "pymongo",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": false,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_inspeksi_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "dotenv",
+      "os",
+      "pathlib",
+      "poc_stock_guard",
+      "pymongo",
+      "requests",
+      "services",
+      "subprocess",
+      "sys",
+      "typing",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_lini_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "dotenv",
+      "os",
+      "pymongo",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_makloon_lini_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "asyncio",
+      "core_utils",
+      "db",
+      "os",
+      "requests",
+      "services",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_notifikasi_alamat_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "asyncio",
+      "core_utils",
+      "db",
+      "dependencies",
+      "os",
+      "requests",
+      "services",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_p0_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "datetime",
+      "json",
+      "os",
+      "poc_stock_guard",
+      "pymongo",
+      "re",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_papan_po_custom_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "_common",
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "httpx",
+      "os",
+      "pathlib",
+      "pymongo",
+      "re",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_po_board_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "copy",
+      "datetime",
+      "os",
+      "poc_stock_guard",
+      "pymongo",
+      "re",
+      "requests",
+      "subprocess",
+      "sys",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_rantai_retur_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "motor",
+      "os",
+      "poc_stock_guard",
+      "requests",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_role_access_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "_common",
+      "copy",
+      "dotenv",
+      "httpx",
+      "os",
+      "pathlib",
+      "pymongo",
+      "re",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_role_reality_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "copy",
+      "dotenv",
+      "httpx",
+      "motor",
+      "os",
+      "pathlib",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_sampling_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "os",
+      "poc_stock_guard",
+      "pymongo",
+      "re",
+      "requests",
+      "subprocess",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_sesi_2026_06_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "_common",
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "httpx",
+      "os",
+      "pathlib",
+      "pymongo",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_sesi_2026_06b_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "_common",
+      "asyncio",
+      "bootstrap",
+      "dotenv",
+      "httpx",
+      "os",
+      "pathlib",
+      "pymongo",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_sesi_2026_06c_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "_common",
+      "asyncio",
+      "bootstrap",
+      "dotenv",
+      "httpx",
+      "os",
+      "pathlib",
+      "pymongo",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_core_tahapan_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "__future__",
+      "dotenv",
+      "os",
+      "poc_stock_guard",
+      "pymongo",
+      "requests",
+      "subprocess",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_f0c_scoping_leak_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "db",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_f3_aftersales_smoke.py",
+    "test_functions": 0,
+    "imports": [
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/test_f3_smoke.py",
+    "test_functions": 0,
+    "imports": [
+      "json",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/test_fase_a_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "os",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/test_fase_b_uom_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "os",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/test_fase_c_lot_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "motor",
+      "os",
+      "re",
+      "requests",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_fase_d_makloon_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "motor",
+      "os",
+      "poc_stock_guard",
+      "requests",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_fase_e_contracts_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "io",
+      "motor",
+      "openpyxl",
+      "os",
+      "requests",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_fase_f1_receiving_uom_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "motor",
+      "os",
+      "poc_stock_guard",
+      "requests",
+      "sys",
+      "traceback"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_fase_f_rnd_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "io",
+      "motor",
+      "os",
+      "poc_stock_guard",
+      "requests",
+      "services",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_fase_f_us3_us11_us12_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "motor",
+      "os",
+      "poc_stock_guard",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_forms_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "core_utils",
+      "db",
+      "entity_scope",
+      "schemas_cash_advance",
+      "services",
+      "sys"
+    ],
+    "external_http_import": false,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_g0_config_api_test.py",
+    "test_functions": 6,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/test_g0_config_poc.py",
+    "test_functions": 9,
+    "imports": [
+      "asyncio",
+      "config_registry",
+      "datetime",
+      "os",
+      "poc_stock_guard",
+      "pymongo",
+      "requests",
+      "services",
+      "sys",
+      "time",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_g1_amendment_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "db",
+      "os",
+      "poc_stock_guard",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_g2_payment_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor",
+      "os",
+      "poc_stock_guard",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_g3_variance_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "motor",
+      "os",
+      "poc_stock_guard",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_g4_refs_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor",
+      "os",
+      "poc_stock_guard",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_g7_contrabon_poc.py",
+    "test_functions": 12,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "motor",
+      "os",
+      "poc_stock_guard",
+      "re",
+      "requests",
+      "services",
+      "subprocess",
+      "sys",
+      "traceback",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_g8_bank_poc.py",
+    "test_functions": 8,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "motor",
+      "os",
+      "requests",
+      "services",
+      "subprocess",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_g9_case_poc.py",
+    "test_functions": 9,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "motor",
+      "os",
+      "poc_stock_guard",
+      "requests",
+      "services",
+      "subprocess",
+      "sys",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_makloon_core_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "core_utils",
+      "db",
+      "services"
+    ],
+    "external_http_import": false,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_makloon_order_api.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "db",
+      "dotenv",
+      "json",
+      "os",
+      "pathlib",
+      "pymongo",
+      "requests",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_ps21_poc.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "motor",
+      "os",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/test_rfid_comprehensive.py",
+    "test_functions": 14,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/test_roll_ssot.py",
+    "test_functions": 5,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "subprocess",
+      "sys",
+      "traceback"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/test_sales_returns_r1.py",
+    "test_functions": 17,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/test_store_credit.py",
+    "test_functions": 8,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/test_store_credit_comprehensive.py",
+    "test_functions": 11,
+    "imports": [
+      "datetime",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/backend_smoke_restore.py",
+    "test_functions": 5,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/fb02_seed_shipments.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "motor",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": false,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/iter281_as01_scenario.py",
+    "test_functions": 0,
+    "imports": [
+      "json",
+      "os",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/iter283_as02_as03_scenario.py",
+    "test_functions": 0,
+    "imports": [
+      "dotenv",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/iter291_cleanup_positions.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "db",
+      "sys"
+    ],
+    "external_http_import": false,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/iter291_driver_rbac_probe.py",
+    "test_functions": 0,
+    "imports": [
+      "dotenv",
+      "os",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/iter299_restore_orphan_rolls.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "db",
+      "pathlib",
+      "services",
+      "sys"
+    ],
+    "external_http_import": false,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/iter313_t01_resolve_escalation_probe.py",
+    "test_functions": 0,
+    "imports": [
+      "os",
+      "pymongo",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/iter313_t09_reorder_lifecycle_probe.py",
+    "test_functions": 0,
+    "imports": [
+      "json",
+      "os",
+      "pymongo",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/seed_iter298_frontend.py",
+    "test_functions": 0,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/seed_iter299_frontend.py",
+    "test_functions": 0,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/smoke_audit_2026_09_07.py",
+    "test_functions": 0,
+    "imports": [
+      "pymongo",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/smoke_feedback_klien_2026_09.py",
+    "test_functions": 0,
+    "imports": [
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/smoke_turn_hygiene_entities.py",
+    "test_functions": 0,
+    "imports": [
+      "pymongo",
+      "requests",
+      "sys",
+      "time",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/smoke_variant_axes_base_fabric.py",
+    "test_functions": 0,
+    "imports": [
+      "json",
+      "os",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/smoke_wilayah.py",
+    "test_functions": 0,
+    "imports": [
+      "pymongo",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_access_roles_iter32.py",
+    "test_functions": 14,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "time",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_audit_bagian_iii.py",
+    "test_functions": 24,
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "services",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_audit_findings_reproduction.py",
+    "test_functions": 6,
+    "imports": [
+      "_common",
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "importlib",
+      "motor",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_color_links.py",
+    "test_functions": 3,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_config_clear_layer.py",
+    "test_functions": 0,
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor",
+      "os",
+      "services",
+      "sys"
+    ],
+    "external_http_import": false,
+    "database_import": true,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_customer_colors.py",
+    "test_functions": 18,
+    "imports": [
+      "asyncio",
+      "db",
+      "os",
+      "pytest",
+      "re",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_design_studio_flow.py",
+    "test_functions": 12,
+    "imports": [
+      "io",
+      "os",
+      "pytest",
+      "re",
+      "requests",
+      "struct",
+      "time",
+      "zlib"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_f0b_entity_scoping.py",
+    "test_functions": 15,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_f0cdef_multientity.py",
+    "test_functions": 25,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_f1a_pricelist.py",
+    "test_functions": 16,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_f1b_product_templates.py",
+    "test_functions": 20,
+    "imports": [
+      "os",
+      "pathlib",
+      "pymongo",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_f2_stock_buckets.py",
+    "test_functions": 20,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_fase_sl_item_label_pattern.py",
+    "test_functions": 7,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_fase_sl_receipt_variance.py",
+    "test_functions": 6,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_fase_sl_rfid_alias.py",
+    "test_functions": 9,
+    "imports": [
+      "os",
+      "pytest",
+      "re",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_fase_sl_scan_label.py",
+    "test_functions": 18,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_fb01_ai_illustration.py",
+    "test_functions": 13,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_fb02_logistics.py",
+    "test_functions": 29,
+    "imports": [
+      "dotenv",
+      "io",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_g5_poc.py",
+    "test_functions": 12,
+    "imports": [
+      "__future__",
+      "core_utils",
+      "datetime",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_g6_poc.py",
+    "test_functions": 21,
+    "imports": [
+      "__future__",
+      "asyncio",
+      "os",
+      "poc_stock_guard",
+      "pymongo",
+      "pytest",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_g6b_poc.py",
+    "test_functions": 16,
+    "imports": [
+      "__future__",
+      "os",
+      "poc_stock_guard",
+      "pymongo",
+      "pytest",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_gelombang1_gl_integrity.py",
+    "test_functions": 18,
+    "imports": [
+      "__future__",
+      "datetime",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_gelombang3_auth_ppn12.py",
+    "test_functions": 13,
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor",
+      "os",
+      "pytest",
+      "requests",
+      "time",
+      "typing",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_grn_phase0.py",
+    "test_functions": 10,
+    "imports": [
+      "domain_registry",
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "services",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_grn_phase2.py",
+    "test_functions": 6,
+    "imports": [
+      "dotenv",
+      "os",
+      "poc_stock_guard",
+      "pymongo",
+      "pytest",
+      "requests",
+      "sys",
+      "test_inbound_complete_characterization",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_grn_phase3_endpoints.py",
+    "test_functions": 6,
+    "imports": [
+      "os",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_grn_phase4_dn_rules.py",
+    "test_functions": 9,
+    "imports": [
+      "services",
+      "sys"
+    ],
+    "external_http_import": false,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_grn_phase4_eval.py",
+    "test_functions": 2,
+    "imports": [
+      "PIL",
+      "asyncio",
+      "io",
+      "json",
+      "os",
+      "sys",
+      "tools"
+    ],
+    "external_http_import": false,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_grn_phase4_read.py",
+    "test_functions": 3,
+    "imports": [
+      "PIL",
+      "io",
+      "os",
+      "pytest",
+      "sys",
+      "test_grn_phase2"
+    ],
+    "external_http_import": false,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_grn_phase5.py",
+    "test_functions": 5,
+    "imports": [
+      "PIL",
+      "io",
+      "os",
+      "poc_stock_guard",
+      "pytest",
+      "services",
+      "sys",
+      "test_grn_phase2"
+    ],
+    "external_http_import": false,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_grn_phase6.py",
+    "test_functions": 10,
+    "imports": [
+      "services",
+      "sys",
+      "test_grn_phase2",
+      "test_grn_phase4_read"
+    ],
+    "external_http_import": false,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_grn_phase7.py",
+    "test_functions": 3,
+    "imports": [
+      "pytest",
+      "sys",
+      "test_grn_phase2"
+    ],
+    "external_http_import": false,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_home_boards_and_drift.py",
+    "test_functions": 5,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_inbound_complete_characterization.py",
+    "test_functions": 2,
+    "imports": [
+      "dotenv",
+      "os",
+      "poc_stock_guard",
+      "pymongo",
+      "pytest",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_interco_g6.py",
+    "test_functions": 13,
+    "imports": [
+      "asyncio",
+      "db",
+      "os",
+      "pytest",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter12_location_backlog.py",
+    "test_functions": 9,
+    "imports": [
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter14_wh_transfer_rolls.py",
+    "test_functions": 9,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter23_sample_and_designer.py",
+    "test_functions": 14,
+    "imports": [
+      "io",
+      "os",
+      "pymongo",
+      "pytest",
+      "re",
+      "requests",
+      "struct",
+      "time",
+      "zlib"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter251_drift_and_isolation.py",
+    "test_functions": 7,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter252_critical_cross_entity.py",
+    "test_functions": 9,
+    "imports": [
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter253_session_2026_06b.py",
+    "test_functions": 6,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter254_session_2026_06c.py",
+    "test_functions": 8,
+    "imports": [
+      "os",
+      "pathlib",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter255_t1_t8.py",
+    "test_functions": 10,
+    "imports": [
+      "asyncio",
+      "core_utils",
+      "db",
+      "os",
+      "pytest",
+      "requests",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter256_e2e_flow_sweep.py",
+    "test_functions": 40,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter258_purchase_e2e_and_recon.py",
+    "test_functions": 15,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter25_revision_filter.py",
+    "test_functions": 5,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter260_board_returns.py",
+    "test_functions": 10,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter261_pipeline_eligibility.py",
+    "test_functions": 15,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter263_wms_rfid_r0r1r2.py",
+    "test_functions": 30,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter264_putaway_fixes.py",
+    "test_functions": 6,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter265_r3r4r5.py",
+    "test_functions": 34,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "time",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter266_r6_cc_r7.py",
+    "test_functions": 31,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter267_notif_health_multileg.py",
+    "test_functions": 18,
+    "imports": [
+      "datetime",
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter268_order_preview.py",
+    "test_functions": 9,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter26_customer_revision_klien_17sep.py",
+    "test_functions": 8,
+    "imports": [
+      "os",
+      "pymongo",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter270_reallocate_extra.py",
+    "test_functions": 4,
+    "imports": [
+      "os",
+      "pathlib",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter272_blanket_unit.py",
+    "test_functions": 3,
+    "imports": [
+      "dotenv",
+      "os",
+      "pathlib",
+      "pytest",
+      "re",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter273_approval_rules.py",
+    "test_functions": 12,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter274_regresi_ringan.py",
+    "test_functions": 8,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter275_g1_admin_sales_audit.py",
+    "test_functions": 50,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter276_g2_md_audit.py",
+    "test_functions": 50,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter277_gates_pin_isolation.py",
+    "test_functions": 15,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter278_fulfillment_whguard.py",
+    "test_functions": 10,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter279_po_line_lock.py",
+    "test_functions": 10,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter280_makloon_partial_queue.py",
+    "test_functions": 6,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter281_demo_wave12.py",
+    "test_functions": 5,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter284_pb01_md02_md08.py",
+    "test_functions": 13,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter285_feedback_export_hutang.py",
+    "test_functions": 17,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter288_logistics_gps.py",
+    "test_functions": 10,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter289_driver_today.py",
+    "test_functions": 16,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter291_audit_probes.py",
+    "test_functions": 28,
+    "imports": [
+      "dotenv",
+      "io",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter292_audit_fixes.py",
+    "test_functions": 15,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter292_f01_dispatch_gl.py",
+    "test_functions": 2,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter293_audit_backlog.py",
+    "test_functions": 19,
+    "imports": [
+      "PIL",
+      "datetime",
+      "dotenv",
+      "io",
+      "os",
+      "pymongo",
+      "pytest",
+      "re",
+      "requests",
+      "zoneinfo"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter294_numbering_pdf.py",
+    "test_functions": 6,
+    "imports": [
+      "asyncio",
+      "core_utils",
+      "db",
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter295_role_desks_bridge.py",
+    "test_functions": 9,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter297_revenue_policy.py",
+    "test_functions": 5,
+    "imports": [
+      "asyncio",
+      "db",
+      "dotenv",
+      "pytest",
+      "services",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": false,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter298_kebpdpt_e2e.py",
+    "test_functions": 15,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "subprocess",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter299_prorata_advance_report.py",
+    "test_functions": 20,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "subprocess",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter301_rbac_pricing_uom.py",
+    "test_functions": 16,
+    "imports": [
+      "csv",
+      "dotenv",
+      "io",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter302_approval_rbac.py",
+    "test_functions": 6,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter303_doc_resolve.py",
+    "test_functions": 12,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter305_hpp_from_po.py",
+    "test_functions": 7,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter306_hpp_redaction_bootstrap.py",
+    "test_functions": 6,
+    "imports": [
+      "dotenv",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter313_audit_fixes.py",
+    "test_functions": 13,
+    "imports": [
+      "__future__",
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter313_u2_role_desks.py",
+    "test_functions": 5,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter314_saga_and_reopen.py",
+    "test_functions": 8,
+    "imports": [
+      "__future__",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "threading",
+      "time",
+      "typing"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter315_saga_locks_new_collections.py",
+    "test_functions": 7,
+    "imports": [
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter316_catalog_rnd_security.py",
+    "test_functions": 12,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "typing",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter316_designer_kpi_design_weight.py",
+    "test_functions": 9,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter317_completion_targets.py",
+    "test_functions": 10,
+    "imports": [
+      "PIL",
+      "concurrent",
+      "io",
+      "os",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter318_dispatch_logistics.py",
+    "test_functions": 12,
+    "imports": [
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter319_dsr_studio_sync.py",
+    "test_functions": 10,
+    "imports": [
+      "io",
+      "os",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter320_dsr_references.py",
+    "test_functions": 6,
+    "imports": [
+      "io",
+      "os",
+      "pytest",
+      "requests",
+      "struct",
+      "uuid",
+      "zlib"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter320_mobile_amendments_customers.py",
+    "test_functions": 5,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter39_design_hold_proofing.py",
+    "test_functions": 16,
+    "imports": [
+      "io",
+      "os",
+      "pytest",
+      "requests",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter40_design_rnd.py",
+    "test_functions": 8,
+    "imports": [
+      "json",
+      "os",
+      "pytest",
+      "requests",
+      "time",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter43_sample_spec_required.py",
+    "test_functions": 8,
+    "imports": [
+      "os",
+      "pathlib",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter44_two_color.py",
+    "test_functions": 2,
+    "imports": [
+      "io",
+      "os",
+      "pytest",
+      "requests",
+      "time",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter45_special_orders.py",
+    "test_functions": 5,
+    "imports": [
+      "base64",
+      "io",
+      "os",
+      "pytest",
+      "requests",
+      "time",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter46_special_orders_phase2.py",
+    "test_functions": 9,
+    "imports": [
+      "io",
+      "os",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter47_special_orders_phase3.py",
+    "test_functions": 18,
+    "imports": [
+      "io",
+      "os",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter48_special_orders_phase3_retest.py",
+    "test_functions": 10,
+    "imports": [
+      "io",
+      "os",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter49_special_orders_phase4.py",
+    "test_functions": 14,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter4_browser_seed_setup.py",
+    "test_functions": 1,
+    "imports": [
+      "PIL",
+      "io",
+      "json",
+      "os",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter50_marketing.py",
+    "test_functions": 30,
+    "imports": [
+      "io",
+      "os",
+      "pytest",
+      "requests",
+      "struct",
+      "zlib"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter51_marketing_ext.py",
+    "test_functions": 16,
+    "imports": [
+      "os",
+      "pymupdf",
+      "pytest",
+      "re",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter52_mkt_entity_name.py",
+    "test_functions": 2,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter58_marketing_templates_duplicate.py",
+    "test_functions": 15,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter60_import_stockaging_reschedule.py",
+    "test_functions": 13,
+    "imports": [
+      "datetime",
+      "io",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "time",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter61_color_library.py",
+    "test_functions": 25,
+    "imports": [
+      "asyncio",
+      "db",
+      "os",
+      "pytest",
+      "requests",
+      "sys",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter62_customer_colors.py",
+    "test_functions": 11,
+    "imports": [
+      "os",
+      "pymongo",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter65_scan_label_probe.py",
+    "test_functions": 1,
+    "imports": [
+      "copy",
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_iter_sample_pos_extra.py",
+    "test_functions": 5,
+    "imports": [
+      "os",
+      "pymongo",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_kn_audit_2026_09_21.py",
+    "test_functions": 7,
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_kn_audit_2026_09_21_extended.py",
+    "test_functions": 24,
+    "imports": [
+      "__future__",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "services",
+      "sys",
+      "threading",
+      "time",
+      "typing",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_kn_audit_2026_09_21_iter57.py",
+    "test_functions": 11,
+    "imports": [
+      "__future__",
+      "asyncio",
+      "datetime",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "services",
+      "subprocess",
+      "sys",
+      "typing",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_kn_audit_2026_09_21_iter58.py",
+    "test_functions": 14,
+    "imports": [
+      "__future__",
+      "asyncio",
+      "os",
+      "pymongo",
+      "pytest",
+      "re",
+      "requests",
+      "services",
+      "subprocess",
+      "sys",
+      "typing",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_m3_auto_elim_consolidation.py",
+    "test_functions": 10,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_m3_coa_per_pt_and_ic_transfer.py",
+    "test_functions": 17,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_notifications_addressing.py",
+    "test_functions": 5,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_notifications_iter33.py",
+    "test_functions": 10,
+    "imports": [
+      "datetime",
+      "json",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "subprocess",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_registry_ai_collections.py",
+    "test_functions": 1,
+    "imports": [
+      "entity_scope",
+      "pathlib",
+      "re"
+    ],
+    "external_http_import": false,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_review_iter86_features.py",
+    "test_functions": 21,
+    "imports": [
+      "__future__",
+      "asyncio",
+      "base64",
+      "datetime",
+      "dotenv",
+      "hashlib",
+      "inspect",
+      "io",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "services",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_review_iter89_features.py",
+    "test_functions": 8,
+    "imports": [
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "services",
+      "sys"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_review_iter91_trace_print.py",
+    "test_functions": 6,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_revision_indicators_iter24.py",
+    "test_functions": 4,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_rnd_proof_gallery_smoke.py",
+    "test_functions": 1,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_rnd_samples_qa3.py",
+    "test_functions": 5,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_role_editor_iter35.py",
+    "test_functions": 8,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_role_editor_iter36.py",
+    "test_functions": 3,
+    "imports": [
+      "os",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_role_editor_iter37.py",
+    "test_functions": 11,
+    "imports": [
+      "os",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_role_editor_iter38.py",
+    "test_functions": 10,
+    "imports": [
+      "os",
+      "permissions_config",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_roll_pick_and_reallocate.py",
+    "test_functions": 9,
+    "imports": [
+      "os",
+      "pathlib",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_sample_pos_flow.py",
+    "test_functions": 1,
+    "imports": [
+      "os",
+      "pymongo",
+      "pytest",
+      "requests"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_sesi14_idempotency.py",
+    "test_functions": 2,
+    "imports": [
+      "copy",
+      "dotenv",
+      "os",
+      "pathlib",
+      "pymongo",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_sesi16_ar_receipt.py",
+    "test_functions": 1,
+    "imports": [
+      "os",
+      "pathlib",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_sesi18_regression.py",
+    "test_functions": 13,
+    "imports": [
+      "__future__",
+      "asyncio",
+      "httpx",
+      "os",
+      "pathlib",
+      "pymongo",
+      "pytest",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_sesi_2026_06_papan_manajer.py",
+    "test_functions": 8,
+    "imports": [
+      "datetime",
+      "dotenv",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_tanya_kn_f0_access.py",
+    "test_functions": 4,
+    "imports": [
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "sys",
+      "test_inbound_complete_characterization"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_tanya_kn_f0_time.py",
+    "test_functions": 6,
+    "imports": [
+      "datetime",
+      "services",
+      "sys"
+    ],
+    "external_http_import": false,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_tanya_kn_f1_engine.py",
+    "test_functions": 12,
+    "imports": [
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "services",
+      "sys",
+      "test_inbound_complete_characterization"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_tanya_kn_f2_f3.py",
+    "test_functions": 6,
+    "imports": [
+      "json",
+      "requests",
+      "services",
+      "sys",
+      "test_inbound_complete_characterization"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_tanya_kn_f4_f5.py",
+    "test_functions": 7,
+    "imports": [
+      "json",
+      "requests",
+      "sys",
+      "test_inbound_complete_characterization"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_tanya_kn_streaming_costpage.py",
+    "test_functions": 6,
+    "imports": [
+      "json",
+      "pytest",
+      "requests",
+      "sys",
+      "test_inbound_complete_characterization",
+      "time"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_tanya_kn_supplemental.py",
+    "test_functions": 11,
+    "imports": [
+      "os",
+      "pytest",
+      "requests",
+      "sys",
+      "test_inbound_complete_characterization"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_uom_1_13.py",
+    "test_functions": 12,
+    "imports": [
+      "fastapi",
+      "os",
+      "pytest",
+      "services",
+      "sys"
+    ],
+    "external_http_import": false,
+    "database_import": false,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_verifikasi_sesi_2026_08_25.py",
+    "test_functions": 10,
+    "imports": [
+      "_common",
+      "asyncio",
+      "datetime",
+      "dotenv",
+      "guardrails",
+      "importlib",
+      "os",
+      "pymongo",
+      "pytest",
+      "requests",
+      "subprocess",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  },
+  {
+    "file": "backend/tests/test_wilayah_extra.py",
+    "test_functions": 0,
+    "imports": [
+      "requests",
+      "sys",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": false,
+    "framework": false
+  },
+  {
+    "file": "backend/tests/test_wms_advance_expected.py",
+    "test_functions": 2,
+    "imports": [
+      "os",
+      "pathlib",
+      "pymongo",
+      "pytest",
+      "requests",
+      "uuid"
+    ],
+    "external_http_import": true,
+    "database_import": true,
+    "framework": true
+  }
+]

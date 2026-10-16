@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="4" tests="46" time="9.674" timestamp="2026-09-28T08:53:25.482012+00:00" hostname="agent-env-bfa48c36-a7f4-4f87-8883-53f985aa03dd"><testcase classname="tests.test_audit_bagian_iii.TestE01SalesOwnership" name="test_sales_list_only_own" time="2.053" /><testcase classname="tests.test_audit_bagian_iii.TestE01SalesOwnership" name="test_sales_cannot_patch_sales_name" time="0.441" /><testcase classname="tests.test_audit_bagian_iii.TestE02AmendmentGuard" name="test_sales_amendment_on_other_order_forbidden" time="0.381" /><testcase classname="tests.test_audit_bagian_iii.TestE03PriceGuards" name="test_preview_price_zero_rejected" time="0.144" /><testcase classname="tests.test_audit_bagian_iii.TestE03PriceGuards" name="test_preview_below_floor_requires_approval" time="0.267" /><testcase classname="tests.test_audit_bagian_iii.TestE04cDoubleApprove" name="test_double_approve_rejected" time="0.443" /><testcase classname="tests.test_audit_bagian_iii.TestE45SettingsScope" name="test_integrations_scope_rejected" time="0.134" /><testcase classname="tests.test_audit_bagian_iii.TestE45SettingsScope" name="test_global_scope_no_api_keys" time="0.124" /><testcase classname="tests.test_audit_bagian_iii.TestE31AiToolsPendingApprovals" name="test_sales_no_po_no_others" time="0.128" /><testcase classname="tests.test_audit_bagian_iii.TestE37ListRecordsFilters" name="test_unsupported_filter_dim_400" time="0.128" /><testcase classname="tests.test_audit_bagian_iii.TestE37ListRecordsFilters" name="test_supported_customer_filter" time="0.126" /><testcase classname="tests.test_audit_bagian_iii.TestE23GRNQueryRegex" name="test_grn_query_special_chars" time="0.133" /><testcase classname="tests.test_audit_bagian_iii.TestE38CommissionScoping" name="test_warehouse_gets_own_data_only" time="0.142" /><testcase classname="tests.test_audit_bagian_iii.TestE44AiUsageAndAnalyze" name="test_sales_ai_usage_own_only" time="0.127" /><testcase classname="tests.test_audit_bagian_iii.TestE44AiUsageAndAnalyze" name="test_analyze_change_missing_compare_to_400" time="0.123" /><testcase classname="tests.test_audit_bagian_iii.TestE50WmsTasks" name="test_list_tasks" time="0.126" /><testcase classname="tests.test_audit_bagian_iii.TestE17WmsInboundGrnMode" name="test_inbound_in_grn_entity_conflict" time="0.134" /><testcase classname="tests.test_audit_bagian_iii.TestE12DnRulesUnit" name="test_parse_yds_dot" time="0.001" /><testcase classname="tests.test_audit_bagian_iii.TestE12DnRulesUnit" name="test_parse_rupiah_no_cent" time="0.000" /><testcase classname="tests.test_audit_bagian_iii.TestE12DnRulesUnit" name="test_parse_range_ambiguous_no_raise" time="0.000" /><testcase classname="tests.test_audit_bagian_iii.TestE12DnRulesUnit" name="test_parse_never_raises" time="0.000" /><testcase classname="tests.test_audit_bagian_iii.TestE12DnRulesUnit" name="test_match_po_token" time="0.000" /><testcase classname="tests.test_audit_bagian_iii.TestE39AiNumberCheckUnit" name="test_negative_number" time="0.001" /><testcase classname="tests.test_audit_bagian_iii.TestE39AiNumberCheckUnit" name="test_2050_m_is_meter_not_miliar" time="0.000" /><testcase classname="tests.test_registry_ai_collections" name="test_every_ai_collection_is_registered" time="0.017" /><testcase classname="tests.test_review_iter86_features.TestIntercoPpnFollowSalesTax" name="test_resolve_tax_pkp_follows_sales_tax_12pct_dpp_nilai_lain" time="0.008"><failure message="RuntimeError: Event loop is closed">self = &lt;test_review_iter86_features.TestIntercoPpnFollowSalesTax object at 0xfdc0556e5110&gt;
+db = Database(MongoClient(host=['localhost:27017'], document_class=dict, tz_aware=False, connect=True), 'test_database')
+
+    def test_resolve_tax_pkp_follows_sales_tax_12pct_dpp_nilai_lain(self, db):
+        """Seller PKP + tax.ppn_rate=12 + dpp_nilai_lain=true → rate 11.0, nominal 12.0, dpp_nilai_lain True."""
+        from services.interco_service import _resolve_tax
+    
+        db.business_entities.update_one({"id": ENT}, {"$set": {"is_pkp": True}})
+        db.settings.update_many({}, {"$unset": {"antar_entitas.ppn_rate_percent": ""}})
+        db.settings.update_one({"scope": "global"}, {"$set": {"tax.ppn_rate": 12, "tax.dpp_nilai_lain": True}}, upsert=True)
+    
+        async def _run():
+            res = await _resolve_tax(ENT, "ikut_pkp")
+            assert res["apply"] is True, res
+            assert abs(res["rate"] - 11.0) &lt; 0.01, res
+            assert abs(res["rate_nominal"] - 12.0) &lt; 0.01, res
+            assert res["dpp_nilai_lain"] is True, res
+    
+&gt;       asyncio.run(_run())
+
+backend/tests/test_review_iter86_features.py:99: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/local/lib/python3.11/asyncio/runners.py:190: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+backend/tests/test_review_iter86_features.py:93: in _run
+    res = await _resolve_tax(ENT, "ikut_pkp")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/services/interco_service.py:209: in _resolve_tax
+    seller = await _entity_snapshot(seller_entity_id)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/services/interco_service.py:90: in _entity_snapshot
+    ent = await db.business_entities.find_one(
+/root/.venv/lib/python3.11/site-packages/motor/metaprogramming.py:74: in method
+    return framework.run_on_executor(
+/root/.venv/lib/python3.11/site-packages/motor/frameworks/asyncio/__init__.py:85: in run_on_executor
+    return loop.run_in_executor(_EXECUTOR, functools.partial(fn, *args, **kwargs))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/base_events.py:817: in run_in_executor
+    self._check_closed()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;_UnixSelectorEventLoop running=False closed=True debug=False&gt;
+
+    def _check_closed(self):
+        if self._closed:
+&gt;           raise RuntimeError('Event loop is closed')
+E           RuntimeError: Event loop is closed
+
+/usr/local/lib/python3.11/asyncio/base_events.py:520: RuntimeError</failure></testcase><testcase classname="tests.test_review_iter86_features.TestIntercoPpnFollowSalesTax" name="test_resolve_tax_flat_override_wins" time="0.001" /><testcase classname="tests.test_review_iter86_features.TestIntercoPpnFollowSalesTax" name="test_faktur_dpp_follows_dpp_nilai_lain" time="0.001" /><testcase classname="tests.test_review_iter86_features.TestMakloonStagedReceipt" name="test_mko_partial_unknown_id_returns_404" time="1.870" /><testcase classname="tests.test_review_iter86_features.TestMakloonStagedReceipt" name="test_mko_partial_grn_without_makloon_lines_400" time="0.001"><skipped type="pytest.skip" message="No non-makloon GRN in counting/reconcile — cannot test 400">/app/backend/tests/test_review_iter86_features.py:144: No non-makloon GRN in counting/reconcile — cannot test 400</skipped></testcase><testcase classname="tests.test_review_iter86_features.TestMakloonStagedReceipt" name="test_receive_step_merges_pending_partial_receipts" time="0.010" /><testcase classname="tests.test_review_iter86_features.TestCustomerImportExport" name="test_dry_run_validation_errors" time="0.142" /><testcase classname="tests.test_review_iter86_features.TestCustomerImportExport" name="test_valid_row_creates_customer_with_sales_and_code" time="0.125" /><testcase classname="tests.test_review_iter86_features.TestCustomerImportExport" name="test_sales_user_import_assigns_to_self" time="0.238"><skipped type="pytest.skip" message="sales role lacks customer.import perm — behavior tested via admin cases">/app/backend/tests/test_review_iter86_features.py:247: sales role lacks customer.import perm — behavior tested via admin cases</skipped></testcase><testcase classname="tests.test_review_iter86_features.TestCustomerImportExport" name="test_export_customers_includes_required_columns" time="0.127" /><testcase classname="tests.test_review_iter86_features.TestReports" name="test_summary_monthly_revenue_is_net_and_sold_only" time="0.121" /><testcase classname="tests.test_review_iter86_features.TestReports" name="test_summary_orders_today_wib_boundary" time="0.135" /><testcase classname="tests.test_review_iter86_features.TestReports" name="test_order_velocity_200" time="0.126" /><testcase classname="tests.test_review_iter86_features.TestReports" name="test_top_customers_200" time="0.128" /><testcase classname="tests.test_review_iter86_features.TestOpeningStock" name="test_initial_stock_with_unit_cost_weight" time="0.277" /><testcase classname="tests.test_review_iter86_features.TestOpeningStock" name="test_roll_without_cost_flags_missing_and_listed" time="0.680" /><testcase classname="tests.test_review_iter86_features.TestGrnFileUpload" name="test_upload_with_client_hash_sets_original_hash_source_client" time="0.001"><skipped type="pytest.skip" message="No draft/review GRN available in ent_ksc">/app/backend/tests/test_review_iter86_features.py:448: No draft/review GRN available in ent_ksc</skipped></testcase><testcase classname="tests.test_review_iter86_features.TestGrnFileUpload" name="test_upload_without_client_hash_sets_source_server" time="0.001"><skipped type="pytest.skip" message="No draft/review GRN available in ent_ksc">/app/backend/tests/test_review_iter86_features.py:466: No draft/review GRN available in ent_ksc</skipped></testcase><testcase classname="tests.test_review_iter86_features.TestVariantAxisLebar" name="test_lebar_150_becomes_1p5_meter" time="0.000" /><testcase classname="tests.test_review_iter86_features.TestVariantAxisLebar" name="test_lebar_150cm_string" time="0.000" /><testcase classname="tests.test_review_iter86_features.TestVariantAxisLebar" name="test_generate_variants_source_has_lebar_conversion" time="0.004" /></testsuite></testsuites>

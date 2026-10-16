@@ -1,0 +1,596 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "same_denominator": true,
+  "inputs": [
+    {
+      "file": ".coverage.alert_numeric90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.assets_loans_lifecycle90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.bootstrap_idempotency90.knhost_audit_native90_template",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.budget_ledger_policy90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.cash_advance_lifecycle90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.child90.iter299_restore_orphan_rolls.5110caf253484f5a887f453724303c7a",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.child90.iter299_restore_orphan_rolls.79baed3a76c94128bb8898782361f6ed",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.child90.migrate_fase_a_domain.82d16ecb70c348be8dc2aae42d90ba4e",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.child90.migrate_fase_a_domain.f0cc0389506f48f39365cf13d7339f24",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.cli_current90.knhost_audit_native90_cli_2d542867ffe04a19bdb615a06d0f1cf6",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.commercial_patch_bounds90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.config_bank_oracles90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.contra_bon_invariants90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.hr_kpi_projection90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.label_master_rules90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.master_planning_oracles90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.missing_resource_contract90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_batch90.knhost_audit_native90_batch_replays",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_current90.knhost_audit_native90_current_replay2",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_current90.knhost_audit_native90_current_sampling",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_current90.knhost_audit_native90_more_062bc7c7cbd74d4e8eb9ee2fb09bf2fc",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_current90.knhost_audit_native90_retry_timeouts",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_0264f5afa187468bbc4e3766f24fa7f4",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_0636b2269fea4e67a2339df9896b6fde",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_0863515bdf1445f6b2f9bfed51d180fb",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_086c7441631c4885ba4bc0210a63327a",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_0985d0a5ff0746b48862adacb1b4b67d",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_0a30a5b978d34919bcc7684d6eee39e6",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_0fc19a86ec36486db8f2d546c9ba53b8",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_147cfbf2efd14cf1a670f4a05abd8de7",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_161090c79c86442cb262f2e2ef1b25c2",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_18c39871cd5b4c0ab122857b6aa36b66",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_1c97cb73a02f4af6a2928a9482d31649",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_1cf2aa782da844e3931f1da4fb4647f4",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_1d10daab3a014c3e90c0c31527bd2293",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_1ff297d8cb714c21be946833e7562b7a",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_20fdd1870a5f4d9a8c4e00e4faa0faca",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_26daa5ff786c4c6586fc77cb5277d8a0",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_298614cbd5f140f5a736e265f4d1f362",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_30019a5549ca4b16b4be548efac5cac0",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_3018d6fd01d3496190a6a5d288eabc32",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_33177f92a6e34841bbdb206612998e84",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_381dd4e9c7e1468fbcd486177346bf01",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_390ec4b77b3d4f53995e54a468b74d08",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_39d9d5b33be043ab9a213aa9edcdefe4",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_3b5400d5ff1f446693a278cba9c53f53",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_47f51261e980497da53df39e2cb6a3cd",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_4cfd2509ba3a46f6b1beb9df74001d4e",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_4d39162a804346fca4a2960e9d7e90a8",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_57185413e484422698c60cc2f06f2bbc",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_57a03dcc34ee4b81b54d662db52c3497",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_585a5d47a22941fd8112c80646cb01b4",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_5ad83b2821c94f70b5cb5995a21dc328",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_5e2a08b508b64e20bb2ebbd2c63af11e",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_5e3b4f85bb014a1186306f0558653dad",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_603d8f40598d43c5b0824b652d4e74a6",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_60e34ff27ca942caac687e882dc544e0",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_641b35348a624f0ab5ad996d2de2a4a4",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_69f6ee46336a4f98a7577339d42ca863",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_6a040d96f46d4f0f93679b3120a04a03",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_759a082981744d0ba1b9b722260fdf12",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_7ae7fdaed7d24e6996d2f41ee9fa93ca",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_7ba1eecd57b540efbaa608ec7aca2176",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_7bacfe54d81c4541ac7d1c2ddfa36180",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_7cb7fce6726b4166a0e0971599400f2c",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_81bd6be1de3d420a9ac3bfa7f9eab2b7",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_834bc24bb162437e96f6e06213a0db8d",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_8618341d949044dcbf6ff0b639f5cac5",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_8d477a82050942dd8accabe616427268",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_8f7be3fa6074496da72ac724581ec3b1",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_8fe487a5041944719ce66276295bf8f4",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_92efb3ca238f4052b2779f7129111c38",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_9345eea8513e4831bfca1a067c85f409",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_943248c766e3478785d5adcb17e7f6fb",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_95edc52715474d5c8e67d6eb8830546f",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_9643a2483c054bbbaf3991fab0f8b5c6",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_96f6da8767e6420eb90964e03d223d7c",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_9e043e89bf7d4475b7a7f00dd6d12e52",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_9ed6f18e9f9a4a54abd70fed3a97e354",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_9ef0678ac029448898c858b845cc9b06",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_9f93727e3c95404e9dd7f8735a764a4f",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_a9144f07440344a78c9a666e96c4ae34",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_ac844b2a6554438e99bed8888b59c518",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_b122d9fc6c1f490c8566cc69876f1694",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_b204d4cbdc344eff86668b7fa9567288",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_b3a362fb819648a9b0d3ef45314f2bc0",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_b3da523e1489445091198ca57435b1fa",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_b5b7c81757d746a49c1afccf6f3f1f4c",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_b75a4f5f050447d8b3cb999d7b3f37ed",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_b7a105a991a84965bdfe488019a11c75",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_bc33512ce23d47b7bba0da065963514e",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_bd1cf0fc877a496db5347e0a41b4cc01",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_bf39808085a04c41adb1497d24fc6620",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_bff9e43c84664dbdb3e9e1e8f6494c50",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_c02c96a70fe24e84af538d230597906d",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_c2d9678360ac41f48fc938418441e1ef",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_c34fd60a85e34cc287e31056da74d7cf",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_c44979e943ec4245a558322cc88b2791",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_c81d55fd4ee84147ada5481c49a35fe9",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_c84de9d2e1314b4d9b092a523f7742f7",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_cb9a27e269b440c3905ecdb1374fa713",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_cbc58eba02d64152bbf4654e11b7ae07",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_cd64b43b55764557926dd8c56af07d46",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_cf90d7a2c30b4604aa6dfdf13ae3bd05",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_d203b727653a466b8f8e988ed39197fe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_d2dcc085cef04edb9b6de5ccf570e32a",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_d318b12fc98a4493a5c81e509f4c5859",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_d8c47107e8524e40a57c2f30ff285ad2",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_da3c3de82dc44332aa8655ed239c1f5d",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_da6556decb214bafb87c720d8935bcb7",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_de8eceace5d945a1af4a2c856f960e05",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_e0467326a89c4ad486c95dec1ed13c26",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_e1425edd9cc34f2d9852fbecc3611dac",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_e4fa5e3d3cf64f6e8ad75d9d19f662be",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_e5c439547eb54474bf155d1c1182d1da",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_e6641445fb8243e4b20ecb7a446e5240",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_e6bf872756db4c52a7ba1806896ef945",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_e75807c02efc43c5be94cfd0784f326c",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_ea3a1ed9863f46408849f5aa29451149",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_f5e914f9b32849d2b9eeb37c2bb18b09",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_fa90b351429e40eab391e636a6305e35",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_fbbfbf0af90e443e9b093578725ac3f9",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_13a5f7693822468b9156627db401bef9",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_1bea115ae620494e83ed5e491d200e35",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_1e586630ed40404fa13add491aebfaef",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_41dc296de0934e678f808c1c0c257581",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_5adc6a75e16f4197bdef8435cf682c1f",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_96e8bcddf74e44058a7f36cf35a4973b",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_9da5bea2d940454c8c6d395b62b3b3f3",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_9ef7f85d18b546f0ae01e3c9513164d0",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_b28e93d9768b413abd8e71965ac405c7",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_c9529732e07049bb99c892806af061f9",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_d56e30455aa845699060dcdff7000d77",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_de7c0e3ddb5d4e8383fde90351665815",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_eb738a572290406eab18a65f9388ec40",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.native_runner.knhost_audit_native90_pytest_f22f9bb48b8943c487007a0147ff3c7f",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.ocr_semantics90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.price_approval_scope90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.procurement_lifecycle90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.pytest_current90.knhost_audit_native90_py_9a9e649f5fa34161b7b27522360fa0c1",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.pytest_current90.knhost_audit_native90_pytestcurrent_571c862b85474e3781540026075333d2",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.pytest_deep90.knhost_audit_native90_deep_f221bb1fe1c447fe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.quantity_provenance90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.rnd_feedback_rules90.probe",
+      "already_merged_unchanged": true
+    },
+    {
+      "file": ".coverage.special_order_chain90.probe",
+      "already_merged_unchanged": true
+    }
+  ],
+  "runtime": {
+    "covered_lines": 59594,
+    "num_statements": 72221,
+    "missing_lines": 12627,
+    "covered_branches": 15727,
+    "num_branches": 23008,
+    "missing_branches": 7281,
+    "statement_percent": 82.51616565818806,
+    "branch_percent": 68.35448539638386
+  }
+}

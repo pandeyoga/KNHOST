@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_e0_isolation_poc.py",
+    "database": "knhost_audit_native90_390ec4b77b3d4f53995e54a468b74d08",
+    "exit": "timeout",
+    "seconds": 210.07,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_core_e0_isolation_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "Timeout (0:00:55)!\nThread 0x0001a2dc (most recent call first):\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\re\\_parser.py\", line 885 in _parse\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\re\\_parser.py\", line 460 in _parse_sub\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\re\\_parser.py\", line 979 in parse\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\re\\_compiler.py\", line 750 in compile\n  File "
+  }
+]

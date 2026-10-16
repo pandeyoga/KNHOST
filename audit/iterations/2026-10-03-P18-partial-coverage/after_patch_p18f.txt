@@ -1,0 +1,47 @@
+  [poc-stock] snapshot 164 dokumen stok dari 4 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (164 dokumen, 4 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "INV-04",
+  "invariant": "approve antar-PT → completed, 2 buku berjurnal seimbang; Persediaan sumber turun = naik di tujuan; IC-AR (1-1250) = IC-AP; roll milik tujuan",
+  "pass": true,
+  "detail": "{'res': (200, '{\"id\":\"trn_c4477722f317\",\"code\":\"KSC/TRF-00005\",\"transfer_kind\":\"inter_entity\",\"'), 'ap': (200, '{\"id\":\"trn_c4477722f317\",\"code\":\"KSC/TRF-00005\",\"transfer_kind\":\"inter_entity\",\"entity_id\":\"ent_ksc\"'), 'src': {'1-1250': 366060.9, '1-1300': -366060.9}, 'dst': {'1-1300': 366060.9, '2-125"
+ },
+ {
+  "id": "INV-04",
+  "invariant": "approve ulang ditolak & jurnal tidak bertambah (idempoten)",
+  "pass": true,
+  "detail": "(400, 2)"
+ },
+ {
+  "id": "INV-04",
+  "invariant": "neraca saldo kedua PT tetap seimbang sesudah transfer",
+  "pass": true,
+  "detail": "{'ent_ksc': (200, 0.0), 'ent_kanda': (200, 0.0)}"
+ },
+ {
+  "id": "DOC-02",
+  "invariant": "ekspor CSV Laba-Rugi = sumber JSON (laba bersih & jumlah baris akun sama)",
+  "pass": true,
+  "detail": "(200, '-22231320.44', -22231320.44, 8, 8)"
+ },
+ {
+  "id": "DOC-02",
+  "invariant": "ekspor CSV Neraca memuat total aset sumber",
+  "pass": true,
+  "detail": "None"
+ },
+ {
+  "id": "DOC-02",
+  "invariant": "hak akses ekspor: desainer 403; finance KSC-saja minta PT lain 403 (laporan & harga pelanggan)",
+  "pass": true,
+  "detail": "(403, 403, 400)"
+ },
+ {
+  "id": "DOC-02",
+  "invariant": "ekspor daftar (inspeksi) berhasil dengan tipe unduhan & nama berkas",
+  "pass": true,
+  "detail": "(200, 'text/csv; charset=utf-8')"
+ }
+]
+pass=7 fail=0

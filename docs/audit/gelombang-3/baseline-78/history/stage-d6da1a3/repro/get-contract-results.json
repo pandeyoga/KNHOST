@@ -1,0 +1,6506 @@
+{
+  "commit": "d6da1a3d536228582645abb98aea19f3e491f300",
+  "database": "knhost_audit_115c458679fd4834a11ecd2580e1d355",
+  "note": "Sparse valid synthetic masters; execution/shape coverage is not arithmetic, permission-matrix, or business-flow correctness. 404/403/dependency errors require triage. Parameterized routes remain explicit gaps.",
+  "results": [
+    {
+      "path": "/api/roles",
+      "handler": "routers.auth.list_roles",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "roles"
+      ]
+    },
+    {
+      "path": "/api/auth/me",
+      "handler": "routers.auth.me",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "allowed_entity_ids",
+        "email",
+        "entity_context",
+        "home_entity_id",
+        "id",
+        "name",
+        "permissions",
+        "role",
+        "role_label",
+        "status"
+      ]
+    },
+    {
+      "path": "/api/auth/context",
+      "handler": "routers.auth.auth_context",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "active_entity_id",
+        "allowed_entity_ids",
+        "archived_entities",
+        "can_switch_entity",
+        "entities",
+        "home_entity_id",
+        "is_cross_entity"
+      ]
+    },
+    {
+      "path": "/api/users",
+      "handler": "routers.users.list_users",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/users/count",
+      "handler": "routers.users.count_users",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count"
+      ]
+    },
+    {
+      "path": "/api/hr-employees-available",
+      "handler": "routers.users.available_employees",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/users/{user_id}",
+      "handler": "routers.users.get_user",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/dashboard",
+      "handler": "routers.dashboard.dashboard",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "customers",
+        "expired_released",
+        "metrics",
+        "orders",
+        "products",
+        "warehouses"
+      ]
+    },
+    {
+      "path": "/api/products",
+      "handler": "routers.products.list_products",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/products/sales-owners",
+      "handler": "routers.products.list_sales_owners",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/products/{product_id}/stock-breakdown",
+      "handler": "routers.products.stock_breakdown",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/customers",
+      "handler": "routers.customers.list_customers",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/customers/{customer_id}/merge-preview",
+      "handler": "routers.customers.merge_customer_preview",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/warehouses/{warehouse_id}/locations",
+      "handler": "routers.warehouses.get_warehouse_locations",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/warehouses/{warehouse_id}/occupancy",
+      "handler": "routers.warehouses.get_warehouse_occupancy",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/warehouses",
+      "handler": "routers.warehouses.list_warehouses",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/uoms",
+      "handler": "routers.uoms.list_uoms",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/uoms/vocab",
+      "handler": "routers.uoms.uom_vocab",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "rows",
+        "words"
+      ]
+    },
+    {
+      "path": "/api/inventory/rolls/{roll_id}/journey-timeline",
+      "handler": "routers.inventory.roll_journey_timeline",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inventory/rolls/{roll_id}/cost-history",
+      "handler": "routers.inventory.roll_cost_history_endpoint",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inventory/putaway/queue",
+      "handler": "routers.inventory.get_putaway_queue",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "rolls"
+      ]
+    },
+    {
+      "path": "/api/inventory/stock-analytics",
+      "handler": "routers.inventory.stock_analytics",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "filters",
+        "generated_at",
+        "rows",
+        "summary",
+        "thresholds"
+      ]
+    },
+    {
+      "path": "/api/inventory/status-board",
+      "handler": "routers.inventory.inventory_status_board",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/inventory/balances",
+      "handler": "routers.inventory.list_balances",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/inventory/rolls",
+      "handler": "routers.inventory.list_rolls",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/inventory/rolls/available",
+      "handler": "routers.inventory.list_rolls_available",
+      "status": "not_executed",
+      "reason": "Required query fixture: product_id"
+    },
+    {
+      "path": "/api/inventory/movements",
+      "handler": "routers.inventory.list_movements",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/inventory/rolls-without-cost",
+      "handler": "routers.inventory.rolls_without_cost",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "rows",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/history/{product_id}",
+      "handler": "routers.inventory.product_history",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inventory/pending-cuts",
+      "handler": "routers.inventory.get_pending_cuts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items"
+      ]
+    },
+    {
+      "path": "/api/inventory/cut-children-unverified",
+      "handler": "routers.inventory.get_cut_children_unverified",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items"
+      ]
+    },
+    {
+      "path": "/api/sales-orders",
+      "handler": "routers.sales_orders_extra.list_orders",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/sales-orders/stats/summary",
+      "handler": "routers.sales_orders_extra.get_orders_stats",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "backorder_count",
+        "by_status",
+        "expiring_soon_count",
+        "revenue",
+        "revenue_basis",
+        "total_orders",
+        "total_reserved_qty"
+      ]
+    },
+    {
+      "path": "/api/sales-orders/frequent-products",
+      "handler": "routers.sales_orders_extra.frequent_products",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/sales-orders/{order_id}/journey",
+      "handler": "routers.sales_orders_extra.order_journey",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/sales-orders/{order_id}/restock-state",
+      "handler": "routers.sales_orders_extra.restock_state",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/sales-orders/{order_id}",
+      "handler": "routers.sales_orders.get_order",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/invoices",
+      "handler": "routers.invoices.list_invoices",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/sales-orders/{order_id}/invoices",
+      "handler": "routers.invoices.order_invoices",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/wms/tasks",
+      "handler": "routers.wms.list_tasks",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/documents/trace/{doc_type}/{doc_id}",
+      "handler": "routers.documents.document_trace",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/documents/trace/{doc_type}/{doc_id}/print",
+      "handler": "routers.documents.document_trace_print",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/documents/refs/{doc_type}/{doc_id}",
+      "handler": "routers.documents.document_refs",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/documents/trace-search",
+      "handler": "routers.documents.document_trace_search",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/documents/ref-types",
+      "handler": "routers.documents.document_ref_types",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "rel_labels",
+        "types"
+      ]
+    },
+    {
+      "path": "/api/documents/relations/{doc_type}/{doc_id}",
+      "handler": "routers.documents.document_relations",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/document-templates",
+      "handler": "routers.documents.list_templates",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/documents/{doc_id}/print",
+      "handler": "routers.documents.print_generated_document",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/documents/preview/{order_id}",
+      "handler": "routers.documents.preview_document",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/documents/resolve",
+      "handler": "routers.documents.resolve_document_number",
+      "status": "not_executed",
+      "reason": "Required query fixture: number"
+    },
+    {
+      "path": "/api/master-data/export-products",
+      "handler": "routers.admin.export_products",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "text/csv; charset=utf-8"
+    },
+    {
+      "path": "/api/master-data/export-yarn",
+      "handler": "routers.admin.export_yarn",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "text/csv; charset=utf-8"
+    },
+    {
+      "path": "/api/master-data/export-customers",
+      "handler": "routers.admin.export_customers",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "text/csv; charset=utf-8"
+    },
+    {
+      "path": "/api/master-data/export-warehouses",
+      "handler": "routers.admin.export_warehouses",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "text/csv; charset=utf-8"
+    },
+    {
+      "path": "/api/permissions",
+      "handler": "routers.admin.get_permissions",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "matrix",
+        "version"
+      ]
+    },
+    {
+      "path": "/api/reports/stock-aging",
+      "handler": "routers.reporting.stock_aging",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/reports/reservation-funnel",
+      "handler": "routers.reporting.reservation_funnel",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "active_orders",
+        "funnel",
+        "total_orders"
+      ]
+    },
+    {
+      "path": "/api/reports/order-velocity",
+      "handler": "routers.reporting.order_velocity",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "avg_per_day",
+        "period_days",
+        "total_orders",
+        "total_revenue",
+        "velocity"
+      ]
+    },
+    {
+      "path": "/api/reports/top-customers",
+      "handler": "routers.reporting.top_customers",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/reports/warehouse-utilization",
+      "handler": "routers.reporting.warehouse_utilization",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/reports/summary",
+      "handler": "routers.reporting.dashboard_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "low_stock_items",
+        "monthly_revenue",
+        "orders_today",
+        "pending_approvals",
+        "pending_cycle_counts"
+      ]
+    },
+    {
+      "path": "/api/audit-logs",
+      "handler": "routers.audit.list_audit_logs",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/audit-logs/resource",
+      "handler": "routers.audit.resource_audit_history",
+      "status": "not_executed",
+      "reason": "Required query fixture: entity_type"
+    },
+    {
+      "path": "/api/cycle-count/sessions",
+      "handler": "routers.cycle_count.list_sessions",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/cycle-count/sessions/{session_id}",
+      "handler": "routers.cycle_count.get_session",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/onboarding",
+      "handler": "routers.onboarding.get_onboarding",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "completed_count",
+        "items",
+        "progress_pct",
+        "role",
+        "total",
+        "user_id"
+      ]
+    },
+    {
+      "path": "/api/transfers",
+      "handler": "routers.transfers.list_transfers",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/transfers/{transfer_id}",
+      "handler": "routers.transfers.get_transfer_detail",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/purchase-orders/board",
+      "handler": "routers.po_board.po_board",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "derived_stages",
+        "has_more",
+        "items",
+        "line_restricted",
+        "lines",
+        "page",
+        "page_size",
+        "stage_labels",
+        "stage_statuses",
+        "summary",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/purchase-orders/blanket",
+      "handler": "routers.purchase_orders_extra.list_blanket_pos",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/po-variance-tasks",
+      "handler": "routers.purchase_orders_extra.list_po_variance_tasks",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/purchase-orders/payables/summary",
+      "handler": "routers.purchase_orders_extra.payables_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "aging",
+        "by_supplier",
+        "purchase_orders",
+        "total_outstanding"
+      ]
+    },
+    {
+      "path": "/api/purchase-orders/status-counts",
+      "handler": "routers.purchase_orders.purchase_order_status_counts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_payment",
+        "by_status",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/purchase-orders",
+      "handler": "routers.purchase_orders.list_purchase_orders",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/purchase-orders/resolve-sourcing",
+      "handler": "routers.purchase_orders.resolve_po_sourcing",
+      "status": "executed",
+      "http_status": 400,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "product_id wajib diisi."
+    },
+    {
+      "path": "/api/purchase-orders/{po_id}",
+      "handler": "routers.purchase_orders.get_purchase_order",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inbound/tasks/{task_id}/uom-options",
+      "handler": "routers.inbound_receiving_extra.inbound_uom_options",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/receiving/uom-settings",
+      "handler": "routers.inbound_receiving_extra.get_receiving_uom_settings",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "block_over_remaining",
+        "entity_id",
+        "entity_overrides",
+        "modes",
+        "require_supplier_item_for_supplier_uom",
+        "supplier_uom_input_mode",
+        "updated_at",
+        "updated_by"
+      ]
+    },
+    {
+      "path": "/api/inbound/qc/queue",
+      "handler": "routers.inbound_receiving_extra.qc_inspection_queue",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/inbound/po/{po_id}/receiving-goods-document",
+      "handler": "routers.inbound_receiving_extra.generate_receiving_goods_document",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inbound/tasks",
+      "handler": "routers.inbound_receiving.list_inbound_tasks",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}/label-pattern",
+      "handler": "routers.inbound_scan_label.get_label_pattern",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inbound/tasks/{task_id}/scanned-rolls",
+      "handler": "routers.inbound_scan_label.list_scanned_rolls",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inbound/scan-label/stats",
+      "handler": "routers.inbound_scan_label.scan_label_stats",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/goods-receipts",
+      "handler": "routers.goods_receipts.list_grn",
+      "status": "executed",
+      "http_status": 403,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Permission ditolak: goods_receipt.view"
+    },
+    {
+      "path": "/api/goods-receipts/partners",
+      "handler": "routers.goods_receipts.grn_partners",
+      "status": "executed",
+      "http_status": 403,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Permission ditolak: goods_receipt.create"
+    },
+    {
+      "path": "/api/goods-receipts/supplier-variance",
+      "handler": "routers.goods_receipts.grn_supplier_variance",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/goods-receipts/usage",
+      "handler": "routers.goods_receipts.grn_ocr_usage",
+      "status": "executed",
+      "http_status": 403,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Permission ditolak: goods_receipt.approve"
+    },
+    {
+      "path": "/api/goods-receipts/mode",
+      "handler": "routers.goods_receipts.grn_mode_status",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "active_entity_id",
+        "entities",
+        "modes"
+      ]
+    },
+    {
+      "path": "/api/goods-receipts/doc-variance",
+      "handler": "routers.goods_receipts.grn_doc_variance",
+      "status": "executed",
+      "http_status": 400,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Isi po_id atau mko_id."
+    },
+    {
+      "path": "/api/goods-receipts/dn-profiles",
+      "handler": "routers.goods_receipts.grn_dn_profiles",
+      "status": "executed",
+      "http_status": 403,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Permission ditolak: goods_receipt.view"
+    },
+    {
+      "path": "/api/goods-receipts/dn-profiles/{partner_id}",
+      "handler": "routers.goods_receipts.grn_dn_profile",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/goods-receipts/{grn_id}/rolls",
+      "handler": "routers.goods_receipts.grn_rolls",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/goods-receipts/{grn_id}",
+      "handler": "routers.goods_receipts.get_grn",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/goods-receipts/{grn_id}/targets",
+      "handler": "routers.goods_receipts.grn_targets",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/goods-receipts/{grn_id}/files/{page}",
+      "handler": "routers.goods_receipts.get_file",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/ocr-samples",
+      "handler": "routers.ocr_samples.list_samples",
+      "status": "executed",
+      "http_status": 403,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Permission ditolak: goods_receipt.view"
+    },
+    {
+      "path": "/api/ocr-samples/runs",
+      "handler": "routers.ocr_samples.list_runs",
+      "status": "executed",
+      "http_status": 403,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Permission ditolak: goods_receipt.view"
+    },
+    {
+      "path": "/api/ocr-samples/runs/{run_id}",
+      "handler": "routers.ocr_samples.get_run",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/ocr-samples/{sample_id}/files/{page}",
+      "handler": "routers.ocr_samples.sample_file",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/shipments",
+      "handler": "routers.outbound_picking_extra.list_shipments",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/shipments/{shipment_id}/surat-jalan",
+      "handler": "routers.outbound_picking_extra.shipment_surat_jalan",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/outbound/so/{order_id}/surat-jalan",
+      "handler": "routers.outbound_picking_extra.generate_surat_jalan",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/outbound/tasks",
+      "handler": "routers.outbound_picking.list_outbound_tasks",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/outbound/so/{order_id}/loading-check",
+      "handler": "routers.outbound_picking.get_loading_check",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/entities",
+      "handler": "routers.entities.list_entities",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/entities/count",
+      "handler": "routers.entities.count_entities",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count"
+      ]
+    },
+    {
+      "path": "/api/entities/{entity_id}",
+      "handler": "routers.entities.get_entity",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/entities/{entity_id}/readiness",
+      "handler": "routers.entities.get_readiness",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/entities/{entity_id}/deactivation-impact",
+      "handler": "routers.entities.get_deactivation_impact",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/entities/{entity_id}/audit",
+      "handler": "routers.entities.get_entity_audit",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/notifications",
+      "handler": "routers.notifications.list_notifications",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/notifications/unread-count",
+      "handler": "routers.notifications.unread_count",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count"
+      ]
+    },
+    {
+      "path": "/api/settings",
+      "handler": "routers.settings.read_settings",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "allocation",
+        "approval",
+        "ar",
+        "commission",
+        "created_at",
+        "finance",
+        "id",
+        "inventory",
+        "purchasing",
+        "qc",
+        "role_home",
+        "sales",
+        "scope",
+        "tax",
+        "ui",
+        "updated_at"
+      ]
+    },
+    {
+      "path": "/api/settings/effective",
+      "handler": "routers.settings.read_effective_settings",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "allocation",
+        "approval",
+        "ar",
+        "commission",
+        "finance",
+        "inventory",
+        "purchasing",
+        "qc",
+        "role_home",
+        "sales",
+        "scope",
+        "tax",
+        "ui"
+      ]
+    },
+    {
+      "path": "/api/settings/compute-tax",
+      "handler": "routers.settings.compute_tax_endpoint",
+      "status": "not_executed",
+      "reason": "Required query fixture: subtotal"
+    },
+    {
+      "path": "/api/settings/evaluate-approval",
+      "handler": "routers.settings.evaluate_approval_endpoint",
+      "status": "not_executed",
+      "reason": "Required query fixture: doc_type,amount"
+    },
+    {
+      "path": "/api/payment-terms",
+      "handler": "routers.settings.list_payment_terms",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/price-approvals/hint",
+      "handler": "routers.price_approvals.price_hint",
+      "status": "not_executed",
+      "reason": "Required query fixture: product_id,price"
+    },
+    {
+      "path": "/api/price-approvals",
+      "handler": "routers.price_approvals.list_price_approvals",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/price-approvals/effective",
+      "handler": "routers.price_approvals.effective_price",
+      "status": "not_executed",
+      "reason": "Required query fixture: customer_id,product_id"
+    },
+    {
+      "path": "/api/price-approvals/stats/summary",
+      "handler": "routers.price_approvals.price_approval_stats",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_status",
+        "pending",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/price-approvals/{approval_id}",
+      "handler": "routers.price_approvals.get_price_approval",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/price-approvals/{approval_id}/attachments/{att_id}/download",
+      "handler": "routers.price_approvals.download_attachment",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/pegging/rolls",
+      "handler": "routers.pegging.list_earmarked",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/tax-invoices",
+      "handler": "routers.tax_invoices.list_tax_invoices",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/tax-invoices/{fkt_id}",
+      "handler": "routers.tax_invoices.get_tax_invoice",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/tax-invoices/{fkt_id}/document",
+      "handler": "routers.tax_invoices.faktur_document",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/sales-returns",
+      "handler": "routers.sales_returns.list_returns",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/sales-returns/status-counts",
+      "handler": "routers.sales_returns.sales_return_status_counts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "all"
+      ]
+    },
+    {
+      "path": "/api/credit-notes",
+      "handler": "routers.sales_returns.list_credit_notes",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items",
+        "total",
+        "total_amount"
+      ]
+    },
+    {
+      "path": "/api/credit-notes/{cn_id}",
+      "handler": "routers.sales_returns.get_credit_note",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/sales-returns/{return_id}",
+      "handler": "routers.sales_returns.get_return",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/sales-returns/meta/complaint-reasons",
+      "handler": "routers.sales_returns.return_complaint_reasons",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items",
+        "milestones"
+      ]
+    },
+    {
+      "path": "/api/sales-returns/{return_id}/quarantine",
+      "handler": "routers.sales_returns.list_quarantine_rolls",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/returns/chain/{doc_id}",
+      "handler": "routers.sales_returns.return_chain",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/sales-returns/{return_id}/attachments/{att_id}/download",
+      "handler": "routers.sales_returns.download_attachment",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/special-orders",
+      "handler": "routers.special_orders.list_special_orders",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "approval_threshold",
+        "by_status",
+        "count",
+        "items"
+      ]
+    },
+    {
+      "path": "/api/special-orders/{order_id}",
+      "handler": "routers.special_orders.get_special_order",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/special-orders/{order_id}/references/{file_id}",
+      "handler": "routers.special_orders.get_od_reference",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/special-orders/{order_id}/customer-decision/evidence/{file_id}",
+      "handler": "routers.special_orders.customer_decision_evidence_file",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/special-orders/{order_id}/pricing",
+      "handler": "routers.special_orders.pricing_preview",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/approval-rules",
+      "handler": "routers.approval_rules.list_approval_rules",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/approval-rules/{rule_id}",
+      "handler": "routers.approval_rules.get_approval_rule",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/suppliers",
+      "handler": "routers.suppliers.list_suppliers",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}",
+      "handler": "routers.suppliers.get_supplier",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}/price-list",
+      "handler": "routers.suppliers.list_supplier_price_list",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/supplier-price-list/resolve",
+      "handler": "routers.suppliers.resolve_supplier_price",
+      "status": "executed",
+      "http_status": 400,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "product_id wajib diisi"
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}/scorecard",
+      "handler": "routers.suppliers.get_supplier_scorecard",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}/360",
+      "handler": "routers.suppliers.get_supplier_360",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/suppliers/{supplier_id}/return-policy",
+      "handler": "routers.suppliers.get_supplier_return_policy",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/cash-transactions",
+      "handler": "routers.cash.list_cash_transactions",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/cash-transactions/summary",
+      "handler": "routers.cash.cash_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "group_cash_pending",
+        "kas_besar",
+        "kas_kecil",
+        "kas_kecil_per_entity",
+        "scope"
+      ]
+    },
+    {
+      "path": "/api/purchase-returns",
+      "handler": "routers.purchase_returns.list_purchase_returns",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/purchase-returns/status-counts",
+      "handler": "routers.purchase_returns.purchase_return_status_counts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "all"
+      ]
+    },
+    {
+      "path": "/api/purchase-returns/source-rolls",
+      "handler": "routers.purchase_returns.purchase_return_source_rolls",
+      "status": "not_executed",
+      "reason": "Required query fixture: product_id"
+    },
+    {
+      "path": "/api/purchase-returns/{return_id}",
+      "handler": "routers.purchase_returns.get_purchase_return",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/purchase-requisitions",
+      "handler": "routers.purchase_requisitions.list_requisitions",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_status",
+        "items",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/purchase-requisitions/reorder-suggestions",
+      "handler": "routers.purchase_requisitions.reorder_suggestions",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "config",
+        "count",
+        "entity_id",
+        "generated_at",
+        "items",
+        "rop_candidate_count",
+        "rop_candidates"
+      ]
+    },
+    {
+      "path": "/api/purchase-requisitions/eligible-suppliers",
+      "handler": "routers.purchase_requisitions.eligible_suppliers",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_product",
+        "common"
+      ]
+    },
+    {
+      "path": "/api/purchase-requisitions/{pr_id}",
+      "handler": "routers.purchase_requisitions.get_requisition",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/purchase-requisitions/{pr_id}/sourcing",
+      "handler": "routers.purchase_requisitions.pr_sourcing",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/purchase-requisitions/{pr_id}/makloon-prefill",
+      "handler": "routers.purchase_requisitions.makloon_prefill",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/material-reservations",
+      "handler": "routers.purchase_requisitions.list_material_reservations",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/purchase-orders/{po_id}/billing-context",
+      "handler": "routers.vendor_bills.po_billing_context",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/vendor-bills/payables/summary",
+      "handler": "routers.vendor_bills.vendor_bill_payables",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "aging",
+        "bills",
+        "by_supplier",
+        "total_outstanding"
+      ]
+    },
+    {
+      "path": "/api/vendor-bills/status-counts",
+      "handler": "routers.vendor_bills.vendor_bill_status_counts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "all"
+      ]
+    },
+    {
+      "path": "/api/vendor-bills",
+      "handler": "routers.vendor_bills.list_vendor_bills",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/vendor-bills/{bill_id}",
+      "handler": "routers.vendor_bills.get_vendor_bill",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/purchase-orders/{po_id}/landed-cost-context",
+      "handler": "routers.landed_cost.po_landed_cost_context",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/landed-costs/payables/summary",
+      "handler": "routers.landed_cost.landed_cost_payables",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_provider",
+        "total_applied",
+        "total_outstanding",
+        "vouchers"
+      ]
+    },
+    {
+      "path": "/api/landed-costs",
+      "handler": "routers.landed_cost.list_landed_costs",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/landed-costs/{voucher_id}",
+      "handler": "routers.landed_cost.get_landed_cost",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/input-tax-invoices/eligible-bills",
+      "handler": "routers.input_tax.list_eligible_bills",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/tax/vat-summary",
+      "handler": "routers.input_tax.get_vat_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "keluaran",
+        "masukan",
+        "masukan_by_supplier",
+        "net_ppn",
+        "period",
+        "position",
+        "position_label"
+      ]
+    },
+    {
+      "path": "/api/input-tax-invoices",
+      "handler": "routers.input_tax.list_input_tax",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/input-tax-invoices/{fpm_id}",
+      "handler": "routers.input_tax.get_input_tax",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rfqs",
+      "handler": "routers.rfq.list_rfqs",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/rfqs/{rfq_id}",
+      "handler": "routers.rfq.get_rfq",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rfqs/{rfq_id}/compare",
+      "handler": "routers.rfq.compare_rfq",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/qc/grade-thresholds",
+      "handler": "routers.qc_inspection.get_grade_thresholds",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "a1_max",
+        "a2_max",
+        "a_max",
+        "b_max"
+      ]
+    },
+    {
+      "path": "/api/inbound/qc/tasks/{task_id}/rolls",
+      "handler": "routers.qc_inspection.list_task_rolls",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inbound/qc/tasks/{task_id}/plan",
+      "handler": "routers.qc_inspection.get_qc_plan",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inventory/rolls/{roll_id}/grade-history",
+      "handler": "routers.qc_inspection.roll_grade_history",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/sales-users",
+      "handler": "routers.crm.list_sales_users",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/customers/{customer_id}/360",
+      "handler": "routers.crm.get_customer_360",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/credit-overrides",
+      "handler": "routers.crm.list_credit_overrides",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/credit-overrides/{override_id}",
+      "handler": "routers.crm.get_credit_override",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/collection-worklist",
+      "handler": "routers.crm.get_collection_worklist",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/customers/{customer_id}/credit-status",
+      "handler": "routers.crm.get_credit_status",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/collection-reminders",
+      "handler": "routers.crm.get_collection_reminders",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/sales/kpi",
+      "handler": "routers.crm.get_sales_kpi",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "ar_outstanding",
+        "avg_order_value",
+        "blocked_customers",
+        "collection_rate",
+        "customers_count",
+        "new_customers",
+        "orders_count",
+        "overdue_amount",
+        "period",
+        "sales_id",
+        "total_collected",
+        "total_sales",
+        "warning_customers"
+      ]
+    },
+    {
+      "path": "/api/sales/leaderboard",
+      "handler": "routers.crm.get_leaderboard",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/sales/commission",
+      "handler": "routers.crm.get_commission",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "achievement_pct",
+        "applied_rate",
+        "base_amount",
+        "basis",
+        "bonus_new_customer",
+        "breakdown",
+        "commission",
+        "kpi",
+        "period",
+        "projection_full",
+        "sales_id",
+        "strategy",
+        "target_amount",
+        "total_incentive"
+      ]
+    },
+    {
+      "path": "/api/sales/commission-history",
+      "handler": "routers.crm.get_commission_history",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/sales/incentive/gl-status",
+      "handler": "routers.crm.get_incentive_gl_status",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "amount",
+        "entity_id",
+        "journal_id",
+        "journal_number",
+        "period",
+        "posted",
+        "posted_at"
+      ]
+    },
+    {
+      "path": "/api/sales-targets",
+      "handler": "routers.crm.list_targets",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/sales-incentives",
+      "handler": "routers.crm.list_incentives",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/home/sales",
+      "handler": "routers.home.home_sales",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "collections",
+        "commission",
+        "customers",
+        "history",
+        "kpi",
+        "period",
+        "recent_orders",
+        "target",
+        "waiting_boards"
+      ]
+    },
+    {
+      "path": "/api/home/admin",
+      "handler": "routers.home.home_admin",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "approvals",
+        "approvals_pending",
+        "ar",
+        "incentive_payout",
+        "leaderboard_top",
+        "low_stock",
+        "period",
+        "sales",
+        "special_orders_waiting",
+        "top_overdue",
+        "waiting_boards"
+      ]
+    },
+    {
+      "path": "/api/home/manager",
+      "handler": "routers.home.home_manager",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "approvals",
+        "approvals_pending",
+        "designers",
+        "late_today",
+        "leaderboard",
+        "period",
+        "special_orders_waiting",
+        "target",
+        "team",
+        "totals",
+        "waiting_boards"
+      ]
+    },
+    {
+      "path": "/api/home/warehouse",
+      "handler": "routers.home.home_warehouse",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "total_waiting",
+        "waiting_boards"
+      ]
+    },
+    {
+      "path": "/api/home/finance",
+      "handler": "routers.home.home_finance",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "total_waiting",
+        "waiting_boards"
+      ]
+    },
+    {
+      "path": "/api/product-categories",
+      "handler": "routers.categories.list_categories",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/product-motifs",
+      "handler": "routers.categories.list_motifs",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items"
+      ]
+    },
+    {
+      "path": "/api/costing/wac",
+      "handler": "routers.costing.list_wac",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/costing/wac/{product_id}",
+      "handler": "routers.costing.get_wac",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/ar-receipts/open-orders",
+      "handler": "routers.ar_receipts.open_orders",
+      "status": "not_executed",
+      "reason": "Required query fixture: customer_id"
+    },
+    {
+      "path": "/api/ar-receipts/deposit",
+      "handler": "routers.ar_receipts.deposit_balance",
+      "status": "not_executed",
+      "reason": "Required query fixture: customer_id"
+    },
+    {
+      "path": "/api/ar-receipts",
+      "handler": "routers.ar_receipts.list_receipts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/ar-receipts/{receipt_id}",
+      "handler": "routers.ar_receipts.get_receipt",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/incentive-rates",
+      "handler": "routers.incentive_rates.list_rates",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/ar/aging",
+      "handler": "routers.ar_aging.ar_aging",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "as_of",
+        "config",
+        "customers",
+        "entity_id",
+        "entity_ids",
+        "entity_name",
+        "is_consolidated",
+        "penalty_policy",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/ar/aging/{customer_id}",
+      "handler": "routers.ar_aging.ar_aging_detail",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/ar/advance-report",
+      "handler": "routers.ar_aging.ar_advance_report",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "filtered",
+        "generated_at",
+        "rows",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/bank-accounts",
+      "handler": "routers.bank.list_bank_accounts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/bank-accounts/{account_id}/ledger",
+      "handler": "routers.bank.bank_account_ledger",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/gl/accounts",
+      "handler": "routers.gl.list_gl_accounts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/gl/cash-accounts",
+      "handler": "routers.gl.list_cash_accounts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/gl/accounts/{code}/ledger",
+      "handler": "routers.gl.gl_account_ledger",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/gl/journal",
+      "handler": "routers.gl.list_journal",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/gl/journal/{entry_id}",
+      "handler": "routers.gl.get_journal",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/gl/trial-balance",
+      "handler": "routers.gl.trial_balance",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "account_count",
+        "as_of",
+        "balanced",
+        "rows",
+        "total_credit",
+        "total_debit"
+      ]
+    },
+    {
+      "path": "/api/gl/summary",
+      "handler": "routers.gl.gl_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "account_count",
+        "balanced",
+        "journal_count",
+        "total_credit",
+        "total_debit"
+      ]
+    },
+    {
+      "path": "/api/gl/consolidation",
+      "handler": "routers.gl.gl_consolidation",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "as_of",
+        "consolidated",
+        "entities"
+      ]
+    },
+    {
+      "path": "/api/gl/inventory-reconciliation",
+      "handler": "routers.gl.gl_inventory_reconciliation",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "as_of",
+        "reconciled",
+        "rounding_tolerance",
+        "rows",
+        "total_difference"
+      ]
+    },
+    {
+      "path": "/api/gl/inventory-drift-explain",
+      "handler": "routers.gl.gl_inventory_drift_explain",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "as_of",
+        "difference",
+        "entity_id",
+        "entity_name",
+        "gl_balance",
+        "gl_by_source",
+        "physical_by_origin",
+        "subledger_value",
+        "suspects",
+        "zero_cost_rolls"
+      ]
+    },
+    {
+      "path": "/api/gl/suspense",
+      "handler": "routers.gl.gl_suspense",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "account_code",
+        "account_name",
+        "balance",
+        "entry_count",
+        "items"
+      ]
+    },
+    {
+      "path": "/api/pricelist",
+      "handler": "routers.pricelist.pricelist_grid",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "entity_id",
+        "rows",
+        "summary"
+      ]
+    },
+    {
+      "path": "/api/pricelist/records",
+      "handler": "routers.pricelist.pricelist_records",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/pricelist/export",
+      "handler": "routers.pricelist.pricelist_export",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "text/csv; charset=utf-8"
+    },
+    {
+      "path": "/api/product-templates",
+      "handler": "routers.product_templates.list_templates",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/product-templates/{template_id}/summary",
+      "handler": "routers.product_templates.template_summary",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/product-templates/{template_id}",
+      "handler": "routers.product_templates.get_template",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/stock/buckets",
+      "handler": "routers.stock_buckets.stock_buckets",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/stock/holds",
+      "handler": "routers.stock_buckets.list_holds",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/stock/wip",
+      "handler": "routers.stock_buckets.list_wip",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/stock/pending-so",
+      "handler": "routers.stock_buckets.pending_so",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/stock/atp",
+      "handler": "routers.stock_buckets.stock_atp",
+      "status": "not_executed",
+      "reason": "Required query fixture: product_id"
+    },
+    {
+      "path": "/api/pos/best-sellers",
+      "handler": "routers.pos.get_best_sellers",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/pos/frequently-bought-together",
+      "handler": "routers.pos.get_frequently_bought_together",
+      "status": "not_executed",
+      "reason": "Required query fixture: product_id"
+    },
+    {
+      "path": "/api/pos/substitutes",
+      "handler": "routers.pos.get_substitutes",
+      "status": "not_executed",
+      "reason": "Required query fixture: product_id"
+    },
+    {
+      "path": "/api/sales-orders/{order_id}/approvals/{approval_id}/evidence/{att_id}/download",
+      "handler": "routers.so_approvals.download_evidence",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/approvals/backlog",
+      "handler": "routers.so_approvals.approvals_backlog",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "all_items",
+        "items",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/approvals/queue-board/{key}",
+      "handler": "routers.so_approvals.approvals_queue_board",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/approvals/queue",
+      "handler": "routers.so_approvals.approvals_queue",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/org-units",
+      "handler": "routers.hr.list_org_units",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/org-units/tree",
+      "handler": "routers.hr.org_units_tree",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/employees",
+      "handler": "routers.hr.list_employees",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/summary",
+      "handler": "routers.hr.hr_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "active",
+        "by_status",
+        "by_type",
+        "departments",
+        "linked_accounts",
+        "org_units",
+        "total_employees"
+      ]
+    },
+    {
+      "path": "/api/hr/employees/me",
+      "handler": "routers.hr.my_employee",
+      "status": "executed",
+      "http_status": 404,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Profil karyawan belum tersedia untuk akun Anda"
+    },
+    {
+      "path": "/api/hr/employees/{employee_id}",
+      "handler": "routers.hr.get_employee",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/hr/employees/{employee_id}/360",
+      "handler": "routers.hr.get_employee_360",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/hr/settings",
+      "handler": "routers.hr.read_hr_settings",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "bpjs",
+        "employment_types",
+        "entity_id",
+        "entity_overrides",
+        "feature_toggles",
+        "jkk_classes",
+        "overtime",
+        "payroll_commission_mode",
+        "ptkp_table",
+        "ter_enabled"
+      ]
+    },
+    {
+      "path": "/api/hr/shifts",
+      "handler": "routers.hr_attendance.list_shifts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/geofences",
+      "handler": "routers.hr_attendance.list_geofences",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/devices",
+      "handler": "routers.hr_attendance.list_devices",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/attendance",
+      "handler": "routers.hr_attendance.list_attendance",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/attendance/recap",
+      "handler": "routers.hr_attendance.attendance_recap",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "month",
+        "rows",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/hr/attendance/me",
+      "handler": "routers.hr_attendance.my_attendance",
+      "status": "executed",
+      "http_status": 404,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Profil karyawan belum tersedia untuk akun Anda"
+    },
+    {
+      "path": "/api/hr/field-tracks/latest",
+      "handler": "routers.hr_tracking.latest_tracks",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/field-tracks",
+      "handler": "routers.hr_tracking.track_history",
+      "status": "not_executed",
+      "reason": "Required query fixture: employee_id"
+    },
+    {
+      "path": "/api/hr/visits",
+      "handler": "routers.hr_tracking.list_visits",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/visits/summary",
+      "handler": "routers.hr_tracking.visits_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "month",
+        "rows",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/hr/visits/me",
+      "handler": "routers.hr_tracking.my_visits",
+      "status": "executed",
+      "http_status": 404,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Profil karyawan belum tersedia untuk akun Anda"
+    },
+    {
+      "path": "/api/hr/visits/mine",
+      "handler": "routers.hr_tracking.my_visits_history",
+      "status": "executed",
+      "http_status": 404,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Profil karyawan belum tersedia untuk akun Anda"
+    },
+    {
+      "path": "/api/hr/payroll/settings",
+      "handler": "routers.hr_payroll.get_payroll_settings",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "bpjs",
+        "entity_id",
+        "entity_overrides",
+        "feature_toggles",
+        "jkk_classes",
+        "overtime",
+        "payroll_commission_mode",
+        "ptkp_table",
+        "ter_enabled"
+      ]
+    },
+    {
+      "path": "/api/hr/payroll/runs",
+      "handler": "routers.hr_payroll.list_payroll_runs",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/payroll/runs/{run_id}",
+      "handler": "routers.hr_payroll.get_payroll_run",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/hr/payslips",
+      "handler": "routers.hr_payroll.list_payslips",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/payslips/me",
+      "handler": "routers.hr_payroll.my_payslips",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "employee",
+        "payslips"
+      ]
+    },
+    {
+      "path": "/api/hr/payslips/{slip_id}",
+      "handler": "routers.hr_payroll.get_payslip",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/hr/payslips/{slip_id}/pdf",
+      "handler": "routers.hr_payroll.payslip_pdf",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/hr/leave-requests/me",
+      "handler": "routers.hr_leave.my_leave_requests",
+      "status": "executed",
+      "http_status": 404,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Profil karyawan belum tersedia untuk akun Anda"
+    },
+    {
+      "path": "/api/hr/leave-balance/me",
+      "handler": "routers.hr_leave.my_leave_balance",
+      "status": "executed",
+      "http_status": 404,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Profil karyawan belum tersedia untuk akun Anda"
+    },
+    {
+      "path": "/api/hr/leave-requests",
+      "handler": "routers.hr_leave.list_leave_requests",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/leave-balances",
+      "handler": "routers.hr_leave.list_leave_balances",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/leave-calendar",
+      "handler": "routers.hr_leave.leave_calendar",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "leaves",
+        "month"
+      ]
+    },
+    {
+      "path": "/api/hr/overtime/me",
+      "handler": "routers.hr_leave.my_overtime_requests",
+      "status": "executed",
+      "http_status": 404,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Profil karyawan belum tersedia untuk akun Anda"
+    },
+    {
+      "path": "/api/hr/overtime",
+      "handler": "routers.hr_leave.list_overtime_requests",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/hr/kpi/me",
+      "handler": "routers.hr_kpi.my_kpi_endpoint",
+      "status": "executed",
+      "http_status": 404,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Profil karyawan belum tersedia untuk akun Anda"
+    },
+    {
+      "path": "/api/hr/kpi",
+      "handler": "routers.hr_kpi.list_kpi",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/design-gallery",
+      "handler": "routers.design_gallery.list_gallery",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/design-gallery/{gallery_id}",
+      "handler": "routers.design_gallery.get_gallery",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/design-gallery/{gallery_id}/files/{file_id}",
+      "handler": "routers.design_gallery.get_gallery_file",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/design-gallery-ai/status",
+      "handler": "routers.design_gallery.ai_illustrate_status",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "configured",
+        "cost_per_image_usd",
+        "daily_limit",
+        "demo",
+        "disabled_reason",
+        "enabled",
+        "model",
+        "verified"
+      ]
+    },
+    {
+      "path": "/api/admin/integrations",
+      "handler": "routers.integrations.get_integrations",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "anthropic",
+        "gemini",
+        "openai"
+      ]
+    },
+    {
+      "path": "/api/hr/analytics/summary",
+      "handler": "routers.hr_analytics.hr_analytics_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "attendance",
+        "headcount",
+        "overtime_trend",
+        "payroll",
+        "payroll_trend",
+        "period",
+        "periods",
+        "statutory",
+        "turnover"
+      ]
+    },
+    {
+      "path": "/api/tax/summary",
+      "handler": "routers.tax_center.get_tax_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "config",
+        "entity",
+        "period",
+        "periods",
+        "pph",
+        "ppn"
+      ]
+    },
+    {
+      "path": "/api/tax/pph-records",
+      "handler": "routers.tax_center.list_pph_records",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/finance/income-statement",
+      "handler": "routers.financial_statements.get_income_statement",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "cogs_total",
+        "generated_at",
+        "gross_margin",
+        "gross_profit",
+        "net_income",
+        "net_margin",
+        "operating_profit",
+        "opex_total",
+        "period",
+        "revenue_total",
+        "sections"
+      ]
+    },
+    {
+      "path": "/api/finance/balance-sheet",
+      "handler": "routers.financial_statements.get_balance_sheet",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "as_of",
+        "assets",
+        "assets_total",
+        "balanced",
+        "comparative",
+        "compare_as_of",
+        "equity",
+        "equity_total",
+        "generated_at",
+        "liabilities",
+        "liabilities_equity_total",
+        "liabilities_total"
+      ]
+    },
+    {
+      "path": "/api/finance/cash-flow",
+      "handler": "routers.financial_statements.get_cash_flow",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "begin_cash",
+        "end_cash",
+        "end_cash_actual",
+        "financing",
+        "generated_at",
+        "investing",
+        "method",
+        "net_change",
+        "noncash_disclosure",
+        "operating",
+        "period",
+        "reconciled"
+      ]
+    },
+    {
+      "path": "/api/finance/equity-changes",
+      "handler": "routers.financial_statements.get_equity_changes",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "begin_total",
+        "components",
+        "end_total",
+        "generated_at",
+        "movement_total",
+        "net_income",
+        "period"
+      ]
+    },
+    {
+      "path": "/api/finance/income-statement/export.csv",
+      "handler": "routers.financial_statements.export_income_statement",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "text/csv; charset=utf-8"
+    },
+    {
+      "path": "/api/finance/balance-sheet/export.csv",
+      "handler": "routers.financial_statements.export_balance_sheet",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "text/csv; charset=utf-8"
+    },
+    {
+      "path": "/api/finance/cash-flow/export.csv",
+      "handler": "routers.financial_statements.export_cash_flow",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "text/csv; charset=utf-8"
+    },
+    {
+      "path": "/api/finance/equity-changes/export.csv",
+      "handler": "routers.financial_statements.export_equity_changes",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "text/csv; charset=utf-8"
+    },
+    {
+      "path": "/api/finance/closing",
+      "handler": "routers.closing.list_closings",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/finance/closing/preview",
+      "handler": "routers.closing.preview_closing",
+      "status": "not_executed",
+      "reason": "Required query fixture: period_type,period_key"
+    },
+    {
+      "path": "/api/finance/closing/status",
+      "handler": "routers.closing.closing_status",
+      "status": "not_executed",
+      "reason": "Required query fixture: date"
+    },
+    {
+      "path": "/api/finance/bi",
+      "handler": "routers.finance_bi.finance_bi_dashboard",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "entity_comparison",
+        "kpi",
+        "monthly",
+        "multi_entity",
+        "ratios",
+        "year"
+      ]
+    },
+    {
+      "path": "/api/crm/leads",
+      "handler": "routers.crm_omnichannel.list_leads",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/crm/leads/board",
+      "handler": "routers.crm_omnichannel.leads_board",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "columns",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/crm/pipeline-stats",
+      "handler": "routers.crm_omnichannel.pipeline_stats",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_stage",
+        "open_count",
+        "open_value",
+        "total",
+        "win_rate",
+        "won_value"
+      ]
+    },
+    {
+      "path": "/api/crm/interactions",
+      "handler": "routers.crm_omnichannel.list_interactions",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/finance/consolidation/summary",
+      "handler": "routers.consolidation.consolidation_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "as_of",
+        "balanced",
+        "consolidated",
+        "elimination",
+        "eliminations_auto_count",
+        "eliminations_bs_count",
+        "eliminations_count",
+        "eliminations_pl_count",
+        "entities",
+        "gross",
+        "year"
+      ]
+    },
+    {
+      "path": "/api/finance/consolidation/eliminations",
+      "handler": "routers.consolidation.list_eliminations",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/finance/consolidation/ic-candidates",
+      "handler": "routers.consolidation.ic_candidates",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "as_of",
+        "candidates",
+        "detected_accounts",
+        "keywords",
+        "suggested_lines"
+      ]
+    },
+    {
+      "path": "/api/rfid/summary",
+      "handler": "routers.rfid.get_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "alerts_today",
+        "devices_online",
+        "devices_total",
+        "reads_today",
+        "tags_active",
+        "tags_total",
+        "untagged_rolls"
+      ]
+    },
+    {
+      "path": "/api/rfid/tags",
+      "handler": "routers.rfid.get_tags",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "tags"
+      ]
+    },
+    {
+      "path": "/api/rfid/lookup",
+      "handler": "routers.rfid.lookup_code",
+      "status": "not_executed",
+      "reason": "Required query fixture: code"
+    },
+    {
+      "path": "/api/rfid/roll-scans/{roll_id}",
+      "handler": "routers.rfid.get_roll_scans",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rfid/printer-status",
+      "handler": "routers.rfid.printer_status",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "as_of",
+        "count",
+        "stuck_warehouses",
+        "total_queued_labels",
+        "warehouses"
+      ]
+    },
+    {
+      "path": "/api/rfid/labels",
+      "handler": "routers.rfid.labels_for_document",
+      "status": "executed",
+      "http_status": 400,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Sebutkan po_id, lot_id, atau task_id"
+    },
+    {
+      "path": "/api/rfid/untagged-rolls",
+      "handler": "routers.rfid.get_untagged",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "rolls"
+      ]
+    },
+    {
+      "path": "/api/rfid/devices",
+      "handler": "routers.rfid.get_devices",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "devices"
+      ]
+    },
+    {
+      "path": "/api/rfid/reads",
+      "handler": "routers.rfid.get_reads",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "next_before",
+        "reads"
+      ]
+    },
+    {
+      "path": "/api/rfid/gate/{device_id}/status",
+      "handler": "routers.rfid.get_gate_status",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rfid/passages",
+      "handler": "routers.rfid.get_passages",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "next_before",
+        "passages"
+      ]
+    },
+    {
+      "path": "/api/rfid/locations",
+      "handler": "routers.rfid.get_locations",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "items"
+      ]
+    },
+    {
+      "path": "/api/rfid/print-jobs",
+      "handler": "routers.rfid.get_print_jobs",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "jobs"
+      ]
+    },
+    {
+      "path": "/api/rfid/print-jobs/{job_id}",
+      "handler": "routers.rfid.get_print_job",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rfid/print-jobs/{job_id}/zpl",
+      "handler": "routers.rfid.get_print_job_zpl",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rfid/device-jobs/pending",
+      "handler": "routers.rfid.get_device_jobs",
+      "status": "executed",
+      "http_status": 401,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Header X-Device-Key wajib"
+    },
+    {
+      "path": "/api/rfid/incidents",
+      "handler": "routers.rfid.get_incidents",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "incidents"
+      ]
+    },
+    {
+      "path": "/api/rfid/shrinkage-report",
+      "handler": "routers.rfid.get_shrinkage",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "days",
+        "per_warehouse",
+        "recent_cycle_counts",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/rfid/device-health",
+      "handler": "routers.rfid.get_device_health",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "devices",
+        "stale_count"
+      ]
+    },
+    {
+      "path": "/api/rfid/cycle-counts",
+      "handler": "routers.rfid.get_cc_list",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "counts"
+      ]
+    },
+    {
+      "path": "/api/rfid/cycle-counts/{cc_id}",
+      "handler": "routers.rfid.get_cc_detail",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/warehouse-sites",
+      "handler": "routers.warehouse_sites.get_sites",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "sites"
+      ]
+    },
+    {
+      "path": "/api/putaway-orders/suggest",
+      "handler": "routers.putaway_orders.get_suggest",
+      "status": "not_executed",
+      "reason": "Required query fixture: from_warehouse_id"
+    },
+    {
+      "path": "/api/putaway-orders",
+      "handler": "routers.putaway_orders.get_orders",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "orders"
+      ]
+    },
+    {
+      "path": "/api/wms/health-dashboard",
+      "handler": "routers.putaway_orders.get_wms_health",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "totals",
+        "warehouses"
+      ]
+    },
+    {
+      "path": "/api/fulfillment/wizard/{so_id}",
+      "handler": "routers.fulfillment.get_wizard",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/finance/profitability",
+      "handler": "routers.finance_analytics.get_profitability",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_category",
+        "by_customer",
+        "by_entity",
+        "by_product",
+        "by_sales",
+        "cost_basis",
+        "generated_at",
+        "monthly",
+        "period",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/finance/cashflow-forecast",
+      "handler": "routers.finance_analytics.get_cashflow_forecast",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "ap_items",
+        "ar_items",
+        "buckets",
+        "cash_now",
+        "generated_at",
+        "net_flow",
+        "projected_cash",
+        "total_inflow",
+        "total_outflow"
+      ]
+    },
+    {
+      "path": "/api/finance/tower",
+      "handler": "routers.finance_analytics.get_finance_tower",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "ap",
+        "ar",
+        "cash",
+        "entity_comparison",
+        "generated_at",
+        "monthly",
+        "period",
+        "pl",
+        "ratios",
+        "working_capital"
+      ]
+    },
+    {
+      "path": "/api/finance/budgets",
+      "handler": "routers.budgets.list_budgets",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/finance/budget-vs-actual",
+      "handler": "routers.budgets.budget_vs_actual",
+      "status": "not_executed",
+      "reason": "Required query fixture: year"
+    },
+    {
+      "path": "/api/finance/budget-keys",
+      "handler": "routers.budgets.budget_keys",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "accounts",
+        "categories",
+        "default_po_account"
+      ]
+    },
+    {
+      "path": "/api/finance/budget-rules",
+      "handler": "routers.budgets.get_budget_rules",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "enforce_po_approve",
+        "enforce_po_create",
+        "entity_id",
+        "is_default",
+        "mode",
+        "unbudgeted_action",
+        "warn_threshold_pct"
+      ]
+    },
+    {
+      "path": "/api/enums",
+      "handler": "routers.enums.list_enums",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "decisions",
+        "enums",
+        "field_labels",
+        "knit_relaxed_fields",
+        "stage_field_rules",
+        "stage_transition_matrix",
+        "stage_transitions"
+      ]
+    },
+    {
+      "path": "/api/enums/stage-transitions",
+      "handler": "routers.enums.stage_transitions",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "from_stage",
+        "matrix",
+        "process_types",
+        "stages",
+        "target_uses",
+        "transitions"
+      ]
+    },
+    {
+      "path": "/api/enums/{name}",
+      "handler": "routers.enums.get_enum",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/marketing/meta",
+      "handler": "routers.marketing.marketing_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "active_entity_id",
+        "active_entity_name",
+        "content_types",
+        "entity_names",
+        "metric_fields",
+        "pic_options",
+        "platforms",
+        "statuses",
+        "transitions"
+      ]
+    },
+    {
+      "path": "/api/marketing/campaigns",
+      "handler": "routers.marketing.list_campaigns",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/marketing/posts",
+      "handler": "routers.marketing.list_posts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/marketing/accounts",
+      "handler": "routers.marketing.list_accounts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/marketing/templates",
+      "handler": "routers.marketing.list_templates",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/marketing/dashboard",
+      "handler": "routers.marketing.marketing_dashboard",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_account",
+        "by_entity",
+        "by_platform",
+        "kpi",
+        "kpi_prev",
+        "month",
+        "overdue",
+        "pipeline",
+        "prev_month",
+        "top_posts",
+        "trend",
+        "upcoming"
+      ]
+    },
+    {
+      "path": "/api/marketing/calendar.pdf",
+      "handler": "routers.marketing.calendar_pdf",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/pdf"
+    },
+    {
+      "path": "/api/marketing/posts/{pid}",
+      "handler": "routers.marketing.get_post",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/marketing/posts/{pid}/attachments/{fid}",
+      "handler": "routers.marketing.attachment_file",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/marketing/assets",
+      "handler": "routers.marketing.assets",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "designs",
+        "products",
+        "special_orders"
+      ]
+    },
+    {
+      "path": "/api/marketing/analytics",
+      "handler": "routers.marketing.marketing_analytics",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_platform",
+        "by_status",
+        "engagement_rate_pct",
+        "engagement_total",
+        "month",
+        "overdue",
+        "posts_total",
+        "published",
+        "top_posts",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/uom-conversions/catalog",
+      "handler": "routers.uom_conversions.get_catalog",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "dimensions",
+        "formulas",
+        "kinds",
+        "settings",
+        "units",
+        "units_master"
+      ]
+    },
+    {
+      "path": "/api/uom-conversions/rules",
+      "handler": "routers.uom_conversions.list_rules",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "active",
+        "rules",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/uom-conversions/settings",
+      "handler": "routers.uom_conversions.get_settings",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "allow_override",
+        "block_pct",
+        "entity_id",
+        "entity_overrides",
+        "precision",
+        "require_trail",
+        "updated_at",
+        "updated_by",
+        "warn_pct"
+      ]
+    },
+    {
+      "path": "/api/uom-conversions/usage",
+      "handler": "routers.uom_conversions.conversion_usage",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "total",
+        "usage"
+      ]
+    },
+    {
+      "path": "/api/finance/posting-failures",
+      "handler": "routers.posting_failures.list_posting_failures",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "counts",
+        "items",
+        "labels",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/finance/posting-failures/count",
+      "handler": "routers.posting_failures.count_posting_failures",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "total"
+      ]
+    },
+    {
+      "path": "/api/color-library",
+      "handler": "routers.color_library.list_color_library",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/color-library/customer-colors",
+      "handler": "routers.color_library.list_customer_colors",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/color-library/customer-colors/{customer_id}/card",
+      "handler": "routers.color_library.customer_color_card",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/color-library/use-requests",
+      "handler": "routers.color_library.list_use_requests",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/color-library/nearest",
+      "handler": "routers.color_library.nearest_color",
+      "status": "not_executed",
+      "reason": "Required query fixture: hex"
+    },
+    {
+      "path": "/api/color-library/supplier-variants",
+      "handler": "routers.color_library.list_supplier_color_variants",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/color-library/{color_id}/links",
+      "handler": "routers.color_library.color_links",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/access/modules",
+      "handler": "routers.access_roles.list_modules",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "action_labels",
+        "levels",
+        "modules",
+        "resource_labels"
+      ]
+    },
+    {
+      "path": "/api/access/roles",
+      "handler": "routers.access_roles.list_roles",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "roles"
+      ]
+    },
+    {
+      "path": "/api/access/roles/{rid}",
+      "handler": "routers.access_roles.get_role",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/product-catalog/meta",
+      "handler": "routers.product_media.meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "ai",
+        "max_media",
+        "permissions",
+        "variant_axes"
+      ]
+    },
+    {
+      "path": "/api/products/{product_id}/media",
+      "handler": "routers.product_media.list_media",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/products/{product_id}/media/{media_id}/content",
+      "handler": "routers.product_media.content",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/products/{product_id}/catalog-relations",
+      "handler": "routers.product_media.relations",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/customer-feedback/meta",
+      "handler": "routers.customer_feedback.feedback_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "categories",
+        "severities",
+        "statuses"
+      ]
+    },
+    {
+      "path": "/api/customer-feedback/summary",
+      "handler": "routers.customer_feedback.feedback_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "open",
+        "overdue",
+        "resolved",
+        "tinggi_open",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/customer-feedback",
+      "handler": "routers.customer_feedback.list_feedback",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "items"
+      ]
+    },
+    {
+      "path": "/api/master-governance/preview",
+      "handler": "routers.master_governance.governance_preview",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "conflicts",
+        "duplicate_candidates",
+        "generated_at",
+        "missing",
+        "non_canonical",
+        "policy",
+        "preview_signature",
+        "product_count",
+        "proposals"
+      ]
+    },
+    {
+      "path": "/api/master-governance/batches",
+      "handler": "routers.master_governance.governance_batches",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/push/public-key",
+      "handler": "routers.push.public_key",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "enabled",
+        "public_key"
+      ]
+    },
+    {
+      "path": "/api/push/status",
+      "handler": "routers.push.status",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "devices",
+        "enabled"
+      ]
+    },
+    {
+      "path": "/api/saga-locks",
+      "handler": "routers.saga_locks.list_saga_locks",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/saga-locks/{collection}/{doc_id}/inspect",
+      "handler": "routers.saga_locks.inspect_saga_lock",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/wilayah/countries",
+      "handler": "routers.wilayah.countries",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/wilayah/provinces",
+      "handler": "routers.wilayah.provinces",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/wilayah/regencies",
+      "handler": "routers.wilayah.regencies",
+      "status": "not_executed",
+      "reason": "Required query fixture: province_code"
+    },
+    {
+      "path": "/api/wilayah/districts",
+      "handler": "routers.wilayah.districts",
+      "status": "not_executed",
+      "reason": "Required query fixture: regency_code"
+    },
+    {
+      "path": "/api/wilayah/villages",
+      "handler": "routers.wilayah.villages",
+      "status": "not_executed",
+      "reason": "Required query fixture: district_code"
+    },
+    {
+      "path": "/api/wilayah/postal-code/{code}",
+      "handler": "routers.wilayah.postal_code",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/wilayah/search",
+      "handler": "routers.wilayah.search",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/ai/catalog",
+      "handler": "routers.ai_analytics.get_catalog",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "dimensions",
+        "metrics",
+        "version"
+      ]
+    },
+    {
+      "path": "/api/ai/results/{result_id}",
+      "handler": "routers.ai_analytics.get_result",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/ai/facts/status",
+      "handler": "routers.ai_analytics.facts_status",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "rows"
+      ]
+    },
+    {
+      "path": "/api/ai/status",
+      "handler": "routers.ai_analytics.get_status",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "budget",
+        "can_edit_rules",
+        "chat_enabled",
+        "config_enabled",
+        "has_key",
+        "margin_roles",
+        "mock",
+        "model",
+        "narrative_ai",
+        "sales_attribution",
+        "sales_definition",
+        "stock_value_roles"
+      ]
+    },
+    {
+      "path": "/api/ai/templates",
+      "handler": "routers.ai_analytics.list_templates",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "groups",
+        "period_presets",
+        "templates",
+        "version"
+      ]
+    },
+    {
+      "path": "/api/ai/sessions",
+      "handler": "routers.ai_analytics.list_sessions",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/ai/sessions/{session_id}",
+      "handler": "routers.ai_analytics.get_session",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/ai/results/{result_id}/export.xlsx",
+      "handler": "routers.ai_analytics.export_result",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/ai/export.xlsx",
+      "handler": "routers.ai_analytics.export_answer",
+      "status": "executed",
+      "http_status": 400,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Tidak ada hasil untuk diunduh"
+    },
+    {
+      "path": "/api/ai/my-templates",
+      "handler": "routers.ai_analytics.list_my_templates",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/ai/schedules",
+      "handler": "routers.ai_analytics.list_schedules",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/ai/schedule-runs",
+      "handler": "routers.ai_analytics.list_schedule_runs",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/ai/schedule-runs/{run_id}",
+      "handler": "routers.ai_analytics.get_schedule_run",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/ai/snapshots/status",
+      "handler": "routers.ai_analytics.snapshots_status",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "fact_ar_daily",
+        "fact_stock_daily"
+      ]
+    },
+    {
+      "path": "/api/ai/usage",
+      "handler": "routers.ai_analytics.usage_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "budget",
+        "cache_hit_rate",
+        "items"
+      ]
+    },
+    {
+      "path": "/api/ai/usage/daily",
+      "handler": "routers.ai_analytics.usage_daily",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "budget",
+        "daily_feature",
+        "daily_user",
+        "demo_rows",
+        "feature_series",
+        "features",
+        "models",
+        "range",
+        "scope",
+        "totals",
+        "user_series",
+        "users"
+      ]
+    },
+    {
+      "path": "/api/ai/actions/{pid}",
+      "handler": "routers.ai_assist.get_action",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/ai/insights",
+      "handler": "routers.ai_assist.get_insights",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/data-hygiene/summary",
+      "handler": "routers.data_hygiene.hygiene_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "active",
+        "labels",
+        "last_run",
+        "locked",
+        "per_collection",
+        "reverted",
+        "rules",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/data-hygiene/log",
+      "handler": "routers.data_hygiene.hygiene_log",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/data-hygiene/preview",
+      "handler": "routers.data_hygiene.hygiene_preview",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/turn-notifications/map",
+      "handler": "routers.data_hygiene.turn_map",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/data-hygiene/unverified-locations",
+      "handler": "routers.data_hygiene.unverified_locations",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "counts",
+        "items",
+        "labels",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/sample-prices",
+      "handler": "routers.sample_sales.list_sample_prices",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/sample-quote",
+      "handler": "routers.sample_sales.sample_quote",
+      "status": "not_executed",
+      "reason": "Required query fixture: product_id,length"
+    },
+    {
+      "path": "/api/sample-orders/limits",
+      "handler": "routers.sample_orders.sample_limits",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "knit",
+        "woven"
+      ]
+    },
+    {
+      "path": "/api/sample-orders",
+      "handler": "routers.sample_orders.list_sample_orders",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/sample-orders/stats/summary",
+      "handler": "routers.sample_orders.sample_stats",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_status",
+        "free",
+        "paid",
+        "paid_value",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/sample-orders/desk",
+      "handler": "routers.sample_orders.sample_desk",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "not_my_desk",
+        "queues",
+        "role",
+        "title"
+      ]
+    },
+    {
+      "path": "/api/makloons",
+      "handler": "routers.makloons.list_makloons",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/makloons/{makloon_id}",
+      "handler": "routers.makloons.get_makloon",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/makloons/{makloon_id}/scorecard",
+      "handler": "routers.makloons.get_makloon_scorecard",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/process-recipes",
+      "handler": "routers.process_recipes.list_recipes",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/process-stages",
+      "handler": "routers.makloon_orders.list_process_stages",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/process-stages/for-line/{line_code}",
+      "handler": "routers.makloon_orders.process_stages_for_line",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/makloon-orders",
+      "handler": "routers.makloon_orders.list_orders",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/makloon-orders/claims",
+      "handler": "routers.makloon_orders.list_claims",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/makloon-orders/claims/stats",
+      "handler": "routers.makloon_orders.claim_stats",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "approved",
+        "approved_amount",
+        "open",
+        "pending_approval",
+        "rejected",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/makloon-orders/{mko_id}",
+      "handler": "routers.makloon_orders.get_order",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/expense-categories",
+      "handler": "routers.cash_advances.list_expense_categories",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/cash-advances",
+      "handler": "routers.cash_advances.list_cash_advances",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/cash-advances/{ca_id}",
+      "handler": "routers.cash_advances.get_cash_advance",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/cash-advance-settlements",
+      "handler": "routers.cash_advances.list_settlements",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/cash-advance-settlements/reimburse-payables",
+      "handler": "routers.cash_advances.reimburse_payables",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "aging",
+        "buckets",
+        "by_employee",
+        "items",
+        "total_outstanding"
+      ]
+    },
+    {
+      "path": "/api/cash-advance-settlements/{stl_id}",
+      "handler": "routers.cash_advances.get_settlement",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/vehicles",
+      "handler": "routers.vehicle_logs.list_vehicles",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/vehicle-usage-logs",
+      "handler": "routers.vehicle_logs.list_vehicle_logs",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/vehicle-usage-logs/summary",
+      "handler": "routers.vehicle_logs.vehicle_logs_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "grand_total",
+        "per_vehicle"
+      ]
+    },
+    {
+      "path": "/api/pdf/doc-types",
+      "handler": "routers.pdf.list_doc_types",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/pdf/render/{doc_type}/{source_id}",
+      "handler": "routers.pdf.render_document",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/pdf/sample/{doc_type}",
+      "handler": "routers.pdf.get_sample",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/pdf/documents/{doc_type}",
+      "handler": "routers.pdf.list_documents",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/pdf/templates",
+      "handler": "routers.pdf.list_templates",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "data",
+        "placeholders"
+      ]
+    },
+    {
+      "path": "/api/pdf/templates/{doc_type}",
+      "handler": "routers.pdf.get_template",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/pdf/branding/{entity_id}",
+      "handler": "routers.pdf.get_branding",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/esign/signatures/{doc_type}/{source_id}",
+      "handler": "routers.esign.signatures",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/esign/verify/{code}",
+      "handler": "routers.esign.public_verify",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/deliveries/whatsapp/settings",
+      "handler": "routers.deliveries.get_wa_settings",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "available_providers",
+        "default_country_code",
+        "enabled",
+        "has_token",
+        "id",
+        "phone_number_id",
+        "provider",
+        "sender_label",
+        "simulate"
+      ]
+    },
+    {
+      "path": "/api/deliveries/whatsapp/recipient/{doc_type}/{source_id}",
+      "handler": "routers.deliveries.wa_recipient",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/deliveries/whatsapp/rules",
+      "handler": "routers.deliveries.list_wa_rules",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "rules"
+      ]
+    },
+    {
+      "path": "/api/deliveries/{doc_type}/{source_id}",
+      "handler": "routers.deliveries.list_deliveries",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/products/{product_id}/purchase-history",
+      "handler": "routers.product_traceability.product_purchase_history",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/sales-return-policies",
+      "handler": "routers.return_policies.list_sales_return_policies",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/sales-return-policies/eligibility",
+      "handler": "routers.return_policies.sales_return_eligibility",
+      "status": "not_executed",
+      "reason": "Required query fixture: order_id"
+    },
+    {
+      "path": "/api/sales-return-policies/{policy_id}",
+      "handler": "routers.return_policies.get_sales_return_policy",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/entity-masters",
+      "handler": "routers.entity_masters.list_master_groups",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/entity-masters/{kind}",
+      "handler": "routers.entity_masters.list_master_rows",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/entity-masters/{kind}/effective",
+      "handler": "routers.entity_masters.list_master_effective",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/store-credit",
+      "handler": "routers.store_credit.list_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/store-credit/balance",
+      "handler": "routers.store_credit.get_balance",
+      "status": "not_executed",
+      "reason": "Required query fixture: customer_id"
+    },
+    {
+      "path": "/api/store-credit/ledger",
+      "handler": "routers.store_credit.get_ledger",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/store-credit/open-orders",
+      "handler": "routers.store_credit.open_orders",
+      "status": "not_executed",
+      "reason": "Required query fixture: customer_id"
+    },
+    {
+      "path": "/api/bank-reconciliation/formats",
+      "handler": "routers.bank_reconciliation.list_formats",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/bank-reconciliation/lines",
+      "handler": "routers.bank_reconciliation.list_lines",
+      "status": "not_executed",
+      "reason": "Required query fixture: bank_account_id"
+    },
+    {
+      "path": "/api/bank-reconciliation/lines/{line_id}/candidates",
+      "handler": "routers.bank_reconciliation.line_candidates",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/bank-reconciliation/summary",
+      "handler": "routers.bank_reconciliation.recon_summary",
+      "status": "not_executed",
+      "reason": "Required query fixture: bank_account_id"
+    },
+    {
+      "path": "/api/bank-reconciliation/rules",
+      "handler": "routers.bank_reconciliation.list_rules",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/bank-reconciliation/holding",
+      "handler": "routers.bank_reconciliation.holding_queue",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "account_code",
+        "balance",
+        "count",
+        "items",
+        "max_age_days",
+        "needs_action"
+      ]
+    },
+    {
+      "path": "/api/finance-cases/playbooks",
+      "handler": "routers.finance_cases.list_playbooks",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/finance-cases/reasons",
+      "handler": "routers.finance_cases.list_reasons",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/finance-cases/policy",
+      "handler": "routers.finance_cases.get_policy",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "approval_above",
+        "approver_role",
+        "auto_charge_max",
+        "auto_scan",
+        "dup_window_days",
+        "escalate",
+        "high_amount",
+        "holding_days",
+        "refund_max",
+        "require_evidence",
+        "sla_hours",
+        "sla_hours_high"
+      ]
+    },
+    {
+      "path": "/api/finance-cases/stats",
+      "handler": "routers.finance_cases.get_stats",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_type",
+        "in_progress",
+        "money_at_stake",
+        "oldest_age_hours",
+        "open",
+        "overdue",
+        "rejected",
+        "resolved",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/finance-cases",
+      "handler": "routers.finance_cases.list_cases",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/finance-cases/{case_id}",
+      "handler": "routers.finance_cases.get_case",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/contra-bons/meta",
+      "handler": "routers.contra_bons.contra_bon_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "deduction_kinds",
+        "exception_actions",
+        "policy",
+        "reasons",
+        "schedule_modes",
+        "statuses",
+        "weekdays"
+      ]
+    },
+    {
+      "path": "/api/contra-bons/summary",
+      "handler": "routers.contra_bons.contra_bon_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "disputed_count",
+        "disputed_value",
+        "due_soon_count",
+        "due_soon_value",
+        "overdue_count",
+        "scheduled_count",
+        "scheduled_value",
+        "sla_days",
+        "unbilled_gr_overdue",
+        "unbilled_gr_po_count",
+        "unbilled_gr_value",
+        "waiting_count",
+        "waiting_value"
+      ]
+    },
+    {
+      "path": "/api/contra-bons/status-counts",
+      "handler": "routers.contra_bons.contra_bon_status_counts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "all"
+      ]
+    },
+    {
+      "path": "/api/contra-bons/prepare",
+      "handler": "routers.contra_bons.contra_bon_prepare",
+      "status": "not_executed",
+      "reason": "Required query fixture: supplier_id"
+    },
+    {
+      "path": "/api/contra-bons/unbilled-receipts",
+      "handler": "routers.contra_bons.contra_bon_unbilled",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "age_threshold_days",
+        "overdue_count",
+        "po_count",
+        "rows",
+        "total_value"
+      ]
+    },
+    {
+      "path": "/api/contra-bons/exchange-schedules",
+      "handler": "routers.contra_bons.contra_bon_schedules",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "due_soon",
+        "modes",
+        "reminder_days_before",
+        "rows",
+        "scheduled_count",
+        "unscheduled_count",
+        "weekdays"
+      ]
+    },
+    {
+      "path": "/api/contra-bons/bank-line-candidates/{line_id}",
+      "handler": "routers.contra_bons.contra_bon_bank_candidates",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/contra-bons",
+      "handler": "routers.contra_bons.list_contra_bons",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/contra-bons/{cb_id}",
+      "handler": "routers.contra_bons.get_contra_bon",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/contra-bons/{cb_id}/receipt",
+      "handler": "routers.contra_bons.contra_bon_receipt",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/interco/meta",
+      "handler": "routers.interco.interco_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "ppn_modes",
+        "pricing_modes",
+        "settlement_methods",
+        "statuses"
+      ]
+    },
+    {
+      "path": "/api/interco/summary",
+      "handler": "routers.interco.interco_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "open_documents",
+        "pair_count",
+        "statuses",
+        "total_payable",
+        "total_receivable"
+      ]
+    },
+    {
+      "path": "/api/interco/transactions",
+      "handler": "routers.interco.list_ict",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/interco/transactions/{interco_id}",
+      "handler": "routers.interco.get_ict",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/interco/transactions/{interco_id}/journal",
+      "handler": "routers.interco.journal_ict",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/interco/accounts",
+      "handler": "routers.interco.list_ica",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/interco/accounts/{from_entity_id}/{to_entity_id}",
+      "handler": "routers.interco.get_ica",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/interco/settlements",
+      "handler": "routers.interco.list_ics",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/interco/settlements/{sid}",
+      "handler": "routers.interco.get_ics",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/interco/contracts",
+      "handler": "routers.interco.list_internal_contracts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/interco/transactions/{interco_id}/tax-invoice",
+      "handler": "routers.interco.get_interco_tax",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/interco/returns/meta",
+      "handler": "routers.interco.interco_return_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "statuses"
+      ]
+    },
+    {
+      "path": "/api/interco/returns",
+      "handler": "routers.interco.list_interco_returns",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/interco/transactions/{interco_id}/returnable",
+      "handler": "routers.interco.returnable_lines",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/interco/returns/{ret_id}",
+      "handler": "routers.interco.get_interco_return",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/interco/reminders",
+      "handler": "routers.interco.interco_reminders",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "checked",
+        "overdue",
+        "rows"
+      ]
+    },
+    {
+      "path": "/api/interco/margin-report",
+      "handler": "routers.interco.margin_report",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "as_of",
+        "pairs",
+        "rows",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/interco/margin-by-product",
+      "handler": "routers.interco.margin_by_product",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "as_of",
+        "pair",
+        "pairs",
+        "rows",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/interco/loans/meta",
+      "handler": "routers.interco_loans.loans_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "open_statuses",
+        "statuses"
+      ]
+    },
+    {
+      "path": "/api/interco/loans",
+      "handler": "routers.interco_loans.list_loans",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items",
+        "summary",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/interco/loans/{loan_id}",
+      "handler": "routers.interco_loans.get_loan",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/interco/non-trade/{from_entity_id}/{to_entity_id}",
+      "handler": "routers.interco_loans.non_trade_balance",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/internal-requests/meta",
+      "handler": "routers.internal_requests.meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "can_decide",
+        "can_pick_source",
+        "open_statuses",
+        "statuses"
+      ]
+    },
+    {
+      "path": "/api/internal-requests",
+      "handler": "routers.internal_requests.list_requests",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items",
+        "summary",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/internal-requests/{req_id}",
+      "handler": "routers.internal_requests.get_request",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/internal-requests/{req_id}/sources",
+      "handler": "routers.internal_requests.request_sources",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/internal-requests-availability/{product_id}",
+      "handler": "routers.internal_requests.product_availability",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/design-requests/meta",
+      "handler": "routers.design_requests.meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "all_statuses",
+        "categories",
+        "designers",
+        "own_only",
+        "role",
+        "sources",
+        "statuses",
+        "target_types"
+      ]
+    },
+    {
+      "path": "/api/design-requests",
+      "handler": "routers.design_requests.list_requests",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items",
+        "summary",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/design-requests/{req_id}",
+      "handler": "routers.design_requests.get_request",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/design-requests/{req_id}/references/{file_id}",
+      "handler": "routers.design_requests.get_reference",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/design/reports/by-designer",
+      "handler": "routers.design_requests.report_by_designer",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items",
+        "period",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/design/reports/mine",
+      "handler": "routers.design_requests.report_mine",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "designer",
+        "me",
+        "period",
+        "rank",
+        "team",
+        "total_designers",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/design-requests-for-so/{so_id}",
+      "handler": "routers.design_requests.requests_for_so",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/design-studio/meta",
+      "handler": "routers.design_studio.studio_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "categories",
+        "code",
+        "designer_code",
+        "hold",
+        "proofing_states",
+        "statuses",
+        "transitions"
+      ]
+    },
+    {
+      "path": "/api/design-studio/next-code",
+      "handler": "routers.design_studio.studio_next_code",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "code",
+        "designer_code",
+        "parts",
+        "pattern"
+      ]
+    },
+    {
+      "path": "/api/design-studio/tags",
+      "handler": "routers.design_studio.studio_tags",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/design-studio/categories",
+      "handler": "routers.design_studio.list_categories",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/design-gallery/{gallery_id}/history",
+      "handler": "routers.design_studio.design_history",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/logistics/meta",
+      "handler": "routers.logistics.logistics_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "modes",
+        "photo_kinds",
+        "pickup_status_label",
+        "status_label",
+        "statuses",
+        "transitions",
+        "vehicle_types"
+      ]
+    },
+    {
+      "path": "/api/logistics/summary",
+      "handler": "routers.logistics.logistics_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_mode",
+        "counts",
+        "late",
+        "today",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/logistics/dashboard",
+      "handler": "routers.logistics.logistics_dashboard",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "active",
+        "by_mode",
+        "by_mode_active",
+        "counts",
+        "fleet",
+        "kpi",
+        "late",
+        "recent",
+        "today",
+        "total",
+        "unassigned"
+      ]
+    },
+    {
+      "path": "/api/logistics/history",
+      "handler": "routers.logistics.logistics_history",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "page",
+        "rows",
+        "size",
+        "stats",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/logistics/fleet/availability",
+      "handler": "routers.logistics.fleet_availability",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "driver_summary",
+        "drivers",
+        "vehicle_statuses",
+        "vehicle_summary",
+        "vehicle_types",
+        "vehicles"
+      ]
+    },
+    {
+      "path": "/api/logistics/fleet/vehicles",
+      "handler": "routers.logistics.list_vehicles",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/logistics/shipments/unassigned",
+      "handler": "routers.logistics.unassigned_shipments",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/logistics/drivers",
+      "handler": "routers.logistics.list_drivers",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/logistics/deliveries",
+      "handler": "routers.logistics.list_deliveries",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/logistics/deliveries/{delivery_id}",
+      "handler": "routers.logistics.get_delivery",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/logistics/deliveries/{delivery_id}/photos/{photo_id}",
+      "handler": "routers.logistics.get_photo",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inspections/meta",
+      "handler": "routers.inspections.meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "can_release_hold",
+        "color_results",
+        "decisions",
+        "handfeel_results",
+        "kinds",
+        "officers",
+        "policy",
+        "role",
+        "statuses"
+      ]
+    },
+    {
+      "path": "/api/inspections",
+      "handler": "routers.inspections.list_inspections",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "items",
+        "stats",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/inspections/export",
+      "handler": "routers.inspections.export_inspections",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "text/csv; charset=utf-8"
+    },
+    {
+      "path": "/api/inspections/{ins_id}",
+      "handler": "routers.inspections.get_inspection",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inspections/meta/ref-docs",
+      "handler": "routers.inspections.ref_doc_options",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "can_create",
+        "items",
+        "kind"
+      ]
+    },
+    {
+      "path": "/api/inspections/{ins_id}/pdf",
+      "handler": "routers.inspections.inspection_pdf",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/inspections/queue/qc-tasks",
+      "handler": "routers.inspections.qc_tasks_without_doc",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/finance/period-unlocks",
+      "handler": "routers.period_unlocks.list_unlocks",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/finance/period-unlocks/active",
+      "handler": "routers.period_unlocks.active_unlocks",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/fixed-assets",
+      "handler": "routers.fixed_assets.list_fixed_assets",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/fixed-assets/meta",
+      "handler": "routers.fixed_assets.fixed_asset_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "acc_dep_account",
+        "asset_accounts",
+        "categories",
+        "category_account",
+        "dep_expense_account"
+      ]
+    },
+    {
+      "path": "/api/fixed-assets/summary",
+      "handler": "routers.fixed_assets.fixed_asset_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "accumulated_depreciation",
+        "active",
+        "count",
+        "disposal_gain_loss",
+        "disposed",
+        "fully_depreciated",
+        "generated_at",
+        "gross_cost",
+        "net_book_value",
+        "transferred",
+        "transferred_book_value",
+        "transferred_unsettled"
+      ]
+    },
+    {
+      "path": "/api/fixed-assets/{asset_id}",
+      "handler": "routers.fixed_assets.get_fixed_asset",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/production/boms",
+      "handler": "routers.production.list_boms",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/production/boms/{bom_id}",
+      "handler": "routers.production.get_bom",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/production/work-orders",
+      "handler": "routers.production.list_work_orders",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/production/work-orders/{wo_id}",
+      "handler": "routers.production.get_work_order",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/production/summary",
+      "handler": "routers.production.production_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "boms",
+        "by_status",
+        "completed",
+        "generated_at",
+        "open",
+        "produced_qty",
+        "produced_value",
+        "work_orders"
+      ]
+    },
+    {
+      "path": "/api/scheduler/jobs",
+      "handler": "routers.scheduler.list_jobs",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "generated_at",
+        "jobs",
+        "owner",
+        "running",
+        "timezone"
+      ]
+    },
+    {
+      "path": "/api/scheduler/summary",
+      "handler": "routers.scheduler.scheduler_summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "delivery_mode",
+        "escalation",
+        "failed_today",
+        "generated_at",
+        "jobs_enabled",
+        "jobs_total",
+        "notifications_today",
+        "notifications_unread",
+        "running",
+        "runs_today",
+        "wa"
+      ]
+    },
+    {
+      "path": "/api/scheduler/runs",
+      "handler": "routers.scheduler.list_runs",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/scheduler/settings",
+      "handler": "routers.scheduler.get_settings",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "delivery_modes",
+        "escalation",
+        "jobs",
+        "providers",
+        "severities",
+        "timezone",
+        "updated_at",
+        "wa"
+      ]
+    },
+    {
+      "path": "/api/scheduler/digest-preview",
+      "handler": "routers.scheduler.digest_preview",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "day",
+        "delivery_mode",
+        "groups",
+        "min_severity",
+        "role",
+        "text",
+        "total",
+        "unread",
+        "wa_enabled"
+      ]
+    },
+    {
+      "path": "/api/scheduler/wa-outbox",
+      "handler": "routers.scheduler.wa_outbox",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items",
+        "stats"
+      ]
+    },
+    {
+      "path": "/api/lots",
+      "handler": "routers.lots.list_lots",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/lots/stats",
+      "handler": "routers.lots.lot_stats",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "by_source",
+        "by_status",
+        "incomplete_capture",
+        "qty_remaining",
+        "rolls_in_lots",
+        "rolls_without_lot",
+        "settings",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/lots/settings",
+      "handler": "routers.lots.lot_settings",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "auto_create_on_receiving",
+        "enforcement_mode",
+        "entity_id",
+        "entity_overrides",
+        "number_format",
+        "require_dye_lot",
+        "require_supplier_lot",
+        "status_on_receipt",
+        "updated_at",
+        "updated_by"
+      ]
+    },
+    {
+      "path": "/api/lots/unassigned-rolls",
+      "handler": "routers.lots.unassigned_rolls",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "rolls",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/lots/{lot_id}",
+      "handler": "routers.lots.get_lot",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/lots/{lot_id}/genealogy",
+      "handler": "routers.lots.lot_genealogy",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/lots/{lot_id}/recall",
+      "handler": "routers.lots.lot_recall",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rolls/{roll_id}/lot",
+      "handler": "routers.lots.roll_lot",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/supplier-contracts",
+      "handler": "routers.supplier_contracts.list_contracts",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/supplier-contracts/stats",
+      "handler": "routers.supplier_contracts.contract_stats",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "active",
+        "draft",
+        "expiring_30d",
+        "makloon",
+        "purchase",
+        "terminated",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/supplier-contracts/policy",
+      "handler": "routers.supplier_contracts.get_policy",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "auto_claim",
+        "claim_approval_roles",
+        "contract_mode",
+        "default_shrinkage_pct",
+        "entity_id",
+        "entity_overrides",
+        "require_output_product",
+        "require_yield_reason",
+        "updated_at",
+        "updated_by",
+        "variance_tolerance_pct"
+      ]
+    },
+    {
+      "path": "/api/supplier-contracts/{contract_id}",
+      "handler": "routers.supplier_contracts.get_contract",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/makloon-partners/scorecard",
+      "handler": "routers.supplier_contracts.partner_scorecard",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/supplier-items",
+      "handler": "routers.supplier_items.list_supplier_items",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/supplier-items/stats",
+      "handler": "routers.supplier_items.supplier_item_stats",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "active",
+        "inactive",
+        "mapped_products",
+        "suppliers",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/supplier-items/lookup",
+      "handler": "routers.supplier_items.lookup_supplier_item",
+      "status": "not_executed",
+      "reason": "Required query fixture: supplier_sku"
+    },
+    {
+      "path": "/api/supplier-items/import-template",
+      "handler": "routers.supplier_items.import_template",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "text/csv; charset=utf-8"
+    },
+    {
+      "path": "/api/supplier-items/{sid}",
+      "handler": "routers.supplier_items.get_supplier_item",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/config/registry",
+      "handler": "routers.config.read_registry",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "caps",
+        "entries",
+        "groups",
+        "scope_levels",
+        "simulators",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/config/effective",
+      "handler": "routers.config.read_effective",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "context",
+        "groups",
+        "items",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/config/explain",
+      "handler": "routers.config.explain",
+      "status": "not_executed",
+      "reason": "Required query fixture: key"
+    },
+    {
+      "path": "/api/config/history",
+      "handler": "routers.config.read_history",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "rows",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/config/health",
+      "handler": "routers.config.read_health",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "broken",
+        "healthy",
+        "legend",
+        "per_group",
+        "rows",
+        "scheduled_applied",
+        "summary",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/config/simulators",
+      "handler": "routers.config.list_simulators",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "simulators"
+      ]
+    },
+    {
+      "path": "/api/amendment-reasons",
+      "handler": "routers.amendments.list_reasons",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/amendments",
+      "handler": "routers.amendments.list_amendments",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/amendments/stats/summary",
+      "handler": "routers.amendments.summary",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "applied",
+        "approved",
+        "auto_applied",
+        "impact_total",
+        "pending_approval",
+        "rejected",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/amendments/doc/{doc_type}/{doc_id}",
+      "handler": "routers.amendments.by_document",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/amendments/{amd_id}",
+      "handler": "routers.amendments.detail",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/payment-plans/meta",
+      "handler": "routers.payment_plans.plan_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "due_rules",
+        "kinds",
+        "modes",
+        "penalty_policy",
+        "penalty_statuses",
+        "plan_policy",
+        "reasons"
+      ]
+    },
+    {
+      "path": "/api/payment-plans",
+      "handler": "routers.payment_plans.list_plans",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "entity_id",
+        "items"
+      ]
+    },
+    {
+      "path": "/api/payment-plans/by-doc/{doc_type}/{doc_id}",
+      "handler": "routers.payment_plans.plan_by_doc",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/penalties",
+      "handler": "routers.payment_plans.list_penalties",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "entity_id",
+        "items",
+        "stats"
+      ]
+    },
+    {
+      "path": "/api/penalties/{penalty_id}",
+      "handler": "routers.payment_plans.get_penalty",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/payment-variances/meta",
+      "handler": "routers.payment_variance.variance_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "kinds",
+        "over_kinds",
+        "policy",
+        "reasons",
+        "under_kinds"
+      ]
+    },
+    {
+      "path": "/api/payment-variances",
+      "handler": "routers.payment_variance.list_decisions",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "entity_id",
+        "items",
+        "pending",
+        "stats"
+      ]
+    },
+    {
+      "path": "/api/payment-variances/pending",
+      "handler": "routers.payment_variance.list_pending",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "entity_id",
+        "items"
+      ]
+    },
+    {
+      "path": "/api/payment-variances/receipt/{receipt_id}",
+      "handler": "routers.payment_variance.by_receipt",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/payment-variances/{decision_id}",
+      "handler": "routers.payment_variance.get_decision",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rnd/meta",
+      "handler": "routers.rnd.rnd_meta",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "deliver_targets",
+        "lifecycles",
+        "measurements",
+        "policy",
+        "reasons",
+        "round_results",
+        "sample_stats",
+        "sample_statuses",
+        "sample_types",
+        "spec_stats",
+        "spec_statuses"
+      ]
+    },
+    {
+      "path": "/api/rnd/sample-types",
+      "handler": "routers.rnd.list_sample_types",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/rnd/specs",
+      "handler": "routers.rnd.list_specs",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "items",
+        "stats"
+      ]
+    },
+    {
+      "path": "/api/rnd/specs/{spec_id}",
+      "handler": "routers.rnd.get_spec",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rnd/specs/{spec_id}/required-tests",
+      "handler": "routers.rnd.spec_required_tests",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rnd/samples",
+      "handler": "routers.rnd.list_samples",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "items",
+        "stats"
+      ]
+    },
+    {
+      "path": "/api/rnd/labdip-history",
+      "handler": "routers.rnd.labdip_history",
+      "status": "executed",
+      "http_status": 400,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "detail"
+      ],
+      "detail": "Sebutkan warna (color_id) atau barang (product_id)."
+    },
+    {
+      "path": "/api/rnd/samples/{sample_id}",
+      "handler": "routers.rnd.get_sample",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rnd/samples/{sample_id}/performers",
+      "handler": "routers.rnd.sample_performers",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rnd/samples/{sample_id}/required-tests",
+      "handler": "routers.rnd.sample_required_tests",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rnd/samples/{sample_id}/rounds/{round_id}/attachments/{file_id}",
+      "handler": "routers.rnd.download_round_file",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/rnd/reports/performer",
+      "handler": "routers.rnd.performer_report",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "items",
+        "stats"
+      ]
+    },
+    {
+      "path": "/api/rnd/reports/designer-kpi",
+      "handler": "routers.rnd.designer_kpi_report",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "division",
+        "divisions_present",
+        "from_date",
+        "grade_bands",
+        "items",
+        "period",
+        "period_label",
+        "period_options",
+        "summary",
+        "to_date",
+        "weights"
+      ]
+    },
+    {
+      "path": "/api/rnd/reports/my-kpi",
+      "handler": "routers.rnd.my_designer_kpi",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "designer",
+        "from_date",
+        "grade_bands",
+        "me",
+        "overdue",
+        "period",
+        "period_label",
+        "period_options",
+        "rank",
+        "rounds",
+        "team",
+        "to_date",
+        "total_designers",
+        "weights"
+      ]
+    },
+    {
+      "path": "/api/rnd/reports/designer-kpi/trend",
+      "handler": "routers.rnd.designer_kpi_trend_report",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "count",
+        "designers",
+        "metric",
+        "metric_label",
+        "month_labels",
+        "months",
+        "series",
+        "weights"
+      ]
+    },
+    {
+      "path": "/api/rnd/reports/designer-kpi/export",
+      "handler": "routers.rnd.export_designer_kpi",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    },
+    {
+      "path": "/api/rnd/reports/designer-kpi/report",
+      "handler": "routers.rnd.designer_kpi_report_pdf",
+      "status": "not_executed",
+      "reason": "Required query fixture: designer"
+    },
+    {
+      "path": "/api/rnd/sla/board",
+      "handler": "routers.rnd.sla_board",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "admin_count",
+        "count",
+        "escalate_admin_days",
+        "items",
+        "manager_count",
+        "round_sla_days",
+        "worst_days_late"
+      ]
+    },
+    {
+      "path": "/api/rnd/lifecycle-board",
+      "handler": "routers.rnd.lifecycle_board",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "counts",
+        "enforcement",
+        "not_orderable",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/rnd/divisions",
+      "handler": "routers.rnd_org.list_divisions",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "approver_matrix",
+        "assigned",
+        "divisions"
+      ]
+    },
+    {
+      "path": "/api/rnd/divisions/members",
+      "handler": "routers.rnd_org.list_members",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/approvals/matrix",
+      "handler": "routers.approvals_matrix.get_matrix",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "approver_matrix",
+        "config",
+        "stages"
+      ]
+    },
+    {
+      "path": "/api/approvals/my-queue",
+      "handler": "routers.approvals_matrix.get_my_queue",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "actionable",
+        "actor",
+        "config",
+        "counts",
+        "items",
+        "stages",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/approvals/matrix-log",
+      "handler": "routers.approvals_matrix.get_matrix_log",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "items",
+        "total"
+      ]
+    },
+    {
+      "path": "/api/customer-prices",
+      "handler": "routers.customer_prices.customer_price_grid",
+      "status": "not_executed",
+      "reason": "Required query fixture: customer_id"
+    },
+    {
+      "path": "/api/customer-prices/records",
+      "handler": "routers.customer_prices.customer_price_records",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "array",
+      "keys": null
+    },
+    {
+      "path": "/api/customer-prices/quote",
+      "handler": "routers.customer_prices.customer_price_quote",
+      "status": "not_executed",
+      "reason": "Required query fixture: customer_id"
+    },
+    {
+      "path": "/api/customer-prices/floor",
+      "handler": "routers.customer_prices.customer_price_floor",
+      "status": "not_executed",
+      "reason": "Required query fixture: product_id"
+    },
+    {
+      "path": "/api/customer-prices/export",
+      "handler": "routers.customer_prices.customer_price_export",
+      "status": "not_executed",
+      "reason": "Required query fixture: customer_id"
+    },
+    {
+      "path": "/api/sales-admin/desk",
+      "handler": "routers.work_desks.sales_admin_desk",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "desk",
+        "desk_label",
+        "entity_ids",
+        "generated_at",
+        "not_my_desk",
+        "queues",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/sales-orders/{order_id}/verification",
+      "handler": "routers.work_desks.verification_preview",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/sales-admin/orders/{order_id}/fulfillment",
+      "handler": "routers.work_desks.fulfillment_options",
+      "status": "not_executed",
+      "reason": "Requires a coherent resource-specific fixture; no invented ID substitution."
+    },
+    {
+      "path": "/api/md/desk",
+      "handler": "routers.work_desks.md_desk",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "desk",
+        "not_my_desk",
+        "queues"
+      ]
+    },
+    {
+      "path": "/api/warehouse-admin/desk",
+      "handler": "routers.work_desks.warehouse_admin_desk",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "desk",
+        "not_my_desk",
+        "queues"
+      ]
+    },
+    {
+      "path": "/api/finance/desk",
+      "handler": "routers.work_desks.finance_desk",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "desk",
+        "desk_label",
+        "entity_ids",
+        "generated_at",
+        "not_my_desk",
+        "queues",
+        "totals"
+      ]
+    },
+    {
+      "path": "/api/desks/me",
+      "handler": "routers.work_desks.my_desk",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "generated_at",
+        "queues",
+        "role",
+        "title",
+        "total_items"
+      ]
+    },
+    {
+      "path": "/api/access/role-reality",
+      "handler": "routers.access_review.role_reality",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "activities_mapped",
+        "method",
+        "rows",
+        "summary",
+        "unmapped_actions"
+      ]
+    },
+    {
+      "path": "/api/",
+      "handler": "server.root",
+      "status": "executed",
+      "http_status": 200,
+      "content_type": "application/json",
+      "shape": "object",
+      "keys": [
+        "message"
+      ]
+    }
+  ]
+}

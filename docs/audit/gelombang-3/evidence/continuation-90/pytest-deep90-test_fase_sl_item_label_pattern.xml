@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="7" time="2.725" timestamp="2026-10-06T14:01:54.270148+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="test_01_set_item_pattern" time="0.595"><failure message="AssertionError: {&quot;detail&quot;:&quot;Barang supplier tidak ditemukan.&quot;}&#10;assert 400 == 200&#10; +  where 400 = &lt;Response [400]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_item_label_pattern.py:56: in test_01_set_item_pattern
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Barang supplier tidak ditemukan."}
+E   assert 400 == 200
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase><testcase classname="" name="test_02_scanned_rolls_exposes_item_patterns" time="0.628"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_item_label_pattern.py:65: in test_02_scanned_rolls_exposes_item_patterns
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_03_gs1_label_decoded_by_item_pattern" time="0.065"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_item_label_pattern.py:74: in test_03_gs1_label_decoded_by_item_pattern
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_04_delimited_label_falls_back_to_supplier_pattern" time="0.053"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_item_label_pattern.py:85: in test_04_delimited_label_falls_back_to_supplier_pattern
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_05_gs1_without_sku_implies_item" time="0.052"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_item_label_pattern.py:96: in test_05_gs1_without_sku_implies_item
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_06_garbage_still_undecodable" time="0.055"><failure message="assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_item_label_pattern.py:107: in test_06_garbage_still_undecodable
+    assert r.status_code == 400
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_07_clear_item_pattern_with_empty_object" time="0.047"><failure message="AssertionError: {&quot;detail&quot;:&quot;Barang supplier tidak ditemukan.&quot;}&#10;assert 400 == 200&#10; +  where 400 = &lt;Response [400]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_item_label_pattern.py:113: in test_07_clear_item_pattern_with_empty_object
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Barang supplier tidak ditemukan."}
+E   assert 400 == 200
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,44 @@
+{
+  "summary": "P05 IMP-16 (MD Quality vs QC) tested — backend 16/17 pytest passed (1 skipped: /api/inventory/rolls/{id} GET returns non-200 so roll status post-random-check verified only via inspection doc, not direct roll GET). All critical IMP-16 behaviors verified: (1) meta flags per role — admin all-true, mdquality: can_md_quality+decide only; qc: can_qc+random_check+release only; warehouse: can_qc inspect only, no random_check/release; (2) route permissions — warehouse 403 on random-check & release-hold; qc 403 on inspect part=md_quality; (3) random check lifecycle — POST /api/inspections/random-check {warehouse_id=wh_jakarta, count=2} as admin creates SPK kind=random_check status=assigned with 2 lines (auto-assigned to creator); POST lines/{lid}/inspect part=md_quality → 400 'Random check hanya berisi pemeriksaan QC'; finish before all QC lines → 400; after inspecting both lines (line1 terima, line2 tolak with defects point_value=4 count=5), POST /finish → status=done, line1 random_check_result='lulus', line2 random_check_result='gagal' + hold=true; reopen random check → 400 (either specific message or status guard); (4) MD Quality on CST/INS-00001 (po_receipt, status=draft, ent_9296445e370b) — part=md_quality allowed walau draft, color_result=beda_shade → line.hold=true + roll.inspection.hold.held=true + grade tidak berubah; reject-hold with reason <15 → 400; reject-hold with proper reason → 200 + line.decision=tolak + md_quality_decision.action=reject; release-hold → 200 + line.hold=false + md_quality_decision.action=release. Frontend (admin): ?view=inspections loads correctly, ins-random-check-button + ins-chip-kind-random_check present; clicking opens ins-random-modal with ins-random-warehouse/count/submit; detail panel (ins-detail-panel) opens; ins-line-mdq-{lineId} present on draft po_receipt; MD Quality modal shows ins-color-select + ins-handfeel-select tetapi TIDAK ada ins-gsm-actual/width-actual (4-point fields correctly hidden). Random check SPK yang dibuat saat test: 1 SPK KSC/INS-00005 (ditutup saat test; roll2 tetap blocked karena gagal — perlu dilepas manual bila mau dilepaskan).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/inventory/rolls/{roll_id}", "issue": "Endpoint tidak ditemukan atau mengembalikan non-200 untuk roll individual — tes verifikasi status 'blocked'/'available' pasca random check di-skip. Rely pada doc.lines random_check_result + hold untuk verifikasi di layer SPK."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "App router (defaultViewForRole / ROLE_HOME_REGISTRY)", "issue": "Role 'md_quality' dan 'qc' TIDAK terdaftar di /app/frontend/src/config/navMeta.js ROLE_HOME_REGISTRY (hanya admin/manager/warehouse/sales/sales_admin/finance/designer/driver/md/warehouse_admin/sample_admin). defaultViewForRole fallback ke registry.sales → mendarat di 'sales-home' (Performa Saya / Penjualan) yang di luar scope hak akses mereka. Deep-link ?view=inspections tidak dihormati karena useEffect baris 224 di App.js hanya berlaku untuk ROLE_REGISTRY[role]?.custom (role bawaan tidak masuk). Sidebar juga tidak menyediakan menu Inspeksi untuk peran ini.", "selector": "N/A", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Login mdquality@kainnusantara.id → ?view=inspections", "issue": "User mdarat di Penjualan>Performa Saya, bukan di layar Inspeksi. Tanpa entri sidebar inspeksi untuk peran md_quality, user tidak bisa mengakses pekerjaannya sendiri via UI meskipun backend izinnya sudah lengkap (can_md_quality=true pada /api/inspections/meta).", "affected_selectors": ["ins-detail-panel", "ins-line-mdq-*"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p05_imp16_md_quality_qc.py",
+    "/app/test_reports/pytest/p05_iter180.xml"
+  ],
+  "action_items": [
+    "Tambahkan entri ROLE_HOME_REGISTRY untuk 'md_quality' dan 'qc' di /app/frontend/src/config/navMeta.js — landing ke view='inspections' (QcHubView tab docs) dengan navId yang sesuai; sertakan item sidebar/menu Inspeksi untuk peran md_quality dan qc di navigationConfig.",
+    "Pertimbangkan deep-link ?view=inspections menang atas default role bahkan untuk peran non-custom (hapus guard rolesVersion-only useEffect agar role bawaan juga menghormati query string).",
+    "Opsional: tambahkan test E2E Playwright khusus role mdquality@/qc@ ketika navigasi sudah tersedia."
+  ],
+  "critical_code_review_comments": [
+    "backend/services/inspection_service.py:723 — Pesan error 'Random check hanya berisi pemeriksaan QC (4-point)' bagus; cocok dengan behavior yang diuji.",
+    "backend/services/inspection_service.py:725 — allowed status untuk part=md_quality include DRAFT; itu kebijakan P05 (MD Quality boleh walau draft) — terdokumentasi, lulus uji.",
+    "backend/routers/inspections.py:276 — finish SPK random check menerima baik ('inspection','decide') maupun ('qc','release') — role qc@ bisa ikut menutup. Konsisten dengan spec.",
+    "frontend/src/config/navMeta.js ROLE_HOME_REGISTRY — tidak ada entry md_quality & qc meskipun backend sudah memberikan izin per role. Harus ditambahkan agar UX berfungsi.",
+    "Random check mengunci roll (status=blocked) via roll_hold_service.hold_roll; close membalikkan via release_roll. Tidak ada test backend yang memanggil GET /api/inventory/rolls/{id} — perlu endpoint ini atau alternatif untuk observability pengujian."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p05_imp16_md_quality_qc.py"
+  ],
+  "success_rate": {"backend": "94% (16/17 passed, 1 skipped by env)", "frontend": "admin flow 100%; md_quality/qc role landing bermasalah (nav/registry hilang)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; mdquality@/qc@/warehouse@/whadmin@kainnusantara.id/demo1234. Semua terverifikasi login.",
+  "seed_data_creation": "1 SPK random check baru dibuat (KSC/INS-00005 atau nomor berikutnya — SPK tidak dihapus; status=done, line gagal masih memegang roll blocked). CST/INS-00001 (ent_9296445e370b) baris insl_442b5f797f9a: setelah test, berakhir dengan md_quality_decision.action=release dan hold=false (siap dipakai iterasi berikutnya).",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend IMP-16 verified end-to-end (random check, MD Quality hold/reject/release, permission matrix per part). Frontend missing nav/landing untuk peran baru md_quality & qc di ROLE_HOME_REGISTRY — harus diisi main agent. Setelah fix, retest login mdquality@ dan qc@ → verify sidebar + landing + ins-line-mdq-* / absence of ins-random-check-button for mdquality, presence for qc@. Pytest default pakai xdist 2 workers; test ini stabil (sequential 5s). File: /app/backend/tests/test_p05_imp16_md_quality_qc.py.",
+  "rca of the issue": "ROLE_HOME_REGISTRY (/app/frontend/src/config/navMeta.js) tidak diperbarui saat peran baru md_quality & qc diperkenalkan di permissions_config.py (P05 DEC-06). Akibatnya defaultViewForRole fallback → sales. Deep-link useEffect di App.js hanya berlaku untuk ROLE_REGISTRY[role].custom, tapi md_quality/qc adalah role bawaan sehingga ?view=inspections di-override. Mitigasi: tambahkan entry {view:'inspections', navId:'<inspeksi-hub-id>'} untuk md_quality & qc di navMeta.js + sidebar item di navigationConfig."
+}

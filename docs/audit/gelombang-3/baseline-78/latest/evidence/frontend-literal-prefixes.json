@@ -1,0 +1,33 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "inspected_files": 351,
+  "errors": [],
+  "records": {
+    "frontend/src/features/logistics/logisticsApi.js": {
+      "L": {
+        "value": "${API}/logistics",
+        "line": 4,
+        "basis": "Babel_module_level_unique_unshadowed_binding"
+      }
+    },
+    "frontend/src/features/settings/config/configApi.js": {
+      "BASE": {
+        "value": "${API}/config",
+        "line": 9,
+        "basis": "Babel_module_level_unique_unshadowed_binding"
+      }
+    },
+    "frontend/src/features/wms/grn/grnApi.js": {
+      "GRN": {
+        "value": "${API}/goods-receipts",
+        "line": 3,
+        "basis": "Babel_module_level_unique_unshadowed_binding"
+      },
+      "OCS": {
+        "value": "${API}/ocr-samples",
+        "line": 102,
+        "basis": "Babel_module_level_unique_unshadowed_binding"
+      }
+    }
+  }
+}

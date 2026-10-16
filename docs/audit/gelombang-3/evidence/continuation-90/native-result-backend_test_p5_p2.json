@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_p5_p2.py",
+    "database": "knhost_audit_native90_9345eea8513e4831bfca1a067c85f409",
+    "exit": 0,
+    "seconds": 49.4,
+    "pass_log_tokens": 12,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-backend_test_p5_p2.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "al=8, items=3)\n  ℹ️  Test: GET /api/sales-orders (no params, backward compatible)\n  ✅ [PASS] GET /sales-orders (no params) returns bare array (backward compatible, count=8)\n  ℹ️  Test: GET /api/sales-orders?page=2 (different data)\n  ✅ [PASS] GET /sales-orders page 1 and page 2 return different data\n\n--- GL JOURNAL PAGINATION TESTS (US-P2-2 / BACKEND-2) ---\n  ℹ️  Test: GET /api/gl/journal?page=2&page_size=20 (envelope)\n  ✅ [PASS] GET /gl/journal?page=2&page_size=20 returns envelope (total=74, items=20)\n  ℹ️  Test: GET /api/gl/journal (no params, backward compatible)\n  ✅ [PASS] GET /gl/journal (no params) returns bare array (backward compatible, count=74)\n  ℹ️  Test: GET /api/gl/journal page 1 vs page 2 (different content)\n  ✅ [PASS] GET /gl/journal page 1 and page 2 return different content\n\n--- STATUS COUNTS TESTS (US-P2-3, US-P2-4 / BACKEND-3) ---\n  ℹ️  Test: GET /api/sales-returns/status-counts\n  ✅ [PASS] GET /sales-returns/status-counts returns correct format (all=1, statuses=['pending_approval'])\n  ℹ️  Test: GET /api/purchase-returns/status-counts\n  ✅ [PASS] GET /purchase-returns/status-counts returns correct format (all=2, statuses=['draft', 'pending_approval'])\n\n--- SALES ORDERS STATS TESTS (BACKEND-4) ---\n  ℹ️  Test: GET /api/sales-orders/stats/summary\n  ✅ [PASS] GET /sales-orders/stats/summary returns correct format (total_orders=8, backorder_count=1)\n\n--- TRANSFER CANCELLATION CONTRACT TESTS (BACKEND-5) ---\n  ℹ️  Test: DELETE /api/transfers/{id}?reason=... contract verification\n  ✅ [PASS] DELETE /api/transfers/{id} requires reason parameter (400 without reason)\n\n======================================================================\n  HASIL: 11 PASS | 0 FAIL\n======================================================================\n\n✅ SEMUA TEST BACKEND P5+P2 LULUS\n"
+  }
+]

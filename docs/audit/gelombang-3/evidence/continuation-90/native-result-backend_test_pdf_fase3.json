@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_pdf_fase3.py",
+    "database": "knhost_audit_native90_b75a4f5f050447d8b3cb999d7b3f37ed",
+    "exit": 0,
+    "seconds": 54.71,
+    "pass_log_tokens": 20,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_pdf_fase3.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "acita Textile, address=Jl. Soekarno Hatta No. 100, Ba...\nℹ️ \n[8] PUT /api/pdf/branding/ent_ksc (save branding)\nℹ️ Testing PUT branding ent_ksc...\n✅ PASS — PUT branding ent_ksc (status: 200)\n✅ Branding saved correctly\nℹ️ \n[9] GET /api/pdf/branding/ent_ksc (verify persistence)\nℹ️ Testing GET branding ent_ksc (verify)...\n✅ PASS — GET branding ent_ksc (verify) (status: 200)\n✅ Branding persisted correctly\nℹ️ \n[10] POST /api/pdf/preview (with config override)\nℹ️ Testing POST preview...\n✅ PASS — POST preview (status: 200)\n✅ Preview HTML contains title_override and watermark\nℹ️ \n[11] GET /api/pdf/render/sales_order/{id}?format=pdf\nℹ️ Testing GET render PDF...\n✅ PASS — GET render PDF (status: 200)\n✅ PDF render successful (starts with %PDF)\nℹ️ \n[12] GET /api/pdf/render/sales_order/{id}?format=html\nℹ️ Testing GET render HTML...\n✅ PASS — GET render HTML (status: 200)\n✅ HTML render successful (len=10397)\nℹ️ \n[13] Resolver fix — check HTML doesn't contain 'recipient_name' string\nℹ️ Testing GET render HTML (resolver check)...\n✅ PASS — GET render HTML (resolver check) (status: 200)\n✅ PASS — HTML does NOT contain 'recipient_name'\n✅ PASS — HTML contains formatted address (Jl./Jakarta)\nℹ️ \n[14] RBAC: sales user permissions\nℹ️ Testing GET template (sales) — expect 403...\n✅ PASS — GET template (sales) — expect 403 (status: 403)\nℹ️ Testing GET branding (sales) — expect 403...\n✅ PASS — GET branding (sales) — expect 403 (status: 403)\nℹ️ Testing POST preview (sales) — expect 403...\n✅ PASS — POST preview (sales) — expect 403 (status: 403)\nℹ️ Testing GET render PDF (sales) — expect 200...\n✅ PASS — GET render PDF (sales) — expect 200 (status: 200)\nℹ️ \n============================================================\nℹ️ TESTS PASSED: 18/18\nℹ️ ============================================================\n"
+  }
+]

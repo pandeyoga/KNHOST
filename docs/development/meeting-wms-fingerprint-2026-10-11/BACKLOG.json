@@ -1,0 +1,2000 @@
+{
+  "schema_version": 1,
+  "project": "KNHOST / KainNusantara",
+  "date": "2026-10-11",
+  "scope": "35 meeting/WMS/fingerprint improvements; not all audit wave findings",
+  "reference_snapshot": "f59b8a60d7b7e078888c537ca93c046afae460a9",
+  "target_branch": "main",
+  "target_commit": "96f73fa",
+  "phases": [
+    {
+      "id": "P00",
+      "title": "Baseline, keputusan bisnis, dan kontrak antarmodul",
+      "dependencies": [],
+      "requirements": [],
+      "relative_size": "M",
+      "status": "in_progress",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": ["evidence/P00/report.md", "evidence/P00/wms-probes-head-96f73fa.json", "evidence/P00/wms-probes-baseline-f59b8a6.json", "evidence/P00/dry-run-bin-simulasi.json"],
+      "open_issues": ["Data UAT lintas entitas/lokasi belum disiapkan"]
+    },
+    {
+      "id": "P01",
+      "title": "Master data, lifecycle, dan cakupan lokasi pengguna",
+      "dependencies": [
+        "P00"
+      ],
+      "requirements": [
+        "IMP-12",
+        "IMP-13",
+        "IMP-14",
+        "IMP-15",
+        "IMP-20"
+      ],
+      "relative_size": "L",
+      "status": "implemented_pending_validation",
+      "implementation_commit": "c3291a7",
+      "verified_commit": null,
+      "evidence": ["evidence/P01/report.md", "/app/test_reports/iteration_173.json"],
+      "open_issues": ["Notifikasi belum berpagar lokasi (dokumen notifikasi tidak membawa gudang)", "Dataset supplier/warna asli klien (DEC-05) belum diterima — dipakai contoh data acuan"]
+    },
+    {
+      "id": "P02",
+      "title": "Alamat, putaway, integritas referensi, dan rules WMS",
+      "dependencies": [
+        "P01"
+      ],
+      "requirements": [
+        "IMP-22",
+        "IMP-23",
+        "IMP-24",
+        "IMP-25"
+      ],
+      "relative_size": "XL",
+      "status": "implemented_pending_validation",
+      "implementation_commit": "765b099",
+      "verified_commit": null,
+      "evidence": [
+        "evidence/P02/report.md",
+        "/app/test_reports/iteration_174.json",
+        "/app/test_reports/iteration_175.json"
+      ],
+      "open_issues": [
+        "DITUTUP di P03: rules tujuan dievaluasi ulang saat terima transfer per roll (blocked_rules / pengecualian supervisor → hold)",
+        "DITUTUP di P03 (sebagian diuji): approve transfer antar badan usaha memakai warehouse_violations untuk pemilik baru (409 INTERCO_DEST_RULES); jalur approve belum diuji testing agent",
+        "Peran kustom & tampilan mobile/handheld untuk putaway belum diuji",
+        "Kapasitas & aturan di data acuan adalah CONTOH (seed_p02_kn.py), bukan angka gudang asli"
+      ]
+    },
+    {
+      "id": "P03",
+      "title": "Penerimaan OCR dan transfer yang terkait pemenuhan SO",
+      "dependencies": [
+        "P02"
+      ],
+      "requirements": [
+        "IMP-21",
+        "IMP-26",
+        "IMP-27"
+      ],
+      "relative_size": "XL",
+      "status": "implemented_pending_validation",
+      "implementation_commit": "P03 di atas 3ed96fd (commit Save to GitHub berikutnya)",
+      "verified_commit": null,
+      "evidence": [
+        "evidence/P03/report.md",
+        "/app/test_reports/iteration_176.json",
+        "backend/tests/test_p03_transfer_receipt.py"
+      ],
+      "open_issues": [
+        "DEC-08 & DEC-11 masih open: ambang review OCR, kategori wajib ukur ulang, SOP roll hilang/pembatalan saat transit belum diputuskan",
+        "Roll hilang tidak bisa dihapus dari stok (write-off menunggu DEC-13); hanya bisa dikembalikan ke asal atau diterima",
+        "Kaki pelanggan dari Jakarta setelah transfer LULUS end-to-end (iteration_178: terima 10 roll → scan-pick Jakarta → override loading check → SJ KANDA/SJ pelanggan dari Jakarta dengan nomor roll RL → terkirim). Approve antar-PT INTERCO_DEST_RULES lewat alur penuh belum diuji",
+        "Roll rusak/ditahan yang terikat SO tetap memegang komitmen; Admin Sales memutuskan ganti roll/batal baris secara manual"
+      ]
+    },
+    {
+      "id": "P04",
+      "title": "Sales, Keep/Pending, roll picker, kuantitas SO, dan grade",
+      "dependencies": [
+        "P01",
+        "P03"
+      ],
+      "requirements": [
+        "IMP-02",
+        "IMP-03",
+        "IMP-04",
+        "IMP-05",
+        "IMP-06",
+        "IMP-11"
+      ],
+      "relative_size": "XL",
+      "status": "implemented_pending_validation",
+      "implementation_commit": "P04 di atas 6485da9 (commit Save to GitHub berikutnya)",
+      "verified_commit": null,
+      "evidence": ["evidence/P04/report.md", "/app/test_reports/iteration_178.json", "backend/tests/test_p03_p04_e2e.py"],
+      "open_issues": [
+        "Pending jalur produksi (MKO/makloon) belum diuji — menunggu P05/P10",
+        "Aturan grade pelanggan belum berisi data (form tersedia); rekomendasi grade hanya muncul bila aturan diisi",
+        "Matriks harga BS & cara penawaran BS rinci (DEC-04) belum diputuskan; BS hanya dipisah di ringkasan stok & kelayakan roll",
+        "Negatif Ganti Roll grade (409) diuji pada level service, belum lewat UI karena data demo tanpa roll non-A pada produk SO contoh"
+      ]
+    },
+    {
+      "id": "P05",
+      "title": "MD Quality, R&D existing, bahan makloon, dan sumber restock",
+      "dependencies": [
+        "P01",
+        "P02"
+      ],
+      "requirements": [
+        "IMP-16",
+        "IMP-17",
+        "IMP-18",
+        "IMP-19"
+      ],
+      "relative_size": "XL",
+      "status": "implemented_pending_validation",
+      "implementation_commit": "P05 di atas ad51444 (commit Save to GitHub berikutnya)",
+      "verified_commit": null,
+      "evidence": ["evidence/P05/report.md", "/app/test_reports/iteration_179.json", "/app/test_reports/iteration_182.json", "backend/tests/test_p05_restock_material_revalidation.py", "backend/tests/test_p05_acceptance_acc31_33_34.py"],
+      "open_issues": [
+        "Retur bahan MKO batal per langkah utuh; retur sebagian/susut di mitra belum ada",
+        "Detail MKO belum ada di tampilan HP"
+      ]
+    },
+    {
+      "id": "P06",
+      "title": "Special Order multi-produk dan jalur desain pelanggan",
+      "dependencies": [
+        "P04",
+        "P05"
+      ],
+      "requirements": [
+        "IMP-07",
+        "IMP-08"
+      ],
+      "relative_size": "XL",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "P07",
+      "title": "Jenis sampel dan proses Admin Cutting",
+      "dependencies": [
+        "P02",
+        "P04"
+      ],
+      "requirements": [
+        "IMP-09",
+        "IMP-10"
+      ],
+      "relative_size": "L",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "P08",
+      "title": "Opname, dashboard stok, dan konsistensi meja pengguna",
+      "dependencies": [
+        "P01",
+        "P02",
+        "P03",
+        "P04",
+        "P05",
+        "P06",
+        "P07"
+      ],
+      "requirements": [
+        "IMP-01",
+        "IMP-28",
+        "IMP-29"
+      ],
+      "relative_size": "XL",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "P09",
+      "title": "Fingerprint langsung, log mentah, perhitungan shift, dan monitoring HR",
+      "dependencies": [
+        "P00",
+        "P01"
+      ],
+      "requirements": [
+        "IMP-30",
+        "IMP-31",
+        "IMP-32",
+        "IMP-33",
+        "IMP-34",
+        "IMP-35"
+      ],
+      "relative_size": "XL; hardware-dependent",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "P10",
+      "title": "Integrasi menyeluruh, migrasi pilot, UAT, dan kesiapan rilis",
+      "dependencies": [
+        "P01",
+        "P02",
+        "P03",
+        "P04",
+        "P05",
+        "P06",
+        "P07",
+        "P08",
+        "P09"
+      ],
+      "requirements": [],
+      "relative_size": "L",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    }
+  ],
+  "requirements": [
+    {
+      "id": "IMP-01",
+      "title": "Setiap antrean membuka detail pekerjaan yang relevan",
+      "primary_phase": "P08",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-48",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-02",
+      "title": "Tampilan khusus Keep dengan definisi yang konsisten",
+      "primary_phase": "P04",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-01",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-21",
+        "ACC-59",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-03",
+      "title": "Pending dimulai dari kebutuhan produk, lalu dokumen pemenuhannya",
+      "primary_phase": "P04",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-01",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-21",
+        "ACC-22",
+        "ACC-59",
+        "ACC-60",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-04",
+      "title": "Pisahkan tampilan komersial Sales dari detail alokasi internal",
+      "primary_phase": "P04",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-04",
+        "DEC-09",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-23",
+        "ACC-24",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-05",
+      "title": "Roll picker untuk seluruh alokasi dan perubahan pemenuhan",
+      "primary_phase": "P04",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-25",
+        "ACC-59",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-06",
+      "title": "Qty, satuan, dan rincian roll jelas sepanjang alur SO",
+      "primary_phase": "P04",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-13",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-26",
+        "ACC-27",
+        "ACC-59",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-07",
+      "title": "Special Order dari artikel existing atau desain pelanggan",
+      "primary_phase": "P06",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-02",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-36",
+        "ACC-38",
+        "ACC-61",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-08",
+      "title": "Special Order berisi beberapa produk dengan progres per baris",
+      "primary_phase": "P06",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-02",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-37",
+        "ACC-38",
+        "ACC-61",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-09",
+      "title": "Tiga jenis sampel tampil jelas bagi Sales",
+      "primary_phase": "P07",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-03",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-39",
+        "ACC-41",
+        "ACC-62",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-10",
+      "title": "Tambahkan serah terima dan proses Admin Cutting setelah pemotongan",
+      "primary_phase": "P07",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-03",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-40",
+        "ACC-41",
+        "ACC-62",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-11",
+      "title": "Samakan harga non-BS dan berikan rekomendasi grade yang dapat dijelaskan",
+      "primary_phase": "P04",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-04",
+        "DEC-13",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-28",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-12",
+      "title": "Rapikan klasifikasi tahap bahan dan kelayakan tampil di Sales",
+      "primary_phase": "P01",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-05",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-01",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-13",
+      "title": "Pemetaan supplier, barang supplier, dan warna supplier lengkap",
+      "primary_phase": "P01",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-05",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-02",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-14",
+      "title": "Perjelas tambah, edit, nonaktif, dan hapus master",
+      "primary_phase": "P01",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-05",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-03",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-15",
+      "title": "Filter master produk/varian lengkap dan dapat digabung",
+      "primary_phase": "P01",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-05",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-04",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-16",
+      "title": "Bedakan MD Quality dengan QC beserta dampak prosesnya",
+      "primary_phase": "P05",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-06",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-29",
+        "ACC-61",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-17",
+      "title": "Uji tambahan SKU existing tanpa membuat master duplikat",
+      "primary_phase": "P05",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-06",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-30",
+        "ACC-31",
+        "ACC-61",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-18",
+      "title": "Tampilkan kebutuhan bahan makloon, reservasi, issue, dan WIP secara jelas",
+      "primary_phase": "P05",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-07",
+        "DEC-13",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-32",
+        "ACC-33",
+        "ACC-34",
+        "ACC-60",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-19",
+      "title": "Tetapkan sumber restock per artikel dan arahkan backorder sesuai master",
+      "primary_phase": "P05",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-07",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-34",
+        "ACC-35",
+        "ACC-60",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-20",
+      "title": "Batasi pekerjaan gudang menurut lokasi penugasan pengguna",
+      "primary_phase": "P01",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-09",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-05",
+        "ACC-62",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-21",
+      "title": "OCR SJ/packing list mengisi kandidat roll secara kelompok",
+      "primary_phase": "P03",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-08",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-14",
+        "ACC-15",
+        "ACC-60",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-22",
+      "title": "Pulihkan pengalaman putaway dan satukan jalur scan/alamat",
+      "primary_phase": "P02",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-06",
+        "ACC-07",
+        "ACC-08",
+        "ACC-62",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-23",
+      "title": "Hierarki fisik konsisten dari lokasi sampai posisi penyimpanan",
+      "primary_phase": "P02",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-06",
+        "ACC-09",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-24",
+      "title": "Rules gudang dan sublokasi berlaku konsisten di seluruh jalur",
+      "primary_phase": "P02",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-09",
+        "DEC-10",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-08",
+        "ACC-11",
+        "ACC-12",
+        "ACC-13",
+        "ACC-20",
+        "ACC-60",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-25",
+      "title": "Lindungi stok dan tugas saat struktur lokasi diubah",
+      "primary_phase": "P02",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-10",
+        "ACC-46",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-26",
+      "title": "Transfer antar gudang untuk memenuhi SO menjaga komitmen barang",
+      "primary_phase": "P03",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-11",
+        "DEC-13",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-16",
+        "ACC-17",
+        "ACC-20",
+        "ACC-59",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-27",
+      "title": "Terima transfer berdasarkan roll aktual, termasuk parsial dan selisih",
+      "primary_phase": "P03",
+      "status": "implemented_pending_validation",
+      "decision_ids": [
+        "DEC-11",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-18",
+        "ACC-19",
+        "ACC-20",
+        "ACC-59",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-28",
+      "title": "Stock opname menyatukan qty, identitas roll, alamat, dan RFID",
+      "primary_phase": "P08",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-12",
+        "DEC-13",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-42",
+        "ACC-43",
+        "ACC-44",
+        "ACC-62",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-29",
+      "title": "Dashboard stok berjenjang dengan subtotal satuan dan status yang benar",
+      "primary_phase": "P08",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-10",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-45",
+        "ACC-46",
+        "ACC-47",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-30",
+      "title": "Mesin mengirim absensi langsung ke penerima di server ERP",
+      "primary_phase": "P09",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-14",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-50",
+        "ACC-58",
+        "ACC-63",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-31",
+      "title": "Registrasi perangkat dan pemetaan ID pegawai terkontrol",
+      "primary_phase": "P09",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-15",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-51",
+        "ACC-63",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-32",
+      "title": "Pisahkan log punch mentah dari hasil perhitungan kehadiran",
+      "primary_phase": "P09",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-15",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-52",
+        "ACC-53",
+        "ACC-54",
+        "ACC-63",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-33",
+      "title": "Tahan putus koneksi dan cegah pencatatan ganda",
+      "primary_phase": "P09",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-15",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-55",
+        "ACC-56",
+        "ACC-63",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-34",
+      "title": "Antarmuka HR memantau sinkronisasi dan exception",
+      "primary_phase": "P09",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-57",
+        "ACC-63",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    },
+    {
+      "id": "IMP-35",
+      "title": "Tetapkan kompatibilitas hardware melalui uji perangkat nyata",
+      "primary_phase": "P09",
+      "status": "not_started",
+      "decision_ids": [
+        "DEC-14",
+        "DEC-16"
+      ],
+      "acceptance_ids": [
+        "ACC-00",
+        "ACC-49",
+        "ACC-58",
+        "ACC-63",
+        "ACC-64",
+        "ACC-65",
+        "ACC-66"
+      ],
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": [],
+      "notes": ""
+    }
+  ],
+  "decisions": [
+    {
+      "id": "DEC-01",
+      "topic": "Keep/Pending",
+      "requirement_scope": "IMP-02, IMP-03",
+      "owner_function": "Admin Sales / pemilik proses Sales",
+      "status": "confirmed",
+      "confirmation_ref": "Pemilik via chat 2026-10-11 (P04)",
+      "confirmed_by": "Pemilik sistem",
+      "reason": null,
+      "notes": "Keep = SO belum diverifikasi Admin Sales; ada batas umur yang dapat dikonfigurasi di Pusat Pengaturan (sales.keep_max_age_days, 0 = tanpa batas) — hanya penanda lewat batas, tanpa batal otomatis/penahanan stok. Roll berkomitmen SO yang masih dalam transfer BUKAN Pending, ditampilkan 'Dalam Perjalanan'. Pending = sisa backorder aktif."
+    },
+    {
+      "id": "DEC-02",
+      "topic": "Special Order",
+      "requirement_scope": "IMP-07, IMP-08",
+      "owner_function": "Sales / MD / pejabat persetujuan",
+      "status": "open",
+      "confirmation_ref": null,
+      "confirmed_by": null,
+      "reason": null,
+      "notes": ""
+    },
+    {
+      "id": "DEC-03",
+      "topic": "Sampel dan Admin Cutting",
+      "requirement_scope": "IMP-09, IMP-10",
+      "owner_function": "PIC sampel / Gudang / Sales",
+      "status": "open",
+      "confirmation_ref": null,
+      "confirmed_by": null,
+      "reason": null,
+      "notes": ""
+    },
+    {
+      "id": "DEC-04",
+      "topic": "Grade dan BS",
+      "requirement_scope": "IMP-11, IMP-04",
+      "owner_function": "Sales / MD / pengelola harga",
+      "status": "open",
+      "confirmation_ref": "Pemilik via chat 2026-10-11 (P04) — sebagian",
+      "confirmed_by": null,
+      "reason": null,
+      "notes": "Dikonfirmasi sebagian: BS tampil ke Sales sebagai pilihan 'BS' terpisah; belum ada aturan pelanggan-grade → disediakan form. Matriks harga/minimum/override BS masih open."
+    },
+    {
+      "id": "DEC-05",
+      "topic": "Dataset dan lifecycle master",
+      "requirement_scope": "IMP-12, IMP-13, IMP-14, IMP-15",
+      "owner_function": "PIC master / MD / pembelian",
+      "status": "confirmed",
+      "confirmation_ref": "Pemilik via chat 2026-10-11 (P01)",
+      "confirmed_by": "Pemilik sistem",
+      "reason": null,
+      "notes": "Sales tidak melihat grey/PFD/PFP/benang (configurable catalog.sales_hidden_stages). Master terpakai: hapus ditolak, nonaktif/arsip hanya Admin/MD; belum terpakai boleh dihapus. Dataset supplier/warna asli belum diterima."
+    },
+    {
+      "id": "DEC-06",
+      "topic": "MD Quality / QC / R&D existing",
+      "requirement_scope": "IMP-16, IMP-17",
+      "owner_function": "MD / Gudang / approver mutu",
+      "status": "confirmed",
+      "confirmation_ref": "Pemilik via chat 2026-10-12 (peran) & 2026-10-13 (random check)",
+      "confirmed_by": "Pemilik sistem",
+      "reason": null,
+      "notes": "MD Quality = warna & handfeel vs sample ACC pada penerimaan PO & hasil makloon, pelepas/penolak tahanan (manajer cadangan). QC = 4-point/grade + random check stok: roll ditahan selama dicek; saat ditutup roll lulus dilepas, roll gagal tetap ditahan, grade mengikuti 4-point. Hak sementara juga melekat ke MD."
+    },
+    {
+      "id": "DEC-07",
+      "topic": "Resep dan restock",
+      "requirement_scope": "IMP-18, IMP-19",
+      "owner_function": "MD / pembelian / produksi",
+      "status": "proposed",
+      "confirmation_ref": "Tercatat sebagai keputusan pemilik 2026-10-11 di kode sesi sebelumnya (restock_source_service.py, seed_p05_kn.py) — mohon dikonfirmasi ulang",
+      "confirmed_by": null,
+      "reason": null,
+      "notes": "Tanpa default; both wajib alasan per dokumen; unknown = block (data acuan); tanpa resep wajib alasan qty bahan manual; bahan dikunci saat MKO dibuat."
+    },
+    {
+      "id": "DEC-08",
+      "topic": "OCR penerimaan",
+      "requirement_scope": "IMP-21",
+      "owner_function": "Gudang / pembelian / supplier liaison",
+      "status": "open",
+      "confirmation_ref": null,
+      "confirmed_by": null,
+      "reason": null,
+      "notes": ""
+    },
+    {
+      "id": "DEC-09",
+      "topic": "Hak lokasi dan cakupan data",
+      "requirement_scope": "IMP-20, IMP-04, IMP-24",
+      "owner_function": "Pemilik sistem / kepala Gudang / Sales",
+      "status": "confirmed",
+      "confirmation_ref": "Pemilik via chat 2026-10-11 (P01)",
+      "confirmed_by": "Pemilik sistem",
+      "reason": null,
+      "notes": "Penugasan per site (opsional dipersempit per gudang); supervisor (warehouse_admin/manager/admin) lihat semua + ambil alih ber-alasan; toggle wms.location_scope_enforced; tanpa penugasan = tidak melihat pekerjaan gudang. Bagian IMP-04/IMP-24 (agregasi Sales, owner shared) belum diputuskan."
+    },
+    {
+      "id": "DEC-10",
+      "topic": "Rules dan kapasitas WMS",
+      "requirement_scope": "IMP-24, IMP-29",
+      "owner_function": "Kepala Gudang / MD / pemilik proses",
+      "status": "confirmed",
+      "confirmation_ref": "Pemilik via chat 2026-10-11 (P02)",
+      "confirmed_by": "Pemilik sistem",
+      "reason": null,
+      "notes": "Kapasitas = jumlah roll per bin; melebihi = ditolak kecuali pengecualian supervisor (warehouse_admin/manager/admin) beralasan tercatat; kapasitas kosong = tanpa batas ('belum diatur'); roll QC/hold/rusak hanya ke area berfungsi QC (diwarisi), in-transit/offsite/consumed selalu ditolak; rules kategori/grade/jenis kain digabung AND, anak tidak membuka larangan induk; campur SKU/lot boleh kecuali node diberi aturan 1 SKU/1 lot; saran bin: SKU+lot sama -> SKU sama -> kosong; struktur & kapasitas diubah warehouse_admin/manager/admin; istilah Lokasi > Gudang > Zona > Lemari/Rak > Tingkat > Bin (padanan tampilan, tanpa hierarki kedua)."
+    },
+    {
+      "id": "DEC-11",
+      "topic": "Transfer terkait SO",
+      "requirement_scope": "IMP-26, IMP-27",
+      "owner_function": "Admin Sales / Gudang sumber-tujuan / logistik",
+      "status": "open",
+      "confirmation_ref": null,
+      "confirmed_by": null,
+      "reason": null,
+      "notes": ""
+    },
+    {
+      "id": "DEC-12",
+      "topic": "Opname",
+      "requirement_scope": "IMP-28",
+      "owner_function": "Gudang / approver persediaan / Finance",
+      "status": "open",
+      "confirmation_ref": null,
+      "confirmed_by": null,
+      "reason": null,
+      "notes": ""
+    },
+    {
+      "id": "DEC-13",
+      "topic": "Dampak komersial dan Finance",
+      "requirement_scope": "IMP-06, IMP-11, IMP-18, IMP-26, IMP-28",
+      "owner_function": "Admin Sales / MD / Finance",
+      "status": "open",
+      "confirmation_ref": "Pemilik via chat 2026-10-11 (P04) — sebagian",
+      "confirmed_by": null,
+      "reason": null,
+      "notes": "Dikonfirmasi sebagian: tagihan pelanggan selalu mengikuti qty roll aktual yang dikirim (1.000 yard dipesan → 1.005 yard roll utuh → ditagih 1.005). Write-off roll hilang, biaya/WIP, valuasi selisih masih open."
+    },
+    {
+      "id": "DEC-14",
+      "topic": "Hardware fingerprint",
+      "requirement_scope": "IMP-30, IMP-35",
+      "owner_function": "Pemilik sistem / HR / pengadaan perangkat",
+      "status": "open",
+      "confirmation_ref": null,
+      "confirmed_by": null,
+      "reason": null,
+      "notes": ""
+    },
+    {
+      "id": "DEC-15",
+      "topic": "Perhitungan absensi",
+      "requirement_scope": "IMP-31, IMP-32, IMP-33",
+      "owner_function": "HR / approver payroll",
+      "status": "open",
+      "confirmation_ref": null,
+      "confirmed_by": null,
+      "reason": null,
+      "notes": ""
+    },
+    {
+      "id": "DEC-16",
+      "topic": "Pilot dan operasi",
+      "requirement_scope": "IMP-30, IMP-34, IMP-35; seluruh scope rilis",
+      "owner_function": "Pemilik sistem / HR / operasional / deployment owner",
+      "status": "open",
+      "confirmation_ref": null,
+      "confirmed_by": null,
+      "reason": null,
+      "notes": ""
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "ACC-00",
+      "phase": "P00",
+      "requirement_scope": "ALL",
+      "title": "Baseline target",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-01",
+      "phase": "P01",
+      "requirement_scope": "IMP-12",
+      "title": "Tahap dan kelayakan jual",
+      "status": "pass",
+      "verified_commit": "c3291a7",
+      "evidence": ["evidence/P01/report.md"],
+      "actual_result": "Sales tanpa grey/pfd/pfp/yarn di /products & /product-templates; SO bahan 403; admin tetap melihat",
+      "notes": "developer test iter 173"
+    },
+    {
+      "id": "ACC-02",
+      "phase": "P01",
+      "requirement_scope": "IMP-13",
+      "title": "Alias supplier/color",
+      "status": "pass",
+      "verified_commit": "c3291a7",
+      "evidence": ["evidence/P01/report.md"],
+      "actual_result": "2 supplier → 1 SKU internal tanpa SKU ganda; warna supplier bentrok masuk needs_review. PO/penerimaan end-to-end belum diuji",
+      "notes": "developer test iter 173 (sebagian)"
+    },
+    {
+      "id": "ACC-03",
+      "phase": "P01",
+      "requirement_scope": "IMP-14",
+      "title": "Lifecycle master",
+      "status": "pass",
+      "verified_commit": "c3291a7",
+      "evidence": ["evidence/P01/report.md"],
+      "actual_result": "Jejak pemakaian tampil; purge master terpakai 409 MASTER_IN_USE; manager nonaktif 403",
+      "notes": "developer test iter 173"
+    },
+    {
+      "id": "ACC-04",
+      "phase": "P01",
+      "requirement_scope": "IMP-15",
+      "title": "Filter master",
+      "status": "pass",
+      "verified_commit": "c3291a7",
+      "evidence": ["evidence/P01/report.md"],
+      "actual_result": "Filter tahap/jenis/lini/supplier/status/warna digabung, jumlah hasil & reset bekerja",
+      "notes": "developer test iter 173"
+    },
+    {
+      "id": "ACC-05",
+      "phase": "P01",
+      "requirement_scope": "IMP-20",
+      "title": "Scope lokasi",
+      "status": "pass",
+      "verified_commit": "c3291a7",
+      "evidence": ["evidence/P01/report.md"],
+      "actual_result": "Operator Soreang/Jakarta hanya lokasinya (API+UI); supervisor semua + ambil alih ber-alasan. Notifikasi & ekspor belum berpagar lokasi",
+      "notes": "developer test iter 173 (sebagian)"
+    },
+    {
+      "id": "ACC-06",
+      "phase": "P02",
+      "requirement_scope": "IMP-22, IMP-23",
+      "title": "Resolver modern/legacy",
+      "status": "pass",
+      "verified_commit": "765b099",
+      "evidence": ["evidence/P02/report.md"],
+      "actual_result": "Bin modern W01-L1-02 & legacy A1-01 ditemukan editor, putaway manual, scan penerimaan (resolver bersama)",
+      "notes": "developer test iter 174"
+    },
+    {
+      "id": "ACC-07",
+      "phase": "P02",
+      "requirement_scope": "IMP-22",
+      "title": "Menu dan putaway",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": ["evidence/P02/report.md"],
+      "actual_result": "Sebagian: antrean siap/terhambat + alasan, qty/owner tetap, hold tidak terlewati (iter 174). Peran kustom & mobile belum diuji.",
+      "notes": "partial"
+    },
+    {
+      "id": "ACC-08",
+      "phase": "P02",
+      "requirement_scope": "IMP-22, IMP-24",
+      "title": "Status fisik",
+      "status": "pass",
+      "verified_commit": "765b099",
+      "evidence": ["evidence/P02/report.md"],
+      "actual_result": "in_transit_transfer & consumed 400 lewat endpoint langsung; hold ditolak ke storage, diterima ke bin QC",
+      "notes": "developer test iter 174-175"
+    },
+    {
+      "id": "ACC-09",
+      "phase": "P02",
+      "requirement_scope": "IMP-23",
+      "title": "Padanan Lemari/Rak",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": ["evidence/P02/report.md"],
+      "actual_result": "Sebagian: label Lemari/Rak & Tingkat atas node rack/level yang sama, ID tetap; cetak label bin belum diuji",
+      "notes": "partial"
+    },
+    {
+      "id": "ACC-10",
+      "phase": "P02",
+      "requirement_scope": "IMP-25",
+      "title": "Hapus atau pindah struktur",
+      "status": "pass",
+      "verified_commit": "765b099",
+      "evidence": ["evidence/P02/report.md"],
+      "actual_result": "Hapus bin berisi roll/tugas -> 409 LOCATION_IN_USE; rename menjaga ID; roll yatim tampil & masuk total fisik; koreksi alamat berjejak",
+      "notes": "developer test iter 174-175"
+    },
+    {
+      "id": "ACC-11",
+      "phase": "P02",
+      "requirement_scope": "IMP-24",
+      "title": "Shared/dedicated",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": ["evidence/P02/report.md"],
+      "actual_result": "Sebagian: evaluator menolak gudang dedicated entitas lain; PA create memakai evaluator; PA end-to-end dgn roll tag_verified belum diuji",
+      "notes": "partial"
+    },
+    {
+      "id": "ACC-12",
+      "phase": "P02",
+      "requirement_scope": "IMP-24",
+      "title": "Rules gabungan",
+      "status": "pass",
+      "verified_commit": "765b099",
+      "evidence": ["evidence/P02/report.md"],
+      "actual_result": "Grade A di Tingkat 3 W01: BS ditolak, A diterima; 1 SKU di Tingkat 2; gudang mode combined menolak transfer grade B; saran & aksi konsisten",
+      "notes": "developer test iter 175"
+    },
+    {
+      "id": "ACC-13",
+      "phase": "P02",
+      "requirement_scope": "IMP-24",
+      "title": "Kapasitas dan balapan aksi",
+      "status": "pass",
+      "verified_commit": "765b099",
+      "evidence": ["evidence/P02/report.md"],
+      "actual_result": "Penuh -> 409 BIN_CAPACITY_FULL; pengecualian warehouse@ 403, supervisor + alasan 200 tercatat; dua penempatan serentak sisa 1 -> tepat satu sukses; isi dihitung semua owner",
+      "notes": "developer test iter 174-175"
+    },
+    {
+      "id": "ACC-14",
+      "phase": "P03",
+      "requirement_scope": "IMP-21",
+      "title": "OCR per roll",
+      "status": "pass",
+      "verified_commit": "P03 di atas 3ed96fd",
+      "evidence": ["evidence/P03/report.md", "/app/test_reports/iteration_176.json"],
+      "actual_result": "10 roll packing list: doc_length/doc_status per roll tersimpan; pl_check rollcount & subtotal; roll tak terbaca = uncertain → GRN ragu (tidak auto-post); koreksi review menandai corrected, nilai dokumen tetap",
+      "notes": "uji unit/fungsi; OCR nyata dengan foto SJ klien belum (DEC-08)"
+    },
+    {
+      "id": "ACC-15",
+      "phase": "P03",
+      "requirement_scope": "IMP-21",
+      "title": "SJ hanya total",
+      "status": "pass",
+      "verified_commit": "P03 di atas 3ed96fd",
+      "evidence": ["evidence/P03/report.md"],
+      "actual_result": "Tanpa packing list: tidak ada expected_rolls (tidak dibagi rata); pl_check.basis=total_only, layar minta ukur tiap roll",
+      "notes": "uji fungsi; SOP kategori wajib ukur ulang menunggu DEC-08"
+    },
+    {
+      "id": "ACC-16",
+      "phase": "P03",
+      "requirement_scope": "IMP-26",
+      "title": "Bandung-Jakarta-customer",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": ["evidence/P03/report.md", "/app/test_reports/iteration_176.json", "/app/test_reports/iteration_178.json", "backend/tests/test_p03_p04_e2e.py"],
+      "actual_result": "Dua kaki lulus di preview (iteration_178): KANDA/SO-00003 → KANDA/TRF-00001 SRG-01 → GU-KANDA diterima 10 roll; tugas Soreang batal, tugas Jakarta lahir; 10 scan-pick Jakarta; loading check override manajer (roll tanpa RFID); dispatch → KANDA/SJ-00002 dari Jakarta berisi 10 nomor roll RL; SO shipped → mark-delivered → done.",
+      "notes": "Lulus uji developer; menunggu validator (verified_commit setelah Save to GitHub)"
+    },
+    {
+      "id": "ACC-17",
+      "phase": "P03",
+      "requirement_scope": "IMP-26",
+      "title": "Reservasi dan concurrency",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": ["evidence/P03/report.md"],
+      "actual_result": "Desain: roll berkomitmen dipindah lewat transfer_ref (CAS), tanpa reservasi kedua; roll di transfer aktif lain → 409; dispatch/terima CAS (retry tidak menggandakan mutasi — terbukti di ACC-18)",
+      "notes": "SO-A vs SO-B serentak belum diuji otomatis"
+    },
+    {
+      "id": "ACC-18",
+      "phase": "P03",
+      "requirement_scope": "IMP-27",
+      "title": "Receipt parsial",
+      "status": "pass",
+      "verified_commit": "P03 di atas 3ed96fd",
+      "evidence": ["evidence/P03/report.md", "/app/test_reports/iteration_176.json"],
+      "actual_result": "Terima 7/10 → partially_received, hanya 7 roll fisik di tujuan; retry 7 → 'already', mutasi transfer_in tetap 7; 3 tetap in_transit; Selesai lewat /status ditolak 409 TRANSFER_RECEIPT_REQUIRED; completed otomatis saat tak ada roll di jalan",
+      "notes": "testing agent iter 176 + uji developer"
+    },
+    {
+      "id": "ACC-19",
+      "phase": "P03",
+      "requirement_scope": "IMP-27",
+      "title": "Exception transfer",
+      "status": "pass",
+      "verified_commit": "P03 di atas 3ed96fd",
+      "evidence": ["evidence/P03/report.md", "/app/test_reports/iteration_176.json"],
+      "actual_result": "Roll salah (kode tak dikenal) → exception, tidak masuk stok; rusak wajib keterangan → status damaged + exception; hilang dilaporkan ber-PIC; non-supervisor 403, supervisor kembalikan ke asal (komitmen SO tetap); batch tervalidasi dulu sebelum ada roll mendarat",
+      "notes": "bug validasi keterangan rusak (iter 176) sudah diperbaiki"
+    },
+    {
+      "id": "ACC-20",
+      "phase": "P03",
+      "requirement_scope": "IMP-24, IMP-26, IMP-27",
+      "title": "Aturan tujuan dan ownership",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": ["evidence/P03/report.md", "/app/test_reports/iteration_176.json"],
+      "actual_result": "Rules tujuan diubah saat transit → blocked_rules, roll tetap di jalan + exception; supervisor beralasan → hold. SO entitas lain → 400 (wajib transaksi antar-PT). Approve antar-PT melanggar gudang dedicated → 409 INTERCO_DEST_RULES (dicek fungsi, belum lewat API)",
+      "notes": "sebagian — jalur approve antar-PT belum diuji testing agent"
+    },
+    {
+      "id": "ACC-21",
+      "phase": "P04",
+      "requirement_scope": "IMP-02, IMP-03",
+      "title": "Keep dan Pending bersamaan",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": ["evidence/P04/report.md", "/app/test_reports/iteration_178.json"],
+      "actual_result": "Keep 2 (SO-00004 lewat batas 3 hari, SO-00005 juga Pending), Pending 2 produk (SO-00005, SO-00006), SO unik 3 (keduanya 1 tidak dihitung ganda). Supply parsial & batal baris belum dijalankan.",
+      "notes": "sebagian lulus uji developer"
+    },
+    {
+      "id": "ACC-22",
+      "phase": "P04",
+      "requirement_scope": "IMP-03",
+      "title": "Referensi supply Pending",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-23",
+      "phase": "P04",
+      "requirement_scope": "IMP-04",
+      "title": "Sales projection",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-24",
+      "phase": "P04",
+      "requirement_scope": "IMP-04",
+      "title": "Stok global dan ATP",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-25",
+      "phase": "P04",
+      "requirement_scope": "IMP-05",
+      "title": "Edit alokasi roll",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-26",
+      "phase": "P04",
+      "requirement_scope": "IMP-06",
+      "title": "Yard dan roll utuh",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-27",
+      "phase": "P04",
+      "requirement_scope": "IMP-06",
+      "title": "Detail qty sebelum/sesudah alokasi",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-28",
+      "phase": "P04",
+      "requirement_scope": "IMP-11",
+      "title": "Harga dan rekomendasi grade",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-29",
+      "phase": "P05",
+      "requirement_scope": "IMP-16",
+      "title": "MD Quality dan QC",
+      "status": "pass",
+      "verified_commit": "preview 2026-10-13",
+      "evidence": ["/app/test_reports/iteration_181.json", "backend/tests/test_p05_imp16_md_quality_qc.py"],
+      "actual_result": "PIC/objek terpisah (MD Quality warna-handfeel, QC 4-point/random check); tahanan hanya lepas lewat keputusan ber-alasan; random check lulus dilepas, gagal tetap ditahan",
+      "notes": ""
+    },
+    {
+      "id": "ACC-30",
+      "phase": "P05",
+      "requirement_scope": "IMP-17",
+      "title": "Labdip dan Handfeel existing",
+      "status": "pass",
+      "verified_commit": "P05 di atas ad51444",
+      "evidence": ["evidence/P05/report.md", "/app/test_reports/iteration_179.json"],
+      "actual_result": "SKU tetap, tanpa spec/SKU baru, retry ditolak, histori terlihat; keputusan pemenang revalidation belum diuji live",
+      "notes": ""
+    },
+    {
+      "id": "ACC-31",
+      "phase": "P05",
+      "requirement_scope": "IMP-17",
+      "title": "Perubahan identitas dan hak MD",
+      "status": "pass",
+      "verified_commit": "preview 2026-10-13",
+      "evidence": ["backend/tests/test_p05_acceptance_acc31_33_34.py"],
+      "actual_result": "Uji tambahan dengan warna target lain tidak mengubah identitas SKU; MD di luar grant lini ditolak",
+      "notes": ""
+    },
+    {
+      "id": "ACC-32",
+      "phase": "P05",
+      "requirement_scope": "IMP-18",
+      "title": "Reservasi dan issue 1:1",
+      "status": "pass",
+      "verified_commit": "preview 2026-10-13",
+      "evidence": ["evidence/P05/report.md", "backend/tests/test_p05_acceptance_acc31_33_34.py"],
+      "actual_result": "Reserve tidak memindah fisik; issue 60/100 → fisik −60, cadangan sisa aktif, WIP = nilai bahan; ulang issue ditolak, 1 jurnal",
+      "notes": ""
+    },
+    {
+      "id": "ACC-33",
+      "phase": "P05",
+      "requirement_scope": "IMP-18",
+      "title": "Yield dan bahan kurang",
+      "status": "pass",
+      "verified_commit": "preview 2026-10-14",
+      "evidence": ["backend/tests/test_p05_acceptance_acc31_33_34.py", "/app/test_reports/iteration_182.json"],
+      "actual_result": "Shortage tercatat sejak MKO dibuat, issue melebihi stok ditolak, bahan per ID, tanpa resep wajib alasan. Resep acuan (1 kemeja = 1,6 m, yield 95%, 1 roll = 50 m): 100 kemeja → 168,43 m (3,37 roll), forecast balik 100; konversi tanpa aturan ditolak 400. Bug pembulatan ke bawah diperbaiki.",
+      "notes": ""
+    },
+    {
+      "id": "ACC-34",
+      "phase": "P05",
+      "requirement_scope": "IMP-18, IMP-19",
+      "title": "Pembatalan/partial produksi",
+      "status": "pass",
+      "verified_commit": "preview 2026-10-14",
+      "evidence": ["backend/tests/test_p05_acceptance_acc31_33_34.py", "/app/test_reports/iteration_182.json"],
+      "actual_result": "Parsial→selesai: sisa cadangan dilepas, WIP MKO 0, bahan terkirim tidak kembali; batal sebelum issue melepas cadangan. DEC-13: batal sesudah issue → bahan tetap di mitra & WIP tetap; retur manual (return-material) mengembalikan stok + 1 jurnal balik, retry 409.",
+      "notes": ""
+    },
+    {
+      "id": "ACC-35",
+      "phase": "P05",
+      "requirement_scope": "IMP-19",
+      "title": "Jalur restock",
+      "status": "pass",
+      "verified_commit": "P05 di atas ad51444",
+      "evidence": ["evidence/P05/report.md", "/app/test_reports/iteration_179.json", "backend/tests/test_p05_restock_material_revalidation.py"],
+      "actual_result": "supplier-only/makloon-only menolak jalur salah; both wajib alasan; unknown diblok; PO manual makloon-only 409",
+      "notes": ""
+    },
+    {
+      "id": "ACC-36",
+      "phase": "P06",
+      "requirement_scope": "IMP-07",
+      "title": "Desain pelanggan dan artikel existing",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-37",
+      "phase": "P06",
+      "requirement_scope": "IMP-08",
+      "title": "OD dua produk",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-38",
+      "phase": "P06",
+      "requirement_scope": "IMP-07, IMP-08",
+      "title": "OD legacy dan retry",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-39",
+      "phase": "P07",
+      "requirement_scope": "IMP-09",
+      "title": "Tipe sampel",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-40",
+      "phase": "P07",
+      "requirement_scope": "IMP-10",
+      "title": "Handoff Admin Cutting",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-41",
+      "phase": "P07",
+      "requirement_scope": "IMP-09, IMP-10",
+      "title": "Retry, cancel, dan sampel legacy",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-42",
+      "phase": "P08",
+      "requirement_scope": "IMP-28",
+      "title": "Opname actual roll dan RFID",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-43",
+      "phase": "P08",
+      "requirement_scope": "IMP-28",
+      "title": "Snapshot dan transaksi berjalan",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-44",
+      "phase": "P08",
+      "requirement_scope": "IMP-28",
+      "title": "Posting adjustment dan dampak reservasi",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-45",
+      "phase": "P08",
+      "requirement_scope": "IMP-29",
+      "title": "Mixed unit dan kapasitas",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": ["evidence/P02/report.md"],
+      "actual_result": "Fondasi P02: okupansi lokasi per satuan, utilisasi = roll/kapasitas roll, label meter tetap dihapus. Dashboard hierarki lengkap menunggu P08.",
+      "notes": "partial (P08)"
+    },
+    {
+      "id": "ACC-46",
+      "phase": "P08",
+      "requirement_scope": "IMP-25, IMP-29",
+      "title": "Rekonsiliasi hierarchy",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-47",
+      "phase": "P08",
+      "requirement_scope": "IMP-29",
+      "title": "Shared capacity dan permissions",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-48",
+      "phase": "P08",
+      "requirement_scope": "IMP-01",
+      "title": "Meja seluruh peran",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-49",
+      "phase": "P09",
+      "requirement_scope": "IMP-35",
+      "title": "Hardware PoC",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-50",
+      "phase": "P09",
+      "requirement_scope": "IMP-30",
+      "title": "Native protocol receiver",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-51",
+      "phase": "P09",
+      "requirement_scope": "IMP-31",
+      "title": "Mapping dan registrasi",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-52",
+      "phase": "P09",
+      "requirement_scope": "IMP-32",
+      "title": "Raw event dan koreksi",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-53",
+      "phase": "P09",
+      "requirement_scope": "IMP-32",
+      "title": "Shift overnight",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-54",
+      "phase": "P09",
+      "requirement_scope": "IMP-32",
+      "title": "Missing/multiple punches dan overtime",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-55",
+      "phase": "P09",
+      "requirement_scope": "IMP-33",
+      "title": "Offline dan kiriman ulang",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-56",
+      "phase": "P09",
+      "requirement_scope": "IMP-33",
+      "title": "Out-of-order, drift, dan partial failure",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-57",
+      "phase": "P09",
+      "requirement_scope": "IMP-34",
+      "title": "Monitoring HR",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-58",
+      "phase": "P09",
+      "requirement_scope": "IMP-30, IMP-35",
+      "title": "Pilot direct tanpa perantara",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-59",
+      "phase": "P10",
+      "requirement_scope": "IMP-02, IMP-03, IMP-05, IMP-06, IMP-26, IMP-27",
+      "title": "E2E SO dan transfer",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-60",
+      "phase": "P10",
+      "requirement_scope": "IMP-03, IMP-18, IMP-19, IMP-21, IMP-24",
+      "title": "E2E backorder supplier/makloon",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-61",
+      "phase": "P10",
+      "requirement_scope": "IMP-07, IMP-08, IMP-16, IMP-17",
+      "title": "E2E Special Order dan R&D",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-62",
+      "phase": "P10",
+      "requirement_scope": "IMP-09, IMP-10, IMP-20, IMP-22, IMP-28",
+      "title": "E2E sampel dan WMS",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-63",
+      "phase": "P10",
+      "requirement_scope": "IMP-30, IMP-31, IMP-32, IMP-33, IMP-34, IMP-35",
+      "title": "E2E attendance dan payroll review",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-64",
+      "phase": "P10",
+      "requirement_scope": "ALL",
+      "title": "Migrasi dan rollback",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-65",
+      "phase": "P10",
+      "requirement_scope": "ALL",
+      "title": "Concurrency dan recovery lintas modul",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    },
+    {
+      "id": "ACC-66",
+      "phase": "P10",
+      "requirement_scope": "ALL",
+      "title": "UAT dan kesiapan rilis",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": [],
+      "actual_result": null,
+      "notes": ""
+    }
+  ]
+}

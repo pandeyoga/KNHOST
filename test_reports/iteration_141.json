@@ -1,0 +1,29 @@
+{
+  "summary": "W2-P08 (R&D performer + required-tests warnings): frontend bundle was STALE (served build 16:39, source last touched 16:48). After `bash /app/scripts/rebuild_frontend.sh` all testids rendered correctly. Verified RoundActionModal shows round-performer-select + round-performer-hint, round-modal-confirm disabled until BOTH note and performer are set (initially true; after note-only still true). Verified DecideModal opens for assessed sample with complete tests and decide-required-tests-warning + decide-override-reason are absent (negative case). Backend spot-check: GET /api/rnd/samples/{id}/performers (8 users), GET /api/rnd/samples/{id}/required-tests returns required/acc/missing, GET /api/rnd/specs/{id}/required-tests returns missing=['proofing'] for SPEC-00002, POST /api/rnd/specs/{id}/approve without override_reason while uji wajib missing → 422 with correct Bahasa Indonesia message. Could not drive KNSelect (Radix) dropdown open from Playwright in modal context (headless+Radix quirk) — confirmed field presence and disabled-logic via DOM state inspection; selected-value remained placeholder. Positive 'warning present + override required' UI case not reproduced because no existing sample has missing required tests at woven/knit line AND acc rounds; code review of DecideModal.jsx lines 83–90 and 48 confirms the gate (overrideOk = !missingTests.length || override.trim().length >= 5) and footer disabled wiring.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/.screenshots/round_modal_filled2.jpeg",
+    "/app/.screenshots/decide_modal_complete.jpeg"
+  ],
+  "action_items": [
+    "Build pipeline hygiene: after editing /app/frontend/src, main agent MUST run `bash /app/scripts/rebuild_frontend.sh` before declaring UI changes complete — initial test session showed served bundle missing the performer field entirely because of a stale build.",
+    "Consider seed data for W2-P08 'warning' path: a sample with sample_types including handfeel/proofing on woven|knit|printing line that has one ACC round but a missing required test, so the UI positive case (decide-required-tests-warning + decide-override-reason) can be reproduced by future testing/QA runs."
+  ],
+  "critical_code_review_comments": [
+    "RoundActionModal.jsx confirm disabled condition `isSubmit && (!note.trim() || !performer)` is correct and matches server contract (422 without performed_by_user_id).",
+    "DecideModal.jsx override gating uses `.trim().length >= 5` matching the >=5 chars rule in the request.",
+    "requiredTests.js overrideReasonFor returns '' when complete (no prompt), string when user supplies reason, null on cancel — SpecDetailPanel/SampleMasterDataPanel need to treat null as cancel (not re-call API). Not verified at runtime, but structure is correct."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (5/5 spot checks)", "frontend": "80% (performer field + decide no-warning validated; warning-present path not reproduced due to seed-data gap, KNSelect dropdown not opened in Playwright)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, manager@kainnusantara.id / demo12345",
+  "seed_data_creation": "Uploaded TEST_proof.png (208B) attachment to round rnd_ad6c0f0ec846 of smp_492176fe1fcc (KSC/SMP-00008) to unlock the Setor-hasil modal. No DELETE endpoint for round attachments exists; file remains prefixed TEST_.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Frontend builds are STATIC — always run rebuild_frontend.sh after src edits. To reproduce W2-P08 warning branch, create a sample with line_code=woven and sample_types=['labdip'], ACC its labdip round, then open decide-modal — required['labdip','handfeel'], acc=['labdip'] → decide-required-tests-warning visible with decide-override-reason textarea. KNSelect inside FormModal is Radix Select; use page.get_by_role('option', name=...) or dispatch 'mousedown' manually if clicking the combobox trigger doesn't open the list in headless Chromium."
+}

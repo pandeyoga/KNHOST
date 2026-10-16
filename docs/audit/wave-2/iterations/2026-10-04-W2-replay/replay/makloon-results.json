@@ -1,0 +1,74 @@
+{
+  "commit": "6206f5f5cc3b4aa46acf87762b7c63f245bf35c3",
+  "database": "knhost_audit_cb63aa75a2c24bd69cd2511a50cf71f3",
+  "level": "real Mongo + service; F01/F02 via ASGI HTTP; no application lifespan",
+  "scenarios": [
+    {
+      "id": "W2-M-C01",
+      "kind": "control",
+      "observed": {
+        "status": "completed",
+        "step_status": "received",
+        "quantity": 10.0,
+        "roll_value": 120.0,
+        "journal_value": 120.0,
+        "warehouses": [
+          "WH"
+        ],
+        "roll_count": 1
+      }
+    },
+    {
+      "id": "W2-M-C02",
+      "kind": "control",
+      "observed": {
+        "http_status": 409,
+        "unchanged": true
+      }
+    },
+    {
+      "id": "W2-M-F01",
+      "kind": "defect",
+      "observed": {
+        "http_status": 200,
+        "status": "completed",
+        "step_status": "received",
+        "quantity": 9.5,
+        "roll_value": 120.0002,
+        "journal_value": 120.0,
+        "warehouses": [
+          "WH"
+        ],
+        "roll_count": 1
+      }
+    },
+    {
+      "id": "W2-M-F02",
+      "kind": "defect",
+      "observed": {
+        "http_status": 404,
+        "status": "in_process",
+        "step_status": "issued",
+        "quantity": 0,
+        "roll_value": 0,
+        "journal_value": 0,
+        "warehouses": [],
+        "roll_count": 0
+      }
+    },
+    {
+      "id": "W2-M-C03",
+      "kind": "control",
+      "observed": {
+        "http_status": 400,
+        "status": "in_process",
+        "step_status": "issued",
+        "quantity": 0,
+        "roll_value": 0,
+        "journal_value": 0,
+        "warehouses": [],
+        "roll_count": 0
+      }
+    }
+  ]
+}

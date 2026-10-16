@@ -1,0 +1,10 @@
+[
+ {
+  "id": "WM-02b",
+  "invariant": "picker menampilkan induk dengan panjang bebas 70 (fisik 100, dipesan 30)",
+  "pass": false,
+  "detail": "None"
+ }
+]
+CRASH (kontrak belum ada di kode ini): HTTPException: 409: Roll R-audit_fu_decab4-0 keburu berubah. Coba lagi.
+pass=0 fail=1 crashed=1

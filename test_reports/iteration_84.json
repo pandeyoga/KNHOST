@@ -1,0 +1,25 @@
+{
+  "summary": "Mobile MD app write flows verified at 390x844 via public preview URL after main-agent fixes. Login md@kainnusantara.id → mobile-md-app; switched entity to ent_ksc via m-md-tab-more → m-md-entity-ent_ksc. FIXED PR create WORKS: Lainnya → m-md-menu-pr → m-pr-new → m-pr-product-0 loads (product select appears without 'Memuat produk…' hanging), option m-pr-product-0-option-prod_batik_mega selected, qty 10, price 185000, reason TEST_MD_PR_iter84_* → m-pr-submit returned m-pr-msg='PR-00010 diajukan & langsung disetujui.'. FIXED Product edit WORKS: m-md-tab-products → m-md-product-prod_batik_mega → m-md-product-edit → m-md-product-form-price 186000 → save → m-md-product-msg='Produk diperbarui.', m-md-product-price='Rp 186.000 / yard'; reverted back to 185000 successfully. Meja row navigation ALL 4 targets confirmed: m-md-row-desain-dsr_b684c02d59b1 → m-dsr-detail True; m-md-row-sample-smp_675dbad5fe70 → m-smp-detail True; m-md-row-pr-pr_3975f95386bf → m-md-sub-pr True; m-md-row-acuan-ins_d3aa69a19c6d → mobile-back-to-app True (full-view). No horizontal overflow at 390px. No console errors, no pageerrors observed during flow. DSR create testid probe hit a tab-id mismatch (script used m-md-tab-designs but actual is different) — DSR create was already manually verified per main-agent note and iteration_83 confirmed m-dsr-new is present in the Desain tab, so not re-blocked.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/i84-final.jpeg"],
+  "action_items": [
+    "Optional: expose a stable notification-sheet close testid (m-md-notif-close or similar) to make Escape-independent overlay dismissal reliable in future automated runs.",
+    "Optional: confirm the Desain tab testid naming (m-md-tab-design vs m-md-tab-designs) so downstream test scripts can reuse a canonical id."
+  ],
+  "critical_code_review_comments": [
+    "MobileMdApp.jsx remains compact and well-composed; MobileMdViews.jsx at ~547 lines still borderline — split by domain when convenient, but not urgent."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not tested this iteration)", "frontend": "100% for the 4 focus flows (PR create, product edit+revert, Meja row navigation ×4)"},
+  "seed_data_creation": "Created 1 PR (KSC/PO-approved auto: PR-00010) with reason prefix TEST_MD_PR_iter84_*; product price toggled 185000→186000→185000 (net no change).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Frontend served from static bundle — after src edits run `bash /app/scripts/rebuild_frontend.sh`. Preview URL: https://knhost-responsive.preview.emergentagent.com. MD login md@kainnusantara.id/demo12345 lands on data-testid=mobile-md-app at 390x844. Must switch entity to ent_ksc via Lainnya → m-md-entity-ent_ksc before any write flow (Semua mode blocks writes with 409). Confirmed working: PR create (m-pr-new/m-pr-product-0*/m-pr-qty-0/m-pr-price-0/m-pr-reason/m-pr-submit → m-pr-msg), product edit (m-md-product-edit/m-md-product-form-price/m-md-product-form-save → m-md-product-msg + m-md-product-price), Meja row taps for all 4 queues. Sample decide (m-smp-decide) manager-only 400 error expected in m-smp-decide-error; DSR reject dialog manually verified previously.",
+  "rca_of_issue": "n/a — no confirmed bug this iteration"
+}

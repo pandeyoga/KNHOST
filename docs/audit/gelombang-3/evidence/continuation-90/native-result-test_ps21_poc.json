@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_ps21_poc.py",
+    "database": "knhost_audit_native90_81bd6be1de3d420a9ac3bfa7f9eab2b7",
+    "exit": 0,
+    "seconds": 65.83,
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_ps21_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "·  HTTP 400: {\"detail\":\"Pilih minimal satu item yang ingin di-repeat/restock\"}\n✅ US-9b qty 0 ditolak (400/422)  ·  HTTP 422\n✅ US-9c produk tak dikenal ditolak 400 berbahasa Indonesia  ·  HTTP 400: {\"detail\":\"Produk prod_tidak_ada tidak ditemukan\"}\n✅ US-6a 1 klik repeat/restock → PR dibuat  ·  HTTP 200 · PR PR-00009 status=approved\n✅ US-6b qty desimal koma '12,5' diterima (PS-15)  ·  [12.5]\n✅ US-6c MD (manager) menerima notifikasi permintaan restock  ·  0 → 1 kartu · notified_md=1\n✅ US-6d notifikasi MD menautkan layar PR (deep-link)  ·  link=purchase-requisitions\n✅ US-7a PR menyimpan asal order (source=so_repeat + source_ref_id)  ·  source=so_repeat ref=so_4ab1ca32799\n✅ US-7b SO mencatat riwayat permintaan restock (nomor PR & pemohon)  ·  1 riwayat · terakhir=PR-00009\n✅ US-7c kandidat produk menampilkan PR terbuka agar sales tidak minta dobel  ·  open_pr=['PR-00009']\n✅ US-8a permintaan ganda produk sama ditolak 400 (anti PR dobel)  ·  HTTP 400: {\"detail\":\"Produk ini sudah punya permintaan repeat/restock terbuka (PR-00009). Selesaikan/batalkan PR itu dul\n\n── US-10 · Integrasi mesin notifikasi R6.5/R6.6 ──────────────────\n✅ US-10a total job bertambah menjadi ≥ 12  ·  jobs_total=31 enabled=31\n✅ US-10b riwayat eksekusi job baru tercatat (sys_scheduler_runs)  ·  2 run tercatat\n✅ US-10c jenis notifikasi baru dapat difilter di bell  ·  jenis: ['ar_due_soon', 'backorder_ready', 'po_arrival', 'restock_request']\n✅ US-10d severity mengikuti urgensi (info/warning/critical)  ·  severity=['critical', 'info', 'warning']\n✅ US-10e kanal WhatsApp memproses notifikasi baru (outbox/digest aktif)  ·  HTTP 200\n\n==============================================================================\n  HASIL: 43 PASS · 0 FAIL\n==============================================================================\n"
+  }
+]

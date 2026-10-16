@@ -1,0 +1,89 @@
+  [poc-stock] snapshot 155 dokumen stok dari 4 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (155 dokumen, 4 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "GRN-05",
+  "invariant": "periode tertutup → tutup GRN 400 NOT_POSTABLE; GRN tetap reconcile, roll masih 'receiving', saldo & jurnal tak berubah",
+  "pass": true,
+  "detail": "(400, '{\"detail\":{\"code\":\"NOT_POSTABLE\",\"errors\":[\"Periode 2026-10 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-10-04 memerlukan izin \\'Buka Periode\\' yang di', 'reconcile', ['receiving'], {'available_qty': 425.0, 'quarantine_qty': 75.0, 'on_hand_qty': 550.0}, {'available_qty': 425.0, 'quarantine_qty': 75.0, 'on_hand_qty': 550.0})"
+ },
+ {
+  "id": "GRN-05",
+  "invariant": "jurnal GR gagal → GRN 'closing' (bukan closed), baris posted.status=failed, gl_posting failed, tanpa jurnal",
+  "pass": true,
+  "detail": "(200, 'closing', {'status': 'failed', 'at': '2026-10-04T10:19:55.035079+00:00', 'error': 'Stok diterima, tetapi jurnal penerimaan gagal: Akun 2-1150 nonaktif', 'result_ref': ''}, 'failed')"
+ },
+ {
+  "id": "GRN-05",
+  "invariant": "stok fisik tercatat sekali (1 roll, karantina +30)",
+  "pass": true,
+  "detail": "(1, {'available_qty': 425.0, 'quarantine_qty': 75.0, 'on_hand_qty': 550.0}, {'available_qty': 425.0, 'quarantine_qty': 105.0, 'on_hand_qty': 580.0})"
+ },
+ {
+  "id": "GRN-05",
+  "invariant": "tutup ulang saat akun masih nonaktif → tetap closing, roll tidak bertambah",
+  "pass": true,
+  "detail": "(200, '{\"grn\":{\"id\":\"grn_489239604ef3\",\"entity_id\":\"ent_ksc\",\"number\":\"KSC/GRN-00001\",\"status\":\"closing\",\"version\":9,\"partner_t')"
+ },
+ {
+  "id": "GRN-05",
+  "invariant": "penyebab dibereskan → tutup ulang: GRN closed, tepat 1 jurnal GR 3.000.000 (Dr 1-1300 / Cr 2-1150)",
+  "pass": true,
+  "detail": "(200, '{\"grn\":{\"id\":\"grn_489239604ef3\",\"entity_id\":\"ent_ksc\",\"number\":\"KSC/GRN-00001\",\"status\":\"closed\",\"version\":10,\"partner_type\":\"supplier\",\"partner_id\":\"', 'closed', 1, {'1-1300': 3000000.0, '2-1150': -3000000.0})"
+ },
+ {
+  "id": "GRN-05",
+  "invariant": "pemulihan tanpa stok ganda: tetap 1 roll, karantina +30 (bukan +60), PO received_qty = 30",
+  "pass": true,
+  "detail": "({'available_qty': 425.0, 'quarantine_qty': 105.0, 'on_hand_qty': 580.0}, {'available_qty': 425.0, 'quarantine_qty': 105.0, 'on_hand_qty': 580.0}, 30.0)"
+ },
+ {
+  "id": "GRN-05",
+  "invariant": "tutup GRN yang sudah closed → 4xx, tanpa jurnal/stok tambahan",
+  "pass": true,
+  "detail": "(409, '{\"detail\":{\"code\":\"BAD_STATUS\",\"message\":\"Tutup penerimaan hanya bisa saat status reconcile, closing')"
+ },
+ {
+  "id": "PRET-01",
+  "invariant": "PO non-PPN: ppn 0, grand_total = 2.000.000",
+  "pass": true,
+  "detail": "('non_ppn', 0.0, 2000000.0)"
+ },
+ {
+  "id": "PRET-01",
+  "invariant": "retur dibuat: ppn_rate 0, ppn 0, grand_total = total = 8 × 100.000",
+  "pass": true,
+  "detail": "(0.0, 0.0, 800000.0, 800000.0)"
+ },
+ {
+  "id": "PRET-01",
+  "invariant": "stok: roll 20 → 12, available −8 & on_hand −8 (sekali)",
+  "pass": true,
+  "detail": "(12.0, {'available_qty': 445.0, 'quarantine_qty': 105.0, 'on_hand_qty': 600.0}, {'available_qty': 437.0, 'quarantine_qty': 105.0, 'on_hand_qty': 592.0})"
+ },
+ {
+  "id": "PRET-01",
+  "invariant": "PO: returned_amount +800.000; outstanding = 2.000.000 − 800.000; status bayar belum lunas",
+  "pass": true,
+  "detail": "(800000.0, 1200000.0, 'unpaid')"
+ },
+ {
+  "id": "PRET-01",
+  "invariant": "jurnal: tepat 1, seimbang, Dr 2-1150 800.000 / Cr 1-1300 800.000, TANPA baris PPN (1-1500)",
+  "pass": true,
+  "detail": "(1, 'posted', {'2-1150': 800000.0, '1-1300': -800000.0})"
+ },
+ {
+  "id": "PRET-01",
+  "invariant": "nilai persediaan keluar (Cr 1-1300) = qty mutasi × harga PO",
+  "pass": true,
+  "detail": "(8.0, {'2-1150': 800000.0, '1-1300': -800000.0})"
+ },
+ {
+  "id": "PRET-01",
+  "invariant": "reverse: 20 yd kembali available (roll asal + potongan anak), saldo pulih, returned_amount pulih, net jurnal 0",
+  "pass": true,
+  "detail": "(200, [{'length_remaining': 12.0, 'status': 'available'}, {'length_remaining': 8.0, 'status': 'available'}], {'available_qty': 445.0, 'quarantine_qty': 105.0, 'on_hand_qty': 600.0}, {'available_qty': 445.0, 'quarantine_qty': 105.0, 'on_hand_qty': 600.0}, 0.0, {})"
+ }
+]
+pass=14 fail=0

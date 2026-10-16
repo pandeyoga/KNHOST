@@ -1,0 +1,47 @@
+  [poc-stock] snapshot 50 dokumen stok dari 1 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (50 dokumen, 1 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "COMM-04",
+  "invariant": "akrual komisi 1.000.000: Dr Beban 6-5000 / Cr Hutang Insentif 2-1500",
+  "pass": true,
+  "detail": "1000000.0"
+ },
+ {
+  "id": "COMM-04",
+  "invariant": "posting ulang tanpa perubahan komisi tidak membuat jurnal baru",
+  "pass": true,
+  "detail": "None"
+ },
+ {
+  "id": "COMM-04",
+  "invariant": "reversal: komisi turun ke 600.000 → jurnal koreksi -400.000, saldo 2-1500 = 600.000",
+  "pass": true,
+  "detail": "('incentive_accrual_adj', 600000.0, 600000.0)"
+ },
+ {
+  "id": "COMM-04",
+  "invariant": "koreksi idempoten (klik ulang tidak menggandakan)",
+  "pass": true,
+  "detail": "600000.0"
+ },
+ {
+  "id": "COMM-04",
+  "invariant": "settlement payroll: komisi slip 750.000 → akrual di-true-up dulu, 2-1500 periode = 0",
+  "pass": true,
+  "detail": "0.0"
+ },
+ {
+  "id": "COMM-04",
+  "invariant": "beban insentif periode = komisi dibayar (750.000), tanpa beban ganda",
+  "pass": true,
+  "detail": "-750000.0"
+ },
+ {
+  "id": "COMM-04",
+  "invariant": "semua jurnal komisi seimbang",
+  "pass": true,
+  "detail": "[]"
+ }
+]
+pass=7 fail=0

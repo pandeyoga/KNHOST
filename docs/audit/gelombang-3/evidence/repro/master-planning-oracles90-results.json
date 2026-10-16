@@ -1,0 +1,900 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_d98dc05ff46949238c8aa54fd92e3e06",
+  "observations": [
+    {
+      "id": "pr.created_draft",
+      "expected": "draft",
+      "actual": "draft",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.total",
+      "expected": 50,
+      "actual": 50.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.roll_count",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.invalid_empty",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Minimal satu item kebutuhan'}",
+      "status": "pass"
+    },
+    {
+      "id": "pr.invalid_warehouse",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Gudang tidak ditemukan'}",
+      "status": "pass"
+    },
+    {
+      "id": "pr.invalid_supplier",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Supplier preferensi tidak ditemukan'}",
+      "status": "pass"
+    },
+    {
+      "id": "pr.invalid_product",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Produk missing tidak ditemukan'}",
+      "status": "pass"
+    },
+    {
+      "id": "pr.invalid_unit",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': \"Konversi 'unknown' → 'yard' belum punya aturan untuk produk BTK-MEGA-001. Tambahkan aturan di Produk & Harga → Konversi Satuan, atau isi gramasi & lebar produk (untuk konversi panjang ↔ be",
+      "status": "pass"
+    },
+    {
+      "id": "pr.invalid_zero_qty",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Quantity item harus > 0'}",
+      "status": "pass"
+    },
+    {
+      "id": "pr.invalid_unnamed_non_catalog",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': 'Deskripsi item wajib diisi untuk item non-katalog'}",
+      "status": "pass"
+    },
+    {
+      "id": "pr.invalid_makloon_no_product",
+      "expected": true,
+      "actual": true,
+      "note": "{'detail': \"Baris 1: mode 'makloon' butuh produk katalog (output makloon harus SKU KN yang jelas).\"}",
+      "status": "pass"
+    },
+    {
+      "id": "pr.edit_no_reason",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.edit_same",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.edit_zero",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.below_so_qty",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.edit_new_qty",
+      "expected": 12,
+      "actual": 12.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.edit_total",
+      "expected": 60,
+      "actual": 60.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.edit_extra",
+      "expected": 2,
+      "actual": 2.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.edit_base_qty",
+      "expected": 12,
+      "actual": 12.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.edit_trail_base_agrees",
+      "expected": 12,
+      "actual": 10.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "pr.small_value_auto_approved",
+      "expected": "approved",
+      "actual": "approved",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.repeated_submit_rejected",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.cancelled",
+      "expected": "cancelled",
+      "actual": "cancelled",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.repeat_cancel_rejected",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.terminal_edit_rejected",
+      "expected": 400,
+      "actual": 400,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.service_missing_submit",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.service_missing_approve",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.service_missing_reject",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.service_missing_cancel",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "pr.service_missing_edit",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-draft-approve-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-draft-approve-admin",
+      "expected": "approved",
+      "actual": "approved",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-draft-reject-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-draft-reject-admin",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-pending_approval-approve-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-pending_approval-approve-admin",
+      "expected": "approved",
+      "actual": "approved",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-pending_approval-reject-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-pending_approval-reject-admin",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-approved-approve-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-approved-approve-admin",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-approved-reject-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-approved-reject-admin",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-converted-approve-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-converted-approve-admin",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-converted-reject-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-converted-reject-admin",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-cancelled-approve-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-cancelled-approve-admin",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-cancelled-reject-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-cancelled-reject-admin",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-rejected-approve-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-rejected-approve-admin",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-rejected-reject-finance",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "PR90-rejected-reject-admin",
+      "expected": "rejected_by_guard",
+      "actual": "rejected_by_guard",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.tag_dedup",
+      "expected": [
+        "Blue",
+        "Cotton"
+      ],
+      "actual": [
+        "Blue",
+        "Cotton"
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_empty_title",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_bad_type",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_bad_pattern",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_bad_design",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.unique_raters",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.rating_average",
+      "expected": 4,
+      "actual": 4.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.my_rating",
+      "expected": 3,
+      "actual": 3,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.clear_count",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.clear_average",
+      "expected": 5,
+      "actual": 5.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_rating_0",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_rating_6",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_rating_None",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_rating_bad",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.missing_rating",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.missing_clear",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_update_{'title': ''}",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_update_{'category_code': 'bad'}",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_update_{'design_category_code': 'bad'}",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_update_{'final_color_count': 0}",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_update_{'final_color_count': 21}",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_update_{'design_type': 'bad'}",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_update_{'status': 'bad'}",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_update_{'repeat_cm': 'bad'}",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.invalid_update_{}",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.update_title",
+      "expected": "Revised Audit Pattern",
+      "actual": "Revised Audit Pattern",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.update_tags",
+      "expected": [
+        "Red"
+      ],
+      "actual": [
+        "Red"
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.file_bytes_unchanged",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.file_mime",
+      "expected": "image/png",
+      "actual": "image/png",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.deleted_file_not_referenced",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "storage.invalid_('audit.exe', 1, b'x')",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "storage.invalid_('audit.png', 0, b'')",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "storage.invalid_('audit.png', 10485761, b'\\x89PNG\\r\\n\\x1a\\n\\x00\\x00\\x00\\rIHDR')",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "storage.invalid_('audit.png', 10, b'not a png')",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "storage.valid_audit.jpg",
+      "expected": "image/jpeg",
+      "actual": "image/jpeg",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "storage.valid_audit.pdf",
+      "expected": "application/pdf",
+      "actual": "application/pdf",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "storage.valid_audit.gif",
+      "expected": "image/gif",
+      "actual": "image/gif",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "storage.valid_audit.webp",
+      "expected": "image/webp",
+      "actual": "image/webp",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.legacy_missing_submit",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.legacy_missing_reject",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.legacy_missing_approve",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.legacy_missing_bump",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.legacy_missing_delete",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.used_design_cannot_delete",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "gallery.unused_delete",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.equivalent_{'quantity': 12, 'unit_factor': 1.6, 'unit_factor_to': 'yard'}",
+      "expected": 19.2,
+      "actual": 19.2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.equivalent_{'qty': 2, 'unit_factor': 3}",
+      "expected": 6,
+      "actual": 6.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.equivalent_{'quantity': 1}",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.equivalent_{'quantity': 'bad', 'unit_factor': 2}",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.wrong_target_returns_none",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.stamp_rolls_None",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.stamp_rolls_",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.stamp_rolls_0",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.stamp_rolls_3",
+      "expected": 3,
+      "actual": 3,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.stamp_rolls_4",
+      "expected": 4,
+      "actual": 4,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.real_roll_override",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.invalid_factor_('missing', 1, 'yard')",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.invalid_factor_('yard', 2, 'yard')",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.invalid_factor_('panel', 2, 'missing')",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.panel_allowed",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.yard_not_doc_factor",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.no_ids_unknown",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "dual.nonexistent_ids",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "context": {
+    "edited_pr": {
+      "id": "pr_80b7d324d6f6",
+      "item": {
+        "line_no": 1,
+        "product_id": "prod_batik_mega",
+        "sku": "BTK-MEGA-001",
+        "product_name": "Batik Mega Mendung Premium",
+        "description": "Batik Mega Mendung Premium",
+        "quantity": 12.0,
+        "unit": "yard",
+        "est_price": 5.0,
+        "subtotal": 60.0,
+        "note": "",
+        "fulfillment_mode": "purchase",
+        "line_code": "printing",
+        "realized_qty": 0.0,
+        "realizations": [],
+        "qty_rolls": 2,
+        "base_unit": "yard",
+        "uom_trail": {
+          "doc_uom": "yard",
+          "doc_qty": 10.0,
+          "base_uom": "yard",
+          "base_qty": 10.0,
+          "factor": 1.0,
+          "source": "same_unit",
+          "rule_id": "",
+          "formula": "",
+          "path": [
+            "yard = yard"
+          ],
+          "context": "purchase_requisition",
+          "converted_at": "2026-10-06T05:36:35.704170+00:00"
+        },
+        "quantity_base": 12.0,
+        "order_qty": 10,
+        "extra_qty": 2.0,
+        "qty_history": [
+          {
+            "from": 10.0,
+            "to": 12.0,
+            "by": "Audit Procurement",
+            "by_id": "PROC90",
+            "at": "2026-10-06T05:36:36.266138+00:00",
+            "reason": "Add two units to available stock"
+          }
+        ]
+      }
+    },
+    "file_result": {
+      "id": "file_012ac4e98160",
+      "filename": "audit.png",
+      "path": "kn7/design_gallery/f75f1d79eea04626b1a821e4c9742ad8.png",
+      "content_type": "image/png",
+      "size": 68,
+      "uploaded_at": "2026-10-06T05:36:37.139116+00:00",
+      "kind": "artwork",
+      "caption": "",
+      "uploaded_by": "Audit actor",
+      "version": 1,
+      "colorway_id": ""
+    }
+  },
+  "harness_errors": []
+}

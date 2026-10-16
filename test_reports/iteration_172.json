@@ -1,0 +1,26 @@
+{
+  "summary": "Pelacak SO (SoTrackerCard) terverifikasi di 6 meja (Admin Sales, Finance, MD, Admin Gudang, Admin Sampel, Meja Saya). Backend: 7 passed, 1 passed (create+cancel→hilang dari tracker). Frontend: kartu `<prefix>-so-tracker` tampil pada semua meja dengan baris, kolom waktu (Dibuat/Diperbarui WIB + umur), tombol aksi hanya pada baris can_act (Finance 'Tagih' pada SO shipped belum lunas → navigasi ?view=orders; Admin Gudang 'Buka tugas gudang' pada SO confirmed → ?view=wms-outbound), selain itu info 'Menunggu <role>'. DeskQueueCard: tidak ada 'Lihat semua' / modal; baris memiliki waktu `<prefix>-time-<ref_id>` ('Masuk ± 06 Okt · menunggu N hari'); pager tingkat halaman tidak muncul (desk-queues-pager=0); per-queue pager muncul kondisional (saat ini antrean <5 baris sehingga 0 pager; usePagedRows terkonfigurasi testid `<prefix>-pager-<queueId>`). Mobile 390px tidak overflow (sw=vw=390).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_so_tracker_desks.py",
+    "/app/test_reports/pytest/so_tracker_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/so_tracker_service.so_tracker: filter CLOSED (done/cancelled/rejected/expired/void) + is_sample!=True; proj EXCLUDES mongo _id (benar). Sort: can_act=True dulu, lalu updated_at — pengguna meja ini melihat baris wewenangnya di atas.",
+    "DESK_ROLES memetakan 'warehouse_admin' ke {warehouse_admin, warehouse} sehingga baris owner_roles=[warehouse_admin, warehouse] jadi can_act TRUE pada meja Admin Gudang — konsisten dengan soTrackerLink yang memberi tujuan wms-outbound.",
+    "SoTrackerCard: baris >5 akan memakai usePagedRows (pageSize=5) dengan testid `<prefix>-so-tracker-pager`; kartu self-start + overflow-x-auto (min-w-[760px]) — di mobile 390 scroll horizontal (tidak overflow halaman).",
+    "DeskQueueCard: tidak ada lagi 'Lihat semua'/SeeAllModal (dihapus dari render), tiap kartu memakai usePagedRows pageSize=5 testid `<prefix>-pager-<queueId>`; baris memiliki `<prefix>-time-<ref_id>` memakai fmtWhen(row.at|created_at|updated_at) fallback sinceFromAge — sesuai spesifikasi pemilik.",
+    "soTrackerLink mengecek owner_roles mengandung warehouse_admin ATAU warehouse → wms-outbound; selain itu ke ROW_TARGET.sales_order (view=orders) — terverifikasi UI (Finance→orders, Admin Gudang→wms-outbound)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_so_tracker_desks.py (dibuat baru; 8 tes untuk GET /api/desks/so-tracker dan siklus SO TEST → cancel)"
+  ],
+  "success_rate": {"backend": "100% (8/8 tes test_so_tracker_desks.py)", "frontend": "100% (6/6 meja menampilkan Pelacak SO; can_act gating + navigasi aksi + waktu + regresi queue card + mobile semua lulus)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345",
+  "seed_data_creation": "test_create_and_close_so_disappears membuat SO TEST (notes='TEST_so_tracker', entity=ent_ksc, customer cust_2e7a9e8618ca) kemudian cancel + DELETE pada finally; tidak ada data persisten yang tersisa.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Retest cepat: (1) cd /app/backend && REACT_APP_BACKEND_URL=https://internal-pricing.preview.emergentagent.com python -m pytest tests/test_so_tracker_desks.py -q -n0; (2) UI: login admin → ?view={sales-admin-desk|finance-desk|md-desk|warehouse-admin-desk|sample-admin-desk|my-desk} → kartu `<prefix>-so-tracker` dengan prefix desk|fin-desk|md-desk|wh-desk|sample-desk|my-desk; Finance tombol 'Tagih' → ?view=orders, Admin Gudang 'Buka tugas gudang' → ?view=wms-outbound. (3) DeskQueueCard: tidak ada 'Lihat semua' lagi, pager hanya per-queue (`<prefix>-pager-<queueId>`) saat >5 baris, baris waktu `<prefix>-time-<ref_id>`."
+}

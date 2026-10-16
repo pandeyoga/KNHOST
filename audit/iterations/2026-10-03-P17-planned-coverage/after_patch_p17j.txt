@@ -1,0 +1,41 @@
+  [poc-stock] snapshot 83 dokumen stok dari 3 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (83 dokumen, 3 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "OCR-REAL",
+  "invariant": "pembacaan sungguhan selesai (status review, tidak read_failed)",
+  "pass": true,
+  "detail": "('review', False, None)"
+ },
+ {
+  "id": "OCR-REAL",
+  "invariant": "model sungguhan dipakai (bukan mock-*)",
+  "pass": true,
+  "detail": "[('gpt-6-sol', 'primary', 'ok')]"
+ },
+ {
+  "id": "OCR-REAL",
+  "invariant": "nomor SJ & tanggal terbaca",
+  "pass": true,
+  "detail": "{'number': 'SJ-2610-0777', 'number_norm': 'SJ26100777', 'date': '2026-10-03', 'date_text': '03 Oktober 2026', 'supplier_name_printed': 'PALEMBANG SILK HOUSE', 'recipient_name': 'PT. SUKACITA TEXTILE', 'po_refs': ['TEST-P17A-0b4e49-PO'], 'other_refs': [], 'vehicle_plate': '', 'annotations': [], 'sour"
+ },
+ {
+  "id": "OCR-REAL",
+  "invariant": "2 baris barang dipetakan ke tugas PO yang benar",
+  "pass": true,
+  "detail": "[('wms_test_p17a_0b4e49_0', 'probable'), ('wms_test_p17a_0b4e49_1', 'probable')]"
+ },
+ {
+  "id": "OCR-REAL",
+  "invariant": "jumlah & roll terbaca (60/2 dan 50/1)",
+  "pass": true,
+  "detail": "{'wms_test_p17a_0b4e49_0': (60.0, 2), 'wms_test_p17a_0b4e49_1': (50.0, 1)}"
+ },
+ {
+  "id": "OCR-REAL",
+  "invariant": "biaya token nyata tercatat di ai_usage_log (> 0 USD)",
+  "pass": true,
+  "detail": "[('gpt-6-sol', 0.00206), ('gpt-6-sol', 0.014992)]"
+ }
+]
+pass=6 fail=0

@@ -1,0 +1,39 @@
+{
+  "project": "ERP Kain Nussantara",
+  "it_producer": "PT Kubus Teknologi Indonesia",
+  "profile_status": "draft_uncommissioned",
+  "model_label": null,
+  "serial_number": null,
+  "firmware_version": null,
+  "sdk_name": null,
+  "sdk_version": null,
+  "sdk_license_or_delivery_reference": null,
+  "runtime_os_version": null,
+  "android_api_level": null,
+  "abi_or_architecture": null,
+  "connection": null,
+  "native_permissions": [],
+  "capabilities_verified": [],
+  "sdk_method_mapping": [],
+  "reader": {
+    "boot_policy": null,
+    "power_policy": null,
+    "antenna_mapping": [],
+    "gpio_mapping": [],
+    "on_device_no_pc_evidence": null
+  },
+  "printer": {
+    "resolution_dpi": null,
+    "media": null,
+    "inlay": null,
+    "ribbon": null,
+    "command_profile": null,
+    "encoding_readback_evidence": null
+  },
+  "config_version": null,
+  "tested_app_build": null,
+  "server_commit": null,
+  "approved_by_function": null,
+  "approved_at": null,
+  "evidence_refs": []
+}

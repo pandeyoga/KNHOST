@@ -1,0 +1,45 @@
+# 2026-10-08-P08-tag-printer-verify/repro_p08.py (1s)
+PASS [RF-01] generate_epc kanonik 24 hex tanpa pemisah
+PASS [RF-01] EPC chip (^RFW) == EPC database
+PASS [RF-01] raw reader & bentuk berpemisah/lowercase → roll yang sama (1 hasil)
+PASS [RF-01] representasi lain dari EPC aktif → 409 (bukan tag kedua)
+PASS [RF-01] custom EPC berpemisah/lowercase disimpan kanonik
+PASS [RF-01] indeks unik EPC tag hidup ada
+PASS [RF-11] teks bebas tidak menyisipkan perintah ZPL (^FD/^XZ/~)
+PASS [RF-11] newline dibuang dari field
+PASS [RF-11] custom EPC invalid (23 char) ditolak 400
+PASS [RF-11] custom EPC invalid (25 char) ditolak 400
+PASS [RF-11] custom EPC invalid (32 char) ditolak 400
+PASS [RF-11] custom EPC invalid (24 char) ditolak 400
+PASS [RF-11] ZPL menolak EPC >24 hex (tanpa potong diam-diam)
+PASS [RF-14] job queued: journey BUKAN tag_printed
+PASS [RF-14] job queued: tag belum aktif (pending_print)
+PASS [RF-14] verifikasi job queued ditolak 400
+PASS [RF-15] dua pull paralel tidak berbagi job
+PASS [RF-15] ack printer lain ditolak 409
+PASS [RF-15] ack dari gate ditolak 403
+PASS [RF-15] ack attempt lama/salah ditolak 409
+PASS [RF-15] ack lease kedaluwarsa ditolak 409
+PASS [RF-15] ack pemilik lease 200
+PASS [RF-14] sesudah ack printer: tag aktif + journey tag_printed
+PASS [RF-14] verify missing → verified_with_issues
+PASS [RF-14] verify bermasalah dapat diulang (revisi baru)
+PASS [RF-14] reprint roll stored: journey tetap stored
+PASS [RF-14] job gagal item ke-2 → tag item ke-1 dicabut
+PASS [RF-10] dua batch scan paralel → union terjaga
+PASS [RF-10] endpoint complete print menolak sesi loading_check
+PASS [RF-10] endpoint scan print menolak sesi loading_check
+PASS [RF-10] sesi tak dikenal → 404
+PASS [RF-10] scan sesudah complete ditolak
+PASS [RF-07] loading check dari scan simulasi → result 'simulated'
+PASS [RF-07] hasil simulasi tidak membuka dispatch (400)
+PASS [RF-07] scan nyata (manual tercatat) bersih → dispatch guard lolos
+PASS [RF-07] asal scan + pelaku tercatat
+PASS [RF-07] sumber scan tak dikenal ditolak
+PASS [RF-07] verify cetak simulasi: job tetap printed, journey tidak naik tag_verified
+PASS [IX-12] attach gagal → 409, roll dihapus, tag TIDAK aktif
+PASS [IX-12] counter tugas tidak bertambah
+PASS [IX-12] retry cleanup: tag yatim (crash di antara hapus roll & retire) → retired
+PASS [UX-02] tidak ada href mentah ke /zpl
+PASS [UX-02] unduh via apiClient blob + revokeObjectURL
+{"pass": 43, "fail": 0}

@@ -1,0 +1,292 @@
+{
+  "sales_orders": {
+    "total": 24,
+    "by_status": {
+      "reserved": 15,
+      "waiting_approval": 3,
+      "approved": 2,
+      "waiting_stock": 1,
+      "confirmed": 1,
+      "partially_shipped": 1,
+      "done": 1
+    }
+  },
+  "purchase_orders": {
+    "total": 12,
+    "by_status": {
+      "pending": 5,
+      "waiting_approval": 2,
+      "receiving": 2,
+      "completed": 3
+    },
+    "sum_primary_amount": 1160207000.0
+  },
+  "vendor_bills": {
+    "total": 12,
+    "by_status": {
+      "paid": 3,
+      "posted": 9
+    },
+    "sum_primary_amount": 76699320.0
+  },
+  "customer_advances": {
+    "status": 404,
+    "error": "{'detail': 'Not Found'}"
+  },
+  "payment_plans": {
+    "status": 422,
+    "error": "{'detail': [{'type': 'less_than_equal', 'loc': ['query', 'limit'], 'msg': 'Input should be less than or equal to 500', '"
+  },
+  "finance_cases": {
+    "total": 3,
+    "by_status": {
+      "in_progress": 2,
+      "resolved": 1
+    },
+    "sum_primary_amount": 13216300.0
+  },
+  "credit_overrides": {
+    "total": 20,
+    "by_status": {
+      "pending": 20
+    },
+    "sum_primary_amount": 706977829.71
+  },
+  "payroll_runs": {
+    "status": 404,
+    "error": "{'detail': 'Not Found'}"
+  },
+  "makloon_orders": {
+    "total": 5,
+    "by_status": {
+      "completed": 3,
+      "partially_received": 1,
+      "in_process": 1
+    },
+    "sum_primary_amount": 0.0
+  },
+  "sales_returns": {
+    "total": 1,
+    "by_status": {
+      "pending_approval": 1
+    },
+    "sum_primary_amount": 0.0
+  },
+  "approvals": {
+    "status": 404,
+    "error": "{'detail': 'Not Found'}"
+  },
+  "notifications": {
+    "total": 41,
+    "by_status": {
+      "null": 41
+    },
+    "sum_primary_amount": 0.0
+  },
+  "home_admin": {
+    "status": 200,
+    "sample_keys": [
+      "period",
+      "sales",
+      "ar",
+      "approvals_pending",
+      "approvals",
+      "special_orders_waiting",
+      "waiting_boards",
+      "low_stock",
+      "incentive_payout",
+      "leaderboard_top",
+      "top_overdue"
+    ],
+    "payload": {
+      "period": "2026-10",
+      "sales": "{...}",
+      "ar": "{...}",
+      "approvals_pending": 39,
+      "approvals": "{...}",
+      "special_orders_waiting": "{...}",
+      "waiting_boards": "len=3",
+      "low_stock": "{...}",
+      "incentive_payout": 9423.27,
+      "leaderboard_top": "len=4",
+      "top_overdue": "len=4"
+    }
+  },
+  "home_sales": {
+    "status": 200,
+    "sample_keys": [
+      "period",
+      "commission",
+      "target",
+      "kpi",
+      "history",
+      "customers",
+      "collections",
+      "recent_orders",
+      "waiting_boards"
+    ],
+    "payload": {
+      "period": "2026-10",
+      "commission": "{...}",
+      "target": "{...}",
+      "kpi": "{...}",
+      "history": "len=6",
+      "customers": "len=0",
+      "collections": "len=0",
+      "recent_orders": "len=0",
+      "waiting_boards": "len=3"
+    }
+  },
+  "home_finance": {
+    "status": 200,
+    "sample_keys": [
+      "waiting_boards",
+      "total_waiting"
+    ],
+    "payload": {
+      "waiting_boards": "len=4",
+      "total_waiting": 1
+    }
+  },
+  "home_warehouse": {
+    "status": 200,
+    "sample_keys": [
+      "waiting_boards",
+      "total_waiting"
+    ],
+    "payload": {
+      "waiting_boards": "len=3",
+      "total_waiting": 4
+    }
+  },
+  "home_manager": {
+    "status": 200,
+    "sample_keys": [
+      "period",
+      "special_orders_waiting",
+      "waiting_boards",
+      "leaderboard",
+      "team",
+      "totals",
+      "target",
+      "approvals_pending",
+      "approvals",
+      "late_today",
+      "designers"
+    ],
+    "payload": {
+      "period": "2026-10",
+      "special_orders_waiting": "{...}",
+      "waiting_boards": "len=4",
+      "leaderboard": "len=4",
+      "team": "len=4",
+      "totals": "{...}",
+      "target": "{...}",
+      "approvals_pending": 39,
+      "approvals": "{...}",
+      "late_today": "{...}",
+      "designers": "{...}"
+    }
+  },
+  "home_salesadmin": {
+    "status": 404,
+    "sample_keys": [
+      "detail"
+    ]
+  },
+  "cash_summary": {
+    "status": 200,
+    "sample_keys": [
+      "scope",
+      "kas_kecil",
+      "kas_besar",
+      "kas_kecil_per_entity",
+      "group_cash_pending"
+    ],
+    "payload": {
+      "scope": "ent_ksc",
+      "kas_kecil": "{...}",
+      "kas_besar": "{...}",
+      "kas_kecil_per_entity": "{...}",
+      "group_cash_pending": "{...}"
+    }
+  },
+  "ar_aging": {
+    "status": 200,
+    "sample_keys": [
+      "as_of",
+      "entity_id",
+      "entity_ids",
+      "entity_name",
+      "is_consolidated",
+      "config",
+      "penalty_policy",
+      "totals",
+      "customers"
+    ],
+    "payload": {
+      "as_of": "2026-10-05T02:55:30.570952+00:00",
+      "entity_id": "ent_ksc",
+      "entity_ids": "len=1",
+      "entity_name": "Sukacita",
+      "is_consolidated": false,
+      "config": "{...}",
+      "penalty_policy": "{...}",
+      "totals": "{...}",
+      "customers": "len=4"
+    }
+  },
+  "analytics_summary": {
+    "status": 404,
+    "sample_keys": [
+      "detail"
+    ]
+  },
+  "analytics_margin": {
+    "status": 404,
+    "sample_keys": [
+      "detail"
+    ]
+  },
+  "analytics_hpp": {
+    "status": 404,
+    "sample_keys": [
+      "detail"
+    ]
+  },
+  "bi_finance": {
+    "status": 404,
+    "sample_keys": [
+      "detail"
+    ]
+  },
+  "bi_hr": {
+    "status": 404,
+    "sample_keys": [
+      "detail"
+    ]
+  },
+  "config_health": {
+    "status": 200,
+    "sample_keys": [
+      "total",
+      "summary",
+      "per_group",
+      "healthy",
+      "broken",
+      "rows",
+      "legend",
+      "scheduled_applied"
+    ],
+    "payload": {
+      "total": 265,
+      "summary": "{...}",
+      "per_group": "{...}",
+      "healthy": true,
+      "broken": "len=0",
+      "rows": "len=265",
+      "legend": "{...}",
+      "scheduled_applied": "{...}"
+    }
+  }
+}

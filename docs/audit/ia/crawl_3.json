@@ -1,0 +1,452 @@
+{
+ "home": {
+  "tabs": [],
+  "heads": [
+   "Control Tower",
+   "Buka Periode (Unlock)",
+   "Antrean Persetujuan (39)",
+   "Papan PO Custom — menunggu keputusan (0)",
+   "Top Sales (MTD)",
+   "Lewat Tempo per Sales",
+   "Stok Perlu Reorder"
+  ],
+  "subs": {}
+ },
+ "approval-inbox": {
+  "tabs": [
+   "Semua 18",
+   "Pesanan Penjualan 9",
+   "Amandemen 2",
+   "Pembelian (PO) 2",
+   "Harga Khusus 2",
+   "Retur 2",
+   "Stock Opname 1"
+  ],
+  "heads": [
+   "Pusat Persetujuan",
+   "Pusat Persetujuan",
+   "Menunggu di layar lain — paling lama dulu"
+  ],
+  "subs": {}
+ },
+ "my-approvals": {
+  "tabs": [],
+  "heads": [
+   "Persetujuan Saya · Matriks Divisi (ACC Desain · Sa",
+   "Persetujuan Saya",
+   "Antrean per Tahap",
+   "Dokumen Menunggu (3)",
+   "Jejak Persetujuan"
+  ],
+  "subs": {}
+ },
+ "price-approvals": {
+  "tabs": [],
+  "heads": [
+   "Persetujuan Harga Khusus",
+   "Persetujuan Harga Khusus"
+  ],
+  "subs": {}
+ },
+ "purchase-approval": {
+  "tabs": [
+   "Menunggu 2",
+   "Disetujui 1",
+   "Ditolak 0"
+  ],
+  "heads": [
+   "Persetujuan Pembelian",
+   "Persetujuan Pembelian"
+  ],
+  "subs": {}
+ },
+ "my-desk": {
+  "tabs": [],
+  "heads": [
+   "Meja Saya · Giliran & Antrean Peran",
+   "Meja Admin"
+  ],
+  "subs": {}
+ },
+ "tanya-kn": {
+  "tabs": [],
+  "heads": [
+   "Tanya KN · Laporan & Pertanyaan Data",
+   "Apa yang ingin Anda ketahui hari ini?"
+  ],
+  "subs": {}
+ },
+ "sales-admin-desk": {
+  "tabs": [],
+  "heads": [
+   "Meja Admin Sales · Antrean Alur Pesanan",
+   "Meja Admin Sales"
+  ],
+  "subs": {}
+ },
+ "finance-desk": {
+  "tabs": [],
+  "heads": [
+   "Meja Finance · Uang Masuk & Pajak Keluaran",
+   "Kontrabon menunggu persetujuan — pemasok belum bis",
+   "Kontrabon menunggu verifikasi berkas (1)",
+   "Meja Finance"
+  ],
+  "subs": {}
+ },
+ "md-desk": {
+  "tabs": [],
+  "heads": [
+   "Meja MD · Desain, Sample & Bahan",
+   "Meja MD"
+  ],
+  "subs": {}
+ },
+ "warehouse-admin-desk": {
+  "tabs": [],
+  "heads": [
+   "Meja Admin Gudang · Operasi Gudang & Logistik",
+   "Meja Admin Gudang"
+  ],
+  "subs": {}
+ },
+ "sample-admin-desk": {
+  "tabs": [],
+  "heads": [
+   "Meja Admin Sampel · Antrean Pesanan Sampel",
+   "Meja Admin Sampel"
+  ],
+  "subs": {}
+ },
+ "rnd-samples": {
+  "tabs": [
+   "Papan",
+   "Daftar"
+  ],
+  "heads": [
+   "Permintaan Sample · Labdip / Handfeel / Proofing",
+   "Permintaan Sample"
+  ],
+  "subs": {}
+ },
+ "rnd-labdip": {
+  "tabs": [],
+  "heads": [
+   "Labdip (Master) · Sampel Warna per Supplier",
+   "Labdip (Master)"
+  ],
+  "subs": {}
+ },
+ "rnd-handfeel": {
+  "tabs": [],
+  "heads": [
+   "Handfeel (Master) · Sampel Pegangan & Konstruksi K",
+   "Handfeel (Master)"
+  ],
+  "subs": {}
+ },
+ "rnd-proofing": {
+  "tabs": [],
+  "heads": [
+   "Proofing (Master) · Sampel Cetak Desain",
+   "Proofing (Master)"
+  ],
+  "subs": {}
+ },
+ "rnd-reports": {
+  "tabs": [],
+  "heads": [
+   "Laporan R&D · SLA Round & Tahap Produk",
+   "Laporan R&D",
+   "Desainer Teratas (30 hari)",
+   "Tahap Produk (boleh dijual atau belum)",
+   "Papan SLA Round (yang masih berjalan)"
+  ],
+  "subs": {}
+ },
+ "design-requests": {
+  "tabs": [
+   "Papan",
+   "Daftar",
+   "Rapor Desainer"
+  ],
+  "heads": [
+   "Permintaan Desain (DSR)",
+   "Permintaan Desain"
+  ],
+  "subs": {}
+ },
+ "designer-kpi": {
+  "tabs": [],
+  "heads": [
+   "KPI Desainer · Tepat Waktu, Pengulangan & Eskalasi",
+   "KPI Desainer",
+   "Tren nilai desainer per bulan",
+   "Tren nilai desain per bulan",
+   "Peringkat kinerja desainer",
+   "Eskalasi SLA — round yang lewat tenggat"
+  ],
+  "subs": {}
+ },
+ "rnd-designs": {
+  "tabs": [],
+  "heads": [
+   "Desain & Pattern (Master) · Kode, Versi & Pengesah",
+   "Desain & Pattern (Master)"
+  ],
+  "subs": {}
+ },
+ "cs-design-gallery": {
+  "tabs": [],
+  "heads": [
+   "Galeri Desain (Showcase)",
+   "Galeri Desain ACC",
+   "Kawung Modern Seragam",
+   "Kawung Modern Seragam",
+   "Parang Modern Monokrom"
+  ],
+  "subs": {}
+ },
+ "rnd-divisions": {
+  "tabs": [],
+  "heads": [
+   "Divisi & Persetujuan R&D · Penempatan Tim & Matrik",
+   "Divisi & Persetujuan R&D",
+   "Divisi (8)",
+   "Matriks Persetujuan",
+   "Anggota R&D (15)"
+  ],
+  "subs": {}
+ },
+ "mkt-calendar": {
+  "tabs": [],
+  "heads": [
+   "Kalender Konten · Rencana, Review & Jadwal Tayang"
+  ],
+  "subs": {}
+ },
+ "mkt-analytics": {
+  "tabs": [],
+  "heads": [
+   "Dashboard Sosmed · KPI, Tren & Performa Konten"
+  ],
+  "subs": {}
+ },
+ "mkt-campaigns": {
+  "tabs": [],
+  "heads": [
+   "Kampanye · Tema & Periode Konten"
+  ],
+  "subs": {}
+ },
+ "mkt-accounts": {
+  "tabs": [],
+  "heads": [
+   "Akun Sosmed · per Badan Usaha"
+  ],
+  "subs": {}
+ },
+ "reports": {
+  "tabs": [],
+  "heads": [
+   "Dasbor & Analitik",
+   "Kecepatan Pesanan — 30 hari terakhir",
+   "Reservation Funnel",
+   "Utilisasi Gudang",
+   "Pelanggan Teratas",
+   "Umur Stok"
+  ],
+  "subs": {}
+ },
+ "costing": {
+  "tabs": [],
+  "heads": [
+   "Margin & HPP (WAC)",
+   "Margin & HPP (WAC)"
+  ],
+  "subs": {}
+ },
+ "bi-finance": {
+  "tabs": [],
+  "heads": [
+   "BI Keuangan · Tren, Rasio & Perbandingan PT",
+   "BI Keuangan · Analitik"
+  ],
+  "subs": {}
+ },
+ "cs-bi-hrd": {
+  "tabs": [],
+  "heads": [
+   "Dasbor BI SDM",
+   "Headcount per Departemen",
+   "Komposisi Tipe Pekerja",
+   "Distribusi Kehadiran",
+   "Tren Biaya Gaji (6 bulan)",
+   "Tren Lembur (6 bulan)",
+   "Statutory & Turnover"
+  ],
+  "subs": {}
+ },
+ "cs-stock-analytics": {
+  "tabs": [],
+  "heads": [
+   "Analitik Stok (Cepat/Lambat/Mati)",
+   "Analitik Stok — Cepat / Lambat / Mati",
+   "Distribusi Nilai per Klasifikasi",
+   "Umur Persediaan (nilai per umur)",
+   "Rincian per SKU"
+  ],
+  "subs": {}
+ },
+ "document-center": {
+  "tabs": [],
+  "heads": [
+   "Pusat Dokumen",
+   "Pesanan Penjualan (24)"
+  ],
+  "subs": {}
+ },
+ "doc-trace": {
+  "tabs": [],
+  "heads": [
+   "Jejak Dokumen (Relasi Antar Surat)",
+   "Jejak Dokumen",
+   "Cari dokumen",
+   "Susun Ulang Relasi Dokumen Lama"
+  ],
+  "subs": {}
+ },
+ "documents": {
+  "tabs": [],
+  "heads": [
+   "Pusat Cetak & Label",
+   "Template dokumen & barcode label",
+   "Template aktif",
+   "Buat label cepat"
+  ],
+  "subs": {}
+ },
+ "settings-config": {
+  "tabs": [],
+  "heads": [
+   "Pusat Pengaturan (Konfigurasi Berjalan)",
+   "Pusat Pengaturan",
+   "Uang Masuk & Piutang",
+   "Term pembayaran default",
+   "Bunga denda keterlambatan",
+   "Masa tenggang sebelum denda",
+   "Kelompok umur piutang (hari)",
+   "Nilai pesanan yang WAJIB punya rencana pembayaran"
+  ],
+  "subs": {}
+ },
+ "entities-access": {
+  "tabs": [
+   "Badan Usaha",
+   "Akun & Akses",
+   "Peran & Hak Akses",
+   "Cek Peran",
+   "Kesiapan"
+  ],
+  "heads": [
+   "Badan Usaha & Akses · Entitas, Akun, Kesiapan",
+   "Daftar Badan Usaha"
+  ],
+  "subs": {}
+ },
+ "admin": {
+  "tabs": [
+   "Pelanggan",
+   "Integrasi AI",
+   "Template Dokumen",
+   "Hak Akses",
+   "Jejak Audit"
+  ],
+  "heads": [
+   "Master Data & Audit",
+   "Kelola produk · pelanggan · satuan · template doku",
+   "Daftar Pelanggan"
+  ],
+  "subs": {}
+ },
+ "entity-masters": {
+  "tabs": [],
+  "heads": [
+   "Master per Badan Usaha",
+   "Kelompok",
+   "Syarat Pembayaran"
+  ],
+  "subs": {}
+ },
+ "scheduler": {
+  "tabs": [
+   "Job Terjadwal",
+   "Riwayat Eksekusi",
+   "WhatsApp"
+  ],
+  "heads": [
+   "Penjadwal & Notifikasi · Alert Otomatis",
+   "Penjadwal & Notifikasi"
+  ],
+  "subs": {}
+ },
+ "pdf-templates": {
+  "tabs": [
+   "Naskah",
+   "Layout",
+   "Kop Surat",
+   "Font & Warna",
+   "Tabel",
+   "Field",
+   "Tanda Tangan",
+   "Footer"
+  ],
+  "heads": [
+   "Desainer Template PDF",
+   "Pratinjau\n(contoh: Pesanan Penjualan)\nSO-0001"
+  ],
+  "subs": {}
+ },
+ "domain-registry": {
+  "tabs": [],
+  "heads": [
+   "Registri Domain Tekstil (Tahap · Jenis Kain · Grad",
+   "Rantai Tahap Bahan & Matriks Transisi",
+   "Simulator Transisi Stage",
+   "Kelengkapan Field Wajib per Tahap",
+   "Daftar Enum Domain",
+   "Aturan Domain yang Mengikat"
+  ],
+  "subs": {}
+ },
+ "approval-rules": {
+  "tabs": [],
+  "heads": [
+   "Aturan Persetujuan",
+   "Aturan Persetujuan"
+  ],
+  "subs": {}
+ },
+ "hr-my-profile": {
+  "tabs": [],
+  "heads": [
+   "Profil Saya (ESS)",
+   "Budi Santoso",
+   "Slip Gaji Terakhir",
+   "Cuti & Lembur Saya",
+   "KPI Saya",
+   "KPI Saya (R&D)",
+   "Data Kepegawaian",
+   "Gaji & Bank"
+  ],
+  "subs": {}
+ },
+ "escalations": {
+  "tabs": [],
+  "heads": [
+   "Eskalasi Barang Masuk & Barang Keluar",
+   "Escalation Management"
+  ],
+  "subs": {}
+ }
+}

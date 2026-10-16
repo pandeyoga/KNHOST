@@ -1,0 +1,418 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_services90_df3530b0fd24441f9a8edfbe35720fe9",
+  "observations": [
+    {
+      "id": "backfill.dry_run_has_no_write",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.dry_run_matches_write_counts",
+      "expected": {
+        "inventory_movements": 1,
+        "wms_tasks": 1,
+        "purchase_orders": 1,
+        "sales_returns": 1,
+        "purchase_returns": 1,
+        "interco_returns": 1,
+        "warehouse_transfers": 1,
+        "shipments": 1,
+        "makloon_orders": 1,
+        "inventory_rolls": 1
+      },
+      "actual": {
+        "inventory_movements": 1,
+        "wms_tasks": 1,
+        "purchase_orders": 1,
+        "sales_returns": 1,
+        "purchase_returns": 1,
+        "interco_returns": 1,
+        "warehouse_transfers": 1,
+        "shipments": 1,
+        "makloon_orders": 1,
+        "inventory_rolls": 1
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.movement_is_single_roll",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.task_real_count",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.received_real_count",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.production_plan_not_guessed",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.actual_weight",
+      "expected": 12.346,
+      "actual": 12.346,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.preserve_existing_count",
+      "expected": 7,
+      "actual": 7,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.no_rolls_no_task_guess",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.shipment_actual_rolls",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.shipment_without_source_unknown",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.makloon_actual_output_rolls",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.normal_sales_returns",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.normal_purchase_returns",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.normal_interco_returns",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.normal_warehouse_transfers",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.idempotent_no_repeat_updates",
+      "expected": {},
+      "actual": {},
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_dry_keeps_plan_unknown",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_po_estimate",
+      "expected": 3,
+      "actual": 3,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_shipment_estimate",
+      "expected": 3,
+      "actual": 3,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_sales_orders",
+      "expected": 3,
+      "actual": 3,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_preserves_sales_orders",
+      "expected": 8,
+      "actual": 8,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_purchase_requisitions",
+      "expected": 3,
+      "actual": 3,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_preserves_purchase_requisitions",
+      "expected": 8,
+      "actual": 8,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_rfqs",
+      "expected": 3,
+      "actual": 3,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_preserves_rfqs",
+      "expected": 8,
+      "actual": 8,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_interco_transactions",
+      "expected": 3,
+      "actual": 3,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_preserves_interco_transactions",
+      "expected": 8,
+      "actual": 8,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_internal_requests",
+      "expected": 3,
+      "actual": 3,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.demo_preserves_internal_requests",
+      "expected": 8,
+      "actual": 8,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "backfill.corrupt_ids_real_unique_rolls",
+      "expected": 1,
+      "actual": 3,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "backfill.real_count_helper_control",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.no_document",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.full_stages",
+      "expected": [
+        "sales_return",
+        "interco_return",
+        "purchase_return",
+        "kept",
+        "kept"
+      ],
+      "actual": [
+        "sales_return",
+        "interco_return",
+        "purchase_return",
+        "kept",
+        "kept"
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.full_root",
+      "expected": 150,
+      "actual": 150,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.complete_route",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.resolve_from_purchase",
+      "expected": "SR1",
+      "actual": "SR1",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.resolve_from_interco",
+      "expected": "SR1",
+      "actual": "SR1",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.foreign_amount_hidden",
+      "expected": null,
+      "actual": null,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.foreign_supplier_hidden",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.foreign_po_hidden",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.foreign_lot_hidden",
+      "expected": "",
+      "actual": "",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.foreign_technical_owner_hidden",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.foreign_root_redacted",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.forbidden_SR1",
+      "expected": "denied",
+      "actual": "denied",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.forbidden_IC-ONLY",
+      "expected": "denied",
+      "actual": "denied",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.forbidden_PR-ONLY",
+      "expected": "denied",
+      "actual": "denied",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.standalone_interco",
+      "expected": "interco_return",
+      "actual": "interco_return",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.standalone_purchase",
+      "expected": "purchase_return",
+      "actual": "purchase_return",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.empty_names",
+      "expected": {},
+      "actual": {},
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.empty_summary",
+      "expected": "Belum ada jejak.",
+      "actual": "Belum ada jejak.",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "chain.mixed_dimensions_kept_separate",
+      "expected": 2,
+      "actual": 1,
+      "note": "A owns 100 yard of cloth and 5 kg of another item; there is no dimensional conversion between these quantities.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "chain.no_105_yard_label",
+      "expected": false,
+      "actual": true,
+      "note": "",
+      "status": "observed_difference"
+    }
+  ],
+  "context": {
+    "mixed_owner_notes": [
+      "105 yard (2 roll) masih dipegang Legal Entity A — bisa di-regrade & dijual lokal."
+    ]
+  },
+  "harness_errors": [],
+  "scope": "Original service functions; explicit synthetic physical-roll and linked-document fixtures. No public-producer or browser claim."
+}

@@ -1,0 +1,989 @@
+diff --git a/backend/routers/cash.py b/backend/routers/cash.py
+index 93b14fd..607b2ce 100644
+--- a/backend/routers/cash.py
++++ b/backend/routers/cash.py
+@@ -73,7 +73,9 @@ async def cash_summary(request: Request, entity_id: str = None) -> Dict[str, Any
+         cout = sum(float(r.get("amount", 0) or 0) for r in rows if r.get("direction") == "out")
+         return {"in": round(cin, 2), "out": round(cout, 2), "balance": round(cin - cout, 2), "count": len(rows)}
+ 
+-    all_rows = await db.cash_transactions.find({"status": {"$ne": "void"}}, {"_id": 0}).to_list(2000)
++    # GN-12 — total kas dari SELURUH transaksi entitas dalam scope (bukan 2.000 pertama lintas grup)
++    all_rows = await db.cash_transactions.find({"status": {"$ne": "void"}, "entity_id": {"$in": list(entities)}},
++                                               {"_id": 0}).to_list(None)
+     kecil_q = [r for r in all_rows if r.get("cash_type") == "kas_kecil"
+                and r.get("entity_id") in entities]
+     besar_q = [r for r in all_rows if r.get("cash_type") == "kas_besar"
+diff --git a/backend/routers/config.py b/backend/routers/config.py
+index 9697e75..b337240 100644
+--- a/backend/routers/config.py
++++ b/backend/routers/config.py
+@@ -84,6 +84,24 @@ def _can_edit(entry: Dict[str, Any], user: Dict[str, Any], perms: Dict[str, List
+     return _may_edit(entry, user, perms)
+ 
+ 
++async def _global_write_allowed(request: Request) -> bool:
++    from entity_scope import entity_ctx
++    return (await entity_ctx(request)).is_cross_entity
++
++
++async def _assert_scope_write(request: Request, entry: Dict[str, Any], scope_type: str, scope_id: str) -> None:
++    """IX-06/IX-07 — lapisan tulis wajib dalam penugasan; nilai grup (global) yang punya lapisan
++    entitas hanya boleh diubah peran lintas badan usaha."""
++    from entity_scope import entity_ctx, resolve_requested_entity
++    ctx = await entity_ctx(request)
++    if scope_type == "entity":
++        resolve_requested_entity(ctx, scope_id)
++    elif scope_type == "global" and "entity" in (entry.get("scopes") or []) and not ctx.is_cross_entity:
++        raise HTTPException(status_code=403, detail=(
++            f"Nilai grup '{entry['label']}' hanya dapat diubah peran lintas badan usaha. "
++            "Pilih 'Badan usaha' untuk mengubah nilai khusus PT Anda."))
++
++
+ @router.get("/registry")
+ async def read_registry(request: Request, group: str = "", q: str = "") -> Dict[str, Any]:
+     """Katalog setting (label awam, penjelasan, dampak, tipe, batas, scope, consumer)."""
+@@ -100,6 +118,8 @@ async def read_registry(request: Request, group: str = "", q: str = "") -> Dict[
+                 "settings_manage": _may(perms, "settings", "manage"),
+                 "impact_apply": _may(perms, "product", "update"),
+                 "editable_count": sum(1 for e in entries if e["can_edit"]),
++                # IX-06 — UI hanya menawarkan lapisan "Global" bila server mengizinkannya
++                "global_write": await _global_write_allowed(request),
+             }}
+ 
+ 
+@@ -189,6 +209,7 @@ async def write_values(payload: ConfigBulkValuesIn, request: Request) -> Dict[st
+         # berguna bagi user daripada sekadar "tidak berwenang").
+         if not _may_edit(entry, actor, perms):
+             raise HTTPException(status_code=403, detail=_perm_error(entry))
++        await _assert_scope_write(request, entry, item.scope_type, item.scope_id)
+         try:
+             row = await resolver.set_value(
+                 item.key, item.value, scope_type=item.scope_type, scope_id=item.scope_id,
+@@ -214,6 +235,7 @@ async def reset_value(payload: ConfigValueIn, request: Request) -> Dict[str, Any
+         raise HTTPException(status_code=404, detail=f"Setting '{payload.key}' tidak ada di registry")
+     if not _may_edit(entry, actor, perms):
+         raise HTTPException(status_code=403, detail=_perm_error(entry))
++    await _assert_scope_write(request, entry, payload.scope_type, payload.scope_id)
+     try:
+         row = await resolver.set_value(
+             payload.key, entry["default"], scope_type=payload.scope_type,
+@@ -240,6 +262,7 @@ async def clear_value_layer(payload: ConfigValueIn, request: Request) -> Dict[st
+         raise HTTPException(status_code=404, detail=f"Setting '{payload.key}' tidak ada di registry")
+     if not _may_edit(entry, actor, perms):
+         raise HTTPException(status_code=403, detail=_perm_error(entry))
++    await _assert_scope_write(request, entry, payload.scope_type, payload.scope_id)
+     try:
+         row = await resolver.clear_layer(
+             payload.key, scope_type=payload.scope_type, scope_id=payload.scope_id,
+diff --git a/backend/routers/hr_payroll.py b/backend/routers/hr_payroll.py
+index badbf35..537db07 100644
+--- a/backend/routers/hr_payroll.py
++++ b/backend/routers/hr_payroll.py
+@@ -38,25 +38,59 @@ async def get_payroll_settings(request: Request):
+ 
+ @router.put("/hr/payroll/settings")
+ async def update_payroll_settings(request: Request, body: HrSettingsUpdate):
++    """IX-06 — tulis lewat resolver kanonik ke lapisan yang DIPILIH (entitas aktif / global)."""
+     actor = await require_permission(request, "hr", "manage_payroll")
+-    from core_utils import now_iso
++    import config_registry as registry
++    from services import config_resolver as resolver
++    ctx = await entity_ctx(request)
+     patch = {k: v for k, v in (body.settings or {}).items() if k in SETTINGS_KEYS}
+     if not patch:
+         raise HTTPException(status_code=400, detail="Tidak ada field statutory yang valid untuk diperbarui.")
+-    # Deep-merge dgn config efektif saat ini (default+tersimpan) agar update PARSIAL
+-    # pada objek bersarang (mis. `bpjs`) TIDAK menghapus sub-key saudara (anti data-loss).
+-    current = await hr_service.get_hr_settings()
+-    to_set = {}
+-    for k, v in patch.items():
+-        if isinstance(v, dict) and isinstance(current.get(k), dict):
+-            to_set[k] = hr_service.deep_merge(current[k], v)
++    if body.scope == "global":
++        if not ctx.is_cross_entity:
++            raise HTTPException(status_code=403, detail="Nilai grup (global) hanya dapat diubah peran lintas badan usaha.")
++        scope_type, scope_id = "global", ""
++    elif body.scope == "entity":
++        if ctx.view_all or not ctx.active_entity_id:
++            raise HTTPException(status_code=400, detail="Pilih satu badan usaha aktif untuk menyimpan nilai khususnya.")
++        scope_type, scope_id = "entity", ctx.active_entity_id
++    else:
++        raise HTTPException(status_code=400, detail="scope harus 'entity' atau 'global'.")
++    items: list = []
++
++    def walk(prefix: str, val):
++        key = f"hr.{prefix}"
++        if registry.get(key):
++            items.append((key, val))
++        elif isinstance(val, dict) and val:
++            for k, v in val.items():
++                walk(f"{prefix}.{k}", v)
+         else:
+-            to_set[k] = v
+-    to_set["updated_at"] = now_iso()
+-    await db.system_settings.update_one({"scope": "hr"}, {"$set": to_set}, upsert=True)
+-    await audit(actor["name"], "hr.payroll.settings_update", "system_settings", "hr", to_set)
+-    cfg = await hr_service.get_hr_settings()
+-    return {k: cfg.get(k) for k in SETTINGS_KEYS}
++            raise HTTPException(status_code=400, detail=f"Field '{prefix}' tidak dikenal di Pusat Pengaturan.")
++    for k, v in patch.items():
++        walk(k, v)
++    for key, val in items:
++        entry = registry.get(key)
++        if scope_type not in (entry.get("scopes") or []):
++            raise HTTPException(status_code=400, detail=f"'{key}' tidak bisa diatur pada level {scope_type}.")
++        try:
++            registry.coerce(entry, val)  # validasi semua sebelum satu pun ditulis
++        except ValueError as exc:
++            raise HTTPException(status_code=400, detail=f"{entry['label']}: {exc}") from exc
++    saved = []
++    for key, val in items:
++        try:
++            row = await resolver.set_value(key, val, scope_type=scope_type, scope_id=scope_id,
++                                           actor=actor.get("name", ""), actor_id=actor.get("id", ""),
++                                           reason=body.reason or "Setelan payroll")
++        except resolver.ConfigWriteError as exc:
++            raise HTTPException(status_code=400, detail=str(exc)) from exc
++        saved.append({"key": key, "value": row["value"]})
++    await audit(actor["name"], "hr.payroll.settings_update", "config_values", scope_id or "global",
++                {"scope": f"{scope_type}:{scope_id or '-'}", "saved": saved})
++    cfg = await hr_service.get_hr_settings(ctx.active_entity_id)
++    return {**{k: cfg.get(k) for k in SETTINGS_KEYS + ("entity_id", "entity_overrides")},
++            "saved_scope": {"scope_type": scope_type, "scope_id": scope_id}}
+ 
+ 
+ # ───────────────────────── Payroll Runs ─────────────────────────
+diff --git a/backend/routers/inbound_scan_label.py b/backend/routers/inbound_scan_label.py
+index a1c6074..018e824 100644
+--- a/backend/routers/inbound_scan_label.py
++++ b/backend/routers/inbound_scan_label.py
+@@ -185,7 +185,10 @@ async def confirm_measure(roll_id: str, payload: ConfirmMeasureIn, request: Requ
+                 "message": (f"Selisih label vs aktual {worst:g}% > toleransi {tol:g}% — masuk QC."
+                             if flagged else "Dalam toleransi."), "confirmed_by": actor["name"],
+                 "confirmed_at": now_iso()}
+-    new_task_qty = round(act_wt if task_unit.lower() == "kg" else _from_meter(_to_meter(act_len, base_unit), task_unit), 2)
++    from services.receiving_roll_service import conv_qty, uom_engine
++    product = await db.products.find_one({"id": roll.get("product_id")}, {"_id": 0}) or {"base_unit": base_unit}
++    new_task_qty = round(act_wt if task_unit.lower() == "kg"
++                         else conv_qty(product, act_len, base_unit, task_unit, await uom_engine()), 2)  # IX-13
+     prev_task_qty = float(roll.get("actual_task_qty") if roll.get("actual_task_qty") is not None
+                           else roll.get("declared_task_qty") or 0)
+     upd = {"length_initial": round(act_len, 2), "length_remaining": round(act_len, 2),
+diff --git a/backend/routers/qc_inspection.py b/backend/routers/qc_inspection.py
+index a62125e..f3a6c67 100644
+--- a/backend/routers/qc_inspection.py
++++ b/backend/routers/qc_inspection.py
+@@ -37,6 +37,36 @@ async def list_task_rolls(task_id: str, request: Request) -> List[Dict[str, Any]
+     return await rolls_for_task(task_id)
+ 
+ 
++async def _qc_task(task_id: str, request: Request) -> Dict[str, Any]:
++    task = safe_doc(await db.wms_tasks.find_one({"id": task_id}, {"_id": 0}))
++    if not task:
++        raise HTTPException(status_code=404, detail="Task QC tidak ditemukan")
++    assert_entity_access(task, "wms_tasks", await entity_ctx(request))
++    return task
++
++
++@router.get("/inbound/qc/tasks/{task_id}/plan")
++async def get_qc_plan(task_id: str, request: Request) -> Dict[str, Any]:
++    """PG01 — rencana QC (Cek semua / Sampling) + cakupan inspeksi aktual."""
++    await require_permission(request, "wms", "view")
++    from services.qc_service import qc_coverage
++    return await qc_coverage(await _qc_task(task_id, request))
++
++
++@router.put("/inbound/qc/tasks/{task_id}/plan")
++async def put_qc_plan(task_id: str, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
++    actor = await require_permission(request, "wms", "update")
++    from services.qc_service import set_qc_plan
++    task = await _qc_task(task_id, request)
++    try:
++        cov = await set_qc_plan(task, str(payload.get("mode") or ""), payload.get("sample_pct") or 0,
++                                payload.get("sample_min") or 0, actor)
++    except ValueError as exc:
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
++    await audit(actor["name"], "qc_plan_set", "wms_task", task_id, {k: cov.get(k) for k in ("mode", "sample_pct", "sample_min", "required_rolls")})
++    return cov
++
++
+ @router.post("/inbound/rolls/{roll_id}/inspect")
+ async def inspect(roll_id: str, payload: RollInspectionInput, request: Request) -> Dict[str, Any]:
+     """Catat inspeksi 4-point pada 1 roll → hitung poin & set grade."""
+diff --git a/backend/schemas_hr_payroll.py b/backend/schemas_hr_payroll.py
+index e4e95cc..5cf2c0e 100644
+--- a/backend/schemas_hr_payroll.py
++++ b/backend/schemas_hr_payroll.py
+@@ -14,6 +14,8 @@ class PayRunInput(BaseModel):
+ 
+ class HrSettingsUpdate(BaseModel):
+     settings: Dict[str, Any]
++    scope: str = "entity"      # IX-06 — "entity" (badan usaha aktif) | "global" (peran lintas PT)
++    reason: str = ""
+ 
+ 
+ class PayrollRejectInput(BaseModel):
+diff --git a/backend/services/costing_service.py b/backend/services/costing_service.py
+index b0ddf90..c93e6a7 100644
+--- a/backend/services/costing_service.py
++++ b/backend/services/costing_service.py
+@@ -12,6 +12,8 @@ Prioritas sumber cost (margin-aware EPIC4):
+ from typing import Any, Dict, List, Optional
+ import time
+ 
++from fastapi import HTTPException
++
+ from db import db
+ 
+ # Status roll yang dihitung sebagai "stok hidup" untuk WAC.
+@@ -57,24 +59,33 @@ async def wac_for_product(
+     query: Dict[str, Any] = {"product_id": product_id, "status": {"$in": list(LIVE_ROLL_STATUSES)}}
+     if entity_id:
+         query["owner_entity_id"] = entity_id
+-    rolls = await db.inventory_rolls.find(query, {"_id": 0}).to_list(5000)
+-
++    # FN-03 — panjang dinormalisasi ke BASE UNIT produk (nilai = cost/unit roll × qty unit roll);
++    # GN-12 — iterasi kursor penuh (dulu to_list(5000) memotong diam-diam).
++    from services.receiving_roll_service import conv_qty, uom_engine
++    eng = await uom_engine()
++    base_unit = product.get("base_unit") or "meter"
+     total_len = 0.0
+     total_val = 0.0
+     base_val = 0.0      # R5.5 — Σ(base_unit_cost×len) untuk memisah komponen landed cost
+     costed_len = 0.0
+-    for r in rolls:
+-        ln = float(r.get("length_remaining", 0) or 0)
+-        if ln <= 0:
++    unconvertible = 0
++    async for r in db.inventory_rolls.find(query, {"_id": 0}):
++        ln_roll = float(r.get("length_remaining", 0) or 0)
++        if ln_roll <= 0:
++            continue
++        try:
++            ln = conv_qty(product, ln_roll, r.get("unit") or base_unit, base_unit, eng)
++        except HTTPException:
++            unconvertible += 1  # tidak dicampur tanpa faktor; ditandai di hasil
+             continue
+         total_len += ln
+         cost = _roll_cost(r)
+         if cost > 0:
+             costed_len += ln
+-            total_val += cost * ln
++            total_val += cost * ln_roll
+             # base_unit_cost = HPP sebelum landed; bila kosong anggap = cost (landed 0).
+             b = float(r.get("base_unit_cost") or 0) or cost
+-            base_val += b * ln
++            base_val += b * ln_roll
+ 
+     price = float(product.get("price", 0) or 0)
+     hpp_manual = float(product.get("harga_pokok", 0) or 0)
+@@ -108,6 +119,7 @@ async def wac_for_product(
+         "category": product.get("category", ""),
+         "base_unit": product.get("base_unit", "meter"),
+         "entity_id": entity_id,
++        "unconvertible_rolls": unconvertible,
+         "wac": round(wac, 2),
+         "wac_base": wac_base,          # R5.5 — HPP dasar (sebelum landed cost)
+         "wac_landed": wac_landed,      # R5.5 — komponen landed cost (freight/duty/handling)
+diff --git a/backend/services/esign_service.py b/backend/services/esign_service.py
+index 25e702c..78da121 100644
+--- a/backend/services/esign_service.py
++++ b/backend/services/esign_service.py
+@@ -56,15 +56,11 @@ def doc_number(src: Dict[str, Any]) -> Optional[str]:
+     return None
+ 
+ 
+-def _doc_hash_from_built(built: dict) -> str:
+-    doc = {k: v for k, v in (built.get("doc") or {}).items() if k != "esign"}
+-    payload = json.dumps(doc, sort_keys=True, default=str, ensure_ascii=False)
+-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+-
+ 
+ async def compute_doc_hash(doc_type: str, source_id: str, entity_id: Optional[str]) -> Tuple[str, dict]:
++    """CX-10 — hash versi = hash isi kanonik (bukan layout/QR/referensi yang bisa berubah sendiri)."""
+     built = await pdfsvc.build_document(doc_type, source_id, entity_id, public_base=public_base())
+-    return _doc_hash_from_built(built), built
++    return built["content_hash"], built
+ 
+ 
+ async def create_request(doc_type: str, source_id: str, entity_id: Optional[str],
+@@ -139,8 +135,10 @@ async def verify_and_sign(request_id: str, otp: str, signature_b64: str, ip: str
+     except Exception as exc:  # noqa: BLE001
+         await _saga.mark_failed("esign_requests", request_id, str(exc))
+         raise
++    # CX-10 — satu kode verifikasi = satu versi isi; versi berbeda selalu kode baru
+     existing = await db.document_signatures.find_one(
+-        {"doc_type": req["doc_type"], "source_id": req["source_id"], "status": "signed"},
++        {"doc_type": req["doc_type"], "source_id": req["source_id"], "status": "signed",
++         "doc_hash": doc_hash, "hash_version": pdfsvc.ESIGN_HASH_VERSION},
+         {"_id": 0, "verification_code": 1})
+     code = (existing or {}).get("verification_code") or gen_code()
+     sig = {
+@@ -148,6 +146,8 @@ async def verify_and_sign(request_id: str, otp: str, signature_b64: str, ip: str
+         "source_id": req["source_id"], "entity_id": req["entity_id"],
+         "signer_name": req["signer_name"], "signer_role": req.get("signer_role", ""),
+         "signature_b64": signature_b64, "doc_hash": doc_hash, "verification_code": code,
++        "hash_version": pdfsvc.ESIGN_HASH_VERSION,
++        "doc_snapshot": json.dumps(_built["content_snapshot"], sort_keys=True, default=str, ensure_ascii=False),
+         "status": "signed", "signed_at": now_iso(), "ip": ip, "channel": req.get("channel", "simulated"),
+     }
+     await db.document_signatures.insert_one(sig)
+@@ -164,14 +164,14 @@ async def list_signatures(doc_type: str, source_id: str, entity_id: Optional[str
+     if entity_id:
+         q["entity_id"] = entity_id
+     sigs = await db.document_signatures.find(
+-        q, {"_id": 0, "signature_b64": 0}).sort("signed_at", 1).to_list(50)
++        q, {"_id": 0, "signature_b64": 0, "doc_snapshot": 0}).sort("signed_at", 1).to_list(50)
+     return safe_doc(sigs)
+ 
+ 
+ async def public_verify(code: str) -> Dict[str, Any]:
+     sigs = await db.document_signatures.find(
+         {"verification_code": code, "status": "signed"},
+-        {"_id": 0, "signature_b64": 0}).sort("signed_at", 1).to_list(50)
++        {"_id": 0, "signature_b64": 0, "doc_snapshot": 0}).sort("signed_at", 1).to_list(50)
+     if not sigs:
+         return {"valid": False, "code": code}
+     first = sigs[0]
+@@ -184,8 +184,18 @@ async def public_verify(code: str) -> Dict[str, Any]:
+             number = doc_number(src)
+     ent = await db.business_entities.find_one(
+         {"id": first.get("entity_id")}, {"_id": 0, "legal_name": 1, "short_name": 1}) or {}
++    # CX-10 — kode ini memverifikasi VERSI yang ditandatangani; bandingkan dengan isi sekarang
++    if first.get("hash_version") != pdfsvc.ESIGN_HASH_VERSION:
++        version_status = "legacy_unbound"
++    else:
++        try:
++            cur_hash, _ = await compute_doc_hash(first["doc_type"], first["source_id"], first.get("entity_id"))
++        except (LookupError, ValueError):
++            cur_hash = ""
++        version_status = "current" if cur_hash == first.get("doc_hash") else "superseded"
+     return {
+         "valid": True, "code": code, "doc_type": first["doc_type"],
++        "version_status": version_status, "document_changed": version_status != "current",
+         "doc_label": reg.get("label", first["doc_type"]), "number": number,
+         "entity_name": ent.get("legal_name") or ent.get("short_name") or "",
+         "doc_hash": first.get("doc_hash"), "signed_at": first.get("signed_at"),
+diff --git a/backend/services/financial_statement_service.py b/backend/services/financial_statement_service.py
+index f208332..09a1f72 100644
+--- a/backend/services/financial_statement_service.py
++++ b/backend/services/financial_statement_service.py
+@@ -57,9 +57,8 @@ async def _aggregate(scope: Optional[Dict[str, Any]],
+         q["source_type"] = {"$ne": "closing"}
+     if date_filter:
+         q["date"] = date_filter
+-    entries = await db.journal_entries.find(q, {"_id": 0, "lines": 1}).to_list(100000)
+     agg: Dict[str, Dict[str, float]] = {}
+-    for je in entries:
++    async for je in db.journal_entries.find(q, {"_id": 0, "lines": 1}):  # GN-12 — tanpa cap diam-diam
+         for ln in je.get("lines", []):
+             code = ln.get("account_code")
+             if not code:
+diff --git a/backend/services/pdf_engine.py b/backend/services/pdf_engine.py
+index 11713f9..cfb67cb 100644
+--- a/backend/services/pdf_engine.py
++++ b/backend/services/pdf_engine.py
+@@ -251,6 +251,8 @@ MASTER_TEMPLATE = r"""
+         <div style="color:#777">Scan QR / kunjungi {{ doc.esign.verify_url }} untuk memverifikasi keaslian.</div>
+       </div>
+     </div>
++    {% elif doc.esign_superseded %}
++    <div class="generated" style="color:#B45309">BELUM DITANDATANGANI (versi baru) — {{ doc.esign_superseded.message }} Tanda tangan terakhir: {{ doc.esign_superseded.last_signed_at }}.</div>
+     {% endif %}
+   </div>
+ </body></html>
+diff --git a/backend/services/pdf_resolvers.py b/backend/services/pdf_resolvers.py
+index e69cb9e..404f188 100644
+--- a/backend/services/pdf_resolvers.py
++++ b/backend/services/pdf_resolvers.py
+@@ -652,7 +652,8 @@ async def resolve_delivery_note(doc, db):
+     rname, rphone = _ship_recipient(doc.get("shipping_address"))
+     return {
+         "title": "Surat Jalan", "number": await _sj_number(db, doc),
+-        "date": datetime.now().strftime("%d %b %Y"), "status": doc.get("status"),
++        # CX-10 — tanggal SJ = tanggal kirim (stabil untuk hash versi), bukan tanggal cetak
++        "date": fmt_date(doc.get("dispatched_at")) or datetime.now().strftime("%d %b %Y"), "status": doc.get("status"),
+         "party_to": {"title": "Kepada Yth", "name": (rname or doc.get("customer_name")),
+                      "address": fmt_address(doc.get("shipping_address")),
+                      "phone": (rphone or doc.get("customer_phone", ""))},
+diff --git a/backend/services/pdf_service.py b/backend/services/pdf_service.py
+index 5119eab..a2b8ed3 100644
+--- a/backend/services/pdf_service.py
++++ b/backend/services/pdf_service.py
+@@ -4,7 +4,10 @@ resolver context + (opsional) blok e-sign → HTML → PDF.
+ """
+ from __future__ import annotations
+ import base64
++import copy
++import hashlib
+ import io
++import json
+ from db import db
+ from services.pdf_engine import render_html, render_pdf
+ from services.pdf_resolvers import DOC_REGISTRY
+@@ -304,12 +307,36 @@ def _apply_cfg_to_doc(doc: dict, cfg: dict, branding: dict) -> dict:
+     return doc
+ 
+ 
+-async def _attach_esign(doc: dict, doc_type: str, source_id: str, public_base: str):
+-    """Bila ada tanda tangan elektronik final → tempel blok e-sign + QR ke dokumen."""
+-    sigs = await db.document_signatures.find(
+-        {"doc_type": doc_type, "source_id": source_id, "status": "signed"}, {"_id": 0}
+-    ).sort("signed_at", 1).to_list(20)
++ESIGN_HASH_VERSION = 2
++_VOLATILE_META = {"Dicetak"}
++
++
++def canonical_content(content: dict) -> dict:
++    """CX-10 — isi dokumen yang ditandatangani: output resolver tanpa stempel cetak/metadata turunan."""
++    c = {k: v for k, v in copy.deepcopy(content or {}).items()
++         if not k.startswith("_") and k not in ("esign", "esign_superseded", "refs")}
++    if isinstance(c.get("meta"), list):
++        c["meta"] = [m for m in c["meta"] if not (isinstance(m, dict) and m.get("label") in _VOLATILE_META)]
++    return c
++
++
++def content_hash(content: dict) -> str:
++    payload = json.dumps(canonical_content(content), sort_keys=True, default=str, ensure_ascii=False)
++    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
++
++
++async def _attach_esign(doc: dict, doc_type: str, source_id: str, public_base: str, chash: str = ""):
++    """Tempel blok e-sign + QR HANYA dari tanda tangan atas versi isi yang sama (CX-10)."""
++    all_sigs = await db.document_signatures.find(
++        {"doc_type": doc_type, "source_id": source_id, "status": "signed"},
++        {"_id": 0, "signature_b64": 0, "doc_snapshot": 0}).sort("signed_at", 1).to_list(50)
++    sigs = [s for s in all_sigs
++            if s.get("hash_version") == ESIGN_HASH_VERSION and s.get("doc_hash") == chash]
+     if not sigs:
++        if all_sigs:
++            doc["esign_superseded"] = {
++                "message": "Isi dokumen berubah setelah ditandatangani — tanda tangan lama tidak berlaku untuk versi ini.",
++                "last_signed_at": (all_sigs[-1].get("signed_at") or "")[:19].replace("T", " ")}
+         return doc
+     last = sigs[-1]
+     code = last.get("verification_code")
+@@ -407,11 +434,14 @@ async def build_document(doc_type: str, source_id: str, entity_id: str | None,
+         cfg = merge_cfg(cfg, _clean_cfg(cfg_override))
+     branding = await get_branding(eid)
+     doc = await reg["resolver"](source, db)
++    chash = content_hash(doc)  # CX-10 — hash isi sebelum template/branding/esign/refs
++    snapshot = canonical_content(doc)
+     doc = _apply_cfg_to_doc(doc, cfg, branding)
+-    doc = await _attach_esign(doc, doc_type, source_id, public_base)
++    doc = await _attach_esign(doc, doc_type, source_id, public_base, chash)
+     if not doc.get("_hide_refs"):
+         doc = await attach_document_refs(doc, doc_type, source_id, source, public_base)
+-    return {"source": source, "cfg": cfg, "branding": branding, "doc": doc, "reg": reg}
++    return {"source": source, "cfg": cfg, "branding": branding, "doc": doc, "reg": reg,
++            "content_hash": chash, "content_snapshot": snapshot}
+ 
+ 
+ async def render_document(doc_type: str, source_id: str, entity_id: str | None,
+diff --git a/backend/services/qc_service.py b/backend/services/qc_service.py
+index a1ae26e..05df526 100644
+--- a/backend/services/qc_service.py
++++ b/backend/services/qc_service.py
+@@ -154,6 +154,57 @@ async def _create_qc_return(task: Dict[str, Any], po: Optional[Dict[str, Any]],
+     return safe_doc(doc)
+ 
+ 
++QC_MODES = ("all", "sampling")
++
++
++def plan_sample_size(n_rolls: int, pct: float, min_rolls: int) -> int:
++    """PG01 — ukuran sampel = max(min, ceil(pct% × n)), dibatasi jumlah roll."""
++    import math
++    if n_rolls <= 0:
++        return 0
++    return max(1, min(n_rolls, max(int(min_rolls or 1), math.ceil(n_rolls * float(pct or 0) / 100.0))))
++
++
++def roll_inspected(r: Dict[str, Any]) -> bool:
++    return bool((r.get("inspection") or {}).get("inspected_at")) or r.get("grade_source") == "manager_override"
++
++
++async def qc_coverage(task: Dict[str, Any]) -> Dict[str, Any]:
++    """PG01 — rencana (Cek semua / Sampling) + cakupan inspeksi aktual per task QC."""
++    plan = task.get("qc_plan") or {"mode": "all"}
++    rolls = await db.inventory_rolls.find({"qc_task_id": task["id"]},
++                                          {"_id": 0, "id": 1, "inspection": 1, "grade_source": 1}).to_list(None)
++    n = len(rolls)
++    inspected = sum(1 for r in rolls if roll_inspected(r))
++    if plan.get("mode") == "sampling":
++        required = plan_sample_size(n, plan.get("sample_pct", 10), plan.get("sample_min", 1))
++    else:
++        required = n
++    return {"mode": plan.get("mode", "all"), "sample_pct": plan.get("sample_pct"), "sample_min": plan.get("sample_min"),
++            "planned_by": plan.get("planned_by"), "planned_at": plan.get("planned_at"),
++            "total_rolls": n, "inspected_rolls": inspected, "required_rolls": required,
++            "coverage_pct": round(100.0 * inspected / n, 1) if n else 0.0, "met": inspected >= required}
++
++
++async def set_qc_plan(task: Dict[str, Any], mode: str, sample_pct: float, sample_min: int,
++                      actor: Dict[str, Any]) -> Dict[str, Any]:
++    if task.get("status") != "qc_pending":
++        raise ValueError("Rencana QC hanya dapat diubah selama task menunggu QC.")
++    if mode not in QC_MODES:
++        raise ValueError("Mode QC harus 'all' (Cek semua) atau 'sampling'.")
++    plan: Dict[str, Any] = {"mode": mode, "planned_by": actor.get("name", ""), "planned_at": now_iso()}
++    if mode == "sampling":
++        if not (0 < float(sample_pct or 0) <= 100):
++            raise ValueError("Persentase sampel harus 1–100%.")
++        if int(sample_min or 0) < 1:
++            raise ValueError("Minimal roll sampel harus ≥ 1.")
++        plan.update(sample_pct=float(sample_pct), sample_min=int(sample_min))
++    await db.wms_tasks.update_one({"id": task["id"], "status": "qc_pending"},
++                                  {"$set": {"qc_plan": plan, "updated_at": now_iso()},
++                                   "$push": {"qc_plan_history": plan}})
++    return await qc_coverage({**task, "qc_plan": plan})
++
++
+ async def process_qc_decision(
+     task: Dict[str, Any], accept_qty: float, reject_qty: float,
+     reject_disposition: str, reason: str, actor: Dict[str, Any],
+@@ -193,6 +244,17 @@ async def process_qc_decision(
+             f"Total terima+tolak ({round(accept_qty + reject_qty, 2)}) melebihi qty karantina ({total_q}).")
+     if reject_qty > 0.01 and reject_disposition not in ("damaged", "return"):
+         raise ValueError("Disposisi reject harus 'damaged' atau 'return'.")
++    # IX-15 — task QC terminal hanya bila SELURUH qty karantina punya disposisi
++    if accept_qty + reject_qty < total_q - 0.05:
++        raise ValueError(
++            f"Keputusan QC wajib mencakup seluruh qty karantina ({total_q}); "
++            f"sisa {round(total_q - accept_qty - reject_qty, 2)} belum diputuskan.")
++    # PG01 — cakupan inspeksi sesuai rencana (Cek semua / Sampling) sebelum mutasi apa pun
++    coverage = await qc_coverage(task)
++    if not coverage["met"]:
++        raise ValueError(
++            f"Inspeksi belum memenuhi rencana '{'Cek semua' if coverage['mode'] == 'all' else 'Sampling'}': "
++            f"{coverage['inspected_rolls']}/{coverage['required_rolls']} roll wajib diinspeksi.")
+ 
+     doc_ref = task.get("po_number") or task_id
+     result: Dict[str, Any] = {
+@@ -215,6 +277,9 @@ async def process_qc_decision(
+     except Exception as e:
+         await _saga.mark_failed("wms_tasks", task_id, str(e))
+         raise
++    # PG01 — cakupan tercatat: keputusan sampel berlaku eksplisit untuk sisa lot
++    set_fields["qc_coverage"] = {**coverage, "decision_applies_to_uninspected": coverage["inspected_rolls"] < coverage["total_rolls"]}
++    result["qc_coverage"] = set_fields["qc_coverage"]
+     # 5) Update task — status + jejak QC + cabut kunci (tulisan akhir saga)
+     await db.wms_tasks.update_one({"id": task_id}, _saga.finish_set(set_fields))
+     return result
+diff --git a/backend/services/receiving_roll_service.py b/backend/services/receiving_roll_service.py
+index e4f415a..1935df9 100644
+--- a/backend/services/receiving_roll_service.py
++++ b/backend/services/receiving_roll_service.py
+@@ -31,6 +31,19 @@ def from_meter(qty_m: float, unit: str) -> float:
+ _to_meter, _from_meter = to_meter, from_meter
+ 
+ 
++async def uom_engine():
++    """IX-13 — faktor kanonik (uom_conversions + aturan pasangan) untuk semua hitung qty penerimaan."""
++    from services.uom_rules_service import load_pair_rules
++    from services.uom_service import load_fixed_factors
++    return await load_fixed_factors(), await load_pair_rules()
++
++
++def conv_qty(product: Dict[str, Any], qty: float, from_u: str, to_u: str, eng) -> float:
++    """Konversi kanonik; unit tanpa faktor → 400 (bukan fallback identitas)."""
++    from services.uom_service import convert
++    return convert(product, float(qty or 0), from_u, to_u, eng[0], precision=6, pair_rules=eng[1])
++
++
+ async def receiving_cfg(key: str, entity_id: str) -> Any:
+     """Kunci `receiving.*` HANYA lewat resolver (GRN Fase 0.2)."""
+     from services.config_resolver import value_of
+@@ -156,21 +169,24 @@ async def create_label_roll(*, task: Dict[str, Any], decoded: Dict[str, Any], si
+     from services.uom_service import kg_per_base_unit, load_fixed_factors
+     factors = await load_fixed_factors()
+     kgpb = kg_per_base_unit(product, factors)
+-    length_m = _to_meter(length_label, label_unit)
+-    if length_m <= 0 and weight_kg > 0 and kgpb > 0:
+-        length_m = _to_meter(weight_kg / kgpb, base_unit)
+-    if length_m <= 0 and weight_kg <= 0:
++    eng = await uom_engine()
++    # IX-13 — semua qty dinormalisasi ke BASE UNIT produk lewat konverter kanonik
++    length_bq = conv_qty(product, length_label, label_unit, base_unit, eng) if length_label > 0 else 0.0
++    if length_bq <= 0 and weight_kg > 0 and kgpb > 0:
++        length_bq = weight_kg / kgpb
++    if length_bq <= 0 and weight_kg <= 0:
+         conv = float(sitem.get("conv_factor") or 0)
+         if conv > 0 and (sitem.get("supplier_uom") or "").lower() in ("roll", "rol", "rll", "gulung"):
+-            length_m = _to_meter(conv, base_unit)
++            length_bq = conv
++    length_m = length_bq
+     if length_m <= 0 and weight_kg <= 0:
+         raise HTTPException(status_code=400, detail={
+             "code": "NO_QTY", "message": "Label tidak memuat panjang/berat. Gunakan 'Label tidak terbaca' "
+                                          "dan isi panjang dari label fisik.", "decoded": decoded})
+-    length_base = round(_from_meter(length_m, base_unit), 2)
++    length_base = round(length_bq, 2)
+     if weight_kg <= 0 and kgpb > 0:
+         weight_kg = round(length_base * kgpb, 3)
+-    task_qty = round(weight_kg if task_unit.lower() == "kg" else _from_meter(length_m, task_unit), 2)
++    task_qty = round(weight_kg if task_unit.lower() == "kg" else conv_qty(product, length_bq, base_unit, task_unit, eng), 2)
+ 
+     # ── pagar PO: qty belum lewat (toleransi kedatangan) ───────────────────
+     from services.config_service import get_effective_settings
+@@ -264,7 +280,8 @@ async def create_counted_roll(*, task: Dict[str, Any], product: Dict[str, Any],
+         raise HTTPException(status_code=400, detail="Isi panjang atau berat roll yang dihitung.")
+     if weight_kg <= 0 and kgpb > 0:
+         weight_kg = round(length_base * kgpb, 3)
+-    task_qty = round(weight_kg if task_unit.lower() == "kg" else from_meter(to_meter(length_base, base_unit), task_unit), 2)
++    task_qty = round(weight_kg if task_unit.lower() == "kg"
++                     else conv_qty(product, length_base, base_unit, task_unit, await uom_engine()), 2)  # IX-13
+     grade = _dr.require_grade(grade, "A")
+     roll_doc = await build_receiving_roll(
+         task, product, owner_entity_id, actor, length_base=length_base, weight_kg=weight_kg,
+diff --git a/backend/services/roll_service.py b/backend/services/roll_service.py
+index 8db4220..2e83f68 100644
+--- a/backend/services/roll_service.py
++++ b/backend/services/roll_service.py
+@@ -108,8 +108,21 @@ async def insert_child_roll(child: Dict[str, Any], parent: Dict[str, Any]) -> Di
+         doc["unit"] = parent.get("unit") or "meter"
+     # KN-B17 — jejak induk: biaya masuk (landed cost) yang datang SETELAH roll dipecah
+     # harus ikut mendarat di potongannya (lihat landed_cost_service.apply_allocations).
+-    doc.setdefault("parent_roll_id", parent.get("id"))
+-    doc.setdefault("root_roll_id", parent.get("root_roll_id") or parent.get("id"))
++    # AX-07 — parent LANGSUNG selalu roll yang dipotong (salinan dict(parent) membawa kakek)
++    doc["parent_roll_id"] = parent.get("id")
++    doc["root_roll_id"] = parent.get("root_roll_id") or parent.get("id")
++    # WM-01 — potongan bersamaan dapat memilih nomor yang sama; ulangi dengan nomor baru supaya
++    # induk yang sudah dikurangi tidak kehilangan potongannya (DuplicateKey = stok hilang).
++    from pymongo.errors import DuplicateKeyError
++    for _ in range(20):
++        try:
++            await db.inventory_rolls.insert_one(dict(doc))
++            return doc
++        except DuplicateKeyError as exc:
++            if "roll_no" not in str(exc):
++                raise
++            doc["roll_no"] = await child_roll_no(parent.get("roll_no") or "")
++    doc["roll_no"] = await next_roll_no()
+     await db.inventory_rolls.insert_one(dict(doc))
+     return doc
+ 
+@@ -183,10 +196,14 @@ async def to_base_qty(prod: Dict[str, Any], qty: float, unit: Optional[str]) ->
+ 
+ async def rebuild_balance(product_id: str, warehouse_id: str, owner_entity_id: str) -> Dict[str, Any]:
+     """Hitung ulang satu segmen balance (product × warehouse × owner) dari rolls."""
+-    rolls = await db.inventory_rolls.find(
+-        {"product_id": product_id, "warehouse_id": warehouse_id, "owner_entity_id": owner_entity_id},
+-        {"_id": 0},
+-    ).to_list(10000)
++    seg = {"product_id": product_id, "warehouse_id": warehouse_id, "owner_entity_id": owner_entity_id}
++    # GN-13 — tiket rebuild diambil SEBELUM membaca roll; hasil hanya ditulis bila tidak ada
++    # rebuild yang lebih baru sudah menulis (tidak ada snapshot lama menimpa yang baru).
++    tk = await db.inventory_balances.find_one_and_update(
++        seg, {"$inc": {"rebuild_ticket": 1}, "$setOnInsert": {"id": new_id("bal")}},
++        upsert=True, projection={"_id": 0, "rebuild_ticket": 1}, return_document=ReturnDocument.AFTER)
++    my_ticket = int(tk.get("rebuild_ticket") or 0)
++    rolls = await db.inventory_rolls.find(seg, {"_id": 0}).to_list(None)  # GN-12 — tanpa cap
+     buckets = {b: 0.0 for b in ALL_BUCKETS}
+     roll_counts = {b: 0 for b in ALL_BUCKETS}  # F2 (UoM SSOT) — jumlah roll per bucket
+     # KN-B16 — saldo dijumlahkan dalam SATUAN DASAR produk: roll ber-unit lain (data lama /
+@@ -194,6 +211,7 @@ async def rebuild_balance(product_id: str, warehouse_id: str, owner_entity_id: s
+     _prod = await db.products.find_one({"id": product_id}, {"_id": 0, "base_unit": 1, "sku": 1, "uom_conversion": 1,
+                                                             "kg_per_meter": 1, "gsm": 1, "width_cm": 1}) or {}
+     _base = (_prod.get("base_unit") or "meter").lower()
++    unconvertible = 0
+     for r in rolls:
+         status = r.get("status")
+         length = float(r.get("length_remaining", 0) or 0)
+@@ -202,7 +220,10 @@ async def rebuild_balance(product_id: str, warehouse_id: str, owner_entity_id: s
+             try:
+                 length = await to_base_qty(_prod, length, _ru)
+             except Exception as exc:  # noqa: BLE001
++                # GN-13 — jangan campur panjang native ke bucket base unit; tandai saldo tidak valid
+                 logger.warning("[rebuild_balance] roll %s unit %s≠%s tak terkonversi: %s", r.get("id"), _ru, _base, exc)
++                unconvertible += 1
++                continue
+         bucket = (PHYSICAL_STATUS_TO_BUCKET.get(status)
+                   or TRANSIT_STATUS_TO_BUCKET.get(status)
+                   or OFFSITE_OWNED_STATUS_TO_BUCKET.get(status))
+@@ -235,23 +256,17 @@ async def rebuild_balance(product_id: str, warehouse_id: str, owner_entity_id: s
+         "roll_count": roll_counts["available_qty"],   # F2 — jumlah roll TERSEDIA (siap dijual)
+         "on_hand_roll_count": on_hand_roll_count,       # F2 — jumlah roll fisik di gudang
+         "roll_counts": roll_counts,                     # F2 — detail count per-bucket
++        "unconvertible_roll_count": unconvertible,
++        "projection_valid": unconvertible == 0,
++        "rebuild_applied": my_ticket,
+         "updated_at": now_iso(),
+     }
+     # round bucket
+     for b in ALL_BUCKETS:
+         doc[b] = round(doc[b], 2)
+-    existing = await db.inventory_balances.find_one(
+-        {"product_id": product_id, "warehouse_id": warehouse_id, "owner_entity_id": owner_entity_id},
+-        {"_id": 0, "id": 1},
+-    )
+-    if existing:
+-        await db.inventory_balances.update_one(
+-            {"product_id": product_id, "warehouse_id": warehouse_id, "owner_entity_id": owner_entity_id},
+-            {"$set": doc},
+-        )
+-    else:
+-        doc["id"] = new_id("bal")
+-        await db.inventory_balances.insert_one(dict(doc))
++    await db.inventory_balances.update_one(
++        {**seg, "$or": [{"rebuild_applied": {"$lt": my_ticket}}, {"rebuild_applied": {"$exists": False}}]},
++        {"$set": doc})
+     # FASE C — agregat lot ikut disegarkan dari roll segmen ini (split/merge/kirim roll
+     # terjadi di banyak jalur; satu hook di sini menjaga INV-LOT-04 tetap hijau).
+     lot_ids = {r.get("lot_id") for r in rolls if r.get("lot_id")}
+@@ -494,20 +509,17 @@ async def _split_roll(roll: Dict[str, Any], take: float, order_id: str) -> Optio
+     checkout bersamaan tidak double-ambil roll yang sama. Gagal guard → None (caller
+     lanjut ke roll berikutnya)."""
+     take = round(float(take), 2)
++    # WM-01 — kurangi + bulatkan dalam SATU update atomik (pipeline). Dulu normalisasi
++    # memakai nilai hasil baca terpisah sehingga bisa menimpa potongan konkuren lain.
+     parent = await db.inventory_rolls.find_one_and_update(
+         {"id": roll["id"], "status": "available", "length_remaining": {"$gte": take - 0.001}},
+-        {"$inc": {"length_remaining": -take, "length_initial": -take},
+-         "$set": {"updated_at": now_iso()}},
++        [{"$set": {"length_remaining": {"$round": [{"$subtract": ["$length_remaining", take]}, 2]},
++                   "length_initial": {"$round": [{"$subtract": ["$length_initial", take]}, 2]},
++                   "updated_at": now_iso()}}],
+         projection={"_id": 0}, return_document=ReturnDocument.AFTER,
+     )
+     if not parent:
+         return None
+-    # Normalisasi drift float hasil $inc
+-    await db.inventory_rolls.update_one(
+-        {"id": roll["id"]},
+-        {"$set": {"length_remaining": round(float(parent.get("length_remaining", 0)), 2),
+-                  "length_initial": round(float(parent.get("length_initial", 0)), 2)}},
+-    )
+     child = dict(roll)
+     child.pop("_id", None)
+     child.update({
+@@ -1450,8 +1462,11 @@ async def receive_wh_transfer_rolls(transfer_id: str, dest_warehouse_id: str, so
+         src_wh = r["warehouse_id"]
+         await db.inventory_rolls.update_one(
+             {"id": r["id"]},
++            # AX-05 — owner tetap → asal perolehan (acquired) TIDAK ditimpa; bin gudang asal
++            # tidak valid di gudang tujuan → kosong sampai putaway. Perpindahan tercatat di movement.
+             {"$set": {"warehouse_id": dest_warehouse_id, "status": "available", "reserved_ref": None,
+-                      "acquired": {"via": "transfer", "ref_id": transfer_id, "date": now_iso()},
++                      "bin_id": None, "last_transfer": {"ref_id": transfer_id, "from_warehouse_id": src_wh,
++                                                        "date": now_iso()},
+                       "updated_at": now_iso()}},
+         )
+         # KN-B19 — tag RFID ikut pindah gudang (seperti jalur putaway); dulu tertinggal di gudang lama.
+diff --git a/frontend/src/features/documents/PublicVerify.jsx b/frontend/src/features/documents/PublicVerify.jsx
+index 5496519..b360478 100644
+--- a/frontend/src/features/documents/PublicVerify.jsx
++++ b/frontend/src/features/documents/PublicVerify.jsx
+@@ -36,11 +36,25 @@ export default function PublicVerify({ code }) {
+             </div>
+           ) : valid ? (
+             <>
+-              <div className="flex flex-col items-center gap-2 bg-[#ECFAF1] px-6 py-7 text-center">
+-                <ShieldCheck size={48} className="text-[#1F7A45]" />
+-                <h1 className="text-[19px] font-extrabold text-[#146c38]">Dokumen Terverifikasi</h1>
+-                <p className="text-[12.5px] text-[#3f8a5e]">Tanda tangan elektronik sah & tercatat di sistem.</p>
+-              </div>
++              {data.version_status === "current" ? (
++                <div className="flex flex-col items-center gap-2 bg-[#ECFAF1] px-6 py-7 text-center" data-testid="pv-status-current">
++                  <ShieldCheck size={48} className="text-[#1F7A45]" />
++                  <h1 className="text-[19px] font-extrabold text-[#146c38]">Dokumen Terverifikasi</h1>
++                  <p className="text-[12.5px] text-[#3f8a5e]">Tanda tangan sah untuk isi dokumen versi saat ini.</p>
++                </div>
++              ) : (
++                <div className="flex flex-col items-center gap-2 bg-[#FFF6E5] px-6 py-7 text-center" data-testid={`pv-status-${data.version_status || "legacy_unbound"}`}>
++                  <ShieldCheck size={48} className="text-[#B45309]" />
++                  <h1 className="text-[19px] font-extrabold text-[#8A5A00]">
++                    {data.version_status === "superseded" ? "Dokumen Telah Berubah" : "Versi Tidak Dapat Dipastikan"}
++                  </h1>
++                  <p className="text-[12.5px] text-[#8A5A00]">
++                    {data.version_status === "superseded"
++                      ? "Tanda tangan ini hanya berlaku untuk versi yang ditandatangani (hash di bawah). Isi dokumen sekarang berbeda dan belum ditandatangani ulang."
++                      : "Tanda tangan dibuat sebelum pengikatan versi; kecocokan isi dokumen tidak dapat dipastikan."}
++                  </p>
++                </div>
++              )}
+               <div className="grid gap-3 px-6 py-5">
+                 <Field icon={FileText} label="Dokumen" value={`${data.doc_label}${data.number ? " · " + data.number : ""}`} testId="pv-doc" />
+                 <Field icon={Building2} label="Entitas" value={data.entity_name || "-"} />
+@@ -59,8 +73,8 @@ export default function PublicVerify({ code }) {
+                 <div className="flex items-start gap-2 rounded-lg bg-[#F7F8FA] px-3 py-2">
+                   <Fingerprint size={14} className="mt-0.5 shrink-0 text-[#9A9BA3]" />
+                   <div className="min-w-0">
+-                    <span className="text-[10.5px] font-bold uppercase tracking-wide text-[#9A9BA3]">Hash Dokumen (SHA-256)</span>
+-                    <p className="break-all font-mono text-[10.5px] text-[#6B6B73]">{data.doc_hash}</p>
++                    <span className="text-[10.5px] font-bold uppercase tracking-wide text-[#9A9BA3]">Hash Versi Ditandatangani (SHA-256)</span>
++                    <p className="break-all font-mono text-[10.5px] text-[#6B6B73]" data-testid="pv-doc-hash">{data.doc_hash}</p>
+                   </div>
+                 </div>
+                 <div className="text-center text-[11px] text-[#9A9BA3]">Kode verifikasi: <b className="font-mono text-[#0058CC]">{data.code}</b></div>
+diff --git a/frontend/src/features/settings/config/SettingsHub.jsx b/frontend/src/features/settings/config/SettingsHub.jsx
+index 89774e9..e43c849 100644
+--- a/frontend/src/features/settings/config/SettingsHub.jsx
++++ b/frontend/src/features/settings/config/SettingsHub.jsx
+@@ -118,6 +118,7 @@ export default function SettingsHub({
+         if (!alive) return;
+         setGroups(reg.groups || []);
+         setCaps(reg.caps || { settings_manage: false, impact_apply: false });
++        if (reg.caps && !reg.caps.global_write && singleEntity) { setScopeType("entity"); setScopeId(singleEntity); }
+         const map = {};
+         (hp.rows || []).forEach((r) => { map[r.key] = r; });
+         setHealth(map);
+@@ -337,7 +338,9 @@ export default function SettingsHub({
+                 value={scopeType}
+                 onValueChange={(v) => { setScopeType(v); if (v === "global") setScopeId(""); }}
+                 options={[
+-                  { value: "global", label: SCOPE_LABEL.global },
++                  // IX-06 — nilai grup hanya untuk peran lintas badan usaha (keputusan server)
++                  { value: "global", label: caps.global_write ? SCOPE_LABEL.global : `${SCOPE_LABEL.global} (khusus peran lintas PT)`,
++                    disabled: !caps.global_write },
+                   { value: "entity", label: SCOPE_LABEL.entity },
+                 ]}
+                 className="field cfg-select-sm"
+diff --git a/frontend/src/features/wms/QCInspection.jsx b/frontend/src/features/wms/QCInspection.jsx
+index 81c9e1a..8870b17 100644
+--- a/frontend/src/features/wms/QCInspection.jsx
++++ b/frontend/src/features/wms/QCInspection.jsx
+@@ -8,6 +8,7 @@ import { formatQty } from "../../utils/formatters";
+ import KNSelect from "../../components/KNSelect";
+ import useDomainEnums from "../../hooks/useDomainEnums";
+ import RollInspectionModal from "./RollInspectionModal";
++import QcPlanPanel from "./QcPlanPanel";
+ 
+ /**
+  * QC Inspection (Depth #3a) — antrian inspeksi QC barang masuk.
+@@ -40,6 +41,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
+   const [reason, setReason] = useState("");
+   const [busy, setBusy] = useState(false);
+   const [formErr, setFormErr] = useState("");
++  const [coverage, setCoverage] = useState(null);  // PG01
+ 
+   useEffect(() => { load(); }, []);   // eslint-disable-line
+ 
+@@ -65,6 +67,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
+     setDefects("");
+     setReason("");
+     setFormErr("");
++    setCoverage(null);
+   }
+ 
+   const totalQuarantine = useMemo(
+@@ -75,11 +78,13 @@ export default function QCInspection({ currentUser, selectedEntity }) {
+   const maxQty = active ? Number(active.quarantine_qty || 0) : 0;
+   const allocated = Math.round((acceptNum + rejectNum) * 100) / 100;
+   const overAllocated = allocated > maxQty + 0.05;
++  const underAllocated = active && allocated < maxQty - 0.05;  // IX-15 — seluruh qty wajib diputuskan
+ 
+   async function submitDecision() {
+     if (!active) return;
+     if (acceptNum + rejectNum <= 0.01) { setFormErr("Tentukan qty diterima dan/atau ditolak."); return; }
+     if (overAllocated) { setFormErr(`Total (${allocated}) melebihi qty karantina (${maxQty}).`); return; }
++    if (underAllocated) { setFormErr(`Seluruh qty karantina (${maxQty}) wajib diputuskan — sisa ${Math.round((maxQty - allocated) * 100) / 100}.`); return; }
+     if (rejectNum > 0.01 && disposition === "return" && !active.supplier_name) {
+       setFormErr("Task ini tanpa supplier — gunakan disposisi 'Barang Rusak'.");
+       return;
+@@ -213,6 +218,8 @@ export default function QCInspection({ currentUser, selectedEntity }) {
+             {formErr && <div className="notice-bar danger"><span>{formErr}</span><button onClick={() => setFormErr("")}>×</button></div>}
+ 
+             <div className="grid gap-3 mt-2">
++              <QcPlanPanel taskId={active.id} onCoverage={setCoverage}
++                onOpenRolls={() => { const t = active; setActive(null); setRoll4pTask(t); }} />
+               <div className="grid grid-cols-2 gap-3">
+                 <div className="grid gap-1.5">
+                   <label className="text-[11px] font-bold uppercase text-[#1E7B34] flex items-center gap-1">
+@@ -298,7 +305,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
+             <div className="modal-actions">
+               <button className="btn-secondary" onClick={() => setActive(null)} disabled={busy}>Batal</button>
+               <button data-testid="qc-submit-decision" className="btn-primary"
+-                      onClick={submitDecision} disabled={busy || overAllocated}>
++                      onClick={submitDecision} disabled={busy || overAllocated || underAllocated || !coverage?.met}>
+                 {busy ? "Memproses…" : "Simpan Keputusan QC"}
+               </button>
+             </div>
+diff --git a/frontend/src/features/wms/QcPlanPanel.jsx b/frontend/src/features/wms/QcPlanPanel.jsx
+new file mode 100644
+index 0000000..85f9a3f
+--- /dev/null
++++ b/frontend/src/features/wms/QcPlanPanel.jsx
+@@ -0,0 +1,81 @@
++import { useEffect, useState } from "react";
++import { ListChecks, Percent } from "lucide-react";
++import axios, { API } from "../../services/apiClient";
++
++// PG01 — pilihan rencana inspeksi: "Cek semua" (default) atau "Sampling" + cakupan tercatat.
++export default function QcPlanPanel({ taskId, onCoverage, onOpenRolls }) {
++  const [cov, setCov] = useState(null);
++  const [mode, setMode] = useState("all");
++  const [pct, setPct] = useState("10");
++  const [min, setMin] = useState("1");
++  const [busy, setBusy] = useState(false);
++  const [err, setErr] = useState("");
++
++  const apply = (c) => { setCov(c); onCoverage?.(c); };
++  useEffect(() => {
++    axios.get(`${API}/inbound/qc/tasks/${taskId}/plan`).then((r) => {
++      apply(r.data); setMode(r.data.mode || "all");
++      if (r.data.sample_pct) setPct(String(r.data.sample_pct));
++      if (r.data.sample_min) setMin(String(r.data.sample_min));
++    }).catch((e) => setErr(e.response?.data?.detail || "Gagal memuat rencana QC"));
++  }, [taskId]); // eslint-disable-line
++
++  const save = async () => {
++    setBusy(true); setErr("");
++    try {
++      const r = await axios.put(`${API}/inbound/qc/tasks/${taskId}/plan`,
++        { mode, sample_pct: Number(pct) || 0, sample_min: Number(min) || 0 });
++      apply(r.data);
++    } catch (e) { setErr(e.response?.data?.detail || "Gagal menyimpan rencana QC"); } finally { setBusy(false); }
++  };
++
++  const dirty = cov && (mode !== cov.mode || (mode === "sampling"
++    && (Number(pct) !== Number(cov.sample_pct) || Number(min) !== Number(cov.sample_min))));
++  const opt = (v, label, Icon) => (
++    <button type="button" data-testid={`qc-plan-mode-${v}`} onClick={() => setMode(v)}
++      className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-[12px] font-semibold transition-colors ${mode === v ? "border-[#0058CC] bg-[#EEF4FF] text-[#0058CC]" : "border-[#EFF0F2] text-[#3C3C43] hover:bg-[#F7F8FA]"}`}>
++      <Icon size={13} /> {label}
++    </button>
++  );
++
++  return (
++    <div className="grid gap-2 rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-3" data-testid="qc-plan-panel">
++      <span className="text-[11px] font-bold uppercase text-[#6B6B73]">Rencana inspeksi</span>
++      <div className="flex gap-2">{opt("all", "Cek semua", ListChecks)}{opt("sampling", "Sampling", Percent)}</div>
++      {mode === "sampling" && (
++        <div className="grid grid-cols-2 gap-2">
++          <label className="grid gap-1 text-[11px] text-[#6B6B73]">% roll per lot
++            <input data-testid="qc-plan-pct" type="number" min="1" max="100" className="form-input" value={pct} onChange={(e) => setPct(e.target.value)} />
++          </label>
++          <label className="grid gap-1 text-[11px] text-[#6B6B73]">Minimal roll
++            <input data-testid="qc-plan-min" type="number" min="1" className="form-input" value={min} onChange={(e) => setMin(e.target.value)} />
++          </label>
++        </div>
++      )}
++      {dirty && (
++        <button data-testid="qc-plan-save" className="btn-secondary btn-sm" onClick={save} disabled={busy}>
++          {busy ? "Menyimpan…" : "Simpan rencana"}
++        </button>
++      )}
++      {cov && (
++        <div className="flex items-center justify-between gap-2 text-[12px]" data-testid="qc-plan-coverage">
++          <span>
++            Terinspeksi <b data-testid="qc-plan-inspected">{cov.inspected_rolls}</b>/{cov.total_rolls} roll · wajib{" "}
++            <b data-testid="qc-plan-required">{cov.required_rolls}</b>
++            {cov.mode === "sampling" && cov.met && cov.inspected_rolls < cov.total_rolls
++              ? " · keputusan sampel berlaku untuk sisa lot" : ""}
++          </span>
++          <span data-testid="qc-plan-met" className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${cov.met ? "bg-[#E7F7EC] text-[#1B7E3B]" : "bg-[#FFF1E0] text-[#8C4A00]"}`}>
++            {cov.met ? "Cakupan terpenuhi" : "Belum terpenuhi"}
++          </span>
++        </div>
++      )}
++      {cov && !cov.met && (
++        <button data-testid="qc-plan-open-rolls" className="btn-secondary btn-sm" onClick={onOpenRolls}>
++          Inspeksi roll (4-Point / grade manual)
++        </button>
++      )}
++      {err && <p className="text-[11.5px] text-[#C0341D]" data-testid="qc-plan-error">{err}</p>}
++    </div>
++  );
++}

@@ -1,0 +1,46 @@
+{
+  "summary": "Validasi independen Fase 02 Gelombang 3 (12 ID lanjutan) + regresi penuh. 64/64 lulus (28 Fase01 + 21 Fase02 service + 15 Fase02 API). TEMUAN KRITIS DITEMUKAN & DIPERBAIKI: patch D4-ALERT-WMS-01 memperluas kunci agregasi menjadi 3-tuple (warehouse_id, flow_type, entity_id) namun loop `for (wid, flow), g in groups.items()` di services/alert_service.py:298 masih meng-unpack 2 elemen → ValueError 'too many values to unpack' setiap kali ada tugas gudang menganggur. Scheduler job_ops_stalled akan crash setiap kali ada ≥1 tugas tertunda > TASK_STALE_DAYS (2 hari) → notifikasi 'ops_stalled' DIAM TOTAL di produksi. Diperbaiki ke `(wid, flow, _ent)` dan diverifikasi dengan uji smoke yang memanggil job langsung. Validasi 12 ID selengkapnya: (1) D4-PRICE-SCOPE-01 — _get_or_404 ditambahi assert_entity_access, stats memakai resolve_list_scope. (2) D4-WMS-03 — rack.levels[].bins ikut dijumlahkan ke total_capacity + legacy rack.bins. (3) D4-ALERT-WMS-01 — kunci agregasi menyertakan entity_id (2 PT berbeda = 2 notifikasi); loop unpack diperbaiki. (4) D4-SUPPLY-01 — 'partial' kini di OPEN_PO_STATUSES. (5) D4-GLOBAL-01 — sales_stock_service.apply_global mengkonversi qty PO ke base unit via quantity_base (10 roll × 500 base/10 doc = 500 base; partial 8/10 → 400). (6) D4-RFQ-01 — _price_of mengembalikan 0 saat supplier.lines.available=False meski harga lama positif → award ditolak 'belum memberi harga'/'Harga 0' baik mode full maupun line. (7) V3-MRES-01 — ID cadangan deterministik mres_<pr>_<line> + distributed lock (material_reservation_locks DuplicateKey) + sanity cek retry idempoten; dua PR paralel atas bahan sama (stok 100, butuh 80 masing-masing) → total cadangan ≤ 100. (8) V3-MRES-02 — 600 balances & 2200 cadangan aktif terjumlah penuh (to_list(None)): on_hand_available=600, reserved_by_others=1100, makloon_reserved_qty=1100. (9) D4-AI-05 — snapshot_stock memecah length_reserved: roll available(rem=100,lres=30) → avail=70, roll reserved(rem=50) + 30 lres dari available → reserved=80. (10) D4-PA-03 — grouping key suggest() dan qty_by_unit/mixed_units create_order memisah meter vs kg. (11) V3-RFID-01 — cache dwell hanya berlaku pada passage_id yang SAMA; passage baru → evaluasi ulang. (12) D4-RET-POLICY-01 — _linked_supplier_deadline menolak PO entitas lain (source='none') dan memakai PO entitas pesanan ketika ada. Regresi Fase 01 28/28 tetap hijau. DB uji di-drop; residu TEST_ nol. Backend tetap start bersih.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "services/alert_service.py:298 (job_ops_stalled)",
+        "issue": "SUDAH DIPERBAIKI oleh testing agent. Patch D4-ALERT-WMS-01 memperluas key agregasi menjadi 3-tuple tapi loop tetap unpack 2 elemen → ValueError 'too many values to unpack (expected 2)' setiap kali ada ≥1 wms_tasks yang menganggur > 2 hari. Dampak: scheduler alert_service job_ops_stalled crash → notifikasi tertunda gudang tidak pernah dikirim di produksi.",
+        "priority": "CRITICAL"
+      }
+    ],
+    "minor": []
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_g3_phase01.py",
+    "/app/backend/tests/test_g3_phase02.py",
+    "/app/backend/tests/test_g3_phase02_api.py",
+    "/app/test_reports/pytest/g3_phase01.xml",
+    "/app/test_reports/pytest/g3_phase02.xml",
+    "/app/test_reports/pytest/g3_phase02_api.xml"
+  ],
+  "action_items": [
+    "VERIFIKASI fix alert_service.py:298 — testing agent sudah menerapkan `for (wid, flow, _ent), g in groups.items()`. Pertimbangkan apakah entity_id juga perlu masuk judul/body notifikasi (saat ini title masih 'Tugas gudang tertunda: WH-1' tanpa nama PT; untuk 2 PT di WH yang sama, pengguna hanya melihat 2 notifikasi dengan judul identik — bedakan di body/title agar unik di bell).",
+    "D4-DASH-01 (follow-up performa iteration_164): backlog Fase 03 — ganti loop products+inventory_balances to_list(None) di routers/dashboard.py dengan agregasi server-side `$group` + materialisasi hpp per request untuk tenant katalog >50k produk.",
+    "D4-CAP-01 (follow-up): konfirmasi index pada products.id (unique) agar `$in` ribuan pids tetap selektif.",
+    "V3-MRES-01 (opsional): tambahkan TTL index pada material_reservation_locks (misal 60 detik) sebagai safeguard bila proses mati di tengah tanpa membersihkan lock (meski try/finally sudah ada, crash SIGKILL/pod-eviction dapat meninggalkan lock dangling)."
+  ],
+  "critical_code_review_comments": [
+    "alert_service.py:286,298 — BUG RUNTIME: key agregasi diubah menjadi 3-tuple pada baris 286 (G3 D4-ALERT-WMS-01) tapi destructuring di baris 298 masih 2-tuple → ValueError pasti setiap job_ops_stalled dijalankan atas tasks berisi ≥1 entry. Diperbaiki ke `(wid, flow, _ent)`. REKOMENDASI tim: pre-commit `python -c 'import ast; ...'` atau test smoke untuk setiap scheduler job (invoke tanpa data lalu dengan 1 row), karena patch sejenis ini tidak ketangkap unit test services yang hanya memeriksa kunci dictionary (bukan loop).",
+    "material_reservation_service.py:84..107 — pola distributed lock via insert duplicate _id OK untuk mesin tunggal MongoDB, tetapi: (a) lock tidak punya TTL — bila proses mati tiba-tiba (SIGKILL, pod evict) di antara insert dan delete, lock dangling. (b) retry 50×0.05s = 2.5 detik maksimal; pada beban tinggi (misal 20 PR paralel) peluang kehabisan retry nyata. Tambahkan TTL index `expireAfterSeconds: 60` dan/atau tingkatkan retry window.",
+    "sales_stock_service.py:46-48 — konversi `open_qty * quantity_base / q_doc` benar bila quantity_base = qty_doc × factor. Namun saat `received_qty > 0` dan `quantity_base` tidak disesuaikan, aritmetikanya mengandalkan rasio di dokumen tetap konsisten. Pastikan GRN tidak mengubah quantity_base saat received_qty naik (atau tulis unit test terpisah).",
+    "analytics_snapshots.py:17-23 — rumus `$min` + `$subtract` menangani length_reserved > length_remaining dengan benar (clamp). OK. Pertimbangkan membuat helper agregasi karena ekspresi kondisional sudah 4 lapis.",
+    "putaway_order_service.py:171 — set comprehension `{(i.get('unit') or 'meter') for i in items}` diiterasi ulang di baris 172 → O(n²) kecil. OK karena items selalu <200 dalam praktek."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_g3_phase02.py (ditambahkan 17 uji service-level: SUPPLY-01, GLOBAL-01×2, RFQ-01×2, MRES-01×2, MRES-02, WMS-03, ALERT-WMS-01×2, AI-05, PA-03×2, RFID-01, RET-POLICY-01)",
+    "/app/backend/services/alert_service.py (perbaikan unpack 2→3 tuple di loop job_ops_stalled; satu baris)"
+  ],
+  "success_rate": {"backend": "100% (64/64: 28 Fase01 + 21 Fase02 service + 15 Fase02 API)", "frontend": "skipped (backend only)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (dari /app/memory/test_credentials.md). Uji ini service-level + DB terisolasi (DB_NAME=g3_audit_phase02); tidak memakai akun demo.",
+  "seed_data_creation": "Semua data ditulis ke DB uji g3_audit_phase01 & g3_audit_phase02 dengan prefix TEST_. DB uji di-drop setelah pytest (mongosh dropDatabase). Residu di DB produksi preview: 0.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fase 02 — 12 ID lanjutan ditutup (total 16 dari 23 Fase02 selesai; iteration_164 menutup 4 ID sebelumnya). Perintah regresi: `cd /app/backend && DB_NAME=g3_audit_phase01 python -m pytest tests/test_g3_phase01.py -q -n0` (28), `cd /app/backend && DB_NAME=g3_audit_phase02 python -m pytest tests/test_g3_phase02.py -q -n0` (21), `cd /app && python -m pytest backend/tests/test_g3_phase02_api.py -q -n0` (15). BUG RUNTIME ditemukan di alert_service.py:298 setelah patch D4-ALERT-WMS-01: unpack 2-tuple vs key 3-tuple. Sudah diperbaiki. Sisa Fase02 open: V3-WEIGHT-01, V3-WMS-02, D4-STOCK-01, D4-AI-06, D4-PLAN-05, D4-PA-01, D4-TAG-01 (7 ID). Hindari pytest-xdist (-n0) untuk tes service karena autouse _clean fixture menghapus data lintas worker.",
+  "rca of the issue": "BUG D4-ALERT-WMS-01 (post-fix): patch main agent di services/alert_service.py:286 memperluas kunci agregasi menjadi (warehouse_id, flow_type, entity_id) untuk memastikan 2 PT di gudang & arah sama menghasilkan 2 notifikasi terpisah. Namun loop di baris 298 (`for (wid, flow), g in groups.items():`) TIDAK diperbarui — tetap meng-unpack 2 elemen. Reproduksi: seed ≥1 wms_tasks dengan status di TASK_OPEN_STATUSES dan created_at > 2 hari lalu, panggil `services.alert_service.job_ops_stalled()` → ValueError 'too many values to unpack (expected 2)'. Mitigasi: ubah menjadi `for (wid, flow, _ent), g in groups.items():` (satu baris). Pelajaran: tidak ada uji smoke untuk eksekusi scheduler alert; disarankan menambah test invoke untuk setiap job (ar/ap/depr/budget/production/ops/event_scan) karena job ini dijalankan background dan error-nya di-swallow di beberapa setup."
+}

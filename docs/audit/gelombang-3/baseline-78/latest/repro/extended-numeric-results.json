@@ -1,0 +1,156 @@
+{
+  "commit": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_1c0a7a9886514839b717d916d4098020",
+  "results": [
+    {
+      "id": "D4-SALES-03-commission-entity",
+      "expected": {
+        "commission": 0,
+        "collected_basis": 0
+      },
+      "actual": {
+        "commission": 9.0,
+        "collected_basis": 0.0
+      },
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-HR-01-multi-run-trend",
+      "expected": 300,
+      "actual": 200.0,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-HR-01-multi-run-kpi",
+      "expected": 300,
+      "actual": 100.0,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-HR-02-separation-date",
+      "expected": 0,
+      "actual": 1,
+      "status": "observed_difference",
+      "note": "Updating a former employee now must not count their departure as this month."
+    },
+    {
+      "id": "D4-WMS-01-wib-day",
+      "expected": 1,
+      "actual": 2,
+      "status": "observed_difference",
+      "note": "Freeze now=01 Oct 01:00 WIB; 30 Sept 23:00 WIB belongs yesterday."
+    },
+    {
+      "id": "D4-DATE-01-home-default",
+      "expected": {
+        "month": "2026-10",
+        "day": "2026-10-01"
+      },
+      "actual": {
+        "month": "2026-09",
+        "day": "2026-09-30"
+      },
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-DATE-01-month-inclusion",
+      "expected": true,
+      "actual": false,
+      "status": "observed_difference",
+      "note": "Normal UTC timestamp is 01 Oct 01:00 WIB; selected October must include it."
+    },
+    {
+      "id": "D4-DATE-01-prior-month",
+      "expected": false,
+      "actual": true,
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-DATE-01-year-inclusion",
+      "expected": true,
+      "actual": false,
+      "status": "observed_difference",
+      "note": "01 Jan 2027 01:00 WIB belongs business year2027."
+    },
+    {
+      "id": "D4-WMS-02-last-measured-cc",
+      "expected": "CCOK",
+      "actual": "CCOPEN",
+      "status": "observed_difference",
+      "note": "New unfinished count must not erase last measured accuracy."
+    },
+    {
+      "id": "D4-AI-05-partial-cut-live",
+      "expected": {
+        "stock_available_qty": 7,
+        "stock_reserved_qty": 3
+      },
+      "actual": {
+        "stock_available_qty": 10.0,
+        "stock_reserved_qty": 0
+      },
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-AI-05-partial-cut-snapshot",
+      "expected": {
+        "avail": 7,
+        "reserved": 3
+      },
+      "actual": {
+        "avail": 10.0,
+        "reserved": 0
+      },
+      "status": "observed_difference",
+      "note": ""
+    },
+    {
+      "id": "D4-MKT-01-attribution-conservation",
+      "expected": {
+        "total_reach": 100,
+        "platform_reach_sum": 100,
+        "account_reach_sum": 100
+      },
+      "actual": {
+        "total_reach": 100.0,
+        "platform_reach_sum": 200.0,
+        "account_reach_sum": 200.0
+      },
+      "status": "observed_difference",
+      "note": "No per-platform/account measurements stored. The UI presents the whole aggregate independently for each platform/account."
+    },
+    {
+      "id": "D4-RND-01-person-identity",
+      "expected": 2,
+      "actual": 1,
+      "status": "observed_difference",
+      "note": "Two genuine performer user IDs sharing a display name become one KPI identity."
+    },
+    {
+      "id": "D4-AI-06-mixed-product-total",
+      "expected": null,
+      "actual": 15.0,
+      "status": "observed_difference",
+      "note": "Products individually have correct meters/kg, but the combined total must not add dimensions."
+    },
+    {
+      "id": "D4-WMS-03-level-capacity",
+      "expected": {
+        "locations": 100,
+        "manager_report": 100
+      },
+      "actual": {
+        "locations": 100.0,
+        "manager_report": 0.0
+      },
+      "status": "observed_difference",
+      "note": ""
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+[
+ {
+  "id": "WM-02",
+  "invariant": "reserve 30 dari roll 100 TIDAK membuat roll baru",
+  "pass": false,
+  "detail": "{'rolls': 2}"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "induk tetap 100 fisik, 30 dipesan, tag induk tetap",
+  "pass": false,
+  "detail": "{'length_remaining': 70.0, 'length_reserved': None, 'rfid_tag_id': 'tag_audit_wm02_481e66', 'status': 'available'}"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "saldo: available 70 + reserved 30, on_hand 100",
+  "pass": true,
+  "detail": "{'available_qty': 70.0, 'reserved_qty': 30.0, 'on_hand_qty': 100.0}"
+ },
+ {
+  "id": "WM-02",
+  "invariant": "alokasi menandai pending_cut + reservation_id",
+  "pass": false,
+  "detail": "{'roll_id': 'roll_6c2b69b20dfd', 'roll_no': 'R-audit_wm02_481e66-0-1', 'lot': 'L1', 'dye_lot': 'L1', 'length': 30.0}"
+ }
+]
+CRASH (kontrak belum ada di kode ini): AttributeError: module 'services.roll_service' has no attribute '_reserve_length'
+pass=1 fail=3 crashed=1

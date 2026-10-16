@@ -1,0 +1,57 @@
+[
+  {
+    "script": "backend/test_core_tahapan_poc.py",
+    "database": "knhost_audit_native90_retry_timeouts",
+    "exit": 0,
+    "seconds": 8.02,
+    "log": "native90-timeout-replay-test_core_tahapan_poc.log",
+    "pass_log_tokens": 65,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_f0c_scoping_leak_poc.py",
+    "database": "knhost_audit_native90_retry_timeouts",
+    "exit": 0,
+    "seconds": 3.76,
+    "log": "native90-timeout-replay-test_f0c_scoping_leak_poc.log",
+    "pass_log_tokens": 1,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_fase_d_makloon_poc.py",
+    "database": "knhost_audit_native90_retry_timeouts",
+    "exit": 0,
+    "seconds": 7.8,
+    "log": "native90-timeout-replay-test_fase_d_makloon_poc.log",
+    "pass_log_tokens": 69,
+    "fail_log_tokens": 0,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_forms_poc.py",
+    "database": "knhost_audit_native90_retry_timeouts",
+    "exit": 0,
+    "seconds": 0.31,
+    "log": "native90-timeout-replay-test_forms_poc.log",
+    "pass_log_tokens": 2,
+    "fail_log_tokens": 1,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  },
+  {
+    "script": "backend/test_f3_smoke.py",
+    "database": "knhost_audit_native90_retry_timeouts",
+    "exit": 1,
+    "seconds": 2.19,
+    "log": "native90-timeout-replay-test_f3_smoke.log",
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "input_adaptations": [],
+    "note": "Current-contract input adapter supplies mandatory sampling performer only; original assertions retained. Shared imported app with fixture reset. Independent isolated reproduction required for a finding."
+  }
+]

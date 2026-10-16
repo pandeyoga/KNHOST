@@ -1,0 +1,28 @@
+{
+  "summary": "P03 retest after fix. Backend regression PASS: POST /api/transfers/KANDA/TRF-00003/receive with outcome='damaged' and note='x' now returns 400 WITHOUT mutating any roll. All 10 rolls remained in_transit_transfer, transfer stayed 'dispatched', no damaged exception recorded — confirms fix in services/transfer_receipt_service.py:receive() where all lines are validated BEFORE any landing. Frontend PASS: whadmin login → entity Kanda Fabric → ?view=operations → wms-tab-transfer → open KANDA/TRF-00003 card → transfer-detail-modal shows transfer-detail-so link to KANDA/SO-00005 (Toko Tekstil Pasar Baru), transfer-receipt-panel visible with transfer-receipt-table 10 rows all 'Dalam perjalanan', NO complete-transfer-button present (as required). Ticked 3 rolls (RL-10135/10143/10136) via receipt-pick-<roll_no>, set RL-10135 to 'damaged' via receipt-outcome-RL-10135 and added note 'sobek tepi gulungan panjang' via receipt-note-RL-10135, clicked transfer-receipt-submit → transfer-receipt-results listed 'RL-10135: Diterima rusak / RL-10143: Diterima / RL-10136: Diterima', status badge flipped to 'Diterima Sebagian'. Reported RL-10142 missing via exc-missing-roll + exc-missing-reason + exc-missing-submit → transfer-exceptions shows 2 open (Rusak RL-10135, Hilang RL-10142). Create-transfer flow: create-transfer-button opens transfer-form; selecting Soreang · Gudang Kanda (SRG-01) in source-warehouse-select renders transfer-so-picker + transfer-so-select (option 'Tidak terkait SO' available; form not submitted). GRN screen not tested per instructions.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p03_damaged_shortnote_fix.py",
+    "/app/test_reports/pytest/p03_damaged_fix.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "The TransferSoPicker testids `transfer-so-picker` and `transfer-so-select` correctly surface only after a source warehouse is picked — good. Consider also adding a stable testid for the actual Soreang option (currently `source-warehouse-select-option-wh_0fe5c5d87530` works but is id-bound; semantic alias would help regression stability).",
+    "Pre-validation in receive() now reliably rejects malformed damaged lines without side effects. Suggest adding a Pydantic validator at the TransferReceiveLine schema level too (defense in depth) for future-proofing."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p03_damaged_shortnote_fix.py"
+  ],
+  "success_rate": { "backend": "100% (1/1)", "frontend": "100% all requested selectors verified" },
+  "test_credentials": "whadmin@kainnusantara.id/demo1234 (used for both backend and frontend).",
+  "seed_data_creation": "No new seed. KANDA/TRF-00003 was partially consumed by the frontend flow: 2 received + 1 received-damaged + 1 missing exception; 6 rolls remain in transit as requested.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "KANDA/TRF-00003 is now partially_received (3 landed at GU-KANDA, 1 open 'missing' exception on RL-10142, 6 rolls still in_transit_transfer). Fresh dispatched transfer needed for another full E2E. Backend fix verified via the one-shot test test_p03_damaged_shortnote_fix.py which only fires a SINGLE bad request and asserts zero mutation; safe to re-run on any dispatched transfer by swapping TRF_CODE.",
+  "rca of the issue": "Previously, receive() per-line order was _land() → note validation → raise 400, so a damaged line with short note mutated the roll+inventory_movement before the 400 was raised. Fix (verified): all lines are now validated before any _land() call, so malformed damaged lines return 400 cleanly with no DB mutation. Confirmed by: (1) 400 status code, (2) all 10 rolls still in_transit_transfer after request, (3) transfer still 'dispatched', (4) no 'damaged' exception recorded on the transfer."
+}

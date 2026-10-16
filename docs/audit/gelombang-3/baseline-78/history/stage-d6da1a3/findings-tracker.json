@@ -1,0 +1,1807 @@
+{
+  "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+  "previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+  "date": "2026-10-05",
+  "status_policy": "Open → implemented_pending_validation → verified_fixed only after independent review. Business-definition decisions need explicit approval; never infer closure from a green status-only test.",
+  "items": [
+    {
+      "id": "V3-PROD-01",
+      "priority": "P1",
+      "title": "Konsumsi bahan dapat berulang setelah movement insert gagal",
+      "related": [
+        "GN-06",
+        "GN-11",
+        "W2-024"
+      ],
+      "source": "backend/services/production_service.py",
+      "function": "_consume_material",
+      "function_line": 331,
+      "line": 363,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/production_service.py#L363",
+      "cause": "CAS mengurangi roll sebelum journal inventory_movements ditulis. Recovery menghitung konsumsi dari movement; write yang gagal tidak tercatat, sehingga retry mengonsumsi lagi.",
+      "observation": "Stok20→15 saat gagal insert movement; retry20→10 untuk output5, sementara movement/reported consumption hanya5. Tidak ada crash sesudah commit yang diasumsikan: fault terjadi sebelum insert.",
+      "fix_prompt": "Buat operasi konsumsi per material/roll dengan identity stabil dan state durable sebelum efek, lalu lakukan perubahan fisik dan ledger dalam transaksi atau step idempoten yang dapat direkonsiliasi. Jangan menyelesaikan recovery hanya dari movement yang mungkin belum lahir.",
+      "acceptance": "Fault sebelum/sesudah tiap write, retry key sama/berbeda dan dua worker: stok20→15, output5, movement5 tepat sekali. Recovery harus bekerja melalui endpoint sah; penghapusan lock di probe hanya kontrol pemulihan lokal.",
+      "baseline_provenance": "Fungsi berubah terhadap baseline W2. Failure window kandidat dikonfirmasi; tanpa differential runtime pada tiap commit, perubahan ini belum membuktikan bug pertama kali lahir pada satu commit tertentu.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "error": "RuntimeError",
+        "before_qty": 20,
+        "after_fault_qty": 15.0,
+        "after_retry_qty": 10.0,
+        "output": 5.0,
+        "reported_consumed": 5.0,
+        "movement_qty": 5.0
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": " 360:             if not won:\n 361:                 continue  # roll berubah/di-hold bersamaan — dicoba lagi di putaran berikut\n 362:             uc = float(r.get(\"unit_cost\") or r.get(\"base_unit_cost\") or 0)\n 363:             await db.inventory_movements.insert_one({\n 364:                 \"id\": new_id(\"mov\"), \"product_id\": product_id, \"warehouse_id\": warehouse_id,\n 365:                 \"owner_entity_id\": owner_entity_id, \"movement_type\": \"production_consume\",\n 366:                 \"quantity\": -take, \"unit\": r.get(\"unit\", \"meter\"), \"lot\": r.get(\"lot\", \"\"),\n 367:                 \"lot_id\": r.get(\"lot_id\", \"\"), \"roll_id\": r[\"id\"], \"unit_cost\": uc,\n 368:                 \"qty_rolls\": 1, \"source_document\": wo_id, \"operation_id\": op_id, \"timestamp\": now_iso(),\n 369:             })\n 370:             value += take * uc",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-PROD-02",
+      "priority": "P1",
+      "title": "Reversal dianggap selesai sebelum panjang roll dipulihkan",
+      "related": [
+        "GN-06",
+        "GN-11"
+      ],
+      "source": "backend/services/production_service.py",
+      "function": "reverse_operation",
+      "function_line": 383,
+      "line": 389,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/production_service.py#L389",
+      "cause": "Movement ditandai reversed sebelum update stok. Kalau update stok gagal, retry mengecualikan movement tersebut dan tidak melakukan restore.",
+      "observation": "Roll tersisa5 dari awal10; restore gagal sebelum update. Retry restored0, roll tetap5 dan movement reversed=true.",
+      "fix_prompt": "Claim reversal dengan token/stage dan stable operation ID. Commit restore stock dengan marker yang sama secara atomik, atau simpan progress yang membedakan claimed dari applied; retry memeriksa kontribusi aktual.",
+      "acceptance": "Restore operasi5 selalu menghasilkan roll10, satu reversal movement dan projection10, termasuk fault restore dan dua worker; jangan double-increment saat response hilang.",
+      "baseline_provenance": "Fungsi ini belum ada di baseline W2; failure berada pada helper/alur baru kandidat.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "retry_restored": 0.0,
+        "remaining": 5,
+        "movement_reversed": true
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": " 386:     async for m in db.inventory_movements.find(\n 387:             {\"operation_id\": op_id, \"movement_type\": \"production_consume\", \"reversed\": {\"$ne\": True}}, {\"_id\": 0}):\n 388:         mark = await db.inventory_movements.update_one(\n 389:             {\"id\": m[\"id\"], \"reversed\": {\"$ne\": True}}, {\"$set\": {\"reversed\": True, \"reversed_at\": now_iso()}})\n 390:         if mark.modified_count != 1:\n 391:             continue\n 392:         qty = -float(m[\"quantity\"])\n 393:         await db.inventory_rolls.update_one({\"id\": m[\"roll_id\"]}, [\n 394:             {\"$set\": {\"status\": {\"$cond\": [{\"$eq\": [\"$status\", \"consumed\"]}, \"available\", \"$status\"]},\n 395:                       \"length_remaining\": {\"$round\": [{\"$add\": [\"$length_remaining\", qty]}, 2]},\n 396:                       \"updated_at\": now_iso()}}])",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-MRES-01",
+      "priority": "P1",
+      "title": "Dua PR mencadangkan bahan lebih banyak daripada stok",
+      "related": [
+        "W2-REQ-07",
+        "W2-REQ-04"
+      ],
+      "source": "backend/services/material_reservation_service.py",
+      "function": "reserve_for_pr",
+      "function_line": 54,
+      "line": 79,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/material_reservation_service.py#L79",
+      "cause": "free_for_commitment dibaca lalu material_reservations diinsert tanpa claim capacity atau unique reservation logical key. Dua PR dapat membaca jumlah bebas sama.",
+      "observation": "Dua approved PR masing-masing700, recipe yield1 dan stok1000 menghasilkan active reservation1400; shortage0 pada kedua PR. Barrier hanya menyelaraskan read, tetap memanggil helper asli.",
+      "fix_prompt": "Serialisasi commitment pada key product+owner+unit dan dimensi gudang bila relevan. Reservasi harus CAS terhadap ledger kapasitas yang konsisten dengan sales/MKO; unique PR line/version untuk retry; shortage dilaporkan eksplisit.",
+      "acceptance": "Parallel700+700 atas1000 tidak pernah reserved>1000. Remaining400 harus shortage/backorder/approval sesuai policy, tidak dianggap tersedia. Uji race dengan SO, issue/cancel/replan dan input UOM berbeda.",
+      "baseline_provenance": "File/service belum ada di baseline W2; failure berasal dari alur yang ditambahkan pada kandidat.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "on_hand_available": 1000,
+        "reserved": 1400.0,
+        "shortage": 0.0,
+        "pr_count": 2
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": "  76:         if not pid or need <= 0:\n  77:             continue\n  78:         entity_id = pr.get(\"entity_id\") or \"\"\n  79:         free = await free_for_commitment(pid, entity_id)\n  80:         qty = round(min(need, free), 3)\n  81:         doc = {\"id\": new_id(\"mres\"), \"product_id\": pid, \"owner_entity_id\": entity_id,\n  82:                \"ref_type\": \"purchase_requisition\", \"ref_id\": pr_id, \"pr_id\": pr_id, \"pr_number\": pr.get(\"number\"),\n  83:                \"pr_line_no\": line_no, \"output_product_id\": line[\"product_id\"],\n  84:                \"target_output_qty\": pre.get(\"target_output_qty\"), \"recipe\": pre.get(\"recipe\"),\n  85:                \"required_qty\": need, \"qty\": qty, \"shortage_qty\": round(need - qty, 3),\n  86:                \"source_ref_id\": pr.get(\"source_ref_id\") or \"\", \"status\": ACTIVE,",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-AR-01",
+      "priority": "P1",
+      "title": "Receipt gagal dibuat tetapi SO terbayar dan deposit kembali utuh",
+      "related": [
+        "FN-10",
+        "W2-017"
+      ],
+      "source": "backend/services/ar_receipt_service.py",
+      "function": "create_receipt",
+      "function_line": 413,
+      "line": 448,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/ar_receipt_service.py#L448",
+      "cause": "Receipt mengurangi deposit, mengalokasikan payments ke SO, baru insert receipt. Except mengembalikan deposit tetapi tidak membatalkan alokasi SO. Tidak ada receipt durable untuk resume.",
+      "observation": "Saldo deposit100; fault sebelum insert ar_receipts: SO paid_total100/payments1, customer deposit100, receipt count0. Saldo yang sama bisa dipakai lagi.",
+      "fix_prompt": "Persist receipt operation sebelum allocations. Setiap alokasi harus terkait stable receipt ID dan dapat resume/compensate tanpa menghapus payment milik operasi lain. Tangani insert/GL/cash/deposit sebagai satu protokol durable.",
+      "acceptance": "Fault sebelum receipt insert, setelah SO allocation, sebelum/sesudah GL dan saat rollback. Akhir harus semua effect100 tepat sekali atau semua batal; tidak ada SO paid tanpa receipt/deposit konsumsi. Uji multi-SO dan pembayaran bersamaan.",
+      "baseline_provenance": "Fungsi berubah terhadap baseline W2. Failure window kandidat dikonfirmasi; tanpa differential runtime pada tiap commit, perubahan ini belum membuktikan bug pertama kali lahir pada satu commit tertentu.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "error": "RuntimeError('Synthetic receipt insert fault BEFORE write')",
+        "paid_total": 100.0,
+        "payments": 1,
+        "deposit": 100.0,
+        "receipts": 0
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": " 445:     receipt_id = new_id(\"arc\")\n 446:     number = await next_doc_number(\"ar_receipts\", \"number\", \"AR-\", entity_id=entity_id)\n 447:     # W2-017 — dana deposit DIRESERVASI (CAS) sebelum alokasi SO; gagal → 409 tanpa efek apa pun.\n 448:     await _adjust_deposit(customer[\"id\"], -use_deposit_amount)\n 449:     try:\n 450:         return await _create_receipt_after_reserve(payload, actor, customer, amount, use_deposit_amount,\n 451:                                                    total_funds, method, receipt_date, entity_id,\n 452:                                                    receipt_id, number)\n 453:     except BaseException:\n 454:         if not await db.ar_receipts.find_one({\"id\": receipt_id}, {\"_id\": 1}):\n 455:             await _adjust_deposit(customer[\"id\"], use_deposit_amount)   # kompensasi reservasi",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-BANK-01",
+      "priority": "P1",
+      "title": "Satu baris bank dapat direkonsiliasi ke dua transaksi kas penuh",
+      "related": [
+        "CX-07",
+        "CX-06"
+      ],
+      "source": "backend/services/bank_recon_service.py",
+      "function": "_link",
+      "function_line": 588,
+      "line": 614,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/bank_recon_service.py#L614",
+      "cause": "CAS membatasi capacity cash transaction, tetapi statement line ditulis berdasarkan ID tanpa claim status/version/capacity yang sama. Dua transaksi berbeda dapat sama-sama mengklaim line bank.",
+      "observation": "Statement100; dua manual_match berbeda100+100: line allocated100, cash reconciled200, kedua cash mencantumkan matched_line_ids BL.",
+      "fix_prompt": "Claim kedua sisi allocation dengan stable match operation dan transaksi/compensation idempoten. Revalidate statement remaining setelah claim; jangan hanya melindungi tiap cash record.",
+      "acceptance": "Dua matching paralel atas line100: satu sukses dan satu conflict atau total allocated100. Jumlah dari statement links harus sama dengan cash links. Uji split, duplicate payload, unlink/rerun/fault antar-write.",
+      "baseline_provenance": "Fungsi berubah terhadap baseline W2. Failure window kandidat dikonfirmasi; tanpa differential runtime pada tiap commit, perubahan ini belum membuktikan bug pertama kali lahir pada satu commit tertentu.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "statement_amount": 100,
+        "statement_allocated": 100.0,
+        "cash_reconciled": 200.0,
+        "linked_cash_count": 2
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": " 611:             raise ValueError(\"Sisa transaksi buku tidak cukup (baru saja dipakai proses lain / alokasi ganda).\")\n 612:         claimed.append({\"txn_id\": a[\"txn_id\"], \"amount\": amt})\n 613:     txn_ids = [a[\"txn_id\"] for a in allocations]\n 614:     await db.bank_statement_lines.update_one({\"id\": line[\"id\"]}, {\"$set\": {\n 615:         \"status\": \"matched\", \"match_kind\": match_kind,\n 616:         \"matched_txn_id\": txn_ids[0] if len(txn_ids) == 1 else \"\",\n 617:         \"matched_txn_ids\": txn_ids, \"allocations\": allocations,\n 618:         \"match_type\": match_type, \"matched_at\": now, \"matched_by\": actor,\n 619:         \"updated_at\": now}})\n 620:     for a in allocations:\n 621:         t = await db.cash_transactions.find_one({\"id\": a[\"txn_id\"]}, {\"_id\": 0})",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-WEIGHT-01",
+      "priority": "P1",
+      "title": "Split bersamaan menggandakan berat walaupun panjang benar",
+      "related": [
+        "W2-019",
+        "WM-01"
+      ],
+      "source": "backend/services/roll_service.py",
+      "function": "_set_parent_weight",
+      "function_line": 155,
+      "line": 163,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/roll_service.py#L163",
+      "cause": "insert_child_roll menghitung berat dari snapshot parent lama dan menulis sisa dengan $set; length CAS terpisah tidak menjaga weight total.",
+      "observation": "Parent10m/3kg dipotong2m dua kali: parent6m/2.4kg, dua child masing-masing0.6kg; total3.6kg, seharusnya3kg. Panjang6+2+2 tetap10.",
+      "fix_prompt": "Simpan reservasi/split berat dan panjang dalam satu conditional update berdimensi version atau ledger cut dengan snapshot terkini. Tidak boleh menulis derived parent weight dari snapshot lama. Tandai estimated_proportional sebagai estimasi, bukan penimbangan aktual.",
+      "acceptance": "Parallel split2+2: parent6m/1.8kg dan children0.6+0.6kg. Uji split QC/retur/cut, decimal rounding dan actual reweigh; conservation kg dan meter diuji terpisah.",
+      "baseline_provenance": "Fungsi ini belum ada di baseline W2; failure berada pada helper/alur baru kandidat.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "initial_length": 10,
+        "remaining_length": 6.0,
+        "initial_weight": 3,
+        "parent_weight": 2.4,
+        "child_weights": [
+          0.6,
+          0.6
+        ],
+        "total_weight": 3.5999999999999996
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": " 160:         s[\"secondary_measures.kg\"] = weight\n 161:         parent[\"secondary_measures\"] = {**parent[\"secondary_measures\"], \"kg\": weight}\n 162:     parent[\"weight_kg\"] = weight\n 163:     await db.inventory_rolls.update_one({\"id\": parent.get(\"id\")}, {\"$set\": s})\n 164: \n 165: \n 166: # ── Taksonomi status (KN_15 §3.4) ────────────────────────────────────────────\n 167: # Bucket FISIK di gudang (menyusun on_hand)\n 168: from services.tolerances import QTY_EPS  # KN-A13 — toleransi bersama\n 169: \n 170: # KN-A11 — SATU definisi \"PO masih terbuka / stok dalam perjalanan\" untuk papan Stok/ATP,",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-PO-01",
+      "priority": "P2",
+      "title": "Task selisih PO tidak refresh dan kehilangan identitas baris",
+      "related": [
+        "W2-REQ-06",
+        "FN-02"
+      ],
+      "source": "backend/services/po_variance_task_service.py",
+      "function": "ensure_for_po",
+      "function_line": 35,
+      "line": 51,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/po_variance_task_service.py#L51",
+      "cause": "Key task memakai product_id, bukan line_id, dan existing task langsung continue. Received yang berubah tidak memperbarui task/suggested qty. Duplicate product pada PO baru diblokir KN-B15, tetapi dokumen historis masih dapat memiliki dua baris.",
+      "observation": "Task awal received90/short10; setelah received95 task tetap90/10. Fixture legacy dua line MAT dengan shortage5 dan100 menghasilkan satu task. Staleness berlaku juga PO satu line biasa.",
+      "fix_prompt": "Key task harus stable PO line ID/version. Refresh ordered/received/short dan close task bila selesai; keputusan memakai revalidation PO terkini. Migrasi legacy duplicate secara eksplisit, jangan menggabungkan dua harga.",
+      "acceptance": "Terima90 lalu95: open task received95/short5, amendment suggestion95. Terima100 menutup obsolete task. Dua legacy line memberi dua task. Race receipt vs decide tidak memakai qty lama.",
+      "baseline_provenance": "File/service belum ada di baseline W2; failure berasal dari alur yang ditambahkan pada kandidat.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "actual_shortages": [
+          5,
+          100
+        ],
+        "task_count": 1,
+        "task_received": 90.0,
+        "task_short": 10.0,
+        "live_first_received": 95
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": "  48:         short = round(ordered - received, 2)\n  49:         if received <= 0 or short <= ordered * tol / 100 + 1e-6:\n  50:             continue\n  51:         key = {\"po_id\": po_id, \"product_id\": it.get(\"product_id\"), \"status\": \"open\"}\n  52:         if await db.po_variance_tasks.find_one(key, {\"_id\": 1}):\n  53:             continue\n  54:         task = {\n  55:             \"id\": new_id(\"pvt\"), **key, \"entity_id\": po.get(\"entity_id\"),\n  56:             \"po_number\": po.get(\"po_number\"), \"supplier_name\": po.get(\"supplier_name\"),\n  57:             \"product_name\": it.get(\"product_name\") or it.get(\"name\") or \"\", \"unit\": it.get(\"unit\", \"\"),\n  58:             \"ordered_qty\": ordered, \"received_qty\": received, \"short_qty\": short, \"tolerance_pct\": tol,",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-MKO-01",
+      "priority": "P1",
+      "title": "Retry penerimaan maklon menambah output fisik dan nilai stok",
+      "related": [
+        "CX-13",
+        "W2-001",
+        "GN-11"
+      ],
+      "source": "backend/services/makloon_order_service.py",
+      "function": "receive_step",
+      "function_line": 880,
+      "line": 1093,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/makloon_order_service.py#L1093",
+      "cause": "Progress lots disimpan sesudah seluruh loop output. Output pertama yang sudah dibuat tidak tersimpan dalam progress jika pembuatan kedua gagal. Retry membuat seluruh roll lagi.",
+      "observation": "Input10, dua output5; fault sebelum create output kedua:1roll. Retry:3roll=15; inventory value180 sedangkan jurnal receipt120 untuk output10.",
+      "fix_prompt": "Beri deterministic roll identity per operation+receipt line/index sebelum loop. Persist plan dan state tiap output sebelum/bersama creation; resume harus reconcile actual roll dan movement sebelum membuat lagi. Simpan original warehouse/lot/cost snapshot.",
+      "acceptance": "Fault pada output1/2/N serta setelah jurnal/status: output total10 dan dua roll saja, inventory value sama GL120. Uji partial multi-gudang, duplicate lot input, response-lost dan authorized saga recovery.",
+      "baseline_provenance": "Fungsi berubah terhadap baseline W2. Failure window kandidat dikonfirmasi; tanpa differential runtime pada tiap commit, perubahan ini belum membuktikan bug pertama kali lahir pada satu commit tertentu.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "error": "RuntimeError('Synthetic second output failure BEFORE write')",
+        "rolls_after_fault": 1,
+        "rolls_after_retry": 3,
+        "expected_output": 10,
+        "actual_output": 15.0,
+        "roll_value": 180.0,
+        "journal_value": 120.0
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": "1090:     _mko_ref = {\"type\": \"makloon_order\", \"id\": mko_id,\n1091:                 \"number\": f\"{order.get('mko_number')} step{seq}\"}\n1092:     _last = len(rolls_in) - 1\n1093:     for _i, r in enumerate(rolls_in if not prog.get(\"lots\") else []):\n1094:         _len = round(float(r[\"length\"]), 2)\n1095:         _uc = out_uc\n1096:         if _i == _last and _len > 0:\n1097:             _prior = sum(round(round(float(x[\"length\"]), 2) * out_uc, 2) for x in rolls_in[:_last])\n1098:             _uc = round((output_value - _prior) / _len, 6)\n1099:         roll = await create_inbound_roll(\n1100:             out_pid, r.get(\"warehouse_id\") or out_wh, entity_id, _len,",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-RFID-01",
+      "priority": "P1",
+      "title": "Read green dari passage lama dipakai kembali pada passage baru",
+      "related": [
+        "RF-02",
+        "RF-16"
+      ],
+      "source": "backend/services/rfid_ingest_service.py",
+      "function": "ingest",
+      "function_line": 118,
+      "line": 149,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/rfid_ingest_service.py#L149",
+      "cause": "Cache dwell120detik mengembalikan verdict read sebelumnya sebelum evaluator dijalankan. Passage window10detik; event_id baru20detik kemudian membentuk passage baru tetapi tetap memakai verdict lama.",
+      "observation": "Event pertama green dan mencatat gate_exit. Sesudah SO cancelled, event UUID baru pada gate sama+20detik tetapgreen duplicate=true dan passage ID berbeda; evaluator state sekarang red REPLAY_EXIT.",
+      "fix_prompt": "Bedakan replay event ID dan noisy repeated sensor read dari otorisasi passage baru. Cache tidak boleh melintasi passage atau versi shipment/QC/tag; evaluasi ulang current state untuk event baru yang memulai passage.",
+      "acceptance": "Same-gate event berbeda pada+20detik harus red ketika replay exit/SO cancelled/tag retired/QC hold. Repeated event_id tetap idempoten. Dwell dalam passage tidak menggandakan mutation/incident; worst verdict passage tetap red.",
+      "baseline_provenance": "Fungsi berubah terhadap baseline W2. Failure window kandidat dikonfirmasi; tanpa differential runtime pada tiap commit, perubahan ini belum membuktikan bug pertama kali lahir pada satu commit tertentu.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "first": "green",
+        "fresh_event_after_seconds": 20,
+        "second": "green",
+        "duplicate": true,
+        "current_evaluator_result": "red",
+        "current_evaluator_code": "REPLAY_EXIT",
+        "different_passage": true
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": " 146:     dwell_cut = (_ts(now) - timedelta(seconds=DWELL_S)).isoformat()\n 147:     results, reads = [], []\n 148:     for raw in fresh:\n 149:         prev = await db.rfid_reads.find_one({\"device_id\": device[\"id\"], \"epc\": raw, \"timestamp\": {\"$gte\": dwell_cut}},\n 150:                                             {\"_id\": 0}, sort=[(\"timestamp\", -1)])\n 151:         if prev:  # tag diam / passage sama — bukan event bisnis baru (tanpa insiden baru)\n 152:             await db.rfid_reads.update_one({\"id\": prev[\"id\"]}, {\"$set\": {\"last_observed_at\": now},\n 153:                                                                \"$inc\": {\"observation_count\": 1}})\n 154:             results.append({\"epc\": raw, \"result\": prev[\"result\"], \"code\": prev.get(\"code\"), \"reason\": prev[\"reason\"],\n 155:                             \"action\": prev.get(\"action\"),\n 156:                             \"roll_no\": prev.get(\"roll_no\"), \"sku\": prev.get(\"sku\"),",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-CF-01",
+      "priority": "P1",
+      "title": "Jurnal campuran kas/nonkas menghasilkan klasifikasi arus kas salah",
+      "related": [
+        "FN-04"
+      ],
+      "source": "backend/services/cash_flow_service.py",
+      "function": "cash_flow_statement",
+      "function_line": 55,
+      "line": 84,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/cash_flow_service.py#L84",
+      "cause": "Bila satu jurnal menyentuh kas, semua contra line dimasukkan bucket aktivitas. Aset yang sebagian dibayar kas dan sebagian AP dianggap seluruhnya cash investing serta AP dianggap cash operating.",
+      "observation": "Jurnal Dr aset100/Cr kas40/Cr AP60 menghasilkan investing−100, operating+60, net−40 dan noncash disclosure kosong. Seharusnya investing−40, operating0 dan noncash asset60.",
+      "fix_prompt": "Klasifikasi sumber harus membawa settlement cash portion yang eksplisit. Pecah source/mixed journal secara traceable; jangan memperkirakan aktivitas dari seluruh contra balance. Reconcile total kas dan disclosure noncash terpisah.",
+      "acceptance": "Fixture asset cash40+credit60 harus CFI−40/CFO0/noncash60. Tambahkan asset penuh kredit, cash penuh, bank-to-bank, depreciation, sale credit+receipt dan mixed multiple assets/liabilities. Persetujuan policy akuntan diperlukan untuk metode alokasi ambigu.",
+      "baseline_provenance": "Fungsi berubah terhadap baseline W2. Failure window kandidat dikonfirmasi; tanpa differential runtime pada tiap commit, perubahan ini belum membuktikan bug pertama kali lahir pada satu commit tertentu.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "expected_investing": -40,
+        "expected_operating": 0,
+        "expected_noncash_asset": 60,
+        "actual_investing": -100.0,
+        "actual_operating": 60.0,
+        "net_change": -40.0,
+        "noncash": []
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": "  81:     noncash: Dict[str, float] = {}\n  82:     async for je in db.journal_entries.find(q, {\"_id\": 0, \"lines\": 1}):\n  83:         lines = [ln for ln in je.get(\"lines\", []) if ln.get(\"account_code\")]\n  84:         touches_cash = any(ln[\"account_code\"] in cash for ln in lines)\n  85:         for ln in lines:\n  86:             code = ln[\"account_code\"]\n  87:             if code in cash:\n  88:                 continue\n  89:             eff = -(float(ln.get(\"debit\", 0) or 0) - float(ln.get(\"credit\", 0) or 0))\n  90:             sec = _section(amap.get(code, {}).get(\"type\", \"\"), code)\n  91:             if touches_cash:",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-DATE-01",
+      "priority": "P1",
+      "title": "Jurnal date-only pada awal periode hilang dari laporan",
+      "related": [
+        "FN-16",
+        "W2-021"
+      ],
+      "source": "backend/services/financial_statement_service.py",
+      "function": "_day_start",
+      "function_line": 28,
+      "line": 31,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/financial_statement_service.py#L31",
+      "cause": "Insert jurnal mempertahankan date yang dikirim, termasuk YYYY-MM-DD. Query start membuat string YYYY-MM-DDT00:00:00; lexical compare mengeluarkan date-only hari pertama.",
+      "observation": "Valid journal beban10 pada2026-09-01, laporan2026-09-01..30: opex0, seharusnya10. Nilai tersimpan masih date-only; probe CF lain memakai ISO timestamp agar kesalahan klasifikasi tidak tercampur.",
+      "fix_prompt": "Gunakan representasi tanggal kanonik di seluruh entry/create/autopost/import dan query, dengan timezone bisnis disepakati. Migration preview tanggal lama dan conflict report; hindari mengubah label saja atau memperlebar cutoff tanpa aturan.",
+      "acceptance": "Date-only/ISO/tz-offset hari awal dan hari akhir periode masuk tepat sekali. Neraca default, ledger, cash flow, closing, unlock dan konsolidasi memakai cutoff sama. Uji jurnal masa depan tetap tidak masuk hari ini.",
+      "baseline_provenance": "Body fungsi tetap sama menurut AST terhadap baseline W2; masalah ini residual atau konflik integrasi baru, bukan bukti fungsi lama berubah menjadi salah.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "expected_opex": 10,
+        "actual_opex": 0,
+        "stored_date": "2026-09-01",
+        "filter_start": "2026-09-01T00:00:00"
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": "  28: def _day_start(d: Optional[str]) -> Optional[str]:\n  29:     if not d:\n  30:         return None\n  31:     return d if \"T\" in d else f\"{d}T00:00:00\"\n  32: \n  33: \n  34: def _day_end(d: Optional[str]) -> Optional[str]:\n  35:     if not d:\n  36:         return None\n  37:     return d if \"T\" in d else f\"{d}T23:59:59.999999\"\n  38: ",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-WMS-02",
+      "priority": "P1",
+      "title": "Loading gudang siap ditahan oleh pending cut gudang lain",
+      "related": [
+        "RF-06",
+        "W2-REQ-08"
+      ],
+      "source": "backend/services/loading_check_service.py",
+      "function": "start",
+      "function_line": 26,
+      "line": 38,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/loading_check_service.py#L38",
+      "cause": "Start loading check memanggil guard atas seluruh SO dan API tidak memberi warehouse/shipment subset. SO-wide session mencampurkan readiness shipment yang berbeda.",
+      "observation": "Satu tagged committed roll diWH siap; pending cut product lain diWH2. Guard local WH lulus, start loading check SO409: satu reservasi potong belum dikonfirmasi di gudang lain.",
+      "fix_prompt": "Bentuk loading session per shipment/task group+warehouse+manifest version. Expected EPC dan cut guard hanya untuk shipment itu; perubahan manifest mengharuskan check ulang. Parent SO menampilkan agregat progres, bukan satu clean global.",
+      "acceptance": "SO woven/knit/printing tiga gudang: WHwoven dapat check/dispatch/SJ sendiri saat cut WHknit tertunda. Check A tidak membuka B. Shipment parsial dan driver gabungan tetap mempunyai manifest dokumen yang konsisten.",
+      "baseline_provenance": "Fungsi berubah terhadap baseline W2. Failure window kandidat dikonfirmasi; tanpa differential runtime pada tiap commit, perubahan ini belum membuktikan bug pertama kali lahir pada satu commit tertentu.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "local_ready_tagged_rolls": 1,
+        "local_cut_guard": "passed",
+        "pending_cuts_other_warehouse": 1,
+        "loading_check_start_error": "409: 1 reservasi potong belum dikonfirmasi (roll induk RL-00010). Potong fisik & konfirmasi dulu."
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": "  35:     if existing:\n  36:         return safe_doc(existing)\n  37:     from services.roll_service import assert_cut_identity_ready\n  38:     await assert_cut_identity_ready(order_id)  # WM-02 — potong dikonfirmasi & tag anak terverifikasi\n  39:     rolls = await _expected_rolls(order_id)\n  40:     if not rolls:\n  41:         raise HTTPException(status_code=400, detail=\"Tidak ada roll ter-alokasi untuk SO ini (pick dulu).\")\n  42:     tag_ids = [r[\"rfid_tag_id\"] for r in rolls if r.get(\"rfid_tag_id\")]\n  43:     tags = {t[\"id\"]: t for t in await db.rfid_tags.find(\n  44:         {\"id\": {\"$in\": tag_ids}, \"status\": \"active\"}, {\"_id\": 0}).to_list(2000)}\n  45:     expected, untagged = [], []",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-MASTER-01",
+      "priority": "P2",
+      "title": "Apply master mengubah produk sebelum snapshot batch durable",
+      "related": [
+        "W2-REQ-02"
+      ],
+      "source": "backend/services/master_governance_service.py",
+      "function": "apply_batch",
+      "function_line": 76,
+      "line": 96,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/master_governance_service.py#L96",
+      "cause": "Apply mengubah produk dan last_governance_batch lalu insert dokumen batch before/after. Jika insert gagal, perubahan tidak mempunyai snapshot rollback.",
+      "observation": "Stage produk greige→grey dan last_governance_batch terisi; fault sebelum insert batch: durable_batch_count0. Rollback batch yang dijanjikan tidak tersedia.",
+      "fix_prompt": "Persist batch plan/hash/before snapshots dan stage prepared sebelum produk diubah; pakai CAS version tiap produk dan idempoten operation. Progress parsial harus bisa resume/rollback tanpa menimpa edit sesudahnya.",
+      "acceptance": "Fault sebelum/antara product update dan batch insert menghasilkan batch recoverable atau tidak ada perubahan. Uji multi-produk, edits concurrent, dry-run signature stale, rollback conflict dan retry identitas sama.",
+      "baseline_provenance": "File/service belum ada di baseline W2; failure berasal dari alur yang ditambahkan pada kandidat.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "error": "RuntimeError('Synthetic batch journal failure BEFORE write')",
+        "original_stage": "greige",
+        "current_stage": "grey",
+        "batch_reference": "mgb_c02f8c920134",
+        "durable_batch_count": 0
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": "  93:                             \"before\": p[\"from\"], \"after\": p[\"to\"]})\n  94:     batch = {\"id\": batch_id, \"status\": \"applied\", \"note\": (note or \"\").strip(), \"changes\": changes,\n  95:              \"preview_signature\": signature, \"applied_by\": actor.get(\"name\", \"\"), \"applied_at\": now_iso()}\n  96:     await db.master_governance_batches.insert_one(dict(batch))\n  97:     return safe_doc(batch)\n  98: \n  99: \n 100: async def rollback_batch(batch_id: str, reason: str, actor: Dict[str, Any]) -> Dict[str, Any]:\n 101:     if len((reason or \"\").strip()) < 5:\n 102:         raise HTTPException(status_code=422, detail=\"Alasan rollback wajib (min. 5 karakter).\")\n 103:     b = await db.master_governance_batches.find_one_and_update(",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-PO-02",
+      "priority": "P2",
+      "title": "Pilihan amend ke jumlah diterima bertentangan dengan guard PO lama",
+      "related": [
+        "W2-REQ-06"
+      ],
+      "source": "backend/services/po_amendment_service.py",
+      "function": "_assert_received_line_locked",
+      "function_line": 97,
+      "line": 103,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/po_amendment_service.py#L103",
+      "cause": "Task baru menjanjikan amendment qty aktual, tetapi guard lama mengunci quantity setiap baris yang received_qty>0. Ini gap integrasi dua aturan bisnis, bukan alasan untuk menghapus guard seluruh field finansial.",
+      "observation": "Ordered1000/received960; suggested amendment960. amend_po menolak400 qty1000→960 walaupun tidak kurang dari received dan tujuannya menutup kekurangan.",
+      "fix_prompt": "Tetapkan flow dedicated receiving-variance amendment atau perbaiki CTA menjadi short-close sesuai policy disepakati. Jika amendment dipilih, target tidak kurang dari received, snapshot/bill/DP dilindungi dan reapproval/credit adjustment eksplisit; jangan rewrite posted GL.",
+      "acceptance": "Kasus1000→960 memiliki jalur selesai yang nyata dan tidak buntu. Received tetap960; PO version/approval terdokumentasi; vendor bill/AP/DP diperhitungkan terpisah. Jika hanya short-close diperbolehkan, UI tidak menjanjikan amend unsupported.",
+      "baseline_provenance": "Body fungsi tetap sama menurut AST terhadap baseline W2; masalah ini residual atau konflik integrasi baru, bukan bukti fungsi lama berubah menjadi salah.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "ordered": 1000,
+        "received": 960,
+        "suggested_amendment": 960,
+        "error": "400: Baris MAT sudah diterima 960 — terkunci dari revisi (qty 1000→960). Barang yang sudah masuk gudang tidak bisa diubah qty/satuan/harga/diskonnya; buat PO baru untuk tambahan, atau retur beli bila ada selisih."
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": " 100:     if not old:\n 101:         return\n 102:     changed = []\n 103:     if abs(float(item_in.quantity or 0) - float(old.get(\"quantity\") or 0)) > 0.001:\n 104:         changed.append(f\"qty {float(old.get('quantity') or 0):g}→{float(item_in.quantity):g}\")\n 105:     old_unit = str(old.get(\"unit\") or \"\").strip().lower()\n 106:     new_unit = str(item_in.unit or old.get(\"unit\") or \"\").strip().lower()\n 107:     if new_unit != old_unit:\n 108:         changed.append(f\"satuan {old.get('unit')}→{item_in.unit}\")\n 109:     new_price = float(item_in.price or 0)\n 110:     if new_price > 0 and abs(new_price - float(old.get(\"price\") or 0)) > 0.001:",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-CUT-01",
+      "priority": "P1",
+      "title": "Gagal membuat child cut menghilangkan stok dan reservasi",
+      "related": [
+        "WM-01",
+        "WM-02",
+        "W2-REQ-09",
+        "GN-11"
+      ],
+      "source": "backend/services/roll_service.py",
+      "function": "confirm_cut",
+      "function_line": 573,
+      "line": 614,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/roll_service.py#L614",
+      "cause": "Parent decrement dan pull reservation dilakukan sebelum child insert. Bila insert gagal sebelum write, tidak ada durable cut command yang dapat melanjutkan dan reservation telah hilang.",
+      "observation": "Awal10/reserve3; fault child insert: parent7, reserved0, child0. Retry confirm_cut404 reservasi tidak ditemukan/sudah dipotong. Stok fisik total data berkurang3 tanpa child.",
+      "fix_prompt": "Persist cut operation dan output identity stabil sebelum mutation; parent/reservation/child/movement/weight/tag lifecycle satu transaksi atau recoverable state machine. Retry mencari cut operation lama, bukan hanya reservation yang sudah dipull.",
+      "acceptance": "Fault setiap tahap cut100→70+30 selalu conservation quantity/value/weight+documented waste; retry menghasilkan satu child dan satu movement, tag identity baru harus diverifikasi sebelum loading. Tidak boleh menambah kembali parent bila child sudah ada.",
+      "baseline_provenance": "Fungsi ini belum ada di baseline W2; failure berada pada helper/alur baru kandidat.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "before_length": 10,
+        "after_length": 7.0,
+        "length_reserved": 0,
+        "child_count": 0,
+        "error": "Synthetic cut child insert fault BEFORE write",
+        "retry_error": "404: Reservasi potong tidak ditemukan / sudah dipotong"
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": " 611:         \"status\": rsv.get(\"status\") or \"reserved\", \"reserved_ref\": rsv[\"ref\"], \"earmarked_for\": None,\n 612:         \"is_remnant\": False, \"cut\": cut, \"journey\": {\"stage\": \"cut_pending_tag\", \"updated_at\": now_iso()},\n 613:         \"created_at\": now_iso(), \"updated_at\": now_iso()})\n 614:     child = await insert_child_roll(child, parent)\n 615:     await db.inventory_movements.insert_one({\n 616:         \"id\": new_id(\"mov\"), \"product_id\": parent[\"product_id\"], \"warehouse_id\": parent[\"warehouse_id\"],\n 617:         \"owner_entity_id\": parent.get(\"owner_entity_id\"), \"movement_type\": \"roll_cut\",\n 618:         \"quantity\": 0, \"unit\": parent.get(\"unit\", \"meter\"), \"lot\": parent.get(\"lot\", \"\"),\n 619:         \"roll_id\": child[\"id\"], \"parent_roll_id\": roll_id, \"qty_rolls\": 1,\n 620:         \"source_document\": rsv[\"ref\"][\"id\"], \"cut\": cut, \"timestamp\": now_iso()})\n 621:     if waste > 0:",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-MRES-02",
+      "priority": "P1",
+      "title": "Total cadangan maklon tetap terpotong pada batas query",
+      "related": [
+        "GN-12",
+        "W2-REQ-07",
+        "W2-REQ-04"
+      ],
+      "source": "backend/services/material_reservation_service.py",
+      "function": "reserved_by_others",
+      "function_line": 40,
+      "line": 44,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/material_reservation_service.py#L44",
+      "cause": "reserved_by_others memakai2000, _on_hand_available500 dan apply_to_products5000 untuk total bisnis, bukan daftar berhalaman. Cadangan yang dilewatkan dapat dijanjikan lagi ke sales.",
+      "observation": "2001 active reservation masing-masing1 menghasilkan reserved_by_others2000. Selisih1 terukur; batas500/5000 lain dikonfirmasi statis, belum diuji runtime pada probe ini.",
+      "fix_prompt": "Gunakan aggregate/kursor penuh untuk seluruh total. Batasi hanya endpoint list berhalaman dengan total terpisah. Harmonisasi owner, product, unit, warehouse dan exclusion ref agar sales dan PR memakai angka sama.",
+      "acceptance": "Cap−1/cap/cap+1 pada2000reservations,500balances,5000catalog reservations serta>10000roll allocation harus konsisten. Test total/UI/guard commit dan cancellation tidak memakai subset sebagai SSOT.",
+      "baseline_provenance": "File/service belum ada di baseline W2; failure berasal dari alur yang ditambahkan pada kandidat.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "expected_reserved": 2001,
+        "actual_reserved": 2000.0,
+        "document_count": 2001
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": "  41:     q: Dict[str, Any] = {\"product_id\": product_id, \"owner_entity_id\": entity_id, \"status\": ACTIVE}\n  42:     if exclude_ref_id:\n  43:         q[\"ref_id\"] = {\"$ne\": exclude_ref_id}\n  44:     rows = await db.material_reservations.find(q, {\"_id\": 0, \"qty\": 1}).to_list(2000)\n  45:     return round(sum(float(r.get(\"qty\") or 0) for r in rows), 3)\n  46: \n  47: \n  48: async def free_for_commitment(product_id: str, entity_id: str, exclude_ref_id: str = \"\",\n  49:                               warehouse_id: str = \"\") -> float:\n  50:     return round(max(await _on_hand_available(product_id, entity_id, warehouse_id)\n  51:                      - await reserved_by_others(product_id, entity_id, exclude_ref_id), 0.0), 3)",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-PO-03",
+      "priority": "P1",
+      "title": "Tugas selisih selesai meski amendment belum disetujui dan qty belum berubah",
+      "related": [
+        "W2-REQ-06"
+      ],
+      "source": "backend/routers/purchase_orders.py",
+      "function": "amend_purchase_order",
+      "function_line": 733,
+      "line": 751,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/routers/purchase_orders.py#L751",
+      "cause": "Router menyelesaikan seluruh pending_amendment segera sesudah amend_po, sebelum reapproval. Fungsi juga tidak memeriksa apakah perubahan berkaitan dengan shortage line.",
+      "observation": "HTTP notes-only amend200: PO quantity1000 tetap dan statuswaiting_approval; task shortage received960 menjadi decided. Persetujuan kuantitas belum terjadi.",
+      "fix_prompt": "Selesaikan task hanya setelah amendment version/line yang ditautkan approved dan acceptance shortage direvalidasi. Notes-only amendment tidak menutup qty task. Rejection/cancel amendment memulihkan action pending yang benar.",
+      "acceptance": "Amend notes saja atau awaiting approval: task pending. Approved qty960/reconciled policy: task selesai. Rejection tetap memerlukan keputusan. Beberapa task/line/versi tidak tertutup sekaligus oleh perubahan unrelated.",
+      "baseline_provenance": "Fungsi berubah terhadap baseline W2. Failure window kandidat dikonfirmasi; tanpa differential runtime pada tiap commit, perubahan ini belum membuktikan bug pertama kali lahir pada satu commit tertentu.",
+      "evidence_type": "runtime_counterexample",
+      "actual": {
+        "http_status": 200,
+        "po_status": "waiting_approval",
+        "po_quantity": 1000,
+        "task_status": "decided",
+        "detail": null
+      },
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": " 748:     result = await amend_po_service(po_id, payload, actor)\n 749:     updated = result[\"po\"]\n 750:     from services import po_variance_task_service as _pvt\n 751:     await _pvt.close_amendment_tasks(po_id, actor[\"name\"])  # W2-REQ-06\n 752:     if result[\"needs_approval\"]:\n 753:         from services.notification_service import notify_po_awaiting_approval\n 754:         await notify_po_awaiting_approval(updated)\n 755:     else:\n 756:         await _create_inbound_tasks_for_po(updated)\n 757:     return safe_doc(await db.purchase_orders.find_one({\"id\": po_id}, {\"_id\": 0}))\n 758: ",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-DUP-01",
+      "priority": "P3",
+      "title": "Helper _clean_perms didefinisikan dua kali",
+      "related": [
+        "GN-15"
+      ],
+      "source": "backend/services/custom_role_service.py",
+      "function": "_clean_perms",
+      "function_line": 60,
+      "line": 60,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/custom_role_service.py#L60",
+      "cause": "AST seluruh backend menemukan dua definisi top-level identik pada baris60 dan67. Definisi kedua menimpa pertama; body kini sama sehingga ini maintainability debt, bukan beda perilaku akses.",
+      "observation": "Dua definisi identik pada file yang sama; syntax parser tidak menolaknya.",
+      "fix_prompt": "Hapus definisi identik dengan satu canonical helper; tambahkan deteksi duplicate top-level definition dalam quality check yang sesuai, tanpa menggandakan business-rule tests.",
+      "acceptance": "Satu definisi, custom permission normal/error contract tetap sama. Jangan menjadikan ini P1 atau menghitungnya sebagai bug akses yang sudah terbukti.",
+      "baseline_provenance": "Body fungsi tetap sama menurut AST terhadap baseline W2; masalah ini residual atau konflik integrasi baru, bukan bukti fungsi lama berubah menjadi salah.",
+      "evidence_type": "static_quality_observation",
+      "actual": null,
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": "  57:     return out\n  58: \n  59: \n  60: def _clean_perms(perms: Any) -> Dict[str, List[str]]:\n  61:     try:\n  62:         return clean_permissions(perms)\n  63:     except ValueError as exc:\n  64:         raise HTTPException(status_code=400, detail=str(exc)) from exc\n  65: \n  66: \n  67: def _clean_perms(perms: Any) -> Dict[str, List[str]]:",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "V3-BUILD-01",
+      "priority": "P2",
+      "title": "Dependency build frontend tidak mempunyai lockfile terlacak",
+      "related": [
+        "GN-15"
+      ],
+      "source": "frontend/package.json",
+      "function": "",
+      "function_line": 1,
+      "line": 151,
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/frontend/package.json#L151",
+      "cause": "Repo mendeklarasikan Yarn1.22.22 tetapi tidak melacak yarn.lock, package-lock.json atau pnpm-lock.yaml. Fresh install harus meresolusikan dependency transitive; dua build tidak mempunyai dependency graph terkunci.",
+      "observation": "Install lokal melaporkan No lockfile found; build berhasil dengan warnings memakai dependency graph yang diselesaikan hari audit. Ini risiko reproducibility, bukan bukti frontend gagal build.",
+      "fix_prompt": "Commit satu lockfile canonical sesuai packageManager; pipeline harus gagal jika lock tidak ada/berbeda dan memakai frozen/immutable install. Simpan runtime versions dan dependency integrity. Jangan commit node_modules/build/.env.",
+      "acceptance": "Fresh isolated install pada dua runner memakai graph/integrity sama. Build smoke lulus dari lock, lint warning relevan ditinjau; packageManager dan pipeline tidak saling memilih manager berbeda.",
+      "baseline_provenance": "File konfigurasi berubah terhadap baseline W2; observasi ini kualitas/reproducibility, bukan runtime regression yang terbukti.",
+      "evidence_type": "static_quality_observation",
+      "actual": null,
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "code_excerpt": " 148:     \"**/tinyglobby/picomatch\": \"4.0.4\",\n 149:     \"http-proxy-middleware\": \"2.0.10\"\n 150:   },\n 151:   \"packageManager\": \"yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e\"\n 152: }",
+      "candidate_previous": "5b7f34122bd104f4426ccd7f72b38fb7969eda8f",
+      "latest_revalidation": "17 runtime probes re-executed on candidate; 2 static items source reviewed. The source permalink below targets current candidate.",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "observations": []
+    },
+    {
+      "id": "D4-STOCK-01",
+      "priority": "P1",
+      "title": "Nilai dan kecepatan stok terhitung dua kali ketika pemilik berbagi SKU dan gudang",
+      "source": "backend/services/stock_analytics_service.py",
+      "anchor": "key =",
+      "ui": "Stock Analytics: nilai persediaan, sold_qty_window, fast/slow/dead",
+      "chain": "Intercompany / multi-owner → balances → analitik stok",
+      "cause": "Roll dan movement diagregasikan menurut product_id + warehouse_id tanpa owner_entity_id, lalu hasil gabungan ditambahkan lagi untuk setiap balance pemilik. On-hand balance sendiri benar; nilai dan velocity salah.",
+      "impact": "Dua pemilik: A 10×10 dan B 20×20 seharusnya bernilai 500, tampil 1000. Penjualan 3+7 menjadi 20, bukan 10. Klasifikasi fast/slow/dead dan prioritas pembelian ikut dapat berubah.",
+      "fix_prompt": "Gunakan grain product + warehouse + owner sampai tahap agregasi akhir. Jangan join aggregate dengan grain yang lebih kasar ke beberapa balance lalu menjumlahkannya lagi. Terapkan pola yang sama untuk movement, oldest-age dan WAC.",
+      "acceptance": "SKU/gudang sama dengan dua pemilik: qty30, nilai500 dan sold10; filter A=100/3, B=400/7. Tambahkan gudang kedua dan movement reversal; grouped total harus sama dengan penjumlahan partisi yang sah.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 137,
+      "code_excerpt": " 134:         resolve_list_scope(\"inventory_movements\", mv_query, ctx, entity_id),\n 135:         {\"_id\": 0, \"product_id\": 1, \"warehouse_id\": 1, \"timestamp\": 1, \"quantity\": 1, \"movement_type\": 1}\n 136:     ).to_list(20000)\n 137:     # seg key = (product, warehouse) → recency/velocity penjualan\n 138:     last_sale: Dict[tuple, datetime] = {}\n 139:     sold_window: Dict[tuple, float] = {}\n 140:     for m in movements:\n 141:         if m.get(\"movement_type\") not in SALE_MOVEMENT_TYPES:\n 142:             continue\n 143:         key = (m.get(\"product_id\"), m.get(\"warehouse_id\"))\n 144:         dt = _parse_ts(m.get(\"timestamp\"))",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/stock_analytics_service.py#L137",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-STOCK-01-value",
+          "expected": 500,
+          "actual": 1000.0,
+          "status": "observed_difference",
+          "note": ""
+        },
+        {
+          "id": "D4-STOCK-01-velocity",
+          "expected": 10,
+          "actual": 20.0,
+          "status": "observed_difference",
+          "note": ""
+        },
+        {
+          "id": "D4-STOCK-01-onhand-control",
+          "expected": 30,
+          "actual": 30.0,
+          "status": "pass",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "D4-STOCK-02",
+      "priority": "P2",
+      "title": "Filter kategori tidak diterapkan pada bucket umur stok",
+      "source": "backend/services/stock_analytics_service.py",
+      "anchor": "aging[b][\"value\"]",
+      "ui": "Stock Analytics: filter kategori vs chart aging",
+      "chain": "Master kategori → stok fisik → chart umur",
+      "cause": "Aging diakumulasi sebelum row product diperiksa terhadap category. Tabel kategori woven sudah difilter, bucket aging masih berisi kategori lain.",
+      "impact": "Fixture woven bernilai100, knitting400: memilih woven menghasilkan aging500. Manajer membandingkan dua visual dengan cakupan berbeda.",
+      "fix_prompt": "Bentuk product whitelist/filter yang sama sebelum mengambil roll, balance dan movement. Semua KPI/chart harus memakai filter yang sama, atau labelkan secara eksplisit jika global.",
+      "acceptance": "Filter woven: total rows100 = sum aging100; filter knitting400. Uji kategori kosong, SKU tanpa kategori dan kombinasi entitas/gudang.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 175,
+      "code_excerpt": " 172:             seg_oldest_age[key] = age\n 173:         b = _age_bucket(age)\n 174:         aging[b][\"qty\"] += length\n 175:         aging[b][\"value\"] += value\n 176: \n 177:     # ── Agregasi per PRODUK (lintas gudang di scope) ──────────────────────────\n 178:     prod_rows: Dict[str, Dict[str, Any]] = {}\n 179:     for b in balances:\n 180:         pid = b.get(\"product_id\")\n 181:         prod = products.get(pid, {})\n 182:         if category and prod.get(\"category\") != category:",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/stock_analytics_service.py#L175",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-STOCK-02-filter",
+          "expected": 100,
+          "actual": 500.0,
+          "status": "observed_difference",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "D4-STOCK-03",
+      "priority": "P2",
+      "title": "Nilai persediaan analitik mengabaikan landed cost",
+      "source": "backend/services/stock_analytics_service.py",
+      "anchor": "cost = float(r.get(\"base_unit_cost\"",
+      "ui": "Stock Analytics: nilai stok",
+      "chain": "Receiving → landed cost → roll valuation → analitik",
+      "cause": "Valuasi memakai base_unit_cost meskipun unit_cost roll sudah memuat landed cost. Basis ini berbeda dengan nilai penuh costing/GL; tampilan nilai persediaan tidak menyatakan hanya biaya dasar.",
+      "impact": "Roll10, biaya dasar10, biaya penuh12: tabel nilai100, biaya persediaan penuh120. Rekonsiliasi dengan laporan biaya penuh tidak cocok.",
+      "fix_prompt": "Tetapkan kontrak nilai persediaan: tampilkan biaya penuh dari sumber biaya kanonis; bila perlu pisahkan dasar, landed dan total. Jangan menjumlahkan landed dua kali.",
+      "acceptance": "Roll10×12 menghasilkan120, split dasar100 + landed20. Uji voucher landed apply/void dan per-entitas. Jika bisnis memilih base-only, label dan rekonsiliasi harus menyatakan basis tersebut.",
+      "evidence_type": "runtime_counterexample",
+      "related": [
+        "D4-STOCK-01"
+      ],
+      "line": 166,
+      "code_excerpt": " 163:             continue\n 164:         key = (r.get(\"product_id\"), r.get(\"warehouse_id\"))\n 165:         length = float(r.get(\"length_remaining\", 0) or 0)\n 166:         cost = float(r.get(\"base_unit_cost\", 0) or 0)\n 167:         value = length * cost\n 168:         seg_value[key] = seg_value.get(key, 0.0) + value\n 169:         dt = _parse_ts(r.get(\"created_at\")) or _parse_ts((r.get(\"acquired\") or {}).get(\"date\"))\n 170:         age = (now - dt).days if dt else 9999\n 171:         if key not in seg_oldest_age or age > seg_oldest_age[key]:\n 172:             seg_oldest_age[key] = age\n 173:         b = _age_bucket(age)",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/stock_analytics_service.py#L166",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-STOCK-03-landed",
+          "expected": 120,
+          "actual": 100.0,
+          "status": "observed_difference",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "D4-STOCK-04",
+      "priority": "P2",
+      "title": "Tanggal roll tanpa timezone dapat menjatuhkan laporan umur stok",
+      "source": "backend/services/stock_analytics_service.py",
+      "anchor": "def _parse_ts",
+      "ui": "Stock Analytics aging",
+      "chain": "Import/legacy roll → parsing tanggal → laporan",
+      "cause": "Parser mengembalikan datetime naive untuk string YYYY-MM-DD, lalu dikurangkan dari now yang timezone-aware.",
+      "impact": "Satu roll legacy/import created_at date-only menghasilkan TypeError. Ini bukan klaim bahwa create roll normal menghasilkan tanggal tersebut; producer normal menggunakan timestamp ISO.",
+      "fix_prompt": "Normalisasi timezone pada boundary parsing dan tentukan kebijakan tanggal legacy. Jangan mengubah data historis diam-diam tanpa aturan timezone yang disetujui.",
+      "acceptance": "Date-only, ISO dengan offset, Z, kosong dan tanggal invalid ditangani deterministik tanpa exception server; aging hari diperiksa di batas WIB.",
+      "evidence_type": "runtime_legacy_compatibility",
+      "related": [],
+      "line": 33,
+      "code_excerpt": "  30: ]\n  31: \n  32: \n  33: def _parse_ts(ts: Optional[str]) -> Optional[datetime]:\n  34:     if not ts:\n  35:         return None\n  36:     try:\n  37:         return datetime.fromisoformat(str(ts).replace(\"Z\", \"+00:00\"))\n  38:     except Exception:\n  39:         return None\n  40: ",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/stock_analytics_service.py#L33",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-STOCK-04-date-only",
+          "expected": null,
+          "actual": "TypeError: can't subtract offset-naive and offset-aware datetimes",
+          "status": "observed_difference",
+          "note": "A stored date-only string is legacy/import input; report must normalize or reject with useful validation."
+        }
+      ]
+    },
+    {
+      "id": "D4-FIN-01",
+      "priority": "P1",
+      "title": "Control Tower menggabungkan AR semua entitas ketika parameter entitas dihilangkan",
+      "source": "backend/routers/finance_analytics.py",
+      "anchor": "comp_ids =",
+      "ui": "Finance Tower: outstanding, overdue, working capital, per-entity BI",
+      "chain": "Entity context → GL/AP/AR → tower",
+      "cause": "Scope journal menggunakan konteks aktif, tetapi ent=None diteruskan ke aging_report, dan comparison memakai semua allowed_entity_ids. Scope komponen dalam satu respons berbeda.",
+      "impact": "Header aktif A dengan hak A+B: tanpa query param AR1000; explicit entity_id=A AR100. GL/AP bisa tetap A. Working capital dan perbandingan tidak punya cakupan konsisten. UI yang selalu mengirim A tidak otomatis terdampak jalur default ini.",
+      "fix_prompt": "Resolve effective scope sekali dan teruskan ke setiap service. Bedakan active, selected dan all secara eksplisit. All harus tetap dibatasi allowed entity set dan tidak memakai None ambigu.",
+      "acceptance": "Default/header A sama dengan explicit A; B dan all memiliki angka terpisah yang benar. Rekonsiliasi cash+AR−AP dalam scope identik. Uji allowed subset.",
+      "evidence_type": "runtime_counterexample",
+      "related": [
+        "D4-SALES-02"
+      ],
+      "line": 68,
+      "code_excerpt": "  65:     ctx = await entity_ctx(request)\n  66:     scope = resolve_list_scope(\"journal_entries\", {}, ctx, entity_id)\n  67:     ent = entity_id if entity_id and entity_id != \"all\" else None\n  68:     comp_ids = [entity_id] if ent else list(ctx.allowed_entity_ids)\n  69:     return await tower.finance_tower(scope=scope, entity_id=ent, entity_ids=comp_ids)",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/routers/finance_analytics.py#L68",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-FIN-01-tower",
+          "expected": {
+            "omitted": 100,
+            "explicit": 100
+          },
+          "actual": {
+            "omitted": 1000.0,
+            "explicit": 100.0
+          },
+          "status": "observed_difference",
+          "note": "HTTP 200/200, same active entity A."
+        }
+      ]
+    },
+    {
+      "id": "D4-SALES-01",
+      "priority": "P1",
+      "title": "Target penjualan dan penagihan tidak mengikuti scope entitas",
+      "source": "backend/services/sales_force_service.py",
+      "anchor": "async def _target_sales_for",
+      "ui": "Sales Home / Sales Force: target, achievement, komisi tier",
+      "chain": "Target entitas → KPI scoped → denominator target",
+      "cause": "Lookup target hanya sales_id dan period, tanpa entity_id. Target A dapat menjadi pembagi KPI B. Probe menggunakan satu target sah di A, tidak mengasumsikan public API mampu membuat dua target paralel yang tidak didukung.",
+      "impact": "B tidak punya target namun memperoleh100 dari A. Achievement dan ambang insentif tier dapat salah walaupun numerator KPI sudah benar.",
+      "fix_prompt": "Tentukan kontrak target per-entity/global; selaraskan schema, uniqueness/upsert dan query untuk target_sales serta target_collection. Nilai tidak dikonfigurasi harus dibedakan dari nol.",
+      "acceptance": "Target A100; B tidak ada → B tidak memakai100. A/B/all, period month/quarter/year, fallback legacy dan tier boundary diuji tanpa penggandaan target.",
+      "evidence_type": "runtime_counterexample",
+      "related": [
+        "D4-SALES-03"
+      ],
+      "line": 155,
+      "code_excerpt": " 152:     return total\n 153: \n 154: \n 155: async def _target_sales_for(sales_id: str, period: str) -> float:\n 156:     \"\"\"Target PENJUALAN (omzet) dalam periode — terpisah dari target penagihan.\"\"\"\n 157:     targets = await db.sales_targets.find({\"sales_id\": sales_id}, {\"_id\": 0}).to_list(400)\n 158:     return sum(float(t.get(\"target_sales_amount\") or 0) for t in targets if _period_contains(period, t.get(\"period\", \"\")))\n 159: \n 160: \n 161: async def _scheme_for(sales_id: str, period: str) -> Dict[str, Any]:\n 162:     \"\"\"Skema insentif: exact period -> skema terbaru sales -> default tiers.\"\"\"",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/sales_force_service.py#L155",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-SALES-01-target-scope",
+          "expected": 0,
+          "actual": 100.0,
+          "status": "observed_difference",
+          "note": "Scope B has no target. Target A must not become a denominator for sales in B."
+        }
+      ]
+    },
+    {
+      "id": "D4-SALES-02",
+      "priority": "P1",
+      "title": "Sales Home masih menampilkan order dan piutang lintas entitas di kartu pelanggan",
+      "source": "backend/services/home_service.py",
+      "anchor": "cc = await compute_customer_credit(c)",
+      "ui": "Sales Home: pelanggan, AR, recent_orders",
+      "chain": "Customer master → SO entity → credit → home",
+      "cause": "Home memfilter customer menurut A, tetapi memanggil compute_customer_credit tanpa entity dan mengambil recent SO customer tanpa entity. Perbaikan KPI di sales_force tidak menyelesaikan consumer home ini.",
+      "impact": "Customer A mempunyai SO A100 dan SO B700: kartu A outstanding800, seharusnya100; recent_orders berisi SO B. Dalam model pelanggan lintas entitas ini bukan pelanggaran producer, tetapi consumer tidak membatasi dokumen.",
+      "fix_prompt": "Teruskan effective entity ke credit helper dan query recent orders. Selaraskan home/KPI/aging sehingga konteks aktif bermakna sama, serta lindungi all dengan allowed scope.",
+      "acceptance": "Home A AR100 dan hanya SO A; Home B700; all800 bila diizinkan. Customer dengan assigned-sales berubah dan SO tim lintas entitas tidak menghasilkan salah atribusi.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 59,
+      "code_excerpt": "  56:     customers = await db.customers.find(cust_filter, {\"_id\": 0}).to_list(2000)\n  57:     cust_rows: List[Dict[str, Any]] = []\n  58:     for c in customers:\n  59:         cc = await compute_customer_credit(c)\n  60:         cust_rows.append({\n  61:             \"id\": c[\"id\"], \"name\": c.get(\"name\", \"\"),\n  62:             \"credit_limit\": cc[\"credit_limit\"], \"ar_outstanding\": cc[\"ar_outstanding\"],\n  63:             \"overdue_amount\": cc[\"overdue_amount\"], \"status\": cc[\"status\"],\n  64:         })\n  65:     cust_rows.sort(key=lambda r: r[\"overdue_amount\"], reverse=True)\n  66:     collections = [r for r in cust_rows if r[\"overdue_amount\"] > 0][:8]",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/home_service.py#L59",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-SALES-02-recent-orders",
+          "expected": false,
+          "actual": true,
+          "status": "observed_difference",
+          "note": ""
+        },
+        {
+          "id": "D4-SALES-02-credit-cards",
+          "expected": 100,
+          "actual": 800.0,
+          "status": "observed_difference",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "D4-SALES-03",
+      "priority": "P1",
+      "title": "Komisi per-SKU memasukkan SO tim sales milik entitas lain",
+      "source": "backend/services/sales_force_service.py",
+      "anchor": "async def _compute_commission_per_sku",
+      "ui": "Sales Force: incentive, commission history dan accrual",
+      "chain": "SO sales_team → payment → incentive rate → payroll/finance liability",
+      "cause": "Query komisi OR customer assigned / sales_team tidak menambahkan entity_id pada SO. KPI dan rate scoped A, tetapi basis commission dapat berasal dari B.",
+      "impact": "SO B paid900 dengan9unit, sales S100% dan rate A1: KPI collected A0, insentif9. Angka ini dapat dipakai proses accrual; bukan hanya chart kosmetik.",
+      "fix_prompt": "Gunakan satu eligible-order scope untuk KPI, collection allocation dan komisi. Query OR attribution harus dibungkus scope entity/status/period. Hitung cost per SO owner; jangan rate A mengalikan transaksi B.",
+      "acceptance": "A tanpa SO memperoleh0 walau S masuk tim B. A/B/all, shared customer, split team, partial receipt, return/void dan accrual ulang harus memenuhi konservasi serta idempotensi.",
+      "evidence_type": "runtime_counterexample",
+      "related": [
+        "D4-SALES-01"
+      ],
+      "line": 253,
+      "code_excerpt": " 250:     return per_unit, float(cfg.get(\"discount_factor\", 1.0) or 0)  # tier_factor\n 251: \n 252: \n 253: async def _compute_commission_per_sku(\n 254:     sales_id: str, period: str, entity_id: Optional[str], settings: Dict[str, Any]\n 255: ) -> Dict[str, Any]:\n 256:     \"\"\"Engine per-SKU, 3 faktor, margin-aware, on-collection (EPIC4).\n 257: \n 258:     Untuk tiap order, fraksi terbayar = Σpembayaran-dalam-periode / grand_total (≤1).\n 259:     Per line: qty_terbayar = base_quantity × fraksi; komisi = qty × per_unit × factor,\n 260:     di-cap oleh margin (margin_cap_pct% × margin line terbayar; pakai WAC EPIC3).",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/sales_force_service.py#L253",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-SALES-03-commission-entity",
+          "expected": {
+            "commission": 0,
+            "collected_basis": 0
+          },
+          "actual": {
+            "commission": 9.0,
+            "collected_basis": 0.0
+          },
+          "status": "observed_difference",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "D4-FIN-02",
+      "priority": "P1",
+      "title": "Forecast kas memakai basis AR dan termin berbeda dari AR kanonis",
+      "source": "backend/services/cashflow_forecast_service.py",
+      "anchor": "term_map =",
+      "ui": "Finance Cashflow Forecast: inflow, due bucket, projected cash",
+      "chain": "Payment profile/SO terms → outstanding AR → cash forecast",
+      "cause": "NON_AR_METHODS didefinisikan tetapi tidak dipakai, projection tidak memuat payment_profile_method. Due date dihitung dari default pelanggan terkini, mengabaikan payment_term_days snapshot SO; term0 juga berubah30 karena or30.",
+      "impact": "SO tunai unpaid200 menjadi inflow AR200. SO tempo dengan snapshot90hari/default customer30diproyeksikan60hari terlalu cepat. Risiko optimisme likuiditas dan bucket overdue salah.",
+      "fix_prompt": "Reuse sumber AR kanonis untuk eligibility, net outstanding, method dan due date. Forecast boleh punya skenario sendiri hanya jika dipisahkan dari confirmed receivables dan diberi label/asumsi.",
+      "acceptance": "Tunai tidak masuk AR forecast; tempo90 mengikuti SO meski profile diubah30; termin0 tetap0. Return/credit note, DP, partial receipt dan closing/reversal harus cocok dengan aging pada snapshot yang sama.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 66,
+      "code_excerpt": "  63: \n  64:     # Peta term_days per customer utk estimasi jatuh tempo AR.\n  65:     cust_rows = await db.customers.find({}, {\"_id\": 0, \"id\": 1, \"payment_profile\": 1}).to_list(20000)\n  66:     term_map = {c[\"id\"]: int((c.get(\"payment_profile\") or {}).get(\"term_days\", 30) or 30)\n  67:                 for c in cust_rows}\n  68: \n  69:     buckets: Dict[str, Dict[str, Any]] = {\n  70:         k: {\"key\": k, \"label\": lbl, \"inflow\": 0.0, \"outflow\": 0.0}\n  71:         for k, lbl, _lo, _hi in BUCKETS\n  72:     }\n  73:     ar_items: List[Dict[str, Any]] = []",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/cashflow_forecast_service.py#L66",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-FIN-02-cash-order-as-ar",
+          "expected": 0,
+          "actual": 200.0,
+          "status": "observed_difference",
+          "note": ""
+        },
+        {
+          "id": "D4-FIN-02-order-terms",
+          "expected": "2027-01-03",
+          "actual": "2026-11-04",
+          "note": "The original canonical customer_service helper honours the order snapshot of 90 days; forecast uses the current customer default of 30 days.",
+          "status": "observed_difference"
+        }
+      ]
+    },
+    {
+      "id": "D4-FIN-03",
+      "priority": "P1",
+      "title": "Revenue profitabilitas memasukkan PPN included dan mengabaikan diskon header legacy",
+      "source": "backend/services/profitability_service.py",
+      "anchor": "revenue = float(it.get(\"line_total\"",
+      "ui": "Profitability: revenue, margin, dimension totals dan monthly trend",
+      "chain": "SO pricing/discount → profitability → management decision",
+      "cause": "Revenue langsung menjumlahkan line_total. Pada harga tax included, field ini masih memuat PPN; revenue kanonis adalah grand_total−ppn_amount. Shape legacy dengan diskon order terpisah juga tidak dialokasikan. Current create_order memaksa manual order discount=0, sehingga contoh diskon header tidak digeneralisasi sebagai alur SO baru.",
+      "impact": "Pricing producer asli pada entitas PKP dengan pengaturan ppn_mode=included menghasilkan revenue laporan1000 meski nilai net setelah PPN lebih kecil. Semua dimensi/trend mewarisi PPN sebagai pendapatan. Contoh legacy baris1000−diskonheader100 menjadi1000 vs net900 dipertahankan dengan label legacy.",
+      "fix_prompt": "Gunakan shared net revenue allocation seperti fact sales dengan residual rounding yang terkontrol. Ambil grand_total−ppn_amount sesuai kontrak kanonis, dan jangan mengurangi diskon item dua kali ketika line_total sudah net. Jelaskan return/void dan legacy header discount.",
+      "acceptance": "Harga included1000: Σrevenue harus grand_total−ppn_amount dari producer pricing; excluded dan non-PKP tetap benar. Legacy ordergross1000−headerdisc100=net900 bila shape masih didukung. Semua dimensi, residual cent dan credit return direkonsiliasi.",
+      "evidence_type": "runtime_counterexample",
+      "related": [
+        "D4-AI-04",
+        "D4-FIN-04"
+      ],
+      "line": 118,
+      "code_excerpt": " 115:             pid = it.get(\"product_id\") or \"\"\n 116:             # Tanya KN F0.4 — WAC per satuan DASAR → HPP memakai base_quantity (qty jual bisa roll/meter).\n 117:             qty = float(it.get(\"base_quantity\") or it.get(\"quantity\") or 0)\n 118:             revenue = float(it.get(\"line_total\", it.get(\"subtotal\", 0)) or 0)\n 119:             if qty <= 0 and revenue <= 0:\n 120:                 continue\n 121:             ck = f\"{pid}::{ent or ''}\"\n 122:             if ck in wac_cache:\n 123:                 wb, wl = wac_cache[ck]\n 124:             else:\n 125:                 w = await wac_for_product(pid, entity_id=ent)",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/profitability_service.py#L118",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-FIN-03-order-discount-legacy",
+          "expected": 900,
+          "actual": 1000.0,
+          "status": "observed_difference",
+          "note": "Legacy/header-discount shape only: current create_order forces manual order discount=0. Do not infer every new SO can produce this header discount."
+        },
+        {
+          "id": "D4-FIN-03-tax-included",
+          "expected": 900.9,
+          "actual": 1000.0,
+          "status": "observed_difference",
+          "note": "Use the original pricing producer with a real PKP entity and entity settings ppn_mode=included. Current create_order uses this producer/settings. Revenue must exclude VAT; report directly sums the inclusive line_total."
+        }
+      ]
+    },
+    {
+      "id": "D4-FIN-04",
+      "priority": "P2",
+      "title": "Label pendapatan realisasi sebenarnya memakai pesanan reserved dan WAC terkini",
+      "source": "backend/services/profitability_service.py",
+      "anchor": "SOLD_STATUSES =",
+      "ui": "Profitability: Pendapatan (Realisasi), HPP (WAC), Marjin Kotor",
+      "chain": "SO reserved/confirmation → shipment/GL → report definition",
+      "cause": "SOLD_STATUSES memasukkan confirmed dan reserved, tanggal memakai created_at SO, biaya dihitung dari WAC saat query. Ini analisis nilai pesanan dengan biaya kini, bukan otomatis realisasi shipment/GL historis.",
+      "impact": "SO reserved100 tanpa shipment/GL memberi Pendapatan (Realisasi)100. Current WAC bukan dengan sendirinya bug untuk estimasi; masalahnya kontrak label dan interpretasi. Probe hanya membuktikan reserved revenue, bukan semua skenario historical cost.",
+      "fix_prompt": "Pilih dan dokumentasikan metrik booked-order estimate vs realised revenue/margin. Jika realisasi, gunakan shipped/recognized amount serta cost snapshot yang sesuai. Jika tetap SO/WAC kini, ubah label/basis dan pisahkan estimator dari GL.",
+      "acceptance": "Reserved menunjukkan estimasi100 dan realisasi0 dalam metrik berbeda. Partial shipment, tanggal order vs dispatch, return, landed adjustment dan perubahan WAC memiliki perilaku terdefinisi.",
+      "evidence_type": "runtime_metric_definition",
+      "related": [],
+      "line": 19,
+      "code_excerpt": "  16: \n  17: EPS = 0.005\n  18: # Status SO yang dianggap penjualan (revenue-recognized / dalam pemenuhan).\n  19: SOLD_STATUSES = [\"confirmed\", \"reserved\", \"partially_shipped\", \"shipped\", \"done\"]\n  20: MONTHS = [\"Jan\", \"Feb\", \"Mar\", \"Apr\", \"Mei\", \"Jun\", \"Jul\", \"Agu\", \"Sep\", \"Okt\", \"Nov\", \"Des\"]\n  21: \n  22: \n  23: def _pct(margin: float, revenue: float) -> Optional[float]:\n  24:     return round(margin / revenue * 100, 1) if revenue > EPS else None\n  25: \n  26: ",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/profitability_service.py#L19",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "open_definition_or_test_gap",
+      "observations": [
+        {
+          "id": "D4-FIN-04-unshipped-as-realisation",
+          "expected": 0,
+          "actual": 100.0,
+          "note": "0 expected only for the UI label Pendapatan (Realisasi). A booked-order forecast may legitimately be 100 but needs a different definition and label. No shipment or GL revenue was created.",
+          "status": "observed_difference"
+        }
+      ]
+    },
+    {
+      "id": "D4-AI-01",
+      "priority": "P1",
+      "title": "Analytics AP mengabaikan fallback vendor bill yang masih dipakai sumber kanonis",
+      "source": "backend/services/analytics_engine.py",
+      "anchor": "remaining = {\"$subtract\": [{\"$ifNull\": [\"$grand_total\"",
+      "ui": "Tanya KN / metric AP outstanding",
+      "chain": "Vendor bill legacy → bill_financials → analytics AP",
+      "cause": "AP analytics hanya grand_total−amount_paid. bill_financials mendukung grand_total0 dengan total_amount fallback. Dokumen legacy yang sah jadi hilang dari analytics.",
+      "impact": "Billtotal125, paid25, grand_total0: sumber kanonis outstanding100, analytics tidak menghasilkan baris (praktis0).",
+      "fix_prompt": "Normalisasi amount melalui satu kontrak bill financials yang juga dapat dieksekusi agregasi. Jangan membuat fallback berbeda antar aging, forecast, BI dan Tanya.",
+      "acceptance": "Grand_total positif, grand_total0 dengan total_amount, paid partial, legacy missing field, posted/void dan multicurrency jika didukung: outstanding konsisten dengan canonical.",
+      "evidence_type": "runtime_legacy_compatibility",
+      "related": [],
+      "line": 288,
+      "code_excerpt": " 285: \n 286: async def _src_ap(metrics, dims, grain, p: Period, filters, sc, w, _s):\n 287:     fq = _match_filters(\"ap\", filters, w)\n 288:     remaining = {\"$subtract\": [{\"$ifNull\": [\"$grand_total\", 0]}, {\"$ifNull\": [\"$amount_paid\", 0]}]}\n 289:     due_field = {\"$ifNull\": [\"$due_date\", \"$bill_date\"]}\n 290:     pre = [{\"$match\": {\"entity_id\": {\"$in\": sc.entity_ids},\n 291:                        \"status\": {\"$nin\": [\"draft\", \"cancelled\", \"void\", \"paid\", \"rejected\"]}, **fq}},\n 292:            {\"$addFields\": {\"_rem\": remaining, \"_due\": due_field}}, {\"$match\": {\"_rem\": {\"$gt\": 0.005}}}]\n 293:     if grain:\n 294:         w.append(\"Hutang adalah posisi saat ini; tidak dipecah per waktu.\")\n 295:     if p.date_to < now_wib().date():   # KN-E36 — hutang tidak punya snapshot historis",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/analytics_engine.py#L288",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-AI-01-ap-fallback",
+          "expected": 100,
+          "actual": null,
+          "status": "observed_difference",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "D4-AI-02",
+      "priority": "P2",
+      "title": "Metric pelanggan baru mengabaikan scope lini",
+      "source": "backend/services/analytics_engine.py",
+      "anchor": "async def _src_fact_new",
+      "ui": "Tanya KN / Analytics: new customer by line",
+      "chain": "Custom role line → fact_sales_lines → customer metric",
+      "cause": "_src_fact_new tidak memakai sc.line_q sebagaimana sumber fact lain. Filter woven tetap menghitung customer knitting-only.",
+      "impact": "Dalam scope woven, satu customer yang hanya membeli knitting terhitung sebagai pelanggan baru1, seharusnya0 sesuai scope yang diminta.",
+      "fix_prompt": "Gunakan scope/line policy bersama sebelum first-purchase grouping, termasuk keputusan apakah first berarti first ever atau first di lini. Jangan hanya filter sesudah agregasi first.",
+      "acceptance": "Knitting-only excluded woven; customer pernah membeli knitting lalu pertama woven diuji menurut definisi yang disetujui. Entity/owned-customer/role dimensi tetap enforced.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 168,
+      "code_excerpt": " 165:     return out\n 166: \n 167: \n 168: async def _src_fact_new(metrics, dims, grain, p: Period, filters, sc: Scope, w, include_samples):\n 169:     match: Dict[str, Any] = {\"entity_id\": {\"$in\": sc.entity_ids}, \"is_live\": True, \"is_sample\": False}\n 170:     if sc.sales_only:\n 171:         match[\"sales_id\"] = sc.sales_only\n 172:     fq = _match_filters(\"fact\", filters, w)\n 173:     fmap = cat.SOURCE_DIMS[\"fact\"]\n 174:     first = {fmap[d]: {\"$first\": f\"${fmap[d]}\"} for d in dims if d != \"customer\"}\n 175:     pipe = [{\"$match\": {**match, **({\"$and\": fq[\"$and\"]} if fq else {})}}, {\"$sort\": {\"date_wib\": 1}},",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/analytics_engine.py#L168",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-AI-02-new-customer-line",
+          "expected": 0,
+          "actual": 1,
+          "status": "observed_difference",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "D4-AI-03",
+      "priority": "P2",
+      "title": "Refresh fact sales menghapus data lama sebelum replacement berhasil",
+      "source": "backend/services/analytics_facts.py",
+      "anchor": "await db.fact_sales_lines.delete_many",
+      "ui": "Tanya KN / analytics fact refresh",
+      "chain": "SO source → ETL/fact refresh → dashboards",
+      "cause": "_write melakukan delete semua fact SO yang direfresh lalu insert_many. Bila insert gagal sebelum write, projection lama hilang walaupun source SO tetap ada.",
+      "impact": "Factrow1 menjadi0 setelah fault insert. Analitik/AI dapat memberi angka0 saat refresh gagal; ini kerusakan read model, bukan bukti GL atau SO hilang.",
+      "fix_prompt": "Gunakan generation staging + atomic publish pointer, transaction, atau deterministic upsert + retire stale rows hanya setelah replacement lengkap. Simpan sync progress dan expose freshness/error.",
+      "acceptance": "Fault sebelum/sesudah tiap write tidak membuat complete snapshot lama hilang. Retry dan dua worker tidak duplicate fact; Σfact sama source valid, invalid schema tidak menurunkan seluruh dataset.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 146,
+      "code_excerpt": " 143:     rows: List[Dict[str, Any]] = []\n 144:     for o in orders:\n 145:         rows.extend(build_rows(o, customers.get(o.get(\"customer_id\") or \"\") or {}, products, users, mode))\n 146:     await db.fact_sales_lines.delete_many({\"so_id\": {\"$in\": [o[\"id\"] for o in orders]}})\n 147:     if rows:\n 148:         await db.fact_sales_lines.insert_many(rows, ordered=False)\n 149:     return len(rows)\n 150: \n 151: \n 152: async def _process(cursor_query: Dict[str, Any]) -> Tuple[int, int, str]:\n 153:     mode = (await ai_policy())[\"sales_attribution\"]",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/analytics_facts.py#L146",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-AI-03-durable-refresh",
+          "expected": 1,
+          "actual": 0,
+          "status": "observed_difference",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "D4-AI-04",
+      "priority": "P2",
+      "title": "Pembulatan alokasi tim sales tidak mengonservasi nilai dokumen",
+      "source": "backend/services/analytics_facts.py",
+      "anchor": "\"net_alloc\": round(net_alloc, 2)",
+      "ui": "Fact Sales / Tanya KN: revenue by sales dan total",
+      "chain": "SO split sales → rounded fact rows → analytics sums",
+      "cause": "Setiap bagian dibulatkan independen ke2desimal tanpa menempatkan residual pada baris deterministik.",
+      "impact": "Tim dua anggota PIC/co dengan split50/50 memenuhi aturan maksimaldua anggota saatini. Net1.01 menjadi0.51+0.51=1.02. Perbedaan kecil per dokumen dapat terakumulasi; gunakan satuan uang sesuai kontrak sebenarnya.",
+      "fix_prompt": "Alokasikan dalam minor units/Decimal, gunakan largest-remainder atau residual akhir deterministik untuk gross/net/PPN. Konservasi harus terjaga pada semua grouping.",
+      "acceptance": "Net1.01 dibagi2 anggota50/50 tetap total1.01; fractionaldiscount+tax,10lines×2sales, negative return dan replay sync tidak mengubah total/identity. Data legacy dengan anggota lebihbanyak, bila masihdibaca, tidak boleh merusak konservasi.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 118,
+      "code_excerpt": " 115:                 \"qty_base\": round(qty_base * split, 4),\n 116:                 \"rolls\": round(_f(it.get(\"qty_rolls\")) * split, 4),\n 117:                 \"gross\": round(gross_alloc, 2),\n 118:                 \"net_alloc\": round(net_alloc, 2),\n 119:                 \"discount\": round(gross_alloc - net_alloc, 2),\n 120:                 \"ppn_alloc\": round(ppn * share * split, 2),\n 121:                 \"cost\": round(_f(it.get(\"unit_cost\")) * qty_base * split, 2),\n 122:             })\n 123:     return rows\n 124: \n 125: ",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/analytics_facts.py#L118",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-AI-04-money-conservation",
+          "expected": 1.01,
+          "actual": 1.02,
+          "status": "observed_difference",
+          "note": "Two members with PIC/co roles and 50/50 split satisfy current max-two-sales rule; the monetary producer keeps two decimal places."
+        }
+      ]
+    },
+    {
+      "id": "D4-AI-05",
+      "priority": "P1",
+      "title": "Stok tersedia dan reserved di live analytics serta snapshot mengabaikan reservasi parsial",
+      "source": "backend/services/analytics_snapshots.py",
+      "anchor": "\"avail\":",
+      "ui": "Tanya KN: available/reserved stock dan historical stock",
+      "chain": "Partial cut reservation → inventory_balances / rolls → live/snapshot analytics",
+      "cause": "Live _src_stock dan snapshot_stock menggolongkan seluruh length_remaining menurut status roll. Roll available dengan length_reserved3 tetap dihitung available10/reserved0.",
+      "impact": "Original roll helper membuat roll10 dan reserve3; SSOTbalance free7/reserved3. Analytics dan snapshot masing-masing10/0. Sales/MD mendapat available yang berlebihan.",
+      "fix_prompt": "Gunakan canonical physical/free/reserved definition yang mengakomodasi whole-roll dan partial-length. Pisahkan availability fisik vs ATP vs ready-to-dispatch; jangan memperbaiki hanya snapshot sementara live tetap berbeda.",
+      "acceptance": "Available roll10 reservedlength3 → free7/reserved3; whole reserved10→free0/reserved10. Hold/quarantine, makloon-reserved, cut complete/release dan snapshotday diuji live=historical snapshot saat titik waktu sama.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 18,
+      "code_excerpt": "  15:     pipe = [{\"$match\": {\"status\": {\"$in\": list(cat.PHYSICAL_ROLL_STATUSES)}}},\n  16:             {\"$group\": {\"_id\": {k: f\"${k}\" for k in _STOCK_KEYS}, \"qty\": {\"$sum\": rem}, \"rolls\": {\"$sum\": 1},\n  17:                         \"value\": {\"$sum\": {\"$multiply\": [rem, {\"$ifNull\": [\"$unit_cost\", 0]}]}},\n  18:                         \"avail\": {\"$sum\": {\"$cond\": [{\"$eq\": [\"$status\", \"available\"]}, rem, 0]}},\n  19:                         \"reserved\": {\"$sum\": {\"$cond\": [{\"$in\": [\"$status\", list(cat.RESERVED_ROLL_STATUSES)]}, rem, 0]}}}}]\n  20:     rows = [{\"date\": day, **{k: r[\"_id\"].get(k) or \"\" for k in _STOCK_KEYS},\n  21:              **{k: r[k] for k in (\"qty\", \"rolls\", \"value\", \"avail\", \"reserved\")}}\n  22:             async for r in db.inventory_rolls.aggregate(pipe)]\n  23:     await db.fact_stock_daily.delete_many({\"date\": day})\n  24:     if rows:\n  25:         await db.fact_stock_daily.insert_many(rows)",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/analytics_snapshots.py#L18",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-AI-05-partial-cut-live",
+          "expected": {
+            "stock_available_qty": 7,
+            "stock_reserved_qty": 3
+          },
+          "actual": {
+            "stock_available_qty": 10.0,
+            "stock_reserved_qty": 0
+          },
+          "status": "observed_difference",
+          "note": ""
+        },
+        {
+          "id": "D4-AI-05-partial-cut-snapshot",
+          "expected": {
+            "avail": 7,
+            "reserved": 3
+          },
+          "actual": {
+            "avail": 10.0,
+            "reserved": 0
+          },
+          "status": "observed_difference",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "D4-AI-06",
+      "priority": "P1",
+      "title": "Total quantity lintas produk menjumlahkan meter dengan kilogram",
+      "source": "backend/services/analytics_engine.py",
+      "anchor": "mixed = ui is not None",
+      "ui": "Tanya KN metric tables: totals dan shares",
+      "chain": "Product base UOM → query group_by product → quantity total",
+      "cause": "Unit guard hanya menambahkan unit ketika group_by tidak memuat product/unit. Mixed-unit detection hanya berjalan jika unit menjadi dimensi. Group product dapat mengembalikan meter/kg dengan total tunggal.",
+      "impact": "Stock10meter +5kg tampiltotal15, yang tidak punya arti dimensional. Row bisa benar tetapi total/share menyesatkan.",
+      "fix_prompt": "Lacak unit fisik dari metadata row walau dimensi product dipilih. Quantity mixed tidak memiliki grand total; kelompokkan per unit atau konversi eksplisit hanya dalam dimensi kompatibel dengan faktor tersimpan.",
+      "acceptance": "Product10m+5kg → total null/N/A dan per-unit10m/5kg;10m+5m→15m. Shares mixed quantity tidak dihitung silang unit; salesmoney tetap boleh dijumlah.",
+      "evidence_type": "runtime_counterexample",
+      "related": [
+        "D4-WMS-03"
+      ],
+      "line": 565,
+      "code_excerpt": " 562:     shares = bool(dims or grain)\n 563:     # KN-E34 — baris sudah per satuan; total/pembanding/porsi qty juga tidak boleh lintas satuan.\n 564:     ui = dims.index(\"unit\") if \"unit\" in dims else None\n 565:     mixed = ui is not None and len({k[ui] for k in keys}) > 1\n 566:     unit_tot: Dict[Any, Dict[str, float]] = {}\n 567:     if mixed:\n 568:         for k, cur in rows.items():\n 569:             for m in shown:\n 570:                 if m in cat.QTY_METRICS:\n 571:                     unit_tot.setdefault(k[ui], {})[m] = unit_tot.get(k[ui], {}).get(m, 0.0) + float(cur.get(m) or 0)\n 572:         warnings.append(\"Total qty tidak ditampilkan karena lintas satuan; porsi dihitung per satuan.\")",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/analytics_engine.py#L565",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-AI-06-mixed-product-total",
+          "expected": null,
+          "actual": 15.0,
+          "status": "observed_difference",
+          "note": "Products individually have correct meters/kg, but the combined total must not add dimensions."
+        }
+      ]
+    },
+    {
+      "id": "D4-CASH-01",
+      "priority": "P1",
+      "title": "Saldo awal kas kecil berpindah menjadi kas besar setelah transaksi terakhir di-void",
+      "source": "backend/routers/cash.py",
+      "anchor": "kecil_ids =",
+      "ui": "Cash Dashboard: opening kas kecil/besar dan saldo",
+      "chain": "Bank/cash account opening → petty transactions → void → summary",
+      "cause": "Jenis saldo awal ditentukan oleh account_id yang muncul pada transaksi kas kecil aktif. Master tidak memiliki field cash_type untuk klasifikasi tetap; void transaksi terakhir membuat account keluar dari kecil_ids.",
+      "impact": "Opening1000 yang semula kas kecil menjadi kasbesar1000 setelah transaksi10 di-void, padahal opening master tidak berubah. Total cash bisa tetap benar namun split kategori salah.",
+      "fix_prompt": "Tetapkan account classification atau mapping eksplisit yang tidak bergantung ada/tidak transaksi. Rancang migration/legacy unknown; jangan menebak dari transaksi terkini atau mengarang field schema sudah ada.",
+      "acceptance": "Void/delete transaksi terakhir tidak mengubah jenis opening. Account tanpa transaksi, legacy tanpa mapping, beberapa entitas, cash deposit transfer dan preview compare harus konsisten.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 103,
+      "code_excerpt": " 100:     # Saldo = saldo awal rekening + masuk − keluar (dulu saldo awal diabaikan).\n 101:     accounts = await db.bank_accounts.find({\"entity_id\": {\"$in\": list(entities)}},\n 102:                                            {\"_id\": 0, \"id\": 1, \"opening_balance\": 1}).to_list(500)\n 103:     kecil_ids = {r.get(\"account_id\") for r in kecil_q if r.get(\"account_id\")}\n 104:     open_kecil = sum(float(a.get(\"opening_balance\") or 0) for a in accounts if a[\"id\"] in kecil_ids)\n 105:     open_besar = sum(float(a.get(\"opening_balance\") or 0) for a in accounts if a[\"id\"] not in kecil_ids)\n 106:     for eid, v in per_entity.items():\n 107:         ob = sum(float(a.get(\"opening_balance\") or 0) for a in accounts\n 108:                  if a[\"id\"] in kecil_ids and any(r.get(\"account_id\") == a[\"id\"] and r.get(\"entity_id\") == eid for r in kecil_q))\n 109:         v[\"balance\"] = round(v[\"balance\"] + ob, 2)\n 110:     return {",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/routers/cash.py#L103",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-CASH-01-opening-reclass",
+          "expected": {
+            "before_kecil_opening": 1000,
+            "after_kecil_opening": 1000,
+            "after_besar_opening": 0
+          },
+          "actual": {
+            "before_kecil_opening": 1000.0,
+            "after_kecil_opening": 0,
+            "after_besar_opening": 1000.0
+          },
+          "status": "observed_difference",
+          "note": "Voiding its only petty transaction must not move unchanged opening money to large cash."
+        }
+      ]
+    },
+    {
+      "id": "D4-DASH-01",
+      "priority": "P1",
+      "title": "Ringkasan dashboard kehilangan reservasi makloon di luar100SKU pertama",
+      "source": "backend/routers/dashboard.py",
+      "anchor": "products_raw =",
+      "ui": "Dashboard summary: total available dan product lookup",
+      "chain": "Product master → makloon reservation → dashboard ATP/availability",
+      "cause": "Dashboard mengambil100product kemudian menjumlahkan makloon_reserved_qty hanya dari product yang termuat, sementara on-hand dibaca lebih luas.",
+      "impact": "SKU reserved200 berada di luar100master pertama. Available seharusnya850, tampil1050. Limit tanpa pagination pada dictionary pendukung juga dapat menyembunyikan referensi.",
+      "fix_prompt": "Agregasi summary harus memakai seluruh scope yang sama dan sumber reservasi kanonis. Pagination untuk daftar tidak boleh mempengaruhi total. Uji semua bounded helper yang dipakai metrik.",
+      "acceptance": "103master dengan reservasi diSKUke101 tetap mengurangi200. Page size/order tidak mengubah total. Entity/warehouse/line filter, pending demand dan hold punya kontrak eksplisit.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 37,
+      "code_excerpt": "  34:     # `apply_scope` hanya mengikat peran `sales`; sales_admin/finance/manager/\n  35:     # admin/warehouse tetap melihat keseluruhan pesanan seperti sebelumnya.\n  36:     order_scope = sales_ownership.apply_scope(scope, actor)\n  37:     products_raw = await db.products.find({}, {\"_id\": 0}).to_list(100)\n  38:     # S#096 — HPP turunan pembelian (WAC roll) untuk layar Master Produk; diredaksi strip_cost_fields per peran.\n  39:     from services import costing_service as _cs\n  40:     for _p in products_raw:\n  41:         try:\n  42:             _w = await _cs.wac_for_product(_p[\"id\"], product=_p)\n  43:             _p[\"hpp\"], _p[\"hpp_source\"] = float(_w.get(\"wac\") or 0), _w.get(\"source\", \"\")\n  44:         except Exception:  # noqa: BLE001",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/routers/dashboard.py#L37",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-DASH-01-master-window-reservation",
+          "expected": 850,
+          "actual": 1050.0,
+          "status": "observed_difference",
+          "note": ""
+        },
+        {
+          "id": "D4-DASH-01-master-completeness",
+          "expected": 103,
+          "actual": 100,
+          "status": "observed_difference",
+          "note": "Master product consumers receive a truncated list without continuation metadata."
+        }
+      ]
+    },
+    {
+      "id": "D4-HR-01",
+      "priority": "P1",
+      "title": "Payroll gabungan memakai satu run pada KPI dan menimpa run lain pada trend",
+      "source": "backend/services/hr_analytics_service.py",
+      "anchor": "run = await db.hr_payroll_runs.find_one",
+      "ui": "HR Analytics: payroll cost, gross/net/BPJS/employee trend",
+      "chain": "Payroll runs perentity → grouped period → HR cards/charts",
+      "cause": "KPI find_one(period); trend map period diberi assignment sehingga run berikut menimpa sebelumnya. Dua entitas dalam bulan sama tidak diaggregate.",
+      "impact": "RunA100 +B200: kartu100, trend200, total seharusnya300. Ini error analitik; probe tidak membuktikan GL payroll posting salah.",
+      "fix_prompt": "Aggregate posted/eligible runs perperiod/selectedentity dengan lifecycle jelas, hindari menghitung draft+replacement ganda. Bedakan sum employees vs distinctpeople jika employee shared.",
+      "acceptance": "All gross300/net270, A100/B200, chart=card. Draft/replaced/void run tidak double-count; BPJS/PPH dan employee basis diuji.",
+      "evidence_type": "runtime_counterexample",
+      "related": [
+        "D4-HR-02"
+      ],
+      "line": 146,
+      "code_excerpt": " 143:     }\n 144: \n 145:     # ── Payroll cost (run periode terpilih) + tren ──\n 146:     run = await db.hr_payroll_runs.find_one({**pay_scope, \"period\": sel}, {\"_id\": 0})\n 147:     t = (run or {}).get(\"totals\", {}) or {}\n 148:     payroll = {\n 149:         \"period\": sel, \"has_run\": bool(run),\n 150:         \"status\": (run or {}).get(\"status\", \"\"),\n 151:         \"employees\": int(t.get(\"employees\") or 0),\n 152:         \"gross\": round(float(t.get(\"gross\") or 0), 0),\n 153:         \"net\": round(float(t.get(\"net\") or 0), 0),",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/hr_analytics_service.py#L146",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-HR-01-multi-run-trend",
+          "expected": 300,
+          "actual": 200.0,
+          "status": "observed_difference",
+          "note": ""
+        },
+        {
+          "id": "D4-HR-01-multi-run-kpi",
+          "expected": 300,
+          "actual": 100.0,
+          "status": "observed_difference",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "D4-HR-02",
+      "priority": "P2",
+      "title": "Turnover menggunakan waktu edit data sebagai waktu karyawan keluar",
+      "source": "backend/services/hr_analytics_service.py",
+      "anchor": "(e.get(\"updated_at\") or \"\")[:7] == sel",
+      "ui": "HR Analytics: separations/turnover",
+      "chain": "Employee status transition → edit profile → turnover",
+      "cause": "Inactive/resigned dihitung berdasarkan updated_at, bukan effective separation event. Schema saat ini tidak menyediakan termination_date yang kanonis; field tersebut pada probe hanya menjelaskan tanggal bisnis, bukan field publik yang diklaim sudah ada.",
+      "impact": "Karyawan keluarbulanJuli tetapi profil dieditOktober dianggap separasiOktober. Ini gap sumber data/definition, bukan sekadar salah operator.",
+      "fix_prompt": "Tambahkan effective status-transition/separationdate dengan audit history dan backfill yang eksplisit. Perubahan profil tidak mengubah tanggal keluar. Definisikan numerator/denominator turnover.",
+      "acceptance": "KeluarJuli lalu editOktober: Juli1, Oktober0. Rehire, koreksi status, delete/archival dan transferentity memiliki treatment terdefinisi.",
+      "evidence_type": "runtime_metric_definition",
+      "related": [],
+      "line": 136,
+      "code_excerpt": " 133: \n 134:     # ── Turnover (separations = status non-active pada periode; new hires periode) ──\n 135:     separations = sum(1 for e in employees if (e.get(\"status\") or \"active\") != \"active\"\n 136:                       and (e.get(\"updated_at\") or \"\")[:7] == sel)\n 137:     hires_period = sum(1 for e in active if _join(e)[:7] == sel)\n 138:     base_hc = len(active) or 1\n 139:     turnover = {\n 140:         \"period\": sel, \"separations\": separations, \"headcount\": len(active),\n 141:         \"new_hires\": hires_period,\n 142:         \"turnover_rate\": round(separations / base_hc * 100, 1),\n 143:     }",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/hr_analytics_service.py#L136",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "open_definition_or_test_gap",
+      "observations": [
+        {
+          "id": "D4-HR-02-separation-date",
+          "expected": 0,
+          "actual": 1,
+          "status": "observed_difference",
+          "note": "Updating a former employee now must not count their departure as this month."
+        }
+      ]
+    },
+    {
+      "id": "D4-WMS-01",
+      "priority": "P2",
+      "title": "RFID RED hari ini pada Warehouse Health memakai hari UTC",
+      "source": "backend/services/wms_health_service.py",
+      "anchor": "today = datetime.now(timezone.utc)",
+      "ui": "Warehouse Health: red_reads_today",
+      "chain": "RFID timestamp UTC → business day WIB → health card",
+      "cause": "Filter today memakai prefix tanggal UTC. Operasi gudang lokal menggunakan WIB sehingga antara00:00–06:59 WIB hari bisnis berbeda.",
+      "impact": "Freeze01Oct01:00WIB: read30Sept23:00WIB dihitung hariini. Dua read menghasilkan2, seharusnya hanya1.",
+      "fix_prompt": "Gunakan range [WIBdaystart, nextdaystart) dikonversi UTC. Jangan memakai regex prefix date atau mencampur string timestamp offset berbeda.",
+      "acceptance": "23:59WIB yesterday excluded;00:00/06:59todayincluded; timezone UTC/Z/offsetnormalized. Chart dan KPI memakai satu batas hari bisnis.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 28,
+      "code_excerpt": "  25:         \"last_cc\": None, \"devices_total\": 0, \"devices_stale\": 0,\n  26:     } for w in whs}\n  27: \n  28:     today = datetime.now(timezone.utc).strftime(\"%Y-%m-%d\")\n  29:     async for r in db.rfid_incidents.aggregate([\n  30:             {\"$match\": {\"status\": \"open\"}},\n  31:             {\"$group\": {\"_id\": \"$warehouse_id\", \"n\": {\"$sum\": 1}}}]):\n  32:         if r[\"_id\"] in rows:\n  33:             rows[r[\"_id\"]][\"open_incidents\"] = r[\"n\"]\n  34:     async for r in db.rfid_reads.aggregate([\n  35:             {\"$match\": {\"result\": \"red\", \"timestamp\": {\"$gte\": today},",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/wms_health_service.py#L28",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-WMS-01-wib-day",
+          "expected": 1,
+          "actual": 2,
+          "status": "observed_difference",
+          "note": "Freeze now=01 Oct 01:00 WIB; 30 Sept 23:00 WIB belongs yesterday."
+        }
+      ]
+    },
+    {
+      "id": "D4-WMS-02",
+      "priority": "P2",
+      "title": "Cycle count terbaru yang belum selesai menghapus angka akurasi terakhir",
+      "source": "backend/services/wms_health_service.py",
+      "anchor": "rows[cc[\"_id\"]][\"last_cc\"]",
+      "ui": "Warehouse Health: last cycle count / accuracy",
+      "chain": "Cycle count open → assessed/approved → warehouse health",
+      "cause": "Service memilih dokumen terbaru tanpa mensyaratkan accuracy valid/status selesai dan tidak mengirim status. Frontend memasang suffix% walau accuracy tidak ada.",
+      "impact": "Count terukur95%, lalu count baruopen: last_cc memilihopen tanpa angka. Hasilnya angka akurasi hilang/placeholder ambigu, bukan bukti0% ditampilkan.",
+      "fix_prompt": "Pisahkan latestcountstatus dan lastmeasuredaccuracy. Pilih count terukur sesuai lifecycle bisnis (bukan secara arbitrer selaluapproved) dan tampilkan N/A untuk belum dinilai.",
+      "acceptance": "Openbaru tidak menimpa lastmeasured95%; UI menunjukkan statusopen. Measured0% harus tetap0% dan dibedakan darinull; rejected/void count tidak dijadikan valid measurement.",
+      "evidence_type": "runtime_metric_definition",
+      "related": [],
+      "line": 71,
+      "code_excerpt": "  68:             {\"$group\": {\"_id\": \"$warehouse_id\", \"doc\": {\"$first\": \"$$ROOT\"}}}]):\n  69:         if cc[\"_id\"] in rows:\n  70:             d = cc[\"doc\"]\n  71:             rows[cc[\"_id\"]][\"last_cc\"] = {\"cc_number\": d.get(\"cc_number\"),\n  72:                                           \"accuracy_pct\": d.get(\"accuracy_pct\"),\n  73:                                           \"missing_count\": d.get(\"missing_count\"),\n  74:                                           \"at\": d.get(\"created_at\")}\n  75:     now = datetime.now(timezone.utc)\n  76:     async for d in db.rfid_devices.find({}, {\"_id\": 0, \"warehouse_id\": 1,\n  77:                                              \"last_heartbeat\": 1, \"status\": 1}):\n  78:         if d.get(\"warehouse_id\") not in rows:",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/wms_health_service.py#L71",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "open_definition_or_test_gap",
+      "observations": [
+        {
+          "id": "D4-WMS-02-last-measured-cc",
+          "expected": "CCOK",
+          "actual": "CCOPEN",
+          "status": "observed_difference",
+          "note": "New unfinished count must not erase last measured accuracy."
+        }
+      ]
+    },
+    {
+      "id": "D4-WMS-03",
+      "priority": "P1",
+      "title": "Utilisasi gudang mengabaikan struktur Rack→Level→Bin yang didukung master",
+      "source": "backend/routers/reporting.py",
+      "anchor": "for bin_ in rack.get(\"bins\", [])",
+      "ui": "Manager Dashboard: warehouse capacity/utilization",
+      "chain": "Warehouse structure → location flattening → capacity dashboard",
+      "cause": "Producer warehouse_structure menyimpan bins di rack.levels[].bins. Consumer reporting hanya rack.bins legacy, sehingga capacity0 dan utilization0 meski lokasi punya capacity.",
+      "impact": "Struktur dibuat melalui helperoriginal: warehouse_locations capacity100; /reports/warehouse-utilization capacity0. Dapat menyamarkan penuh/tidaknya gudang.",
+      "fix_prompt": "Reuse canonical location traversal yang mendukung legacy dan level. Tegaskan unit kapasitas dan pisahkan mixedunitstock; jangan membagi meter+kg terhadap denominator yang tidak jelas.",
+      "acceptance": "Rack→Level→Bins100 tampilcapacity100; legacyrack.bins tetap benar dan tidak dihitungdua kali. Multiunit/capacity0/owner shares/locationinactive diuji.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 203,
+      "code_excerpt": " 200:         total_capacity = 0.0\n 201:         for zone in warehouse.get(\"zones\", []):\n 202:             for rack in zone.get(\"racks\", []):\n 203:                 for bin_ in rack.get(\"bins\", []):\n 204:                     total_capacity += float(bin_.get(\"capacity\", 0))\n 205:         bal_scope = resolve_list_scope(\n 206:             \"inventory_balances\", {\"warehouse_id\": warehouse[\"id\"]}, ctx, entity_id)\n 207:         balances = await db.inventory_balances.find(bal_scope, {\"_id\": 0}).to_list(1000)\n 208:         on_hand_total = sum(float(b.get(\"on_hand_qty\", 0)) for b in balances)\n 209:         reserved_total = sum(float(b.get(\"reserved_qty\", 0)) for b in balances)\n 210:         available_total = sum(float(b.get(\"available_qty\", 0)) for b in balances)",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/routers/reporting.py#L203",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-WMS-03-level-capacity",
+          "expected": {
+            "locations": 100,
+            "manager_report": 100
+          },
+          "actual": {
+            "locations": 100.0,
+            "manager_report": 0.0
+          },
+          "status": "observed_difference",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "D4-MKT-01",
+      "priority": "P2",
+      "title": "Reach agregat post disajikan ulang sebagai reach tiap platform dan akun",
+      "source": "backend/services/marketing_ext.py",
+      "anchor": "by_platform:",
+      "ui": "Marketing Dashboard: by_platform dan by_account",
+      "chain": "Post multi-platform → aggregate metrics → channel breakdown",
+      "cause": "Satu metrics aggregate post ditambahkan penuh ke setiap platform/account. Tidak ada pengukuran per-channel tersimpan, sehingga channel reach bukan actual channel measurement. Kelompok overlapping boleh nonadditive hanya bila kontraknya jelas.",
+      "impact": "Post reach100 padaIG+TikTok: KPI100, jumlahbyplatform200 dan byaccount200. Jangan menebak channel reach50/50; data actual belum tersedia.",
+      "fix_prompt": "Tentukan apakah breakdown merupakan shared post attribution atau measurement perchannel. Jika shared, label nonadditive dan jangan total ulang. Jika actual, simpan metrics perplatform/account dengan provenance/time dan aggregate dedup sesuai definisi.",
+      "acceptance": "Postmulti-channel100 tidak ditampilkan seolah masing-masingpunya actual100 tanpa keterangan. Separate metrics30/70 hanya jika benar-benar diukur. Reachunique crosschannel tidak disimpulkan dari penjumlahan biasa.",
+      "evidence_type": "runtime_metric_definition",
+      "related": [],
+      "line": 137,
+      "code_excerpt": " 134:         rows = [r for r in six if (r.get(\"publish_at\") or \"\")[:7] == mm]\n 135:         k = _kpi(rows)\n 136:         trend.append({\"month\": mm, \"label\": f\"{MONTHS_ID[int(mm[5:7]) - 1][:3]} {mm[2:4]}\", \"posts\": k[\"posts\"], \"published\": k[\"published\"], \"reach\": k[\"reach\"], \"engagement\": k[\"engagement\"]})\n 137:     by_platform: Dict[str, Dict[str, Any]] = {}\n 138:     by_account: Dict[str, Dict[str, Any]] = {}\n 139:     by_entity: Dict[str, Dict[str, Any]] = {}\n 140:     for r in cur:\n 141:         pub = r[\"status\"] == \"published\"; mt = r.get(\"metrics\") or {}\n 142:         for pl in r.get(\"platforms\") or []:\n 143:             b = by_platform.setdefault(pl, {\"posts\": 0, \"published\": 0, \"reach\": 0.0, \"engagement\": 0.0, \"clicks\": 0.0})\n 144:             b[\"posts\"] += 1",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/marketing_ext.py#L137",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "open_definition_or_test_gap",
+      "observations": [
+        {
+          "id": "D4-MKT-01-attribution-conservation",
+          "expected": {
+            "total_reach": 100,
+            "platform_reach_sum": 100,
+            "account_reach_sum": 100
+          },
+          "actual": {
+            "total_reach": 100.0,
+            "platform_reach_sum": 200.0,
+            "account_reach_sum": 200.0
+          },
+          "status": "observed_difference",
+          "note": "No per-platform/account measurements stored. The UI presents the whole aggregate independently for each platform/account."
+        }
+      ]
+    },
+    {
+      "id": "D4-RND-01",
+      "priority": "P2",
+      "title": "KPI R&D menggabungkan orang berbeda yang mempunyai nama sama",
+      "source": "backend/services/rnd_kpi_service.py",
+      "anchor": "def designer_of",
+      "ui": "R&D designer/MD KPI, approval performance",
+      "chain": "Round performer identity → names → KPI groups",
+      "cause": "Round producer menyimpan performed_by_user_id, tetapi KPI memakai performed_by/opened_by/created_by displayname sebagai identity. Dua user dengan nama sama menjadi satu baris.",
+      "impact": "Dua round dengan U1 danU2 sama displayname menghasilkan1pelaksana, seharusnya2. Nama berubah juga dapat memecah histori orang yang sama.",
+      "fix_prompt": "Group stable user_id/employee_id dan render displayname sebagai label. Legacy name-only perlu mapping ambiguity explicit, bukan autojoin semua nama.",
+      "acceptance": "U1/U2nama sama→2KPI; U1ganti nama→1history. Fallbacklegacyambiguous ditandai, customroleline/roundtypefilter tetap berlaku.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 153,
+      "code_excerpt": " 150:     return max((today - due).days, 0)\n 151: \n 152: \n 153: def designer_of(sample: Dict[str, Any], rd: Dict[str, Any]) -> str:\n 154:     \"\"\"Penanggung jawab round — lihat catatan desain di docstring modul.\"\"\"\n 155:     for cand in (rd.get(\"performed_by\"), rd.get(\"opened_by\"), sample.get(\"created_by\")):\n 156:         name = str(cand or \"\").strip()\n 157:         if name:\n 158:             return name\n 159:     return \"(tanpa nama)\"\n 160: ",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/rnd_kpi_service.py#L153",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-RND-01-person-identity",
+          "expected": 2,
+          "actual": 1,
+          "status": "observed_difference",
+          "note": "Two genuine performer user IDs sharing a display name become one KPI identity."
+        }
+      ]
+    },
+    {
+      "id": "D4-FE-01",
+      "priority": "P2",
+      "title": "Grafik velocity Manager selalu memotong menjadi14hari",
+      "source": "frontend/src/features/manager/ManagerDashboard.jsx",
+      "anchor": "slice(-14)",
+      "ui": "Manager Dashboard: periode 7/30/90 vs velocity chart",
+      "chain": "Period selector → reporting velocity → frontend slicing",
+      "cause": "Dataset velocity dari API dipotong slice(-14) tanpa mengikuti period pilihan.",
+      "impact": "OriginalJS expression diuji: input7 tampil7(control), input30/90 masing-masing14. Judul/periode dapat memberikan kesan datasetlengkap.",
+      "fix_prompt": "Gunakan range period yang sama dengan request atau label last14days secara eksplisit jika itu tujuan grafik. Jangan memotong data tanpa indikasi.",
+      "acceptance": "Periode7/30/90 menunjukkan dataset sesuai tanggalpilihan; emptydays tetapkontrak API, boundarydates/labeltooltip diperiksa diUI.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 100,
+      "code_excerpt": "  97:   useEffect(() => { load(); }, [period, agingDays, selectedEntity]);\n  98: \n  99:   const funnelChartData = (funnel?.funnel || []).filter(f => ![\"cancelled\", \"expired\"].includes(f.status));\n 100:   const velocityData = (velocity?.velocity || []).slice(-14); // last 14 days\n 101:   const utilizationData = utilization.map(w => ({\n 102:     name: w.warehouse_city || w.warehouse_name,\n 103:     on_hand: w.on_hand_qty,\n 104:     capacity: w.total_capacity,\n 105:     pct: w.utilization_pct,\n 106:   }));\n 107: ",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/frontend/src/features/manager/ManagerDashboard.jsx#L100",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-FE-01-chart-7",
+          "expected": 7,
+          "actual": 7,
+          "status": "pass",
+          "note": "Execute the original velocityData expression with n input days."
+        },
+        {
+          "id": "D4-FE-01-chart-30",
+          "expected": 30,
+          "actual": 14,
+          "status": "observed_difference",
+          "note": "Execute the original velocityData expression with n input days."
+        },
+        {
+          "id": "D4-FE-01-chart-90",
+          "expected": 90,
+          "actual": 14,
+          "status": "observed_difference",
+          "note": "Execute the original velocityData expression with n input days."
+        }
+      ]
+    },
+    {
+      "id": "D4-FE-02",
+      "priority": "P1",
+      "title": "Respons lama dapat menimpa dashboard setelah pengguna beralih entitas",
+      "source": "frontend/src/features/manager/ManagerDashboard.jsx",
+      "anchor": "const load =",
+      "ui": "Manager Dashboard entity/filter controls",
+      "chain": "Entity switch → concurrent API requests → React state",
+      "cause": "load/useEffect tidak membatalkan request lama atau menjaga generation. RequestA lambat selesai setelahB dan menulis stateA meskipun selectionB.",
+      "impact": "Transportterkontrol menjalankan original load: B selesai→stateB benar; A selesai kemudian→stateA. Probe function-level, tidak mengklaim browserE2E atau semua halaman memiliki bug yang sudahteruji.",
+      "fix_prompt": "Implement generationguard/AbortController yang melindungi semua setters termasuk loading/error. Data beberapaendpoint harus satu requestgeneration. Audit pola sama dihalaman lain dengan probe terpisah.",
+      "acceptance": "SwitchA→B dan responseoutoforder: semuakartu/chart B; staleerrors dan finallyA tidakmengubahB. Rapidperiod/categorychanges, unmount dan combinedpartialfail diperiksa.",
+      "evidence_type": "runtime_counterexample",
+      "related": [],
+      "line": 69,
+      "code_excerpt": "  66: \n  67:   const headers = { Authorization: `Bearer ${token}`, \"Content-Type\": \"application/json\" };\n  68: \n  69:   const load = async () => {\n  70:     setLoading(true);\n  71:     // F0-E: laporan ter-scope per entitas aktif ('all' = oversight lintas-PT).\n  72:     const ent = selectedEntity || \"all\";\n  73:     const cfg = { headers, params: { entity_id: ent } };\n  74:     try {\n  75:       const [sumRes, funnelRes, velRes, custRes, utilRes, agingRes] = await Promise.all([\n  76:         axios.get(`${API}/reports/summary`, cfg),",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/frontend/src/features/manager/ManagerDashboard.jsx#L69",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-FE-02-after-current-response",
+          "expected": "B",
+          "actual": "B",
+          "status": "pass",
+          "note": ""
+        },
+        {
+          "id": "D4-FE-02-stale-entity-overwrite",
+          "expected": "B",
+          "actual": "A",
+          "status": "observed_difference",
+          "note": "The old A response completes after B and replaces B data; source useEffect has no cancellation/generation guard."
+        }
+      ]
+    },
+    {
+      "id": "D4-TEST-01",
+      "priority": "P2",
+      "title": "Tes konsistensi ATP dapat lulus walaupun mencatat mismatch",
+      "source": "backend/tests/test_iter149_audit.py",
+      "anchor": "bad_row = []",
+      "ui": "Verification pipeline / ATP oracle",
+      "chain": "Inventory report → old regression test → green status",
+      "cause": "test_stock_atp_sum_matches mengumpulkan bad_row/bad_wh dan menulis/print hasil tanpa assert terakhir yang menolak mismatch. Formula lama juga perlu diselaraskan dengan pendingdemandyang didokumentasikan.",
+      "impact": "Green test ini hanya membuktikanHTTP/listshape, bukan ATPformula benar. test_iter150 memilikiassert yang lebihbermakna sehingga perbaikannya harus menghindari oracle lama yangsalah.",
+      "fix_prompt": "Definisikan formulaavailability/ATP bersama timbisnis, buat independentoracle dengan fixture partialreserve/hold/pending/incoming. Tambahkan assertionmismatch dan test-negatif yangmemastikanoracle gagal terhadapmutasi.",
+      "acceptance": "InjectwrongATP→testFAIL; correctformula→PASS. Uji fixture>100SKU, multiowner, pendingcut, externalincoming dan no-dependencydemoaccount.",
+      "evidence_type": "source_review_test_oracle",
+      "related": [],
+      "line": 116,
+      "code_excerpt": " 113:     assert r.status_code == 200, r.text\n 114:     rows = r.json()\n 115:     assert isinstance(rows, list)\n 116:     bad_row = []\n 117:     bad_wh = []\n 118:     for row in rows:\n 119:         av = float(row.get('total_available') or 0)\n 120:         inc = float(row.get('total_incoming') or 0)\n 121:         rsv = float(row.get('total_reserved') or 0)\n 122:         atp = float(row.get('total_atp') or 0)\n 123:         expected = av + inc - rsv",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/tests/test_iter149_audit.py#L116",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "open_definition_or_test_gap",
+      "observations": []
+    },
+    {
+      "id": "D4-DATE-01",
+      "priority": "P2",
+      "title": "Penjualan dan Home menggunakan bulan/tahun UTC yang berbeda dari periode bisnis WIB",
+      "source": "backend/services/sales_force_service.py",
+      "anchor": "v = str(value or \"\")[:10]",
+      "ui": "Sales KPI, commission period/history, Home periode default; consumer tanggal serupa perlu ditelusuri",
+      "chain": "UTC created_at/payment timestamp → period selection → target/commission/report",
+      "cause": "_in_period memotong tanggal string tanpa konversi timezone. Home _current_month/_today_prefix juga memakai UTC. Transaksi normal pada tujuh jam pertama WIB di awal bulan/tahun dapat masuk periode sebelumnya. Analytics engine memiliki konversi WIB tersendiri, sehingga metrik antarmodul dapat berbeda.",
+      "impact": "Timestamp30Sep18:00UTC adalah01Oct01:00WIB: filterOctoberFalse, SeptemberTrue. Home defaultmasihSeptember/30Sep. Timestamp31Dec18:00UTC ditolak dariyear2027 meski tanggalbisnis01Jan2027. Belum semua consumer polaUTC ini diuji runtime; jangan menganggap semuanya sudahconfirmed.",
+      "fix_prompt": "Tentukan timezone bisnis/per-entity dan gunakan helper periode bersama untuk timestamp serta date-only. Buat range UTC dari batas periode WIB. Jangan hanya mengubah bulan default Home sementara filterSO/payment masih memotong stringUTC. Telusuri profitability monthly grouping dan Finance Tower period sebagai related static candidates.",
+      "acceptance": "Batas23:59:59WIB dan00:00WIB di awalbulan, kuartal dan tahun masuk periodeyangbenar; timestamp Z/+00/+07 serta date-only memiliki aturanjelas. KPI, target, commissionhistory, snapshot dan export pada filter sama harusrekonsiliasi.",
+      "evidence_type": "runtime_counterexample",
+      "related": [
+        "D4-WMS-01",
+        "V3-DATE-01",
+        "D4-FIN-04"
+      ],
+      "line": 27,
+      "code_excerpt": "  24:     \"\"\"Cocokkan created_at dengan periode: YYYY-MM (bulan), YYYY-Qn (kuartal), YYYY (tahun).\"\"\"\n  25:     if not period:\n  26:         return True\n  27:     v = str(value or \"\")[:10]\n  28:     if len(v) < 7:\n  29:         return False\n  30:     ym, yr = v[:7], v[:4]\n  31:     p = str(period).upper()\n  32:     if \"-Q\" in p:\n  33:         try:\n  34:             py, q = p.split(\"-Q\")",
+      "source_url": "https://github.com/pandeyoga/KNHOST/blob/d6da1a3d536228582645abb98aea19f3e491f300/backend/services/sales_force_service.py#L27",
+      "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+      "status": "open",
+      "implementation_commit": null,
+      "implementation_evidence": [],
+      "validation_verdict": "confirmed_open",
+      "observations": [
+        {
+          "id": "D4-DATE-01-home-default",
+          "expected": {
+            "month": "2026-10",
+            "day": "2026-10-01"
+          },
+          "actual": {
+            "month": "2026-09",
+            "day": "2026-09-30"
+          },
+          "status": "observed_difference",
+          "note": ""
+        },
+        {
+          "id": "D4-DATE-01-month-inclusion",
+          "expected": true,
+          "actual": false,
+          "status": "observed_difference",
+          "note": "Normal UTC timestamp is 01 Oct 01:00 WIB; selected October must include it."
+        },
+        {
+          "id": "D4-DATE-01-prior-month",
+          "expected": false,
+          "actual": true,
+          "status": "observed_difference",
+          "note": ""
+        },
+        {
+          "id": "D4-DATE-01-year-inclusion",
+          "expected": true,
+          "actual": false,
+          "status": "observed_difference",
+          "note": "01 Jan 2027 01:00 WIB belongs business year2027."
+        }
+      ]
+    }
+  ]
+}

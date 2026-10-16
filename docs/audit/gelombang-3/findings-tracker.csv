@@ -1,0 +1,102 @@
+﻿id,priority,phase,origin,status,title,source,line,implementation_commit,validation_verdict
+V3-PROD-01,P1,01,checkpoint_sebelum_lanjutan_90,open,Konsumsi bahan dapat berulang setelah movement insert gagal,backend/services/production_service.py,363,,confirmed_open
+V3-PROD-02,P1,01,checkpoint_sebelum_lanjutan_90,open,Reversal dianggap selesai sebelum panjang roll dipulihkan,backend/services/production_service.py,389,,confirmed_open
+V3-MRES-01,P1,02,checkpoint_sebelum_lanjutan_90,open,Dua PR mencadangkan bahan lebih banyak daripada stok,backend/services/material_reservation_service.py,79,,confirmed_open
+V3-AR-01,P1,01,checkpoint_sebelum_lanjutan_90,open,Receipt gagal dibuat tetapi SO terbayar dan deposit kembali utuh,backend/services/ar_receipt_service.py,448,,confirmed_open
+V3-BANK-01,P1,01,checkpoint_sebelum_lanjutan_90,open,Satu baris bank dapat direkonsiliasi ke dua transaksi kas penuh,backend/services/bank_recon_service.py,614,,confirmed_open
+V3-WEIGHT-01,P1,02,checkpoint_sebelum_lanjutan_90,open,Split bersamaan menggandakan berat walaupun panjang benar,backend/services/roll_service.py,163,,confirmed_open
+V3-PO-01,P2,03,checkpoint_sebelum_lanjutan_90,open,Task selisih PO tidak refresh dan kehilangan identitas baris,backend/services/po_variance_task_service.py,51,,confirmed_open
+V3-MKO-01,P1,01,checkpoint_sebelum_lanjutan_90,open,Retry penerimaan maklon menambah output fisik dan nilai stok,backend/services/makloon_order_service.py,1093,,confirmed_open
+V3-RFID-01,P1,02,checkpoint_sebelum_lanjutan_90,open,Read green dari passage lama dipakai kembali pada passage baru,backend/services/rfid_ingest_service.py,149,,confirmed_open
+V3-CF-01,P1,03,checkpoint_sebelum_lanjutan_90,open,Jurnal campuran kas/nonkas menghasilkan klasifikasi arus kas salah,backend/services/cash_flow_service.py,84,,confirmed_open
+V3-DATE-01,P1,03,checkpoint_sebelum_lanjutan_90,open,Jurnal date-only pada awal periode hilang dari laporan,backend/services/financial_statement_service.py,31,,confirmed_open
+V3-WMS-02,P1,02,checkpoint_sebelum_lanjutan_90,open,Loading gudang siap ditahan oleh pending cut gudang lain,backend/services/loading_check_service.py,38,,confirmed_open
+V3-MASTER-01,P2,01,checkpoint_sebelum_lanjutan_90,open,Apply master mengubah produk sebelum snapshot batch durable,backend/services/master_governance_service.py,96,,confirmed_open
+V3-PO-02,P2,03,checkpoint_sebelum_lanjutan_90,open,Pilihan amend ke jumlah diterima bertentangan dengan guard PO lama,backend/services/po_amendment_service.py,103,,confirmed_open
+V3-CUT-01,P1,01,checkpoint_sebelum_lanjutan_90,open,Gagal membuat child cut menghilangkan stok dan reservasi,backend/services/roll_service.py,614,,confirmed_open
+V3-MRES-02,P1,02,checkpoint_sebelum_lanjutan_90,open,Total cadangan maklon tetap terpotong pada batas query,backend/services/material_reservation_service.py,44,,confirmed_open
+V3-PO-03,P1,03,checkpoint_sebelum_lanjutan_90,open,Tugas selisih selesai meski amendment belum disetujui dan qty belum berubah,backend/routers/purchase_orders.py,751,,confirmed_open
+V3-DUP-01,P3,05,checkpoint_sebelum_lanjutan_90,open,Helper _clean_perms didefinisikan dua kali,backend/services/custom_role_service.py,60,,confirmed_open
+V3-BUILD-01,P2,05,checkpoint_sebelum_lanjutan_90,open,Dependency build frontend tidak mempunyai lockfile terlacak,frontend/package.json,151,,confirmed_open
+D4-STOCK-01,P1,02,checkpoint_sebelum_lanjutan_90,open,Nilai dan kecepatan stok terhitung dua kali ketika pemilik berbagi SKU dan gudang,backend/services/stock_analytics_service.py,137,,confirmed_open
+D4-STOCK-02,P2,04,checkpoint_sebelum_lanjutan_90,open,Filter kategori tidak diterapkan pada bucket umur stok,backend/services/stock_analytics_service.py,175,,confirmed_open
+D4-STOCK-03,P2,04,checkpoint_sebelum_lanjutan_90,open,Nilai persediaan analitik mengabaikan landed cost,backend/services/stock_analytics_service.py,166,,confirmed_open
+D4-STOCK-04,P2,04,checkpoint_sebelum_lanjutan_90,open,Tanggal roll tanpa timezone dapat menjatuhkan laporan umur stok,backend/services/stock_analytics_service.py,33,,confirmed_open
+D4-FIN-01,P1,03,checkpoint_sebelum_lanjutan_90,open,Control Tower menggabungkan AR semua entitas ketika parameter entitas dihilangkan,backend/routers/finance_analytics.py,68,,confirmed_open
+D4-SALES-01,P1,03,checkpoint_sebelum_lanjutan_90,open,Target penjualan dan penagihan tidak mengikuti scope entitas,backend/services/sales_force_service.py,155,,confirmed_open
+D4-SALES-02,P1,03,checkpoint_sebelum_lanjutan_90,open,Sales Home masih menampilkan order dan piutang lintas entitas di kartu pelanggan,backend/services/home_service.py,59,,confirmed_open
+D4-SALES-03,P1,03,checkpoint_sebelum_lanjutan_90,open,Komisi per-SKU memasukkan SO tim sales milik entitas lain,backend/services/sales_force_service.py,253,,confirmed_open
+D4-FIN-02,P1,03,checkpoint_sebelum_lanjutan_90,open,Forecast kas memakai basis AR dan termin berbeda dari AR kanonis,backend/services/cashflow_forecast_service.py,66,,confirmed_open
+D4-FIN-03,P1,03,checkpoint_sebelum_lanjutan_90,open,Revenue profitabilitas memasukkan PPN included dan mengabaikan diskon header legacy,backend/services/profitability_service.py,118,,confirmed_open
+D4-FIN-04,P2,03,checkpoint_sebelum_lanjutan_90,open,Label pendapatan realisasi sebenarnya memakai pesanan reserved dan WAC terkini,backend/services/profitability_service.py,19,,open_definition_or_test_gap
+D4-AI-01,P1,03,checkpoint_sebelum_lanjutan_90,open,Analytics AP mengabaikan fallback vendor bill yang masih dipakai sumber kanonis,backend/services/analytics_engine.py,288,,confirmed_open
+D4-AI-02,P2,04,checkpoint_sebelum_lanjutan_90,open,Metric pelanggan baru mengabaikan scope lini,backend/services/analytics_engine.py,168,,confirmed_open
+D4-AI-03,P2,04,checkpoint_sebelum_lanjutan_90,open,Refresh fact sales menghapus data lama sebelum replacement berhasil,backend/services/analytics_facts.py,146,,confirmed_open
+D4-AI-04,P2,04,checkpoint_sebelum_lanjutan_90,open,Pembulatan alokasi tim sales tidak mengonservasi nilai dokumen,backend/services/analytics_facts.py,118,,confirmed_open
+D4-AI-05,P1,02,checkpoint_sebelum_lanjutan_90,open,Stok tersedia dan reserved di live analytics serta snapshot mengabaikan reservasi parsial,backend/services/analytics_snapshots.py,18,,confirmed_open
+D4-AI-06,P1,02,checkpoint_sebelum_lanjutan_90,open,Total quantity lintas produk menjumlahkan meter dengan kilogram,backend/services/analytics_engine.py,565,,confirmed_open
+D4-CASH-01,P1,03,checkpoint_sebelum_lanjutan_90,open,Saldo awal kas kecil berpindah menjadi kas besar setelah transaksi terakhir di-void,backend/routers/cash.py,103,,confirmed_open
+D4-DASH-01,P1,02,checkpoint_sebelum_lanjutan_90,open,Batas katalog 3.000 SKU masih menghilangkan master dan cadangan pada KPI,backend/routers/dashboard.py,37,,confirmed_open
+D4-HR-01,P1,04,checkpoint_sebelum_lanjutan_90,open,Payroll gabungan memakai satu run pada KPI dan menimpa run lain pada trend,backend/services/hr_analytics_service.py,146,,confirmed_open
+D4-HR-02,P2,04,checkpoint_sebelum_lanjutan_90,open,Turnover menggunakan waktu edit data sebagai waktu karyawan keluar,backend/services/hr_analytics_service.py,136,,open_definition_or_test_gap
+D4-WMS-01,P2,04,checkpoint_sebelum_lanjutan_90,open,RFID RED hari ini pada Warehouse Health memakai hari UTC,backend/services/wms_health_service.py,28,,confirmed_open
+D4-WMS-02,P2,04,checkpoint_sebelum_lanjutan_90,open,Cycle count terbaru yang belum selesai menghapus angka akurasi terakhir,backend/services/wms_health_service.py,71,,open_definition_or_test_gap
+D4-WMS-03,P1,02,checkpoint_sebelum_lanjutan_90,open,Utilisasi gudang mengabaikan struktur Rack→Level→Bin yang didukung master,backend/routers/reporting.py,203,,confirmed_open
+D4-MKT-01,P2,04,checkpoint_sebelum_lanjutan_90,open,Reach agregat post disajikan ulang sebagai reach tiap platform dan akun,backend/services/marketing_ext.py,137,,open_definition_or_test_gap
+D4-RND-01,P2,04,checkpoint_sebelum_lanjutan_90,open,KPI R&D menggabungkan orang berbeda yang mempunyai nama sama,backend/services/rnd_kpi_service.py,153,,confirmed_open
+D4-FE-01,P2,05,checkpoint_sebelum_lanjutan_90,open,Grafik velocity Manager selalu memotong menjadi14hari,frontend/src/features/manager/ManagerDashboard.jsx,100,,confirmed_open
+D4-FE-02,P1,05,checkpoint_sebelum_lanjutan_90,open,Respons periode lama dapat menimpa grafik setelah periode diganti,frontend/src/features/manager/ManagerDashboard.jsx,69,,confirmed_open
+D4-TEST-01,P2,05,checkpoint_sebelum_lanjutan_90,open,Tes konsistensi ATP dapat lulus walaupun mencatat mismatch,backend/tests/test_iter149_audit.py,116,,open_definition_or_test_gap
+D4-DATE-01,P2,03,checkpoint_sebelum_lanjutan_90,open,Penjualan dan Home menggunakan bulan/tahun UTC yang berbeda dari periode bisnis WIB,backend/services/sales_force_service.py,27,,confirmed_open
+D4-PLAN-01,P1,03,checkpoint_sebelum_lanjutan_90,open,Rencana pembelian mencatat qty yang berbeda dari PR yang dirujuk,backend/services/fulfillment_plan_service.py,133,,confirmed_open
+D4-PLAN-02,P1,03,checkpoint_sebelum_lanjutan_90,open,Baris produk ganda pada API rencana dapat membuat pembelian melebihi kekurangan,backend/services/fulfillment_plan_service.py,76,,confirmed_open
+D4-PLAN-03,P1,03,checkpoint_sebelum_lanjutan_90,open,Riwayat mengatakan pemenuhan penuh walaupun sebagian eksekusi gagal,backend/services/fulfillment_plan_service.py,160,,confirmed_open
+D4-PLAN-04,P2,05,checkpoint_sebelum_lanjutan_90,open,Pesan kegagalan pemenuhan parsial terhapus oleh refresh otomatis,frontend/src/features/sales_admin/FulfillmentDecisionDialog.jsx,59,,confirmed_open
+D4-PLAN-05,P1,02,checkpoint_sebelum_lanjutan_90,open,Pasokan masuk yang sama dapat direncanakan penuh untuk beberapa SO,backend/services/fulfillment_plan_service.py,139,,confirmed_open
+D4-GLOBAL-01,P1,02,checkpoint_sebelum_lanjutan_90,open,Barang datang 100 yard dilabelkan 100 meter pada katalog stok global,backend/services/sales_stock_service.py,44,,confirmed_open
+D4-SUPPLY-01,P1,02,checkpoint_sebelum_lanjutan_90,open,Sisa PO diterima sebagian hilang dari incoming karena definisi status berbeda,backend/services/roll_service.py,173,,confirmed_open
+D4-BACKORDER-01,P1,01,checkpoint_sebelum_lanjutan_90,open,Pemenuhan stok bersamaan mereservasi 160 untuk SO yang hanya kurang 100,backend/services/backorder_service.py,82,,confirmed_open
+D4-CAP-01,P1,02,checkpoint_sebelum_lanjutan_90,open,SKU yang benar-benar ada ditolak saat membuat PO setelah 1.000 master pertama,backend/routers/purchase_orders.py,407,,confirmed_open
+D4-ORDER-01,P1,05,checkpoint_sebelum_lanjutan_90,open,Rata-rata pesanan membagi revenue seluruh pesanan dengan hanya 20 pesanan terbaru,frontend/src/features/orders/OrderDashboard.jsx,74,,confirmed_open
+D4-CASE-01,P1,01,checkpoint_sebelum_lanjutan_90,open,Refund store credit menjurnal pengurangan kewajiban dua kali dan menciptakan pendapatan semu,backend/services/finance_case_actions.py,238,,confirmed_open
+D4-CASE-02,P1,01,checkpoint_sebelum_lanjutan_90,open,Penyelesaian kasus keuangan dapat mengulang kas yang sudah tercatat setelah konflik atau kegagalan,backend/services/finance_case_actions.py,206,,confirmed_open
+D4-INTERCO-01,P1,01,checkpoint_sebelum_lanjutan_90,open,Transfer roll retur dapat selesai memindahkan pemilik tetapi kehilangan jurnal pasangan dan dokumen pemulihan,backend/services/gl_service.py,1333,,confirmed_open
+D4-INTERCO-02,P1,01,checkpoint_sebelum_lanjutan_90,open,Nilai transfer antarentitas memakai WAC sesudah stok sumber dipindahkan,backend/services/gl_service.py,1337,,confirmed_open
+D4-DOC-01,P2,05,checkpoint_sebelum_lanjutan_90,open,Pratinjau Template Dokumen Dasar memanggil endpoint yang tidak tersedia dan mengabaikan jenis template,frontend/src/hooks/useAppActions.js,616,,confirmed_open
+D4-CASE-03,P1,01,checkpoint_sebelum_lanjutan_90,open,Alur dana dipegang karyawan tidak menjaga urutan langkah dan sisa piutang,backend/services/finance_case_actions.py,310,,confirmed_open
+D4-CLOSE-01,P2,01,checkpoint_sebelum_lanjutan_90,open,Reopen bulan tidak menandai penutupan tahun yang bergantung padanya sebagai basi,backend/services/closing_service.py,346,,confirmed_open
+D4-CLOSE-02,P1,01,checkpoint_sebelum_lanjutan_90,open,Tutup ulang gagal mengadopsi jurnal yang sudah tersimpan sehingga recovery admin tetap gagal,backend/services/closing_service.py,371,,confirmed_open
+D4-GL-01,P1,01,checkpoint_sebelum_lanjutan_90,open,Jurnal manual yang sudah dibalik masih dapat dianulir dan membentuk pembatalan dua kali,backend/services/gl_service.py,755,,confirmed_open
+D4-GL-02,P1,01,checkpoint_sebelum_lanjutan_90,open,Jurnal manual meloloskan NaN/Infinity dan menghilangkan angka transaksi sah dari laporan,backend/services/gl_service.py,640,,confirmed_open
+D4-EQ-01,P1,04,checkpoint_sebelum_lanjutan_90,open,KPI Laba Periode Berjalan pada perubahan ekuitas berubah menjadi nol sesudah tutup buku,backend/services/equity_statement_service.py,57,,confirmed_open
+D4-COA-01,P1,03,checkpoint_sebelum_lanjutan_90,open,Mode Semua Entitas pada laporan keuangan menghilangkan akun khusus entitas yang sah,backend/services/financial_statement_service.py,54,,confirmed_open
+D4-PA-01,P1,02,checkpoint_sebelum_lanjutan_90,open,Reservasi SO mengambil roll yang sudah diklaim putaway dan meninggalkan lokasi alokasi lama,backend/services/roll_service.py,792,,confirmed_open
+D4-PA-02,P1,01,checkpoint_sebelum_lanjutan_90,open,Putaway kehilangan checkpoint setelah roll berpindah sehingga recovery stok dan tag gagal,backend/services/putaway_order_service.py,232,,confirmed_open
+D4-PA-03,P2,02,checkpoint_sebelum_lanjutan_90,open,Total putaway menjumlahkan meter dan yard lalu memberi satu label satuan,backend/services/putaway_order_service.py,49,,confirmed_open
+D4-WMS-04,P2,04,checkpoint_sebelum_lanjutan_90,open,KPI antrean simpan menghitung roll reserved yang tidak boleh diputaway,backend/services/wms_health_service.py,42,,confirmed_open
+D4-RFID-01,P1,01,checkpoint_sebelum_lanjutan_90,open,"Deduplikasi event RFID melewati recovery keputusan, insiden dan status passage",backend/services/rfid_ingest_service.py,138,,confirmed_open
+D4-CC-01,P2,01,checkpoint_sebelum_lanjutan_90,open,Recovery cycle count membuat dua laporan dan nomor untuk satu sesi,backend/services/cycle_count_service.py,124,,confirmed_open
+D4-TAG-01,P1,02,checkpoint_sebelum_lanjutan_90,open,Verifikasi tag lama tetap berlaku setelah tag dihapus atau diganti dengan tag pending,backend/services/putaway_order_service.py,132,,confirmed_open
+D4-SIM-01,P2,04,tambahan_lanjutan_90,open,Simulator menyatakan 3-way match lolos saat barang belum diterima,backend/services/config_simulator.py,192,,confirmed_open
+D4-BANK-01,P2,04,tambahan_lanjutan_90,open,Tanggal kalender yang tidak mungkin masuk ke data rekonsiliasi bank,backend/services/bank_statement_parser.py,179,,confirmed_open
+D4-BANK-02,P2,04,tambahan_lanjutan_90,open,Parser MT940 tidak membaca kode pembalikan transaksi RC dan RD,backend/services/bank_statement_parser.py,416,,confirmed_open
+D4-ASSET-01,P1,01,tambahan_lanjutan_90,open,Penyusutan yang gagal mengunci periode sehingga retry tidak memperbaiki aset,backend/services/fixed_asset_service.py,244,,confirmed_open
+D4-ASSET-02,P1,01,tambahan_lanjutan_90,open,Penyusutan dua periode bersamaan membuat register aset tertinggal dari jurnal,backend/services/fixed_asset_service.py,261,,confirmed_open
+D4-ICLOAN-01,P1,02,tambahan_lanjutan_90,open,Akun Finance dapat mengubah pinjaman entitas yang tidak ditugaskan kepadanya,backend/routers/interco_loans.py,96,,confirmed_open
+D4-RFQ-01,P1,02,tambahan_lanjutan_90,open,Award RFQ tetap membuat PO untuk item yang dinyatakan tidak tersedia,backend/services/rfq_service.py,296,,confirmed_open
+D4-RFQ-02,P1,02,tambahan_lanjutan_90,open,Perbandingan dan pembatalan RFQ tidak mengikuti pembatasan entitas pada halaman detail,backend/routers/rfq.py,56,,confirmed_open
+D4-CB-01,P2,05,tambahan_lanjutan_90,open,Pemeriksa kontrabon dapat memberi hasil bersih karena hanya memeriksa 2.000 dokumen pertama,backend/services/contra_bon_scan.py,24,,confirmed_open
+D4-UOM-BF-01,P2,03,tambahan_lanjutan_90,open,"Backfill jumlah roll memakai panjang daftar ID mentah, berbeda dari resolver roll nyata",backend/services/dual_qty_service.py,169,,confirmed_open
+D4-RET-CHAIN-01,P2,04,tambahan_lanjutan_90,open,Ringkasan fisik rantai retur menjumlahkan barang berlainan satuan menjadi satu angka,backend/services/return_chain_service.py,223,,confirmed_open
+D4-ALERT-DATE-01,P2,04,tambahan_lanjutan_90,open,Peringatan AP menyebut jatuh tempo hari ini sudah terlambat satu hari,backend/services/alert_service.py,144,,confirmed_open
+D4-ALERT-AMT-01,P2,04,tambahan_lanjutan_90,open,Peringatan utang menampilkan nominal penuh meskipun pembayaran sebagian sudah tercatat,backend/services/alert_service.py,124,,confirmed_open
+D4-ALERT-WMS-01,P1,02,tambahan_lanjutan_90,open,Notifikasi tugas WMS mencampur pesanan dua entitas yang memakai gudang sama,backend/services/alert_service.py,286,,confirmed_open
+D4-PRICE-SCOPE-01,P1,02,tambahan_lanjutan_90,open,"Scope harga khusus berbeda antara detail, perubahan, harga efektif dan ringkasan",backend/routers/price_approvals.py,263,,confirmed_open
+D4-OD-LOCK-01,P1,01,tambahan_lanjutan_90,open,Kegagalan pembaruan SKU meninggalkan harga OD terkunci dan pengulangan tidak dapat memulihkannya,backend/services/special_order_phase2.py,235,,confirmed_open
+D4-COMM-BOUNDS-01,P1,03,tambahan_lanjutan_90,open,Perubahan master komersial melewati batas angka dan dapat menghasilkan ongkos makloon negatif,backend/schemas_contracts.py,62,,confirmed_open
+D4-KPI-WEIGHT-01,P2,04,tambahan_lanjutan_90,open,Bobot KPI nol menjadi satu dan mengubah rata-rata tertimbang,backend/services/hr_kpi_service.py,123,,confirmed_open
+D4-KPI-PERIOD-01,P2,04,tambahan_lanjutan_90,open,Periode KPI yang bukan bulan kalender diterima dan dipilih sebagai periode terbaru,backend/services/hr_kpi_service.py,39,,confirmed_open
+D4-KPI-SCORE-01,P2,04,tambahan_lanjutan_90,open,Skor otomatis KPI dapat negatif meskipun kontrak fungsi menyatakan rentang 0–150,backend/services/hr_kpi_service.py,31,,confirmed_open
+D4-BUD-EDIT-01,P1,03,tambahan_lanjutan_90,open,Perubahan anggaran melewati keunikan periode/kunci dan batas tahun,backend/services/budget_service.py,209,,confirmed_open
+D4-BUD-THRESHOLD-01,P2,04,tambahan_lanjutan_90,open,Ambang peringatan anggaran 0% berubah menjadi 85% pada laporan,backend/services/budget_service.py,347,,confirmed_open
+D4-RET-POLICY-01,P1,02,tambahan_lanjutan_90,open,Deadline retur dapat berubah karena PO terbaru entitas lain dengan produk yang sama,backend/services/return_policy_service.py,241,,confirmed_open

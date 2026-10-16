@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-01",
+  "source": "rfid-results.json",
+  "review": "12_VALIDASI_ULANG_W2_05.md",
+  "overrides": [
+    {
+      "scenario": "W2-R-F02",
+      "historical_kind": "defect",
+      "reviewed_kind": "policy_observation",
+      "reason": "Incidents explicitly SHARED; device infra shared; unauthorized global security/report scope not established."
+    },
+    {
+      "scenario": "W2-R-F03",
+      "historical_kind": "defect",
+      "reviewed_kind": "policy_observation",
+      "reason": "Incidents explicitly SHARED; device infra shared; unauthorized global security/report scope not established."
+    },
+    {
+      "scenario": "W2-R-F04",
+      "historical_kind": "defect",
+      "reviewed_kind": "policy_observation",
+      "reason": "Incidents explicitly SHARED; device infra shared; unauthorized global security/report scope not established."
+    },
+    {
+      "scenario": "W2-R-F05",
+      "historical_kind": "defect",
+      "reviewed_kind": "policy_observation",
+      "reason": "Incidents explicitly SHARED; device infra shared; unauthorized global security/report scope not established."
+    },
+    {
+      "scenario": "W2-R-F06",
+      "historical_kind": "defect",
+      "reviewed_kind": "policy_observation",
+      "reason": "Incidents explicitly SHARED; device infra shared; unauthorized global security/report scope not established."
+    },
+    {
+      "scenario": "W2-R-F07",
+      "historical_kind": "defect",
+      "reviewed_kind": "policy_observation",
+      "reason": "Incidents explicitly SHARED; device infra shared; unauthorized global security/report scope not established."
+    }
+  ],
+  "wave2_reviewed_totals": {
+    "scenarios": 63,
+    "control": 38,
+    "defect": 14,
+    "policy_observation": 6,
+    "wave1_extension": 5,
+    "finding_ids": 12
+  },
+  "review_runs_counted_as_new_coverage": false
+}
