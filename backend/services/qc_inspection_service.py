@@ -74,8 +74,10 @@ def normalize_interval_defects(defects: List[Dict[str, Any]], inspect_length_yar
     out = []
     for d in defects or []:
         pv, cnt = int(d.get("point_value", 0) or 0), int(d.get("count", 0) or 0)
-        if pv not in VALID_POINTS or cnt <= 0:
+        if cnt == 0 and pv in VALID_POINTS:
             continue
+        if pv not in VALID_POINTS or cnt < 0:
+            raise IntervalError(f"Cacat tidak sah: poin harus 1–4 dan jumlah ≥ 1 (dapat poin {pv}, jumlah {cnt}).")
         row: Dict[str, Any] = {"point_value": pv, "count": cnt, "note": d.get("note", ""),
                                "code": str(d.get("code") or "").strip().upper()[:20]}
         if d.get("interval") not in (None, ""):

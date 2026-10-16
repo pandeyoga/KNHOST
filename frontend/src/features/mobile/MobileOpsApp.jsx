@@ -98,5 +98,10 @@ export default function MobileOpsApp(props) {
     id: 'catalog', label: 'Produk', icon: ClipboardList,
     render: () => <div className="space-y-3 p-5"><button data-testid="mobile-open-catalog" className="primary-button w-full justify-center" onClick={() => props.onNavigate?.('products-pricing', 'md-products')}>Produk & varian</button><button data-testid="mobile-open-rnd" className="secondary-button w-full justify-center" onClick={() => props.onNavigate?.('rnd-hub', 'rnd-samples')}>Permintaan Sample R&D</button>{props.user?.role !== 'md' && <button data-testid="mobile-open-grn-ops" className="secondary-button w-full justify-center" onClick={() => props.onNavigate?.('wms-operations', 'goods-receipts')}>Kedatangan Barang & foto SJ</button>}{can(props.user?.permissions, 'makloon_order', 'view') && <button data-testid="mobile-open-makloon-orders" className="secondary-button w-full justify-center" onClick={() => props.onNavigate?.('purchase-orders', 'makloon-orders')}>Order Makloon (detail & retur bahan)</button>}</div>,
   });
+  // L05 — petugas QC/MD Quality: Meja QC (SPK, random check dari scan) bisa dibuka dari HP.
+  if (can(props.user?.permissions, 'qc', 'inspect') || can(props.user?.permissions, 'qc', 'random_check')) tabs.splice(Math.min(4, tabs.length), 0, {
+    id: 'qc', label: 'QC', icon: ClipboardList,
+    render: () => <div className="space-y-3 p-5"><button data-testid="mobile-open-inspections" className="primary-button w-full justify-center" onClick={() => props.onNavigate?.('wms-operations', 'inspections')}>Meja QC · SPK inspeksi & random check scan</button></div>,
+  });
   return <MobileShell {...props} tabs={tabs} testId="mobile-ops-app" />;
 }

@@ -551,7 +551,11 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any],
                                                    "owner_entity_id": entity_id}, {"_id": 0}).to_list(len(rids) * 2)
             if returned & {r["id"] for r in rolls}:
                 raise InspectionError("Roll retur tidak boleh diperiksa sebagai barang pengganti.")
-            if len({r["id"] for r in rolls}) != len(set(rids)):
+            matched = {t for t in rids if any(t in (r["id"], r.get("roll_no")) for r in rolls)}
+            bad = [r.get("roll_no") for r in rolls if r.get("status") not in ("available", "reserved", "quarantine", "hold")]
+            if bad:
+                raise InspectionError(f"Roll pengganti berstatus tidak bisa diperiksa (terjual/terpakai): {', '.join(bad)}.")
+            if matched != set(rids):
                 raise InspectionError("Sebagian roll pengganti tidak ditemukan / di luar badan usaha ini.")
             lines = await _lines_from_rolls(rolls)
         line_code = line_code or str(ret.get("line_code") or "")

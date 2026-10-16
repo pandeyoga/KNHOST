@@ -184,6 +184,10 @@ async def record_loss(mko_id: str, seq: int, *, roll_ids: Optional[List[str]], r
         pending = {r for x in step.get("material_losses") or [] if x["status"] == "pending_approval" for r in x["roll_ids"]}
         q: Dict[str, Any] = {"bucket_ref.id": step["issue_ref"], "status": "subcon"}
         ids = list(roll_ids) if roll_ids is not None else None
+        if ids and partial is not None:   # validasi roll utuh SEBELUM ada roll yang dipecah
+            ok = await db.inventory_rolls.count_documents({"id": {"$in": ids}, "bucket_ref.id": step["issue_ref"], "status": "subcon"})
+            if ok != len(set(ids)) or set(ids) & pending:
+                raise HTTPException(status_code=409, detail="Roll yang dipilih tidak (lagi) berada di mitra atau sedang menunggu persetujuan.")
         if partial is not None:
             pids = [str(p.get("roll_id") or "") for p in partial]
             if len(set(pids + (ids or []))) != len(pids) + len(ids or []):

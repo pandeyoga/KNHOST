@@ -15,7 +15,11 @@ export default function IntervalDefectGrid({ length, setLength, rows, setRows, s
         <label className="block">
           <span className="field-label">Panjang diinspeksi (yard)</span>
           <input data-testid="ins-inspect-length" type="number" min="0" step="0.01" className="field" value={length}
-            onChange={(e) => setLength(e.target.value)} placeholder="mis. 124" />
+            onChange={(e) => {
+              const m = intervalCount(e.target.value);
+              setLength(e.target.value);
+              if (rows.some((r) => r.interval !== "" && r.interval >= m)) setRows(rows.map((r) => (r.interval !== "" && r.interval >= m ? { ...r, interval: "" } : r)));
+            }} placeholder="mis. 124" />
         </label>
         <p className="self-end text-[11px] text-[#6B6B73]" data-testid="ins-stock-unit-note">
           Stok roll tetap {stockQty} {stockUnit || ""} — posisi cacat selalu dalam yard. {n} interval × 15 yard{n > 10 ? " (berlanjut melewati 150)" : ""}.

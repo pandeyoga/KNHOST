@@ -25,7 +25,8 @@ export default function MakloonReturnMaterial({ mkoId, step, canAct, canLoss, ca
   const [ctol, setCtol] = useState(null);
   const [tolEdit, setTolEdit] = useState("");
   const returns = step.material_returns || [];
-  const valueLeft = Number(step.material_value || 0) - returns.reduce((a, r) => a + Number(r.value || 0), 0);
+  const valueLeft = Number(step.material_value || 0) - returns.reduce((a, r) => a + Number(r.value || 0), 0)
+    - (step.material_losses || []).filter((x) => x.status === "posted").reduce((a, x) => a + Number(x.value || 0), 0);
 
   async function openForm() {
     setOpen(true);

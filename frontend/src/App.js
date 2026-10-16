@@ -366,7 +366,7 @@ function App() {
   // Master/R&D are responsive pages, not redirects to the mobile approval inbox.
   // Keep an explicitly selected/deep-linked page when the viewport changes.
   // Fitur tanpa layar HP khusus dibuka "tampilan penuh" (mobileVisit) + tombol kembali ke aplikasi HP.
-  const responsiveWorkspace = ['md-products', 'product-templates', 'rnd-specs', 'goods-receipts', 'makloon-orders'].includes(activeView) || mobileVisit;
+  const responsiveWorkspace = ['md-products', 'product-templates', 'rnd-specs', 'goods-receipts', 'makloon-orders', 'inspections'].includes(activeView) || mobileVisit;
   const goDesktop = () => { localStorage.setItem("kn_force_desktop", "1"); setForceDesktop(true); };
   const openFullView = (navId, view) => { setMobileVisit(true); handleNavSelect(navId, view); };
   const backToMobile = () => { setMobileVisit(false); handleNavSelect("home"); };

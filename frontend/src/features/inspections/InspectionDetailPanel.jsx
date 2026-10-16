@@ -297,6 +297,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
                     {ln.grade_after
                       ? <span data-testid={`ins-line-grade-${ln.id}`}>
                           {ln.grade_before || "—"} &rarr; <strong>{ln.grade_after}</strong>
+                          {ln.grade_rule?.status === "candidate_unvalidated" && <span data-testid={`ins-line-grade-candidate-${ln.id}`} title="Rumus & ambang grade menunggu keputusan KLX-02" className="ml-1 rounded-full bg-[#FFF6E5] px-1.5 py-0.5 text-[9.5px] font-semibold text-[#B26A00]">kandidat</span>}
                         </span>
                       : (ln.grade_before || "—")}
                   </td>

@@ -49,9 +49,13 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
   // “menempel” di form roll berikutnya (kelas bug yang paling mudah lolos uji).
   useEffect(() => {
     if (!open || !line) return;
-    setCounts(KOSONG);
-    setIvRows([]);
-    setInspectLen("");
+    // Buka ulang baris yang sudah diinspeksi → muat hasil tersimpan (bukan form kosong yang menimpa data).
+    const saved = line.defects || [];
+    const c = { ...KOSONG };
+    saved.filter((d) => d.interval == null).forEach((d) => { c[d.point_value] = String((Number(c[d.point_value]) || 0) + Number(d.count || 0)); });
+    setCounts(c);
+    setIvRows(saved.filter((d) => d.interval != null).map((d) => ({ interval: d.interval, code: d.code || "", point_value: d.point_value, count: d.count, note: d.note || "" })));
+    setInspectLen(line.inspect_form?.inspect_length_yard ?? "");
     setForm({
       gsm_actual: line.gsm_actual ?? "",
       width_actual: line.width_actual ?? "",
