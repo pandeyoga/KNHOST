@@ -59,7 +59,7 @@ export function BillForm({ campaign, onClose, onDone }) {
   const submit = async () => {
     setBusy(true); setErr("");
     const body = { ...f, amount: Number(f.amount || 0), ppn_amount: Number(f.ppn_amount || 0) };
-    try { await mktApi.createBill(campaign.id, body, intent.keyFor(body)); intent.done(); onDone(); }
+    try { await intent.send(body, (k) => mktApi.createBill(campaign.id, body, k)); onDone(); }
     catch (e) { setErr(errText(e, "Gagal membuat tagihan.")); } finally { setBusy(false); }
   };
   return (
@@ -86,7 +86,8 @@ export function RejectModal({ campaign, bill, onClose, onDone }) {
   };
   return (
     <FormModal open title={`Tolak ${bill.bill_number}`} icon={X} onClose={onClose} onSubmit={submit} busy={busy} error={err} submitLabel="Tolak tagihan" testId="mkt-bill-reject-modal" submitTestId="mkt-bill-reject-submit" cancelTestId="mkt-bill-reject-cancel">
-      <Field label="Alasan penolakan *"><input className="field w-full" value={reason} onChange={(e) => setReason(e.target.value)} data-testid="mkt-bill-reject-reason" /></Field>
+      <Field label="Alasan penolakan * (min. 5 karakter)"><input className="field w-full" value={reason} onChange={(e) => setReason(e.target.value)} data-testid="mkt-bill-reject-reason" /></Field>
+      {reason.trim().length > 0 && reason.trim().length < 5 && <p className="text-[11px] text-[#B26A00]" data-testid="mkt-bill-reject-hint">Alasan minimal 5 karakter.</p>}
     </FormModal>
   );
 }

@@ -840,13 +840,15 @@
         "LN-040-T01",
         "LN-040-T02"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -911,13 +913,15 @@
         "LN-043-T02",
         "LN-043-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -2941,8 +2945,10 @@
       "scenario": "Diberikan order sepuluh roll 100 yard dan SJ/fisik total 960 dengan variasi panjang, ketika OCR lalu user koreksi dan commit, maka tersimpan sepuluh identitas beserta qty masing-masing dan total 960; confidence rendah ditandai untuk verifikasi.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16 (belum ber-SHA), OCR NYATA OpenAI gpt-6-sol: SJ sintetis 10 roll (100,98,95,97,96,94,99,93,92,96 = 960) vs tugas PO 1000; roll #7 dicoret → OCR: 9 roll benar + #7 doc_status=missing + peringatan \"1 roll ragu\"; status review, verified=false (bukan posting). User koreksi expected_rolls → start-count → 10 roll diukur → close: 10 identitas roll unik, Σ length_initial 960. tests/test_l04_ln040_real_ocr.py PASS (iteration_191).",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,
@@ -2956,8 +2962,10 @@
       "scenario": "Diberikan request receiving sama dikirim ulang, ketika diproses, maka roll/stok/notifikasi tidak dibuat dua kali dan selisih 40 tetap terlihat.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16: kirim ulang roll dengan Idempotency-Key sama → X-Idempotent-Replay, roll id sama; tanpa kunci → 409 (roll packing list sudah diukur); finish-count versi lama 409; close kedua 409, notifikasi & roll tidak bertambah, 1 JE goods_receipt; received 960 → selisih 40 tetap terlihat (sisa tugas). Perbaikan: /api/goods-receipts/* ditambahkan ke IDEMPOTENT_PREFIXES + FE GrnCountPanel mengirim Idempotency-Key per niat.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,
@@ -3052,8 +3060,10 @@
       "scenario": "Diberikan bahan 1000 dan kebutuhan produksi 600, ketika komitmen dibuat lalu sebagian di-issue, maka reserved/available dan fisik berubah pada peristiwa yang benar serta antarmuka menjelaskan jumlahnya.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16: bahan ±1050 yd, MKO 600 → cadangan aktif min(600, bebas) + shortage = 600; fisik tidak berubah; issue parsial 300 → fisik −300 tepat saat issue, cadangan terpakai 300, sisa cadangan aktif; GET /makloon-orders/{id}/material-ledger + panel mko-material-ledger menjelaskan angka. Bug diperbaiki: cek cadangan order lain memakai qty SESUDAH konversi dokumen (issue parsial dulu ditolak 409). tests/test_l04_ln043_material_ledger.py::test_t01 PASS.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,
@@ -3067,8 +3077,10 @@
       "scenario": "Diberikan MKO dibatalkan setelah issue, ketika bahan belum kembali, maka stok gudang tidak bertambah otomatis; saat sebagian kembali dan sisanya loss/masih partner, ketiga saldo tetap dapat direkonsiliasi.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16: MKO 100 di-issue lalu dibatalkan → stok gudang tidak bertambah, 100 masih di mitra (awaiting_return), cadangan dilepas; retur 1 roll → stok +qty roll itu; susut roll lain (persetujuan manager bila di atas toleransi) → ledger: dikirim = kembali + susut + di mitra + terpakai, Seimbang. Pembatas: retur/susut per ROLL UTUH (belum bisa sebagian panjang satu roll) — perlu keputusan owner. test_t02 PASS.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,
@@ -3082,8 +3094,10 @@
       "scenario": "Diberikan hasil fisik berbeda dari forecast yield, ketika receiving dilakukan, maka stok dan nilai memakai fakta aktual, estimasi tidak menimpa qty fisik atau menghasilkan pengurangan ganda.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L04/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16: terima hasil aktual = estimasi − 7,5 → stok hasil +aktual, output_variance −7,5, bahan tidak berkurang lagi; terima ulang ditolak 400/409 tanpa penambahan ganda. test_t03 PASS.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,

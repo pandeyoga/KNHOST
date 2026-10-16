@@ -26,7 +26,7 @@ export default function CampaignCostsModal({ campaign, canPost, canCreateBill, c
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const submit = async () => {
     setBusy(true); setErr("");
-    try { const body = { ...f, amount: Number(f.amount || 0) }; await mktApi.recordCost(campaign.id, body, intent.keyFor(body)); intent.done(); setF((s) => ({ ...s, description: "", amount: "", vendor_name: "" })); await load(); onChanged(); }
+    try { const body = { ...f, amount: Number(f.amount || 0) }; await intent.send(body, (k) => mktApi.recordCost(campaign.id, body, k)); setF((s) => ({ ...s, description: "", amount: "", vendor_name: "" })); await load(); onChanged(); }
     catch (e) { setErr(errText(e, "Gagal mencatat biaya.")); } finally { setBusy(false); }
   };
   return (

@@ -446,6 +446,9 @@ async def approve_vendor_bill(bill_id: str, request: Request) -> Dict[str, Any]:
     bill = await db.vendor_bills.find_one({"id": bill_id}, {"_id": 0})
     # KN-A04 — aksi tulis dijaga entitas (dulu hanya pangkat peran).
     await guard_doc(request, "vendor_bills", bill, not_found="Vendor Bill tidak ditemukan")
+    if bill.get("bill_type") == "campaign_expense":   # COMM-04 — aturan tagihan kampanye satu sumber
+        from services import marketing_cost_service as _mcost
+        return _hydrate(safe_doc(await _mcost.approve_campaign_bill(bill, actor)))
     if bill.get("status") != "pending_approval":
         raise HTTPException(status_code=409, detail=f"Bill status '{bill.get('status')}' tidak menunggu approval.")
     required = bill.get("required_approval_role") or "manager"
@@ -470,6 +473,12 @@ async def reject_vendor_bill(bill_id: str, payload: VendorBillDecision, request:
     bill = await db.vendor_bills.find_one({"id": bill_id}, {"_id": 0})
     # KN-A04 — aksi tulis dijaga entitas (dulu hanya pangkat peran).
     await guard_doc(request, "vendor_bills", bill, not_found="Vendor Bill tidak ditemukan")
+    if bill.get("bill_type") == "campaign_expense":
+        from services import marketing_cost_service as _mcost
+        out = await _mcost.reject_campaign_bill(bill, payload.notes or "", actor)
+        await audit(actor["name"], "vendor_bill_rejected", "vendor_bill", bill_id,
+                    {"bill_number": bill.get("bill_number"), "reason": payload.notes})
+        return _hydrate(safe_doc(out))
     if bill.get("status") != "pending_approval":
         raise HTTPException(status_code=409, detail=f"Bill status '{bill.get('status')}' tidak menunggu approval.")
     required = bill.get("required_approval_role") or "manager"

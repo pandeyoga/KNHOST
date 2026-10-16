@@ -270,3 +270,5 @@ sandi semua `demo1234` · md@ · manager@ · finance@ · salesadmin@ · salesadm
 P01 LOKASI KERJA (2026-10-11): setting `wms.location_scope_enforced`=TRUE (data acuan, scripts/seed_p01_kn.py). warehouse@ → site Jakarta (WH-JKT), warehouse.soreang@ → Soreang (SRG-01), warehouse.rancamalang@ → Rancamalang (RCM-*). Supervisor tanpa batas: whadmin@ (warehouse_admin), manager@, admin@. Ambil alih tugas: POST /api/wms/tasks/{id}/takeover {reason≥5} (supervisor saja). Indikator: GET /api/wms/my-location-scope.
 P01 SALES: setting `catalog.sales_hidden_stages` = [grey,pfd,pfp,yarn] → sales@ tidak melihat bahan. Hapus/nonaktif master hanya admin & md (manager 403). GET /api/master/usage/{product|template|color|supplier_item}/{id}; DELETE /api/master/{kind}/{id}/purge (hanya bila belum dipakai).
 
+
+SESI 2026-10-16 (E1) — OpenAI untuk OCR SJ: kunci di backend/.env `OPENAI_API_KEY` (fallback env; Admin > Integrasi kosong). Tagihan vendor kampanye: buat sebagai manager@ (demo1234) di ?view=mkt-campaigns → Biaya → `mkt-bill-add`; setujui finance@ (API) / admin@ (UI `mkt-bill-approve-<id>`). Pembuat tidak bisa menyetujui sendiri (kecuali admin override).

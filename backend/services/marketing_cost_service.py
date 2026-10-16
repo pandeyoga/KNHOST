@@ -172,7 +172,8 @@ async def create_campaign_bill(campaign: Dict[str, Any], payload: Dict[str, Any]
         raise HTTPException(status_code=400, detail="Nominal tagihan harus lebih dari 0 (PPN tidak boleh negatif).")
     if len(desc) < 3:
         raise HTTPException(status_code=400, detail="Uraian tagihan wajib diisi (min. 3 karakter).")
-    sup = await db.suppliers.find_one({"id": payload.get("supplier_id") or ""}, {"_id": 0})
+    sup = await db.suppliers.find_one({"id": payload.get("supplier_id") or "",
+                                       "entity_id": {"$in": [entity_id, "all", "", None]}}, {"_id": 0})
     if not sup:
         raise HTTPException(status_code=400, detail="Pilih vendor (supplier) yang terdaftar.")
     from services import group_partner_service as _grp

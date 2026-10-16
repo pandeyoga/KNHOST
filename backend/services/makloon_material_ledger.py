@@ -36,8 +36,8 @@ async def _step_row(s: Dict[str, Any]) -> Dict[str, Any]:
     lost = _r(sum(float(x.get("qty") or 0) for x in s.get("material_losses") or [] if x.get("status") == "posted"))
     loss_pending = _r(sum(float(x.get("qty") or 0) for x in s.get("material_losses") or []
                           if x.get("status") == "pending_approval"))
-    consumed = _r(((s.get("receive_progress") or {}).get("consumed") or {}).get("consumed_qty")
-                  or (issued - returned - lost if status == "received" else 0))
+    cq = ((s.get("receive_progress") or {}).get("consumed") or {}).get("consumed_qty")
+    consumed = _r(cq if cq is not None else (issued - returned - lost if status == "received" else 0))
     gap = _r(issued - at_partner - returned - lost - consumed)
     exp_out, act_out = _r(s.get("expected_output_qty")), _r(s.get("actual_output_qty"))
     return {"seq": s.get("seq"), "stage": s.get("stage_label") or s.get("process_type"), "status": status,
@@ -71,7 +71,7 @@ async def material_ledger(order: Dict[str, Any]) -> Dict[str, Any]:
         "steps": steps, "reconciled": all(x["reconciled"] for x in steps),
         "stock_now": await _stock(pid, ent) if pid else None,
         "final_output": {"forecast": _r((order.get("forecast") or {}).get("expected_finished_qty")),
-                         "actual": _r((order.get("costing") or {}).get("steps", [{}])[-1].get("actual_output_qty"))
+                         "actual": _r(((order.get("costing") or {}).get("steps") or [{}])[-1].get("actual_output_qty"))
                          if order.get("status") in ("completed", "partial") else None,
                          "unit": order.get("final_output_unit", "")},
     }
@@ -82,7 +82,7 @@ async def material_ledger(order: Dict[str, Any]) -> Dict[str, Any]:
 def _explain(x: Dict[str, Any]) -> List[str]:
     u, m, rv = x["unit"], x["material"], x["reservation"]
     lines = [f"Kebutuhan bahan (estimasi resep): {x['forecast_need']:g} {u}."]
-    if rv["required"]:
+    if rv["required"] and (rv["active"] > EPS or rv["shortage"] > EPS or not rv["consumed_by_issue"]):
         lines.append(f"Dicadangkan {rv['active']:g} {u} (belum keluar gudang; fisik tidak berkurang)"
                      + (f", kurang {rv['shortage']:g} {u}" if rv["shortage"] > EPS else "") + ".")
     if m["issued"]:

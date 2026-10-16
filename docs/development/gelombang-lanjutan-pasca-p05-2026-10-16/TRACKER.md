@@ -46,10 +46,10 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-030 | L03 | Sumber desain, multi-produk dan status HOLD | not_started | belum ada |
 | LN-031 | L03 | Round designer dan persetujuan yang sudah ada | not_started | belum ada |
 | LN-032 | L03 | Uji kain sesuai lini dan proofing printing berulang | not_started | belum ada |
-| LN-040 | L04 | Receiving aktual dan OCR per roll | not_started | belum ada |
+| LN-040 | L04 | Receiving aktual dan OCR per roll | in_progress | evidence/L04/report.md |
 | LN-041 | L04 | MD Quality memilih roll dan mencatat dua indikator | in_progress | evidence/L04/report.md |
 | LN-042 | L04 | Pemotongan 0,25 yard, identitas tag dan konversi kg | in_progress | evidence/L04/report.md |
-| LN-043 | L04 | Komitmen greige, issue, hasil fisik dan sisa bahan makloon | not_started | belum ada |
+| LN-043 | L04 | Komitmen greige, issue, hasil fisik dan sisa bahan makloon | in_progress | evidence/L04/report.md |
 | LN-050 | L05 | Permintaan QC dan sumber antrean | not_started | belum ada |
 | LN-051 | L05 | Form inspect sesuai kertas tanpa ambigu satuan | not_started | belum ada |
 | LN-052 | L05 | Kamus cacat, perhitungan skor dan grade tervalidasi | not_started | belum ada |

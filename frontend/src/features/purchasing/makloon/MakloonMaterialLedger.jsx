@@ -16,7 +16,7 @@ export default function MakloonMaterialLedger({ mkoId, version }) {
   if (!d || !d.material_product_id) return null;
   const vals = { forecast_need: d.forecast_need, reserved: d.reservation.active, ...d.material };
   return (
-    <Panel icon={Scale} title={`Buku bahan · ${d.material_name}`} testId="mko-material-ledger"
+    <Panel icon={Scale} title={`Buku bahan · ${d.material_name}`} testId="mko-material-ledger" className="max-sm:!pb-14"
       right={<span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${d.reconciled ? "bg-[#E7F6F3] text-[#0F766E]" : "bg-[#FDECEC] text-[#B4231F]"}`} data-testid="mko-ledger-reconciled">{d.reconciled ? "Seimbang" : "Ada selisih"}</span>}>
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 lg:grid-cols-7">
         {CELLS.map(([k, label]) => (

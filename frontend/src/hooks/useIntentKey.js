@@ -1,6 +1,7 @@
 import { useRef } from "react";
 
-/** Satu niat = satu Idempotency-Key: kirim ulang isi yang sama memakai kunci sama; isi berubah / sukses → kunci baru. */
+/** Satu niat = satu Idempotency-Key. Kirim ulang isi sama (jaringan putus) memakai kunci sama; sukses, isi berubah,
+ *  atau server sudah menjawab 4xx (keputusan bisnis) → kunci baru supaya percobaan berikutnya tidak membaca jawaban basi. */
 export default function useIntentKey(prefix = "ik") {
   const ref = useRef({ body: null, key: "" });
   const keyFor = (payload) => {
@@ -9,5 +10,9 @@ export default function useIntentKey(prefix = "ik") {
     return ref.current.key;
   };
   const done = () => { ref.current = { body: null, key: "" }; };
-  return { keyFor, done };
+  const send = async (payload, fn) => {
+    try { const r = await fn(keyFor(payload)); done(); return r; }
+    catch (e) { if (e?.response && e.response.status < 500) done(); throw e; }
+  };
+  return { keyFor, done, send };
 }

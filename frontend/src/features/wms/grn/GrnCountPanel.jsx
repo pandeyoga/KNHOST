@@ -15,12 +15,12 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
   const intent = useIntentKey(`grn-${grn.id}-${ln.line_no}`);
   const scan = async () => {
     const body = { raw: raw.trim() };
-    if (body.raw && await run(() => grnApi.post(grn.id, `lines/${ln.line_no}/scan-label`, body, intent.keyFor({ scan: body })))) { intent.done(); setRaw(""); }
+    if (body.raw && await run(() => intent.send({ scan: body }, (k) => grnApi.post(grn.id, `lines/${ln.line_no}/scan-label`, body, k)))) setRaw("");
   };
   const add = async () => {
     const body = { length: Number(m.length || 0), weight_kg: Number(m.weight_kg || 0), lot: m.lot, grade: m.grade, expected_seq: seq };
-    const ok = await run(() => grnApi.post(grn.id, `lines/${ln.line_no}/rolls`, body, intent.keyFor({ roll: body })));
-    if (ok) { intent.done(); setM((x) => ({ ...x, length: "", weight_kg: "" })); setSeq(null); }
+    const ok = await run(() => intent.send({ roll: body }, (k) => grnApi.post(grn.id, `lines/${ln.line_no}/rolls`, body, k)));
+    if (ok) { setM((x) => ({ ...x, length: "", weight_kg: "" })); setSeq(null); }
   };
   const editable = canCount && grn.status === "counting";
   const sisa = ln.role === "byproduct";

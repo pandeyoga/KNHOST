@@ -6,10 +6,10 @@ Belum ada SHA GitHub untuk sesi ini, jadi semua requirement maksimal `in_progres
 
 | Req | Status | Isi |
 |---|---|---|
-| LN-040 | belum | Receiving aktual + OCR per roll. Alur GRN (read OCR → `expected_rolls` → koreksi → hitung → selisih → tutup) sudah ada; belum diverifikasi terhadap T01/T02. Untuk OCR sungguhan, kunci OpenAI perlu diisi lagi di Admin > Integrasi. |
+| LN-040 | diverifikasi lokal (OCR nyata) + celah idempotensi ditutup | Alur GRN OCR → draf per roll → koreksi → hitung → tutup. |
 | LN-041 | diverifikasi lokal | Tidak ada perubahan kode. Pemilihan roll MDQ dan keputusan manusia sudah ada sejak P05. |
 | LN-042 | T01/T02 (sesi lalu) + **T03 (sesi ini)** | Reprint label: EPC sama, qty dari saldo ERP, histori cetak. |
-| LN-043 | belum | Komitmen greige, issue, hasil fisik vs forecast, dan sisa bahan. |
+| LN-043 | buku bahan baru + bug issue parsial diperbaiki | T01–T03 lulus lokal; pembatas retur per roll utuh dicatat. |
 
 ## LN-041 — verifikasi (tanpa perubahan kode)
 - **Navigasi:** `?view=inspections` → SPK penerimaan PO → baris roll → isi warna/handfeel (bagian MD Quality) → potong MDQ (opsional) → lepas atau tolak tahanan dengan alasan.
@@ -59,6 +59,54 @@ Belum ada SHA GitHub untuk sesi ini, jadi semua requirement maksimal `in_progres
   - Kas yang sudah direkonsiliasi bank ditolak.
 - **Anggaran vs realisasi:** `GET .../costs` (budget, realized, remaining, over_budget). Daftar kampanye menampilkan `cost_realized` dan `budget_remaining`. Anggaran tidak dijurnal.
 - **FE:** tombol "Biaya" di kartu kampanye (`?view=mkt-campaigns`) membuka `CampaignCostsModal`.
+
+## LN-040 — receiving aktual + OCR per roll (sesi 2)
+
+**Sebelum:**
+- Alur GRN sudah ada: OCR SJ + packing list → `expected_rolls` (dengan `doc_status`) → koreksi review → hitung fisik → selisih → tutup.
+- Tetapi `POST /goods-receipts/{id}/lines/{n}/rolls` tanpa `expected_seq` yang dikirim ulang (HP putus sinyal) bisa membuat roll dobel.
+
+**Sesudah:**
+- `/api/goods-receipts/` ditambahkan ke `IDEMPOTENT_PREFIXES`.
+- FE `GrnCountPanel` memakai `useIntentKey`: satu niat = satu kunci. Kirim ulang isi yang sama memakai kunci yang sama. Kunci diganti setelah sukses atau setelah server menjawab 4xx.
+
+**Bukti:** `backend/tests/test_l04_ln040_real_ocr.py`, dengan OCR NYATA (OpenAI). Kunci disimpan di `backend/.env` `OPENAI_API_KEY`, tidak di repo.
+- Gambar SJ sintetis: 10 roll; roll #7 sengaja dicoret.
+- OCR membaca 9 roll dengan benar, menandai #7 `missing`, dan memberi peringatan "1 roll ragu".
+
+## LN-043 — buku bahan makloon (sesi 2)
+
+**Sebelum:**
+- Cadangan (`material_reservations`), issue, batal (bahan tetap di mitra), retur per roll, dan susut per roll sudah ada.
+- Tetapi tidak ada satu tampilan yang menjelaskan forecast / cadangan / dikirim / di mitra / terpakai / kembali / susut.
+- Bug: cek "dicadangkan order lain" memakai qty rencana, bukan qty dokumen yang benar-benar dikirim. Akibatnya issue parsial ditolak 409 walau bahan cukup.
+
+**Sesudah:**
+- **Service baru (hanya-baca)** `services/makloon_material_ledger.py`. Endpoint: `GET /api/makloon-orders/{id}/material-ledger` (izin `makloon_order.view`, dibatasi entitas).
+  - Rekonsiliasi per langkah: dikirim = di mitra + kembali + susut + terpakai.
+- **Panel FE** `MakloonMaterialLedger` di detail MKO (`mko-material-ledger`): menampilkan angka per kategori, status Seimbang, stok sekarang, penjelasan, dan hasil aktual vs estimasi.
+- **Perbaikan** `issue_step`: cek stok sumber dan cadangan pihak lain dipindah ke SESUDAH konversi dokumen.
+
+**Bukti:** `backend/tests/test_l04_ln043_material_ledger.py` 3/3; regresi `test_p05_acceptance_acc31_33_34.py` dan `test_l00_p05_open_issues.py` 22/22.
+
+**Pembatas yang perlu keputusan owner:**
+- Retur dan susut bahan dari mitra hanya bisa per ROLL UTUH. Sebagian panjang satu roll belum bisa.
+  - Usulan penyelesaian terukur: pecah roll di mitra menjadi roll anak (identitas sendiri, mengikuti pola GN-07 retur beli), lalu retur/susut per roll anak.
+- Batasan mobile P05 belum direproduksi pada sesi ini.
+
+## COMM-04 lanjutan — tagihan vendor kampanye tanpa PO (keputusan owner 2026-10-16)
+
+**Alur:** Marketing/Admin mengajukan (`POST /api/marketing/campaigns/{cid}/vendor-bills`; izin `marketing.update`).
+- Dokumen tersimpan di `vendor_bills` dengan `bill_type=campaign_expense`, status `pending_approval`, dan belum dijurnal.
+- **Persetujuan:** Finance/Manager/Admin menyetujui (`.../approve`). Pembuat tidak boleh menyetujui tagihannya sendiri, kecuali kebijakan admin override.
+  - Jalur generik `/vendor-bills/{id}/approve|reject` juga diarahkan ke aturan yang sama.
+  - Saat disetujui → `post_vendor_bill` membuat jurnal Dr 6-4700 (+ Dr 1-1500 PPN Masukan) / Cr 2-1100 Hutang Usaha.
+- **Pembayaran:** lewat `/vendor-bills/{id}/pay` yang sudah ada (Dr Hutang / Cr Kas). Masuk umur hutang.
+- **Tolak:** wajib alasan ≥5 karakter, tanpa jurnal.
+- **Realisasi anggaran:** = biaya kas langsung + tagihan yang sudah disetujui (tanpa PPN). Tagihan yang menunggu persetujuan ditampilkan terpisah.
+- **Validasi:** vendor dari daftar `GET /api/marketing/vendor-options` (tanpa badan usaha grup; dibatasi entitas); invoice dobel ditolak.
+
+**Bukti:** `backend/tests/test_comm04_campaign_bills.py` 3/3 dan `test_comm04_campaign_bills_edge.py` 4/4.
 
 ## Blocker
 - **DES-01:** aturan kg↔yard (LN-042-T02 cabang konversi produk).

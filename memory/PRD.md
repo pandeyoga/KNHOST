@@ -1182,3 +1182,9 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - LN-041: diverifikasi (tests/test_l04_ln041_mdq_select.py). Saga registry += finance_cases.
 - Testing agent iteration_189/190: 100% setelah perbaikan (nested form void modal).
 - Berikutnya: LN-040 (butuh kunci OpenAI untuk OCR nyata), LN-043, P08 W2-REQ (butuh keputusan owner). Bukti: docs/development/gelombang-lanjutan-pasca-p05-2026-10-16/evidence/L04/report.md
+
+## Sesi 2026-10-16 bagian 2 (E1) — LN-040 · LN-043 · tagihan vendor kampanye
+- LN-040: OCR NYATA (OPENAI_API_KEY di backend/.env) diverifikasi: SJ 10 roll → draf per roll, roll ragu ditandai; /api/goods-receipts/* kini Idempotency-Key; FE useIntentKey (kunci per niat, rotasi sesudah sukses/4xx).
+- LN-043: GET /api/makloon-orders/{id}/material-ledger + panel `mko-material-ledger`; bug issue parsial (cek cadangan sebelum konversi dokumen) diperbaiki. Pembatas: retur/susut per roll utuh (butuh keputusan owner).
+- COMM-04 lanjutan: tagihan vendor kampanye tanpa PO (vendor_bills bill_type=campaign_expense): ajukan (marketing.update) → setujui Finance/Manager/Admin (SoD) → Dr 6-4700 (+1-1500) / Cr 2-1100; bayar via /vendor-bills/{id}/pay; realisasi = kas langsung + tagihan disetujui (tanpa PPN). Jalur generik approve/reject diarahkan ke aturan yang sama.
+- Testing agent iteration_191: semua lulus setelah perbaikan bypass approve generik.
