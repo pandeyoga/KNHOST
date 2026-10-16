@@ -765,6 +765,18 @@ export function useAppActions(state) {
   // Depth #3 — approve PO langsung dari kartu notifikasi.
   const approveFromNotification = async (notif) => {
     if (!notif?.action_id) return null;
+    if (notif.action_type === "vendor_bill_approve") {   // COMM-04 — tagihan vendor kampanye
+      try {
+        const res = await axios.post(`${API}/vendor-bills/${notif.action_id}/approve`);
+        setNotice(`Tagihan ${res.data.bill_number} disetujui — Beban Pemasaran & Hutang dijurnal.`);
+        await loadNotifications();
+        return res.data;
+      } catch (error) {
+        const d = error.response?.data?.detail;
+        setNotice((typeof d === "string" ? d : d?.message) || "Gagal menyetujui tagihan dari notifikasi.");
+        return null;
+      }
+    }
     try {
       const res = await axios.post(`${API}/purchase-orders/${notif.action_id}/approve`);
       setNotice(`PO ${res.data.po_number} disetujui dari notifikasi. Inbound task dibuat.`);

@@ -196,6 +196,17 @@ async def _campaign_bill_or_404(cid: str, bill_id: str) -> Dict[str, Any]:
     return bill
 
 
+@router.get("/marketing/campaigns/budget-summary")
+async def campaign_budget_summary(request: Request, entity_id: Optional[str] = None) -> Dict[str, Any]:
+    """Anggaran vs realisasi per bulan untuk semua kampanye + daftar kampanye ≥80% anggaran."""
+    await require_any_permission(request, [("marketing", "view"), ("accounting", "view")])
+    ctx = await entity_ctx(request)
+    rows = await db.mkt_campaigns.find(resolve_list_scope("mkt_campaigns", {"status": {"$ne": "cancelled"}}, ctx, entity_id),
+                                       {"_id": 0, "id": 1, "name": 1, "budget": 1, "start_date": 1, "end_date": 1,
+                                        "created_at": 1}).to_list(500)
+    return await mcost.budget_summary(rows)
+
+
 @router.get("/marketing/vendor-options")
 async def campaign_vendor_options(request: Request) -> List[Dict[str, Any]]:
     """Daftar vendor (supplier) ringkas untuk form tagihan kampanye — id & nama saja."""

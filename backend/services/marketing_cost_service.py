@@ -202,6 +202,14 @@ async def create_campaign_bill(campaign: Dict[str, Any], payload: Dict[str, Any]
         "created_at": now, "updated_at": now,
     }
     await db.vendor_bills.insert_one(dict(bill))
+    from services.notification_service import create_notification
+    await create_notification(
+        notif_type="campaign_bill_approval", ref=f"mkt_bill:{bill['id']}", severity="warning",
+        title=f"Tagihan kampanye menunggu persetujuan: {num}",
+        body=(f"{campaign.get('name', '')} · {sup.get('name', '')} · Rp {grand:,.0f} — {desc}. "
+              f"Diajukan {actor.get('name', '')}; setujui agar masuk Beban Pemasaran & Hutang."),
+        link="mkt-campaigns", entity_id=entity_id, recipient_role="finance",
+        action_type="vendor_bill_approve", action_id=bill["id"], action_role="finance")
     return bill
 
 
@@ -222,6 +230,8 @@ async def approve_campaign_bill(bill: Dict[str, Any], actor: Dict[str, Any]) -> 
     await db.vendor_bills.update_one({"id": bill["id"], "status": "pending_approval"}, {"$set": {
         "approval_status": "approved", "approved_by": actor.get("name", ""), "approved_at": now_iso()}})
     out = await _post_bill(bill["id"], actor, note=f"disetujui oleh {actor.get('role')}")
+    await db.notifications.update_many({"ref": f"mkt_bill:{bill['id']}", "read": {"$ne": True}},
+                                       {"$set": {"read": True, "read_at": now_iso()}})
     if not await db.journal_entries.find_one({"source_type": "vendor_bill", "source_id": bill["id"]}, {"_id": 1}):
         await gl.post_vendor_bill(out)   # _post_bill best-effort → pastikan jurnal ada (idempoten)
     return out
@@ -241,4 +251,58 @@ async def reject_campaign_bill(bill: Dict[str, Any], reason: str, actor: Dict[st
         projection={"_id": 0}, return_document=True)
     if not out:
         raise HTTPException(status_code=409, detail="Tagihan sudah diproses orang lain. Muat ulang.")
+    await db.notifications.update_many({"ref": f"mkt_bill:{bill['id']}", "read": {"$ne": True}},
+                                       {"$set": {"read": True, "read_at": now_iso()}})
     return out
+
+
+# ─── Grafik anggaran vs realisasi per bulan + peringatan hampir habis ───────────────────────
+NEAR_PCT = 80.0
+
+
+def _months_between(start: str, end: str) -> List[str]:
+    if not start:
+        return []
+    y, m = int(start[:4]), int(start[5:7])
+    ey, em = (int(end[:4]), int(end[5:7])) if end else (y, m)
+    out = []
+    while (y, m) <= (ey, em) and len(out) < 36:
+        out.append(f"{y:04d}-{m:02d}")
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return out
+
+
+async def budget_summary(campaigns: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Anggaran dibagi rata ke bulan periode kampanye; realisasi per bulan dari tanggal kas keluar / tagihan."""
+    ids = [c["id"] for c in campaigns]
+    months: Dict[str, Dict[str, float]] = {}
+
+    def bump(month: str, key: str, v: float) -> None:
+        row = months.setdefault(month, {"budget": 0.0, "realized": 0.0})
+        row[key] = _r(row[key] + v)
+    for c in campaigns:
+        span = _months_between(c.get("start_date") or (c.get("created_at") or "")[:10], c.get("end_date") or "")
+        for mo in span:
+            bump(mo, "budget", float(c.get("budget") or 0) / len(span))
+    async for x in db[COLL].find({"campaign_id": {"$in": ids}, "status": "posted"}, {"_id": 0, "date": 1, "amount": 1}):
+        bump((x.get("date") or "")[:7], "realized", float(x.get("amount") or 0))
+    bills = await db.vendor_bills.find({"campaign_id": {"$in": ids}, "bill_type": BILL_TYPE, "status": {"$in": ["posted", "paid"]}},
+                                       {"_id": 0, "bill_date": 1, "grand_total": 1, "ppn_amount": 1}).to_list(5000)
+    for b in bills:
+        bump((b.get("bill_date") or "")[:7], "realized", bill_expense(b))
+    realized = await realized_by_campaign(ids)
+    alerts = []
+    for c in campaigns:
+        budget, used = float(c.get("budget") or 0), realized.get(c["id"], 0.0)
+        if budget <= 0:
+            continue
+        pct = round(used / budget * 100, 1)
+        if pct >= NEAR_PCT:
+            alerts.append({"campaign_id": c["id"], "name": c.get("name", ""), "budget": _r(budget), "realized": used,
+                           "pct": pct, "level": "over" if pct > 100 else "near",
+                           "remaining": _r(budget - used)})
+    alerts.sort(key=lambda a: -a["pct"])
+    rows = [{"month": k, **v} for k, v in sorted(months.items()) if k]
+    return {"months": rows, "alerts": alerts, "near_pct": NEAR_PCT,
+            "total_budget": _r(sum(float(c.get("budget") or 0) for c in campaigns)),
+            "total_realized": _r(sum(realized.values()))}

@@ -11,6 +11,7 @@ const canActOn = (userRole, requiredRole) =>
 
 // R6.6 — label ramah-manusia per tipe notifikasi (untuk filter jenis).
 const TYPE_LABEL = {
+  campaign_bill_approval: "Tagihan kampanye",
   escalation: "Eskalasi",
   ar_overdue: "Piutang jatuh tempo",
   ap_due: "Hutang supplier",
@@ -214,7 +215,7 @@ export default function NotificationCenter({
             )}
             {filtered.map((n) => {
               const Icon = n.type === "escalation" ? ArrowUpCircle : (SEVERITY_ICON[n.severity] || Info);
-              const canApprove = n.action_type === "po_approve" && !n.read &&
+              const canApprove = ["po_approve", "vendor_bill_approve"].includes(n.action_type) && !n.read &&
                 onApprove && canActOn(currentUserRole, n.action_role || "manager");
               return (
                 <div

@@ -289,9 +289,15 @@ async def cancel_order_ep(mko_id: str, payload: MakloonOrderCancel, request: Req
     return order
 
 
+class PartialReturnIn(BaseModel):
+    roll_id: str
+    qty: float
+
+
 class MaterialReturnIn(BaseModel):
     reason: str = Field(..., max_length=300)
     roll_ids: Optional[List[str]] = None
+    partial: Optional[List[PartialReturnIn]] = None   # L04 — retur sebagian panjang satu roll (roll dipecah)
 
 
 class MaterialLossIn(BaseModel):
@@ -374,10 +380,11 @@ async def return_material_ep(mko_id: str, seq: int, payload: MaterialReturnIn,
     actor = await require_permission(request, "makloon_order", "cancel")
     ctx = await entity_ctx(request)
     await _assert_access(mko_id, ctx)
+    partial = [p.model_dump() for p in payload.partial] if payload.partial is not None else None
     order = await return_cancelled_material(mko_id, seq, reason=payload.reason, roll_ids=payload.roll_ids,
-                                            actor_name=actor.get("name", ""))
+                                            partial=partial, actor_name=actor.get("name", ""))
     await audit(actor.get("name", ""), "makloon_material_returned", "makloon_order", mko_id,
-                {"step_seq": seq, "reason": payload.reason.strip(), "roll_ids": payload.roll_ids})
+                {"step_seq": seq, "reason": payload.reason.strip(), "roll_ids": payload.roll_ids, "partial": partial})
     return order
 
 

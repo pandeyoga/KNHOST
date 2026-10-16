@@ -143,6 +143,37 @@ async def move_rolls_by_ref(ref_id: str, to_status: str,
     return {"released": round(total, 2), "rolls": len(moved_ids), "roll_ids": moved_ids, "ref_id": ref_id}
 
 
+async def split_off_from_ref(ref_id: str, roll_id: str, take: float, to_status: str = "available",
+                             movement_type: str = "bucket_move") -> Optional[Dict[str, Any]]:
+    """L04 — keluarkan SEBAGIAN panjang satu roll dari bucket `ref_id` sebagai roll anak beridentitas sendiri.
+    Induk tetap di bucket (sisa). Atomik: guard panjang induk; gagal guard → None."""
+    from pymongo import ReturnDocument
+    take = round(float(take), 2)
+    before = await db.inventory_rolls.find_one({"id": roll_id, "bucket_ref.id": ref_id}, {"_id": 0})
+    if not before or take <= 0 or take >= float(before.get("length_remaining") or 0) - 0.01:
+        return None
+    parent = await db.inventory_rolls.find_one_and_update(
+        {"id": roll_id, "bucket_ref.id": ref_id, "length_remaining": {"$gt": take + 0.01}},
+        [{"$set": {"length_remaining": {"$round": [{"$subtract": ["$length_remaining", take]}, 2]},
+                   "length_initial": {"$round": [{"$subtract": ["$length_initial", take]}, 2]},
+                   "updated_at": now_iso()}}],
+        projection={"_id": 0}, return_document=ReturnDocument.AFTER)
+    if not parent:
+        return None
+    child = {k: v for k, v in before.items() if k != "_id"}
+    child.update({"id": new_id("roll"), "length_initial": take, "length_remaining": take, "status": to_status,
+                  "bucket_ref": None, "split_from_roll_id": roll_id, "is_remnant": False,
+                  "created_at": now_iso(), "updated_at": now_iso()})
+    child = await insert_child_roll(child, before)
+    await db.inventory_movements.insert_one({
+        "id": new_id("mov"), "product_id": child["product_id"], "warehouse_id": child["warehouse_id"],
+        "owner_entity_id": child["owner_entity_id"], "movement_type": movement_type, "quantity": take,
+        "unit": child.get("unit", "meter"), "lot": child.get("lot", ""), "roll_id": child["id"],
+        "parent_roll_id": roll_id, "qty_rolls": 1, "source_document": ref_id, "timestamp": now_iso()})
+    await rebuild_balance(child["product_id"], child["warehouse_id"], child["owner_entity_id"])
+    return child
+
+
 # ── Operasi tingkat tinggi ───────────────────────────────────────────────────
 
 async def hold_stock(data: Dict[str, Any], actor_name: str) -> Dict[str, Any]:

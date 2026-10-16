@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Flag, Plus, Pencil, Wallet } from "lucide-react";
 import CampaignCostsModal from "./CampaignCostsModal";
+import CampaignBudgetChart from "./CampaignBudgetChart";
 import FormModal from "../../components/FormModal";
 import { Field } from "../rnd/RndField";
 import KNSelect from "../../components/KNSelect";
@@ -28,6 +29,7 @@ export default function Campaigns({ currentUser }) {
       </div>
       <SearchBox value={q} onChange={setQ} placeholder="Cari kampanye…" testId="mkt-campaigns-search" />
       {shown.length === 0 && <p className="rounded-xl border border-dashed border-[#D9D9DE] p-6 text-center text-[12px] text-[#9A9BA3]" data-testid="mkt-campaigns-empty">{q ? "Tidak ada kampanye yang cocok." : "Belum ada kampanye."}</p>}
+      <CampaignBudgetChart version={rows} />
       <div className="grid gap-2 md:grid-cols-2">
         {shown.map((c) => (
           <div key={c.id} className="rounded-xl border border-[#EFF0F2] bg-white p-3" data-testid={`mkt-campaign-${c.id}`} style={{ borderLeft: `4px solid ${c.color || "#0058CC"}` }}>

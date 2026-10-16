@@ -61,6 +61,7 @@ export const mktApi = {
   updateCampaign: (id, b) => axios.patch(`${API}/marketing/campaigns/${id}`, b).then((r) => r.data),
   costs: (id) => axios.get(`${API}/marketing/campaigns/${id}/costs`).then((r) => r.data),
   recordCost: (id, b, key) => axios.post(`${API}/marketing/campaigns/${id}/costs`, b, { headers: key ? { "Idempotency-Key": key } : {} }).then((r) => r.data),
+  budgetSummary: () => axios.get(`${API}/marketing/campaigns/budget-summary`).then((r) => r.data),
   vendorOptions: () => axios.get(`${API}/marketing/vendor-options`).then((r) => r.data),
   createBill: (id, b, key) => axios.post(`${API}/marketing/campaigns/${id}/vendor-bills`, b, { headers: key ? { "Idempotency-Key": key } : {} }).then((r) => r.data),
   approveBill: (id, billId) => axios.post(`${API}/marketing/campaigns/${id}/vendor-bills/${billId}/approve`).then((r) => r.data),

@@ -20,6 +20,7 @@ export default function GrnCreateWizard({ preset, onClose, onCreated }) {
   const [docIds, setDocIds] = useState(preset?.po_ids || []);
   const [pages, setPages] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [reading, setReading] = useState(false);
   const [err, setErr] = useState("");
 
   useEffect(() => { grnApi.partners(ptype).then(setPartners).catch((e) => setErr(errText(e))); }, [ptype]);
@@ -62,6 +63,13 @@ export default function GrnCreateWizard({ preset, onClose, onCreated }) {
       let g = await grnApi.create({ partner_type: ptype, partner_id: partnerId, warehouse_id: whId,
         po_ids: ptype === "supplier" ? docIds : [], mko_ids: ptype === "makloon" ? docIds : [] });
       for (const pg of pages) g = (await grnApi.upload(g.id, pg.file, g.version, pg.originalSha)).grn;
+      // Foto SJ dari HP → langsung dibaca otomatis (bila OCR aktif) supaya draf roll terlihat tanpa langkah tambahan.
+      if (pages.length && g.ocr_enabled && g.status === "draft") {
+        setReading(true);
+        try { g = await grnApi.post(g.id, "read", { expected_version: g.version }); }
+        catch (e) { setErr(errText(e, "Baca otomatis gagal — bisa diulang dari detail.")); }
+        finally { setReading(false); }
+      }
       onCreated(g);
     } catch (e) { setErr(errText(e, "Gagal membuat kedatangan.")); } finally { setBusy(false); }
   };
@@ -132,7 +140,7 @@ export default function GrnCreateWizard({ preset, onClose, onCreated }) {
           {step === 2 ? <button className="secondary-button" onClick={() => setStep(1)} data-testid="grn-wizard-back">Kembali</button> : <span />}
           {step === 1
             ? <button className="primary-button" disabled={!partnerId || !whId} onClick={() => setStep(2)} data-testid="grn-wizard-next">Lanjut</button>
-            : <button className="primary-button" disabled={busy} onClick={submit} data-testid="grn-wizard-submit">{busy ? "Menyimpan…" : "Buat kedatangan"}</button>}
+            : <button className="primary-button" disabled={busy} onClick={submit} data-testid="grn-wizard-submit">{reading ? "Membaca surat jalan…" : busy ? "Menyimpan…" : "Buat kedatangan"}</button>}
         </div>
       </div>
     </div>

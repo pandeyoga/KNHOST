@@ -9,7 +9,7 @@ export function MakloonReturnHistory({ step }) {
   if (!returns.length) return null;
   return (
     <ul className="mt-1 text-[11px] text-[#3C3C43]" data-testid={`mko-return-history-${step.seq}`}>
-      {returns.map((r, i) => <li key={i}>Retur {i + 1}: {formatQty(r.qty)} {step.input_unit} · {r.rolls} roll · {formatCurrency(r.value)} — {r.reason}</li>)}
+      {returns.map((r, i) => <li key={i}>Retur {i + 1}: {formatQty(r.qty)} {step.input_unit} · {r.rolls} roll{(r.split || []).length ? ` (${r.split.length} dipecah)` : ""} · {formatCurrency(r.value)} — {r.reason}</li>)}
     </ul>
   );
 }
@@ -20,6 +20,7 @@ export default function MakloonReturnMaterial({ mkoId, step, canAct, canLoss, ca
   const [busy, setBusy] = useState(false);
   const [rolls, setRolls] = useState([]);
   const [picked, setPicked] = useState({});
+  const [part, setPart] = useState({});   // L04 — qty kembali per roll (kosong = seluruh roll)
   const [tol, setTol] = useState(null);
   const [ctol, setCtol] = useState(null);
   const [tolEdit, setTolEdit] = useState("");
@@ -39,7 +40,9 @@ export default function MakloonReturnMaterial({ mkoId, step, canAct, canLoss, ca
   }
 
   const ids = Object.keys(picked).filter((k) => picked[k]);
-  const qty = rolls.filter((r) => picked[r.id]).reduce((a, r) => a + Number(r.length_remaining || 0), 0);
+  const partQty = (r) => { const v = parseFloat(String(part[r.id] ?? "").replace(",", ".")); return v > 0 && v < Number(r.length_remaining || 0) ? v : null; };
+  const qty = rolls.filter((r) => picked[r.id]).reduce((a, r) => a + (partQty(r) ?? Number(r.length_remaining || 0)), 0);
+  const splitCount = rolls.filter((r) => picked[r.id] && partQty(r) != null).length;
 
   async function saveTol(value) {
     setBusy(true);
@@ -56,7 +59,10 @@ export default function MakloonReturnMaterial({ mkoId, step, canAct, canLoss, ca
   async function submit(kind = "return") {
     setBusy(true);
     try {
-      await axios.post(`${API}/makloon-orders/${mkoId}/steps/${step.seq}/${kind === "loss" ? "material-loss" : "return-material"}`, { reason: reason.trim(), roll_ids: ids });
+      const sel = rolls.filter((r) => picked[r.id]);
+      const body = kind === "loss" ? { reason: reason.trim(), roll_ids: ids }
+        : { reason: reason.trim(), roll_ids: sel.filter((r) => partQty(r) == null).map((r) => r.id), partial: sel.filter((r) => partQty(r) != null).map((r) => ({ roll_id: r.id, qty: partQty(r) })) };
+      await axios.post(`${API}/makloon-orders/${mkoId}/steps/${step.seq}/${kind === "loss" ? "material-loss" : "return-material"}`, body);
       setOpen(false); setReason(""); await onDone?.();
     } catch (e) { onError?.(e.response?.data?.detail || (kind === "loss" ? "Gagal mencatat susut." : "Gagal mencatat retur bahan.")); }
     finally { setBusy(false); }
@@ -81,12 +87,15 @@ export default function MakloonReturnMaterial({ mkoId, step, canAct, canLoss, ca
               <label key={r.id} className="flex items-center gap-2 py-0.5">
                 <input type="checkbox" checked={!!picked[r.id]} data-testid={`mko-return-roll-${r.id}`}
                   onChange={(e) => setPicked({ ...picked, [r.id]: e.target.checked })} />
-                <span>{r.roll_no || r.id}{r.lot ? ` · LOT ${r.lot}` : ""} — {formatQty(r.length_remaining)} {r.unit || step.input_unit}</span>
+                <span className="flex-1">{r.roll_no || r.id}{r.lot ? ` · LOT ${r.lot}` : ""} — {formatQty(r.length_remaining)} {r.unit || step.input_unit}</span>
+                {canAct && picked[r.id] && <input className="field !w-20 !py-0.5 text-[11px]" inputMode="decimal" placeholder="semua" value={part[r.id] ?? ""}
+                  title="Isi bila hanya sebagian panjang roll yang kembali (roll dipecah)" data-testid={`mko-return-partial-${r.id}`}
+                  onChange={(e) => setPart({ ...part, [r.id]: e.target.value })} />}
               </label>
             ))}
             {!rolls.length && <p className="text-[#6B6B73]">Memuat roll…</p>}
           </div>
-          <p data-testid={`mko-return-summary-${step.seq}`}>Dipilih {ids.length}/{rolls.length} roll · {formatQty(qty)} {step.input_unit}. Roll yang tidak dipilih tetap tercatat di mitra.</p>
+          <p data-testid={`mko-return-summary-${step.seq}`}>Dipilih {ids.length}/{rolls.length} roll · {formatQty(qty)} {step.input_unit}. Roll yang tidak dipilih tetap tercatat di mitra.{splitCount > 0 && ` ${splitCount} roll dikembalikan sebagian: dipecah jadi roll baru, sisanya tetap di mitra (susut hanya untuk roll utuh).`}</p>
           {canLoss && <p className="text-[#6B6B73]" data-testid={`mko-loss-tolerance-${step.seq}`}>Toleransi susut wajar (kontrak mitra × proses): <b>{tol ?? "—"}%</b> dari bahan dikirim → dibebankan perusahaan. Kelebihannya butuh persetujuan lalu diklaim ke mitra.</p>}
           {canLoss && canTol && (
             <div className="flex flex-wrap items-center gap-1.5" data-testid={`mko-tol-editor-${step.seq}`}>

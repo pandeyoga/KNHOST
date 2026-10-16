@@ -6,6 +6,7 @@ import { ErrorBox, GrnStatusBadge, GrnStepper } from "./GrnBits";
 import GrnCountPanel from "./GrnCountPanel";
 import GrnReconPanel from "./GrnReconPanel";
 import GrnReviewPanel from "./GrnReviewPanel";
+import GrnOcrDraft from "./GrnOcrDraft";
 import { errText, grnApi, sampleApi } from "./grnApi";
 
 const REVIEW_ROLES = ["admin", "manager", "warehouse_admin"];
@@ -67,6 +68,7 @@ export default function GrnDetail({ grnId, user, onBack }) {
         ))}
       </div>
       <ErrorBox text={err} />
+      {(!canReview || tab !== "review") && <GrnOcrDraft grn={grn} />}
       {tab === "review" && canReview && <GrnReviewPanel grn={grn} onChange={onChange} canReview={canReview} />}
       {tab === "count" && <GrnCountPanel grn={grn} onChange={onChange} canCount={canCount} />}
       {tab === "recon" && <GrnReconPanel grn={grn} onChange={onChange} canReview={canReview} canClose={canReview} />}

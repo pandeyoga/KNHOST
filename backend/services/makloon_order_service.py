@@ -1510,6 +1510,7 @@ async def set_step_tolerance(mko_id: str, seq: int, *, pct: float, reason: str, 
 
 
 async def return_cancelled_material(mko_id: str, seq: int, *, reason: str, roll_ids: Optional[List[str]] = None,
+                                    partial: Optional[List[Dict[str, Any]]] = None,
                                     actor_name: str = "system") -> Dict[str, Any]:
     """P05 DEC-13 + L00 — retur bahan (seluruh atau sebagian roll) dari mitra untuk MKO batal.
     Nilai WIP dibalik pro-rata qty yang benar-benar kembali; sisa tetap di mitra (WIP tetap)."""
@@ -1526,13 +1527,14 @@ async def return_cancelled_material(mko_id: str, seq: int, *, reason: str, roll_
     token = (order.pop(_claim.LOCK, None) or {}).get("token", "")
     try:
         return await _return_material_locked(order, mko_id, seq, reason=reason, roll_ids=roll_ids,
-                                             actor_name=actor_name)
+                                             partial=partial, actor_name=actor_name)
     finally:
         await _claim.release("makloon_orders", mko_id, token)
 
 
 async def _return_material_locked(order: Dict[str, Any], mko_id: str, seq: int, *, reason: str,
-                                  roll_ids: Optional[List[str]], actor_name: str) -> Dict[str, Any]:
+                                  roll_ids: Optional[List[str]], actor_name: str,
+                                  partial: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     import hashlib
     step = _find_step(order, seq)
     if step.get("status") != "issued" or not step.get("awaiting_return"):
@@ -1543,13 +1545,42 @@ async def _return_material_locked(order: Dict[str, Any], mko_id: str, seq: int, 
                             - sum(float(r.get("value") or 0) for r in returns)
                             - sum(float(x.get("value") or 0) for x in step.get("material_losses") or []
                                   if x.get("status") == "posted"), 2)
-    if roll_ids is not None and not roll_ids:
+    # L04 — retur SEBAGIAN panjang satu roll: roll dipecah, anak kembali ke gudang, induk tetap di mitra.
+    whole = list(roll_ids or [])
+    cut: List[Dict[str, Any]] = []
+    for p in partial or []:
+        rid, q = str(p.get("roll_id") or ""), round(float(p.get("qty") or 0), 2)
+        r = await db.inventory_rolls.find_one({"id": rid, "bucket_ref.id": step["issue_ref"]},
+                                              {"_id": 0, "length_remaining": 1})
+        if not r:
+            raise HTTPException(status_code=409, detail="Roll yang dipilih tidak (lagi) berada di mitra untuk langkah ini.")
+        if q <= 0:
+            raise HTTPException(status_code=400, detail="Qty retur sebagian harus lebih dari 0.")
+        if q > float(r["length_remaining"]) + 0.01:
+            raise HTTPException(status_code=400, detail=f"Qty retur {q:g} melebihi sisa roll di mitra {r['length_remaining']:g}.")
+        if q >= float(r["length_remaining"]) - 0.01:
+            whole.append(rid)
+        else:
+            cut.append({"roll_id": rid, "qty": q})
+    if (roll_ids is not None or partial is not None) and not whole and not cut:
         raise HTTPException(status_code=400, detail="Pilih minimal satu roll yang kembali dari mitra.")
-    try:
-        moved = await sb.move_rolls_by_ref(step["issue_ref"], "available", movement_type="subcon_return_cancel",
-                                           roll_ids=roll_ids)
-    except HTTPException:
-        raise HTTPException(status_code=409, detail="Roll yang dipilih tidak (lagi) berada di mitra untuk langkah ini.")
+    moved = {"released": 0.0, "rolls": 0, "roll_ids": []}
+    if whole or (roll_ids is None and partial is None):
+        try:
+            moved = await sb.move_rolls_by_ref(step["issue_ref"], "available", movement_type="subcon_return_cancel",
+                                               roll_ids=whole if (roll_ids is not None or partial is not None) else None)
+        except HTTPException:
+            raise HTTPException(status_code=409, detail="Roll yang dipilih tidak (lagi) berada di mitra untuk langkah ini.")
+    for c in cut:
+        child = await sb.split_off_from_ref(step["issue_ref"], c["roll_id"], c["qty"], "available",
+                                            movement_type="subcon_return_cancel")
+        if not child:
+            raise HTTPException(status_code=409, detail="Roll berubah bersamaan — muat ulang lalu coba lagi.")
+        moved["released"] = round(float(moved["released"]) + c["qty"], 2)
+        moved["roll_ids"] = [*moved["roll_ids"], child["id"]]
+        moved["rolls"] = len(moved["roll_ids"])
+        moved.setdefault("split", []).append({"parent_roll_id": c["roll_id"], "child_roll_id": child["id"],
+                                              "child_roll_no": child.get("roll_no"), "qty": c["qty"]})
     if not moved.get("rolls"):
         raise HTTPException(status_code=409, detail="Roll yang dipilih sudah dicatat kembali sebelumnya.")
     left = await sb.subcon_qty_by_ref(step["issue_ref"])
@@ -1562,7 +1593,8 @@ async def _return_material_locked(order: Dict[str, Any], mko_id: str, seq: int, 
                                   amount=value, label=label, part=part)
     returns.append({"at": now_iso(), "by": actor_name, "reason": reason.strip(), "qty": round(qty, 2),
                     "rolls": len(moved["roll_ids"]), "roll_ids": moved["roll_ids"], "value": value,
-                    "ignored_roll_ids": sorted(set(roll_ids or []) - set(moved["roll_ids"]))})
+                    "split": moved.get("split") or [],
+                    "ignored_roll_ids": sorted(set(whole) - set(moved["roll_ids"]))})
     step["material_returns"] = returns
     step["material_value_open"] = round(remaining_value - value, 2)   # nilai bahan yang MASIH di mitra
     step["returned_qty"] = round(sum(float(r.get("qty") or 0) for r in returns), 2)
