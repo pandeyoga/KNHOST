@@ -208,7 +208,7 @@ async def create_campaign_bill(campaign: Dict[str, Any], payload: Dict[str, Any]
         title=f"Tagihan kampanye menunggu persetujuan: {num}",
         body=(f"{campaign.get('name', '')} · {sup.get('name', '')} · Rp {grand:,.0f} — {desc}. "
               f"Diajukan {actor.get('name', '')}; setujui agar masuk Beban Pemasaran & Hutang."),
-        link="mkt-campaigns", entity_id=entity_id, recipient_role="finance",
+        link="accounts-payable", entity_id=entity_id, recipient_role="finance",
         action_type="vendor_bill_approve", action_id=bill["id"], action_role="finance")
     return bill
 

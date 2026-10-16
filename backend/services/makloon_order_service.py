@@ -1547,6 +1547,9 @@ async def _return_material_locked(order: Dict[str, Any], mko_id: str, seq: int, 
                                   if x.get("status") == "posted"), 2)
     # L04 — retur SEBAGIAN panjang satu roll: roll dipecah, anak kembali ke gudang, induk tetap di mitra.
     whole = list(roll_ids or [])
+    all_ids = whole + [str(p.get("roll_id") or "") for p in partial or []]
+    if len(all_ids) != len(set(all_ids)):
+        raise HTTPException(status_code=400, detail="Satu roll hanya boleh muncul sekali (pilih utuh ATAU sebagian).")
     cut: List[Dict[str, Any]] = []
     for p in partial or []:
         rid, q = str(p.get("roll_id") or ""), round(float(p.get("qty") or 0), 2)
@@ -1574,8 +1577,9 @@ async def _return_material_locked(order: Dict[str, Any], mko_id: str, seq: int, 
     for c in cut:
         child = await sb.split_off_from_ref(step["issue_ref"], c["roll_id"], c["qty"], "available",
                                             movement_type="subcon_return_cancel")
-        if not child:
-            raise HTTPException(status_code=409, detail="Roll berubah bersamaan — muat ulang lalu coba lagi.")
+        if not child:   # yang sudah pindah tetap dicatat (tanpa roll yatim); sisanya dilaporkan
+            moved.setdefault("failed", []).append(c["roll_id"])
+            continue
         moved["released"] = round(float(moved["released"]) + c["qty"], 2)
         moved["roll_ids"] = [*moved["roll_ids"], child["id"]]
         moved["rolls"] = len(moved["roll_ids"])
@@ -1593,7 +1597,7 @@ async def _return_material_locked(order: Dict[str, Any], mko_id: str, seq: int, 
                                   amount=value, label=label, part=part)
     returns.append({"at": now_iso(), "by": actor_name, "reason": reason.strip(), "qty": round(qty, 2),
                     "rolls": len(moved["roll_ids"]), "roll_ids": moved["roll_ids"], "value": value,
-                    "split": moved.get("split") or [],
+                    "split": moved.get("split") or [], "failed_partial_roll_ids": moved.get("failed") or [],
                     "ignored_roll_ids": sorted(set(whole) - set(moved["roll_ids"]))})
     step["material_returns"] = returns
     step["material_value_open"] = round(remaining_value - value, 2)   # nilai bahan yang MASIH di mitra

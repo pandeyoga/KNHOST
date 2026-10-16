@@ -38,7 +38,7 @@ export default function CampaignBudgetChart({ version }) {
               <YAxis tickFormatter={short} tick={{ fontSize: 10 }} width={44} />
               <Tooltip formatter={(v) => `Rp ${fmtN(v)}`} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="budget" name="Anggaran" fill="#C9D8F2" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="budget" name="Anggaran" fill="#7FA3E0" radius={[3, 3, 0, 0]} />
               <Bar dataKey="realized" name="Realisasi" fill="#0058CC" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

@@ -6,8 +6,11 @@ import { isSirenMuted, setSirenMuted, playSiren } from "../utils/sirenAlarm";
 
 const SEVERITY_ICON = { warning: AlertTriangle, critical: AlertTriangle, info: Info };
 const ROLE_RANK = { sales: 1, warehouse: 1, manager: 2, admin: 3 };
-const canActOn = (userRole, requiredRole) =>
-  (ROLE_RANK[userRole] || 0) >= (ROLE_RANK[requiredRole] || 99);
+// Tagihan vendor kampanye: Finance/Manager/Admin (aturan server sama; PO tetap pangkat).
+const BILL_APPROVERS = ["finance", "manager", "admin"];
+const canActOn = (userRole, requiredRole, actionType = "") =>
+  actionType === "vendor_bill_approve" ? BILL_APPROVERS.includes(userRole)
+    : (ROLE_RANK[userRole] || 0) >= (ROLE_RANK[requiredRole] || 99);
 
 // R6.6 — label ramah-manusia per tipe notifikasi (untuk filter jenis).
 const TYPE_LABEL = {
@@ -216,7 +219,7 @@ export default function NotificationCenter({
             {filtered.map((n) => {
               const Icon = n.type === "escalation" ? ArrowUpCircle : (SEVERITY_ICON[n.severity] || Info);
               const canApprove = ["po_approve", "vendor_bill_approve"].includes(n.action_type) && !n.read &&
-                onApprove && canActOn(currentUserRole, n.action_role || "manager");
+                onApprove && canActOn(currentUserRole, n.action_role || "manager", n.action_type);
               return (
                 <div
                   key={n.id}
@@ -270,7 +273,7 @@ export default function NotificationCenter({
                         <button
                           data-testid={`notif-approve-${n.id}`}
                           className="notif-approve-button"
-                          title="Setujui PO langsung"
+                          title={n.action_type === "vendor_bill_approve" ? "Setujui tagihan langsung" : "Setujui PO langsung"}
                           disabled={approving === n.id}
                           onClick={(e) => handleApprove(e, n)}
                         >

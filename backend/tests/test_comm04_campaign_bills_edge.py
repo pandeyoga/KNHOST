@@ -28,6 +28,7 @@ def ctx():
     DB.journal_entries.delete_many({"source_id": {"$in": bills + cash}})
     DB.cash_transactions.delete_many({"id": {"$in": cash}})
     DB.vendor_bills.delete_many({"id": {"$in": bills}})
+    DB.notifications.delete_many({"ref": {"$in": [f"mkt_bill:{b}" for b in bills]}})
     DB.mkt_campaigns.delete_one({"id": c["id"]})
 
 
