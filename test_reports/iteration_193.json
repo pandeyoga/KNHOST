@@ -1,0 +1,28 @@
+{
+  "summary": "Retested the iteration_192 fixes. (1) Finance can now approve a campaign bill directly from the notification bell. Tested in the UI: manager created campaign TEST_RT and bill VB-00004. finance@ saw notif-approve-ntf_2e910ae93256 with title 'Setujui tagihan langsung'. Clicking it showed the notice 'Tagihan VB-00004 disetujui — Beban Pemasaran & Hutang dijurnal.' and the DB shows the bill as status=posted, approved_by Sri Mulyani. sales@ and warehouse@ do not get the notification at all, so they never see the button. (2) Backend partial return: tests/test_session3_extended_t1.py passed 5/5. In code review, duplicate roll ids get a 400 before any data changes, and failed cuts are recorded under failed_partial_roll_ids. (3) MakloonReturnMaterial partial qty in the UI (MKO-00009 created with qty 60, issued 60 yd, then cancelled; rolls 23.55 + 36.45): '100', 'abc', '0' and '-5' all show mko-return-partial-error-1 and disable mko-return-submit-1. '', '23.55' (full roll), '10' and '10,5' are accepted correctly. FAILED: the typo '1O' shows no error and the submit button stays enabled; it is quietly read as a 1-yard partial return (summary shows 37,45 yard). (4) The budget chart 'Anggaran' bar color is #7FA3E0, checked in code only.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MakloonReturnMaterial partial qty", "issue": "partQty and badPart use parseFloat, which reads '1O' as 1 and '10abc' as 10. A typo is accepted as a valid partial qty with no error and the submit button enabled, and the roll is split by the wrong amount. The review request says '1O' must show the error.", "selector": "[data-testid=mko-return-partial-<rollId>], [data-testid=mko-return-partial-error-1]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Finance inline approve from the bell", "issue": "Minor: after approving, approveFromNotification only reloads notifications. The finance desk board 'Tagihan supplier menunggu ACC (1)' still lists VB-00004 until the page is refreshed, and the notification card stays in the list (marked read, button gone).", "affected_selectors": ["notif-approve-<id>"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_session3_extended_t1.py", "/app/backend/tests/t1_iter193_setup.py"],
+  "action_items": [
+    "MakloonReturnMaterial.jsx: validate partial qty strictly, e.g. const s=String(v).trim().replace(',', '.'); if (!/^\\d+(\\.\\d+)?$/.test(s)) treat as invalid; then use Number(s). This makes '1O' and '10abc' show mko-return-partial-error and disable submit. Then rebuild the static bundle.",
+    "Optional: after a vendor_bill_approve from the bell, also refresh the desk waiting boards or the AP list so the approved bill disappears."
+  ],
+  "critical_code_review_comments": [
+    "The backend checks for duplicates before any changes; Pydantic PartialReturnIn rejects non-numeric qty, so the backend is safe. Only the frontend parsing is loose.",
+    "canActOn now special-cases vendor_bill_approve to BILL_APPROVERS [finance, manager, admin]. OK."
+  ],
+  "updated_files": ["/app/backend/tests/t1_iter193_setup.py"],
+  "success_rate": {"backend": "100%", "frontend": "75% (3/4 fixes verified; the '1O' typo case fails)"},
+  "seed_data_creation": "TEST_RT campaign mkc_d1efe1c7f6eb + bill vbill_c4cd16166609 (approved and posted) + notification ntf_2e910ae93256 + MKO-00009 (mko_34a9757ca334, issued and cancelled). All removed by bash /app/scripts/restore_local_demo.sh, run at the end.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "To recreate the fixtures: cd backend; set -a; . ./.env; set +a; REACT_APP_BACKEND_URL=... python tests/t1_iter193_setup.py bill|mko. MKO UI: ?view=makloon-orders&entity=ent_ksc → mko-row-<id> → mko-return-open-1. Only the '1O' typo validation needs a retest."
+}

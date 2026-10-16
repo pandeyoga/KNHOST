@@ -1188,3 +1188,10 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - LN-043: GET /api/makloon-orders/{id}/material-ledger + panel `mko-material-ledger`; bug issue parsial (cek cadangan sebelum konversi dokumen) diperbaiki. Pembatas: retur/susut per roll utuh (butuh keputusan owner).
 - COMM-04 lanjutan: tagihan vendor kampanye tanpa PO (vendor_bills bill_type=campaign_expense): ajukan (marketing.update) → setujui Finance/Manager/Admin (SoD) → Dr 6-4700 (+1-1500) / Cr 2-1100; bayar via /vendor-bills/{id}/pay; realisasi = kas langsung + tagihan disetujui (tanpa PPN). Jalur generik approve/reject diarahkan ke aturan yang sama.
 - Testing agent iteration_191: semua lulus setelah perbaikan bypass approve generik.
+
+## Sesi 2026-10-16 bagian 3 (E1)
+- Retur sebagian roll makloon (roll anak via split_off_from_ref; `partial` di return-material; validasi UI).
+- Notifikasi tagihan kampanye ke Finance (type campaign_bill_approval, link accounts-payable, aksi inline vendor_bill_approve; dibaca otomatis saat disetujui/ditolak).
+- GET /api/marketing/campaigns/budget-summary + CampaignBudgetChart (recharts) + peringatan ≥80% / lewat anggaran.
+- Foto SJ dari HP: wizard GRN otomatis memanggil /read sesudah unggah (bila OCR aktif); GrnOcrDraft menampilkan draf roll (roll ragu kuning); hitung buta dihormati.
+- Testing iteration_192/193 lulus setelah perbaikan.

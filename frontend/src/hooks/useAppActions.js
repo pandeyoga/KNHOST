@@ -770,6 +770,7 @@ export function useAppActions(state) {
         const res = await axios.post(`${API}/vendor-bills/${notif.action_id}/approve`);
         setNotice(`Tagihan ${res.data.bill_number} disetujui — Beban Pemasaran & Hutang dijurnal.`);
         await loadNotifications();
+        await loadAll();
         return res.data;
       } catch (error) {
         const d = error.response?.data?.detail;

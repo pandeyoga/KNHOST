@@ -3,7 +3,6 @@
 import pytest
 import requests
 
-import test_p05_acceptance_acc31_33_34 as P
 from test_p05_acceptance_acc31_33_34 import BASE, DB, _create, _free, adm, output_is_makloon  # noqa: F401
 
 B = f"{BASE}/api"
@@ -14,7 +13,7 @@ def _h(email, pw="demo1234"):
     return {"Authorization": f"Bearer {tok}", "X-Entity-Id": "ent_ksc"}
 
 
-def _cancelled_mko(adm, qty, note):
+def _cancelled_mko(adm, qty, note):  # noqa: F811
     mko = _create(adm, qty, note)
     assert requests.post(f"{B}/makloon-orders/{mko['id']}/issue", json={"step_seq": 1, "doc_uom": "yard", "doc_qty": qty},
                          headers=adm, timeout=60).status_code == 200

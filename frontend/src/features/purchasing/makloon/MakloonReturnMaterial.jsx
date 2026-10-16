@@ -40,11 +40,12 @@ export default function MakloonReturnMaterial({ mkoId, step, canAct, canLoss, ca
   }
 
   const ids = Object.keys(picked).filter((k) => picked[k]);
-  const partQty = (r) => { const v = parseFloat(String(part[r.id] ?? "").replace(",", ".")); return v > 0 && v < Number(r.length_remaining || 0) ? v : null; };
+  const num = (x) => { const t = String(x ?? "").trim().replace(",", "."); return /^\d+(\.\d+)?$/.test(t) ? Number(t) : NaN; };
+  const partQty = (r) => { const v = num(part[r.id]); return v > 0 && v < Number(r.length_remaining || 0) ? v : null; };
   const qty = rolls.filter((r) => picked[r.id]).reduce((a, r) => a + (partQty(r) ?? Number(r.length_remaining || 0)), 0);
   const splitCount = rolls.filter((r) => picked[r.id] && partQty(r) != null).length;
   const badPart = rolls.filter((r) => picked[r.id] && String(part[r.id] ?? "").trim() !== "" && partQty(r) == null
-    && parseFloat(String(part[r.id]).replace(",", ".")) !== Number(r.length_remaining || 0));
+    && num(part[r.id]) !== Number(r.length_remaining || 0));
 
   async function saveTol(value) {
     setBusy(true);

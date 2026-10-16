@@ -1,5 +1,4 @@
 """L04 LN-042 edge cases — MDQ cut validation, roles, inspection state; restores roll state after each test."""
-import asyncio
 import os
 import uuid
 

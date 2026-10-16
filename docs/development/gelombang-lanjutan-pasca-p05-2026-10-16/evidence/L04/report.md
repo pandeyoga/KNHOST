@@ -89,9 +89,14 @@ Belum ada SHA GitHub untuk sesi ini, jadi semua requirement maksimal `in_progres
 
 **Bukti:** `backend/tests/test_l04_ln043_material_ledger.py` 3/3; regresi `test_p05_acceptance_acc31_33_34.py` dan `test_l00_p05_open_issues.py` 22/22.
 
-**Pembatas yang perlu keputusan owner:**
-- Retur dan susut bahan dari mitra hanya bisa per ROLL UTUH. Sebagian panjang satu roll belum bisa.
-  - Usulan penyelesaian terukur: pecah roll di mitra menjadi roll anak (identitas sendiri, mengikuti pola GN-07 retur beli), lalu retur/susut per roll anak.
+**Pembatas retur sebagian roll — diselesaikan di sesi 3:**
+- `return-material` kini menerima `partial: [{roll_id, qty}]`.
+  - Roll dipecah lewat `stock_bucket_service.split_off_from_ref`. Roll anak mendapat nomor sendiri (`split_from_roll_id`), lalu kembali ke gudang. Induk tetap di mitra dengan panjang berkurang.
+  - WIP dibalik pro-rata.
+  - Validasi: roll yang sama tidak boleh muncul dua kali (400); qty 0 atau melebihi sisa ditolak (400).
+- UI `mko-return-partial-<roll>` menampilkan validasi bila angka tidak sah.
+- Susut tetap per roll utuh.
+- Bukti: `tests/test_session3_partial_return_notif_budget.py`, `tests/test_session3_extended_t1.py`; testing agent iteration_192–193.
 - Batasan mobile P05 belum direproduksi pada sesi ini.
 
 ## COMM-04 lanjutan — tagihan vendor kampanye tanpa PO (keputusan owner 2026-10-16)
