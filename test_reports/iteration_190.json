@@ -1,0 +1,24 @@
+{
+  "summary": "Retested the fixes from iteration_189. All of them pass. (1) CRITICAL void from UI: on a TEST_ campaign I recorded a 75.000 cost; mkt-cost-date is now a KNDatePicker popover button with today's date, and realized went from 0 to 75.000. I then voided it in mkt-cost-void-modal. A 2-char reason shows 'Alasan pembatalan wajib diisi (min. 5 karakter).' inside the modal, with no navigation. A valid reason sends POST /costs/{id}/void with no page reload (0 frame navigations, URL unchanged). The void modal closes, the costs modal stays open, the row shows 'batal (pembalik KSC/JE-00055): <reason>' with the amount struck through, the Batalkan button is gone, and realized is back to Rp 0. (2) Idempotency-Key on POST /marketing/campaigns/{cid}/costs: the same key sent twice returns the same id plus the X-Idempotent-Replay header, and creates only 1 cost doc, 1 JE and 1 cash txn. 4 concurrent requests with one key create only 1 cost doc. The same key with a different payload returns 409 IDEMPOTENCY_KEY_REUSED. Different keys create 2 costs. The UI record sends a key: the idempotency_keys doc was stored with an mcc-... key and status done. (3) RFID reprint: 2 UI reprints on RL-00001 both called /api/rfid/lookup?...&record=false. 0 roll_scans rows were created and roll.last_scan was not set. The messages read 'cetak ke-1' and then 'cetak ke-2, ulang' with 'qty terkini 150 yard'. (4) Regression: test_comm04_ln042t03_regression.py passes 17/17, and smoke_comm04_ln042t03.py (MONGO_URL/DB_NAME from env) prints ALL PASS.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "RFID Tags", "issues": ["Still open from iteration_189: the KPI 'Roll Belum Ber-tag 5000' does not match the tab 'Belum Ber-tag (500)', because the list is capped."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_comm04_idempotency.py", "/app/backend/tests/test_comm04_ln042t03_regression.py", "/app/backend/tests/smoke_comm04_ln042t03.py", "/app/test_reports/pytest/pytest_comm04_idem.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "IDEMPOTENT_PREFIXES '/api/marketing/campaigns/' covers every POST/PATCH under campaigns (void, PATCH campaign), but only when the client sends the header. This is harmless. Voids are already guarded by the saga claim (409 on a duplicate).",
+    "The idempotency key is regenerated only on success. After a validation error the same key is reused with an edited payload. The middleware stores 4xx responses as 'done', so resubmitting with the same key and the SAME payload replays the old 400. With a changed payload it returns 409 IDEMPOTENCY_KEY_REUSED. That 409 would block a user who fixes an invalid amount and resubmits. Consider calling setIdemKey(newKey()) in the catch block when the error is a 4xx (other than the 409 in-progress case), or skip caching 4xx responses for this route."
+  ],
+  "updated_files": ["/app/backend/tests/test_comm04_idempotency.py"],
+  "success_rate": {"backend": "100% (5/5 new idempotency + 17/17 regression + smoke ALL PASS)", "frontend": "100% (void UI flow, short-reason error, date picker, RFID reprint record=false)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (X-Entity-Id ent_ksc)",
+  "seed_data_creation": "None left behind. Deleted: TEST_UI Void Kampanye (mkc_c606671e8efe) and its cost, cash txn, JEs and idempotency key; the TEST_T1 Idem campaign data (via fixture teardown); roll_label_prints rlp_f8ca29928b75 and rlp_77e0364c82dc on roll_e0ca983743fe (RL-00001). No roll_scans were created.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "COMM-04 void UI is fixed (VoidCostModal is now a fragment sibling of the outer FormModal). RFID Tags view: ?view=cs-rfid-tags. To open the untagged tab, click button with text 'Belum Ber-tag (' — get_by_text('Belum Ber-tag') matches the empty-state hint first. The minor open item is idempotency key reuse after a 4xx (see code review)."
+}

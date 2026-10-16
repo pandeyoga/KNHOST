@@ -89,7 +89,7 @@ export default function RfidTagsView({ currentUser, selectedEntity }) {
 
       <div className="flex gap-1 border-b border-[#EFF0F2]">
         <TabBtn id="tags" tab={tab} setTab={setTab} label={`Tag Aktif${tags.length ? ` (${tags.length})` : ""}`} testId="rfid-tab-tags" />
-        <TabBtn id="untagged" tab={tab} setTab={setTab} label={`Belum Ber-tag${untagged.length ? ` (${untagged.length})` : ""}`} testId="rfid-tab-untagged" />
+        <TabBtn id="untagged" tab={tab} setTab={setTab} label={`Belum Ber-tag${untagged.length ? ` (${(summary?.untagged_rolls ?? 0) > untagged.length ? `${untagged.length} dari ${summary.untagged_rolls}` : untagged.length})` : ""}`} testId="rfid-tab-untagged" />
         <TabBtn id="print" tab={tab} setTab={setTab} label="Cetak & Verifikasi" testId="rfid-tab-print" />
       </div>
 

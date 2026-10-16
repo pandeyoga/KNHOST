@@ -1174,3 +1174,11 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 
 
 - BELUM: cari/paginasi di sisa daftar (Kebijakan Retur, Kendaraan, Lokasi/Tag RFID, Monitor Gerbang, Rekening, Transaksi Kas, Rekonsiliasi Bank, Kasus Keuangan, Antar Entitas Grup, Presensi, Slip Gaji, Kunjungan Sales, Buka Kunci Periode, Kategori Produk, Satuan, Inbox/Persetujuan Saya, Riwayat Persetujuan PO, Pengiriman); paginasi daftar panjang lain; penyeragaman filter di ±18 layar lain; T5.4/T5.5; T6.4 Label Alasan, T6.5 Rate Insentif, T6.7 aturan/template bank, T6.8 konfigurasi PPh, T6.12 master produk, T6.13.
+
+## Sesi 2026-10-16 (lanjutan, E1) — COMM-04 + L04 LN-042-T03 + verifikasi LN-041
+- Setup: clone pandeyoga/KNHOST → /app (.env dijaga), backend/.env (CORS eksplisit, SESSION_COOKIE_SECURE, KN_DEMO_DATA, KN_DISABLE_SCHEDULER=1), `scripts/restore_local_demo.sh`, rebuild FE.
+- COMM-04: biaya kampanye → kas keluar + JE Dr 6-4700 Beban Pemasaran / Cr Kas; void = pembalik sekali (atomic_claim), Idempotency-Key; anggaran vs realisasi di kartu kampanye (`CampaignCostsModal`). Koleksi `mkt_campaign_costs`.
+- LN-042-T03: histori cetak label `roll_label_prints` (EPC sama, qty saldo ERP, print_seq, reprint); `GET /api/rfid/rolls/{id}/print-history`, `POST /api/rfid/rolls/{id}/label-prints`; lookup memuat `label.label_outdated`.
+- LN-041: diverifikasi (tests/test_l04_ln041_mdq_select.py). Saga registry += finance_cases.
+- Testing agent iteration_189/190: 100% setelah perbaikan (nested form void modal).
+- Berikutnya: LN-040 (butuh kunci OpenAI untuk OCR nyata), LN-043, P08 W2-REQ (butuh keputusan owner). Bukti: docs/development/gelombang-lanjutan-pasca-p05-2026-10-16/evidence/L04/report.md
