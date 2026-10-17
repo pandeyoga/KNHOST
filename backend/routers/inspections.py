@@ -341,7 +341,7 @@ async def ref_doc_options(request: Request, kind: str = Query(""),
         # L05 LN-050-T01 — HANYA SO yang meminta QC di checkout & belum lulus QC.
         from services.loading_check_service import qc_uncovered
         q = {**_scoped("sales_orders"), "qc_request.mode": {"$in": ["full", "sampling"]},
-             "status": {"$nin": ["cancelled", "shipped", "delivered", "completed"]}}
+             "status": {"$nin": ["cancelled", "shipped", "delivered", "completed", "done"]}}
         rows = await db.sales_orders.find(q, {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "qc_request": 1}
                                           ).sort("created_at", -1).to_list(150)
         # Lulus → tidak ditawarkan, KECUALI mode seluruh dan alokasi berubah sesudah QC (roll baru belum di-QC).
@@ -351,6 +351,12 @@ async def ref_doc_options(request: Request, kind: str = Query(""),
             r.get("number"), r.get("customer_name"),
             "QC seluruh roll" if r["qc_request"]["mode"] == "full" else f"QC sampling {r['qc_request'].get('sample_pct', 10):g}%") if x)}
             for r in rows]
+        for o in out:   # tanda SPK yang masih berjalan → layar memperingatkan, tidak membuat dobel
+            open_spk = await db.inspections.find_one(
+                {"kind": "sales_order", "ref_doc_id": o["value"], "status": {"$nin": ["done", "closed", "cancelled"]}},
+                {"_id": 0, "number": 1, "status": 1}, sort=[("created_at", -1)])
+            if open_spk:
+                o.update({"spk_number": open_spk.get("number", ""), "spk_status": open_spk.get("status", "")})
     elif want == svc.KIND_RETURN_SUPPLIER:
         rows = await db.purchase_returns.find(
             _scoped("purchase_returns"),

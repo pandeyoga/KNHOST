@@ -1200,3 +1200,7 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - DES-01 resolved (owner): urutan receiving bruto → tag → potong MDQ → saldo bersih/reprint. Susut sebagian roll di mitra (roll anak tetap subcon lalu dicatat susut).
 - L05: form inspect per interval 15 yd tanpa batas 150 (IntervalDefectGrid), header dari sumber, versi aturan kandidat (KLX-02 pending), random check dari scan roll (scope entitas), SPK pengganti wajib roll pengganti, Meja QC responsif di HP.
 - Belum: LN-050-T01 (Request QC di checkout SO + pagar dispatch), LN-052 final (butuh KLX-02).
+
+## Sesi 2026-10-16 bagian 5 (E1) — L05 LN-050-T01
+- Request QC di checkout (CheckoutDrawer, MobileCart): none/full/sampling% → SO.qc_request; SPK kind `sales_order` dari roll alokasi terbaru (utuh + potong); pagar dispatch `qc_request_guard` (juga di /wms/tasks/advance); keputusan terakhir menentukan; alokasi berubah → QC lagi.
+- Testing iteration_196/197 lulus; perbaikan minor terakhir (keputusan terakhir, SPK dobel, posisi picker HP) diuji lewat pytest.

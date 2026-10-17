@@ -570,6 +570,10 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any],
         qr = so.get("qc_request") or {}
         if qr.get("mode") not in ("full", "sampling"):
             raise InspectionError("Pesanan ini tidak meminta QC saat checkout — tidak ada kebutuhan QC.")
+        dup = await db[COLL].find_one({"kind": KIND_SALES_ORDER, "ref_doc_id": so["id"],
+                                       "status": {"$nin": [STATUS_DONE, STATUS_CLOSED, "cancelled"]}}, {"_id": 0, "number": 1})
+        if dup:
+            raise InspectionError(f"SPK QC pesanan {dup.get('number')} masih berjalan — selesaikan dulu.")
         from services.loading_check_service import so_alloc_rolls
         rolls = await so_alloc_rolls(so["id"])
         if not rolls:

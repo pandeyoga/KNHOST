@@ -216,9 +216,11 @@ async def qc_request_guard(order_id: str) -> None:
     if qr.get("mode") not in ("full", "sampling"):
         return
     docs = await db.inspections.find({"kind": "sales_order", "ref_doc_id": order_id, "status": {"$in": ["done", "closed"]}},
-                                     {"_id": 0, "decision": 1, "lines.roll_id": 1}).to_list(50)
+                                     {"_id": 0, "decision": 1, "lines.roll_id": 1, "finished_at": 1}
+                                     ).sort("finished_at", -1).to_list(50)
     passed = [d for d in docs if d.get("decision") in ("terima", "turun_grade")]
-    if not passed:
+    # Keputusan TERAKHIR yang menentukan: QC ulang yang ditolak membatalkan kelulusan sebelumnya.
+    if not passed or qr.get("status") == "failed" or (docs and docs[0].get("decision") not in ("terima", "turun_grade")):
         raise HTTPException(status_code=400, detail=(
             f"Pesanan {so.get('number', '')} meminta QC ({'seluruh roll' if qr['mode'] == 'full' else 'sampling'}) — "
             "kirim menunggu SPK QC pesanan selesai & diterima."))

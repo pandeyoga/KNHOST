@@ -1,0 +1,36 @@
+{
+  "summary": "Retest of the iteration_196 fixes for L05 LN-050-T01 (QC request at SO checkout). All 6 claimed fixes are VERIFIED. NOTE: at start the DB was NOT seeded (4 users, 0 SOs; admin login locked out with 401). I ran restore_local_demo.sh and cleared login_attempts before testing. BACKEND: 26/26 pass. That is test_l05_so_qc_request.py 4/4, test_l05_so_qc_request_api_t1.py 6/6, the new test_l05_so_qc_retest_t1.py 2/2 and regression test_l05_replacement_extra_t1.py 14/14. Flow on a REAL API cut-length SO (10 yd, qc_request full): the roll is allocated only through length_reservations. The picker label contains the SO number. Both /outbound/tasks/{id}/dispatch and /wms/tasks/{id}/advance return 400 'Pesanan KSC/SO-000xx meminta QC', and the task stays in staging. The SPK succeeds with the cut roll (ref_doc_number = SO number). Inspect + finish 'terima' sets qc_request.status=passed and drops the SO from the picker. Dispatch is then no longer blocked by QC: it gets 409 'reservasi potong belum dikonfirmasi', the expected cut-confirm gate. Allocating a new whole roll lists the SO in ref-docs again; advance returns 400 'belum di-QC' and qc_request.status resets to 'required'. The new SPK covers the new roll, and after it is accepted dispatch passes QC (then hits the RFID tag gate, as expected). FRONTEND: Mobile 390 as sales@: catalog → Batik Mega 10 yd → cart tab. There is no QC picker on the cart step. On the checkout step checkout-qc-request is shown with note and pct, with no horizontal overflow. Submit sent qc_request:'sampling', qc_sample_pct:40, and KSC/SO-00011 was stored {mode:sampling, sample_pct:40, status:required, requested_by:'Ayu Marketing'}. Desktop 1920 as admin (CheckoutDrawer): step 2 shows the picker. Choosing full shows checkout-review-qc 'Request QC: seluruh roll' on step 3. Close and reopen resets to 'none' (no note, no review banner). Sampling 20% shows 'sampling 20%' on review. I did not submit on desktop because 'Semua entitas' mode disables submit by design; submission was covered on mobile and in iteration_196.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "loading_check_service.qc_request_guard / qc_uncovered", "issue": "Still open from iteration_196 (not in this fix scope): ANY earlier passed SPK satisfies the guard. If a later re-QC of the same rolls is 'tolak' (SO.qc_request.status becomes 'failed'), dispatch is still allowed. The guard should use the latest decision per roll/SPK, or SO.qc_request.status."},
+      {"endpoint": "GET /api/inspections/meta/ref-docs?kind=sales_order", "issue": "Still open: the status exclusion list misses 'done'. Options also carry no spk_number/spk_status, so the open-SPK warning does not work and duplicate open SPKs for the same SO are possible."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "features/sales/mobile/MobileCart.jsx checkout step (390px)", "issue": "The QC picker now sits in the sticky bottom bar. Subtotal + QC picker + 'Buat Pesanan' make it about 215px tall, but the scroll container keeps paddingBottom 96px. When fully scrolled, the bottom of the mobile-sales-team card (y≈583) sits under the sticky bar (top ≈575). The QC picker starts at 617. Expanded content (Join/Group Sales split) would be hidden. Fix: raise paddingBottom on the checkout step (e.g. ~240px), or move the QC picker into the scrollable form.", "selector": "[data-testid=mobile-sales-team], [data-testid=checkout-qc-request]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_l05_so_qc_retest_t1.py", "/app/backend/tests/test_l05_so_qc_request.py", "/app/backend/tests/test_l05_so_qc_request_api_t1.py", "/app/test_reports/pytest/iter197_l05_all.xml"],
+  "action_items": [
+    "LOW: increase bottom padding on the MobileCart checkout step (or move the QC picker into the form) so the sales-team card is not hidden under the taller sticky footer",
+    "LOW (carry-over): qc_request_guard should respect the latest QC decision ('tolak' after an earlier pass)",
+    "LOW (carry-over): ref-docs sales_order should exclude status 'done' and expose open-SPK info to prevent duplicate SPKs",
+    "Note: the preview DB was not seeded when testing began, although the context note said it was restored. Check that restore_local_demo.sh finished before handing off."
+  ],
+  "critical_code_review_comments": [
+    "so_alloc_rolls mixes whole rolls (status reserved) and cut rolls (status may be 'available' with a length_reservations entry). The SPK lines therefore list the parent roll of a cut, which is correct for QC.",
+    "The ref-docs filter calls `await qc_uncovered()` per SO inside a list comprehension: N+1 queries (up to 150 SOs × 2 queries). Fine for now; consider batching.",
+    "test_l05_so_qc_request.py uses default fallbacks for BASE/MONGO_URL (localhost), which goes against the env-only rule."
+  ],
+  "updated_files": ["/app/backend/tests/test_l05_so_qc_retest_t1.py"],
+  "success_rate": {"backend": "100%", "frontend": "100% (1 low-priority layout issue)"},
+  "seed_data_creation": "Ran restore_local_demo.sh at start (DB was empty) and again at the end (in the background, ~2 min). Test SOs were cancelled and their SPKs deleted in teardown. KSC/SO-00011 (mobile) is removed by the final restore.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run the backend tests with REACT_APP_BACKEND_URL=<public> MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database, using -n0. If logins return 401 'Terlalu banyak percobaan', clear db.login_attempts. Desktop checkout: the address KNSelect's first option is the placeholder sentinel; pick option nth(1) via '[data-testid=checkout-address-select] [role=combobox]'. Desktop submit is disabled in 'Semua entitas' mode. On mobile and desktop, adding 10 yd opens the reconcile sheet (reconcile-option-* → reconcile-confirm).",
+  "test_credentials": "admin@kainnusantara.id / demo12345; sales@kainnusantara.id / demo1234 (from /app/memory/test_credentials.md)"
+}

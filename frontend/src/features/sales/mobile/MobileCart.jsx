@@ -162,6 +162,7 @@ export default function MobileCart({
                 <SalesTeamEditor value={salesTeam} onChange={setSalesTeam} />
               </div>
             )}
+            <QcRequestPicker value={qcReq} onChange={setQcReq} />
           </div>
         </>
       )}
@@ -172,7 +173,6 @@ export default function MobileCart({
           <span className="text-[12px] m-muted">Estimasi subtotal</span>
           <span data-testid="mobile-cart-subtotal" className="text-[16px] font-bold tabular-nums">{formatCurrency(subtotal)}</span>
         </div>
-        {step === "checkout" && <QcRequestPicker value={qcReq} onChange={setQcReq} />}
         {step === "cart" ? (
           <button data-testid="mobile-checkout-btn" className="primary-button w-full justify-center py-3" disabled={cart.length === 0} onClick={() => setStep("checkout")}>
             Lanjut ke Checkout

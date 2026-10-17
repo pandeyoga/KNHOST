@@ -44,6 +44,13 @@ Belum ber-SHA. Acceptance tetap `not_run`; hasil lokal dicatat di `actual_result
     - `meta/ref-docs` hanya menawarkan SO yang meminta QC dan belum lulus.
     - Keputusan SPK mengisi `qc_request.status` passed/failed.
   - **Pagar dispatch:** `loading_check_service.qc_request_guard` (dipanggil `dispatch_guard`) menolak pengiriman bila QC belum lulus, atau (mode seluruh) ada roll alokasi yang belum di-QC.
+  - **Perbaikan review (iteration_196–197):**
+    - Roll potong (`length_reservations`) ikut dalam SPK dan pagar.
+    - SO muncul lagi di pemilih bila alokasi berubah sesudah lulus.
+    - Nomor SO dibaca dari field `number`.
+    - `/wms/tasks/{id}/advance` ke dispatched kini lewat `dispatch_guard`.
+    - Keputusan QC TERAKHIR yang menentukan; SPK QC pesanan dobel yang masih berjalan ditolak.
+    - Picker QC juga ada di keranjang HP sales.
   - **Perbaikan terkait T02:** SPK pengganti tidak lagi menandai barang retur "sudah diinspeksi" (hanya `return_customer`).
 
 ## Mobile

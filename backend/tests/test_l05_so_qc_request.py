@@ -134,3 +134,14 @@ def test_cut_length_reservation_and_relisting_after_reallocation(so_factory):
             DB.inventory_rolls.replace_one({"id": extra["id"]}, extra)
     finally:
         DB.inventory_rolls.replace_one({"id": cut["id"]}, cut)
+
+
+def test_latest_reject_overrides_earlier_pass_and_no_duplicate_open_spk(so_factory):
+    h = _h()
+    sid, _ = so_factory("full")
+    d1 = _spk(h, sid).json()
+    assert _spk(h, sid).status_code == 400                                 # SPK kedua saat yang pertama berjalan
+    assert _finish(h, d1, "terima").status_code == 200 and _guard(sid) is None
+    d2 = _spk(h, sid).json()
+    assert _finish(h, d2, "tolak").status_code == 200
+    assert "meminta QC" in (_guard(sid) or "")                             # keputusan terakhir menentukan
