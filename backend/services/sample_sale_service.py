@@ -22,6 +22,7 @@ from services.roll_service import insert_child_roll, rebuild_balance
 REMNANT_THRESHOLD = 2.0   # sisa induk < 2 satuan → ditandai is_remnant
 
 # REVISI SAMPEL (klien 17 Sep): woven maks 5 yard · knitting maks 2 kg per baris sampel.
+SAMPLE_BLOCKED_STAGES = ("yarn",)   # benang bukan kain → tidak dipotong jadi sampel
 SAMPLE_LIMITS = {"woven": {"max_qty": 5.0, "unit": "yard", "label": "woven"},
                  "knit": {"max_qty": 2.0, "unit": "kg", "label": "knitting"}}
 # L06 LN-060 — tiga jenis sampel. Batas = MAKSIMAL (bukan qty wajib); catalogue punya komposisi sendiri.

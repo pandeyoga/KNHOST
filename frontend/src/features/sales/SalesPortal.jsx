@@ -163,7 +163,7 @@ export function SalesPortal({
         <div data-testid="pos-cart-kind-banner" className={`mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-[12px] ${sampleMode ? "border-[#F3D9A4] bg-[#FFF9EC] text-[#9A5B00]" : "border-[#CBDFFF] bg-[#F2F7FF] text-[#0058CC]"}`}>
           <span className="flex items-center gap-2 font-semibold">
             {sampleMode ? <Scissors size={14} /> : <ShoppingBag size={14} />}
-            {sampleMode ? "Keranjang: PESANAN SAMPEL (SOS) — hanya bahan sampel, maks 5 yard woven / 2 kg knitting per bahan." : "Keranjang: ORDER BIASA (PO) — pembelian roll/yard, nomor SO."}
+            {cart.some((i) => i.is_sample) && !sampleMode ? "Keranjang CAMPUR (sampel + ecer) — pisahkan dulu di checkout sebelum membuat pesanan." : sampleMode ? "Keranjang: PESANAN SAMPEL (SOS) — hanya bahan sampel, maks 5 yard woven / 2 kg knitting per bahan." : "Keranjang: ORDER BIASA (PO) — pembelian roll/yard, nomor SO."}
           </span>
           <button data-testid="pos-cart-kind-clear" className="text-[11px] font-semibold underline" onClick={() => setCart([])}>Kosongkan untuk ganti jenis</button>
         </div>

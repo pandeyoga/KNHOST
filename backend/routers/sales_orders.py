@@ -224,6 +224,10 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         # §3-C — baris SAMPEL: harga master sampel per induk (atau manual sales); harga
         # khusus/langganan tidak berlaku, dan unit dipaksa satuan dasar (panjang potongan).
         if getattr(item_in, "is_sample", False):
+            if str(product.get("stage") or "").lower() in _smp.SAMPLE_BLOCKED_STAGES:
+                raise HTTPException(status_code=400, detail={
+                    "code": "SAMPLE_NOT_ALLOWED", "product_id": product.get("id"),
+                    "message": f"'{product.get('name') or product.get('sku')}' adalah benang \u2014 tidak bisa dipesan sebagai sampel."})
             sp = await _smp.resolve_sample_price(product, getattr(item_in, "sample_price", None))
             if is_sample_order and sample_billing == "free":
                 sp = {"price_per_unit": 0.0, "source": "sampel_gratis", "unit": product.get("base_unit") or "yard"}

@@ -11,6 +11,10 @@ export const SAMPLE_KINDS = {
   hanger: { label: "Hanger", limits: { woven: 0.5, knit: 2 } },
 };
 
+// Benang (tahap yarn) bukan kain — tidak bisa dipotong jadi sampel (cermin backend SAMPLE_NOT_ALLOWED).
+export const SAMPLE_BLOCKED_STAGES = ["yarn"];
+export const canSample = (product) => !SAMPLE_BLOCKED_STAGES.includes(String(product?.stage || "").toLowerCase());
+
 export function sampleLimit(product, kind = "standard") {
   const ft = String(product?.fabric_type || "woven").toLowerCase();
   const rule = SAMPLE_LIMITS[ft] || SAMPLE_LIMITS.woven;

@@ -4,7 +4,7 @@ import {
   X, ChevronRight, ChevronLeft, Users, UserPlus, PackageCheck, Receipt,
   AlertTriangle, Layers, ShieldAlert, ShieldCheck, MapPin, CreditCard, CheckCircle2, Truck, Scissors, Gift, Banknote,
 } from "lucide-react";
-import { isSampleCart, clampSampleQty } from "../../utils/sampleOrder";
+import { isSampleCart, clampSampleQty, canSample } from "../../utils/sampleOrder";
 import axios, { API } from "../../services/apiClient";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { computeOrderPreview } from "../../utils/pricing";
@@ -15,6 +15,7 @@ import StoreCreditBadge from "../../components/StoreCreditBadge";
 import CreateCustomerModal from "./CreateCustomerModal";
 import RequestSpecialPriceModal from "./RequestSpecialPriceModal";
 import { CheckoutItemCard, Row } from "./CheckoutItemCard";
+import { MixedCartNotice } from "./MixedCartNotice";
 import CheckoutStep3 from "./CheckoutStep3";
 import { SalesTeamEditor, salesTeamError, customerDefaultTeam } from "./SalesTeamEditor";
 import { useEffectivePrices, pickPrice, sourceMeta } from "../../hooks/useEffectivePrices";
@@ -57,6 +58,7 @@ export default function CheckoutDrawer({
   const canApprovePrice = ["admin", "manager"].includes(user?.role);
   // REVISI SAMPEL — keranjang satu jenis; mode sampel punya pilihan Gratis/Berbayar (wajib) & tanpa lot/backorder.
   const sampleMode = isSampleCart(cart);
+  const mixedCart = cart.some((it) => it.is_sample) && cart.some((it) => !it.is_sample);
   const [sampleBilling, setSampleBilling] = useState("");   // "free" | "paid"
 
   const defaultTerm = settings?.finance?.default_payment_term_code || "";
@@ -182,6 +184,7 @@ export default function CheckoutDrawer({
   const toggleSample = (id) => setCart((cur) => cur.map((it) => {
     if (it.product.id !== id) return it;
     if (it.is_sample) return { ...it, is_sample: false, sample_kind: undefined, sample_price: null };
+    if (!canSample(it.product)) return it;
     const kind = it.sample_kind || "standard";
     return { ...it, is_sample: true, sample_kind: kind, quantity: clampSampleQty(it.product, it.quantity, kind) };
   }));
@@ -220,7 +223,7 @@ export default function CheckoutDrawer({
 
   if (!open) return null;
   const canNext1 = !!selectedCustomer && !!selectedAddress;
-  const canNext2 = cart.length > 0 && !lotPlan.loading && (!sampleMode || !!sampleBilling);
+  const canNext2 = cart.length > 0 && !mixedCart && !lotPlan.loading && (!sampleMode || !!sampleBilling);
   const billingInvalid = sampleMode && !sampleBilling;
   const pickupInvalid = fulfillmentMethod === "ambil" && !pickupDate;
   const teamInvalid = !!salesTeamError(salesTeam);
@@ -349,6 +352,7 @@ export default function CheckoutDrawer({
 
           {step === 2 && (
             <div data-testid="checkout-step-2" className="space-y-2">
+              {mixedCart && <MixedCartNotice cart={cart} setCart={setCart} />}
               {cart.length === 0 && <p data-testid="checkout-empty" className="rounded-md border border-dashed border-[#E5E5EA] bg-white p-3 text-[12px] text-[#6B6B73]">Keranjang kosong.</p>}
               {sampleMode && cart.length > 0 && (
                 <div data-testid="sample-billing-choice" className="rounded-md border border-[#F3D9A4] bg-[#FFF9EC] p-3">
@@ -487,8 +491,8 @@ export default function CheckoutDrawer({
                 Lanjut <ChevronRight size={14} />
               </button>
             ) : (
-              <button data-testid="checkout-submit" className={`primary-button ${sampleMode ? "!bg-[#9A5B00] hover:!bg-[#7A4700]" : ""}`} disabled={!canWrite || !selectedCustomer || !selectedAddress || cart.length === 0 || lotPlan.loading || creditBlocked || pickupInvalid || deliveryInvalid || teamInvalid || billingInvalid || !!priceError} title={priceError ? "Harga pelanggan gagal dimuat — muat ulang dulu." : writeBlockHint} onClick={handleSubmitClick}>
-                <PackageCheck size={14} /> {!canWrite ? "Pilih Badan Usaha Dulu" : billingInvalid ? "Pilih Gratis/Berbayar" : creditBlocked ? "Terblokir Kredit" : pickupInvalid ? "Pilih Tanggal Ambil" : teamInvalid ? "Perbaiki Tim Sales" : deliveryInvalid ? "Tanggal Kirim Tak Valid" : requiresLotConfirmation ? "Tinjau Lot & Buat" : sampleMode ? `Buat Pesanan Sampel (${sampleBilling === "free" ? "Gratis" : "Berbayar"})` : "Buat Sales Order"}
+              <button data-testid="checkout-submit" className={`primary-button ${sampleMode ? "!bg-[#9A5B00] hover:!bg-[#7A4700]" : ""}`} disabled={!canWrite || mixedCart || !selectedCustomer || !selectedAddress || cart.length === 0 || lotPlan.loading || creditBlocked || pickupInvalid || deliveryInvalid || teamInvalid || billingInvalid || !!priceError} title={priceError ? "Harga pelanggan gagal dimuat — muat ulang dulu." : writeBlockHint} onClick={handleSubmitClick}>
+                <PackageCheck size={14} /> {!canWrite ? "Pilih Badan Usaha Dulu" : mixedCart ? "Pisahkan Sampel & Ecer" : billingInvalid ? "Pilih Gratis/Berbayar" : creditBlocked ? "Terblokir Kredit" : pickupInvalid ? "Pilih Tanggal Ambil" : teamInvalid ? "Perbaiki Tim Sales" : deliveryInvalid ? "Tanggal Kirim Tak Valid" : requiresLotConfirmation ? "Tinjau Lot & Buat" : sampleMode ? `Buat Pesanan Sampel (${sampleBilling === "free" ? "Gratis" : "Berbayar"})` : "Buat Sales Order"}
               </button>
             )}
           </div>

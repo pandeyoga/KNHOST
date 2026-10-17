@@ -1,0 +1,25 @@
+{
+  "summary": "iter202 — verified mixed-cart handling for POS checkout (sample + retail). Backend: SAMPLE_MIXED guard still active (POST /api/sales-orders order_type=regular + is_sample=true line -> 400 detail.code=SAMPLE_MIXED). order_type=sample forces every line to is_sample=true and number uses SOS- sequence. Pure regular cart submits normally. Frontend: added sample line of Batik Mega + sample line of Katun yarn (two sample lines) -> step-2 toggle-sample-<pid> converts first line to retail -> mixed-cart-notice appears ('Keranjang campur: 1 baris sampel + 1 baris ecer'), checkout-next disabled, pos-cart-kind-banner on SalesPortal reads 'Keranjang CAMPUR (sampel + ecer)'. mixed-cart-all-retail turns all lines into retail -> notice disappears, Next enables, step-3 checkout-submit label = 'Buat Sales Order' (regular SO flow). mixed-cart-keep-samples removes the retail line -> notice disappears, sample-billing-choice renders (Gratis/Berbayar chips); after picking Gratis step-3 submit label = 'Buat Pesanan Sampel (Gratis)'. No silent failure, no 500. (Note: when the kept sample line happened to be Benang Katun yarn, backend correctly rejected with a different guard — yarn-tahap not sellable to Sales — unrelated to SAMPLE_MIXED.)",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_iter202_mixed_cart.py",
+    "/app/test_reports/pytest/iter202.xml",
+    "/app/test_reports/iter202_mixed.jpeg",
+    "/app/test_reports/iter202_keep.jpeg"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Mixed-cart UX is well-handled on both ends: server rejects with structured code SAMPLE_MIXED and UI prevents submission with a clear bilingual notice + two single-click resolutions (all-retail / keep-samples). Both resolutions wire through state immutably (MixedCartNotice setCart(cur => ...)).",
+    "Minor polish: MixedCartNotice.jsx line 11 label counts work; however when samples==0 or retail==0 the component should never render (parent CheckoutDrawer already gates on `mixedCart = some sample && some retail`, so OK). No defensive guard needed.",
+    "SalesPortal pos-cart-kind-banner wording ('Keranjang CAMPUR (sampel + ecer) — pisahkan dulu di checkout sebelum membuat pesanan.') matches the task requirement."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter202_mixed_cart.py"],
+  "success_rate": {"backend": "100% (3/3 pytest)", "frontend": "100% (all 8 UI assertions pass across two scripts)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345 (backend tests — sales account returns empty /api/customers list in this preview), sales@kainnusantara.id/demo1234 (UI tests, customer Toko Kain Sejahtera prefilled)",
+  "seed_data_creation": "No new seed. UI test triggered one submit of a kept-sample SOS which was rejected by yarn-not-sellable guard (no persisted SO). Backend test_sample_order_forces_all_lines_sample and test_pure_regular_cart_submits create SOs then cancel them via /cancel.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Mixed-cart handling fully regression-covered. In this preview, sales@kainnusantara.id receives EMPTY /api/customers (not a bug for this task — POS has a different endpoint that works), so if backend tests need sales creds, use admin@ instead or hit POS endpoints. QuickView forces single-kind cart on entry ('mengikuti keranjang') — to produce a mixed cart you must add two sample lines first then toggle one to retail inside checkout step-2 (or vice-versa via sample-to-retail-<pid>).",
+  "rca of the issue": "No new issue. Mixed-cart logic working as designed on both backend (SAMPLE_MIXED guard in /app/backend/routers/sales_orders.py:177-180) and frontend (CheckoutDrawer.jsx:61 mixedCart flag; MixedCartNotice.jsx renders notice + two resolution buttons; canNext2 gates step 2; submit button label switches to 'Pisahkan Sampel & Ecer' when mixed)."
+}

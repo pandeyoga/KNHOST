@@ -1,5 +1,9 @@
 # PRD — Kain Nusantara ERP (lanjutan dari repo github.com/kakjsbsbs/KN)
 
+## 2026-10-17 — Keranjang campur sampel + ecer (iteration_202)
+- Checkout POS: bila keranjang berisi baris sampel dan ecer, muncul peringatan `mixed-cart-notice`; tombol Lanjut & Buat pesanan dikunci ("Pisahkan Sampel & Ecer"). Pilihan: `mixed-cart-all-retail` (semua jadi ecer → SO biasa) atau `mixed-cart-keep-samples` (hapus baris ecer → Pesanan Sampel). Banner keranjang Sales menulis "Keranjang CAMPUR". Server tetap menolak campuran (400 SAMPLE_MIXED).
+
+
 ## 2026-10-17 — Uji Sampel Kasir + durasi tunggu Meja Cutting (iteration_200–201)
 - POS: tombol "Jadikan ecer" (`sample-to-retail-<pid>`) & chip `toggle-sample-<pid>` di checkout kini berfungsi (CheckoutDrawer meneruskan onToggleSample). Diuji: chip standar/hanger, peringatan lewat batas, ubah ke ecer (jumlah tetap), SO biasa berhasil dibuat.
 - Meja Cutting: `/api/cutting/desk` memberi `cut_at`, `wait_minutes`, `wait_thresholds` (kuning ≥2 jam, merah ≥4 jam), `late_count`; antrean "perlu diterima" diurut terlama dulu. UI: `cutting-wait-<taskId>` (ok/warn/late/done), spanduk `cutting-late-alert`, muat ulang otomatis tiap 60 detik.

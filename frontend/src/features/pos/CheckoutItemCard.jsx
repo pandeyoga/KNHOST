@@ -3,7 +3,7 @@ import { formatCurrency, formatQty } from "../../utils/formatters";
 import { sourceMeta } from "../../hooks/useEffectivePrices";
 import { FulfillmentInfo } from "../../components/FulfillmentInfo";
 import { SampleLineFields } from "./SampleLineFields";
-import { sampleLimit } from "../../utils/sampleOrder";
+import { sampleLimit, canSample } from "../../utils/sampleOrder";
 
 /**
  * Kartu satu item di Checkout step-2 (Term & Lot). Dipisah dari CheckoutDrawer
@@ -57,7 +57,7 @@ export function CheckoutItemCard({
           {isSample && (
             <span data-testid={`sample-badge-${pid}`} className="inline-flex items-center gap-1 rounded-full border border-[#9A5B00] bg-[#FFF3D6] px-2 py-0.5 text-[9.5px] font-bold text-[#9A5B00]"><Scissors size={10} /> Sampel · maks {lim.max_qty} {lim.unit}</span>
           )}
-          {onToggleSample && (
+          {onToggleSample && (isSample || canSample(item.product)) && (
             <button data-testid={`toggle-sample-${pid}`} onClick={() => onToggleSample?.(pid)} title={isSample ? "Kembalikan ke penjualan roll biasa" : "Jual sebagai sampel (permintaan potong ke gudang)"}
               className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9.5px] font-bold ${isSample ? "border-[#9A5B00] bg-[#FFF3D6] text-[#9A5B00]" : "border-[#E5E5EA] text-[#6B6B73] hover:bg-[#F5F5F7]"}`}>
               <Scissors size={10} /> {isSample ? "Sampel" : "Jual sbg sampel"}

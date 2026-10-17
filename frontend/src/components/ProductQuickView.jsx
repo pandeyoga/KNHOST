@@ -11,7 +11,7 @@ import RollReconcileSheet from "./RollReconcileSheet";
 import { overlayDismiss } from "@/utils/overlayDismiss";
 import { blocksOrder, lifecycleLabel, notOrderableReason } from "../utils/lifecycle";
 import { pickPrice, sourceMeta } from "../hooks/useEffectivePrices";
-import { sampleLimit, clampSampleQty } from "../utils/sampleOrder";
+import { sampleLimit, clampSampleQty, canSample } from "../utils/sampleOrder";
 import SalesStockSummary from "./SalesStockSummary";
 
 /**
@@ -73,6 +73,7 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
   const availLabel = { habis: "Habis", low: "Stok rendah", ready: "Tersedia" }[availState];
   const lineTotal = special ? unitPrice * (Number(qty) || 0) : mergedLineTotal(selected, qty, unitPrice);
   const isSampleKind = orderKind === "sample";
+  const sampleable = canSample(selected);
   const limit = selected ? sampleLimit(selected) : null;
   const step = (d) => setQty((q) => {
     const next = Number(q || 1) + d;
@@ -192,16 +193,19 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
           {selected && !blocked && (
             <div data-testid="quickview-kind-toggle" className={`rounded-lg border p-2 ${isSampleKind ? "border-[#F3D9A4] bg-[#FFF9EC]" : "border-[#EFF0F2] bg-[#FAFBFC]"}`}>
               <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Jenis pesanan {kindLocked && <span className="ml-1 rounded-full bg-[#E5E5EA] px-1.5 py-0.5 text-[9px] normal-case text-[#3C3C43]">mengikuti keranjang</span>}</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className={`grid gap-2 ${sampleable ? "grid-cols-2" : "grid-cols-1"}`}>
                 <button type="button" data-testid="quickview-kind-regular" onClick={() => pickKind("regular")} disabled={kindLocked && orderKind !== "regular"}
                   className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-[12px] font-semibold transition disabled:opacity-40 ${!isSampleKind ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#9A9BA3]"}`}>
                   <ShoppingBag size={13} /> Pesanan Biasa (PO)
                 </button>
-                <button type="button" data-testid="quickview-kind-sample" onClick={() => pickKind("sample")} disabled={kindLocked && orderKind !== "sample"}
+                {sampleable && <button type="button" data-testid="quickview-kind-sample" onClick={() => pickKind("sample")} disabled={kindLocked && orderKind !== "sample"}
                   className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-[12px] font-semibold transition disabled:opacity-40 ${isSampleKind ? "border-[#9A5B00] bg-[#FFF3D6] text-[#9A5B00]" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#9A9BA3]"}`}>
                   <Scissors size={13} /> Pesanan Sampel
-                </button>
+                </button>}
               </div>
+              {!sampleable && (
+                <p data-testid="quickview-sample-unavailable" className="mt-1.5 text-[10.5px] text-[#6B6B73]">Benang tidak bisa dipesan sebagai sampel — sampel hanya untuk kain yang dipotong dari roll.</p>
+              )}
               {isSampleKind && limit && (
                 <p data-testid="quickview-sample-limit" className="mt-1.5 text-[10.5px] text-[#9A5B00]">Sampel kain <b>{limit.label}</b>: maks <b>{limit.max_qty} {limit.unit}</b> per bahan · dipotong gudang dari roll (RFID) · gratis/berbayar dipilih saat checkout.</p>
               )}
@@ -267,10 +271,10 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
             </div>
             <div className="flex gap-2">
               {isSampleKind ? (
-                <button data-testid="quickview-sample-button" className="primary-button flex-1 justify-center py-2.5 !bg-[#9A5B00] hover:!bg-[#7A4700]" disabled={avail <= 0 || blocked || !(qty > 0)}
+                <button data-testid="quickview-sample-button" className="primary-button flex-1 justify-center py-2.5 !bg-[#9A5B00] hover:!bg-[#7A4700]" disabled={avail <= 0 || blocked || !sampleable || !(qty > 0)}
                   title="Pesanan Sampel — dipotong gudang dari roll; gratis/berbayar dipilih saat checkout"
-                  onClick={() => { if (blocked || avail <= 0) return; onAdd(selected, clampSampleQty(selected, qty), baseUnit, { is_sample: true }); onClose(); }}>
-                  <Scissors size={15} /> {avail <= 0 ? "Stok Habis" : `Tambah Sampel (${qty} ${baseUnit})`}
+                  onClick={() => { if (blocked || avail <= 0 || !sampleable) return; onAdd(selected, clampSampleQty(selected, qty), baseUnit, { is_sample: true }); onClose(); }}>
+                  <Scissors size={15} /> {!sampleable ? "Benang tidak bisa disampel" : avail <= 0 ? "Stok Habis" : `Tambah Sampel (${qty} ${baseUnit})`}
                 </button>
               ) : (
                 <button data-testid="quickview-add-button" className="primary-button flex-1 justify-center py-2.5" disabled={avail <= 0 || blocked} onClick={() => {
