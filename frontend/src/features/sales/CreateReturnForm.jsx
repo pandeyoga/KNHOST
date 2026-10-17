@@ -1,7 +1,7 @@
 /** Sub-fase 1.11 — Create return form. */
 import { useState, useEffect } from "react";
 import axios, { API } from "../../services/apiClient";
-import { AlertCircle, ArrowLeft, CalendarClock, Loader2, RotateCcw, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CalendarClock, Loader2, Paperclip, RotateCcw, ShieldCheck, Trash2, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 
 
@@ -25,8 +25,15 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
   const [error, setError]           = useState(null);
   const [eligibility, setEligibility] = useState(null);
   const [checking, setChecking]     = useState(false);
+  // L08 LN-080-T03 — bukti foto saat membuat retur; kewajiban per tahap dari kebijakan.
+  const [files, setFiles]           = useState([]);
+  const [evPolicy, setEvPolicy]     = useState(null);
 
   useEffect(() => { onLoadOrders(); }, []); // eslint-disable-line
+  useEffect(() => {
+    axios.get(`${API}/sales-returns/meta/evidence-policy`).then((r) => setEvPolicy(r.data?.required || {})).catch(() => {});
+  }, []);
+  const needsPhotoToSubmit = !!evPolicy?.submit && submitNow && files.length === 0;
 
   // R0 — cek kelayakan & deadline retur tiap kali order/tipe berubah.
   useEffect(() => {
@@ -78,14 +85,25 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
     if (!orderId) return setError("Pilih pesanan terlebih dahulu");
     const validItems = items.filter(it => it.product_id && parseFloat(it.quantity_returned) > 0);
     if (!validItems.length) return setError("Minimal 1 item dengan kuantitas > 0");
+    if (needsPhotoToSubmit) return setError("Kebijakan mewajibkan bukti foto sebelum retur diajukan. Lampirkan foto atau simpan sebagai draf.");
     setSaving(true); setError(null);
     try {
+      // Dengan foto: simpan draf → unggah foto → ajukan (bukti sudah ada saat tahap 'ajukan').
       const res = await axios.post(`${API}/sales-returns`, {
         order_id: orderId, return_type: returnType,
         items: validItems.map(({ max, sku, color, ...it }) => ({ ...it, quantity_returned: parseFloat(it.quantity_returned) })),
-        notes, submit_now: submitNow,
+        notes, submit_now: submitNow && files.length === 0,
       }, { headers: { Authorization: `Bearer ${token}` } });
-      onCreated(res.data);
+      let doc = res.data;
+      if (files.length) {
+        for (const f of files) {
+          const fd = new FormData(); fd.append("file", f);
+          await axios.post(`${API}/sales-returns/${doc.id}/attachments`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+        }
+        doc = submitNow ? (await axios.post(`${API}/sales-returns/${doc.id}/submit`, {})).data
+                        : (await axios.get(`${API}/sales-returns/${doc.id}`)).data;
+      }
+      onCreated(doc);
     } catch (err) {
       setError("Gagal membuat return: " + (err.response?.data?.detail || err.message));
     } finally { setSaving(false); }
@@ -238,6 +256,20 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
           <label className="form-label" htmlFor="ret-notes">Catatan</label>
           <textarea id="ret-notes" data-testid="return-notes-input" className="textarea" rows={2}
             placeholder="Keterangan tambahan..." value={notes} onChange={e => setNotes(e.target.value)} />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Bukti foto {evPolicy?.submit ? <span className="req">* (wajib sebelum diajukan)</span> : <span className="text-[10.5px] text-[#6B6B73]">(boleh dilengkapi kemudian)</span>}</label>
+          <input data-testid="return-photo-input" type="file" accept="image/*,.pdf" multiple className="form-input"
+            onChange={(e) => setFiles(Array.from(e.target.files || []))} />
+          {files.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1.5" data-testid="return-photo-list">
+              {files.map((f) => <span key={f.name} className="text-[10.5px] rounded-full border border-[#E1E4EA] px-2 py-0.5"><Paperclip size={10} className="inline mr-1" />{f.name}</span>)}
+            </div>
+          )}
+          {needsPhotoToSubmit && (
+            <p className="text-[11px] text-[#A05000] mt-1" data-testid="return-photo-required-hint">Lampirkan minimal satu foto, atau hapus centang "Langsung kirim" untuk menyimpan draf.</p>
+          )}
         </div>
 
         <div className="form-group">

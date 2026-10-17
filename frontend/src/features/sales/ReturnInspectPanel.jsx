@@ -23,6 +23,8 @@ export default function ReturnInspectPanel({ ret, onStartInspect, onCompleteInsp
       p: { 1: 0, 2: 0, 3: 0, 4: 0 },
       condition: it.condition || "ok",
       accepted_qty: it.quantity_returned ?? 0,
+      // L08 LN-082 — qty aktual hasil ukur per roll (default = klaim per roll).
+      roll_actuals: Object.fromEntries((it.roll_ids || []).map((rid) => [rid, (it.roll_qtys || {})[rid] ?? ""])),
     })));
 
   const upd = (i, patch) => setRows((r) => r.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
@@ -38,6 +40,8 @@ export default function ReturnInspectPanel({ ret, onStartInspect, onCompleteInsp
         defects: PTS.map((pv) => ({ point_value: pv, count: r.p[pv] || 0 })).filter((d) => d.count > 0),
         condition: r.condition,
         accepted_qty: parseFloat(r.accepted_qty) || 0,
+        roll_actuals: Object.fromEntries(Object.entries(r.roll_actuals || {})
+          .filter(([, v]) => v !== "" && !Number.isNaN(parseFloat(v))).map(([k, v]) => [k, parseFloat(v)])),
       }));
       await onCompleteInspect(ret, inspections, "");
     } finally { setBusy(false); }
@@ -94,6 +98,22 @@ export default function ReturnInspectPanel({ ret, onStartInspect, onCompleteInsp
                 </tr>
               );
             })}
+            {(ret.items || []).map((it, i) => (it.roll_ids || []).length > 0 && (
+              <tr key={`ra-${i}`} data-testid={`inspect-roll-actuals-${i}`}>
+                <td colSpan={11} className="text-[10.5px]">
+                  <span className="mr-2 font-semibold text-[#6B6B73]">Qty aktual per roll ({it.unit}):</span>
+                  {it.roll_ids.map((rid) => (
+                    <label key={rid} className="mr-3 inline-flex items-center gap-1">
+                      <span className="font-mono">{(it.roll_nos || {})[rid] || rid}</span>
+                      <span className="text-[#9A9BA3]">klaim {fmtNum((it.roll_qtys || {})[rid])}</span>
+                      <input data-testid={`inspect-roll-actual-${rid}`} type="number" min="0" step="0.01"
+                        className="field tabular-nums" style={{ width: 80 }} value={rows[i].roll_actuals[rid]}
+                        onChange={(e) => upd(i, { roll_actuals: { ...rows[i].roll_actuals, [rid]: e.target.value } })} />
+                    </label>
+                  ))}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

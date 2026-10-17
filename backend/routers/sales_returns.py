@@ -18,6 +18,8 @@ from schemas import (SalesReturnCreate, SalesReturnDecision,
 # skema inspeksi (`schemas_inspection.py`), bukan disalin ke `schemas.py`.
 from schemas_inspection import ReturnComplaintInput, ReturnMilestoneInput
 from services import return_service, storage_service as storage
+from services import return_evidence_service as evidence      # L08 LN-080-T03
+from services import return_journey_service as journey        # L08 LN-081
 from services import line_scope                # FASE L — pagar & penyaring lini produk
 from services import return_state as st
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope
@@ -67,17 +69,26 @@ async def list_returns(
 
 @router.get("/sales-returns/status-counts")
 async def sales_return_status_counts(request: Request,
-                                     entity_id: Optional[str] = Query(None)) -> Dict[str, int]:
+                                     entity_id: Optional[str] = Query(None),
+                                     return_type: Optional[str] = Query(None),
+                                     line: str = Query(""),
+                                     q: str = Query("")) -> Dict[str, int]:
     """P2 — jumlah retur jual per status (untuk lencana tab), agregasi ringan.
 
     Kenapa endpoint sendiri: lencana tab dulu dihitung dari SELURUH daftar yang sudah
     ada di peramban. Begitu daftarnya dipaginasi, angka lencana akan diam-diam mengikuti
     isi HALAMAN, bukan isi sebenarnya — kelas bug "kartu bilang 12, daftar berisi 3".
     """
-    await require_permission(request, "sales_return", "view")
+    user = await require_permission(request, "sales_return", "view")
     ctx = await entity_ctx(request)
-    q = resolve_list_scope("sales_returns", {}, ctx, entity_id)
-    pipeline = [{"$match": q}, {"$group": {"_id": "$status", "n": {"$sum": 1}}}]
+    # L08 LN-080-T04 — hitungan memakai saringan yang SAMA dengan daftar (tipe, lini, cari),
+    # supaya kartu total tidak berbeda dari isi daftar tanpa label cakupan.
+    base: Dict[str, Any] = {"return_type": return_type} if return_type else {}
+    base = resolve_list_scope("sales_returns", base, ctx, entity_id)
+    base = line_scope.narrow(base, user, line, field=line_scope.LINES_FIELD)
+    if q:
+        base = merge_query(base, build_search(q, ["number", "customer_name", "order_number"]))
+    pipeline = [{"$match": base}, {"$group": {"_id": "$status", "n": {"$sum": 1}}}]
     agg = await db.sales_returns.aggregate(pipeline).to_list(100)
     counts: Dict[str, int] = {row["_id"]: int(row["n"]) for row in agg if row.get("_id")}
     counts["all"] = sum(counts.values())
@@ -143,6 +154,11 @@ async def create_return(
 
     entity_id = payload.entity_id or order.get("entity_id", "")
     assert_entity_access(order, "sales_orders", await entity_ctx(request))
+    if payload.submit_now:   # L08 LN-080-T03 — dokumen baru belum punya lampiran
+        try:
+            await evidence.assert_evidence({"entity_id": entity_id, "attachments": []}, "submit")
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"{e} Simpan sebagai draf dulu.")
     from services.return_rolls_service import order_lock
     try:
       async with order_lock(payload.order_id):
@@ -189,6 +205,13 @@ async def get_return(return_id: str, request: Request) -> Dict[str, Any]:
     doc.pop("_id", None)
     assert_entity_access(doc, "sales_returns", ctx)
     doc["attachments"] = [a for a in (doc.get("attachments") or []) if not a.get("is_deleted")]
+    doc["evidence"] = await evidence.describe(doc)   # L08 LN-080-T03
+    _rids = [r for it in doc.get("items", []) for r in (it.get("roll_ids") or [])]
+    if _rids:   # L08 LN-082 — nomor roll untuk layar (bukan id mentah)
+        _nos = {x["id"]: x.get("roll_no", "") async for x in db.inventory_rolls.find(
+            {"id": {"$in": _rids}}, {"_id": 0, "id": 1, "roll_no": 1})}
+        for it in doc.get("items", []):
+            it["roll_nos"] = {r: _nos.get(r, "") for r in (it.get("roll_ids") or [])}
     # UI/UX 2026-06 — NILAI per item untuk layar detail: harga diambil dari SO sumber.
     # SETELAH settle angka resminya adalah Nota Kredit; sebelum itu ini ESTIMASI
     # (dan diberi label demikian di layar) supaya pemutus tahu berapa rupiah yang
@@ -229,6 +252,7 @@ async def submit_return(return_id: str, request: Request) -> Dict[str, Any]:
     assert_entity_access(doc, "sales_returns", ctx)
     if doc["status"] != "draft":
         raise HTTPException(status_code=400, detail="Hanya draft yang bisa disubmit")
+    await _need_evidence(doc, "submit")
     await db.sales_returns.update_one(
         {"id": return_id},
         {"$set": {"status": "pending_approval",
@@ -257,6 +281,7 @@ async def approve_return(
         raise HTTPException(status_code=404, detail="Return tidak ditemukan")
     existing.pop("_id", None)
     assert_entity_access(existing, "sales_returns", ctx)
+    await _need_evidence(existing, "approve")
     try:
         doc = await return_service.approve_return(
             return_id=return_id,
@@ -300,6 +325,11 @@ async def complete_inspection(
         raise HTTPException(status_code=404, detail="Return tidak ditemukan")
     existing.pop("_id", None)
     assert_entity_access(existing, "sales_returns", ctx)
+    await _need_evidence(existing, "inspect")
+    try:
+        journey.assert_ready_for_qc(existing)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     try:
         doc = await return_service.complete_inspection(
             return_id, user.get("name", user.get("email", "")),
@@ -369,6 +399,21 @@ async def set_return_complaint(
     return doc
 
 
+async def _need_evidence(doc: Dict[str, Any], stage: str) -> None:
+    try:
+        await evidence.assert_evidence(doc, stage)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/sales-returns/meta/evidence-policy")
+async def evidence_policy(request: Request) -> Dict[str, Any]:
+    """L08 LN-080-T03 — tahap yang mewajibkan bukti untuk badan usaha aktif."""
+    await require_permission(request, "sales_return", "view")
+    ctx = await entity_ctx(request)
+    return {"required": await evidence.policy(ctx.active_entity_id), "stages": evidence.STAGES}
+
+
 @router.get("/sales-returns/meta/complaint-reasons")
 async def return_complaint_reasons(request: Request) -> Dict[str, Any]:
     """Kosakata SEBAB keluhan yang BERLAKU untuk badan usaha aktif.
@@ -397,6 +442,20 @@ async def settle_return(
         raise HTTPException(status_code=404, detail="Return tidak ditemukan")
     existing.pop("_id", None)
     assert_entity_access(existing, "sales_returns", ctx)
+    await _need_evidence(existing, "settle")
+    # L08 LN-081-T02 — keputusan final (refund/kompensasi) hanya sesudah QC; percobaan yang
+    # ditolak tetap terekam (siapa, izin apa, bukti keputusan apa).
+    if existing.get("status") != "inspected":
+        await audit(user.get("name", ""), "sales_return_settle_blocked", "sales_return", return_id,
+                    {"status": existing.get("status"), "outcome": payload.outcome,
+                     "permission": "sales_return.approve", "decision_note": payload.decision_note})
+        raise HTTPException(status_code=400, detail=(
+            "Keputusan akhir (refund / store credit / nego) baru bisa diambil sesudah QC selesai. "
+            f"Status retur sekarang: {existing.get('status')}."))
+    try:
+        journey.assert_settle_location(existing, payload.return_warehouse_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     if payload.return_warehouse_id:   # E4.1 — barang retur masuk ke gudang yang sah
         from services import warehouse_scope_service as whscope
         await whscope.assert_usable(payload.return_warehouse_id,
@@ -413,8 +472,14 @@ async def settle_return(
             refund_account_code=payload.refund_account_code)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    decision = {"by": user.get("name", user.get("email", "")), "role": user.get("role", ""),
+                "permission": "sales_return.approve", "at": now_iso(), "outcome": payload.outcome,
+                "note": (payload.decision_note or "").strip(),
+                "attachment_ids": list(payload.decision_attachment_ids or [])}
+    await db.sales_returns.update_one({"id": return_id}, {"$set": {"decision": decision}})
+    doc["decision"] = decision
     await audit(user.get("name", ""), "sales_return_settled", "sales_return", return_id,
-                {"outcome": payload.outcome,
+                {"outcome": payload.outcome, "decision_note": decision["note"],
                  "return_warehouse_id": payload.return_warehouse_id})
     return doc
 
@@ -722,23 +787,63 @@ class RelocatePayload(BaseModel):
     note: Optional[str] = ""
 
 
-@router.post("/sales-returns/{return_id}/relocate")
-async def relocate_return(return_id: str, payload: RelocatePayload, request: Request) -> Dict[str, Any]:
+class JourneyScanPayload(BaseModel):
+    stage: str                 # received | dispatched | arrived
+    codes: List[str]           # nomor roll / id / EPC hasil scan
+    warehouse_id: str          # gudang tempat scan dilakukan
+    to_warehouse_id: str = ""  # wajib untuk dispatched
+    carrier: str = ""
+    note: str = ""
+
+
+@router.post("/sales-returns/{return_id}/journey/scan")
+async def scan_return_journey(return_id: str, payload: JourneyScanPayload, request: Request) -> Dict[str, Any]:
+    """L08 LN-081-T01 — lokasi fisik roll retur berubah hanya lewat scan berdokumen."""
     user = await require_permission(request, "sales_return", "update")
     ctx = await entity_ctx(request)
     ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
     if not ret:
         raise HTTPException(status_code=404, detail="Retur tidak ditemukan")
     assert_entity_access(ret, "sales_returns", ctx)
-    # E4.1 — gudang tujuan pemindahan harus boleh dipakai badan usaha pemilik retur.
     from services import warehouse_scope_service as whscope
-    await whscope.assert_usable(payload.to_warehouse_id, ret.get("entity_id") or ctx.active_entity_id,
-                                action="memindahkan roll retur ke sini", field_label="Gudang tujuan")
+    ent = ret.get("entity_id") or ctx.active_entity_id
+    await whscope.assert_usable(payload.warehouse_id, ent, action="menscan barang retur di sini", field_label="Gudang scan")
+    if payload.stage == "dispatched":
+        if not payload.to_warehouse_id:
+            raise HTTPException(status_code=400, detail="Pilih gudang tujuan pengiriman.")
+        await whscope.assert_usable(payload.to_warehouse_id, ent, action="mengirim barang retur ke sini",
+                                    field_label="Gudang tujuan")
     try:
-        res = await return_service.relocate_return_rolls(
-            return_id, payload.to_warehouse_id, user.get("name", ""), payload.note or "")
+        res = await journey.scan(return_id, payload.stage, payload.codes, payload.warehouse_id,
+                                 user.get("name", user.get("email", "")), payload.to_warehouse_id,
+                                 payload.carrier, payload.note)
+    except journey.JourneyConflict as e:
+        raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    await audit(user.get("name", ""), "sales_return_relocated", "sales_return", return_id,
-                {"to": payload.to_warehouse_id, "moved": res["moved"]})
+    await audit(user.get("name", ""), "sales_return_journey_scan", "sales_return", return_id,
+                {"stage": payload.stage, "doc_no": res["event"]["doc_no"], "rolls": len(res["event"]["roll_ids"])})
     return res
+
+
+@router.get("/sales-returns/{return_id}/timeline")
+async def return_timeline(return_id: str, request: Request) -> Dict[str, Any]:
+    """L08 LN-081 — satu timeline, jalur terpisah (izin · masuk · QC · disposisi · uang · pengganti)."""
+    await require_permission(request, "sales_return", "view")
+    ctx = await entity_ctx(request)
+    ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
+    if not ret:
+        raise HTTPException(status_code=404, detail="Retur tidak ditemukan")
+    assert_entity_access(ret, "sales_returns", ctx)
+    from services import return_timeline_service as tl
+    return await tl.timeline(ret)
+
+
+@router.post("/sales-returns/{return_id}/relocate")
+async def relocate_return(return_id: str, payload: RelocatePayload, request: Request) -> Dict[str, Any]:
+    """Dinonaktifkan (L08 LN-081): roll tidak boleh berpindah gudang lewat satu klik."""
+    await require_permission(request, "sales_return", "update")
+    raise HTTPException(status_code=409, detail=(
+        "Pindah gudang instan tidak lagi tersedia. Sebelum penyelesaian, gunakan scan Kirim → Tiba "
+        "di panel Perjalanan Retur; sesudahnya gunakan Transfer Gudang (kirim → terima)."))
+

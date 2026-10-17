@@ -566,3 +566,42 @@ E("cutting.wait_late_minutes", group="stok-satuan", type="int", default=240, min
   impact="Mengubah jumlah 'terlambat' di spanduk Meja Cutting; tidak mengubah stok atau tugas.",
   example="240 → potongan yang sudah 4 jam belum diterima tampil merah",
   consumers=("services/cutting_service.py:desk",), related=("cutting.wait_warn_minutes",), risk="low")
+
+
+E("returns.evidence_required_submit", group="retur", type="bool", default=False, scopes=("global", "entity"),
+  label="Bukti foto wajib sebelum retur diajukan untuk persetujuan",
+  help="Bila aktif, retur tanpa satu pun lampiran bukti tidak bisa diajukan untuk persetujuan. Bila mati, bukti boleh dilengkapi kemudian.",
+  impact="Menahan langkah 'diajukan untuk persetujuan' sampai ada minimal satu foto/dokumen di panel Lampiran bukti.",
+  example="Aktif → Sales wajib mengunggah foto kain cacat sebelum retur diajukan untuk persetujuan",
+  consumers=("services/return_evidence_service.py:assert_evidence", "routers/sales_returns.py:submit_return"), risk="low")
+
+E("returns.evidence_required_approve", group="retur", type="bool", default=False, scopes=("global", "entity"),
+  label="Bukti foto wajib sebelum retur disetujui",
+  help="Bila aktif, retur tanpa satu pun lampiran bukti tidak bisa disetujui. Bila mati, bukti boleh dilengkapi kemudian.",
+  impact="Menahan langkah 'disetujui' sampai ada minimal satu foto/dokumen di panel Lampiran bukti.",
+  example="Aktif → Sales wajib mengunggah foto kain cacat sebelum retur disetujui",
+  consumers=("services/return_evidence_service.py:assert_evidence", "routers/sales_returns.py:approve_return"), risk="low")
+
+E("returns.evidence_required_inspect", group="retur", type="bool", default=False, scopes=("global", "entity"),
+  label="Bukti foto wajib sebelum retur inspeksi diselesaikan",
+  help="Bila aktif, retur tanpa satu pun lampiran bukti tidak bisa inspeksi diselesaikan. Bila mati, bukti boleh dilengkapi kemudian.",
+  impact="Menahan langkah 'inspeksi diselesaikan' sampai ada minimal satu foto/dokumen di panel Lampiran bukti.",
+  example="Aktif → Sales wajib mengunggah foto kain cacat sebelum retur inspeksi diselesaikan",
+  consumers=("services/return_evidence_service.py:assert_evidence", "routers/sales_returns.py:complete_inspection"), risk="low")
+
+E("returns.evidence_required_settle", group="retur", type="bool", default=False, scopes=("global", "entity"),
+  label="Bukti foto wajib sebelum retur diselesaikan (refund/store credit/nego)",
+  help="Bila aktif, retur tanpa satu pun lampiran bukti tidak bisa diselesaikan (refund/store credit/nego). Bila mati, bukti boleh dilengkapi kemudian.",
+  impact="Menahan langkah 'diselesaikan (refund/store credit/nego)' sampai ada minimal satu foto/dokumen di panel Lampiran bukti.",
+  example="Aktif → Sales wajib mengunggah foto kain cacat sebelum retur diselesaikan (refund/store credit/nego)",
+  consumers=("services/return_evidence_service.py:assert_evidence", "routers/sales_returns.py:settle_return"), risk="low")
+
+E("returns.block_resend_to_origin_customer", group="retur", type="bool", default=True, scopes=("global", "entity"),
+  label="Larang kirim ulang roll retur (dan potongannya) ke pelanggan asal",
+  help="Roll yang pernah diretur pelanggan, termasuk potongan turunannya walau sudah pindah pemilik, "
+       "tidak dialokasikan lagi ke pelanggan yang sama.",
+  impact="Alokasi otomatis melewati roll tersebut untuk pelanggan asal; pilihan roll manual ditolak (409).",
+  example="Roll RL-10124 diretur Toko A → tidak bisa dipesan lagi untuk Toko A, tetap bisa untuk Toko B",
+  consumers=("services/return_identity_service.py:block_policy_on", "services/roll_service.py:_available_rolls_for_order",
+             "services/sales_order_helpers.py:reserve_roll_mode_item"),
+  permission=("sales_return", "policy"), risk="medium")

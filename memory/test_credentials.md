@@ -274,3 +274,5 @@ P01 SALES: setting `catalog.sales_hidden_stages` = [grey,pfd,pfp,yarn] → sales
 
 
 SESI 2026-10-16 (E1) — OpenAI untuk OCR SJ: kunci di backend/.env `OPENAI_API_KEY` (fallback env; Admin > Integrasi kosong). Tagihan vendor kampanye: buat sebagai manager@ (demo1234) di ?view=mkt-campaigns → Biaya → `mkt-bill-add`; setujui finance@ (API) / admin@ (UI `mkt-bill-approve-<id>`). Pembuat tidak bisa menyetujui sendiri (kecuali admin override).
+
+L08 lanjutan (2026-10-17): Retur Penjualan (menu Penjualan → Pesanan → tab "Retur & Barang Sisa", `?view=returns`). Saringan dropdown `return-status-filter` / `return-type-filter`, label cakupan `return-stats-scope`, kartu `return-stat-{total,pending,process,done}`, `return-list-count`. Form buat: `return-photo-input`, `return-photo-required-hint`. Detail: `return-evidence-missing`. Inspeksi: `inspect-roll-actual-<rollId>`. Setting (Pusat Pengaturan grup "Retur Penjualan"): returns.evidence_required_{submit,approve,inspect,settle} (bawaan false), returns.block_resend_to_origin_customer (bawaan true, izin sales_return.policy). SO terkirim untuk uji: KSC/SO-00001. Tes: backend/tests/test_l08_evidence_identity.py.

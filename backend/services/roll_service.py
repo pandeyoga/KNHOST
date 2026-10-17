@@ -16,6 +16,7 @@ import re
 import logging
 from fastapi import HTTPException
 from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 from db import db
 from core_utils import now_iso, new_id, to_cents, DEFAULT_ENTITY_ID
 from schemas import WAREHOUSE_PRIORITY
@@ -80,14 +81,25 @@ async def child_roll_no(parent_no: str) -> str:
     base = (parent_no or "").strip()
     if not base:
         return await next_roll_no()
-    n = await db.inventory_rolls.count_documents(
-        {"roll_no": {"$regex": f"^{re.escape(base)}-[0-9]+$"}}) + 1
-    for _ in range(200):
-        cand = f"{base}-{n}"
-        if not await db.inventory_rolls.find_one({"roll_no": cand}, {"_id": 1}):
-            return cand
-        n += 1
-    return await next_roll_no()
+    # L08 LN-082 — sequence ATOMIK per induk (bukan hitung dokumen): dua potongan bersamaan
+    # dari induk yang sama selalu mendapat nomor berbeda dan berurutan.
+    q = {"entity_id": "_global", "doc_type": f"ROLL_CHILD:{base}", "prefix": base}
+    if not await db.number_sequences.find_one(q, {"_id": 1}):
+        top = 0
+        pat = re.compile(rf"^{re.escape(base)}-(\d+)$")
+        async for d in db.inventory_rolls.find({"roll_no": {"$regex": f"^{re.escape(base)}-[0-9]+$"}},
+                                               {"_id": 0, "roll_no": 1}):
+            m = pat.match(str(d.get("roll_no") or ""))
+            if m:
+                top = max(top, int(m.group(1)))
+        try:
+            await db.number_sequences.update_one(
+                q, {"$setOnInsert": {**q, "last_no": top, "created_at": now_iso()}}, upsert=True)
+        except DuplicateKeyError:
+            pass   # inisialisasi paralel: dokumen sequence sudah dibuat pemanggil lain
+    seq = await db.number_sequences.find_one_and_update(
+        q, {"$inc": {"last_no": 1}, "$set": {"updated_at": now_iso()}}, return_document=ReturnDocument.AFTER)
+    return f"{base}-{seq['last_no']}"
 
 
 async def insert_child_roll(child: Dict[str, Any], parent: Dict[str, Any],
@@ -839,8 +851,12 @@ async def _available_rolls_for_order(product_id: str, owner_entity_id: str, orde
          "active_movement": None,  # G3 D4-PA-01 — roll yang diklaim PA tidak boleh diambil SO
          "length_remaining": {"$gt": 0}}, {"_id": 0},
     ).to_list(10000)
+    from services import return_identity_service as _rid
+    block_origin = bool(customer_id) and await _rid.block_policy_on(owner_entity_id)
     out = []
     for r in rolls:
+        if block_origin and _rid.blocked_for(r, customer_id):
+            continue  # L08 LN-082 — roll retur (dan turunannya) tidak kembali ke pelanggan asal
         if float(r.get("length_reserved") or 0) > 0:  # WM-02 — hanya panjang bebas yang dialokasikan
             r = {**r, "physical_length": r["length_remaining"], "length_remaining": free_length(r)}
             if r["length_remaining"] <= QTY_EPS:

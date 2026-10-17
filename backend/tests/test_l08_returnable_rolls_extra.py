@@ -8,9 +8,9 @@ from pymongo import MongoClient
 
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.environ.get("DB_NAME", "test_database")]
-SHIPPED_SO = "so_7f6b0f78e8d8"
-UNSHIPPED_SO = "so_831678368880"
-KANDA_SO = "so_73c7ad18d278"
+SHIPPED_SO = DB.sales_orders.find_one({"number": "KSC/SO-00001"})["id"]
+UNSHIPPED_SO = DB.sales_orders.find_one({"number": "KSC/SO-00003"})["id"]
+KANDA_SO = DB.sales_orders.find_one({"number": "KANDA/SO-00002"})["id"]
 TAG = "TEST_L08_T1"
 
 
@@ -161,7 +161,7 @@ def test_parallel_4(h):
 
 
 # regression pre-seeded
-@pytest.mark.parametrize("rid", ["sret_409ad538e71e", "sret_486109af2a77", "sret_6c61065cf086"])
+@pytest.mark.parametrize("rid", [d["id"] for d in DB.sales_returns.find({"notes": {"$ne": "TEST_L08"}}, {"id": 1}).limit(3)])
 def test_regression_detail(h, rid):
     r = requests.get(f"{BASE}/sales-returns/{rid}", headers=h)
     assert r.status_code == 200 and r.json()["id"] == rid

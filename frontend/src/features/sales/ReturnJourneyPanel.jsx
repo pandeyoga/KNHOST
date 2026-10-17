@@ -45,10 +45,13 @@ function fmtStamp(iso) {
 const STEPS = [
   { key: "shipped_to_store", field: "shipped_to_store_at", label: "SJ Kirim Toko",
     icon: Truck, hint: "Surat jalan pengembalian ke toko diterbitkan" },
-  { key: "shipped_to_customer", field: "shipped_to_customer_at", label: "Kirim ke pelanggan",
-    icon: Truck, hint: "Barang pengganti dikirim ke pelanggan" },
   { key: "goods_arrived", field: "goods_arrived_at", label: "Barang sampai",
-    icon: PackageCheck, hint: "Barang diterima kembali & siap diperiksa" },
+    icon: PackageCheck, hint: "Barang retur diterima kembali & siap diperiksa" },
+];
+// L08 LN-081 — jalur KELUAR (barang pengganti) dipisah dari kedatangan retur.
+const OUT_STEPS = [
+  { key: "shipped_to_customer", field: "shipped_to_customer_at", label: "Kirim pengganti ke pelanggan",
+    icon: Truck, hint: "Barang pengganti dikirim — bukan bukti barang retur sampai" },
 ];
 
 export default function ReturnJourneyPanel({ ret, canEdit = false, onChanged }) {
@@ -99,6 +102,31 @@ export default function ReturnJourneyPanel({ ret, canEdit = false, onChanged }) 
   }
 
   const selectedMeta = reasons.find((r) => r.value === code);
+  const stepRow = (s) => {
+              const at = ret[s.field];
+              const Icon = at ? CheckCircle2 : Circle;
+              return (
+                <div key={s.key} data-testid={`return-milestone-${s.key}`}
+                  className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-[11.5px]">
+                    <Icon size={14} className={at ? "text-[#15803D]" : "text-[#C7C7CC]"} />
+                    <span className={at ? "font-semibold text-[#1C1C1E]" : "text-[#6B6B73]"}>
+                      {s.label}
+                    </span>
+                    <span className="text-[10.5px] text-[#8E8E93]">
+                      {at ? fmtStamp(at) : s.hint}
+                    </span>
+                  </span>
+                  {canEdit && (
+                    <button data-testid={`return-milestone-mark-${s.key}`}
+                      className="secondary-button !py-1 !text-[11px]"
+                      disabled={busy === s.key} onClick={() => tandai(s.key)}>
+                      {at ? "Perbarui tanggal" : "Tandai sekarang"}
+                    </button>
+                  )}
+                </div>
+              );
+            };
 
   return (
     <div className="section-card" data-testid="return-journey-panel">
@@ -157,33 +185,9 @@ export default function ReturnJourneyPanel({ ret, canEdit = false, onChanged }) 
             Perjalanan barang
           </p>
           <div className="mt-1.5 grid gap-1.5">
-            {STEPS.map((s) => {
-              const at = ret[s.field];
-              const Icon = at ? CheckCircle2 : Circle;
-              return (
-                <div key={s.key} data-testid={`return-milestone-${s.key}`}
-                  className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2 text-[11.5px]">
-                    <Icon size={14} className={at ? "text-[#15803D]" : "text-[#C7C7CC]"} />
-                    <span className={at ? "font-semibold text-[#1C1C1E]" : "text-[#6B6B73]"}>
-                      {s.label}
-                    </span>
-                    <span className="text-[10.5px] text-[#8E8E93]">
-                      {at ? fmtStamp(at) : s.hint}
-                    </span>
-                  </span>
-                  {canEdit && (
-                    <button data-testid={`return-milestone-mark-${s.key}`}
-                      className="secondary-button !py-1 !text-[11px]"
-                      disabled={busy === s.key} onClick={() => tandai(s.key)}>
-                      {at ? "Perbarui tanggal" : "Tandai sekarang"}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+            {STEPS.map((s) => stepRow(s))}
 
-            {/* Tonggak ke-4: DITURUNKAN dari dokumen inspeksi — sengaja tanpa tombol. */}
+            {/* Tonggak QC: DITURUNKAN dari dokumen inspeksi — sengaja tanpa tombol. */}
             <div data-testid="return-milestone-inspect" className="flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 text-[11.5px]">
                 <ClipboardCheck size={14}
@@ -204,6 +208,13 @@ export default function ReturnJourneyPanel({ ret, canEdit = false, onChanged }) 
               </span>
             </div>
           </div>
+        </div>
+
+        <div className="border-t border-[#EFF0F2] pt-2" data-testid="return-replacement-lane">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-[#9A9BA3]">
+            Pengiriman pengganti (jalur keluar)
+          </p>
+          <div className="mt-1.5 grid gap-1.5">{OUT_STEPS.map((s) => stepRow(s))}</div>
         </div>
       </div>
     </div>

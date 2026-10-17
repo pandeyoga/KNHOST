@@ -118,6 +118,10 @@ GROUPS: List[Dict[str, Any]] = [
     {"id": "asisten-analitik", "label": "Asisten Analitik (Tanya KN)", "order": 22,
      "question": "Apa arti \u201cpenjualan\u201d, siapa mendapat kredit penjualan, dan siapa boleh "
                  "melihat margin & nilai stok?"},
+    # L08 — retur penjualan: kewajiban bukti per tahap & larangan kirim ulang roll retur.
+    {"id": "retur", "label": "Retur Penjualan", "order": 23,
+     "question": "Pada tahap mana bukti foto retur wajib ada, dan bolehkah roll retur dikirim "
+                 "lagi ke pelanggan yang mengembalikannya?"},
 ]
 GROUP_IDS = {g["id"] for g in GROUPS}
 

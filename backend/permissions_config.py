@@ -38,7 +38,7 @@ DEFAULT_PERMISSIONS = {
         "entity": ["view", "create", "update", "delete"],
         "price_approval": ["view", "create", "update", "delete", "approve", "reject"],
         "tax_invoice": ["view", "create", "update", "replace", "cancel", "print"],
-        "sales_return": ["view", "create", "update", "approve", "reject"],
+        "sales_return": ["view", "create", "update", "approve", "reject", "policy"],
         # FASE F-6 — `approval.approve` DICABUT: satu-satunya endpoint yang memeriksanya
         # (`POST /approval-requests/{id}/approve|reject`) dipensiunkan karena mesin
         # persetujuan generiknya tak pernah punya produsen. Keputusan nyata dijaga izin
@@ -183,7 +183,7 @@ DEFAULT_PERMISSIONS = {
         "entity": ["view"],
         "price_approval": ["view", "create", "update", "approve", "reject"],
         "tax_invoice": ["view", "create", "update", "replace", "cancel", "print"],
-        "sales_return": ["view", "create", "update", "approve", "reject"],
+        "sales_return": ["view", "create", "update", "approve", "reject", "policy"],
         # FASE F-6 — `approval.approve` DICABUT: satu-satunya endpoint yang memeriksanya
         # (`POST /approval-requests/{id}/approve|reject`) dipensiunkan karena mesin
         # persetujuan generiknya tak pernah punya produsen. Keputusan nyata dijaga izin

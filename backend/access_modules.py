@@ -255,7 +255,7 @@ ACTION_LABEL = {
     "dispatch": "Dispatch", "dispose": "Lepas aset", "exact_cut": "Potong roll (pas)", "generate": "Generate", "hold": "Hold / tahan", "inspect": "Inspeksi", "invoice": "Buat faktur",
     "issue": "Terbitkan", "manage": "Kelola", "manage_attendance": "Kelola absensi", "manage_bom": "Kelola BOM",
     "manage_org": "Kelola struktur", "manage_payroll": "Kelola payroll", "manage_settings": "Kelola pengaturan", "pay": "Bayar",
-    "pegging": "Pegging", "override": "Override / edit SO", "approve_price_edit": "Setujui ubah harga/diskon",
+    "pegging": "Pegging", "policy": "Atur kebijakan retur", "override": "Override / edit SO", "approve_price_edit": "Setujui ubah harga/diskon",
     "propose": "Usulkan", "random_check": "Random check", "receive": "Terima", "release": "Rilis", "reopen": "Buka kembali",
     "replace": "Ganti", "report": "Laporan", "resolve": "Selesaikan kasus", "return": "Retur", "run": "Jalankan", "scan": "Scan",
     "send": "Kirim", "settle": "Lunasi", "ship": "Kirim barang", "sign": "Tandatangani", "submit": "Ajukan", "tax": "Pajak",

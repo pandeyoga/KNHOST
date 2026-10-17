@@ -21,6 +21,19 @@ import { resolveDeepLinkTarget } from "../../config/navigationConfig";
 import ReturnDetail from "./ReturnDetail";
 import CreateReturnForm from "./CreateReturnForm";
 import FormModal from "../../components/FormModal";
+import KNSelect from "../../components/KNSelect";
+
+// L08 LN-080-T04 — status & tipe adalah SARINGAN (dropdown), bukan deretan tab.
+const STATUS_OPTIONS = [
+  ["all", "Semua status"], ["draft", "1 · Draf"], ["pending_approval", "2 · Menunggu ACC"],
+  ["approved", "3 · Disetujui"], ["inspecting", "4 · Inspeksi"], ["inspected", "5 · Siap Diselesaikan"],
+  ["refund_settled", "Hasil · Refund"], ["credit_settled", "Hasil · Store Credit"], ["nego_settled", "Hasil · Nego"],
+  ["rejected", "Hasil · Ditolak"], ["cancelled", "Hasil · Dibatalkan"],
+];
+const TYPE_OPTIONS = [
+  ["all", "Semua tipe"], ["retur", "Retur"], ["bs", "Barang Sisa (BS)"],
+  ["penggantian", "Penggantian"], ["komplain", "Komplain"], ["garansi", "Garansi"],
+];
 
 // FASE P6 — kolom Unduh CSV (mengikuti kolom tabel retur jual).
 import { qtyDualCsvColumns } from "../../utils/qtyDualCsv";   // FASE U — dua satuan di CSV
@@ -66,12 +79,16 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
   const returns = paged.items;
   const loading = paged.loading;
 
+  // Hitungan memakai saringan yang sama dengan daftar (tipe, lini, cari) — status tidak, karena
+  // hitungan inilah yang menjelaskan sebaran status di dalam cakupan saringan.
   const loadCounts = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/sales-returns/status-counts`);
+      const res = await axios.get(`${API}/sales-returns/status-counts`, { params: {
+        ...(returnType === "all" ? {} : { return_type: returnType }),
+        ...(lineFilter ? { line: lineFilter } : {}), ...(search ? { q: search } : {}) } });
       setCounts(res.data || {});
     } catch { /* lencana bukan alasan menggagalkan layar */ }
-  }, []);
+  }, [returnType, lineFilter, search]);
 
   const load = useCallback(() => { paged.refresh(); loadCounts(); },
     [paged.refresh, loadCounts]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -106,7 +123,10 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
 
   const canApprove = ["admin", "manager"].includes(currentUser?.role);
   const cnt = (s) => Number(counts[s] || 0);
-  const rTotal = Number(counts.all || paged.total || 0);
+  const rTotal = Number(counts.all || 0);
+  const scopeParts = [returnType !== "all" && `Tipe: ${TYPE_OPTIONS.find(([v]) => v === returnType)?.[1]}`,
+    lineFilter && `Lini: ${lineFilter}`, search && `Cari: "${search}"`].filter(Boolean);
+  const scopeLabel = scopeParts.length ? `Cakupan: ${scopeParts.join(" · ")}` : "Cakupan: semua retur yang boleh Anda lihat";
 
   // ─── lifecycle actions (R1 state machine) ─────────────────────────────────
   async function handleApprove(ret) {
@@ -140,9 +160,9 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     }
   }
 
-  async function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode) {
+  async function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode, decisionNote) {
     try {
-      const body = { outcome, item_decisions: itemDecisions || [], notes: notes || "" };
+      const body = { outcome, item_decisions: itemDecisions || [], notes: notes || "", decision_note: decisionNote || "" };
       if (returnWarehouseId) body.return_warehouse_id = returnWarehouseId;
       if (refundAccountCode) body.refund_account_code = refundAccountCode;
       const res = await axios.post(`${API}/sales-returns/${ret.id}/settle`, body);
@@ -254,12 +274,12 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
       {/* Ringkasan */}
       <div data-testid="return-stats" className="grid grid-cols-2 gap-2 sm:grid-cols-4" style={{ marginBottom: 16 }}>
         {[
-          { label: "Total Retur", value: rTotal, icon: RotateCcw, hint: "semua status" },
-          { label: "Menunggu Persetujuan", value: cnt("pending_approval"), icon: AlertCircle },
-          { label: "Diproses", value: cnt("approved") + cnt("inspecting") + cnt("inspected"), icon: CheckCircle2 },
-          { label: "Selesai", value: cnt("refund_settled") + cnt("credit_settled") + cnt("nego_settled"), icon: CheckCircle2 },
-        ].map(({ label, value, icon: Icon, hint }) => (
-          <div key={label} className="metric-card">
+          { k: "total", label: "Total Retur", value: rTotal, icon: RotateCcw, hint: "semua status dalam cakupan" },
+          { k: "pending", label: "Menunggu Persetujuan", value: cnt("pending_approval"), icon: AlertCircle, hint: "status 2" },
+          { k: "process", label: "Diproses", value: cnt("approved") + cnt("inspecting") + cnt("inspected"), icon: CheckCircle2, hint: "status 3 + 4 + 5" },
+          { k: "done", label: "Selesai", value: cnt("refund_settled") + cnt("credit_settled") + cnt("nego_settled"), icon: CheckCircle2, hint: "refund + store credit + nego (tanpa ditolak/batal)" },
+        ].map(({ k, label, value, icon: Icon, hint }) => (
+          <div key={label} className="metric-card" data-testid={`return-stat-${k}`}>
             <div className="metric-icon"><Icon size={16} /></div>
             <div className="metric-body">
               <div className="metric-label">{label}</div>
@@ -310,51 +330,21 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
         <LineFilter value={lineFilter} onChange={setLineFilter} storageKey="sales-returns"
                     allowed={currentUser?.allowed_line_codes} testId="sret-line-filter" />
       </div>
-      <div className="tab-bar" data-testid="return-status-filter" style={{ marginBottom: 12 }}>
-          {/* ALUR (urutan proses) — lalu HASIL AKHIR. Dikelompokkan supaya terbaca
-              sebagai pipeline, bukan sebelas pil acak. */}
-          {[
-            ["all",             "Semua"],
-            ["draft",           "1 · Draf"],
-            ["pending_approval","2 · Menunggu ACC"],
-            ["approved",        "3 · Disetujui"],
-            ["inspecting",      "4 · Inspeksi"],
-            ["inspected",       "5 · Siap Diselesaikan"],
-          ].map(([v, l]) => (
-            <button
-              key={v}
-              data-testid={`filter-${v}`}
-              className={`tab-button ${filterStatus === v ? "active" : ""}`}
-              onClick={() => setFilterStatus(v)}
-            >{l}{counts[v] ? <span className="tab-badge">{counts[v]}</span> : null}</button>
-          ))}
-          <span className="mx-1 self-center border-l border-[#E5E5EA] pl-2 text-[10px] font-bold uppercase text-[#9A9BA3]">Hasil</span>
-          {[
-            ["refund_settled",  "Refund"],
-            ["credit_settled",  "Store Credit"],
-            ["nego_settled",    "Nego"],
-            ["rejected",        "Ditolak"],
-          ].map(([v, l]) => (
-            <button
-              key={v}
-              data-testid={`filter-${v}`}
-              className={`tab-button ${filterStatus === v ? "active" : ""}`}
-              onClick={() => setFilterStatus(v)}
-            >{l}{counts[v] ? <span className="tab-badge">{counts[v]}</span> : null}</button>
-          ))}
-      </div>
-      {/* Saring per TIPE retur — lima jenis dengan aturan berbeda (retur biasa, barang
-          sisa, penggantian, komplain, garansi); dulu tak bisa disaring sama sekali. */}
-      <div className="tab-pills" style={{ marginBottom: 16 }} data-testid="return-type-filter">
-        <span className="self-center text-[10px] font-bold uppercase text-[#9A9BA3]">Tipe:</span>
-        {[
-          ["all", "Semua Tipe"], ["retur", "Retur"], ["bs", "Barang Sisa (BS)"],
-          ["penggantian", "Penggantian"], ["komplain", "Komplain"], ["garansi", "Garansi"],
-        ].map(([v, l]) => (
-          <button key={v} data-testid={`filter-type-${v}`}
-            className={returnType === v ? "tab-pill active" : "tab-pill"}
-            onClick={() => setReturnType(v)}>{l}</button>
-        ))}
+      <p className="text-[11px] text-[#6B6B73]" style={{ margin: "-8px 0 12px" }} data-testid="return-stats-scope">{scopeLabel}</p>
+      <div className="mb-4 flex flex-wrap items-end gap-3" data-testid="return-filters">
+        <div style={{ minWidth: 230 }}>
+          <label className="form-label">Status</label>
+          <KNSelect data-testid="return-status-filter" className="form-select" value={filterStatus} onValueChange={setFilterStatus}
+            options={STATUS_OPTIONS.map(([v, l]) => ({ value: v, label: `${l} (${v === "all" ? rTotal : cnt(v)})` }))} />
+        </div>
+        <div style={{ minWidth: 200 }}>
+          <label className="form-label">Kategori / tipe</label>
+          <KNSelect data-testid="return-type-filter" className="form-select" value={returnType} onValueChange={setReturnType}
+            options={TYPE_OPTIONS.map(([v, l]) => ({ value: v, label: l }))} />
+        </div>
+        <span className="text-[11px] text-[#6B6B73] self-center" data-testid="return-list-count">
+          Daftar: {paged.total ?? 0} retur{filterStatus !== "all" ? " (status terpilih)" : ""}
+        </span>
       </div>
 
       {/* Table */}

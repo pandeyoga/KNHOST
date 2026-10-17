@@ -14,6 +14,7 @@ import ReturnSettleModal from "./ReturnSettleModal";
 import ReturnQuarantinePanel from "./ReturnQuarantinePanel";
 import ReturnChainPanel from "./ReturnChainPanel";
 import ReturnJourneyPanel from "./ReturnJourneyPanel";   // FASE I.F — keluhan + milestone
+import ReturnTimelinePanel from "./ReturnTimelinePanel"; // L08 LN-081 — satu timeline per jalur
 import ReturnEligibilityPanel from "./ReturnEligibilityPanel"; // 2026-06 — jendela retur tampak
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { DetailHeader, Panel, Cell } from "../../components/DetailParts";
@@ -217,6 +218,10 @@ export default function ReturnDetail({
       <ReturnJourneyPanel ret={ret} canEdit={!isTerminal || canApprove}
         onChanged={(fresh) => onReturnChanged?.(fresh)} />
 
+      <ReturnTimelinePanel ret={ret} canEdit={!isTerminal} onChanged={refetchReturn} />
+
+      <EvidenceBanner ev={enriched?.evidence} hasFiles={attachments.length > 0} />
+
       {/* R2 — Inspeksi 4-point (approved → inspecting → inspected) */}
       <ReturnInspectPanel ret={ret} onStartInspect={onStartInspect} onCompleteInspect={onCompleteInspect} />
 
@@ -381,6 +386,21 @@ export default function ReturnDetail({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const EVIDENCE_STAGE_LABEL = { submit: "diajukan", approve: "disetujui", inspect: "inspeksi diselesaikan", settle: "diselesaikan" };
+
+/** L08 LN-080-T03 — tahap yang menunggu bukti foto menurut kebijakan badan usaha. */
+function EvidenceBanner({ ev, hasFiles }) {
+  const missing = hasFiles ? [] : (ev?.missing_for || []);
+  if (!missing.length) return null;
+  return (
+    <div className="notice-bar warning mb-3" data-testid="return-evidence-missing">
+      <AlertCircle size={14} />
+      Bukti foto wajib sebelum retur {missing.map((s) => EVIDENCE_STAGE_LABEL[s] || s).join(" / ")}.
+      Unggah minimal satu foto di panel Lampiran bukti.
     </div>
   );
 }

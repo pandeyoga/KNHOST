@@ -1015,7 +1015,9 @@
       "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": ["evidence/L06/report.md"],
+      "evidence": [
+        "evidence/L06/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
       "implementer": "agent E1 (Emergent)",
@@ -1037,7 +1039,9 @@
       "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": ["evidence/L06/report.md"],
+      "evidence": [
+        "evidence/L06/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
       "implementer": "agent E1 (Emergent)",
@@ -1058,7 +1062,9 @@
       "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": ["evidence/L06/report.md"],
+      "evidence": [
+        "evidence/L06/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
       "implementer": "agent E1 (Emergent)",
@@ -1079,7 +1085,9 @@
       "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": ["evidence/L07/report.md"],
+      "evidence": [
+        "evidence/L07/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
       "implementer": "agent E1 (Emergent)",
@@ -1102,7 +1110,9 @@
       "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": ["evidence/L07/report.md"],
+      "evidence": [
+        "evidence/L07/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
       "implementer": "agent E1 (Emergent)",
@@ -1124,7 +1134,9 @@
       "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": ["evidence/L07/report.md"],
+      "evidence": [
+        "evidence/L07/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
       "implementer": "agent E1 (Emergent)",
@@ -1147,7 +1159,9 @@
       "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": ["evidence/L08/report.md"],
+      "evidence": [
+        "evidence/L08/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
       "implementer": "agent E1 (Emergent)",
@@ -1188,13 +1202,15 @@
         "LN-082-T02",
         "LN-082-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L08/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },

@@ -8,8 +8,8 @@ from pymongo import MongoClient
 
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
-SHIPPED_SO = "so_7f6b0f78e8d8"      # KSC/SO-00001 (done, SJ-00001/00002)
-UNSHIPPED_SO = "so_831678368880"    # KSC/SO-00003 (confirmed, belum ada SJ)
+SHIPPED_SO = DB.sales_orders.find_one({"number": "KSC/SO-00001"})["id"]      # done, SJ-00001/00002
+UNSHIPPED_SO = DB.sales_orders.find_one({"number": "KSC/SO-00003"})["id"]    # confirmed, belum ada SJ
 TAG = "TEST_L08"
 
 
@@ -35,7 +35,7 @@ def test_t01_only_shipped_rolls(h):
     r = _post(h, SHIPPED_SO, [{"product_id": p["product_id"], "quantity_returned": 1, "unit": p["unit"],
                                "roll_ids": [other["id"]], "roll_qtys": {other["id"]: 1}}])
     assert r.status_code == 400 and "bukan roll terkirim" in r.json()["detail"]
-    r = _post(h, UNSHIPPED_SO, [{"product_id": "prod_8328aea88d71", "quantity_returned": 1, "unit": "kg"}])
+    r = _post(h, UNSHIPPED_SO, [{"product_id": DB.sales_orders.find_one({"id": UNSHIPPED_SO})["items"][0]["product_id"], "quantity_returned": 1, "unit": "kg"}])
     assert r.status_code == 400 and "belum punya barang terkirim" in r.json()["detail"]
 
 

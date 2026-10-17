@@ -1246,3 +1246,10 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 ## Sesi 2026-10-16 bagian 5 (E1) — L05 LN-050-T01
 - Request QC di checkout (CheckoutDrawer, MobileCart): none/full/sampling% → SO.qc_request; SPK kind `sales_order` dari roll alokasi terbaru (utuh + potong); pagar dispatch `qc_request_guard` (juga di /wms/tasks/advance); keputusan terakhir menentukan; alokasi berubah → QC lagi.
 - Testing iteration_196/197 lulus; perbaikan minor terakhir (keputusan terakhir, SPK dobel, posisi picker HP) diuji lewat pytest.
+
+## 2026-10-17 (lanjutan, agent E1) — L08 Retur: bukti per tahap, hitungan sesuai saringan, identitas roll retur
+- LN-080-T03: setting `returns.evidence_required_{submit,approve,inspect,settle}` (bawaan mati), penegakan API + foto saat buat retur + banner bukti kurang.
+- LN-080-T04: status/kategori jadi saringan dropdown; `status-counts` ikut saringan tipe/lini/cari; label cakupan & rumus kartu.
+- LN-082: roll utuh kembali dengan id/nomor/tag sama (+riwayat qty bruto/klaim/aktual, grade lama→baru; reversal memulihkan), klaim sebagian → child `<induk>-N`; nomor potongan atomik; larangan kirim ulang ke pelanggan asal (`returns.block_resend_to_origin_customer`, izin `sales_return.policy`).
+- Bukti: `backend/tests/test_l08_evidence_identity.py` 10/10, iteration_207 100%. Evidence: `docs/development/gelombang-lanjutan-pasca-p05-2026-10-16/evidence/L08/report.md`.
+- Berikutnya: LN-081 (timeline terpisah: izin · perjalanan fisik · QC per roll · disposisi · settlement), lalu L09 sesuai keputusan pending; LN-083 menunggu KLR-08/KLR-09. Isi SHA setelah Save to GitHub.

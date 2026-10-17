@@ -19,6 +19,9 @@ const OUTCOMES = [
 export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
   const [outcome, setOutcome] = useState("refund");
   const [notes, setNotes] = useState("");
+  const [decisionNote, setDecisionNote] = useState("");   // L08 LN-081 — bukti keputusan di luar sistem
+  const physLocs = Object.values(ret.roll_locations || {});
+  const physNames = [...new Set(physLocs.map((l) => l.warehouse_name || l.to_warehouse_name).filter(Boolean))];
   const [busy, setBusy] = useState(false);
   const [warehouses, setWarehouses] = useState([]);
   const [returnWarehouseId, setReturnWarehouseId] = useState("");
@@ -57,8 +60,8 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
         outcome: d.include ? "" : "reject",
         settle_qty: d.include ? (parseFloat(d.settle_qty) || 0) : -1,
       }));
-      await onSettle(ret, outcome, item_decisions, notes, movesStock ? returnWarehouseId : "",
-                     outcome === "refund" ? refundAccount : "");
+      await onSettle(ret, outcome, item_decisions, notes, movesStock && !physLocs.length ? returnWarehouseId : "",
+                     outcome === "refund" ? refundAccount : "", decisionNote);
       onClose();
     } finally { setBusy(false); }
   }
@@ -94,7 +97,13 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
         </div>
 
         {/* R3 — Lokasi gudang penerimaan (owner tetap = entitas SO) */}
-        {movesStock && (
+        {movesStock && physLocs.length > 0 && (
+          <div className="rounded-md border border-[#E4ECF7] bg-[#F6FAFF] p-2.5 mb-3 text-[11.5px]" data-testid="settle-physical-location">
+            <Warehouse size={13} className="inline mr-1" /> Roll masuk karantina di <b>lokasi fisik hasil scan</b>: {physNames.join(", ") || "—"}.
+            Untuk memindah barang, scan Kirim → Tiba di panel Perjalanan Retur.
+          </div>
+        )}
+        {movesStock && !physLocs.length && (
           <div className="rounded-md border border-[#E4ECF7] bg-[#F6FAFF] p-2.5 mb-3" data-testid="settle-destination">
             <label className="flex items-center gap-1.5 text-[12px] font-semibold text-[#1B4F9C] mb-1.5">
               <Warehouse size={13} /> Lokasi Gudang Penerimaan Retur
@@ -166,6 +175,9 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
           </table>
         </div>
 
+        <input data-testid="settle-decision-note" className="field mt-3 w-full"
+          placeholder="Bukti keputusan (mis. ACC Pak Budi via WA 12/10, nego disepakati Rp …)"
+          value={decisionNote} onChange={(e) => setDecisionNote(e.target.value)} />
         <textarea data-testid="settle-notes" className="textarea mt-3" rows={2}
           placeholder="Catatan penyelesaian (opsional)..." value={notes} onChange={(e) => setNotes(e.target.value)} />
 

@@ -133,6 +133,8 @@ async def reserve_roll_mode_item(
     Returns: {allocations, reserved_qty, pending_qty, intercompany[], transfer_ids[], proposals[]}.
     """
     norm: List[Dict[str, Any]] = []
+    from services import return_identity_service as _rid
+    _cust = ((await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "customer_id": 1})) or {}).get("customer_id", "")
     for ln in (roll_lines or []):
         rid = ln.get("roll_id")
         take = round(float(ln.get("take_qty") or 0), 2)
@@ -143,6 +145,10 @@ async def reserve_roll_mode_item(
             raise HTTPException(status_code=400, detail=f"Roll {roll.get('roll_no', rid)} bukan milik produk ini.")
         if roll.get("status") != "available":
             raise HTTPException(status_code=409, detail=f"Roll {roll.get('roll_no', rid)} sudah tidak tersedia.")
+        try:
+            await _rid.assert_not_origin_customer(roll, _cust, selling_entity_id)
+        except ValueError as e:
+            raise HTTPException(status_code=409, detail=str(e))
         if take <= 0:  # WM-02 — "roll utuh" = panjang BEBAS (sisa − reservasi potong tertunda)
             take = round(float(roll.get("length_remaining", 0) or 0) - float(roll.get("length_reserved") or 0), 2)
         norm.append({"roll_id": rid, "take_qty": take, "owner": roll.get("owner_entity_id")})

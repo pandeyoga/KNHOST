@@ -1,0 +1,22 @@
+{
+  "summary": "Verified L08 LN-080-T03/T04 + LN-082-T01/T02/T03 (retur evidence, identity, filter counts, resend block). Ran backend/tests/test_l08_evidence_identity.py (10/10 pass) and regressions test_l08_returnable_rolls.py + test_l08_returnable_rolls_extra.py (19/19 pass). Frontend Retur list loads cleanly: return-status-filter, return-type-filter, return-stat-total/pending/process/done (each with formula hint), return-stats-scope, return-list-count, and create-return-btn all present. Total card (3) equals Daftar count (3) with status=all. Create Retur modal renders return-order-select, return-photo-input, save-return-btn correctly. No console errors, no overlays blocking interaction.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_l08_evidence_identity.py",
+    "/app/backend/tests/test_l08_returnable_rolls.py",
+    "/app/backend/tests/test_l08_returnable_rolls_extra.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Status/type filters are custom dropdowns (not native <select>); automated tests using select_option need Playwright locator.press/click fallback. Not a bug - just a tester note."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (29/29)", "frontend": "100% (loads + testids present)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345, sales@kainnusantara.id/demo1234",
+  "seed_data_creation": "None (tests use existing KSC/SO-00001 and self-clean TEST_L08B tag)",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "L08 retur (evidence policy, identity-preserving restock, child roll_no atomic, resend-block policy, status-counts filter awareness) all working. Backend test file test_l08_evidence_identity.py covers all 10 scenarios of LN-080-T03/T04 + LN-082-T01/T02/T03 and self-cleans. Config keys returns.evidence_required_submit and returns.block_resend_to_origin_customer are reset by fixture teardown.",
+  "rca of the issue": "N/A - no issues found"
+}

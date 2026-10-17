@@ -868,6 +868,7 @@ class ReturnInspectionInput(BaseModel):
     defects: List[RollDefectInput] = [] # R2 — 4-point (point_value 1..4, count)
     gsm_actual: Optional[float] = None
     width_actual: Optional[float] = None
+    roll_actuals: Dict[str, float] = {}  # L08 LN-082 — qty aktual hasil ukur per roll {roll_id: qty}
     note: str = ""
 
 
@@ -905,6 +906,9 @@ class SalesReturnSettle(BaseModel):
     # R5.3 — akun Kas/Bank untuk refund TUNAI (GL Cr akun ini + cash_transaction keluar).
     #   Kosong = default 1-1100 Kas Besar/Bank. Hanya relevan bila settlement = cash.
     refund_account_code: str = ""
+    # L08 LN-081 — bukti keputusan (mis. "ACC Pak Budi via WA 12/10") + lampiran yang mendukung.
+    decision_note: str = ""
+    decision_attachment_ids: List[str] = []
 
 
 class RollOwnershipTransferInput(BaseModel):

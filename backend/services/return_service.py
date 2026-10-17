@@ -591,11 +591,12 @@ async def mark_milestone(return_id: str, milestone: str, actor: str,
         raise ValueError(
             f"Tanggal “{label}” tidak boleh di masa depan — penanda perjalanan adalah "
             f"catatan kejadian, bukan rencana.")
-    if key == "goods_arrived" and not (ret.get("shipped_to_store_at")
-                                       or ret.get("shipped_to_customer_at")):
+    # L08 LN-081 — kedatangan retur hanya dari jalur MASUK; "Kirim ke pelanggan" adalah
+    # pengiriman pengganti (jalur keluar) dan tidak bisa menjadi bukti barang retur sampai.
+    if key == "goods_arrived" and not (ret.get("shipped_to_store_at") or ret.get("journey_events")):
         raise ValueError(
-            "Tandai pengirimannya dulu (SJ Kirim Toko atau Kirim ke pelanggan) — "
-            "barang tidak bisa “sampai” sebelum pernah dikirim.")
+            "Tandai SJ Kirim Toko atau scan terima barang dulu — barang retur tidak bisa "
+            "“sampai” sebelum pernah dikirim balik. Pengiriman pengganti ke pelanggan tidak dihitung.")
 
     entry = {"id": new_id("rmst"), "milestone": key, "label": label, "at": stamp,
              "by": actor, "note": str(note or "").strip(),
@@ -743,6 +744,9 @@ async def complete_inspection(return_id: str, actor: str,
             "recommended_outcome": rec,
             "accepted_qty": round(float(insp.get("accepted_qty", it.get("quantity_returned", 0)) or 0), 2),
             "gsm_actual": insp.get("gsm_actual"), "width_actual": insp.get("width_actual"),
+            # L08 LN-082 — qty aktual hasil ukur per roll (hanya roll yang diklaim item ini).
+            "roll_actuals": {k: round(float(v), 2) for k, v in (insp.get("roll_actuals") or {}).items()
+                             if k in (it.get("roll_ids") or []) and float(v or 0) >= 0},
             "thresholds": th, "notes": insp.get("note", insp.get("notes", "")),
             "inspected_by": actor, "inspected_at": now_iso(),
         }
@@ -850,6 +854,10 @@ async def _restock_returned_items(ret: Dict[str, Any], items: List[Dict], now: s
     R3 — `warehouse_id` (lokasi fisik) & `owner_entity_id` (kepemilikan) TERPISAH (SSOT).
       Default bila kosong: warehouse=outbound SO, owner=entity dokumen retur.
     Idempotent via flag ret.stock_adjusted (dicek pemanggil)."""
+    if not warehouse_id:   # L08 LN-081 — lokasi fisik hasil scan perjalanan
+        from services.return_journey_service import physical_warehouse
+        warehouse_id = next((w for it in items for r in (it.get("roll_ids") or [])
+                             if (w := physical_warehouse(ret, r))), "")
     warehouse_id = warehouse_id or await _resolve_return_warehouse(ret["order_id"])
     owner_entity_id = owner_entity_id or ret["entity_id"]
     combos: set = set()
@@ -914,9 +922,17 @@ async def _restock_returned_items(ret: Dict[str, Any], items: List[Dict], now: s
             **prov,
             "created_at": now, "updated_at": now,
         }
-        await db.inventory_rolls.insert_one(roll)
-        await db.inventory_movements.insert_one({
-            "id": new_id("mov"), "product_id": product_id, "warehouse_id": warehouse_id,
+        # L08 LN-082 — baris dari roll terkirim: identitas roll dipertahankan (utuh = id/nomor sama,
+        # potongan = child bernomor induk). Baris lama tanpa roll_ids tetap membuat roll RTN baru.
+        if item.get("roll_ids"):
+            from services import return_identity_service as _rid
+            placed = await _rid.restock_identity(ret, item, roll, qty, now)
+        else:
+            await db.inventory_rolls.insert_one(roll)
+            placed = [(roll, qty)]
+        for roll, qty in placed:
+          await db.inventory_movements.insert_one({
+            "id": new_id("mov"), "product_id": product_id, "warehouse_id": roll["warehouse_id"],
             "owner_entity_id": owner_entity_id,
             # Nama kanonik buku mutasi adalah `movement_type` (dipakai layar Mutasi,
             # laporan, dan POC). Baris retur dulu HANYA menulis `type`, jadi mutasinya
@@ -928,11 +944,11 @@ async def _restock_returned_items(ret: Dict[str, Any], items: List[Dict], now: s
  # FASE U — satu baris mutasi menunjuk SATU roll fisik.
  "qty_rolls": (1 if roll["id"] else None),
             "ref_type": "sales_return", "ref_id": ret["id"],
-            "notes": f"Retur {ret['number']} → karantina (grade {grade}) @ {warehouse_id} · owner {owner_entity_id}",
-            "source_document": ret["id"], "timestamp": now, "lot": roll["lot"],
-            "lot_id": _rtn_lot["id"],
-        })
-        combos.add((product_id, warehouse_id, owner_entity_id))
+            "notes": f"Retur {ret['number']} → karantina (grade {grade}) @ {roll['warehouse_id']} · owner {owner_entity_id}",
+            "source_document": ret["id"], "timestamp": now, "lot": roll.get("lot"),
+            "lot_id": roll.get("lot_id") or _rtn_lot["id"],
+          })
+          combos.add((product_id, roll["warehouse_id"], owner_entity_id))
     for (pid, wid, eid) in combos:
         await rebuild_balance(pid, wid, eid)
 
@@ -1487,7 +1503,11 @@ async def reverse_settlement(return_id: str, actor: str, reason: str = "") -> Di
     # b) Hapus roll restock + catat movement keluar + rebuild balance (subledger ikut GL yang dibalik).
     combos: set = set()
     for r in rolls:
-        await db.inventory_rolls.delete_one({"id": r["id"]})
+        if r.get("returned_identity"):
+            from services import return_identity_service as _rid
+            await _rid.restore_identity_roll(r, now)   # L08 LN-082 — roll asli kembali "di pelanggan"
+        else:
+            await db.inventory_rolls.delete_one({"id": r["id"]})
         await db.inventory_movements.insert_one({
             "id": new_id("mov"), "product_id": r.get("product_id"),
             "warehouse_id": r.get("warehouse_id"), "owner_entity_id": r.get("owner_entity_id"),
@@ -1651,71 +1671,3 @@ async def _resolve_return_warehouse(order_id: str) -> str:
 
     wh = await db.warehouses.find_one({}, sort=[("created_at", 1)])
     return wh["id"] if wh else "wh_default"
-
-
-# ─── RETUR MULTI-LEG (2026-06) — kaki perjalanan fisik terjahit ke dokumen retur ──
-async def relocate_return_rolls(return_id: str, to_warehouse_id: str,
-                                actor: str, note: str = "") -> Dict[str, Any]:
-    """Pindahkan roll karantina milik retur ini ke gudang lain (mis. Gudang Jakarta →
-    Gedung Retur Central untuk inspeksi). Kaki (leg) dicatat di dokumen retur
-    (`relocation_legs[]`) + movements ber-source retur → tampil di Jejak Barang.
-    Kepemilikan TIDAK berubah (bukan interco); balance di-rebuild dua sisi."""
-    from services.roll_service import rebuild_balance
-    ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
-    if not ret:
-        raise ValueError("Retur tidak ditemukan")
-    wh_to = await db.warehouses.find_one({"id": to_warehouse_id}, {"_id": 0, "name": 1})
-    if not wh_to:
-        raise ValueError("Gudang tujuan tidak ditemukan")
-    rolls = await db.inventory_rolls.find(
-        {"acquired.ref_id": return_id, "acquired.via": "return", "status": "quarantine",
-         "warehouse_id": {"$ne": to_warehouse_id}}, {"_id": 0}).to_list(500)
-    if not rolls:
-        raise ValueError("Tidak ada roll karantina retur ini yang bisa dipindah "
-                          "(sudah di gudang tujuan / sudah dilepas).")
-    # INV-ATOMIC-01 — klaim retur sebelum roll/tag/mutasi ditulis; dua pemindahan
-    # bersamaan tidak boleh menulis kaki (leg) & mutasi ganda.
-    from services import atomic_claim as _saga
-    await _saga.claim("sales_returns", return_id, "sales_return_relocate", actor=actor)
-    now = now_iso()
-    from_ids = {}
-    segs = set()
-    total_qty = 0.0
-    for r in rolls:
-        from_ids.setdefault(r["warehouse_id"], 0)
-        from_ids[r["warehouse_id"]] += 1
-        total_qty += float(r.get("length_remaining") or 0)
-        await db.inventory_rolls.update_one({"id": r["id"]}, {"$set": {
-            "warehouse_id": to_warehouse_id, "bin_id": None,
-            "journey.stage": "received_transit", "journey.routing": "store",
-            "journey.updated_at": now, "updated_at": now}})
-        await db.rfid_tags.update_one({"roll_id": r["id"], "status": "active"},
-                                      {"$set": {"warehouse_id": to_warehouse_id}})
-        for wh, mtype in ((r["warehouse_id"], "return_relocation_out"),
-                          (to_warehouse_id, "return_relocation_in")):
-            await db.inventory_movements.insert_one({
-                "id": new_id("mov"), "product_id": r["product_id"], "warehouse_id": wh,
-                "owner_entity_id": r.get("owner_entity_id"),
-                "movement_type": mtype,
-                "quantity": (1 if mtype.endswith("_in") else -1) * float(r.get("length_remaining") or 0),
-                "unit": r.get("unit", "meter"), "lot": r.get("lot", ""), "roll_id": r["id"],
-                "qty_rolls": 1, "source_document": ret.get("number", return_id),
-                "timestamp": now,
-            })
-        segs.add((r["product_id"], r["warehouse_id"], r.get("owner_entity_id")))
-        segs.add((r["product_id"], to_warehouse_id, r.get("owner_entity_id")))
-    for pid, wid, owner in segs:
-        await rebuild_balance(pid, wid, owner)
-    from_names = []
-    for wid in from_ids:
-        w = await db.warehouses.find_one({"id": wid}, {"_id": 0, "name": 1}) or {}
-        from_names.append(w.get("name", wid))
-    leg = {"id": new_id("leg"), "from_warehouses": from_names,
-           "to_warehouse_id": to_warehouse_id, "to_warehouse_name": wh_to.get("name", ""),
-           "roll_count": len(rolls), "qty": round(total_qty, 2),
-           "note": (note or "").strip(), "by": actor, "at": now}
-    _upd = _saga.finish_set({"updated_at": now})
-    _upd["$push"] = {"relocation_legs": leg}
-    await db.sales_returns.update_one({"id": return_id}, _upd)
-    return {"leg": leg, "moved": len(rolls),
-            "legs": ((ret.get("relocation_legs") or []) + [leg])}

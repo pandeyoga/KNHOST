@@ -195,6 +195,7 @@ def _return_with_quarantine(exclude_wh=RETUR_WH):
     return None, None
 
 
+@pytest.mark.skip(reason="L08 LN-081: pindah gudang instan /relocate dinonaktifkan (409); diganti scan perjalanan")
 class TestReturnMultiLeg:
     def test_relocate_moves_rolls_and_records_leg(self, admin_h):
         ret, roll = _return_with_quarantine()

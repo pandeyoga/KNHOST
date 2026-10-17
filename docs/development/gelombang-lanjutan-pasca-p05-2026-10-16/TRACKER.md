@@ -61,7 +61,7 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-072 | L07 | Transit Jakarta, receipt aktual dan posting yang tepat | in_progress | evidence/L07/report.md |
 | LN-080 | L08 | Form retur dan menu yang jelas | in_progress | evidence/L08/report.md |
 | LN-081 | L08 | Pisahkan perjalanan fisik, QC, keputusan dan saldo | not_started | belum ada |
-| LN-082 | L08 | Identitas unik, potongan dan larangan kembali ke customer asal | not_started | belum ada |
+| LN-082 | L08 | Identitas unik, potongan dan larangan kembali ke customer asal | in_progress | evidence/L08/report.md |
 | LN-083 | L08 | Batas waktu, eligibility dan bukti keputusan | not_started | belum ada |
 | LN-090 | L09 | Tukar barang sampai customer | not_started | belum ada |
 | LN-091 | L09 | Refund/saldo, potong tagihan dan nilai histori | not_started | belum ada |

@@ -46,29 +46,8 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
   const [unscrapRoll, setUnscrapRoll] = useState(null);
   const [unscrapReason, setUnscrapReason] = useState("");
   const [unscrapBusy, setUnscrapBusy] = useState(false);
-  // RETUR MULTI-LEG — kirim roll karantina ke gudang lain (mis. Gedung Retur Central)
-  const [warehousesAll, setWarehousesAll] = useState([]);
-  const [relocDest, setRelocDest] = useState("");
-  const [relocBusy, setRelocBusy] = useState(false);
-  const [legs, setLegs] = useState(ret.relocation_legs || []);
-
-  useEffect(() => {
-    axios.get(`${API}/warehouses`).then((r) => setWarehousesAll(r.data || [])).catch(() => {});
-  }, []);
-
-  const relocate = async () => {
-    if (!relocDest) return;
-    setRelocBusy(true); setErr(null);
-    try {
-      const r = await axios.post(`${API}/sales-returns/${ret.id}/relocate`,
-        { to_warehouse_id: relocDest, note: "" });
-      setLegs(r.data.legs || []);
-      setMsg(`${r.data.moved} roll dikirim ke ${r.data.leg.to_warehouse_name} — leg tercatat di dokumen retur.`);
-      setRelocDest("");
-      await load();
-    } catch (e) { setErr(e.response?.data?.detail || "Gagal memindahkan roll retur"); }
-    finally { setRelocBusy(false); }
-  };
+  // Kaki perjalanan lama (sebelum L08 LN-081) tetap ditampilkan sebagai riwayat, tanpa tombol pindah.
+  const legs = ret.relocation_legs || [];
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -227,7 +206,7 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
 
       {/* RETUR MULTI-LEG — kaki perjalanan fisik terjahit ke dokumen retur */}
       <div className="mb-2 rounded-lg border border-[#D9E4F5] bg-[#F7FAFF] p-2.5" data-testid="return-relocate-block">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-[#3C5A8A]">Perjalanan Fisik Retur (Multi-Leg)</p>
+        <p className="text-[11px] font-bold uppercase tracking-wide text-[#3C5A8A]">Pindah Gudang Roll Retur</p>
         {legs.length > 0 && (
           <div className="mt-1 space-y-0.5" data-testid="return-legs">
             {legs.map((l, i) => (
@@ -239,29 +218,10 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
             ))}
           </div>
         )}
-        {(() => {
-          const qRolls = rolls.filter((r) => r.status === "quarantine");
-          if (qRolls.length === 0) return null;
-          const destOpts = warehousesAll
-            .filter((w) => qRolls.some((r) => r.warehouse_id !== w.id))
-            .map((w) => ({ value: w.id, label: `${w.name}${(w.roles || []).includes("return") ? " · gedung retur" : ""}` }));
-          return (
-            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-              <KNSelect data-testid="return-relocate-dest" value={relocDest} onValueChange={setRelocDest}
-                options={destOpts} className="field !py-1 !px-2 w-auto text-[11.5px]"
-                placeholder="Pilih gudang tujuan…" />
-              <button data-testid="return-relocate-btn" disabled={relocBusy || !relocDest || destOpts.length === 0}
-                onClick={relocate}
-                className="rounded-lg bg-[#0058CC] px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-40">
-                {relocBusy ? "Memindahkan…" : "Kirim Roll Karantina ke Gudang Ini"}
-              </button>
-              <span className="text-[10px] text-[#8E8E93]">mis. ke Gedung Retur Central untuk inspeksi & regrading</span>
-            </div>
-          );
-        })()}
-        {legs.length === 0 && !rolls.some((r) => r.status === "quarantine") && (
-          <p className="mt-1 text-[11px] text-[#8E8E93]">Belum ada kaki perjalanan; tidak ada roll karantina yang bisa dipindah.</p>
-        )}
+        <p className="mt-1 text-[11px] text-[#6B6B73]" data-testid="return-relocate-note">
+          Pindah gudang tidak lagi lewat satu klik. Sebelum penyelesaian, gunakan scan Kirim → Tiba di panel
+          Perjalanan Retur; sesudah roll masuk stok, gunakan Transfer Gudang (kirim → terima).
+        </p>
       </div>
 
       {loading ? (
