@@ -1,4 +1,5 @@
 import KNDatePicker from "@/components/KNDatePicker";
+import QcRequestPicker, { qcPayload } from "../../../components/QcRequestPicker";
 import { useState, useEffect } from "react";
 import { Minus, Plus, Trash2, ShoppingCart, Loader2, CheckCircle2, ArrowLeft, PackageX } from "lucide-react";
 import KNSelect from "../../../components/KNSelect";
@@ -23,6 +24,7 @@ export default function MobileCart({
     onRefresh?.();
   };
   const [step, setStep] = useState("cart");      // "cart" | "checkout"
+  const [qcReq, setQcReq] = useState({ mode: "none", pct: 10 });
   // Harga EFEKTIF per pelanggan (harga khusus disetujui → pelanggan → PT → umum) — SAMA
   // dengan desktop CheckoutDrawer; tanpa ini pesanan dari HP mengabaikan harga khusus yang disetujui.
   const { priceMap } = useEffectivePrices({
@@ -57,8 +59,8 @@ export default function MobileCart({
     if (salesTeamError(salesTeam)) { setStep("checkout"); return; }
     setSubmitting(true);
     try {
-      const ok = await onSubmitOrder({ payment_term_code: termCode, allow_backorder: allowBackorder, sales_team: salesTeam, delivery_date: deliveryDate, special_prices: linePrices });
-      if (ok) { setStep("cart"); onDone && onDone(); }
+      const ok = await onSubmitOrder({ payment_term_code: termCode, allow_backorder: allowBackorder, sales_team: salesTeam, delivery_date: deliveryDate, special_prices: linePrices, ...qcPayload(qcReq) });
+      if (ok) { setStep("cart"); setQcReq({ mode: "none", pct: 10 }); onDone && onDone(); }
     } finally {
       setSubmitting(false);
     }
@@ -170,6 +172,7 @@ export default function MobileCart({
           <span className="text-[12px] m-muted">Estimasi subtotal</span>
           <span data-testid="mobile-cart-subtotal" className="text-[16px] font-bold tabular-nums">{formatCurrency(subtotal)}</span>
         </div>
+        {step === "checkout" && <QcRequestPicker value={qcReq} onChange={setQcReq} />}
         {step === "cart" ? (
           <button data-testid="mobile-checkout-btn" className="primary-button w-full justify-center py-3" disabled={cart.length === 0} onClick={() => setStep("checkout")}>
             Lanjut ke Checkout

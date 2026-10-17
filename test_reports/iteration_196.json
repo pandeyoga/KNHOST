@@ -1,0 +1,47 @@
+{
+  "summary": "L05 LN-050-T01 (QC request at SO checkout + dispatch waits for QC). BACKEND: test_l05_so_qc_request.py passes 3/3. New test_l05_so_qc_request_api_t1.py passes 6/6. It covers a real POST /api/sales-orders as admin and as salesadmin@, invalid mode → 400, pct 0/101 → 422, default none → {mode:none,status:not_required}, sampling 25 stored, and full → required. Ref-docs lists QC SOs and excludes 'none' SOs. POST /outbound/tasks/{id}/dispatch is blocked with 400 'meminta QC'. test_l05_replacement_extra_t1.py passes 14/14 (regression: replacement SPK no longer marks the return as inspected). test_iter318_dispatch_logistics.py and test_iter292_f01_dispatch_gl.py fail 5 and error 1 on STALE fixtures (warehouse@ login 401, shipments missing, so_006 missing), not on the QC guard. FRONTEND desktop 1920 (admin@, ?view=sales): add Batik Mega 150 yd (whole roll) → CheckoutDrawer step 2 shows checkout-qc-request with none/full/sampling. With none there is no note or pct. full shows checkout-qc-note. sampling shows checkout-qc-pct. Submit sent qc_request:'sampling', qc_sample_pct:30 → KSC/SO-00010 stored {mode:sampling, sample_pct:30, status:required}. Inspections → 'Buat SPK Inspeksi' → kind 'QC Permintaan Pesanan (SO)' lists only the 2 QC SOs. At 390 the modal is x20 w350 with no overflow, and the SPK was issued (1 line for sampling 30% of 1 roll). Found bugs: SO number is missing everywhere (wrong field), cut-length (partial roll) orders can never be QC'd or dispatched, a UI deadlock after reallocation, the mobile sales cart has no QC picker, and CartPanel is dead code.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/inspections {kind:sales_order} + qc_request_guard", "issue": "SPK lines only come from inventory_rolls with reserved_ref.id==SO and status 'reserved'. Partial-length (cut) orders reserve through roll.length_reservations, not reserved_ref. A real SO of 10 yd with qc_request full got 400 'Belum ada roll teralokasi' and dispatch got 400 'meminta QC'. The SO can NEVER ship (deadlock). Full mode also ignores cut rolls when checking coverage.", "priority": "HIGH"},
+      {"endpoint": "GET /api/inspections/meta/ref-docs?kind=sales_order", "issue": "The filter is qc_request.status != 'passed'. In full mode, after QC passes and a new roll is allocated, the guard says 'buat SPK QC pesanan lagi' but the SO is no longer listed in the picker. The UI cannot create the needed SPK (only the API can). Reproduced. Fix: also list SOs whose current allocation is not covered, or reset qc_request.status to 'required' when the allocation changes.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "routers/inspections.py ref_doc_options, services/inspection_service.py KIND_SALES_ORDER, loading_check_service.qc_request_guard", "issue": "The code reads so['order_number'], but sales_orders store the number in 'number' (0 docs have order_number). Effects: picker label is 'Butik Bali Indah · QC sampling 30%' with no SO number, so two SOs for the same customer cannot be told apart. SPK ref_doc_number is '' (KSC/INS-00012/13). Guard message reads 'Pesanan  meminta QC'. The tests mask this because the fixture inserts order_number."},
+      {"endpoint": "POST /api/wms/tasks/{id}/advance", "issue": "Moving an outbound task to 'dispatched' calls shipment_service.dispatch_task directly, WITHOUT loading_check_service.dispatch_guard. QC (and loading check) can be bypassed through this route. My probe hit an unrelated 409 (cut reservation), so this is from code review only. Add the guard there, or inside dispatch_task."},
+      {"endpoint": "qc_request_guard", "issue": "Any earlier passed SPK satisfies the guard. If QC passes and a later re-QC of the same rolls is 'tolak', SO.qc_request.status becomes 'failed' but dispatch is still allowed. The guard should use the latest decision (or SO.qc_request.status)."},
+      {"endpoint": "ref-docs sales_order", "issue": "The status exclusion list misses 'done' (an SO status used in this DB). There is also no spk_number/spk_status on options, so the open-SPK warning (ins-ref-spk-open) does not work for the SO kind and duplicate SPKs are possible."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "features/sales/mobile/MobileCart.jsx (MobileSalesApp cart tab at 390px for sales@)", "issue": "No QcRequestPicker, and onSubmitOrder is called without qc_request, so mobile sales cannot request QC. (MobileCartSheet in pos/mobile also lacks it, but MobilePOS appears unused.)", "selector": "mobile-tab-btn-cart", "priority": "MEDIUM"},
+      {"component": "components/CartPanel.jsx", "issue": "Not imported anywhere (dead code). The QC picker added there never renders. Only CheckoutDrawer is live.", "selector": "submit-sales-order-button", "priority": "LOW"},
+      {"component": "CheckoutDrawer", "issue": "qcReq is not reset when the drawer reopens (the useEffect on open resets step and billing only). The QC choice can carry over to the next order in the same session. Step 3 Review does not show the QC choice.", "selector": "checkout-qc-request", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Inspections → QC Permintaan Pesanan (SO)", "issue": "Option label has no SO number (see backend order_number bug)", "affected_selectors": ["ins-ref-select"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_l05_so_qc_request.py", "/app/backend/tests/test_l05_so_qc_request_api_t1.py", "/app/test_reports/pytest/l05_qc_api_t1.xml"],
+  "action_items": [
+    "Use so['number'] (fallback order_number) in ref_doc_options label, inspection_service KIND_SALES_ORDER ref_number, and qc_request_guard message",
+    "Support cut/length reservations (roll.length_reservations for the SO) when building SO QC SPK lines and in the full-mode coverage check, or block qc_request for cut lines at checkout",
+    "After QC passes, re-list the SO in the ref-docs picker when its allocation changes (full mode). For example, reset qc_request.status to 'required' when uncovered rolls exist",
+    "Call dispatch_guard in POST /wms/tasks/{id}/advance (outbound → dispatched), or move the guard into shipment_service.dispatch_task",
+    "Make the guard respect the latest SPK decision / SO.qc_request.status",
+    "Add QcRequestPicker + qcPayload to MobileCart.jsx (mobile sales checkout). Remove or wire the unused CartPanel",
+    "Reset qcReq when CheckoutDrawer opens, and show the QC choice in step 3 review"
+  ],
+  "critical_code_review_comments": [
+    "Test fixtures insert 'order_number' and fake reserved_ref rolls, which hides both the number-field bug and the cut-reservation gap. Add a test that goes through a real POST /api/sales-orders",
+    "qc_sample_pct is stored (default 10) even for full mode. This is harmless but noisy"
+  ],
+  "updated_files": ["/app/backend/tests/test_l05_so_qc_request_api_t1.py"],
+  "success_rate": {"backend": "85% (feature tests 23/23 pass; 2 HIGH logic gaps found by real-flow probes)", "frontend": "80% (desktop checkout + inspections picker + 390 modal OK; mobile sales cart lacks picker)"},
+  "seed_data_creation": "Created and then cancelled/deleted KSC/SO-00008, -00009, -00010 and the test SOs from the pytest run. Deleted inspections KSC/INS-00012 and -00013. Rolls RL-00001/RL-00002 are back to available, and no length_reservations or test wms_tasks remain. The SO/INS number counters advanced (gaps). Run restore_local_demo.sh if clean numbering is needed.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run tests with env REACT_APP_BACKEND_URL=<public> MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database, using -n0 per file. Real SO payload: customer cust_butik_bali / addr_002 / prod_batik_mega (rolls of 150 yd in wh_jakarta, ent_ksc). Quantity 150 gives a whole-roll reservation (reserved_ref). Smaller quantities give cut length_reservations. UI checkout: ?view=sales → add-to-cart-button-<pid> → quickview-qty-input → quickview-add-button → roll-reconcile-sheet 'Pakai Opsi Ini' → quickview-close → floating-cart-button → checkout-customer-select (text 'Butik Bali Indah — Denpasar') → checkout-address-select first option → checkout-next → step 2 has checkout-qc-* → checkout-next → checkout-submit. Inspections: ins-create-button → ins-kind-select → ins-ref-select → ins-create-submit. At 390, admin gets MobileOpsApp and sales@ gets MobileSalesApp (MobileCart). iter318/iter292 regression files depend on stale fixtures.",
+  "rca of the issue": "1) The SO number field is 'number' in sales_orders, but the new code reads 'order_number'. 2) The SO QC SPK only reads reserved_ref (whole-roll reservations). Cut orders keep their reservation in roll.length_reservations, so they get no lines and the guard deadlocks. 3) ref-docs hides SOs with status 'passed', but qc_request_guard can still demand re-QC after reallocation."
+}

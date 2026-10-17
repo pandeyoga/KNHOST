@@ -40,7 +40,7 @@ def so_factory():
     def mk(mode, pct=10):
         rolls = list(DB.inventory_rolls.find({"status": "available", "owner_entity_id": "ent_ksc"}, {"_id": 0}).limit(3))
         sid = f"so_test_{uuid.uuid4().hex[:8]}"
-        DB.sales_orders.insert_one({"id": sid, "order_number": f"TEST-SO-{sid[-4:]}", "entity_id": "ent_ksc", "status": "confirmed",
+        DB.sales_orders.insert_one({"id": sid, "number": f"TEST-SO-{sid[-4:]}", "entity_id": "ent_ksc", "status": "confirmed",
                                     "customer_id": "", "customer_name": "TEST QC", "created_at": "2026-10-16",
                                     "qc_request": ({"mode": mode, "sample_pct": pct, "status": "required"} if mode != "none"
                                                    else {"mode": "none", "status": "not_required"})})
@@ -110,3 +110,27 @@ def test_sampling_and_rejected_blocks(so_factory):
     assert _finish(h, doc, "tolak").status_code == 200
     assert DB.sales_orders.find_one({"id": sid})["qc_request"]["status"] == "failed"
     assert "meminta QC" in (_guard(sid) or "")
+
+
+def test_cut_length_reservation_and_relisting_after_reallocation(so_factory):
+    h = _h()
+    sid, rolls = so_factory("full")
+    cut = DB.inventory_rolls.find_one({"status": "available", "owner_entity_id": "ent_ksc", "length_remaining": {"$gt": 20}}, {"_id": 0})
+    DB.inventory_rolls.update_one({"id": cut["id"]}, {"$set": {"length_reservations": [
+        {"id": "rsv_test", "ref": {"type": "sales_order", "id": sid}, "qty": 10, "status": "reserved"}], "length_reserved": 10}})
+    try:
+        doc = _spk(h, sid).json()
+        assert cut["id"] in {ln["roll_id"] for ln in doc["lines"]} and len(doc["lines"]) == 4   # roll potong ikut
+        assert _finish(h, doc, "terima").status_code == 200
+        assert _guard(sid) is None
+        listed = lambda: sid in [o["value"] for o in requests.get(f"{BASE}/inspections/meta/ref-docs", params={"kind": "sales_order"}, headers=h, timeout=30).json()["items"]]  # noqa: E731
+        assert not listed()
+        extra = DB.inventory_rolls.find_one({"status": "available", "owner_entity_id": "ent_ksc", "id": {"$ne": cut["id"]}}, {"_id": 0})
+        DB.inventory_rolls.update_one({"id": extra["id"]}, {"$set": {"status": "reserved", "reserved_ref": {"type": "sales_order", "id": sid}}})
+        try:
+            assert listed()                                                   # alokasi berubah → muncul lagi di pemilih
+            assert "belum di-QC" in (_guard(sid) or "")
+        finally:
+            DB.inventory_rolls.replace_one({"id": extra["id"]}, extra)
+    finally:
+        DB.inventory_rolls.replace_one({"id": cut["id"]}, cut)

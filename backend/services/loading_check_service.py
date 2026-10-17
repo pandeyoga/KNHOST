@@ -192,10 +192,26 @@ async def untagged_rolls(order_id: str, warehouse_id: Optional[str] = None) -> L
     return [r.get("roll_no", "") for r in rolls if r.get("rfid_tag_id") not in active]
 
 
+async def so_alloc_rolls(order_id: str) -> List[Dict[str, Any]]:
+    """Roll alokasi TERBARU sebuah SO: roll utuh (`reserved_ref`) + roll potong (`length_reservations`)."""
+    return await db.inventory_rolls.find(
+        {"$or": [{"reserved_ref.id": order_id, "status": "reserved"},
+                 {"length_reservations": {"$elemMatch": {"ref.id": order_id, "status": "reserved"}}}]},
+        {"_id": 0}).to_list(2000)
+
+
+async def qc_uncovered(order_id: str) -> List[str]:
+    """Roll alokasi terbaru yang belum tercakup SPK QC pesanan yang lulus (mode seluruh)."""
+    docs = await db.inspections.find({"kind": "sales_order", "ref_doc_id": order_id, "status": {"$in": ["done", "closed"]},
+                                      "decision": {"$in": ["terima", "turun_grade"]}}, {"_id": 0, "lines.roll_id": 1}).to_list(50)
+    checked = {ln.get("roll_id") for d in docs for ln in d.get("lines") or []}
+    return [r["id"] for r in await so_alloc_rolls(order_id) if r["id"] not in checked]
+
+
 async def qc_request_guard(order_id: str) -> None:
     """L05 LN-050-T01 — SO yang minta QC di checkout tidak boleh berangkat sebelum SPK QC pesanan selesai & lulus,
     dan (mode seluruh) semua roll alokasi terbaru sudah diperiksa."""
-    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "qc_request": 1, "order_number": 1})
+    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "qc_request": 1, "number": 1})
     qr = (so or {}).get("qc_request") or {}
     if qr.get("mode") not in ("full", "sampling"):
         return
@@ -204,13 +220,12 @@ async def qc_request_guard(order_id: str) -> None:
     passed = [d for d in docs if d.get("decision") in ("terima", "turun_grade")]
     if not passed:
         raise HTTPException(status_code=400, detail=(
-            f"Pesanan {so.get('order_number', '')} meminta QC ({'seluruh roll' if qr['mode'] == 'full' else 'sampling'}) — "
+            f"Pesanan {so.get('number', '')} meminta QC ({'seluruh roll' if qr['mode'] == 'full' else 'sampling'}) — "
             "kirim menunggu SPK QC pesanan selesai & diterima."))
     if qr["mode"] == "full":
-        checked = {ln.get("roll_id") for d in passed for ln in d.get("lines") or []}
-        current = {r["id"] for r in await db.inventory_rolls.find({"reserved_ref.id": order_id}, {"_id": 0, "id": 1}).to_list(2000)}
-        missing = current - checked
+        missing = await qc_uncovered(order_id)
         if missing:
+            await db.sales_orders.update_one({"id": order_id}, {"$set": {"qc_request.status": "required"}})
             raise HTTPException(status_code=400, detail=(
                 f"{len(missing)} roll alokasi terbaru belum di-QC (alokasi berubah sesudah QC) — buat SPK QC pesanan lagi."))
 

@@ -339,12 +339,16 @@ async def ref_doc_options(request: Request, kind: str = Query(""),
                for r in rows]
     elif want == svc.KIND_SALES_ORDER:
         # L05 LN-050-T01 — HANYA SO yang meminta QC di checkout & belum lulus QC.
+        from services.loading_check_service import qc_uncovered
         q = {**_scoped("sales_orders"), "qc_request.mode": {"$in": ["full", "sampling"]},
-             "qc_request.status": {"$ne": "passed"}, "status": {"$nin": ["cancelled", "shipped", "delivered", "completed"]}}
-        rows = await db.sales_orders.find(q, {"_id": 0, "id": 1, "order_number": 1, "customer_name": 1, "qc_request": 1}
+             "status": {"$nin": ["cancelled", "shipped", "delivered", "completed"]}}
+        rows = await db.sales_orders.find(q, {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "qc_request": 1}
                                           ).sort("created_at", -1).to_list(150)
+        # Lulus → tidak ditawarkan, KECUALI mode seluruh dan alokasi berubah sesudah QC (roll baru belum di-QC).
+        rows = [r for r in rows if r["qc_request"].get("status") != "passed"
+                or (r["qc_request"]["mode"] == "full" and await qc_uncovered(r["id"]))]
         out = [{"value": r["id"], "label": " · ".join(x for x in (
-            r.get("order_number"), r.get("customer_name"),
+            r.get("number"), r.get("customer_name"),
             "QC seluruh roll" if r["qc_request"]["mode"] == "full" else f"QC sampling {r['qc_request'].get('sample_pct', 10):g}%") if x)}
             for r in rows]
     elif want == svc.KIND_RETURN_SUPPLIER:

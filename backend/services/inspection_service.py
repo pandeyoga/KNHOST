@@ -563,14 +563,15 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any],
             lines = await _lines_from_rolls(rolls)
         line_code = line_code or str(ret.get("line_code") or "")
     elif kind == KIND_SALES_ORDER:
-        so = await db.sales_orders.find_one({"id": ref_id}, {"_id": 0, "id": 1, "order_number": 1, "entity_id": 1,
+        so = await db.sales_orders.find_one({"id": ref_id}, {"_id": 0, "id": 1, "number": 1, "entity_id": 1,
                                                           "customer_id": 1, "customer_name": 1, "qc_request": 1})
         if not so:
             raise InspectionError("Pesanan (SO) tidak ditemukan.")
         qr = so.get("qc_request") or {}
         if qr.get("mode") not in ("full", "sampling"):
             raise InspectionError("Pesanan ini tidak meminta QC saat checkout — tidak ada kebutuhan QC.")
-        rolls = await db.inventory_rolls.find({"reserved_ref.id": so["id"], "status": "reserved"}, {"_id": 0}).to_list(2000)
+        from services.loading_check_service import so_alloc_rolls
+        rolls = await so_alloc_rolls(so["id"])
         if not rolls:
             raise InspectionError("Belum ada roll teralokasi untuk pesanan ini — alokasikan dulu.")
         if qr["mode"] == "sampling":
@@ -578,7 +579,7 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any],
             import random
             n = max(1, math.ceil(len(rolls) * float(qr.get("sample_pct") or 10) / 100))
             rolls = random.sample(rolls, min(n, len(rolls)))
-        ref_type, ref_number = "sales_order", so.get("order_number", "")
+        ref_type, ref_number = "sales_order", so.get("number", "")
         customer = (so.get("customer_id", ""), so.get("customer_name", ""))
         lines = await _lines_from_rolls(rolls)
     elif kind == KIND_RETURN_SUPPLIER:

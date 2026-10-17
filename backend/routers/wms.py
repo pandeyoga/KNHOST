@@ -258,6 +258,8 @@ async def advance_task(task_id: str, request: Request, expected_status: Optional
     # Sub-fase 1.8 — outbound mencapai 'dispatched': delegasi ke shipment_service
     # (SSOT-safe: roll committed→in_transit_sales + catat shipment, BUKAN $inc balance).
     if next_stage == "dispatched" and task["flow_type"] == "outbound":
+        from services import loading_check_service as _lc   # pagar sama dengan jalur dispatch utama (QC & loading)
+        await _lc.dispatch_guard(task.get("order_id"), task.get("warehouse_id"))
         updated_task, shipment = await dispatch_task(task, None, actor["name"])
         await audit(actor["name"], "wms_task_advanced", "wms_task", task_id,
                     {"status": updated_task["status"], "shipment_no": shipment["shipment_no"]})

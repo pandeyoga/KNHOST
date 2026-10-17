@@ -61,7 +61,7 @@ export default function CheckoutDrawer({
 
   const defaultTerm = settings?.finance?.default_payment_term_code || "";
   useEffect(() => { if (!paymentTerm && defaultTerm) setPaymentTerm(defaultTerm); }, [defaultTerm]); // eslint-disable-line
-  useEffect(() => { if (open) { setStep(1); setSpNotice({}); setSampleBilling(""); } }, [open]);
+  useEffect(() => { if (open) { setStep(1); setSpNotice({}); setSampleBilling(""); setQcReq({ mode: "none", pct: 10 }); } }, [open]);
   // F-4c REVISI — prefill tim sales dari default customer saat customer dipilih (boleh di-override per order).
   useEffect(() => { setSalesTeam(customerDefaultTeam(selectedCustomer)); }, [selectedCustomer?.id]); // eslint-disable-line
 
@@ -442,6 +442,11 @@ export default function CheckoutDrawer({
             </div>
           )}
 
+          {step === 3 && qcReq.mode !== "none" && (
+            <p data-testid="checkout-review-qc" className="mb-2 rounded-md bg-[#FFF6E5] px-2 py-1 text-[11px] font-semibold text-[#B26A00]">
+              Request QC: {qcReq.mode === "full" ? "seluruh roll" : `sampling ${qcPayload(qcReq).qc_sample_pct}%`} — kirim ditahan sampai QC lulus.
+            </p>
+          )}
           {step === 3 && (
             <CheckoutStep3
               fulfillmentMethod={fulfillmentMethod} setFulfillmentMethod={setFulfillmentMethod}
