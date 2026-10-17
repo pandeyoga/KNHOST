@@ -101,6 +101,22 @@ async def _free_by_product(product_ids: List[str], entity_id: str, wh_ids: List[
     return out
 
 
+async def catalogue_templates_for(entity_id: str) -> List[Dict[str, Any]]:
+    wh_ids = await warehouses_for("catalogue")
+    pids = set()
+    async for r in db.inventory_rolls.find({"status": "available", "owner_entity_id": entity_id, "warehouse_id": {"$in": wh_ids}},
+                                           {"_id": 0, "product_id": 1, "length_remaining": 1, "length_reserved": 1}):
+        if float(r.get("length_remaining") or 0) - float(r.get("length_reserved") or 0) >= CATALOGUE_BASE_QTY - 0.0001:
+            pids.add(r["product_id"])
+    tids = set()
+    async for p in db.products.find({"id": {"$in": list(pids)}, "template_id": {"$nin": ["", None]}},
+                                    {"_id": 0, "template_id": 1, "base_unit": 1}):
+        if (p.get("base_unit") or "yard") == "yard":
+            tids.add(p["template_id"])
+    rows = await db.product_templates.find({"id": {"$in": list(tids)}}, {"_id": 0, "id": 1, "name": 1, "code": 1}).sort("name", 1).to_list(2000)
+    return rows
+
+
 async def build_catalogue(template_id: str, entity_id: str, soft_product_id: str = "") -> Dict[str, Any]:
     prods = await db.products.find({"template_id": template_id}, {"_id": 0}).sort("color", 1).to_list(500)
     if not prods:

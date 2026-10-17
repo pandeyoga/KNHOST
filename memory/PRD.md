@@ -1,5 +1,19 @@
 # PRD — Kain Nusantara ERP (lanjutan dari repo github.com/kakjsbsbs/KN)
 
+## 2026-10-17 — Uji Sampel Kasir + durasi tunggu Meja Cutting (iteration_200–201)
+- POS: tombol "Jadikan ecer" (`sample-to-retail-<pid>`) & chip `toggle-sample-<pid>` di checkout kini berfungsi (CheckoutDrawer meneruskan onToggleSample). Diuji: chip standar/hanger, peringatan lewat batas, ubah ke ecer (jumlah tetap), SO biasa berhasil dibuat.
+- Meja Cutting: `/api/cutting/desk` memberi `cut_at`, `wait_minutes`, `wait_thresholds` (kuning ≥2 jam, merah ≥4 jam), `late_count`; antrean "perlu diterima" diurut terlama dulu. UI: `cutting-wait-<taskId>` (ok/warn/late/done), spanduk `cutting-late-alert`, muat ulang otomatis tiap 60 detik.
+- Backlog: P2 batas jam kuning/merah bisa diatur admin; uji keranjang campur (sampel + ecer) saat submit.
+
+
+## 2026-10-17 — L05/L06 tindak lanjut iterasi 198 (7 temuan ditutup, iteration_199)
+- Terima hasil potong (`POST /api/cutting/tasks/{id}/receive`) menolak gudang khusus PT lain (400 `CUTTING_DEST_OTHER_OWNER`), roll hilang → 409; dropdown `cutting-dest-*` hanya gudang yang boleh dipakai pemilik roll.
+- Admin Sampel diberi `sample_order.create`; `POST /api/sales-orders` order_type=sample cukup izin itu (SO biasa tetap butuh `order.create`). Tombol `sample-catalogue-create` hanya untuk sales/sample_admin/manager/admin.
+- Catalogue tanpa warna soft ditolak server (400). Daftar artikel catalogue dari `GET /api/sample-orders/catalogue/templates` (hanya ber-stok milik PT ini). Select modal/soft/cutting-dest → KNSelect.
+- Badge QC: `so-compact-qc-status-badge` (panel SO ringkas), `dispatch-qc-status-<id>` (dasbor logistik). `paid_value` statistik sampel tanpa order batal. Label notifikasi `so_qc_requested` = "Permintaan QC pesanan".
+- Backlog: P1 uji UI penuh mode sampel POS (chip standard/hanger, over-limit → retail) & kartu mobile `logistics-card-qc-status-*`.
+
+
 ## 2026-10-16 — AKHIR SESI: handoff
 Baca `docs/development/gelombang-lanjutan-pasca-p05-2026-10-16/evidence/HANDOFF_SESI_2026-10-16.md` (cara lanjut, status fase L00/L01/L04, keputusan owner, temuan terbuka, berkas tes, prompt sesi berikut). Tambahan terakhir: master jenis kain (`/api/master/fabric-types`, tambah dari laporan impor), tiga warna SKU (`ProductColorTriad`), Excel rekap klaim (`/api/makloon-claims/recap.xlsx`), L04 LN-042 potong MDQ (`/api/inspections/{id}/lines/{line}/mdq-cut`). iteration_188.
 

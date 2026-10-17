@@ -3,7 +3,8 @@ import { BookOpen } from "lucide-react";
 import FormModal from "../../components/FormModal";
 import axios, { API } from "../../services/apiClient";
 import { apiErrorText } from "../../utils/apiError";
-import { cataloguePreview, createCatalogueOrder } from "./sampleApi";
+import { KNSelect } from "../../components/KNSelect";
+import { cataloguePreview, catalogueTemplates, createCatalogueOrder } from "./sampleApi";
 
 const rows = (d) => (Array.isArray(d) ? d : d?.items || []);
 
@@ -21,14 +22,14 @@ export default function CatalogueCreateModal({ open, onClose, entityId, onCreate
     if (!open) return;
     setErr(""); setPreview(null);
     axios.get(`${API}/customers`, { params: { with_credit: false } }).then((r) => setCustomers(rows(r.data))).catch(() => {});
-    axios.get(`${API}/product-templates`, { params: { fabric_type: "woven", limit: 500 } }).then((r) => setTemplates(rows(r.data))).catch(() => {});
-  }, [open]);
+    catalogueTemplates(entityId ? { entity_id: entityId } : {}).then((r) => setTemplates(rows(r))).catch(() => setTemplates([]));
+  }, [open, entityId]);
   useEffect(() => {
     if (!form.template_id) { setPreview(null); return; }
-    cataloguePreview({ template_id: form.template_id, soft_product_id: form.soft || undefined })
+    cataloguePreview({ template_id: form.template_id, soft_product_id: form.soft || undefined, ...(entityId ? { entity_id: entityId } : {}) })
       .then((p) => { setPreview(p); setErr(""); })
       .catch((e) => { setPreview(null); setErr(apiErrorText(e, "Komposisi catalogue tidak bisa disusun.")); });
-  }, [form.template_id, form.soft]);
+  }, [form.template_id, form.soft, entityId]);
 
   const submit = async () => {
     const cust = customers.find((c) => c.id === form.customer_id);
@@ -48,13 +49,12 @@ export default function CatalogueCreateModal({ open, onClose, entityId, onCreate
       icon={BookOpen} testId="catalogue-create" onSubmit={submit} submitLabel="Buat Pesanan Catalogue" busy={busy} error={err}>
       <div className="grid gap-3 text-[12px]">
         <label className="grid gap-1"><span className="field-label">Pelanggan</span>
-          <select data-testid="catalogue-customer" className="field" value={form.customer_id} onChange={(e) => set("customer_id", e.target.value)}>
-            <option value="">— pilih —</option>{customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select></label>
+          <KNSelect data-testid="catalogue-customer" aria-label="Pelanggan" placeholder="— pilih —" value={form.customer_id}
+            onValueChange={(v) => set("customer_id", v)} options={customers.map((c) => ({ value: c.id, label: c.name }))} /></label>
         <label className="grid gap-1"><span className="field-label">Artikel (woven, yard)</span>
-          <select data-testid="catalogue-template" className="field" value={form.template_id} onChange={(e) => setForm((f) => ({ ...f, template_id: e.target.value, soft: "" }))}>
-            <option value="">— pilih —</option>{templates.map((t) => <option key={t.id} value={t.id}>{t.name || t.code || t.id}</option>)}
-          </select></label>
+          <KNSelect data-testid="catalogue-template" aria-label="Artikel" placeholder={templates.length ? "— pilih —" : "Tidak ada artikel ber-stok di badan usaha ini"}
+            value={form.template_id} onValueChange={(v) => setForm((f) => ({ ...f, template_id: v, soft: "" }))}
+            options={templates.map((t) => ({ value: t.id, label: t.name || t.code || t.id }))} /></label>
         <div className="grid grid-cols-2 gap-2">
           {["free", "paid"].map((b) => (
             <button key={b} type="button" data-testid={`catalogue-billing-${b}`} onClick={() => set("billing", b)}

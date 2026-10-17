@@ -12,6 +12,7 @@ import { formatCurrency } from "../../utils/formatters";
 import { StagePill, SubStatusChips } from "../../components/SoStatusBadges";
 import PaymentBadge from "../../components/PaymentBadge";
 import EntityBadge from "../../components/EntityBadge";
+import { QcStatusBadge, soQcStatus } from "../../components/QcStatusBadge";
 import FulfillmentWizard from "./FulfillmentWizard";
 
 export default function SOCompactPanel({ order, onClose, onOpenFull }) {
@@ -47,6 +48,7 @@ export default function SOCompactPanel({ order, onClose, onOpenFull }) {
       </div>
 
       <div className="section-body space-y-2.5">
+        {soQcStatus(order) && <div className="flex items-center gap-1.5 text-[11px] text-[#6B6B73]">QC sebelum kirim: <QcStatusBadge status={soQcStatus(order)} testId="so-compact-qc-status-badge" /></div>}
         <div className="grid grid-cols-2 gap-2 text-[11.5px]">
           <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2">
             <p className="mb-0.5 text-[10px] font-semibold uppercase text-[#6B6B73]">Pelanggan</p>

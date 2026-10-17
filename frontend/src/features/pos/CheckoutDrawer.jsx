@@ -178,6 +178,13 @@ export default function CheckoutDrawer({
   const remove = (id) => setCart(cart.filter((it) => it.product.id !== id));
   // §3-C — toggle per baris dilepas (REVISI SAMPEL: keranjang satu jenis; sampel dipilih di QuickView).
   const updateSample = (id, patch) => setCart((cur) => cur.map((it) => it.product.id === id ? { ...it, ...patch } : it));
+  // Sampel ↔ ecer: ke ecer jumlah dipertahankan (dijual sebagai potongan berbayar biasa).
+  const toggleSample = (id) => setCart((cur) => cur.map((it) => {
+    if (it.product.id !== id) return it;
+    if (it.is_sample) return { ...it, is_sample: false, sample_kind: undefined, sample_price: null };
+    const kind = it.sample_kind || "standard";
+    return { ...it, is_sample: true, sample_kind: kind, quantity: clampSampleQty(it.product, it.quantity, kind) };
+  }));
 
   const doSubmit = (confirmMixed) => {
     onSubmitOrder({
@@ -380,6 +387,7 @@ export default function CheckoutDrawer({
                   reqStatus={transferRequests[item.product.id]}
                   onRequestTransfer={handleRequestTransfer}
                   onUpdateSample={updateSample}
+                  onToggleSample={toggleSample}
                   sampleBilling={sampleBilling}
                 />
               ))}

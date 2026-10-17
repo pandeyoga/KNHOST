@@ -558,7 +558,7 @@ DEFAULT_PERMISSIONS = {
         "template": ["view"],
         "pricelist": ["view"],
         "order": ["view", "update", "confirm", "print"],
-        "sample_order": ["view", "approve_payment", "confirm", "cancel", "cutting_receive"],
+        "sample_order": ["view", "create", "approve_payment", "confirm", "cancel", "cutting_receive"],
         "document": ["view", "create", "print"],
         "inventory": ["view"],
         "wms": ["view"],

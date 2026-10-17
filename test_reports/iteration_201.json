@@ -1,0 +1,29 @@
+{
+  "summary": "T1 iter201 — RETEST of iter200 HIGH bug. CheckoutDrawer now passes onToggleSample to CheckoutItemCard; full UI retest in sales POS confirms the fix. End-to-end flow (sales@kainnusantara.id → Toko Kain Sejahtera prefilled customer → search Batik Mega → quickview Pesanan Sampel → Tambah Sampel 5 yd → floating-cart-button → step-1 Lanjut → step-2 SampleLineFields visible): toggle-sample-prod_batik_mega chip RENDERS (count=1), sample-kind panel renders with standard+hanger chips. Clicking sample-kind-prod_batik_mega-hanger shows sample-over-limit-prod_batik_mega (hanger woven max 0.5 yd, current 5 yd) with inline sample-to-retail-prod_batik_mega 'Jadikan ecer' link. Clicking 'Jadikan ecer' REMOVES is_sample from the line: sample-fields-* vanishes (count=0), sample-badge-* vanishes (count=0), qty is RETAINED at 5, and toggle-sample chip switches to 'Jual sbg sampel' label. Clicking toggle-sample chip to re-enter sample mode: qty stays 5 (standard woven max=5 so already at limit, no clamp needed in this scenario — but code uses clampSampleQty), sample-kind panel reappears. With cart converted to regular, step-3 shows normal 'Buat Sales Order' button (Rp 1.026.750 incl PPN 12%, NET30), submit creates KSC/SO-00006 (order_type regular, status reserved) SUCCESSFULLY — cancelled during cleanup. Meja Cutting wait-time instrumentation was fully verified in iter200 and remains unchanged (no regression risk since no src changes to cutting_service.py or CuttingDesk.jsx in this iteration).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iter201_step2.jpeg",
+    "/app/test_reports/iter201_after_retail.jpeg",
+    "/app/test_reports/iter201_step3.jpeg",
+    "/app/test_reports/iter201_submitted.jpeg"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "FIX VERIFIED: CheckoutDrawer.jsx line 390 now passes onToggleSample={toggleSample} to CheckoutItemCard, and the toggleSample fn (lines 182-187) correctly flips is_sample, drops sample_kind/sample_price on retail conversion, and re-applies clampSampleQty when toggling back to sample.",
+    "Mixed cart scenario (one sample + one regular line) was NOT exercised in this UI pass because quickview locks the cart to a single kind at a time (header shows 'Keranjang: PESANAN SAMPEL (SOS-) — hanya bahan sampel' or 'ORDER BIASA (PO) — pembelian roll/yard'), so a true mixed cart is only reachable by converting one line mid-checkout via toggle-sample. In that case the SOS banner remains and sampleMode is isSampleCart(cart) which returns true only if cart.some(is_sample) — needs code review: utils/sampleOrder.isSampleCart may yield partial-sample classification; backend order_type is forced to 'sample' or 'regular' from a single flag. Not re-tested here; main agent should verify behaviour if mixed carts are a real product requirement.",
+    "Minor: step-2 toggle chip label uses leading space (' Jual sbg sampel'); harmless but worth trimming."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100% (all 8 UI assertions for the retest pass; regular SO submission end-to-end OK)"},
+  "test_credentials": "sales@kainnusantara.id / demo1234 (used), admin@kainnusantara.id / demo12345 (used for cleanup cancel)",
+  "seed_data_creation": "Created KSC/SO-00006 (so_9c4d4775bc48) as regular SO via UI test; CANCELLED via /api/sales-orders/{id}/cancel to clean up (returned status=cancelled). No lingering reservations.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "iter200 HIGH bug fully resolved. For future POS sample tests use sales@kainnusantara.id (customer Toko Kain Sejahtera prefilled with address). Cart FAB selector is [data-testid='floating-cart-button']. Mixed-cart (one sample + one regular line) was NOT tested because the UI gates cart to single kind on entry; could only be reached by mid-checkout toggle. If main agent intends that flow to be valid, main agent should extend tests.",
+  "rca of the issue": "iter200 bug (onToggleSample not wired) is fixed by passing onToggleSample={toggleSample} prop in CheckoutDrawer.jsx:390. Verified both testids (toggle-sample-<pid>, sample-to-retail-<pid>) now render and function as described."
+}

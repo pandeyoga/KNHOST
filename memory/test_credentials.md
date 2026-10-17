@@ -1,6 +1,8 @@
 # Test Credentials
 # Agent writes here when creating/modifying auth credentials (admin accounts, test users).
 # Testing agent reads this before auth tests. Fork/continuation agents read on startup.
+L05/L06 (2026-10-17): sampleadmin@kainnusantara.id / demo1234 kini boleh membuat catalogue & ganti soft (izin sample_order.create). curl lokal: pakai header Bearer dari token login (cookie Secure). Login UI: `login-email-input`, tombol "Masuk".
+
 L01 (2026-10-16): Master Grade `?view=grade-master&entity=ent_kanda` (grade-new-code/name/rank/submit, grade-toggle-<code>+grade-reason-<code>). Sales (sales.kanda) TIDAK menerima grade/lot/origin (header x-kn-fields-hidden). Susut MKO: mko-loss-submit-<seq> (izin makloon_order.record_loss: admin/manager/md) → disetujui manager (approve_loss) via mko-loss-approve-<lossId>; pencatat tidak boleh menyetujui. Role editor: entities-access-tab-roles → role-card-duplicate-sales → role-module-advanced-<modul> → role-nav-tab-<modul>-<view>. Tes: tests/test_l01_*.py (per file).
 L00 (2026-10-16): backend/.env preview WAJIB KN_DEMO_DATA="true" + CORS_ORIGINS eksplisit + SESSION_COOKIE_SECURE="true"; data acuan `bash /app/scripts/restore_local_demo.sh`. Admin admin@kainnusantara.id / demo12345; akun lain demo1234 (manager@, md@, sales.kanda@, salesadmin.kanda@ ...). Retur bahan MKO sebagian: `mko-return-open-<seq>` → `mko-return-roll-<rollId>` → `mko-return-reason-<seq>` → `mko-return-submit-<seq>`; riwayat `mko-return-history-<seq>`. HP: `mobile-open-makloon-orders` (manager/admin), `m-md-full-makloon-orders` (hanya bila izin makloon_order.view). Tes: tests/test_l00_p05_open_issues.py, tests/test_l00_edge_cases.py (jalankan per file).
 

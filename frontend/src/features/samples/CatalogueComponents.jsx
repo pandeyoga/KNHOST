@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { changeCatalogueSoft } from "./sampleApi";
+import { KNSelect } from "../../components/KNSelect";
 import { apiErrorText } from "../../utils/apiError";
 
 /** L06 LN-060 — komponen catalogue: dasar 1 yd per warna (tetap) + soft 2 yd (bisa diganti sebelum ke gudang). */
@@ -20,9 +21,11 @@ export default function CatalogueComponents({ order, canEdit, onChanged }) {
       <div className="mt-1 flex items-center gap-2">
         <span>Soft:</span>
         {editable ? (
-          <select data-testid="catalogue-soft-select" className="field !h-7 !w-auto text-[11px]" disabled={busy} value={cat.soft?.product_id || ""} onChange={(e) => change(e.target.value)}>
-            {cat.base.map((c) => <option key={c.product_id} value={c.product_id}>{c.color || c.product_name}</option>)}
-          </select>
+          <div className="min-w-[160px]">
+            <KNSelect data-testid="catalogue-soft-select" aria-label="Warna soft" className="field !h-7 text-[11px]" disabled={busy}
+              value={cat.soft?.product_id || ""} onValueChange={(v) => v && v !== cat.soft?.product_id && change(v)}
+              options={cat.base.map((c) => ({ value: c.product_id, label: c.color || c.product_name }))} />
+          </div>
         ) : <b data-testid="catalogue-soft-label">{cat.soft?.color || "—"}</b>}
       </div>
       {err && <p className="mt-1 text-[#B23B14]">{err}</p>}

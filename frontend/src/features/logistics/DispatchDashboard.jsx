@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { PackagePlus, PackageCheck, Truck, AlertTriangle, Clock, CheckCircle2, ChevronRight, Bus, UserRound, ArrowRight, KeyRound } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
+import { QcStatusBadge } from "../../components/QcStatusBadge";
 import { formatDateId } from "../../components/KNDatePicker";
 import { logisticsDashboard, MODE_LABEL, MODE_PILL, STATUS_PILL, carrierText } from "./logisticsApi";
 
@@ -193,6 +194,7 @@ function ActiveRow({ r, onOpen }) {
       <span className="font-mono font-bold text-[#0058CC] shrink-0">{r.number}</span>
       <span className={`status-pill ${MODE_PILL[r.mode]} shrink-0`}>{r.mode_label}</span>
       <span className="min-w-0 truncate"><b>{r.order_number}</b> · {r.customer_name} · <span className="text-[#6B6B73]">{carrierText(r)}</span></span>
+      <QcStatusBadge status={r.qc_status} testId={`dispatch-qc-status-${r.id}`} />
       {r.is_late && <span className="text-[#C62828] text-[10px] font-bold inline-flex items-center gap-0.5 shrink-0"><AlertTriangle size={10} /> lewat ETA</span>}
       {r.eta && !r.is_late && <span className="text-[10px] text-[#6B6B73] tabular-nums shrink-0">ETA {formatDateId(r.eta, "dd MMM")}</span>}
       <span className={`status-pill ${STATUS_PILL[r.status]} ml-auto shrink-0`}>{r.status_label}</span>

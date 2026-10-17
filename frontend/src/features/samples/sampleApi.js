@@ -8,6 +8,7 @@ export const confirmSampleOrder = (id) => axios.post(`${API}/sample-orders/${id}
 export const cancelSampleOrder = (id, note = "") => axios.post(`${API}/sample-orders/${id}/cancel`, { note }).then((r) => r.data);
 // L06 — catalogue, Meja Cutting & kemampuan lokasi
 export const cataloguePreview = (params) => axios.get(`${API}/sample-orders/catalogue/preview`, { params }).then((r) => r.data);
+export const catalogueTemplates = (params = {}) => axios.get(`${API}/sample-orders/catalogue/templates`, { params }).then((r) => r.data);
 export const changeCatalogueSoft = (id, product_id) => axios.post(`${API}/sample-orders/${id}/catalogue/soft`, { product_id }).then((r) => r.data);
 export const cuttingDesk = (params = {}) => axios.get(`${API}/cutting/desk`, { params }).then((r) => r.data);
 export const receiveCut = (taskId, to_warehouse_id = "") => axios.post(`${API}/cutting/tasks/${taskId}/receive`, { to_warehouse_id }).then((r) => r.data);

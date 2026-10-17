@@ -302,7 +302,7 @@ def _compact(d: Dict[str, Any]) -> Dict[str, Any]:
     keys = ("id", "number", "order_id", "order_number", "customer_name", "mode", "mode_label", "status",
             "status_label", "eta", "is_late", "shipment_nos", "courier_name", "tracking_no", "vehicle_plate",
             "driver_name", "driver_user_id", "pickup_date", "last_position", "photo_counts", "created_at",
-            "delivered_at", "completed_at", "fail_reason", "shipping_cost", "loaded_at", "departed_at", "pod")
+            "delivered_at", "completed_at", "fail_reason", "shipping_cost", "loaded_at", "departed_at", "pod", "qc_status")
     return {k: d.get(k) for k in keys}
 
 

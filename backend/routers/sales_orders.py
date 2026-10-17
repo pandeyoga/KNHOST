@@ -86,7 +86,9 @@ async def _validate_min_cut(items: List[Dict[str, Any]], entity_id: str) -> None
 
 @router.post("/sales-orders")
 async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "order", "create")
+    # L06 — Pesanan Sampel cukup izin sample_order.create (Admin Sampel tidak membuat SO roll biasa).
+    is_sample_order = (payload.order_type or "").strip().lower() == "sample"
+    actor = await require_permission(request, *(("sample_order", "create") if is_sample_order else ("order", "create")))
     # Diskon manual DIHAPUS untuk SEMUA role — potongan harga HANYA via "Ajukan Harga
     # Khusus" (special-price) yang disetujui manager/admin. Payload discount diabaikan.
     customer = safe_doc(await db.customers.find_one({"id": payload.customer_id}, {"_id": 0}))
@@ -139,6 +141,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         from services import sample_sale_service as _smpc
         if (payload.order_type or "").strip().lower() != "sample":
             raise HTTPException(status_code=400, detail="Catalogue hanya untuk Pesanan Sampel.")
+        if not (payload.catalogue.soft_product_id or "").strip():
+            raise HTTPException(status_code=400, detail="Pilih satu warna soft (+2 yd) untuk catalogue.")
         catalogue_doc = await _smpc.build_catalogue(
             payload.catalogue.template_id, payload.entity_id or customer.get("entity_id") or active_entity_or(DEFAULT_ENTITY_ID),
             payload.catalogue.soft_product_id)

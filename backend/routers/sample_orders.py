@@ -72,6 +72,16 @@ async def catalogue_preview(request: Request, template_id: str, soft_product_id:
     return await build_catalogue(template_id, ent, soft_product_id)
 
 
+@router.get("/sample-orders/catalogue/templates")
+async def catalogue_templates(request: Request, entity_id: str = None) -> List[Dict[str, Any]]:
+    """Hanya artikel yang punya stok bebas ≥1 yd milik badan usaha ini di lokasi catalogue."""
+    await require_permission(request, "sample_order", "create")
+    from services.sample_sale_service import catalogue_templates_for
+    ctx = await entity_ctx(request)
+    ent = entity_id if entity_id and entity_id != "all" else ctx.active_entity_id
+    return await catalogue_templates_for(ent)
+
+
 @router.post("/sample-orders/{order_id}/catalogue/soft")
 async def catalogue_soft(order_id: str, payload: SoftIn, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "sample_order", "create")
@@ -108,7 +118,8 @@ async def sample_stats(request: Request, entity_id: str = None, mine: Optional[b
     return {"total": len(rows), "by_status": by_status,
             "free": sum(1 for r in rows if r.get("sample_billing") == "free"),
             "paid": sum(1 for r in rows if r.get("sample_billing") == "paid"),
-            "paid_value": round(sum(float(r.get("grand_total") or 0) for r in rows if r.get("sample_billing") == "paid"), 2)}
+            "paid_value": round(sum(float(r.get("grand_total") or 0) for r in rows
+                                     if r.get("sample_billing") == "paid" and r.get("status") != "cancelled"), 2)}
 
 
 def _rows(docs: List[Dict[str, Any]], action: str, kind: str) -> List[Dict[str, Any]]:

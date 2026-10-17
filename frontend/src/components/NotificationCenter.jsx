@@ -44,6 +44,7 @@ const TYPE_LABEL = {
   rfid_gate_alarm: "Alarm gate MERAH",
   // 2026-09 — giliran Anda: dokumen berpindah tahap → peran berikutnya diberi tahu
   turn: "Giliran Anda",
+  so_qc_requested: "Permintaan QC pesanan",
 };
 const typeLabel = (t) => TYPE_LABEL[t] || (t || "lainnya").replace(/_/g, " ");
 
