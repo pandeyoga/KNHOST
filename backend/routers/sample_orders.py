@@ -51,6 +51,37 @@ async def sample_limits(request: Request) -> Dict[str, Any]:
     return SAMPLE_LIMITS
 
 
+class SoftIn(BaseModel):
+    product_id: str
+
+
+@router.get("/sample-orders/kinds")
+async def sample_kinds(request: Request) -> Dict[str, Any]:
+    await require_permission(request, "order", "view")
+    from services.sample_sale_service import CATALOGUE_BASE_QTY, CATALOGUE_SOFT_QTY, SAMPLE_KINDS
+    return {"kinds": SAMPLE_KINDS, "catalogue": {"base_qty": CATALOGUE_BASE_QTY, "soft_qty": CATALOGUE_SOFT_QTY, "unit": "yard"}}
+
+
+@router.get("/sample-orders/catalogue/preview")
+async def catalogue_preview(request: Request, template_id: str, soft_product_id: str = "", entity_id: str = None) -> Dict[str, Any]:
+    """L06 LN-060 — komposisi catalogue: 1 yd tiap warna TERSEDIA + 2 yd satu warna soft (komponen terpisah)."""
+    await require_permission(request, "sample_order", "create")
+    from services.sample_sale_service import build_catalogue
+    ctx = await entity_ctx(request)
+    ent = entity_id if entity_id and entity_id != "all" else ctx.active_entity_id
+    return await build_catalogue(template_id, ent, soft_product_id)
+
+
+@router.post("/sample-orders/{order_id}/catalogue/soft")
+async def catalogue_soft(order_id: str, payload: SoftIn, request: Request) -> Dict[str, Any]:
+    actor = await require_permission(request, "sample_order", "create")
+    order = await _load(order_id, request)
+    from services.cutting_service import change_catalogue_soft
+    out = await change_catalogue_soft(order, payload.product_id, actor)
+    await audit(actor["name"], "catalogue_soft_changed", "sales_order", order_id, {"soft": payload.product_id})
+    return out
+
+
 @router.get("/sample-orders")
 async def list_sample_orders(request: Request, status: str = None, entity_id: str = None,
                              mine: Optional[bool] = None, customer_id: str = None) -> List[Dict[str, Any]]:

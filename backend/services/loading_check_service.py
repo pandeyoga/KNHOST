@@ -202,10 +202,13 @@ async def so_alloc_rolls(order_id: str) -> List[Dict[str, Any]]:
 
 async def qc_uncovered(order_id: str) -> List[str]:
     """Roll alokasi terbaru yang belum tercakup SPK QC pesanan yang lulus (mode seluruh)."""
-    docs = await db.inspections.find({"kind": "sales_order", "ref_doc_id": order_id, "status": {"$in": ["done", "closed"]},
-                                      "decision": {"$in": ["terima", "turun_grade"]}}, {"_id": 0, "lines.roll_id": 1}).to_list(50)
-    checked = {ln.get("roll_id") for d in docs for ln in d.get("lines") or []}
-    return [r["id"] for r in await so_alloc_rolls(order_id) if r["id"] not in checked]
+    docs = await db.inspections.find({"kind": "sales_order", "ref_doc_id": order_id, "status": {"$in": ["done", "closed"]}},
+                                     {"_id": 0, "decision": 1, "lines.roll_id": 1}).sort("finished_at", 1).to_list(50)
+    latest: Dict[str, bool] = {}   # keputusan TERAKHIR per roll — QC ulang yang ditolak membatalkan lulus lama
+    for d in docs:
+        for ln in d.get("lines") or []:
+            latest[ln.get("roll_id")] = d.get("decision") in ("terima", "turun_grade")
+    return [r["id"] for r in await so_alloc_rolls(order_id) if not latest.get(r["id"])]
 
 
 async def qc_request_guard(order_id: str) -> None:
@@ -237,6 +240,12 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
     if not order_id:
         return
     await qc_request_guard(order_id)
+    from services.cutting_service import pending_handoffs   # L06 LN-061 — potong → Admin Cutting → kirim
+    waiting = await pending_handoffs(order_id)
+    if waiting:
+        raise HTTPException(status_code=400, detail=(
+            f"{len(waiting)} hasil potong sampel belum diterima Admin Cutting ({', '.join(w for w in waiting if w) or '-'}) — "
+            "serahkan ke Admin Cutting dulu sebelum kirim."))
     if await db.rfid_verify_sessions.find_one(_open_q(order_id, warehouse_id), {"_id": 0, "id": 1}):
         raise HTTPException(status_code=400, detail="Final Loading Check masih berjalan — selesaikan dulu sebelum kirim.")
     so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "loading_check": 1, "loading_checks": 1})

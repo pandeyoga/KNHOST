@@ -273,6 +273,11 @@ async def list_deliveries(scope: Dict[str, Any], status: str = "", q: str = "",
         rows = [r for r in rows if any(s in str(r.get(k, "")).lower() for k in
                 ("number", "order_number", "customer_name", "tracking_no", "courier_name",
                  "vehicle_plate", "driver_name")) or any(s in str(n).lower() for n in r.get("shipment_nos", []))]
+    qc = {o["id"]: o["qc_request"].get("status", "") async for o in db.sales_orders.find(
+        {"id": {"$in": list({r.get("order_id") for r in rows if r.get("order_id")})},
+         "qc_request.mode": {"$in": ["full", "sampling"]}}, {"_id": 0, "id": 1, "qc_request.status": 1})}
+    for r in rows:   # L05 — status QC pesanan (badge Menunggu QC / Lulus / Ditolak)
+        r["qc_status"] = qc.get(r.get("order_id"), "")
     return [_enrich(safe_doc(r)) for r in rows]
 
 

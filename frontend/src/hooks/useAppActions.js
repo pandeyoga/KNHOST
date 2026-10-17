@@ -362,6 +362,7 @@ export function useAppActions(state) {
           // §3-C — baris sampel: harga master sampel / manual, dipenuhi lewat permintaan potong gudang.
           if (item.is_sample) {
             return { ...base, unit: item.product.base_unit || item.unit, price_approval_id: "", is_sample: true,
+              sample_kind: item.sample_kind || "standard",
               sample_price: Number(item.sample_price) > 0 ? Number(item.sample_price) : null };
           }
           // SALES REVAMP V2 — Beli per Roll: kirim pilihan roll eksplisit.

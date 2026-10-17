@@ -507,6 +507,13 @@ class SalesOrderItemIn(BaseModel):
     # permintaan potong ke gudang (tugas outbound bersubtipe sample_cut), bukan reservasi FEFO.
     is_sample: bool = False
     sample_price: Optional[float] = Field(None, ge=0)
+    sample_kind: str = "standard"        # L06 LN-060 — standard | hanger | catalogue
+    cut_warehouse_id: str = ""           # L06 LN-061 — lokasi potong pilihan (divalidasi kemampuan lokasi)
+
+
+class CatalogueSpecIn(BaseModel):
+    template_id: str
+    soft_product_id: str = ""
 
 
 class SalesOrderCreate(BaseModel):
@@ -534,6 +541,7 @@ class SalesOrderCreate(BaseModel):
     # Sampel TIDAK boleh digabung dengan baris roll biasa; nomor & alur persetujuannya terpisah.
     order_type: str = "regular"
     sample_billing: str = ""               # "free" | "paid" — wajib bila order_type=="sample"
+    catalogue: Optional[CatalogueSpecIn] = None   # L06 LN-060 — server menyusun baris dari komponen catalogue
 
 
 class AllocationPreviewItem(BaseModel):

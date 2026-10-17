@@ -248,7 +248,7 @@ RESOURCE_LABEL = {
 ACTION_LABEL = {
     "view": "Lihat", "create": "Buat", "update": "Ubah", "delete": "Hapus", "approve": "Setujui", "reject": "Tolak",
     "confirm": "Konfirmasi", "cancel": "Batalkan", "print": "Cetak", "export": "Ekspor", "import": "Impor",
-    "adjust": "Penyesuaian", "admin": "Administrasi", "approve_count": "Setujui hitung", "approve_payment": "Setujui bayar",
+    "adjust": "Penyesuaian", "admin": "Administrasi", "approve_count": "Setujui hitung", "approve_payment": "Setujui bayar", "cutting_config": "Atur kemampuan cutting lokasi", "cutting_receive": "Terima hasil potong (Admin Cutting)",
     "assess": "Nilai", "assign": "Tugaskan", "award": "Tetapkan pemenang", "backdate": "Tanggal mundur", "claim": "Klaim",
     "claim_approve": "Setujui klaim", "complete": "Selesaikan", "configure": "Konfigurasi", "convert": "Konversi",
     "cycle_count": "Stock opname", "decide": "Putuskan", "deliver": "Serahkan / kirim", "disburse": "Cairkan",

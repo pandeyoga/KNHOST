@@ -78,7 +78,7 @@ export default function MobileCart({
   }
 
   return (
-    <div data-testid="mobile-cart" className="space-y-3" style={{ paddingBottom: "96px" }}>
+    <div data-testid="mobile-cart" className="space-y-3" style={{ paddingBottom: step === "checkout" ? "240px" : "96px" }}>
       {step === "cart" ? (
         <>
           <div className="flex items-center gap-2">

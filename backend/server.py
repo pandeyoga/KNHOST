@@ -217,6 +217,8 @@ from routers import sample_sales  # noqa: E402  — §3-C Jual Sampel (2026-09)
 app.include_router(sample_sales.router)
 from routers import sample_orders  # noqa: E402  — REVISI SAMPEL: Pesanan Sampel (SMP-) + Meja Admin Sampel
 app.include_router(sample_orders.router)
+from routers import cutting  # noqa: E402  — L06 LN-061 Meja Cutting / Admin Cutting
+app.include_router(cutting.router)
 app.include_router(makloons.router)
 app.include_router(process_recipes.router)
 app.include_router(makloon_orders.router)

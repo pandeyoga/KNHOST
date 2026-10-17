@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { QcStatusBadge } from "../../components/QcStatusBadge";
 import { ArrowUpDown, ArrowUp, ArrowDown, Camera, MapPin, ExternalLink, ChevronRight, AlertTriangle } from "lucide-react";
 import { STATUS_PILL, MODE_PILL, todayWib, carrierText } from "./logisticsApi";
 import { formatDateId } from "../../components/KNDatePicker";
@@ -63,6 +64,7 @@ export default function DeliveryTable({ rows, onOpen, canOpenOrder }) {
                     {canOpenOrder ? (
                       <button type="button" data-testid={`logistics-open-order-${d.id}`} className="inline-flex items-center gap-1 hover:underline text-[#0058CC]" title="Buka pesanan & Perjalanan Pesanan" onClick={(e) => openOrder(e, d)}>{d.order_number} <ExternalLink size={10} /></button>
                     ) : d.order_number}
+                    <QcStatusBadge status={d.qc_status} testId={`logistics-qc-status-${d.id}`} />
                   </div>
                   <div className="text-[10.5px] text-[#6B6B73]">{d.customer_name}</div>
                 </td>
@@ -92,7 +94,7 @@ export default function DeliveryTable({ rows, onOpen, canOpenOrder }) {
               <span className="font-mono text-[11.5px] font-bold text-[#0058CC]">{d.number}</span>
               <span className={`status-pill ${STATUS_PILL[d.status]}`}>{d.status_label}</span>
             </div>
-            <div className="text-[12px] font-semibold mt-1">{d.order_number} · {d.customer_name}</div>
+            <div className="text-[12px] font-semibold mt-1 flex items-center gap-1 flex-wrap">{d.order_number} · {d.customer_name} <QcStatusBadge status={d.qc_status} testId={`logistics-card-qc-status-${d.id}`} /></div>
             <div className="text-[11px] text-[#6B6B73] mt-0.5">{d.mode_label} · {carrier(d)}</div>
             <div className="flex items-center gap-3 text-[10.5px] text-[#6B6B73] mt-1 flex-wrap">
               <span className={isLate(d) ? "text-[#C0341D] font-bold" : ""}>ETA {d.eta || "—"}</span>

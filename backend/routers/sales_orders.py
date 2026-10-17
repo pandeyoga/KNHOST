@@ -13,7 +13,7 @@ from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID, next_doc_number, strip_cost_fields, rupiah
-from schemas import GenericPatch, SalesOrderCreate
+from schemas import GenericPatch, SalesOrderCreate, SalesOrderItemIn
 from services.roll_service import (
     allocate_and_reserve_rolls, release_order_rolls,
     preview_line_allocation, _release_rolls_by_ref_id,
@@ -133,6 +133,20 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
                                 detail="Format tanggal pengiriman tidak valid (gunakan YYYY-MM-DD).")
         if delivery_dt < datetime.now(timezone.utc).date():
             raise HTTPException(status_code=400, detail="Tanggal pengiriman tidak boleh di masa lalu.")
+    # L06 LN-060 — catalogue: baris disusun SERVER dari komponen (1 yd/warna tersedia + 2 yd soft).
+    catalogue_doc = None
+    if payload.catalogue:
+        from services import sample_sale_service as _smpc
+        if (payload.order_type or "").strip().lower() != "sample":
+            raise HTTPException(status_code=400, detail="Catalogue hanya untuk Pesanan Sampel.")
+        catalogue_doc = await _smpc.build_catalogue(
+            payload.catalogue.template_id, payload.entity_id or customer.get("entity_id") or active_entity_or(DEFAULT_ENTITY_ID),
+            payload.catalogue.soft_product_id)
+        payload.items = [SalesOrderItemIn(product_id=pid, quantity=q, unit="yard", base_quantity=q, is_sample=True,
+                                          sample_kind="catalogue")
+                         for pid, q in _smpc.catalogue_items(catalogue_doc).items()]
+    elif any((it.sample_kind or "").strip().lower() == "catalogue" for it in payload.items):
+        raise HTTPException(status_code=400, detail="Sampel catalogue dibuat lewat komposisi catalogue (template + warna soft).")
     # S-5 (Gelombang 2) — lookup produk TERARAH by id (bukan cap 100 pertama katalog).
     prod_ids = list({it.product_id for it in payload.items})
     products = {p["id"]: p for p in await db.products.find(
@@ -211,8 +225,10 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
                 sp = {"price_per_unit": 0.0, "source": "sampel_gratis", "unit": product.get("base_unit") or "yard"}
             unit_price = round(float(sp["price_per_unit"]) * sell_factor, 2)
             appr_id = ""
+            _kind = _smp.norm_kind(getattr(item_in, "sample_kind", "standard"))
             special_meta = {"is_sample": True, "sample_price_source": sp["source"], "sample_price_per_unit": sp["price_per_unit"],
-                            "sample_limit": _smp.sample_limit_for(product)}
+                            "sample_kind": _kind, "cut_warehouse_id": (getattr(item_in, "cut_warehouse_id", "") or "").strip(),
+                            "sample_limit": _smp.sample_limit_for(product, _kind)}
         if appr_id:
             # Sub-fase 1.7 — harga khusus: harus approved, berlaku, & qty >= min.
             appr = await get_effective_special_price(
@@ -281,7 +297,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     # REVISI SAMPEL — batas per baris: woven maks 5 yard, knitting maks 2 kg (pagar SERVER, bukan hanya UI).
     for it in items:
         if it.get("is_sample"):
-            _smp.assert_sample_qty(products.get(it["product_id"], {}), float(it.get("base_quantity") or 0))
+            _smp.assert_sample_qty(products.get(it["product_id"], {}), float(it.get("base_quantity") or 0),
+                                   it.get("sample_kind") or "standard")
     # FASE G-0 — `sales.allow_partial_shipment` DULU tidak dibaca kode mana pun (hanya muncul
     # sebagai NILAI string `shipment_policy`). Sekarang benar-benar mengikat: bila kebijakan
     # kirim-sebagian dimatikan, pesanan dipaksa berkebijakan kirim penuh.
@@ -599,6 +616,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         "has_mixed_lot": has_mixed_lot,
         # §3-C — ada baris "Jual sebagai sampel" (permintaan potong ke gudang saat confirmed)
         "has_sample": has_sample,
+        "catalogue": catalogue_doc,   # L06 LN-060 — komponen dasar & soft disimpan TERPISAH
         # REVISI SAMPEL — jenis pesanan & skema bayar sampel (nomor SMP-, meja Admin Sampel).
         "order_type": order_type,
         "sample_billing": sample_billing if is_sample_order else "",
@@ -615,6 +633,19 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     _pic = next((m for m in (order.get("sales_team") or []) if m.get("role") == "pic"), None)
     order["sales_name"] = ((_pic or {}).get("name") or actor.get("name") or "").strip()
     await db.sales_orders.insert_one(order)
+    if any(it.get("sample_cut_status") == "awaiting_internal" for it in order["items"]):
+        from services import sample_sale_service as _smpi   # L06 LN-061-T01 — ownership dulu
+        await _smpi.request_internal_supply(order, actor)
+    if _qc_mode != "none":   # L05 — petugas QC entitas ini diberi tahu ada pesanan yang menunggu QC
+        from services.notification_service import create_addressed
+        _qr = order["qc_request"]
+        _qlabel = "QC seluruh roll" if _qc_mode == "full" else "QC sampling %g%%" % _qr["sample_pct"]
+        await create_addressed(
+            permission=("qc", "inspect"), entity_id=entity_id, notif_type="so_qc_requested",
+            ref=f"so_qc:{order_id}", severity="warning", link="inspections",
+            title=f"Pesanan {number} meminta QC sebelum kirim",
+            body=(f"{customer['name']} · {_qlabel} — diminta {actor.get('name', '')}. "
+                  "Buat SPK QC pesanan; pengiriman tertahan sampai lulus."))
     # FASE G-4 — pesanan yang lahir dari Special Order menaut ke sumbernya (dua arah).
     if order.get("source_special_order_id"):
         from services import doc_refs_service as _refs

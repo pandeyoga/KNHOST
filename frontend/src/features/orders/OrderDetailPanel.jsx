@@ -4,6 +4,7 @@ import { XCircle, Clock3, Truck, CreditCard, PackageX, ShieldAlert, Send, FileTe
 import { can } from "../../config/roles";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { StagePill, StageTimeline } from "../../components/SoStatusBadges";
+import { QcStatusBadge, soQcStatus } from "../../components/QcStatusBadge";
 import PaymentBadge from "../../components/PaymentBadge";
 import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
 import axios, { API } from "../../services/apiClient";
@@ -139,6 +140,7 @@ export function OrderDetailPanel({
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
             <StagePill order={sel} testId="order-stage-pill" />
             <PaymentBadge order={sel} showRemaining testId="order-payment-pill" />
+            <QcStatusBadge status={soQcStatus(sel)} testId="order-qc-status-badge" />
             {sel.has_backorder && (
               <span data-testid="order-backorder-chip" className="rounded bg-[#FFF1EA] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#B23B14]">
                 Backorder

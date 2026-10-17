@@ -19,7 +19,7 @@ export function CheckoutItemCard({
 }) {
   const pid = item.product.id;
   const isSample = !!item.is_sample;
-  const lim = isSample ? sampleLimit(item.product) : null;
+  const lim = isSample ? sampleLimit(item.product, item.sample_kind) : null;
   const isSpecial = !isSample && !!(sp && sp.has_special);
   const baseUnit = item.product.base_unit || "meter";
   const rollCount = Number(item.product.roll_count || 0);
@@ -71,7 +71,7 @@ export function CheckoutItemCard({
         <input data-testid={`cart-item-qty-input-${pid}`} className="field" type="number" min={isSample ? "0.1" : "1"} step={isSample ? "0.5" : "1"} max={isSample ? lim.max_qty : undefined} value={item.quantity} onChange={(e) => onUpdateQty(pid, e.target.value)} />
         <p data-testid={`cart-item-rolls-${pid}`} className="mt-1 text-[10px] text-[#9A9BA3]">{rollCount} roll tersedia · {isSample ? `dipotong gudang dari roll (RFID) · kain ${lim.label} maks ${lim.max_qty} ${lim.unit}` : `dijual per ${baseUnit}`}</p>
       </div>
-      {isSample && <SampleLineFields item={item} onUpdateSample={onUpdateSample} billing={sampleBilling} />}
+      {isSample && <SampleLineFields item={item} onUpdateSample={onUpdateSample} billing={sampleBilling} onToggleSample={onToggleSample} />}
       {/* Shortcut Harga Khusus — ajukan tanpa pindah menu. Notice tetap tampil
           walau isSpecial (approve path) agar feedback 'diterapkan/menunggu'
           tidak hilang saat badge muncul. */}

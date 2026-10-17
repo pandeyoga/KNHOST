@@ -11,6 +11,10 @@ import { SAMPLE_STATUS_LABEL } from "../../utils/sampleOrder";
 import { listSampleOrders, sampleStats, cancelSampleOrder, approveSamplePayment, confirmSampleOrder } from "./sampleApi";
 import { StatusTabs, SearchBox, ListToolbar } from "../../components/ListControls";
 import PagedRows from "../../components/PagedRows";
+import CatalogueCreateModal from "./CatalogueCreateModal";
+import CatalogueComponents from "./CatalogueComponents";
+import CuttingDesk from "./CuttingDesk";
+import CuttingLocations from "./CuttingLocations";
 
 const FILTERS = [
   { id: "all", label: "Semua" },
@@ -22,7 +26,9 @@ const FILTERS = [
   { id: "cancelled", label: "Dibatalkan" },
 ];
 
-const CUT = { requested: "menunggu potong", cut: "sudah dipotong" };
+const CUT = { requested: "menunggu potong", cut: "sudah dipotong", awaiting_internal: "menunggu pembelian internal (stok PT lain)" };
+const KIND = { standard: "Standar", hanger: "Hanger", catalogue: "Catalogue" };
+const TABS = [["orders", "Pesanan Sampel"], ["desk", "Meja Cutting"], ["locations", "Lokasi Cutting"]];
 
 export default function SampleOrdersView({ user, selectedEntity = "all", focusDoc, onClearFocus }) {
   const [orders, setOrders] = useState([]);
@@ -34,6 +40,8 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
   const [selectedId, setSelectedId] = useState(null);
   const [busy, setBusy] = useState("");
   const [toast, setToast] = useState("");
+  const [tab, setTab] = useState("orders");
+  const [showCat, setShowCat] = useState(false);
   const role = user?.role || "";
   const canPay = ["finance", "sample_admin", "manager", "admin"].includes(role);
   const canConfirm = ["sample_admin", "manager", "admin"].includes(role);
@@ -69,8 +77,30 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
   };
 
   const bs = stats?.by_status || {};
+  const tabBar = (
+    <div className="flex flex-wrap items-center gap-2" role="tablist">
+      {TABS.map(([k, l]) => (
+        <button key={k} role="tab" aria-selected={tab === k} data-testid={`sample-tab-${k}`} onClick={() => setTab(k)}
+          className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${tab === k ? "bg-[#9A5B00] text-white" : "bg-[#F5F5F7] text-[#3C3C43] hover:bg-[#FFF3D6]"}`}>{l}</button>
+      ))}
+      <button data-testid="sample-catalogue-create" className="secondary-button ml-auto" onClick={() => setShowCat(true)}>+ Sampel Catalogue</button>
+      <CatalogueCreateModal open={showCat} onClose={() => setShowCat(false)} entityId={selectedEntity !== "all" ? selectedEntity : ""}
+        onCreated={(so) => { flash(`${so.number} (catalogue) dibuat.`); setTab("orders"); load(); }} />
+    </div>
+  );
+  if (tab !== "orders") {
+    return (
+      <div data-testid="sample-orders-view" className="grid gap-4">
+        {tabBar}
+        {toast && <div data-testid="sample-orders-toast" className="rounded-md border border-[#A7D8B0] bg-[#EAF7EE] px-3 py-2 text-[12px] text-[#126E2C]">{toast}</div>}
+        {tab === "desk" ? <CuttingDesk selectedEntity={selectedEntity} canReceive={canConfirm} />
+          : <CuttingLocations canEdit={["manager", "admin"].includes(role)} />}
+      </div>
+    );
+  }
   return (
     <div data-testid="sample-orders-view" className="grid gap-4">
+      {tabBar}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="sample-orders-error" />
       {toast && <div data-testid="sample-orders-toast" className="rounded-md border border-[#A7D8B0] bg-[#EAF7EE] px-3 py-2 text-[12px] text-[#126E2C]">{toast}</div>}
       <section className="section-card">
@@ -137,12 +167,13 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
               <ul data-testid="sample-detail-items" className="divide-y divide-[#F2F3F5] rounded-md border border-[#EFF0F2]">
                 {(sel.items || []).map((i) => (
                   <li key={i.product_id} className="px-2.5 py-1.5">
-                    <p className="font-semibold">{i.product_name} <span className="text-[#8E8E93]">{i.sku}</span></p>
+                    <p className="font-semibold">{i.product_name} <span className="text-[#8E8E93]">{i.sku}</span> <span data-testid={`sample-line-kind-${i.product_id}`} className="rounded bg-[#FFF3D6] px-1.5 text-[10px] text-[#9A5B00]">{KIND[i.sample_kind || "standard"]}</span></p>
                     <p className="text-[11px] text-[#3C3C43]">{formatQty(i.quantity)} {i.base_unit || i.unit} · {CUT[i.sample_cut_status] || i.sample_cut_status || "—"}{i.child_roll_no ? ` · potongan ${i.child_roll_no} dari ${i.cut_roll_no}` : i.suggested_roll_no ? ` · saran roll ${i.suggested_roll_no}` : ""}</p>
                     {sel.sample_billing === "paid" && <p className="text-[11px] tabular-nums">{formatCurrency(i.price)}/{i.base_unit || i.unit} → {formatCurrency(i.line_total ?? i.subtotal ?? i.price * i.quantity)}</p>}
                   </li>
                 ))}
               </ul>
+              <CatalogueComponents order={sel} canEdit={canCancel} onChanged={() => { flash("Warna soft diganti — komponen dasar tetap."); load(); }} />
               {sel.sample_billing === "paid" && <p className="text-right text-[13px] font-bold tabular-nums">Total {formatCurrency(sel.grand_total)}</p>}
               {sel.sample_billing === "paid" && (
                 <p data-testid="sample-detail-payment" className={`rounded-md px-2.5 py-1.5 text-[11px] ${sel.sample_payment_status === "approved" ? "bg-[#EAF7EE] text-[#126E2C]" : "bg-[#FFF3D6] text-[#9A5B00]"}`}>

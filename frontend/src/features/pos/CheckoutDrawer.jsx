@@ -173,7 +173,7 @@ export default function CheckoutDrawer({
   const requiresLotConfirmation = !!lotPlan?.requires_confirmation && mixedLotLines.length > 0;
   const creditBlocked = !!credit && credit.blocked && !credit.has_approved_override;
 
-  const updateQty = (id, q) => setCart(cart.map((it) => it.product.id === id ? { ...it, quantity: it.is_sample ? clampSampleQty(it.product, q) : (Number(q) || 0) } : it));
+  const updateQty = (id, q) => setCart(cart.map((it) => it.product.id === id ? { ...it, quantity: it.is_sample ? clampSampleQty(it.product, q, it.sample_kind) : (Number(q) || 0) } : it));
   const updateDiscount = (id, d) => setCart(cart.map((it) => it.product.id === id ? { ...it, discount_percent: Math.max(0, Math.min(100, Number(d) || 0)) } : it));
   const remove = (id) => setCart(cart.filter((it) => it.product.id !== id));
   // §3-C — toggle per baris dilepas (REVISI SAMPEL: keranjang satu jenis; sampel dipilih di QuickView).
