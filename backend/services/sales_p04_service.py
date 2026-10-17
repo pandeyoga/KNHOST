@@ -337,20 +337,24 @@ async def sales_stock_summary(product_id: str, entity_id: str) -> Dict[str, Any]
     rows: Dict[str, Dict[str, float]] = {}
     pipe = [{"$match": {"product_id": product_id, "length_remaining": {"$gt": 0}}},
             {"$group": {"_id": {"bs": {"$eq": ["$grade", "BS"]}, "own": {"$eq": ["$owner_entity_id", entity_id]},
-                                "st": "$status"}, "q": {"$sum": "$length_remaining"}}}]
+                                "st": "$status"}, "q": {"$sum": "$length_remaining"},
+                    "lr": {"$sum": {"$min": ["$length_remaining", {"$ifNull": ["$length_reserved", 0]}]}}}}]
     async for g in db.inventory_rolls.aggregate(pipe):
         cls = "bs" if g["_id"]["bs"] else "regular"
         r = rows.setdefault(cls, {"physical": 0.0, "reserved": 0.0, "free": 0.0, "blocked": 0.0, "in_transit": 0.0,
                                   "group_free": 0.0})
-        st, q = g["_id"]["st"], float(g["q"] or 0)
+        st = g["_id"]["st"] or ""
+        q = float(g["q"] or 0)
+        lr = float(g.get("lr") or 0) if st == "available" else 0.0   # L02 LN-020 — reservasi potong di roll available
         if not g["_id"]["own"]:
             if st == "available":
-                r["group_free"] += q
+                r["group_free"] += q - lr
             continue
         if st in ("available", "reserved", "hold", "quarantine", "blocked", "picked", "packed", "damaged"):
             r["physical"] += q
         if st == "available":
-            r["free"] += q
+            r["free"] += q - lr
+            r["reserved"] += lr
         elif st in ("reserved", "picked", "packed", "hold"):
             r["reserved"] += q
         elif st in ("quarantine", "blocked", "damaged"):
@@ -371,6 +375,9 @@ async def sales_stock_summary(product_id: str, entity_id: str) -> Dict[str, Any]
             row.update(incoming=round(sum(float(i.get("qty") or 0) for i in incoming), 2), incoming_in_horizon=inc_h,
                        pending_demand=demand, atp=compute_atp(r["free"], inc_h, demand))
         out.append(row)
+    from services.atp_policy import ATP_HORIZON_DAYS
     return {"product_id": product_id, "product_name": prod.get("name", ""), "unit": prod.get("base_unit", ""),
-            "entity_id": entity_id, "rows": out,
+            "entity_id": entity_id, "rows": out, "atp_horizon_days": ATP_HORIZON_DAYS,
+            "atp_definition": (f"ATP = stok bebas + barang datang (PO/makloon, ETA ≤ {ATP_HORIZON_DAYS} hari) − "
+                               "sisa pesanan yang masih menunggu. Barang datang belum siap kirim."),
             "note": "Stok PT lain di grup bukan milik Anda — penggunaannya diputuskan Admin Sales."}

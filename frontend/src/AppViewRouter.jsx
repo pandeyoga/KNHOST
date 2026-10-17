@@ -325,7 +325,7 @@ export default function AppViewRouter(props) {
       {activeView === "reimburse-payables" && <ReimbursePayablesView selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "vehicle-logs" && <VehicleLogsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "consolidation" && <GroupConsolidationView entities={entities} />}
-      {activeView === "sales-home" && <SalesHome token={token} user={user} onNavigate={(target) => onNavSelect(target, target)} />}
+      {activeView === "sales-home" && <SalesHome token={token} user={user} onNavigate={(target) => onNavSelect(target, target)} onOpenDocument={openDocument} />}
       {activeView === "admin-home" && <AdminHome token={token} entities={entities} selectedEntity={selectedEntity} onNavigate={(target) => onNavSelect(target, target)} />}
       {activeView === "manager-home" && <ManagerHome selectedEntity={selectedEntity} onNavigate={(target) => onNavSelect(target, target)} />}
       {activeView === "sales" && <SalesPortal data={data} loading={loading} selectedProduct={selectedProduct} breakdown={breakdown} onInspect={inspectProduct} onAdd={addToCart} cart={cart} setCart={setCart} selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} selectedAddress={selectedAddress} setSelectedAddress={setSelectedAddress} onCreateCustomer={createCustomer} onSubmitOrder={submitOrder} search={search} setSearch={setSearch} onShowDetail={setActiveDetail} settings={settings} paymentTerms={paymentTerms} selectedEntity={selectedEntity} entities={entities} user={user} />}

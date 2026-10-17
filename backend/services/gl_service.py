@@ -2504,6 +2504,38 @@ async def post_sales_return(ret: Dict[str, Any], *, return_net: float, return_pp
         created_by="system", source_label=label)
 
 
+async def post_amendment_credit_note(note: Dict[str, Any], *, ar_part: float,
+                                     store_credit_part: float) -> Optional[Dict[str, Any]]:
+    """L02 LN-022-T03 — Nota Kredit amandemen (harga/qty turun setelah terbit).
+      Dr Pendapatan (net) + Dr PPN Keluaran (ppn) / Cr Piutang (ar_part) + Cr Saldo Kredit (sisa).
+    Idempotent (source_type='amendment_credit_note', source_id=note.id)."""
+    nid = note.get("id")
+    if not nid or await _already_posted("amendment_credit_note", nid):
+        return None
+    net, ppn = round(float(note.get("net_amount") or 0), 2), round(float(note.get("ppn_amount") or 0), 2)
+    ar_part, sc_part = round(float(ar_part or 0), 2), round(float(store_credit_part or 0), 2)
+    if net + ppn <= EPS:
+        return None
+    label = note.get("number", nid)
+    lines = [{"account_code": ACC_PENDAPATAN, "debit": net, "credit": 0.0,
+              "description": f"Koreksi penjualan {label}"}]
+    if ppn > EPS:
+        lines.append({"account_code": ACC_PPN_OUT, "debit": ppn, "credit": 0.0,
+                      "description": f"Koreksi PPN Keluaran {label}"})
+    if ar_part > EPS:
+        lines.append({"account_code": ACC_PIUTANG, "debit": 0.0, "credit": ar_part,
+                      "description": f"Pengurang piutang {label}"})
+    if sc_part > EPS:
+        lines.append({"account_code": ACC_STORE_CREDIT, "debit": 0.0, "credit": sc_part,
+                      "description": f"Saldo kredit pelanggan {label}"})
+    return await _insert_entry(
+        lines=lines, description=f"Nota Kredit amandemen {label}", date=note.get("created_at") or now_iso(),
+        source_type="amendment_credit_note", source_id=nid, entity_id=note.get("entity_id", ""),
+        created_by="system", source_label=label,
+        ref={"order_id": note.get("order_id"), "order_number": note.get("order_number")})
+
+
+
 async def post_store_credit_redemption(*, redemption_id: str, entity_id: str, amount: float,
                                         customer_label: str = "", date: str = "") -> Optional[Dict[str, Any]]:
     """R5.2 — Redeem store credit sebagai pembayaran piutang.

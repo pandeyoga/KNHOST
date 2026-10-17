@@ -14,12 +14,12 @@ import PaymentBadge from "../../components/PaymentBadge";
 import EntityBadge from "../../components/EntityBadge";
 import { QcStatusBadge, soQcStatus } from "../../components/QcStatusBadge";
 import FulfillmentWizard from "./FulfillmentWizard";
+import { formatQtyByUnit } from "../../utils/qtyByUnit";
 
 export default function SOCompactPanel({ order, onClose, onOpenFull }) {
   const [showWizard, setShowWizard] = useState(false);
   if (!order) return null;
   const its = order.items || [];
-  const qty = its.reduce((s, it) => s + Number(it.qty ?? it.quantity ?? 0), 0);
   const units = [...new Set(its.map((it) => it.unit).filter(Boolean))];
   const advanceHeld = ["shipped", "partially_shipped", "done"].includes(order.status) ? 0
     : (order.payments || []).filter((p) => p.gl_bucket === "advance").reduce((s, p) => s + Number(p.amount || 0), 0);
@@ -57,7 +57,7 @@ export default function SOCompactPanel({ order, onClose, onOpenFull }) {
           </div>
           <div className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2">
             <p className="mb-0.5 text-[10px] font-semibold uppercase text-[#6B6B73]">Qty Pesan</p>
-            <p className="font-semibold tabular-nums">{new Intl.NumberFormat("id-ID").format(qty)} {units.length === 1 ? units[0] : ""}</p>
+            <p className="font-semibold tabular-nums" data-testid="so-compact-qty">{formatQtyByUnit(its)}</p>
             <p className="text-[10.5px] text-[#6B6B73]">{its.length} item{units.length > 1 ? " · unit campuran" : ""}</p>
           </div>
         </div>

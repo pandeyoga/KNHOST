@@ -21,3 +21,24 @@ Belum ber-SHA GitHub. Dikerjakan: LN-022 (T01/T02) dan LN-021-T03 sebagian. LN-0
 ## Bukti
 - `backend/tests/test_l02_ln022_special_price.py` 4/4: pengajuan kedua menggantikan pertama (ACC lama 409, harga = 22222); baris P1 dihapus → harga P2 tetap pada P2; qty diubah → ACC lama 409 lalu ajukan ulang OK; Ganti Roll → ACC lama 409.
 - `tests/test_iter275_g1_admin_sales_audit.py` tidak bisa jalan (akun lama sales@ tidak ada di data acuan sekarang) — bukan regresi.
+
+## Sesi 2026-10-17 bagian 2 — retest LN-022 + LN-020 + LN-021-T01/T02
+### LN-022 (lanjutan, iteration_211)
+- SoD juga di `decide_approval` (panel SO): pengaju tidak bisa memutuskan harga khususnya sendiri → 403.
+- Klaim SO di keputusan dibungkus try/finally; cek `alloc_sig` dijalankan sesudah klaim.
+- DELETE `price_approvals` tertaut SO yang pending → 409. Kartu Pusat Persetujuan tidak menampilkan Ubah/Hapus untuk pengajuan itu.
+- Keputusan lewat SO kini menulis `approved_by(_name)` ke dokumen pra; bukti dari form ikut ke `evidence` entri SO.
+- Tombol "Ajukan Harga Khusus" di panel SO tersedia untuk Admin Sales.
+- Tes: `test_l02_ln022_special_price.py` 5/5, `test_l02_ln022_ln021_extra.py` 4/4, `test_l02_ln022_form_path_retest.py` 6/6.
+
+### LN-020
+- T01 — sebelum: `sales_stock_summary` menghitung roll `available` yang sebagian sudah dikunci potong (`length_reserved`) seluruhnya sebagai Bebas (satu panjang terhitung dua kali). Sesudah: bagian `length_reserved` masuk Dikunci, Bebas = sisa. Respons kini membawa `atp_definition` + `atp_horizon_days`; UI `SalesStockSummary` menampilkan "Datang … (belum siap kirim) · Menunggu … · ATP …" dan definisinya (`sales-stock-atp-definition`).
+- T02 — sebelum: antrean Keep/Pending hanya untuk izin `order.verify` (Sales tidak punya jalan). Sesudah: `GET /api/sales/keep-pending` menerima `order.view`; peran ber-kunci pemilik (sales) dibatasi ke SO miliknya (`sales_ownership.apply_scope`). Panel `KeepPendingPanel` (prefix `sales-kp`) dipasang di Beranda Sales. Isi pending: produk → SO → dokumen sumber PR/PO/MKO/interco + ETA, tanpa nama pemilik/supplier.
+- T03 — sebelum: daftar SO & panel ringkas menjumlah qty semua baris (yard + kg tercampur). Sesudah: `utils/qtyByUnit.js` menampilkan qty per satuan + jumlah roll ("905 yard (9 roll) · 50 kg (2 roll)"); detail (`QtyDual`) dan cetak (kolom roll per baris) sudah benar sebelumnya.
+- Belum: "riwayat Sales rotating Tasik/Tamim" — perlu data penugasan nyata untuk diuji.
+
+### LN-021
+- T01 — sebelum: `compute_roll_reconcile` opsi turun selalu membuang roll FEFO terakhir; dengan 9×100 + 1×105 dan target 1000 hasilnya bisa 900/9, bukan 905/9. Sesudah: buang roll terpendek yang panjangnya ≥ kelebihan → turun = set utuh terbesar ≤ target (905/9), naik 1005/10; SO turun menyimpan qty 905, 9 roll_lines, `roll_rounding.choice=round_down`.
+- T02 — dua SO bersamaan dengan 10 roll yang sama: semua roll hanya dikunci satu SO; SO kalah tidak memegang roll (tanpa perubahan kode, perilaku existing).
+- Tes: `backend/tests/test_l02_ln020_ln021.py` 3/3 (fixture produk/roll TEST_ dibuat & dihapus sendiri).
+

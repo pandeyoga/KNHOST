@@ -42,6 +42,7 @@ export function PriceApprovalCard({
   const meta = STATUS_META[r.status] || { label: r.status, icon: Clock3 };
   const StatusIcon = meta.icon;
   const editable = ["draft", "pending"].includes(r.status);
+  const soLocked = r.scope === "order" && !!r.so_id && r.status === "pending";
   const attachments = r.attachments || [];
 
   return (
@@ -112,8 +113,8 @@ export function PriceApprovalCard({
                     {att.original_filename}
                   </button>
                   <button onClick={() => onViewAttachment(r.id, att)} aria-label="Lihat" className="text-[#0058CC]"><Eye size={11} /></button>
-                  {editable && (
-                    <button onClick={() => onDeleteAttachment(r.id, att.id)} aria-label="Hapus lampiran" className="text-[#A8221A]"><Trash2 size={11} /></button>
+                  {r.status === "draft" && (
+                    <button onClick={() => onDeleteAttachment(r.id, att.id)} aria-label="Hapus lampiran" data-testid={`price-approvals-att-delete-${att.id}`} className="text-[#A8221A]"><Trash2 size={11} /></button>
                   )}
                 </span>
               ))}
@@ -185,7 +186,7 @@ export function PriceApprovalCard({
             </button>
           )}
 
-          {editable && (
+          {editable && !soLocked && (
             <div className="flex gap-1.5">
               <button
                 data-testid={`price-approvals-edit-${r.id}`}

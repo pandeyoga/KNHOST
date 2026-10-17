@@ -178,6 +178,7 @@ async def attach_order_price(order_id: str, pra: Dict[str, Any], actor: Dict[str
             product_id=pid, product_name=item.get("product_name"),
             normal_price=float(item.get("price", 0) or 0), requested_price=float(pra.get("requested_price") or 0),
             alloc_sig=await _alloc_sig(order_id, item))
+        entry["evidence"] = [a for a in (pra.get("attachments") or []) if not a.get("is_deleted")]
         pa = list(order.get("pending_approvals") or [])
         stale = [p for p in pa if p.get("type") == "special_price" and p.get("status") == "pending"
                  and p.get("product_id") == pid]
@@ -253,15 +254,31 @@ async def decide_approval(order_id: str, approval_id: str, payload: SoApprovalDe
         raise HTTPException(status_code=403,
             detail=f"Keputusan butuh role minimal '{entry.get('required_role')}'.")
     new_status = "approved" if decision == "approve" else "rejected"
-    target_idx = None
-    if entry.get("type") == "special_price" and new_status == "approved":
-        target_idx = await _special_price_target(order_id, order.get("items", []), entry)
+    if entry.get("type") == "special_price":
+        from services import approval_matrix_service as matrix
+        pra_doc = await db.price_approvals.find_one({"id": entry.get("ref_id")}, {"_id": 0}) or {}
+        sod_doc = {**pra_doc, "requested_by_id": entry.get("requested_by_id") or pra_doc.get("requested_by_id"),
+                   "entity_id": order.get("entity_id", "")}
+        if await matrix.sod_blocked(sod_doc, actor, order.get("entity_id", "")):
+            raise HTTPException(status_code=403, detail=(
+                "Pemisahan tugas: pengaju harga tidak boleh memutuskan pengajuannya sendiri. "
+                "Minta approver lain."))
     # T-01 Opsi B (INV-ATOMIC-01) — klaim SO atas entri approval INI: dua penyetuju yang
     # menekan bersamaan tidak boleh sama-sama menulis harga/kredit + memutuskan entri.
     from services import atomic_claim as _saga
     await _saga.claim("sales_orders", order_id, f"so_approval_decide:{approval_id}",
                       precondition={"pending_approvals": {"$elemMatch": {"id": approval_id, "status": "pending"}}},
                       actor=actor["name"], detail="Entri approval sudah diputuskan pihak lain. Muat ulang layar.")
+    try:
+        return await _apply_decision(order_id, order, pa, entry, approval_id, new_status, payload, actor)
+    finally:
+        await _saga.release("sales_orders", order_id)
+
+
+async def _apply_decision(order_id, order, pa, entry, approval_id, new_status, payload, actor) -> Dict[str, Any]:
+    target_idx = None
+    if entry.get("type") == "special_price" and new_status == "approved":
+        target_idx = await _special_price_target(order_id, order.get("items", []), entry)
     entry.update({"status": new_status, "decided_by": actor["name"], "decided_by_id": actor["id"],
                   "decided_at": now_iso(), "decision_notes": (payload.notes or "").strip()})
     atype = entry.get("type")
@@ -270,6 +287,7 @@ async def decide_approval(order_id: str, approval_id: str, payload: SoApprovalDe
     if atype == "special_price":
         await db.price_approvals.update_one({"id": entry.get("ref_id")}, {"$set": {
             "status": new_status, "decided_by": actor["name"], "decided_by_id": actor["id"],
+            "approved_by": actor["id"], "approved_by_name": actor["name"],
             "decision_notes": (payload.notes or "").strip(), "decided_at": now_iso(), "updated_at": now_iso()}})
         if new_status == "approved":
             items = order.get("items", [])
@@ -299,7 +317,6 @@ async def decide_approval(order_id: str, approval_id: str, payload: SoApprovalDe
             await set_order_rolls_status(order_id, "committed")
     await audit(actor["name"], f"so_approval_{new_status}", "sales_order", order_id,
                 {"type": atype, "approval_id": approval_id, "notes": (payload.notes or "").strip()})
-    await _saga.release("sales_orders", order_id)
     return safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
 
 

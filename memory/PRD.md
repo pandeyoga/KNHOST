@@ -1267,3 +1267,21 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - LN-082: roll utuh kembali dengan id/nomor/tag sama (+riwayat qty bruto/klaim/aktual, grade lama→baru; reversal memulihkan), klaim sebagian → child `<induk>-N`; nomor potongan atomik; larangan kirim ulang ke pelanggan asal (`returns.block_resend_to_origin_customer`, izin `sales_return.policy`).
 - Bukti: `backend/tests/test_l08_evidence_identity.py` 10/10, iteration_207 100%. Evidence: `docs/development/gelombang-lanjutan-pasca-p05-2026-10-16/evidence/L08/report.md`.
 - Berikutnya: LN-081 (timeline terpisah: izin · perjalanan fisik · QC per roll · disposisi · settlement), lalu L09 sesuai keputusan pending; LN-083 menunggu KLR-08/KLR-09. Isi SHA setelah Save to GitHub.
+
+## 2026-10-17 (lanjutan, E1, repo di-clone ulang ke preview) — Retest L02 LN-022 + perbaikan
+- Setup: clone pandeyoga/KNHOST → /app, backend/.env (CORS eksplisit, KN_DEMO_DATA, SESSION_COOKIE_SECURE), `bash scripts/restore_local_demo.sh`.
+- Tes L02 kini memilih produk/alamat secara dinamis (ID produk berubah tiap restore).
+- Perbaikan dari iteration_211: SoD di `decide_approval` untuk special_price (pengaju tidak bisa menyetujui dari panel SO → 403); klaim SO dibungkus try/finally + cek alloc_sig sesudah klaim; DELETE pra terikat SO yang pending → 409; mirror `approved_by(_name)` ke pra; bukti dari form ikut ke entri SO (`evidence`); tombol Ajukan Harga Khusus juga untuk sales_admin; Ubah/Hapus disembunyikan pada kartu pra SO pending.
+- Bukti: iteration_211 + pytest test_l02_ln022_special_price (5), _ln021_extra (4), _form_path_retest (6), test_l09_ln093_ln090 (4), test_l08_ln081_journey (4) lulus.
+- Sisa (minor): pesan 409 saat submit bersamaan masih teks umum SAGA_IN_PROGRESS.
+
+## 2026-10-17 bagian 2 (E1) — L02 LN-020 + LN-021-T01/T02
+- LN-020-T01: ringkasan stok Sales tidak lagi menghitung bagian roll yang dikunci potong (`length_reserved`) sebagai Bebas; definisi ATP + satuan ditampilkan.
+- LN-020-T02: antrean Keep/Pending terbuka untuk Sales (hanya SO miliknya) di Beranda Sales (`sales-kp-*`).
+- LN-020-T03: daftar SO & panel ringkas menampilkan qty per satuan + jumlah roll (yard/kg tidak dijumlah).
+- LN-021-T01: opsi "genapkan ke bawah" = set roll utuh terbesar ≤ target (905/9 untuk 9×100+1×105, target 1000); bila pas, hanya exact_whole. T02 alokasi bersamaan sudah aman (diuji).
+- Hapus lampiran pengajuan harga hanya saat draf (409 sesudahnya).
+- PENTING: frontend preview dilayani dari build statis — jalankan `bash /app/scripts/rebuild_frontend.sh` setelah ubah frontend/src.
+- Bukti: iteration_212; pytest test_l02_ln020_ln021 (3), test_l02_ln020_t02_t03_extra (9), L02 LN-022 (15) lulus. Evidence: docs/.../evidence/L02/report.md; BACKLOG LN-020 → in_progress.
+- Berikutnya L02: LN-022-T03 (koreksi setelah invoice terposting), LN-023 (AR/AP/revisi PO); LN-024 menunggu KLX-03.
+

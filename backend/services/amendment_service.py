@@ -279,8 +279,15 @@ async def is_issued(order: Dict[str, Any]) -> Tuple[bool, str]:
         return True, f"sudah terbit Faktur Pajak {inv.get('number', '')}".strip()
     if float(order.get("paid_total", 0) or 0) > 0 or order.get("payment_status") in {"paid", "partial"}:
         return True, "sudah ada pembayaran masuk"
-    if order.get("status") in {"delivered", "completed", "closed"}:
+    if order.get("status") in {"delivered", "completed", "closed", "shipped", "partially_shipped", "done"}:
         return True, f"pesanan sudah berstatus '{order.get('status')}'"
+    # L02 LN-022-T03 — pendapatan sudah dijurnal (per pesanan / per surat jalan) = sudah terbit.
+    je = await db.journal_entries.find_one(
+        {"status": {"$ne": "void"}, "$or": [{"source_type": "sales_order", "source_id": order["id"]},
+                                             {"source_type": "shipment_revenue", "ref.order_id": order["id"]}]},
+        {"_id": 0, "id": 1})
+    if je:
+        return True, "pendapatan pesanan sudah dijurnal"
     return False, ""
 
 
@@ -821,6 +828,11 @@ async def _apply_note(amd: Dict[str, Any], actor: Dict[str, Any]) -> List[Dict[s
         "refs": [],   # ditulis lewat services/doc_refs_service (dua arah) setelah insert
     }
     await db.credit_notes.insert_one(dict(note_doc))
+    if kind == "credit_note":
+        await _settle_credit_note(note_doc, order)
+    else:
+        # Penagihan tambahan (jatuh tempo, cara tagih) belum diputuskan — nota tercatat, jurnal/AR menunggu.
+        await db.credit_notes.update_one({"id": note_doc["id"]}, {"$set": {"billing_status": "awaiting_billing_rule"}})
 
     # Dokumen asal HANYA menerima jejak — nominalnya sengaja tidak diubah sama sekali.
     await db.sales_orders.update_one({"id": order["id"]}, {
@@ -851,6 +863,30 @@ async def _apply_note(amd: Dict[str, Any], actor: Dict[str, Any]) -> List[Dict[s
                           "amends", note=amd["reason_label"])
     return [{"rel": "issued", "doc_type": kind, "doc_id": note_doc["id"],
              "doc_number": number, "note": f"{rupiah(gross)}"}]
+
+
+async def _settle_credit_note(note: Dict[str, Any], order: Dict[str, Any]) -> None:
+    """L02 LN-022-T03 — nota kredit amandemen: kurangi sisa tagihan pesanan, sisanya jadi saldo kredit
+    pelanggan, lalu jurnal (idempoten per nota)."""
+    from services import gl_service, store_credit_service
+    from services.customer_service import _order_paid
+    gross = float(note["gross_amount"])
+    open_amt = round(float(order.get("grand_total") or 0) - _order_paid(order), 2)
+    ar_part = round(min(gross, max(open_amt, 0.0)), 2)
+    sc_part = round(gross - ar_part, 2)
+    if ar_part > 0:
+        from services import ar_receipt_service as _ar
+        await _ar.apply_from_case(order["id"], ar_part, note["id"], note["number"], method="credit_note")
+    je = await gl_service.post_amendment_credit_note(note, ar_part=ar_part, store_credit_part=sc_part)
+    if sc_part > 0:
+        await store_credit_service.issue(
+            customer_id=order.get("customer_id") or "", entity_id=note.get("entity_id", ""), amount=sc_part,
+            ref_type="credit_note", ref_id=note["id"], ref_number=note["number"],
+            note=f"Sisa nota kredit amandemen {note['number']}", je_id=(je or {}).get("id", ""),
+            customer_name=order.get("customer_name", ""))
+    await db.credit_notes.update_one({"id": note["id"]}, {"$set": {
+        "status": "posted", "ar_applied": ar_part, "store_credit_amount": sc_part,
+        "journal_entry_id": (je or {}).get("id", ""), "updated_at": now_iso()}})
 
 
 async def _close_approval_notice(amd_id: str, outcome: str, actor: Dict[str, Any]) -> None:

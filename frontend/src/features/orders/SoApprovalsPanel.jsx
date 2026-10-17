@@ -24,7 +24,7 @@ const OPEN_STATES = ["reserved", "waiting_approval", "waiting_stock", "draft"];
 export default function SoApprovalsPanel({ order, user, onRefresh }) {
   const role = user?.role;
   const isApprover = role === "admin" || role === "manager";
-  const isSales = role === "sales";
+  const isSales = role === "sales" || role === "sales_admin";
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");

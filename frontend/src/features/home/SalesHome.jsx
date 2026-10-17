@@ -9,6 +9,7 @@ import {
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import WaitingQueueBoard from "../../components/WaitingQueueBoard";
+import KeepPendingPanel from "../sales_admin/KeepPendingPanel";
 import { boardLook, selectWaitingBoards } from "../../config/waitingBoards";
 
 const fmt = new Intl.NumberFormat("id-ID");
@@ -40,7 +41,7 @@ function KPICard({ icon: Icon, label, value, sub, color = "#007AFF", loading }) 
   );
 }
 
-export default function SalesHome({ token, user, onNavigate }) {
+export default function SalesHome({ token, user, onNavigate, onOpenDocument }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
@@ -254,6 +255,7 @@ export default function SalesHome({ token, user, onNavigate }) {
             </div>
           ) : <div className="h-20 flex items-center justify-center text-[13px] text-[#8E8E93]">Belum ada pelanggan ditugaskan</div>}
         </div>
+        <div className="mt-4"><KeepPendingPanel onOpenDocument={onOpenDocument} testPrefix="sales-kp" /></div>
       </div>
     </section>
   );

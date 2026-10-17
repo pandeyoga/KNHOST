@@ -38,7 +38,7 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-012 | L01 | Grade dinamis, rank customer dan konfigurasi POS | in_progress | evidence/L01/report.md, evidence/L01/field_leak_scan_sales_before.json, evidence/L01/field_leak_scan_sales_after.json |
 | LN-013 | L01 | Default restock dan konteks entitas MD | in_progress | evidence/L01/report.md, evidence/L01/field_leak_scan_sales_before.json, evidence/L01/field_leak_scan_sales_after.json |
 | LN-014 | L01 | LOT supplier dan identitas LOT internal | not_started | belum ada |
-| LN-020 | L02 | ATP, Keep/Pending dan satuan pada SO | not_started | belum ada |
+| LN-020 | L02 | ATP, Keep/Pending dan satuan pada SO | in_progress | evidence/L02/report.md |
 | LN-021 | L02 | Roll picker dan perubahan alokasi yang sah | in_progress | evidence/L02/report.md |
 | LN-022 | L02 | Harga grade dan pengajuan ulang Special Price | in_progress | evidence/L02/report.md |
 | LN-023 | L02 | AR, AP, revisi PO dan dampak finansial | not_started | belum ada |

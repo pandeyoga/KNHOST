@@ -2394,9 +2394,15 @@ async def compute_roll_reconcile(product_id: str, target_qty: float, selling_ent
                            "total_qty": sum_up, "delta": round(sum_up - target, 2), "roll_count": len(up_rolls)}
     if abs(sum_up - target) < 0.01:
         options["exact_whole"] = options["round_up"]
+        return {"product_id": product_id, "target_qty": target, "feasible": True,
+                "total_available": total_available, "options": options}
 
-    last = up_rolls[-1]
-    down_rolls = up_rolls[:-1]
+    # L02 LN-021-T01 — turun = set utuh TERBESAR ≤ target: buang roll terpendek yang cukup
+    # (panjang ≥ kelebihan), bukan selalu roll FEFO terakhir.
+    excess = sum_up - target
+    last = min((r for r in up_rolls if float(r["length_remaining"]) >= excess - 0.01),
+               key=lambda r: float(r["length_remaining"]), default=up_rolls[-1])
+    down_rolls = [r for r in up_rolls if r is not last]
     sum_down = round(sum_up - float(last["length_remaining"]), 2)
     options["round_down"] = {"roll_lines": lines(down_rolls), "snapshot": snap(down_rolls),
                              "total_qty": sum_down, "delta": round(sum_down - target, 2), "roll_count": len(down_rolls)}

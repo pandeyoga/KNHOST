@@ -11,6 +11,7 @@ import { usePagedList } from "../../hooks/usePagedList";
 // menyimpan `entity_id`, dan menampilkan id entitas dilarang (INV-UI-02) — sebuah kolom
 // berisi `ent_ksc` tidak berarti apa pun bagi yang membuka berkasnya.
 import { qtyDualCsvColumns } from "../../utils/qtyDualCsv";   // FASE U — dua satuan di CSV
+import { formatQtyByUnit } from "../../utils/qtyByUnit";
 
 const CSV_COLUMNS = [
   { key: "number", header: "Nomor" },
@@ -279,7 +280,6 @@ export default function OrdersView({
                   {!paged.loading && filteredOrders.map((order) => {
                     /* UI/UX 2026-06 — kolom tengah dulu kosong; diisi qty & tanggal. */
                     const its = order.items || [];
-                    const qty = its.reduce((s, it) => s + Number(it.qty ?? it.quantity ?? 0), 0);
                     const units = [...new Set(its.map((it) => it.unit).filter(Boolean))];
                     return (
                     <div 
@@ -321,8 +321,8 @@ export default function OrdersView({
                       <p data-testid={`order-customer-${order.id}`} className="text-[11px] text-[#3C3C43] truncate">
                         {order.customer_name}
                       </p>
-                      <div className="text-[11px] tabular-nums" data-testid={`order-qty-${order.id}`}>
-                        <p className="font-semibold">{new Intl.NumberFormat("id-ID").format(qty)} {units.length === 1 ? units[0] : ""}</p>
+                      <div className="text-[11px] tabular-nums" data-testid={`order-qty-cell-${order.id}`}>
+                        <p className="font-semibold" data-testid={`order-qty-${order.id}`}>{formatQtyByUnit(its)}</p>
                         <p className="text-[10px] text-[#6B6B73]">{its.length} item{units.length > 1 ? " · campuran" : ""}</p>
                       </div>
                       <p data-testid={`order-total-${order.id}`} className="text-right text-[11.5px] font-bold tabular-nums">

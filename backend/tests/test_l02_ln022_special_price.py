@@ -8,7 +8,10 @@ from pymongo import MongoClient
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
 ENT = "ent_ksc"
-P1, P2 = "prod_4d5c9286714a", "prod_6e5cf6be52dc"
+P1, P2 = [r["_id"] for r in DB.inventory_rolls.aggregate([
+    {"$match": {"status": "available", "owner_entity_id": ENT, "unit": "yard"}},
+    {"$group": {"_id": "$product_id", "n": {"$sum": 1}}}, {"$sort": {"n": -1}}, {"$limit": 2}])]
+ADDR = (DB.customers.find_one({"id": "cust_butik_bali"}) or {}).get("addresses", [{}])[0].get("id")
 CREATED = []
 
 
@@ -33,7 +36,7 @@ def H():
 
 def _so(h):
     r = requests.post(f"{BASE}/sales-orders", headers=h, json={
-        "customer_id": "cust_butik_bali", "shipping_address_id": "addr_001", "entity_id": ENT,
+        "customer_id": "cust_butik_bali", "shipping_address_id": ADDR, "entity_id": ENT,
         "notes": "TEST_L022", "confirm_mixed_lot": True, "allow_backorder": True,
         "items": [{"product_id": P1, "quantity": 20, "unit": "yard"},
                   {"product_id": P2, "quantity": 20, "unit": "yard"}]})

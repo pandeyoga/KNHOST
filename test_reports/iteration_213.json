@@ -1,0 +1,31 @@
+{
+  "summary": "Backend-only testing of L02 LN-022-T03 (amendment after revenue issued -> credit/debit note + journal). Regressions (test_l02_ln022_t03_amendment_note.py, test_l02_ln020_ln021.py, test_l02_ln022_special_price.py) 10/10 pass. New extended suite test_l02_ln022_t03_amendment_note_extended.py: 12/13 pass. Verified: is_issued for status shipped/partially_shipped/done, sales_order JE, and shipment_revenue JE (void JE ignored -> re_derive); reserved order w/o JE/payment -> re_derive (number kept, grand_total recomputed, no note); credit note posted with ar_applied=min(gross,outstanding), remainder to store credit (ledger issue ref_type credit_note, exactly 1); JE amendment_credit_note balanced, Dr 4-1000=net, Dr 2-1200=ppn, Cr 1-1200=ar_applied, Cr 2-1450=remainder; fully paid order -> all to 2-1450, no AR line, no payment row; exactly one payments[] row method credit_note; order items/grand_total unchanged; double approve -> 400 with still 1 note + 1 JE; debit note -> billing_status awaiting_billing_rule, no JE, order untouched. ONE FAILURE: repeated identical price correction on an issued order issues a second credit note (double credit).",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/amendments (+ /decision) on issued SO", "issue": "Double credit: because credit/debit notes never change order items, every later amendment is evaluated against the ORIGINAL price. Proposing price X*0.9 twice on the same shipped order created 2 credit notes (433,224 total vs 216,612 real correction), 2 JEs, AR reduced twice. Same root cause makes a later debit note (e.g. price back up) be computed vs original price, not the already-corrected effective price.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "amendment_service._apply_note/_settle_credit_note", "issue": "Not atomic: note is inserted, then payments[] row pushed, then JE posted. If JE posting raises (e.g. ClosedPeriodError) or apply_from_case 400s (outstanding changed concurrently), the note stays status 'issued' with AR reduced but no JE, and the amendment stays 'approved' (not 'applied'); retry -> 400 'sudah berstatus approved' so it can never be completed. Suggest preflight_posting + outstanding check before inserting the note, or a compensating/resume path."},
+      {"endpoint": "_settle_credit_note", "issue": "If order has no customer_id, JE still credits 2-1450 for the remainder but store_credit_service.issue returns None -> liability without ledger owner."},
+      {"endpoint": "POST /api/amendments/preview (quantity)", "issue": "Info: qty decrease below reserved/shipped qty on a shipped order is rejected with 400 ('Lepas reservasi atau short-pick dulu'), so post-issue qty corrections can't create a credit note for shipped goods (returns path). Confirm this is the intended rule."},
+      {"endpoint": "POST /api/amendments/{id}/decision", "issue": "Info: admin proposer can self-approve (approval_matrix.admin_override, recorded in trail) — by design, but means dual control does not apply to admin."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_l02_ln022_t03_amendment_note_extended.py", "/app/backend/tests/test_l02_ln022_t03_amendment_note.py", "/app/test_reports/pytest/l022t03x.xml"],
+  "action_items": [
+    "Prevent double credit: track effective (post-note) line prices/qty — e.g. store amended lines on the SO as a non-financial 'effective_items' / sum prior applied notes per line — and compute later amendment diffs/deltas against the effective values (or reject when the target equals the already-corrected value).",
+    "Make credit-note settlement fail-safe: preflight period + outstanding before inserting the note; on failure roll back the note/payment or leave amendment in a resumable state.",
+    "Guard store-credit remainder when order has no customer_id."
+  ],
+  "critical_code_review_comments": [
+    "amendment_service.py is 957 lines (>700) — consider splitting note settlement into its own module.",
+    "_apply_note computes ppn_delta via abs() of before/after ppn — fine for single-direction changes, but mixed changes (one line up, one down) within one amendment rely on net sign only; acceptable."
+  ],
+  "updated_files": ["/app/backend/tests/test_l02_ln022_t03_amendment_note_extended.py"],
+  "success_rate": {"backend": "96% (22/23 incl. regressions; 1 real bug)", "frontend": "not tested"},
+  "seed_data_creation": "None persisted. Extended suite creates so_TEST_l022t03x_* SO copies (+ je_TEST_* fixtures) and deletes all SOs, credit_notes, doc_amendments, journal_entries, store_credit_ledger, doc_refs, notifications it creates. Verified DB clean after run.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend; set -a; . ./.env; set +a; export REACT_APP_BACKEND_URL=...; python -m pytest tests/test_l02_ln022_t03_amendment_note_extended.py -q -n0. test_repeat_same_price_correction_does_not_double_credit is the failing bug check; it should pass after fix (either preview 400 on repeat or no second CN). Default policy: issued_doc_policy=note_only, dual_control on, 10%+ price changes require manager approval."
+}

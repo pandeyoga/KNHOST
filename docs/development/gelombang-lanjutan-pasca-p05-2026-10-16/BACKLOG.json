@@ -661,10 +661,12 @@
         "LN-020-T02",
         "LN-020-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L02/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
       "implementer": null,

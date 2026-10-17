@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from db import db
 from core_utils import safe_doc
-from dependencies import audit, require_permission
+from dependencies import audit, require_any_permission, require_permission
 from entity_scope import assert_entity_access, entity_ctx, resolve_list_scope
 from services import sales_p04_service as svc
 
@@ -14,9 +14,11 @@ router = APIRouter(prefix="/api")
 
 @router.get("/sales/keep-pending")
 async def keep_pending(request: Request, entity_id: Optional[str] = None) -> Dict[str, Any]:
-    await require_permission(request, "order", "verify")
+    # L02 LN-020-T02 — Sales juga membaca antrean, dibatasi ke pesanan miliknya.
+    actor = await require_any_permission(request, [("order", "verify"), ("order", "view")])
     ctx = await entity_ctx(request)
-    scope = resolve_list_scope("sales_orders", {}, ctx, entity_id)
+    from services import sales_ownership
+    scope = sales_ownership.apply_scope(resolve_list_scope("sales_orders", {}, ctx, entity_id), actor)
     eff = entity_id or getattr(ctx, "active_entity_id", "") or ""
     return await svc.keep_pending(scope, eff if eff != "all" else "")
 

@@ -331,6 +331,10 @@ async def delete_price_approval(approval_id: str, request: Request) -> Dict[str,
     _ensure_owner_or_privileged(doc, user)
     if doc["status"] == "approved":
         raise HTTPException(status_code=409, detail="Pengajuan yang sudah disetujui tidak dapat dihapus")
+    if _so_bound(doc) and doc["status"] == "pending":
+        raise HTTPException(status_code=409, detail=(
+            "Pengajuan harga pesanan yang sedang menunggu tidak bisa dihapus — tolak lewat detail pesanan "
+            "atau Pusat Persetujuan."))
     await db.price_approvals.delete_one({"id": approval_id})
     await audit(user.get("name", ""), "price_approval_deleted", "price_approval", approval_id, {"status": doc["status"]})
     return {"deleted": True, "id": approval_id}
@@ -617,6 +621,8 @@ async def delete_attachment(approval_id: str, att_id: str, request: Request) -> 
     user = await require_permission(request, "price_approval", "update")
     doc = await _get_or_404(approval_id, request)
     _ensure_owner_or_privileged(doc, user)
+    if doc.get("status") != "draft":   # bukti pengajuan yang sudah diajukan tidak boleh hilang
+        raise HTTPException(status_code=409, detail="Bukti hanya bisa dihapus selama pengajuan masih draf.")
     res = await db.price_approvals.update_one(
         {"id": approval_id, "attachments.id": att_id},
         {"$set": {"attachments.$.is_deleted": True, "updated_at": now_iso()}},

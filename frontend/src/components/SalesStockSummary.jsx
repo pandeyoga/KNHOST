@@ -18,13 +18,18 @@ export default function SalesStockSummary({ productId, entityId }) {
       {data.rows.map((r) => (
         <div key={r.class} data-testid={`sales-stock-${r.class}`} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 py-0.5">
           <b className={r.class === "bs" ? "text-[#9A5B00]" : "text-[#1C1C1E]"}>{r.label}</b>
-          <span>Fisik {formatQty(r.physical)}</span>
-          <span>Dikunci {formatQty(r.reserved)}</span>
+          <span>Fisik {formatQty(r.physical)} {u}</span>
+          <span>Dikunci {formatQty(r.reserved)} {u}</span>
           <span className="font-semibold text-[#126E2C]" data-testid={`sales-stock-${r.class}-free`}>Bebas {formatQty(r.free)} {u}</span>
-          {r.class === "regular" && <span>Datang {formatQty(r.incoming)} · ATP <b data-testid="sales-stock-atp">{formatQty(r.atp)}</b></span>}
+          {r.class === "regular" && (
+            <span title={data.atp_definition} data-testid="sales-stock-incoming">
+              Datang {formatQty(r.incoming)} {u} (belum siap kirim) · Menunggu {formatQty(r.pending_demand)} {u} · ATP <b data-testid="sales-stock-atp">{formatQty(r.atp)}</b>
+            </span>
+          )}
           {r.group_free > 0 && <span className="text-[#6B6B73]">+ grup {formatQty(r.group_free)} (keputusan Admin Sales)</span>}
         </div>
       ))}
+      {data.atp_definition && <div className="pt-0.5 text-[#6B6B73]" data-testid="sales-stock-atp-definition">{data.atp_definition}</div>}
     </div>
   );
 }

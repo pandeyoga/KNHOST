@@ -1,0 +1,41 @@
+{
+  "summary": "Tested L02 LN-020-T01..T03, LN-021-T01/T02 and the LN-022 retest fixes, backend and UI. All 18 existing regression tests pass (test_l02_ln020_ln021 3, ln022_special_price 5, ln022_ln021_extra 4, ln022_form_path_retest 6). I added a new test file with 9 tests, all passing: keep-pending scoping for sales vs sales_admin, a synthetic foreign SO hidden from sales.kanda but visible to salesadmin.kanda, no supplier/owner keys in the pending list, round_down when the long roll comes first in FEFO (still 905/9), exact target producing exact_whole, take_all backorder, and the stock-summary response shape. UI checks after rebuilding the stale static bundle: Sales home KeepPendingPanel (sales-kp-*) shows counts 2/2/1; the pending rows expand to SO -> PR-00005/MKO-00005 + ETA with no supplier names; SalesStockSummary in the kasir quick view shows Fisik/Dikunci/Bebas, 'Datang .. (belum siap kirim) · Menunggu · ATP' and the ATP definition; RollReconcileSheet shows round_up 254,41/5, round_down 204,97/4 and exact_cut options; order-qty shows '51,33 kg (2 roll)' for KSC/SO-00003 and so-compact-qty matches; for salesadmin@ the 'Ajukan Harga Khusus' toggle is visible and the Ubah/Hapus buttons are hidden on SO-bound pending cards.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "DELETE /api/price-approvals/{id}/attachments/{att_id}", "issue": "The requester can delete the only evidence file on a pra that is already submitted (pending). The request returns 200 and leaves a pending request with attachments=[], which bypasses EVIDENCE_REQUIRED from submit. The UI also still shows the trash icon on the attachment chip of SO-bound pending cards, even though Ubah/Hapus are hidden. Reproduced on pra_0ab37a86326f (cleaned up)."},
+      {"endpoint": "POST /api/sales-orders/preview-roll-reconcile", "issue": "When the target equals a whole-roll sum (exact_whole), round_down still drops the shortest roll (905 -> 805/8). This is harmless but noisy; consider omitting round_down when exact_whole exists. round_down/exact_cut may also skip an older FEFO roll (the shortest covering roll), which leaves a small remnant (e.g. a 4,41 yard leftover). This follows the spec, but FEFO is not kept."},
+      {"endpoint": "services/sales_p04_service.sales_stock_summary", "issue": "st.startswith('in_transit') raises AttributeError if a roll has status None/missing. Use (st or '')."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "OrdersView row qty cell", "issue": "The same data-testid order-qty-<id> was on both the wrapper div and the inner p (strict-mode selector clash). Fixed: wrapper renamed to order-qty-cell-<id>.", "selector": "[data-testid=order-qty-<id>]", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Preview deployment", "issue": "The frontend is served from the static build (static_server.js, NO hot reload). The build at 19:09 was older than the LN-020 source edits (19:45-19:48), so the Sales home KeepPendingPanel was missing until I ran bash /app/scripts/rebuild_frontend.sh. Main agent must rebuild after every frontend edit.", "affected_selectors": ["sales-kp-panel"]}
+    ],
+    "design_issues": [
+      {"screen": "Kasir quick view", "issues": ["The header 'Tersedia 550 yard' includes group stock while SalesStockSummary shows 'Fisik 0 · Bebas 0 + grup 550'. This can confuse Sales (pre-existing). Consider labelling the header as group stock.", "In SalesStockSummary only 'Bebas' has a unit; Fisik/Dikunci/Datang have none."]},
+      {"screen": "Orders list vs SO compact panel", "issues": ["The list total for KSC/SO-00003 is Rp 2.258.520 (total_amount) but the compact panel Grand Total is Rp 2.506.957 (grand_total incl. PPN). The two numbers are inconsistent (pre-existing)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l02_ln020_t02_t03_extra.py", "/app/backend/tests/test_l02_ln020_ln021.py", "/app/test_reports/pytest/pytest_l02_ln020_extra.xml"],
+  "action_items": [
+    "Block deleting price-approval attachments once status is pending/approved (or require at least one remaining when EVIDENCE_REQUIRED), and hide the attachment trash icon on SO-bound pending cards.",
+    "Always run bash /app/scripts/rebuild_frontend.sh after frontend edits (static bundle, no hot reload).",
+    "Optional: omit round_down when exact_whole exists; guard st=None in sales_stock_summary."
+  ],
+  "critical_code_review_comments": [
+    "keep_pending router: scoping via sales_ownership.apply_scope is correct (verified with a synthetic foreign SO).",
+    "compute_roll_reconcile round_down: picking the shortest roll with length >= excess is correct for the 'largest subset after dropping one roll'. The default up_rolls[-1] is unreachable but safe.",
+    "qtyByUnit: groups strictly by unit; never sums yard+kg. OK."
+  ],
+  "updated_files": ["/app/frontend/src/features/orders/OrdersView.jsx (duplicate testid -> order-qty-cell-<id>)", "/app/backend/tests/test_l02_ln020_t02_t03_extra.py (new)", "frontend/build (rebuilt)"],
+  "success_rate": {"backend": "100% (27/27 pytest)", "frontend": "100% of requested flows verified (after rebuild)"},
+  "seed_data_creation": "Temporary: prod_TEST_l021b + 10 rolls (fixture, removed), so_TEST_kp_foreign (removed), KSC/SO-00085 + pra_0ab37a86326f created by salesadmin@ for the UI check (cancelled + deleted). Verified 0 TEST_ leftovers.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Frontend = static build; rebuild with scripts/rebuild_frontend.sh. Kanda SOs all belong to sales.kanda, so to test sales scoping insert a synthetic SO with created_by=admin (see test_foreign_so_hidden_from_sales_visible_to_admin). Kasir product with own Kanda rolls for the reconcile sheet: search 'DMO-PF' (PFD Woven Katun Poplin). KSC/SO-00003 = kg SO (so_1d9015c0ec6c).",
+  "test_credentials": "From /app/memory/test_credentials.md: admin@ / demo12345; sales.kanda@, salesadmin.kanda@, salesadmin@, manager@ / demo1234."
+}
