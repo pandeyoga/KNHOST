@@ -832,6 +832,8 @@ class SalesReturnItem(BaseModel):
     # BUKAN "0 roll" yang menyesatkan). Diisi manual saat memesan (rencana), atau
     # DIHITUNG dari roll nyata saat penerimaan/pengiriman/retur (lihat §U.D rencana).
     qty_rolls: Optional[int] = Field(None, ge=0)
+    roll_ids: List[str] = []                        # L08 LN-080 — roll terkirim yang diklaim
+    roll_qtys: Dict[str, float] = {}                # klaim per roll (kosong = seluruh panjang terkirim)
 
 
 class SalesReturnCreate(BaseModel):

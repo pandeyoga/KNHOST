@@ -53,13 +53,13 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-050 | L05 | Permintaan QC dan sumber antrean | in_progress | evidence/L05/report.md |
 | LN-051 | L05 | Form inspect sesuai kertas tanpa ambigu satuan | in_progress | evidence/L05/report.md |
 | LN-052 | L05 | Kamus cacat, perhitungan skor dan grade tervalidasi | in_progress | evidence/L05/report.md |
-| LN-060 | L06 | Tiga jenis sampel dan catalogue terurai | not_started | belum ada |
-| LN-061 | L06 | Cutting lintas lokasi/entitas dan Admin Cutting | not_started | belum ada |
-| LN-062 | L06 | Ecer berbayar, sisa roll dan mutasi potong | not_started | belum ada |
-| LN-070 | L07 | Picking multi-gudang dan validasi konsolidasi | not_started | belum ada |
-| LN-071 | L07 | Dokumen per leg dan multi-SO manifest | not_started | belum ada |
-| LN-072 | L07 | Transit Jakarta, receipt aktual dan posting yang tepat | not_started | belum ada |
-| LN-080 | L08 | Form retur dan menu yang jelas | not_started | belum ada |
+| LN-060 | L06 | Tiga jenis sampel dan catalogue terurai | in_progress | evidence/L06/report.md |
+| LN-061 | L06 | Cutting lintas lokasi/entitas dan Admin Cutting | in_progress | evidence/L06/report.md |
+| LN-062 | L06 | Ecer berbayar, sisa roll dan mutasi potong | in_progress | evidence/L06/report.md |
+| LN-070 | L07 | Picking multi-gudang dan validasi konsolidasi | in_progress | evidence/L07/report.md |
+| LN-071 | L07 | Dokumen per leg dan multi-SO manifest | in_progress | evidence/L07/report.md |
+| LN-072 | L07 | Transit Jakarta, receipt aktual dan posting yang tepat | in_progress | evidence/L07/report.md |
+| LN-080 | L08 | Form retur dan menu yang jelas | in_progress | evidence/L08/report.md |
 | LN-081 | L08 | Pisahkan perjalanan fisik, QC, keputusan dan saldo | not_started | belum ada |
 | LN-082 | L08 | Identitas unik, potongan dan larangan kembali ke customer asal | not_started | belum ada |
 | LN-083 | L08 | Batas waktu, eligibility dan bukti keputusan | not_started | belum ada |

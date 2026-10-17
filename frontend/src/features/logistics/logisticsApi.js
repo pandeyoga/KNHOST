@@ -10,6 +10,10 @@ export const listDeliveries = (params) => axios.get(`${L}/deliveries`, { params 
 export const getDelivery = (id) => axios.get(`${L}/deliveries/${id}`).then((r) => r.data);
 export const unassignedShipments = (params) => axios.get(`${L}/shipments/unassigned`, { params }).then((r) => r.data);
 export const createDelivery = (payload) => axios.post(`${L}/deliveries`, payload).then((r) => r.data);
+export const tripCandidates = (params) => axios.get(`${L}/trip/candidates`, { params }).then((r) => r.data);
+export const tripPickingList = (order_ids) => axios.post(`${L}/trip/picking-list`, { order_ids }).then((r) => r.data);
+export const tripCheck = (order_ids) => axios.post(`${L}/trip/check`, { order_ids }).then((r) => r.data);
+export const deliveryManifest = (id) => axios.get(`${L}/deliveries/${id}/manifest`).then((r) => r.data);
 export const updateDelivery = (id, payload) => axios.patch(`${L}/deliveries/${id}`, payload).then((r) => r.data);
 export const addPosition = (id, payload) => axios.post(`${L}/deliveries/${id}/positions`, payload).then((r) => r.data);
 export const transitionDelivery = (id, payload) => axios.post(`${L}/deliveries/${id}/transition`, payload).then((r) => r.data);

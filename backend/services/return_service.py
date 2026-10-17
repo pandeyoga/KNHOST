@@ -419,8 +419,9 @@ async def create_return(
     # Item berunit pesanan (yard/roll) dikonversi lewat master UoM — bukan dipakai mentah.
     items = await _normalize_return_items_to_base(items)
 
-    # R1-06 — batasi qty retur: (retur aktif sebelumnya + retur ini) ≤ terkirim/terjual per produk.
-    await assert_return_within_limits(order_id, items)
+    # L08 LN-080 — hanya barang/roll yang benar-benar terkirim lewat SJ; kumulatif ≤ terkirim.
+    from services.return_rolls_service import assert_shipped_items
+    await assert_shipped_items(order_id, items)
 
     number = await next_return_number()
     now = now_iso()

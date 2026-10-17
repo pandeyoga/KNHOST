@@ -548,3 +548,21 @@ E("wms.location_scope_enforced", group="stok-satuan", type="bool", default=False
   example="Petugas Soreang tidak melihat antrean Jakarta walau badan usahanya sama",
   consumers=("services/location_scope.py:warehouse_ids_for", "entity_scope.py:resolve_list_scope"),
   risk="high")
+
+
+E("cutting.wait_warn_minutes", group="stok-satuan", type="int", default=120, min=1, max=10080, step=10,
+  unit="menit", scopes=("global", "entity"),
+  label="Meja Cutting — batas kuning (menit) hasil potong belum diterima",
+  help="Hasil potong yang menunggu diterima Admin Cutting lebih lama dari batas ini diberi tanda kuning.",
+  impact="Hanya mengubah warna penanda dan urutan perhatian di Meja Cutting; tidak mengubah stok atau tugas.",
+  example="120 → potongan yang sudah 2 jam belum diterima tampil kuning",
+  consumers=("services/cutting_service.py:desk",), related=("cutting.wait_late_minutes",), risk="low")
+
+E("cutting.wait_late_minutes", group="stok-satuan", type="int", default=240, min=1, max=10080, step=10,
+  unit="menit", scopes=("global", "entity"),
+  label="Meja Cutting — batas merah/terlambat (menit) hasil potong belum diterima",
+  help="Lewat batas ini potongan dianggap terlambat (merah) dan dihitung di spanduk peringatan Meja Cutting. "
+       "Bila lebih kecil dari batas kuning, batas kuning ikut dipakai sebagai batas merah.",
+  impact="Mengubah jumlah 'terlambat' di spanduk Meja Cutting; tidak mengubah stok atau tugas.",
+  example="240 → potongan yang sudah 4 jam belum diterima tampil merah",
+  consumers=("services/cutting_service.py:desk",), related=("cutting.wait_warn_minutes",), risk="low")

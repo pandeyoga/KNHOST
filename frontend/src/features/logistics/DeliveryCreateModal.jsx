@@ -6,7 +6,8 @@ import KNSelect from "../../components/KNSelect";
 import MoneyInput from "../../components/MoneyInput";
 import { createDelivery, fleetAvailability, unassignedShipments, MODE_LABEL } from "./logisticsApi";
 
-// FB-02 — buat pengiriman dari Surat Jalan yang belum diangkut (satu pesanan per pengiriman).
+// FB-02 — buat pengiriman dari Surat Jalan yang belum diangkut. L07 LN-071: satu armada boleh membawa SJ
+// dari beberapa pesanan (tiap pesanan tetap punya SJ sendiri); pesanan ambil sendiri tidak digabung.
 // Moda mengikuti metode pemenuhan pesanan: pesanan AMBIL → "Diambil pelanggan" (kode pickup),
 // pesanan KIRIM → ekspedisi (resi + biaya) atau armada sendiri (kendaraan master + sopir).
 const EMPTY = { courier_name: "", service_level: "", tracking_no: "", shipping_cost: 0, vehicle_id: "", vehicle_plate: "", driver_name: "", driver_user_id: "", eta: "", destination: "", receiver_phone: "", notes: "" };
@@ -34,6 +35,8 @@ export default function DeliveryCreateModal({ params, onClose, onCreated, presel
   const pickedShip = ships.find((s) => picked.includes(s.id));
   const pickedOrder = pickedShip?.order_id;
   const isPickupOrder = pickedShip?.fulfillment_method === "ambil";
+  const pickedOrders = [...new Set(ships.filter((s) => picked.includes(s.id)).map((s) => s.order_id))];
+  const blocked = (s) => pickedOrder && s.order_id !== pickedOrder && (isPickupOrder || s.fulfillment_method === "ambil");
 
   function applyShipment(s) {
     if (s.fulfillment_method === "ambil") { setMode("self_pickup"); setF((x) => ({ ...x, destination: "", eta: s.pickup_date || "" })); }
@@ -41,8 +44,10 @@ export default function DeliveryCreateModal({ params, onClose, onCreated, presel
   }
   function toggle(s) {
     if (picked.includes(s.id)) { const next = picked.filter((x) => x !== s.id); setPicked(next); if (!next.length) { setMode("expedition"); setF(EMPTY); } return; }
-    if (pickedOrder && s.order_id !== pickedOrder) { setErr("Satu pengiriman hanya untuk Surat Jalan dari SATU pesanan."); return; }
-    setErr(""); setPicked([...picked, s.id]); if (!picked.length) applyShipment(s);
+    if (blocked(s)) { setErr("Pesanan AMBIL SENDIRI tidak bisa digabung dengan pesanan lain dalam satu pengiriman."); return; }
+    setErr(""); setPicked([...picked, s.id]);
+    if (!picked.length) applyShipment(s);
+    else if (s.order_id !== pickedOrder) setF((x) => ({ ...x, destination: "" }));
   }
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   function pickDriver(uid) {
@@ -79,7 +84,7 @@ export default function DeliveryCreateModal({ params, onClose, onCreated, presel
             : ships.length === 0 ? <p className="text-[11.5px] text-[#9A9BA3]" data-testid="logistics-no-shipments">Tidak ada Surat Jalan yang menunggu diangkut (semua sudah punya pengiriman).</p> : (
             <div className="max-h-[200px] overflow-auto rounded-lg border border-[#E1E4EA] divide-y divide-[#F0F1F3]">
               {ships.map((s) => (
-                <label key={s.id} className={`flex items-center gap-2 px-2.5 py-1.5 text-[11.5px] cursor-pointer hover:bg-[#F7F9FC] ${pickedOrder && s.order_id !== pickedOrder ? "opacity-50" : ""}`} data-testid={`logistics-ship-${s.id}`}>
+                <label key={s.id} className={`flex items-center gap-2 px-2.5 py-1.5 text-[11.5px] cursor-pointer hover:bg-[#F7F9FC] ${blocked(s) ? "opacity-50" : ""}`} data-testid={`logistics-ship-${s.id}`}>
                   <input type="checkbox" checked={picked.includes(s.id)} onChange={() => toggle(s)} className="h-4 w-4 accent-[#0058CC]" />
                   <span className="font-mono font-bold text-[#0058CC]">{s.shipment_no}</span>
                   <span className={`status-pill ${s.fulfillment_method === "ambil" ? "pill-purple" : "pill-info"}`}>{s.fulfillment_method === "ambil" ? "Ambil sendiri" : "Kirim"}</span>
@@ -91,6 +96,10 @@ export default function DeliveryCreateModal({ params, onClose, onCreated, presel
           )}
         </div>
 
+        {pickedOrders.length > 1 && (
+          <div className="notice-bar info !mt-3 !py-1.5" data-testid="logistics-multi-order-notice"><Truck size={13} />
+            <span className="text-[11.5px]">Satu armada untuk <b>{pickedOrders.length} pesanan</b> — tiap pesanan tetap memakai Surat Jalannya sendiri; manifest memuat semuanya. Alamat tujuan kosong = semua alamat pesanan.</span></div>
+        )}
         {isPickupOrder && (
           <div className="notice-bar info !mt-3 !py-1.5" data-testid="logistics-pickup-notice"><KeyRound size={13} />
             <span className="text-[11.5px]">Pesanan ini <b>diambil sendiri oleh pelanggan</b>{pickedShip?.pickup_date ? ` (tgl ${pickedShip.pickup_date})` : ""}. Sistem akan membuat <b>kode pickup</b>; tidak ada alamat kirim, sopir, atau kendaraan.</span></div>

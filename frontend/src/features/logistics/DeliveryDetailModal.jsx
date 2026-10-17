@@ -8,6 +8,7 @@ import PositionMap from "./PositionMap";
 import { openOrderJourney } from "./logisticsDeepLink";
 import { addPosition, deletePhoto, deletePosition, getDelivery, photoUrl, transitionDelivery, updateDelivery, uploadPhoto, STATUS_LABEL, STATUS_PILL, STEPS, PICKUP_STEPS, PICKUP_STATUS_LABEL, MODE_PILL, mapsUrl, telUrl, waUrl } from "./logisticsApi";
 import PickupHandoverPanel from "./PickupHandoverPanel";
+import ManifestPanel from "./ManifestPanel";
 import MoneyInput from "../../components/MoneyInput";
 import { formatCurrency } from "../../utils/formatters";
 
@@ -93,7 +94,9 @@ export default function DeliveryDetailModal({ id, canManage, canUpdate, canOpenO
             <button type="button" data-testid="logistics-detail-open-order" className="inline-flex items-center gap-1 font-semibold text-[#0058CC] hover:underline" title="Buka pesanan & Perjalanan Pesanan" onClick={() => { onClose(); openOrderJourney(d.order_id); }}>{d.order_number} <ExternalLink size={11} /></button>
           ) : <span className="font-semibold">{d.order_number}</span>}
           <span>· {d.customer_name} · SJ {(d.shipment_nos || []).join(", ")}</span>
+          {d.is_multi_order && <span className="status-pill pill-info" data-testid="logistics-detail-multi">{(d.order_ids || []).length} pesanan</span>}
         </p>
+        {!isPickup && <ManifestPanel deliveryId={d.id} />}
         {!isPickup && d.destination && (
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             <span className="flex items-center gap-1 text-[11.5px] text-[#3A3B42]"><MapPin size={12} className="text-[#0058CC]" /> {d.destination}</span>

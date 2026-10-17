@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Truck, Plus, Search, RefreshCw, AlertTriangle, LayoutDashboard, ListOrdered, History, Bus } from "lucide-react";
+import { Truck, Plus, Search, RefreshCw, AlertTriangle, LayoutDashboard, ListOrdered, History, Bus, ListChecks } from "lucide-react";
 import ErrorNotice from "../../components/ErrorNotice";
 import { listDeliveries, logisticsSummary, STATUS_LABEL } from "./logisticsApi";
 import DeliveryCreateModal from "./DeliveryCreateModal";
@@ -9,6 +9,8 @@ import DeliveryTable from "./DeliveryTable";
 import DispatchDashboard from "./DispatchDashboard";
 import HistoryPanel from "./HistoryPanel";
 import FleetPanel from "./FleetPanel";
+import { can } from "../../config/roles";
+import TripPlannerPanel from "./TripPlannerPanel";
 
 // FB-02 — Modul Logistik: Dasbor (aksi cepat + visual) · Daftar · Riwayat · Armada.
 const FILTERS = ["", "prepared", "loaded", "in_transit", "delivered", "completed", "failed"];
@@ -18,11 +20,12 @@ const TABS = [
   { id: "list", label: "Daftar pengiriman", icon: ListOrdered },
   { id: "history", label: "Riwayat", icon: History },
   { id: "fleet", label: "Armada", icon: Bus },
+  { id: "trip", label: "Picking & Trip", icon: ListChecks, manageOnly: true },
 ];
 
 export default function LogisticsView({ currentUser, selectedEntity, focusDelivery, onFocusConsumed }) {
   const role = currentUser?.role;
-  const canManage = ["admin", "manager", "warehouse"].includes(role);
+  const canManage = role === "admin" || can(currentUser?.permissions || {}, "logistics", "manage");
   const isDriver = role === "driver";
   const readOnly = !canManage && !isDriver;   // sales / admin sales: hanya-lihat
   const canOpenOrder = ORDER_ROLES.includes(role);
@@ -77,7 +80,7 @@ export default function LogisticsView({ currentUser, selectedEntity, focusDelive
       {isDriver && <DriverTodayPanel params={params} onOpen={setOpenId} refreshKey={tick} />}
 
       <div className="flex flex-wrap items-center gap-1.5" data-testid="logistics-tabs">
-        {TABS.filter((t) => !isDriver || t.id !== "fleet").map((t) => {
+        {TABS.filter((t) => (!isDriver || t.id !== "fleet") && (!t.manageOnly || canManage)).map((t) => {
           const Icon = t.icon; const active = tab === t.id;
           return (
             <button key={t.id} type="button" data-testid={`logistics-tab-${t.id}`} onClick={() => setTab(t.id)} aria-current={active ? "page" : undefined}
@@ -99,6 +102,7 @@ export default function LogisticsView({ currentUser, selectedEntity, focusDelive
       )}
       {tab === "history" && <HistoryPanel params={params} onOpen={setOpenId} refreshKey={tick} />}
       {tab === "fleet" && <FleetPanel params={params} canManage={canManage} onOpen={setOpenId} refreshKey={tick} />}
+      {tab === "trip" && canManage && <TripPlannerPanel params={params} />}
 
       {tab === "list" && (<>
         {sum && (

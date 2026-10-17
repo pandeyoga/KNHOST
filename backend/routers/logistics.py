@@ -14,6 +14,8 @@ from schemas_logistics import (DeliveryCreateIn, DeliveryUpdateIn, MyRouteIn, Pi
                                TransitionIn, VehicleIn, VehicleStatusIn, VehicleUpdateIn)
 from services import logistics_service as lg
 from services import fleet_service as fleet
+from services import trip_service as trips
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/logistics", tags=["logistics"])
 
@@ -125,6 +127,38 @@ async def set_vehicle_status(vehicle_id: str, payload: VehicleStatusIn, request:
         raise HTTPException(status_code=400, detail=str(e))
     await audit(actor["name"], "fleet_vehicle_status", fleet.COLL, vehicle_id, {"status": payload.status}, reason=payload.note)
     return doc
+
+
+class TripOrdersIn(BaseModel):
+    order_ids: List[str]
+
+
+def _scope_ids(ctx) -> List[str]:
+    return ctx.allowed_entity_ids if ctx.view_all else [ctx.active_entity_id]
+
+
+@router.get("/trip/candidates")
+async def trip_candidates(request: Request) -> List[Dict[str, Any]]:
+    await require_permission(request, "logistics", "manage")
+    return await trips.trip_candidates(_scope_ids(await entity_ctx(request)))
+
+
+@router.post("/trip/picking-list")
+async def picking_list(payload: TripOrdersIn, request: Request) -> Dict[str, Any]:
+    await require_permission(request, "logistics", "manage")
+    return await trips.picking_list(payload.order_ids, _scope_ids(await entity_ctx(request)))
+
+
+@router.post("/trip/check")
+async def trip_check(payload: TripOrdersIn, request: Request) -> Dict[str, Any]:
+    await require_permission(request, "logistics", "manage")
+    return await trips.trip_check(payload.order_ids, _scope_ids(await entity_ctx(request)))
+
+
+@router.get("/deliveries/{delivery_id}/manifest")
+async def delivery_manifest(delivery_id: str, request: Request) -> Dict[str, Any]:
+    await require_permission(request, "logistics", "view")
+    return await trips.manifest(await _guard(delivery_id, await entity_ctx(request)))
 
 
 @router.get("/shipments/unassigned")

@@ -142,7 +142,10 @@ async def create_return(
         )
 
     entity_id = payload.entity_id or order.get("entity_id", "")
+    assert_entity_access(order, "sales_orders", await entity_ctx(request))
+    from services.return_rolls_service import order_lock
     try:
+      async with order_lock(payload.order_id):
         doc = await return_service.create_return(
             order_id=payload.order_id,
             return_type=payload.return_type,
@@ -160,6 +163,18 @@ async def create_return(
     await audit(user.get("name", ""), "sales_return_created", "sales_return", doc["id"],
                 {"number": doc["number"], "order_id": payload.order_id, "type": payload.return_type})
     return doc
+
+
+@router.get("/sales-returns/returnable")
+async def returnable_items(request: Request, order_id: str = Query(...)) -> Dict[str, Any]:
+    """L08 LN-080 — roll/qty terkirim (per SJ) yang masih bisa diretur untuk satu SO."""
+    await require_permission(request, "sales_return", "create")
+    order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "id": 1, "entity_id": 1})
+    if not order:
+        raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan")
+    assert_entity_access(order, "sales_orders", await entity_ctx(request))
+    from services.return_rolls_service import returnable
+    return await returnable(order_id)
 
 
 # ─── DETAIL ──────────────────────────────────────────────────────────────────

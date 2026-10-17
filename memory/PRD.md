@@ -1,5 +1,29 @@
 # PRD — Kain Nusantara ERP (lanjutan dari repo github.com/kakjsbsbs/KN)
 
+## 2026-10-17 — L08 mulai: LN-080 retur dari barang terkirim (iteration_206)
+- `GET /api/sales-returns/returnable?order_id=` (roll per SJ, sisa per roll/produk); `services/return_rolls_service.py` (cek SJ, klaim per roll, kunci per SO); schema item += `roll_ids`, `roll_qtys`; cek akses entitas di POST.
+- Form Buat Return: baris otomatis dari SJ + pilih roll, tanpa input ID produk bebas. Tes `test_l08_returnable_rolls*.py` 19/19.
+- Berikutnya: LN-080 T03/T04, LN-081, LN-082; LN-083 menunggu KLR-08/KLR-09.
+
+
+## 2026-10-17 — L07 mulai: picking multi-gudang, manifest multi-SO, transit Jakarta (iteration_205)
+- `services/trip_service.py`: `GET /api/logistics/trip/candidates`, `POST /trip/picking-list`, `POST /trip/check` (dispatch_guard per SO×gudang), `GET /deliveries/{id}/manifest`.
+- Pengiriman logistik kini boleh membawa SJ dari beberapa SO (`order_ids`, `orders[]`, `is_multi_order`); klaim SJ atomik; pesanan ambil sendiri tidak digabung. UI: tab "Picking & Trip", catatan multi-SO di Buat Pengiriman, manifest di detail.
+- Akses tombol kelola Logistik kini mengikuti izin `logistics.manage` (sebelumnya daftar peran tetap).
+- Transit Jakarta memakai ulang P03 (transfer SO + terima per roll). Tes `test_l07_trip_manifest.py` 5/5, testing agent 13/13 BE. Pending DES-02 (owner).
+
+
+## 2026-10-17 — Batas tunggu Meja Cutting bisa diatur + status L06 (iteration_204)
+- Setting baru `cutting.wait_warn_minutes` (120) & `cutting.wait_late_minutes` (240), per entitas, di Pusat Pengaturan grup Stok & Satuan; `/api/cutting/desk` memakai nilai entitas aktif (merah tidak pernah di bawah kuning); spanduk menulis durasi terformat.
+- Badge QC kartu logistik HP (`logistics-card-qc-status-*`) diverifikasi.
+- BACKLOG paket: LN-060/061/062 → in_progress, bukti `evidence/L06/report.md` (tes L06 8/8 + 1/1). Berikutnya: L07 (picking multi-gudang, multi-SO manifest, transit Jakarta) — DES-02 pending.
+
+
+## 2026-10-17 — Saring Sampel Benang (iteration_203)
+- Kasir: tombol sampel disembunyikan untuk produk benang (stage yarn) di quickview & checkout; server menolak pesanan sampel berisi benang (400 SAMPLE_NOT_ALLOWED). Diuji penuh: backend 7/7, frontend 100%, regresi keranjang campur & Jadikan ecer lolos.
+- Lingkungan preview baru: repo disalin ke /app, data acuan dipulihkan (scripts/restore_local_demo.sh).
+
+
 ## 2026-10-17 — Keranjang campur sampel + ecer (iteration_202)
 - Checkout POS: bila keranjang berisi baris sampel dan ecer, muncul peringatan `mixed-cart-notice`; tombol Lanjut & Buat pesanan dikunci ("Pisahkan Sampel & Ecer"). Pilihan: `mixed-cart-all-retail` (semua jadi ecer → SO biasa) atau `mixed-cart-keep-samples` (hapus baris ecer → Pesanan Sampel). Banner keranjang Sales menulis "Keranjang CAMPUR". Server tetap menolak campuran (400 SAMPLE_MIXED).
 

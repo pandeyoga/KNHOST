@@ -1,10 +1,8 @@
 /** Sub-fase 1.11 — Create return form. */
 import { useState, useEffect } from "react";
 import axios, { API } from "../../services/apiClient";
-import { AlertCircle, ArrowLeft, CalendarClock, Loader2, Plus, RotateCcw, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, CalendarClock, Loader2, RotateCcw, ShieldCheck, Trash2, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
-import useUomConversions from "../../hooks/useUomConversions";   // FASE U
-import { uomSelectOptions } from "../../utils/uomCatalog";        // FASE U
 
 
 export default function CreateReturnForm({ orders, token, onCreated, onCancel,
@@ -16,11 +14,11 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
   // tidak bisa diretur dalam satuan yang sama (pilihannya hanya meter/kg/roll/pcs),
   // jadi petugas memilih satuan yang salah dan angka retur tidak bisa dicocokkan
   // dengan pesanan asalnya.
-  useUomConversions();
-  const unitOpts = uomSelectOptions({ dimensions: ["length", "weight", "count"] });
+  // L08 LN-080 — baris retur diisi dari barang TERKIRIM (Surat Jalan); satuan ikut satuan kirim.
   const [orderId, setOrderId]       = useState("");
   const [returnType, setReturnType] = useState("retur");
-  const [items, setItems]           = useState([{ product_id: "", product_name: "", quantity_returned: "", unit: "meter", reason: "", condition: "ok" }]);
+  const [items, setItems]           = useState([]);
+  const [shipped, setShipped]       = useState(null);
   const [notes, setNotes]           = useState("");
   const [submitNow, setSubmitNow]   = useState(true);
   const [saving, setSaving]         = useState(false);
@@ -51,22 +49,28 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
   }, [orderId, returnType]);
 
   function handleOrderChange(id) {
-    setOrderId(id);
-    const order = orders.find(o => o.id === id);
-    if (order?.items?.length) {
-      setItems(order.items.map(li => ({
-        product_id:        li.product_id || "",
-        product_name:      li.product_name || "",
-        quantity_returned: "",
-        unit:              li.unit || "meter",
-        reason:            "",
-        condition:         "ok",
+    setOrderId(id); setShipped(null); setItems([]);
+    if (!id) return;
+    axios.get(`${API}/sales-returns/returnable`, { params: { order_id: id } }).then((r) => {
+      setShipped(r.data);
+      setItems(r.data.products.filter((p) => p.remaining > 0).map((p) => ({
+        product_id: p.product_id, product_name: p.product_name, sku: p.sku, color: p.color,
+        quantity_returned: "", unit: p.unit, reason: "", condition: "ok", roll_ids: [], max: p.remaining,
       })));
-    }
+    }).catch((e) => setError(e.response?.data?.detail || "Gagal memuat barang terkirim."));
+  }
+
+  const rollsOf = (pid) => (shipped?.rolls || []).filter((r) => r.product_id === pid && r.remaining > 0);
+  function toggleRoll(i, roll) {
+    setItems((prev) => prev.map((it, idx) => {
+      if (idx !== i) return it;
+      const ids = it.roll_ids.includes(roll.roll_id) ? it.roll_ids.filter((x) => x !== roll.roll_id) : [...it.roll_ids, roll.roll_id];
+      const sum = rollsOf(it.product_id).filter((r) => ids.includes(r.roll_id)).reduce((a, r) => a + r.remaining, 0);
+      return { ...it, roll_ids: ids, quantity_returned: ids.length ? String(Math.round(sum * 100) / 100) : it.quantity_returned };
+    }));
   }
 
   const updateItem = (i, f, v) => setItems(prev => prev.map((it, idx) => idx === i ? { ...it, [f]: v } : it));
-  const addItem    = () => setItems(prev => [...prev, { product_id: "", product_name: "", quantity_returned: "", unit: "meter", reason: "", condition: "ok" }]);
   const removeItem = (i) => setItems(prev => prev.filter((_, idx) => idx !== i));
 
   async function handleSubmit(e) {
@@ -78,7 +82,7 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
     try {
       const res = await axios.post(`${API}/sales-returns`, {
         order_id: orderId, return_type: returnType,
-        items: validItems.map(it => ({ ...it, quantity_returned: parseFloat(it.quantity_returned) })),
+        items: validItems.map(({ max, sku, color, ...it }) => ({ ...it, quantity_returned: parseFloat(it.quantity_returned) })),
         notes, submit_now: submitNow,
       }, { headers: { Authorization: `Bearer ${token}` } });
       onCreated(res.data);
@@ -187,21 +191,23 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
 
         <div className="form-group">
           <label className="form-label">Item yang Diretur <span className="req">*</span></label>
+          {orderId && shipped && !items.length && (
+            <p className="text-[11.5px] text-[#A05000]" data-testid="return-nothing-shipped">Belum ada barang terkirim (Surat Jalan) yang masih bisa diretur untuk pesanan ini.</p>
+          )}
           <div className="form-items-table">
             <div className="form-items-header">
-              <span>Produk</span><span>Qty</span><span>Satuan</span><span>Kondisi</span><span>Alasan</span><span></span>
+              <span>Produk (dari Surat Jalan)</span><span>Qty</span><span>Satuan</span><span>Kondisi</span><span>Alasan</span><span></span>
             </div>
             {items.map((it, i) => (
-              <div key={i} className="form-items-row" data-testid={`return-item-row-${i}`}>
-                <input data-testid={`item-product-${i}`} className="form-input" placeholder="ID Produk"
-                  value={it.product_id} onChange={e => updateItem(i, "product_id", e.target.value)} />
+              <div key={it.product_id} data-testid={`return-item-row-${i}`}>
+              <div className="form-items-row">
+                <div className="text-[11.5px]" data-testid={`item-product-${i}`}>
+                  <b>{it.product_name || it.sku}</b>
+                  <span className="block text-[10.5px] text-[#6B6B73]">{it.sku}{it.color ? ` · ${it.color}` : ""} · sisa {it.max} {it.unit}</span></div>
                 <input data-testid={`item-qty-${i}`} className="form-input text-right" type="number"
-                  min="0.01" step="0.01" placeholder="0.00"
+                  min="0.01" step="0.01" max={it.max} placeholder="0.00"
                   value={it.quantity_returned} onChange={e => updateItem(i, "quantity_returned", e.target.value)} />
-                <KNSelect data-testid={`item-unit-${i}`} className="form-select" value={it.unit}
-                  onValueChange={v => updateItem(i, "unit", v)}
-                  options={unitOpts}
-                />
+                <span className="text-[11.5px] self-center" data-testid={`item-unit-${i}`}>{it.unit}</span>
                 <KNSelect data-testid={`item-condition-${i}`} className="form-select" value={it.condition}
                   onValueChange={v => updateItem(i, "condition", v)}
                   options={[
@@ -216,10 +222,15 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
                   <Trash2 size={12} />
                 </button>
               </div>
+              <div className="flex flex-wrap gap-1.5 px-1 pb-2" data-testid={`item-rolls-${i}`}>
+                {rollsOf(it.product_id).map((r) => (
+                  <label key={r.roll_id} className={`text-[10.5px] rounded-full border px-2 py-0.5 cursor-pointer ${it.roll_ids.includes(r.roll_id) ? "border-[#0058CC] bg-[#EEF4FF]" : "border-[#E1E4EA]"}`} data-testid={`item-roll-${r.roll_id}`}>
+                    <input type="checkbox" className="mr-1 align-middle" checked={it.roll_ids.includes(r.roll_id)} onChange={() => toggleRoll(i, r)} />
+                    <span className="font-mono">{r.roll_no || r.roll_id}</span> · {r.shipment_no} · {r.remaining} {r.unit}</label>
+                ))}
+              </div>
+              </div>
             ))}
-            <button type="button" className="link-button" onClick={addItem} data-testid="add-return-item-btn">
-              <Plus size={12} /> Tambah Item
-            </button>
           </div>
         </div>
 

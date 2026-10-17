@@ -156,14 +156,23 @@ async def create_delivery(payload: Dict[str, Any], actor: Dict[str, Any], entity
         if (s.get("status") or "") not in SHIPMENT_DISPATCHABLE:
             raise ValueError(f"Surat Jalan {s.get('shipment_no')} berstatus '{s.get('status') or '-'}' — "
                              f"hanya SJ yang sudah dispatch gudang yang bisa diangkut.")
-    orders = {s.get("order_id") for s in ships}
-    if len(orders) > 1:
-        raise ValueError("Satu pengiriman hanya untuk Surat Jalan dari SATU pesanan.")
-    order_id = next(iter(orders))
-    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "order_number": 1, "number": 1,
-                                                          "customer_name": 1, "customer_id": 1,
-                                                          "shipping_address": 1, "fulfillment_method": 1,
-                                                          "pickup_date": 1}) or {}
+    # L07 LN-071 — satu armada boleh mengangkut SJ dari beberapa SO (tiap SO tetap punya SJ sendiri).
+    order_ids = list(dict.fromkeys(s.get("order_id") for s in ships))
+    so_map = {o["id"]: o for o in await db.sales_orders.find(
+        {"id": {"$in": order_ids}}, {"_id": 0, "id": 1, "order_number": 1, "number": 1, "customer_name": 1,
+                                       "customer_id": 1, "shipping_address": 1, "fulfillment_method": 1,
+                                       "pickup_date": 1}).to_list(100)}
+    if len(order_ids) > 1 and any(_is_pickup_order(so_map.get(o)) for o in order_ids):
+        raise ValueError("Pesanan AMBIL SENDIRI tidak bisa digabung dengan pesanan lain dalam satu pengiriman.")
+    order_id = order_ids[0]
+    so = so_map.get(order_id) or {}
+    orders_meta = [{"order_id": o, "order_number": (so_map.get(o) or {}).get("number") or (so_map.get(o) or {}).get("order_number", ""),
+                    "customer_id": (so_map.get(o) or {}).get("customer_id", ""),
+                    "customer_name": (so_map.get(o) or {}).get("customer_name", ""),
+                    "destination": _addr_text((so_map.get(o) or {}).get("shipping_address")),
+                    "shipment_ids": [s["id"] for s in ships if s.get("order_id") == o],
+                    "shipment_nos": [s.get("shipment_no", "") for s in ships if s.get("order_id") == o]} for o in order_ids]
+    multi = len(order_ids) > 1
     pickup_order = _is_pickup_order(so)
     mode = (payload.get("mode") or "expedition").strip()
     if mode not in MODES:
@@ -187,9 +196,13 @@ async def create_delivery(payload: Dict[str, Any], actor: Dict[str, Any], entity
     await _assert_driver_free(driver_user_id)
     doc = {
         "id": new_id("lgs"), "number": await next_doc_number(COLL, "number", "LG-", entity_id=entity_id),
-        "entity_id": entity_id, "order_id": order_id,
-        "order_number": so.get("order_number") or so.get("number") or ships[0].get("order_number", ""),
-        "customer_id": so.get("customer_id", ""), "customer_name": so.get("customer_name", ""),
+        "entity_id": entity_id, "order_id": order_id, "order_ids": order_ids, "orders": orders_meta,
+        "is_multi_order": multi,
+        "order_number": ", ".join(o["order_number"] for o in orders_meta) if multi else (
+            so.get("order_number") or so.get("number") or ships[0].get("order_number", "")),
+        "customer_id": so.get("customer_id", ""),
+        "customer_name": "; ".join(dict.fromkeys(o["customer_name"] for o in orders_meta if o["customer_name"])) if multi
+        else so.get("customer_name", ""),
         "shipment_ids": ids, "shipment_nos": [s.get("shipment_no", "") for s in ships],
         "mode": mode, "fulfillment_method": "ambil" if pickup_order else "kirim",
         "courier_name": (payload.get("courier_name") or "").strip() if mode == "expedition" else "",
@@ -201,7 +214,9 @@ async def create_delivery(payload: Dict[str, Any], actor: Dict[str, Any], entity
         "driver_user_id": driver_user_id,
         "eta": (payload.get("eta") or "").strip() or ((so.get("pickup_date") or "") if is_pickup else ""),
         # Ambil sendiri: TIDAK ada alamat tujuan (barang tidak dikirim ke mana pun).
-        "destination": "" if is_pickup else (payload.get("destination") or _addr_text(so.get("shipping_address"))).strip(),
+        "destination": "" if is_pickup else (payload.get("destination") or (
+            " | ".join(dict.fromkeys(o["destination"] for o in orders_meta if o["destination"])) if multi
+            else _addr_text(so.get("shipping_address")))).strip(),
         "receiver_phone": (payload.get("receiver_phone") or contact["receiver_phone"]).strip(),
         "receiver_name_hint": contact["receiver_name_hint"],
         "pickup_code": _gen_pickup_code() if is_pickup else "",
@@ -214,11 +229,25 @@ async def create_delivery(payload: Dict[str, Any], actor: Dict[str, Any], entity
         "created_by": actor.get("name", ""), "created_at": now_iso(), "updated_at": now_iso(),
     }
     _validate_mode_fields(doc)
-    await db[COLL].insert_one(dict(doc))
-    await db.shipments.update_many({"id": {"$in": ids}}, {"$set": {
+    # Klaim SJ atomik: retry / klik ganda / dua petugas bersamaan tidak menerbitkan pengiriman ganda.
+    res = await db.shipments.update_many({"id": {"$in": ids}, "logistics_id": {"$in": [None, ""]}}, {"$set": {
         "logistics_id": doc["id"], "logistics_number": doc["number"], "logistics_status": "prepared",
         "logistics_mode": mode}})
+    if res.modified_count != len(ids):
+        await db.shipments.update_many({"logistics_id": doc["id"]}, {"$set": {
+            "logistics_id": None, "logistics_number": None, "logistics_status": None, "logistics_mode": None}})
+        raise ValueError("Sebagian Surat Jalan baru saja diangkut pengiriman lain — muat ulang daftar.")
+    try:
+        await db[COLL].insert_one(dict(doc))
+    except Exception:
+        await db.shipments.update_many({"logistics_id": doc["id"]}, {"$set": {
+            "logistics_id": None, "logistics_number": None, "logistics_status": None, "logistics_mode": None}})
+        raise
     return _enrich(safe_doc(doc))
+
+
+def order_ids_of(doc: Dict[str, Any]) -> List[str]:
+    return list(doc.get("order_ids") or ([doc["order_id"]] if doc.get("order_id") else []))
 
 
 def _status_label(doc: Dict[str, Any]) -> str:
@@ -261,7 +290,7 @@ async def list_deliveries(scope: Dict[str, Any], status: str = "", q: str = "",
     if mode:
         query["mode"] = mode
     if order_id:
-        query["order_id"] = order_id
+        query = {"$and": [query, {"$or": [{"order_id": order_id}, {"order_ids": order_id}]}]}
     if driver_user_id:
         query["driver_user_id"] = driver_user_id
     rows = await db[COLL].find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
@@ -274,10 +303,12 @@ async def list_deliveries(scope: Dict[str, Any], status: str = "", q: str = "",
                 ("number", "order_number", "customer_name", "tracking_no", "courier_name",
                  "vehicle_plate", "driver_name")) or any(s in str(n).lower() for n in r.get("shipment_nos", []))]
     qc = {o["id"]: o["qc_request"].get("status", "") async for o in db.sales_orders.find(
-        {"id": {"$in": list({r.get("order_id") for r in rows if r.get("order_id")})},
+        {"id": {"$in": list({o for r in rows for o in order_ids_of(r)})},
          "qc_request.mode": {"$in": ["full", "sampling"]}}, {"_id": 0, "id": 1, "qc_request.status": 1})}
-    for r in rows:   # L05 — status QC pesanan (badge Menunggu QC / Lulus / Ditolak)
-        r["qc_status"] = qc.get(r.get("order_id"), "")
+    rank = {"failed": 0, "required": 1, "": 3}
+    for r in rows:   # L05 — status QC pesanan (badge Menunggu QC / Lulus / Ditolak); multi-SO → status terburuk
+        sts = [qc[o] for o in order_ids_of(r) if o in qc]
+        r["qc_status"] = min(sts, key=lambda s: rank.get(s, 2)) if sts else ""
     return [_enrich(safe_doc(r)) for r in rows]
 
 
@@ -302,7 +333,8 @@ def _compact(d: Dict[str, Any]) -> Dict[str, Any]:
     keys = ("id", "number", "order_id", "order_number", "customer_name", "mode", "mode_label", "status",
             "status_label", "eta", "is_late", "shipment_nos", "courier_name", "tracking_no", "vehicle_plate",
             "driver_name", "driver_user_id", "pickup_date", "last_position", "photo_counts", "created_at",
-            "delivered_at", "completed_at", "fail_reason", "shipping_cost", "loaded_at", "departed_at", "pod", "qc_status")
+            "delivered_at", "completed_at", "fail_reason", "shipping_cost", "loaded_at", "departed_at", "pod", "qc_status",
+            "order_ids", "is_multi_order")
     return {k: d.get(k) for k in keys}
 
 
@@ -564,12 +596,13 @@ async def transition(delivery_id: str, payload: Dict[str, Any], actor_name: str)
             await fleet.release(doc["vehicle_id"], delivery_id)
     if to in ("delivered", "failed"):
         await _notify_sales(doc, to, note, actor_name)
-    if to in ("delivered", "completed") and doc.get("order_id"):
-        try:
-            from services import special_order_phase2 as _p2
-            await _p2.on_delivered(doc["order_id"])
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("[transition] efek samping gagal diabaikan: %s", exc)  # KN-C10
+    if to in ("delivered", "completed"):
+        for oid in order_ids_of(doc):
+            try:
+                from services import special_order_phase2 as _p2
+                await _p2.on_delivered(oid)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("[transition] efek samping gagal diabaikan: %s", exc)  # KN-C10
     return await get_delivery(delivery_id)
 
 
@@ -645,6 +678,6 @@ async def list_drivers(entity_id: str) -> List[Dict[str, Any]]:
 
 async def for_order(order_id: str) -> List[Dict[str, Any]]:
     """Ringkasan pelacakan untuk Perjalanan Pesanan (read-only)."""
-    rows = await db[COLL].find({"order_id": order_id}, {"_id": 0, "photos": 0, "timeline": 0}) \
+    rows = await db[COLL].find({"$or": [{"order_id": order_id}, {"order_ids": order_id}]}, {"_id": 0, "photos": 0, "timeline": 0}) \
         .sort("created_at", 1).to_list(50)
     return [_enrich(safe_doc(r)) for r in rows]

@@ -59,7 +59,7 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
       </div>
       {data?.late_count > 0 && (
         <p data-testid="cutting-late-alert" className="rounded-lg bg-[#FDECEC] px-3 py-2 text-[11.5px] font-semibold text-[#C62828]">
-          {data.late_count} potongan menunggu diterima Admin Cutting lebih dari {Math.round(data.wait_thresholds.late_minutes / 60)} jam.</p>
+          {data.late_count} potongan menunggu diterima Admin Cutting lebih dari {fmtWait(data.wait_thresholds.late_minutes)}.</p>
       )}
       <div className="grid gap-3 lg:grid-cols-2">
         {(data?.queues || []).map((q) => (

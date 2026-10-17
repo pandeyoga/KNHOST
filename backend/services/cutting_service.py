@@ -65,7 +65,16 @@ def _minutes_since(iso: Optional[str], until: Optional[str] = None) -> Optional[
         return None
 
 
-async def desk(scope: Dict[str, Any]) -> Dict[str, Any]:
+async def wait_thresholds(entity_id: Optional[str]) -> Dict[str, int]:
+    from services import config_resolver
+    ctx = {"entity_id": entity_id} if entity_id else None
+    warn = int(await config_resolver.value_of("cutting.wait_warn_minutes", ctx) or WAIT_WARN_MIN)
+    late = int(await config_resolver.value_of("cutting.wait_late_minutes", ctx) or WAIT_LATE_MIN)
+    return {"warn_minutes": warn, "late_minutes": max(warn, late)}
+
+
+async def desk(scope: Dict[str, Any], entity_id: Optional[str] = None) -> Dict[str, Any]:
+    th = await wait_thresholds(entity_id)
     tasks = await db.wms_tasks.find({**scope, "task_subtype": "sample_cut"}, {"_id": 0}).sort("created_at", 1).to_list(500)
     orders = {o["id"]: o for o in await db.sales_orders.find(
         {"id": {"$in": list({t["order_id"] for t in tasks})}}, {"_id": 0, "id": 1, "items": 1, "number": 1, "catalogue": 1}).to_list(500)}
@@ -92,9 +101,9 @@ async def desk(scope: Dict[str, Any]) -> Dict[str, Any]:
             "wait_minutes": _minutes_since(t.get("cut_at") or line.get("cut_at"),
                                            (t.get("cutting_handoff") or {}).get("received_at")) if q in ("to_receive", "ready") else None})
     buckets["to_receive"].sort(key=lambda r: -(r["wait_minutes"] or 0))
-    late = sum(1 for r in buckets["to_receive"] if (r["wait_minutes"] or 0) >= WAIT_LATE_MIN)
+    late = sum(1 for r in buckets["to_receive"] if (r["wait_minutes"] or 0) >= th["late_minutes"])
     return {"queues": [{"key": k, "label": lbl, "rows": buckets[k]} for k, lbl in QUEUES],
-            "wait_thresholds": {"warn_minutes": WAIT_WARN_MIN, "late_minutes": WAIT_LATE_MIN}, "late_count": late}
+            "wait_thresholds": th, "late_count": late}
 
 
 async def receive(task_id: str, to_warehouse_id: str, actor: Dict[str, Any], scope_entities: List[str]) -> Dict[str, Any]:

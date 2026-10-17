@@ -36,7 +36,9 @@ async def set_caps(wid: str, payload: CapsIn, request: Request) -> Dict[str, Any
 @router.get("/desk")
 async def desk(request: Request, entity_id: str = None) -> Dict[str, Any]:
     await require_permission(request, "sample_order", "view")
-    return await cs.desk(resolve_list_scope("wms_tasks", {}, await entity_ctx(request), entity_id))
+    ctx = await entity_ctx(request)
+    eid = entity_id if entity_id and entity_id != "all" else (None if ctx.view_all else ctx.active_entity_id)
+    return await cs.desk(resolve_list_scope("wms_tasks", {}, ctx, entity_id), eid)
 
 
 @router.post("/tasks/{task_id}/receive")

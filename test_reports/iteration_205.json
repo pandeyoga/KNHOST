@@ -1,0 +1,42 @@
+{
+  "summary": "Tested L07 end to end: the backend through the public URL with pytest (13/13 pass: 5 from main agent's test_l07_trip_manifest.py and 8 new in test_l07_trip_regression.py), and the UI with Playwright as admin, sales and warehouse. The core features work. LN-070: candidates return only KSC SOs that have open outbound tasks. Picking list groups rolls per warehouse and tags each roll with its own SO. Empty list returns 400, an unknown SO 404, and a Kanda SO 403. The trip check returns rows per SO x warehouse; KSC/SO-00003 is blocked because RL-11704/11705 have no RFID tag. LN-071: one expedition delivery with SJ-00001..04 (2 SOs) works (is_multi_order true, 2 order_ids). Re-sending the same request returns 400, and so does a partial overlap with an already-claimed SJ. GET /deliveries?order_id lists the delivery for both SOs, and the manifest totals show 2 orders, 4 SJ and the correct roll count. Status changes loaded and in_transit carry over to all 4 SJ. A self-pickup SO cannot be combined with another SO: tested by temporarily setting SO-00002 to 'ambil' (then restored); returns 400 with no SJ left claimed. Regression: single-SO delivery and its status flow (loaded/in_transit guards, failed, back to prepared) still work, and the driver list works. UI: the Picking & Trip tab, check result and picking table render correctly. In the create modal, selecting 2 SJ from 2 SOs shows the multi-order notice, and submitting opens the detail with the '2 Pesanan' pill and a manifest showing both SOs. The tab is hidden for sales and visible for warehouse. Cleanup done: all test deliveries deleted and the SJ logistics_* fields reset to null (verified 0 deliveries, 0 claimed KSC SJ).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/logistics/trip/* and POST /api/logistics/deliveries", "issue": "The manager role gets 403 'Permission ditolak: logistics.manage'. The stored permission_settings matrix (id=default) has no 'logistics' key for manager, but permissions_config.py:312 gives manager view/manage/update. The frontend LogisticsView treats manager as canManage, so manager sees the Picking & Trip tab and the create button, but the API calls fail. This existed before L07 (a gap in DB defaults_applied), but it now affects the new tab too."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "LogisticsView canManage", "issue": "Access is hardcoded to the roles ['admin','manager','warehouse'] instead of checking the logistics.manage permission. Result: warehouse_admin (whadmin@) and sales_admin, who do have logistics.manage on the backend, cannot see the Trip tab or the create button. Manager sees them but gets 403.", "selector": "[data-testid='logistics-tab-trip'], [data-testid='logistics-create-button']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Delivery detail for a multi-SO delivery", "issues": [
+        "receiver_phone and the contact (Telepon/WA) only come from the first SO's customer (Pak Hendra). The second customer's contact is missing.",
+        "Destination joins the addresses with ' | ', and the Navigasi link sends that combined string to maps, so a multi-drop trip cannot be navigated.",
+        "There is one POD/receiver_name and one 'delivered' transition for the whole trip. A drop at SO1 cannot be marked delivered while SO2 is still in transit, so per-SO delivery status is not tracked."
+      ]},
+      {"screen": "Picking & Trip table", "issue_note": "Rolls without a bin show '-'; acceptable", "issues": []}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l07_trip_regression.py", "/app/backend/tests/test_l07_trip_manifest.py", "/app/test_reports/pytest/l07_trip.xml"],
+  "action_items": [
+    "Pick one fix for the manager role: add logistics view/manage/update to manager in the permission_settings matrix (migration/default merge), or remove manager from the frontend canManage list.",
+    "Base LogisticsView canManage on the logistics.manage permission instead of the hardcoded role list (covers warehouse_admin, sales_admin and custom roles).",
+    "Optional (business decision): per-order receiver contact, a per-drop navigation link and per-SO POD/delivered status for multi-order trips."
+  ],
+  "critical_code_review_comments": [
+    "create_delivery: the contact (_receiver_contact) and customer_id come only from order_ids[0] in multi mode, so the delivery doc's customer_id is the first SO's customer only.",
+    "transition('delivered') runs _p2.on_delivered for every order_id with a single POD. Acceptable if the agreed rule is 'one trip = one delivery event'; otherwise needs per-order POD.",
+    "trip_service.picking_list makes one find_one per warehouse that has no tasks (N+1). Minor.",
+    "The atomic SJ claim with rollback is implemented correctly; duplicate and partial-overlap requests are both rejected with no SJ left claimed."
+  ],
+  "updated_files": ["/app/backend/tests/test_l07_trip_regression.py"],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "95% (all L07 flows pass; role-gating mismatch for manager/warehouse_admin)"},
+  "seed_data_creation": "None kept. Test deliveries (including KSC/LG-00008 from the UI) were deleted and SJ-00001..04 reset to logistics_*=null. SO-00002 fulfillment_method was temporarily set to 'ambil' and restored to 'kirim'. The LG number sequence moved forward by the test creates.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run with: cd /app/backend && export MONGO_URL/DB_NAME from .env and REACT_APP_BACKEND_URL; python -m pytest tests/test_l07_trip_regression.py -n0. SO1=so_7f6b0f78e8d8 (SJ-00001/02), SO2=so_d755b1b5ab40 (SJ-00003/04). The only trip candidate is KSC/SO-00003 (blocked by untagged rolls). The manager login password is demo1234.",
+  "rca of the issue": "Manager 403 on logistics.manage: the effective permissions come from the permission_settings DB matrix, which has no logistics entry for manager (the code defaults are not merged). The frontend gates by role name, so it shows manager the controls and the backend rejects the calls."
+}
