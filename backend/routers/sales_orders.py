@@ -286,6 +286,9 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     # sebagai NILAI string `shipment_policy`). Sekarang benar-benar mengikat: bila kebijakan
     # kirim-sebagian dimatikan, pesanan dipaksa berkebijakan kirim penuh.
     from services.config_resolver import value_of as _cfg_value
+    _qc_mode = (payload.qc_request or "none").strip().lower()
+    if _qc_mode not in ("none", "full", "sampling"):
+        raise HTTPException(status_code=400, detail="Request QC harus: none, full, atau sampling.")
     _shipment_policy = (payload.shipment_policy or "allow_partial_shipment").strip()
     if not bool(await _cfg_value("sales.allow_partial_shipment", {"entity_id": entity_id})):
         _shipment_policy = "require_full_shipment"
@@ -572,6 +575,10 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         # EPIC6 — link eksplisit asal Special Order (bila order dikonversi dari OD).
         "source_special_order_id": (getattr(payload, "source_special_order_id", "") or "").strip() or None,
         "shipment_policy": _shipment_policy,
+        # L05 LN-050-T01 — permintaan QC dari checkout; dispatch menunggu QC lulus bila diminta.
+        "qc_request": ({"mode": _qc_mode, "sample_pct": float(payload.qc_sample_pct or 10), "status": "required",
+                        "requested_by": actor.get("name", ""), "requested_at": now_iso()}
+                       if _qc_mode != "none" else {"mode": "none", "status": "not_required"}),
         # Order Pengambilan (pickup) — metode pemenuhan + tanggal ambil (hold picking s/d tgl).
         "fulfillment_method": (getattr(payload, "fulfillment_method", "kirim") or "kirim").strip().lower(),
         "pickup_date": (getattr(payload, "pickup_date", "") or "").strip(),

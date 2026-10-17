@@ -192,10 +192,34 @@ async def untagged_rolls(order_id: str, warehouse_id: Optional[str] = None) -> L
     return [r.get("roll_no", "") for r in rolls if r.get("rfid_tag_id") not in active]
 
 
+async def qc_request_guard(order_id: str) -> None:
+    """L05 LN-050-T01 — SO yang minta QC di checkout tidak boleh berangkat sebelum SPK QC pesanan selesai & lulus,
+    dan (mode seluruh) semua roll alokasi terbaru sudah diperiksa."""
+    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "qc_request": 1, "order_number": 1})
+    qr = (so or {}).get("qc_request") or {}
+    if qr.get("mode") not in ("full", "sampling"):
+        return
+    docs = await db.inspections.find({"kind": "sales_order", "ref_doc_id": order_id, "status": {"$in": ["done", "closed"]}},
+                                     {"_id": 0, "decision": 1, "lines.roll_id": 1}).to_list(50)
+    passed = [d for d in docs if d.get("decision") in ("terima", "turun_grade")]
+    if not passed:
+        raise HTTPException(status_code=400, detail=(
+            f"Pesanan {so.get('order_number', '')} meminta QC ({'seluruh roll' if qr['mode'] == 'full' else 'sampling'}) — "
+            "kirim menunggu SPK QC pesanan selesai & diterima."))
+    if qr["mode"] == "full":
+        checked = {ln.get("roll_id") for d in passed for ln in d.get("lines") or []}
+        current = {r["id"] for r in await db.inventory_rolls.find({"reserved_ref.id": order_id}, {"_id": 0, "id": 1}).to_list(2000)}
+        missing = current - checked
+        if missing:
+            raise HTTPException(status_code=400, detail=(
+                f"{len(missing)} roll alokasi terbaru belum di-QC (alokasi berubah sesudah QC) — buat SPK QC pesanan lagi."))
+
+
 async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = None) -> None:
     """Blokir dispatch bila loading check terbuka / tidak bersih / basi (RF-06) / wajib tapi tidak ada (RF-04)."""
     if not order_id:
         return
+    await qc_request_guard(order_id)
     if await db.rfid_verify_sessions.find_one(_open_q(order_id, warehouse_id), {"_id": 0, "id": 1}):
         raise HTTPException(status_code=400, detail="Final Loading Check masih berjalan — selesaikan dulu sebelum kirim.")
     so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "loading_check": 1, "loading_checks": 1})

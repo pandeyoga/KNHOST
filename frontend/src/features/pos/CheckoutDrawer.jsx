@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import QcRequestPicker, { qcPayload } from "../../components/QcRequestPicker";
 import {
   X, ChevronRight, ChevronLeft, Users, UserPlus, PackageCheck, Receipt,
   AlertTriangle, Layers, ShieldAlert, ShieldCheck, MapPin, CreditCard, CheckCircle2, Truck, Scissors, Gift, Banknote,
@@ -38,6 +39,7 @@ export default function CheckoutDrawer({
   const [orderDiscount, setOrderDiscount] = useState(0);
   const [paymentTerm, setPaymentTerm] = useState("");
   const [allowBackorder, setAllowBackorder] = useState(false);
+  const [qcReq, setQcReq] = useState({ mode: "none", pct: 10 });
   const [showMixedConfirm, setShowMixedConfirm] = useState(false);
   const [showCreateCustomer, setShowCreateCustomer] = useState(false);
   const [allocation, setAllocation] = useState({ map: {}, loading: false, entityId: "" });
@@ -180,7 +182,7 @@ export default function CheckoutDrawer({
   const doSubmit = (confirmMixed) => {
     onSubmitOrder({
       order_discount_percent: 0, payment_term_code: paymentTerm,
-      allow_backorder: allowBackorder, special_prices: linePrices, confirm_mixed_lot: !!confirmMixed,
+      allow_backorder: allowBackorder, special_prices: linePrices, confirm_mixed_lot: !!confirmMixed, ...qcPayload(qcReq),
       needs_tax_invoice: p.isPkp !== false ? needsTaxInvoice : false,
       fulfillment_method: fulfillmentMethod,
       pickup_date: fulfillmentMethod === "ambil" ? pickupDate : "",
@@ -411,6 +413,7 @@ export default function CheckoutDrawer({
                 </div>
               )}
 
+              <QcRequestPicker value={qcReq} onChange={setQcReq} />
               {hasBackorderLine && (
                 <div data-testid="backorder-option-card" className="rounded-md border border-[#F5C9A6] bg-[#FFF7EF] p-2.5">
                   <div className="flex items-start gap-2">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import QcRequestPicker, { qcPayload } from "./QcRequestPicker";
 import { ShoppingBag, PackageCheck, XCircle, Receipt, Layers } from "lucide-react";
 import { formatCurrency, formatQty } from "../utils/formatters";
 import { computeOrderPreview } from "../utils/pricing";
@@ -38,6 +39,7 @@ export function CartPanel({
   const [orderDiscount, setOrderDiscount] = useState(0);
   const [paymentTerm, setPaymentTerm] = useState("");
   const [allowBackorder, setAllowBackorder] = useState(false);
+  const [qcReq, setQcReq] = useState({ mode: "none", pct: 10 });
   const [showMixedConfirm, setShowMixedConfirm] = useState(false);
   // FASE E-3 (user story 7) — pesanan WAJIB lahir di satu badan usaha.
   const { canWrite, writeBlockHint } = useEntityScope();
@@ -67,6 +69,7 @@ export function CartPanel({
       allow_backorder: allowBackorder,
       special_prices: specialPrices,
       confirm_mixed_lot: !!confirmMixed,
+      ...qcPayload(qcReq),
     });
 
   const handleSubmitClick = () => {
@@ -382,6 +385,7 @@ export function CartPanel({
           </button>
         )}
 
+        {cart.length > 0 && <QcRequestPicker value={qcReq} onChange={setQcReq} />}
         <CartPanelBanners
           cartLength={cart.length}
           hasBackorderLine={hasBackorderLine}

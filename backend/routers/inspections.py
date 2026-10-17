@@ -337,6 +337,16 @@ async def ref_doc_options(request: Request, kind: str = Query(""),
                 "label": " · ".join(x for x in (r.get("number"), r.get("customer_name"),
                                                 r.get("complaint_label")) if x)}
                for r in rows]
+    elif want == svc.KIND_SALES_ORDER:
+        # L05 LN-050-T01 — HANYA SO yang meminta QC di checkout & belum lulus QC.
+        q = {**_scoped("sales_orders"), "qc_request.mode": {"$in": ["full", "sampling"]},
+             "qc_request.status": {"$ne": "passed"}, "status": {"$nin": ["cancelled", "shipped", "delivered", "completed"]}}
+        rows = await db.sales_orders.find(q, {"_id": 0, "id": 1, "order_number": 1, "customer_name": 1, "qc_request": 1}
+                                          ).sort("created_at", -1).to_list(150)
+        out = [{"value": r["id"], "label": " · ".join(x for x in (
+            r.get("order_number"), r.get("customer_name"),
+            "QC seluruh roll" if r["qc_request"]["mode"] == "full" else f"QC sampling {r['qc_request'].get('sample_pct', 10):g}%") if x)}
+            for r in rows]
     elif want == svc.KIND_RETURN_SUPPLIER:
         rows = await db.purchase_returns.find(
             _scoped("purchase_returns"),

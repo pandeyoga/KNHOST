@@ -42,6 +42,7 @@ export const INS_KIND_LABEL = {
   return_supplier: "Inspeksi Retur ke Supplier",
   replacement: "Inspeksi Barang Pengganti",
   random_check: "Random Check Stok (QC)",
+  sales_order: "QC Permintaan Pesanan (SO)",
 };
 
 /** Nama pendek untuk chip penyaring — judul panjang membuat bilah filter melipat. */
@@ -52,6 +53,7 @@ export const INS_KIND_SHORT = {
   return_supplier: "Retur Pembelian (ke pemasok)",
   replacement: "Barang Pengganti",
   random_check: "Random Check",
+  sales_order: "QC Pesanan",
 };
 
 /** P05 IMP-16 — jenis yang warna & handfeel-nya milik MD Quality (cadangan bila meta belum termuat). */

@@ -523,6 +523,8 @@ class SalesOrderCreate(BaseModel):
     confirm_makloon_override: bool = False  # W2-REQ-07 — pakai stok cadangan makloon (mode approve → persetujuan manajer)
     source_special_order_id: str = ""     # EPIC6 — link eksplisit asal Special Order (opsional)
     sales_team: List[SalesTeamMember] = []  # F-4c — join/group sales (PIC + co-sales, split insentif custom)
+    qc_request: str = "none"              # L05 LN-050-T01 — none | full | sampling (dispatch menunggu QC)
+    qc_sample_pct: float = Field(10, ge=1, le=100)
     needs_tax_invoice: bool = False        # F6 — minta Faktur Pajak untuk order ini
     tax_override: str = ""                 # F6 — paksa mode pajak: "" (ikut entitas) | "non_ppn"
     fulfillment_method: str = "kirim"      # "kirim" (dikirim) | "ambil" (Order Pengambilan di gudang)

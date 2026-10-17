@@ -3119,8 +3119,10 @@
       "scenario": "Diberikan SO tidak minta QC dan SO minta QC seluruh/sampling, ketika diproses, maka hanya kebutuhan yang relevan muncul dan dispatch menunggu QC yang diwajibkan.",
       "status": "not_run",
       "verified_commit": null,
-      "evidence": [],
-      "actual_result": null,
+      "evidence": [
+        "evidence/L05/report.md"
+      ],
+      "actual_result": "Lokal 2026-10-16: checkout (CartPanel & CheckoutDrawer) punya Request QC none/full/sampling% → SO.qc_request. SO tanpa QC: tidak muncul di pilihan SPK QC Pesanan, SPK ditolak, dispatch tidak tertahan. SO full: dispatch_guard menolak sampai SPK kind sales_order (roll alokasi terbaru) diputus terima/turun_grade; alokasi bertambah sesudah QC → tertahan lagi. Sampling 34% dari 3 roll → 2 roll; keputusan tolak → status failed & tetap tertahan. tests/test_l05_so_qc_request.py 3/3 PASS.",
       "reviewer": null,
       "hardware_evidence": false,
       "requires_hardware": false,

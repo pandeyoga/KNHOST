@@ -343,6 +343,8 @@ export function useAppActions(state) {
         sales_team: Array.isArray(extra.sales_team) ? extra.sales_team : [],
         payment_term_code: extra.payment_term_code || "",
         allow_backorder: Boolean(extra.allow_backorder),
+        qc_request: extra.qc_request || "none",
+        qc_sample_pct: Number(extra.qc_sample_pct) || 10,
         confirm_mixed_lot: Boolean(extra.confirm_mixed_lot),
         confirm_makloon_override: Boolean(extra.confirm_makloon_override),
         needs_tax_invoice: Boolean(extra.needs_tax_invoice),

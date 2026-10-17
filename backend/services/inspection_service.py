@@ -52,6 +52,8 @@ KIND_RETURN_SUPPLIER = "return_supplier"
 KIND_REPLACEMENT = "replacement"
 # P05 IMP-16 — random check QC atas roll yang sudah di stok (roll ditahan selama dicek).
 KIND_RANDOM_CHECK = "random_check"
+# L05 LN-050-T01 — QC atas permintaan checkout SO (seluruh / sampling) atas roll alokasi TERBARU.
+KIND_SALES_ORDER = "sales_order"
 #: Jenis yang hasil warna & handfeel-nya milik MD Quality (DEC-06, pemilik 2026-10-12).
 MD_QUALITY_KINDS: Tuple[str, ...] = ("po_receipt", "makloon_output")
 
@@ -62,6 +64,7 @@ KIND_LABEL: Dict[str, str] = {
     KIND_RETURN_SUPPLIER: "Inspeksi Retur ke Supplier",
     KIND_REPLACEMENT: "Inspeksi Barang Pengganti",
     KIND_RANDOM_CHECK: "Random Check Stok (QC)",
+    KIND_SALES_ORDER: "QC Permintaan Pesanan (SO)",
 }
 
 # ─── Mesin keadaan (sengaja pendek) ──────────────────────────────────────────
@@ -559,6 +562,25 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any],
                 raise InspectionError("Sebagian roll pengganti tidak ditemukan / di luar badan usaha ini.")
             lines = await _lines_from_rolls(rolls)
         line_code = line_code or str(ret.get("line_code") or "")
+    elif kind == KIND_SALES_ORDER:
+        so = await db.sales_orders.find_one({"id": ref_id}, {"_id": 0, "id": 1, "order_number": 1, "entity_id": 1,
+                                                          "customer_id": 1, "customer_name": 1, "qc_request": 1})
+        if not so:
+            raise InspectionError("Pesanan (SO) tidak ditemukan.")
+        qr = so.get("qc_request") or {}
+        if qr.get("mode") not in ("full", "sampling"):
+            raise InspectionError("Pesanan ini tidak meminta QC saat checkout — tidak ada kebutuhan QC.")
+        rolls = await db.inventory_rolls.find({"reserved_ref.id": so["id"], "status": "reserved"}, {"_id": 0}).to_list(2000)
+        if not rolls:
+            raise InspectionError("Belum ada roll teralokasi untuk pesanan ini — alokasikan dulu.")
+        if qr["mode"] == "sampling":
+            import math
+            import random
+            n = max(1, math.ceil(len(rolls) * float(qr.get("sample_pct") or 10) / 100))
+            rolls = random.sample(rolls, min(n, len(rolls)))
+        ref_type, ref_number = "sales_order", so.get("order_number", "")
+        customer = (so.get("customer_id", ""), so.get("customer_name", ""))
+        lines = await _lines_from_rolls(rolls)
     elif kind == KIND_RETURN_SUPPLIER:
         if not ref_id:
             raise InspectionError("Sebutkan nomor retur pembelian yang mau diperiksa.")
@@ -905,7 +927,13 @@ async def finish(ins_id: str, decision: str, remark: str,
     # FASE I.F — `sales_returns.inspect_done_at` DITURUNKAN dari sini, tidak pernah
     # diketik: dua tanggal "inspeksi selesai" yang bisa berbeda adalah kelas bug
     # yang paling sering menipu di repo ini.
-    if doc.get("ref_doc_type") == "sales_return" and doc.get("ref_doc_id"):
+    if doc.get("kind") == KIND_SALES_ORDER and doc.get("ref_doc_id"):   # L05 LN-050-T01
+        await db.sales_orders.update_one({"id": doc["ref_doc_id"], "qc_request.mode": {"$in": ["full", "sampling"]}}, {"$set": {
+            "qc_request.status": "passed" if dec in ("terima", "turun_grade") else "failed",
+            "qc_request.inspection_id": doc["id"], "qc_request.inspection_number": doc.get("number", ""),
+            "qc_request.decided_at": now_iso()}})
+    # L05 LN-050-T02 — SPK PENGGANTI tidak boleh menandai barang retur sudah diinspeksi.
+    if doc.get("ref_doc_type") == "sales_return" and doc.get("ref_doc_id") and doc.get("kind") == KIND_RETURN_CUSTOMER:
         from services import return_service as _ret
         await _ret.mark_inspected_by_document(doc["ref_doc_id"],
                                               out.get("finished_at", ""))
