@@ -258,7 +258,7 @@
         "frontend/src/features/sales/SalesReturns.jsx"
       ],
       "implementation_notes": "",
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
       "evidence": [],
@@ -286,7 +286,7 @@
         "backend/services/ar_aging_service.py"
       ],
       "implementation_notes": "",
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
       "evidence": [],
@@ -683,13 +683,15 @@
         "LN-021-T02",
         "LN-021-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L02/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -705,13 +707,15 @@
         "LN-022-T02",
         "LN-022-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L02/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -1180,13 +1184,15 @@
         "LN-081-T02",
         "LN-081-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L08/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -1255,13 +1261,15 @@
         "LN-090-T02",
         "LN-090-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L09/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -1332,13 +1340,15 @@
         "LN-093-T03",
         "LN-093-T04"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L09/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },

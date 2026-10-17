@@ -86,6 +86,27 @@ async def _recompute_so_totals(order: Dict[str, Any]) -> None:
 
 # ─── Sales: ajukan harga khusus (aksi di DETAIL SO) ──────────────────────────
 
+async def _alloc_sig(order_id: str, item: Dict[str, Any]) -> str:
+    """L02 LN-022 — sidik versi alokasi baris: produk + qty + satuan + roll yang benar-benar ter-reserve."""
+    pid = item.get("product_id")
+    held = await db.inventory_rolls.find(
+        {"product_id": pid, "$or": [{"reserved_ref.id": order_id}, {"length_reservations.ref.id": order_id}]},
+        {"_id": 0, "id": 1}).to_list(2000)
+    rolls = sorted({r["id"] for r in held} | {str(r.get("roll_id")) for r in (item.get("roll_lines") or []) if r.get("roll_id")})
+    return f"{pid}|{round(float(item.get('quantity') or 0), 4)}|{item.get('unit') or ''}|{','.join(rolls)}"
+
+
+async def _special_price_target(order_id: str, items: List[Dict[str, Any]], entry: Dict[str, Any]) -> int:
+    """Baris yang dituju approval harga — dicari lewat produk (bukan posisi array) + versi alokasi."""
+    idx = next((i for i, it in enumerate(items) if it.get("product_id") == entry.get("product_id")), None)
+    if idx is None:
+        raise HTTPException(status_code=409, detail="Produk pengajuan harga sudah tidak ada di pesanan — tolak lalu ajukan ulang.")
+    if entry.get("alloc_sig") and entry["alloc_sig"] != await _alloc_sig(order_id, items[idx]):
+        raise HTTPException(status_code=409, detail=(
+            "Alokasi roll/qty baris ini berubah sejak harga diajukan — Admin Sales perlu mengajukan ulang "
+            "harga khusus untuk versi alokasi terbaru."))
+    return idx
+
 @router.post("/sales-orders/{order_id}/request-special-price")
 async def request_special_price(order_id: str, payload: SoSpecialPriceRequest, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "order", "update")
@@ -104,13 +125,13 @@ async def request_special_price(order_id: str, payload: SoSpecialPriceRequest, r
     if idx is None or idx < 0 or idx >= len(items):
         raise HTTPException(status_code=400, detail="Item tidak ditemukan pada pesanan.")
     item = items[idx]
+    pid = item.get("product_id")
     normal_price = float(item.get("price", 0) or 0)
     req_price = float(payload.requested_price or 0)
     if req_price <= 0:
         raise HTTPException(status_code=400, detail="Harga khusus harus lebih dari 0.")
-    # Dokumen detail price_approvals (pra_) tertaut SO.
     pra_id = new_id("pra")
-    await db.price_approvals.insert_one({
+    pra = {
         "id": pra_id, "customer_id": order.get("customer_id"), "customer_name": order.get("customer_name"),
         "product_id": item.get("product_id"), "product_name": item.get("product_name"),
         "normal_price": normal_price, "requested_price": req_price,
@@ -119,16 +140,56 @@ async def request_special_price(order_id: str, payload: SoSpecialPriceRequest, r
         "status": "pending", "scope": "order", "so_id": order_id, "so_item_index": idx,  # P16d — lingkup pesanan
         "attachments": [], "requested_by": actor["name"], "requested_by_id": actor["id"],
         "created_at": now_iso(), "updated_at": now_iso(),
-    })
-    entry = so_approvals.make_approval(
-        "special_price", required_role="manager", reason=payload.reason.strip(),
-        requested_by=actor["name"], requested_by_id=actor["id"], ref_id=pra_id,
-        item_index=idx, product_id=item.get("product_id"), product_name=item.get("product_name"),
-        normal_price=normal_price, requested_price=req_price)
-    pa = list(order.get("pending_approvals") or []) + [entry]
-    result = await _persist_pending(order_id, pa)
+    }
+    await db.price_approvals.insert_one(dict(pra))
+    try:
+        result = await attach_order_price(order_id, pra, actor)
+    except HTTPException:
+        await db.price_approvals.delete_one({"id": pra_id})
+        raise
     await audit(actor["name"], "so_special_price_requested", "sales_order", order_id,
                 {"product": item.get("product_name"), "normal": normal_price, "requested": req_price})
+    return result
+
+
+async def attach_order_price(order_id: str, pra: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+    """L02 LN-022 — SATU pintu: pengajuan harga lingkup pesanan (dari detail SO maupun form
+    bukti /price-approvals) menjadi entri approval SO dengan versi alokasi; pengajuan pending
+    lama untuk produk yang sama digantikan."""
+    from services import atomic_claim as _saga
+    order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
+    if not order:
+        raise HTTPException(status_code=404, detail="Pesanan untuk harga khusus tidak ditemukan.")
+    if order.get("status") not in OPEN_STATES:
+        raise HTTPException(status_code=409, detail={
+            "code": "SO_LOCKED",
+            "message": "Harga khusus hanya bisa diajukan sebelum pesanan disetujui (tahap Dipesan)."})
+    pid = pra.get("product_id")
+    item = next((it for it in order.get("items", []) if it.get("product_id") == pid), None)
+    if not item:
+        raise HTTPException(status_code=400, detail="Produk pengajuan tidak ada di pesanan ini.")
+    claimed = await _saga.claim("sales_orders", order_id, "so_special_price_request", actor=actor.get("name", ""),
+                                detail="Pesanan sedang diproses pengguna lain. Coba lagi.")
+    try:
+        order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
+        entry = so_approvals.make_approval(
+            "special_price", required_role="manager", reason=(pra.get("reason") or "").strip(),
+            requested_by=actor.get("name", ""), requested_by_id=actor.get("id", ""), ref_id=pra["id"],
+            product_id=pid, product_name=item.get("product_name"),
+            normal_price=float(item.get("price", 0) or 0), requested_price=float(pra.get("requested_price") or 0),
+            alloc_sig=await _alloc_sig(order_id, item))
+        pa = list(order.get("pending_approvals") or [])
+        stale = [p for p in pa if p.get("type") == "special_price" and p.get("status") == "pending"
+                 and p.get("product_id") == pid]
+        for p in stale:
+            p.update({"status": "superseded", "superseded_by": entry["id"], "decided_at": now_iso()})
+        if stale:
+            await db.price_approvals.update_many(
+                {"id": {"$in": [p.get("ref_id") for p in stale]}, "status": "pending"},
+                {"$set": {"status": "superseded", "superseded_by": pra["id"], "updated_at": now_iso()}})
+        result = await _persist_pending(order_id, pa + [entry])
+    finally:
+        await _saga.release("sales_orders", order_id, ((claimed or {}).get(_saga.LOCK) or {}).get("token", ""))
     return result
 
 
@@ -192,6 +253,9 @@ async def decide_approval(order_id: str, approval_id: str, payload: SoApprovalDe
         raise HTTPException(status_code=403,
             detail=f"Keputusan butuh role minimal '{entry.get('required_role')}'.")
     new_status = "approved" if decision == "approve" else "rejected"
+    target_idx = None
+    if entry.get("type") == "special_price" and new_status == "approved":
+        target_idx = await _special_price_target(order_id, order.get("items", []), entry)
     # T-01 Opsi B (INV-ATOMIC-01) — klaim SO atas entri approval INI: dua penyetuju yang
     # menekan bersamaan tidak boleh sama-sama menulis harga/kredit + memutuskan entri.
     from services import atomic_claim as _saga
@@ -209,13 +273,13 @@ async def decide_approval(order_id: str, approval_id: str, payload: SoApprovalDe
             "decision_notes": (payload.notes or "").strip(), "decided_at": now_iso(), "updated_at": now_iso()}})
         if new_status == "approved":
             items = order.get("items", [])
-            idx = entry.get("item_index")
-            if isinstance(idx, int) and 0 <= idx < len(items):
-                items[idx]["price"] = float(entry.get("requested_price") or items[idx].get("price"))
-                items[idx]["special_price_id"] = entry.get("ref_id")
-                await db.sales_orders.update_one({"id": order_id}, {"$set": {"items": items}})
-                order["items"] = items
-                await _recompute_so_totals(order)
+            idx = target_idx
+            items[idx]["price"] = float(entry.get("requested_price") or items[idx].get("price"))
+            items[idx]["special_price_id"] = entry.get("ref_id")
+            items[idx]["price_source"] = "special_approval"
+            await db.sales_orders.update_one({"id": order_id}, {"$set": {"items": items}})
+            order["items"] = items
+            await _recompute_so_totals(order)
     elif atype == "kredit":
         ref = entry.get("ref_id")
         if ref:

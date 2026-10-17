@@ -1,0 +1,31 @@
+{
+  "summary": "Tested the login fix and the L08 LN-081 sales-return timeline/journey-scan feature on the preview URL. Login through the UI works (admin@ / demo12345 lands on ?view=admin-home). No requests went to localhost, and the built bundle has no localhost:8001 string. Backend tests/test_l08_ln081_journey.py: 4/4 passed. UI: created return SRET-00008 from KSC/SO-00001 via API (notes TEST_L081_UI, approved), then opened it in ?view=returns&entity=ent_ksc. The return-timeline-panel renders the summary (timeline-unit-yard: claim 115 yard, 1 roll, value basis note), the rolls table and the events. Full scan flow worked through the UI: received@Jakarta (TRM-1) -> dispatched to Rancamalang Transit (SJ-1, location 'Dalam perjalanan ...') -> arrived Transit (TBA-1) -> dispatched to Gudang Retur (SJ-2) -> arrived (TBA-2, location 'Area QC · ...'). timeline-roll-location-<rollId> updated after each scan and showed 5 inbound-lane events with doc numbers. The UI showed the right Indonesian error for each negative test: unknown code, receiving twice, arriving at the wrong warehouse. API checks: cross-entity warehouse -> 403, dispatch without destination -> 400, unknown stage -> 400, empty codes -> 400, no auth -> 401, other-entity user -> 404. Test data cleaned up (return deleted, roll restored to delivered@wh_jakarta).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Return detail - ReturnTimelinePanel ScanForm", "issues": [
+        "The warehouse dropdowns list every warehouse, including other entities' warehouses (e.g. Soreang · Gudang Kanda). The backend then rejects them with 403. Better to filter the options to warehouses usable by ret.entity_id.",
+        "When stage=dispatched, the submit button is enabled even if no destination is chosen. The backend returns 400 'Pilih gudang tujuan pengiriman.' The button could be disabled until toWh is set.",
+        "The older ReturnJourneyPanel ('Perjalanan Barang') still has manual 'Tandai sekarang' / 'Perbarui tanggal' buttons for 'Barang sampai' / 'SJ Kirim Toko', next to the new scan-based timeline. Two parallel 'journey' UIs may confuse users. A manual goods_arrived milestone also shows up in the inbound lane even though no roll was scanned. Consider hiding or deprecating these buttons once the scan journey is used."
+      ]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l08_ln081_journey.py", "/app/backend/tests/l081_ui_setup.py", "/app/test_reports/pytest/l08_ln081.xml"],
+  "action_items": [
+    "Optional UX: filter scan warehouse options by entity usability",
+    "Optional UX: disable journey-scan-submit when stage=dispatched and no destination is selected",
+    "Optional: reconcile the old manual 'Barang sampai' milestone buttons with the scan-only location rule"
+  ],
+  "critical_code_review_comments": [
+    "return_journey_service.scan: one scan containing rolls in mixed stages fails as a whole. That is fine, but the error only names the first failing roll.",
+    "ReturnTimelinePanel loads /api/warehouses without passing the entity scope, which is why the options include other entities' warehouses."
+  ],
+  "updated_files": ["/app/backend/tests/l081_ui_setup.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Temporary return SRET-00008 (notes TEST_L081_UI) was created and then fully cleaned up by `python tests/l081_ui_setup.py cleanup`.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use `cd /app/backend && set -a; . ./.env; set +a; export REACT_APP_BACKEND_URL=...; python tests/l081_ui_setup.py setup|cleanup` to create or remove a UI test return. Open it at ?view=returns&entity=ent_ksc -> return-search <number> -> view-return-<id>. KNSelect option testids: <testid>-option-<value>. Warehouses: transit wh_b6d67cdf2196, return/QC wh_ec5b441528d0. Frontend is a prebuilt bundle: rebuild with scripts/rebuild_frontend.sh after src changes."
+}

@@ -17,6 +17,7 @@ const STATUS_META = {
   pending: { label: "Menunggu", cls: "border-[#FFE2B8] bg-[#FFF7EC] text-[#9A5B00]" },
   approved: { label: "Disetujui", cls: "border-[#BFE6CD] bg-[#E5F6EC] text-[#1B7A43]" },
   rejected: { label: "Ditolak", cls: "border-[#F5C2C2] bg-[#FDE2E2] text-[#9B1C1C]" },
+  superseded: { label: "Digantikan pengajuan baru", cls: "border-[#E2E2E2] bg-[#F4F4F4] text-[#666]" },
 };
 const OPEN_STATES = ["reserved", "waiting_approval", "waiting_stock", "draft"];
 

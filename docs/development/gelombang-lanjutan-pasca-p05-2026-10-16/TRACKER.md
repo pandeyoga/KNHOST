@@ -18,8 +18,8 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | L05 Meja QC dan form inspect tiga sumber | not_started | 0/3 | 0/9 | KLX-02 | [Buka](phases/L05.md) |
 | L06 Sampel, Admin Cutting dan penjualan ecer | not_started | 0/3 | 0/9 | — | [Buka](phases/L06.md) |
 | L07 Picking, transit, multi-SO dispatch dan perjalanan antar lokasi | not_started | 0/3 | 0/7 | DES-02 | [Buka](phases/L07.md) |
-| L08 Menu Retur terpadu, penerimaan, QC dan lineage roll | not_started | 0/4 | 0/13 | KLR-08, KLR-09 | [Buka](phases/L08.md) |
-| L09 Tukar, kompensasi, retur interco dan supplier end-to-end | not_started | 0/4 | 0/13 | KLR-01, KLR-02, KLR-03, KLR-04, KLR-05, KLR-06, KLR-07, KLR-09, KLR-10, KLR-11 | [Buka](phases/L09.md) |
+| L08 Menu Retur terpadu, penerimaan, QC dan lineage roll | in_progress | 0/4 | 0/13 | KLR-08, KLR-09 | [Buka](phases/L08.md) |
+| L09 Tukar, kompensasi, retur interco dan supplier end-to-end | in_progress | 0/4 | 0/13 | KLR-01, KLR-02, KLR-03, KLR-04, KLR-05, KLR-06, KLR-07, KLR-09, KLR-10, KLR-11 | [Buka](phases/L09.md) |
 | L10 Putaway, stock opname, dashboard dan Meja User | not_started | 0/3 | 0/9 | OPS-01 | [Buka](phases/L10.md) |
 | L11 Pusat export, join bisnis dan rapor staf | not_started | 0/4 | 0/12 | DES-03 | [Buka](phases/L11.md) |
 | L12 Kesiapan ERP untuk middleware Chainway dan UAT tiga perangkat | not_started | 0/3 | 0/56 | HW-01 | [Buka](phases/L12.md) |
@@ -39,8 +39,8 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-013 | L01 | Default restock dan konteks entitas MD | in_progress | evidence/L01/report.md, evidence/L01/field_leak_scan_sales_before.json, evidence/L01/field_leak_scan_sales_after.json |
 | LN-014 | L01 | LOT supplier dan identitas LOT internal | not_started | belum ada |
 | LN-020 | L02 | ATP, Keep/Pending dan satuan pada SO | not_started | belum ada |
-| LN-021 | L02 | Roll picker dan perubahan alokasi yang sah | not_started | belum ada |
-| LN-022 | L02 | Harga grade dan pengajuan ulang Special Price | not_started | belum ada |
+| LN-021 | L02 | Roll picker dan perubahan alokasi yang sah | in_progress | evidence/L02/report.md |
+| LN-022 | L02 | Harga grade dan pengajuan ulang Special Price | in_progress | evidence/L02/report.md |
 | LN-023 | L02 | AR, AP, revisi PO dan dampak finansial | not_started | belum ada |
 | LN-024 | L02 | Utang/piutang interco dan pembayaran per transaksi | not_started | belum ada |
 | LN-030 | L03 | Sumber desain, multi-produk dan status HOLD | not_started | belum ada |
@@ -60,13 +60,13 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-071 | L07 | Dokumen per leg dan multi-SO manifest | in_progress | evidence/L07/report.md |
 | LN-072 | L07 | Transit Jakarta, receipt aktual dan posting yang tepat | in_progress | evidence/L07/report.md |
 | LN-080 | L08 | Form retur dan menu yang jelas | in_progress | evidence/L08/report.md |
-| LN-081 | L08 | Pisahkan perjalanan fisik, QC, keputusan dan saldo | not_started | belum ada |
+| LN-081 | L08 | Pisahkan perjalanan fisik, QC, keputusan dan saldo | in_progress | evidence/L08/report.md |
 | LN-082 | L08 | Identitas unik, potongan dan larangan kembali ke customer asal | in_progress | evidence/L08/report.md |
 | LN-083 | L08 | Batas waktu, eligibility dan bukti keputusan | not_started | belum ada |
-| LN-090 | L09 | Tukar barang sampai customer | not_started | belum ada |
+| LN-090 | L09 | Tukar barang sampai customer | in_progress | evidence/L09/report.md |
 | LN-091 | L09 | Refund/saldo, potong tagihan dan nilai histori | not_started | belum ada |
 | LN-092 | L09 | Cutloss dan discount hanya setelah kebijakan final | not_started | belum ada |
-| LN-093 | L09 | Sukacita → CST → supplier dengan provenance benar | not_started | belum ada |
+| LN-093 | L09 | Sukacita → CST → supplier dengan provenance benar | in_progress | evidence/L09/report.md |
 | LN-100 | L10 | Alamat fisik dan putaway yang dapat dipakai | not_started | belum ada |
 | LN-101 | L10 | Stock opname fisik, identitas, qty dan rekonsiliasi | not_started | belum ada |
 | LN-102 | L10 | Dashboard stok dan antrean Meja User yang konsisten | not_started | belum ada |

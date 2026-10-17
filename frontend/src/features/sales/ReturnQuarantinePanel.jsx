@@ -97,7 +97,8 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
       if (supRetSupplier) body.supplier_id = supRetSupplier;
       const res = await axios.post(`${API}/sales-returns/${ret.id}/create-purchase-return`, body);
       setLinkedPR(res.data?.number || "");
-      setMsg(`Retur beli ${res.data?.number || ""} dibuat & ditautkan (ke supplier ${res.data?.supplier_name || ""}). Lanjutkan RMA di modul Retur Beli.`);
+      const parts = (res.data?.split_purchase_returns || []).map((p) => `${p.number} → ${p.supplier_name}${p.po_number ? ` (${p.po_number})` : ""}`);
+      setMsg(`Retur beli dibuat sesuai asal roll: ${parts.join("; ") || res.data?.number || ""}. Lanjutkan RMA di modul Retur Beli.`);
       setShowSupRet(false);
       await load();
       onReleased && onReleased();
@@ -259,7 +260,7 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
                         </span>
                       )}
                     </td>
-                    <td className="font-mono">{fmtNum(r.length_remaining ?? r.length)} m</td>
+                    <td className="font-mono">{fmtNum(r.length_remaining ?? r.length)} {r.unit || "m"}</td>
                     <td>
                       <span className="inline-flex items-center gap-1 text-[11px]" data-testid={`roll-owner-${r.id}`}>
                         <Building2 size={11} className="text-[#0058CC]" />
@@ -411,13 +412,14 @@ export default function ReturnQuarantinePanel({ ret, canApprove, onReleased, onN
               Alur RMA supplier (kirim → terima/tolak → barang kembali) dikelola di modul <b>Retur Beli</b>.
               Barang <b>impor tak-returnable</b> akan ditolak (rekomendasi regrade + jual lokal).
             </p>
-            <label className="form-label mt-2">Supplier Tujuan</label>
+            <label className="form-label mt-2">Supplier untuk roll tanpa asal tercatat</label>
             <KNSelect className="field w-full" data-testid="supplier-return-supplier"
-              value={supRetSupplier} placeholder="Otomatis (dari PO terakhir produk)"
+              value={supRetSupplier} placeholder="Otomatis per roll (supplier & PO asal roll)"
               onValueChange={setSupRetSupplier}
-              options={[{ value: "", label: "Otomatis (dari PO terakhir produk)" },
+              options={[{ value: "", label: "Otomatis per roll (supplier & PO asal roll)" },
                 ...suppliers.map((s) => ({ value: s.id,
                   label: `${s.name}${s.origin_type === "import" ? " · Impor" : ""}` }))]} />
+            {err && <div className="notice-bar danger mt-2" data-testid="supplier-return-error">{err}</div>}
             <div className="modal-actions">
               <button className="secondary-button" onClick={() => setShowSupRet(false)}>Batal</button>
               <button data-testid="confirm-supplier-return-btn" className="primary-button"

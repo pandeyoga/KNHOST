@@ -1,5 +1,19 @@
 # PRD — Kain Nusantara ERP (lanjutan dari repo github.com/kakjsbsbs/KN)
 
+## 2026-10-17 — L09 bagian independen: retur supplier per asal roll + pengganti diblok sebelum QC (iteration_209)
+- LN-093-T02: "Teruskan ke Supplier" kini memecah retur beli per supplier & PO asal tiap roll (bukan PO terbaru produk sama); `linked_purchase_returns[]`; roll tanpa asal → wajib pilih supplier manual; satuan item = satuan roll (bug lama `meter` diperbaiki).
+- LN-090-T01: "Kirim ke pelanggan" (pengganti) hanya boleh setelah QC selesai/settle; retur ditolak/batal juga ditolak.
+- UI modal supplier: label/opsi baru, pesan galat di dalam modal, satuan roll di tabel karantina.
+- Tes `tests/test_l09_ln093_ln090.py` 4/4; testing agent 33/33 BE. BACKLOG: LN-081 in_progress (menunggu SHA), LN-090/LN-093 in_progress; evidence/L09/report.md.
+- Terbuka: GET /api/suppliers konteks KSC tidak memuat supplier global (entity_id 'all') — dropdown manual terbatas (pre-existing). Sisa L09 menunggu KLR-01..11.
+
+
+## 2026-10-17 — Lanjutan dari repo pandeyoga/KNHOST: login preview diperbaiki + LN-081 diverifikasi (iteration_208)
+- Repo disalin ke /app; backend/.env diisi CORS_ORIGINS eksplisit + KN_DEMO_DATA + SESSION_COOKIE_SECURE; data acuan dipulihkan (`scripts/restore_local_demo.sh`); bundle FE dibangun ulang dengan REACT_APP_BACKEND_URL yang benar (sebelumnya bundle memanggil localhost:8001 → login gagal).
+- LN-081 timeline retur: BE 4/4, UI scan Terima → Kirim → Tiba diuji penuh (100%). Pilihan gudang di form scan kini hanya gudang yang boleh dipakai PT aktif; tombol Catat scan terkunci sampai gudang tujuan dipilih saat "Kirim".
+- Sisa saran: panel lama "Perjalanan Barang" (tombol Tandai sekarang manual) masih berdampingan dengan timeline scan baru.
+
+
 ## 2026-10-17 — L08 mulai: LN-080 retur dari barang terkirim (iteration_206)
 - `GET /api/sales-returns/returnable?order_id=` (roll per SJ, sisa per roll/produk); `services/return_rolls_service.py` (cek SJ, klaim per roll, kunci per SO); schema item += `roll_ids`, `roll_qtys`; cek akses entitas di POST.
 - Form Buat Return: baris otomatis dari SJ + pilih roll, tanpa input ID produk bebas. Tes `test_l08_returnable_rolls*.py` 19/19.

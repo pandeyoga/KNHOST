@@ -11,7 +11,7 @@ Status: draft → pending_approval → approved | rejected.
 """
 import logging
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from db import db
 from services import dual_qty_service as _dual  # FASE U — dua satuan (roll + ukuran)
 from core_utils import now_iso, new_id, DEFAULT_ENTITY_ID, safe_doc
@@ -593,62 +593,95 @@ async def create_from_sales_return(sales_return_id: str, actor: str,
     entity_id = sr.get("entity_id") or rolls[0].get("owner_entity_id") or DEFAULT_ENTITY_ID
     wh_id = warehouse_id or rolls[0].get("warehouse_id", "")
 
-    # Resolusi supplier & PO asal (best-effort dari PO terakhir yang memuat produk).
-    po_id = ""
-    if not supplier_id:
-        for pid in {r.get("product_id") for r in rolls}:
-            po = await db.purchase_orders.find_one(
-                {"items.product_id": pid, "supplier_id": {"$ne": ""}},
-                {"_id": 0, "supplier_id": 1, "id": 1}, sort=[("created_at", -1)])
-            if po and po.get("supplier_id"):
-                supplier_id = po["supplier_id"]; po_id = po.get("id", "")
-                break
-    if not supplier_id:
-        raise ValueError("Supplier asal tidak dapat ditentukan otomatis — pilih supplier secara manual.")
-
-    # Grup per produk → item + roll_ids + qty + harga (WAC dari roll).
-    by_prod: Dict[str, Dict[str, Any]] = {}
+    # L09 LN-093 — supplier & PO diambil dari PROVENANCE tiap roll (bukan PO terbaru produk
+    # yang sama). Satu retur jual bisa bercabang ke beberapa supplier/PO. Supplier manual hanya
+    # dipakai untuk roll yang asalnya tidak tercatat.
+    groups: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
+    unknown: List[str] = []
     for r in rolls:
-        pid = r.get("product_id")
-        g = by_prod.setdefault(pid, {"qty": 0.0, "roll_ids": [], "cost_sum": 0.0, "cost_n": 0})
-        ln = float(r.get("length_remaining", 0) or 0)
-        g["qty"] += ln
-        g["roll_ids"].append(r["id"])
-        c = float(r.get("unit_cost") or r.get("base_unit_cost") or 0)
-        if c > 0:
-            g["cost_sum"] += c; g["cost_n"] += 1
-    items = [PurchaseReturnItem(
-        product_id=pid, quantity=round(g["qty"], 2), unit="meter",
-        price=round(g["cost_sum"] / g["cost_n"], 2) if g["cost_n"] else 0.0,
-        reason=reason or "cacat", condition="damaged", roll_ids=g["roll_ids"],
-    ) for pid, g in by_prod.items()]
+        sup, po_id = await roll_supplier_provenance(r)
+        if not sup:
+            if not supplier_id:
+                unknown.append(r.get("roll_no") or r["id"])
+                continue
+            sup, po_id = supplier_id, ""
+        groups.setdefault((sup, po_id), []).append(r)
+    if unknown:
+        raise ValueError("Supplier asal tidak tercatat pada roll " + ", ".join(unknown[:10])
+                         + " — pilih supplier secara manual untuk roll tersebut.")
 
-    payload = PurchaseReturnCreate(
-        supplier_id=supplier_id, po_id=po_id, warehouse_id=wh_id, items=items,
-        reason=reason or "Retur ke supplier (barang cacat dari retur jual)", notes=notes,
-        entity_id=entity_id, submit_now=True, created_by=actor,
-        supplier_flow=True, origin_sales_return_id=sales_return_id,
-        bypass_import_policy=bypass_import_policy,
-    )
+    payloads = []
+    for (sup, po_id), grp in groups.items():
+        by_prod: Dict[str, Dict[str, Any]] = {}
+        for r in grp:
+            g = by_prod.setdefault(r.get("product_id"), {"qty": 0.0, "roll_ids": [], "cost_sum": 0.0, "cost_n": 0,
+                                                         "unit": r.get("unit") or ""})
+            g["qty"] += float(r.get("length_remaining", 0) or 0)
+            g["roll_ids"].append(r["id"])
+            c = float(r.get("unit_cost") or r.get("base_unit_cost") or 0)
+            if c > 0:
+                g["cost_sum"] += c; g["cost_n"] += 1
+        items = [PurchaseReturnItem(
+            product_id=pid, quantity=round(g["qty"], 2), unit=g["unit"],
+            price=round(g["cost_sum"] / g["cost_n"], 2) if g["cost_n"] else 0.0,
+            reason=reason or "cacat", condition="damaged", roll_ids=g["roll_ids"],
+        ) for pid, g in by_prod.items()]
+        payloads.append(PurchaseReturnCreate(
+            supplier_id=sup, po_id=po_id, warehouse_id=wh_id, items=items,
+            reason=reason or "Retur ke supplier (barang cacat dari retur jual)", notes=notes,
+            entity_id=entity_id, submit_now=True, created_by=actor,
+            supplier_flow=True, origin_sales_return_id=sales_return_id,
+            bypass_import_policy=bypass_import_policy,
+        ))
     # INV-ATOMIC-01 — klaim retur jual (belum tertaut retur beli) SESUDAH validasi, sebelum
     # retur beli lahir; dua klik → satu 409, bukan dua retur beli dari satu retur jual.
     from services import atomic_claim as _saga
     await _saga.claim("sales_returns", sales_return_id, "sales_return_create_purchase_return",
                       precondition={"linked_purchase_return_id": {"$in": [None, ""]}}, actor=actor)
-    try:
-        pr = await create_purchase_return(payload, created_by=actor)
-    except Exception:
+    created: List[Dict[str, Any]] = []
+    failure: Exception = None
+    for p in payloads:
+        try:
+            pr = await create_purchase_return(p, created_by=actor)
+        except Exception as e:  # noqa: BLE001
+            failure = e
+            break
+        await db.purchase_returns.update_one({"id": pr["id"]},
+            {"$set": {"origin_sales_return_number": sr.get("number", ""), "updated_at": now_iso()}})
+        pr["origin_sales_return_number"] = sr.get("number", "")
+        created.append(pr)
+    if not created:
         await _saga.release("sales_returns", sales_return_id)   # retur beli belum lahir → aman
-        raise
+        raise failure
 
-    # Tautkan 2 arah.
-    await db.purchase_returns.update_one({"id": pr["id"]},
-        {"$set": {"origin_sales_return_number": sr.get("number", ""), "updated_at": now_iso()}})
+    links = [{"id": p["id"], "number": p["number"], "supplier_id": p.get("supplier_id", ""),
+              "supplier_name": p.get("supplier_name", ""), "po_id": p.get("po_id", ""),
+              "po_number": p.get("po_number", "")} for p in created]
     await db.sales_returns.update_one({"id": sales_return_id},
-        _saga.finish_set({"linked_purchase_return_id": pr["id"],
-                          "linked_purchase_return_number": pr["number"], "updated_at": now_iso()}))
-    pr["origin_sales_return_number"] = sr.get("number", "")
-    return pr
+        _saga.finish_set({"linked_purchase_return_id": created[0]["id"],
+                          "linked_purchase_return_number": ", ".join(p["number"] for p in created),
+                          "linked_purchase_returns": links, "updated_at": now_iso()}))
+    if failure:
+        raise ValueError(f"Retur beli {', '.join(p['number'] for p in created)} sudah dibuat, tetapi "
+                         f"cabang supplier berikutnya gagal: {failure}")
+    out = dict(created[0])
+    out["split_purchase_returns"] = links
+    out["number"] = ", ".join(p["number"] for p in created)
+    return out
+
+
+async def roll_supplier_provenance(roll: Dict[str, Any]) -> Tuple[str, str]:
+    """(supplier_id, po_id) asal roll: field roll dulu, lalu PO dari riwayat penerimaan roll itu sendiri."""
+    if roll.get("supplier_id"):
+        return roll["supplier_id"], roll.get("po_id") or ""
+    for acq in reversed([roll.get("acquired") or {}] + list(roll.get("acquired_history") or [])):
+        if acq.get("via") not in ("inbound", "grn", "goods_receipt", "purchase"):
+            continue
+        po_id = acq.get("po_id") or acq.get("ref_id") or ""
+        po = await db.purchase_orders.find_one({"id": po_id}, {"_id": 0, "supplier_id": 1}) if po_id else None
+        if po and po.get("supplier_id"):
+            return po["supplier_id"], po_id
+    return "", ""
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────

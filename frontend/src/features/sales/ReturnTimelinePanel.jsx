@@ -38,7 +38,7 @@ function ScanForm({ ret, warehouses, onDone }) {
   const [carrier, setCarrier] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  const opts = warehouses.map((w) => ({ value: w.id, label: w.name }));
+  const opts = warehouses.filter((w) => w.usable_by_active !== false).map((w) => ({ value: w.id, label: w.name }));
   async function submit(e) {
     e.preventDefault(); setBusy(true); setErr("");
     try {
@@ -69,7 +69,7 @@ function ScanForm({ ret, warehouses, onDone }) {
             onChange={(e) => setCodes(e.target.value)} placeholder="RL-10124&#10;RL-10125" /></label>
         <label><span className="field-label">Ekspedisi / sopir (opsional)</span>
           <input data-testid="journey-scan-carrier" className="field" value={carrier} onChange={(e) => setCarrier(e.target.value)} /></label>
-        <button data-testid="journey-scan-submit" className="primary-button" disabled={busy || !wh || !codes.trim()}>
+        <button data-testid="journey-scan-submit" className="primary-button" disabled={busy || !wh || !codes.trim() || (stage === "dispatched" && !toWh)}>
           <ScanLine size={13} /> {busy ? "Mencatat…" : "Catat scan"}
         </button>
       </div>

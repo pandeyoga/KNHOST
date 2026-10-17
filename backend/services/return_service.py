@@ -598,6 +598,13 @@ async def mark_milestone(return_id: str, milestone: str, actor: str,
             "Tandai SJ Kirim Toko atau scan terima barang dulu — barang retur tidak bisa "
             "“sampai” sebelum pernah dikirim balik. Pengiriman pengganti ke pelanggan tidak dihitung.")
 
+    # L09 LN-090-T01 — pengganti tidak boleh dikirim final sebelum barang retur selesai QC.
+    if key == "shipped_to_customer" and ret.get("status") not in (
+            "inspected", "refund_settled", "credit_settled", "nego_settled"):
+        raise ValueError(
+            "Pengganti belum boleh dikirim ke pelanggan — barang retur harus diterima dan "
+            "selesai QC lebih dulu (retur ditolak/batal tidak punya pengganti).")
+
     entry = {"id": new_id("rmst"), "milestone": key, "label": label, "at": stamp,
              "by": actor, "note": str(note or "").strip(),
              "replaced": str(ret.get(field) or ""), "recorded_at": now_iso()}

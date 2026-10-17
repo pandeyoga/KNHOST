@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="12" time="4.248" timestamp="2026-10-17T16:53:12.758095+00:00" hostname="agent-env-25de971c-49f1-4e22-80be-49b19f3e3f74"><testcase classname="tests.test_l09_ln093_extra" name="test_yard_roll_unit_preserved" time="2.000"><failure message="AssertionError: assert 'quarantine' != 'quarantine'">h = {'Authorization': 'Bearer ia9sOaS4tdqjvW9bAZI1ncZ5b8o_hJzovYLQegu-lWE', 'X-Entity-Id': 'ent_ksc'}
+
+    def test_yard_roll_unit_preserved(h):
+        if not TPL_YARD:
+            pytest.skip("no yard roll in ent_ksc")
+        rid, rolls = make_case([{"supplier_id": PO_A["supplier_id"], "po_id": PO_A["id"]}], tpl=TPL_YARD)
+        r = requests.post(f"{BASE}/sales-returns/{rid}/create-purchase-return", headers=h,
+                          json={"bypass_import_policy": True})
+        assert r.status_code == 200, r.text
+        pr = DB.purchase_returns.find_one({"id": r.json()["split_purchase_returns"][0]["id"]})
+        assert pr["items"][0]["unit"] == "yard"
+        assert abs(float(pr["items"][0]["quantity"]) - 10.0) &lt; 0.01
+        roll = DB.inventory_rolls.find_one({"id": rolls[0]})
+        print("roll status after:", roll["status"], roll.get("length_remaining"))
+&gt;       assert roll["status"] != "quarantine"
+E       AssertionError: assert 'quarantine' != 'quarantine'
+
+tests/test_l09_ln093_extra.py:63: AssertionError</failure></testcase><testcase classname="tests.test_l09_ln093_extra" name="test_mixed_known_and_unknown_with_manual_supplier" time="0.353" /><testcase classname="tests.test_l09_ln093_extra" name="test_get_detail_shows_links" time="0.361" /><testcase classname="tests.test_l09_ln093_extra" name="test_ln090_status_matrix[draft-400]" time="0.128" /><testcase classname="tests.test_l09_ln093_extra" name="test_ln090_status_matrix[pending_approval-400]" time="0.140" /><testcase classname="tests.test_l09_ln093_extra" name="test_ln090_status_matrix[approved-400]" time="0.162" /><testcase classname="tests.test_l09_ln093_extra" name="test_ln090_status_matrix[inspecting-400]" time="0.131" /><testcase classname="tests.test_l09_ln093_extra" name="test_ln090_status_matrix[inspected-200]" time="0.130" /><testcase classname="tests.test_l09_ln093_extra" name="test_ln090_status_matrix[refund_settled-200]" time="0.127" /><testcase classname="tests.test_l09_ln093_extra" name="test_ln090_status_matrix[credit_settled-200]" time="0.133" /><testcase classname="tests.test_l09_ln093_extra" name="test_ln090_rejected_cancelled_info[rejected]" time="0.193" /><testcase classname="tests.test_l09_ln093_extra" name="test_ln090_rejected_cancelled_info[cancelled]" time="0.212" /></testsuite></testsuites>

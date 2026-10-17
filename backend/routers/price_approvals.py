@@ -114,6 +114,30 @@ async def get_effective_special_price(
     return None
 
 
+def _so_bound(doc: Dict[str, Any]) -> bool:
+    return (doc.get("scope") or "") == "order" and bool(doc.get("so_id"))
+
+
+async def _decide_via_so(doc: Dict[str, Any], decision: str, payload: PriceApprovalDecision,
+                         request: Request) -> Dict[str, Any]:
+    """L02 LN-022 — harga lingkup pesanan diputuskan lewat entri approval SO (versi alokasi,
+    klaim atomik, tulis harga baris), bukan jalur samping yang hanya mengubah dokumen ini."""
+    from routers.so_approvals import decide_approval
+    from schemas import SoApprovalDecision
+    so = await db.sales_orders.find_one({"id": doc["so_id"]}, {"_id": 0, "pending_approvals": 1})
+    entry = next((p for p in (so or {}).get("pending_approvals") or []
+                  if p.get("type") == "special_price" and p.get("ref_id") == doc["id"]), None)
+    if not entry:
+        if decision == "reject":
+            return None   # pengajuan lama tanpa entri SO → tolak biasa
+        raise HTTPException(status_code=409, detail=(
+            "Pengajuan harga ini tidak tercatat di gerbang persetujuan pesanannya — tolak lalu ajukan "
+            "ulang dari detail pesanan."))
+    await decide_approval(doc["so_id"], entry["id"],
+                          SoApprovalDecision(decision=decision, notes=payload.decision_notes or ""), request)
+    return _decorate(safe_doc(await db.price_approvals.find_one({"id": doc["id"]}, {"_id": 0})))
+
+
 async def _get_or_404(approval_id: str, request: Optional[Request] = None) -> Dict[str, Any]:
     doc = safe_doc(await db.price_approvals.find_one({"id": approval_id}, {"_id": 0}))
     if not doc:
@@ -269,6 +293,10 @@ async def patch_price_approval(approval_id: str, payload: GenericPatch, request:
     _ensure_owner_or_privileged(doc, user)
     if doc["status"] not in EDITABLE_STATUSES:
         raise HTTPException(status_code=409, detail=f"Pengajuan status '{doc['status']}' tidak dapat diubah")
+    if _so_bound(doc) and doc["status"] == "pending":
+        raise HTTPException(status_code=409, detail=(
+            "Pengajuan harga pesanan yang sudah diajukan tidak bisa diubah — ajukan ulang dari detail "
+            "pesanan (pengajuan lama otomatis digantikan)."))
     allowed = {"requested_price", "min_quantity", "reason", "valid_until"}
     data: Dict[str, Any] = {}
     for k, v in (payload.data or {}).items():
@@ -321,6 +349,9 @@ async def submit_price_approval(approval_id: str, request: Request) -> Dict[str,
         raise HTTPException(status_code=400, detail={
             "code": "EVIDENCE_REQUIRED",
             "message": "Bukti (tangkapan chat/penawaran) wajib dilampirkan sebelum diajukan."})
+    if _so_bound(doc):   # L02 LN-022 — harga lingkup pesanan masuk gerbang approval SO
+        from routers.so_approvals import attach_order_price
+        await attach_order_price(doc["so_id"], doc, {"id": user.get("id", ""), "name": user.get("name", "")})
     updated = await db.price_approvals.find_one_and_update(
         {"id": approval_id}, {"$set": {"status": "pending", "updated_at": now_iso()}},
         projection={"_id": 0}, return_document=ReturnDocument.AFTER,
@@ -344,6 +375,8 @@ async def approve_price_approval(approval_id: str, payload: PriceApprovalDecisio
             detail="Pemisahan tugas: pengaju harga tidak boleh menyetujui pengajuannya "
                    "sendiri. Minta approver lain, atau ubah sakelar pemisahan tugas di "
                    "Pusat Pengaturan → Persetujuan & Ambang.")
+    if _so_bound(doc):
+        return await _decide_via_so(doc, "approve", payload, request)
     update = {
         "status": "approved", "approved_by": user.get("id"),
         "approved_by_name": user.get("name", ""),
@@ -435,6 +468,10 @@ async def reject_price_approval(approval_id: str, payload: PriceApprovalDecision
             detail="Pemisahan tugas: pengaju harga tidak boleh memutuskan pengajuannya "
                    "sendiri. Minta approver lain, atau ubah sakelar pemisahan tugas di "
                    "Pusat Pengaturan → Persetujuan & Ambang.")
+    if _so_bound(doc):
+        via = await _decide_via_so(doc, "reject", payload, request)
+        if via is not None:
+            return via
     update = {
         "status": "rejected", "approved_by": user.get("id"),
         "approved_by_name": user.get("name", ""),

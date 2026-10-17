@@ -116,11 +116,14 @@ def test_t02_settle_before_qc_blocked_and_recorded(h):
 
 def test_replacement_shipping_is_not_return_arrival(h):
     roll = whole_roll(h, 1)
-    rid = DB.sales_returns.find_one({"notes": TAG, "status": "approved"})["id"]
-    m = requests.post(f"{BASE}/sales-returns/{rid}/milestone", headers=h, json={"milestone": "shipped_to_customer"})
-    assert m.status_code == 200
-    g = requests.post(f"{BASE}/sales-returns/{rid}/milestone", headers=h, json={"milestone": "goods_arrived"})
+    pending = DB.sales_returns.find_one({"notes": TAG, "status": "approved"})["id"]
+    m = requests.post(f"{BASE}/sales-returns/{pending}/milestone", headers=h, json={"milestone": "shipped_to_customer"})
+    assert m.status_code == 400                                          # L09 LN-090-T01: belum QC
+    g = requests.post(f"{BASE}/sales-returns/{pending}/milestone", headers=h, json={"milestone": "goods_arrived"})
     assert g.status_code == 400 and "pengganti" in g.json()["detail"].lower()
+    rid = DB.sales_returns.find_one({"notes": TAG, "status": "refund_settled"})["id"]
+    m = requests.post(f"{BASE}/sales-returns/{rid}/milestone", headers=h, json={"milestone": "shipped_to_customer"})
+    assert m.status_code == 200, m.text
     tl = requests.get(f"{BASE}/sales-returns/{rid}/timeline", headers=h).json()
     lanes = [e["lane"] for e in tl["events"] if "pelanggan" in e["title"].lower()]
     assert lanes == ["replacement"]

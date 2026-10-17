@@ -682,6 +682,9 @@ async def reallocate_line_rolls(order_id: str, product_id: str, payload: SoReall
     item["backorder_qty"] = backorder_qty
     if item.get("qty_rolls") is not None:
         item["qty_rolls"] = len(final_rolls)
+    if item.get("roll_lines"):   # L02 LN-021-T03 — detail SO mengikuti versi alokasi terbaru
+        item["roll_lines"] = [{"roll_id": r["id"], "take_qty": round(float(r.get("length_remaining", 0) or 0), 2)}
+                              for r in final_rolls]
 
     allocations = [a for a in order.get("allocations", []) if a.get("product_id") != product_id]
     new_allocs = allocations_from_reserved_rolls(product_id, final_rolls, warehouses, status="allocated")

@@ -1,0 +1,40 @@
+{
+  "summary": "L02 LN-022 (special price bound to product + alloc version, supersede) and LN-021-T03 (Ganti Roll updates items[].roll_lines). Backend: the 3 regression files pass (12/12). A new extra suite passes (4/4) and covers: superseded fields + reject-superseded 409, approve of a stale entry 409 'ajukan ulang' with no leftover saga lock, reject of a stale entry works, 4 parallel approves give exactly one 200 + three 409, roll-mode SO Ganti Roll rewrites roll_lines to the new roll (old roll released), approve after the swap 409, re-request + approve 200. UI: the SoApprovalsPanel label 'Digantikan pengajuan baru' renders; manager approve via so-appr-approve works (price Rp16.000, totals recomputed, SO auto-approved). INTEGRATION GAP: the SO-detail 'Ajukan Harga Khusus' form (SpecialPriceRequestForm) does NOT call /request-special-price. It creates a detached price_approvals doc (scope=order, so_id) that never appears in the SO approvals panel, has no alloc_sig and no supersede, and approving it does not change the SO price.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/price-approvals/{id}/approve (order-scope pra linked to SO)", "issue": "This endpoint is a side channel. It approved pra_163d (ref_id of a pending SO entry) with 200. The SO pending_approvals entry stayed 'pending' and the SO price did not change. It skips alloc_sig validation and the SO claim, so the pra and the SO entry go out of sync. Order-scope/so_id-linked pra should be rejected here (409, 'putuskan di detail SO') or routed through decide_approval.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/sales-orders/{id}/request-special-price", "issue": "This is a non-atomic read-modify-write of pending_approvals with no claim and no $elemMatch precondition. Two concurrent requests, or a request racing a decide, can overwrite each other (lost entry, or two pending entries for the same product)."},
+      {"endpoint": "decide_approval", "issue": "pa is read before _saga.claim and then persisted wholesale. A concurrent change to a different entry made between load and claim is overwritten. Pre-existing."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "SO detail > Persetujuan > Ajukan Harga Khusus", "issue": "SpecialPriceRequestForm posts to /price-approvals + /attachments + /submit with scope=order and so_id. It does not call /sales-orders/{id}/request-special-price. Verified in the UI: the request for P1 at 18000 created pra_884d (pending). No SO pending_approvals entry was created, the panel showed nothing new, and approving it as manager via /price-approvals left the SO price at 25000. So the LN-022 alloc_sig and supersede protections are never used by the real UI path.", "affected_selectors": ["so-appr-request-sp-toggle", "so-appr-sp-form", "spr-submit"]}
+    ],
+    "design_issues": [
+      {"screen": "SO detail item line", "issues": ["After the special price was approved, the line shows 'Rp 16.000/yard' with the badge 'Harga PT'. The source label should say harga khusus."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l02_ln022_ln021_extra.py", "/app/backend/tests/test_l02_ln022_special_price.py", "/app/test_reports/pytest/l02_ln022.xml", "/app/test_reports/pytest/l02_extra.xml"],
+  "action_items": [
+    "Make the SO-detail 'Ajukan Harga Khusus' form (SoApprovalsPanel > SpecialPriceRequestForm with soId) call POST /api/sales-orders/{id}/request-special-price {product_id, requested_price, reason}, then upload evidence via /approvals/{entry}/evidence. Alternatively, have the backend /price-approvals POST/submit with so_id create the SO entry with alloc_sig and supersede.",
+    "Block /api/price-approvals/{id}/approve|reject for pra with scope=order and so_id set (409), or delegate to decide_approval, so the pra and the SO entry cannot desync.",
+    "Optional: claim the SO in request_special_price, or use an $elemMatch-guarded update, to avoid lost updates.",
+    "Optional: show a 'Harga khusus' badge instead of 'Harga PT' on lines that have special_price_id."
+  ],
+  "critical_code_review_comments": [
+    "_special_price_target raises before _saga.claim, so a stale 409 never leaves the SO locked. Verified: no claim fields remained.",
+    "reallocate roll_lines: kept rolls use the full length_remaining as take_qty. That is fine for whole-roll mode, but it would misstate take_qty if a kept roll was an exact-cut line.",
+    "request_special_price: item_index takes priority over product_id when both are sent. A stale index from the client could target the wrong product. Prefer product_id when it is given.",
+    "sales_orders_extra.py is 922 lines, over the 700-line guideline."
+  ],
+  "updated_files": ["/app/backend/tests/test_l02_ln022_ln021_extra.py"],
+  "success_rate": {"backend": "100% (16/16 tests); 1 HIGH side-channel issue found by manual check", "frontend": "75% (superseded label + approve OK; request flow not integrated with SO approvals)"},
+  "seed_data_creation": "Test SOs (TEST_T1_*, KSC/SO-00026 for the UI) were cancelled, then deleted together with their price_approvals. Verified 0 orphan reserved or length-reserved rolls and 0 TEST_ SOs left.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run pytest from /app/backend with env sourced and -n0. To open an SO in the UI: ?view=orders&entity=ent_ksc, fill orders-search-input with the number, click order-card-<id>, then the text 'Lihat detail & aksi', then so-approvals-panel. For a special-price request in the UI, the form needs spr-price-input plus spr-file-input (evidence is required). After the fix, retest that the UI request creates an SO entry with alloc_sig and supersedes the old one."
+}
