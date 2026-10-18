@@ -760,9 +760,9 @@ async def download_attachment(return_id: str, att_id: str, request: Request):
     if not att:
         raise HTTPException(status_code=404, detail="Lampiran tidak ditemukan")
     from fastapi.responses import Response
-    obj = await storage.get_object(att["path"])
+    data, _ = await storage.get_object(att["path"])
     return Response(
-        content=obj["data"],
+        content=data,
         media_type=att.get("content_type", "application/octet-stream"),
         headers={"Content-Disposition": f'attachment; filename="{att["filename"]}"'}
     )

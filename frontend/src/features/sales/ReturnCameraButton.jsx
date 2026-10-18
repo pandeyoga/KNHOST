@@ -3,7 +3,7 @@ import { Camera, Loader2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 
 // Ambil foto langsung dari kamera HP (capture=environment) → tersimpan sebagai lampiran retur.
-export default function ReturnCameraButton({ returnId, onUploaded, testId = "return-camera-btn" }) {
+export default function ReturnCameraButton({ returnId, uploadUrl, onUploaded, testId = "return-camera-btn" }) {
   const ref = useRef(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -13,7 +13,7 @@ export default function ReturnCameraButton({ returnId, onUploaded, testId = "ret
     try {
       const fd = new FormData();
       fd.append("file", file, file.name || `kamera-${Date.now()}.jpg`);
-      const { data } = await axios.post(`${API}/sales-returns/${returnId}/attachments`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      const { data } = await axios.post(uploadUrl || `${API}/sales-returns/${returnId}/attachments`, fd, { headers: { "Content-Type": "multipart/form-data" } });
       onUploaded?.(data);
     } catch (e) { setErr(e.response?.data?.detail || e.message); } finally { setBusy(false); }
   };

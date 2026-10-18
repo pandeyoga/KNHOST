@@ -101,18 +101,20 @@ def test_grade_down_impairment_separate_from_customer_credit():
     r = requests.post(f"{BASE}/sales-returns/{rid}/quarantine/release", headers=H_KSC,
                       json={"decisions": [{"roll_id": roll, "action": "release", "grade": "B"}], "notes": TAG})
     assert r.status_code == 200, r.text
-    expected = round(PRICE * 0.30, 2) * 10
+    f = requests.get(f"{BASE}/sales-returns/{rid}/grade-impairments", headers=H_KSC).json()["factors"]
+    drop = (f["A"] - f["B"]) / 100
+    expected = round(PRICE * drop, 2) * 10
     assert abs(r.json()["_release_summary"]["grade_impairment_total"] - expected) < 0.05
     je = DB.journal_entries.find_one({"source_type": "return_grade_impairment", "source_id": f"{rid}:{roll}"})
     assert je and abs(sum(l["debit"] for l in je["lines"]) - sum(l["credit"] for l in je["lines"])) < 0.01
     assert {l["account_code"] for l in je["lines"]} == {"5-9500", "1-1300"}
     rr = DB.inventory_rolls.find_one({"id": roll})
-    assert abs(rr["unit_cost"] - (PRICE - round(PRICE * 0.30, 2))) < 0.02 and rr["grade"] == "B"
+    assert abs(rr["unit_cost"] - (PRICE - round(PRICE * drop, 2))) < 0.02 and rr["grade"] == "B"
     sr = DB.sales_returns.find_one({"id": rid})
     assert sr["credit_note_amount"] == 777.0
     assert DB.journal_entries.count_documents({"source_type": "sales_invoice"}) == je_before
     g = requests.get(f"{BASE}/sales-returns/{rid}/grade-impairments", headers=H_KSC).json()
-    assert len(g["items"]) == 1 and abs(g["total"] - expected) < 0.05 and g["factors"]["B"] == 70
+    assert len(g["items"]) == 1 and abs(g["total"] - expected) < 0.05 and g["factors"]["B"] == f["B"]
     again = requests.post(f"{BASE}/sales-returns/{rid}/quarantine/release", headers=H_KSC,
                           json={"decisions": [{"roll_id": roll, "action": "release", "grade": "C"}]})
     assert again.status_code in (400, 409)
@@ -222,3 +224,63 @@ def test_wrong_owner_cannot_decide_stage2():
     r = requests.post(f"{BASE}/sales-returns/{rid}/disposition/internal", headers=H_KSC,
                       json={"roll_ids": [roll], "decision": "keep", "reason": "salah tahap"})
     assert r.status_code == 400
+
+
+# ── Meja CST + pengingat batas supplier ─────────────────────────────────────
+def test_cst_inbox_lists_incoming_and_pending_rolls():
+    pair = make_interco()
+    rid = make_return(status="refund_settled")
+    back = make_roll(rid, KSC, pair=pair)
+    r = requests.post(f"{BASE}/sales-returns/{rid}/disposition/internal", headers=H_KSC,
+                      json={"roll_ids": [back], "decision": "return_internal", "reason": "kembalikan ke CST"})
+    assert r.status_code == 200, r.text
+    pend = make_roll(rid, CST, pair=pair, receipt_days=2,
+                     disposition={"internal": {"decision": "return_internal", "status": "done"}})
+    box = requests.get(f"{BASE}/return-dispositions/inbox", params={"entity_id": CST}, headers=H_CST)
+    assert box.status_code == 200, box.text
+    data = box.json()
+    rc = next(x for x in data["incoming"] if x["source_sales_return_number"].startswith(TAG))
+    assert rc["status"] == "draft" and "customer_name" not in rc
+    case = next(c for c in data["cases"] if c["return_id"] == rid)
+    assert [x["roll_id"] for x in case["rows"]] == [pend]
+    ksc_box = requests.get(f"{BASE}/return-dispositions/inbox", params={"entity_id": KSC}, headers=H_KSC).json()
+    assert not any(c["return_id"] == rid for c in ksc_box["cases"])
+
+
+def test_disposition_photo_on_settled_return_then_dispose():
+    pair = make_interco()
+    rid = make_return(status="refund_settled")
+    bs = make_roll(rid, CST, grade="BS", pair=pair, unit_cost=500,
+                   disposition={"internal": {"decision": "return_internal", "status": "done"}})
+    png = bytes.fromhex("89504e470d0a1a0a0000000d4948445200000001000000010806000000"
+                        "1f15c4890000000d49444154789c6360000002000154a24f5d0000000049454e44ae426082")
+    up = requests.post(f"{BASE}/sales-returns/{rid}/disposition/photos", headers=H_CST,
+                       files={"file": ("kamera.png", png, "image/png")})
+    assert up.status_code == 200, up.text
+    att = up.json()
+    assert requests.get(f"{BASE}/sales-returns/{rid}/disposition/photos/{att['id']}", headers=H_CST).status_code == 200
+    r = requests.post(f"{BASE}/sales-returns/{rid}/disposition/supplier", headers=H_CST,
+                      json={"roll_ids": [bs], "decision": "dispose", "reason": "BS dibuang", "attachment_ids": [att["id"]]})
+    assert r.status_code == 200, r.text
+
+
+def test_supplier_deadline_reminder_job_notifies_cst_roles_once():
+    import asyncio
+    import sys
+    sys.path.insert(0, "/app/backend")
+    from services import return_disposition_service as rds
+    pair = make_interco()
+    rid = make_return()
+    # supplier uji punya kebijakan 30 hari → terima 28 hari lalu = 2 hari lagi (≤ 3 hari pengingat)
+    roll = make_roll(rid, CST, pair=pair, receipt_days=28,
+                     disposition={"internal": {"decision": "return_internal", "status": "done"}})
+
+    async def run():
+        await rds.job_supplier_deadline_reminder()
+        await rds.job_supplier_deadline_reminder()
+    asyncio.run(run())
+    notes = list(DB.notifications.find({"type": "return_supplier_deadline", "ref": {"$regex": f"^{roll}:"}}))
+    assert {n["recipient_role"] for n in notes} == {"warehouse_admin", "admin", "finance"}
+    assert all(n["entity_id"] == CST for n in notes)
+    assert DB.notifications.count_documents({"type": "return_supplier_deadline", "ref": {"$regex": f"^{roll}:"}}) == 3
+    DB.notifications.delete_many({"type": "return_supplier_deadline", "ref": {"$regex": f"^{roll}:"}})

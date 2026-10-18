@@ -58,6 +58,12 @@ LOCK_RETRY_SECONDS = 30    # coba ambil-alih lock berkala bila sedang dipegang p
 _OWNER = f"{os.uname().nodename}:{os.getpid()}"
 
 _scheduler = None          # AsyncIOScheduler | None
+
+
+async def _supplier_deadline_job():
+    from services import return_disposition_service as _rds   # LN-093 (impor malas, hindari siklus)
+    return await _rds.job_supplier_deadline_reminder()
+
 _owns_lock = False
 
 
@@ -233,6 +239,10 @@ JOBS: List[Dict[str, Any]] = [
                     "diatur (tidak berjalan selama cutoff KLX-03 belum dikonfigurasi).",
      "kind": "interval", "interval_minutes": 60, "fn": _ic_remind.job_interco_payment_reminder,
      "link": "interco-transactions"},
+    {"id": "return_supplier_deadline_reminder", "label": "Pengingat Batas Retur Supplier (Antar-PT)",
+     "description": "Memberi tahu gudang/admin & finance PT pemasok (mis. CST) N hari (returns.supplier_reminder_days) "
+                    "sebelum masa retur supplier roll hasil retur internal habis.",
+     "kind": "daily", "hour": 7, "minute": 30, "fn": _supplier_deadline_job, "link": "interco-transactions"},
     {"id": "export_schedule_dispatch", "label": "Export Terjadwal (Pusat Export)",
      "description": "Menjalankan template export yang dijadwalkan mingguan/bulanan dengan hak akses pemilik saat itu; "
                     "file siap diunduh di Pusat Export → Pekerjaan dan pemilik diberi notifikasi.",

@@ -12,7 +12,7 @@ import { reprintRollLabel, printRollLabelsBulk } from "../../../utils/rollLabels
 import LotGenealogyTree from "./LotGenealogyTree";
 import LotRecallPanel from "./LotRecallPanel";
 import { LotSourcePill, LotStatusPill } from "./LotParts";
-import { shortDateTime } from "./lotApi";
+import { lotApi, shortDateTime } from "./lotApi";
 
 const TABS = [
   { id: "ringkasan", label: "Ringkasan" },
@@ -26,7 +26,9 @@ export default function LotDetailPanel({
   tab, setTab, onClose, onRefresh, onOpenLot, canEdit, labelOf,
   onSaveIdentity, onSplit, onMerge, onRework, onStatus, onLabel, savingIdentity, saveMsg,
 }) {
-  const [draft, setDraft] = useState({ supplier_lot: "", dye_lot: "", shade_ref: "", note: "" });
+  const [draft, setDraft] = useState({ supplier_lot: "", dye_lot: "", shade_ref: "", note: "", internal_alias: "", reason: "" });
+  const [aliasMode, setAliasMode] = useState("off");
+  useEffect(() => { lotApi.settings().then((s) => setAliasMode(s.alias_mode || "off")).catch(() => {}); }, []);
   const [queueBusy, setQueueBusy] = useState(false);
   const [queueInfo, setQueueInfo] = useState("");
   const queueLabels = async () => {
@@ -41,9 +43,9 @@ export default function LotDetailPanel({
   useEffect(() => {
     setDraft({
       supplier_lot: lot?.supplier_lot || "", dye_lot: lot?.dye_lot || "",
-      shade_ref: lot?.shade_ref || "", note: lot?.note || "",
+      shade_ref: lot?.shade_ref || "", note: lot?.note || "", internal_alias: lot?.internal_alias || "", reason: "",
     });
-  }, [lot?.id, lot?.supplier_lot, lot?.dye_lot, lot?.shade_ref, lot?.note]);
+  }, [lot?.id, lot?.supplier_lot, lot?.dye_lot, lot?.shade_ref, lot?.note, lot?.internal_alias]);
 
   if (!lot) return null;
   const rolls = lot.rolls || [];
@@ -102,7 +104,7 @@ export default function LotDetailPanel({
           <span className="flex items-center gap-1"><Printer size={11} /> Label / QR</span>
         </button>
         <button data-testid="lot-action-print-roll-labels" className="btn-secondary !px-2 !py-1 !text-[10.5px]"
-          disabled={rolls.length === 0} onClick={() => printRollLabelsBulk(rolls.map((r) => ({ ...r, product_name: lot.product_name, lot: r.lot || lot.supplier_lot || lot.lot_number, dye_lot: r.dye_lot || lot.dye_lot })))}
+          disabled={rolls.length === 0} onClick={() => printRollLabelsBulk(rolls.map((r) => ({ ...r, product_name: lot.product_name, lot: lot.lot_number, supplier_lot: r.supplier_lot || lot.supplier_lot, dye_lot: r.dye_lot || lot.dye_lot })))}
           title="Cetak label QR semua roll di lot ini (58×40 mm per roll)">
           <span className="flex items-center gap-1"><Printer size={11} /> Label {rolls.length} roll</span>
         </button>
@@ -163,14 +165,21 @@ export default function LotDetailPanel({
               <div className="border-b border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">
                 Identitas lot (dipakai label, silsilah, dan recall)
               </div>
+              <p className="px-2.5 pt-2 text-[10.5px] text-[#3C3C43]" data-testid="lot-canonical-number">
+                Nomor lot internal (kanonik, tidak bisa diubah): <b className="font-mono">{lot.lot_number}</b>
+                {lot.supplier_lot ? <> · lot supplier <b className="font-mono" data-testid="lot-supplier-lot-view">{lot.supplier_lot}</b></> : null}
+                {lot.internal_alias ? <> · alias <b data-testid="lot-alias-view">{lot.internal_alias}</b></> : null}
+              </p>
               <div className="grid gap-2 px-2.5 py-2 md:grid-cols-2">
                 {[["supplier_lot", "Nomor lot supplier", "mis. SUP-2024-118"],
                   ["dye_lot", "Dye lot / batch warna", "mis. DL-RED-01"],
                   ["shade_ref", "Referensi shade", "mis. SHADE-A / Pantone 18-1663"],
-                  ["note", "Catatan", "mis. hasil kiriman kedua supplier A"]].map(([k, label, ph]) => (
+                  ["note", "Catatan", "mis. hasil kiriman kedua supplier A"],
+                  ["internal_alias", aliasMode === "manual" ? "Alias internal (ASUMSI, KLX-01)" : "Alias internal — belum aktif (KLX-01)", "mis. KN A"],
+                  ["reason", "Alasan perubahan identitas", "wajib bila lot sudah berisi roll"]].map(([k, label, ph]) => (
                   <label key={k} className="grid gap-1">
                     <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</span>
-                    <input data-testid={`lot-edit-${k}`} className="field" disabled={!canEdit}
+                    <input data-testid={`lot-edit-${k}`} className="field" disabled={!canEdit || (k === "internal_alias" && aliasMode !== "manual")}
                       value={draft[k]} placeholder={ph}
                       onChange={(e) => setDraft({ ...draft, [k]: e.target.value })} />
                   </label>
@@ -188,6 +197,8 @@ export default function LotDetailPanel({
                 </div>
               )}
             </div>
+
+            <LotIdentityHistory items={lot.identity_history || []} />
 
             <div className="grid gap-2 md:grid-cols-2">
               <div className="rounded-md border border-[#EFF0F2]">
@@ -278,7 +289,7 @@ export default function LotDetailPanel({
                       <td className="px-2 py-1.5">
                         <button type="button" className="icon-button" data-testid={`lot-roll-reprint-${r.id}`}
                           aria-label={`Cetak ulang label QR ${r.roll_no}`} title="Cetak ulang label QR (rusak/hilang)"
-                          onClick={() => reprintRollLabel({ ...r, lot: r.lot || lot.supplier_lot || lot.lot_number, dye_lot: r.dye_lot || lot.dye_lot }, lot.product_name)}>
+                          onClick={() => reprintRollLabel({ ...r, lot: lot.lot_number, supplier_lot: r.supplier_lot || lot.supplier_lot, dye_lot: r.dye_lot || lot.dye_lot }, lot.product_name)}>
                           <Printer size={12} />
                         </button>
                       </td>
@@ -302,6 +313,26 @@ export default function LotDetailPanel({
             <LotRecallPanel data={recall} loading={recallLoading} />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+const FIELD_LABEL = { supplier_lot: "Lot supplier", dye_lot: "Dye lot", supplier_id: "Supplier", supplier_name: "Nama supplier", internal_alias: "Alias internal" };
+
+// LN-014 — riwayat pemetaan identitas lot (sebelum → sesudah, alasan, pengubah).
+function LotIdentityHistory({ items }) {
+  if (!items.length) return null;
+  return (
+    <div className="rounded-md border border-[#EFF0F2]" data-testid="lot-identity-history">
+      <div className="border-b border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Riwayat identitas lot</div>
+      <div className="max-h-[160px] divide-y divide-[#F5F5F7] overflow-y-auto">
+        {items.slice().reverse().map((h, i) => (
+          <div key={i} className="px-2.5 py-1.5 text-[10.5px]">
+            <b>{FIELD_LABEL[h.field] || h.field}</b>: {h.before || "—"} → {h.after || "—"}
+            <span className="text-[#6B6B73]"> · {h.by} · {String(h.at).slice(0, 16).replace("T", " ")}{h.reason ? ` · ${h.reason}` : ""}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

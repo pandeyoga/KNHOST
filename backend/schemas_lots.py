@@ -32,6 +32,8 @@ class LotPatchIn(BaseModel):
     warehouse_id: Optional[str] = None
     supplier_id: Optional[str] = None
     supplier_name: Optional[str] = None
+    internal_alias: Optional[str] = None   # LN-014 — hanya bila lot.alias_mode = manual
+    reason: Optional[str] = None           # wajib saat mengubah identitas lot yang sudah berisi roll
 
 
 class LotStatusIn(BaseModel):

@@ -39,7 +39,7 @@ export default function ReturnAssumptionsPanel({ canManage }) {
   useEffect(() => {
     axios.get(`${API}/settings/effective`).then((r) => setF({ customer_window_days: 21, supplier_window_days: 21,
       klr08_hangtag_cut: "pending", klr09_end_event: "pending", bill_first: true, cutloss_return_part: "pending",
-      cutloss_value_basis: "pending", discount_mode: "pending", ...(r.data.returns || {}) })).catch(() => setF(null));
+      cutloss_value_basis: "pending", discount_mode: "pending", supplier_reminder_days: 3, ...(r.data.returns || {}) })).catch(() => setF(null));
   }, []);
   if (!f) return null;
   const save = async () => {
@@ -47,7 +47,8 @@ export default function ReturnAssumptionsPanel({ canManage }) {
     try {
       await axios.put(`${API}/settings`, { scope: "global", returns: { ...f,
         customer_window_days: Math.max(1, parseInt(f.customer_window_days, 10) || 21),
-        supplier_window_days: Math.max(1, parseInt(f.supplier_window_days, 10) || 21) } });
+        supplier_window_days: Math.max(1, parseInt(f.supplier_window_days, 10) || 21),
+        supplier_reminder_days: Math.max(0, parseInt(f.supplier_reminder_days, 10) || 0) } });
       setMsg("Asumsi tersimpan.");
     } catch (e) { setMsg(e.response?.data?.detail || e.message); }
   };
@@ -63,6 +64,7 @@ export default function ReturnAssumptionsPanel({ canManage }) {
       <div className="flex flex-wrap items-end gap-3">
         {num("customer_window_days", "Customer (hari dari SJ)")}
         {num("supplier_window_days", "Supplier (hari dari terima)")}
+        {num("supplier_reminder_days", "Ingatkan PT pemasok (hari sebelum batas)")}
         <div className="w-64 flex flex-col gap-1 text-[12px]">KLR-08 hangtag hilang / kain dipotong
           <KNSelect data-testid="return-assume-klr08" value={f.klr08_hangtag_cut} options={K8} searchable={false} disabled={!canManage}
                     onValueChange={(v) => setF({ ...f, klr08_hangtag_cut: v })} /></div>

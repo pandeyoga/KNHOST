@@ -18,7 +18,7 @@ const STAGE = {
 };
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
 
-function Row({ r, checked, onToggle }) {
+export function DispositionRow({ r, checked, onToggle }) {
   const [label, color] = STAGE[r.stage] || [r.stage, "#6B6B73"];
   const actionable = r.stage === "internal_pending" || r.stage === "supplier_pending";
   return (
@@ -40,19 +40,18 @@ function Row({ r, checked, onToggle }) {
   );
 }
 
-function ActionBar({ ret, stage, sel, rows, onDone, onPhoto }) {
+export function DispositionActionBar({ returnId, imgs, stage, sel, rows, onDone, onPhoto }) {
   const [reason, setReason] = useState("");
   const [photos, setPhotos] = useState([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-  const imgs = (ret.attachments || []).filter((a) => !a.is_deleted && (a.content_type || "").startsWith("image/"));
   const expired = rows.some((r) => sel.includes(r.roll_id) && r.supplier_window_expired);
   const one = rows.find((r) => sel.includes(r.roll_id)) || {};
   const go = async (decision) => {
     setBusy(true); setMsg("");
     try {
       const path = stage === "internal_pending" ? "internal" : "supplier";
-      const { data } = await axios.post(`${API}/sales-returns/${ret.id}/disposition/${path}`, { roll_ids: sel, decision, reason, attachment_ids: photos });
+      const { data } = await axios.post(`${API}/sales-returns/${returnId}/disposition/${path}`, { roll_ids: sel, decision, reason, attachment_ids: photos });
       setMsg((data.interco_returns || []).map((x) => x.number).join(", ") || (data.purchase_returns || []).map((x) => x.number).join(", ") || "Keputusan tersimpan.");
       setReason(""); setPhotos([]); onDone();
     } catch (e) { setMsg(errText(e)); } finally { setBusy(false); }
@@ -78,7 +77,7 @@ function ActionBar({ ret, stage, sel, rows, onDone, onPhoto }) {
       {stage === "supplier_pending" && (
         <div className="flex flex-wrap gap-3 text-[11px]">
           <span className="text-[#6E6E73]">Foto bukti buang BS:</span>
-          <ReturnCameraButton returnId={ret.id} testId="disposition-camera"
+          <ReturnCameraButton returnId={returnId} uploadUrl={`${API}/sales-returns/${returnId}/disposition/photos`} testId="disposition-camera"
             onUploaded={(att) => { setPhotos((p) => [...p, att.id]); onPhoto?.(); }} />
           {!imgs.length && <span className="text-[#8E8E93]">belum ada foto di lampiran</span>}
           {imgs.map((a) => <label key={a.id} className="inline-flex items-center gap-1"><input type="checkbox" data-testid={`disposition-photo-${a.id}`}
@@ -102,6 +101,8 @@ export default function ReturnDispositionPanel({ ret, canApprove, onChanged }) {
   const rows = data?.rows || [];
   if (!rows.some((r) => r.stage !== "no_internal_origin")) return null;
   const selStage = rows.find((r) => r.roll_id === sel[0])?.stage;
+  const imgs = [...(ret.attachments || []), ...(ret.disposition_photos || [])]
+    .filter((a) => !a.is_deleted && (a.content_type || "").startsWith("image/"));
   const toggle = (r) => setSel((s) => (s.includes(r.roll_id) ? s.filter((x) => x !== r.roll_id)
     : (selStage && selStage !== r.stage ? [r.roll_id] : [...s, r.roll_id])));
   return (
@@ -114,11 +115,11 @@ export default function ReturnDispositionPanel({ ret, canApprove, onChanged }) {
             <th /><th className="px-2 py-1.5 text-left">Roll</th><th className="px-2 py-1.5 text-right">Jumlah</th><th className="px-2 py-1.5 text-left">Pemilik</th>
             <th className="px-2 py-1.5 text-left">Asal</th><th className="px-2 py-1.5 text-left">Batas supplier</th><th className="px-2 py-1.5 text-left">Tahap</th></tr></thead>
           <tbody className="divide-y divide-[#F2F2F5]">
-            {rows.map((r) => <Row key={r.roll_id} r={r} checked={sel.includes(r.roll_id)} onToggle={() => toggle(r)} />)}
+            {rows.map((r) => <DispositionRow key={r.roll_id} r={r} checked={sel.includes(r.roll_id)} onToggle={() => toggle(r)} />)}
           </tbody>
         </table>
       </div>
-      {canApprove && sel.length > 0 && <ActionBar ret={ret} stage={selStage} sel={sel} rows={rows} onDone={load} onPhoto={onChanged} />}
+      {canApprove && sel.length > 0 && <DispositionActionBar returnId={ret.id} imgs={imgs} stage={selStage} sel={sel} rows={rows} onDone={load} onPhoto={onChanged} />}
     </div>
   );
 }

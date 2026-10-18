@@ -18,6 +18,7 @@ import axios, { API } from "../../../services/apiClient";
 import PaginationBar from "../../../components/PaginationBar";
 import useDomainEnums from "../../../hooks/useDomainEnums";
 import LotDetailPanel from "./LotDetailPanel";
+import LotIdentityTrace from "./LotIdentityTrace";
 import { CreateLotModal, LotLabelModal, LotStatusModal, MergeLotModal, ReworkLotModal,
          SplitLotModal } from "./LotActionModals";
 import { LotFilters, LotStatCards, LotTable, UnassignedRollsCard } from "./LotParts";
@@ -276,6 +277,8 @@ export default function LotsView({ user, products = [], warehouses = [], entityI
               { key: "lot.number_format", label: "Format nomor lot" },
             ]}
           />
+
+          <LotIdentityTrace onOpen={(id) => openLot(id, "ringkasan")} />
 
           <div className="rounded-md border border-[#EFF0F2] bg-white">
             <div className="flex flex-wrap items-center gap-2 border-b border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-1.5">

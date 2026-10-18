@@ -246,3 +246,56 @@ async def label(lot_id: str, *, fmt: str = "zpl", qty: int = 1,
         "qr_value": barcode,
     }
     return cmd
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# LN-014 — TELUSUR IDENTITAS: lot internal ≠ lot supplier ≠ dye lot ≠ SJ sumber
+# ═══════════════════════════════════════════════════════════════════════════
+MATCH_FIELDS = (("lot_number", "Nomor lot internal"), ("supplier_lot", "Lot supplier"),
+                ("dye_lot", "Dye lot"), ("internal_alias", "Alias internal"),
+                ("legacy_lot_codes", "Kode lot lama"))
+
+
+async def _origin(lot: Dict[str, Any]) -> Dict[str, Any]:
+    ref = lot.get("source_ref") or {}
+    out = {"ref_type": ref.get("type", ""), "ref_number": ref.get("number", ""),
+           "po_number": "", "supplier_dn_numbers": []}
+    if ref.get("type") == "wms_task" and ref.get("id"):
+        t = await db.wms_tasks.find_one({"id": ref["id"]}, {"_id": 0, "po_number": 1, "supplier_dn_number": 1,
+                                                          "supplier_dn_numbers": 1, "code": 1}) or {}
+        out["po_number"] = t.get("po_number", "")
+        out["supplier_dn_numbers"] = sorted({*(t.get("supplier_dn_numbers") or []),
+                                             *([t["supplier_dn_number"]] if t.get("supplier_dn_number") else [])})
+        out["ref_number"] = out["ref_number"] or t.get("code", "")
+    elif ref.get("type") == "purchase_order" and ref.get("id"):
+        po = await db.purchase_orders.find_one({"id": ref["id"]}, {"_id": 0, "po_number": 1}) or {}
+        out["po_number"] = po.get("po_number", "")
+    return out
+
+
+async def identity_trace(code: str, scope_ids: List[str], limit: int = 50) -> Dict[str, Any]:
+    code = (code or "").strip()
+    if len(code) < 2:
+        raise ls.LotError("Masukkan minimal 2 karakter nomor lot / lot supplier / alias.")
+    exact = {"$regex": f"^{ls.re.escape(code)}$", "$options": "i"}
+    lots = await db[COLL].find({"owner_entity_id": {"$in": scope_ids},
+                                "$or": [{f: exact} for f, _ in MATCH_FIELDS]}, {"_id": 0}).to_list(limit)
+    rows = []
+    for lot in lots:
+        matched = [label for f, label in MATCH_FIELDS
+                   if any(str(v).lower() == code.lower() for v in
+                          (lot.get(f) if isinstance(lot.get(f), list) else [lot.get(f) or ""]))]
+        ret_rolls = await db[ROLLS].find({"origin_type": "return", "$or": [{"lot_id": lot["id"]},
+                                          {"source_roll_ids": {"$in": await db[ROLLS].distinct("id", {"lot_id": lot["id"]})}}]},
+                                         {"_id": 0, "roll_no": 1, "return_id": 1, "lot": 1}).to_list(50)
+        rows.append({
+            "lot_id": lot["id"], "lot_number": lot.get("lot_number", ""), "matched_on": matched,
+            "supplier_lot": lot.get("supplier_lot", ""), "dye_lot": lot.get("dye_lot", ""),
+            "internal_alias": lot.get("internal_alias", ""), "supplier_name": lot.get("supplier_name", ""),
+            "product_name": lot.get("product_name", ""), "sku": lot.get("sku", ""),
+            "owner_entity_id": lot.get("owner_entity_id", ""), "roll_count": lot.get("roll_count", 0),
+            "origin": await _origin(lot), "identity_history": lot.get("identity_history") or [],
+            "return_rolls": ret_rolls,
+        })
+    return {"code": code, "rows": rows,
+            "note": "Nomor lot internal adalah identitas kanonik; lot supplier, dye lot dan alias hanya acuan."}

@@ -126,6 +126,17 @@ async def unassigned_rolls(request: Request, product_id: str = "",
 
 
 # ── Detail & silsilah ────────────────────────────────────────────────
+@router.get("/lots/identity-trace")
+async def lot_identity_trace(request: Request, code: str = "", entity_id: Optional[str] = None) -> Dict[str, Any]:
+    """LN-014 — cari lewat nomor lot internal / lot supplier / dye lot / alias; tampilkan kedua identitas + PO/SJ asal."""
+    await require_permission(request, "inventory", "view")
+    from entity_scope import resolve_scope_ids
+    try:
+        return await lts.identity_trace(code, resolve_scope_ids(await entity_ctx(request), entity_id))
+    except ls.LotError as exc:
+        raise _err(exc) from exc
+
+
 @router.get("/lots/{lot_id}")
 async def get_lot(lot_id: str, request: Request) -> Dict[str, Any]:
     await require_permission(request, "inventory", "view")

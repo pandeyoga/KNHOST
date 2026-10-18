@@ -115,6 +115,26 @@ E("lot.require_dye_lot", group="lot", type="bool", default=True, scopes=G,
   related=("allocation.dye_lot_strict",), risk="medium",
   roles=_MANAGER_TOO)
 
+E("lot.alias_mode", group="lot", type="enum", default="off",
+  options=({"value": "off", "label": "Belum dipakai (menunggu KLX-01)"},
+           {"value": "manual", "label": "ASUMSI: alias internal diisi manual per lot"}),
+  scopes=G,
+  label="Alias lot internal (mis. supplier 234 → KN A)",
+  help="LN-014 — alias internal TIDAK pernah dibuat otomatis selama KLX-01 belum diputuskan.",
+  impact="Mode manual mengizinkan petugas mengisi alias per lot dengan jejak riwayat; nomor lot internal tetap tidak berubah.",
+  example="manual → lot KSC/LOT-2610-0001 (supplier 234) boleh diberi alias 'KN A'",
+  consumers=("services/lot_service.py",), risk="medium", roles=_MANAGER_TOO)
+
+E("lot.alias_unique_scope", group="lot", type="enum", default="entity_supplier",
+  options=({"value": "entity_supplier", "label": "Unik per entitas + supplier"},
+           {"value": "entity", "label": "Unik per entitas (lintas supplier)"}),
+  scopes=G,
+  label="Cakupan keunikan alias lot",
+  help="LN-014 — alias tidak boleh dipakai dua lot dalam cakupan ini (asumsi sampai KLX-01).",
+  impact="Mencegah dua lot berbeda punya alias sama sehingga penelusuran tidak ambigu.",
+  example="entity_supplier → 'KN A' boleh dipakai lagi untuk supplier lain",
+  consumers=("services/lot_service.py",), risk="low", roles=_MANAGER_TOO)
+
 E("lot.auto_create_on_receiving", group="lot", type="bool", default=True, scopes=G,
   label="Buat lot otomatis saat penerimaan",
   help="Sistem membuat kartu lot baru otomatis ketika barang diterima, tanpa input manual.",

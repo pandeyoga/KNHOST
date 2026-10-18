@@ -43,7 +43,11 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "auto_create_on_receiving": True,  # 1 batch penerimaan = 1 lot (per dye lot)
     "status_on_receipt": "karantina",
     "number_format": "LOT-YYMM-####",
+    "alias_mode": "off",               # LN-014 — off | manual (KLX-01 pending; tak ada alias otomatis)
+    "alias_unique_scope": "entity_supplier",  # entity_supplier | entity
 }
+# LN-014 — field identitas yang perubahannya wajib beralasan & tercatat (nomor lot internal TIDAK bisa diubah).
+IDENTITY_FIELDS = ("supplier_lot", "dye_lot", "supplier_id", "supplier_name", "internal_alias")
 
 # Sumber pembentukan lot (dipakai `inventory_lots.source`) — label untuk UI.
 SOURCE_LABELS: Dict[str, str] = {s["value"]: s["label"] for s in dr.LOT_SOURCES}
@@ -529,22 +533,51 @@ async def set_status(lot_id: str, status: str, reason: str = "",
 
 async def patch_lot(lot_id: str, payload: Dict[str, Any],
                     actor: str = "System") -> Dict[str, Any]:
-    """Ubah data identitas lot (supplier_lot/dye_lot/shade/note/gudang)."""
+    """Ubah METADATA lot. Nomor lot internal (identitas kanonik) tidak pernah diubah;
+    perubahan identitas supplier/alias pada lot yang sudah menaungi roll wajib beralasan
+    dan tercatat di `identity_history` (LN-014)."""
     lot = await get_lot(lot_id)
+    payload = dict(payload or {})
+    reason = (payload.pop("reason", "") or "").strip()
     allowed = ("supplier_lot", "dye_lot", "shade_ref", "note", "warehouse_id",
-               "supplier_id", "supplier_name")
+               "supplier_id", "supplier_name", "internal_alias")
     patch = {k: (str(v).strip() if isinstance(v, str) else v)
-             for k, v in (payload or {}).items() if k in allowed and v is not None}
+             for k, v in payload.items() if k in allowed and v is not None}
+    patch = {k: v for k, v in patch.items() if v != (lot.get(k) or "")}
     if not patch:
         raise LotError("Tidak ada perubahan yang sah untuk disimpan.")
+    changes = [{"field": k, "before": lot.get(k) or "", "after": v} for k, v in patch.items() if k in IDENTITY_FIELDS]
+    if "internal_alias" in patch:
+        await _check_alias(lot, patch["internal_alias"])
+    if changes and int(lot.get("roll_count") or 0) > 0 and len(reason) < 5:
+        raise LotError("Lot ini sudah menaungi roll — perubahan identitas supplier/alias wajib diberi alasan (min. 5 huruf).")
     patch["updated_at"] = now_iso()
     patch["updated_by"] = actor
-    await db[COLL].update_one({"id": lot["id"]}, {"$set": patch})
-    if patch.get("dye_lot"):
-        await db[ROLLS].update_many({"lot_id": lot["id"]},
-                                   {"$set": {"dye_lot": patch["dye_lot"],
-                                             "updated_at": now_iso()}})
+    upd: Dict[str, Any] = {"$set": patch}
+    if changes:
+        upd["$push"] = {"identity_history": {"$each": [{**c, "reason": reason, "by": actor, "at": now_iso()}
+                                                       for c in changes]}}
+    await db[COLL].update_one({"id": lot["id"]}, upd)
+    roll_set = {k: patch[k] for k in ("dye_lot", "supplier_lot") if patch.get(k)}
+    if roll_set:
+        await db[ROLLS].update_many({"lot_id": lot["id"]}, {"$set": {**roll_set, "updated_at": now_iso()}})
     return await get_lot(lot["id"])
+
+
+async def _check_alias(lot: Dict[str, Any], alias: str) -> None:
+    cfg = await get_settings(lot.get("owner_entity_id", ""))
+    if cfg.get("alias_mode", "off") != "manual":
+        raise LotError("Alias lot internal belum diaktifkan (KLX-01 belum diputuskan). "
+                       "Aktifkan asumsi 'lot.alias_mode = manual' di Pusat Pengaturan bila perlu.")
+    if not alias:
+        return
+    q: Dict[str, Any] = {"internal_alias": alias, "owner_entity_id": lot.get("owner_entity_id"),
+                         "id": {"$ne": lot["id"]}}
+    if cfg.get("alias_unique_scope", "entity_supplier") == "entity_supplier":
+        q["supplier_id"] = lot.get("supplier_id") or ""
+    other = await db[COLL].find_one(q, {"_id": 0, "lot_number": 1})
+    if other:
+        raise LotError(f"Alias '{alias}' sudah dipakai lot {other['lot_number']}.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -560,7 +593,8 @@ async def list_lots(query: Dict[str, Any], *, q: str = "", limit: int = 200,
     if q:
         flt["$or"] = [{"lot_number": _rx(q)}, {"supplier_lot": _rx(q)},
                       {"dye_lot": _rx(q)}, {"sku": _rx(q)}, {"product_name": _rx(q)},
-                      {"legacy_lot_codes": _rx(q)}, {"note": _rx(q)}]
+                      {"legacy_lot_codes": _rx(q)}, {"note": _rx(q)},
+                      {"internal_alias": _rx(q)}]
     field = sort.lstrip("-") or "created_at"
     direction = -1 if sort.startswith("-") else 1
     rows = await db[COLL].find(flt, {"_id": 0}).sort(field, direction).skip(

@@ -227,7 +227,8 @@ async def decide_supplier(ret: Dict[str, Any], roll_ids: List[str], decision: st
     if decision == "supplier_return" and any(p["supplier_window_expired"] for p in picked):
         raise DispositionError("Masa retur supplier sudah lewat untuk sebagian roll — simpan sebagai stok.")
     if decision == "dispose":
-        atts = {a["id"]: a for a in ret.get("attachments") or [] if not a.get("is_deleted")}
+        atts = {a["id"]: a for a in (ret.get("attachments") or []) + (ret.get("disposition_photos") or [])
+                if not a.get("is_deleted")}
         if not any((atts.get(i, {}).get("content_type") or "").startswith("image/") for i in attachment_ids or []):
             raise DispositionError("Buang BS wajib melampirkan minimal satu foto bukti.")
     entry = {"decision": decision, "status": "processing", "reason": reason.strip(), "by": actor, "at": now_iso(),
@@ -254,3 +255,76 @@ async def decide_supplier(ret: Dict[str, Any], roll_ids: List[str], decision: st
         raise
     await _log(ret, f"Keputusan {STAGE2[decision].lower()}", actor, note)
     return out
+
+
+_AWAIT_SUPPLIER = {"origin_type": "return", "disposition.internal.decision": "return_internal",
+                   "disposition.supplier": {"$exists": False}, "status": {"$nin": list(GONE)}}
+
+
+async def _pending_supplier_rows(scope_ids: List[str] = None) -> List[Dict[str, Any]]:
+    """Kasus retur (dengan baris tahap 2 yang masih menunggu) milik PT dalam cakupan."""
+    q = dict(_AWAIT_SUPPLIER)
+    if scope_ids is not None:
+        q["owner_entity_id"] = {"$in": scope_ids}
+    rids = await db.inventory_rolls.distinct("return_id", q)
+    out = []
+    for rid in rids:
+        ret = await db.sales_returns.find_one({"id": rid}, {"_id": 0})
+        if not ret:
+            continue
+        v = await view(ret)
+        rows = [r for r in v["rows"] if r["stage"] == "supplier_pending"
+                and (scope_ids is None or r["owner_entity_id"] in scope_ids)]
+        if rows:
+            out.append({"return_id": rid, "return_number": ret.get("number", ""),
+                        "supplier_window_days": v["supplier_window_days"], "rows": rows,
+                        "photos": [{k: p.get(k) for k in ("id", "filename", "content_type")}
+                                   for p in ret.get("disposition_photos") or []]})
+    return out
+
+
+async def inbox(scope_ids: List[str]) -> Dict[str, Any]:
+    """Meja PT pemasok (CST): retur internal wajib terima + roll menunggu keputusan tahap 2.
+    Detail pelanggan PT pengembali tidak ikut (hanya nomor retur sebagai acuan kasus)."""
+    incoming = await db.interco_returns.find(
+        {"role": "receiver", "mandatory_accept": True, "entity_id": {"$in": scope_ids},
+         "status": {"$in": ["draft", "approved"]}},
+        {"_id": 0, "id": 1, "number": 1, "counterpart_id": 1, "counterpart_number": 1, "status": 1,
+         "buyer_entity_name": 1, "seller_entity_name": 1, "grand_total": 1, "reason": 1, "doc_date": 1,
+         "warehouse_transfer_code": 1, "warehouse_transfer_status": 1, "source_sales_return_number": 1,
+         "created_by": 1, "items.product_name": 1, "items.sku": 1, "items.quantity": 1, "items.unit": 1,
+         "items.qty_rolls": 1}).sort("created_at", 1).to_list(200)
+    cases = await _pending_supplier_rows(scope_ids)
+    return {"incoming": incoming, "cases": cases,
+            "counts": {"incoming": len(incoming), "rolls": sum(len(c["rows"]) for c in cases)}}
+
+
+REMINDER_ROLES = ("warehouse_admin", "admin", "finance")
+
+
+async def job_supplier_deadline_reminder() -> Dict[str, Any]:
+    """LN-093 — ingatkan gudang/admin & finance PT pemilik N hari sebelum masa retur supplier habis."""
+    from datetime import date
+    from services.notification_service import create_notification
+    today = date.fromisoformat(_today())
+    sent = 0
+    for case in await _pending_supplier_rows(None):
+        for r in case["rows"]:
+            if not r["supplier_deadline"]:
+                continue
+            a = await return_assumptions(r["owner_entity_id"])
+            days = int(a.get("supplier_reminder_days") or 0)
+            left = (date.fromisoformat(r["supplier_deadline"]) - today).days
+            if days <= 0 or not 0 <= left <= days:
+                continue
+            for role in REMINDER_ROLES:
+                n = await create_notification(
+                    notif_type="return_supplier_deadline", severity="warning" if left <= 1 else "info",
+                    title=f"Batas retur supplier {r['supplier_deadline']}: roll {r['roll_no']}",
+                    body=(f"{r['qty']} {r['unit']} · {r['supplier_name'] or 'supplier'}{' · ' + r['po_number'] if r['po_number'] else ''}"
+                          f" · {'hari ini' if left == 0 else f'{left} hari lagi'}. Putuskan simpan / retur supplier / buang BS "
+                          "di Antar-PT → Retur Masuk; lewat batas otomatis disimpan sebagai stok."),
+                    link="interco-transactions", entity_id=r["owner_entity_id"], recipient_role=role,
+                    ref=f"{r['roll_id']}:{r['supplier_deadline']}:{role}", dedupe=True, dedupe_scope="ever")
+                sent += 1 if n else 0
+    return {"created": sent, "detail": f"{sent} pengingat batas retur supplier dikirim"}

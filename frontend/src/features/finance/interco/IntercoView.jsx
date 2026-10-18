@@ -31,6 +31,7 @@ import IntercoCancelModal from "./IntercoCancelModal";
 import IntercoTaxModal from "./IntercoTaxModal";
 import IntercoReturnModal from "./IntercoReturnModal";
 import IntercoReturnsPanel from "./IntercoReturnsPanel";
+import IntercoReturnInbox from "./IntercoReturnInbox";
 import IntercoMarginPanel from "./IntercoMarginPanel";
 // FASE E-7 (E7f) — pinjaman uang antar-PT (dokumen kembar + eliminasi non-dagang).
 import IntercoLoansPanel from "./IntercoLoansPanel";
@@ -43,6 +44,7 @@ const TABS = [
   { id: "settlements",  label: "Settlement",       icon: Layers },
   { id: "schedule",     label: "Jadwal Bayar",     icon: Layers },
   { id: "returns",      label: "Retur Antar-PT",   icon: Undo2 },
+  { id: "return-inbox", label: "Retur Masuk",      icon: Undo2 },
   { id: "loans",        label: "Pinjaman Antar-PT", icon: Wallet },
   { id: "margin",       label: "Rapor Margin",     icon: TrendingUp },
 ];
@@ -282,6 +284,10 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           onCancel={(r, reason) => retAct(r, "cancel", { reason },
             `Draf retur ${r.number} dibatalkan`)}
         />
+      )}
+      {tab === "return-inbox" && (
+        <IntercoReturnInbox entityId={entityId}
+          canAct={can(perms, "interco", "approve") || can(perms, "sales_return", "approve")} />
       )}
       {tab === "loans" && (
         <IntercoLoansPanel entities={entities} entityId={entityId} canWrite={canWrite} />

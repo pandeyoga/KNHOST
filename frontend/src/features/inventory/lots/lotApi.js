@@ -22,6 +22,7 @@ export const lotApi = {
   merge: (body) => axios.post(`${API}/lots/merge`, body).then((r) => r.data),
   rework: (id, body) => axios.post(`${API}/lots/${id}/rework`, body).then((r) => r.data),
   attachRolls: (id, body) => axios.post(`${API}/lots/${id}/rolls`, body).then((r) => r.data),
+  identityTrace: (code) => axios.get(`${API}/lots/identity-trace`, { params: { code } }).then((r) => r.data),
   unassignedRolls: (params) => axios.get(`${API}/lots/unassigned-rolls`, { params }).then((r) => r.data),
 };
 
