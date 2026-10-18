@@ -1398,3 +1398,10 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - LN-014: nomor lot internal kanonik; ubah lot supplier/dye/supplier/alias pada lot berisi roll wajib alasan + `identity_history`; alias internal ASUMSI `lot.alias_mode` off|manual & `lot.alias_unique_scope` (KLX-01 pending); GET /api/lots/identity-trace (lot internal vs supplier, PO/SJ asal, roll retur); label roll menampilkan lot internal + lot supplier terpisah. Fix: unduh lampiran retur (get_object tuple).
 - Tes: test_ln091t02_ln093_chain.py 10/10, test_ln014_lot_identity.py 3/3; iteration_231 100%.
 - Berikutnya: LN-140 uji rantai end-to-end, validasi owner KLX-01/KLR pending, L12/L13 butuh perangkat.
+
+## 2026-10-18 (7) — status in_progress
+- LN-140 uji rantai (backend/test_core_rantai_retur_poc.py, 46/46): CST PO supplier luar → GR (SJ + lot supplier) → inspeksi 4-point → QC → beli internal Sukacita (gudang bersama) → potong + verifikasi label → pick → loading check → dispatch SJ → terkirim → retur pelanggan → retur antar-PT → retur supplier. Laporan: docs/.../evidence/L14/report.md.
+- Temuan diperbaiki: supplier grup `entity_id="all"` kini terlihat di semua PT; gudang retur pelanggan (flow_type outbound → alokasi → gudang default entitas); patch_lot no-op; SJ supplier tersimpan di roll/lot + backfill boot.
+- SJ supplier tampil di detail lot (`lot-supplier-dn-view`) dan label roll ("SJ sup. …").
+- Kartu Beranda `return-desk-summary` (admin/manager/finance/warehouse_admin): retur internal masuk, roll menunggu keputusan, batas supplier dekat → tombol ke tab Retur Masuk. API GET /api/return-dispositions/summary.
+- Tes: test_ln140_chain_fixes.py 3/3 (+ tests/_shared_loop.py); iteration_232 100%.
