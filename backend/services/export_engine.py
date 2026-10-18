@@ -237,7 +237,9 @@ async def build_plan(spec: Dict[str, Any], user: Dict[str, Any], ctx) -> Dict[st
     if ands:
         pipeline.append({"$match": {"$and": ands} if len(ands) > 1 else ands[0]})
     if ds.get("unwind"):
-        pipeline.append({"$unwind": {"path": f"${ds['unwind']}", "includeArrayIndex": "_line"}})
+        pipeline.append({"$unwind": {"path": f"${ds['unwind']}", "includeArrayIndex": "_line",
+                                     "preserveNullAndEmptyArrays": bool(ds.get("unwind_preserve"))}})
+    pipeline += ds.get("stages") or []
     if post:
         pipeline.append({"$match": post})
     sort_doc = {p: d for p, d in sort}
@@ -245,7 +247,10 @@ async def build_plan(spec: Dict[str, Any], user: Dict[str, Any], ctx) -> Dict[st
     if ds.get("unwind"):
         sort_doc.setdefault("_line", 1)
     cols = [by_key[k] for k in keys]
-    return {"ds": ds, "columns": cols, "pipeline": pipeline, "sort": sort_doc, "hidden": await hidden_for_user(user),
+    group = None
+    if spec.get("group_by"):
+        cols, group = _group_plan(ds, spec["group_by"], cols, base_cols)
+    return {"ds": ds, "columns": cols, "group": group, "pipeline": pipeline, "sort": sort_doc, "hidden": await hidden_for_user(user),
             "filter_text": describe_filter(spec.get("filter"), labels), "date_text": date_label or "(semua tanggal)",
             "sort_text": ", ".join(f"{labels.get(s.get('key'))} {'↓' if s.get('dir') == 'desc' else '↑'}"
                                    for s in spec.get("sort") or []) or "(bawaan: kunci dataset)",
@@ -254,8 +259,38 @@ async def build_plan(spec: Dict[str, Any], user: Dict[str, Any], ctx) -> Dict[st
             "denied": [{"key": d["key"], "label": d["label"], "reason": d["reason"]} for d in denied]}
 
 
+ROWS_COL = {"key": "_rows", "label": "Jumlah baris", "type": "number", "path": "_rows", "source": "base"}
+
+
+def _group_plan(ds, group_by, cols, base_cols):
+    """LN-111 — ringkasan per kunci: angka diagregasi (sum/avg) dari baris grain yang sama, tanpa join."""
+    if len(group_by) > 3:
+        raise _err(422, "GROUP_TOO_MANY", "Kelompokkan maksimal 3 kolom")
+    bad = [g for g in group_by if g not in base_cols]
+    if bad:
+        raise _err(403, "FIELD_NOT_ALLOWED", "Kolom pengelompokan tidak tersedia", fields=bad)
+    if any(c["source"] != "base" for c in cols):
+        raise _err(422, "GROUP_JOIN", "Mode ringkasan hanya untuk kolom dataset utama (tanpa relasi)")
+    keys = [base_cols[g] for g in group_by]
+    measures = [c for c in cols if c["type"] in ("number", "money") and c["key"] not in group_by]
+    agg = ds.get("agg") or {}
+    measures = [c for c in measures if agg.get(c["key"]) != "none"]
+    measures = [{**c, "agg": agg.get(c["key"], "sum"),
+                 "label": c["label"] + (" (rata-rata, kosong diabaikan)" if agg.get(c["key"]) == "avg" else "")}
+                for c in measures]
+    group = {"_id": {g["key"]: f"${g['path']}" for g in keys}, "_rows": {"$sum": 1},
+             **{m["key"]: {f"${m['agg']}": f"${m['path']}"} for m in measures}}
+    return keys + measures + [ROWS_COL], {"stage": group, "keys": [g["key"] for g in keys]}
+
+
+def _grouped(plan):
+    g = plan["group"]
+    return plan["pipeline"] + [{"$group": g["stage"]}]
+
+
 async def count(plan: Dict[str, Any]) -> int:
-    res = await db[plan["ds"]["collection"]].aggregate(plan["pipeline"] + [{"$count": "n"}]).to_list(1)
+    pipe = _grouped(plan) if plan.get("group") else plan["pipeline"]
+    res = await db[plan["ds"]["collection"]].aggregate(pipe + [{"$count": "n"}]).to_list(1)
     return res[0]["n"] if res else 0
 
 
@@ -285,7 +320,18 @@ def _norm(col: Dict[str, Any], v: Any) -> Any:
     return str(v)
 
 
+async def _fetch_grouped(plan, skip, limit):
+    keys = plan["group"]["keys"]
+    pipe = _grouped(plan) + [{"$sort": {**{f"_id.{k}": 1 for k in keys}}}, {"$skip": skip}, {"$limit": limit}]
+    docs = await db[plan["ds"]["collection"]].aggregate(pipe, allowDiskUse=True).to_list(limit)
+    rows = [{c["key"]: _norm(c, d["_id"].get(c["key"]) if c["key"] in keys else d.get(c["key"])) for c in plan["columns"]}
+            for d in docs]
+    return redact(rows, plan["hidden"]) if plan["hidden"] else rows
+
+
 async def fetch(plan: Dict[str, Any], skip: int, limit: int) -> List[Dict[str, Any]]:
+    if plan.get("group"):
+        return await _fetch_grouped(plan, skip, limit)
     ds, cols = plan["ds"], plan["columns"]
     joins = {j["id"]: j for j in ds.get("joins", [])}
     used_joins = {c["source"] for c in cols if c["source"] != "base"}
@@ -396,6 +442,13 @@ async def write_file(job: Dict[str, Any], plan: Dict[str, Any], path: str, rows_
         if len(rows) < batch:
             break
     job = {**job, "written_rows": written, "partitions": partitions}
+    sp = plan.get("summary_plan")
+    if sp:
+        label = "+".join(c["label"] for c in sp["columns"] if c["key"] in sp["group"]["keys"])
+        ws2 = wb.create_sheet(f"Ringkasan per {label}"[:31])
+        ws2.append([c["label"] for c in sp["columns"]])
+        for r in await fetch(sp, 0, 100000):
+            ws2.append([WriteOnlyCell(ws2, value=r.get(c["key"])) for c in sp["columns"]])
     summary = wb.create_sheet("Ringkasan")
     for line in summary_lines(job, plan):
         cells = []

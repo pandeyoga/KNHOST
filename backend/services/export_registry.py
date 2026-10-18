@@ -224,7 +224,6 @@ DATASETS: List[Dict[str, Any]] = [
      "joins": [J("department", "Departemen", "hr_org_units", "department_id", [C("name", "Departemen")]),
                ENTITY_JOIN()]},
 ]
-DATASET_BY_ID = {d["id"]: d for d in DATASETS}
 
 #: Koleksi yang sengaja tidak menjadi dataset bisnis (LN-110-T02: alasan terdokumentasi).
 EXCLUDED: Dict[str, str] = {
@@ -236,7 +235,7 @@ EXCLUDED: Dict[str, str] = {
     "migrations": "Catatan migrasi (teknis)", "sys_scheduler_runs": "Log penjadwal (teknis)",
     "sys_wa_outbox": "Antrean pesan WhatsApp (teknis)", "turn_marks": "Penanda notifikasi (teknis)",
     "notifications": "Pesan pribadi pengguna", "audit_logs": "Jejak audit — layar Jejak Audit (admin)",
-    "export_jobs": "Pekerjaan export itu sendiri", "material_reservation_locks": "Kunci transaksi (teknis)",
+    "export_jobs": "Pekerjaan export itu sendiri", "export_templates": "Template export pribadi pengguna", "material_reservation_locks": "Kunci transaksi (teknis)",
     "data_hygiene_runs": "Log job kebersihan data (teknis)", "ai_fact_state": "Status sinkron Tanya KN (teknis)",
     "fact_sales_lines": "Tabel fakta turunan Tanya KN (duplikat Baris Pesanan)",
     "push_subscriptions": "Kredensial Web Push", "integration_secrets": "Rahasia integrasi",
@@ -244,6 +243,13 @@ EXCLUDED: Dict[str, str] = {
 }
 EXCLUDED_PREFIXES = {"sys_": "Infrastruktur sistem", "ai_": "Cache/riwayat Tanya KN per pengguna",
                      "tmp_": "Data sementara"}
+
+
+from services.export_registry_more import EXCLUDED_MORE, FINANCE, MORE, STAFF  # noqa: E402
+
+DATASETS += FINANCE + STAFF + MORE
+DATASET_BY_ID = {d["id"]: d for d in DATASETS}
+EXCLUDED.update(EXCLUDED_MORE)
 
 
 def excluded_reason(name: str) -> Optional[str]:

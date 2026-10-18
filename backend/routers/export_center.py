@@ -33,6 +33,7 @@ class ExportSpec(BaseModel):
     date_to: Optional[str] = None
     sort: List[Dict[str, str]] = Field(default_factory=list)
     entity_scope: str = "active"
+    group_by: List[str] = Field(default_factory=list)
 
 
 class PreviewIn(ExportSpec):
@@ -59,7 +60,7 @@ async def list_datasets(request: Request) -> Any:
             continue
         allowed, denied = await eng.resolve_columns(user, ds)
         out.append({"id": ds["id"], "label": ds["label"], "group": ds["group"], "grain": ds["grain"],
-                    "key": ds["key"], "date_fields": [_public_col(d) for d in ds["date_fields"]],
+                    "key": ds["key"], "summary_by": ds.get("summary_by") or [], "date_fields": [_public_col(d) for d in ds["date_fields"]],
                     "columns": [_public_col(c) for c in allowed],
                     "hidden_columns": [{"key": d["key"], "label": d["label"], "reason": d["reason"]} for d in denied],
                     "joins": [{"id": j["id"], "label": j["label"]} for j in ds.get("joins", [])]})
@@ -113,6 +114,10 @@ async def _create_job(spec: Dict[str, Any], fmt: str, rows_per_sheet: int, reque
     user = await require_permission(request, "data_export", "export")
     ctx = await entity_ctx(request)
     plan = await eng.build_plan(spec, user, ctx)
+    if plan["ds"].get("summary_by") and not spec.get("group_by") and fmt == "xlsx":
+        # LN-112 — rapor: detail + ringkasan per staf dari filter/periode yang sama.
+        plan["summary_plan"] = await eng.build_plan(
+            {**spec, "columns": [], "sort": [], "group_by": plan["ds"]["summary_by"]}, user, ctx)
     total = await eng.count(plan)
     if total > eng.MAX_EXPORT_ROWS:
         raise HTTPException(status_code=413, detail={"code": "EXPORT_TOO_LARGE", "message": (
@@ -207,3 +212,64 @@ async def download_job(job_id: str, request: Request) -> Any:
     media = "text/csv" if job["format"] == "csv" else \
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     return FileResponse(str(path), media_type=media, filename=job["file_name"])
+
+
+class TemplateIn(BaseModel):
+    name: str = Field(..., min_length=3, max_length=80)
+    spec: ExportSpec
+    format: str = Field("xlsx", pattern="^(xlsx|csv)$")
+    rows_per_sheet: int = Field(eng.EXCEL_MAX_ROWS, ge=100, le=eng.EXCEL_MAX_ROWS)
+
+
+def _tpl_public(t: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: t.get(k) for k in ("id", "name", "spec", "format", "rows_per_sheet", "dataset", "dataset_label",
+                                  "created_at", "last_run_at", "run_count")}
+
+
+@router.get("/templates")
+async def list_templates(request: Request) -> Any:
+    user = await require_permission(request, "data_export", "view")
+    docs = await db.export_templates.find({"user_id": user["id"]}, {"_id": 0}).sort("name", 1).to_list(200)
+    return {"items": [_tpl_public(d) for d in docs]}
+
+
+@router.post("/templates")
+async def save_template(payload: TemplateIn, request: Request) -> Any:
+    user = await require_permission(request, "data_export", "export")
+    ctx = await entity_ctx(request)
+    spec = payload.spec.dict()
+    plan = await eng.build_plan(spec, user, ctx)   # hanya pilihan yang sah saat ini yang boleh disimpan
+    name = payload.name.strip()
+    existing = await db.export_templates.find_one({"user_id": user["id"], "name": name}, {"_id": 0, "id": 1})
+    doc = {"id": existing["id"] if existing else new_id("ext"), "user_id": user["id"], "name": name, "spec": spec,
+           "format": payload.format, "rows_per_sheet": payload.rows_per_sheet, "dataset": plan["ds"]["id"],
+           "dataset_label": plan["ds"]["label"], "updated_at": now_iso()}
+    if existing:
+        await db.export_templates.update_one({"id": existing["id"]}, {"$set": doc})
+    else:
+        await db.export_templates.insert_one({**doc, "created_at": now_iso(), "run_count": 0})
+    return _tpl_public(await db.export_templates.find_one({"id": doc["id"]}, {"_id": 0}))
+
+
+async def _own_tpl(tpl_id: str, user: Dict[str, Any]) -> Dict[str, Any]:
+    t = await db.export_templates.find_one({"id": tpl_id, "user_id": user["id"]}, {"_id": 0})
+    if not t:
+        raise HTTPException(status_code=404, detail="Template tidak ditemukan")
+    return t
+
+
+@router.delete("/templates/{tpl_id}")
+async def delete_template(tpl_id: str, request: Request) -> Any:
+    user = await require_permission(request, "data_export", "view")
+    await _own_tpl(tpl_id, user)
+    await db.export_templates.delete_one({"id": tpl_id, "user_id": user["id"]})
+    return {"ok": True}
+
+
+@router.post("/templates/{tpl_id}/run")
+async def run_template(tpl_id: str, request: Request) -> Any:
+    user = await require_permission(request, "data_export", "export")
+    t = await _own_tpl(tpl_id, user)
+    job = await _create_job(t["spec"], t["format"], t.get("rows_per_sheet") or eng.EXCEL_MAX_ROWS, request)
+    await db.export_templates.update_one({"id": tpl_id}, {"$set": {"last_run_at": now_iso()}, "$inc": {"run_count": 1}})
+    return job
