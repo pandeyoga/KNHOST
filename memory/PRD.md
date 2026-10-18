@@ -1377,3 +1377,10 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - LN-083: batas customer 21 hari dari SJ & supplier 21 hari per receiving roll (independen), KLR-08/09 pending/asumsi configurable.
 - Tes: test_lanjutan_sched_returns_interco.py 9/9; iteration_228 100%.
 - Berikutnya: alur pengecualian retur + input hangtag di form retur, penerimaan interco end-to-end, LN-091/092 (refund/cutloss) dengan asumsi, reviewer/owner validasi.
+
+## 2026-10-18 (4) — status in_progress
+- Form retur: kondisi hangtag hilang / kain dipotong; pengecualian retur (alasan + foto + persetujuan pihak lain) + gerbang settle.
+- LN-091: potong tagihan SO asal dulu, kelebihan → refund/saldo (bill_first, KLR-10 asumsi SO asal).
+- LN-092: simulasi cutloss (3 skenario) & diskon; posting cutloss dikunci; nego wajib pengecualian QC.
+- LN-024: pengingat bayar antar-PT ke finance N hari sebelum tanggal bayar.
+- Tes: test_ln091_092_returns_exceptions.py 5/5; iteration_229 100%.

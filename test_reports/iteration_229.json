@@ -1,0 +1,34 @@
+{
+  "summary": "LN-091/092 return exceptions + bill-first credit note + cutloss/discount simulators + return assumptions + interco payment reminder: backend 27/27 (5/5 test_ln091_092_returns_exceptions.py + 9/9 test_lanjutan_sched_returns_interco.py + 6/6 test_l11_export_center.py + 7/7 test_l11_finance_staff_templates.py). All Preview UI testids verified end-to-end as admin@kainnusantara.id/demo12345. (A) ?view=return-policies (Pengaturan → Kebijakan Retur Jual) ASUMSI SEMENTARA panel: return-assume-cutloss_return_part / cutloss_value_basis / discount_mode selects + return-assume-bill_first checkbox + return-assume-save → return-assume-msg 'Asumsi tersimpan.'. Simulasi cutloss (100/40-60/50000 + 100 qty / 10%): cutloss-row-defect_only, defect_plus_shorter, whole_roll all rendered; discount-result shows 'Diskon tanpa barang kembali: Rp 500.000 · stok tidak bertambah · Barang tetap di customer...'. (B) ?view=returns&entity=ent_ksc → create-return-btn opens create-return-form; return-condition-flags section shows checkboxes return-cond-hangtag_missing + return-cond-cut_by_customer; after check, return-cond-note appears: 'Aturan kondisi ini belum diputuskan owner (KLR-08). Retur tetap bisa diajukan, tetapi sebelum diselesaikan wajib pengecualian \"kondisi\" dengan foto bukti yang disetujui.' (C) Return detail (opened via return-row-<id>): return-exceptions-panel + return-exception-toggle → return-exception-form with return-exception-kind (default 'Kondisi barang (hangtag hilang / kain dipotong)'), return-exception-reason textarea, return-exception-submit button, return-exception-no-photo hint shown when no attachments. Eligibility banner correctly surfaces KLR-09 pending note + asumsi 'customer 21 hari, supplier 21 hari'. (D) ?view=interco-transactions&entity=ent_ksc tab interco-tab-schedule → interco-reminder-days input present with default value 3; KLX-03 pending cutoff note still displayed when basis empty.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Pusat Pengaturan — Kebijakan Retur Jual (Semua Entitas)", "issues": ["In 'Semua Entitas' view-only mode the cutloss/discount Hitung button still fires but backend returns 409; UI already shows a red hint 'Mode Semua Entitas hanya untuk melihat gabungan ... pilih dulu badan usaha'. Could disable the button in view-only mode for clarity (same minor remark as iter227 for templates)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_ln091_092_returns_exceptions.py",
+    "/app/backend/tests/test_lanjutan_sched_returns_interco.py",
+    "/app/backend/tests/test_l11_export_center.py",
+    "/app/backend/tests/test_l11_finance_staff_templates.py",
+    "/app/test_reports/pytest/iter229.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "return_exception_service.py: enforces attachment_ids ⊆ return.attachments AND type startswith image/ before accepting a 'condition' or 'discount_no_goods' exception; approve blocked if requester == decider (same_user_decide 400). Clean separation of policy_eligibility.pending_decisions from exception approval set — matches the ReturnSettlementPolicy gate 409 contract on /settle.",
+    "return_service._create_credit_note_and_post_gl: bill-first splits ar_applied = min(gross, open_bill) and excess_amount → cash/store_credit; GL post_sales_return credits 1-1200 for ar_part and refund/store_credit account for the rest. Setting returns.bill_first default True from DEFAULT_GLOBAL_SETTINGS — toggle respected end-to-end (tested t01).",
+    "Cutloss simulator (returns.cutloss_simulate) returns 3 scenarios with reconciles True and selected=null + posting_locked=true while KLR-01/02 pending — exactly the configurable-assumption behaviour. Discount simulator returns stock_movement 0 and requires_exception True whenever settings.returns.discount_mode == pending.",
+    "interco_service.job_interco_payment_reminder dedupes per (interco_id:pay_date) via notifications.sent_once_key and emits for finance of payer entity within settings.interco_payment.reminder_days (default 3); exits early when cutoff pending. UI exposes interco-reminder-days input tied to settings.interco_payment via /api/config/values.",
+    "CreateReturnForm.jsx POSTs hangtag_missing / cut_by_customer via SalesReturnCreate schema; eligibility preview re-fetches via /api/sales-returns/eligibility with those flags → matches backend_schema SalesReturnCreate fields and condition_flags storage."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (27/27, 1 cross-file motor fixture leak passes in isolation)", "frontend": "100% core UI testids verified"},
+  "test_credentials": "admin@kainnusantara.id / demo12345; manager@, finance@, sales.kanda@ /demo1234",
+  "seed_data_creation": "pytest fixtures (TEST_-prefix) in test_ln091_092_returns_exceptions.py seed SO + sales-return + ar_receipts + attachments and tear down returns.condition_flags/exceptions, settings.returns, settings.interco_payment. Frontend used existing demo returns (SRET-00001..3 in Sukacita) — no new seed required.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "L09 LN-091/092 + interco reminder is green. If you rerun the full suite in a single pytest invocation, test_lanjutan_sched_returns_interco.py::test_ln100_t02_shared_woven_node may fail with motor 'Future attached to a different loop' when it follows test_ln091_092_returns_exceptions.py — it passes in isolation (confirmed). Pre-existing cross-file async-fixture isolation issue, not an LN-091/092 regression. Testids: return-cond-hangtag_missing/cut_by_customer/note (create form), return-exceptions-panel, return-exception-toggle, return-exception-kind/reason/photo-<attId>/submit/approve-<id>/reject-<id>/note-<id>, cutloss-length/from/to/price, discount-qty/pct, cutloss-simulate (runs BOTH cutloss and discount — there is NO separate discount-simulate button; discount-result renders inline), return-assume-cutloss_return_part/cutloss_value_basis/discount_mode/bill_first/save/msg, interco-reminder-days. Sales returns view name is 'returns' not 'sales-returns' (?view=returns&entity=ent_ksc).",
+  "rca of the issue": "N/A — no bugs found this iteration. The transient 'different loop' failure in test_ln100_t02_shared_woven_node when chained after test_ln091_092 is a pre-existing cross-file motor fixture leak; the woven-node code path is unrelated to L09 LN-091/092."
+}

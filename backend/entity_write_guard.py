@@ -124,6 +124,7 @@ GROUP_LEVEL_EXACT: frozenset = frozenset({
     "/api/esign/verify",
     # L11 — Pusat Export: preview & job export hanya membaca data bisnis (job milik pengguna)
     "/api/export-center/preview", "/api/export-center/jobs", "/api/export-center/templates",
+    "/api/sales-returns/cutloss/simulate", "/api/sales-returns/discount/simulate",   # LN-092 — simulasi, tanpa tulis
     # (P) pekerjaan pemeliharaan tingkat grup (dijalankan penjadwal/admin)
     "/api/finance-cases/scan", "/api/contra-bons/run-reminder",
     "/api/fixed-assets/run-depreciation", "/api/rnd/sla/escalate",

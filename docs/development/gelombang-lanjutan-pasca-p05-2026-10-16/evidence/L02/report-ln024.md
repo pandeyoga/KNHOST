@@ -20,3 +20,8 @@ Navigasi: **Transaksi Antar Entitas → tab Jadwal Bayar** (izin `interco_financ
 ## Belum
 - T01 bagian "stock owner berpindah saat diterima" memakai alur Tugas Gudang yang sudah ada. Di test, penerimaan disimulasikan, jadi belum diuji ulang end-to-end.
 - KLX-03 tetap pending. Reviewer dan owner belum ada.
+
+## 2026-10-18 — Pengingat bayar
+- Job scheduler `interco_payment_reminder` (tiap jam). Notifikasi ke peran **finance** PT pembayar bila `pay_date` ≤ `reminder_days` (bawaan 3) hari lagi, satu kali per transaksi × tanggal bayar.
+- Tidak berjalan selama cutoff KLX-03 belum dikonfigurasi. Isian "Ingatkan (hari sebelum)" ada di tab Jadwal Bayar.
+- Tes: `test_ln091_092_returns_exceptions.py::test_ln024_payment_reminder_job`.

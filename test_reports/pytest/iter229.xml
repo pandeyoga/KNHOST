@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="14" time="2.191" timestamp="2026-10-18T18:34:12.485765+00:00" hostname="agent-env-72c385ab-6fa0-4efe-8385-288d2f554cf9"><testcase classname="tests.test_ln091_092_returns_exceptions" name="test_ln091_t01_bill_first_then_saldo_or_refund" time="0.367" /><testcase classname="tests.test_ln091_092_returns_exceptions" name="test_ln091_split_helper" time="0.001" /><testcase classname="tests.test_ln091_092_returns_exceptions" name="test_ln092_cutloss_simulation_locked_and_reconciles" time="0.029" /><testcase classname="tests.test_ln091_092_returns_exceptions" name="test_ln092_t02_nego_requires_approved_exception_and_ln083_condition_gate" time="0.081" /><testcase classname="tests.test_ln091_092_returns_exceptions" name="test_ln024_payment_reminder_job" time="0.009" /><testcase classname="tests.test_lanjutan_sched_returns_interco" name="test_schedule_period_and_next_run" time="0.009" /><testcase classname="tests.test_lanjutan_sched_returns_interco" name="test_schedule_template_runs_with_owner_rights" time="0.104" /><testcase classname="tests.test_lanjutan_sched_returns_interco" name="test_schedule_revoked_owner_fails_safely" time="0.266" /><testcase classname="tests.test_lanjutan_sched_returns_interco" name="test_ln083_t01_customer_independent_of_supplier" time="0.039" /><testcase classname="tests.test_lanjutan_sched_returns_interco" name="test_ln083_t02_supplier_deadline_per_receiving" time="0.042" /><testcase classname="tests.test_lanjutan_sched_returns_interco" name="test_ln083_t03_pending_rules_not_assumed" time="0.078" /><testcase classname="tests.test_lanjutan_sched_returns_interco" name="test_ln024_t01_t02_per_transaction_no_netting" time="0.194" /><testcase classname="tests.test_lanjutan_sched_returns_interco" name="test_ln024_t03_cutoff_pending_then_configured" time="0.064" /><testcase classname="tests.test_lanjutan_sched_returns_interco" name="test_ln100_t02_shared_woven_node" time="0.030"><failure message="RuntimeError: Task &lt;Task pending name='Task-3' coro=&lt;test_ln100_t02_shared_woven_node.&lt;locals&gt;.run() running at /app/backend/tests/test_lanjutan_sched_returns_interco.py:218&gt; cb=[_run_until_complete_cb() at /usr/local/lib/python3.11/asyncio/base_events.py:181]&gt; got Future &lt;Future pending cb=[_chain_future.&lt;locals&gt;._call_check_cancel() at /usr/local/lib/python3.11/asyncio/futures.py:387]&gt; attached to a different loop">tests/test_lanjutan_sched_returns_interco.py:221: in test_ln100_t02_shared_woven_node
+    res = asyncio.run(run())
+          ^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/runners.py:190: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/test_lanjutan_sched_returns_interco.py:218: in run
+    res = await pr.evaluate(wh, node, roll, {"fabric_type": fab})
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/placement_rules.py:195: in evaluate
+    contents = (await bin_contents(wh["id"], [bid], exclude_roll=roll.get("id", ""))).get(bid, EMPTY)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+services/placement_rules.py:154: in bin_contents
+    async for r in db.inventory_rolls.find(q, {"_id": 0, "bin_id": 1, "product_id": 1, "lot": 1}):
+/root/.venv/lib/python3.11/site-packages/motor/core.py:1390: in next
+    if self.alive and (self._buffer_size() or await self._get_more()):
+                                              ^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: Task &lt;Task pending name='Task-3' coro=&lt;test_ln100_t02_shared_woven_node.&lt;locals&gt;.run() running at /app/backend/tests/test_lanjutan_sched_returns_interco.py:218&gt; cb=[_run_until_complete_cb() at /usr/local/lib/python3.11/asyncio/base_events.py:181]&gt; got Future &lt;Future pending cb=[_chain_future.&lt;locals&gt;._call_check_cancel() at /usr/local/lib/python3.11/asyncio/futures.py:387]&gt; attached to a different loop</failure></testcase></testsuite></testsuites>

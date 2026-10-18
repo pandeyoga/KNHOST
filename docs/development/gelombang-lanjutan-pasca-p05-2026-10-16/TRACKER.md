@@ -64,8 +64,8 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-082 | L08 | Identitas unik, potongan dan larangan kembali ke customer asal | in_progress | evidence/L08/report.md |
 | LN-083 | L08 | Batas waktu, eligibility dan bukti keputusan | in_progress | evidence/L08/report-ln083.md |
 | LN-090 | L09 | Tukar barang sampai customer | in_progress | evidence/L09/report.md |
-| LN-091 | L09 | Refund/saldo, potong tagihan dan nilai histori | not_started | belum ada |
-| LN-092 | L09 | Cutloss dan discount hanya setelah kebijakan final | not_started | belum ada |
+| LN-091 | L09 | Refund/saldo, potong tagihan dan nilai histori | in_progress | evidence/L09/report-ln091-092.md |
+| LN-092 | L09 | Cutloss dan discount hanya setelah kebijakan final | in_progress | evidence/L09/report-ln091-092.md |
 | LN-093 | L09 | Sukacita → CST → supplier dengan provenance benar | in_progress | evidence/L09/report.md |
 | LN-100 | L10 | Alamat fisik dan putaway yang dapat dipakai | in_progress | evidence/L10/report.md |
 | LN-101 | L10 | Stock opname fisik, identitas, qty dan rekonsiliasi | in_progress | evidence/L10/report.md |
