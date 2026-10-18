@@ -54,6 +54,19 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
             detail=f"Task harus dalam status qc_check atau put_away (current: {task['status']})"
         )
     
+    # LN-014 — SJ supplier: dari form, atau sudah tercatat lewat Kedatangan Barang.
+    _sj_missing_warning = ""
+    _sj_in = ((payload.supplier_dn if payload else "") or "").strip()
+    if task.get("po_id") and not (_sj_in or task.get("supplier_dn_number") or task.get("supplier_dn_numbers")):
+        from services.config_resolver import value_of as _cfg_value
+        _sj_mode = await _cfg_value("receiving.supplier_dn_mode", {"entity_id": task.get("entity_id")}) or "warn"
+        if _sj_mode == "block":
+            raise HTTPException(status_code=400, detail=(
+                "Nomor SJ supplier wajib diisi sebelum menyelesaikan penerimaan "
+                "(Pengaturan › Penerimaan › Nomor SJ supplier)."))
+        if _sj_mode == "warn":
+            _sj_missing_warning = "Nomor SJ supplier belum diisi — lot baru tidak membawa SJ asal."
+
     # Check if qty is finalized
     final_qty = task.get("quantity", 0.0)
     if final_qty <= 0:
@@ -301,6 +314,8 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
             for _lt in _lot_by_dye.values():
                 await _lots.patch_lot(_lt["id"], {"shade_ref": _shade_ref},
                                       actor.get("name", "System"))
+        if _sj_missing_warning:
+            _lot_warnings.append(_sj_missing_warning)
         _lot_warnings = list(dict.fromkeys(_lot_warnings))
 
         # FASE SL — CATATAN SELISIH vs PO (roll & qty): dibaca purchasing + finance.
@@ -537,6 +552,7 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
             **({"qc_status": "pending", "quarantine_qty": final_qty} if qc_on_receipt else {}),
             **({"supplier_dn_number": payload.supplier_dn.strip()}
                if (payload and payload.supplier_dn and payload.supplier_dn.strip()) else {}),
+            "supplier_dn_missing": bool(_sj_missing_warning),
             **({"receipt_variance": _receipt_variance, "needs_review": True} if _receipt_variance else {}),
         }, "$unset": {"saga_lock": ""}},  # INV-ATOMIC-01 — tulisan akhir mencabut klaim
         projection={"_id": 0},

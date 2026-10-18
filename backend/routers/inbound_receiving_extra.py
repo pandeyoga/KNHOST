@@ -47,6 +47,10 @@ async def inbound_uom_options(task_id: str, request: Request) -> Dict[str, Any]:
     task = await _load_task_for_uom(task_id, request)
     out = await rus.uom_options(task)
     out["receive_tolerance_percent"] = await _receive_tolerance_pct(task)
+    from services.config_resolver import value_of as _cfg_value
+    out["supplier_dn_mode"] = await _cfg_value("receiving.supplier_dn_mode", {"entity_id": task.get("entity_id")}) or "warn"
+    out["supplier_dn_known"] = sorted({*(task.get("supplier_dn_numbers") or []),
+                                       *([task["supplier_dn_number"]] if task.get("supplier_dn_number") else [])})
     return out
 
 

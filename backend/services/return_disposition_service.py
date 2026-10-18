@@ -150,6 +150,20 @@ async def _pick(ret: Dict[str, Any], roll_ids: List[str], stage: str) -> List[Di
     return [rows[r] for r in roll_ids]
 
 
+async def _notify_incoming(receiver: Dict[str, Any], rolls: int, ret: Dict[str, Any]) -> None:
+    """LN-093 — tim PT penerima (gudang/admin & finance) langsung tahu ada retur internal wajib terima."""
+    from services.notification_service import create_notification
+    for role in REMINDER_ROLES:
+        await create_notification(
+            notif_type="interco_return_incoming", severity="warning",
+            title=f"Retur internal masuk {receiver.get('number', '')} — wajib diterima",
+            body=(f"{receiver.get('buyer_entity_name') or 'PT grup'} mengembalikan {rolls} roll "
+                  f"(nilai {rupiah(receiver.get('grand_total') or 0)}). Terima & terbitkan tugas gudang di "
+                  "Antar-PT → Retur Masuk, lalu putuskan simpan / retur supplier / buang BS."),
+            link="interco-transactions", entity_id=receiver.get("entity_id") or receiver.get("seller_entity_id", ""),
+            recipient_role=role, ref=f"{receiver.get('id', '')}:{role}", dedupe=True, dedupe_scope="ever")
+
+
 async def decide_internal(ret: Dict[str, Any], roll_ids: List[str], decision: str, reason: str,
                           actor: str) -> Dict[str, Any]:
     if decision not in STAGE1:
@@ -188,6 +202,7 @@ async def decide_internal(ret: Dict[str, Any], roll_ids: List[str], decision: st
                                               "interco_return_number": pair["returner"]["number"], "return_pair_id": rp})
         created.append({"id": pair["returner"]["id"], "number": pair["returner"]["number"],
                         "counterpart_number": pair["receiver"]["number"], "roll_ids": grp_rolls})
+        await _notify_incoming(pair["receiver"], len(grp_rolls), ret)
     await _log(ret, "Retur internal dibuat", actor, ", ".join(c["number"] for c in created) + " — PT pemasok wajib menerima")
     return {"decision": decision, "rolls": len(roll_ids), "interco_returns": created}
 

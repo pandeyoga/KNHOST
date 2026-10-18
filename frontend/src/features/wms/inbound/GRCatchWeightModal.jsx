@@ -19,7 +19,8 @@ function kgPerUnit(p) {
  * Validasi Σ kontribusi (berat utk PO per-kg, panjang utk PO per-meter) ≈ qty diterima.
  */
 export default function GRCatchWeightModal({ task, product, rolls, setRolls, onSubmit, onClose,
-                                            submitting, lotFields, setLotFields, lotSettings, tolPct = 2 }) {
+                                            submitting, lotFields, setLotFields, lotSettings, tolPct = 2,
+                                            sjMode = "warn", sjKnown = [] }) {
   const { options } = useDomainEnums();   // GRN Fase 0.4 — grade dari SSOT
   if (!task) return null;
   const isKg = (task.unit || "").toLowerCase() === "kg";
@@ -33,7 +34,8 @@ export default function GRCatchWeightModal({ task, product, rolls, setRolls, onS
   const tol = Math.max(0.5, r2(expected * (Number(tolPct) || 0) / 100));
   const matched = Math.abs(taskTotal - expected) <= tol;
   // FASE C (D-10/D-27) — kelengkapan lot: wajib di form, penegakan server warn/block
-  const lf = lotFields || { supplier_lot: "", lot_number: "", shade_ref: "" };
+  const lf = { supplier_dn: "", ...(lotFields || { supplier_lot: "", lot_number: "", shade_ref: "" }) };
+  const needSj = !!task.po_id && sjMode !== "off" && !sjKnown.length && !lf.supplier_dn.trim();
   const blocking = (lotSettings?.enforcement_mode || "warn") === "block";
   const needSupplierLot = (lotSettings?.require_supplier_lot !== false) && !lf.supplier_lot.trim();
   const needDyeLot = (lotSettings?.require_dye_lot !== false)
@@ -134,6 +136,18 @@ export default function GRCatchWeightModal({ task, product, rolls, setRolls, onS
             </label>
             <label className="grid gap-1">
               <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
+                Nomor SJ supplier {needSj && <span className="text-rose-500">*</span>}
+              </span>
+              <input data-testid="gr-supplier-dn" type="text" value={sjKnown.length ? sjKnown.join(", ") : lf.supplier_dn}
+                disabled={!!sjKnown.length} placeholder="mis. SJ/2610/0458"
+                onChange={(e) => setLotFields({ ...lf, supplier_dn: e.target.value })}
+                className={`border rounded px-2 py-1 text-[12px] ${needSj ? "border-amber-400 bg-amber-50" : "border-[#E5E5EA]"}`} />
+              {needSj && <span className="text-[10px] text-amber-700" data-testid="gr-supplier-dn-warning">
+                {sjMode === "block" ? "Wajib diisi." : "Belum diisi — lot baru tidak akan membawa SJ asal."}</span>}
+              {!!sjKnown.length && <span className="text-[10px] text-[#6E6E73]">Sudah tercatat dari Kedatangan Barang.</span>}
+            </label>
+            <label className="grid gap-1">
+              <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
                 Referensi shade (opsional)
               </span>
               <input data-testid="gr-shade-ref" type="text" value={lf.shade_ref}
@@ -202,7 +216,7 @@ export default function GRCatchWeightModal({ task, product, rolls, setRolls, onS
         </div>
 
         <div className="flex gap-2">
-          <button data-testid="gr-submit-complete" onClick={onSubmit} disabled={submitting || !matched}
+          <button data-testid="gr-submit-complete" onClick={onSubmit} disabled={submitting || !matched || (needSj && sjMode === "block")}
             className="flex-1 bg-[#007AFF] hover:bg-[#0056B3] text-white rounded-lg px-4 py-2 text-[12px] font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5">
             <CheckCircle size={13} /> {submitting ? "Memproses…" : "Selesaikan Penerimaan"}
           </button>

@@ -36,6 +36,9 @@ def cleanup():
     rolls = [r["id"] for r in DB.inventory_rolls.find({"notes": TAG}, {"id": 1})]
     DB.journal_entries.delete_many({"$or": [{"source_id": {"$in": rolls + prs}},
                                             {"source_id": {"$regex": f"^sret_{TAG}"}}]})
+    icr_ids = [d["id"] for d in DB.interco_returns.find({"return_pair_id": {"$in": rps}}, {"id": 1})]
+    for i in icr_ids:
+        DB.notifications.delete_many({"type": "interco_return_incoming", "ref": {"$regex": f"^{i}:"}})
     DB.interco_returns.delete_many({"return_pair_id": {"$in": rps}})
     DB.interco_transactions.delete_many({"pair_id": {"$in": pairs}})
     DB.warehouse_transfers.delete_many({"notes": TAG})
@@ -148,6 +151,10 @@ def test_stage1_keep_and_internal_return_idempotent():
     docs = list(DB.interco_returns.find({"source_sales_return_id": rid}))
     assert len(docs) == 2 and {d["role"] for d in docs} == {"returner", "receiver"}
     assert all(d["mandatory_accept"] for d in docs)
+    rcv = next(d for d in docs if d["role"] == "receiver")
+    notes = list(DB.notifications.find({"type": "interco_return_incoming", "ref": {"$regex": f"^{rcv['id']}:"}}))
+    assert {n["recipient_role"] for n in notes} == {"warehouse_admin", "admin", "finance"}
+    assert all(n["entity_id"] == CST for n in notes)
     assert docs[0]["items"][0]["roll_ids"] == [back]
     rb = DB.inventory_rolls.find_one({"id": back})
     assert rb["warehouse_id"] == wh_before and rb["disposition"]["internal"]["interco_return_number"] == icr["number"]

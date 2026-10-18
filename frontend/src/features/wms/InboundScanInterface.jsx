@@ -13,7 +13,7 @@ import { formatQty } from "../../utils/formatters";
 import RollLabelActions from "../../components/RollLabelActions";
 import { kgPerBaseUnit } from "../../utils/uom";
 import ScanLabelStatsCard from "./inbound/ScanLabelStatsCard";
-import { askReason } from "../../services/confirmService";
+import { askReason, askText } from "../../services/confirmService";
 import useReceivingMode from "../../hooks/useReceivingMode";
 import { can } from "../../config/roles";
 
@@ -55,7 +55,7 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
   const [showGRModal, setShowGRModal] = useState(false);
   const [grRolls, setGrRolls] = useState([]);
   // FASE C (D-10/D-27) — identitas lot batch penerimaan + kebijakan penegakan
-  const [lotFields, setLotFields] = useState({ supplier_lot: "", lot_number: "", shade_ref: "" });
+  const [lotFields, setLotFields] = useState({ supplier_lot: "", lot_number: "", shade_ref: "", supplier_dn: "" });
   const [lotSettings, setLotSettings] = useState(null);
   const [lotResult, setLotResult] = useState(null);   // {lots:[], warnings:[]}
   const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
@@ -201,9 +201,20 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
   };
 
   const submitCompleteScanned = async () => {
+    // LN-014 — roll hasil scan: tanyakan SJ supplier bila belum tercatat (mode warn/block).
+    const sjMode = uom.options?.supplier_dn_mode || "warn";
+    let supplierDn = "";
+    if (selectedTask.po_id && sjMode !== "off" && !(uom.options?.supplier_dn_known || []).length) {
+      const v = await askText({ title: "Nomor SJ supplier", reasonLabel: "Nomor surat jalan supplier",
+        message: sjMode === "block" ? "Wajib diisi sebelum penerimaan diselesaikan."
+          : "Disarankan diisi supaya lot baru membawa SJ asal. Kosongkan bila memang tidak ada.",
+        reasonRequired: sjMode === "block", confirmLabel: "Selesaikan penerimaan" });
+      if (v === null) return;
+      supplierDn = v.trim();
+    }
     setSubmitting(true);
     try {
-      const res = await axios.post(`${API}/inbound/tasks/${selectedTask.id}/complete`, {});
+      const res = await axios.post(`${API}/inbound/tasks/${selectedTask.id}/complete`, supplierDn ? { supplier_dn: supplierDn } : {});
       setLotResult({ lots: res.data?.lots || [], warnings: res.data?.lot_warnings || [], rolls: res.data?.created_rolls || [],
         task: selectedTask, variance: res.data?.receipt_variance || null });
       fetchTasks();
@@ -236,12 +247,13 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
         supplier_lot: lotFields.supplier_lot || "",
         lot_number: lotFields.lot_number || "",
         shade_ref: lotFields.shade_ref || "",
+        supplier_dn: lotFields.supplier_dn || "",
         ...(overrideReason ? { variance_override_reason: overrideReason } : {}),
       });
       setLotResult({ lots: res.data?.lots || [], warnings: res.data?.lot_warnings || [], rolls: res.data?.created_rolls || [], task: selectedTask });
       setShowGRModal(false);
       setGrRolls([]);
-      setLotFields({ supplier_lot: "", lot_number: "", shade_ref: "" });
+      setLotFields({ supplier_lot: "", lot_number: "", shade_ref: "", supplier_dn: "" });
       fetchTasks();
       setSelectedTask(null);
       setError("");
@@ -483,6 +495,8 @@ export default function InboundScanInterface({ user, focusPoId = "", onFocusCons
           lotFields={lotFields}
           setLotFields={setLotFields}
           lotSettings={lotSettings}
+          sjMode={uom.options?.supplier_dn_mode || "warn"}
+          sjKnown={uom.options?.supplier_dn_known || []}
         />
       )}
     </div>

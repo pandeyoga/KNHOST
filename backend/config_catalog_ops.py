@@ -188,6 +188,17 @@ E("receiving.require_supplier_item_for_supplier_uom", group="penerimaan", type="
   example="Aktif → satuan 'cone' tanpa data barang supplier ditolak dengan petunjuk perbaikan",
   consumers=("services/receiving_uom_service.py:convert_doc_qty",), risk="medium")
 
+E("receiving.supplier_dn_mode", group="penerimaan", type="enum", default="warn",
+  options=({"value": "off", "label": "Tidak diperiksa"},
+           {"value": "warn", "label": "Ingatkan bila kosong (tetap boleh simpan)"},
+           {"value": "block", "label": "Wajib diisi"}),
+  scopes=G,
+  label="Nomor SJ supplier saat penerimaan PO",
+  help="LN-014 — setiap lot baru sebaiknya langsung membawa nomor surat jalan supplier.",
+  impact="warn → penerimaan tanpa SJ tetap tersimpan dengan peringatan & tanda 'SJ belum diisi'; block → ditolak.",
+  example="block → Selesaikan Penerimaan tanpa SJ supplier ditolak (400)",
+  consumers=("services/inbound_complete_service.py",), risk="medium", roles=_MANAGER_TOO)
+
 E("receiving.block_over_remaining", group="penerimaan", type="bool", default=True,
   scopes=G, simulate="receiving_over",
   label="Tolak penerimaan melebihi sisa PO",
