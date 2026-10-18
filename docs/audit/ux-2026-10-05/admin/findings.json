@@ -1,0 +1,6322 @@
+{
+ "findings": {
+  "daftar_tanpa_search": [
+   {
+    "where": "admin",
+    "rows": 0
+   },
+   {
+    "where": "admin › Integrasi AI",
+    "rows": 0
+   },
+   {
+    "where": "amendments › Label Alasan",
+    "rows": 33
+   },
+   {
+    "where": "approval-inbox",
+    "rows": 15
+   },
+   {
+    "where": "approval-inbox › Semua 39",
+    "rows": 15
+   },
+   {
+    "where": "approval-inbox › Pesanan Penjualan 9",
+    "rows": 9
+   },
+   {
+    "where": "approval-inbox › Amandemen 2",
+    "rows": 2
+   },
+   {
+    "where": "approval-inbox › Pembelian (PO) 2",
+    "rows": 2
+   },
+   {
+    "where": "approval-inbox › Harga Khusus 2",
+    "rows": 2
+   },
+   {
+    "where": "approval-inbox › Retur 3",
+    "rows": 3
+   },
+   {
+    "where": "approval-inbox › Stock Opname 1",
+    "rows": 1
+   },
+   {
+    "where": "approval-inbox › Kredit Pelanggan 20",
+    "rows": 15
+   },
+   {
+    "where": "approval-rules",
+    "rows": 7
+   },
+   {
+    "where": "bank-accounts",
+    "rows": 3
+   },
+   {
+    "where": "bank-reconciliation",
+    "rows": 6
+   },
+   {
+    "where": "bank-reconciliation › Mutasi & Pencocokan",
+    "rows": 6
+   },
+   {
+    "where": "bank-reconciliation › Dana Titipan 1",
+    "rows": 1
+   },
+   {
+    "where": "bank-reconciliation › Aturan Pembelajaran",
+    "rows": 1
+   },
+   {
+    "where": "bank-reconciliation › Template Bank",
+    "rows": 7
+   },
+   {
+    "where": "bi-finance",
+    "rows": 1
+   },
+   {
+    "where": "blanket-po",
+    "rows": 0
+   },
+   {
+    "where": "blanket-po › Semua 0",
+    "rows": 0
+   },
+   {
+    "where": "blanket-po › Aktif 0",
+    "rows": 0
+   },
+   {
+    "where": "blanket-po › Habis 0",
+    "rows": 0
+   },
+   {
+    "where": "blanket-po › Kadaluarsa 0",
+    "rows": 0
+   },
+   {
+    "where": "blanket-po › Ditutup 0",
+    "rows": 0
+   },
+   {
+    "where": "budget",
+    "rows": 4
+   },
+   {
+    "where": "budget › Per Akun COA",
+    "rows": 4
+   },
+   {
+    "where": "budget › Per Kategori Beban",
+    "rows": 5
+   },
+   {
+    "where": "cash-advances",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Semua",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Draf",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Menunggu Persetujuan",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Disetujui",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Dicairkan",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Selesai",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Ditolak",
+    "rows": 0
+   },
+   {
+    "where": "cash-management",
+    "rows": 16
+   },
+   {
+    "where": "cashflow-forecast",
+    "rows": 30
+   },
+   {
+    "where": "chart-of-accounts",
+    "rows": 76
+   },
+   {
+    "where": "closing",
+    "rows": 0
+   },
+   {
+    "where": "consolidation",
+    "rows": 6
+   },
+   {
+    "where": "consolidation › Laba-Rugi",
+    "rows": 6
+   },
+   {
+    "where": "consolidation › Neraca",
+    "rows": 3
+   },
+   {
+    "where": "consolidation › Eliminasi (3)",
+    "rows": 11
+   },
+   {
+    "where": "contra-bons",
+    "rows": 3
+   },
+   {
+    "where": "contra-bons › Daftar Kontrabon",
+    "rows": 3
+   },
+   {
+    "where": "contra-bons › GR Belum Ditagih",
+    "rows": 4
+   },
+   {
+    "where": "contra-bons › Jadwal Tukar Faktur",
+    "rows": 6
+   },
+   {
+    "where": "cs-bi-hrd",
+    "rows": 0
+   },
+   {
+    "where": "cs-kpi",
+    "rows": 0
+   },
+   {
+    "where": "cs-pajak",
+    "rows": 0
+   },
+   {
+    "where": "cs-pajak › PPN (SPT Masa)",
+    "rows": 0
+   },
+   {
+    "where": "cs-pajak › PPh",
+    "rows": 2
+   },
+   {
+    "where": "cs-rfid-gate",
+    "rows": 0
+   },
+   {
+    "where": "cs-rfid-gate › Monitor Gate",
+    "rows": 0
+   },
+   {
+    "where": "cs-rfid-gate › Alarm & Keamanan",
+    "rows": 1
+   },
+   {
+    "where": "cs-rfid-lokasi",
+    "rows": 47
+   },
+   {
+    "where": "cs-rfid-lokasi › Lokasi Tag",
+    "rows": 47
+   },
+   {
+    "where": "cs-rfid-lokasi › Stock Opname (RFID)",
+    "rows": 0
+   },
+   {
+    "where": "cs-rfid-tags",
+    "rows": 26
+   },
+   {
+    "where": "cs-rfid-tags › Tag Aktif (47)",
+    "rows": 26
+   },
+   {
+    "where": "customers-crm › Leads",
+    "rows": 0
+   },
+   {
+    "where": "customers-crm › Interaksi",
+    "rows": 0
+   },
+   {
+    "where": "customers-crm › Penagihan",
+    "rows": 5
+   },
+   {
+    "where": "customers-crm › Sales Force",
+    "rows": 10
+   },
+   {
+    "where": "customers-crm › Rate Insentif",
+    "rows": 12
+   },
+   {
+    "where": "customers-crm › Skema (Arsip)",
+    "rows": 4
+   },
+   {
+    "where": "customers-crm › Persetujuan Kredit",
+    "rows": 20
+   },
+   {
+    "where": "designer-kpi",
+    "rows": 2
+   },
+   {
+    "where": "doc-templates-basic",
+    "rows": 0
+   },
+   {
+    "where": "document-center",
+    "rows": 24
+   },
+   {
+    "where": "documents",
+    "rows": 0
+   },
+   {
+    "where": "domain-registry",
+    "rows": 14
+   },
+   {
+    "where": "entities-access › Peran & Hak Akses",
+    "rows": 55
+   },
+   {
+    "where": "entities-access › Cek Peran",
+    "rows": 2
+   },
+   {
+    "where": "entities-access › Kesiapan",
+    "rows": 8
+   },
+   {
+    "where": "expense-categories",
+    "rows": 8
+   },
+   {
+    "where": "finance-cases",
+    "rows": 3
+   },
+   {
+    "where": "finance-desk",
+    "rows": 13
+   },
+   {
+    "where": "finance-tower",
+    "rows": 9
+   },
+   {
+    "where": "financial-statements",
+    "rows": 13
+   },
+   {
+    "where": "financial-statements › Laba-Rugi",
+    "rows": 13
+   },
+   {
+    "where": "financial-statements › Neraca",
+    "rows": 33
+   },
+   {
+    "where": "financial-statements › Arus Kas",
+    "rows": 20
+   },
+   {
+    "where": "financial-statements › Perubahan Ekuitas",
+    "rows": 4
+   },
+   {
+    "where": "general-ledger › Neraca Saldo",
+    "rows": 29
+   },
+   {
+    "where": "general-ledger › Rekonsiliasi Persediaan",
+    "rows": 3
+   },
+   {
+    "where": "general-ledger › Suspense",
+    "rows": 1
+   },
+   {
+    "where": "goods-receipts",
+    "rows": 0
+   },
+   {
+    "where": "goods-receipts › Kedatangan",
+    "rows": 0
+   },
+   {
+    "where": "goods-receipts › Selisih Supplier",
+    "rows": 0
+   },
+   {
+    "where": "goods-receipts › Profil SJ",
+    "rows": 0
+   },
+   {
+    "where": "goods-receipts › Sampel Uji OCR",
+    "rows": 0
+   },
+   {
+    "where": "goods-receipts › Biaya OCR",
+    "rows": 0
+   },
+   {
+    "where": "goods-receipts › Mode Penerimaan",
+    "rows": 3
+   },
+   {
+    "where": "home",
+    "rows": 1
+   },
+   {
+    "where": "hr-attendance",
+    "rows": 4
+   },
+   {
+    "where": "hr-attendance › Kehadiran Harian",
+    "rows": 4
+   },
+   {
+    "where": "hr-attendance › Rekap Periode",
+    "rows": 4
+   },
+   {
+    "where": "hr-attendance-setup",
+    "rows": 1
+   },
+   {
+    "where": "hr-attendance-setup › Shift",
+    "rows": 1
+   },
+   {
+    "where": "hr-attendance-setup › Geofence",
+    "rows": 1
+   },
+   {
+    "where": "hr-attendance-setup › Perangkat",
+    "rows": 1
+   },
+   {
+    "where": "hr-leave",
+    "rows": 0
+   },
+   {
+    "where": "hr-leave › Pengajuan",
+    "rows": 0
+   },
+   {
+    "where": "hr-leave › Saldo Cuti",
+    "rows": 1
+   },
+   {
+    "where": "hr-live-tracking",
+    "rows": 0
+   },
+   {
+    "where": "hr-my-profile",
+    "rows": 0
+   },
+   {
+    "where": "hr-overtime",
+    "rows": 0
+   },
+   {
+    "where": "hr-payslips",
+    "rows": 15
+   },
+   {
+    "where": "hr-visits",
+    "rows": 0
+   },
+   {
+    "where": "input-tax",
+    "rows": 0
+   },
+   {
+    "where": "input-tax › Semua 0",
+    "rows": 0
+   },
+   {
+    "where": "input-tax › Tercatat 0",
+    "rows": 0
+   },
+   {
+    "where": "input-tax › Batal 0",
+    "rows": 0
+   },
+   {
+    "where": "interco-transactions",
+    "rows": 4
+   },
+   {
+    "where": "interco-transactions › Daftar Transaksi",
+    "rows": 4
+   },
+   {
+    "where": "interco-transactions › Retur Antar-PT 1",
+    "rows": 1
+   },
+   {
+    "where": "internal-requests",
+    "rows": 0
+   },
+   {
+    "where": "internal-requests › Semua",
+    "rows": 0
+   },
+   {
+    "where": "internal-requests › Antrean",
+    "rows": 0
+   },
+   {
+    "where": "internal-requests › Jadi transaksi antar-PT",
+    "rows": 0
+   },
+   {
+    "where": "internal-requests › Ditolak",
+    "rows": 0
+   },
+   {
+    "where": "internal-requests › Dibatalkan",
+    "rows": 0
+   },
+   {
+    "where": "landed-cost",
+    "rows": 3
+   },
+   {
+    "where": "landed-cost › Semua 3",
+    "rows": 3
+   },
+   {
+    "where": "landed-cost › Draf 1",
+    "rows": 1
+   },
+   {
+    "where": "landed-cost › Menunggu 1",
+    "rows": 1
+   },
+   {
+    "where": "landed-cost › Diterapkan 1",
+    "rows": 1
+   },
+   {
+    "where": "landed-cost › Lunas 0",
+    "rows": 0
+   },
+   {
+    "where": "landed-cost › Batal 0",
+    "rows": 0
+   },
+   {
+    "where": "logistics",
+    "rows": 0
+   },
+   {
+    "where": "logistics › Dasbor",
+    "rows": 0
+   },
+   {
+    "where": "logistics › Riwayat",
+    "rows": 0
+   },
+   {
+    "where": "logistics › Armada",
+    "rows": 0
+   },
+   {
+    "where": "md-categories",
+    "rows": 12
+   },
+   {
+    "where": "md-desk",
+    "rows": 8
+   },
+   {
+    "where": "md-uoms",
+    "rows": 17
+   },
+   {
+    "where": "mkt-accounts",
+    "rows": 0
+   },
+   {
+    "where": "mkt-analytics",
+    "rows": 0
+   },
+   {
+    "where": "mkt-campaigns",
+    "rows": 0
+   },
+   {
+    "where": "my-approvals",
+    "rows": 3
+   },
+   {
+    "where": "my-desk",
+    "rows": 25
+   },
+   {
+    "where": "operations › Terima Cepat (mode lama)",
+    "rows": 10
+   },
+   {
+    "where": "payment-plans › Selisih Bayar 0",
+    "rows": 1
+   },
+   {
+    "where": "pdf-templates",
+    "rows": 0
+   },
+   {
+    "where": "pdf-templates › Layout",
+    "rows": 0
+   },
+   {
+    "where": "period-unlock",
+    "rows": 0
+   },
+   {
+    "where": "permission-matrix",
+    "rows": 0
+   },
+   {
+    "where": "production",
+    "rows": 3
+   },
+   {
+    "where": "production › Perintah Kerja",
+    "rows": 3
+   },
+   {
+    "where": "production › BOM / Resep",
+    "rows": 2
+   },
+   {
+    "where": "profitability",
+    "rows": 6
+   },
+   {
+    "where": "purchase-approval",
+    "rows": 2
+   },
+   {
+    "where": "purchase-approval › Menunggu 2",
+    "rows": 2
+   },
+   {
+    "where": "purchase-approval › Disetujui 1",
+    "rows": 1
+   },
+   {
+    "where": "qc-inspection",
+    "rows": 1
+   },
+   {
+    "where": "reorder",
+    "rows": 8
+   },
+   {
+    "where": "return-policies",
+    "rows": 0
+   },
+   {
+    "where": "rfq",
+    "rows": 3
+   },
+   {
+    "where": "rfq › Semua 3",
+    "rows": 3
+   },
+   {
+    "where": "rfq › Draf 1",
+    "rows": 1
+   },
+   {
+    "where": "rfq › Berjalan 1",
+    "rows": 1
+   },
+   {
+    "where": "rfq › Awarded 1",
+    "rows": 1
+   },
+   {
+    "where": "rfq › Batal 0",
+    "rows": 0
+   },
+   {
+    "where": "rnd-divisions",
+    "rows": 20
+   },
+   {
+    "where": "rnd-reports",
+    "rows": 6
+   },
+   {
+    "where": "sales-admin-desk",
+    "rows": 22
+   },
+   {
+    "where": "sample-orders",
+    "rows": 0
+   },
+   {
+    "where": "scheduler",
+    "rows": 31
+   },
+   {
+    "where": "scheduler › Job Terjadwal",
+    "rows": 31
+   },
+   {
+    "where": "scheduler › Riwayat Eksekusi",
+    "rows": 80
+   },
+   {
+    "where": "scheduler › WhatsApp",
+    "rows": 0
+   },
+   {
+    "where": "settings-config › Riwayat Perubahan",
+    "rows": 10
+   },
+   {
+    "where": "settings-config › Kebersihan Data",
+    "rows": 78
+   },
+   {
+    "where": "settlements",
+    "rows": 0
+   },
+   {
+    "where": "settlements › Semua",
+    "rows": 0
+   },
+   {
+    "where": "settlements › Draf",
+    "rows": 0
+   },
+   {
+    "where": "settlements › Diajukan",
+    "rows": 0
+   },
+   {
+    "where": "settlements › Terposting",
+    "rows": 0
+   },
+   {
+    "where": "settlements › Ditolak",
+    "rows": 0
+   },
+   {
+    "where": "stock-buckets › SO Menunggu (4)",
+    "rows": 4
+   },
+   {
+    "where": "tanya-kn › Jadwal",
+    "rows": 0
+   },
+   {
+    "where": "tanya-kn › Biaya",
+    "rows": 0
+   },
+   {
+    "where": "vehicle-logs",
+    "rows": 0
+   },
+   {
+    "where": "vehicle-logs › Log & Biaya",
+    "rows": 0
+   },
+   {
+    "where": "vehicle-logs › Master Kendaraan",
+    "rows": 0
+   },
+   {
+    "where": "vehicle-logs › Rekap",
+    "rows": 0
+   },
+   {
+    "where": "warehouse-admin-desk",
+    "rows": 15
+   },
+   {
+    "where": "wms-locations › Perintah Simpan ke Rak (Antar Gedung)",
+    "rows": 0
+   }
+  ],
+  "tab_bernuansa_pengaturan_di_menu_operasional": [
+   {
+    "where": "amendments",
+    "tab": "Kebijakan Retur"
+   },
+   {
+    "where": "bank-reconciliation",
+    "tab": "Aturan Pembelajaran"
+   },
+   {
+    "where": "bank-reconciliation",
+    "tab": "Template Bank"
+   },
+   {
+    "where": "cs-pajak",
+    "tab": "Konfigurasi"
+   },
+   {
+    "where": "cs-rfid-devices",
+    "tab": "Perangkat"
+   },
+   {
+    "where": "cs-rfid-gate",
+    "tab": "Perangkat"
+   },
+   {
+    "where": "cs-rfid-lokasi",
+    "tab": "Perangkat"
+   },
+   {
+    "where": "cs-rfid-tags",
+    "tab": "Perangkat"
+   },
+   {
+    "where": "goods-receipts",
+    "tab": "Profil SJ"
+   },
+   {
+    "where": "goods-receipts",
+    "tab": "Sampel Uji OCR"
+   },
+   {
+    "where": "goods-receipts",
+    "tab": "Biaya OCR"
+   },
+   {
+    "where": "goods-receipts",
+    "tab": "Mode Penerimaan"
+   },
+   {
+    "where": "hr-attendance",
+    "tab": "Shift & Geofence"
+   },
+   {
+    "where": "hr-attendance-setup",
+    "tab": "Shift & Geofence"
+   },
+   {
+    "where": "hr-attendance-setup",
+    "tab": "Shift"
+   },
+   {
+    "where": "hr-attendance-setup",
+    "tab": "Geofence"
+   },
+   {
+    "where": "hr-attendance-setup",
+    "tab": "Perangkat"
+   },
+   {
+    "where": "hr-leave",
+    "tab": "Shift & Geofence"
+   },
+   {
+    "where": "hr-live-tracking",
+    "tab": "Shift & Geofence"
+   },
+   {
+    "where": "hr-overtime",
+    "tab": "Shift & Geofence"
+   },
+   {
+    "where": "internal-requests",
+    "tab": "Kebijakan Retur"
+   },
+   {
+    "where": "operations",
+    "tab": "Terima Cepat (mode lama)"
+   },
+   {
+    "where": "orders",
+    "tab": "Kebijakan Retur"
+   },
+   {
+    "where": "return-policies",
+    "tab": "Kebijakan Retur"
+   },
+   {
+    "where": "returns",
+    "tab": "Kebijakan Retur"
+   },
+   {
+    "where": "tanya-kn",
+    "tab": "Biaya"
+   },
+   {
+    "where": "vehicle-logs",
+    "tab": "Log & Biaya"
+   }
+  ],
+  "daftar_panjang_tanpa_paginasi": [
+   {
+    "where": "amendments › Label Alasan",
+    "rows": 33
+   },
+   {
+    "where": "cashflow-forecast",
+    "rows": 30
+   },
+   {
+    "where": "chart-of-accounts",
+    "rows": 76
+   },
+   {
+    "where": "color-library",
+    "rows": 28
+   },
+   {
+    "where": "costing",
+    "rows": 20
+   },
+   {
+    "where": "cs-price-list",
+    "rows": 20
+   },
+   {
+    "where": "cs-rfid-lokasi",
+    "rows": 47
+   },
+   {
+    "where": "cs-rfid-lokasi › Lokasi Tag",
+    "rows": 47
+   },
+   {
+    "where": "customers-crm › Persetujuan Kredit",
+    "rows": 20
+   },
+   {
+    "where": "document-center",
+    "rows": 24
+   },
+   {
+    "where": "entities-access › Peran & Hak Akses",
+    "rows": 55
+   },
+   {
+    "where": "financial-statements › Neraca",
+    "rows": 33
+   },
+   {
+    "where": "financial-statements › Arus Kas",
+    "rows": 20
+   },
+   {
+    "where": "general-ledger › Neraca Saldo",
+    "rows": 29
+   },
+   {
+    "where": "inventory-board",
+    "rows": 20
+   },
+   {
+    "where": "my-desk",
+    "rows": 25
+   },
+   {
+    "where": "operations",
+    "rows": 22
+   },
+   {
+    "where": "operations › Stok",
+    "rows": 22
+   },
+   {
+    "where": "pricelist",
+    "rows": 40
+   },
+   {
+    "where": "rnd-divisions",
+    "rows": 20
+   },
+   {
+    "where": "sales-admin-desk",
+    "rows": 22
+   },
+   {
+    "where": "scheduler",
+    "rows": 31
+   },
+   {
+    "where": "scheduler › Job Terjadwal",
+    "rows": 31
+   },
+   {
+    "where": "scheduler › Riwayat Eksekusi",
+    "rows": 80
+   },
+   {
+    "where": "settings-config",
+    "rows": 72
+   },
+   {
+    "where": "settings-config › Pengaturan",
+    "rows": 72
+   },
+   {
+    "where": "settings-config › Kesehatan Konfigurasi",
+    "rows": 265
+   },
+   {
+    "where": "settings-config › Kebersihan Data",
+    "rows": 78
+   },
+   {
+    "where": "supplier-items",
+    "rows": 21
+   }
+  ],
+  "daftar_tanpa_filter_dan_search": [
+   {
+    "where": "approval-rules",
+    "rows": 7
+   },
+   {
+    "where": "bank-accounts",
+    "rows": 3
+   },
+   {
+    "where": "blanket-po",
+    "rows": 0
+   },
+   {
+    "where": "blanket-po › Semua 0",
+    "rows": 0
+   },
+   {
+    "where": "blanket-po › Aktif 0",
+    "rows": 0
+   },
+   {
+    "where": "blanket-po › Habis 0",
+    "rows": 0
+   },
+   {
+    "where": "blanket-po › Kadaluarsa 0",
+    "rows": 0
+   },
+   {
+    "where": "blanket-po › Ditutup 0",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Semua",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Draf",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Menunggu Persetujuan",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Disetujui",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Dicairkan",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Selesai",
+    "rows": 0
+   },
+   {
+    "where": "cash-advances › Ditolak",
+    "rows": 0
+   },
+   {
+    "where": "cash-management",
+    "rows": 16
+   },
+   {
+    "where": "cashflow-forecast",
+    "rows": 30
+   },
+   {
+    "where": "consolidation › Neraca",
+    "rows": 3
+   },
+   {
+    "where": "consolidation › Eliminasi (3)",
+    "rows": 11
+   },
+   {
+    "where": "contra-bons › GR Belum Ditagih",
+    "rows": 4
+   },
+   {
+    "where": "contra-bons › Jadwal Tukar Faktur",
+    "rows": 6
+   },
+   {
+    "where": "customers-crm › Leads",
+    "rows": 0
+   },
+   {
+    "where": "customers-crm › Penagihan",
+    "rows": 5
+   },
+   {
+    "where": "customers-crm › Persetujuan Kredit",
+    "rows": 20
+   },
+   {
+    "where": "doc-templates-basic",
+    "rows": 0
+   },
+   {
+    "where": "entities-access › Peran & Hak Akses",
+    "rows": 55
+   },
+   {
+    "where": "entities-access › Cek Peran",
+    "rows": 2
+   },
+   {
+    "where": "entities-access › Kesiapan",
+    "rows": 8
+   },
+   {
+    "where": "finance-desk",
+    "rows": 13
+   },
+   {
+    "where": "finance-tower",
+    "rows": 9
+   },
+   {
+    "where": "financial-statements",
+    "rows": 13
+   },
+   {
+    "where": "financial-statements › Laba-Rugi",
+    "rows": 13
+   },
+   {
+    "where": "financial-statements › Neraca",
+    "rows": 33
+   },
+   {
+    "where": "financial-statements › Arus Kas",
+    "rows": 20
+   },
+   {
+    "where": "financial-statements › Perubahan Ekuitas",
+    "rows": 4
+   },
+   {
+    "where": "general-ledger › Neraca Saldo",
+    "rows": 29
+   },
+   {
+    "where": "general-ledger › Rekonsiliasi Persediaan",
+    "rows": 3
+   },
+   {
+    "where": "goods-receipts › Profil SJ",
+    "rows": 0
+   },
+   {
+    "where": "goods-receipts › Sampel Uji OCR",
+    "rows": 0
+   },
+   {
+    "where": "goods-receipts › Mode Penerimaan",
+    "rows": 3
+   },
+   {
+    "where": "home",
+    "rows": 1
+   },
+   {
+    "where": "hr-attendance › Rekap Periode",
+    "rows": 4
+   },
+   {
+    "where": "hr-attendance-setup",
+    "rows": 1
+   },
+   {
+    "where": "hr-attendance-setup › Shift",
+    "rows": 1
+   },
+   {
+    "where": "hr-attendance-setup › Geofence",
+    "rows": 1
+   },
+   {
+    "where": "hr-attendance-setup › Perangkat",
+    "rows": 1
+   },
+   {
+    "where": "hr-leave › Saldo Cuti",
+    "rows": 1
+   },
+   {
+    "where": "hr-live-tracking",
+    "rows": 0
+   },
+   {
+    "where": "hr-my-profile",
+    "rows": 0
+   },
+   {
+    "where": "input-tax",
+    "rows": 0
+   },
+   {
+    "where": "input-tax › Semua 0",
+    "rows": 0
+   },
+   {
+    "where": "input-tax › Tercatat 0",
+    "rows": 0
+   },
+   {
+    "where": "input-tax › Batal 0",
+    "rows": 0
+   },
+   {
+    "where": "interco-transactions › Retur Antar-PT 1",
+    "rows": 1
+   },
+   {
+    "where": "internal-requests",
+    "rows": 0
+   },
+   {
+    "where": "internal-requests › Semua",
+    "rows": 0
+   },
+   {
+    "where": "internal-requests › Antrean",
+    "rows": 0
+   },
+   {
+    "where": "internal-requests › Jadi transaksi antar-PT",
+    "rows": 0
+   },
+   {
+    "where": "internal-requests › Ditolak",
+    "rows": 0
+   },
+   {
+    "where": "internal-requests › Dibatalkan",
+    "rows": 0
+   },
+   {
+    "where": "landed-cost",
+    "rows": 3
+   },
+   {
+    "where": "landed-cost › Semua 3",
+    "rows": 3
+   },
+   {
+    "where": "landed-cost › Draf 1",
+    "rows": 1
+   },
+   {
+    "where": "landed-cost › Menunggu 1",
+    "rows": 1
+   },
+   {
+    "where": "landed-cost › Diterapkan 1",
+    "rows": 1
+   },
+   {
+    "where": "landed-cost › Lunas 0",
+    "rows": 0
+   },
+   {
+    "where": "landed-cost › Batal 0",
+    "rows": 0
+   },
+   {
+    "where": "logistics",
+    "rows": 0
+   },
+   {
+    "where": "logistics › Dasbor",
+    "rows": 0
+   },
+   {
+    "where": "logistics › Armada",
+    "rows": 0
+   },
+   {
+    "where": "md-desk",
+    "rows": 8
+   },
+   {
+    "where": "mkt-accounts",
+    "rows": 0
+   },
+   {
+    "where": "mkt-campaigns",
+    "rows": 0
+   },
+   {
+    "where": "my-approvals",
+    "rows": 3
+   },
+   {
+    "where": "my-desk",
+    "rows": 25
+   },
+   {
+    "where": "payment-plans › Selisih Bayar 0",
+    "rows": 1
+   },
+   {
+    "where": "permission-matrix",
+    "rows": 0
+   },
+   {
+    "where": "production › BOM / Resep",
+    "rows": 2
+   },
+   {
+    "where": "profitability",
+    "rows": 6
+   },
+   {
+    "where": "purchase-approval",
+    "rows": 2
+   },
+   {
+    "where": "purchase-approval › Menunggu 2",
+    "rows": 2
+   },
+   {
+    "where": "purchase-approval › Disetujui 1",
+    "rows": 1
+   },
+   {
+    "where": "qc-inspection",
+    "rows": 1
+   },
+   {
+    "where": "return-policies",
+    "rows": 0
+   },
+   {
+    "where": "rfq",
+    "rows": 3
+   },
+   {
+    "where": "rfq › Semua 3",
+    "rows": 3
+   },
+   {
+    "where": "rfq › Draf 1",
+    "rows": 1
+   },
+   {
+    "where": "rfq › Berjalan 1",
+    "rows": 1
+   },
+   {
+    "where": "rfq › Awarded 1",
+    "rows": 1
+   },
+   {
+    "where": "rfq › Batal 0",
+    "rows": 0
+   },
+   {
+    "where": "rnd-reports",
+    "rows": 6
+   },
+   {
+    "where": "sales-admin-desk",
+    "rows": 22
+   },
+   {
+    "where": "settings-config › Riwayat Perubahan",
+    "rows": 10
+   },
+   {
+    "where": "settlements",
+    "rows": 0
+   },
+   {
+    "where": "settlements › Semua",
+    "rows": 0
+   },
+   {
+    "where": "settlements › Draf",
+    "rows": 0
+   },
+   {
+    "where": "settlements › Diajukan",
+    "rows": 0
+   },
+   {
+    "where": "settlements › Terposting",
+    "rows": 0
+   },
+   {
+    "where": "settlements › Ditolak",
+    "rows": 0
+   },
+   {
+    "where": "stock-buckets › SO Menunggu (4)",
+    "rows": 4
+   },
+   {
+    "where": "tanya-kn › Jadwal",
+    "rows": 0
+   },
+   {
+    "where": "vehicle-logs",
+    "rows": 0
+   },
+   {
+    "where": "vehicle-logs › Log & Biaya",
+    "rows": 0
+   },
+   {
+    "where": "vehicle-logs › Master Kendaraan",
+    "rows": 0
+   },
+   {
+    "where": "vehicle-logs › Rekap",
+    "rows": 0
+   },
+   {
+    "where": "warehouse-admin-desk",
+    "rows": 15
+   }
+  ],
+  "badge_filter_beda_dengan_isi": [
+   {
+    "where": "design-requests",
+    "filter": "Revisi ≥ 1",
+    "badge": 1,
+    "rows": 0
+   },
+   {
+    "where": "design-requests",
+    "filter": "Revisi ≥ 2",
+    "badge": 2,
+    "rows": 0
+   },
+   {
+    "where": "design-requests",
+    "filter": "Revisi ≥ 3",
+    "badge": 3,
+    "rows": 0
+   },
+   {
+    "where": "design-requests › Papan",
+    "filter": "Revisi ≥ 1",
+    "badge": 1,
+    "rows": 0
+   },
+   {
+    "where": "design-requests › Papan",
+    "filter": "Revisi ≥ 2",
+    "badge": 2,
+    "rows": 0
+   },
+   {
+    "where": "design-requests › Papan",
+    "filter": "Revisi ≥ 3",
+    "badge": 3,
+    "rows": 0
+   },
+   {
+    "where": "design-requests › Daftar",
+    "filter": "Revisi ≥ 2",
+    "badge": 2,
+    "rows": 0
+   },
+   {
+    "where": "design-requests › Daftar",
+    "filter": "Revisi ≥ 3",
+    "badge": 3,
+    "rows": 0
+   }
+  ],
+  "filter_tidak_mengubah_daftar": [
+   {
+    "where": "design-requests › Daftar",
+    "filter": "Revisi ≥ 1",
+    "rows": 2
+   },
+   {
+    "where": "operations",
+    "filter": "Bandung",
+    "rows": 23
+   },
+   {
+    "where": "operations › Stok",
+    "filter": "Bandung",
+    "rows": 23
+   },
+   {
+    "where": "operations › Terima Cepat (mode lama)",
+    "filter": "Receiving",
+    "rows": 10
+   },
+   {
+    "where": "pdf-templates › Font & Warna",
+    "filter": "",
+    "rows": 72
+   },
+   {
+    "where": "returns",
+    "filter": "Retur",
+    "rows": 1
+   },
+   {
+    "where": "rnd-samples",
+    "filter": "Handfeel",
+    "rows": 1
+   },
+   {
+    "where": "sales",
+    "filter": "Kain",
+    "rows": 12
+   },
+   {
+    "where": "sales",
+    "filter": "B",
+    "rows": 10
+   },
+   {
+    "where": "sales",
+    "filter": "Biru-Oranye",
+    "rows": 2
+   },
+   {
+    "where": "sales",
+    "filter": "Coklat-Putih",
+    "rows": 3
+   },
+   {
+    "where": "sales",
+    "filter": "Emas-Hitam",
+    "rows": 3
+   }
+  ],
+  "search_tidak_bekerja": [
+   {
+    "where": "design-requests › Rapor Desainer",
+    "placeholder": "Cari nomor / brief / pelanggan…",
+    "rows": 2,
+    "rows_setelah_kata_acak": 2
+   }
+  ],
+  "tab_gagal_dibuka": [
+   {
+    "view": "operations",
+    "tab": "Barang Keluar",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"wms-tab-outbou"
+   },
+   {
+    "view": "operations",
+    "tab": "Transfer",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"wms-tab-transf"
+   },
+   {
+    "view": "operations",
+    "tab": "Kesehatan",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"wms-tab-health"
+   },
+   {
+    "view": "operations",
+    "tab": "Stok",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"inventory-tab-"
+   },
+   {
+    "view": "operations",
+    "tab": "Roll",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"inventory-tab-"
+   },
+   {
+    "view": "operations",
+    "tab": "Mutasi",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"inventory-tab-"
+   },
+   {
+    "view": "pdf-templates",
+    "tab": "Tabel",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"pdf-tab-tabel\\"
+   },
+   {
+    "view": "pdf-templates",
+    "tab": "Field",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"pdf-tab-field\\"
+   },
+   {
+    "view": "pdf-templates",
+    "tab": "Tanda Tangan",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"pdf-tab-ttd\\\"]"
+   },
+   {
+    "view": "pdf-templates",
+    "tab": "Footer",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"pdf-tab-footer"
+   },
+   {
+    "view": "rnd-samples",
+    "tab": "Papan",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"rnd-samples-ta"
+   },
+   {
+    "view": "rnd-samples",
+    "tab": "Daftar",
+    "err": "Locator.click: Timeout 4000ms exceeded.\nCall log:\nwaiting for locator(\"[data-testid=\\\"rnd-samples-ta"
+   }
+  ],
+  "konteks_sama_beda_level_tab": [
+   {
+    "view": "operations",
+    "masuk": [
+     "Barang Masuk (SJ & OCR)",
+     "Barang Masuk (SJ & OCR)",
+     "Barang Masuk (SJ & OCR)"
+    ],
+    "keluar": [
+     "Barang Keluar",
+     "Barang Keluar",
+     "Barang Keluar"
+    ]
+   }
+  ]
+ },
+ "signatures": {
+  "md-desk": {
+   "title": "Meja MD · Desain, Sample & Bahan",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 8,
+   "pager": false,
+   "heads": [
+    "Meja MD"
+   ],
+   "inner_tabs": []
+  },
+  "warehouse-admin-desk": {
+   "title": "Meja Admin Gudang · Operasi Gudang & Logistik",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 15,
+   "pager": false,
+   "heads": [
+    "Meja Admin Gudang"
+   ],
+   "inner_tabs": []
+  },
+  "finance-desk": {
+   "title": "Meja Finance · Uang Masuk & Pajak Keluaran",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 13,
+   "pager": false,
+   "heads": [
+    "Kontrabon menunggu persetujuan — pemasok belum bisa dibayar ",
+    "Kontrabon menunggu verifikasi berkas (1)",
+    "Meja Finance"
+   ],
+   "inner_tabs": []
+  },
+  "sales-admin-desk": {
+   "title": "Meja Admin Sales · Antrean Alur Pesanan",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 22,
+   "pager": false,
+   "heads": [
+    "Meja Admin Sales"
+   ],
+   "inner_tabs": []
+  },
+  "sample-admin-desk": {
+   "title": "Meja Admin Sampel · Antrean Pesanan Sampel",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Meja Admin Sampel"
+   ],
+   "inner_tabs": []
+  },
+  "orders": {
+   "title": "Pesanan Penjualan",
+   "kpi": 7,
+   "search": [
+    [
+     1292,
+     289,
+     "bg-transparent flex-1 text-[13px] | bg-white border border-[#E5E5EA] px-3 py-2 r"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Pesanan (SO)",
+      "Koreksi & Amandemen",
+      "Retur & Barang Sisa",
+      "Kebijakan Retur",
+      "Permintaan Internal (PIN)"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 40,
+   "pager": true,
+   "heads": [
+    "Sales Orders"
+   ],
+   "inner_tabs": []
+  },
+  "returns": {
+   "title": "Retur & Barang Sisa",
+   "kpi": 4,
+   "search": [
+    [
+     293,
+     321,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pesanan (SO)",
+      "Koreksi & Amandemen",
+      "Retur & Barang Sisa",
+      "Kebijakan Retur",
+      "Permintaan Internal (PIN)"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua Tipe",
+     "Retur",
+     "Barang Sisa (BS)",
+     "Penggantian",
+     "Komplain",
+     "Garansi"
+    ]
+   ],
+   "selects": 0,
+   "rows": 1,
+   "listRows": 1,
+   "pager": true,
+   "heads": [
+    "Retur & Barang Sisa"
+   ],
+   "inner_tabs": []
+  },
+  "return-policies": {
+   "title": "Kebijakan Retur Jual",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pesanan (SO)",
+      "Koreksi & Amandemen",
+      "Retur & Barang Sisa",
+      "Kebijakan Retur",
+      "Permintaan Internal (PIN)"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Kebijakan Retur Jual"
+   ],
+   "inner_tabs": []
+  },
+  "amendments": {
+   "title": "Pusat Amandemen · Koreksi Ber-alasan & Ber-jejak",
+   "kpi": 0,
+   "search": [
+    [
+     384,
+     298,
+     " | flex-1 max-w-sm"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pesanan (SO)",
+      "Koreksi & Amandemen",
+      "Retur & Barang Sisa",
+      "Kebijakan Retur",
+      "Permintaan Internal (PIN)"
+     ]
+    ],
+    [
+     false,
+     218,
+     "",
+     [
+      "Daftar Amandemen 4",
+      "Label Alasan"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua",
+     "Menunggu persetujuan",
+     "Diterapkan",
+     "Diterapkan otomatis",
+     "Ditolak"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 4,
+   "pager": false,
+   "heads": [
+    "Pusat Amandemen",
+    "Daftar amandemen"
+   ],
+   "inner_tabs": [
+    "Daftar Amandemen 4",
+    "Label Alasan"
+   ]
+  },
+  "sales": {
+   "title": "POS / Sales Portal",
+   "kpi": 5,
+   "search": [
+    [
+     201,
+     212,
+     "bg-transparent text-[13px] w-full | bg-white border border-[#E5E5EA] px-2 py-1.5"
+    ]
+   ],
+   "tabs": [],
+   "chips": [
+    [
+     "Barang Sisa",
+     "Batik",
+     "Benang",
+     "Denim",
+     "Endek",
+     "Grey",
+     "Jumputan",
+     "Kain"
+    ],
+    [
+     "A",
+     "B"
+    ],
+    [
+     "-",
+     "Biru-Coklat",
+     "Biru-Indigo",
+     "Biru-Oranye",
+     "Biru-Putih",
+     "Coklat-Putih",
+     "Emas-Hitam",
+     "Hijau-Emas"
+    ]
+   ],
+   "selects": 3,
+   "rows": 0,
+   "listRows": 16,
+   "pager": true,
+   "heads": [
+    "Filter",
+    "Katalog Kain Nusantara",
+    "Sering dibeli Toko Kain Sejahtera"
+   ],
+   "inner_tabs": []
+  },
+  "internal-requests": {
+   "title": "Permintaan Internal (PIN)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pesanan (SO)",
+      "Koreksi & Amandemen",
+      "Retur & Barang Sisa",
+      "Kebijakan Retur",
+      "Permintaan Internal (PIN)"
+     ]
+    ],
+    [
+     false,
+     275,
+     "",
+     [
+      "Semua",
+      "Antrean",
+      "Jadi transaksi antar-PT",
+      "Ditolak",
+      "Dibatalkan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Permintaan Internal (PIN)"
+   ],
+   "inner_tabs": [
+    "Semua",
+    "Antrean",
+    "Jadi transaksi antar-PT",
+    "Ditolak",
+    "Dibatalkan"
+   ]
+  },
+  "special-orders": {
+   "title": "Pesanan Khusus (OD)",
+   "kpi": 5,
+   "search": [
+    [
+     292,
+     209,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     false,
+     248,
+     "",
+     [
+      "Semua",
+      "Draf 1",
+      "Menunggu Persetujuan",
+      "Terkonfirmasi",
+      "Produksi",
+      "Siap",
+      "Dikirim",
+      "Selesai"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 1,
+   "listRows": 1,
+   "pager": false,
+   "heads": [
+    "Pesanan Khusus (OD)"
+   ],
+   "inner_tabs": [
+    "Semua",
+    "Draf 1",
+    "Menunggu Persetujuan",
+    "Terkonfirmasi",
+    "Produksi",
+    "Siap",
+    "Dikirim",
+    "Selesai"
+   ]
+  },
+  "hr-visits": {
+   "title": "Kunjungan Sales (Visit)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "CRM & Pelanggan",
+      "Kunjungan Sales",
+      "Impor/Ekspor & Status"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Kunjungan Sales — Log & KPI"
+   ],
+   "inner_tabs": []
+  },
+  "sample-orders": {
+   "title": "Pesanan Sampel (SOS) · Terpisah dari SO Biasa",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [
+    [
+     "Semua",
+     "Menunggu ACC bayar",
+     "Siap ke gudang",
+     "Di gudang",
+     "Dikirim / diambil",
+     "Selesai",
+     "Dibatalkan"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Pesanan Sampel (SOS)"
+   ],
+   "inner_tabs": []
+  },
+  "md-categories": {
+   "title": "Kategori Produk",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Produk & Varian",
+      "Kategori",
+      "Pustaka Warna",
+      "Satuan & Konversi",
+      "Harga per Badan Usaha",
+      "Harga per Pelanggan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 12,
+   "listRows": 12,
+   "pager": false,
+   "heads": [
+    "Kategori Baru",
+    "Daftar Kategori (12)"
+   ],
+   "inner_tabs": []
+  },
+  "customers-master": {
+   "title": "Impor/Ekspor & Status Pelanggan",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "CRM & Pelanggan",
+      "Kunjungan Sales",
+      "Impor/Ekspor & Status"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Daftar Pelanggan"
+   ],
+   "inner_tabs": []
+  },
+  "md-products": {
+   "title": "Produk & Varian",
+   "kpi": 0,
+   "search": [
+    [
+     448,
+     254,
+     " | max-w-md w-full"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Produk & Varian",
+      "Kategori",
+      "Pustaka Warna",
+      "Satuan & Konversi",
+      "Harga per Badan Usaha",
+      "Harga per Pelanggan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 20,
+   "pager": true,
+   "heads": [
+    "Produk & varian",
+    "",
+    "Kain Demo Rantai Retur (E-9)"
+   ],
+   "inner_tabs": []
+  },
+  "md-uoms": {
+   "title": "Satuan & Konversi",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Produk & Varian",
+      "Kategori",
+      "Pustaka Warna",
+      "Satuan & Konversi",
+      "Harga per Badan Usaha",
+      "Harga per Pelanggan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 5,
+   "rows": 17,
+   "listRows": 17,
+   "pager": false,
+   "heads": [
+    "Daftar Satuan (UOM)",
+    "Konversi Satuan (Global)"
+   ],
+   "inner_tabs": []
+  },
+  "color-library": {
+   "title": "Pustaka Warna",
+   "kpi": 0,
+   "search": [
+    [
+     820,
+     225,
+     "w-full | flex-1"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Produk & Varian",
+      "Kategori",
+      "Pustaka Warna",
+      "Satuan & Konversi",
+      "Harga per Badan Usaha",
+      "Harga per Pelanggan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 3,
+   "rows": 0,
+   "listRows": 28,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": []
+  },
+  "pricelist": {
+   "title": "Harga per Badan Usaha",
+   "kpi": 0,
+   "search": [
+    [
+     220,
+     180,
+     "py-1.5 text-[12px] w-[220px] | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Produk & Varian",
+      "Kategori",
+      "Pustaka Warna",
+      "Satuan & Konversi",
+      "Harga per Badan Usaha",
+      "Harga per Pelanggan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 40,
+   "listRows": 40,
+   "pager": false,
+   "heads": [
+    "Master Harga Sampel (per induk, per satuan roll)"
+   ],
+   "inner_tabs": []
+  },
+  "reorder": {
+   "title": "Saran Reorder · Replenishment",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Saran Reorder",
+      "Permintaan Pembelian",
+      "RFQ / Penawaran"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 8,
+   "pager": false,
+   "heads": [
+    "Saran Reorder · Replenishment",
+    "Daftar Saran"
+   ],
+   "inner_tabs": []
+  },
+  "cs-price-list": {
+   "title": "Harga per Pelanggan",
+   "kpi": 0,
+   "search": [
+    [
+     220,
+     255,
+     "py-1.5 text-[12px] w-[220px] | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Produk & Varian",
+      "Kategori",
+      "Pustaka Warna",
+      "Satuan & Konversi",
+      "Harga per Badan Usaha",
+      "Harga per Pelanggan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 20,
+   "listRows": 20,
+   "pager": false,
+   "heads": [
+    "Daftar Harga per Pelanggan"
+   ],
+   "inner_tabs": []
+  },
+  "customers-crm": {
+   "title": "Pelanggan & CRM · Sales Force",
+   "kpi": 0,
+   "search": [
+    [
+     826,
+     206,
+     " | flex-1"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "CRM & Pelanggan",
+      "Kunjungan Sales",
+      "Impor/Ekspor & Status"
+     ]
+    ],
+    [
+     false,
+     85,
+     "",
+     [
+      "Pelanggan",
+      "Leads",
+      "Interaksi",
+      "Penagihan",
+      "Sales Force",
+      "Rate Insentif",
+      "Skema (Arsip)",
+      "Persetujuan Kredit"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 3,
+   "rows": 0,
+   "listRows": 4,
+   "pager": true,
+   "heads": [
+    "Pelanggan (Semua)"
+   ],
+   "inner_tabs": [
+    "Pelanggan",
+    "Leads",
+    "Interaksi",
+    "Penagihan",
+    "Sales Force",
+    "Rate Insentif",
+    "Skema (Arsip)",
+    "Persetujuan Kredit"
+   ]
+  },
+  "rfq": {
+   "title": "RFQ / Penawaran · Tender & Banding Harga Supplier",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Saran Reorder",
+      "Permintaan Pembelian",
+      "RFQ / Penawaran"
+     ]
+    ],
+    [
+     false,
+     156,
+     "",
+     [
+      "Semua 3",
+      "Draf 1",
+      "Berjalan 1",
+      "Awarded 1",
+      "Batal 0"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 3,
+   "pager": false,
+   "heads": [
+    "RFQ / Penawaran — Tender Pengadaan"
+   ],
+   "inner_tabs": [
+    "Semua 3",
+    "Draf 1",
+    "Berjalan 1",
+    "Awarded 1",
+    "Batal 0"
+   ]
+  },
+  "po-board": {
+   "title": "Papan PO per Lini",
+   "kpi": 0,
+   "search": [
+    [
+     190,
+     101,
+     "w-[190px] | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pesanan Pembelian (PO)",
+      "Papan PO per Lini",
+      "Blanket / Kontrak",
+      "Order Makloon",
+      "Klaim Selisih Makloon"
+     ]
+    ],
+    [
+     false,
+     230,
+     "",
+     [
+      "Semua lini",
+      "Woven (Tenun)",
+      "Knit (Rajut)",
+      "Printing"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 9,
+   "pager": true,
+   "heads": [
+    "Papan PO per Lini"
+   ],
+   "inner_tabs": [
+    "Semua lini",
+    "Woven (Tenun)",
+    "Knit (Rajut)",
+    "Printing"
+   ]
+  },
+  "blanket-po": {
+   "title": "Blanket / Contract PO · Call-off",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pesanan Pembelian (PO)",
+      "Papan PO per Lini",
+      "Blanket / Kontrak",
+      "Order Makloon",
+      "Klaim Selisih Makloon"
+     ]
+    ],
+    [
+     false,
+     191,
+     "",
+     [
+      "Semua 0",
+      "Aktif 0",
+      "Habis 0",
+      "Kadaluarsa 0",
+      "Ditutup 0"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Blanket / Contract PO — Call-off"
+   ],
+   "inner_tabs": [
+    "Semua 0",
+    "Aktif 0",
+    "Habis 0",
+    "Kadaluarsa 0",
+    "Ditutup 0"
+   ]
+  },
+  "purchase-requisitions": {
+   "title": "Permintaan Pembelian (PR)",
+   "kpi": 4,
+   "search": [
+    [
+     292,
+     246,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Saran Reorder",
+      "Permintaan Pembelian",
+      "RFQ / Penawaran"
+     ]
+    ],
+    [
+     false,
+     290,
+     "",
+     [
+      "Semua",
+      "Draf 1",
+      "Menunggu Persetujuan 1",
+      "Disetujui 2",
+      "Jadi PO 4",
+      "Ditolak"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 8,
+   "listRows": 8,
+   "pager": false,
+   "heads": [
+    "Permintaan Pembelian (PR)"
+   ],
+   "inner_tabs": [
+    "Semua",
+    "Draf 1",
+    "Menunggu Persetujuan 1",
+    "Disetujui 2",
+    "Jadi PO 4",
+    "Ditolak"
+   ]
+  },
+  "makloon-orders": {
+   "title": "Order Makloon (Subkontrak · WIP-at-Vendor)",
+   "kpi": 4,
+   "search": [
+    [
+     292,
+     246,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pesanan Pembelian (PO)",
+      "Papan PO per Lini",
+      "Blanket / Kontrak",
+      "Order Makloon",
+      "Klaim Selisih Makloon"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 5,
+   "listRows": 5,
+   "pager": false,
+   "heads": [
+    "Order Makloon (Subkontrak)"
+   ],
+   "inner_tabs": []
+  },
+  "makloon-claims": {
+   "title": "Klaim Selisih Makloon · Persetujuan & Skor Mitra",
+   "kpi": 5,
+   "search": [
+    [
+     292,
+     228,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pesanan Pembelian (PO)",
+      "Papan PO per Lini",
+      "Blanket / Kontrak",
+      "Order Makloon",
+      "Klaim Selisih Makloon"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 4,
+   "listRows": 5,
+   "pager": false,
+   "heads": [
+    "Klaim Selisih Makloon",
+    "Skor Mitra Makloon"
+   ],
+   "inner_tabs": []
+  },
+  "contra-bons": {
+   "title": "Kontrabon · Siklus Tukar Faktur Supplier",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Tagihan Supplier",
+      "Kontrabon (Tukar Faktur)",
+      "Landed Cost (HPP)",
+      "Retur Pembelian (Nota Debit)"
+     ]
+    ],
+    [
+     false,
+     311,
+     "bg-[#EAF2FF] border border-[#0058CC] px-3 py-1.5 rounded-ful",
+     [
+      "Daftar Kontrabon",
+      "GR Belum Ditagih",
+      "Jadwal Tukar Faktur"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 3,
+   "listRows": 3,
+   "pager": false,
+   "heads": [
+    "Kontrabon · Tukar Faktur Supplier"
+   ],
+   "inner_tabs": [
+    "Daftar Kontrabon",
+    "GR Belum Ditagih",
+    "Jadwal Tukar Faktur"
+   ]
+  },
+  "landed-cost": {
+   "title": "Landed Cost · Alokasi HPP Roll",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Tagihan Supplier",
+      "Kontrabon (Tukar Faktur)",
+      "Landed Cost (HPP)",
+      "Retur Pembelian (Nota Debit)"
+     ]
+    ],
+    [
+     false,
+     236,
+     "",
+     [
+      "Semua 3",
+      "Draf 1",
+      "Menunggu 1",
+      "Diterapkan 1",
+      "Lunas 0",
+      "Batal 0"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 3,
+   "pager": false,
+   "heads": [
+    "Landed Cost (Alokasi HPP Roll)"
+   ],
+   "inner_tabs": [
+    "Semua 3",
+    "Draf 1",
+    "Menunggu 1",
+    "Diterapkan 1",
+    "Lunas 0",
+    "Batal 0"
+   ]
+  },
+  "suppliers": {
+   "title": "Master Pemasok (Supplier)",
+   "kpi": 0,
+   "search": [
+    [
+     384,
+     156,
+     " | max-w-sm"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Pemasok (Supplier)",
+      "Mitra Makloon",
+      "Kontrak Mitra & Supplier",
+      "Barang Supplier",
+      "Resep Proses"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 6,
+   "pager": true,
+   "heads": [
+    "Master Pemasok (Supplier)"
+   ],
+   "inner_tabs": []
+  },
+  "makloons": {
+   "title": "Mitra Makloon (Subkontraktor)",
+   "kpi": 0,
+   "search": [
+    [
+     384,
+     156,
+     " | max-w-sm"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pemasok (Supplier)",
+      "Mitra Makloon",
+      "Kontrak Mitra & Supplier",
+      "Barang Supplier",
+      "Resep Proses"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 7,
+   "pager": false,
+   "heads": [
+    "Mitra Makloon (Subkontraktor)"
+   ],
+   "inner_tabs": []
+  },
+  "vendor-bills": {
+   "title": "Tagihan Supplier · 3-Way Matching",
+   "kpi": 5,
+   "search": [
+    [
+     292,
+     242,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Tagihan Supplier",
+      "Kontrabon (Tukar Faktur)",
+      "Landed Cost (HPP)",
+      "Retur Pembelian (Nota Debit)"
+     ]
+    ],
+    [
+     false,
+     281,
+     "",
+     [
+      "Semua 12",
+      "Draf",
+      "Menunggu Persetujuan",
+      "Terposting (belum lunas) 9",
+      "Lunas 3",
+      "Dibatalkan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 12,
+   "listRows": 12,
+   "pager": true,
+   "heads": [
+    "Tagihan Supplier (Vendor Bill)"
+   ],
+   "inner_tabs": [
+    "Semua 12",
+    "Draf",
+    "Menunggu Persetujuan",
+    "Terposting (belum lunas) 9",
+    "Lunas 3",
+    "Dibatalkan"
+   ]
+  },
+  "purchase-returns": {
+   "title": "Retur Pembelian (Nota Debit)",
+   "kpi": 4,
+   "search": [
+    [
+     292,
+     246,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Tagihan Supplier",
+      "Kontrabon (Tukar Faktur)",
+      "Landed Cost (HPP)",
+      "Retur Pembelian (Nota Debit)"
+     ]
+    ],
+    [
+     false,
+     290,
+     "",
+     [
+      "Semua 2",
+      "Draf",
+      "Menunggu Persetujuan 2",
+      "Disetujui",
+      "Ditolak"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 2,
+   "listRows": 2,
+   "pager": true,
+   "heads": [
+    "Retur Pembelian (Nota Debit)"
+   ],
+   "inner_tabs": [
+    "Semua 2",
+    "Draf",
+    "Menunggu Persetujuan 2",
+    "Disetujui",
+    "Ditolak"
+   ]
+  },
+  "supplier-items": {
+   "title": "Barang Supplier · Peta SKU/Nama Supplier & Impor Massal",
+   "kpi": 0,
+   "search": [
+    [
+     1102,
+     343,
+     " | flex-1"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pemasok (Supplier)",
+      "Mitra Makloon",
+      "Kontrak Mitra & Supplier",
+      "Barang Supplier",
+      "Resep Proses"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 21,
+   "pager": false,
+   "heads": [
+    "Barang Supplier"
+   ],
+   "inner_tabs": []
+  },
+  "supplier-contracts": {
+   "title": "Kontrak Mitra & Supplier · Tarif, Susut & Toleransi",
+   "kpi": 0,
+   "search": [
+    [
+     384,
+     216,
+     " | flex-1 max-w-sm"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pemasok (Supplier)",
+      "Mitra Makloon",
+      "Kontrak Mitra & Supplier",
+      "Barang Supplier",
+      "Resep Proses"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua",
+     "Kontrak Makloon",
+     "Kontrak Pembelian"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 12,
+   "pager": false,
+   "heads": [
+    "Kontrak Mitra & Supplier"
+   ],
+   "inner_tabs": []
+  },
+  "process-recipes": {
+   "title": "Resep Proses (Konversi & Rumus Makloon)",
+   "kpi": 0,
+   "search": [
+    [
+     203,
+     96,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pemasok (Supplier)",
+      "Mitra Makloon",
+      "Kontrak Mitra & Supplier",
+      "Barang Supplier",
+      "Resep Proses"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 2,
+   "pager": false,
+   "heads": [
+    "Resep Proses (Konversi)"
+   ],
+   "inner_tabs": []
+  },
+  "qc-inspection": {
+   "title": "Inspeksi QC · Penerimaan",
+   "kpi": 2,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Operasi WMS",
+      "Barang Masuk (SJ & OCR)",
+      "Antrean QC Kedatangan",
+      "Dokumen Inspeksi (INS)",
+      "Transfer Antar-Entitas"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 1,
+   "pager": false,
+   "heads": [
+    "Inspeksi QC — Penerimaan",
+    "Antrian Inspeksi"
+   ],
+   "inner_tabs": []
+  },
+  "inspections": {
+   "title": "SPK Inspeksi & QC (INS)",
+   "kpi": 0,
+   "search": [
+    [
+     224,
+     103,
+     "w-56 | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Operasi WMS",
+      "Barang Masuk (SJ & OCR)",
+      "Antrean QC Kedatangan",
+      "Dokumen Inspeksi (INS)",
+      "Transfer Antar-Entitas"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua Jenis",
+     "Penerimaan PO",
+     "Hasil Makloon",
+     "Retur Penjualan (Dari Pelanggan)",
+     "Retur Pembelian (Ke Pemasok)",
+     "Barang Pengganti",
+     "Semua Status",
+     "Draf (Belum Ditugaskan)"
+    ]
+   ],
+   "selects": 0,
+   "rows": 2,
+   "listRows": 2,
+   "pager": true,
+   "heads": [
+    "SPK Inspeksi & QC"
+   ],
+   "inner_tabs": []
+  },
+  "purchasing": {
+   "title": "Pesanan Pembelian (PO)",
+   "kpi": 4,
+   "search": [
+    [
+     292,
+     246,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Pesanan Pembelian (PO)",
+      "Papan PO per Lini",
+      "Blanket / Kontrak",
+      "Order Makloon",
+      "Klaim Selisih Makloon"
+     ]
+    ],
+    [
+     false,
+     329,
+     "",
+     [
+      "Semua",
+      "Menunggu Persetujuan 2",
+      "Menunggu / Proses Terima 7",
+      "Selesai 3",
+      "Ditolak / Batal"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua 12",
+     "Belum Bayar 12",
+     "Sebagian 0",
+     "Lunas 0",
+     "Lunas lewat retur 0"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 18,
+   "pager": true,
+   "heads": [
+    "Pesanan Pembelian (PO)"
+   ],
+   "inner_tabs": [
+    "Semua",
+    "Menunggu Persetujuan 2",
+    "Menunggu / Proses Terima 7",
+    "Selesai 3",
+    "Ditolak / Batal"
+   ]
+  },
+  "interco-transfers": {
+   "title": "Transfer Antar-Entitas",
+   "kpi": 0,
+   "search": [
+    [
+     161,
+     103,
+     "bg-transparent text-[13px] w-full | bg-white border border-[#E5E5EA] px-2 py-1.5"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Operasi WMS",
+      "Barang Masuk (SJ & OCR)",
+      "Antrean QC Kedatangan",
+      "Dokumen Inspeksi (INS)",
+      "Transfer Antar-Entitas"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua",
+     "Menunggu",
+     "Selesai",
+     "Ditolak"
+    ]
+   ],
+   "selects": 0,
+   "rows": 1,
+   "listRows": 1,
+   "pager": false,
+   "heads": [
+    "Transfer Antar-Entitas"
+   ],
+   "inner_tabs": []
+  },
+  "goods-receipts": {
+   "title": "Barang Masuk · Surat Jalan, OCR & Hitung Fisik",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Operasi WMS",
+      "Barang Masuk (SJ & OCR)",
+      "Antrean QC Kedatangan",
+      "Dokumen Inspeksi (INS)",
+      "Transfer Antar-Entitas"
+     ]
+    ],
+    [
+     false,
+     86,
+     "bg-white px-3 py-1.5 rounded-md shadow-sm text-[#0058CC]",
+     [
+      "Kedatangan",
+      "Selisih Supplier",
+      "Profil SJ",
+      "Sampel Uji OCR",
+      "Biaya OCR",
+      "Mode Penerimaan"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua",
+     "Tinjau SJ",
+     "Hitung",
+     "Rekonsiliasi",
+     "Ditutup",
+     "Batal/Tolak"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": [
+    "Kedatangan",
+    "Selisih Supplier",
+    "Profil SJ",
+    "Sampel Uji OCR",
+    "Biaya OCR",
+    "Mode Penerimaan"
+   ]
+  },
+  "inventory-board": {
+   "title": "Status Stok & ATP",
+   "kpi": 0,
+   "search": [
+    [
+     162,
+     103,
+     "bg-transparent text-[13px] w-full | bg-white border border-[#E5E5EA] px-2 py-1.5"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Status Stok & ATP",
+      "Stok Multi-Bucket",
+      "Lot & Silsilah"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 20,
+   "listRows": 20,
+   "pager": false,
+   "heads": [
+    "Papan Status Persediaan · ATP"
+   ],
+   "inner_tabs": []
+  },
+  "inventory-lots": {
+   "title": "Lot & Silsilah · Traceability, Recall & Label",
+   "kpi": 0,
+   "search": [
+    [
+     220,
+     456,
+     "w-[220px] | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Status Stok & ATP",
+      "Stok Multi-Bucket",
+      "Lot & Silsilah"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 4,
+   "rows": 20,
+   "listRows": 20,
+   "pager": true,
+   "heads": [
+    "Lot & Silsilah"
+   ],
+   "inner_tabs": []
+  },
+  "production": {
+   "title": "Produksi In-House · BOM & Work Order",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     false,
+     200,
+     "border-[#6B219A] border-b-2 px-3.5 py-2 text-[#6B219A] text-",
+     [
+      "Perintah Kerja",
+      "BOM / Resep"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 3,
+   "listRows": 3,
+   "pager": false,
+   "heads": [
+    "Produksi In-House"
+   ],
+   "inner_tabs": [
+    "Perintah Kerja",
+    "BOM / Resep"
+   ]
+  },
+  "md-warehouses": {
+   "title": "Gudang (Master) · Lokasi & Bin",
+   "kpi": 0,
+   "search": [
+    [
+     220,
+     212,
+     "py-1.5 text-[12px] w-[220px] | "
+    ]
+   ],
+   "tabs": [],
+   "chips": [],
+   "selects": 3,
+   "rows": 3,
+   "listRows": 3,
+   "pager": false,
+   "heads": [
+    "Gudang bersama & gudang khusus badan usaha"
+   ],
+   "inner_tabs": []
+  },
+  "stock-buckets": {
+   "title": "Stok Multi-Kantong (WIP / Ditahan / Dalam Perjalanan)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Status Stok & ATP",
+      "Stok Multi-Bucket",
+      "Lot & Silsilah"
+     ]
+    ],
+    [
+     false,
+     178,
+     "bg-[#6B219A] border border-[#6B219A] px-3 py-1.5 rounded-lg ",
+     [
+      "Ringkasan Bucket",
+      "Tahanan Aktif",
+      "WIP Aktif",
+      "SO Menunggu (4)"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": [
+    "Ringkasan Bucket",
+    "Tahanan Aktif",
+    "WIP Aktif",
+    "SO Menunggu (4)"
+   ]
+  },
+  "logistics": {
+   "title": "Pengiriman & Pelacakan · Ekspedisi, Armada Sendiri, Foto Mua",
+   "kpi": 7,
+   "search": [],
+   "tabs": [
+    [
+     false,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Dasbor",
+      "Daftar pengiriman",
+      "Riwayat",
+      "Armada"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": [
+    "Dasbor",
+    "Daftar pengiriman",
+    "Riwayat",
+    "Armada"
+   ]
+  },
+  "cs-rfid-lokasi": {
+   "title": "Lokasi RFID",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Lokasi RFID",
+      "Tag RFID",
+      "Perangkat",
+      "Monitor Gerbang"
+     ]
+    ],
+    [
+     false,
+     169,
+     "border-[#0058CC] border-b-2 px-4 py-2 text-[#0058CC] text-[1",
+     [
+      "Lokasi Tag",
+      "Stock Opname (RFID)"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 47,
+   "listRows": 47,
+   "pager": false,
+   "heads": [
+    "Lokasi RFID",
+    "Simulasi Sweep (Fixed Reader)"
+   ],
+   "inner_tabs": [
+    "Lokasi Tag",
+    "Stock Opname (RFID)"
+   ]
+  },
+  "wms-locations": {
+   "title": "Lokasi Gudang & Penempatan Rak",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     false,
+     253,
+     "border-[#0058CC] border-b-2 px-4 py-2 text-[#0058CC] text-[1",
+     [
+      "Struktur Lokasi",
+      "Putaway (13)",
+      "Perintah Simpan ke Rak (Antar Gedung)",
+      "Antrean Potong"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Lokasi Gudang & Penempatan Rak"
+   ],
+   "inner_tabs": [
+    "Struktur Lokasi",
+    "Putaway (13)",
+    "Perintah Simpan ke Rak (Antar Gedung)",
+    "Antrean Potong"
+   ]
+  },
+  "cs-rfid-devices": {
+   "title": "Devices (Reader / Gate)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Lokasi RFID",
+      "Tag RFID",
+      "Perangkat",
+      "Monitor Gerbang"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Devices (Reader / Gate)",
+    "Daftar Device"
+   ],
+   "inner_tabs": []
+  },
+  "cs-rfid-gate": {
+   "title": "Gate Monitor",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Lokasi RFID",
+      "Tag RFID",
+      "Perangkat",
+      "Monitor Gerbang"
+     ]
+    ],
+    [
+     false,
+     169,
+     "border-[#0058CC] border-b-2 px-4 py-2 text-[#0058CC] text-[1",
+     [
+      "Monitor Gate",
+      "Alarm & Keamanan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 3,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Gate Monitor",
+    "Simulasi Pembacaan Gate",
+    "Riwayat Passage Gate"
+   ],
+   "inner_tabs": [
+    "Monitor Gate",
+    "Alarm & Keamanan"
+   ]
+  },
+  "finance-tower": {
+   "title": "Dashboard Keuangan · Control Tower",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Posisi & Kontrol",
+      "BI Keuangan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 9,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": []
+  },
+  "escalations": {
+   "title": "Eskalasi Gudang",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [
+    [
+     "Semua",
+     "Barang Masuk",
+     "Barang Keluar"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Eskalasi Gudang"
+   ],
+   "inner_tabs": []
+  },
+  "bi-finance": {
+   "title": "BI Keuangan · Tren, Rasio & Perbandingan PT",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Posisi & Kontrol",
+      "BI Keuangan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 1,
+   "listRows": 1,
+   "pager": false,
+   "heads": [
+    "BI Keuangan · Analitik"
+   ],
+   "inner_tabs": []
+  },
+  "cs-rfid-tags": {
+   "title": "Tags (tag↔item)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Lokasi RFID",
+      "Tag RFID",
+      "Perangkat",
+      "Monitor Gerbang"
+     ]
+    ],
+    [
+     false,
+     276,
+     "border-[#0058CC] border-b-2 px-4 py-2 text-[#0058CC] text-[1",
+     [
+      "Tag Aktif (47)",
+      "Belum Ber-tag (4)",
+      "Cetak & Verifikasi"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 26,
+   "listRows": 25,
+   "pager": true,
+   "heads": [
+    "Tags (tag ↔ item)",
+    "Daftar Tag RFID Aktif"
+   ],
+   "inner_tabs": [
+    "Tag Aktif (47)",
+    "Belum Ber-tag (4)",
+    "Cetak & Verifikasi"
+   ]
+  },
+  "bank-accounts": {
+   "title": "Kas & Bank · Rekening & Saldo",
+   "kpi": 3,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Rekening & Saldo",
+      "Transaksi Kas",
+      "Rekonsiliasi Bank"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 3,
+   "pager": false,
+   "heads": [
+    "Akun Kas & Bank"
+   ],
+   "inner_tabs": []
+  },
+  "cash-management": {
+   "title": "Transaksi Kas",
+   "kpi": 2,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Rekening & Saldo",
+      "Transaksi Kas",
+      "Rekonsiliasi Bank"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 16,
+   "pager": false,
+   "heads": [
+    "Pengelolaan Kas"
+   ],
+   "inner_tabs": []
+  },
+  "operations": {
+   "title": "Operasi Gudang (WMS)",
+   "kpi": 5,
+   "search": [
+    [
+     1292,
+     771,
+     "bg-transparent flex-1 text-[13px] | bg-white border border-[#E5E5EA] px-3 py-2 r"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     119,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Operasi WMS",
+      "Barang Masuk (SJ & OCR)",
+      "Antrean QC Kedatangan",
+      "Dokumen Inspeksi (INS)",
+      "Transfer Antar-Entitas"
+     ]
+    ],
+    [
+     false,
+     594,
+     "bg-blue-50/50 border-[#007AFF] border-b-2 px-3 py-2.5 text-[",
+     [
+      "Stok",
+      "Terima Cepat (mode lama)",
+      "Barang Keluar",
+      "Transfer",
+      "Kesehatan"
+     ]
+    ],
+    [
+     false,
+     811,
+     "bg-[#007AFF] px-2.5 py-1 rounded-md text-[11px] text-white",
+     [
+      "Stok",
+      "Roll",
+      "Mutasi"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua Gudang",
+     "Jakarta",
+     "Bandung",
+     "Surabaya"
+    ]
+   ],
+   "selects": 0,
+   "rows": 22,
+   "listRows": 36,
+   "pager": false,
+   "heads": [
+    "Transfer gudang menunggu ACC — barang belum boleh jalan (1)",
+    "Stock opname menunggu ACC (1)",
+    "Barang ditahan QC — hanya manajer boleh melepas (2)"
+   ],
+   "inner_tabs": [
+    "Stok",
+    "Terima Cepat (mode lama)",
+    "Barang Keluar",
+    "Transfer",
+    "Kesehatan",
+    "Stok",
+    "Roll",
+    "Mutasi"
+   ]
+  },
+  "ar-aging": {
+   "title": "AR / Piutang & Umur",
+   "kpi": 0,
+   "search": [
+    [
+     191,
+     287,
+     " | "
+    ]
+   ],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 4,
+   "listRows": 4,
+   "pager": false,
+   "heads": [
+    "Sebaran Umur Piutang",
+    "Piutang per Pelanggan"
+   ],
+   "inner_tabs": []
+  },
+  "advance-report": {
+   "title": "Uang Muka Pelanggan",
+   "kpi": 0,
+   "search": [
+    [
+     181,
+     57,
+     "text-[12px] | "
+    ]
+   ],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 3,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Laporan Uang Muka Pelanggan"
+   ],
+   "inner_tabs": []
+  },
+  "bank-reconciliation": {
+   "title": "Kas & Bank · Rekonsiliasi Bank Otomatis",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Rekening & Saldo",
+      "Transaksi Kas",
+      "Rekonsiliasi Bank"
+     ]
+    ],
+    [
+     false,
+     264,
+     "border-[#0058CC] border-b-2 px-3 py-2 text-[#0058CC] text-[1",
+     [
+      "Mutasi & Pencocokan",
+      "Dana Titipan 1",
+      "Aturan Pembelajaran",
+      "Template Bank"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 6,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Rekonsiliasi Bank"
+   ],
+   "inner_tabs": [
+    "Mutasi & Pencocokan",
+    "Dana Titipan 1",
+    "Aturan Pembelajaran",
+    "Template Bank"
+   ]
+  },
+  "store-credit": {
+   "title": "Store Credit / Saldo Pelanggan",
+   "kpi": 0,
+   "search": [
+    [
+     191,
+     136,
+     " | "
+    ]
+   ],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Saldo Store Credit Pelanggan"
+   ],
+   "inner_tabs": []
+  },
+  "finance-cases": {
+   "title": "Pusat Kasus Keuangan",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [
+    [
+     "Dana masuk tak dikenal 1/1",
+     "Nominal kurang karena biaya bank 0/1"
+    ]
+   ],
+   "selects": 2,
+   "rows": 3,
+   "listRows": 3,
+   "pager": false,
+   "heads": [
+    "Pusat Kasus Keuangan"
+   ],
+   "inner_tabs": []
+  },
+  "tax-invoices": {
+   "title": "Faktur Pajak Keluaran",
+   "kpi": 0,
+   "search": [
+    [
+     260,
+     186,
+     "bg-white border border-[#E5E5EA] py-1 rounded-md text-[12px] w-[260px] | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Faktur Keluaran",
+      "Faktur Masukan",
+      "PPh & Rekap"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 4,
+   "listRows": 4,
+   "pager": false,
+   "heads": [
+    "Faktur Pajak Jual"
+   ],
+   "inner_tabs": []
+  },
+  "input-tax": {
+   "title": "Faktur Pajak Masukan · PPN Masukan & Rekap",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Faktur Keluaran",
+      "Faktur Masukan",
+      "PPh & Rekap"
+     ]
+    ],
+    [
+     false,
+     252,
+     "",
+     [
+      "Semua 0",
+      "Tercatat 0",
+      "Batal 0"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Faktur Pajak Masukan (Input VAT)"
+   ],
+   "inner_tabs": [
+    "Semua 0",
+    "Tercatat 0",
+    "Batal 0"
+   ]
+  },
+  "cs-pajak": {
+   "title": "PPh & Rekap Pajak",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Faktur Keluaran",
+      "Faktur Masukan",
+      "PPh & Rekap"
+     ]
+    ],
+    [
+     false,
+     157,
+     "border-[#6B219A] border-b-2 px-3 py-2.5 text-[#6B219A] text-",
+     [
+      "PPN (SPT Masa)",
+      "PPh",
+      "Konfigurasi"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Pusat Pajak",
+    "Rincian Pajak Masukan per Pemasok"
+   ],
+   "inner_tabs": [
+    "PPN (SPT Masa)",
+    "PPh",
+    "Konfigurasi"
+   ]
+  },
+  "chart-of-accounts": {
+   "title": "Bagan Akun · Chart of Accounts",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Jurnal & Buku Besar",
+      "Chart of Accounts"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Template Global",
+     "Sukacita",
+     "Kanda Fabric",
+     "Cipta Sandang"
+    ]
+   ],
+   "selects": 1,
+   "rows": 76,
+   "listRows": 76,
+   "pager": false,
+   "heads": [
+    "Bagan Akun · Template Global"
+   ],
+   "inner_tabs": []
+  },
+  "financial-statements": {
+   "title": "Laporan Keuangan · Laba-Rugi, Neraca & Arus Kas",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Laba-Rugi, Neraca & Arus Kas",
+      "Profitabilitas & Margin",
+      "Proyeksi Arus Kas",
+      "Anggaran vs Realisasi",
+      "Konsolidasi Grup"
+     ]
+    ],
+    [
+     false,
+     96,
+     "bg-[#6B219A] border border-[#6B219A] px-3 py-1.5 rounded-lg ",
+     [
+      "Laba-Rugi",
+      "Neraca",
+      "Arus Kas",
+      "Perubahan Ekuitas"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 13,
+   "listRows": 0,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": [
+    "Laba-Rugi",
+    "Neraca",
+    "Arus Kas",
+    "Perubahan Ekuitas"
+   ]
+  },
+  "profitability": {
+   "title": "Profitabilitas & Margin (WAC)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Laba-Rugi, Neraca & Arus Kas",
+      "Profitabilitas & Margin",
+      "Proyeksi Arus Kas",
+      "Anggaran vs Realisasi",
+      "Konsolidasi Grup"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 6,
+   "listRows": 6,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": []
+  },
+  "cashflow-forecast": {
+   "title": "Proyeksi Arus Kas · Likuiditas",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Laba-Rugi, Neraca & Arus Kas",
+      "Profitabilitas & Margin",
+      "Proyeksi Arus Kas",
+      "Anggaran vs Realisasi",
+      "Konsolidasi Grup"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 30,
+   "listRows": 30,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": []
+  },
+  "general-ledger": {
+   "title": "Buku Besar · Jurnal Umum",
+   "kpi": 0,
+   "search": [
+    [
+     1005,
+     248,
+     "bg-transparent flex-1 text-[12px] | bg-white border border-[#EFF0F2] flex-1 px-2"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Jurnal & Buku Besar",
+      "Chart of Accounts"
+     ]
+    ],
+    [
+     false,
+     180,
+     "bg-[#6B219A] border border-[#6B219A] px-3 py-1.5 rounded-lg ",
+     [
+      "Jurnal",
+      "Neraca Saldo",
+      "Buku Besar",
+      "Rekonsiliasi Persediaan",
+      "Suspense"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 20,
+   "listRows": 20,
+   "pager": true,
+   "heads": [],
+   "inner_tabs": [
+    "Jurnal",
+    "Neraca Saldo",
+    "Buku Besar",
+    "Rekonsiliasi Persediaan",
+    "Suspense"
+   ]
+  },
+  "payment-plans": {
+   "title": "Rencana Pembayaran & Denda",
+   "kpi": 0,
+   "search": [
+    [
+     384,
+     221,
+     " | flex-1 max-w-sm"
+    ]
+   ],
+   "tabs": [
+    [
+     false,
+     173,
+     "",
+     [
+      "Antrean Denda 1",
+      "Jadwal Pembayaran 2",
+      "Selisih Bayar 0"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua",
+     "Usulan (draf)",
+     "Terbit",
+     "Diubah",
+     "Dibebaskan",
+     "Dibayar"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 1,
+   "pager": false,
+   "heads": [
+    "Rencana Pembayaran & Denda",
+    "Antrean denda keterlambatan"
+   ],
+   "inner_tabs": [
+    "Antrean Denda 1",
+    "Jadwal Pembayaran 2",
+    "Selisih Bayar 0"
+   ]
+  },
+  "closing": {
+   "title": "Tutup Buku · Closing Bulanan & Tahunan",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 4,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Tutup Buku (Closing)"
+   ],
+   "inner_tabs": []
+  },
+  "period-unlock": {
+   "title": "Buka Periode (Unlock) · Kontrol Ganda & Jendela Waktu",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Buka Periode (Unlock) — Kontrol Ganda"
+   ],
+   "inner_tabs": []
+  },
+  "budget": {
+   "title": "Anggaran vs Realisasi · Commitment Control",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Laba-Rugi, Neraca & Arus Kas",
+      "Profitabilitas & Margin",
+      "Proyeksi Arus Kas",
+      "Anggaran vs Realisasi",
+      "Konsolidasi Grup"
+     ]
+    ],
+    [
+     false,
+     219,
+     "bg-[#F3EAFB] border border-[#D9C4EC] px-3 py-1.5 rounded-md ",
+     [
+      "Per Akun COA",
+      "Per Kategori Beban"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 4,
+   "listRows": 4,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": [
+    "Per Akun COA",
+    "Per Kategori Beban"
+   ]
+  },
+  "consolidation": {
+   "title": "Konsolidasi Grup · Eliminasi Intercompany",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Laba-Rugi, Neraca & Arus Kas",
+      "Profitabilitas & Margin",
+      "Proyeksi Arus Kas",
+      "Anggaran vs Realisasi",
+      "Konsolidasi Grup"
+     ]
+    ],
+    [
+     false,
+     97,
+     "bg-[#6B219A] border border-[#6B219A] px-3 py-1.5 rounded-lg ",
+     [
+      "Laba-Rugi",
+      "Neraca",
+      "Eliminasi (3)"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 6,
+   "listRows": 6,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": [
+    "Laba-Rugi",
+    "Neraca",
+    "Eliminasi (3)"
+   ]
+  },
+  "interco-transactions": {
+   "title": "Transaksi Antar Entitas · Jual-Beli Antar-PT",
+   "kpi": 4,
+   "search": [],
+   "tabs": [
+    [
+     false,
+     276,
+     "border-[#0F172A] border-b-2 px-4 py-2.5 text-[#0F172A] text-",
+     [
+      "Daftar Transaksi",
+      "Retur Antar-PT 1"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 4,
+   "listRows": 4,
+   "pager": false,
+   "heads": [
+    "Transaksi Antar Entitas"
+   ],
+   "inner_tabs": [
+    "Daftar Transaksi",
+    "Retur Antar-PT 1"
+   ]
+  },
+  "reimburse-payables": {
+   "title": "Hutang Reimburse Karyawan · Umur Hutang",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pengajuan Dana (PD)",
+      "Pertanggungjawaban",
+      "Hutang Reimburse",
+      "Kategori Beban"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Hutang Reimburse Karyawan (2-1650)",
+    "Per Karyawan",
+    "Rincian LPJ"
+   ],
+   "inner_tabs": []
+  },
+  "posting-failures": {
+   "title": "Posting Gagal · Dokumen dengan Jurnal Gagal",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [
+    [
+     "Semua (0)",
+     "Transaksi Kas (0)",
+     "Kwitansi AR (0)",
+     "Retur Beli (0)",
+     "Penerimaan Barang (GR) (0)",
+     "Surat Jalan (0)"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": []
+  },
+  "expense-categories": {
+   "title": "Kategori Beban → Akun COA",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pengajuan Dana (PD)",
+      "Pertanggungjawaban",
+      "Hutang Reimburse",
+      "Kategori Beban"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 8,
+   "rows": 0,
+   "listRows": 8,
+   "pager": false,
+   "heads": [
+    "Kategori Beban → Akun COA"
+   ],
+   "inner_tabs": []
+  },
+  "settlements": {
+   "title": "Pertanggungjawaban (LPJ) · Petty Cash",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pengajuan Dana (PD)",
+      "Pertanggungjawaban",
+      "Hutang Reimburse",
+      "Kategori Beban"
+     ]
+    ],
+    [
+     false,
+     233,
+     "",
+     [
+      "Semua",
+      "Draf",
+      "Diajukan",
+      "Terposting",
+      "Ditolak"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Pertanggungjawaban (LPJ)"
+   ],
+   "inner_tabs": [
+    "Semua",
+    "Draf",
+    "Diajukan",
+    "Terposting",
+    "Ditolak"
+   ]
+  },
+  "cash-advances": {
+   "title": "Pengajuan Dana (PD) · Cash Advance",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Pengajuan Dana (PD)",
+      "Pertanggungjawaban",
+      "Hutang Reimburse",
+      "Kategori Beban"
+     ]
+    ],
+    [
+     false,
+     233,
+     "",
+     [
+      "Semua",
+      "Draf",
+      "Menunggu Persetujuan",
+      "Disetujui",
+      "Dicairkan",
+      "Selesai",
+      "Ditolak"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Pengajuan Dana (PD)"
+   ],
+   "inner_tabs": [
+    "Semua",
+    "Draf",
+    "Menunggu Persetujuan",
+    "Disetujui",
+    "Dicairkan",
+    "Selesai",
+    "Ditolak"
+   ]
+  },
+  "vehicle-logs": {
+   "title": "Penggunaan & Biaya Kendaraan",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     false,
+     188,
+     "",
+     [
+      "Log & Biaya",
+      "Master Kendaraan",
+      "Rekap"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Penggunaan & Biaya Kendaraan"
+   ],
+   "inner_tabs": [
+    "Log & Biaya",
+    "Master Kendaraan",
+    "Rekap"
+   ]
+  },
+  "fixed-assets": {
+   "title": "Aset Tetap · Penyusutan & Disposal",
+   "kpi": 0,
+   "search": [
+    [
+     191,
+     247,
+     " | "
+    ]
+   ],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 2,
+   "listRows": 2,
+   "pager": false,
+   "heads": [
+    "Daftar Aset Tetap"
+   ],
+   "inner_tabs": []
+  },
+  "hr-employees": {
+   "title": "Karyawan",
+   "kpi": 0,
+   "search": [
+    [
+     954,
+     230,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Karyawan",
+      "Struktur Organisasi"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 0,
+   "listRows": 15,
+   "pager": false,
+   "heads": [
+    "Master Karyawan"
+   ],
+   "inner_tabs": []
+  },
+  "hr-org-units": {
+   "title": "Struktur Organisasi",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Karyawan",
+      "Struktur Organisasi"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Struktur Organisasi"
+   ],
+   "inner_tabs": []
+  },
+  "hr-overtime": {
+   "title": "Lembur (Overtime)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Presensi",
+      "Cuti & Izin",
+      "Lembur",
+      "Lacak Lapangan",
+      "Shift & Geofence"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Lembur"
+   ],
+   "inner_tabs": []
+  },
+  "hr-live-tracking": {
+   "title": "Lacak Lapangan · Live Tracking Sales",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Presensi",
+      "Cuti & Izin",
+      "Lembur",
+      "Lacak Lapangan",
+      "Shift & Geofence"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Lacak Lapangan — Posisi Sales Realtime"
+   ],
+   "inner_tabs": []
+  },
+  "hr-leave": {
+   "title": "Cuti & Izin",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Presensi",
+      "Cuti & Izin",
+      "Lembur",
+      "Lacak Lapangan",
+      "Shift & Geofence"
+     ]
+    ],
+    [
+     false,
+     139,
+     "bg-[#0058CC] px-3 py-1.5 rounded-md text-[12px] text-white",
+     [
+      "Pengajuan",
+      "Kalender",
+      "Saldo Cuti"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Cuti & Izin"
+   ],
+   "inner_tabs": [
+    "Pengajuan",
+    "Kalender",
+    "Saldo Cuti"
+   ]
+  },
+  "hr-attendance": {
+   "title": "Presensi & Kehadiran",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Presensi",
+      "Cuti & Izin",
+      "Lembur",
+      "Lacak Lapangan",
+      "Shift & Geofence"
+     ]
+    ],
+    [
+     false,
+     96,
+     "bg-[#0058CC] px-3 py-1.5 rounded-lg text-[12px] text-white",
+     [
+      "Kehadiran Harian",
+      "Rekap Periode",
+      "Impor Sidik Jari"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 4,
+   "pager": false,
+   "heads": [
+    "Presensi & Kehadiran"
+   ],
+   "inner_tabs": [
+    "Kehadiran Harian",
+    "Rekap Periode",
+    "Impor Sidik Jari"
+   ]
+  },
+  "hr-attendance-setup": {
+   "title": "Shift & Geofence",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Presensi",
+      "Cuti & Izin",
+      "Lembur",
+      "Lacak Lapangan",
+      "Shift & Geofence"
+     ]
+    ],
+    [
+     false,
+     96,
+     "bg-[#0058CC] px-3 py-1.5 rounded-lg text-[12px] text-white",
+     [
+      "Shift",
+      "Geofence",
+      "Perangkat"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 1,
+   "pager": false,
+   "heads": [
+    "Shift & Geofence",
+    "Daftar Shift"
+   ],
+   "inner_tabs": [
+    "Shift",
+    "Geofence",
+    "Perangkat"
+   ]
+  },
+  "hr-payroll-runs": {
+   "title": "Penggajian (Payroll Run)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Payroll Run",
+      "Slip Gaji"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Payroll Run — Penggajian"
+   ],
+   "inner_tabs": []
+  },
+  "hr-payslips": {
+   "title": "Slip Gaji (Payslip)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Payroll Run",
+      "Slip Gaji"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 15,
+   "pager": false,
+   "heads": [
+    "Slip Gaji Karyawan"
+   ],
+   "inner_tabs": []
+  },
+  "cs-kpi": {
+   "title": "KPI Karyawan (input manual per periode)",
+   "kpi": 2,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 2,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Daftar KPI"
+   ],
+   "inner_tabs": []
+  },
+  "home": {
+   "title": "Control Tower",
+   "kpi": 8,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 1,
+   "pager": false,
+   "heads": [
+    "Buka Periode (Unlock)",
+    "Antrean Persetujuan (40)",
+    "Papan PO Custom — menunggu keputusan (0)"
+   ],
+   "inner_tabs": []
+  },
+  "my-approvals": {
+   "title": "Persetujuan Saya · Matriks Divisi (ACC Desain · Sample · PO ",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Inbox Persetujuan",
+      "Persetujuan Saya",
+      "Pengajuan Harga Khusus",
+      "Riwayat Persetujuan PO"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 3,
+   "listRows": 3,
+   "pager": false,
+   "heads": [
+    "Persetujuan Saya",
+    "Antrean per Tahap",
+    "Dokumen Menunggu (3)"
+   ],
+   "inner_tabs": []
+  },
+  "my-desk": {
+   "title": "Meja Saya · Giliran & Antrean Peran",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 25,
+   "pager": false,
+   "heads": [
+    "Meja Admin"
+   ],
+   "inner_tabs": []
+  },
+  "purchase-approval": {
+   "title": "Persetujuan Pembelian",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Inbox Persetujuan",
+      "Persetujuan Saya",
+      "Pengajuan Harga Khusus",
+      "Riwayat Persetujuan PO"
+     ]
+    ],
+    [
+     false,
+     156,
+     "",
+     [
+      "Menunggu 2",
+      "Disetujui 1",
+      "Ditolak 0"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 2,
+   "pager": false,
+   "heads": [
+    "Persetujuan Pembelian"
+   ],
+   "inner_tabs": [
+    "Menunggu 2",
+    "Disetujui 1",
+    "Ditolak 0"
+   ]
+  },
+  "price-approvals": {
+   "title": "Persetujuan Harga Khusus",
+   "kpi": 0,
+   "search": [
+    [
+     161,
+     103,
+     "bg-transparent text-[13px] w-full | bg-white border border-[#E5E5EA] px-2 py-1.5"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Inbox Persetujuan",
+      "Persetujuan Saya",
+      "Pengajuan Harga Khusus",
+      "Riwayat Persetujuan PO"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua",
+     "Menunggu 2",
+     "Disetujui",
+     "Ditolak",
+     "Draf",
+     "Digantikan",
+     "Diakhiri",
+     "Dibatalkan"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 5,
+   "pager": false,
+   "heads": [
+    "Persetujuan Harga Khusus"
+   ],
+   "inner_tabs": []
+  },
+  "rnd-labdip": {
+   "title": "Labdip (Master) · Sampel Warna per Supplier",
+   "kpi": 0,
+   "search": [
+    [
+     384,
+     247,
+     " | flex-1 max-w-sm"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Permintaan Sample",
+      "Labdip",
+      "Handfeel",
+      "Proofing",
+      "Laporan R&D"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 6,
+   "rows": 0,
+   "listRows": 1,
+   "pager": false,
+   "heads": [
+    "Labdip (Master)"
+   ],
+   "inner_tabs": []
+  },
+  "rnd-handfeel": {
+   "title": "Handfeel (Master) · Sampel Pegangan & Konstruksi Kain",
+   "kpi": 0,
+   "search": [
+    [
+     384,
+     247,
+     " | flex-1 max-w-sm"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Permintaan Sample",
+      "Labdip",
+      "Handfeel",
+      "Proofing",
+      "Laporan R&D"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 6,
+   "rows": 0,
+   "listRows": 1,
+   "pager": false,
+   "heads": [
+    "Handfeel (Master)"
+   ],
+   "inner_tabs": []
+  },
+  "rnd-proofing": {
+   "title": "Proofing (Master) · Sampel Cetak Desain",
+   "kpi": 0,
+   "search": [
+    [
+     384,
+     247,
+     " | flex-1 max-w-sm"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Permintaan Sample",
+      "Labdip",
+      "Handfeel",
+      "Proofing",
+      "Laporan R&D"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 6,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Proofing (Master)"
+   ],
+   "inner_tabs": []
+  },
+  "rnd-reports": {
+   "title": "Laporan R&D · SLA Round & Tahap Produk",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Permintaan Sample",
+      "Labdip",
+      "Handfeel",
+      "Proofing",
+      "Laporan R&D"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 6,
+   "pager": false,
+   "heads": [
+    "Laporan R&D",
+    "Desainer Teratas (30 hari)",
+    "Tahap Produk (boleh dijual atau belum)"
+   ],
+   "inner_tabs": []
+  },
+  "tanya-kn": {
+   "title": "Tanya KN · Laporan & Pertanyaan Data",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     false,
+     140,
+     "",
+     [
+      "Laporan",
+      "Peringatan",
+      "Riwayat",
+      "Jadwal",
+      "Biaya"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Hari ini",
+     "Minggu ini",
+     "Bulan ini",
+     "Bulan lalu",
+     "3 bulan",
+     "Tahun ini"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Apa yang ingin Anda ketahui hari ini?"
+   ],
+   "inner_tabs": [
+    "Laporan",
+    "Peringatan",
+    "Riwayat",
+    "Jadwal",
+    "Biaya"
+   ]
+  },
+  "designer-kpi": {
+   "title": "KPI Desainer · Tepat Waktu, Pengulangan & Eskalasi SLA",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Permintaan Desain",
+      "KPI Desainer",
+      "Desain & Pattern",
+      "Galeri Desain (Showcase)",
+      "Divisi & Persetujuan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 4,
+   "rows": 0,
+   "listRows": 2,
+   "pager": false,
+   "heads": [
+    "KPI Desainer",
+    "Tren nilai desainer per bulan",
+    "Tren nilai desain per bulan"
+   ],
+   "inner_tabs": []
+  },
+  "rnd-samples": {
+   "title": "Permintaan Sample · Labdip / Handfeel / Proofing",
+   "kpi": 0,
+   "search": [
+    [
+     224,
+     103,
+     "w-56 | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Permintaan Sample",
+      "Labdip",
+      "Handfeel",
+      "Proofing",
+      "Laporan R&D"
+     ]
+    ],
+    [
+     false,
+     220,
+     "",
+     [
+      "Papan",
+      "Daftar"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua jenis",
+     "Labdip",
+     "Handfeel",
+     "Proofing"
+    ],
+    [
+     "Semua ronde",
+     "Revisi ≥ 1",
+     "Revisi ≥ 2",
+     "Revisi ≥ 3"
+    ],
+    [
+     "Semua",
+     "Draf",
+     "Terkirim Ke Supplier",
+     "Dikerjakan",
+     "Ada Yang ACC",
+     "Pemenang Dipilih"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 4,
+   "pager": false,
+   "heads": [
+    "Permintaan Sample"
+   ],
+   "inner_tabs": [
+    "Papan",
+    "Daftar"
+   ]
+  },
+  "cs-design-gallery": {
+   "title": "Galeri Desain (Showcase)",
+   "kpi": 0,
+   "search": [
+    [
+     360,
+     107,
+     " | flex-1 max-w-[360px]"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Permintaan Desain",
+      "KPI Desainer",
+      "Desain & Pattern",
+      "Galeri Desain (Showcase)",
+      "Divisi & Persetujuan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 7,
+   "rows": 0,
+   "listRows": 11,
+   "pager": false,
+   "heads": [
+    "Galeri Desain ACC",
+    "Kawung Modern Seragam",
+    "Kawung Modern Seragam"
+   ],
+   "inner_tabs": []
+  },
+  "rnd-designs": {
+   "title": "Desain & Pattern (Master) · Kode, Versi & Pengesahan",
+   "kpi": 0,
+   "search": [
+    [
+     384,
+     281,
+     " | flex-1 max-w-sm"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Permintaan Desain",
+      "KPI Desainer",
+      "Desain & Pattern",
+      "Galeri Desain (Showcase)",
+      "Divisi & Persetujuan"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Hari ini",
+     "7 hari",
+     "30 hari",
+     "Bulan ini",
+     "Bulan lalu"
+    ]
+   ],
+   "selects": 12,
+   "rows": 0,
+   "listRows": 7,
+   "pager": false,
+   "heads": [
+    "Desain & Pattern (Master)"
+   ],
+   "inner_tabs": []
+  },
+  "rnd-divisions": {
+   "title": "Divisi & Persetujuan R&D · Penempatan Tim & Matriks Approver",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Permintaan Desain",
+      "KPI Desainer",
+      "Desain & Pattern",
+      "Galeri Desain (Showcase)",
+      "Divisi & Persetujuan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 15,
+   "rows": 20,
+   "listRows": 23,
+   "pager": false,
+   "heads": [
+    "Divisi & Persetujuan R&D",
+    "Divisi (8)",
+    "Matriks Persetujuan"
+   ],
+   "inner_tabs": []
+  },
+  "mkt-analytics": {
+   "title": "Dashboard Sosmed · KPI, Tren & Performa Konten",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Kalender Konten",
+      "Dasbor & Performa",
+      "Kampanye",
+      "Akun Sosmed"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "",
+     ""
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": []
+  },
+  "mkt-campaigns": {
+   "title": "Kampanye · Tema & Periode Konten",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Kalender Konten",
+      "Dasbor & Performa",
+      "Kampanye",
+      "Akun Sosmed"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": []
+  },
+  "mkt-calendar": {
+   "title": "Kalender Konten · Rencana, Review & Jadwal Tayang",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Kalender Konten",
+      "Dasbor & Performa",
+      "Kampanye",
+      "Akun Sosmed"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "",
+     ""
+    ],
+    [
+     "Kalender",
+     "Minggu",
+     "Daftar"
+    ]
+   ],
+   "selects": 3,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": []
+  },
+  "mkt-accounts": {
+   "title": "Akun Sosmed · per Badan Usaha",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Kalender Konten",
+      "Dasbor & Performa",
+      "Kampanye",
+      "Akun Sosmed"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [],
+   "inner_tabs": []
+  },
+  "costing": {
+   "title": "Margin & HPP (WAC)",
+   "kpi": 0,
+   "search": [
+    [
+     191,
+     182,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Ringkasan",
+      "Margin & HPP",
+      "BI SDM",
+      "Analitik Stok"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 20,
+   "listRows": 20,
+   "pager": false,
+   "heads": [
+    "Margin & HPP (WAC)"
+   ],
+   "inner_tabs": []
+  },
+  "reports": {
+   "title": "Dasbor & Analitik",
+   "kpi": 10,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     119,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Ringkasan",
+      "Margin & HPP",
+      "BI SDM",
+      "Analitik Stok"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Kecepatan Pesanan — 30 hari terakhir",
+    "Reservation Funnel",
+    "Utilisasi Gudang"
+   ],
+   "inner_tabs": []
+  },
+  "cs-bi-hrd": {
+   "title": "Dasbor BI SDM",
+   "kpi": 3,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Ringkasan",
+      "Margin & HPP",
+      "BI SDM",
+      "Analitik Stok"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Headcount per Departemen",
+    "Komposisi Tipe Pekerja",
+    "Distribusi Kehadiran"
+   ],
+   "inner_tabs": []
+  },
+  "document-center": {
+   "title": "Pusat Dokumen",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Daftar Dokumen",
+      "Jejak Dokumen",
+      "Cetak PDF & Label"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 24,
+   "listRows": 24,
+   "pager": false,
+   "heads": [
+    "Pesanan Penjualan (24)"
+   ],
+   "inner_tabs": []
+  },
+  "cs-stock-analytics": {
+   "title": "Analitik Stok (Cepat/Lambat/Mati)",
+   "kpi": 4,
+   "search": [
+    [
+     176,
+     645,
+     "bg-white border border-[#EFF0F2] py-1 rounded-lg text-[12px] w-44 | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Ringkasan",
+      "Margin & HPP",
+      "BI SDM",
+      "Analitik Stok"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 16,
+   "listRows": 16,
+   "pager": false,
+   "heads": [
+    "Analitik Stok — Cepat / Lambat / Mati",
+    "Distribusi Nilai per Klasifikasi",
+    "Umur Persediaan (nilai per umur)"
+   ],
+   "inner_tabs": []
+  },
+  "design-requests": {
+   "title": "Permintaan Desain (DSR)",
+   "kpi": 0,
+   "search": [
+    [
+     208,
+     103,
+     "w-52 | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Permintaan Desain",
+      "KPI Desainer",
+      "Desain & Pattern",
+      "Galeri Desain (Showcase)",
+      "Divisi & Persetujuan"
+     ]
+    ],
+    [
+     false,
+     220,
+     "",
+     [
+      "Papan",
+      "Daftar",
+      "Rapor Desainer"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Semua ronde",
+     "Revisi ≥ 1",
+     "Revisi ≥ 2",
+     "Revisi ≥ 3"
+    ],
+    [
+     "Semua",
+     "Draf",
+     "Menunggu Penugasan",
+     "Ditugaskan",
+     "Dikerjakan",
+     "Menunggu Keputusan",
+     "Minta Revisi",
+     "Disetujui (ACC)"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 11,
+   "pager": false,
+   "heads": [
+    "Permintaan Desain"
+   ],
+   "inner_tabs": [
+    "Papan",
+    "Daftar",
+    "Rapor Desainer"
+   ]
+  },
+  "documents": {
+   "title": "Pusat Cetak & Label",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Daftar Dokumen",
+      "Jejak Dokumen",
+      "Cetak PDF & Label"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 1,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Template dokumen & barcode label",
+    "Template aktif",
+    "Buat label cepat"
+   ],
+   "inner_tabs": []
+  },
+  "doc-trace": {
+   "title": "Jejak Dokumen (Relasi Antar Surat)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Daftar Dokumen",
+      "Jejak Dokumen",
+      "Cetak PDF & Label"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Jejak Dokumen",
+    "Cari dokumen",
+    "Susun Ulang Relasi Dokumen Lama"
+   ],
+   "inner_tabs": []
+  },
+  "scheduler": {
+   "title": "Penjadwal & Notifikasi · Alert Otomatis",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pusat Pengaturan",
+      "Penjadwal & Notifikasi",
+      "Integrasi & Audit",
+      "Badan Usaha & Akses",
+      "Matriks Izin",
+      "Aturan Persetujuan",
+      "Master per Badan Usaha",
+      "Registri Domain"
+     ]
+    ],
+    [
+     false,
+     287,
+     "",
+     [
+      "Job Terjadwal",
+      "Riwayat Eksekusi",
+      "WhatsApp"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 31,
+   "listRows": 31,
+   "pager": false,
+   "heads": [
+    "Penjadwal & Notifikasi"
+   ],
+   "inner_tabs": [
+    "Job Terjadwal",
+    "Riwayat Eksekusi",
+    "WhatsApp"
+   ]
+  },
+  "admin": {
+   "title": "Master Data & Audit",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pusat Pengaturan",
+      "Penjadwal & Notifikasi",
+      "Integrasi & Audit",
+      "Badan Usaha & Akses",
+      "Matriks Izin",
+      "Aturan Persetujuan",
+      "Master per Badan Usaha",
+      "Registri Domain"
+     ]
+    ],
+    [
+     false,
+     183,
+     "",
+     [
+      "Integrasi AI",
+      "Jejak Audit"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 2,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Kelola produk · pelanggan · satuan · template dokumen · hak ",
+    "Integrasi AI — Anthropic Claude",
+    "Integrasi AI — Gemini Nano Banana Pro (Ilustrasi Galeri Desa"
+   ],
+   "inner_tabs": [
+    "Integrasi AI",
+    "Jejak Audit"
+   ]
+  },
+  "permission-matrix": {
+   "title": "Matriks Izin (semua peran)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pusat Pengaturan",
+      "Penjadwal & Notifikasi",
+      "Integrasi & Audit",
+      "Badan Usaha & Akses",
+      "Matriks Izin",
+      "Aturan Persetujuan",
+      "Master per Badan Usaha",
+      "Registri Domain"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Matriks Hak Akses per Peran"
+   ],
+   "inner_tabs": []
+  },
+  "approval-rules": {
+   "title": "Aturan Persetujuan",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pusat Pengaturan",
+      "Penjadwal & Notifikasi",
+      "Integrasi & Audit",
+      "Badan Usaha & Akses",
+      "Matriks Izin",
+      "Aturan Persetujuan",
+      "Master per Badan Usaha",
+      "Registri Domain"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 7,
+   "listRows": 7,
+   "pager": false,
+   "heads": [
+    "Aturan Persetujuan"
+   ],
+   "inner_tabs": []
+  },
+  "settings-config": {
+   "title": "Pusat Pengaturan (Konfigurasi Berjalan)",
+   "kpi": 0,
+   "search": [
+    [
+     739,
+     276,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Pusat Pengaturan",
+      "Penjadwal & Notifikasi",
+      "Integrasi & Audit",
+      "Badan Usaha & Akses",
+      "Matriks Izin",
+      "Aturan Persetujuan",
+      "Master per Badan Usaha",
+      "Registri Domain"
+     ]
+    ],
+    [
+     false,
+     182,
+     "",
+     [
+      "Pengaturan",
+      "Kesehatan Konfigurasi",
+      "Riwayat Perubahan",
+      "Koreksi Harga & Daftar Dampak",
+      "Kunci Saga",
+      "Kebersihan Data"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 10,
+   "rows": 0,
+   "listRows": 72,
+   "pager": false,
+   "heads": [
+    "Uang Masuk & Piutang",
+    "Term pembayaran default",
+    "Bunga denda keterlambatan"
+   ],
+   "inner_tabs": [
+    "Pengaturan",
+    "Kesehatan Konfigurasi",
+    "Riwayat Perubahan",
+    "Koreksi Harga & Daftar Dampak",
+    "Kunci Saga",
+    "Kebersihan Data"
+   ]
+  },
+  "entity-masters": {
+   "title": "Master per Badan Usaha",
+   "kpi": 0,
+   "search": [
+    [
+     180,
+     190,
+     "bg-white border border-[#E5E5EA] h-8 rounded-md text-[#1C1C1E] text-[12px] w-[18"
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pusat Pengaturan",
+      "Penjadwal & Notifikasi",
+      "Integrasi & Audit",
+      "Badan Usaha & Akses",
+      "Matriks Izin",
+      "Aturan Persetujuan",
+      "Master per Badan Usaha",
+      "Registri Domain"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 12,
+   "listRows": 12,
+   "pager": false,
+   "heads": [
+    "Kelompok",
+    "Syarat Pembayaran"
+   ],
+   "inner_tabs": []
+  },
+  "domain-registry": {
+   "title": "Registri Domain Tekstil (Tahap · Jenis Kain · Grade)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pusat Pengaturan",
+      "Penjadwal & Notifikasi",
+      "Integrasi & Audit",
+      "Badan Usaha & Akses",
+      "Matriks Izin",
+      "Aturan Persetujuan",
+      "Master per Badan Usaha",
+      "Registri Domain"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 4,
+   "rows": 14,
+   "listRows": 39,
+   "pager": false,
+   "heads": [
+    "Rantai Tahap Bahan & Matriks Transisi",
+    "Simulator Transisi Stage",
+    "Kelengkapan Field Wajib per Tahap"
+   ],
+   "inner_tabs": []
+  },
+  "entities-access": {
+   "title": "Badan Usaha & Akses · Entitas, Akun, Kesiapan",
+   "kpi": 0,
+   "search": [
+    [
+     191,
+     247,
+     " | "
+    ]
+   ],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pusat Pengaturan",
+      "Penjadwal & Notifikasi",
+      "Integrasi & Audit",
+      "Badan Usaha & Akses",
+      "Matriks Izin",
+      "Aturan Persetujuan",
+      "Master per Badan Usaha",
+      "Registri Domain"
+     ]
+    ],
+    [
+     false,
+     189,
+     "",
+     [
+      "Badan Usaha",
+      "Akun & Akses",
+      "Peran & Hak Akses",
+      "Cek Peran",
+      "Kesiapan"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 3,
+   "listRows": 3,
+   "pager": false,
+   "heads": [
+    "Daftar Badan Usaha"
+   ],
+   "inner_tabs": [
+    "Badan Usaha",
+    "Akun & Akses",
+    "Peran & Hak Akses",
+    "Cek Peran",
+    "Kesiapan"
+   ]
+  },
+  "doc-templates-basic": {
+   "title": "Template Dokumen Dasar",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pusat Pengaturan",
+      "Penjadwal & Notifikasi",
+      "Integrasi & Audit",
+      "Badan Usaha & Akses",
+      "Matriks Izin",
+      "Aturan Persetujuan",
+      "Master per Badan Usaha",
+      "Registri Domain"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Daftar Template Dokumen"
+   ],
+   "inner_tabs": []
+  },
+  "hr-my-profile": {
+   "title": "Profil Saya (ESS)",
+   "kpi": 0,
+   "search": [],
+   "tabs": [],
+   "chips": [],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Budi Santoso",
+    "Slip Gaji Terakhir",
+    "Cuti & Lembur Saya"
+   ],
+   "inner_tabs": []
+  },
+  "approval-inbox": {
+   "title": "Pusat Persetujuan",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-[#1C1C1E] border border-[#1C1C1E] px-3.5 py-1.5 rounded-f",
+     [
+      "Inbox Persetujuan",
+      "Persetujuan Saya",
+      "Pengajuan Harga Khusus",
+      "Riwayat Persetujuan PO"
+     ]
+    ],
+    [
+     false,
+     334,
+     "",
+     [
+      "Semua 39",
+      "Pesanan Penjualan 9",
+      "Amandemen 2",
+      "Pembelian (PO) 2",
+      "Harga Khusus 2",
+      "Retur 3",
+      "Stock Opname 1",
+      "Kredit Pelanggan 20"
+     ]
+    ]
+   ],
+   "chips": [
+    [
+     "Pesanan penjualan 9",
+     "Pesanan pembelian 2",
+     "Permintaan harga khusus 2",
+     "Permintaan pembelian (PR) 1",
+     "Retur penjualan 1",
+     "Retur pembelian 2",
+     "Koreksi & amandemen 2",
+     "Stock opname 1"
+    ]
+   ],
+   "selects": 0,
+   "rows": 0,
+   "listRows": 15,
+   "pager": true,
+   "heads": [
+    "Pusat Persetujuan",
+    "Menunggu di layar lain — paling lama dulu"
+   ],
+   "inner_tabs": [
+    "Semua 39",
+    "Pesanan Penjualan 9",
+    "Amandemen 2",
+    "Pembelian (PO) 2",
+    "Harga Khusus 2",
+    "Retur 3",
+    "Stock Opname 1",
+    "Kredit Pelanggan 20"
+   ]
+  },
+  "pdf-templates": {
+   "title": "Desainer Template PDF",
+   "kpi": 0,
+   "search": [],
+   "tabs": [
+    [
+     true,
+     40,
+     "bg-white border border-[#E5E5EA] px-3.5 py-1.5 rounded-full ",
+     [
+      "Pusat Pengaturan",
+      "Penjadwal & Notifikasi",
+      "Integrasi & Audit",
+      "Badan Usaha & Akses",
+      "Matriks Izin",
+      "Aturan Persetujuan",
+      "Master per Badan Usaha",
+      "Registri Domain"
+     ]
+    ],
+    [
+     false,
+     258,
+     "bg-[#F5F5F7] border border-[#E5E5EA] px-3.5 py-1.5 rounded-f",
+     [
+      "Naskah",
+      "Layout",
+      "Kop Surat",
+      "Font & Warna",
+      "Tabel",
+      "Field",
+      "Tanda Tangan",
+      "Footer"
+     ]
+    ]
+   ],
+   "chips": [],
+   "selects": 6,
+   "rows": 0,
+   "listRows": 0,
+   "pager": false,
+   "heads": [
+    "Pratinjau (contoh: Pesanan Penjualan) SO-0001"
+   ],
+   "inner_tabs": [
+    "Naskah",
+    "Layout",
+    "Kop Surat",
+    "Font & Warna",
+    "Tabel",
+    "Field",
+    "Tanda Tangan",
+    "Footer"
+   ]
+  }
+ }
+}

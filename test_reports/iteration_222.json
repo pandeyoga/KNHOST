@@ -1,0 +1,40 @@
+{
+  "summary": "L03 LN-033 (OD per-item fulfillment route) tested backend + frontend. Backend: original suite 8/8 (after test-isolation fix) + new edge suite 11/11 pass (permissions/can flags per role, 'both' article blocked until route chosen, create-pr requires route, blank-reason deviation 400, idempotent same-route, concurrent route change -> 1x200 + 409s with single history entry, cancelled OD 400, invalid warehouse -> 404 with error saved + lock released + retry OK, needs_data -> switch back to purchase cancels/retires old PR and new purchase PR->PO, fresh lock 409 / stale lock reclaimed, create-pr manual then realize reuses same PR, /procure partial errors + idempotent, 404 unknown OD). Frontend: demo OD SORD-261018-0003 panel verified (item1 realized PO locked, item2 deviation -> reason input required -> save enabled only with reason; reverted; realized item2 -> MKO-00018 shown, status Terealisasi, route locked). Manager on TEST OD: deviation saved with reason shown, 'both' item route chosen -> ready, realize -> needs_data with error + 'Ulangi realisasi', realize item2 -> PO. Sales: read-only (no selects/realize buttons).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/special-orders/{id}/procure (+ lock-price auto procure)", "issue": "realize_all calls realize(check_perm=False) and only catches FulfillmentError; HTTPException (e.g. whs.assert_usable 404/403), PermissionError, or plain ValueError from pr_svc.create_requisition propagate and abort remaining items (and may break lock-price side effect). Also /procure only requires purchase_requisition.create, bypassing od_fulfillment.realize."},
+      {"endpoint": "POST /api/special-orders/{id}/create-pr", "issue": "Manual create-pr without warehouse_id creates PR with warehouse_id '' (realize path uses default warehouse; create-pr does not)."},
+      {"endpoint": "realize makloon (pr_sourcing_service.makloon_prefill)", "issue": "Input material qty = target output qty * yield with no unit conversion: demo TEST recipe (output kg, grey input yard) produced MKO-00018 input 11 yard -> forecast 1.66 kg vs 11 kg ordered; fulfillment status still 'realized' with no under-forecast warning."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SpecialOrderPricingPanel", "issue": "od-mko-chip is in the else-branch of the PO chip ternary, so mixed OD (PO + MKO, e.g. demo SORD-261018-0003) only shows PO chip; MKO chip never visible.", "selector": "[data-testid=od-mko-chip]", "priority": "LOW"},
+      {"component": "SpecialOrderFulfillmentPanel", "issue": "If initial GET /fulfillment fails, data stays null and component returns null, so od-ful-error message is never rendered.", "selector": "[data-testid=od-ful-error]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "OD detail fulfillment", "issues": ["Demo/test data shows 'supplier pemenang uji Kanda Fabric' while PO partner is PT Benang Sejahtera Abadi (decision.supplier_name mismatches supplier_id sup_c0c3c13dc21a in seeded md_samples) - data cosmetic", "needs_data error text has redundant tail ('...dihitung otomatis. — lengkapi resep proses/mitra di master lalu ulangi.')"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l03_ln033_fulfillment.py", "/app/backend/tests/test_l03_ln033_fulfillment_edges.py", "/app/test_reports/pytest/ln033.xml", "/app/test_reports/pytest/ln033_edges.xml"],
+  "action_items": [
+    "realize_all: catch HTTPException/ValueError/PermissionError per item so one bad item doesn't abort others; decide whether /procure should require od_fulfillment.realize",
+    "Show MKO chip alongside PO chip in SpecialOrderPricingPanel for mixed ODs",
+    "Consider unit conversion / under-forecast warning when MKO expected output < OD qty",
+    "create-pr manual: default warehouse like realize path",
+    "Render fetch error in fulfillment panel even when data is null"
+  ],
+  "critical_code_review_comments": [
+    "test_needs_data_then_retry_reuses_pr was environment-dependent: demo recipe rcp_TEST_adfb92 (output prod_591fecc1e0e3) made it create an MKO instead of needs_data -> fixed test to temporarily remove other recipes for that output and restore them",
+    "set_route optimistic version guard works (verified under concurrency)",
+    "qc_service OD correlation: PO without special_order_id but with id never falls back to SKU match — legacy POs rely on migration script tagging them"
+  ],
+  "updated_files": ["/app/backend/tests/test_l03_ln033_fulfillment.py", "/app/backend/tests/test_l03_ln033_fulfillment_edges.py"],
+  "success_rate": {"backend": "100% (19/19)", "frontend": "95% (all flows work; MKO chip hidden on mixed OD)"},
+  "seed_data_creation": "Demo OD SORD-261018-0003 item2 was realized via UI as requested -> PR-00039 + MKO-00018 now linked (status in_production). All TEST_LN033E_ ODs and their PR/PO/MKO cleaned up.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run per file: cd /app/backend && REACT_APP_BACKEND_URL=http://localhost:8001 MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database python -m pytest tests/test_l03_ln033_fulfillment.py tests/test_l03_ln033_fulfillment_edges.py -n0 -q (run each file separately). Demo OD sord_2058e0b220b1 both items now realized (PO-00008, MKO-00018). UI: login-email-input + password + 'Masuk', ?view=special-orders&entity=ent_ksc -> view-special-order-<id>. KNSelect options via get_by_role('option')."
+}

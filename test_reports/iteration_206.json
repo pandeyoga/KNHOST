@@ -1,0 +1,45 @@
+{
+  "summary": "L08 LN-080 (returns only from shipped rolls). Backend: 18 pytest cases (new test_l08_returnable_rolls_extra.py plus the existing test_l08_returnable_rolls.py). 17 passed, 1 failed. Extra API probes found 3 more issues. Working: returnable shape (6 rolls from SJ-00001/00002, readable product names, SKU, colour, unit, remaining); unknown SO gives 404; sales@ asking for a Kanda SO gives 404; roll not shipped gives 400 'bukan roll terkirim'; product not in the SJ gives 400; SO with no SJ gives 400 'belum punya barang terkirim'; qty over the roll or product remaining gives 400 with a clear message; 4 parallel POSTs save exactly 1 (the other 3 get 400 'sedang disimpan'), returned_qty updates and the lock collection is left empty; a valid save stores roll_ids and qty_rolls is computed; pre-seeded SRET-00001/2/3 detail and the list load. UI (admin, ?view=returns): order select works, rows show name, SKU, colour and remaining, unit is read-only (span), roll chips toggle and fill/sum the qty, there is no 'Tambah Item' button, save created SRET-00013 and opened its detail, SO-00003 shows return-nothing-shipped, and the SRET-00002 detail with its approve button loads.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/sales-returns", "issue": "No entity-access check on create. sales@ (KSC context) created a return SRET-00010 on KANDA/SO-00002 (ent_kanda) and got 200, while GET /returnable for that SO correctly gives 404. Fix: call assert_entity_access(order, 'sales_orders', await entity_ctx(request)) in create_return before the lock.", "priority": "HIGH"},
+      {"endpoint": "POST /api/sales-returns (the payload the UI sends)", "issue": "The UI sends roll_ids without roll_qtys. _roll_claims then counts each roll as its FULL shipped length, not the qty entered. (a) A roll that is already partly returned (remaining 104.98 of 114.98): selecting the chip fills qty=104.98 and the backend rejects it with 400 'klaim 114.98 melebihi sisa 104.98'. Partly returned rolls can never be returned from the UI. (b) Selecting a roll and then lowering qty to 5: the save succeeds but the roll ledger records 118.07 of 118.07 returned, so the roll is fully used up. Fix: the frontend should send roll_qtys (the remaining amount per roll, or a split of the edited qty), and/or the backend should default a missing roll_qtys to the roll's remaining or spread quantity_returned across the rolls.", "priority": "HIGH"},
+      {"endpoint": "POST /api/sales-returns", "issue": "The same roll can be claimed in 2 items of one payload (each 60%, 120% in total) and the save returns 200 (SRET-00005). assert_shipped_items checks each item's claim against remaining from the DB, not the running total within the request. Fix: add up the claims per roll across all items before comparing to remaining.", "priority": "MEDIUM"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/sales-returns", "issue": "quantity_returned is not checked against sum(roll_qtys): quantity_returned=1 with roll_qtys equal to the full roll is accepted, so the product total and the roll total disagree."},
+      {"endpoint": "POST /api/sales-returns (parallel)", "issue": "Losing parallel requests get 400 'Retur lain ... sedang disimpan' (fail-fast lock) instead of waiting and re-checking. This is acceptable, but a 409 would be the more fitting status."},
+      {"endpoint": "seed data", "issue": "The pre-seeded SRET-00001/2/3 are on KSC/SO-00003, which has no SJ. They break the new rule (demo data is now inconsistent), and the new create flow cannot reproduce them."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CreateReturnForm roll chips", "issue": "Does not send roll_qtys, so partly returned rolls fail and lowering qty after selecting a roll over-claims the roll (see the backend issue)", "selector": "[data-testid^=item-roll-]", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Return detail items table", "issues": ["The SKU line under the product name shows '—'. The SKU is not stored or shown on the return item."]},
+      {"screen": "CreateReturnForm", "issues": ["remove-item-<i> deletes a shipped-product row and it cannot be re-added without choosing the SO again (minor)", "'Langsung kirim untuk persetujuan' is checked by default"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l08_returnable_rolls_extra.py", "/app/backend/tests/test_l08_returnable_rolls.py", "/app/test_reports/pytest/l08_results.xml"],
+  "action_items": [
+    "Add assert_entity_access in POST /api/sales-returns (cross-entity create is possible today)",
+    "CreateReturnForm: send roll_qtys (remaining per selected roll; when the user edits qty, spread or validate it). Backend: default a missing roll_qtys to remaining, not shipped length",
+    "assert_shipped_items: add up roll claims across all items in one payload",
+    "Validate quantity_returned against sum(roll_qtys) when rolls are given",
+    "Optional: return 409 for the lock conflict; fix the seeded returns on SO-00003 that has no SJ"
+  ],
+  "critical_code_review_comments": [
+    "return_rolls_service._roll_claims falls back to shipped_len and not remaining. This is the root cause of the UI over-claim/reject bug",
+    "The order lock is fail-fast with a 60s stale TTL. It is fine, but the user gets an error instead of a retry",
+    "The returnable products[].returned_qty counts quantity_returned per product, while the rolls are counted from claims. The two ledgers can drift (mismatch case)"
+  ],
+  "updated_files": ["/app/backend/tests/test_l08_returnable_rolls_extra.py"],
+  "success_rate": {"backend": "75% (17/18 pytest passed; 3 more issues found by probe)", "frontend": "90% (all requested flows work; the roll_qtys bug only shows on partly returned rolls or edited qty)"},
+  "seed_data_creation": "None kept. Every TEST_L08* return deleted (including UI-created SRET-00013 and cross-entity SRET-00010); return_create_locks emptied. Sequence numbers moved up to SRET-00013.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Desktop view id is ?view=returns (not sales-returns). KNSelect option testid: return-order-select-option-<soId>. SO-00001 rolls: RL-36304/05/06 (SJ-00001, TAUPE), RL-35759/60/61 (SJ-00002, HITAM). Kanda SO so_73c7ad18d278 has 2 shipped rolls. Run: cd /app/backend && REACT_APP_BACKEND_URL=... MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database python -m pytest tests/test_l08_returnable_rolls_extra.py -n0 -s",
+  "rca of the issue": "UI over-claim: CreateReturnForm.handleSubmit sends roll_ids only, and _roll_claims maps a missing roll_qtys to shipped_len[rid]. Repro: create a return of 10 on RL-36304 using roll_qtys, then in the UI select chip RL-36304 (qty 104.98) and save: 400 '114.98 melebihi sisa 104.98'. Cross-entity: create_return never calls assert_entity_access."
+}

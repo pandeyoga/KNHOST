@@ -1,0 +1,39 @@
+{
+  "summary": "G3 Fase 05 (9 temuan) + regresi Fase 01-04 LULUS 100%. Pytest service: tests/test_g3_phase05.py 7/7 (DB_NAME=g3_audit_phase05); regresi phase01+02+02b+03 87/87 (DB_NAME=g3_audit_phase01); phase04 17/17 (DB_NAME=g3_audit_phase04); test_iter149_audit.py -k atp 1/1. Live API baru (tests/test_g3_phase05_live.py) 12/12: (a) GET /api/sales-orders/stats/summary → periods.{7d,30d,90d}.avg_order_value == revenue÷fulfilled_count (rata-rata = revenue status terpenuhi ÷ jumlah pesanan terpenuhi), top_customers ≤5 dengan revenue ≥0, pending_count = Σ(waiting_approval+reserved+approved). Lulus pada login admin & sales (scoping). (b) POST /api/document-templates/{id}/preview tmpl_inv_default & tmpl_sj_default → 200 HTML dengan 'INVOICE' / 'SURAT JALAN'; document_type mismatch → 400; template tidak ada → 404; template nonaktif (buat TEST, PATCH {data:{status:'inactive'}}, hapus setelahnya) → 409; source_id kosong → 400; invalid → 404; generated_documents TIDAK bertambah. (c) GET /api/inventory/status-board → tiap by_entity & by_warehouse memiliki pending_demand DAN atp == available+incoming−pending_demand (toleransi 0.5). Frontend (setelah bash /app/scripts/rebuild_frontend.sh): /?view=reports (hub Dasbor Manager) manager-velocity-title mengikuti periode terpilih (default 30d, race-switch 30→90 settle di 90 hari dengan rentang tanggal 2026-07-09 s/d 2026-10-06); /?view=orders tab Dasbor order-dashboard-avg='Rp 14.769.242', order-dashboard-count='3 pesanan terpenuhi · 3 total periode', order-dashboard-scope='Setelah diskon & PPN · seluruh pesanan ter-scope', Top Customers berlabel '7d · seluruh pesanan ter-scope' + Status Distribution '7d · 3 pesanan'; /?view=doc-templates-basic → admin-preview-template-tmpl_inv_default-button & admin-preview-template-tmpl_sj_default-button menampilkan pratinjau Invoice & Surat Jalan (konten berbeda per template). FulfillmentDecisionDialog diverifikasi via code review: submit() → catch → setExecError(msg) + load(); setExecError('') HANYA dipanggil di awal submit (baris 68) & onClick fulfill-exec-error-dismiss (baris 113); reload sukses TIDAK mereset error — sesuai keputusan user (pesan gagal pemenuhan parsial tetap tampil setelah data dimuat ulang).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_g3_phase05.py",
+    "/app/backend/tests/test_g3_phase05_live.py",
+    "/app/backend/tests/test_g3_phase01.py",
+    "/app/backend/tests/test_g3_phase02.py",
+    "/app/backend/tests/test_g3_phase02b.py",
+    "/app/backend/tests/test_g3_phase03.py",
+    "/app/backend/tests/test_g3_phase04.py",
+    "/app/backend/tests/test_iter149_audit.py"
+  ],
+  "action_items": [
+    "Opsional: tambahkan unit test playwright khusus FulfillmentDecisionDialog yang mengintercept POST /api/sales-orders/{id}/fulfillment-plan/decide ke 500 lalu memverifikasi fulfill-exec-error bertahan setelah load() dan hilang hanya via fulfill-exec-error-dismiss (saat ini diverifikasi via code review; perilaku kode sudah benar)."
+  ],
+  "critical_code_review_comments": [
+    "routers/sales_orders_extra.get_orders_stats: avg_order_value = round(grand_total ÷ fulfilled_count, 2) dengan fulfilled_count & grand_total dihitung dari SATU pipeline agg yang sama (status ∈ _fulfilled, scope + sales_ownership + line_scope). Konsisten dengan keputusan user. top_customers di-group by customer_id ber-sort revenue desc limit 5. revenue_basis & avg_basis dicantumkan di body sebagai dokumentasi.",
+    "routers/documents.preview_template: alur status check (409 bila status != 'active'), document_type check (400 mismatch), source order existence (404), entity fence (400 lintas entitas), tanpa mutasi generated_documents — sesuai keputusan user. render_order_html(template_override=tmpl) memastikan template terpilih dipakai.",
+    "frontend ManagerDashboard.jsx baris 114: velocityData = velocity?.period_days === period ? velocity.velocity : [] — race guard yang BENAR; respons dari periode lama (period_days ≠ period aktif) ditolak sampai respons yang cocok datang. Judul manager-velocity-title ikut period aktif + rentang tanggal dari array velocityData.",
+    "frontend OrderDashboard.jsx baris 114/115/147: testid order-dashboard-scope/count/avg menampilkan metrics.avgOrderValue (dari periods.<p>.avg_order_value server) + metrics.fulfilledCount + '{p}d · seluruh pesanan ter-scope' pada Top Customers & Status Distribution. SSOT di server.",
+    "frontend FulfillmentDecisionDialog.jsx baris 68-86: setExecError('') hanya pada mulai submit; catch → setExecError(pesan panjang dengan 'Data di bawah dimuat ulang') + load() refresh data; dismiss (baris 113) satu-satunya cara menghilangkan — pesan gagal pemenuhan parsial PERSISTENT setelah reload sukses (sesuai keputusan user).",
+    "frontend AppViewRouter.jsx: Manager Dashboard dirouting ke activeView==='reports' (bukan 'manager-dashboard' seperti disebut di prompt audit) — mungkin membingungkan agent/dok eksternal; tetapi konsisten dengan menu alat Analitik di sidebar."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_g3_phase05_live.py (dibuat baru, 12 tes live untuk iterasi 171)"
+  ],
+  "success_rate": {"backend": "100% (7 phase05 pytest + 87 regresi phase01-03 + 17 regresi phase04 + 1 iter149 atp + 12 live baru = 124/124)", "frontend": "100% (manager-velocity-title + race guard + order-dashboard-* + admin-preview-template-* bekerja; fulfill-exec-error persistence diverifikasi via code review)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345; manager/sales lihat /app/memory/test_credentials.md (demo1234)",
+  "seed_data_creation": "Tidak ada seed persisten. test_preview_inactive_template_409 membuat TEST_phase05_inactive template lalu DELETE di finally — verified.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Retest cepat Fase 05: (1) cd /app/backend && DB_NAME=g3_audit_phase05 python -m pytest tests/test_g3_phase05.py -q -n0; (2) DB_NAME=g3_audit_phase01 python -m pytest tests/test_g3_phase01.py tests/test_g3_phase02.py tests/test_g3_phase02b.py tests/test_g3_phase03.py -q -n0; (3) DB_NAME=g3_audit_phase04 python -m pytest tests/test_g3_phase04.py -q -n0; (4) cd /app && REACT_APP_BACKEND_URL=https://internal-pricing.preview.emergentagent.com python -m pytest backend/tests/test_g3_phase05_live.py -q -n0. Catatan penting: (a) Manager Dashboard view = ?view=reports (bukan manager-dashboard), (b) PATCH /api/document-templates/{id} butuh body {data:{...}} (GenericPatch wrapper), (c) GET /api/inventory/status-board return LIST produk dengan by_entity & by_warehouse nested (bukan dict), (d) sebelum uji UI selalu bash /app/scripts/rebuild_frontend.sh karena bundle statis."
+}

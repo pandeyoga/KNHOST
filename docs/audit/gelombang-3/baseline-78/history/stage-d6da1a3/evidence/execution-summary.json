@@ -1,0 +1,20 @@
+{
+  "candidate": "d6da1a3d536228582645abb98aea19f3e491f300",
+  "files": 5114,
+  "python_ast": 1249,
+  "javascript_ast": 855,
+  "functions": 13074,
+  "routes": 1409,
+  "query_caps": 1249,
+  "pytest_counts": {
+    "error": 173,
+    "failure": 467,
+    "passed": 1549,
+    "skipped": 72
+  },
+  "failure_clusters": 271,
+  "get_route_counts": {
+    "executed": 419,
+    "not_executed": 218
+  }
+}

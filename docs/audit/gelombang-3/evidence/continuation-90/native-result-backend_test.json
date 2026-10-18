@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test.py",
+    "database": "knhost_audit_native90_0264f5afa187468bbc4e3766f24fa7f4",
+    "exit": 1,
+    "seconds": 49.06,
+    "pass_log_tokens": 34,
+    "fail_log_tokens": 3,
+    "log": "continuation-90\\native-backend_test.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "cipes/forecast returns correct calculation (output=90.25)\n  ℹ️  Test: POST /api/process-recipes/forecast (with formula)\n  ✅ [PASS] POST /process-recipes/forecast with formula works\n  ℹ️  Test: POST /api/process-recipes/forecast (invalid formula)\n  ✅ [PASS] POST /process-recipes/forecast handles invalid formula safely (warnings + fallback)\n  ℹ️  Test: POST /api/process-recipes/forecast (out-of-range)\n  ✅ [PASS] POST /process-recipes/forecast rejects out-of-range waste_pct (422)\n\n--- SUPPLIER 360 TESTS ---\n  ℹ️  Test: GET /api/suppliers/{id}/360\n  ✅ [PASS] GET /suppliers/{id}/360 returns complete 360 view (PO count=0)\n\n--- PERMISSION TESTS ---\n  ℹ️  Test: Warehouse role permissions\n  ✅ [PASS] Login warehouse@kainnusantara.id\n  ✅ [PASS] Warehouse can GET /makloons\n  ✅ [PASS] Warehouse cannot POST /makloons (403)\n  ✅ [PASS] Warehouse cannot PATCH /makloons (403)\n  ✅ [PASS] Warehouse cannot DELETE /makloons (403)\n  ✅ [PASS] Login admin@kainnusantara.id\n  ℹ️  Test: Sales role permissions\n  ✅ [PASS] Login sales@kainnusantara.id\n  ❌ [FAIL] Sales GET /makloons should return 403, got 200\n  ✅ [PASS] Login admin@kainnusantara.id\n  ℹ️  Test: Unauthenticated access\n  ❌ [FAIL] Unauthenticated GET /makloons should return 401/403, got 200\n\n--- CLEANUP TESTS (DELETE) ---\n  ℹ️  Test: DELETE /api/process-recipes/{id}\n  ✅ [PASS] DELETE /process-recipes/{id} soft-deactivated\n  ℹ️  Test: DELETE /api/makloons/{id} (soft delete)\n  ✅ [PASS] DELETE /makloons/{id} soft-deactivated (status=inactive)\n\n======================================================================\n  HASIL: 33 PASS | 2 FAIL\n======================================================================\n\n❌ FAILED TESTS:\n   - Sales GET /makloons should return 403, got 200\n   - Unauthenticated GET /makloons should return 401/403, got 200\n"
+  }
+]

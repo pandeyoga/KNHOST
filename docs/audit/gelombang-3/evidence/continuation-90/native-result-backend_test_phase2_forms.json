@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_phase2_forms.py",
+    "database": "knhost_audit_native90_1cf2aa782da844e3931f1da4fb4647f4",
+    "exit": 1,
+    "seconds": 56.14,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_phase2_forms.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "action created\n  ✅ Journal entry created\n  ✅ POST disburse when status=draft returns 409\n\n[TEST 6] Settlement (Pertanggungjawaban)\n  ✅ POST settlement\n  ✅ Settlement status = draft\n  ✅ Settlement has expense_lines\n  ✅ Settlement total_pengeluaran = 450,000\n  ✅ Settlement category_totals exists\n  ✅ Settlement sisa_kurang_dana calculated\n  ✅ GET settlements list\n  ✅ GET settlement by ID\n  ✅ PATCH settlement (draft)\n  ✅ POST settlement submit\n  ✅ Settlement status = submitted\n  ✅ POST settlement approve\n  ✅ Settlement status = posted_to_gl\n  ✅ Settlement journal_entry_id exists\n  ✅ Parent CA status = settled\n\n[TEST 7] Vehicles\n  ✅ POST vehicle\n  ✅ Vehicle no_polisi uppercase\n  ✅ POST vehicle with duplicate no_polisi returns 409\n  ✅ GET vehicles list\n  ✅ PATCH vehicle\n  ✅ DELETE vehicle (unused)\n\n[TEST 8] Vehicle Usage Logs\n  ✅ POST vehicle-usage-log\n  ❌ Log number starts with VHL- — \n  ✅ Log jarak_tempuh = 150\n  ✅ Log total = 265,000\n  ✅ GET vehicle-usage-logs list\n  ✅ GET vehicle-usage-logs summary\n  ✅ Summary has grand_total\n  ✅ Summary has per_vehicle\n  ✅ PATCH vehicle-usage-log\n  ✅ DELETE vehicle-usage-log\n\n[TEST 9] RBAC Negative Tests\n  ✅ Sales can create cash-advance\n  ✅ Sales FORBIDDEN on disburse (403)\n  ✅ Warehouse FORBIDDEN on GET cash-advances (403)\n  ✅ Warehouse ALLOWED on GET vehicles\n  ✅ Warehouse ALLOWED on POST vehicles\n  ✅ Sales FORBIDDEN on PATCH expense-categories (403)\n\n[TEST 10] Entity Scoping\n  ✅ Create CA under ent_kanda\n  ✅ ent_kanda CA NOT in ent_ksc list\n  ✅ GET ent_kanda CA under ent_ksc returns 404\n  ✅ GET ent_kanda CA under ent_kanda works\n\n================================================================================\nRESULTS: 76/77 tests passed\n❌ 1 tests FAILED\n================================================================================\n"
+  }
+]

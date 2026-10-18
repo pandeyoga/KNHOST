@@ -1,0 +1,852 @@
+{
+  "database": "knhost_audit_53ed7c3cc1174ea1876927334d481437",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "observations": [
+    {
+      "path": "/sales-orders",
+      "status": 200,
+      "body": {
+        "id": "so_c5083a390a58",
+        "number": "A/SO-00001",
+        "status": "reserved",
+        "entity_id": "A",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR",
+          "label": "Audit",
+          "address": "Synthetic address",
+          "city": "Jakarta",
+          "recipient_name": "Synthetic recipient",
+          "phone": "0000000000"
+        },
+        "shipping_address_id": "ADDR",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "P",
+            "sku": "P",
+            "product_name": "Audit fabric",
+            "quantity": 20.0,
+            "unit": "meter",
+            "price": 10000.0,
+            "discount_percent": 0.0,
+            "qty_rolls": null,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 200000.0,
+            "discount_amount": 0.0,
+            "line_total": 200000.0,
+            "base_unit": "meter",
+            "base_quantity": 20.0,
+            "category": "",
+            "line_code": "",
+            "reserved_qty": 20.0,
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_5820eefbbe44",
+            "product_id": "P",
+            "warehouse_id": "WH",
+            "warehouse_name": "Audit WH",
+            "warehouse_city": "",
+            "owner_entity_id": "A",
+            "quantity": 20.0,
+            "lot": "A/LOT-2610-0001",
+            "lots": [
+              "A/LOT-2610-0001"
+            ],
+            "dye_lot": "LOT-MIGRATED",
+            "dye_lots": [
+              "LOT-MIGRATED"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "20.0 dari Lot A/LOT-2610-0001 (FEFO) \u00b7 Audit WH \u2014 lot tunggal.",
+            "policy_lot_selection": "fefo",
+            "dye_lot_strict": false,
+            "rolls": [
+              {
+                "roll_id": "roll_9c3eb2cfae75",
+                "roll_no": "RL-00001-1",
+                "lot": "A/LOT-2610-0001",
+                "dye_lot": "LOT-MIGRATED",
+                "length": 20.0
+              }
+            ],
+            "status": "allocated"
+          }
+        ],
+        "total_amount": 200000.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 200000.0,
+        "dpp": 200000.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 200000.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": null,
+        "approval_amount": 200000.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-05T10:18:07.918648+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-02T10:18:07.923829+00:00",
+        "updated_at": "2026-10-02T10:18:07.923829+00:00",
+        "stage": "Reserved",
+        "sub_status": [
+          "siap_disahkan"
+        ]
+      }
+    },
+    {
+      "path": "/sales-orders/so_c5083a390a58/submit-for-approval",
+      "status": 200,
+      "body": {
+        "id": "so_c5083a390a58",
+        "number": "A/SO-00001",
+        "status": "approved",
+        "entity_id": "A",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR",
+          "label": "Audit",
+          "address": "Synthetic address",
+          "city": "Jakarta",
+          "recipient_name": "Synthetic recipient",
+          "phone": "0000000000"
+        },
+        "shipping_address_id": "ADDR",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "P",
+            "sku": "P",
+            "product_name": "Audit fabric",
+            "quantity": 20.0,
+            "unit": "meter",
+            "price": 10000.0,
+            "discount_percent": 0.0,
+            "qty_rolls": null,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 200000.0,
+            "discount_amount": 0.0,
+            "line_total": 200000.0,
+            "base_unit": "meter",
+            "base_quantity": 20.0,
+            "category": "",
+            "line_code": "",
+            "reserved_qty": 20.0,
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_5820eefbbe44",
+            "product_id": "P",
+            "warehouse_id": "WH",
+            "warehouse_name": "Audit WH",
+            "warehouse_city": "",
+            "owner_entity_id": "A",
+            "quantity": 20.0,
+            "lot": "A/LOT-2610-0001",
+            "lots": [
+              "A/LOT-2610-0001"
+            ],
+            "dye_lot": "LOT-MIGRATED",
+            "dye_lots": [
+              "LOT-MIGRATED"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "20.0 dari Lot A/LOT-2610-0001 (FEFO) \u00b7 Audit WH \u2014 lot tunggal.",
+            "policy_lot_selection": "fefo",
+            "dye_lot_strict": false,
+            "rolls": [
+              {
+                "roll_id": "roll_9c3eb2cfae75",
+                "roll_no": "RL-00001-1",
+                "lot": "A/LOT-2610-0001",
+                "dye_lot": "LOT-MIGRATED",
+                "length": 20.0
+              }
+            ],
+            "status": "allocated"
+          }
+        ],
+        "total_amount": 200000.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 200000.0,
+        "dpp": 200000.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 200000.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": "",
+        "approval_amount": 200000.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-05T10:18:07.918648+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-02T10:18:07.923829+00:00",
+        "updated_at": "2026-10-02T10:18:07.956699+00:00",
+        "stage": "Approved",
+        "sub_status": [
+          "siap_confirm"
+        ],
+        "approval_note": "Auto-approve (validasi nonaktif, di bawah threshold)"
+      }
+    },
+    {
+      "path": "/sales-orders/so_c5083a390a58/verify",
+      "status": 200,
+      "body": {
+        "order_id": "so_c5083a390a58",
+        "order_number": "A/SO-00001",
+        "verification": {
+          "status": "verified",
+          "by": "Audit User A",
+          "by_id": "U",
+          "by_role": "finance",
+          "at": "2026-10-02T10:18:08.007612+00:00",
+          "note": "Synthetic complete document check",
+          "warnings": [],
+          "checks": [
+            {
+              "id": "alamat",
+              "label": "Alamat & penerima lengkap",
+              "ok": true,
+              "detail": "Lengkap"
+            },
+            {
+              "id": "syarat_bayar",
+              "label": "Syarat pembayaran dipilih",
+              "ok": true,
+              "detail": "Kredit NET 30 Hari"
+            },
+            {
+              "id": "isi_pesanan",
+              "label": "Isi pesanan wajar (ada item, jumlah > 0)",
+              "ok": true,
+              "detail": "1 baris"
+            },
+            {
+              "id": "pajak",
+              "label": "Perlakuan PPN sesuai status badan usaha",
+              "ok": true,
+              "detail": "Non-PKP \u00b7 PPN nol (benar)"
+            },
+            {
+              "id": "npwp",
+              "label": "NPWP pelanggan (bila minta Faktur Pajak)",
+              "ok": true,
+              "detail": "Tidak diminta"
+            },
+            {
+              "id": "kredit",
+              "label": "Tidak tertahan batas kredit",
+              "ok": true,
+              "detail": "Aman"
+            }
+          ]
+        },
+        "blocking_gaps": [],
+        "warnings": [],
+        "ready": true,
+        "checked": 6
+      }
+    },
+    {
+      "path": "/sales-orders/so_c5083a390a58/confirm",
+      "status": 200,
+      "body": {
+        "id": "so_c5083a390a58",
+        "number": "A/SO-00001",
+        "status": "confirmed",
+        "entity_id": "A",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR",
+          "label": "Audit",
+          "address": "Synthetic address",
+          "city": "Jakarta",
+          "recipient_name": "Synthetic recipient",
+          "phone": "0000000000"
+        },
+        "shipping_address_id": "ADDR",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "P",
+            "sku": "P",
+            "product_name": "Audit fabric",
+            "quantity": 20.0,
+            "unit": "meter",
+            "price": 10000.0,
+            "discount_percent": 0.0,
+            "qty_rolls": null,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 200000.0,
+            "discount_amount": 0.0,
+            "line_total": 200000.0,
+            "base_unit": "meter",
+            "base_quantity": 20.0,
+            "category": "",
+            "line_code": "",
+            "unit_cost": 5000.0,
+            "reserved_qty": 20.0,
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_5820eefbbe44",
+            "product_id": "P",
+            "warehouse_id": "WH",
+            "warehouse_name": "Audit WH",
+            "warehouse_city": "",
+            "owner_entity_id": "A",
+            "quantity": 20.0,
+            "lot": "A/LOT-2610-0001",
+            "lots": [
+              "A/LOT-2610-0001"
+            ],
+            "dye_lot": "LOT-MIGRATED",
+            "dye_lots": [
+              "LOT-MIGRATED"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "20.0 dari Lot A/LOT-2610-0001 (FEFO) \u00b7 Audit WH \u2014 lot tunggal.",
+            "policy_lot_selection": "fefo",
+            "dye_lot_strict": false,
+            "rolls": [
+              {
+                "roll_id": "roll_9c3eb2cfae75",
+                "roll_no": "RL-00001-1",
+                "lot": "A/LOT-2610-0001",
+                "dye_lot": "LOT-MIGRATED",
+                "length": 20.0
+              }
+            ],
+            "status": "allocated"
+          }
+        ],
+        "total_amount": 200000.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 200000.0,
+        "dpp": 200000.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 200000.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": "",
+        "approval_amount": 200000.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-05T10:18:07.918648+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-02T10:18:07.923829+00:00",
+        "updated_at": "2026-10-02T10:18:08.070142+00:00",
+        "stage": "Confirmed",
+        "sub_status": [
+          "siap_pick"
+        ],
+        "approval_note": "Auto-approve (validasi nonaktif, di bawah threshold)",
+        "status_history": [
+          {
+            "status": "approved",
+            "stage": "verified_by_sales_admin",
+            "timestamp": "2026-10-02T10:18:08.007612+00:00",
+            "user": "Audit User A",
+            "note": "Kelengkapan administratif diverifikasi"
+          }
+        ],
+        "verification": {
+          "status": "verified",
+          "by": "Audit User A",
+          "by_id": "U",
+          "by_role": "finance",
+          "at": "2026-10-02T10:18:08.007612+00:00",
+          "note": "Synthetic complete document check",
+          "warnings": [],
+          "checks": [
+            {
+              "id": "alamat",
+              "label": "Alamat & penerima lengkap",
+              "ok": true,
+              "detail": "Lengkap"
+            },
+            {
+              "id": "syarat_bayar",
+              "label": "Syarat pembayaran dipilih",
+              "ok": true,
+              "detail": "Kredit NET 30 Hari"
+            },
+            {
+              "id": "isi_pesanan",
+              "label": "Isi pesanan wajar (ada item, jumlah > 0)",
+              "ok": true,
+              "detail": "1 baris"
+            },
+            {
+              "id": "pajak",
+              "label": "Perlakuan PPN sesuai status badan usaha",
+              "ok": true,
+              "detail": "Non-PKP \u00b7 PPN nol (benar)"
+            },
+            {
+              "id": "npwp",
+              "label": "NPWP pelanggan (bila minta Faktur Pajak)",
+              "ok": true,
+              "detail": "Tidak diminta"
+            },
+            {
+              "id": "kredit",
+              "label": "Tidak tertahan batas kredit",
+              "ok": true,
+              "detail": "Aman"
+            }
+          ]
+        },
+        "refs": [
+          {
+            "rel": "child",
+            "doc_type": "picking_task",
+            "doc_id": "wms_7fa6aab1ad61",
+            "doc_number": "PICK-B1AD61",
+            "note": "pengambilan untuk SO",
+            "at": "2026-10-02T10:18:08.055702+00:00"
+          }
+        ],
+        "fulfillment": {
+          "total_qty": 20.0,
+          "picked_qty": 0.0,
+          "shipped_qty": 0.0,
+          "remaining_qty": 20.0
+        }
+      }
+    },
+    {
+      "path": "/outbound/tasks/wms_7fa6aab1ad61/scan-pick",
+      "status": 200,
+      "body": {
+        "id": "wms_7fa6aab1ad61",
+        "entity_id": "A",
+        "flow_type": "outbound",
+        "source_type": "sales_order",
+        "order_id": "so_c5083a390a58",
+        "order_number": "A/SO-00001",
+        "allocation_id": "alloc_5820eefbbe44",
+        "product_id": "P",
+        "product_name": "Audit fabric",
+        "sku": "P",
+        "quantity": 20.0,
+        "picked_qty": 20.0,
+        "shipped_qty": 0.0,
+        "unit": "meter",
+        "warehouse_id": "WH",
+        "warehouse_name": "Audit WH",
+        "warehouse_city": "",
+        "bin_id": "",
+        "batch": "",
+        "lot": "",
+        "roll_id": "",
+        "status": "packing",
+        "stages": [
+          "created",
+          "picking",
+          "packing",
+          "staging",
+          "dispatched"
+        ],
+        "scan_log": [
+          {
+            "id": "scan_2cd6a4f12c1b",
+            "scan_type": "pick",
+            "actual_qty": 20.0,
+            "batch": "",
+            "lot": "",
+            "roll_id": "",
+            "bin_id": "",
+            "actor": "Audit User A",
+            "timestamp": "2026-10-02T10:18:08.095943+00:00"
+          }
+        ],
+        "fulfillment_method": "kirim",
+        "hold_until": "",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-02T10:18:08.046412+00:00",
+        "updated_at": "2026-10-02T10:18:08.095943+00:00",
+        "refs": [
+          {
+            "rel": "parent",
+            "doc_type": "sales_order",
+            "doc_id": "so_c5083a390a58",
+            "doc_number": "A/SO-00001",
+            "note": "pengambilan untuk SO",
+            "at": "2026-10-02T10:18:08.055702+00:00"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/outbound/tasks/wms_7fa6aab1ad61/dispatch",
+      "status": 200,
+      "body": {
+        "task": {
+          "id": "wms_7fa6aab1ad61",
+          "entity_id": "A",
+          "flow_type": "outbound",
+          "source_type": "sales_order",
+          "order_id": "so_c5083a390a58",
+          "order_number": "A/SO-00001",
+          "allocation_id": "alloc_5820eefbbe44",
+          "product_id": "P",
+          "product_name": "Audit fabric",
+          "sku": "P",
+          "quantity": 20.0,
+          "picked_qty": 20.0,
+          "shipped_qty": 8.0,
+          "unit": "meter",
+          "warehouse_id": "WH",
+          "warehouse_name": "Audit WH",
+          "warehouse_city": "",
+          "bin_id": "",
+          "batch": "",
+          "lot": "",
+          "roll_id": "",
+          "status": "partially_shipped",
+          "stages": [
+            "created",
+            "picking",
+            "packing",
+            "staging",
+            "dispatched"
+          ],
+          "scan_log": [
+            {
+              "id": "scan_2cd6a4f12c1b",
+              "scan_type": "pick",
+              "actual_qty": 20.0,
+              "batch": "",
+              "lot": "",
+              "roll_id": "",
+              "bin_id": "",
+              "actor": "Audit User A",
+              "timestamp": "2026-10-02T10:18:08.095943+00:00"
+            },
+            {
+              "id": "scan_7313f3e8efe8",
+              "scan_type": "dispatch",
+              "actual_qty": 8.0,
+              "actor": "Audit User A",
+              "timestamp": "2026-10-02T10:18:08.155470+00:00"
+            }
+          ],
+          "fulfillment_method": "kirim",
+          "hold_until": "",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-02T10:18:08.046412+00:00",
+          "updated_at": "2026-10-02T10:18:08.155470+00:00",
+          "refs": [
+            {
+              "rel": "parent",
+              "doc_type": "sales_order",
+              "doc_id": "so_c5083a390a58",
+              "doc_number": "A/SO-00001",
+              "note": "pengambilan untuk SO",
+              "at": "2026-10-02T10:18:08.055702+00:00"
+            }
+          ]
+        },
+        "shipment": {
+          "id": "shp_1e56bce82638",
+          "shipment_no": "A/SJ-00001",
+          "entity_id": "A",
+          "order_id": "so_c5083a390a58",
+          "order_number": "A/SO-00001",
+          "task_id": "wms_7fa6aab1ad61",
+          "allocation_id": "alloc_5820eefbbe44",
+          "warehouse_id": "WH",
+          "warehouse_name": "Audit WH",
+          "warehouse_city": "",
+          "product_id": "P",
+          "product_name": "Audit fabric",
+          "sku": "P",
+          "qty": 8.0,
+          "unit": "meter",
+          "qty_rolls": 1,
+          "rolls": [
+            {
+              "roll_id": "roll_f3f7b4ba776b",
+              "lot": "A/LOT-2610-0001",
+              "length": 8.0,
+              "unit": "meter"
+            }
+          ],
+          "is_partial": true,
+          "status": "dispatched",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-02T10:18:08.162592+00:00"
+        }
+      }
+    },
+    {
+      "path": "/outbound/tasks/wms_7fa6aab1ad61/dispatch",
+      "status": 200,
+      "body": {
+        "task": {
+          "id": "wms_7fa6aab1ad61",
+          "entity_id": "A",
+          "flow_type": "outbound",
+          "source_type": "sales_order",
+          "order_id": "so_c5083a390a58",
+          "order_number": "A/SO-00001",
+          "allocation_id": "alloc_5820eefbbe44",
+          "product_id": "P",
+          "product_name": "Audit fabric",
+          "sku": "P",
+          "quantity": 20.0,
+          "picked_qty": 20.0,
+          "shipped_qty": 20.0,
+          "unit": "meter",
+          "warehouse_id": "WH",
+          "warehouse_name": "Audit WH",
+          "warehouse_city": "",
+          "bin_id": "",
+          "batch": "",
+          "lot": "",
+          "roll_id": "",
+          "status": "dispatched",
+          "stages": [
+            "created",
+            "picking",
+            "packing",
+            "staging",
+            "dispatched"
+          ],
+          "scan_log": [
+            {
+              "id": "scan_2cd6a4f12c1b",
+              "scan_type": "pick",
+              "actual_qty": 20.0,
+              "batch": "",
+              "lot": "",
+              "roll_id": "",
+              "bin_id": "",
+              "actor": "Audit User A",
+              "timestamp": "2026-10-02T10:18:08.095943+00:00"
+            },
+            {
+              "id": "scan_7313f3e8efe8",
+              "scan_type": "dispatch",
+              "actual_qty": 8.0,
+              "actor": "Audit User A",
+              "timestamp": "2026-10-02T10:18:08.155470+00:00"
+            },
+            {
+              "id": "scan_96a50e155508",
+              "scan_type": "dispatch",
+              "actual_qty": 12.0,
+              "actor": "Audit User A",
+              "timestamp": "2026-10-02T10:18:08.337509+00:00"
+            }
+          ],
+          "fulfillment_method": "kirim",
+          "hold_until": "",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-02T10:18:08.046412+00:00",
+          "updated_at": "2026-10-02T10:18:08.337509+00:00",
+          "refs": [
+            {
+              "rel": "parent",
+              "doc_type": "sales_order",
+              "doc_id": "so_c5083a390a58",
+              "doc_number": "A/SO-00001",
+              "note": "pengambilan untuk SO",
+              "at": "2026-10-02T10:18:08.055702+00:00"
+            },
+            {
+              "rel": "fulfilled_by",
+              "doc_type": "shipment",
+              "doc_id": "shp_1e56bce82638",
+              "doc_number": "A/SJ-00001",
+              "note": "dari tugas pengambilan",
+              "at": "2026-10-02T10:18:08.182200+00:00"
+            }
+          ]
+        },
+        "shipment": {
+          "id": "shp_acce69fe1e7b",
+          "shipment_no": "A/SJ-00002",
+          "entity_id": "A",
+          "order_id": "so_c5083a390a58",
+          "order_number": "A/SO-00001",
+          "task_id": "wms_7fa6aab1ad61",
+          "allocation_id": "alloc_5820eefbbe44",
+          "warehouse_id": "WH",
+          "warehouse_name": "Audit WH",
+          "warehouse_city": "",
+          "product_id": "P",
+          "product_name": "Audit fabric",
+          "sku": "P",
+          "qty": 12.0,
+          "unit": "meter",
+          "qty_rolls": 1,
+          "rolls": [
+            {
+              "roll_id": "roll_9c3eb2cfae75",
+              "lot": "A/LOT-2610-0001",
+              "length": 12.0,
+              "unit": "meter"
+            }
+          ],
+          "is_partial": false,
+          "status": "dispatched",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-02T10:18:08.343147+00:00"
+        }
+      }
+    },
+    {
+      "path": "/sales-orders/so_c5083a390a58/mark-delivered",
+      "status": 403,
+      "body": {
+        "detail": "Permission ditolak: order.deliver"
+      }
+    }
+  ]
+}

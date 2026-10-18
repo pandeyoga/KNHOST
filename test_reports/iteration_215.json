@@ -1,0 +1,46 @@
+{
+  "summary": "L02 LN-023 (T01 AR ledger vs exposure, T02 PO short-close settlement, T03 retry idempotency) tested end-to-end. Backend 9/9 pytest pass (new file test_l02_ln023_ar_ap_consistency.py) + ad-hoc checks: overpay-vs-recognized GL consistency, 5 concurrent same-key AR receipts. Frontend (static build verified to contain new code): AR Aging strip/KPI/customer split column and PO closed_short settlement panel + follow-ups render correct numbers. 1 HIGH bug: po_close_settlement finance notification is never visible to finance (link format filtered out by notification relevance). 1 MEDIUM label inconsistency on closed_short PO billing card.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "services/po_close_settlement_service.py record_on_close → GET /api/notifications", "issue": "Notification is stored with link='?view=purchase-orders&po=<id>'. notification_scope.relevance_filter only lets non-admin users see a notification if link is EXACTLY one of the allowed view names (e.g. 'purchase-orders'/'purchasing'). So finance@ (recipient_role=finance) gets 0 po_close_settlement notifications (checked via API with X-Entity-Id ent_ksc and with no header; the UI bell shows only 3 'turn' items). Only admin sees it. Also NotificationCenter onNavigate calls setActiveView(link), so a '?view=...' string would not open the PO either. The same link format is used for the existing po_variance notification (po_variance_task_service.py:83). Fix: link='purchase-orders' (or another allowed view key) and carry the PO id in ref/action_id so the screen can focus it.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/sales-orders, /api/sales-orders/{id}", "issue": "SO list/detail return no ar_ledger/exposure split (only grand_total/paid_total/payment_status). Numbers do match aging, but the SO screens can't show the 'piutang ledger vs eksposur' label that T01 asks for. Mobile labels 'Piutang terbuka' (MobileCustomers) and 'Piutang Belum Lunas' (MobileSalesHome) still label the full outstanding, exposure included, as 'piutang'."},
+      {"endpoint": "vendor_bill_service PO billing summary (unbilled_total)", "issue": "On a closed_short PO, unbilled_total is still grand_total - billed. The PO detail card shows 'Belum Ditagih Rp 10.000.000' while the settlement panel on the same screen says to bill only Rp 9.600.000 (received value). The two numbers disagree on one screen."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PurchaseOrderManagement deep link", "issue": "URL ?view=purchase-orders&entity=ent_ksc&po=<id> doesn't open the PO (shows 'Pilih PO untuk lihat detail'). The po param is not parsed, but the notification links rely on it.", "selector": "[data-testid=po-close-settlement]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Finance follow-up after PO short-close", "issue": "Finance never sees the po_close_settlement notification (see backend critical).", "affected_selectors": ["[data-testid=notif-bell]", "[data-testid=notif-panel]"]}
+    ],
+    "design_issues": [
+      {"screen": "AR Aging customer detail modal", "issue": ["Header changes letter case of the customer name ('TEST_LN023 Customer' is shown as 'Test_ln023 Customer'), probably a capitalize text-transform. This would also mangle names like 'PT ABC'."]},
+      {"screen": "POCloseSettlementPanel", "issue": ["Shows only `current`, not the `at_close` snapshot. Fetch errors are swallowed (panel just disappears, no error state)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l02_ln023_ar_ap_consistency.py", "/app/test_reports/pytest/pytest_ln023.xml"],
+  "action_items": [
+    "HIGH: change the po_close_settlement (and po_variance) notification link to an allowed view key (e.g. 'purchase-orders') so relevance_filter shows it to finance/md, and make clicking it focus the PO (focusDoc focus_type purchase_order).",
+    "MEDIUM: on closed_short POs, base unbilled_total / 'Belum Ditagih' on received value (or show settlement.unbilled_received) so the billing card matches the settlement panel.",
+    "MEDIUM: support the ?po=<id> URL deep link in PurchaseOrderManagement, or stop emitting it.",
+    "LOW: expose the ar_ledger/exposure split on SO list/detail and relabel the mobile 'Piutang' KPIs that include exposure.",
+    "LOW: remove the capitalize transform on the customer name in the AR detail modal header."
+  ],
+  "critical_code_review_comments": [
+    "ar_aging_service.split_outstanding is consistent with GL: tested shipped 4M, paid 4.5M → ar_ledger 0, and the GL shows 1-1200 = 0 and 2-1400 = -500,100 (customer advance). Exposure 5,499,900 = unshipped 6M minus the advance.",
+    "recognized_by_order counts shipment_revenue JEs with status != void, but reversal JEs are separate *_reversal docs and the original only gets reversed=True. It's safe today only because cancelled orders are in DEAD_STATUSES. A reversed shipment on a live order (shipment void/return) would still be counted as recognized. Consider excluding reversed=True or netting *_reversal.",
+    "po_close_settlement.record_on_close is idempotent through the close_settlement $exists guard plus the notification dedupe_key. A retry close returns 400 and computed_at stays the same; a retried variance decide returns 200 with no duplicate notification.",
+    "Idempotency middleware: 5 parallel POST /api/ar-receipts with the same key → 1×200, 1×replay, 3×409 IN_PROGRESS. Result: one receipt and paid_total changed once."
+  ],
+  "updated_files": ["/app/backend/tests/test_l02_ln023_ar_ap_consistency.py"],
+  "success_rate": {"backend": "100% (9/9 pytest); 1 HIGH notification-visibility bug found by code/API inspection", "frontend": "85% (AR aging + PO settlement UI correct; notification flow broken; deep link broken)"},
+  "seed_data_creation": "Fixtures are created and deleted inside the test module: cust_TEST_ln023, so_TEST_ln023_a, po_TEST_ln023_close/var, vbill_TEST_ln023, je_TEST_ln023_shp, plus the receipts, cash txns, journals, notifications, idempotency keys and variance tasks they generate. Set LN023_KEEP=1 to keep the data for UI inspection. Verified 0 TEST_ln023 leftovers after the final run.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "test_credentials": "admin@kainnusantara.id/demo12345, finance@kainnusantara.id/demo1234 (from /app/memory/test_credentials.md)",
+  "context_for_next_testing_agent": "Run: cd /app/backend; set -a; . ./.env; set +a; export REACT_APP_BACKEND_URL=...; python -m pytest tests/test_l02_ln023_ar_ap_consistency.py -n0. To view in UI, run with LN023_KEEP=1, then open ?view=ar-aging&entity=ent_ksc (search TEST_LN023) or the PO list → KSC/TEST_PO-LN023-1/2 → 'Lihat detail lengkap'. Re-run without KEEP to clean up. After the fix, retest finance bell visibility of the po_close_settlement notification.",
+  "rca of the issue": "Finance notification invisible: po_close_settlement_service.py:83 uses link=f'?view=purchase-orders&po={id}'. routers/notifications._scope_query → notification_scope.relevance_filter requires link ∈ allowed_links(user), and allowed_links holds plain view keys ('purchase-orders', 'purchasing', ...). The query-string link never matches, so the notification is filtered out for every non-admin role. Repro: close a short PO that has a bill → notification created (recipient_role finance) → GET /api/notifications as finance@ does not return it. Mitigation: link='purchase-orders' and put the PO id in ref/action_id."
+}

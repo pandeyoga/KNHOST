@@ -1,0 +1,18 @@
+{
+  "mongodb_identity_verified": {
+    "port": 27919,
+    "pid": 113656,
+    "dbpath": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\mongodb-data-audit-2026-10-05"
+  },
+  "shutdown_requested": true,
+  "removed_task_owned_venv_hooks": [
+    {
+      "name": "knhost_audit_child_trace90.py",
+      "sha256": "1717c428ff00f0a5d0529191102afb9425e2211ee3834a4a43540a904d89fa21"
+    },
+    {
+      "name": "knhost_audit_child_trace90.pth",
+      "sha256": "0b859ec0aa7d806b0799793d37e4ad30ee7cdbdd3f820a45467939819663e86f"
+    }
+  ]
+}

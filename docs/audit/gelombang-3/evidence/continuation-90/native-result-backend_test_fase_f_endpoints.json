@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_fase_f_endpoints.py",
+    "database": "knhost_audit_native90_39d9d5b33be043ab9a213aa9edcdefe4",
+    "exit": 0,
+    "seconds": 51.56,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_fase_f_endpoints.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "d, skipping approval tests\n\n==============================================================================\n4. LIFECYCLE GATING (US3)\n==============================================================================\n⚠ No product_id provided, skipping gating tests\n\n==============================================================================\n5. SAMPLES CRUD\n==============================================================================\n  ✓ GET /rnd/samples returns 200\n  ✗ POST /rnd/samples returns 200/201\n\n==============================================================================\n6. PROOFING REQUIRES DESIGN (US9)\n==============================================================================\n  ✓ Proofing without design_id returns 4xx — Got 400\n  ✗ Error message mentions design — Spesifikasi produk WAJIB — setiap permintaan sample (labdip/handfeel/proofing) lahir bersama spesifi\n\n==============================================================================\n7. RBAC TESTS\n==============================================================================\n\n🔐 Logging in as warehouse...\n✓ Logged in as warehouse\n  ✓ Warehouse cannot create spec (403) — Got 403\n  ✓ Warehouse can view specs (200) — Got 200\n\n==============================================================================\n8. REPORTS\n==============================================================================\n  ✓ GET /rnd/reports/performer returns 200\n  ✓ GET /rnd/lifecycle-board returns 200\n  ✓ Lifecycle board has enforcement\n  ✓ Lifecycle board has counts\n  ✓ Lifecycle board has not_orderable\n\n==============================================================================\nTEST SUMMARY\n==============================================================================\n\nTotal Tests: 19\nPassed: 16\nFailed: 3\nSuccess Rate: 84.2%\n"
+  }
+]

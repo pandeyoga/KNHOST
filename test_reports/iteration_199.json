@@ -1,0 +1,36 @@
+{
+  "summary": "T1 iter199 — Verified 7 fixes requested for L05/L06 (cutting receive guards, sample_admin catalogue permissions, catalogue soft validation, dispatch qc_status, sample stats paid_value, QC notification, catalogue templates filter). Built new pytest suite /app/backend/tests/test_l05_l06_t1_iter199.py with 16 focused tests (uses synthetic sample_cut wms_tasks pointing to a real ent_ksc roll to exercise /cutting/tasks/{id}/receive directly). 15/16 PASS; the single failure is a minor backend coverage gap in GET /api/cutting/locations where legacy warehouses (wh_bandung, wh_surabaya) lack sharing_mode/entity_ids keys in Mongo and the service does not default them, so the response is missing those fields on those rows. Frontend touch points were verified by code reading (catalogue modal fields use KNSelect; sample-catalogue-create gated by role list sales/sample_admin/manager/admin; QC badge testids present in SOCompactPanel and DispatchDashboard). The DB was already seeded on arrival; test SOs and synthetic wms_tasks were cleaned up (module-scoped fixture cancels SOs, deletes notifications, deletes synthetic tasks; inventory_movements for the shared-receive test are also removed and the roll warehouse_id reverted).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/cutting/locations", "issue": "Legacy warehouses without sharing_mode/entity_ids fields in DB (wh_bandung, wh_surabaya) are returned without those keys; service should default to sharing_mode='' and entity_ids=[] so FE can safely branch. Fix in services/cutting_service.list_locations."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_l05_l06_t1_iter199.py",
+    "/app/test_reports/pytest/iter199.xml"
+  ],
+  "action_items": [
+    "LOW: in services/cutting_service.list_locations default missing sharing_mode='' and entity_ids=[] on legacy warehouse docs so GET /api/cutting/locations has these keys on every row."
+  ],
+  "critical_code_review_comments": [
+    "cutting_service.receive — the dedicated-dest check only runs when dst != src. If a sample_cut task's original warehouse is itself a dedicated warehouse of another entity (data drift), the check is bypassed. Harmless today but worth asserting owner usability on src too.",
+    "sample_orders.catalogue_templates_for performs an unindexed scan of inventory_rolls filtered by status+owner+warehouse per request; fine for current volumes but add an index if scaled.",
+    "sample_orders.sample_stats paid_value correctly excludes cancelled; by_status however still counts cancelled under total — intentional per spec but worth documenting."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_l05_l06_t1_iter199.py"
+  ],
+  "success_rate": {"backend": "94% (15/16 passed, 1 minor coverage gap)", "frontend": "code-review only (static bundle unchanged)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; sampleadmin@/finance@/qc@/sales@kainnusantara.id/demo1234",
+  "seed_data_creation": "Synthetic wms_tasks (ids prefixed wt_T1I199_*) are created and deleted inside the test; the shared-warehouse receive test also reverts the test roll's warehouse_id and removes mov_cho/mov_chi documents it generated. Test sample SOs created via POST /api/sales-orders are cancelled in the module teardown.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run with REACT_APP_BACKEND_URL (public), MONGO_URL + DB_NAME from backend/.env, -n0. Entities on this preview: ent_ksc, ent_kanda, ent_a38145b8787b (NOT ent_7487424c3f95 as review-request text said). The real catalogue template id ptpl_a2cbc00d355e used by iter198 test does not exist on this DB; iter199 test uses /sample-orders/catalogue/templates to discover templates dynamically. If login returns 401 'Terlalu banyak percobaan', clear db.login_attempts.",
+  "rca of the issue": "GET /api/cutting/locations: cutting_service.list_locations projects {sharing_mode:1, entity_ids:1} and then spreads **r. For legacy warehouse docs where these fields were never written, Mongo returns no key and the spread omits them, so the response dict is missing those keys. Fix: `{'sharing_mode': r.get('sharing_mode',''), 'entity_ids': r.get('entity_ids',[]), **r, ...}` or set defaults explicitly before returning."
+}

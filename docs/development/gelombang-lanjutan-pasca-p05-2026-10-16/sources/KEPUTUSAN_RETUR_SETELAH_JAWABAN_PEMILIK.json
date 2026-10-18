@@ -1,0 +1,99 @@
+{
+  "source_commit": "64d81f29577dae4daa86ddc64689dec7243804f2",
+  "answers": {
+    "R-01": {
+      "status": "menunggu_klarifikasi_client",
+      "answer": "Pertanyaan cutloss harus memakai contoh roll 120 yard, cacat yard 46–60: apakah customer menerima 61–120 (60 yard) dan nilai dikembalikan setara 60 yard, atau menerima dua potong 1–45 dan 61–120 (105 yard) dengan nilai dikembalikan setara 15 yard.",
+      "note": "Tidak menetapkan salah satu skenario sebagai aturan.",
+      "client_questions": [
+        "KLR-01",
+        "KLR-02"
+      ]
+    },
+    "R-02": {
+      "status": "dijawab_pemilik",
+      "answer": "Sales yang membuat Sales Retur memilih barang/roll mana dari transaksi sumber yang diretur.",
+      "note": "Identifier, qty dan satuan sumber otomatis; tidak tambah produk bebas. Rincian perlakuan potongan mengikuti hasil klarifikasi cutloss.",
+      "client_questions": []
+    },
+    "R-03": {
+      "status": "dijawab_pemilik",
+      "answer": "Tidak menerima Barang Sisa sebagai layanan pengajuan tersendiri. Garansi adalah masa klaim 21 hari sesudah barang dikirim.",
+      "note": "Tidak membuat layanan garansi tambahan atau menyamakan Barang Sisa dengan grade BS.",
+      "client_questions": []
+    },
+    "R-04": {
+      "status": "menunggu_klarifikasi_client",
+      "answer": "Perbedaan qty yard pada tukar sangat mungkin; patokan pengganti dan penyelesaian selisih perlu diklarifikasi ke client.",
+      "note": "Tidak mengasumsikan jumlah roll berarti qty yard selalu sama.",
+      "client_questions": [
+        "KLR-03",
+        "KLR-04"
+      ]
+    },
+    "R-05": {
+      "status": "menunggu_klarifikasi_client",
+      "answer": "Dasar nilai serta tagihan/refund/saldo atas selisih tukar harus ditanyakan ke client.",
+      "note": "Belum menetapkan selisih gratis, otomatis ditagih, atau harga acuan.",
+      "client_questions": [
+        "KLR-04",
+        "KLR-05"
+      ]
+    },
+    "R-06": {
+      "status": "dijawab_pemilik",
+      "answer": "Perubahan warna dan grade pengganti tidak diperbolehkan.",
+      "note": "Acuan pengganti adalah transaksi asal; penurunan grade barang yang kembali setelah QC merupakan hal berbeda.",
+      "client_questions": []
+    },
+    "R-07": {
+      "status": "dijawab_pemilik",
+      "answer": "Barang pengganti mengikuti permintaan QC pada SO awal. Pengganti menunggu barang retur diterima dan selesai QC.",
+      "note": "QC atas barang kembali selalu berbeda dari QC roll pengganti. Pengiriman menunggu keputusan final yang berlaku.",
+      "client_questions": []
+    },
+    "R-08": {
+      "status": "dijawab_pemilik",
+      "answer": "Customer boleh memilih refund atau saldo. Bila masih ada tagihan, nilai mengurangi tagihan terlebih dahulu; kelebihannya direfund atau menjadi saldo.",
+      "note": "Pertanyaan baru KLR-10 hanya tentang cakupan SO/tagihan lain, bukan mengulang pilihan refund/saldo.",
+      "client_questions": [
+        "KLR-10"
+      ]
+    },
+    "R-09": {
+      "status": "dijawab_pemilik",
+      "answer": "Foto boleh dilengkapi kemudian. Kewajiban foto mengikuti konfigurasi kebijakan.",
+      "note": "Upload tersedia sejak pengajuan; tidak mewajibkan foto untuk seluruh kasus secara hardcoded.",
+      "client_questions": []
+    },
+    "R-10": {
+      "status": "dijawab_pemilik",
+      "answer": "CST wajib menerima retur internal bila Sukacita memutuskan mengembalikan ke CST. Sebelumnya Sukacita dapat memilih menyimpan sebagai stok milik Sukacita.",
+      "note": "Keputusan menyimpan tidak membalik pembelian internal. Penerimaan CST tidak menambahkan approval bisnis opsional yang bisa menolak aturan ini.",
+      "client_questions": []
+    },
+    "R-11": {
+      "status": "dijawab_pemilik",
+      "answer": "QC retur saat ini hanya di Rancamalang. Retur dari Jakarta dapat diterima di Jakarta, dikirim ke Rancamalang dan ditempatkan pada area transit menunggu QC. Gudang shared dibagi kategori, bukan per entitas. Owner dapat menjadi CST setelah retur internal walau fisik tetap di area shared.",
+      "note": "Lokasi, gudang/area, status fisik/QC dan owner harus dicatat terpisah; jangan membuat gudang entitas fiktif atau perpindahan fisik fiktif.",
+      "client_questions": [
+        "KLR-06"
+      ]
+    },
+    "R-12": {
+      "status": "dijawab_pemilik",
+      "answer": "CST boleh memilih simpan atau retur supplier. Bila masa retur supplier lewat, disimpan sebagai stok.",
+      "note": "Stok tetap membawa kondisi/grade/hold hasil QC; bukan otomatis menjadi available. Disposal atas grade BS tetap tindakan tersendiri sesuai keputusan sebelumnya.",
+      "client_questions": []
+    },
+    "R-13": {
+      "status": "dijawab_pemilik",
+      "answer": "Persetujuan melalui WA berlangsung di luar ERP; gunakan bukti keputusan. Keputusan tukar/kompensasi final sesudah QC inspect.",
+      "note": "Tidak membuat integrasi WA baru. Pengecualian cara verifikasi discount tanpa barang kembali perlu klarifikasi KLR-06.",
+      "client_questions": [
+        "KLR-06"
+      ]
+    }
+  },
+  "erp_changed": false
+}

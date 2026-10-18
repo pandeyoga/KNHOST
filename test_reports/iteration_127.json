@@ -1,0 +1,22 @@
+{
+  "summary": "P17 review-pass completed. Backend: 6/6 pytest tests pass covering (a) Archived-readonly entity lifecycle (archive→cache wait→admin GET 200, admin POST 403 'diarsipkan', sales GET 403, reactivate 200), (b) COMM-05 customer-price PATCH-after-DELETE returns 400 with value unchanged, double-DELETE returns 200 {deactivated:false, already_inactive:true}, 5 concurrent POSTs leave a single active record retrievable via /quote, (c) COMM-04 incentive /gl-status returns valid JSON and /post-gl does not 500 (returned 200 created=false amount=0, no leftover journal). Frontend UI smoke: EntitySwitcher shows the 'Terarsip — baca saja' section with entity-option-archived-ent_d1772c5f5ced; selecting it renders archived-readonly-banner (name='CV Cipta Sandang Textile'), entity-switcher-readonly-tag='arsip · baca saja'; ?view=customers still opens; archived-readonly-exit returns to ent_ksc and the banner is removed. Scope-readonly-banner shows when 'Semua Entitas' is picked. GRN-06 screen (?view=goods-receipts&entity=ent_ksc) loads cleanly (empty state 'Belum ada kedatangan.' with tabs rendered correctly). Entity reactivation confirmed (status→active, final REACTIVATE 200/409). No TEST_ residue (all customer-price records cleaned up in fixtures; no incentive journal created).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_p17_review.py",
+    "/app/test_reports/pytest/p17_review.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Customers POST endpoint runs Pydantic validation BEFORE the archived-entity check, so an archived-write with missing fields returns 422 instead of 403. Not a bug for this review (full payload still returns 403 'diarsipkan'), but consider short-circuiting the archived check earlier for a cleaner API contract."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p17_review.py (new)"
+  ],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (all P17 UI selectors verified)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, manager@kainnusantara.id / demo12345, sales@kainnusantara.id / demo12345 (X-Entity-Id: ent_ksc)",
+  "seed_data_creation": "None. All test fixtures self-clean. ent_d1772c5f5ced returned to active (verified reactivate 200 / 409 'sudah aktif').",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "P17 planned-coverage (archived read-only + COMM-04 + COMM-05) validated end-to-end via REST and bundled frontend. Use /app/backend/tests/test_p17_review.py for regression. All UI testids expected by the handoff exist and function: entity-switcher, entity-switcher-archived, entity-option-archived-ent_d1772c5f5ced, archived-readonly-banner / -name / -exit, entity-switcher-readonly-tag, scope-readonly-banner. Known upstream unrelated failure (KANDA/SO-00001 integrity, test_core_inspeksi_poc.py scan-receive) was not re-run per handoff."
+}

@@ -1,0 +1,125 @@
+{
+  "method": "Original functions compiled from AST with in-memory database and boundary doubles; no live HTTP, real MongoDB or RFID device.",
+  "source_commit": "f59b8a60d7b7e078888c537ca93c046afae460a9",
+  "cases": [
+    {
+      "probe": "P01-scan-modern-bin",
+      "issue_reproduced": true,
+      "classification": "defect",
+      "observed": {
+        "flatten_bin_count": 1,
+        "scan_status": 400,
+        "message": "Bin 'BIN-01' tidak ada di master gudang wh-a. Scan label bin yang terpasang di rak."
+      },
+      "expected_control": "Scan dan editor menemukan bin yang sama pada rack.levels[].bins."
+    },
+    {
+      "probe": "P02-delete-occupied-bin",
+      "issue_reproduced": true,
+      "classification": "defect",
+      "observed": {
+        "before_occupied": 100,
+        "after_occupied": 0,
+        "after_unassigned": {
+          "qty": 0.0,
+          "rolls": 0
+        },
+        "roll_qty_unchanged": 100
+      },
+      "expected_control": "Struktur berisi stok tidak dapat dihapus tanpa migrasi; orphan harus terlihat."
+    },
+    {
+      "probe": "P03-mixed-uom-occupancy",
+      "issue_reproduced": true,
+      "classification": "defect",
+      "observed": {
+        "meter": 100,
+        "kg": 100,
+        "reported_occupied": 200.0,
+        "reported_utilization": 400.0,
+        "ui_label": "m"
+      },
+      "expected_control": "100 meter dan 100 kg ditampilkan terpisah; kapasitas memakai dimensi/satuan yang ditetapkan."
+    },
+    {
+      "probe": "P04-putaway-over-capacity",
+      "issue_reproduced": true,
+      "classification": "capability_gap",
+      "observed": {
+        "capacity": 50,
+        "roll_qty": 100,
+        "assigned": "bin-1"
+      },
+      "expected_control": "Aturan kapasitas menolak/memperingatkan sesuai kebijakan yang disetujui."
+    },
+    {
+      "probe": "P05-putaway-transit-roll",
+      "issue_reproduced": true,
+      "classification": "defect",
+      "observed": {
+        "roll_status": "in_transit_transfer",
+        "assigned": "bin-1"
+      },
+      "expected_control": "Aksi penempatan fisik menolak roll yang masih dalam perjalanan."
+    },
+    {
+      "probe": "P06-pa-dedicated-destination",
+      "issue_reproduced": true,
+      "classification": "defect",
+      "observed": {
+        "owner": "ent-a",
+        "destination_allowed_owners": [
+          "ent-b"
+        ],
+        "created_status": "open"
+      },
+      "expected_control": "PA wajib memvalidasi gudang tujuan usable bagi pemilik roll, sama dengan transfer biasa."
+    },
+    {
+      "probe": "P07-rules-category-plus-grade",
+      "issue_reproduced": true,
+      "classification": "capability_gap",
+      "observed": {
+        "rules": {
+          "mode": "category",
+          "categories": [
+            "Woven"
+          ],
+          "grades": [
+            "A"
+          ]
+        },
+        "product_category": "Woven",
+        "roll_grade": "BS",
+        "accepted": true
+      },
+      "expected_control": "Kombinasi kategori DAN grade harus eksplisit; mode saat ini hanya memeriksa satu dimensi."
+    },
+    {
+      "probe": "P08-so-reservation-to-transfer",
+      "issue_reproduced": true,
+      "classification": "business_flow_gap",
+      "observed": {
+        "roll_status": "reserved",
+        "reserved_for": "sales_order",
+        "transfer_status": 409,
+        "message": "Sebagian roll yang dipilih tidak tersedia atau bukan milik badan usaha transfer. Muat ulang daftar roll."
+      },
+      "expected_control": "Pemenuhan via gudang lain perlu jalur pemindahan dengan komitmen SO terjaga atau replan resmi."
+    },
+    {
+      "probe": "C01-existing-inspection-hold-control",
+      "issue_reproduced": false,
+      "classification": "existing_control",
+      "observed": {
+        "status": 400,
+        "blocked": true
+      },
+      "expected_control": "Kontrol hold inspeksi tetap dipertahankan pada perbaikan putaway."
+    }
+  ],
+  "observed_issues": 8,
+  "control_checks": 1,
+  "defects": 5,
+  "capability_gaps": 3
+}

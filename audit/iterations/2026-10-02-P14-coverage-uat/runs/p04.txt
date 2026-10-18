@@ -1,0 +1,46 @@
+# 2026-10-03-P04-costing/repro_p04.py (1s)
+[
+ {
+  "id": "FN-01",
+  "invariant": "parent 70 + anak 20 + cucu 10 (tanpa acquired), voucher 100 → nilai stok +100 (retry tidak menambah)",
+  "pass": true,
+  "detail": "{'delta': 100.0, 'targets': 3}"
+ },
+ {
+  "id": "FN-02",
+  "invariant": "60 + 60 vs diterima 100 → blocked",
+  "pass": true,
+  "detail": "blocked"
+ },
+ {
+  "id": "FN-02",
+  "invariant": "60 + 40 vs 100 → matched (kontrol)",
+  "pass": true,
+  "detail": "matched"
+ },
+ {
+  "id": "FN-02",
+  "invariant": "router menolak baris produk ganda (statis)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "FN-11",
+  "invariant": "shipment roll murah HPP 1.000, roll mahal 3.000",
+  "pass": true,
+  "detail": "{'sj1': 1000.0, 'sj2': 3000.0}"
+ },
+ {
+  "id": "FN-11",
+  "invariant": "snapshot biaya tersimpan di surat jalan (edit biaya roll tidak mengubah histori)",
+  "pass": true,
+  "detail": "{'roll_id': 'audit_p04_f6fef6_cheap', 'lot': 'L1', 'length': 100.0, 'unit': 'meter', 'unit_cost': 10.0, 'extended_cost': 1000.0}"
+ },
+ {
+  "id": "IX-16",
+  "invariant": "grand_total 111: AP turun 111, Dr hutang 111 / Cr persediaan 100 / Cr PPN 11",
+  "pass": true,
+  "detail": "{'returned': 111.0, 'lines': [('1-1300', 0.0, 100.0), ('1-1500', 0.0, 11.0), ('2-1150', 111.0, 0.0)]}"
+ }
+]
+pass=7 fail=0

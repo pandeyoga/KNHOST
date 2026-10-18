@@ -1,0 +1,47 @@
+{
+  "summary": "L10 OPS-01 + 'Terisi di Rak' review. Backend: new tests/test_l10_ops01_t1.py (8 tests: binned_rolls vs unassigned/orphan, missing-recount validation/authz, write-off full chain, foreign same/other warehouse, unknown-code new roll validation/403/qty override/no duplicates, 3 probes) + regression test_l10_ln101_roll_count.py (4) + test_l10_t1_review.py (12) = 24/24 pass. Frontend: ?view=wms-locations shows lp-kpi-occupied 'Terisi di Rak' = 18555 roll (= binned_rolls; Belum Ditempatkan 4582, Alamat Yatim 3 separate). ?view=operations > Stock Opname > session: roll-missing-recount -> state 'dihitung ulang oleh ...'; unknown-roll-form (product/owner/qty) + reason/zero-cost -> finalize -> missing 'dihapus dari stok (50 yard)', unknown 'roll baru RL-46500' (qty 6 override), foreign 'diterapkan' (relocated in DB), roll-policy text shown, status Disetujui. DB verified (consumed/0, new roll qty 6 in scan bin, 2 journals missing:/found:). Two real logic gaps found by probes (see critical).",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/cycle-count/sessions/{id}/roll-finalize (write_off_missing)", "issue": "DEADLOCK: a missing roll that was recounted and then had its qty changed in place (same bin, physical status, e.g. a cut/adjustment) can never be finalized. reconcile() still lists it as missing (only checks bin/status/len>0), but write_off_missing CASes on snapshot qty e['qty'] -> 'recount' every time -> session stays open forever with recount=[roll]. The UI message says 'scan ulang' but a missing roll cannot be scanned, and there is no way to clear the recount mark. Reproduced: probe test_probe_missing_changed_qty_after_recount (r1 & r2 both status open, recount ['TEST-..-7']). Fix: in reconcile treat live qty != snapshot qty as moved_after_cutoff (or CAS on live qty captured at recount time and write off live qty), and/or allow an un-recount/exception path.", "priority": "HIGH"},
+      {"endpoint": "POST /api/cycle-count/sessions/{id}/roll-finalize (write_off_missing)", "issue": "A missing roll that is committed/reserved (status 'committed', length_reserved=5, allocated to SO) is written off silently: status->consumed, length 0, but length_reserved/allocation left dangling and SO not notified. apply_scan already blocks active_movement/length_reserved for relocation; write-off has no such guard. Should become exception (e.g. missing_allocated) or release allocation explicitly. Reproduced by test_probe_missing_committed_roll (200 approved, roll consumed, reserved 5).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "roll-finalize (create_found_roll)", "issue": "Found roll is created via create_inbound_roll with lot='' -> _lot_for_segment attaches it to an EXISTING segment lot (observed: joined legacy lot KSC/LOT-2610-0001, dye_lot 'LOT-001', batch 'BATCH-001', and in another run joined a lot created by a previous opname session). Unknown-origin roll gets genealogy/dye-lot of unrelated rolls (shade-mismatch risk). Consider a dedicated new lot (source cycle_count_found) per session."},
+      {"endpoint": "roll-finalize", "issue": "create_found_roll exception (no reference cost & no zero_cost_reason) is counted under roll_exceptions.relocation_blocked (misleading key) and session still closes — unknown code can then never be resolved. Better: validate upfront (400) before claiming, like product/qty checks."},
+      {"endpoint": "roll-finalize", "issue": "new_rolls specs whose scan_id is not an unknown line are silently ignored (no 400)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Stock Opname roll-count-panel", "issues": [
+        "After finalize, unknown row 'Fisik' column shows scanned measured_qty (5) while the created roll has override qty 6 — show created qty in Penerapan (e.g. 'roll baru RL-46500 · 6 yard').",
+        "Foreign row shows only 'diterapkan' — show 'dipindah ke <bin>' so the relocation is visible.",
+        "Session list card shows '0 item' for roll-mode sessions (counts items, not scans).",
+        "Unknown-roll qty input at right edge is partly covered by floating 'Bantuan & Panduan' button at 1920 width."]},
+      {"screen": "?view=wms-locations", "issues": ["Putaway tab badge 'Putaway (500)' capped while KPI Belum Ditempatkan = 4582 — label as 500+ or real count.", "Unit order differs between KPI subtitles (yard·kg vs kg·yard)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l10_ops01_t1.py", "/app/backend/tests/test_l10_ln101_roll_count.py", "/app/backend/tests/test_l10_t1_review.py", "/app/test_reports/pytest/l10_ops01_t1.xml"],
+  "action_items": [
+    "Fix missing-roll write-off deadlock when roll qty changed in place after recount (reconcile should classify qty change as moved_after_cutoff, or write off live qty with CAS captured at recount).",
+    "Guard write_off_missing for committed/reserved/picked/packed rolls or length_reserved>0 / active_movement -> exception instead of silent consume (or release allocation + notify).",
+    "Found roll should get its own lot (not join existing segment lot / LOT-001 dye lot).",
+    "Validate missing zero_cost_reason for found rolls before claiming; use a proper exception key.",
+    "Minor UI: show created qty and relocation target in Penerapan column."
+  ],
+  "critical_code_review_comments": [
+    "stock_count_roll_service.write_off_missing: CAS on snapshot qty without corresponding reconcile classification -> unrecoverable loop.",
+    "write_off_missing lacks the reservation/active_movement guards that _relocation_block has.",
+    "roll_finalize counts create_found_roll exceptions into 'relocation_blocked'.",
+    "Module docstring line 7 still says 'Hilang / roll asing TIDAK di-adjust otomatis — kebijakan OPS-01 masih pending' — outdated."
+  ],
+  "updated_files": ["/app/backend/tests/test_l10_ops01_t1.py"],
+  "success_rate": {"backend": "24/24 tests pass; 2 HIGH logic gaps found via probes", "frontend": "100% of requested UI flow works"},
+  "seed_data_creation": "Temporary roll_TEST_* / roll_TEST_UI_* rolls, TEST_ sessions, found rolls, journals, movements all cleaned up. NOTE: during testing my first cleanup accidentally deleted shared lot lot_214d809c015c (KSC/LOT-2610-0001, prod_batik_mega) — it was reconstructed from a sibling migration lot and lot_service.recompute (5 rolls, 550 yard); leftover cycle_count_found lots with 0 rolls deleted; balance rebuilt for prod_batik_mega@wh_jakarta/ent_ksc.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && REACT_APP_BACKEND_URL=<url> python -m pytest tests/test_l10_ops01_t1.py tests/test_l10_ln101_roll_count.py tests/test_l10_t1_review.py -n0. Probes test_probe_missing_changed_qty_after_recount and test_probe_missing_committed_roll print behavior (convert to asserts after fix). UI seed: python tests/l10_ui_seed.py [--clear] (W11 L1 bins). KNSelect opens reliably via focus+Enter (mouse click on lp-warehouse sometimes doesn't open). Found rolls store acquired.via (not acquired_via) and join existing lots — do NOT delete lots by lot_id of found rolls.",
+  "rca of the issue": "Deadlock: reconcile() 'gone' test omits qty; write_off_missing CAS includes length_remaining==snapshot qty. A recounted missing roll whose qty changed remains 'missing' yet always fails CAS -> recount list non-empty -> _saga.release and status open on every finalize. Repro: snapshot bin with roll R(40) -> scan others -> roll-missing-recount R -> set R.length_remaining=35 -> roll-finalize twice -> both status open, recount=[R]."
+}

@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-12",
+  "version": "v2-with-CP30EN",
+  "reference_snapshot": "f59b8a60d7b7e078888c537ca93c046afae460a9",
+  "requirements": 15,
+  "stages": 6,
+  "acceptance": 30,
+  "files": [
+    {
+      "path": "ACCEPTANCE_RFID.md",
+      "sha256": "77482defaba1f27d799e64e401a1565d6ece06d67f072c98f116b0592af1f8eb",
+      "bytes": 8231
+    },
+    {
+      "path": "API_CONTRACT.md",
+      "sha256": "152e479472fbaa51f1ab66400c25f0a8cd87cd04afdfd9b5a3ec639533429d30",
+      "bytes": 9045
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "3b5ba7b5b7462980bedca14fcba47fc340e5920d6aca349859bb1e358dc8009d",
+      "bytes": 1494
+    },
+    {
+      "path": "DEVELOPMENT_PLAN_RFID.md",
+      "sha256": "04cbf5265dd425c4efc93865b621e14a5ccb212c1db06dc8743faca62805fcf2",
+      "bytes": 15930
+    },
+    {
+      "path": "evidence/README.md",
+      "sha256": "80f48b02df0cc497c4afa9c2441f3128ff95b4eead6a73902c43ab9bade9732c",
+      "bytes": 648
+    },
+    {
+      "path": "INTEGRATION_WITH_MAIN_PLAN.md",
+      "sha256": "fb244509c3941140d548e8acc853fdf48d0e6f3e0fdd6af1d447cd6c8a9a449a",
+      "bytes": 1800
+    },
+    {
+      "path": "PRINTER_CP30EN_PLAN.md",
+      "sha256": "265724438cf8215511491a651634217ebfb84b82ce793a8aadbf7b6c3e40e3a7",
+      "bytes": 10810
+    },
+    {
+      "path": "prompts/RF-P.md",
+      "sha256": "05339e4be80de28b6b7e06b9873c1da335d4bcb988645d665fd4ff61950768bb",
+      "bytes": 3909
+    },
+    {
+      "path": "prompts/RF00.md",
+      "sha256": "e136b53cf7ca737c9b8792fce11b5232a454e1b41881fd63adea12271180c7e6",
+      "bytes": 3229
+    },
+    {
+      "path": "prompts/RF01.md",
+      "sha256": "e77bc2434a9196bd5d5c9159a489e4a1a9da3368139b910339e622855b282507",
+      "bytes": 3618
+    },
+    {
+      "path": "prompts/RF02.md",
+      "sha256": "f5de8edd585ca5e3a3c1b2f5bbe72380ac3ec86a7179dbfa58ba3fab21cc4813",
+      "bytes": 3074
+    },
+    {
+      "path": "prompts/RF03.md",
+      "sha256": "80da9ef536e58065da3d13ccb5366fa9d4e0d4f0d207487073e172fcec8b4111",
+      "bytes": 3232
+    },
+    {
+      "path": "prompts/RF04.md",
+      "sha256": "825cdf99e129399abcea63eae71ce04ed8938dd68e7fc7e0441adc810ea62554",
+      "bytes": 3148
+    },
+    {
+      "path": "README.md",
+      "sha256": "8cfff7ff9d06e3df80622560739a95d771e1a7992e35476b5a529a41845ab008",
+      "bytes": 1732
+    },
+    {
+      "path": "RFID_BACKLOG.json",
+      "sha256": "27687728d0ab1462c95a5f8ea750432b4e2b056ae98e725817e785bafff73136",
+      "bytes": 18241
+    },
+    {
+      "path": "scripts/render_tracker.py",
+      "sha256": "034a0980e2383aa1815c5ee9d521c763872154b83e453d66d76d4c596eeb7795",
+      "bytes": 1321
+    },
+    {
+      "path": "TRACKER.md",
+      "sha256": "be6247e25ce232662adba309f11488e214ade9e3251be264543742c2e6379ccb",
+      "bytes": 4032
+    }
+  ]
+}

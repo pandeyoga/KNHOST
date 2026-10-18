@@ -1,0 +1,41 @@
+{
+  "summary": "T1 iter200 — Verified POS sample-mode (kind chips + over-limit + under-limit) and Meja Cutting waiting-time instrumentation. Backend 10/10 pass (SAMPLE_LIMIT per kind for woven & knit, 400 code, cutting_desk wait_thresholds=120/240, late_count, cut_at+wait_minutes on every to_receive/ready row, longest-wait-first sort, receive→ready transition with 'diterima setelah' delta). Frontend verified end-to-end: PosProductCard quickview → 'Pesanan Sampel' → 'Tambah Sampel' → CheckoutDrawer step-2 shows sample-kind-{pid} panel with standard & hanger chips, sample-over-limit-{pid} appears correctly when switching to hanger at qty>0.5 yd and disappears at ≤0.5 yd hanger / ≤5 yd standard. Meja Cutting UI (?view=sample-orders → sample-tab-desk) correctly renders cutting-late-alert banner (red, '1 potongan menunggu diterima Admin Cutting lebih dari 4 jam.') and 3 cutting-wait-{taskId} badges with data-level='late' (Terlambat · menunggu 5 j 0 mnt), 'warn' (menunggu 3 j 0 mnt), 'ok' (menunggu 1 j 0 mnt); to_receive queue sorted longest-wait first (late→warn→ok); after cutting-receive-{taskId} click the row moves to Ready with level='done' (diterima setelah 3 j 0 mnt). ONE FRONTEND BUG FOUND: in POS CheckoutDrawer the sample-to-retail-{pid} 'Jadikan ecer' button is MISSING because CheckoutDrawer does not pass onToggleSample prop to CheckoutItemCard. The over-limit text is shown but the inline retail-toggle button (required by review request) does not render, and there is also no toggle-sample-{pid} chip in the drawer to flip a line back to retail/ecer.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "features/pos/CheckoutDrawer.jsx (and CheckoutItemCard integration)",
+        "issue": "sample-to-retail-{pid} 'Jadikan ecer' button (and the parent toggle-sample-{pid} action) are not rendered in the checkout drawer because <CheckoutItemCard> is instantiated without the onToggleSample prop. SampleLineFields guards the retail-toggle link behind `onToggleSample &&`, so when a woven line is 1 yd and the user switches to Hanger (max 0.5 yd), the over-limit copy appears correctly but the required inline 'Jadikan ecer' button described in the review request is absent. Users cannot convert a sample over-limit line back to retail/ecer from the drawer.",
+        "selector": "[data-testid='sample-to-retail-prod_batik_mega']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_l06_t1_iter200.py",
+    "/app/test_reports/pytest/iter200.xml",
+    "/app/test_reports/iter200_meja_cutting_full.jpeg",
+    "/app/test_reports/iter200_pos_over.jpeg"
+  ],
+  "action_items": [
+    "FIX: In /app/frontend/src/features/pos/CheckoutDrawer.jsx wire onToggleSample to CheckoutItemCard. Example: add a `toggleSample` fn `const toggleSample = (id) => setCart(cur => cur.map(it => it.product.id===id ? { ...it, is_sample: !it.is_sample, sample_kind: !it.is_sample ? (it.sample_kind||'standard') : it.sample_kind, quantity: !it.is_sample ? clampSampleQty(it.product, it.quantity, it.sample_kind||'standard') : it.quantity } : it));` and pass `onToggleSample={toggleSample}` to <CheckoutItemCard>. Verify sample-to-retail-{pid} renders and clicking it clears is_sample from the line while keeping the quantity. Then rebuild frontend bundle with /app/scripts/rebuild_frontend.sh."
+  ],
+  "critical_code_review_comments": [
+    "CheckoutDrawer.jsx:366 — <CheckoutItemCard> missing onToggleSample prop; this disables both the per-line sample toggle chip AND the 'Jadikan ecer' retail-fallback link in SampleLineFields. Required by review request.",
+    "sample_sale_service.py — SAMPLE_KINDS.hanger.limits uses knit=2.0 (same as standard); matches review spec but worth doc-flagging that hanger knit does NOT reduce vs standard.",
+    "cutting_service.py:94 — to_receive sort uses -(wait_minutes or 0); rows with cut_at=None sort last (confirmed via UI).",
+    "CuttingDesk.jsx fmtWait: works correctly; display rounds to minutes."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_l06_t1_iter200.py (new)"
+  ],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "95% (POS sample kind/over-limit + Meja Cutting fully verified; 1 missing data-testid: sample-to-retail-<pid> not wired in CheckoutDrawer)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; sampleadmin@/sales@/qc@/warehouse@kainnusantara.id/demo1234",
+  "seed_data_creation": "Synthetic wms_tasks wt_T1I200_* (pytest) and wt_T1I200UI_* (UI) created & cleaned up (DB confirmed 0 remaining). Test sample SOs created inside pytest are cancelled via module teardown. Shared roll was received to same warehouse so no inventory_movements persisted.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run with env: REACT_APP_BACKEND_URL=https://kain-nusantara.preview.emergentagent.com, MONGO_URL=mongodb://localhost:27017, DB_NAME=test_database. Pytest cmd: `cd /app/backend && python -m pytest tests/test_l06_t1_iter200.py -v -o addopts=`. UI test flow: ?view=sales → search 'Batik Mega' → add-to-cart-button-prod_batik_mega → quickview-kind-sample → button 'Tambah Sampel' → cart FAB → in step 1 click 'Lanjut' → step 2 shows SampleLineFields. For Meja Cutting: ?view=sample-orders&entity=ent_ksc → sample-tab-desk; insert aged tasks via Mongo to drive banner/levels.",
+  "rca of the issue": "FE bug: CheckoutDrawer.jsx line 366-384 omits onToggleSample from the <CheckoutItemCard> props. CheckoutItemCard conditionally renders the toggle-sample button `{onToggleSample && (<button data-testid=\"toggle-sample-{pid}\" .../>)}` and passes onToggleSample through to SampleLineFields, which in turn guards the 'Jadikan ecer' link with `{onToggleSample && <button data-testid=\"sample-to-retail-{pid}\" .../>}`. Because the parent never provides the handler, both testids are missing from the DOM even when the sample-over-limit warning is correctly displayed. Backend path is fully correct — a plain regular SO at the over-sample qty (1 yd woven) is accepted (verified by test_regular_retail_at_over_sample_qty_ok)."
+}

@@ -1,0 +1,45 @@
+{
+  "summary": "Iter95 — Full backend + frontend test of OCR Photo Quality Check + Tanya KN AI assistant. Backend pytest tests/test_iter95_photo_check.py: 6/6 PASS (good/blur/cut/non-image/usage-log/no-permission). Config catalog exposes receiving.ocr_photo_check with default=true (verified via /api/config/effective). Mobile 390x844 wizard end-to-end verified: upload of 3 files → immediate pre-AI grn-photo-issue-2-blur + grn-photo-issue-3-small + grn-photo-ai-checking-1/2/3, after ~20s AI returns grn-photo-ok-1, grn-photo-issue-2-blur='Buram — tulisan kabur' + advice + retake, grn-photo-issue-3-cut='Terpotong di bawah' + grn-photo-issue-3-small + advice + retake. Retake page 2 with n_d.jpeg → page 2 becomes grn-photo-ok-2. Submit with page 3 bad → 'Ada foto yang kurang baik' dialog (Batal/Tetap kirim); Batal keeps wizard open (no GRN). Remove page 3 (grn-wizard-page-remove-3) → submit succeeds → KSC/GRN-00001 created. Cleaned up: cancelled GRN-00001 via grn-cancel with reason 'cleanup iter95 test'. Tanya KN: AI status='Aktif', biaya $0.02/$100 loaded. Free-text question 'Siapa 3 pelanggan dengan penjualan terbesar 90 hari terakhir?' → real streaming answer from gpt-6-sol: 'Butik Bali Indah Rp 29.600.000 (31,57%), Fashion Bandung Kencana Rp 24.950.000 (26,61%), Tekstil Medan Jaya Rp 20.850.000'. Report template top_customers ran with chart+table (real data). Biaya tab (?tab=cost) loads with usage panels. SSE /api/ai/chat verified via curl (status/tool/result/delta/done events).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verified_flows": [
+    {"flow": "Backend photo-check good/blur/cut/non-image", "result": "6/6 pytest cases pass in 13.76s"},
+    {"flow": "Backend RBAC 403", "result": "sales@kainnusantara.id → 403 as expected"},
+    {"flow": "Backend usage log", "result": "/api/goods-receipts/usage returns 200 after photo-check calls"},
+    {"flow": "Config catalog", "result": "receiving.ocr_photo_check exposed with default=true via GET /api/config/effective"},
+    {"flow": "Mobile 390 wizard immediate hints", "result": "Right after files chosen: blur2=true, small3=true, ai-checking-1/2/3=true"},
+    {"flow": "Mobile 390 AI results", "result": "ok1=true; issue2blur='Buram — tulisan kabur' + advice2 + retake2; issue3cut='Terpotong di bawah' + advice3 + retake3"},
+    {"flow": "Mobile 390 retake", "result": "grn-photo-retake-input-2 with n_d.jpeg → page 2 re-checked to ok2=true"},
+    {"flow": "Mobile 390 bad-photo confirm", "result": "'Ada foto yang kurang baik' dialog shown; Batal keeps wizard open"},
+    {"flow": "Mobile 390 submit after remove", "result": "grn-wizard-page-remove-3 → submit created KSC/GRN-00001 (Cirebon Craft, 2 halaman)"},
+    {"flow": "Mobile 390 cancel GRN", "result": "grn-cancel with reason 'cleanup iter95 test' → status Dibatalkan"},
+    {"flow": "Desktop Tanya KN free-text", "result": "Real gpt-6-sol streaming answer with correct data (Butik Bali Indah top, Fashion Bandung Kencana, Tekstil Medan Jaya)"},
+    {"flow": "Desktop Tanya KN template", "result": "top_customers template produced report with real chart, table, Butik Bali Indah 35.4% pangsa"},
+    {"flow": "Tanya KN biaya tab", "result": "?view=tanya-kn&tab=cost loads with US$ 0.0230 spent, per-fitur/per-pengguna charts"},
+    {"flow": "SSE /api/ai/chat curl", "result": "Verified events: status→tool(query_metrics)→result→status→delta→delta→done"}
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iter95_photo_check.py",
+    "/app/test_reports/it95_post_ai.jpg",
+    "/app/test_reports/it95_bad_confirm.jpg",
+    "/app/test_reports/it95_after_submit.jpg",
+    "/app/test_reports/it95_cancelled.jpg",
+    "/app/test_reports/it95_tanyakn.jpg",
+    "/app/test_reports/it95_tanya_answer.jpg",
+    "/app/test_reports/it95_tanya_template.jpg",
+    "/app/test_reports/it95_tanya_biaya.jpg",
+    "/app/test_reports/it95_tanya_freetext_ok.jpg"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "GrnPhotoQuality.jsx renders issue chips + ai-checking + advice + retake with proper data-testid using page index (1-based) — matches spec.",
+    "Photo-check endpoint gracefully returns {checked:false, reason:'not_image'} for non-image uploads — good defensive default that avoids wasting AI calls."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (6/6 pytest)", "frontend": "100% (all requested testids and both flows verified: photo QC + Tanya KN)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (used); sales@kainnusantara.id / demo12345 (verified 403).",
+  "seed_data_creation": "Created and CANCELLED KSC/GRN-00001 for Cirebon Craft (2 halaman = n_d.jpeg + retaken n_d.jpeg). Reason='cleanup iter95 test'. Ai_usage_log rows added with role='photo_check' (~7 real image + 3 chat/report calls to gpt-6-sol/gpt-6-luna, total spend $0.023 for the month).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter95 fully green. Free-text Tanya KN button uses data-testid='tanya-chat-submit' (not just the text 'Tanya'). Note: multiple buttons have text 'Tanya' (tab, submit, mobile-tab-btn-tanya) — always target by testid. Cancelled GRN-00001 remains in Cirebon Craft ledger with status Dibatalkan — do not confuse with the pre-existing GRN-00002/00009."
+}

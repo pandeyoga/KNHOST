@@ -1,0 +1,155 @@
+{
+  "generated": "2026-10-11",
+  "reference_snapshot": "f59b8a60d7b7e078888c537ca93c046afae460a9",
+  "requirements": 35,
+  "phases": 11,
+  "decisions": 16,
+  "acceptance_scenarios": 67,
+  "files": [
+    {
+      "path": "ACCEPTANCE_MATRIX.md",
+      "bytes": 25434,
+      "sha256": "5b1fc94937c2dba934ec79e62c479e4c91a3c9124953be5b7d467fb886db2725"
+    },
+    {
+      "path": "AGENT_GUIDE.md",
+      "bytes": 4152,
+      "sha256": "0e194c56cdf4e472d722b53b2188435700f9482b83543e1ef9da4daed30e43a6"
+    },
+    {
+      "path": "BACKLOG.json",
+      "bytes": 48429,
+      "sha256": "70e29f45294161faad95e9c494337715ed3595b33ed310b7919b9d4d860c40bd"
+    },
+    {
+      "path": "COVERAGE.md",
+      "bytes": 6451,
+      "sha256": "fc2de708cce8244c30b3438dc1c86fa66f4617670643097fccae2dffd2636275"
+    },
+    {
+      "path": "DECISIONS.md",
+      "bytes": 7681,
+      "sha256": "a0210b937bbeb63dcca04ed1cc586d879fa2a03b8b4a15ca27bb7485f7f5ed2b"
+    },
+    {
+      "path": "DEVELOPMENT_PLAN.md",
+      "bytes": 14840,
+      "sha256": "0b1d0cf3675d7ca742eb3e4958c8bbf16f1eba5af9c7ee5b1441f9aa64addff4"
+    },
+    {
+      "path": "evidence/README.md",
+      "bytes": 501,
+      "sha256": "cae97061a6587eaed2d650b7b34770eb9e4c33c0f8b4531f5019a0352b5e7d71"
+    },
+    {
+      "path": "phases/P00.md",
+      "bytes": 4447,
+      "sha256": "265eb9e8e11c2b80edec22f031f339a33af32d60cac17962d57a250c12e50b73"
+    },
+    {
+      "path": "phases/P01.md",
+      "bytes": 5199,
+      "sha256": "53e7d42b0214d57bdea611352983a4faad115112c11cb083bde0efe84e6a8f92"
+    },
+    {
+      "path": "phases/P02.md",
+      "bytes": 5643,
+      "sha256": "4f427115670708341da89b237875195fc87fd62ffb9cb76ce7ff2d101f344f03"
+    },
+    {
+      "path": "phases/P03.md",
+      "bytes": 4953,
+      "sha256": "7b85c8dc47bb10cbd5b58f98f02b3c528752407de33415756e50bcca9a3ae26b"
+    },
+    {
+      "path": "phases/P04.md",
+      "bytes": 5329,
+      "sha256": "b64abea9e57b82b4e18607aa0f11ce89ce837a643e97bf5e3d9f0d446b22a462"
+    },
+    {
+      "path": "phases/P05.md",
+      "bytes": 5250,
+      "sha256": "ff9510c08f8c8f4dd50219bdd76b8ac9c85d526486c9c9d08d1c3c5877c90b36"
+    },
+    {
+      "path": "phases/P06.md",
+      "bytes": 4537,
+      "sha256": "aa6ed653c0f16217586b308d8ceedeeceeb805a2259f496f95cc3f19615c8b62"
+    },
+    {
+      "path": "phases/P07.md",
+      "bytes": 4185,
+      "sha256": "13f3a368516e67ce5e72d93d323e51f616d012bf4fd90a175ab78e6683cae202"
+    },
+    {
+      "path": "phases/P08.md",
+      "bytes": 4985,
+      "sha256": "36434770349a8346b861f067220835c07b6c019d5e8602842e54a29b7b13570e"
+    },
+    {
+      "path": "phases/P09.md",
+      "bytes": 5406,
+      "sha256": "b83329d61304ece2422b25e243b4d387bd513dc15c6fe360185888ad72977ae4"
+    },
+    {
+      "path": "phases/P10.md",
+      "bytes": 4506,
+      "sha256": "e3476225093b8334e6d6735366a99691a5291165d122a2f4746105cd13dff50d"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2131,
+      "sha256": "029dd0e3fa7dfad1bb7674736cbc891e4bf8c7b8764b57ced81a52f050180cfb"
+    },
+    {
+      "path": "scripts/render_tracking.py",
+      "bytes": 2005,
+      "sha256": "22f569643e8170a2c16109df894cd61bf384c3e7b160341ff6902830af6b508b"
+    },
+    {
+      "path": "scripts/validate_package.py",
+      "bytes": 4687,
+      "sha256": "a75b7efbf3897407c6f60a5e4163c558021a461b105651497110ebcac7e4bdc1"
+    },
+    {
+      "path": "sources/Daftar_Perbaikan_dan_Improvement_ERP_KainNusantara_2026-10-11.md",
+      "bytes": 35114,
+      "sha256": "8a1a0032aad8efc077bef4d99c6335ba6abda0917c3d9f189037a0f58dd2baf3"
+    },
+    {
+      "path": "sources/Memo_Internal_Developer_WMS_2026-10-08.md",
+      "bytes": 37609,
+      "sha256": "809180eb5c89beb9f619a83e730c3137280236901951164bb80da8d42ec9e905"
+    },
+    {
+      "path": "sources/Memo_Meeting_KainNusantara_2026-10-07.md",
+      "bytes": 28383,
+      "sha256": "bab9ab0381399671a50cb8aa74361e4f784fecfd6ed51e3b8407dd6fb4f6ff74"
+    },
+    {
+      "path": "sources/README.md",
+      "bytes": 899,
+      "sha256": "3ca63eacc59091df52ea7392e22c2161dd2d26bc12722ba4e86effa5b3ca2f0c"
+    },
+    {
+      "path": "sources/wms-developer-2026-10-08/wms-focused-probes.py",
+      "bytes": 13228,
+      "sha256": "f668e7a99489fa6be5d7b36e6596efa1376b3b8082469de567d8f3df8e406eb9"
+    },
+    {
+      "path": "sources/wms-developer-2026-10-08/wms-focused-validation.json",
+      "bytes": 4119,
+      "sha256": "18a0936dc54df39f102c7f70c0ddb6e6b2fa0847ccdfddd88f7286debaa3ee7e"
+    },
+    {
+      "path": "templates/PHASE_REPORT.md",
+      "bytes": 1942,
+      "sha256": "30c913083b93c2cf64a150374a57d7b350e3928132a15dfec5deadf0bce1cb56"
+    },
+    {
+      "path": "TRACKER.md",
+      "bytes": 10722,
+      "sha256": "e999fbb4315c58cf53ce13290d899f1e562585d41220184f3d693e89bec9fe24"
+    }
+  ]
+}

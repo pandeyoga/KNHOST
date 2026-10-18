@@ -1,0 +1,130 @@
+{
+  "completed": true,
+  "commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_1695607641e040d1b36a50615fcc9b5c",
+  "level": "Original WMS UOM services + synthetic local Mongo; not HTTP/browser or full receiving flow",
+  "scenarios": [
+    {
+      "id": "W2-U-C01",
+      "kind": "control",
+      "label": "10 yard to meter",
+      "observed": 9.14,
+      "expected": 9.14
+    },
+    {
+      "id": "W2-U-C02",
+      "kind": "control",
+      "label": "100 cm to meter",
+      "observed": 1.0,
+      "expected": 1.0
+    },
+    {
+      "id": "W2-U-C03",
+      "kind": "control",
+      "label": "10 inch to meter",
+      "observed": 0.25,
+      "expected": 0.25
+    },
+    {
+      "id": "W2-U-C04",
+      "kind": "control",
+      "label": "2 rolls at 50 meter each",
+      "observed": 100.0,
+      "expected": 100.0
+    },
+    {
+      "id": "W2-U-C05",
+      "kind": "control",
+      "label": "100 meter to rolls",
+      "observed": 2.0,
+      "expected": 2.0
+    },
+    {
+      "id": "W2-U-C06",
+      "kind": "control",
+      "label": "3 kg at GSM200 width1.5m",
+      "observed": 10.0,
+      "expected": 10.0
+    },
+    {
+      "id": "W2-U-C07",
+      "kind": "control",
+      "label": "10 meter to kg",
+      "observed": 3.0,
+      "expected": 3.0
+    },
+    {
+      "id": "W2-U-C08",
+      "kind": "control",
+      "label": "uppercase master alias YRD",
+      "observed": 9.14,
+      "expected": 9.14
+    },
+    {
+      "id": "W2-U-C09",
+      "kind": "control",
+      "label": "3 dozen to pieces",
+      "observed": 36.0,
+      "expected": 36.0
+    },
+    {
+      "id": "W2-U-C10",
+      "kind": "control",
+      "label": "100 yard round trip",
+      "observed": 100.0,
+      "expected": 100.0
+    },
+    {
+      "id": "W2-U-C11",
+      "kind": "control",
+      "label": "kg per yard base",
+      "observed": 0.27432,
+      "expected": 0.27432
+    },
+    {
+      "id": "W2-U-C12",
+      "kind": "control",
+      "label": "roll without factor rejected",
+      "observed": true,
+      "expected": true
+    },
+    {
+      "id": "W2-U-C13",
+      "kind": "control",
+      "label": "variance boundary 101",
+      "observed": "ok",
+      "expected": "ok"
+    },
+    {
+      "id": "W2-U-C14",
+      "kind": "control",
+      "label": "variance boundary 102",
+      "observed": "warn",
+      "expected": "warn"
+    },
+    {
+      "id": "W2-U-C15",
+      "kind": "control",
+      "label": "variance boundary 105",
+      "observed": "block",
+      "expected": "block"
+    },
+    {
+      "id": "W2-U-C16",
+      "kind": "control",
+      "label": "conversion trail quantity and source",
+      "observed": {
+        "doc_qty": 2.0,
+        "base_qty": 100.0,
+        "factor": 50.0,
+        "source": "product_override"
+      },
+      "expected": {
+        "doc_qty": 2.0,
+        "base_qty": 100.0,
+        "factor": 50.0,
+        "source": "product_override"
+      }
+    }
+  ]
+}

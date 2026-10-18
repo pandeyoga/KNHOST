@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_rfid_comprehensive.py",
+    "database": "knhost_audit_native90_5ad83b2821c94f70b5cb5995a21dc328",
+    "exit": 1,
+    "seconds": 59.17,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_rfid_comprehensive.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": " Gate Simulate\n✅ PASSED - Gate Simulate (Status: 200)\n✅   Gate result: RED - Roll KARANTINA (QC hold) — dilarang keluar.\nℹ️ \n=== READER SCAN ===\nℹ️ Testing: Get Devices for Reader Test\n✅ PASSED - Get Devices for Reader Test (Status: 200)\nℹ️ Testing: Reader Scan\n✅ PASSED - Reader Scan (Status: 200)\nℹ️   Scanned 13 tags\nℹ️ \n=== RFID READS ===\nℹ️ Testing: Reads List (all)\n✅ PASSED - Reads List (all) (Status: 200)\nℹ️   Total reads: 50\nℹ️ Testing: Reads List (result=red)\n✅ PASSED - Reads List (result=red) (Status: 200)\nℹ️   Red alerts: 3\nℹ️ \n=== RFID LOCATIONS ===\nℹ️ Testing: Locations\n✅ PASSED - Locations (Status: 200)\nℹ️   Location items: 43\nℹ️   States found: {'drift', 'tracked'}\nℹ️   Drift detected: 1 items\nℹ️ \n=== ENCODE/RETIRE FLOW ===\nℹ️ Testing: Get Tags for Encode/Retire Test\n✅ PASSED - Get Tags for Encode/Retire Test (Status: 200)\nℹ️ Testing: Retire Tag\n✅ PASSED - Retire Tag (Status: 200)\nℹ️ Testing: Check Untagged Rolls\n✅ PASSED - Check Untagged Rolls (Status: 200)\n✅   Roll roll_f6af7844f356 now in untagged list\nℹ️ Testing: Re-encode Tag\n✅ PASSED - Re-encode Tag (Status: 200)\n✅   Roll re-encoded with EPC: E2CEE91042B3714D32A89C33\nℹ️ \n=== CAPTURING STOCK SNAPSHOT (AFTER) ===\nℹ️ Testing: Get Inventory Summary (after)\n❌ FAILED - Get Inventory Summary (after) (Expected 200, got 404)\n❌   Error: {'detail': 'Not Found'}\nℹ️ \n=== SSOT VERIFICATION ===\n⚠️   Cannot verify SSOT - missing snapshots\nℹ️ \n============================================================\nℹ️ RFID COMPREHENSIVE TEST SUMMARY\nℹ️ ============================================================\nℹ️ Total Tests: 28\n✅ Passed: 26\n❌ Failed: 2\n❌ \nFailed Tests:\n❌   - Get Inventory Summary (before)\n❌   - Get Inventory Summary (after)\n✅ \nSuccess Rate: 92.9%\nℹ️ ============================================================\n"
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_fase_b.py",
+    "database": "knhost_audit_native90_e5c439547eb54474bf155d1c1182d1da",
+    "exit": 0,
+    "seconds": 51.4,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_fase_b.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "============================================================================\n\n🔍 Test 9: Get reorder suggestions (velocity-based)\n  → GET /api/purchase-requisitions/reorder-suggestions\n✅ PASSED - Status: 200\n  Reorder suggestions: 7\n  ROP candidates (products without ROP): 0\n  Config - Velocity window: 90 days\n  Config - Safety days: 7 days\n  \nSample reorder suggestions:\n    - SKU: PFP-KTN-001 | Product: Kain PFP Katun (siap print, per Yard)\n      Available: 24.5 | On Order: 0.0 | Projected: 24.5\n      ROP: 300.0 | Suggested Qty: 800.0\n      Avg Daily Sold: 0.0 | Suggested ROP: 0.0\n      Lead Time: 0 days | Supplier: Makloon Pre-Treatment\n    - SKU: ENK-BALI-003 | Product: Endek Bali Rangrang\n      Available: 110.0 | On Order: 0.0 | Projected: 110.0\n      ROP: 250.0 | Suggested Qty: 500.0\n      Avg Daily Sold: 0.0 | Suggested ROP: 0.0\n      Lead Time: 12 days | Supplier: Bali Weave Studio\n    - SKU: ENK-BALI-002 | Product: Endek Bali Rangrang\n      Available: 150.0 | On Order: 0.0 | Projected: 150.0\n      ROP: 250.0 | Suggested Qty: 500.0\n      Avg Daily Sold: 0.0 | Suggested ROP: 0.0\n      Lead Time: 12 days | Supplier: Bali Weave Studio\n\n================================================================================\nPHASE 5: SSOT REGRESSION CHECK\n================================================================================\n  ✅ Putaway API only updates roll.bin_id (verified in code)\n  ✅ Putaway does NOT directly modify inventory_balances\n  ✅ inventory_balances is a derived projection (SSOT maintained)\n\n================================================================================\nTEST SUMMARY\n================================================================================\nTotal tests run: 9\nTests passed: 9\nTests failed: 0\nSuccess rate: 100.0%\n\n🎉 ALL TESTS PASSED!\n"
+  }
+]

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_f0a_entity_context.py",
+    "database": "knhost_audit_native90_8f7be3fa6074496da72ac724581ec3b1",
+    "exit": 1,
+    "seconds": 58.54,
+    "pass_log_tokens": 40,
+    "fail_log_tokens": 2,
+    "log": "continuation-90\\native-backend_test_f0a_entity_context.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "iched Entity Data\n======================================================================\n  ✅ PASS: /entities returns 200\n      Got status: 200\n  ✅ PASS: /entities returns at least 2 entities\n      Got 2 entities\n  ✅ PASS: /entities includes ent_ksc\n      Entity IDs: ['ent_ksc', 'ent_kanda']\n  ✅ PASS: /entities includes ent_kanda\n      Entity IDs: ['ent_ksc', 'ent_kanda']\n  ✅ PASS: ent_ksc has enriched field 'currency'\n      Value: IDR\n  ✅ PASS: ent_ksc has enriched field 'coa_template'\n      Value: id_standard\n  ✅ PASS: ent_ksc has enriched field 'incentive_payer'\n      Value: sales_entity\n  ✅ PASS: ent_ksc has enriched field 'numbering_scheme'\n      Value: per_entity_prefix\n  ✅ PASS: ent_ksc incentive_payer = sales_entity (Model 1)\n      Got: sales_entity\n  ✅ PASS: entity_context.entities[ent_ksc].is_pkp = True\n      Got: True\n  ✅ PASS: entity_context.entities[ent_kanda].is_pkp = False\n      Got: False\n\n======================================================================\nTEST 7: Auth Regression Tests\n======================================================================\n  ❌ FAIL: Valid login returns token\n      Token prefix: GJmwP\n  ✅ PASS: Invalid password returns 401\n      Got status: 401\n  ✅ PASS: Logout returns 200\n      Got status: 200\n\n======================================================================\nTEST 8: Protected Endpoint Regression\n======================================================================\n  ✅ PASS: Protected endpoint /home/admin returns 200 for admin\n      Got status: 200\n  ✅ PASS: Protected endpoint /sales-orders returns 200 for admin\n      Got status: 200\n\n======================================================================\nTEST SUMMARY: 40/42 passed, 2/42 failed\n======================================================================\n"
+  }
+]

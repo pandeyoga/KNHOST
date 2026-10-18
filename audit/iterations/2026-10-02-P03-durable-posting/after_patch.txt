@@ -1,0 +1,262 @@
+[_post_cash_in] jurnal kwitansi AUDIT_P03_AEA20B/AR-00001 gagal: fault injection GL
+[
+ {
+  "id": "FN-15",
+  "invariant": "jurnal tidak seimbang ditolak sebelum insert",
+  "pass": true,
+  "detail": "('JournalValidationError', 'Jurnal tidak seimbang (debit 100.00 ≠ kredit 90.00)')"
+ },
+ {
+  "id": "FN-15",
+  "invariant": "jurnal NaN ditolak sebelum insert",
+  "pass": true,
+  "detail": "('JournalValidationError', 'Nilai jurnal tidak valid (NaN/Infinity) pada akun 1-1100')"
+ },
+ {
+  "id": "FN-15",
+  "invariant": "jurnal negatif ditolak sebelum insert",
+  "pass": true,
+  "detail": "('JournalValidationError', 'Nilai jurnal negatif pada akun 1-1100')"
+ },
+ {
+  "id": "FN-15",
+  "invariant": "jurnal dua sisi ditolak sebelum insert",
+  "pass": true,
+  "detail": "('JournalValidationError', 'Baris akun 1-1100 berisi debit DAN kredit sekaligus')"
+ },
+ {
+  "id": "FN-15",
+  "invariant": "jurnal akun induk ditolak sebelum insert",
+  "pass": true,
+  "detail": "('JournalValidationError', 'Akun 1-0000 adalah akun induk (tidak boleh diposting)')"
+ },
+ {
+  "id": "FN-15",
+  "invariant": "jurnal akun tak ada ditolak sebelum insert",
+  "pass": true,
+  "detail": "('JournalValidationError', 'Akun 9-9999 tidak ada di bagan akun')"
+ },
+ {
+  "id": "FN-15",
+  "invariant": "jurnal valid tetap terposting",
+  "pass": true,
+  "detail": "AUDIT_P03_AEA20B/JE-00001"
+ },
+ {
+  "id": "FN-08",
+  "invariant": "rekening baru saldo awal 1000 → jurnal pembukaan Dr Bank/Cr 3-2900",
+  "pass": true,
+  "detail": "je_025b33b05160"
+ },
+ {
+  "id": "FN-08",
+  "invariant": "ubah saldo awal → jurnal penyesuaian selisih 500 (bukan edit diam-diam)",
+  "pass": true,
+  "detail": "AUDIT_P03_AEA20B/JE-00003"
+ },
+ {
+  "id": "FN-07",
+  "invariant": "kas manual berjurnal langsung (gl_status posted)",
+  "pass": true,
+  "detail": "posted"
+ },
+ {
+  "id": "FN-07",
+  "invariant": "void kas: pembalik jurnal + tolak kas turunan dokumen (statis)",
+  "pass": true,
+  "detail": "routers/cash.py"
+ },
+ {
+  "id": "FN-07",
+  "invariant": "pembalik jurnal kas idempotent",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "P03",
+  "invariant": "preflight menolak periode tertutup",
+  "pass": true,
+  "detail": "('ClosedPeriodError', \"Periode 2026-09 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-09-30 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka\")"
+ },
+ {
+  "id": "FN-10",
+  "invariant": "kwitansi di periode tertutup → 409 tanpa kwitansi/alokasi",
+  "pass": true,
+  "detail": "(409, \"Periode 2026-09 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-09-30 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka\")"
+ },
+ {
+  "id": "FN-10",
+  "invariant": "order tidak termutasi & tidak ada kwitansi",
+  "pass": true,
+  "detail": "0.0"
+ },
+ {
+  "id": "FN-10",
+  "invariant": "GL gagal → kwitansi gl_status=failed (tidak tampil sukses final)",
+  "pass": true,
+  "detail": "failed"
+ },
+ {
+  "id": "FN-10",
+  "invariant": "repost 2x → tepat satu jurnal kas",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "CX-01",
+  "invariant": "redeem 10 dengan alokasi 150 ditolak (Σ alokasi ≠ nominal)",
+  "pass": true,
+  "detail": "(400, 'Σ alokasi Rp 150 harus sama dengan nominal penebusan Rp 10')"
+ },
+ {
+  "id": "CX-01",
+  "invariant": "tidak ada mutasi AR dari permintaan tidak sah",
+  "pass": true,
+  "detail": "50.0"
+ },
+ {
+  "id": "CX-03",
+  "invariant": "GL store credit gagal → 409",
+  "pass": true,
+  "detail": "(409, 'Jurnal store credit gagal, penebusan dibatalkan: fault injection GL')"
+ },
+ {
+  "id": "CX-03",
+  "invariant": "setelah gagal: AR dikompensasi (paid tetap 50), saldo kredit 100, kunci lepas",
+  "pass": true,
+  "detail": "{'paid': 50.0, 'bal': 100.0}"
+ },
+ {
+  "id": "CX-03",
+  "invariant": "retry sah: AR +50, saldo 50, satu jurnal",
+  "pass": true,
+  "detail": "50.0"
+ },
+ {
+  "id": "CX-04",
+  "invariant": "pencairan: GL gagal → 409",
+  "pass": true,
+  "detail": "(409, 'Kas AUDIT_P03_AEA20B/CASH-00002 tercatat tetapi jurnal gagal: fault injection GL. Ulangi pencairan untuk melanjutkan (tanpa kas ganda).')"
+ },
+ {
+  "id": "CX-04",
+  "invariant": "retry pencairan: tepat SATU kas 100 + satu jurnal, status disbursed",
+  "pass": true,
+  "detail": "{'cash': 1, 'status': 'disbursed'}"
+ },
+ {
+  "id": "CX-04",
+  "invariant": "pencairan kedua ditolak",
+  "pass": true,
+  "detail": "(409, \"Hanya PD berstatus 'approved' yang bisa dicairkan\")"
+ },
+ {
+  "id": "CX-05",
+  "invariant": "LPJ kedua saat LPJ pertama aktif ditolak",
+  "pass": true,
+  "detail": "(409, 'PD ini sudah punya pertanggungjawaban AUDIT_P03_AEA20B/STL-00001')"
+ },
+ {
+  "id": "CX-05",
+  "invariant": "LPJ baru untuk PD settled ditolak",
+  "pass": true,
+  "detail": "(409, 'Pertanggungjawaban hanya untuk PD berstatus dicairkan (belum selesai)')"
+ },
+ {
+  "id": "CX-06",
+  "invariant": "OUT vs IN ditolak",
+  "pass": true,
+  "detail": "('ValueError', 'Arah dana transaksi T-IN1 berbeda dgn mutasi')"
+ },
+ {
+  "id": "CX-06",
+  "invariant": "BANK1 vs transaksi BANK2 ditolak",
+  "pass": true,
+  "detail": "('ValueError', 'Transaksi T-IN2 bukan milik buku rekening mutasi ini')"
+ },
+ {
+  "id": "CX-07",
+  "invariant": "split T60+T60 atas transaksi 100 ditolak tanpa write",
+  "pass": true,
+  "detail": "('ValueError', 'Alokasi Rp 120 melebihi sisa transaksi T-IN1 (Rp 100)')"
+ },
+ {
+  "id": "CX-07",
+  "invariant": "reconciled_amount tidak bertambah setelah penolakan",
+  "pass": true,
+  "detail": "None"
+ },
+ {
+  "id": "CX-06",
+  "invariant": "bank/arah/nominal sama diterima",
+  "pass": true,
+  "detail": "matched"
+ },
+ {
+  "id": "CX-08",
+  "invariant": "setelah split baris 1, baris 2 (seq 2) tetap paid 100",
+  "pass": true,
+  "detail": "[(1, 'C1', 50.0), (3, 'Sisa C1 (tempo baru)', 0.0), (2, 'C2', 100.0)]"
+ },
+ {
+  "id": "FN-12",
+  "invariant": "edit biaya aset terkapitalisasi ditolak",
+  "pass": true,
+  "detail": "('ValueError', 'Aset sudah dikapitalisasi (jurnal perolehan terposting) — acquisition_cost tidak bisa diedit. Batalkan/koreksi jurnal perolehan lewat Keuangan.')"
+ },
+ {
+  "id": "FN-12",
+  "invariant": "edit nonfinansial tetap boleh",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "IX-14",
+  "invariant": "close GRN ditolak sebelum `closing` bila periode tertutup",
+  "pass": true,
+  "detail": "[\"Periode 2026-09 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-09-30 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka Periode (Unlock).\"]"
+ },
+ {
+  "id": "IX-14",
+  "invariant": "jurnal GR masih gagal → 409 (baris tidak done)",
+  "pass": true,
+  "detail": "(409, \"Stok diterima, tetapi jurnal penerimaan gagal: Periode 2026-09 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-09-30 memerlukan izin 'Buka Periode' yang\")"
+ },
+ {
+  "id": "IX-14",
+  "invariant": "setelah periode dibuka: tepat satu jurnal GR, status posted",
+  "pass": true,
+  "detail": "posted"
+ },
+ {
+  "id": "IX-17",
+  "invariant": "approve di periode tertutup ditolak",
+  "pass": true,
+  "detail": "('ClosedPeriodError', \"Periode 2026-09 sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-09-30 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka\")"
+ },
+ {
+  "id": "IX-17",
+  "invariant": "tidak ada status final / AP berubah sebelum jurnal",
+  "pass": true,
+  "detail": "{'status': 'pending_approval', 'returned': 0.0}"
+ },
+ {
+  "id": "IX-17",
+  "invariant": "GL retur gagal → error (bukan sukses)",
+  "pass": true,
+  "detail": "('ValueError', 'Stok/AP retur tercatat, tetapi jurnal gagal: fault injection GL. Setujui ulang untuk melanjutkan posting.')"
+ },
+ {
+  "id": "IX-17",
+  "invariant": "status posting gagal terlihat (gl_status=failed)",
+  "pass": true,
+  "detail": "failed"
+ },
+ {
+  "id": "IX-17",
+  "invariant": "approve ulang melanjutkan: satu jurnal, AP berkurang SEKALI",
+  "pass": true,
+  "detail": "{'gl': 'posted', 'returned': 100.0}"
+ }
+]
+pass=43 fail=0

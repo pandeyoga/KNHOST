@@ -1,0 +1,45 @@
+{
+  "summary": "L10 LN-100/LN-102/LN-101 review (backend + UI). Developer tests 5/5 pass; new regression file tests/test_l10_t1_review.py 12/12 pass (site tree, owner 403, unchanged structure re-save no migration (W-OVER-01 fix), fabric_types rule on SHARED warehouse RCM-WOVEN (woven milik Kanda lolos, knit ditolak dengan alasan jelas), putaway tanpa jurnal & total stock-tree tetap, Meja Saya dedupe giliran (3 notif/2 dokumen -> +2) count==rows untuk admin/warehouse/manager, LN-101 all kinds (rfid_epc lookup, tag_damaged, foreign, delta_in, unknown, moved_after_cutoff, duplicate), bin luar scope/tag salah 400, rescope after scan 409, warehouse@ finalize 403, reason<5 400, re-finalize 400, whadmin finalize OK + jurnal cycle_count_variance, measured_qty negatif/teks 400, 6 scan paralel -> 1 baris, partial apply + recount tanpa jurnal/mutasi ganda). UI: opname per roll end-to-end di ?view=operations (entity Sukacita) berjalan: snapshot 3 roll, matched, scan ganda, salah alamat+qty+tag rusak, missing, finalize -> 'Disetujui — ada exception', DB terverifikasi (roll pindah bin & 45 yard, 1 jurnal). ?view=wms-locations: lp-hierarchy Lokasi›Gudang›Zona›Lemari›Rak›Bin, stock tree WH-JKT (induk=jumlah anak, alamat bin lengkap, owner filter options), simpan struktur tanpa perubahan -> 'Struktur lokasi tersimpan.' tanpa dialog, kapasitas < isi -> dialog alasan migrasi -> tersimpan + location_migrations. Meja Saya: klik baris giliran membuka row.link (operations/approvals), wms_task -> wms-outbound, sales_return -> returns, purchase_order -> purchasing. Satu temuan medium (finalize opname melewati aturan penempatan).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/cycle-count/sessions/{id}/roll-finalize", "issue": "MEDIUM: apply_scan menulis bin_id langsung (bukan lewat place_roll 'jalur tunggal'). Terbukti: roll dengan active_movement (perpindahan berjalan) tetap direlokasi ke bin scan; roll available yang discan di bin QC (Q01, fungsi qc) dipindah ke bin QC dengan status tetap 'available' -> stok 'tersedia' di area karantina, aturan bin/kapasitas/single-SKU tidak dievaluasi. Sarankan: tolak/jadikan exception bila roll punya active_movement/length_reserved, dan evaluasi pr.evaluate untuk bin tujuan (exception 'wrong_address_rule_block' bukan auto-apply)."},
+      {"endpoint": "POST /api/cycle-count/sessions/{id}/roll-scans", "issue": "find_roll tidak dibatasi entitas/akses: operator yang hanya punya akses entitas tertentu dapat men-scan kode roll entitas lain dan menerima roll_no/product_id/owner_entity_id/live_qty di response (kebocoran info kecil; finalize sudah menolak selisih entitas luar)."},
+      {"endpoint": "services/stock_count_roll_service.make_snapshot", "issue": "node_label = node_id mentah (mis. 'rack_sim_wh_jkt_w11_l1') bila scope berisi >1 bin; UI menampilkan id mentah di roll-count-scope. Pakai path node (Zona › Lemari › Rak)."},
+      {"endpoint": "services/role_desk_service._turn_queue", "issue": "Dedupe memakai action_id or notification id — notifikasi giliran tanpa action_id tetapi untuk dokumen sama (ref sama) tidak di-dedupe. Pertimbangkan fallback ke n.ref tanpa suffix tahap."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "RollCountPanel", "issue": "Pesan sukses scan menampilkan kode kind mentah bahasa Inggris: 'Tercatat: TEST-UI-2 (tag_damaged, wrong_address, qty_diff)' — pakai rec.labels (Indonesia).", "selector": "[data-testid='roll-count-msg']", "priority": "LOW"},
+      {"component": "CycleCount (sesi roll)", "issue": "Sesi opname per roll yang sudah difinalisasi tetap menampilkan kartu 'Item Count (0) — Belum ada item. Tambah produk di atas.' yang membingungkan.", "selector": "[data-testid='cycle-count-panel']", "priority": "LOW"},
+      {"component": "RollCountPanel canApprove", "issue": "Tombol finalisasi digate per nama peran ['admin','manager','warehouse_admin'], bukan izin inventory.approve_count — peran kustom ber-izin tidak melihat tombol / peran tanpa izin melihat tombol lalu 403.", "selector": "[data-testid='roll-finalize-button']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "?view=wms-locations KPI", "issues": ["KPI 'Terisi 23140 roll' termasuk 4582 roll Belum Ditempatkan + 3 yatim (total_rolls), sedangkan stock-tree root 23148 (+8 transit). Label 'Terisi' menyesatkan — harusnya roll ber-bin (18555)."]},
+      {"screen": "Stok per Alamat", "issues": ["Urutan satuan per node tidak konsisten (Rak W01: kg di atas yard; node lain yard dulu)."]},
+      {"screen": "Meja Saya (warehouse@/admin)", "issues": ["Antrean 'Tugas picking & packing' menampilkan id mentah 'wms_a94584a7a867' dan judul 'tugas' — tampilkan nomor SO/tugas & pelanggan.", "Tombol 'Terima' di antrean 'PO menunggu penerimaan' Meja Saya membuka layar PO (purchasing), bukan Barang Masuk seperti Meja Admin Gudang.", "data-testid baris berbasis ref_id saja (my-desk-row-<id>) sehingga dokumen yang muncul di 2 antrean (giliran + po_terima) menghasilkan testid ganda."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l10_t1_review.py", "/app/backend/tests/test_l10_ln100_ln102_stock_tree.py", "/app/backend/tests/test_l10_ln101_roll_count.py", "/app/backend/tests/l10_ui_seed.py", "/app/test_reports/pytest/l10_t1.xml"],
+  "action_items": [
+    "LN-101 finalize: jangan relokasi roll yang punya active_movement/length_reserved dan evaluasi aturan bin tujuan (fungsi QC, kapasitas, single SKU) — jadikan exception, bukan auto-apply",
+    "Batasi find_roll/response roll-scans ke entitas yang dapat diakses (atau samarkan detail roll asing)",
+    "Tampilkan label Indonesia untuk kinds di roll-count-msg & path node yang terbaca di roll-count-scope",
+    "Sembunyikan kartu Item Count untuk sesi mode roll; gate tombol finalisasi via izin inventory.approve_count",
+    "Opsional: perbaiki label KPI 'Terisi' di wms-locations, nomor tugas WMS di Meja Saya"
+  ],
+  "critical_code_review_comments": [
+    "stock_count_roll_service.apply_scan menulis inventory_rolls.bin_id langsung; location_service.place_roll mengklaim 'Jalur TUNGGAL penulisan bin' — dua jalur sekarang, aturan & kunci bin tidak berlaku untuk opname",
+    "cycle_count.roll_finalize: bila apply_scan melempar exception di tengah loop, sesi ditandai mark_failed sementara sebagian baris sudah diterapkan (adjustment tercatat) — perlu jalur pemulihan/retry yang jelas di UI",
+    "make_snapshot memuat hingga 20000 roll ke dokumen sesi (expected[]) — scope 'Seluruh gudang' WH-JKT (~18.5k roll ber-bin) mendekati batas 16MB dokumen Mongo; pertimbangkan koleksi terpisah atau batasi scope",
+    "FE RollCountPanel tidak menampilkan state loading/disabled saat submit (double-click finalize/scan bergantung pada CAS backend)"
+  ],
+  "updated_files": ["/app/backend/tests/test_l10_t1_review.py", "/app/backend/tests/l10_ui_seed.py"],
+  "success_rate": {"backend": "100% (17/17 tests; 1 medium design gap found via probe)", "frontend": "100% flows working; 3 low UI issues"},
+  "seed_data_creation": "Sementara: roll_TEST_UI_0..2 (l10_ui_seed.py) + sesi 'TEST_UI roll', rules fabric_types sementara di RCM-WOVEN, kapasitas W11-L1-01=1 + 1 location_migrations dari uji UI. Semua sudah dihapus/dikembalikan (rolls TEST=0, sesi TEST_=0, location_migrations=0, rules fabric=0). Catatan: simpan struktur via UI menormalisasi bin WH-JKT (menambah function:'' dan rules{} kosong) — tidak berdampak fungsi.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Jalankan per file -n0 dengan REACT_APP_BACKEND_URL. WH-JKT dedicated ent_ksc (roll entitas lain diblok di level gudang) — untuk uji rules shared pakai RCM-WOVEN wh_6b2c7ef462be. UI opname: ?view=operations&entity=ent_ksc -> wms-tab-cycle (mode Semua Entitas memblok buat sesi). wms-locations default gudang GU-KSC (kosong) — pilih 'Jakarta · Gudang Sukacita' di lp-warehouse. Bin structure testid: lp-bin-<binId>-capacity. Dialog alasan: [data-testid$='-reason'] + [data-testid$='-confirm']. Data Meja Saya dinamis (notifikasi/so bertambah selama sesi). Probe test test_probe_relocate_active_movement_and_qc_bin hanya mencetak perilaku (tidak assert) — ubah jadi assert setelah fix."
+}

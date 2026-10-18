@@ -1,0 +1,34 @@
+{
+  "summary": "L02 LN-023-T01 follow-up (Piutang ledger vs Eksposur split). Backend: 11/12 tests pass (fixture lifecycle test 8/9 + new cross-surface demo-data test 3/3). Customer 360 credit, /home/sales, /home/admin, /home/manager, /sales/kpi, order journey and AR aging detail all agree: ledger+exposure==outstanding at every stage (unshipped->all exposure, partial shipment JE moves 4jt to ledger, payment cuts ledger only). Credit gating still uses full outstanding. The one failure: a CANCELLED order's journey still reports outstanding 8.5jt / exposure 6jt. Frontend (static build): every surface checked shows the split correctly: Admin Home, Sales Home (desktop sales.kanda), Customer 360 tile, Sales Force sf-kpi-ar, Order journey journey-ar-split (shipped SO = all ledger, confirmed SO = all exposure), AR aging detail header (text-transform none) with ledger/exposure totals, and mobile 390px home KPI + m-customer-ar-split. All UI numbers match the API.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/sales-orders/{id}/journey", "issue": "Cancelled/expired order still returns outstanding=grand-paid and exposure>0 (test: cancelled SO -> outstanding 8.5jt, ar_ledger 2.5jt, exposure 6jt). Customer 360 correctly shows 0 for the same order. The 'dibayar' step also says 'Sisa tagihan ...' on a cancelled order."},
+      {"endpoint": "GET /api/sales/kpi, /api/home/sales (sales force)", "issue": "Scope is customers.assigned_sales_id only. Demo customers cust_butik_bali/cust_toko_kain have no assigned_sales_id, so sales@ (Ayu) shows Belum Lunas Rp0 even though KSC/SO-00003 (sales_id=user_sales_01) has 2.5jt open. This is existing behaviour and a data gap, not a regression."},
+      {"endpoint": "compute_customer_credit", "issue": "waiting_approval orders (KANDA/SO-00001, 38.7jt) count as exposure. The spec defines exposure as 'confirmed but not shipped'. Confirm this is intended."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Orders list vs journey panel", "issues": ["The list TOTAL column shows the pre-tax amount (KSC/SO-00003 Rp 2.258.520). The journey 'Nilai pesanan' and the AR figures show the amount incl. PPN (Rp 2.506.957). Two different 'total' values for the same order can confuse users. Consider a label such as 'DPP' or showing the same figure in both places."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l02_ln023_t01_ar_split_surfaces.py", "/app/backend/tests/test_l02_ln023_t01_cross_surface_demo.py", "/app/test_reports/pytest/ln023_t01.xml"],
+  "action_items": [
+    "order_journey_service.journey(): when status in STATUS_BATAL, force exposure=0 (and decide on outstanding: 0, or the ledger-only remainder if the JE is not voided). Re-run test_cancelled_order_journey_split.",
+    "Optional: decide whether waiting_approval orders belong in exposure, and whether the sales KPI should also cover orders where sales_id equals the user."
+  ],
+  "critical_code_review_comments": [
+    "order_journey_service.py:166 computes sisa = grand - paid with no check for a cancelled order, and _ledger_split passes that value straight through.",
+    "split_outstanding is shared by aging, customer credit and journey, so the logic lives in one place (good). recognized_by_order runs one query per call; customer credit batches it."
+  ],
+  "updated_files": ["/app/backend/tests/test_l02_ln023_t01_ar_split_surfaces.py (template SO fallback; so_97e1a0a7a24c no longer exists after restore)", "/app/backend/tests/test_l02_ln023_t01_cross_surface_demo.py (new)"],
+  "success_rate": {"backend": "92% (11/12)", "frontend": "100%"},
+  "seed_data_creation": "TEST_ fixtures cust_TEST_ln023t01 / so_TEST_ln023t01 / je_TEST_ln023t01_shp were created and cleaned up (verified 0 left).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database REACT_APP_BACKEND_URL=<frontend/.env> python -m pytest tests/test_l02_ln023_t01_ar_split_surfaces.py tests/test_l02_ln023_t01_cross_surface_demo.py -n0. The CST entity id in demo data is ent_3ac82f5051fc, not ent_7487424c3f95 as test_credentials.md says. Mobile customer path: mobile-tab-btn-more -> 'Pelanggan & lapangan' group -> mobile-more-crm -> m-customer-<id>.",
+  "rca of the issue": "Cancelled-journey exposure: journey() builds sisa from grand_total - paid_total whatever the status. _ledger_split -> split_outstanding then puts everything not recognized into exposure. Fix: short-circuit when dibatalkan."
+}

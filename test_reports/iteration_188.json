@@ -1,0 +1,47 @@
+{
+  "summary": "L01/L04 testing. Backend: test_l01_fabric_xlsx_color 3/3, test_l01_dataset_recap 5/5, test_l01_dataset_edge 10 pass + 1 skip. test_l04_mdq_cut 3/4 on the first run: test_yard_cut_idempotent failed with 3 mdq_cut movements instead of 1. Root cause is the test, not the feature: _roll() always picks the same yard roll and the cleanup only deletes inspections, so every run leaves another 0.25 yd cut, a movement, an mdq_cuts doc and a journal entry. I fixed the assertion to count by source_document. New tests/test_l04_mdq_cut_edge.py has 6 tests: 5 pass and 1 fails (a real bug: the cut is allowed on a completed inspection). Frontend: (1) Dataset import: unknown 'printing' -> cds-add-fabric-printing -> name/UoM -> save works; cds-unknown disappears and the row becomes 'Akan diubah' (fabric_type knit -> printing). (2) recap-download-xlsx downloads rekap_klaim_mitra_awal_sekarang.xlsx with sheets ['Ringkasan per Mitra','Rincian']. No entity has susut/claim data, so only the empty structure was checked. (3) The Catalog Workspace triad shows internal '10', supplier 'WRN-77 (WRN-77) — CV Cipta Sandang Textile · B-COL-12 ...' and customer (a customer_color set temporarily for the test). (4) PR article picker search matches the supplier color (WRN-77, B-COL-12) and the customer color (TEST_MERAH). (5) MDQ (admin, ?view=inspections -> ins-detail -> ins-line-mdq): mdq-cut-box defaults to 0.25 -> submit -> 'Terpotong 0.25 yard'; the roll goes from 150 to 149.75 and length_initial stays 150; reopening shows mdq-cut-done. BUT components/ProductDetail.jsx is not imported anywhere, so the triad does not appear in the sales portal or the MD mobile product detail.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/inspections/{id}/lines/{lid}/mdq-cut", "issue": "No check on the inspection's status or kind. A cut on a status='completed' inspection returns 200 and reduces stock. It should be limited to open inspections (draft/assigned/in_progress) and the MDQ kinds (po_receipt/makloon_output), with a 409 otherwise. Repro: tests/test_l04_mdq_cut_edge.py::test_completed_inspection_should_block"},
+      {"endpoint": "services/mdq_cut_service.cut", "issue": "If the process fails after the mdq_cuts 'pending' insert (or after the roll $inc but before 'posted'), every retry returns 409 'sedang/sudah diproses' and nothing can recover it (no stale-pending takeover or reconciliation). Stock could also be cut without a movement or journal."},
+      {"endpoint": "services/fabric_type_master_service", "issue": "There is no deactivate/delete endpoint. The in-memory dr.FABRIC_TYPES is only refreshed on create or startup, so removing a type in Mongo only takes effect after a backend restart."},
+      {"endpoint": "client_dataset batches list", "issue": "The stored batch summary is frozen at upload. After a fabric type is added, the GET batch report shows 1 diubah, but the Riwayat impor row still says '0 diubah · 1 ditolak' (the onAdded callback doesn't call loadBatches either)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "components/ProductDetail.jsx", "issue": "Dead component: it is not imported anywhere in src. The ProductColorTriad added there is never rendered. MD mobile (MobileMdViews.jsx) uses its own local ProductDetail with no triad, and the sales portal product detail has no triad either. The only place product-color-triad-<id> appears is the Catalog Workspace.", "selector": "[data-testid^=product-color-triad-]", "priority": "MEDIUM"},
+      {"component": "MdqCutBox", "issue": "After a successful cut the box keeps the editable yard input and the 'Catat potong' button. InspectLineModal doesn't pass onDone, so the box doesn't switch to mdq-cut-done until the modal is reopened. A second click silently replays and shows the same success message.", "selector": "[data-testid=mdq-cut-submit]", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "MDQ cut as md@", "issue": "md@kainnusantara.id is redirected from ?view=inspections to md-desk, so the MDQ modal UI could only be tested as admin. md@ and mdquality@ can cut through the API (200).", "affected_selectors": ["ins-line-mdq-<id>"]}
+    ],
+    "design_issues": [
+      {"screen": "Rekap Susut & Klaim Mitra", "issues": ["recap-from/recap-to use the native <input type=date> instead of KNDatePicker (which PR and others use)"]},
+      {"screen": "KNSelect product/article search", "issues": ["cmdk fuzzy matching is noisy: 'WRN-77' matched 11 articles, including unrelated ones (SAPPORO LINEN, Grey Woven). The correct one ranks first. This was already the behaviour before this session."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l04_mdq_cut.py", "/app/backend/tests/test_l04_mdq_cut_edge.py", "/app/backend/tests/test_l01_fabric_xlsx_color.py", "/app/backend/tests/test_l01_dataset_recap.py", "/app/backend/tests/test_l01_dataset_edge.py"],
+  "action_items": [
+    "Block mdq-cut on closed or non-MDQ inspections (status not in draft/assigned/in_progress -> 409)",
+    "Wire ProductColorTriad into the real product detail surfaces (MobileMdViews local ProductDetail, the sales portal product detail/quickview), or delete the dead components/ProductDetail.jsx. Respect canSeeSourcing for the supplier color if sales should not see it.",
+    "Fix test_l04_mdq_cut.py teardown: revert length_remaining and usage_history, delete the mdq_cut movements, mdq_cuts and journal_entries (source_id mdq:<key>), and rebuild the balance. Optionally pick a random roll. Today every run permanently cuts 0.25 yd from the same demo roll.",
+    "MdqCutBox: pass onDone from InspectLineModal (refresh the line) so mdq-cut-done shows right away and the submit button is hidden",
+    "Add a stale-pending recovery to mdq_cut_service (e.g. take over a pending doc older than N seconds, or use a transaction)",
+    "ClientDatasetImportView onAdded: also call loadBatches(), and refresh the stored summary in get_batch for dry_run batches",
+    "Make test_l01_dataset_edge clean up the dry_run batch it leaves behind (edge.csv)"
+  ],
+  "critical_code_review_comments": [
+    "mdq_cut_service: the yard roll's weight_kg is ignored without any message. A kg roll whose line.unit is missing would hide the kg input in the UI (isKg reads line.unit, not the roll's unit). Inspection lines built by inspection_service do include unit, so this is fine today.",
+    "fabric_type_master: create() is upsert $setOnInsert, so a race-safe 409 is good. Code normalisation (non [a-z0-9_] -> '_') means 'Printing Digital' becomes 'printing_digital', but the FE posts the raw unknown value as the code. If the import value has spaces or uppercase, the saved code differs from the value and the row may still be unknown. Worth testing with 'Printing Digital'.",
+    "supplier_contracts recap.xlsx reuses the JSON handler (good). It was only exercised with empty data, so add a populated-data test."
+  ],
+  "updated_files": ["/app/backend/tests/test_l04_mdq_cut.py (assertion scoped to source_document)", "/app/backend/tests/test_l04_mdq_cut_edge.py (new)"],
+  "success_rate": {"backend": "92% (22/24 executed; 1 test-design failure since fixed + 1 real bug)", "frontend": "80% (4/5 flows OK; the triad is missing from the sales/MD mobile detail)"},
+  "seed_data_creation": "Temporary and all cleaned: md_fabric_types 'printing' + its dry_run batch were deleted (backend restarted to reload FABRIC_TYPES); the edge.csv dry_run batch was deleted; the TEST inspection ins_test_ui_l04 was removed; products.prod_b2a29e9cace5.customer_color was unset; all 9 test mdq_cuts were reverted (roll_d922db785d58 back to 47.5, roll_710be476677b to 10.07, roll_3066bcc2bd26 to 150; movements and journals deleted; balances rebuilt).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "MDQ UI: admin -> ?view=inspections&entity=ent_ksc -> ins-detail-<insId> -> ins-line-mdq-<lineId> -> ins-line-modal / mdq-cut-box. md@ cannot open ?view=inspections. Insert a test inspection in Mongo (kind po_receipt, status in_progress, entity_id=roll.owner_entity_id, lines with unit) and revert the cut afterwards (see /tmp/revert_mdq.py logic: $inc length_remaining back, pull usage_history ref, delete the movement by source_document, delete journals by source_id 'mdq:<ins>:<line>', delete mdq_cuts, rebuild_balance). The triad is visible at ?view=product-templates -> catalog-search 'ALICE' -> catalog-open-ptpl_4f50185cc28b -> catalog-select-prod_b2a29e9cace5. The PR picker test: ?view=purchase-requisitions -> pr-create-btn -> pr-article-select-search. There is no makloon susut/claim data, so the recap is empty.",
+  "rca of the issue": "test_yard_cut_idempotent: 3 == 1. The test's _roll() is find_one with no sort, so it returns the same roll every run. test_cleanup deletes only the inspections and leaves inventory_movements (mdq_cut), mdq_cuts, journal_entries and the reduced length_remaining. The count by roll_id therefore grows with each run. The service's idempotency per inspection line is correct (the second POST replays)."
+}

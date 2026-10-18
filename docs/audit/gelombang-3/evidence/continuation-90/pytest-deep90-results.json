@@ -1,0 +1,791 @@
+[
+  {
+    "module": "test_iter313_audit_fixes.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 11.57,
+    "cases": 17,
+    "failed": [
+      "test_t02_cors_allowed_origin",
+      "test_t08_seed_demo_wrong_confirm"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter314_saga_and_reopen.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 5.79,
+    "cases": 8,
+    "failed": [
+      "test_stuck_saga_lock_visibility_and_release"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter315_saga_locks_new_collections.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 3.37,
+    "cases": 7,
+    "failed": [
+      "test_saga_locks_lists_new_collections"
+    ],
+    "skipped": [
+      "test_release_no_lock"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter316_designer_kpi_design_weight.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 7.8,
+    "cases": 9,
+    "failed": [
+      "test_weights_and_rows",
+      "test_design_score_trend",
+      "test_weight_changes"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter319_dsr_studio_sync.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 3.66,
+    "cases": 10,
+    "failed": [],
+    "skipped": [
+      "test_create_design_forbidden_for_other_designer"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter320_dsr_references.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 2.21,
+    "cases": 6,
+    "failed": [],
+    "skipped": [
+      "test_designer_get_reference_foreign_request_403"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter320_mobile_amendments_customers.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 1.9,
+    "cases": 5,
+    "failed": [],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter321_rolls_pagination.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 3.13,
+    "cases": 7,
+    "failed": [
+      "test_bare_limit_100",
+      "test_paged_envelope"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_f1a_pricelist.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 6.57,
+    "cases": 16,
+    "failed": [
+      "test_create_then_grid_shows_entity_only_for_ksc"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_f1b_product_templates.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 5.94,
+    "cases": 20,
+    "failed": [
+      "test_create_template_ok",
+      "test_generate_variants_cartesian",
+      "test_generate_variants_idempotent",
+      "test_generate_variants_subset_axes",
+      "test_get_template_detail",
+      "test_list_templates",
+      "test_list_templates_search",
+      "test_assign_and_detach",
+      "test_products_include_template_fields",
+      "test_patch_product_template_id",
+      "test_rbac_sales_cannot_generate",
+      "test_rbac_sales_cannot_delete",
+      "test_delete_template_non_destructive"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_f2_stock_buckets.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 8.2,
+    "cases": 20,
+    "failed": [],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_fase_sl_item_label_pattern.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 3.44,
+    "cases": 7,
+    "failed": [
+      "test_01_set_item_pattern",
+      "test_02_scanned_rolls_exposes_item_patterns",
+      "test_03_gs1_label_decoded_by_item_pattern",
+      "test_04_delimited_label_falls_back_to_supplier_pattern",
+      "test_05_gs1_without_sku_implies_item",
+      "test_06_garbage_still_undecodable",
+      "test_07_clear_item_pattern_with_empty_object"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_fase_sl_scan_label.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 5.32,
+    "cases": 18,
+    "failed": [
+      "test_01_list_scanned_rolls_initial",
+      "test_02_scan_json",
+      "test_03_scan_delimited",
+      "test_04_scan_gs1",
+      "test_05_duplicate",
+      "test_06_unmapped",
+      "test_07_not_in_task",
+      "test_08_no_roll_no",
+      "test_09_undecodable",
+      "test_10_over_po",
+      "test_11_manual_fallback",
+      "test_12_confirm_measure_variance",
+      "test_13_putaway",
+      "test_14_delete_manual",
+      "test_15_stats",
+      "test_17_pattern_get_put_and_scan_meter",
+      "test_18_complete_task"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_rnd_proof_gallery_smoke.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 2.3,
+    "cases": 1,
+    "failed": [
+      "test_attachment_download_smp_00008"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_rnd_samples_qa3.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 2.56,
+    "cases": 5,
+    "failed": [
+      "test_create_sample_labdip_handfeel",
+      "test_patch_add_proofing_type"
+    ],
+    "skipped": [
+      "test_cancel_cleanup"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter39_design_hold_proofing.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 5.67,
+    "cases": 16,
+    "failed": [
+      "test_gallery_shape_and_specific_items",
+      "test_gallery_filter_on_hold",
+      "test_hold_already_held_returns_400",
+      "test_release_then_rehold_roundtrip",
+      "test_hold_on_draft_400",
+      "test_proofing_rejected",
+      "test_labdip_allowed_then_cancel",
+      "test_update_story_produces_timeline_diff",
+      "test_history_endpoint_shape_and_kind_filter"
+    ],
+    "skipped": [
+      "test_request_revision_ignores_score",
+      "test_file_upload_and_delete"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter40_design_rnd.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 4.14,
+    "cases": 8,
+    "failed": [
+      "test_final_requirement_no_colorway",
+      "test_upload_source_file_and_download_and_delete",
+      "test_colorway_kind_still_accepted",
+      "test_invalid_kind_rejected",
+      "test_full_flow_send_submit_assess",
+      "test_admin_creator_cannot_decide",
+      "test_manager_decide_and_master_data"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter43_sample_spec_required.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 3.12,
+    "cases": 8,
+    "failed": [],
+    "skipped": [
+      "test_attach_spec_on_legacy_sample"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter44_two_color.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 2.61,
+    "cases": 2,
+    "failed": [
+      "test_existing_product_two_color",
+      "test_decide_syncs_two_color_to_new_product"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter268_order_preview.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 1.62,
+    "cases": 9,
+    "failed": [
+      "test_verify_synthetic_defective_order_409"
+    ],
+    "skipped": [
+      "test_verify_incomplete_order_returns_409"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter270_reallocate_extra.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 3.04,
+    "cases": 4,
+    "failed": [
+      "test_reallocate_keeps_old_roll_and_adds_new"
+    ],
+    "skipped": [
+      "test_reallocate_confirmed_order_conflict"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter272_blanket_unit.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 1.28,
+    "cases": 3,
+    "failed": [
+      "test_bogus_unit_rejected",
+      "test_master_unit_accepted_and_persisted",
+      "test_call_off_unit_mismatch_rejected"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter273_approval_rules.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 1.57,
+    "cases": 12,
+    "failed": [
+      "test_list_has_engine_schema_and_sorted"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter275_g1_admin_sales_audit.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 6.37,
+    "cases": 50,
+    "failed": [
+      "test_desk_sales_admin_8_antrean",
+      "test_desk_finance_5_antrean",
+      "test_a0_sales_portfolio_visibility",
+      "test_a1_warehouse_pick_and_dispatch",
+      "test_a1_status_shipped_then_delivered",
+      "test_f_pin_list_and_queue"
+    ],
+    "skipped": [
+      "test_a6_min_cut_rule",
+      "test_e_reject_requires_reason",
+      "test_f_sources_for_open_pin",
+      "test_f_sales_cannot_see_sources",
+      "test_f_convert_to_interco",
+      "test_f_pricing_uses_internal_contract",
+      "test_no_qc_release"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter276_g2_md_audit.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 8.0,
+    "cases": 50,
+    "failed": [
+      "test_G3_setujui_pr_lalu_realisasikan_jadi_po",
+      "test_G4_po_baru_tampil_di_papan",
+      "test_I1_spesifikasi_draf_ajukan_setujui",
+      "test_I5_nilai_acc_dan_putuskan_pemenang",
+      "test_J4_minta_revisi_menuntut_alasan_lalu_acc",
+      "test_D1_tiga_od_demo"
+    ],
+    "skipped": [
+      "test_G6_amandemen_po_disetujui_menuntut_alasan"
+    ],
+    "input_adaptations": [
+      {
+        "url": "http://127.0.0.1:8026/api/rnd/samples/smp_a53e85805078/rounds/rnd_1ab6d98960b6/submit",
+        "added_field": "performed_by_user_id",
+        "value": "user_manager_01",
+        "reason": "Current mandatory performer input; original assertions retained. Unadapted 422 was independently recorded."
+      }
+    ],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter278_fulfillment_whguard.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 4.31,
+    "cases": 10,
+    "failed": [],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter279_po_line_lock.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 3.79,
+    "cases": 16,
+    "failed": [],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter280_makloon_partial_queue.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 2.82,
+    "cases": 6,
+    "failed": [],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter284_pb01_md02_md08.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 3.27,
+    "cases": 13,
+    "failed": [
+      "test_pb01_blanket_create_ok",
+      "test_pb01_blanket_inherits_supplier_term_when_missing",
+      "test_pb01_blanket_invalid_term_code",
+      "test_pb01_blanket_invalid_tax_mode",
+      "test_pb01_call_off_excluded",
+      "test_pb01_call_off_included",
+      "test_color_library_labdip_overdue"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter285_feedback_export_hutang.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 6.45,
+    "cases": 17,
+    "failed": [
+      "test_finance_desk_hutang_jatuh_tempo"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter291_audit_probes.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 5.72,
+    "cases": 28,
+    "failed": [
+      "test_sales_write_forbidden",
+      "test_photo_get_wrong_id_404"
+    ],
+    "skipped": [
+      "test_driver_can_act_on_delivery_not_assigned_to_him",
+      "test_driver_position_on_foreign_delivery",
+      "test_driver_transition_on_foreign_delivery",
+      "test_driver_get_foreign_entity_delivery_blocked",
+      "test_patch_bad_eta_400",
+      "test_patch_bad_mode_400",
+      "test_patch_empty_body_400",
+      "test_patch_completed_400",
+      "test_transition_from_completed_400",
+      "test_transition_unknown_status_400",
+      "test_upload_txt_rejected",
+      "test_upload_bad_kind_rejected",
+      "test_position_string_lat_coerced",
+      "test_position_out_of_range_lat",
+      "test_position_on_prepared_blocked",
+      "test_my_route_sets_order_on_delivered"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter292_audit_fixes.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 4.18,
+    "cases": 15,
+    "failed": [
+      "test_netting_over_reverse_receivable_rejected"
+    ],
+    "skipped": [
+      "test_netting_within_reverse_receivable_allowed",
+      "test_default_method_is_transfer",
+      "test_transfer_allowed"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter292_f01_dispatch_gl.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 2.72,
+    "cases": 2,
+    "failed": [
+      "test_e01_reservations_visible_for_owning_entity",
+      "test_f01_dispatch_posts_revenue_and_cogs"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter293_audit_backlog.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 4.37,
+    "cases": 19,
+    "failed": [
+      "test_01_l8_non_dispatched_rejected",
+      "test_02_create_deliveries",
+      "test_03_p1_1_driver_write_guard",
+      "test_04_p1_1_driver_read_allowed",
+      "test_05_driver_write_own_allowed",
+      "test_06_p1_3_unload",
+      "test_07_l2_position_validation_and_delete",
+      "test_08_l3_my_route_active",
+      "test_09_l4_combined_message_and_delivered",
+      "test_10_l9_notification_to_sales",
+      "test_11_l3_my_route_inactive_rejected",
+      "test_13_p1_2_shipment_carries_logistics",
+      "test_14_g3_ai_status_keys",
+      "test_16_g8_daily_limit",
+      "test_17_g6_comment_notification_and_delete"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter298_kebpdpt_e2e.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 8.05,
+    "cases": 15,
+    "failed": [
+      "test_01_create_order_and_advance_receipt",
+      "test_02_no_sales_order_je_before_shipment",
+      "test_03_cash_je_credits_advance_not_receivable",
+      "test_04_journey_reports_advance_unrecognized",
+      "test_05_payment_tagged_advance",
+      "test_06_finance_desk_advance_queue",
+      "test_07_pick_and_dispatch",
+      "test_08_revenue_cogs_and_reclass_je",
+      "test_09_journey_recognized",
+      "test_10_idempotent_no_duplicate_je",
+      "test_11_finance_desk_no_longer_lists_order",
+      "test_12_receipt_after_shipment_credits_receivable",
+      "test_13_void_advance_receipt_reverses_reclass",
+      "test_14_advance_account_nets_to_zero"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter299_prorata_advance_report.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 10.8,
+    "cases": 21,
+    "failed": [
+      "test_01_order_and_advance",
+      "test_02_partial_dispatch",
+      "test_03_shipment_revenue_prorata",
+      "test_04_shipment_cogs",
+      "test_05_advance_reclass_partial",
+      "test_06_journey_pct",
+      "test_07_dispatch_remainder",
+      "test_08_totals_exact",
+      "test_09_cogs_proportional",
+      "test_10_advance_reclass_full",
+      "test_11_journey_full_and_idempotent",
+      "test_13_void_receipt",
+      "test_14_advance_account_net_zero",
+      "test_15_second_order_with_advance",
+      "test_16_report_contents[admin@kainnusantara.id]",
+      "test_16_report_contents[finance@kainnusantara.id]",
+      "test_17_search_filter",
+      "test_20_finance_desk_partial_advance"
+    ],
+    "skipped": [
+      "test_12_legacy_order_untouched"
+    ],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter303_doc_resolve.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 4.04,
+    "cases": 12,
+    "failed": [],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter305_hpp_from_po.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 4.79,
+    "cases": 7,
+    "failed": [
+      "test_patch_harga_pokok_ignored"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_iter306_hpp_redaction_bootstrap.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 3.56,
+    "cases": 6,
+    "failed": [
+      "test_admin_dashboard_products_have_hpp"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_color_links.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 2.84,
+    "cases": 3,
+    "failed": [
+      "test_supplier_variants_contains_target_row",
+      "test_color_links_returns_full_structure"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_design_studio_flow.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 6.36,
+    "cases": 12,
+    "failed": [
+      "test_lifecycle_full",
+      "test_designer_forbidden_assess"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_home_boards_and_drift.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 4.73,
+    "cases": 5,
+    "failed": [
+      "test_home_sales_boards_present"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_inbound_complete_characterization.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 4.08,
+    "cases": 2,
+    "failed": [],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_uom_1_13.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 1.91,
+    "cases": 12,
+    "failed": [],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_wms_advance_expected.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 2,
+    "seconds": 2.29,
+    "cases": 1,
+    "failed": [
+      ""
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_saga_lock_registry.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 1.7,
+    "cases": 1,
+    "failed": [
+      "test_every_claimed_collection_is_listed_in_saga_locks"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_posting_failures.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 0,
+    "seconds": 3.8,
+    "cases": 5,
+    "failed": [],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_notifications_addressing.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 1,
+    "seconds": 5.01,
+    "cases": 5,
+    "failed": [
+      "test_generate_creates_special_order_approval",
+      "test_recipients_are_approvers_only"
+    ],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  },
+  {
+    "module": "test_config_clear_layer.py",
+    "database": "knhost_audit_native90_deep_f221bb1fe1c447fe",
+    "exit": 5,
+    "seconds": 2.29,
+    "cases": 0,
+    "failed": [],
+    "skipped": [],
+    "input_adaptations": [],
+    "note": "Original assertions, deployment/loop adapter and disclosed current sampling performer input; isolated synthetic template reset per module."
+  }
+]

@@ -1,0 +1,142 @@
+{
+  "database": "knhost_audit_d72f9ff853a44ba3a1e2a1d598e226ab",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "mode": "Actual payroll/GL services+Mongo, payment via ASGI; tax/BPJS disabled synthetic arithmetic fixture, no statutory accuracy conclusion, no bank transfer",
+  "results": [
+    {
+      "id": "W2-PAY-C01",
+      "kind": "control",
+      "label": "Synthetic no-deduction payroll arithmetic",
+      "observed": [
+        100000.0,
+        100000.0,
+        1
+      ],
+      "expected": [
+        100000,
+        100000,
+        1
+      ]
+    },
+    {
+      "id": "W2-PAY-C02",
+      "kind": "control",
+      "label": "Approve draft rejected",
+      "observed": true,
+      "expected": true
+    },
+    {
+      "id": "W2-PAY-C03",
+      "kind": "control",
+      "label": "Pay before posting rejected",
+      "observed": true,
+      "expected": true
+    },
+    {
+      "id": "W2-PAY-C04",
+      "kind": "control",
+      "label": "Reject requires explanation",
+      "observed": true,
+      "expected": true
+    },
+    {
+      "id": "W2-PAY-C05",
+      "kind": "control",
+      "label": "Reject returns draft with retained reason",
+      "observed": [
+        "draft",
+        "Synthetic correction"
+      ],
+      "expected": [
+        "draft",
+        "Synthetic correction"
+      ]
+    },
+    {
+      "id": "W2-PAY-C06",
+      "kind": "control",
+      "label": "Accrual posts100k salary liability",
+      "observed": [
+        "posted",
+        100000.0,
+        100000.0
+      ],
+      "expected": [
+        "posted",
+        100000,
+        100000
+      ]
+    },
+    {
+      "id": "W2-PAY-C07",
+      "kind": "control",
+      "label": "Payroll payment clears salary liability",
+      "observed": [
+        "paid",
+        -100000.0,
+        0.0
+      ],
+      "expected": [
+        "paid",
+        -100000,
+        0
+      ]
+    },
+    {
+      "id": "W2-PAY-F01",
+      "kind": "defect",
+      "label": "Paid payroll credits GL cash without any cash book transaction",
+      "observed": [
+        -100000.0,
+        0
+      ],
+      "expected": [
+        -100000,
+        0
+      ]
+    },
+    {
+      "id": "W2-PAY-C08",
+      "kind": "control",
+      "label": "Repeat pay blocked",
+      "observed": true,
+      "expected": true
+    },
+    {
+      "id": "W2-PAY-C09",
+      "kind": "control",
+      "label": "Same period run creation returns existing paid run",
+      "observed": [
+        "prun_eb81b01cf5ff",
+        "paid"
+      ],
+      "expected": [
+        "prun_eb81b01cf5ff",
+        "paid"
+      ]
+    },
+    {
+      "id": "W2-PAY-F02",
+      "kind": "defect",
+      "label": "Payroll marked paid using salary expense as cash account",
+      "observed": [
+        "paid",
+        [
+          [
+            "6-1000",
+            100000.0
+          ]
+        ]
+      ],
+      "expected": [
+        "paid",
+        [
+          [
+            "6-1000",
+            100000
+          ]
+        ]
+      ]
+    }
+  ]
+}

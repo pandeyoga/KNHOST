@@ -1,0 +1,44 @@
+{
+  "summary": "Retest of L02 LN-022 after the iteration_210 fixes. All three iteration_210 gaps are now fixed. (1) The UI 'Ajukan Harga Khusus' form creates an SO pending special_price entry with alloc_sig. (2) /price-approvals approve/reject now routes through decide_approval. (3) The line badge shows 'Harga khusus'. Regression: 17/17 pass across test_l02_ln022_special_price (5), test_l02_ln022_ln021_extra (4), test_l09_ln093_ln090 and test_l08_ln081_journey. New suite test_l02_ln022_form_path_retest.py: 5/6 pass. It covers the form path as salesadmin, supersede of the SO entry and the pra doc, PATCH 409, approving a superseded pra -> 409, approve via /price-approvals (price, price_source and special_price_id written, SO entry approved), reject mirror, SoD 403 on /price-approvals, stale qty -> 409 'ajukan ulang' with no saga_lock and a stable repeat, and 3 concurrent submits (2x200 + 1x409 SAGA_IN_PROGRESS; no lost entries; exactly 1 pending entry and 1 pending pra; the losing draft stays draft). FAIL: SoD bypass through the SO panel. UI E2E (sales@ requester, manager approver) passed. Request 18000, then request 17000: the first entry shows 'Digantikan pengajuan baru' and the pra doc is superseded. Manager so-appr-approve: line Rp 17.000/yard with the 'Harga khusus' badge, totals recomputed, SO auto-approved. Pusat Persetujuan > Pengajuan Harga Khusus: approving the valid pra gave 'Disetujui'; approving the stale pra showed a banner 'Alokasi roll/qty ... mengajukan ulang' and it stayed Menunggu.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/sales-orders/{id}/approvals/{aid}/decide", "issue": "SoD bypass. A manager who requested a special price (via the form or request-special-price) can approve their own entry from the SO panel (returns 200). The same action via /price-approvals/{id}/approve correctly returns 403. decide_approval never calls matrix.sod_blocked for special_price entries (it could check entry.requested_by_id, or the pra doc). Reproduced by test_sod_own_request_so_panel.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "DELETE /api/price-approvals/{id}", "issue": "Admin can delete a pending SO-bound pra (200). The SO pending_approvals entry stays 'pending' with a dangling ref_id, so the SO is blocked from auto-approve. Approving it later would write special_price_id pointing to a deleted doc. It should return 409 for _so_bound pending/approved docs, or cascade to mark the SO entry rejected or superseded."},
+      {"endpoint": "decide_approval -> price_approvals mirror", "issue": "When a pra is decided through the SO path, only decided_by and decided_by_id are set. approved_by and approved_by_name are never set, so PriceApprovalCard (which reads approved_by_name) shows no 'Disetujui: <name>' on approved SO-bound cards."},
+      {"endpoint": "POST /api/price-approvals/{id}/submit (concurrent)", "issue": "The loser of a race gets 409 SAGA_IN_PROGRESS with a generic message ('sedang/pernah berjalan'). The custom detail 'Pesanan sedang diproses pengguna lain. Coba lagi.' passed to _saga.claim is not surfaced. The behaviour is correct; only the wording is affected."},
+      {"endpoint": "SO entry evidence", "issue": "Evidence uploaded through SpecialPriceRequestForm is stored on price_approvals.attachments. The SO entry has evidence=[], so the SO approvals panel shows 'Unggah Bukti' and no evidence link, and an approver in the SO panel cannot see the proof. It should be mirrored or linked."},
+      {"endpoint": "decide_approval", "issue": "_special_price_target (alloc_sig check) runs before _saga.claim, leaving a small window between check and write. There is also no try/finally after the claim, so an exception mid-decide leaves saga_lock behind."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SoApprovalsPanel", "issue": "The 'Ajukan Harga Khusus' toggle is hidden for the sales_admin role (isSales = role==='sales' only, isApprover = admin/manager). The backend allows it (order.update), and the stale-409 message tells 'Admin Sales' to re-request. salesadmin@ sees the panel but has no request button.", "selector": "so-appr-request-sp-toggle", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Pusat Persetujuan > Pengajuan Harga Khusus card for an SO-bound pending pra", "issue": "'Ubah' (PATCH returns 409) and 'Hapus' are shown for manager. Hapus returns 403 for manager and 200 for admin, which desyncs the SO entry. These buttons should be hidden for so_id-bound pending pra. The stale-409 banner also offers 'Coba lagi', which is pointless for a deterministic 409.", "affected_selectors": ["price-approvals-card-<id>"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_l02_ln022_form_path_retest.py", "/app/backend/tests/test_l02_ln022_special_price.py", "/app/backend/tests/test_l02_ln022_ln021_extra.py", "/app/test_reports/pytest/l02_retest.xml", "/app/test_reports/pytest/l02_form_retest.xml"],
+  "action_items": [
+    "HIGH: enforce SoD in decide_approval for special_price entries. Use matrix.sod_blocked against the pra doc or requested_by_id, and return 403 when the requester decides their own entry. Then run test_sod_own_request_so_panel.",
+    "Block DELETE /price-approvals/{id} for so_id-bound docs in pending/approved status (409), or cascade to the SO entry. Hide Ubah/Hapus on SO-bound pending cards.",
+    "Set approved_by and approved_by_name (or rejected equivalents) on the pra when it is decided via decide_approval.",
+    "Show 'Ajukan Harga Khusus' to the sales_admin role in SoApprovalsPanel (or fix the 409 text that mentions Admin Sales).",
+    "Optional: mirror form attachments to the SO entry evidence; surface the friendly claim message on concurrent submit; move the alloc_sig check after the claim and wrap the claim in try/finally."
+  ],
+  "critical_code_review_comments": [
+    "so_approvals.decide_approval has no SoD check, while price_approvals.approve does. There are two entry points with different policies.",
+    "price_approvals.delete_price_approval ignores _so_bound and can orphan the SO entry.",
+    "decide_approval acquires the claim without try/finally. Any exception after the claim leaves saga_lock on the SO."
+  ],
+  "updated_files": ["/app/backend/tests/test_l02_ln022_form_path_retest.py (new)", "/app/backend/tests/_ui_seed_l022.py (new helper: create TEST_ SO, --clean <ids>)"],
+  "success_rate": {"backend": "95% (22/23: 17 regression + 5/6 new)", "frontend": "90% (form path, supersede label, SO-panel approve, badge, and Pusat Persetujuan approve/stale all work; the sales_admin toggle is missing)"},
+  "seed_data_creation": "Temporary SOs KSC/SO-00030..32 (TEST_T1_UI_L022) plus their pra docs were created and then cancelled/deleted. Verified 0 TEST_ SOs, 0 TEST_ pra and 0 orphan reserved rolls remain.",
+  "test_credentials": "From /app/memory/test_credentials.md: admin@ / demo12345; manager@, sales@ (Ayu Marketing, ent_ksc), salesadmin@ / demo1234.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend; set -a; . ./.env; set +a; export REACT_APP_BACKEND_URL=<frontend/.env>; python -m pytest tests/test_l02_ln022_form_path_retest.py -q -n0. test_sod_own_request_so_panel is expected to fail until the SoD fix. For UI: SEED_EMAIL=sales@kainnusantara.id python tests/_ui_seed_l022.py creates an SO owned by sales@ (sales@ only sees own SOs). Open ?view=orders&entity=ent_ksc, then orders-search-input, order-card-<id>, 'Lihat detail & aksi', so-approvals-panel. Pusat Persetujuan: ?view=price-approvals&entity=ent_ksc, then price-approvals-approve-<pra>, then the 'Konfirmasi Setujui' button inside the card. NOTE: the frontend is served as a static build (static_server.js, /app/scripts/rebuild_frontend.sh). The frontend was FATAL/502 (EADDRINUSE) at test start; supervisorctl restart frontend triggered a ~3 min rebuild, after which it served normally. Clean up with: python tests/_ui_seed_l022.py --clean <so_ids>."
+}

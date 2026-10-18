@@ -1,0 +1,45 @@
+{
+  "summary": "Tested L04 closure and L05 LN-050/051. BACKEND: test_l05_interval_form.py (4/4) and test_partial_loss_splits_child_at_partner (1/1) pass. New tests/test_l05_replacement_extra_t1.py: 9/11 pass. LN-050-T02 works (roll_ids required, returned roll rejected, unknown roll gives 400, lines = the replacement rolls, sales_returns.inspection_id unchanged). Interval counts are right (150->10, 151->11, 100->10, 300->20). Interval -1 gives 400. The 2 failures: point_value=5 and count=-2 return 200 because the rows are silently dropped. FRONTEND (desktop 1920 + mobile 390): L04 partial loss works end to end on cancelled MKO-00007. Invalid qty (50>roll, 0, -1, abc) shows mko-return-partial-error-1 and disables both mko-return-submit-1 and mko-loss-submit-1; qty = full roll is accepted as whole; '1,5' is accepted. The loss list appears (mko-loss-list-1), the ledger shows Masih di mitra 58,5 / Susut 1,5 / Seimbang, and in the DB the parent is subcon 42.28 and child RL-46130-2 has the same bucket_ref and is consumed. Mobile: mobile-open-makloon-orders under the Produk tab opens ?view=makloon-orders; MKO detail, ledger and return form are usable with no horizontal overflow (scrollWidth 390). L05 random check from scan (qc@): scanning fills in warehouse/count, label 'Periksa roll hasil scan', a roll from another entity is rejected with the 'cakupan' error, and a valid scan creates an SPK with exactly that roll. LN-051 modal: 10 chips by default, 11 at 165; add/remove rows works; 2 defects in the same interval are both stored (no merge); from/to 150-165 correct; points preview 9 mentions KLX-02 candidate; save stores inspect_form + grade_rule candidate_unvalidated. 390px layout fits. Replacement create modal: submit is disabled until rolls are entered, the returned roll shows an error, and success creates KSC/INS-00004 with RL-00002/RL-00003. Seed restore (restore_local_demo.sh) was started at the end.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/inspections/{id}/lines/{line}/inspect", "issue": "normalize_interval_defects silently skips rows with point_value not in 1..4 or count<=0 (e.g. point 5, count -2) and returns 200. Defects the user entered are dropped with no error. Should return 400/422, like out-of-range interval does."},
+      {"endpoint": "POST /api/makloon-orders/{id}/steps/{seq}/material-loss", "issue": "_split_partial_losses splits rolls before the later checks in run() (pending filter / empty rolls). If a later check raises, the child roll stays split. Harmless (same bucket, still subcon) but not atomic."},
+      {"endpoint": "POST /api/inspections (kind replacement)", "issue": "Replacement rolls are not checked for status (sold/held/consumed rolls are accepted). Passing both the id and the roll_no of the same roll gives a wrong 'tidak ditemukan' error because of the count comparison."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "InspectLineModal (re-edit 'Ubah QC 4-point')", "issue": "When reopened for a line that was already inspected, the modal resets ivRows=[] and inspectLen='' instead of loading line.defects / line.inspect_form. Saving then OVERWRITES the stored defects. Verified: re-saving blank via the same payload left defects=[] and points 0 (was 9). Data-loss risk.", "selector": "[data-testid^='ins-line-qc-'] -> ins-line-modal", "priority": "HIGH"},
+      {"component": "MakloonReturnMaterial banner", "issue": "After a loss, the banner reads 'bahan 58,5 yard (Rp 816.000) masih di ...'. valueLeft subtracts returns only, not losses. The step line above correctly shows 'nilai bahan Rp 795.600'.", "selector": "[data-testid='mko-await-return-1']", "priority": "LOW"},
+      {"component": "IntervalDefectGrid", "issue": "If the user picks interval 10 (150-165) and then shortens the length to <=150, the select shows 'Interval…' but state keeps 10, so save fails with a backend 400. Clamp or reset intervals that fall outside the new length.", "selector": "[data-testid^='ins-defect-interval-']", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Post-save KLX-02 indication", "issue": "The KLX-02 candidate note is only in the modal preview. After saving, the SPK detail row shows grade 'A → A' with no candidate/unvalidated badge, although grade_rule.status=candidate_unvalidated is stored.", "affected_selectors": ["ins-detail-panel"]}
+    ],
+    "design_issues": [
+      {"screen": "Mobile 390 qc@ role", "issues": ["MobileOpsApp for the qc role ignores ?view=inspections and has no Inspeksi entry; it only works after mobile-force-desktop. Consider a mobile entry for inspections/random-check scan."]},
+      {"screen": "Mobile makloon entry (admin)", "issues": ["mobile-open-makloon-orders opens in 'Semua badan usaha' (read-only banner) mode, yet the return/loss form is still offered. Pass the entity or select it."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l05_interval_form.py", "/app/backend/tests/test_session3_partial_return_notif_budget.py", "/app/backend/tests/test_l05_replacement_extra_t1.py", "/app/backend/tests/t1_setup_l04_fe.py", "/app/test_reports/pytest/l05_l04.xml", "/app/test_reports/pytest/l05_extra.xml"],
+  "action_items": [
+    "HIGH: InspectLineModal: prefill inspectLen/ivRows (and the quick counts) from line.inspect_form and line.defects when editing an already inspected line, so 'Ubah QC 4-point' does not wipe stored defects",
+    "Backend: reject invalid defect rows (point_value not in 1-4, count<=0) with 400 instead of silently dropping them",
+    "MakloonReturnMaterial: subtract losses (posted/auto value) from valueLeft in the banner",
+    "IntervalDefectGrid: reset/clamp row.interval when the length is reduced",
+    "Optional: show the candidate/KLX-02 badge on graded lines in the SPK detail; check replacement roll status"
+  ],
+  "critical_code_review_comments": [
+    "qc_inspection_service.normalize_interval_defects: silent `continue` on invalid pv/count hides user input errors",
+    "makloon_loss_service.record_loss: partial split happens mid-transaction before the final validation (not atomic)",
+    "inspection_service replacement: no status filter on replacement rolls; the id/roll_no mix makes the count check fragile",
+    "InspectLineModal useEffect resets defect state on open instead of hydrating it from the line"
+  ],
+  "updated_files": ["/app/backend/tests/test_l05_replacement_extra_t1.py", "/app/backend/tests/t1_setup_l04_fe.py"],
+  "success_rate": {"backend": "93% (14/16 incl. new edge tests; all requested acceptance tests pass)", "frontend": "90% (all requested flows pass; 1 HIGH re-edit data-loss bug found)"},
+  "seed_data_creation": "Created MKO-00007 (mko_3875d9b968c2, cancelled, 1.5 yd partial loss), KSC/INS-00003 (random check RL-00013), KSC/INS-00004 (replacement), sales_return sret_TEST_T1FE, restock_source on the BABY CRUSH template. restore_local_demo.sh was started in the background at the end (log /tmp/restore_t1.log).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run the L05 tests per file with -n0 after `set -a; . backend/.env; set +a; REACT_APP_BACKEND_URL=...`. The FE L04 fixture is backend/tests/t1_setup_l04_fe.py (it sets restock_source makloon on the output template, then creates/issues/cancels a 60 yd MKO). Login uses login-email-input/login-password-input/login-submit-button. On mobile qc@ use mobile-force-desktop to reach ?view=inspections. In the replacement create flow, KNSelect option name is 'Inspeksi Barang Pengganti'. Retest: the InspectLineModal re-edit prefill and the defect validation 400."
+}

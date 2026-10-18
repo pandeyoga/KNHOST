@@ -1,0 +1,240 @@
+{
+  "method": "Original AST function bodies; controlled async interleavings and fault injection; dependency model, not Mongo/HTTP/hardware.",
+  "results": [
+    {
+      "id": "V2-01",
+      "kind": "defect",
+      "observed": {
+        "raw_result": "red",
+        "stored_format_result": "info"
+      },
+      "meaning": "RF-01 survives full encode/ZPL/ingest chain in dependency model."
+    },
+    {
+      "id": "V2-02",
+      "kind": "defect",
+      "observed": {
+        "result": "green",
+        "reason": "Keluar untuk putaway PA-1."
+      },
+      "meaning": "PA branch precedes QC block and ignores cancelled PA status."
+    },
+    {
+      "id": "V2-03",
+      "kind": "defect",
+      "observed": {
+        "before": "offline",
+        "after": "online"
+      },
+      "meaning": "Actual UI Matikan uses offline; heartbeat silently turns it online."
+    },
+    {
+      "id": "V2-04",
+      "kind": "defect",
+      "observed": {
+        "untagged": 1,
+        "result": "clean",
+        "dispatch_allowed": true
+      },
+      "meaning": "RF-05: subset verification reaches dispatch guard as clean."
+    },
+    {
+      "id": "V2-05",
+      "kind": "defect",
+      "observed": {
+        "session_status": "completed",
+        "roll_journey": {
+          "stage": "tag_verified",
+          "updated_at": "2026-09-28T12:00:00Z",
+          "verify_session_id": "S"
+        },
+        "cycle_count_reports": 0
+      },
+      "meaning": "RF-10: wrong completion endpoint consumes a cycle count as print verify and changes roll journey."
+    },
+    {
+      "id": "V2-06",
+      "kind": "defect",
+      "observed": {
+        "accepted_requests": 2,
+        "stored": [
+          "A"
+        ]
+      },
+      "meaning": "RF-10: concurrent union/read/set loses one accepted EPC."
+    },
+    {
+      "id": "V2-07",
+      "kind": "defect",
+      "observed": {
+        "start_qty": 100,
+        "end_qty": 140.0,
+        "lengths": [
+          70.0,
+          40.0,
+          30.0
+        ]
+      },
+      "meaning": "WM-01 deterministic interleaving executes original stale normalization after CAS."
+    },
+    {
+      "id": "V2-08",
+      "kind": "defect",
+      "observed": {
+        "shipment_roll": "roll_9",
+        "child_tag": null,
+        "child_status": "in_transit_sales"
+      },
+      "meaning": "Dispatch can create untagged child after any loading verification; identity checked before dispatch no longer equals shipped identity."
+    },
+    {
+      "id": "V2-09",
+      "kind": "defect",
+      "observed": {
+        "pa_status": "open",
+        "roll_status": "quarantine"
+      },
+      "meaning": "PA creation verifies tag journey/storage category but accepts QC quarantine."
+    },
+    {
+      "id": "V2-10",
+      "kind": "defect",
+      "observed": {
+        "scanned": [],
+        "arrived_count": 1,
+        "warehouse": "W2"
+      },
+      "meaning": "WM-03 empty list equals unrestricted arrival; original bulk function executed."
+    },
+    {
+      "id": "V2-11",
+      "kind": "defect",
+      "observed": {
+        "roll_owner": "B",
+        "roll_qty": 70,
+        "roll_warehouse": "W2",
+        "movement_owner": "A",
+        "movement_qty": 100
+      },
+      "meaning": "PA parent claim does not revalidate roll owner/source/status/quantity; stale document can move newer state."
+    },
+    {
+      "id": "V2-12",
+      "kind": "defect",
+      "observed": {
+        "warehouse": "W2",
+        "bin": "BIN-W1",
+        "acquired": {
+          "via": "transfer",
+          "ref_id": "TR",
+          "date": "2026-09-28T12:00:00Z"
+        },
+        "po_cost_selector_matches": false
+      },
+      "meaning": "Warehouse receipt overwrites procurement provenance and retains source bin. Late landed-cost PO selection misses transferred roll."
+    },
+    {
+      "id": "V2-13",
+      "kind": "defect",
+      "observed": {
+        "picked_roll": "NEW",
+        "shipped_roll": "OLD"
+      },
+      "meaning": "Picked identity is not dispatch selection; dispatch uses qty/FEFO despite scan_log/roll_id."
+    },
+    {
+      "id": "V2-14",
+      "kind": "defect",
+      "observed": {
+        "task_status": "dispatched",
+        "has_lock": false,
+        "shipments": 0,
+        "roll_statuses": [
+          "in_transit_sales",
+          "in_transit_sales"
+        ]
+      },
+      "meaning": "Failure after finish_set before shipment insert leaves dispatched task/transit rolls without shipment; no saga lock exposes recovery."
+    },
+    {
+      "id": "V2-15",
+      "kind": "defect",
+      "observed": {
+        "task_shipped_qty": 30.0,
+        "shipment_sum": 60.0
+      },
+      "meaning": "Two requests with same pre-read task can both claim sequentially; partial status remains allowed, stale shipped_qty overwrites progress."
+    },
+    {
+      "id": "V2-16",
+      "kind": "correction",
+      "observed": {
+        "surplus_qty": 10.0,
+        "unit_cost": 100.0
+      },
+      "meaning": "FN-14 zero-cost is conditional: surplus inherits product.harga_pokok=100, not always zero. Missing variance GL remains separate defect."
+    },
+    {
+      "id": "V2-17",
+      "kind": "defect",
+      "observed": {
+        "requested_owner": "A",
+        "reserved_owner": "B",
+        "rebuild_calls": 0
+      },
+      "meaning": "Explicit roll transfer path omits owner filter and returns before balance rebuild; original service executed."
+    },
+    {
+      "id": "V2-18",
+      "kind": "defect",
+      "observed": {
+        "job_owner": "A",
+        "viewer_scope": [
+          "A"
+        ],
+        "visible_rolls": [
+          "A-ROLL",
+          "B-ROLL"
+        ]
+      },
+      "meaning": "Authorized multi-owner job creation stamps first owner; later A-only caller receives B-owned roll through get_print_job."
+    },
+    {
+      "id": "V2-19",
+      "kind": "defect",
+      "observed": {
+        "actual_immediate_parent": "CHILD",
+        "stored_parent": "ROOT",
+        "root": "ROOT"
+      },
+      "meaning": "Copied child carries its existing parent_roll_id; setdefault preserves grandparent for a new second-generation cut."
+    },
+    {
+      "id": "V2-20",
+      "kind": "defect",
+      "observed": {
+        "parent_first": 130,
+        "child_first": 100
+      },
+      "meaning": "FN-01 is order-dependent: same voucher allocations produce total stock-cost uplift 130 or 100; not universally double in every order."
+    },
+    {
+      "id": "V2-C1",
+      "kind": "control",
+      "observed": {
+        "start_qty": 100,
+        "end_qty": 100.0
+      },
+      "meaning": "Sequential split with fresh parent snapshots conserves quantity; V2-07 requires specified concurrency interleaving."
+    },
+    {
+      "id": "V2-C2",
+      "kind": "control",
+      "observed": {
+        "result": "red",
+        "reason": "SALAH GUDANG — PA-1 menuju ?, bukan gudang ini."
+      },
+      "meaning": "Active PA IN branch does reject wrong destination; RF-03 concerns transit fallback, not every IN decision."
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+[
+ {
+  "id": "WM-02b",
+  "invariant": "picker menampilkan induk dengan panjang bebas 70 (fisik 100, dipesan 30)",
+  "pass": true,
+  "detail": "{'id': 'audit_fu_82dee2_r0', 'roll_no': 'R-audit_fu_82dee2-0', 'lot': 'L1', 'dye_lot': 'L1', 'length_remaining': 70.0, 'physical_length': 100.0, 'length_reserved': 30.0, 'warehouse_id': 'wh_jakarta', 'warehouse_name': 'Gudang Jakarta Utara', 'warehouse_city': 'Jakarta', 'owner_entity_id': 'ent_ksc',"
+ },
+ {
+  "id": "WM-02b",
+  "invariant": "beli 20 dari roll (mode per roll) → tanpa roll baru, dipesan 50",
+  "pass": true,
+  "detail": "{'rolls': 1, 'reserved': 50.0}"
+ },
+ {
+  "id": "WM-02b",
+  "invariant": "beli melebihi panjang bebas ditolak",
+  "pass": true,
+  "detail": "(400, 'Qty roll R-audit_fu_82dee2-0 (60.0) melebihi panjang bebas (50.0).')"
+ },
+ {
+  "id": "WM-02a",
+  "invariant": "dispatch sebelum potong → 409",
+  "pass": true,
+  "detail": "(409, '1 reservasi potong belum dikonfirmasi (roll induk R-audit_fu_82dee2-0). Potong fisik & konfirmasi dulu.')"
+ },
+ {
+  "id": "WM-02a",
+  "invariant": "loading check dengan roll anak belum ber-tag → 409",
+  "pass": true,
+  "detail": "(409, 'Roll anak R-audit_fu_82dee2-0-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
+ },
+ {
+  "id": "WM-02a",
+  "invariant": "dispatch dengan roll anak belum ber-tag → 409",
+  "pass": true,
+  "detail": "(409, 'Roll anak R-audit_fu_82dee2-0-1 belum ber-tag/terverifikasi — cetak tag RFID baru & selesaikan verifikasi sebelum muat/kirim.')"
+ },
+ {
+  "id": "WM-02a",
+  "invariant": "verifikasi tanpa tag tidak mengesahkan identitas",
+  "pass": true,
+  "detail": "0"
+ },
+ {
+  "id": "WM-02a",
+  "invariant": "setelah tag baru terverifikasi → dispatch berhasil",
+  "pass": true,
+  "detail": "30.0"
+ },
+ {
+  "id": "WM-02a",
+  "invariant": "complete_verify mengesahkan identitas roll anak (statis)",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "CX-05",
+  "invariant": "LPJ 130 atas uang muka 100 → Cr Uang Muka 100 + Cr 2-1650 Hutang Reimburse 30",
+  "pass": true,
+  "detail": "[('1-1400', 100.0), ('2-1650', 30.0)]"
+ },
+ {
+  "id": "PANEL",
+  "invariant": "daftar memuat kas gagal",
+  "pass": true,
+  "detail": "{'cash_transaction': 1, 'ar_receipt': 0, 'purchase_return': 0, 'goods_receipt': 0, 'shipment': 0}"
+ },
+ {
+  "id": "PANEL",
+  "invariant": "ulang posting → posted, satu jurnal; ulang kedua 404 (sudah terposting)",
+  "pass": true,
+  "detail": "{'r1': 200, 'r2': 404, 'jes': 1}"
+ },
+ {
+  "id": "PANEL",
+  "invariant": "role sales tidak boleh melihat panel",
+  "pass": true,
+  "detail": ""
+ }
+]
+pass=13 fail=0

@@ -1,0 +1,56 @@
+{
+  "summary": "Tested session-3 features (backend+frontend). Partial roll return (API+UI), budget summary (API+UI incl. 390px), GRN photo->auto OCR read (real OpenAI) with draft for blind (warehouse@) and non-blind (admin) users all WORK. Campaign-bill notification for Finance had 2 bugs: (1) BACKEND notif link 'mkt-campaigns' is not an allowed screen for finance so notification_scope.relevance_filter HID it from finance's bell (FIXED by T1: link -> 'accounts-payable'); (2) FRONTEND inline approve button never renders for finance (ROLE_RANK in NotificationCenter.jsx lacks 'finance') - NOT fixed (static bundle needs rebuild). Also found data-integrity bug in partial return with duplicate roll ids (orphan child roll).",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/marketing/campaigns/{cid}/vendor-bills (notification)", "issue": "Notification created with link='mkt-campaigns'; finance has no marketing screen so GET /api/notifications filtered it out (relevance_filter by allowed_links) -> finance never saw it. FIXED by T1 in services/marketing_cost_service.py line 211: link='accounts-payable' (in finance allowed_links). Verified: finance /notifications now lists it. Main agent: confirm the target screen choice.", "priority": "HIGH"},
+      {"endpoint": "POST /api/makloon-orders/{id}/steps/{seq}/return-material", "issue": "Non-atomic partial handling: partial=[{roll_id:A,qty:0.6*len},{roll_id:A,qty:0.6*len}] (duplicate roll) passes per-item validation, first split creates a child roll (status available, stock +qty, movement written), second split fails -> 409 'Roll berubah bersamaan', but the first child roll stays in warehouse with NO material_returns entry and NO GL WIP reversal -> stock vs WIP/ledger out of sync. Same applies if whole-roll move succeeds then a later cut fails. Fix: reject duplicate roll_ids across roll_ids+partial (400) and validate sum per roll before mutating; ideally do all validation first / compensate on failure. Reproduced 2x (tests/test_session3_extended_t1.py::test_partial_mixed_and_duplicate).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/marketing/campaigns/budget-summary", "issue": "sales@ gets 200 (has marketing.view) - confirm intended. Campaigns without start_date and created_at contribute to total_budget but to no month bucket."},
+      {"endpoint": "tests/test_comm04_*", "issue": "Earlier comm04 tests leave orphan campaign_bill_approval notifications (VB-00012/13 TEST_COMM04E) after deleting campaigns/bills - finance bell shows stale items. Add notifications cleanup to those tests (and/or mark read/delete notification when bill/campaign removed)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "NotificationCenter.jsx", "issue": "Inline 'Setujui' button never rendered for campaign bill notifications: canActOn(userRole, n.action_role='finance') uses ROLE_RANK={sales,warehouse,manager,admin}; 'finance' missing -> required rank 99 -> false for finance AND admin. Fix e.g. canActOn = userRole===requiredRole || rank(user)>=rank(required) (don't just give finance rank 2, that would expose PO approve). Also button title says 'Setujui PO langsung' for bills. Requires rebuilding static bundle.", "selector": "[data-testid='notif-approve-<id>']", "priority": "HIGH"},
+      {"component": "MakloonReturnMaterial.jsx", "issue": "Partial qty input silently falls back to WHOLE roll when value is invalid/>=remaining/0/typo (partQty returns null) - user typing 30 for a 28.34 roll or '1O' returns the entire roll without warning. Show inline validation or block submit.", "selector": "[data-testid^='mko-return-partial-']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Finance approves campaign bill from bell", "issue": "Notification now visible (after backend link fix) with title 'Tagihan kampanye menunggu persetujuan: VB-xxxxx', but approve button missing (see ui_bugs) so notice 'Tagihan ... disetujui' flow could not be verified in UI. Backend approve via /api/vendor-bills/{id}/approve by finance works and marks notification read.", "affected_selectors": ["notif-approve-<id>"]}
+    ],
+    "design_issues": [
+      {"screen": "mkt-campaigns budget chart", "issues": ["Legend label 'Anggaran' rendered in very light blue on white - low contrast", "Campaign form start/end use native <input type=date> instead of shadcn calendar (cost modal uses the shadcn picker - inconsistent)"]},
+      {"screen": "wms-operations Barang Masuk (390px)", "issues": ["Empty info/notice bar with only a sparkle icon at top of page"]}
+    ]
+  },
+  "passed_tests": [
+    "Backend: test_session3_partial_return_notif_budget.py 2/2",
+    "Backend: test_session3_extended_t1.py - qty==remaining -> whole roll (no split), unknown roll 409, empty partial 400, short reason 400; mixed roll_ids+partial in one request -> 200, ledger reconciled, value>0; reject (generic) marks notif read; approve via campaign endpoint marks read; budget-summary schema; unauth 401/403",
+    "Regression: test_l00_p05_open_issues.py 5/5, test_l00_edge_cases.py 5/5, test_comm04_campaign_bills(.py 3, _edge 4, _idempotency 5, _ln042t03_regression 17) all pass after link change",
+    "UI: manager budget chart bars + total; created TEST_ campaign 1.000.000 + cost 850.000 via Biaya modal -> yellow alert 'terpakai 85% ... sisa Rp 150.000' (appears even before reload); 390px no horizontal overflow",
+    "UI: cancelled MKO-00013 -> mko-return-open-1 -> partial input placeholder 'semua' -> qty 10 on 28.34 roll -> summary '1 roll dikembalikan sebagian: dipecah...' -> submit -> history 'Retur 1: 41,66 yard · 4 roll (1 dipecah)'; ledger masih di mitra 18,34 / kembali 41,66",
+    "UI: warehouse@ 390px mobile-open-grn -> grn-new-button -> wizard supplier/PO/upload SJ image -> submit shows 'Membaca surat jalan…' -> ~10s real OCR -> detail shows grn-ocr-draft-blind",
+    "UI: admin 390px same GRN, tab Hitung -> grn-ocr-draft with 10 chips, #7 '?' highlighted yellow, ragu note, total '10 roll · 861 yd · 1 roll ragu'; no overflow"
+  ],
+  "test_report_links": ["/app/backend/tests/test_session3_partial_return_notif_budget.py", "/app/backend/tests/test_session3_extended_t1.py", "/app/backend/tests/t1_campaign_ui_helper.py", "/app/backend/tests/t1_mko_ui_helper.py", "/app/backend/tests/t1_grn_ocr_ui_helper.py", "/app/test_reports/pytest/iter192_session3.xml"],
+  "action_items": [
+    "Fix NotificationCenter canActOn so finance (action_role 'finance') sees inline approve on campaign bill notifications; rename button title; rebuild static frontend bundle; retest finance bell approve -> notice 'Tagihan ... disetujui'",
+    "Review/keep T1 backend fix: campaign bill notification link 'accounts-payable' (finance-visible); consider also a link the manager/admin can open",
+    "Make return-material partial handling atomic: reject duplicate roll ids (within partial and across roll_ids) with 400 before any mutation; validate everything before moving/splitting",
+    "Frontend partial qty input: validate (0 < qty < remaining) and warn instead of silently returning whole roll",
+    "Clean orphan notifications in comm04 tests"
+  ],
+  "critical_code_review_comments": [
+    "makloon_order_service._return_material_locked: whole-roll move runs before cuts; any cut failure after that leaves rolls moved without a return record/GL reversal (no compensation)",
+    "split_off_from_ref also reduces parent length_initial - original issued length of the parent roll is lost for audit; consider keeping length_initial and tracking split separately",
+    "GrnCreateWizard.submit: if auto /read fails, setErr is called then onCreated(g) closes the wizard, so the error message is likely never seen",
+    "GrnDetail: for reviewers (admin) the OCR draft is hidden on the default 'Surat jalan' tab; only visible in 'Hitung' tab - fine but less discoverable"
+  ],
+  "updated_files": ["/app/backend/services/marketing_cost_service.py (notification link mkt-campaigns -> accounts-payable)", "/app/backend/tests/test_session3_extended_t1.py", "/app/backend/tests/t1_campaign_ui_helper.py", "/app/backend/tests/t1_mko_ui_helper.py", "/app/backend/tests/t1_grn_ocr_ui_helper.py"],
+  "success_rate": {"backend": "90% (1 of 10 scenarios fails: duplicate-roll partial orphan; notification visibility fixed by T1)", "frontend": "75% (3 of 4 features pass; finance inline approve broken)"},
+  "seed_data_creation": "Created TEST_ campaigns/bills/costs, MKO-00011..13 (cancelled, partial returns), KSC/GRN-00001 with real OCR. Config receiving.ocr_enabled restored to false (second_reader on_doubt). TEST_UI campaigns cleaned; then ran bash /app/scripts/restore_local_demo.sh (verified login 200, 5 MKO, 0 GRN, 0 campaign notifications).",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run per file with REACT_APP_BACKEND_URL -n0. test_session3_extended_t1.py::test_partial_mixed_and_duplicate is expected to FAIL until the duplicate-roll fix. For finance bell UI: create bill via `python tests/t1_campaign_ui_helper.py` (env from backend/.env), login finance@ -> notif-bell -> notif-item-<id> -> notif-approve-<id>; clean with `--clean`. Cancelled MKO for UI: `python tests/t1_mko_ui_helper.py`. GRN OCR: `python tests/t1_grn_ocr_ui_helper.py prep` (prints PREV config, writes /tmp/sj_t1.jpg) then restore with `restore '<PREV json>'`. Admin on 390px lands on mobile shell: click mobile-force-desktop, then ?view=wms-operations -> 'Barang Masuk'. Always finish with restore_local_demo.sh.",
+  "rca of the issue": "Finance notification invisible: services/notification_scope.relevance_filter requires notification.link in allowed_links(user); finance's allowed links (108) include 'accounts-payable' but not 'mkt-campaigns'. Inline approve missing: NotificationCenter ROLE_RANK has no 'finance' key -> canActOn('finance','finance') = 0 >= 99 false. Orphan child roll: per-item validation reads the same parent length for duplicate entries; split 1 mutates, split 2 guard fails -> HTTPException after side effects, no rollback."
+}

@@ -1,0 +1,19 @@
+{
+  "summary": "Shell-only verification of the Dockerfile.frontend fix for missing lock (VPS build failure 'deploy/frontend.yarn.lock: not found'). New test /app/backend/tests/test_dockerfile_frontend_lock.sh runs 17 checks - all pass. Verified: (1) all non-glob COPY sources in deploy/Dockerfile.frontend + Dockerfile.backend exist in repo (frontend/package.json, frontend/, deploy/nginx-web.conf, backend/requirements.txt, backend/); (2) Dockerfile.frontend has no live (non-comment) reference to old 'frontend.yarn.lock' and uses optional-glob COPY 'deploy/frontend-yarnlock.tx[t]'; (3) deploy/frontend-yarnlock.txt exists and is byte-identical (md5 c1c1f8bcf118d57443e98ad510a66c8e) to frontend/yarn.lock; (4) neither .gitignore (checked via ephemeral git repo + git check-ignore) nor .dockerignore (fnmatch simulation on all patterns) ignores deploy/frontend-yarnlock.txt; (5) Simulated Dockerfile RUN sequence in tmpdir with lock present: mv frontend-yarnlock.txt->yarn.lock, node prune of @emergentbase/visual-edits, sed removal of block, then `yarn install --frozen-lockfile --ignore-scripts --non-interactive` completes successfully with NO remaining references to assets.emergent.sh or @emergentbase/visual-edits in resulting package.json/yarn.lock; (6) Fallback simulation without lock: `touch yarn.lock` branch produces an empty file, node prune + sed still succeed (sed on empty file is a no-op, exit 0). backend/.env untouched, tmpdirs cleaned on exit.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_dockerfile_frontend_lock.sh"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "deploy/Dockerfile.frontend line 22 uses `yarn install --production=false` (no --frozen-lockfile). This is intentional because the sed removes a lock entry, invalidating checksum integrity; but consider `yarn install --frozen-lockfile` only when lock existed originally, else the resolve-refresh can drift from what dev tested. Current approach is pragmatic for the private-package workaround.",
+    "deploy/Dockerfile.frontend line 17 `touch yarn.lock` fallback: subsequent `sed -i '/^\"@emergentbase/,/^$/d' yarn.lock` is safe on empty file. Verified.",
+    "deploy/frontend-yarnlock.txt is a 596KB duplicate of frontend/yarn.lock committed for VPS-only. Any yarn.lock changes must be mirrored (consider adding a one-liner in scripts to copy on preflight, or a CI/pre-commit check). Currently they match, but this can drift silently.",
+    ".dockerignore has bare pattern 'tests' (line 20) which would also exclude any subdir named 'tests' anywhere — not an issue for the deploy path but worth noting for future backend refactors."
+  ],
+  "updated_files": ["/app/backend/tests/test_dockerfile_frontend_lock.sh"],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "n/a (skipped as requested)"},
+  "seed_data_creation": "None. Test creates two ephemeral tmpdirs (mktemp -d) for build simulation and cleans them via trap/rm.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "test_dockerfile_frontend_lock.sh (17 checks, 0 fail) covers the deploy fix. Also see test_deploy_scripts.sh from iteration_100 for setup_vps_ai_import.sh key-validation + git reset. No docker in preview so real `docker compose build` cannot be executed here; this is a static+simulated verification of every Dockerfile RUN step outside a container."
+}

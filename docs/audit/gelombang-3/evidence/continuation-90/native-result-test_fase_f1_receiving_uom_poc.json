@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_fase_f1_receiving_uom_poc.py",
+    "database": "knhost_audit_native90_d8c47107e8524e40a57c2f30ff285ad2",
+    "exit": 0,
+    "seconds": 57.88,
+    "pass_log_tokens": 48,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_fase_f1_receiving_uom_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "bih besar dari 0.\"\n  ✅ [PASS] Pratinjau tanpa satuan ditolak 400 beralasan (bukan 422)\n\nTEST 12 — F1-02 fallback registry: satuan DASAR produk tetap bisa dipakai\n  ✅ [PASS] Satuan dasar produk selalu tersedia sebagai opsi (jalur registry)\n  ✅ [PASS] Satuan sama dengan satuan PO → sumber `same_unit`, faktor 1 (tanpa aturan tambahan)\n\nTEST 13 — US-F6/F1-08: kebijakan `off` mematikan input satuan supplier\n  ✅ [PASS] Mode `off`: input satuan supplier ditolak dengan penjelasan kebijakan\n  ✅ [PASS] Mode `off`: opsi satuan menyusut ke satuan KN saja (UI konsisten dgn kebijakan)\n  ✅ [PASS] Mode `optional`: satuan supplier tersedia tapi default tetap satuan KN\n  ✅ [PASS] Mode tak dikenal ditolak 400 (kebijakan tidak bisa dirusak)\n\nTEST 14 — RBAC & pagar entitas\n  ✅ [PASS] Warehouse BOLEH melihat opsi satuan (dia yang menerima barang)\n  ✅ [PASS] Warehouse DITOLAK 403 mengubah kebijakan penerimaan (hanya admin/manager)\n  ✅ [PASS] Sales DITOLAK 403 mengakses opsi satuan penerimaan (bukan wewenangnya)\n  ✅ [PASS] Task tidak ada → 404 (bukan 500)\n\nTEST 15 — INV-RCV-01..03 hijau pada data POC (sebelum dibersihkan)\n  ✅ [PASS] INV-RCV-01: semua jejak konversi penerimaan lengkap (20 task diperiksa)\n  ✅ [PASS] INV-RCV-02: doc_qty × faktor == task_qty pada semua jejak (matematika konsisten)\n  ✅ [PASS] INV-RCV-03: sumber faktor selalu dari daftar sah (tidak ada faktor 'karangan')\n\nTEST 16 — Kebersihan data: artifact POC dibersihkan\n  ✅ [PASS] Semua artifact POC dihapus (invarian global tetap pristine)\n\n================================================================\n  PASS 47  |  FAIL 0\n  POC FASE F-1 HIJAU — penerimaan satuan supplier terbukti.\n================================================================\nTimeout (0:00:55)!\nThread 0x0001a9ac (most recent call first):\n  <no Python frame>\n"
+  }
+]

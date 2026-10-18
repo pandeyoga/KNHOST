@@ -1,0 +1,22 @@
+frontend,chart_components,numeric_line_candidates,literal_calls,method,full_browser_all_values_verified
+frontend/src/config/hubTabs.js,Chart,,,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/config/navMeta.js,Chart,,,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/config/navStructure.js,PieChart,,,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/designer/DesignScoreTrendChart.jsx,LineChart;ResponsiveContainer,37,,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/designer/DesignerKpiTrendChart.jsx,LineChart;ResponsiveContainer,40,,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/finance/BiFinanceView.jsx,BarChart;Chart;ResponsiveContainer,34;37;38;39;74;78;88;150;151;153;156;215,get ${API}/finance/bi,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/finance/BudgetView.jsx,BarChart;ResponsiveContainer,78;79;92,get ${API}/finance/budget-vs-actual;get ${API}/finance/budget-rules;get ${API}/finance/budget-keys;post ${API}/finance/budgets;patch ${API}/finance/budgets/${id};delete ${API}/finance/budgets/${id};put ${API}/finance/budget-rules,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/finance/CashFlowForecastView.jsx,LineChart;ResponsiveContainer,,get ${API}/finance/cashflow-forecast,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/finance/CashFlowTab.jsx,BarChart;ResponsiveContainer,,get ${API}/finance/cash-flow;get ${API}/finance/cash-flow/export.csv,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/finance/ChartOfAccounts.jsx,Chart,,get ${API}/gl/accounts;post ${API}/gl/accounts;delete ${API}/gl/accounts/${acc.code};patch ${API}/gl/accounts/${acc.code};patch ${API}/gl/accounts/${acc.code},AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/finance/EquityChangesTab.jsx,BarChart;ResponsiveContainer,,get ${API}/finance/equity-changes;get ${API}/finance/equity-changes/export.csv,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/finance/FinanceTowerParts.jsx,BarChart;PieChart;ResponsiveContainer,43;44,,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/finance/ProfitabilityView.jsx,BarChart;ResponsiveContainer,65;162,get ${API}/finance/profitability,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/home/SalesHome.jsx,LineChart;ResponsiveContainer,15;118;139,get ${API}/home/sales,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/hr/HrAnalyticsView.jsx,BarChart;LineChart;PieChart;ResponsiveContainer,16;18;19;20;21;172,get ${API}/hr/analytics/summary,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/inventory/StockAnalyticsView.jsx,BarChart;PieChart;ResponsiveContainer,14;16;17;18;19;22,get ${API}/warehouses;get ${API}/inventory/stock-analytics,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/logistics/DispatchDashboard.jsx,PieChart;ResponsiveContainer,34,,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/manager/ManagerDashboard.jsx,BarChart;LineChart;PieChart;ResponsiveContainer,115;271,get ${API}/reports/summary;get ${API}/reports/reservation-funnel;get ${API}/reports/order-velocity?days=${period};get ${API}/reports/top-customers?limit=10;get ${API}/reports/warehouse-utilization;get ${API}/reports/stock-aging?days_threshold=${agingDays},AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/sales/mobile/MobileSalesHome.jsx,LineChart;ResponsiveContainer,117;151;165,get ${API}/home/sales,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/tanya/TanyaChart.jsx,AreaChart;BarChart;LineChart;PieChart;ResponsiveContainer,,,AST inventory and source lineage; targeted numeric cases in tracker,NO
+frontend/src/features/tanya/TanyaCostChart.jsx,BarChart;ResponsiveContainer,,,AST inventory and source lineage; targeted numeric cases in tracker,NO

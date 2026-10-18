@@ -1,0 +1,379 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_services90_ad107387f9a748da85b6813550bb5663",
+  "observations": [
+    {
+      "id": "od.review_empty",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.review_decided",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.latest_revision_blocks_old_winner",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.decision_guard_invalid",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.decision_guard_draft",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.decision_guard_locked",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.decision_guard_no_result",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.decision_guard_reject_note",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.decision_guard_revise_note",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.customer_acc",
+      "expected": "acc",
+      "actual": "acc",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.customer_history",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.customer_actor",
+      "expected": "Budi Santoso",
+      "actual": "Budi Santoso",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.price_unit_0",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.price_total_0",
+      "expected": 1000,
+      "actual": 1000.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.price_unit_30",
+      "expected": 130,
+      "actual": 130.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.price_total_30",
+      "expected": 1300,
+      "actual": 1300.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.price_unit_50",
+      "expected": 150,
+      "actual": 150.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.price_total_50",
+      "expected": 1500,
+      "actual": 1500.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.price_unit_500",
+      "expected": 600,
+      "actual": 600.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.price_total_500",
+      "expected": 6000,
+      "actual": 6000.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.margin_guard_-1",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.margin_guard_501",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.lock_needs_acc",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.lock_needs_winning_contract",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.lock_total",
+      "expected": 1300,
+      "actual": 1300.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.lock_sku_price",
+      "expected": 130,
+      "actual": 130.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.lock_repeat_guard",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.locked_preview_snapshot",
+      "expected": 1300,
+      "actual": 1300.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.unlock_requires_admin",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.unlock_requires_reason",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.unlock_blocks_existing_po",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.unlock_flag",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.unlock_reason",
+      "expected": "Synthetic reprice",
+      "actual": "Synthetic reprice",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.procure_needs_lock",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.procure_guard_sku",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.procure_guard_supplier",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.procure_existing_idempotent",
+      "expected": "sudah ada PO",
+      "actual": "sudah ada PO",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.reject_cancelled",
+      "expected": "cancelled",
+      "actual": "cancelled",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.evidence_content",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.evidence_type",
+      "expected": "image/png",
+      "actual": "image/png",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.evidence_missing",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.evidence_no_decision",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.fault_injected",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.failed_lock_no_committed_mismatch",
+      "expected": false,
+      "actual": true,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "od.failed_lock_retry_recovers",
+      "expected": "recovered",
+      "actual": "blocked_already_locked",
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "od.fulfillment_no_shipment",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.fulfillment_no_delivery",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.fulfillment_partial",
+      "expected": false,
+      "actual": false,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.fulfillment_all",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.on_received_missing",
+      "expected": {},
+      "actual": {},
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.on_received_needs_so",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.default_warehouse_exists",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "od.default_warehouse_empty",
+      "expected": "",
+      "actual": "",
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "harness_errors": [],
+  "scope": "Original OD services on explicit decided-sample/document fixtures; no public R&D-producer or external fulfillment claim. Injected DB-write fault disclosed."
+}

@@ -1,0 +1,56 @@
+=== [1/7] pip install (skip emergentintegrations & litellm: sudah di base image) Thu Oct  1 08:39:43 UTC 2026
+PIP_EXIT=0
+=== [2/7] yarn install Thu Oct  1 08:40:30 UTC 2026
+warning Resolution field "@tootallnate/once@2.0.1" is incompatible with requested version "@tootallnate/once@1"
+warning Resolution field "@eslint/plugin-kit@0.3.4" is incompatible with requested version "@eslint/plugin-kit@^0.2.7"
+warning " > @babel/plugin-transform-modules-systemjs@7.29.4" has unmet peer dependency "@babel/core@^7.0.0-0".
+warning "@babel/plugin-transform-modules-systemjs > @babel/helper-module-transforms@7.29.7" has unmet peer dependency "@babel/core@^7.0.0".
+warning "webpack-dev-server > webpack-dev-middleware > memfs@4.57.7" has unmet peer dependency "tslib@2".
+warning " > react-day-picker@8.10.1" has incorrect peer dependency "date-fns@^2.28.0 || ^3.0.0".
+warning " > react-day-picker@8.10.1" has incorrect peer dependency "react@^16.8.0 || ^17.0.0 || ^18.0.0".
+warning " > react-markdown@9.1.0" has unmet peer dependency "@types/react@>=18".
+warning " > @babel/plugin-proposal-private-property-in-object@7.21.11" has unmet peer dependency "@babel/core@^7.0.0-0".
+warning "react-scripts > eslint-config-react-app > eslint-plugin-flowtype@8.0.3" has unmet peer dependency "@babel/plugin-syntax-flow@^7.14.5".
+warning "react-scripts > eslint-config-react-app > eslint-plugin-flowtype@8.0.3" has unmet peer dependency "@babel/plugin-transform-react-jsx@^7.14.9".
+warning "react-scripts > react-dev-utils > fork-ts-checker-webpack-plugin@6.5.3" has unmet peer dependency "typescript@>= 2.7".
+warning "react-scripts > eslint-config-react-app > @typescript-eslint/eslint-plugin > tsutils@3.21.0" has unmet peer dependency "typescript@>=2.8.0 || >= 3.2.0-dev || >= 3.3.0-dev || >= 3.4.0-dev || >= 3.5.0-dev || >= 3.6.0-dev || >= 3.6.0-beta || >= 3.7.0-dev || >= 3.7.0-beta".
+warning " > recharts@3.6.0" has unmet peer dependency "react-is@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0".
+warning "@craco/craco > cosmiconfig-typescript-loader@1.0.9" has unmet peer dependency "@types/node@*".
+warning "@craco/craco > cosmiconfig-typescript-loader@1.0.9" has unmet peer dependency "typescript@>=3".
+warning "@craco/craco > cosmiconfig-typescript-loader > ts-node@10.9.2" has unmet peer dependency "@types/node@*".
+warning "@craco/craco > cosmiconfig-typescript-loader > ts-node@10.9.2" has unmet peer dependency "typescript@>=2.7".
+warning Workspaces can only be enabled in private projects.
+warning Workspaces can only be enabled in private projects.
+YARN_EXIT=0
+=== [3/7] pastikan MongoDB HIDUP (prasyarat bootstrap & seed) Thu Oct  1 08:42:15 UTC 2026
+mongodb: ERROR (already started)
+mongodb SIAP setelah 1x percobaan.
+=== [3b/7] backend/.env: CORS_ORIGINS wajib eksplisit (T-02 gagal-berisik) Thu Oct  1 08:42:16 UTC 2026
+CORS_ORIGINS ok: https://kain-erp-p07.preview.emergentagent.com,http://localhost:3000
+=== [4/7] restart backend — bootstrap fondasi menulis ke DB yang HIDUP Thu Oct  1 08:42:16 UTC 2026
+backend: stopped
+backend: started
+backend /api/ -> 200
+=== [5/7] seed_realistic Thu Oct  1 08:42:39 UTC 2026
+[bootstrap] kebersihan data: 34 record dirapikan {'customers': 5, 'suppliers': 6, 'users': 14, 'hr_employees': 2, 'makloons': 7}
+✅ Fondasi bootstrap ditanam ulang (akun md@/wh.admin@: 0/2)
+
+📋 Summary:
+  - 14 Users (admin, sales, manager, warehouse×2)
+  - 18 Products (Batik, Tenun, Lurik, Songket, Ulos, Jumputan, Endek)
+  - 5 Customers
+  - 4 Warehouses (Jakarta, Bandung, Surabaya)
+  - 16 Purchase Orders (PO-00001 → PO-00006)
+  - 10 Sales Orders (SO-0001 → SO-0009)
+  - 17 Inbound tasks · 8 Outbound tasks
+  - 18 inventory balances · 26 movements
+  - 43 inventory rolls (Roll-as-SSOT)
+  - 9 audit logs
+  - 3 Work Order produksi in-house (BOM + HPP)
+SEED_EXIT=0
+=== [6/7] VERIFIKASI FONDASI (gagal berisik, bukan gate merah menyesatkan) Thu Oct  1 08:43:12 UTC 2026
+  OK   expense_categories        8 dok   — kategori pengeluaran petty cash (POC FASE E-4 memeriksanya)
+  OK   gl_accounts              76 dok   — bagan akun baku (COA) — semua jurnal bergantung padanya
+  OK   uoms                      8 dok   — master satuan (FASE U: CM·INCH·KG·MTR·PANEL·PCS·RLL·YRD)
+  fondasi LENGKAP.
+=== [7/7] rebuild frontend Thu Oct  1 08:43:13 UTC 2026

@@ -1,0 +1,16 @@
+{
+  "summary": "Backend-only retest of L02 LN-023-T01 cancelled-journey bug fix. order_journey_service.journey() now sets sisa=0 when status is cancelled/expired; the 'dibayar' step reads 'Pesanan dibatalkan — tidak ada tagihan' with done=false and state=cancelled. Ran the full test_l02_ln023_t01_ar_split_surfaces.py (extended) plus cross_surface_demo: 15/15 passed. A TEST_ SO (NET30, shipment_revenue JE 4jt, payment 1.5jt) set to cancelled and to expired returns outstanding 0, ar_ledger 0, exposure 0, cancelled true and current_step 'dibatalkan', for both the admin and the sales owner. No step contains 'Sisa tagihan'. Regression checks pass: after un-cancel, the split is restored (8.5jt = 2.5jt ledger + 6jt exposure, text 'Sisa tagihan'); status shipped keeps the ledger+exposure==outstanding invariant; the confirmed-unshipped stage is all exposure; all 11 demo orders and 7 customers satisfy the invariants.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_l02_ln023_t01_ar_split_surfaces.py", "/app/backend/tests/test_l02_ln023_t01_cross_surface_demo.py", "/app/test_reports/pytest/ln023_t01_r2.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "journey(): when the order is cancelled, _ledger_split receives sisa=0, so ar_ledger and exposure both come back 0 even if a shipment_revenue JE was never voided. This matches Customer 360. Any un-voided JE on a cancelled order is a GL concern and does not belong to the journey."
+  ],
+  "updated_files": ["/app/backend/tests/test_l02_ln023_t01_ar_split_surfaces.py (cancelled test parametrized cancelled/expired with full assertions incl. step text; added un-cancel restore + shipped-status invariant tests)"],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "not tested (per request)"},
+  "seed_data_creation": "TEST_ fixtures cust_TEST_ln023t01 / so_TEST_ln023t01 / je_TEST_ln023t01_shp created and cleaned up (verified 0 remaining).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run: cd /app/backend && MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database REACT_APP_BACKEND_URL=<frontend/.env> python -m pytest tests/test_l02_ln023_t01_ar_split_surfaces.py tests/test_l02_ln023_t01_cross_surface_demo.py -n0. The open questions from iteration_216 (sales KPI scope uses assigned_sales_id only; waiting_approval orders counted in exposure) are still product decisions and were not retested."
+}

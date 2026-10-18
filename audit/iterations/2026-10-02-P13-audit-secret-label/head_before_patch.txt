@@ -1,0 +1,45 @@
+[
+ {
+  "id": "GN-14",
+  "invariant": "helper audit mendukung before/source",
+  "pass": false,
+  "detail": "TypeError(\"audit() got an unexpected keyword argument 'before'\")"
+ },
+ {
+  "id": "GN-14",
+  "invariant": "HTTP akun GL",
+  "pass": false,
+  "detail": "RuntimeError('HTTP dilewati (baseline HEAD: server yang berjalan bukan kode HEAD)')"
+ },
+ {
+  "id": "GN-14",
+  "invariant": "file token sesi tidak ada di pohon repo",
+  "pass": false,
+  "detail": "['.tok', '.tok_admin', '.tok_mgr', 'memory/.tok_admin']"
+ },
+ {
+  "id": "GN-14",
+  "invariant": ".gitignore menolak .tok*",
+  "pass": false,
+  "detail": ""
+ },
+ {
+  "id": "GN-14",
+  "invariant": "pemindai secret tersedia",
+  "pass": false,
+  "detail": ""
+ },
+ {
+  "id": "UX-03",
+  "invariant": "kolom Badan usaha tidak merender ID mentah",
+  "pass": false,
+  "detail": ""
+ },
+ {
+  "id": "UX-03",
+  "invariant": "memakai resolver label entitas + fallback",
+  "pass": false,
+  "detail": ""
+ }
+]
+pass=0 fail=7

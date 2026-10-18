@@ -1,0 +1,40 @@
+{
+  "summary": "L06 Meja Cutting wait thresholds (configurable) + mobile logistics card QC badge. Backend: existing tests test_l06_cutting_wait_config.py + test_l06_samples_cutting.py 9/9 pass; new test_l06_cutting_wait_config_extra.py 10/10 pass (defaults 120/240 for ent_ksc/ent_kanda/no-entity, warn-only entity override 30 leaves ent_kanda 120, late<warn clamps to warn, global scope applies, validation rejects 0/-5/20000/'abc', sales@ gets 403, registry lists both keys). UI: Pusat Pengaturan search 'Meja Cutting' shows both cards (group Stok & Satuan, scopes Entitas, 'Aktif & tersambung'); changed late to 150 with reason via UI -> notice 'Tersimpan dan langsung berlaku di mesin', value 150 menit. Meja Cutting (sample-tab-desk) with seeded synthetic to_receive tasks (5h/3h/30m): defaults -> late/warn/ok badges, banner '1 potongan ... lebih dari 4 j 0 mnt'; after late=150 -> 2 late, banner '... lebih dari 2 j 30 mnt'. Mobile 390px (after mobile-force-desktop): logistics-card-qc-status-<id> renders 'Menunggu QC' (data-status=required) only for delivery whose SO has qc_request mode full; absent for the other. No page errors. All config restored to 120/240 and all seed data cleared.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/config/values", "issue": "Empty reason is accepted for cutting.wait_* (risk low -> requires_reason false). Review request said admin changes 'with a reason'; UI Simpan button is enabled before a reason is typed. By design per catalog, flagging only."},
+      {"endpoint": "GET /api/cutting/desk (entity=all, view_all user)", "issue": "eid=None -> global thresholds applied to rows of all entities, even if an entity has its own override. Per-row thresholds would be more accurate in 'Semua entitas' view."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Mobile admin", "issues": ["Admin on 390px lands in the mobile ops shell (approvals). Logistics list/cards need 'mobile-force-desktop' first; no direct logistics entry in the mobile bottom nav for admin"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_l06_cutting_wait_config_extra.py",
+    "/app/backend/tests/test_l06_cutting_wait_config.py",
+    "/app/test_reports/pytest/pytest_l06_cutting_wait.xml"
+  ],
+  "action_items": [
+    "Optional: decide whether cutting.wait_* changes should require a reason (set requires_reason) to match the 'with a reason' requirement",
+    "Optional: in the all-entities view, compute wait level per row using that row's entity thresholds"
+  ],
+  "critical_code_review_comments": [
+    "cutting_service.wait_thresholds: `int(value or default)`: a stored 0 would fall back to the default, but min=1 validation blocks 0, so OK.",
+    "Backend tests in backend/tests trigger uvicorn hot reload when created or edited, which causes short 502s. Wait a few seconds before running."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_l06_cutting_wait_config_extra.py",
+    "/app/scripts/seed_test_cutting_wait.py",
+    "/app/scripts/seed_test_logistics_qc_badge.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Synthetic data, inserted directly into the DB and then removed: scripts/seed_test_cutting_wait.py (3 wms_tasks sample_cut + so_TEST_cutwait) and scripts/seed_test_logistics_qc_badge.py (2 logistics_deliveries + 2 TEST SOs). Run either with --clear to remove. Both cleared. Config ent_ksc cutting.wait_warn/late restored to 120/240 (entity-scoped rows now hold the default values).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run backend tests with `set -a; . backend/.env; set +a; export REACT_APP_BACKEND_URL=...; pytest -n0`. test_l06_samples_cutting needs MONGO_URL. The preview DB had no logistics_deliveries and no SO with qc_request, so the seed scripts are needed for the badge UI checks. Admin gets 403 on cutting desk for ent_7487424c3f95 (not in admin's allowed entities)."
+}

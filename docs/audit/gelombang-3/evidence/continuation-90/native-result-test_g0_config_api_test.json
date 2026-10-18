@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_g0_config_api_test.py",
+    "database": "knhost_audit_native90_96f6da8767e6420eb90964e03d223d7c",
+    "exit": 0,
+    "seconds": 71.3,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_g0_config_api_test.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "as hr.manage_payroll)\n\n🔍 Testing Manager RESTORE hr.overtime.multiplier to 1.5...\n✅ Passed - Status: 200\n\n======================================================================\nBACKEND-4: Manager Edit Tax Setting (Forbidden)\n======================================================================\n\n🔍 Testing Manager PUT /config/values for tax.ppn_rate (should be 403)...\n✅ Passed - Status: 403\n   ✅ Manager correctly forbidden with permission message: 'Tarif PPN' tidak bisa Anda ubah (butuh izin settings.manage)\n\n======================================================================\nBACKEND-5: Admin Edit Not-Used Setting (Should Explain Why)\n======================================================================\n\n🔍 Testing Admin PUT /config/values for hr.ptkp_table (should be 400)...\n✅ Passed - Status: 400\n   ✅ Admin correctly blocked with explanation: 'Tabel PTKP tahunan (referensi)' tidak dipakai sistem saat ini — Payroll memakai metode TER (hr.ter_enabled = aktif). Tabel PTKP tahunan tidak dipakai dalam perhitungan PPh 21 bulanan. Angka di sini hanya referensi; mengubahnya TIDAK mengubah slip gaji.\n\n======================================================================\nBACKEND-6: Warehouse Edit Any Setting (Forbidden)\n======================================================================\n\n🔍 Testing Warehouse PUT /config/values for any key (should be 403)...\n✅ Passed - Status: 403\n   ✅ Warehouse correctly forbidden from editing any config\n\n======================================================================\nTEST SUMMARY\n======================================================================\nTests run: 15\nTests passed: 15\nTests failed: 0\n\n❌ FAILURES:\n  - Admin caps incorrect: expected editable_count=96, got 263\n  - Manager caps incorrect: expected editable_count=31, got 61\n"
+  }
+]

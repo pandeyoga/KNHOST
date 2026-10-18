@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="1" tests="12" time="4.468" timestamp="2026-10-06T13:01:29.387243+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="test_dashboard_shape" time="0.849" /><testcase classname="" name="test_unassigned_no_address_leak_for_pickup_orders" time="0.051" /><testcase classname="" name="test_create_delivery_rejects_self_pickup_for_kirim_so" time="0.056"><skipped type="pytest.skip" message="SJ-90007 not present">C:\Users\abc\Documents\Codex\2026-09-28\sya\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-current90-copies\test_iter318_dispatch_logistics.py:69: SJ-90007 not present</skipped></testcase><testcase classname="" name="test_admin_sees_pickup_code" time="0.059"><failure message="AssertionError: {&quot;detail&quot;:&quot;Pengiriman tidak ditemukan.&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-current90-copies\test_iter318_dispatch_logistics.py:84: in test_admin_sees_pickup_code
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Pengiriman tidak ditemukan."}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_warehouse_pickup_code_hidden" time="0.669"><failure message="AssertionError: {&quot;detail&quot;:&quot;Pengiriman tidak ditemukan.&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-current90-copies\test_iter318_dispatch_logistics.py:92: in test_warehouse_pickup_code_hidden
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Pengiriman tidak ditemukan."}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_transition_loaded_rejected_for_pickup" time="0.048"><failure message="AssertionError: {&quot;detail&quot;:&quot;Pengiriman tidak ditemukan.&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-current90-copies\test_iter318_dispatch_logistics.py:105: in test_transition_loaded_rejected_for_pickup
+    assert r.status_code == 400, r.text
+E   AssertionError: {"detail":"Pengiriman tidak ditemukan."}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_pickup_handover_wrong_code" time="0.052"><failure message="assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-current90-copies\test_iter318_dispatch_logistics.py:114: in test_pickup_handover_wrong_code
+    assert r.status_code == 400
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_pickup_handover_success_then_duplicate" time="0.061"><failure message="AssertionError: {&quot;detail&quot;:&quot;Pengiriman tidak ditemukan.&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-current90-copies\test_iter318_dispatch_logistics.py:125: in test_pickup_handover_success_then_duplicate
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Pengiriman tidak ditemukan."}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="" name="test_fleet_vehicle_crud" time="0.575" /><testcase classname="" name="test_fleet_availability_and_on_trip_maintenance_blocked" time="0.095" /><testcase classname="" name="test_history_filters" time="0.210" /><testcase classname="" name="test_order_preview_leak" time="0.091"><failure message="AssertionError: {'customer_name': 'Toko Kain Sejahtera', 'customer_city': 'Jakarta', 'fulfillment_method': 'kirim', 'pickup_date': '', ...}&#10;assert 'kirim' == 'ambil'&#10;  &#10;  - ambil&#10;  + kirim">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-current90-copies\test_iter318_dispatch_logistics.py:268: in test_order_preview_leak
+    assert op.get("fulfillment_method") == "ambil", op
+E   AssertionError: {'customer_name': 'Toko Kain Sejahtera', 'customer_city': 'Jakarta', 'fulfillment_method': 'kirim', 'pickup_date': '', ...}
+E   assert 'kirim' == 'ambil'
+E     
+E     - ambil
+E     + kirim</failure></testcase></testsuite></testsuites>

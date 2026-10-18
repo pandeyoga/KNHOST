@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="18" skipped="1" tests="21" time="9.965" timestamp="2026-10-06T14:03:54.960482+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname=".TestPartialDispatchProrata" name="test_01_order_and_advance" time="0.937"><failure message="TypeError: 'NoneType' object is not subscriptable">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:156: in test_01_order_and_advance
+    o = _create_order(hdr)
+        ^^^^^^^^^^^^^^^^^^
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:99: in _create_order
+    print(f"SO {fresh['number']} id={oid} grand={fresh.get('grand_total')} ppn={fresh.get('ppn_amount')}")
+                ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname=".TestPartialDispatchProrata" name="test_02_partial_dispatch" time="0.007"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:167: in test_02_partial_dispatch
+    oid = STATE["oid"]
+          ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestPartialDispatchProrata" name="test_03_shipment_revenue_prorata" time="0.027"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:178: in test_03_shipment_revenue_prorata
+    oid = STATE["oid"]
+          ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestPartialDispatchProrata" name="test_04_shipment_cogs" time="0.012"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:192: in test_04_shipment_cogs
+    cj = _je("shipment_cogs", STATE["oid"])
+                              ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestPartialDispatchProrata" name="test_05_advance_reclass_partial" time="0.004"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:201: in test_05_advance_reclass_partial
+    rj = _je("advance_reclass", STATE["oid"])
+                                ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestPartialDispatchProrata" name="test_06_journey_pct" time="0.004"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:212: in test_06_journey_pct
+    r = requests.get(f"{BASE}/sales-orders/{STATE['oid']}/journey", headers=hdr, timeout=60)
+                                            ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestClosingShipment" name="test_07_dispatch_remainder" time="0.004"><failure message="KeyError: 'task_id'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:225: in test_07_dispatch_remainder
+    r = requests.post(f"{BASE}/outbound/tasks/{STATE['task_id']}/dispatch", headers=hdr,
+                                               ^^^^^^^^^^^^^^^^
+E   KeyError: 'task_id'</failure></testcase><testcase classname=".TestClosingShipment" name="test_08_totals_exact" time="0.004"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:233: in test_08_totals_exact
+    oid = STATE["oid"]
+          ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestClosingShipment" name="test_09_cogs_proportional" time="0.004"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:243: in test_09_cogs_proportional
+    cj = _je("shipment_cogs", STATE["oid"])
+                              ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestClosingShipment" name="test_10_advance_reclass_full" time="0.003"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:252: in test_10_advance_reclass_full
+    rj = _je("advance_reclass", STATE["oid"])
+                                ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestClosingShipment" name="test_11_journey_full_and_idempotent" time="0.007"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:260: in test_11_journey_full_and_idempotent
+    oid = STATE["oid"]
+          ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestClosingShipment" name="test_12_legacy_order_untouched" time="0.007"><skipped type="pytest.skip" message="tidak ada pesanan legacy ber-JE sales_order">C:\Users\abc\Documents\Codex\2026-09-28\sya\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:281: tidak ada pesanan legacy ber-JE sales_order</skipped></testcase><testcase classname=".TestVoidAdvance" name="test_13_void_receipt" time="0.007"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:292: in test_13_void_receipt
+    oid, rid = STATE["oid"], STATE["rid_adv"]
+               ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestVoidAdvance" name="test_14_advance_account_net_zero" time="0.005"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:303: in test_14_advance_account_net_zero
+    oid = STATE["oid"]
+          ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestAdvanceReport" name="test_15_second_order_with_advance" time="0.394"><failure message="TypeError: 'NoneType' object is not subscriptable">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:320: in test_15_second_order_with_advance
+    o = _create_order(hdr)
+        ^^^^^^^^^^^^^^^^^^
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:99: in _create_order
+    print(f"SO {fresh['number']} id={oid} grand={fresh.get('grand_total')} ppn={fresh.get('ppn_amount')}")
+                ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname=".TestAdvanceReport" name="test_16_report_contents[admin@kainnusantara.id]" time="0.761"><failure message="KeyError: 'advance2'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:344: in test_16_report_contents
+    assert t["advance_orders"] &gt;= STATE["advance2"] - 1
+                                  ^^^^^^^^^^^^^^^^^
+E   KeyError: 'advance2'</failure></testcase><testcase classname=".TestAdvanceReport" name="test_16_report_contents[finance@kainnusantara.id]" time="0.749"><failure message="KeyError: 'advance2'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:344: in test_16_report_contents
+    assert t["advance_orders"] &gt;= STATE["advance2"] - 1
+                                  ^^^^^^^^^^^^^^^^^
+E   KeyError: 'advance2'</failure></testcase><testcase classname=".TestAdvanceReport" name="test_17_search_filter" time="0.002"><failure message="KeyError: 'number2'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:362: in test_17_search_filter
+    params={"entity_id": ENT, "q": STATE["number2"]}, timeout=90)
+                                   ^^^^^^^^^^^^^^^^
+E   KeyError: 'number2'</failure></testcase><testcase classname=".TestAdvanceReport" name="test_18_sales_role_forbidden" time="0.594" /><testcase classname=".TestTrialBalance" name="test_19_trial_balance_balanced" time="0.064" /><testcase classname=".TestTrialBalance" name="test_20_finance_desk_partial_advance" time="3.818"><failure message="KeyError: 'oid2'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:404: in test_20_finance_desk_partial_advance
+    mine = next((x for x in rows if x.get("ref_id") == STATE["oid2"] or
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter299_prorata_advance_report.py:404: in &lt;genexpr&gt;
+    mine = next((x for x in rows if x.get("ref_id") == STATE["oid2"] or
+                                                       ^^^^^^^^^^^^^
+E   KeyError: 'oid2'</failure></testcase></testsuite></testsuites>

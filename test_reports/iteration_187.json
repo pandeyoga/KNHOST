@@ -1,0 +1,58 @@
+{
+  "summary": "Retest of iteration_186 fixes. Most fixes now work: the merged-twin cart split works with default settings (roll_pick_sales=true) on desktop and mobile, the 0-qty roll notice appears, re-import after rollback works, the LIFO rollback guard returns 409, the recap/dataset permissions are correct, the recap header is inline and the 'Diubah' label shows. NEW backend bug: committing a dataset where two SKUs share the same supplier article code returns 500 (the unique index uq_supplier_sku is hit, but the dry-run said OK). On top of that, rolling back the failed batch leaves the created supplier_item active. Still not fixed (MEDIUM): the quickview subtotal for merged products uses only the first member's price.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/client-dataset/batches/{id}/commit", "issue": "500 DuplicateKeyError on index uq_supplier_sku (supplier_id, supplier_sku) when 2+ rows map different SKUs (e.g. colors of one supplier article) to the same supplier + kode_artikel_supplier, or when an inactive rolled-back row with the same supplier_sku already exists for another product. The dry-run reports these rows as 'ok', so the error only shows up at commit. The batch ends up 'failed'. Repro: tests/test_l01_dataset_edge.py::TestDatasetLifo::test_two_skus_same_supplier_article_code_no_500", "priority": "HIGH"},
+      {"endpoint": "POST /api/client-dataset/batches/{id}/rollback (failed batch)", "issue": "_apply() calls snap() only for templates/products. Supplier_items created before the failure are not saved in 'before', so the rollback leaves them ACTIVE. Observed: si_27c94d9fe52d stayed active after the failed batch was rolled back (test data, deleted afterwards).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/client-dataset/batches/{id}/rollback", "issue": "The 'newer' check uses me.committed_at or ''. A failed batch (no committed_at), or an unknown batch id, is blocked with 409 whenever any committed batch exists; an unknown id should get 404. There is still no recovery for batches stuck in 'committing'."},
+      {"endpoint": "rollback", "issue": "Fields that were absent before the import are restored as null instead of $unset (e.g. customer_color: null)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ProductQuickView / MobileQuickView (merged products)", "issue": "Subtotal and add button show qty x first member's price: 4000 kg -> Rp 160.000.000, but the cart gets 2930.32@40k + 1069.68@44k = Rp 164.278.720. The HARGA/KG stat shows only Rp 40.000, and the stock line 'Reguler... + grup 2.930,32' shows only member 1 while TERSEDIA shows 10.633,31. The subtotal should be computed from the split.", "selector": "quickview-line-total, mobile-quickview-add", "priority": "MEDIUM"},
+      {"component": "addToCart merged split", "issue": "When the requested qty is more than the members' remaining stock, the whole remainder lands silently on the last member. Third add of 4000: prod_8426fc46c071 got 3396.23 kg against 2029.54 kg stock, with no notice or backorder warning.", "selector": "quickview-add-button", "priority": "LOW"},
+      {"component": "Mobile tab bar cart badge", "issue": "mobile-tab-cart-count shows '99+' for 3 cart lines; it appears to sum kg rather than count lines. Desktop cart-badge-count shows line count (3).", "selector": "mobile-tab-cart-count", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Mobile catalog HIKARI card", "issues": ["Shows 'Rp 40.000+/kg' while desktop shows the range 'Rp 40.000 – Rp 45.000/kg'. Acceptable, but not consistent."]}
+    ]
+  },
+  "passed": [
+    "Desktop sales.kanda: HIKARI card price range Rp 40.000 – Rp 45.000/kg; header '44 produk · 268 varian'",
+    "Desktop: color 1 (merged) qty 4000 -> no RollReconcileSheet; cart lines 2930.32 kg @40k (117.212.800) + 1069.68 @44k; badge Rp 164.278.720",
+    "Desktop: second 4000 -> 2930.32 / 2923.65 (full) / 2146.03 @45k = 8000 kg, no member over its stock; total Rp 342.424.750",
+    "Mobile 390x844: same split (prod_9647088009e6 2930.32, prod_acdf2b3a8fcd 2923.65, prod_8e882e59d223 2146.03), no reconcile sheet",
+    "Roll-mode 0 qty: HIKARI color 10 reconcile 'Ambil semua + backorder' 0 roll -> notice 'tidak ada roll yang bisa diambil', nothing added to cart",
+    "Backend: test_l01_dataset_recap.py 5/5; test_l01_dataset_edge.py 10/11 (the 1 failure is the new dup supplier_sku bug)",
+    "Re-import after rollback reactivates supplier_item; existing inactive item reactivated on commit and restored to inactive on rollback",
+    "LIFO: rolling back the older batch while a newer one is committed -> 409; newest-first rollback works",
+    "manager and finance GET /api/makloon-claims/recap = 200; manager /api/client-dataset/batches = 403; hubTabs client-dataset-import roles=['admin']",
+    "Admin recap: partner select inline (199px wide in a 1560px section); options stay after partner and date filters",
+    "Admin dataset import: upload -> 'Akan diubah' -> commit -> row shows 'Diubah'; rollback via UI (confirm dialog) -> 'Dibatalkan'"
+  ],
+  "test_report_links": ["/app/backend/tests/test_l01_dataset_edge.py", "/app/backend/tests/test_l01_dataset_recap.py", "/app/test_reports/pytest/pytest_l01_dataset_edge.xml"],
+  "action_items": [
+    "HIGH: client_dataset_service.dry_run should flag (error/warning) rows whose (supplier_id, kode_artikel_supplier) clashes with another product's supplier_item (any status) or with another row in the same file. Alternatively, make supplier_sku uniqueness include color, or reuse/reassign the row. Commit must never 500. Wrap insert_one in DuplicateKeyError handling and return 409/400 with the row number.",
+    "HIGH: In _apply, call snap() after each supplier_items append (created and updated) so that rolling back a failed batch deactivates or restores them",
+    "MEDIUM: Merged products in ProductQuickView and MobileQuickView: compute the subtotal/add-button amount from the same per-member split (and show the price range or blended price); show combined stock in the stock-breakdown line",
+    "LOW: Warn when a merged split goes over the members' total remaining stock (remainder silently goes to the last member)",
+    "LOW: mobile-tab-cart-count should count lines, not qty",
+    "LOW: Rollback guard: 404 for an unknown batch; ignore the committed_at ordering for 'failed' batches; recover from stuck 'committing'"
+  ],
+  "critical_code_review_comments": [
+    "client_dataset_service._apply: supplier_items inserts have no duplicate-key handling, and 'before' is not saved incrementally for supplier_items (snap only covers templates/products)",
+    "client_dataset_service.rollback: the newer-batch check and the status flip are not atomic (minor race); restoring sets missing fields to null",
+    "useAppActions.addToCart merged split: inCart reads the 'cart' closure, which is fine per click; the last member absorbs the overflow without a notice"
+  ],
+  "updated_files": ["/app/backend/tests/test_l01_dataset_edge.py (added TestDatasetLifo: LIFO 409, inactive reactivate/restore, dup supplier_sku regression; unique TEST-EDGE codes per run)"],
+  "success_rate": {"backend": "93% (14/15)", "frontend": "85% (core flows pass; quickview subtotal mismatch remains)"},
+  "seed_data_creation": "None kept. Deleted test-polluted supplier_items with supplier_sku TEST-EDGE / TEST-DUP-*. Rolled back the failed batch cdi_48a611aa93c8 and the UI batch cdi_a537085c4893. allocation.roll_pick_sales reset to the default (true) via /api/config/values/reset.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Merged HIKARI color 1 = quickview-color-0 (the quickview opens on color 10 by default, which is non-merged; its reconcile gives 0 rolls, which makes it a good case for the 0-qty notice). Sales login lands on Performa Saya; click the 'Buat Pesanan' button to get to ?view=sales&entity=ent_kanda. Mobile: mobile-tab-btn-catalog -> mobile-catalog-search -> mobile-product-<id> 'Pilih'; cart via mobile-tab-btn-cart. The dataset rollback UI uses window.confirm, so Playwright must accept the dialog. Dup-supplier_sku repro: two KNKNT0007 SKUs + SUP-00002 with the same kode_artikel_supplier.",
+  "rca of the issue": "Commit 500: supplier_items has a unique partial index uq_supplier_sku on (supplier_id, supplier_sku). dry_run only checks for a (product_id, supplier_id) link, not supplier_sku uniqueness across products or rows, so insert_one raises DuplicateKeyError. A rollback leaves rows active because the 'before' list of created supplier_items is only saved at the final status update, not on failure."
+}

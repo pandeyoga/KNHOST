@@ -1,0 +1,27 @@
+{
+  "summary": "Mobile Sales & Admin Sales end-to-end review (viewport 390x844). Verified: PWA manifest + icons + service worker + index.html link tags; backend Push endpoints (public-key/status/subscribe/unsubscribe/test); Customer Management on mobile (list/detail/tabs Tagihan+Alamat+Tindak lanjut+Pesanan, credit/WA/call/edit/new-order, add form opens); Notifications header bell + sheet + items + mark-all; Lainnya renders m-pwa-install and m-push-card (status='Diblokir di pengaturan browser.' as expected in headless). All existing seed data available (cust_toko_kain, notifications, etc). No page errors, no horizontal overflow at 390px on customer flow, sales-home, notif sheet.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_82.json"
+  ],
+  "action_items": [
+    "Manual smoke by main agent for: (a) m-special orders detail flow (m-od-detail, m-od-status, m-od-specs, m-od-phases, m-od-history, m-od-customer-decision, m-od-submit for draft) — testing agent could not open Lainnya > mobile-more-special reliably because toggling sections in bulk collapsed defaults; opening the app fresh (no bulk toggle) exposes it. (b) m-return-detail with m-return-submit-draft and m-return-photo-input/upload using setInputFiles. (c) URL /?m=orders auto-selects Pesanan tab. (d) Real Web Push delivery cannot be verified headless (blocked).",
+    "Consider marking the Lainnya section groups (assist/orders/customers/stock/hubs/full) with individual initial-state testIDs (e.g. data-collapsed) so automated tests can inspect state instead of assuming defaults."
+  ],
+  "critical_code_review_comments": [
+    "manifest.json icons are served from site root (/icon-192.png, /icon-512.png, /icon-maskable-512.png) — verified 200 image/png. index.html includes <link rel=manifest>, theme-color=#0058CC, apple-touch-icon. sw.js reachable and navigator.serviceWorker.getRegistration() resolves to a registration."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "90%"},
+  "seed_data_creation": "None. Only ephemeral push subscription for endpoint 'https://fcm.googleapis.com/fcm/send/TEST_x' was created and immediately unsubscribed (cleanup verified).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "PWA manifest/icons/theme-color/sw all pass. Backend push API (/api/push/public-key, /status, /subscribe, /unsubscribe, /test) all pass with sales@ session cookie. Mobile Customer CRM flow works end-to-end: Lainnya > toggle customers > mobile-more-crm > m-customers > m-customer-<id> > tabs Tagihan/Alamat/Tindak lanjut/Pesanan; edit, address-add, followup-add buttons all present. Notifications bell + sheet + items + markall work. When automating Lainnya sections do NOT bulk-toggle — use the specific section toggle only when the desired item isn't visible; default open sections vary by role.",
+  "rca_of_issue": "N/A — no failing flows observed. The one behavioural note is that bulk-toggling all Lainnya section headers can collapse sections that are open by default; test scripts should query the target testid first and only toggle its parent section if not found."
+}

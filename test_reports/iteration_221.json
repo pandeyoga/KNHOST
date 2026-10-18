@@ -1,0 +1,38 @@
+{
+  "summary": "LN-032 (repeated proofing) + design-card print paper count, tested on backend and frontend. Backend: LN-032 main 4/4, new extra suite 6/6 (both run 3x in a row with no flakiness), LN-031 10/10, LN-030 31/31. Checked: T01 printing OD after PIC ACC -> ready=false, object=proofing, waiting_for=[proofing no], proofing_rounds R1 (design_id + version), acc/revisi/tolak all 400; revisi without a note 400; 2 concurrent revisi -> exactly one 200, the other gets 409 'sedang dicatat pengguna lain' or 400; exactly 1 new round (proofing_round 2, same artwork id + version, sample_types ['proofing']); decision_lock is released; tolak on a proofing round -> OD cancelled, object=proofing; plain (labdip+handfeel) revisi -> object=sample, waiting_for has the new sample, proofing_rounds=[]; revalidation with mixed handfeel+proofing types -> 400; GET /design-gallery rounds_total/paper_rounds_done go 0 -> 1 -> 2 -> 1 (uncheck). UI (static build): Sales opens Special Order detail -> od-customer-not-ready 'Menunggu proofing kain selesai diputus R&D: KSC/SMP-xxx...', chips od-proofing-round-1/2 'R1 · KSC/SMP-00141 · artwork v2'; after R&D decides -> basis + reminder; revisi via UI (Submit disabled with no note) -> R3 chip appears; ACC via UI -> chip 'Pelanggan ACC', buttons/reminder gone, history object 'Proofing kain (printing)'. Design & Pattern list: design-paper-count shows 'Print paper 1/2 ronde' (grey), and after checking design-round-paper-toggle-2 in the detail it shows '2/2' green (#1A5C2E). No 4xx/5xx API errors in the UI. All TEST data removed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "special_order_phase2._spawn_revision_sample (p_round)", "issue": "proofing_round counts every proofing for the OD (special_order_id), not per item/design. On a multi-item printing OD (LN-030) with 2 designs, item B's round numbers carry on from item A's (for example the first reproofing of B becomes R3). review_ready.proofing_rounds also mixes both items. Count by special_order_item_id/design_id instead."},
+      {"endpoint": "review_ready / _spawn_revision_sample", "issue": "For an OD with printing + labdip, a revisi only re-runs the jenis uji of the latest decided sample (by created_at, usually the proofing). Labdip is not repeated. Needs an owner decision on whether that is intended."},
+      {"endpoint": "special_orders status", "issue": "The OD status stays 'confirmed' (shown as 'Terkonfirmasi' in the header badge and Riwayat Status) through approval and every proofing round, while the timeline phase says 'Sampling berjalan'. This confuses Sales because the customer has not confirmed yet. It is a pre-existing label issue."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Special Order detail > Rantai Dokumen 'SAMPLE R&D'", "issues": ["A proofing round that R&D decided but the customer rejected (revisi) still shows 'Pemenang dipilih' in green. It should say something like 'ditolak pelanggan / revisi'."]},
+      {"screen": "RndDesignsView DesignCard", "issues": ["The 'Print paper X/Y ronde' text is 9.5px, which is very small for a progress indicator the PIC is meant to read at a glance.", "The date-range filter uses native mm/dd/yyyy date inputs (browser default picker) instead of the shadcn calendar."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l03_ln032_extra_iter221.py", "/app/backend/tests/test_l03_ln032_reproofing.py", "/app/backend/tests/seed_iter221_ui.py", "/app/test_reports/pytest/iter221.xml"],
+  "action_items": [
+    "(Optional) Count proofing_round per special_order_item_id/design_id for multi-item printing ODs",
+    "(Optional) In the Rantai Dokumen card, label proofing rounds the customer rejected differently from 'Pemenang dipilih'",
+    "(Optional) Enlarge the design-paper-count text"
+  ],
+  "critical_code_review_comments": [
+    "customer_decide: the lock is claimed atomically with a 60s stale takeover and released in finally. OK.",
+    "review_ready blocks while any linked sample is not 'decided' (draft/sent/in_progress/assessed). OK, because 'cancelled' is excluded.",
+    "test_l03_ln032_reproofing.py::test_concurrent_revalidation_existing_sku_no_duplicate sets ALL open revalidation samples of a real product to status=cancelled (seeded/demo data is modified). Restrict it to TEST_ data or restore the status in teardown.",
+    "design_studio_service.py is 751 lines (>700 limit)"
+  ],
+  "updated_files": ["/app/backend/tests/test_l03_ln032_extra_iter221.py", "/app/backend/tests/seed_iter221_ui.py"],
+  "success_rate": {"backend": "100% (51/51)", "frontend": "100%"},
+  "seed_data_creation": "tests/seed_iter221_ui.py creates OD TEST_UI221_PRINT + dsgn_TEST_ui221od/card for UI testing; removed with --clear (already run).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run the tests one file at a time with -n0 and env from backend/.env + REACT_APP_BACKEND_URL. To simulate R&D deciding, set md_samples.status='decided'. UI: sales@ -> ?view=special-orders&entity=ent_ksc -> view-special-order-<id> -> od-customer-approval. Designs: admin -> ?view=rnd-designs&entity=ent_ksc, search rnd-designs-search.",
+  "test_credentials": "admin@kainnusantara.id/demo12345, sales@/manager@ demo1234 (from /app/memory/test_credentials.md)"
+}

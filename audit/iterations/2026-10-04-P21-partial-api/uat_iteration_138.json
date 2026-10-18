@@ -1,0 +1,28 @@
+{
+  "summary": "UAT for TANYA-DOC (new 'Tanya dari Dokumen'), HR-06 leave approval across sales/manager roles, and partial DOC-06. TANYA-DOC fully PASS: AskKnButton dropdown shows presets (q-0, q-1) + 'Tulis pertanyaan sendiri…' (ask-kn-sales_order-custom) on SO-0001 detail; clicking q-1 navigates to /?view=tanya-kn&tab=chat, chip 'Konteks: SO-0001' visible, bubble shows 'Dari halaman: SO-0001' (tanya-thread-context), AI answer streamed with real OpenAI mentioning 'Rp 5.571.200' sisa tagihan + 'Rp 11.155.500' total + 'Rp 5.584.300' paid; 'Tulis pertanyaan sendiri' opens Tanya KN without auto question, placeholder reads 'Tanya tentang SO-0001…', clicking tanya-context-clear (X) removes chip and placeholder reverts to 'Tanya apa saja tentang penjualan, stok, piutang…'. Customer 360 (Butik Bali Indah) shows ask-kn-customer with 4 presets (q-0..q-3) and custom item. Status 'Aktif' pill + Biaya tab both visible on Tanya KN (regresi PASS). HR-06 PASS: sales@kainnusantara.id can only see her own hr-my-profile (own gaji Rp 6.000.000 visible, Agus Setiawan's data not visible), hr-leave view is RBAC-protected (sales redirected to sales-home). Manager approved pending Izin leave via leave-approve-<id>; status flipped to 'Disetujui' and reflected in sales ESS history. HR-06 note: new TEST_UAT leave submit was rejected by backend because default date (Sunday 04-Oct-2026) is non-working day — correct validation message 'Rentang harus mengandung minimal 1 hari kerja.' (not a bug). DOC-06 PARTIAL: grn-new-button opens GRN wizard, grn-wizard-partner and grn-wizard-warehouse testids present, 5 mitra + 4 gudang options; however automated option click did not persist state (dropdown closed without binding) so step-2 upload input grn-wizard-files could not be exercised in this session. DESIGN-06 NOT TESTED this iteration (deferred due to multi-role file-upload complexity).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "GRN wizard step-1 → step-2", "issue": "In automated tests, clicking a [role=option] inside the shadcn Combobox for grn-wizard-partner closed the dropdown but did not update the selected value, leaving the 'Lanjut' button disabled. Manual users unaffected (observed on preview). Could not reach grn-wizard-files to exercise the bad-file validation path for DOC-06.", "affected_selectors": ["grn-wizard-partner", "grn-wizard-warehouse"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Confirm DESIGN-06 manually (designer uploads PNG, submits; manager minta revisi; designer sees bell notif + 'revisi' status).",
+    "Confirm DOC-06 manually: open GRN wizard step 2 and attempt to upload /tmp/bad.jpg (text content, .jpg ext) and a text-with-.png into Design Studio — verify a friendly rejection toast and no crash."
+  ],
+  "critical_code_review_comments": [
+    "AskKnButton.jsx is clean (45 LOC). PRESETS could be externalized to i18n/constants file for reuse.",
+    "TanyaKnView.jsx uses sessionStorage key for cross-page handoff — note race if user has multiple tabs open; low priority."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "TANYA-DOC 100%, HR-06 100%, DOC-06 ~40% (blocked at wizard step 1 combobox), DESIGN-06 not run"},
+  "test_credentials": "admin@kainnusantara.id, manager@kainnusantara.id, sales@kainnusantara.id, warehouse@kainnusantara.id — all /demo12345",
+  "seed_data_creation": "No new rows persisted. The attempted TEST_UAT leave submit was rejected server-side (weekend date). The pending 'Izin · 2026-10-05' for Ayu Permatasari (leave_e3a061a59d30) that existed before this iteration was approved to Disetujui by manager during the test.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Real OpenAI used for exactly 1 chat (q-1 preset for SO-0001). Budget headroom ~5 more questions. Combobox interaction in GRN wizard needs page.click on the trigger then listbox option — in Playwright the state binding seems to need focus; use page.locator with role=option exact=True or dispatch pointer events. Design Studio bad-file flow and the designer→manager→designer revision flow for DESIGN-06 are the main remaining UAT gaps.",
+  "rca of the issue": "DOC-06 wizard blocking is likely a Radix popover state issue when triggered via Playwright force-click; functionality itself not confirmed broken for real users."
+}

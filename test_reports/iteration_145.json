@@ -1,0 +1,40 @@
+{
+  "summary": "Iter145 — IA consolidation sweep (admin+finance+sales). Verified Meja Peran group (5 desks admin-only), Gudang & Logistik contains rfid-hub + escalations, Akuntansi & Pajak contains interco-transactions, Keuangan › Dasbor Keuangan is finance-tower hub with 'Posisi & Kontrol' + 'BI Keuangan', Analitik no longer has BI Keuangan but keeps Ringkasan/Margin & HPP/BI SDM/Analitik Stok. settings-config shows 3 labeled sections (Sistem · Organisasi & Akses · Kamus & Dokumen); Pusat Pengaturan has single kicker (no inline duplicate). ?view=admin shows Integrasi AI + Jejak Audit tabs + Reset Demo Data button and NO metric cards. ?view=permission-matrix shows permission-matrix-hint + Simpan Hak Akses. ?view=doc-templates-basic create modal has Ukuran kertas (A4/A5/Letter/F4), Orientasi (portrait/landscape), URUTAN BAGIAN DOKUMEN. ?view=customers-master shows 'Impor/Ekspor & Status' tab + Nonaktifkan buttons. Approval-Inbox has 'Pengajuan Harga Khusus', 'Riwayat Persetujuan PO', 'Kredit Pelanggan' tabs. interco-transactions renders all 6 sub-tabs. All 11 legacy deep-links (cs-rfid-*, escalations, interco-transactions, bi-finance, admin, finance-tower, documents, cs-stock-analytics) resolve to real page titles (no 404). Finance role: no Meja Peran group, finance-desk still standalone. ONE CRITICAL BUG FOUND: Kasir makloon label does NOT render in SalesPortal product grid even with active material_reservations doc.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "/api/dashboard (products[])", "issue": "Dashboard products payload omits 'makloon_reserved_qty' field, and 'available_qty' is NOT reduced by active material_reservations. SalesPortal (Kasir) reads products from /api/dashboard (via data.products in useAppActions), so PosProductCard.makloonQty = 0 and the <p data-testid=product-makloon-reserved-{id}> 'Dicadangkan makloon: X' pill is never rendered — review-request feature not visible to users. /api/products already enriches both fields correctly (confirmed: makloon_reserved_qty=50, available_qty=260 after seeding mres_TEST_ui 50 on prod_batik_mega), but dashboard router (backend/routers/dashboard.py ~L37/95) uses raw db.products + inventory_balances aggregation without the material_reservations overlay.", "priority": "CRITICAL"}
+    ],
+    "minor": [
+      {"endpoint": "/api/dashboard products available_qty inconsistency", "issue": "Dashboard shows available_qty=310 for prod_batik_mega while /api/products shows 260 after the 50-makloon reservation — two sources of truth for same screen (Kasir header totals vs product grid available). Fix at same place as the critical issue."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PosProductCard (SalesPortal grid)", "issue": "Missing testid product-makloon-reserved-prod_batik_mega — downstream of backend dashboard not returning makloon_reserved_qty. If dashboard fix is not desired, SalesPortal should hydrate from /api/products instead of data.products, or useAppActions must merge the two sources.", "selector": "[data-testid=\"product-makloon-reserved-prod_batik_mega\"]", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "?view=escalations", "issues": ["page-title is 'Eskalasi Barang Masuk & Barang Keluar' while nav label and spec say 'Eskalasi Gudang' — label mismatch (minor)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_145.json"
+  ],
+  "action_items": [
+    "FIX (backend): In /app/backend/routers/dashboard.py, enrich products[] with makloon_reserved_qty from db.material_reservations (status='active', group by product_id, scoped by owner_entity_id when scope applies) and subtract that qty from available_qty — mirror what /api/products list_products does. This single fix restores the Kasir 'Dicadangkan makloon' pill AND makes available_qty consistent across both endpoints.",
+    "Consider aligning page-title at ?view=escalations to 'Eskalasi Gudang' to match sidebar nav label (minor)."
+  ],
+  "critical_code_review_comments": [
+    "Dashboard & /api/products are two sources of truth for product stock on the same screen; Kasir uses dashboard.products while /api/products enrichment is bypassed. Any new stock-overlay (makloon, hold, quarantine) silently breaks Kasir UI unless duplicated in dashboard.py. Suggest extracting a single `enrich_products_with_stock_overlays()` service and calling it from both endpoints.",
+    "navStructure.js Meja Peran group (lines 148-160) correctly limits roles to ['admin']; finance@/sales@/manager@ do NOT see the group but their standalone desk nav items still render via ROLE_NAV — verified in-browser.",
+    "AppViewRouter correctly resolves legacy ids (cs-rfid-*, bi-finance, interco-transactions, etc.) — all 11 ids rendered expected page titles."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "~90% (1 critical, 1 minor on dashboard overlay)", "frontend": "~97% (nav/IA all correct; 1 downstream UI bug due to backend)"},
+  "test_credentials": "admin@/sales@/finance@kainnusantara.id / demo12345, entity ent_ksc",
+  "seed_data_creation": "Seeded TEST material_reservation {id:'mres_TEST_ui', product_id:'prod_batik_mega', owner_entity_id:'ent_ksc', ref_id:'TEST_PR', qty:50, status:'active'} and deleted after test — no residue.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "To reproduce the Kasir bug: seed material_reservations doc (see above), login sales@kainnusantara.id, open ?view=sales&entity=ent_ksc, scroll to BTK-MEGA-001 card in product-grid — the amber 'Dicadangkan makloon: …' pill should appear below the available-qty row but currently does not. curl GET /api/dashboard?entity_id=ent_ksc for product prod_batik_mega: observe missing makloon_reserved_qty + available_qty=310 (should be 260). curl GET /api/products?entity_id=ent_ksc for same product: observe makloon_reserved_qty=50, available_qty=260. Fix is in backend/routers/dashboard.py.",
+  "rca of the issue": "Kasir makloon label absent → PosProductCard.makloonQty uses v.makloon_reserved_qty on each variant; variants come from SalesPortal.allProducts = data.products from useAppActions which calls GET /api/dashboard; dashboard router aggregates stock from inventory_balances only — it never reads material_reservations overlay, so makloon_reserved_qty is undefined and the pill is hidden. /api/products enrichment (which uses the overlay) is unused by Kasir."
+}

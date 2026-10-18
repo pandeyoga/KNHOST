@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="8" time="3.558" timestamp="2026-10-06T14:02:19.983107+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname=".TestDesignGallery" name="test_final_requirement_no_colorway" time="0.677"><failure message="AssertionError: {&quot;detail&quot;:&quot;Entri galeri tidak ditemukan.&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter40_design_rnd.py:53: in test_final_requirement_no_colorway
+    assert r.status_code == 200, r.text[:300]
+E   AssertionError: {"detail":"Entri galeri tidak ditemukan."}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestDesignGallery" name="test_upload_source_file_and_download_and_delete" time="0.058"><failure message="AssertionError: upload source failed 404 {&quot;detail&quot;:&quot;Desain tidak ditemukan.&quot;}&#10;assert 404 in (200, 201)&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter40_design_rnd.py:72: in test_upload_source_file_and_download_and_delete
+    assert r.status_code in (200, 201), f"upload source failed {r.status_code} {r.text[:300]}"
+E   AssertionError: upload source failed 404 {"detail":"Desain tidak ditemukan."}
+E   assert 404 in (200, 201)
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestDesignGallery" name="test_colorway_kind_still_accepted" time="0.060"><failure message="AssertionError: colorway upload failed 404 {&quot;detail&quot;:&quot;Desain tidak ditemukan.&quot;}&#10;assert 404 in (200, 201)&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter40_design_rnd.py:106: in test_colorway_kind_still_accepted
+    assert r.status_code in (200, 201), f"colorway upload failed {r.status_code} {r.text[:300]}"
+E   AssertionError: colorway upload failed 404 {"detail":"Desain tidak ditemukan."}
+E   assert 404 in (200, 201)
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestDesignGallery" name="test_invalid_kind_rejected" time="0.056"><failure message="AssertionError: expected 400 for invalid kind, got 404&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter40_design_rnd.py:121: in test_invalid_kind_rejected
+    assert r.status_code == 400, f"expected 400 for invalid kind, got {r.status_code}"
+E   AssertionError: expected 400 for invalid kind, got 404
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestRndSampleFlow" name="test_create_sample_with_spec" time="0.266" /><testcase classname=".TestRndSampleFlow" name="test_full_flow_send_submit_assess" time="0.189"><failure message="AssertionError: {&quot;detail&quot;:&quot;Supplier 'sup_a05908473e52' tidak ditemukan.&quot;}&#10;assert 400 == 200&#10; +  where 400 = &lt;Response [400]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter40_design_rnd.py:175: in test_full_flow_send_submit_assess
+    assert r.status_code == 200, r.text[:300]
+E   AssertionError: {"detail":"Supplier 'sup_a05908473e52' tidak ditemukan."}
+E   assert 400 == 200
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase><testcase classname=".TestRndSampleFlow" name="test_admin_creator_cannot_decide" time="0.240"><failure message="AssertionError: expected 403 for creator-decide, got 400 {&quot;detail&quot;:&quot;Permintaan berstatus 'draft' belum bisa diputus.&quot;}&#10;assert 400 == 403&#10; +  where 400 = &lt;Response [400]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter40_design_rnd.py:235: in test_admin_creator_cannot_decide
+    assert r.status_code == 403, f"expected 403 for creator-decide, got {r.status_code} {r.text[:200]}"
+E   AssertionError: expected 403 for creator-decide, got 400 {"detail":"Permintaan berstatus 'draft' belum bisa diputus."}
+E   assert 400 == 403
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase><testcase classname=".TestRndSampleFlow" name="test_manager_decide_and_master_data" time="0.821"><failure message="AssertionError: {&quot;detail&quot;:&quot;Permintaan berstatus 'draft' belum bisa diputus.&quot;}&#10;assert 400 == 200&#10; +  where 400 = &lt;Response [400]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter40_design_rnd.py:255: in test_manager_decide_and_master_data
+    assert r.status_code == 200, r.text[:400]
+E   AssertionError: {"detail":"Permintaan berstatus 'draft' belum bisa diputus."}
+E   assert 400 == 200
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase></testsuite></testsuites>

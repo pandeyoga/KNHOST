@@ -1,0 +1,43 @@
+{
+  "summary": "W2-P08 frontend verification (REQ-02/04/05/06/08/09). REQ-05 PO buyer entity switch PASS end-to-end: po-create-modal opens via create-po-button → mode-finished-goods, po-buyer-entity/-name/-switch all present (name='Sukacita', 3 opsi: ent_ksc/ent_kanda/ent_676da7a83682); notes 'TEST_W2REQ05_notes_draft' tersimpan, ganti entitas ke ent_kanda → halaman reload, modal re-opened, notice 'Draft PO dipindah ke entitas pembeli baru' tampil, notes restored, buyer name='Kanda Fabric'. REQ-04 PASS: untuk sales (view=inventory-board) 20 isb-available + 20 isb-own-promisable rows (angka GRUP + 'entitas saya N' di bawahnya); admin: 20 isb-available, 0 isb-own-promisable (expected). REQ-02 PASS: catalog-governance-toggle (details) + master-governance-panel render dengan ringkasan '20 produk · kosong 0 · tidak kanonik 0 · konflik 0 · kandidat duplikat 0'; tidak ada mg-proposals/mg-apply karena data bersih (expected empty-state). REQ-09 PARTIAL: roll-reconcile-sheet terbuka untuk sales (qty 150 Batik Mega), 'Diminta 150 yard', reconcile-confirm initial disabled=True, reconcile-summary ada. NAMUN: backend /api/sales-orders/preview-roll-reconcile mengembalikan 403 'Peran Anda hanya boleh melihat roll entitas sendiri' karena body `all_entities: true` dikirim untuk SEMUA peran → tidak ada reconcile-option-* yang di-render untuk sales (tidak bisa menguji opsi exact_cut disabled untuk sales dari UI). Admin alur sama → 1 opsi (take_all) muncul, confirm disabled sampai dipilih. REQ-06 code-verified: POVarianceTasksPanel return null bila tasks.length==0 (line 28) sehingga PODetailPanel render tanpa error bila belum ada tugas selisih. REQ-08 code-verified: LoadingCheckPanel lc-label-scan `disabled={busy || !labelInput.trim() || labelReason.trim().length < 5}` sesuai permintaan.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/sales-orders/preview-roll-reconcile", "issue": "403 untuk sales ketika body `all_entities: true`. Hal ini membuat RollReconcileSheet gagal memuat opsi untuk peran sales di POS (opsi exact_cut/exact_whole/round_up/round_down/take_all kosong) — alur REQ-09 untuk sales tidak dapat diselesaikan via UI."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "POS → quickview → Tambah ke Keranjang (sales)", "issue": "RollReconcileSheet mengirim `all_entities: true` tanpa cek izin peran. Sales mendapat 403 → opsi reconcile tidak termuat, hanya pesan error merah tampil di sheet.", "affected_selectors": ["roll-reconcile-sheet", "reconcile-option-*"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/.screenshots/req05_after2.jpeg",
+    "/app/.screenshots/req02.jpeg",
+    "/app/.screenshots/req04_sales2.jpeg",
+    "/app/.screenshots/req04_admin.jpeg",
+    "/app/.screenshots/req09_sales_150.jpeg",
+    "/app/.screenshots/req09_admin.jpeg"
+  ],
+  "action_items": [
+    "Perbaiki alur REQ-09 untuk peran sales: di RollReconcileSheet.jsx baris 32, jangan paksa `all_entities: true` untuk peran yang tidak punya izin lintas-entitas (atau kirim `all_entities: !!canCrossEntity`) sehingga preview-roll-reconcile tidak 403 untuk sales. Alternatif: longgarkan izin pada endpoint sehingga menerima permintaan all_entities=true dari sales dengan membatasi hasil ke entitas aktif (sejalan dengan spec REQ-04 angka GRUP vs promisable entitas saya)."
+  ],
+  "critical_code_review_comments": [
+    "POBuyerEntitySwitch.jsx: implementasi draft via sessionStorage + takePODraft() aman (hapus setelah ambil); dibersihkan di useEffect saat `d.to === selectedEntity`. Baik.",
+    "InventoryStatusBoard.jsx: helper `pv()` menghitung angka GRUP saat detail_scope==='own_entity', dan baris kecil `isb-own-promisable-*` hanya di-render saat detail_scope==='own_entity' → admin (full scope) otomatis tidak tampil. Baik.",
+    "RollReconcileSheet.jsx: auto-pick hanya saat `rec?.options?.exact_whole` (REQ-09 OK). `exact_cut` locked by `data?.can_exact_cut === false` (backend-driven). Namun payload `all_entities: true` menyebabkan 403 untuk sales — perlu disesuaikan.",
+    "MasterGovernancePanel.jsx: mg-apply disabled sampai `nPicked > 0` (OK). Panel kosong (tidak ada proposals) dirender tanpa error.",
+    "LoadingCheckPanel.jsx: lc-label-scan disabled hingga reason.trim().length >= 5 (OK, konsisten dengan lc-override).",
+    "POVarianceTasksPanel.jsx: early return null saat tasks kosong (OK)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "~90% (REQ-02/04/05/06/08 PASS, REQ-09 UI gated oleh 403 preview-roll-reconcile untuk sales)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, sales@kainnusantara.id / demo12345",
+  "seed_data_creation": "Tidak ada data persist dibuat. Draft PO di sessionStorage ikut terhapus oleh takePODraft; tidak ada PO/SO disimpan.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Pengujian hanya frontend. Untuk REQ-09 full-coverage sales, perlu fix di RollReconcileSheet.jsx (payload all_entities) atau endpoint. REQ-05 flow menggunakan: create-po-button → mode-finished-goods untuk membuka po-create-modal (bukan sekadar 'Buat'). Admin memiliki 3 entitas (Sukacita, Kanda Fabric, Cipta Sandang) sehingga select switch tampil. Untuk REQ-04 route-nya `view=inventory-board` (bukan inventory-status-board).",
+  "rca of the issue": "RCA REQ-09 sales: Frontend `RollReconcileSheet` (components/RollReconcileSheet.jsx:30-32) selalu mengirim `all_entities: true` saat mem-POST preview-roll-reconcile. Backend menolak dengan 403 'Peran Anda hanya boleh melihat roll entitas sendiri' untuk peran sales (izin inventory lintas-entitas tidak dimiliki). Akibatnya: data.options kosong → tidak ada reconcile-option-* yang di-render untuk sales, sehingga poin REQ 'opsi reconcile-option-exact_cut (bila ada) disabled untuk sales' tidak dapat divalidasi via UI. Reproduksi: login sales → ?view=sales&entity=ent_ksc → klik produk 'Batik Mega Mendung Premium' (3 roll, 310 yard) → pilih kind regular → qty 150 → 'Tambah ke Keranjang' → sheet terbuka tanpa opsi, error merah terlihat. Mitigasi: deteksi izin cross-entity (mis. `can(user.permissions,'inventory','view_all')`) sebelum mengirim all_entities=true, atau sesuaikan server agar peran sales mendapat kembalian dibatasi tanpa 403."
+}

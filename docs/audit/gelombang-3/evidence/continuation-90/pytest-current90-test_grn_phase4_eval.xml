@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="2" failures="0" skipped="0" tests="2" time="2.824" timestamp="2026-10-06T13:00:33.970871+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="test_eval_all_correct_passes_gate" time="0.090"><error message="failed on setup with &quot;PermissionError: [WinError 5] Access is denied: 'C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\temp-files\\pytest-of-abc'&quot;">..\..\integration_env\Lib\site-packages\pytest_asyncio\plugin.py:926: in pytest_fixture_setup
+    return (yield)
+            ^^^^^
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\temp-files\\pytest-of-abc'</error></testcase><testcase classname="" name="test_eval_reports_wrong_unflagged_line" time="0.012"><error message="failed on setup with &quot;PermissionError: [WinError 5] Access is denied: 'C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\temp-files\\pytest-of-abc'&quot;">..\..\integration_env\Lib\site-packages\pytest_asyncio\plugin.py:926: in pytest_fixture_setup
+    return (yield)
+            ^^^^^
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\temp-files\\pytest-of-abc'</error></testcase></testsuite></testsuites>

@@ -1,0 +1,89 @@
+  [poc-stock] snapshot 84 dokumen stok dari 4 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (84 dokumen, 4 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "DESIGN-04",
+  "invariant": "sebelum dipindah: A (penerima tugas) bisa unggah ke desainnya; B ditolak 403 (permintaan & desain)",
+  "pass": true,
+  "detail": "(200, 403, '{\"detail\":\"Anda tidak bisa mengubah desain ini — permintaan KSC/DSR-00005 kini ditugaskan ke Sari Melati.\"}')"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "sesudah dipindah ke B: A ditolak 403 membuka permintaan (berisi nama pelanggan) & berkas referensinya; daftar A bersih",
+  "pass": true,
+  "detail": "(200, 403, 403)"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "A tidak lagi bisa menulis desain itu (unggah, berkas berjenis, ajukan, colorway, ubah) → semua 403",
+  "pass": true,
+  "detail": "{'upload': 403, 'kind': 403, 'submit': 403, 'colorway': 403, 'update': 403}"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "B (penerima baru) membuka permintaan & referensi, bisa unggah ke desain, tugas muncul di daftarnya",
+  "pass": true,
+  "detail": "(200, 200, 200)"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "galeri bersama tetap terbaca A tetapi TANPA PII pelanggan (nama/id pelanggan tidak ikut di dokumen desain)",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "DESIGN-04",
+  "invariant": "admin/manager (rnd.manage) tetap bisa menulis desain mana pun",
+  "pass": true,
+  "detail": "200"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "PO 600 jt → rantai 2 tingkat (manager → direksi/admin), menunggu tingkat 1",
+  "pass": true,
+  "detail": "('waiting_approval', [{'level': 1, 'required_role': 'manager', 'label': 'Persetujuan', 'status': 'pending', 'approved_by': '', 'approved_by_id': '', 'approved_at': ''}, {'level': 2, 'required_role': 'admin', 'label': 'Direksi', 'status': 'pending', 'approved_by': '', 'approved_by_id': '', 'approved_at': ''}])"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "dua manajer menyetujui tingkat 1 bersamaan → tepat 1×200 + 1×409; lanjut ke tingkat 2",
+  "pass": true,
+  "detail": "[409, 200]"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "penyetuju tingkat 1 tak bisa menandatangani tingkat 2 (403)",
+  "pass": true,
+  "detail": "(403, '{\"detail\":\"Approval PO butuh role minimal \\'admin\\'. Role Anda: \\'manager\\'.\"}')"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "amandemen saat tingkat 2 menunggu → versi naik, rantai diulang dari tingkat 1 (persetujuan lama gugur)",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"po_eb5a986d018e\",\"po_number\":\"KSC/PO-00016\",\"pr_id\":\"\",\"pr_number\":\"\",\"source\":\"manual\",\"source_so_ids\":[],\"sales', 2)"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "keputusan atas versi basi (v1) — setujui maupun tolak — ditolak 409 tanpa mengubah PO",
+  "pass": true,
+  "detail": "(409, 409)"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "setujui vs tolak bersamaan → tepat satu menang, status akhir konsisten dengan pemenangnya",
+  "pass": true,
+  "detail": "([409, 200], 'rejected', 1)"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "disetujui penuh (2 tingkat, orang berbeda) → pending + task inbound; tolak terlambat 409, status tetap",
+  "pass": true,
+  "detail": "(200, 409, 'pending', 1)"
+ },
+ {
+  "id": "DOC-03",
+  "invariant": "dua amandemen bersamaan → 1×200 + 1×409; versi naik tepat 1 (tak ada amandemen yang menimpa diam-diam)",
+  "pass": true,
+  "detail": "([200, 409], 2)"
+ }
+]
+pass=14 fail=0

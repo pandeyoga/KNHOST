@@ -1,0 +1,212 @@
+{
+ "summary": {
+  "mode": "model",
+  "n": 6,
+  "p50_ms": 4441,
+  "tool_pct": 83.3,
+  "args_pct": 83.3,
+  "args_strict_pct": 50.0,
+  "routed_n": 0,
+  "numbers_pct": 83.3
+ },
+ "rows": [
+  {
+   "id": "q011",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "orders_count"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_month",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "orders_count",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4321,
+   "answer": "Bulan lalu, **Butik Bali Indah** dan **Fashion Bandung Kencana** sama-sama memiliki jumlah pesanan terbesar di Sukacita: **masing-masing 1 pesanan**. Hanya ada **2 pelanggan** dengan pesanan yang tercatat, jadi daftar 10 besar tidak terisi penuh.\n\n```kn-table\n{\"result_id\":\"r_ea2b142c64\",\"columns\":[\""
+  },
+  {
+   "id": "q019",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "qty_sold"
+    ],
+    "group_by": [
+     "customer",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "qty_sold",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4352,
+   "answer": "**Fashion Bandung Kencana memiliki qty terjual terbesar minggu ini: 135 yard.** Di entitas aktif Sukacita, hanya ada 4 pelanggan dengan penjualan tercatat, sehingga daftar 10 teratas berisi:\n\n| Peringkat | Pelanggan | Qty terjual |\n|---|---|---:|\n| 1 | Fashion Bandung Kencana | 135 yard |\n| 2 | Teks"
+  },
+  {
+   "id": "q027",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "avg_order_value",
+     "orders_count",
+     "net_sales"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "avg_order_value",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 5218,
+   "answer": "**Tekstil Medan Jaya memiliki rata-rata nilai pesanan terbesar tahun ini di Sukacita: Rp 20.850.000 per pesanan.** Data yang tersedia memuat 4 pelanggan, bukan 10.\n\n| Peringkat | Pelanggan | Rata-rata per pesanan | Pesanan |\n|---|---|---:|---:|\n| 1 | Tekstil Medan Jaya | Rp 20.850.000 | 1 |\n| 2 | Bu"
+  },
+  {
+   "id": "q047",
+   "category": "piutang_kas",
+   "tool_ok": false,
+   "args_ok": false,
+   "args_strict_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "ar_aging",
+    "period": null,
+    "filters": [],
+    "as_of": "2026-10-04",
+    "top_n": null
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4441,
+   "answer": "**Piutang Sukacita per 4 Okt 2026 sebesar Rp 34.707.850.** Dari jumlah itu, Rp 5.571.200 sudah lewat jatuh tempo.\n\n- **Belum jatuh tempo:** Rp 29.136.650 (83,95%).\n- **Lewat jatuh tempo 1–30 hari:** Rp 5.571.200 (16,05%). Tidak ada saldo pada kelompok umur yang lebih lama.\n- Seluruh piutang lewat ja"
+  },
+  {
+   "id": "q054",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": false,
+   "tools": [
+    "list_records"
+   ],
+   "args": {
+    "record_type": "inactive_customers",
+    "period": null,
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": 20
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [
+    "30"
+   ],
+   "ms": 3859,
+   "answer": "Tidak ada pelanggan Sukacita yang tercatat **tidak memesan selama lebih dari 60 hari**.\n\n- Saya memakai batas “lama tidak order” lebih dari 60 hari karena Anda belum menyebutkan batasnya.\n\nPeriode posisi 4 Okt 2026 (WIB) · Entitas Sukacita · Definisi pelanggan tidak aktif: tanpa pesanan lebih dari 6"
+  },
+  {
+   "id": "q055",
+   "category": "piutang_kas",
+   "tool_ok": true,
+   "args_ok": true,
+   "args_strict_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "run_report"
+   ],
+   "args": {
+    "report": "ar_aging",
+    "period": {
+     "preset": "today",
+     "from": null,
+     "to": null
+    },
+    "filters": [],
+    "as_of": "2026-10-04",
+    "top_n": 10
+   },
+   "error": null,
+   "routed_template": null,
+   "unmatched": [],
+   "ms": 4806,
+   "answer": "**Total piutang Sukacita per 4 Okt 2026 adalah Rp 34.707.850; Rp 5.571.200 di antaranya lewat jatuh tempo.**\n\n- Belum jatuh tempo: Rp 29.136.650 (83,95%). Lewat jatuh tempo 1–30 hari: Rp 5.571.200 (16,05%).\n- Seluruh piutang lewat jatuh tempo berasal dari Toko Kain Sejahtera. Total piutang pelanggan"
+  }
+ ]
+}

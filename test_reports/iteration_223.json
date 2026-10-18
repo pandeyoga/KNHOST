@@ -1,0 +1,41 @@
+{
+  "summary": "LN-034 (uji ulang SKU existing per supplier) tested end to end. Backend: the existing test_l03_ln034_revalidation (4/4) passes on the public URL, and the new edge test file passes 4/4. UI as admin and md: form for existing SKU (chip, picker, supplier KNSelect, reason, eligibility panel, save enabled only when all fields are filled) → reval-box shows supplier, cycle and reference → round set to assessed in Mongo → reval-decide-modal (pass is blocked when there is no ACC, a fail note under 5 characters is blocked) → status 'Gagal — menunggu PIC', cancel button hidden → pic-decision-modal retest creates cycle 2 with a reference to the failed cycle → pic-queue-panel row and Buka work → md sees override disabled ('tidak berizin') → admin override records the result as still GAGAL, eligibility shows 'Gagal — override PIC', queue goes back to 0. sample-decision-box does not show for revalidation. No contract was created. The core flow works. Several UI copy/state issues were found: a failed revalidation is labelled 'Pemenang dipilih'.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/rnd/samples/{id}/decide (revalidation)", "issue": "md gets 403 from approval matrix sample_acc ('hanya Manager atau Direksi/Admin'), but the UI (canDecide includes md) shows the active 'Catat hasil uji ulang' button to md. Recording a technical result for revalidation (no price/contract) arguably should not go through the 'ACC Sample' gate; otherwise hide the button for md."},
+      {"endpoint": "GET /api/rnd/revalidation/partners", "issue": "Not scoped to entity or to external suppliers: it returns the 6 internal PT supplier records (entity_id ent_*), including duplicates (e.g. 'Sukacita Textile' x2, 'Kanda Fabric' x2, 'CV Cipta Sandang Textile' x2, some from other entities). Filter to entity_id in ('all', active entity) and/or exclude internal PTs, or dedupe."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SampleDetailPanel header/stepper + rndMeta SAMPLE_STATUS_META.decided", "issue": "After a PIC decision on a FAILED revalidation (status=decided), the status pill reads 'Pemenang dipilih' and stepper step '5. Pemenang' is highlighted. This contradicts 'hasil tetap GAGAL'. Use a revalidation-specific label (e.g. 'Gagal — diputus PIC' / 'Lulus') when purpose=revalidation.", "selector": "status pill in sample detail header", "priority": "MEDIUM"},
+      {"component": "SampleMasterDataPanel (line ~46)", "issue": "For revalidation samples (pending_pic and decided-fail) it shows a green-check row 'ACC sampling → kontrak & barang supplier: Pemenang <supplier> · Rp 0 · Kontrak otomatis nonaktif — buat manual di Pembelian'. Before the decision it reads 'menunggu keputusan pemenang (tombol Pilih pemenang)'. This contradicts the 'no winner/no contract' rule; hide or reword it for purpose=revalidation. Also the 'Belum ada spesifikasi … SKU produk tidak bisa lahir saat ACC' warning with a 'Lengkapi spesifikasi' button is irrelevant for an existing SKU.", "selector": "SampleMasterDataPanel", "priority": "MEDIUM"},
+      {"component": "PicDecisionModal", "issue": "Hidden scope state leaks into the request: if the user fills pic-scope-documents/pic-scope-note under operational_note/override and then switches to retest (the fields are hidden), the documents are still sent and shown in reval-box-pic ('Uji ulang … · dokumen: PO-00012, MKO-00004'). Send scope only when action !== 'retest', or clear it on switch.", "selector": "[data-testid=pic-scope-documents]", "priority": "LOW"},
+      {"component": "RndSamplesView KPI", "issue": "The 'Pemenang dipilih' KPI (rnd-samples-kpi-decided) counts failed revalidation samples that PIC decided (showed 2 with 0 real winners).", "selector": "[data-testid=rnd-samples-kpi-decided]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Revalidation sample detail", "issues": ["The 'Sample jadi' action stays visible after pending_pic/decided (disabled-looking). Consider hiding it."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l03_ln034_revalidation.py", "/app/backend/tests/test_l03_ln034_revalidation_edges.py", "/app/test_reports/pytest/ln034_edges.xml"],
+  "action_items": [
+    "Use a revalidation-aware status label and stepper for status=decided (do not show 'Pemenang dipilih' for a fail result); exclude revalidation from the 'Pemenang dipilih' KPI.",
+    "Hide or reword the SampleMasterDataPanel 'ACC sampling → kontrak … Pemenang' row and the 'Belum ada spesifikasi' warning for purpose=revalidation.",
+    "Fix the md mismatch: either let md record the revalidation technical result (skip/adjust the sample_acc matrix guard for purpose=revalidation) or hide sample-decide-button for md.",
+    "Scope /api/rnd/revalidation/partners to external suppliers and the active entity (exclude/dedupe internal PT supplier records).",
+    "PicDecisionModal: do not submit scope documents/note when action=retest."
+  ],
+  "critical_code_review_comments": [
+    "rnd_revalidation_service.lookup_partners filters only on status != inactive, with no entity scope; internal PT duplicates leak into the picker.",
+    "SampleDetailPanel computes canDecide = [admin, manager, md], but the backend amx.guard('sample_acc') denies md. Front-end permissions are out of sync with the approval matrix.",
+    "decide() accepts only in_progress/assessed, while the front-end 'active' state also covers draft/sent. This is OK because hasResult gates it, but the error message for a stale state ('baru saja diputus pengguna lain') is misleading when the sample is in draft/sent."
+  ],
+  "updated_files": ["/app/backend/tests/test_l03_ln034_revalidation_edges.py"],
+  "success_rate": {"backend": "100% (8/8 tests; 2 minor design issues)", "frontend": "~85% (all flows work; 4 label/state issues)"},
+  "seed_data_creation": "Created KSC/SMP-00129 and 00130 (prod_lurik_classic × CV Grey Mandiri Majalaya) via the UI and API and set rounds directly in Mongo. All were deleted afterwards, along with the rnd_test_history pull. Pytest files clean up after themselves.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "LN-034 UI flow verified with admin and md on ?view=rnd-samples&entity=ent_ksc. ProductSelect items use product-select-item-<pid>; KNSelect searchable uses existing-sku-supplier-search and existing-sku-supplier-option-<id>. External supplier example: sup_e3280c5bf71d (CV Grey Mandiri Majalaya). md cannot POST /decide (approval matrix sample_acc), so use admin. Retest the label/master-panel fixes after a frontend rebuild (CI=false yarn build)."
+}

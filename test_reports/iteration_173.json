@@ -1,0 +1,22 @@
+{
+  "summary": "P01 regression (IMP-12/13/14/15/20). Backend 18/18 passed on test_p01_imp_12_13_14_15_20.py (sales hides grey/pfd/pfp/yarn in /api/products & /api/product-templates; admin sees grey; setting toggle makes yarn visible then restored; sales creating grey SO rejected 403; soreang my-location-scope restricted=true site=Soreang; soreang /api/wms/tasks has no Jakarta/Rancamalang tasks; soreang /api/inventory/rolls only in SRG-01 (wh_646c3ce76f1c); /api/warehouses/<jkt>/locations=403; scan of Jakarta task=403; warehouse@=Jakarta scope; whadmin supervisor unrestricted; takeover with short reason=400, operator=403, whadmin ok (takeover_log appended, then UNDONE in mongo); /api/master/usage/product returns dict, DELETE /api/master/product/<used>/purge=409 MASTER_IN_USE, manager DELETE /api/products=403; supplier-items review_status=needs_review returns SUP-A-002 (sit_7939fb9910ec); product-templates?stage=grey returns only grey). Frontend: catalog-filters + all selects/color/result-count present; catalog-filter-reset appears after applying stage=grey (count '2 dari 2 produk'); catalog-open-<id> opens template detail with tabs incl. master-usage-product panel (refs: inventory_rolls, inventory_movements, master-usage-policy); supplier-items shows supplier-items-kpi-review + supplier-item-review-<id> + supplier-item-resolve-<id>; wms-locations for warehouse.soreang shows location-scope-badge 'Lokasi tugas: Soreang' and warehouse picker lists only 'Soreang · Gudang Kanda'; entities-access accounts tab exposes account-row/account-edit, drawer renders account-form-locations section (site/wh chips are role-gated so not shown for admin role — expected).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_p01_imp_12_13_14_15_20.py",
+    "/app/test_reports/pytest/p01_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/location_scope.enforced() caches 15s — invalidate() exists; when toggling wms.location_scope_enforced via settings tests may see stale state up to 15s. Acceptable but worth noting for future flake.",
+    "takeover_task sets assigned_to but does not persist a 'from' baseline; cleanup requires manual mongo unset. Consider exposing an admin un-assign endpoint for QA.",
+    "AccountFormDrawer only shows location chips when selected role is warehouse-scoped (SCOPED_ROLES = {'warehouse'}); UI must make this discoverable by auto-highlighting role filter — currently chips silently disappear for other roles."
+  ],
+  "updated_files": ["/app/backend/tests/test_p01_imp_12_13_14_15_20.py"],
+  "success_rate": {"backend": "100% (18/18)", "frontend": "100% (all required data-testids present on relevant views)"},
+  "test_credentials": "see /app/memory/test_credentials.md (admin@kainnusantara.id/demo12345; others demo1234)",
+  "seed_data_creation": "none; takeover_log temporary row created on task wms_ef381414e512 and REMOVED post-test via direct mongo update; catalog.sales_hidden_stages setting restored to [grey,pfd,pfp,yarn] in test finally.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Retest: cd /app/backend && python -m pytest tests/test_p01_imp_12_13_14_15_20.py -q (expect 18 passed). Soreang user is in ent_kanda (not ent_ksc) — always pass X-Entity-Id: ent_kanda for soreang/rancamalang tokens. For FE: ?view=entities-access (not settings-accounts), ?view=md-products (catalog), ?view=supplier-items, ?view=wms-locations. account-form-site/wh chips only render when the account's role is in SCOPED_ROLES ('warehouse'); open a warehouse@ or warehouse.soreang@ edit drawer to see chips."
+}

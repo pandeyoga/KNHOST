@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_r5_4b.py",
+    "database": "knhost_audit_native90_5e2a08b508b64e20bb2ebbd2c63af11e",
+    "exit": 0,
+    "seconds": 96.53,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_r5_4b.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "\\Lib\\threading.py\", line 1012 in run\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\threading.py\", line 1075 in _bootstrap_inner\n  File \"C:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\threading.py\", line 1032 in _bootstrap\n\nThread 0x0001c7c4 (most recent call first):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\continuation-90\\native_runner.py\", line 58 in <module>\n  File \"<frozen runpy>\", line 88 in _run_code\n  File \"<frozen runpy>\", line 98 in _run_module_code\n  File \"<frozen runpy>\", line 287 in run_path\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\outputs\\data-flow-audit-2026-10-05\\latest\\repro\\run_isolated.py\", line 25 in <module>\nNATIVE90_READY knhost_audit_native90_5e2a08b508b64e20bb2ebbd2c63af11e backend_test_r5_4b.py\n============================================================\nR5.4b Backend API Tests\n============================================================\n\n=== Testing Authentication ===\n✅ Admin login successful\n✅ Sales login successful\n\n=== Testing Purchase Returns List ===\n✅ GET /purchase-returns returns 200\n✅ Purchase returns response has items\n\n=== Testing Sales Returns List ===\n✅ GET /sales-returns returns 200\n✅ Sales returns response has items\n\n=== Testing Purchase Return Reversal RBAC ===\n⚠️  No finalized purchase returns available for RBAC test\n\n=== Testing Write-off Reversal RBAC ===\n✅ Sales role forbidden for write-off reversal\n✅ Admin can access write-off reversal endpoint\n\n=== Testing R5.4 Regression (Existing Endpoints) ===\n✅ R5.4 sales return reversal endpoint exists\n\n============================================================\nResults: 9/9 tests passed\n============================================================\n"
+  }
+]

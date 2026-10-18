@@ -1,0 +1,16 @@
+[
+ {
+  "id": "AX-08",
+  "invariant": "roll quarantine bertag terverifikasi ditolak PA",
+  "pass": false,
+  "detail": "diterima"
+ },
+ {
+  "id": "WM-05",
+  "invariant": "dua PA serentak satu roll: tepat satu menang",
+  "pass": false,
+  "detail": "['PA00014', 'PA00015']"
+ }
+]
+CRASH (kontrak belum ada di kode ini): AttributeError: 'NoneType' object has no attribute 'get'
+pass=0 fail=2 crashed=1

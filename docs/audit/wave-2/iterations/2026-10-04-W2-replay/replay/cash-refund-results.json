@@ -1,0 +1,7 @@
+{
+  "database": "knhost_audit_1d26272c00484d109312004066ba82e1",
+  "source_commit": "6206f5f5cc3b4aa46acf87762b7c63f245bf35c3",
+  "mode": "Actual ASGI returns+Mongo+GL; delivered order replay then seeded cash classification, not tender capture; synthetic cash-ledger exception before write",
+  "results": [],
+  "observations": []
+}

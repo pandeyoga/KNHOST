@@ -1,0 +1,38 @@
+{
+  "summary": "L09 LN-093-T02 (sales-return -> purchase-return split per roll provenance) and LN-090-T01 (replacement shipment blocked before QC) tested via backend pytest (33/33 pass incl. regression L08 suites + 12 new extra tests) and UI E2E on ?view=returns&entity=ent_ksc. Split per (supplier, PO) works: 3 rolls (KSC/PO-00001, CST/PO-00001, unknown+manual supplier) -> PRET-00017/18/19, success msg lists 'PRET → supplier (PO)', linked badge persists after reload, second/parallel calls rejected, yard unit preserved on PR item, status matrix for shipped_to_customer correct. Minor UI/consistency issues found (below). All TEST_ data cleaned.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/sales-returns/{id}/milestone", "issue": "LN-090 guard is a blocklist (draft/pending_approval/approved/inspecting). Returns in status 'rejected' or 'cancelled' still accept milestone shipped_to_customer (200) — replacement can be marked shipped for a rejected/cancelled return. Consider allowlist {inspected, *_settled} or also block rejected/cancelled."},
+      {"endpoint": "GET /api/suppliers (X-Entity-Id: ent_ksc)", "issue": "Pre-existing: only returns 2 internal group suppliers (entity_id=ent_ksc); suppliers with entity_id='all' (CV Grey Mandiri Majalaya, PT Benang Sejahtera Abadi, etc.) are excluded by resolve_list_scope. In the LN-093 modal the manual fallback supplier dropdown therefore cannot pick real external suppliers. Same endpoint used by PurchaseReturns, RFQ, BlanketPO, MakloonWizard."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ReturnQuarantinePanel supplier-return modal", "issue": "Select shows option label 'Otomatis (dari PO terakhir produk)' (value '') instead of placeholder 'Otomatis per roll (supplier & PO asal roll)' because the empty-value option is selected by default. The label text contradicts the new LN-093 logic (no longer 'latest PO of product'). Rename option label to 'Otomatis per roll (supplier & PO asal roll)' or remove the '' option.", "selector": "[data-testid='supplier-return-supplier']", "priority": "MEDIUM"},
+      {"component": "ReturnQuarantinePanel", "issue": "When submit fails (e.g. 'Supplier asal tidak tercatat pada roll ...'), the error is rendered in the panel behind the modal overlay (quarantine-err), barely visible while modal stays open. Show error inside the modal.", "selector": "[data-testid='quarantine-err']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Return detail quarantine table", "issues": ["Roll length hardcoded 'm' (shows '10,0 m' for a yard-based product while Jejak Retur shows 'yard') — pre-existing."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l09_ln093_ln090.py", "/app/backend/tests/test_l09_ln093_extra.py", "/app/backend/tests/seed_l09_ui.py", "/app/test_reports/pytest/l09_all.xml"],
+  "action_items": [
+    "Fix modal option label 'Otomatis (dari PO terakhir produk)' -> match new per-roll provenance wording (ReturnQuarantinePanel.jsx ~line 419)",
+    "Consider blocking shipped_to_customer for rejected/cancelled returns (return_service.mark_milestone ~line 602)",
+    "Investigate /api/suppliers scope excluding entity_id='all' suppliers (manual fallback list incomplete)",
+    "Optional: show create-purchase-return error inside the modal; consider disabling quarantine Release for rolls already attached to a pending purchase return"
+  ],
+  "critical_code_review_comments": [
+    "create_from_sales_return: rolls stay 'quarantine' until PR approval; Release button in quarantine panel remains enabled for rolls already listed in pending PRs — release-to-stock then PR approval would consume them from available stock (sold/reserved risk). Consider a hold/lock flag.",
+    "Partial failure path: if branch N fails after branches 1..N-1 created, sales return is linked to the partial set and a 400 is raised; retry is impossible (already linked) — remaining rolls need manual handling. Acceptable but should be visible in UI.",
+    "roll_supplier_provenance does a DB lookup per acquired entry per roll (N+1); fine for small returns."
+  ],
+  "updated_files": ["/app/backend/tests/test_l09_ln093_extra.py", "/app/backend/tests/seed_l09_ui.py"],
+  "success_rate": {"backend": "100% (33/33)", "frontend": "90% (flow works; stale select label)"},
+  "seed_data_creation": "Temporary TEST_L093UI / TEST_L093X sales_returns + rolls + purchase_returns created and fully cleaned (verified 0 remaining). PRET-00017..00019 sequence numbers consumed.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "UI data: `cd /app/backend && set -a; . ./.env; set +a; python tests/seed_l09_ui.py` prints return id/number (3 quarantine rolls: PO_A, PO_B, unknown); open ?view=returns&entity=ent_ksc, search number, click view-return-<id>, create-supplier-return-btn, supplier-return-supplier, confirm-supplier-return-btn. Clean with --clear. Purchase-return approval (stock consumption/GL) not exercised to avoid GL side effects."
+}

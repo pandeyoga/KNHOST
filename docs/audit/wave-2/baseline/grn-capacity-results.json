@@ -1,0 +1,66 @@
+{
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "database": "knhost_audit_43048110cf0f4a57bc3d5c23bfd350f8",
+  "mode": "501 actual add_counted_roll calls and actual close, full indexes, synthetic Mongo",
+  "results": [
+    {
+      "id": "W2-G-C14",
+      "kind": "control",
+      "label": "501 rolls accepted by count service",
+      "observed": [
+        501.0,
+        501,
+        501
+      ],
+      "expected_reproduction": [
+        501,
+        501,
+        501
+      ]
+    },
+    {
+      "id": "W2-G-F01",
+      "kind": "defect",
+      "label": "GRN closes but 501st roll is left receiving",
+      "observed": {
+        "grn_status": "closed",
+        "counted": 501.0,
+        "po_received": 500.0,
+        "statuses": {
+          "receiving": 1,
+          "quarantine": 500,
+          "available": 0
+        },
+        "task_status": "qc_pending",
+        "movement_count": 500
+      },
+      "expected_reproduction": {
+        "grn_status": "closed",
+        "counted": 501,
+        "po_received": 500,
+        "statuses": {
+          "receiving": 1,
+          "quarantine": 500,
+          "available": 0
+        },
+        "task_status": "qc_pending",
+        "movement_count": 500
+      }
+    },
+    {
+      "id": "W2-G-F02",
+      "kind": "defect",
+      "label": "Normal retry cannot finalize omitted roll",
+      "observed": [
+        409,
+        1,
+        0
+      ],
+      "expected_reproduction": [
+        409,
+        1,
+        0
+      ]
+    }
+  ]
+}

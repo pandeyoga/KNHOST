@@ -1,0 +1,25 @@
+{
+  "summary": "Frontend-only redesign of Tanya KN chat pane (Claude-style, light) verified end-to-end on desktop 1920x900 and mobile 390x844. All 8 requested behaviors PASS. No overlap between komposer and scroll/table/help button; welcome prompt sends; textarea auto-grows and caps at 220px; scroll-bottom button appears/hides correctly; template report and Riwayat thread render inside chat pane with komposer sticky at bottom; mobile komposer sits above bottom nav.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Tanya KN desktop 1920x900", "issues": ["Halaman document.scrollHeight=988 vs winH=900 (~88px overflow). Pane sendiri PAS dalam viewport (pane.bottom=884), tapi masih ada body-scroll kecil karena header + tabs + welcome. Bukan blocker; jika ingin benar-benar zero-scroll, kecilkan gap useFillHeight atau padding welcome."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "useFillHeight menggunakan window.scrollY untuk menghitung tinggi panel — jika halaman ter-scroll saat pertama render, tinggi bisa berbeda; pertimbangkan getBoundingClientRect().top saja (sudah relatif viewport).",
+    "TanyaChatBox: onKeyDown check e.nativeEvent.isComposing bagus; namun textarea rows=1 + auto-resize via effect bekerja baik (diverifikasi h=33 -> 190 pada 8 baris, cap <=220)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id / demo12345",
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Diverifikasi (desktop 1920x900): pane.bottom=884 < winH=900; form.y=781.75, scroll.bottom=781.75 (form persis di dasar scroll, TIDAK beririsan); submit(1571,794→1607,830) vs help-tours-button(1852,832→1896,876) TIDAK overlap; welcome-prompt-1 → tanya-answer terisi; pertanyaan tabel 'jumlah roll per produk di stok' → tabel di scroll area, tanya-scroll-bottom muncul saat scrollTop=0 dan hilang setelah klik; textarea grew 33→190px (cap 220); tombol submit disabled saat kosong; template 'Laporan hari ini' → hasil masuk chat pane; Riwayat item pertama membuka thread. Mobile 390x844: form.y=650.75, form.bottom=757, winH=844 (form tidak tertutup nav bawah yang ada di y≈810); question terkirim & tanya-answer muncul. Kuota OpenAI dipakai ±4 request (welcome-prompt-1 + question tabel + template + mobile question).",
+  "rca of the issue": "N/A — verifikasi lulus; redesign berhasil mengatasi masalah kotak tanya sticky menimpa tabel karena sekarang komposer berada di dalam kartu tanya-chat berlapis (grid rows: scroll 1fr + composer auto), bukan sticky global. Panel diberi tinggi = viewport - top (useFillHeight), area pesan bergulir dalam tanya-chat-scroll."
+}

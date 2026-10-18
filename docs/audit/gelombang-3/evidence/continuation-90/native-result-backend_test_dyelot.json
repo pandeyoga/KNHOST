@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_dyelot.py",
+    "database": "knhost_audit_native90_92efb3ca238f4052b2779f7129111c38",
+    "exit": 1,
+    "seconds": 50.42,
+    "pass_log_tokens": 12,
+    "fail_log_tokens": 2,
+    "log": "continuation-90\\native-backend_test_dyelot.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_92efb3ca238f4052b2779f7129111c38 backend_test_dyelot.py\n\n======================================================================\n  Backend API Test — Phase 5.3 P0-4: Dye Lot + Grade Traceability\n======================================================================\n\n  ✅ [PASS] Login admin@kainnusantara.id\n  ✅ [PASS] Setup references: entity=ent_ksc, warehouse=wh_bandu\n  ℹ️  TEST 5: Regression sweep of key GET endpoints\n  ✅ [PASS] GET /dashboard → 200\n  ✅ [PASS] GET /products → 200\n  ✅ [PASS] GET /customers → 200\n  ✅ [PASS] GET /inventory/balances → 200\n  ✅ [PASS] GET /inventory/rolls → 200\n  ✅ [PASS] GET /sales-orders → 200\n  ✅ [PASS] GET /purchase-orders → 200\n  ✅ [PASS] GET /inbound/qc/queue → 200\n  ℹ️  TEST 1a: GR complete without body (backward compatible)\n  ℹ️    No inbound tasks in qc_check status - skipping test\n  ℹ️  TEST 1b: GR complete with dye_lot + grade\n  ℹ️    No inbound tasks in qc_check status - skipping test\n  ℹ️  TEST 1c: GR complete with rolls[] (multi-roll breakdown)\n  ℹ️    No inbound tasks in qc_check status - skipping test\n  ℹ️  TEST 2: QC decision with accept_grade + defects[]\n  ✅ [PASS] QC decision: grade=C qc_grade=C defects=['belang', 'noda']\n  ℹ️  TEST 3 & 4: Customer enforce_single_dye_lot + preview-lots\n  ❌ [FAIL] Create customer failed: 400 {\"detail\":\"Pilih Sales penanggung jawab (PIC internal) untuk pelanggan ini.\"}\n\n======================================================================\n  SUMMARY: 11 PASS | 1 FAIL\n======================================================================\n\n❌ FAILED:\n  - Create customer failed: 400 {\"detail\":\"Pilih Sales penanggung jawab (PIC internal) untuk pelanggan ini.\"}\n"
+  }
+]

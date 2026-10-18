@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="5" time="3.671" timestamp="2026-10-16T06:34:04.267185+00:00" hostname="agent-env-32930a03-c845-43a2-ad36-0416e4bb58c5"><testcase classname="tests.test_l00_edge_cases.TestRevalFive" name="test_five_parallel" time="1.981" /><testcase classname="tests.test_l00_edge_cases.TestRevalFive" name="test_index_exists" time="0.001" /><testcase classname="tests.test_l00_edge_cases.TestReturnEdges" name="test_setup" time="0.546" /><testcase classname="tests.test_l00_edge_cases.TestReturnEdges" name="test_validation" time="0.554" /><testcase classname="tests.test_l00_edge_cases.TestReturnEdges" name="test_parallel_partial_returns" time="0.430"><failure message="AssertionError: lost history entry under concurrency: 1&#10;assert 1 == 2">self = &lt;test_l00_edge_cases.TestReturnEdges object at 0xffd1343e0c90&gt;
+adm = {'Authorization': 'Bearer zp-4uYVnePZxqVAv-wED7bIcRYv2nIRzHvD4-ZWI8So', 'X-Entity-Id': 'ent_ksc'}
+
+    def test_parallel_partial_returns(self, adm):
+        mko = self.S["mko"]
+        rolls = requests.get(f"{BASE}/api/makloon-orders/{mko['id']}/steps/1/partner-rolls", headers=adm,
+                             timeout=30).json()["rolls"]
+        if len(rolls) &lt; 2:
+            pytest.skip("need &gt;=2 rolls")
+        url = f"{BASE}/api/makloon-orders/{mko['id']}/steps/1/return-material"
+        half = len(rolls) // 2
+        groups = [[r["id"] for r in rolls[:half]], [r["id"] for r in rolls[half:]]]
+        with ThreadPoolExecutor(max_workers=2) as ex:
+            res = list(ex.map(lambda g: requests.post(url, json={"reason": "TEST_L00x paralel", "roll_ids": g},
+                                                      headers=adm, timeout=60), groups))
+        print("parallel codes:", [r.status_code for r in res])
+        o = DB.makloon_orders.find_one({"id": mko["id"]}, {"_id": 0})
+        st = o["steps"][0]
+        n_hist = len(st.get("material_returns") or [])
+        wip = _wip(mko["mko_number"])
+        print("history entries:", n_hist, "status:", st["status"], "returned_qty:", st.get("returned_qty"),
+              "wip:", wip, "value:", self.S["value"])
+        left = DB.inventory_rolls.count_documents({"bucket_ref.id": st["issue_ref"]})
+        assert left == 0
+        assert wip == pytest.approx(0, abs=1), f"WIP not zero after full parallel return: {wip}"
+&gt;       assert n_hist == 2, f"lost history entry under concurrency: {n_hist}"
+E       AssertionError: lost history entry under concurrency: 1
+E       assert 1 == 2
+
+tests/test_l00_edge_cases.py:100: AssertionError</failure></testcase></testsuite></testsuites>

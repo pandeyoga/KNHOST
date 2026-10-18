@@ -1,0 +1,48 @@
+{
+  "summary": "L03 LN-030 (Special Order multi-item + design source per item + HOLD + redesign + design origin) and the DPP column label, tested on backend and frontend. Backend: new pytest suite tests/test_l03_ln030_special_order_items.py, 24/25 passed. Covered: multi-item create (total, union of request types, origin, no products created), validation of approved_artwork (HOLD / not ACC / other entity / not found → 400), the legacy custom_item payload, per-item routing on approve (parent+printing → design request with special_order_item_id; artwork+printing → proofing sample with design_id and no design request; labdip/handfeel → sample), chain.items, re-route / re-approve not duplicating, redesign (new draft OD, redesign_of, redesigns[], original unchanged, 409 duplicate, 400 when there is no artwork, 422 when the reason is short), origin filters on special orders and on the design gallery, link-design setting origin=redesign + special_order_number + parent_design_id, and release-hold permission (designer/sales 403; md/manager/admin 200; meta can_release + origins). The 1 failure is a HOLD bypass through source_type=redesign. A separate probe found a second bug: on_design_approved uses the wrong item's spec for the proofing sample. Frontend (Playwright, admin/md/manager/designer): create form with 2 items from different sources works (template picker, artwork picker lists only the ACC non-HOLD fixture, type chips, add/remove item, shadcn date picker, save); detail items panel; approve; redesign modal (submit disabled until the reason has 5 or more characters) → new OD; redesign OD shows the origin badge and the redesign-of banner; the list origin filter and redesign badge work; Design Studio rnd-filter-origin, design-origin-<id> and design-detail-origin work; the release-hold button shows only for md/manager (not designer); the Orders list header reads 'Total (DPP)'. All TEST_ fixtures were deleted (special_orders count is back to 3).",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/special-orders (items[].source_type='redesign')", "issue": "build_items accepts source_type 'redesign' from the client and skips assert_artwork_usable. A client can pick a HOLD artwork, a draft artwork or another entity's artwork just by sending source_type=redesign. This bypasses the T02 HOLD rule. The OD also gets origin='special_order' while its item is labelled redesign. Fix: reject 'redesign' in client payloads (it should only be set by /redesign), or validate it the same way as approved_artwork.", "priority": "HIGH"},
+      {"endpoint": "services/special_order_phase2.on_design_approved (proofing auto-created after a design is ACC)", "issue": "For a multi-item OD it uses od.spec_id at OD level. That field is set by the first routed labdip/handfeel item (links.setdefault). So when item 2's design request gets ACC, its proofing sample is created on item 1's spec (wrong template, title 'item 1'). special_order_item_id is still correct. Reproduced with tests/probe_l03_on_design_approved_spec.py: the sample spec is the item-1 ALICE KNIT spec instead of item 2 (AUDIA KNIT). This breaks T01 (proofing must stay linked to the correct item). Fix: when od_item exists, use od_item.spec_id or create the spec with routing._spec_from_item(od, od_item, ['proofing']), and do not overwrite the OD-level spec_id.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/special-orders/{id}/approve", "issue": "Returns the raw doc without `chain`. The frontend calls onUpdate(res.data), so right after approval the items panel shows the stale 'Dokumen turunan dibuat saat pesanan disetujui', the 'Ubah motif' button disappears (can_redesign comes from chain.items) and the timeline phases are empty until the page is reloaded. Fix: return await _fresh(order_id) from approve (and from reject/submit), or refetch in the frontend."},
+      {"endpoint": "services/special_order_routing._route_item", "issue": "The proofing idempotency guard is `not item.get('sample_ids')`. If proofing fails (for example the artwork goes on HOLD between create and approve) but the labdip sample of the same item succeeds, a later /route will never retry the proofing. Use a dedicated item.proofing_sample_id like rnd_sample_id. Also, approve does not re-check HOLD on approved_artwork items; it only fails later inside create_sample and records a routing_errors entry."},
+      {"endpoint": "POST /api/special-orders/{id}/redesign", "issue": "Redesign is allowed while the source OD is still draft or pending_approval (the 'Ubah motif' button is visible before approval). Confirm with the product owner whether redesign should only be allowed after approval."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SpecialOrderDetail after Setujui", "issue": "The items panel and timeline are stale after approval (see the backend minor issue about approve not returning chain).", "selector": "[data-testid='special-order-item-links-1']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [
+      {"flow": "Redesign creation", "issue": "After redesign-submit the user stays on the original OD with only a toast. 'Redesign lanjutan: SORD-xxx' is plain text, not a link to open the new redesign OD.", "affected_selectors": ["[data-testid='special-order-redesigns']"]}
+    ],
+    "design_issues": [
+      {"screen": "Special Orders list", "issues": ["special-order-origin-filter is a native <select>; other filters use KNSelect (inconsistent styling)."]},
+      {"screen": "Design detail", "issues": ["design-detail-origin-ref shows the raw parent design id ('induk desain dsgn_xxx') instead of the parent's code/title."]},
+      {"screen": "Special Order detail", "issues": ["The header status pill shows 'Terkonfirmasi' right after approval while the timeline shows 'Sampling berjalan'. The timeline also marks 'Desain berjalan' done for an OD whose only printing item used an ACC artwork (no design request). These are confusing labels (possibly pre-existing)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l03_ln030_special_order_items.py", "/app/backend/tests/probe_l03_on_design_approved_spec.py", "/app/backend/tests/ui_fixtures_l03.py", "/app/test_reports/pytest/l03_ln030.xml"],
+  "action_items": [
+    "HIGH: Block the source_type='redesign' HOLD/entity bypass in so_items.build_items for client payloads.",
+    "HIGH: on_design_approved must use the per-item spec (_spec_from_item / item.spec_id) for proofing in multi-item ODs, not od.spec_id.",
+    "MEDIUM: The approve endpoint should return the doc with chain (_fresh), so the items panel, redesign button and timeline update without a reload.",
+    "LOW: Track the proofing sample per item (proofing_sample_id) so a failed proofing can be re-routed. Make 'Redesign lanjutan' a link. Show the parent design code instead of its id. Replace the native select in the origin filter."
+  ],
+  "critical_code_review_comments": [
+    "routers/special_orders.py is 1097 lines (above the 700-line guideline); consider moving redesign/create into the services layer.",
+    "build_items treats 'redesign' as a valid client source type. SOURCE_TYPES is used both for validation and for display; split it into CLIENT_SOURCE_TYPES and internal ones.",
+    "route_on_approve sets OD-level spec_id/design_request_id with setdefault from the first item. Any legacy code that reads od.spec_id / od.design_request_id (on_design_approved, chain_of 'design_request', _phase) will only see item 1 in multi-item ODs.",
+    "Data note for DPP: sales_orders keep both total_amount (shown as 'Total (DPP)', matching the detail's 'Subtotal netto (DPP)') and a `dpp` field = total*11/12 (DPP Nilai Lain). The label is consistent with the detail page, but two different 'DPP' numbers exist in the data. Make sure the tax screens are not mixed with the list."
+  ],
+  "updated_files": ["/app/backend/tests/test_l03_ln030_special_order_items.py", "/app/backend/tests/probe_l03_on_design_approved_spec.py", "/app/backend/tests/ui_fixtures_l03.py"],
+  "success_rate": {"backend": "92% (24/25 pytest; plus 1 probe-confirmed bug)", "frontend": "90% (all LN-030 UI flows work; stale panel after approve)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; manager@, md@, sales@, designer@ (role designer) / demo1234",
+  "seed_data_creation": "TEST_ design_gallery fixtures (approved, approved+HOLD, other entity, draft) were inserted directly in Mongo and removed afterwards together with the TEST ODs, samples, md_specs and design_requests.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run: cd /app/backend && REACT_APP_BACKEND_URL=<frontend/.env> MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database python -m pytest tests/test_l03_ln030_special_order_items.py -n0 (self-cleaning). Probe: python tests/probe_l03_on_design_approved_spec.py (prints BUG/OK; then delete leftover md_specs with title /^TEST/). UI fixtures: python tests/ui_fixtures_l03.py up|down. KNSelect searchable options need normal clicks (no force) to pick the right option. Delivery date is a shadcn calendar: click od-delivery, then next-month, then the day button.",
+  "rca of the issue": "HOLD bypass: build_items branch `st in ('approved_artwork','redesign')` validates only approved_artwork. Wrong proofing spec: phase2.on_design_approved reads od['spec_id'], which route_on_approve sets from the first labdip item through links.setdefault('spec_id')."
+}

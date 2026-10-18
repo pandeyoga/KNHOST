@@ -1,0 +1,580 @@
+{
+  "database": "knhost_audit_4486b68eb5b140b5804d343e29d734de",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "mode": "Actual ASGI returns+Mongo+GL; delivered order replay then seeded cash classification, not tender capture; synthetic cash-ledger exception before write",
+  "results": [
+    {
+      "id": "W2-CR-C01",
+      "kind": "control",
+      "label": "Cash refund amount matches credit note",
+      "observed": [
+        50000.0,
+        1,
+        50000.0,
+        "out",
+        "posted"
+      ],
+      "expected": [
+        50000,
+        1,
+        50000,
+        "out",
+        "posted"
+      ]
+    },
+    {
+      "id": "W2-CR-C02",
+      "kind": "control",
+      "label": "Refund GL cash credit matches cash book outflow",
+      "observed": 50000.0,
+      "expected": 50000
+    },
+    {
+      "id": "W2-CR-C03",
+      "kind": "control",
+      "label": "Refund stock enters quarantine",
+      "observed": {
+        "available": 80.0,
+        "delivered": 20.0,
+        "quarantine": 5.0
+      },
+      "expected": {
+        "available": 80,
+        "delivered": 20,
+        "quarantine": 5
+      }
+    },
+    {
+      "id": "W2-CR-C04",
+      "kind": "control",
+      "label": "Sequential retry creates no extra cash or journal",
+      "observed": [
+        1,
+        1
+      ],
+      "expected": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": "W2-CR-C05",
+      "kind": "control",
+      "label": "Reverse voids cash and removes returned stock",
+      "observed": [
+        "void",
+        {
+          "available": 80.0,
+          "delivered": 20.0
+        }
+      ],
+      "expected": [
+        "void",
+        {
+          "available": 80,
+          "delivered": 20
+        }
+      ]
+    },
+    {
+      "id": "W2-CR-C06",
+      "kind": "control",
+      "label": "Reversal nets original cash GL to zero",
+      "observed": 0.0,
+      "expected": 0
+    },
+    {
+      "id": "W2-CR-F01",
+      "kind": "defect",
+      "label": "Ledger outage still returns settled refund with GL cash credit but no cash row",
+      "observed": [
+        "refund_settled",
+        0,
+        50000.0
+      ],
+      "expected": [
+        "refund_settled",
+        0,
+        50000
+      ]
+    },
+    {
+      "id": "W2-CR-F02",
+      "kind": "defect",
+      "label": "Retry after restoring ledger does not repair missing cash row",
+      "observed": 0,
+      "expected": 0
+    }
+  ],
+  "observations": [
+    {
+      "return_document": {
+        "id": "sret_4eae2b9271dd",
+        "number": "SRET-00002",
+        "order_id": "so_90a54d7f44b0",
+        "order_number": "A/SO-00001",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "entity_id": "A",
+        "return_type": "retur",
+        "status": "refund_settled",
+        "items": [
+          {
+            "product_id": "P",
+            "product_name": "",
+            "quantity_returned": 5.0,
+            "unit": "meter",
+            "reason": "",
+            "condition": "ok",
+            "qty_rolls": null,
+            "settle_outcome": "refund",
+            "settled_qty": 5.0,
+            "replacement_qty": 0.0,
+            "inspection": {
+              "points": 0.0,
+              "grade": "A",
+              "defects": [],
+              "condition": "ok",
+              "disposition": "restock",
+              "recommended_outcome": "refund",
+              "accepted_qty": 5.0,
+              "gsm_actual": null,
+              "width_actual": null,
+              "thresholds": {
+                "a_max": 20.0,
+                "a1_max": 26.67,
+                "a2_max": 33.33,
+                "b_max": 40.0
+              },
+              "notes": "",
+              "inspected_by": "Audit User A",
+              "inspected_at": "2026-10-02T18:45:42.783304+00:00"
+            },
+            "line_code": ""
+          }
+        ],
+        "line_codes": [],
+        "notes": "",
+        "attachments": [],
+        "stock_adjusted": true,
+        "policy_snapshot": {
+          "id": "",
+          "name": "Default (sistem)",
+          "scope": "global",
+          "scope_ref": "",
+          "window_days": 30,
+          "allowed_return_types": [
+            "retur",
+            "bs",
+            "penggantian",
+            "komplain",
+            "garansi"
+          ],
+          "allowed_outcomes": [
+            "refund",
+            "store_credit",
+            "nego",
+            "reject"
+          ],
+          "restocking_fee_pct": 0.0,
+          "require_inspection": true,
+          "enforce_window": false,
+          "link_to_supplier_window": false,
+          "condition_requirements": "",
+          "custom_fields": {},
+          "is_default": true,
+          "snapshot_at": "2026-10-02T18:45:42.668191+00:00"
+        },
+        "return_deadline": "2026-11-01T18:45:41.880167+00:00",
+        "policy_eligibility": {
+          "eligible": true,
+          "within_window": true,
+          "blocked": false,
+          "reference_date": "2026-10-02T18:45:41.880167+00:00",
+          "window_days": 30,
+          "days_remaining": 29,
+          "require_inspection": true,
+          "supplier_linked": null,
+          "warnings": []
+        },
+        "outcome": "refund",
+        "inspection_status": "done",
+        "inspection": {
+          "grades": [
+            "A"
+          ],
+          "worst_grade": "A",
+          "total_points": 0.0,
+          "recommended_outcome": "refund",
+          "thresholds": {
+            "a_max": 20.0,
+            "a1_max": 26.67,
+            "a2_max": 33.33,
+            "b_max": 40.0
+          },
+          "notes": "",
+          "inspected_by": "Audit User A",
+          "inspected_at": "2026-10-02T18:45:42.783304+00:00"
+        },
+        "settlement": {
+          "outcome": "refund",
+          "settled_at": "2026-10-02T18:45:42.812105+00:00",
+          "settled_by": "Audit User A",
+          "credit_note_number": "CN-00002",
+          "gross_amount": 50000.0,
+          "net_amount": 50000.0,
+          "settlement": "cash",
+          "cash_txn_id": "cash_7b46ad2b8a82",
+          "cash_txn_number": "A/CASH-00001",
+          "refund_account_code": "1-1100"
+        },
+        "complaint_code": "",
+        "complaint_label": "",
+        "complaint_note": "",
+        "complaint_needs_inspection": false,
+        "complaint_claimable": false,
+        "shipped_to_store_at": "",
+        "shipped_to_customer_at": "",
+        "goods_arrived_at": "",
+        "milestones": [],
+        "inspection_id": "",
+        "inspection_number": "",
+        "inspect_done_at": "",
+        "created_by": "Audit User A",
+        "approved_by": "Audit User A",
+        "approved_at": "2026-10-02T18:45:42.724860+00:00",
+        "inspected_by": "Audit User A",
+        "inspected_at": "2026-10-02T18:45:42.783304+00:00",
+        "settled_by": "Audit User A",
+        "settled_at": "2026-10-02T18:45:42.812105+00:00",
+        "rejected_by": null,
+        "rejected_at": null,
+        "reject_reason": null,
+        "created_at": "2026-10-02T18:45:42.666680+00:00",
+        "updated_at": "2026-10-02T18:45:42.812105+00:00",
+        "refs": [
+          {
+            "rel": "reverses",
+            "doc_type": "sales_order",
+            "doc_id": "so_90a54d7f44b0",
+            "doc_number": "A/SO-00001",
+            "note": "retur atas pesanan",
+            "at": "2026-10-02T18:45:42.685662+00:00"
+          },
+          {
+            "rel": "issued",
+            "doc_type": "credit_note",
+            "doc_id": "cn_044d17ad99e1",
+            "doc_number": "CN-00002",
+            "note": "Diterbitkan oleh retur pelanggan",
+            "at": "2026-10-02T18:45:42.920489+00:00"
+          }
+        ],
+        "approval_notes": "",
+        "inspection_started_at": "2026-10-02T18:45:42.749990+00:00",
+        "inspection_started_by": "Audit User A",
+        "return_owner_entity_id": "A",
+        "return_warehouse_id": "WH",
+        "credit_note_amount": 50000.0,
+        "credit_note_id": "cn_044d17ad99e1",
+        "credit_note_number": "CN-00002",
+        "settle_notes": ""
+      },
+      "cash": [
+        {
+          "id": "cash_7b46ad2b8a82",
+          "number": "A/CASH-00001",
+          "cash_type": "kas_besar",
+          "direction": "out",
+          "amount": 50000.0,
+          "category": "Refund Retur Jual",
+          "description": "Refund tunai retur SRET-00002 \u2192 Audit customer",
+          "entity_id": "A",
+          "source_entity_id": "A",
+          "ref_type": "sales_return",
+          "ref_id": "sret_4eae2b9271dd",
+          "account_id": "1-1100",
+          "account_code": "1-1100",
+          "journal_entry_id": "je_4c92e6b52241",
+          "gl_posted": true,
+          "txn_date": "2026-10-02T18:45:42.932224+00:00",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-02T18:45:42.932224+00:00",
+          "updated_at": "2026-10-02T18:45:42.932224+00:00"
+        }
+      ],
+      "journals": [
+        {
+          "id": "je_4c92e6b52241",
+          "number": "A/JE-00007",
+          "date": "2026-10-02T18:45:42.724860+00:00",
+          "description": "Credit Note / Retur penjualan CN-00002",
+          "source": "sales_return",
+          "source_type": "sales_return",
+          "source_id": "sret_4eae2b9271dd",
+          "source_label": "CN-00002",
+          "lines": [
+            {
+              "account_code": "4-1000",
+              "account_name": "",
+              "debit": 50000.0,
+              "credit": 0.0,
+              "description": "Retur penjualan CN-00002"
+            },
+            {
+              "account_code": "1-1100",
+              "account_name": "",
+              "debit": 0.0,
+              "credit": 50000.0,
+              "description": "Refund tunai CN-00002"
+            },
+            {
+              "account_code": "1-1300",
+              "account_name": "",
+              "debit": 25000.0,
+              "credit": 0.0,
+              "description": "Barang retur masuk stok CN-00002"
+            },
+            {
+              "account_code": "5-1000",
+              "account_name": "",
+              "debit": 0.0,
+              "credit": 25000.0,
+              "description": "Barang retur masuk stok CN-00002"
+            }
+          ],
+          "total_debit": 75000.0,
+          "total_credit": 75000.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "system",
+          "created_at": "2026-10-02T18:45:42.886200+00:00",
+          "updated_at": "2026-10-02T18:45:42.886200+00:00"
+        }
+      ]
+    },
+    {
+      "failed_return": {
+        "id": "sret_63ba168b666e",
+        "number": "SRET-00003",
+        "order_id": "so_90a54d7f44b0",
+        "order_number": "A/SO-00001",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "entity_id": "A",
+        "return_type": "retur",
+        "status": "refund_settled",
+        "items": [
+          {
+            "product_id": "P",
+            "product_name": "",
+            "quantity_returned": 5.0,
+            "unit": "meter",
+            "reason": "",
+            "condition": "ok",
+            "qty_rolls": null,
+            "settle_outcome": "refund",
+            "settled_qty": 5.0,
+            "replacement_qty": 0.0,
+            "inspection": {
+              "points": 0.0,
+              "grade": "A",
+              "defects": [],
+              "condition": "ok",
+              "disposition": "restock",
+              "recommended_outcome": "refund",
+              "accepted_qty": 5.0,
+              "gsm_actual": null,
+              "width_actual": null,
+              "thresholds": {
+                "a_max": 20.0,
+                "a1_max": 26.67,
+                "a2_max": 33.33,
+                "b_max": 40.0
+              },
+              "notes": "",
+              "inspected_by": "Audit User A",
+              "inspected_at": "2026-10-02T18:45:43.218010+00:00"
+            },
+            "line_code": ""
+          }
+        ],
+        "line_codes": [],
+        "notes": "",
+        "attachments": [],
+        "stock_adjusted": true,
+        "policy_snapshot": {
+          "id": "",
+          "name": "Default (sistem)",
+          "scope": "global",
+          "scope_ref": "",
+          "window_days": 30,
+          "allowed_return_types": [
+            "retur",
+            "bs",
+            "penggantian",
+            "komplain",
+            "garansi"
+          ],
+          "allowed_outcomes": [
+            "refund",
+            "store_credit",
+            "nego",
+            "reject"
+          ],
+          "restocking_fee_pct": 0.0,
+          "require_inspection": true,
+          "enforce_window": false,
+          "link_to_supplier_window": false,
+          "condition_requirements": "",
+          "custom_fields": {},
+          "is_default": true,
+          "snapshot_at": "2026-10-02T18:45:43.101486+00:00"
+        },
+        "return_deadline": "2026-11-01T18:45:41.880167+00:00",
+        "policy_eligibility": {
+          "eligible": true,
+          "within_window": true,
+          "blocked": false,
+          "reference_date": "2026-10-02T18:45:41.880167+00:00",
+          "window_days": 30,
+          "days_remaining": 29,
+          "require_inspection": true,
+          "supplier_linked": null,
+          "warnings": []
+        },
+        "outcome": "refund",
+        "inspection_status": "done",
+        "inspection": {
+          "grades": [
+            "A"
+          ],
+          "worst_grade": "A",
+          "total_points": 0.0,
+          "recommended_outcome": "refund",
+          "thresholds": {
+            "a_max": 20.0,
+            "a1_max": 26.67,
+            "a2_max": 33.33,
+            "b_max": 40.0
+          },
+          "notes": "",
+          "inspected_by": "Audit User A",
+          "inspected_at": "2026-10-02T18:45:43.218010+00:00"
+        },
+        "settlement": {
+          "outcome": "refund",
+          "settled_at": "2026-10-02T18:45:43.246697+00:00",
+          "settled_by": "Audit User A",
+          "credit_note_number": "CN-00003",
+          "gross_amount": 50000.0,
+          "net_amount": 50000.0,
+          "settlement": "cash"
+        },
+        "complaint_code": "",
+        "complaint_label": "",
+        "complaint_note": "",
+        "complaint_needs_inspection": false,
+        "complaint_claimable": false,
+        "shipped_to_store_at": "",
+        "shipped_to_customer_at": "",
+        "goods_arrived_at": "",
+        "milestones": [],
+        "inspection_id": "",
+        "inspection_number": "",
+        "inspect_done_at": "",
+        "created_by": "Audit User A",
+        "approved_by": "Audit User A",
+        "approved_at": "2026-10-02T18:45:43.159220+00:00",
+        "inspected_by": "Audit User A",
+        "inspected_at": "2026-10-02T18:45:43.218010+00:00",
+        "settled_by": "Audit User A",
+        "settled_at": "2026-10-02T18:45:43.246697+00:00",
+        "rejected_by": null,
+        "rejected_at": null,
+        "reject_reason": null,
+        "created_at": "2026-10-02T18:45:43.099461+00:00",
+        "updated_at": "2026-10-02T18:45:43.246697+00:00",
+        "refs": [
+          {
+            "rel": "reverses",
+            "doc_type": "sales_order",
+            "doc_id": "so_90a54d7f44b0",
+            "doc_number": "A/SO-00001",
+            "note": "retur atas pesanan",
+            "at": "2026-10-02T18:45:43.115149+00:00"
+          },
+          {
+            "rel": "issued",
+            "doc_type": "credit_note",
+            "doc_id": "cn_4b74baff349b",
+            "doc_number": "CN-00003",
+            "note": "Diterbitkan oleh retur pelanggan",
+            "at": "2026-10-02T18:45:43.360467+00:00"
+          }
+        ],
+        "approval_notes": "",
+        "inspection_started_at": "2026-10-02T18:45:43.187700+00:00",
+        "inspection_started_by": "Audit User A",
+        "return_owner_entity_id": "A",
+        "return_warehouse_id": "WH",
+        "credit_note_amount": 50000.0,
+        "credit_note_id": "cn_4b74baff349b",
+        "credit_note_number": "CN-00003",
+        "settle_notes": ""
+      },
+      "cash": [],
+      "journals": [
+        {
+          "id": "je_72b141e4a7ba",
+          "number": "A/JE-00009",
+          "date": "2026-10-02T18:45:43.159220+00:00",
+          "description": "Credit Note / Retur penjualan CN-00003",
+          "source": "sales_return",
+          "source_type": "sales_return",
+          "source_id": "sret_63ba168b666e",
+          "source_label": "CN-00003",
+          "lines": [
+            {
+              "account_code": "4-1000",
+              "account_name": "",
+              "debit": 50000.0,
+              "credit": 0.0,
+              "description": "Retur penjualan CN-00003"
+            },
+            {
+              "account_code": "1-1100",
+              "account_name": "",
+              "debit": 0.0,
+              "credit": 50000.0,
+              "description": "Refund tunai CN-00003"
+            },
+            {
+              "account_code": "1-1300",
+              "account_name": "",
+              "debit": 25000.0,
+              "credit": 0.0,
+              "description": "Barang retur masuk stok CN-00003"
+            },
+            {
+              "account_code": "5-1000",
+              "account_name": "",
+              "debit": 0.0,
+              "credit": 25000.0,
+              "description": "Barang retur masuk stok CN-00003"
+            }
+          ],
+          "total_debit": 75000.0,
+          "total_credit": 75000.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "system",
+          "created_at": "2026-10-02T18:45:43.329371+00:00",
+          "updated_at": "2026-10-02T18:45:43.329371+00:00"
+        }
+      ]
+    }
+  ]
+}

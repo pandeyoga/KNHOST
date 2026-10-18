@@ -1,0 +1,24 @@
+{
+  "summary": "Verified stok awal MOCK import (scripts/import_stok_awal_kn.py) end-to-end. DB has 45,435 inventory_rolls with acquired.ref_id='STOK_AWAL_KN' across 325 lots and 30 artikels. Per-artikel total ∈ [1011, 1982] — all within 1000–2000. Entity segmentation: ent_ksc→wh_bandung 22,922 rolls, ent_kanda→wh_tangerang 2,684 rolls, ent_2ddcf414870d→wh_de95a5fb3857 ('Gudang Utama Cipta Sandang', dedicated, auto-created) 19,829 rolls. Roll lengths verified within ±5% of factor (uom roll→base_unit; falls back to template.qty_per_roll then DEFAULT_LEN kg=25/yard=50) for all 268 products. `unit` matches product base_unit for 268/268; `unit_cost` == product.harga_pokok for 268/268. Re-running `python scripts/import_stok_awal_kn.py` prints '0 roll baru · 325 segmen sudah ada' (idempotent). `--dry-run` writes nothing (segmen=0 after import). GL reconciliation post-import: total_difference=0.0, reconciled=true; per-entity: ent_ksc/kanda/2ddcf414870d subledger_value == gl_balance (22.77B / 2.05B / 24.91B) diff=0. `bash -n /app/deploy/setup_vps_ai_import.sh` passes and step 3/4 now runs import_stok_awal_kn.py after master produk import. API perf on preview URL (with 45k rolls loaded): /api/inventory/balances 195–278ms, /api/inventory/status-board 557ms, /api/inventory/stock-analytics 437ms, /api/stock/buckets 163ms, /api/inventory/rolls 559–653ms — all <1s. Entity scoping on balances verified (only rows for requested entity_id). Frontend loaded views stok / meja-gudang / kasir / md-products under 3.6s each after login (target <5s). No regressions vs iter97.",
+  "backend_issues": {"critical": [], "minor": [
+    {"endpoint": "/api/inventory/rolls?limit=100", "issue": "limit query param is ignored — returns full ~5000-row payload (5.9MB) regardless. Existing behavior, not introduced by this iteration, but worth flagging now that dataset is 45k rolls."}
+  ]},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [],
+  "action_items": [
+    "(Optional/low priority) Honor `limit` param on GET /api/inventory/rolls to keep payload manageable with 45k+ rolls."
+  ],
+  "critical_code_review_comments": [
+    "import_stok_awal_kn.py roll_len(): falls back to DEFAULT_LEN when both uom_conversions[from_unit=roll].factor and template.qty_per_roll are 0/absent. Correct — several templates have qty_per_roll=0.0 (e.g. CHIKITA KNIT), and rolls come out at 25kg ±5% as expected.",
+    "Idempotency check keyed on (product_id, acquired.ref_id=STOK_AWAL_KN) — sound; per-product+entity pair granularity would be stricter but current SKU×entity split is deterministic (seeded random.Random(sku_prefix)) so a partial rerun is safe.",
+    "reserve_roll_numbers reserves ROLL numbers in one atomic $inc — good for concurrency and avoids per-roll roundtrips.",
+    "Uses lot_service.resolve_or_create + roll_service.rebuild_balance + gl_service.post_inventory_opening_balance — official paths, no manual ledger writes."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (X-Entity-Id: ent_ksc, ent_kanda, ent_2ddcf414870d)",
+  "seed_data_creation": "No new seed. 45,435 rolls / 325 lots already present from prior run of import_stok_awal_kn.py (BATCH=MIGRASI_MASTER_PRODUK_KN, REF=STOK_AWAL_KN). DO NOT DELETE.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Stok awal MOCK is idempotent — re-running import_stok_awal_kn.py is safe (prints '0 roll baru'). Warehouse 'Gudang Utama Cipta Sandang' (wh_de95a5fb3857) was auto-created for ent_2ddcf414870d. Do not delete inventory_rolls where acquired.ref_id='STOK_AWAL_KN'. GL inventory opening journal is posted via gl_service.post_inventory_opening_balance; reconciliation returns diff=0 for all 3 entities. /api/inventory/rolls ignores limit param (returns ~5k rows / 5.9MB) — filter server-side if needed for tighter tests."
+}

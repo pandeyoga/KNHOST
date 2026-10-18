@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_sesi_2026_06_poc.py",
+    "database": "knhost_audit_native90_e75807c02efc43c5be94cfd0784f326c",
+    "exit": 1,
+    "seconds": 74.5,
+    "pass_log_tokens": 65,
+    "fail_log_tokens": 3,
+    "log": "continuation-90\\native-test_core_sesi_2026_06_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "RAH dua arah: roll dibuang → tuduhannya ikut hilang\n  [PASS] roll yang nilainya PERSIS sebesar selisih ditunjuk beserta dokumen sumbernya [{'kind': 'nilai_cocok_selisih', 'value': 200000.0, 'label': 'Roll ROLL-POC-TUNJUK bernilai Rp 200.000 — PERSIS sebesar selisihnya', 'hint': \"Masuk lewat 'inbound' (dokumen po_poc_uji, 2026-10-05). Barangnya ada di gudang tetapi nilainya tidak pernah berjurnal ke 1-1300 — periksa dokumen itu dulu, jangan langsung true-up.\", 'ref': {'kind': 'roll', 'id': 'roll_poc_tunjuk_2026_06', 'number': 'ROLL-POC-TUNJUK', 'q': 'ROLL-POC-TUNJUK', 'view': 'inventory-rolls', 'source_ref_id': 'po_poc_uji', 'source_via': 'inbound'}}]\n  [PASS] BUKTI-MERAH: roll dibuang → penunjukan itu ikut hilang (bukan tuduhan abadi)\n\n▶ G4 — `status_history[]` hanya punya SATU bentuk (INV-HIST-01)\n  [PASS] penyusun SSOT menghasilkan bentuk kanonik ['note', 'status', 'timestamp', 'user']\n  [PASS] pembaca kanonik membaca satu kunci (bentuk lama TIDAK diam-diam diterima)\n  [PASS] nol lot masih memakai bentuk lama `at` (migrasi sudah jalan) 0 lot\n  [PASS] nol PO custom memakai bentuk lama 0 dokumen\n  [PASS] riwayat lot nyata sudah berbentuk kanonik ['reason', 'status', 'timestamp', 'user']\n  [PASS] `waiting_since` membaca kunci kanonik (umur 2 hari, bukan 20) 2026-10-04\n\n▶ G5 — nol residu setelah POC (DIUKUR, bukan diklaim)\n  [FAIL] seluruh koleksi tersentuh kembali ke jumlah awal (INV-GATE-01) {'audit_logs': (66, 73), 'sessions': (4, 11)}\n  [PASS] BUKTI-MERAH: pengukur residu MEMERAH saat 1 dokumen sengaja nyangkut\n  [FAIL] sentinel ikut dibersihkan (POC ini nol residu)\n\n==============================================================================\n  HASIL: 64 PASS · 2 FAIL dari 66 pemeriksaan\n==============================================================================\n"
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "id": "D4-FE-03-redacted-as-zero",
+  "expected": "Tidak tersedia / disembunyikan",
+  "actual": "Rp 0",
+  "status": "observed_difference",
+  "note": "Execute the original formatter used by the unconditional HPP and margin KPI cards. No browser rendering claimed."
+}

@@ -1,0 +1,192 @@
+{
+ "summary": {
+  "mode": "model",
+  "n": 5,
+  "p50_ms": 3828,
+  "tool_pct": 100.0,
+  "args_pct": 20.0,
+  "numbers_pct": 100.0
+ },
+ "rows": [
+  {
+   "id": "q005",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": true,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales"
+    ],
+    "group_by": [],
+    "time_grain": "month",
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "asc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "ms": 4700,
+   "answer": "Penjualan bersih Sukacita **tahun ini hingga 4 Okt 2026 mencapai Rp 89.375.000**. Nilainya naik pada setiap bulan yang memiliki penjualan tercatat.\n\n- Agu: Rp 10.050.000\n- Sep: Rp 31.700.000\n- Okt (hingga 4 Okt): Rp 47.625.000 — bulan ini belum penuh.\n\n```kn-chart\n{\"result_id\":\"r_8b34e16060\",\"type\":"
+  },
+  {
+   "id": "q017",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "qty_sold"
+    ],
+    "group_by": [
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "qty_sold",
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "ms": 2935,
+   "answer": "Qty terjual minggu ini di **Sukacita adalah 280 yard**.\n\n- Data penjualan tersedia hingga pukul 18.57 WIB.\n\nPeriode 28 Sep–4 Okt 2026 · Entitas Sukacita · Definisi qty terjual: jumlah kuantitas dalam satuan dasar pada baris pesanan, tidak dijumlah lintas satuan.\n\n```kn-followups\n[\"Produk apa yang pa"
+  },
+  {
+   "id": "q018",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "qty_sold"
+    ],
+    "group_by": [
+     "sales_person",
+     "unit"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "this_week",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "qty_sold",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "ms": 3828,
+   "answer": "**Qty terjual minggu ini di Sukacita: Ayu Permatasari 265 yard dan Bima Saputra 15 yard.**\n\n- Total: 280 yard. Ayu menyumbang 94,64% dari qty terjual.\n- Data penjualan tersedia hingga 18:57 WIB.\n\n```kn-table\n{\"result_id\":\"r_4f6660695e\",\"columns\":[\"sales_person\",\"unit\",\"qty_sold\",\"qty_sold_share\"],\"t"
+  },
+  {
+   "id": "q025",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "avg_order_value",
+     "net_sales",
+     "orders_count"
+    ],
+    "group_by": [],
+    "time_grain": null,
+    "period": {
+     "preset": "ytd",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": null,
+     "direction": "desc"
+    },
+    "limit": null,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "ms": 3577,
+   "answer": "Rata-rata nilai pesanan tahun ini di **Sukacita adalah Rp 12.767.857,14**.\n\n- Penjualan bersih: Rp 89.375.000 dari 7 pesanan.\n- Data penjualan tersedia hingga 18:58 WIB.\n\nPeriode 1 Jan–4 Okt 2026 · Entitas Sukacita · Definisi rata-rata nilai pesanan = penjualan bersih ÷ jumlah pesanan hidup, tanpa s"
+  },
+  {
+   "id": "q035",
+   "category": "penjualan",
+   "tool_ok": true,
+   "args_ok": false,
+   "numbers_ok": true,
+   "tools": [
+    "query_metrics"
+   ],
+   "args": {
+    "metrics": [
+     "net_sales",
+     "orders_count"
+    ],
+    "group_by": [
+     "customer"
+    ],
+    "time_grain": null,
+    "period": {
+     "preset": "last_30d",
+     "from": null,
+     "to": null
+    },
+    "compare": "none",
+    "filters": [],
+    "sort": {
+     "by": "net_sales",
+     "direction": "desc"
+    },
+    "limit": 10,
+    "include_samples": false,
+    "entity_scope": "active"
+   },
+   "error": null,
+   "ms": 4500,
+   "answer": "**Ada 4 pelanggan yang bertransaksi dalam 30 hari terakhir di Sukacita**, sehingga daftar 10 terbesar hanya berisi 4 pelanggan. Peringkat berdasarkan penjualan bersih:\n\n| Pelanggan | Penjualan bersih | Pesanan |\n|---|---:|---:|\n| Butik Bali Indah | Rp 25.225.000 | 2 |\n| Fashion Bandung Kencana | Rp "
+  }
+ ]
+}

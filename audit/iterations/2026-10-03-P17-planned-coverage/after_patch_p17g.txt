@@ -1,0 +1,41 @@
+  [poc-stock] snapshot 236 dokumen stok dari 5 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (236 dokumen, 5 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "DESIGN-05",
+  "invariant": "ambil bahan 2,5: biaya = unit_cost × qty, cost_total sample naik sebesar itu",
+  "pass": true,
+  "detail": "(200, 305250.0, 305250.0)"
+ },
+ {
+  "id": "DESIGN-05",
+  "invariant": "stok: roll berkurang 2,5 + mutasi sample_issue -2,5 ber-referensi sample",
+  "pass": true,
+  "detail": "(137.5, -2.5)"
+ },
+ {
+  "id": "DESIGN-05",
+  "invariant": "GL: Dr 6-7000 Beban Sample / Cr 1-1300 Persediaan = biaya bahan",
+  "pass": true,
+  "detail": "{'6-7000': 305250.0, '1-1300': -305250.0}"
+ },
+ {
+  "id": "DESIGN-05",
+  "invariant": "dua ambil bersamaan pada roll sama: hasil roll = Σ yang sukses (tanpa lost update)",
+  "pass": true,
+  "detail": "(200, 400, 136.5, 2)"
+ },
+ {
+  "id": "DESIGN-05",
+  "invariant": "rekonsiliasi: Σ biaya bahan = Σ jurnal; cost_total = biaya round + bahan",
+  "pass": true,
+  "detail": "(427350.0, 427350.0, 427350.0, 0.0)"
+ },
+ {
+  "id": "DESIGN-05",
+  "invariant": "ambil melebihi sisa roll ditolak 400 tanpa efek",
+  "pass": true,
+  "detail": "400"
+ }
+]
+pass=6 fail=0

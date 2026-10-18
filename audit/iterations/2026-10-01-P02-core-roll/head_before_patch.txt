@@ -1,0 +1,70 @@
+[rebuild_balance] roll audit_p02_a035e2_r12 unit unitgaib≠meter tak terkonversi: 400: Konversi unit 'unitgaib' → 'meter' tidak tersedia untuk produk SKU-audit_p02_a035e2. Tambahkan faktor di uom_conversions.
+[
+ {
+  "id": "WM-01",
+  "invariant": "concurrent splits conserve length (parent+children == 10)",
+  "pass": false,
+  "detail": "{'parent': 8.0, 'children': 2, 'sum': 10.0, 'errors': [\"DuplicateKeyError('E11000 duplicate key error collection: test_database.inventor\", \"DuplicateKeyError('E11000 duplicate key error collection: test_database.inventor\", \"DuplicateKeyError('E11000 duplicate key error collection: test_database.inve"
+ },
+ {
+  "id": "AX-07",
+  "invariant": "grandchild.parent_roll_id == child (direct parent)",
+  "pass": false,
+  "detail": "{'grand_parent': 'audit_p02_a035e2_r0', 'child': 'roll_481f2a4748fe', 'root': 'audit_p02_a035e2_r0'}"
+ },
+ {
+  "id": "AX-07",
+  "invariant": "grandchild.root_roll_id == root",
+  "pass": true,
+  "detail": "audit_p02_a035e2_r0"
+ },
+ {
+  "id": "AX-05",
+  "invariant": "transfer keeps acquisition origin (PO)",
+  "pass": false,
+  "detail": "{'via': 'transfer', 'ref_id': 'tr_audit_p02_a035e2', 'date': '2026-09-30T16:28:25.547323+00:00'}"
+ },
+ {
+  "id": "AX-05",
+  "invariant": "source bin not carried to destination warehouse",
+  "pass": false,
+  "detail": "{'wh': 'wh_bandung', 'bin': 'BIN-W1'}"
+ },
+ {
+  "id": "AX-05",
+  "invariant": "late landed cost still targets transferred roll",
+  "pass": false,
+  "detail": "[]"
+ },
+ {
+  "id": "FN-03",
+  "invariant": "WAC converts yard to base unit (≈50.000/m)",
+  "pass": false,
+  "detail": "47860.0"
+ },
+ {
+  "id": "GN-13",
+  "invariant": "unconvertible roll excluded + projection_valid False",
+  "pass": false,
+  "detail": "{'available': 29.14, 'valid': None}"
+ },
+ {
+  "id": "GN-13",
+  "invariant": "stale rebuild write (older ticket) is rejected",
+  "pass": false,
+  "detail": "{'modified': 1, 'applied': None}"
+ },
+ {
+  "id": "GN-12",
+  "invariant": "WAC over 5002 rolls includes the last roll",
+  "pass": false,
+  "detail": "[10000.0, 11999.2]"
+ },
+ {
+  "id": "SCRIPT",
+  "invariant": "script error",
+  "pass": false,
+  "detail": "AttributeError(\"module 'services.receiving_roll_service' has no attribute 'uom_engine'\")"
+ }
+]
+SUMMARY pass=1 fail=10

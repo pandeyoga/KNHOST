@@ -1,0 +1,63 @@
+[
+ {
+  "id": "GN-14",
+  "invariant": "audit menyimpan before & diff field yang berubah",
+  "pass": true,
+  "detail": "{'before': {'name': 'Lama', 'api_key': '[REDACTED]'}, 'diff': [{'field': 'name', 'from': 'Lama', 'to': 'Baru'}, {'field': 'nested', 'from': None, 'to': {'password': '[REDACTED]'}}]}"
+ },
+ {
+  "id": "GN-14",
+  "invariant": "secret di before/after diredaksi",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-14",
+  "invariant": "actor_id, source & content_hash tercatat",
+  "pass": true,
+  "detail": "{'actor_id': 'audit_p13_bdfd7a_u', 'source': 'routers/gl.update'}"
+ },
+ {
+  "id": "GN-14",
+  "invariant": "PATCH akun GL: before.name lama, after.name baru, diff",
+  "pass": true,
+  "detail": "200/200 before={'entity_id': None, 'name': 'audit_p13_bdfd7a Lama'}"
+ },
+ {
+  "id": "GN-14",
+  "invariant": "hapus akun GL menyimpan snapshot sebelum",
+  "pass": true,
+  "detail": "{'id': 'gla_0ec3e8130ab7', 'code': '9-C4BF', 'name': 'audit_p13_bdfd7a Baru', 'type': 'expense', 'normal_balance': 'debit', 'parent_code': '', 'is_postable': True, 'is_active': True, 'system': False, 'currency': 'IDR', 'description': '', 'entity_id': None, 'created_at': '2026-10-02T18:04:00.133587+0"
+ },
+ {
+  "id": "GN-14",
+  "invariant": "file token sesi tidak ada di pohon repo",
+  "pass": true,
+  "detail": "[]"
+ },
+ {
+  "id": "GN-14",
+  "invariant": ".gitignore menolak .tok*",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "GN-14",
+  "invariant": "pemindai secret tersedia",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "UX-03",
+  "invariant": "kolom Badan usaha tidak merender ID mentah",
+  "pass": true,
+  "detail": ""
+ },
+ {
+  "id": "UX-03",
+  "invariant": "memakai resolver label entitas + fallback",
+  "pass": true,
+  "detail": ""
+ }
+]
+pass=10 fail=0

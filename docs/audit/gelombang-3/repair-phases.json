@@ -1,0 +1,149 @@
+[
+  {
+    "id": "01",
+    "name": "Transaksi, recovery, dan konsistensi stok/jurnal",
+    "finding_ids": [
+      "V3-PROD-01",
+      "V3-PROD-02",
+      "V3-AR-01",
+      "V3-BANK-01",
+      "V3-MKO-01",
+      "V3-MASTER-01",
+      "V3-CUT-01",
+      "D4-BACKORDER-01",
+      "D4-CASE-01",
+      "D4-CASE-02",
+      "D4-INTERCO-01",
+      "D4-INTERCO-02",
+      "D4-CASE-03",
+      "D4-CLOSE-01",
+      "D4-CLOSE-02",
+      "D4-GL-01",
+      "D4-GL-02",
+      "D4-PA-02",
+      "D4-RFID-01",
+      "D4-CC-01",
+      "D4-ASSET-01",
+      "D4-ASSET-02",
+      "D4-OD-LOCK-01"
+    ],
+    "depends_on": []
+  },
+  {
+    "id": "02",
+    "name": "Hak akses, kepemilikan, RFID/WMS, dan alur lintas entitas",
+    "finding_ids": [
+      "V3-MRES-01",
+      "V3-WEIGHT-01",
+      "V3-RFID-01",
+      "V3-WMS-02",
+      "V3-MRES-02",
+      "D4-STOCK-01",
+      "D4-AI-05",
+      "D4-AI-06",
+      "D4-DASH-01",
+      "D4-WMS-03",
+      "D4-PLAN-05",
+      "D4-GLOBAL-01",
+      "D4-SUPPLY-01",
+      "D4-CAP-01",
+      "D4-PA-01",
+      "D4-PA-03",
+      "D4-TAG-01",
+      "D4-ICLOAN-01",
+      "D4-RFQ-01",
+      "D4-RFQ-02",
+      "D4-PRICE-SCOPE-01",
+      "D4-ALERT-WMS-01",
+      "D4-RET-POLICY-01"
+    ],
+    "depends_on": [
+      "01"
+    ]
+  },
+  {
+    "id": "03",
+    "name": "Master data, procurement, harga, dan aturan komersial",
+    "finding_ids": [
+      "V3-PO-01",
+      "V3-CF-01",
+      "V3-DATE-01",
+      "V3-PO-02",
+      "V3-PO-03",
+      "D4-FIN-01",
+      "D4-SALES-01",
+      "D4-SALES-02",
+      "D4-SALES-03",
+      "D4-FIN-02",
+      "D4-FIN-03",
+      "D4-FIN-04",
+      "D4-AI-01",
+      "D4-CASH-01",
+      "D4-DATE-01",
+      "D4-PLAN-01",
+      "D4-PLAN-02",
+      "D4-PLAN-03",
+      "D4-COA-01",
+      "D4-COMM-BOUNDS-01",
+      "D4-BUD-EDIT-01",
+      "D4-UOM-BF-01"
+    ],
+    "depends_on": [
+      "01"
+    ]
+  },
+  {
+    "id": "04",
+    "name": "Sumber angka, analitik, parser, dan tampilan",
+    "finding_ids": [
+      "D4-STOCK-02",
+      "D4-STOCK-03",
+      "D4-STOCK-04",
+      "D4-AI-02",
+      "D4-AI-03",
+      "D4-AI-04",
+      "D4-HR-01",
+      "D4-HR-02",
+      "D4-WMS-01",
+      "D4-WMS-02",
+      "D4-MKT-01",
+      "D4-RND-01",
+      "D4-EQ-01",
+      "D4-WMS-04",
+      "D4-SIM-01",
+      "D4-BANK-01",
+      "D4-BANK-02",
+      "D4-RET-CHAIN-01",
+      "D4-ALERT-DATE-01",
+      "D4-ALERT-AMT-01",
+      "D4-KPI-WEIGHT-01",
+      "D4-KPI-PERIOD-01",
+      "D4-KPI-SCORE-01",
+      "D4-BUD-THRESHOLD-01"
+    ],
+    "depends_on": [
+      "01"
+    ]
+  },
+  {
+    "id": "05",
+    "name": "Regresi, pembersihan duplikasi, dan validasi penutupan",
+    "finding_ids": [
+      "V3-DUP-01",
+      "V3-BUILD-01",
+      "D4-FE-01",
+      "D4-FE-02",
+      "D4-TEST-01",
+      "D4-PLAN-04",
+      "D4-ORDER-01",
+      "D4-DOC-01",
+      "D4-CB-01"
+    ],
+    "depends_on": [
+      "01",
+      "02",
+      "03",
+      "04"
+    ]
+  }
+]

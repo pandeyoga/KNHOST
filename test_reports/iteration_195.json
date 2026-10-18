@@ -1,0 +1,32 @@
+{
+  "summary": "Retest of the iteration_194 fixes. BACKEND: test_l05_replacement_extra_t1.py now passes 14/14. This includes 3 new tests: a replacement roll with status sold or consumed is rejected with 400 ('terjual/terpakai'), and passing both the id and the roll_no of the same roll gives 200 with a single line. test_l05_interval_form.py passes 4/4. point_value 5 and count -2 now return 400. FRONTEND desktop 1920 (qc@, random-check SPK KSC/INS-00005 for roll RL-00001): (1) Re-edit prefill works. After saving length 165 + 3 interval defects (150-165 HOLE 4pt x1, 30-45 SLUB 2pt x2, 75-90 OIL 1pt x3) + quick count 3pt=2, reopening 'Ubah QC 4-point' shows length 165, all 3 rows with interval/code/point/count/note, counts ['','','2',''] and preview 17. Saving again without changes keeps the DB defects and points identical. (2) Grid reset works. Picking 150-165 and then setting length 120 resets the rows to 'Interval…' and the chips go 11 to 10. Saving succeeds (no 400) and the defects are stored without a position. (3) The SPK detail grade cell shows 'A → A' plus the ins-line-grade-candidate-<id> 'kandidat' badge. (4) MKO banner: by code review, valueLeft now subtracts posted material_losses.value, which matches the backend makloon_loss_service logic. Not re-run in the UI. MOBILE 390: admin@ MobileOpsApp has the QC tab; mobile-open-inspections opens ?view=inspections with scrollWidth 390, and ins-random-check-button is present. qc@ and mdquality@ never see MobileOpsApp: their home view (navMeta qc → inspections) is in responsiveWorkspace, so they land directly on the responsive Meja QC. The QC tab is therefore not reachable for them, but the goal is still met. The random check modal at 390 fits (x 20, width 350, submit visible and enabled, no overflow). NEW minor bug found: on reopen, a position-less defect that has a code/note goes into the quick-summary counts, and the next save loses its code and note.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "InspectLineModal prefill", "issue": "useEffect sends every saved defect with interval==null into the quick-summary counts, including rows that came from the grid (interval reset or never picked) and have a code/note. Reproduced: DB had {4pt HOLE 'akhir roll'} and {1pt KNOT 'simpul'} with no interval. On reopen they show as counts 1pt=1 and 4pt=1, and the grid shows only the 2 positioned rows. Saving again would store them without code/note (points are kept). Fix: when interval==null and (code||note), hydrate into ivRows with interval:'' and leave only the bare {point_value,count} rows as counts.", "selector": "[data-testid^='ins-defect-row-'], [data-testid='ins-defect-1..4']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Meja QC (inspections) at 390px", "issues": ["The page header card squeezes the title column: 'GUDANG & OPERASI / SPK Inspeksi & QC' wraps one word per line and is cut off ('Inspek…') because the toolbar (LINI chips, search, buttons) sits next to it instead of wrapping below. Stack it under the title on small screens.", "For qc@ and mdquality@ the mobile view opens in 'Semua badan usaha' read-only mode by default. The user has to tap Sukacita before working. Consider defaulting to the user's single/primary entity."]},
+      {"screen": "MobileOpsApp QC tab", "issues": ["Only admin/manager-type MobileOpsApp users see the QC tab. qc and md_quality land directly on Meja QC, so the tab is never shown to them. Acceptable, but no 'back to mobile app' control is shown after admin opens it via the QC tab (onNavigate is used, not openFullView)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l05_replacement_extra_t1.py", "/app/backend/tests/test_l05_interval_form.py", "/app/test_reports/pytest/iter195.xml", "/app/test_reports/pytest/iter195_extra.xml"],
+  "action_items": [
+    "InspectLineModal useEffect: keep position-less defects that have a code/note as grid rows (interval:'') instead of merging them into the quick counts, so code/note are not lost on re-save",
+    "Optional: make the inspections header toolbar wrap below the title at <=640px",
+    "Optional: for qc/md_quality on mobile, auto-select the entity, or add a back-to-mobile control"
+  ],
+  "critical_code_review_comments": [
+    "InspectLineModal.jsx:55-57 splits on interval==null only. Position-less rows from the grid lose code/note on reopen.",
+    "InspectLineModal useEffect depends on [open, line]. If the parent passes a new line object while the modal is open (e.g. a refresh), user edits are reset. Low risk.",
+    "normalize_interval_defects: {point_value:0,count:0} raises 400 instead of being skipped. Harmless because the UI never sends it.",
+    "MakloonReturnMaterial valueLeft ignores pending_approval losses. This is consistent with the backend, which only counts posted losses."
+  ],
+  "updated_files": ["/app/backend/tests/test_l05_replacement_extra_t1.py"],
+  "success_rate": {"backend": "100% (18/18)", "frontend": "95% (all 7 retest items pass; 1 new medium edge-case bug)"},
+  "seed_data_creation": "Created KSC/INS-00005 (ins_849fe66bcb68, random check RL-00001) with QC defects. restore_local_demo.sh was started in the background at the end (log /tmp/restore_t1_195.log).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run the L05 tests per file with -n0, env MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database REACT_APP_BACKEND_URL=<public>. To open an SPK use ins-detail-<insId> ('Buka SPK'); clicking the row does nothing. ins-line-qc-<lid> is shown only when the status is assigned/in_progress. The grid row fields are ins-defect-{interval|code|point|count|note}-<i> (native selects) and the quick counts are ins-defect-1..4. At 390px, qc@ lands directly on ?view=inspections. Use admin@ to see the MobileOpsApp QC tab."
+}

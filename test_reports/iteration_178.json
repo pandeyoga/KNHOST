@@ -1,0 +1,31 @@
+{
+  "summary": "E2E tested P03 Jakarta leg + P04 Keep/Pending/Grade/Candidates/StockSummary against preview backend (fresh DB). Backend: 19/20 tests passed (1 skip for no non-SO roll of same wh, 1 skip for invoice endpoint not public). PART A (SO KANDA/SO-00003 so_df1f8042999f, trn_4eee1c252639): (1) GET /api/transfers/.../receipt+POST .../receive -> status 'received', SO stays 'confirmed'. (2) Soreang outbound task auto-cancelled, Jakarta task wms_c9f099e4082f created at wh_ea274533ff2a. (3) 10 scan-pick calls with roll_id+actual_qty on Jakarta task -> all 200. Loading-check override (manager, reason='Uji alur Jakarta...') -> 200. POST /outbound/tasks/{id}/dispatch -> 200 with shipment shp_5fee556c498c number=KANDA/SJ-00002 (field name is 'shipment_no'). SO status -> 'shipped'. (4) GET /api/shipments/shp_5fee556c498c/surat-jalan -> HTML includes 'Toko Tekstil Pasar Baru','Jakarta', 10× RL-10125..RL-10134 (NO internal roll_ ids). (5) salesadmin.kanda POST /api/sales-orders/.../mark-delivered -> SO status 'done'. PART B KEEP/PENDING (checked BEFORE receipt): keep=[SO-00004 overdue age_days=5, SO-00005 also_pending], pending=[prod_ed50d5dcfd7d short 250 for SO-00005, prod_8a1a664cdc78 short 250 for SO-00006], in_transit=[SO-00003 with TRF-00001 dispatched], counts {unique_orders:3, both:1, keep_overdue:1, keep_limit_days:3}. sales.kanda -> 403. GRADE RULES: GET null OK, PUT invalid grade 'Z' -> 422, preferred B not in allowed [A] -> 422, valid PUT [A]/[A] -> 200, roll-candidates returns recommendation.grade='A' with reason citing 'prioritas pelanggan'. STOCK-SUMMARY: sales.kanda 200, Reguler row only, no lot/owner leakage. UI (salesadmin.kanda @ 1920 and 390): kp-panel, kp-tab-{keep,pending,in_transit} + kp-count-*, kp-keep-row-so_450bfacd5813 shows 'KANDA/SO-00004 · Toko Tekstil Pasar Baru' with kp-keep-age-... text '5 hari · lewat batas'; kp-keep-also-pending-so_62d6b89bf559 shows 'juga Pending'; kp-pending-prod_* rows + toggle reveals kp-pending-so-* / kp-pending-nosupply-* for SO-00005 and SO-00006; SO link click navigates to orders view & opens OrderDetailPanel. in_transit tab now shows 0 (SO-00003 already delivered). m-kp-panel visible on 390px mobile. grade-rules-card: selecting customer -> grade-rule-allow-A, grade-rule-prefer-A, grade-rule-accept-bs, grade-rule-save all present; after Save -> grade-rule-msg='Aturan grade tersimpan — dipakai saat Ganti Roll & rekomendasi grade.'. SO-00003 OrderDetailPanel: order-detail-panel + order-transfer-links (KANDA/TRF-00001 Soreang→Jakarta Selesai) + shipment-row-shp_5fee556c498c + shipment-sj-btn-shp_5fee556c498c (opens surat jalan HTML in new tab). Grade rule cleaned up (allowed=[], preferred=[], accept_bs=false).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p03_p04_e2e.py",
+    "/app/test_reports/pytest/p04_e2e.xml",
+    "/app/test_reports/pytest/p04_e2e_part2.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "`shipment-sj-btn` testid in OrderDetailPanel is `shipment-sj-btn-{shipment_id}` (not the bare `shipment-sj-btn` the review request mentioned). Review request / docs should be updated to match the suffixed convention actually implemented (`shipment-row-{id}`/`shipment-sj-btn-{id}`), or vice versa.",
+    "`/api/outbound/tasks/{id}/dispatch` returns `{shipment: {shipment_no: ...}}`; the field is `shipment_no`, not `number`. Consider aliasing to `number` for API consistency with other document resources (SO.number, TRF.code).",
+    "`sales/stock-summary` correctly hides lot/owner from sales role — verified. Suggest also masking `incoming_in_horizon` numeric detail only to admin+sales_admin if sensitive; currently exposed to sales too (may be intended).",
+    "Grade-rules PUT returns full `history` audit list in the saved object; verify this is not sent to any role lacking audit.view. Current behavior exposes `history[].by/at` to salesadmin — acceptable but worth noting."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p03_p04_e2e.py"
+  ],
+  "success_rate": {"backend": "100% (19/19 non-skipped)", "frontend": "100% all requested selectors + flows verified"},
+  "test_credentials": "whadmin@kainnusantara.id/demo1234, manager@kainnusantara.id/demo1234, salesadmin.kanda@kainnusantara.id/demo1234, sales.kanda@kainnusantara.id/demo1234 (all preview).",
+  "seed_data_creation": "No new seed. The E2E consumed KANDA/TRF-00001 (now completed) and KANDA/SO-00003 (now done=Delivered) with shipment KANDA/SJ-00002. Grade rule on cust_f380f404da40 reset to empty allowed/preferred. SO-00004,-00005,-00006 still as per fresh seed (reserved).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "After this iteration, SO-00003 is 'done' (Delivered) and TRF-00001 is received. in_transit list on /api/sales/keep-pending is now empty for ent_kanda. Jakarta outbound task wms_c9f099e4082f dispatched. Shipment shp_5fee556c498c=KANDA/SJ-00002. If you need to re-exercise the full Jakarta leg, re-run `python backend/scripts/seed_p04_kn.py` or seed_p03 to recreate dispatched transfer. Grade-rule for cust_f380f404da40 left in cleared state (allowed_grades=[], preferred_grades=[], accept_bs=false). To test 409 grade-reallocate negative case, you need a non-A roll for the same product+entity — demo currently has no such roll for prod_8940eeadf05c (LYFLEX BEIGE A) in ent_kanda; consider seeding one B roll.",
+  "rca of the issue": "N/A — no bug found. Minor doc mismatch: review request names bare `shipment-sj-btn`, actual testid is `shipment-sj-btn-{id}`."
+}

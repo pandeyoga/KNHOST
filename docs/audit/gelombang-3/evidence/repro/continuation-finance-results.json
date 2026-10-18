@@ -1,0 +1,3500 @@
+{
+  "commit": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_fc60c816954f4f39bb494d5ed08fbd7b",
+  "results": [
+    {
+      "id": "D4-CASE-01-public-resolution-control",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-01-ledger-control",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-01-liability-debit",
+      "expected": 80,
+      "actual": 160.0,
+      "note": "Refund80 should debit the liability once. Original manual adjustment and original cash posting each debit80.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-01-phantom-income",
+      "expected": 0,
+      "actual": 80.0,
+      "note": "Paying cash is not forfeiture of customer credit; refund should not create Other Income.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-01-liability-ledger-reconciliation",
+      "expected": 20,
+      "actual": -60.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-02-normal-refund-control",
+      "expected": {
+        "http": 200,
+        "deposit": 20,
+        "cash": 80,
+        "liability_debit": 80
+      },
+      "actual": {
+        "http": 200,
+        "deposit": 20.0,
+        "cash": 80.0,
+        "liability_debit": 80.0
+      },
+      "note": "Normal original producer then one refund is correct; wrong-account hypothesis rejected.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-02-concurrent-cash",
+      "expected": 80,
+      "actual": 160.0,
+      "note": "Two original public resolutions read deposit100 before cash creation. CAS prevents a negative deposit, but both cash80 and both GL journals already exist.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-02-concurrent-deposit-control",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-02-concurrent-http-control",
+      "expected": [
+        200,
+        400
+      ],
+      "actual": [
+        200,
+        400
+      ],
+      "note": "Original executor translates the balance CAS409 into CaseActionError and the router returns400. One request is rejected, but its cash is already committed.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-02-failure-retry-cash",
+      "expected": 80,
+      "actual": 160.0,
+      "note": "Original first cash+JE survives a failed deposit step; same case retry creates a new cash UUID instead of resuming the existing action.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-02-failure-retry-deposit-control",
+      "expected": 20,
+      "actual": 20.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-INTERCO-01-normal-control",
+      "expected": {
+        "http": 200,
+        "je_posted": true,
+        "owner": "B"
+      },
+      "actual": {
+        "http": 200,
+        "je_posted": true,
+        "owner": "B"
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-INTERCO-01-owner-after-failed-transfer",
+      "expected": "A",
+      "actual": "B",
+      "note": "Original physical ownership, lot, RFID owner and balance move before both journals succeed; rollback filters the cleared reserved_ref and does not restore ownership.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-INTERCO-01-transfer-history-after-failure",
+      "expected": 1,
+      "actual": 0,
+      "note": "Once ownership is committed, recovery needs a durable transfer document; current path inserts it only after both journals.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-INTERCO-01-rfid-owner-after-failure",
+      "expected": "A",
+      "actual": "B",
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-INTERCO-01-journal-pair-after-failure",
+      "expected": [
+        "A",
+        "B"
+      ],
+      "actual": [
+        "A"
+      ],
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-INTERCO-01-helper-recovery-pair",
+      "expected": 2,
+      "actual": 1,
+      "note": "The presence of just source JE causes already_posted, so retry does not create missing destination JE.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-INTERCO-01-public-recovery",
+      "expected": 200,
+      "actual": 400,
+      "note": "Same original API retry rejects destination==current owner; no supported recovery is reached.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-INTERCO-02-empty_source-valuation",
+      "expected": 150.0,
+      "actual": 10.0,
+      "note": "The original helper promises source WAC at-cost; it recalculates AFTER the chosen roll leaves the source. Empty source falls back to stale master1, or cheaper remainder changes WAC to5.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-INTERCO-02-empty_source-http-control",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-INTERCO-02-empty_source-retained-roll-cost-control",
+      "expected": 15,
+      "actual": 15.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-INTERCO-02-cheaper_remainder-valuation",
+      "expected": 100.0,
+      "actual": 50.0,
+      "note": "The original helper promises source WAC at-cost; it recalculates AFTER the chosen roll leaves the source. Empty source falls back to stale master1, or cheaper remainder changes WAC to5.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-INTERCO-02-cheaper_remainder-http-control",
+      "expected": 200,
+      "actual": 200,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-INTERCO-02-cheaper_remainder-retained-roll-cost-control",
+      "expected": 15,
+      "actual": 15.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-02-bank-transfer-retry-total",
+      "expected": {
+        "in": 80,
+        "out": 80
+      },
+      "actual": {
+        "in": 80.0,
+        "out": 160.0
+      },
+      "note": "Same unresolved case retry repeats the succeeded first leg: original out80, retry out80 and in80; the resolved case has an extra cash out80.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-02-bank-transfer-transit",
+      "expected": 0,
+      "actual": 80.0,
+      "note": "A completed own-bank transfer should clear transit; current resolved case leaves debit80.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-02-supplier-producer-control",
+      "expected": {
+        "http": 200,
+        "advance": 100
+      },
+      "actual": {
+        "http": 200,
+        "advance": 100.0
+      },
+      "note": "Original manual approved case action creates supplier advance; preceding vendor-bill/payment producer is not executed in this fixture.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-02-supplier-concurrent-cash",
+      "expected": 80,
+      "actual": 160.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-02-supplier-concurrent-balance",
+      "expected": 20,
+      "actual": -60.0,
+      "note": "Unlike customer deposit, supplier refund uses unconditional $inc after cash; both original requests succeed and supplier advance goes negative.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-02-supplier-advance-retry-balance",
+      "expected": 100,
+      "actual": 200.0,
+      "note": "Finance-case JE uses stable case ID and skips repost; supplier balance increment still repeats. Stable JE idempotency alone is insufficient.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-02-supplier-advance-retry-journal-control",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-03-normal-two-step-control",
+      "expected": {
+        "http": [
+          200,
+          200
+        ],
+        "state": "resolved",
+        "debt": 0,
+        "cash_in": 80
+      },
+      "actual": {
+        "http": [
+          200,
+          200
+        ],
+        "state": "resolved",
+        "debt": -0.0,
+        "cash_in": 80.0
+      },
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-03-skip-step-one-cash",
+      "expected": 0,
+      "actual": 80.0,
+      "note": "Original public action accepts step2 on a newly open case: no step1 liability/AR transfer exists, but cash80 and Cr employee receivable80 are posted.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-03-skip-step-one-debt",
+      "expected": 0,
+      "actual": -80.0,
+      "note": "",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-03-partial-remains-open",
+      "expected": "in_progress",
+      "actual": "resolved",
+      "note": "Acknowledged employee receivable80, received40: case must keep an outstanding40 or reject partial; it currently resolves and removes next_action.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-03-partial-receivable-control",
+      "expected": 40,
+      "actual": 40.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-03-excess-receivable",
+      "expected": 0,
+      "actual": -20.0,
+      "note": "Received100 is applied wholly to an acknowledged debt80, creating negative employee receivable20; no surplus classification or amount bound is applied.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "REPLAY-OPS-02-escalation-level-control",
+      "expected": [
+        1,
+        2,
+        2
+      ],
+      "actual": [
+        1,
+        2,
+        2
+      ],
+      "note": "Separate manager then admin escalation is intentional, not duplicate notifications. Third scan no new level.",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-02-closed-period-cash",
+      "expected": 0,
+      "actual": 80.0,
+      "note": "No injection: a valid locked-period state rejects GL, but the refund cash is already inserted with status posted; deposit is unchanged and case remains open.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-CASE-02-closed-period-journal-control",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-CASE-02-closed-period-deposit-control",
+      "expected": 100,
+      "actual": 100.0,
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "contexts": {
+    "indexes": {
+      "created": 212,
+      "existed": 0,
+      "failed": 0,
+      "unique": {
+        "created": 25,
+        "failed": []
+      }
+    },
+    "journal_indexes": {
+      "_id_": {
+        "v": 2,
+        "key": [
+          [
+            "_id",
+            1
+          ]
+        ]
+      },
+      "kn_entity_id_1__date_-1": {
+        "v": 2,
+        "key": [
+          [
+            "entity_id",
+            1
+          ],
+          [
+            "date",
+            -1
+          ]
+        ],
+        "background": true
+      },
+      "kn_source_type_1__source_id_1": {
+        "v": 2,
+        "key": [
+          [
+            "source_type",
+            1
+          ],
+          [
+            "source_id",
+            1
+          ]
+        ],
+        "background": true
+      },
+      "kn_status_1__date_-1": {
+        "v": 2,
+        "key": [
+          [
+            "status",
+            1
+          ],
+          [
+            "date",
+            -1
+          ]
+        ],
+        "background": true
+      },
+      "kn_entity_id_1__lines.account_code_1__date_1": {
+        "v": 2,
+        "key": [
+          [
+            "entity_id",
+            1
+          ],
+          [
+            "lines.account_code",
+            1
+          ],
+          [
+            "date",
+            1
+          ]
+        ],
+        "background": true
+      },
+      "kn_number_1": {
+        "v": 2,
+        "key": [
+          [
+            "number",
+            1
+          ]
+        ],
+        "background": true
+      },
+      "kn_date_-1": {
+        "v": 2,
+        "key": [
+          [
+            "date",
+            -1
+          ]
+        ],
+        "background": true
+      },
+      "uq_number": {
+        "v": 2,
+        "key": [
+          [
+            "number",
+            1
+          ]
+        ],
+        "background": true,
+        "unique": true,
+        "partialFilterExpression": {
+          "number": {
+            "$type": "string",
+            "$gt": ""
+          }
+        }
+      },
+      "uq_je_source_active": {
+        "v": 2,
+        "key": [
+          [
+            "source_type",
+            1
+          ],
+          [
+            "source_id",
+            1
+          ]
+        ],
+        "background": true,
+        "unique": true,
+        "partialFilterExpression": {
+          "source_type": {
+            "$type": "string",
+            "$gt": ""
+          },
+          "source_id": {
+            "$type": "string",
+            "$gt": ""
+          },
+          "status": {
+            "$in": [
+              "posted",
+              "draft"
+            ]
+          }
+        }
+      }
+    },
+    "cash_indexes": {
+      "_id_": {
+        "v": 2,
+        "key": [
+          [
+            "_id",
+            1
+          ]
+        ]
+      },
+      "uq_number": {
+        "v": 2,
+        "key": [
+          [
+            "number",
+            1
+          ]
+        ],
+        "background": true,
+        "unique": true,
+        "partialFilterExpression": {
+          "number": {
+            "$type": "string",
+            "$gt": ""
+          }
+        }
+      }
+    },
+    "store_credit": {
+      "case": {
+        "id": "fcs_8e80b6020826",
+        "number": "A/CASE-00001",
+        "entity_id": "A",
+        "case_type": "refund_pelanggan",
+        "case_type_label": "Pengembalian dana ke pelanggan",
+        "title": "Audit refund CSC",
+        "description": "",
+        "amount": 80.0,
+        "customer_id": "CSC",
+        "supplier_id": "",
+        "order_ids": [],
+        "source": {
+          "kind": "manual",
+          "id": "",
+          "label": ""
+        },
+        "status": "open",
+        "assignee": "",
+        "attachments": [],
+        "sla_hours": 24,
+        "sla_due_at": "2026-10-06T16:17:03.488771+00:00",
+        "escalation_level": 0,
+        "escalated_at": "",
+        "reason_code": "",
+        "reason_label": "",
+        "resolution": {},
+        "documents": [],
+        "approved_by": "",
+        "approved_at": "",
+        "resolved_by": "",
+        "resolved_at": "",
+        "auto_source": "",
+        "timeline": [
+          {
+            "event": "dibuka",
+            "label": "Kasus dibuka: Pengembalian dana ke pelanggan",
+            "actor": "Audit User A",
+            "note": "",
+            "at": "2026-10-05T16:17:03.488771+00:00"
+          }
+        ],
+        "refs": [],
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:17:03.488771+00:00",
+        "updated_at": "2026-10-05T16:17:03.488771+00:00",
+        "playbook": [
+          "Pastikan saldonya benar-benar ada (uang muka pelanggan atau store credit).",
+          "Pilih sumber dananya, lalu catat kas keluarnya. Nominal besar wajib disetujui."
+        ],
+        "actions": [
+          {
+            "code": "refund_pelanggan",
+            "label": "Kembalikan dari uang muka pelanggan",
+            "effect": "Kas keluar mengurangi kewajiban uang muka pelanggan.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1400 Uang Muka Pelanggan / Cr Kas-Bank",
+            "sensitive": true
+          },
+          {
+            "code": "refund_store_credit",
+            "label": "Kembalikan dari saldo kredit toko",
+            "effect": "Saldo kredit toko pelanggan dicairkan menjadi uang.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1450 Saldo Kredit Pelanggan / Cr Kas-Bank + baris buku store credit",
+            "sensitive": true
+          }
+        ],
+        "moves_cash": true,
+        "needs_evidence": false,
+        "reason_codes": [
+          "customer_refund_request"
+        ],
+        "priority": "normal",
+        "age_hours": 0.0,
+        "overdue": false
+      },
+      "response": {
+        "id": "fcs_8e80b6020826",
+        "number": "A/CASE-00001",
+        "entity_id": "A",
+        "case_type": "refund_pelanggan",
+        "case_type_label": "Pengembalian dana ke pelanggan",
+        "title": "Audit refund CSC",
+        "description": "",
+        "amount": 80.0,
+        "customer_id": "CSC",
+        "supplier_id": "",
+        "order_ids": [],
+        "source": {
+          "kind": "manual",
+          "id": "",
+          "label": ""
+        },
+        "status": "resolved",
+        "assignee": "",
+        "attachments": [],
+        "sla_hours": 24,
+        "sla_due_at": "2026-10-06T16:17:03.488771+00:00",
+        "escalation_level": 0,
+        "escalated_at": "",
+        "reason_code": "customer_refund_request",
+        "reason_label": "Pelanggan minta dana dikembalikan",
+        "resolution": {
+          "action": "refund_store_credit",
+          "action_label": "Kembalikan dari saldo kredit toko",
+          "effect": "Saldo kredit toko pelanggan dicairkan menjadi uang.",
+          "produces": "Transaksi kas keluar + jurnal Dr 2-1450 Saldo Kredit Pelanggan / Cr Kas-Bank + baris buku store credit",
+          "amount": 80.0,
+          "note": "Synthetic local audit",
+          "extra": {},
+          "next_action": "",
+          "auto_resolved": false,
+          "at": "2026-10-05T16:17:04.025368+00:00",
+          "by": "Audit User A"
+        },
+        "documents": [
+          {
+            "kind": "cash_transaction",
+            "id": "cash_25fd2ec124ce",
+            "number": "A/CASH-00001",
+            "label": "Kas keluar Rp 80"
+          },
+          {
+            "kind": "journal_entry",
+            "id": "je_9ec74e79957c",
+            "number": "A/JE-00003",
+            "label": "Jurnal kas A/CASH-00001"
+          },
+          {
+            "kind": "store_credit_entry",
+            "id": "scl_b24ef40dd479",
+            "number": "",
+            "label": "Baris buku saldo kredit −Rp 80"
+          }
+        ],
+        "approved_by": "",
+        "approved_at": "",
+        "resolved_by": "Audit User A",
+        "resolved_at": "2026-10-05T16:17:04.025368+00:00",
+        "auto_source": "",
+        "timeline": [
+          {
+            "event": "dibuka",
+            "label": "Kasus dibuka: Pengembalian dana ke pelanggan",
+            "actor": "Audit User A",
+            "note": "",
+            "at": "2026-10-05T16:17:03.488771+00:00"
+          },
+          {
+            "event": "selesai",
+            "label": "Kasus diselesaikan: Kembalikan dari saldo kredit toko",
+            "actor": "Audit User A",
+            "note": "Pelanggan minta dana dikembalikan · Rp 80 · 3 dokumen turunan",
+            "at": "2026-10-05T16:17:04.025368+00:00"
+          }
+        ],
+        "refs": [],
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:17:03.488771+00:00",
+        "updated_at": "2026-10-05T16:17:04.025368+00:00",
+        "playbook": [
+          "Pastikan saldonya benar-benar ada (uang muka pelanggan atau store credit).",
+          "Pilih sumber dananya, lalu catat kas keluarnya. Nominal besar wajib disetujui."
+        ],
+        "actions": [
+          {
+            "code": "refund_pelanggan",
+            "label": "Kembalikan dari uang muka pelanggan",
+            "effect": "Kas keluar mengurangi kewajiban uang muka pelanggan.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1400 Uang Muka Pelanggan / Cr Kas-Bank",
+            "sensitive": true
+          },
+          {
+            "code": "refund_store_credit",
+            "label": "Kembalikan dari saldo kredit toko",
+            "effect": "Saldo kredit toko pelanggan dicairkan menjadi uang.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1450 Saldo Kredit Pelanggan / Cr Kas-Bank + baris buku store credit",
+            "sensitive": true
+          }
+        ],
+        "moves_cash": true,
+        "needs_evidence": false,
+        "reason_codes": [
+          "customer_refund_request"
+        ],
+        "priority": "normal",
+        "age_hours": 0.0,
+        "overdue": false
+      },
+      "delta_journals": [
+        {
+          "id": "je_9ec74e79957c",
+          "number": "A/JE-00003",
+          "date": "2026-10-05T16:17:03.999411+00:00",
+          "description": "Kas out · Pencairan saldo kredit toko · A/CASE-00001",
+          "source": "cash_transaction",
+          "source_type": "cash_transaction",
+          "source_id": "cash_25fd2ec124ce",
+          "source_label": "A/CASH-00001",
+          "lines": [
+            {
+              "account_code": "2-1450",
+              "account_name": "Saldo Kredit Pelanggan (Store Credit)",
+              "debit": 80.0,
+              "credit": 0.0,
+              "description": "A/CASH-00001 · Pencairan saldo kredit toko · A/CASE-00001"
+            },
+            {
+              "account_code": "1-1100",
+              "account_name": "Kas Besar / Bank",
+              "debit": 0.0,
+              "credit": 80.0,
+              "description": "A/CASH-00001 · Pencairan saldo kredit toko · A/CASE-00001"
+            }
+          ],
+          "total_debit": 80.0,
+          "total_credit": 80.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:04.019486+00:00",
+          "updated_at": "2026-10-05T16:17:04.019486+00:00"
+        },
+        {
+          "id": "je_61c32e5807c7",
+          "number": "A/JE-00002",
+          "date": "2026-10-05T16:17:03.955352+00:00",
+          "description": "Penyesuaian store credit Audit CSC (-80)",
+          "source": "store_credit_adjust",
+          "source_type": "store_credit_adjust",
+          "source_id": "sca_a7bf2e4bfa3c",
+          "source_label": "Audit CSC (-80)",
+          "lines": [
+            {
+              "account_code": "2-1450",
+              "account_name": "Saldo Kredit Pelanggan (Store Credit)",
+              "debit": 80.0,
+              "credit": 0.0,
+              "description": "Store credit hangus/berkurang Audit CSC (-80)"
+            },
+            {
+              "account_code": "4-9000",
+              "account_name": "Pendapatan Lain-lain",
+              "debit": 0.0,
+              "credit": 80.0,
+              "description": "Pendapatan store credit hangus Audit CSC (-80)"
+            }
+          ],
+          "total_debit": 80.0,
+          "total_credit": 80.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "system",
+          "created_at": "2026-10-05T16:17:03.972874+00:00",
+          "updated_at": "2026-10-05T16:17:03.972874+00:00"
+        }
+      ]
+    },
+    "deposit_race": {
+      "case": {
+        "id": "fcs_a9966df98922",
+        "number": "A/CASE-00003",
+        "entity_id": "A",
+        "case_type": "refund_pelanggan",
+        "case_type_label": "Pengembalian dana ke pelanggan",
+        "title": "Audit refund CRACE",
+        "description": "",
+        "amount": 80.0,
+        "customer_id": "CRACE",
+        "supplier_id": "",
+        "order_ids": [],
+        "source": {
+          "kind": "manual",
+          "id": "",
+          "label": ""
+        },
+        "status": "open",
+        "assignee": "",
+        "attachments": [],
+        "sla_hours": 24,
+        "sla_due_at": "2026-10-06T16:17:05.353852+00:00",
+        "escalation_level": 0,
+        "escalated_at": "",
+        "reason_code": "",
+        "reason_label": "",
+        "resolution": {},
+        "documents": [],
+        "approved_by": "",
+        "approved_at": "",
+        "resolved_by": "",
+        "resolved_at": "",
+        "auto_source": "",
+        "timeline": [
+          {
+            "event": "dibuka",
+            "label": "Kasus dibuka: Pengembalian dana ke pelanggan",
+            "actor": "Audit User A",
+            "note": "",
+            "at": "2026-10-05T16:17:05.354851+00:00"
+          }
+        ],
+        "refs": [],
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:17:05.353852+00:00",
+        "updated_at": "2026-10-05T16:17:05.353852+00:00",
+        "playbook": [
+          "Pastikan saldonya benar-benar ada (uang muka pelanggan atau store credit).",
+          "Pilih sumber dananya, lalu catat kas keluarnya. Nominal besar wajib disetujui."
+        ],
+        "actions": [
+          {
+            "code": "refund_pelanggan",
+            "label": "Kembalikan dari uang muka pelanggan",
+            "effect": "Kas keluar mengurangi kewajiban uang muka pelanggan.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1400 Uang Muka Pelanggan / Cr Kas-Bank",
+            "sensitive": true
+          },
+          {
+            "code": "refund_store_credit",
+            "label": "Kembalikan dari saldo kredit toko",
+            "effect": "Saldo kredit toko pelanggan dicairkan menjadi uang.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1450 Saldo Kredit Pelanggan / Cr Kas-Bank + baris buku store credit",
+            "sensitive": true
+          }
+        ],
+        "moves_cash": true,
+        "needs_evidence": false,
+        "reason_codes": [
+          "customer_refund_request"
+        ],
+        "priority": "normal",
+        "age_hours": 0.0,
+        "overdue": false
+      },
+      "responses": [
+        {
+          "http": 400,
+          "body": {
+            "detail": "Deposit pelanggan tidak cukup (baru saja terpakai proses lain)."
+          }
+        },
+        {
+          "http": 200,
+          "body": {
+            "id": "fcs_a9966df98922",
+            "number": "A/CASE-00003",
+            "entity_id": "A",
+            "case_type": "refund_pelanggan",
+            "case_type_label": "Pengembalian dana ke pelanggan",
+            "title": "Audit refund CRACE",
+            "description": "",
+            "amount": 80.0,
+            "customer_id": "CRACE",
+            "supplier_id": "",
+            "order_ids": [],
+            "source": {
+              "kind": "manual",
+              "id": "",
+              "label": ""
+            },
+            "status": "resolved",
+            "assignee": "",
+            "attachments": [],
+            "sla_hours": 24,
+            "sla_due_at": "2026-10-06T16:17:05.353852+00:00",
+            "escalation_level": 0,
+            "escalated_at": "",
+            "reason_code": "customer_refund_request",
+            "reason_label": "Pelanggan minta dana dikembalikan",
+            "resolution": {
+              "action": "refund_pelanggan",
+              "action_label": "Kembalikan dari uang muka pelanggan",
+              "effect": "Kas keluar mengurangi kewajiban uang muka pelanggan.",
+              "produces": "Transaksi kas keluar + jurnal Dr 2-1400 Uang Muka Pelanggan / Cr Kas-Bank",
+              "amount": 80.0,
+              "note": "Synthetic local audit",
+              "extra": {},
+              "next_action": "",
+              "auto_resolved": false,
+              "at": "2026-10-05T16:17:05.788481+00:00",
+              "by": "Audit User A"
+            },
+            "documents": [
+              {
+                "kind": "cash_transaction",
+                "id": "cash_a415b0a5950c",
+                "number": "A/CASH-00006",
+                "label": "Kas keluar Rp 80"
+              },
+              {
+                "kind": "journal_entry",
+                "id": "je_7229d2b8d391",
+                "number": "A/JE-00008",
+                "label": "Jurnal kas A/CASH-00006"
+              }
+            ],
+            "approved_by": "",
+            "approved_at": "",
+            "resolved_by": "Audit User A",
+            "resolved_at": "2026-10-05T16:17:05.788481+00:00",
+            "auto_source": "",
+            "timeline": [
+              {
+                "event": "dibuka",
+                "label": "Kasus dibuka: Pengembalian dana ke pelanggan",
+                "actor": "Audit User A",
+                "note": "",
+                "at": "2026-10-05T16:17:05.354851+00:00"
+              },
+              {
+                "event": "selesai",
+                "label": "Kasus diselesaikan: Kembalikan dari uang muka pelanggan",
+                "actor": "Audit User A",
+                "note": "Pelanggan minta dana dikembalikan · Rp 80 · 2 dokumen turunan",
+                "at": "2026-10-05T16:17:05.788481+00:00"
+              }
+            ],
+            "refs": [],
+            "created_by": "Audit User A",
+            "created_at": "2026-10-05T16:17:05.353852+00:00",
+            "updated_at": "2026-10-05T16:17:05.788481+00:00",
+            "playbook": [
+              "Pastikan saldonya benar-benar ada (uang muka pelanggan atau store credit).",
+              "Pilih sumber dananya, lalu catat kas keluarnya. Nominal besar wajib disetujui."
+            ],
+            "actions": [
+              {
+                "code": "refund_pelanggan",
+                "label": "Kembalikan dari uang muka pelanggan",
+                "effect": "Kas keluar mengurangi kewajiban uang muka pelanggan.",
+                "needs": [
+                  "customer_id",
+                  "amount"
+                ],
+                "produces": "Transaksi kas keluar + jurnal Dr 2-1400 Uang Muka Pelanggan / Cr Kas-Bank",
+                "sensitive": true
+              },
+              {
+                "code": "refund_store_credit",
+                "label": "Kembalikan dari saldo kredit toko",
+                "effect": "Saldo kredit toko pelanggan dicairkan menjadi uang.",
+                "needs": [
+                  "customer_id",
+                  "amount"
+                ],
+                "produces": "Transaksi kas keluar + jurnal Dr 2-1450 Saldo Kredit Pelanggan / Cr Kas-Bank + baris buku store credit",
+                "sensitive": true
+              }
+            ],
+            "moves_cash": true,
+            "needs_evidence": false,
+            "reason_codes": [
+              "customer_refund_request"
+            ],
+            "priority": "normal",
+            "age_hours": 0.0,
+            "overdue": false
+          }
+        }
+      ],
+      "transactions": [
+        {
+          "id": "cash_a415b0a5950c",
+          "number": "A/CASH-00006",
+          "cash_type": "kas_besar",
+          "direction": "out",
+          "amount": 80.0,
+          "category": "refund pelanggan",
+          "description": "Pengembalian dana pelanggan · A/CASE-00003",
+          "entity_id": "A",
+          "ref_type": "ar_refund",
+          "ref_id": "fcs_a9966df98922",
+          "txn_date": "2026-10-05T16:17:05.755080+00:00",
+          "account_id": "",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:05.755080+00:00",
+          "updated_at": "2026-10-05T16:17:05.755080+00:00",
+          "owner_entity_id": "A"
+        },
+        {
+          "id": "cash_7d5560c1557e",
+          "number": "A/CASH-00007",
+          "cash_type": "kas_besar",
+          "direction": "out",
+          "amount": 80.0,
+          "category": "refund pelanggan",
+          "description": "Pengembalian dana pelanggan · A/CASE-00003",
+          "entity_id": "A",
+          "ref_type": "ar_refund",
+          "ref_id": "fcs_a9966df98922",
+          "txn_date": "2026-10-05T16:17:05.759456+00:00",
+          "account_id": "",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:05.759456+00:00",
+          "updated_at": "2026-10-05T16:17:05.759456+00:00",
+          "owner_entity_id": "A"
+        }
+      ]
+    },
+    "deposit_fault": {
+      "case": {
+        "id": "fcs_5733eafbd46f",
+        "number": "A/CASE-00004",
+        "entity_id": "A",
+        "case_type": "refund_pelanggan",
+        "case_type_label": "Pengembalian dana ke pelanggan",
+        "title": "Audit refund CFAULT",
+        "description": "",
+        "amount": 80.0,
+        "customer_id": "CFAULT",
+        "supplier_id": "",
+        "order_ids": [],
+        "source": {
+          "kind": "manual",
+          "id": "",
+          "label": ""
+        },
+        "status": "open",
+        "assignee": "",
+        "attachments": [],
+        "sla_hours": 24,
+        "sla_due_at": "2026-10-06T16:17:05.951458+00:00",
+        "escalation_level": 0,
+        "escalated_at": "",
+        "reason_code": "",
+        "reason_label": "",
+        "resolution": {},
+        "documents": [],
+        "approved_by": "",
+        "approved_at": "",
+        "resolved_by": "",
+        "resolved_at": "",
+        "auto_source": "",
+        "timeline": [
+          {
+            "event": "dibuka",
+            "label": "Kasus dibuka: Pengembalian dana ke pelanggan",
+            "actor": "Audit User A",
+            "note": "",
+            "at": "2026-10-05T16:17:05.951458+00:00"
+          }
+        ],
+        "refs": [],
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:17:05.951458+00:00",
+        "updated_at": "2026-10-05T16:17:05.951458+00:00",
+        "playbook": [
+          "Pastikan saldonya benar-benar ada (uang muka pelanggan atau store credit).",
+          "Pilih sumber dananya, lalu catat kas keluarnya. Nominal besar wajib disetujui."
+        ],
+        "actions": [
+          {
+            "code": "refund_pelanggan",
+            "label": "Kembalikan dari uang muka pelanggan",
+            "effect": "Kas keluar mengurangi kewajiban uang muka pelanggan.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1400 Uang Muka Pelanggan / Cr Kas-Bank",
+            "sensitive": true
+          },
+          {
+            "code": "refund_store_credit",
+            "label": "Kembalikan dari saldo kredit toko",
+            "effect": "Saldo kredit toko pelanggan dicairkan menjadi uang.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1450 Saldo Kredit Pelanggan / Cr Kas-Bank + baris buku store credit",
+            "sensitive": true
+          }
+        ],
+        "moves_cash": true,
+        "needs_evidence": false,
+        "reason_codes": [
+          "customer_refund_request"
+        ],
+        "priority": "normal",
+        "age_hours": 0.0,
+        "overdue": false
+      },
+      "http": [
+        400,
+        200
+      ],
+      "first_body": {
+        "detail": "AUDIT injected disconnect after original cash+JE, before deposit CAS"
+      },
+      "retry_body": {
+        "id": "fcs_5733eafbd46f",
+        "number": "A/CASE-00004",
+        "entity_id": "A",
+        "case_type": "refund_pelanggan",
+        "case_type_label": "Pengembalian dana ke pelanggan",
+        "title": "Audit refund CFAULT",
+        "description": "",
+        "amount": 80.0,
+        "customer_id": "CFAULT",
+        "supplier_id": "",
+        "order_ids": [],
+        "source": {
+          "kind": "manual",
+          "id": "",
+          "label": ""
+        },
+        "status": "resolved",
+        "assignee": "",
+        "attachments": [],
+        "sla_hours": 24,
+        "sla_due_at": "2026-10-06T16:17:05.951458+00:00",
+        "escalation_level": 0,
+        "escalated_at": "",
+        "reason_code": "customer_refund_request",
+        "reason_label": "Pelanggan minta dana dikembalikan",
+        "resolution": {
+          "action": "refund_pelanggan",
+          "action_label": "Kembalikan dari uang muka pelanggan",
+          "effect": "Kas keluar mengurangi kewajiban uang muka pelanggan.",
+          "produces": "Transaksi kas keluar + jurnal Dr 2-1400 Uang Muka Pelanggan / Cr Kas-Bank",
+          "amount": 80.0,
+          "note": "Synthetic local audit",
+          "extra": {},
+          "next_action": "",
+          "auto_resolved": false,
+          "at": "2026-10-05T16:17:06.328436+00:00",
+          "by": "Audit User A"
+        },
+        "documents": [
+          {
+            "kind": "cash_transaction",
+            "id": "cash_da77e0922e1b",
+            "number": "A/CASH-00009",
+            "label": "Kas keluar Rp 80"
+          },
+          {
+            "kind": "journal_entry",
+            "id": "je_a424d8eb5352",
+            "number": "A/JE-00011",
+            "label": "Jurnal kas A/CASH-00009"
+          }
+        ],
+        "approved_by": "",
+        "approved_at": "",
+        "resolved_by": "Audit User A",
+        "resolved_at": "2026-10-05T16:17:06.328436+00:00",
+        "auto_source": "",
+        "timeline": [
+          {
+            "event": "dibuka",
+            "label": "Kasus dibuka: Pengembalian dana ke pelanggan",
+            "actor": "Audit User A",
+            "note": "",
+            "at": "2026-10-05T16:17:05.951458+00:00"
+          },
+          {
+            "event": "selesai",
+            "label": "Kasus diselesaikan: Kembalikan dari uang muka pelanggan",
+            "actor": "Audit User A",
+            "note": "Pelanggan minta dana dikembalikan · Rp 80 · 2 dokumen turunan",
+            "at": "2026-10-05T16:17:06.328436+00:00"
+          }
+        ],
+        "refs": [],
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:17:05.951458+00:00",
+        "updated_at": "2026-10-05T16:17:06.328436+00:00",
+        "playbook": [
+          "Pastikan saldonya benar-benar ada (uang muka pelanggan atau store credit).",
+          "Pilih sumber dananya, lalu catat kas keluarnya. Nominal besar wajib disetujui."
+        ],
+        "actions": [
+          {
+            "code": "refund_pelanggan",
+            "label": "Kembalikan dari uang muka pelanggan",
+            "effect": "Kas keluar mengurangi kewajiban uang muka pelanggan.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1400 Uang Muka Pelanggan / Cr Kas-Bank",
+            "sensitive": true
+          },
+          {
+            "code": "refund_store_credit",
+            "label": "Kembalikan dari saldo kredit toko",
+            "effect": "Saldo kredit toko pelanggan dicairkan menjadi uang.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1450 Saldo Kredit Pelanggan / Cr Kas-Bank + baris buku store credit",
+            "sensitive": true
+          }
+        ],
+        "moves_cash": true,
+        "needs_evidence": false,
+        "reason_codes": [
+          "customer_refund_request"
+        ],
+        "priority": "normal",
+        "age_hours": 0.0,
+        "overdue": false
+      },
+      "transactions": [
+        {
+          "id": "cash_aa51ffc2cb49",
+          "number": "A/CASH-00008",
+          "cash_type": "kas_besar",
+          "direction": "out",
+          "amount": 80.0,
+          "category": "refund pelanggan",
+          "description": "Pengembalian dana pelanggan · A/CASE-00004",
+          "entity_id": "A",
+          "ref_type": "ar_refund",
+          "ref_id": "fcs_5733eafbd46f",
+          "txn_date": "2026-10-05T16:17:06.157708+00:00",
+          "account_id": "",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:06.157708+00:00",
+          "updated_at": "2026-10-05T16:17:06.157708+00:00",
+          "owner_entity_id": "A"
+        },
+        {
+          "id": "cash_da77e0922e1b",
+          "number": "A/CASH-00009",
+          "cash_type": "kas_besar",
+          "direction": "out",
+          "amount": 80.0,
+          "category": "refund pelanggan",
+          "description": "Pengembalian dana pelanggan · A/CASE-00004",
+          "entity_id": "A",
+          "ref_type": "ar_refund",
+          "ref_id": "fcs_5733eafbd46f",
+          "txn_date": "2026-10-05T16:17:06.309190+00:00",
+          "account_id": "",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:06.309190+00:00",
+          "updated_at": "2026-10-05T16:17:06.309190+00:00",
+          "owner_entity_id": "A"
+        }
+      ]
+    },
+    "intercompany_fault": {
+      "fixture_scope": "Released external-sales-return roll; preceding return/SO producer not executed",
+      "roll": {
+        "id": "roll_8cc37e7cc7da",
+        "product_id": "PTRANSFER",
+        "owner_entity_id": "A",
+        "ownership_type": "internal",
+        "consignor_ref": null,
+        "warehouse_id": "WH",
+        "bin_id": null,
+        "lot": "A/LOT-2610-0003",
+        "lot_id": "lot_f03ea45afffa",
+        "supplier_lot": "",
+        "dye_lot": "AUDIT-RETURN",
+        "batch": "AUDIT-RETURN",
+        "roll_no": "RL-00003",
+        "length_initial": 10.0,
+        "length_remaining": 10.0,
+        "unit": "meter",
+        "grade": "A",
+        "stage": "finished",
+        "fabric_type": "woven",
+        "line_code": "",
+        "domain_snapshot_source": "default",
+        "status": "available",
+        "tracking_mode": "barcode",
+        "earmarked_for": null,
+        "secondary_measures": null,
+        "location_type": "warehouse_bin",
+        "reserved_ref": null,
+        "base_unit_cost": 10.0,
+        "unit_cost": 10.0,
+        "landed_cost_total": 0.0,
+        "acquired": {
+          "via": "sales_return",
+          "ref_id": "RET-AUDIT",
+          "date": "2026-10-05T16:17:06.801444+00:00"
+        },
+        "rfid_tag_id": null,
+        "is_remnant": false,
+        "created_at": "2026-10-05T16:17:06.801444+00:00",
+        "updated_at": "2026-10-05T16:17:06.801444+00:00",
+        "created_by": "System",
+        "created_by_name": "System"
+      },
+      "unchanged_cost_control_roll": "roll_a56bf7e7a38a",
+      "transfer_id": "xfer_93fb47a62c09",
+      "first_http": 500,
+      "retry_http": 400,
+      "retry_body": {
+        "detail": "Entitas tujuan harus berbeda dari pemilik saat ini"
+      },
+      "retry_helper": {
+        "posted": false,
+        "reason": "already_posted",
+        "total": 0.0
+      },
+      "roll_after": {
+        "id": "roll_8cc37e7cc7da",
+        "product_id": "PTRANSFER",
+        "owner_entity_id": "B",
+        "ownership_type": "internal",
+        "consignor_ref": null,
+        "warehouse_id": "WH",
+        "bin_id": null,
+        "lot": "B/LOT-2610-0002",
+        "lot_id": "lot_5a228059a9e9",
+        "supplier_lot": "",
+        "dye_lot": "AUDIT-RETURN",
+        "batch": "AUDIT-RETURN",
+        "roll_no": "RL-00003",
+        "length_initial": 10.0,
+        "length_remaining": 10.0,
+        "unit": "meter",
+        "grade": "A",
+        "stage": "finished",
+        "fabric_type": "woven",
+        "line_code": "",
+        "domain_snapshot_source": "default",
+        "status": "available",
+        "tracking_mode": "rfid",
+        "earmarked_for": null,
+        "secondary_measures": null,
+        "location_type": "warehouse_bin",
+        "reserved_ref": null,
+        "base_unit_cost": 10.0,
+        "unit_cost": 10.0,
+        "landed_cost_total": 0.0,
+        "acquired": {
+          "via": "transfer",
+          "ref_id": "xfer_93fb47a62c09",
+          "date": "2026-10-05T16:17:06.935258+00:00"
+        },
+        "rfid_tag_id": "TAG-AUDIT",
+        "is_remnant": false,
+        "created_at": "2026-10-05T16:17:06.801444+00:00",
+        "updated_at": "2026-10-05T16:17:06.935258+00:00",
+        "created_by": "System",
+        "created_by_name": "System",
+        "origin_ref": "RET-AUDIT",
+        "origin_type": "return",
+        "return_id": "RET-AUDIT",
+        "acquired_history": [
+          {
+            "via": "sales_return",
+            "ref_id": "RET-AUDIT",
+            "date": "2026-10-05T16:17:06.801444+00:00",
+            "owner_entity_name": "A",
+            "replaced_at": "2026-10-05T16:17:06.937272+00:00",
+            "replaced_by_transfer": "RTNX-T-001-c7da"
+          }
+        ]
+      },
+      "tag_after": {
+        "id": "TAG-AUDIT",
+        "roll_id": "roll_8cc37e7cc7da",
+        "status": "active",
+        "epc": "300000000000000000000001",
+        "product_id": "PTRANSFER",
+        "owner_entity_id": "B",
+        "updated_at": "2026-10-05T16:17:06.939488+00:00"
+      },
+      "journals": [
+        {
+          "id": "je_892d10c9ec3b",
+          "number": "A/JE-00013",
+          "date": "2026-10-05T16:17:06.909953+00:00",
+          "description": "Transfer antar-PT RTNX-T-001-c7da → B (at-cost)",
+          "source": "inter_company_transfer",
+          "source_type": "inter_company_transfer",
+          "source_id": "xfer_93fb47a62c09:src",
+          "source_label": "RTNX-T-001-c7da",
+          "lines": [
+            {
+              "account_code": "1-1250",
+              "account_name": "Piutang Antar-Perusahaan (IC-AR)",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": "Transfer antar-PT RTNX-T-001-c7da → B (at-cost)"
+            },
+            {
+              "account_code": "1-1300",
+              "account_name": "Persediaan Barang",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "Transfer antar-PT RTNX-T-001-c7da → B (at-cost)"
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "system",
+          "created_at": "2026-10-05T16:17:07.025345+00:00",
+          "updated_at": "2026-10-05T16:17:07.025345+00:00"
+        }
+      ]
+    },
+    "transfer_valuation": [
+      {
+        "mode": "empty_source",
+        "pre_source_wac": {
+          "product_id": "PCOST-empty_source",
+          "sku": "",
+          "name": "Cost snapshot empty_source",
+          "category": "",
+          "base_unit": "meter",
+          "entity_id": "A",
+          "unconvertible_rolls": 0,
+          "wac": 15.0,
+          "wac_base": 15.0,
+          "wac_landed": 0.0,
+          "landed_included": false,
+          "source": "roll",
+          "qty_on_hand": 10.0,
+          "qty_costed": 10.0,
+          "price": 0.0,
+          "margin_amount": -15.0,
+          "margin_pct": null
+        },
+        "original_transfer_response": {
+          "transfer_id": "xfer_8a1fbdd3d155",
+          "code": "RTNX-ource-f27f",
+          "from_entity": "A",
+          "to_entity": "B",
+          "qty": 10.0,
+          "moved": {
+            "moved_qty": 10.0,
+            "rolls": 1
+          },
+          "je": {
+            "posted": true,
+            "total": 10.0,
+            "pair_id": "ict_xfer_8a1fbdd3d155",
+            "source_je": {
+              "id": "je_2e9b1f1d6610",
+              "number": "A/JE-00014",
+              "entity_id": "A"
+            },
+            "dest_je": {
+              "id": "je_81e44b3e305d",
+              "number": "B/JE-00002",
+              "entity_id": "B"
+            },
+            "breakdown": [
+              {
+                "product_id": "PCOST-empty_source",
+                "sku": "",
+                "name": "Cost snapshot empty_source",
+                "qty": 10.0,
+                "unit_cost": 1.0,
+                "value": 10.0,
+                "cost_source": "harga_pokok"
+              }
+            ]
+          },
+          "roll": {
+            "id": "roll_a5d0f41cf27f",
+            "product_id": "PCOST-empty_source",
+            "owner_entity_id": "B",
+            "ownership_type": "internal",
+            "consignor_ref": null,
+            "warehouse_id": "WH",
+            "bin_id": null,
+            "lot": "B/LOT-2610-0003",
+            "lot_id": "lot_bc9f79034116",
+            "supplier_lot": "",
+            "dye_lot": "AUDIT-COST-MOVE",
+            "batch": "AUDIT-COST-MOVE",
+            "roll_no": "RL-00004",
+            "length_initial": 10.0,
+            "length_remaining": 10.0,
+            "unit": "meter",
+            "grade": "A",
+            "stage": "finished",
+            "fabric_type": "woven",
+            "line_code": "",
+            "domain_snapshot_source": "default",
+            "status": "available",
+            "tracking_mode": "barcode",
+            "earmarked_for": null,
+            "secondary_measures": null,
+            "location_type": "warehouse_bin",
+            "reserved_ref": null,
+            "base_unit_cost": 15.0,
+            "unit_cost": 15.0,
+            "landed_cost_total": 0.0,
+            "acquired": {
+              "via": "transfer",
+              "ref_id": "xfer_8a1fbdd3d155",
+              "date": "2026-10-05T16:17:07.221366+00:00"
+            },
+            "rfid_tag_id": null,
+            "is_remnant": false,
+            "created_at": "2026-10-05T16:17:07.120590+00:00",
+            "updated_at": "2026-10-05T16:17:07.221366+00:00",
+            "created_by": "System",
+            "created_by_name": "System",
+            "origin_ref": "RET-COST-empty_source",
+            "origin_type": "return",
+            "return_id": "RET-COST-empty_source",
+            "acquired_history": [
+              {
+                "via": "sales_return",
+                "ref_id": "RET-COST-empty_source",
+                "date": "2026-10-05T16:17:07.120590+00:00",
+                "owner_entity_name": "A",
+                "replaced_at": "2026-10-05T16:17:07.223484+00:00",
+                "replaced_by_transfer": "RTNX-ource-f27f"
+              }
+            ]
+          }
+        },
+        "physical_transferred_roll_value": 150.0,
+        "policy_note": "Pre-source WAC is the function-documented baseline. Cost-per-roll SSOT is150; the mixed-cost case additionally needs an explicit choice of valuation policy."
+      },
+      {
+        "mode": "cheaper_remainder",
+        "pre_source_wac": {
+          "product_id": "PCOST-cheaper_remainder",
+          "sku": "",
+          "name": "Cost snapshot cheaper_remainder",
+          "category": "",
+          "base_unit": "meter",
+          "entity_id": "A",
+          "unconvertible_rolls": 0,
+          "wac": 10.0,
+          "wac_base": 10.0,
+          "wac_landed": 0.0,
+          "landed_included": false,
+          "source": "roll",
+          "qty_on_hand": 20.0,
+          "qty_costed": 20.0,
+          "price": 0.0,
+          "margin_amount": -10.0,
+          "margin_pct": null
+        },
+        "original_transfer_response": {
+          "transfer_id": "xfer_04d0c3ba031e",
+          "code": "RTNX-inder-2069",
+          "from_entity": "A",
+          "to_entity": "B",
+          "qty": 10.0,
+          "moved": {
+            "moved_qty": 10.0,
+            "rolls": 1
+          },
+          "je": {
+            "posted": true,
+            "total": 50.0,
+            "pair_id": "ict_xfer_04d0c3ba031e",
+            "source_je": {
+              "id": "je_b5e15ad67467",
+              "number": "A/JE-00015",
+              "entity_id": "A"
+            },
+            "dest_je": {
+              "id": "je_c02d0af58753",
+              "number": "B/JE-00003",
+              "entity_id": "B"
+            },
+            "breakdown": [
+              {
+                "product_id": "PCOST-cheaper_remainder",
+                "sku": "",
+                "name": "Cost snapshot cheaper_remainder",
+                "qty": 10.0,
+                "unit_cost": 5.0,
+                "value": 50.0,
+                "cost_source": "roll"
+              }
+            ]
+          },
+          "roll": {
+            "id": "roll_b44e94c92069",
+            "product_id": "PCOST-cheaper_remainder",
+            "owner_entity_id": "B",
+            "ownership_type": "internal",
+            "consignor_ref": null,
+            "warehouse_id": "WH",
+            "bin_id": null,
+            "lot": "B/LOT-2610-0004",
+            "lot_id": "lot_5e0085c48a6e",
+            "supplier_lot": "",
+            "dye_lot": "AUDIT-COST-MOVE",
+            "batch": "AUDIT-COST-MOVE",
+            "roll_no": "RL-00006",
+            "length_initial": 10.0,
+            "length_remaining": 10.0,
+            "unit": "meter",
+            "grade": "A",
+            "stage": "finished",
+            "fabric_type": "woven",
+            "line_code": "",
+            "domain_snapshot_source": "default",
+            "status": "available",
+            "tracking_mode": "barcode",
+            "earmarked_for": null,
+            "secondary_measures": null,
+            "location_type": "warehouse_bin",
+            "reserved_ref": null,
+            "base_unit_cost": 15.0,
+            "unit_cost": 15.0,
+            "landed_cost_total": 0.0,
+            "acquired": {
+              "via": "transfer",
+              "ref_id": "xfer_04d0c3ba031e",
+              "date": "2026-10-05T16:17:07.593778+00:00"
+            },
+            "rfid_tag_id": null,
+            "is_remnant": false,
+            "created_at": "2026-10-05T16:17:07.444886+00:00",
+            "updated_at": "2026-10-05T16:17:07.593778+00:00",
+            "created_by": "System",
+            "created_by_name": "System",
+            "origin_ref": "RET-COST-cheaper_remainder",
+            "origin_type": "return",
+            "return_id": "RET-COST-cheaper_remainder",
+            "acquired_history": [
+              {
+                "via": "sales_return",
+                "ref_id": "RET-COST-cheaper_remainder",
+                "date": "2026-10-05T16:17:07.444886+00:00",
+                "owner_entity_name": "A",
+                "replaced_at": "2026-10-05T16:17:07.598689+00:00",
+                "replaced_by_transfer": "RTNX-inder-2069"
+              }
+            ]
+          }
+        },
+        "physical_transferred_roll_value": 150.0,
+        "policy_note": "Pre-source WAC is the function-documented baseline. Cost-per-roll SSOT is150; the mixed-cost case additionally needs an explicit choice of valuation policy."
+      }
+    ],
+    "book_transfer": {
+      "case": {
+        "id": "fcs_62b0aeaf2825",
+        "number": "A/CASE-00005",
+        "entity_id": "A",
+        "case_type": "salah_rekening_internal",
+        "case_type_label": "Pelanggan salah transfer ke rekening KN yang lain",
+        "title": "Audit own-bank transfer",
+        "description": "",
+        "amount": 80.0,
+        "customer_id": "",
+        "supplier_id": "",
+        "order_ids": [],
+        "source": {
+          "kind": "manual",
+          "id": "",
+          "label": ""
+        },
+        "status": "open",
+        "assignee": "",
+        "attachments": [],
+        "sla_hours": 24,
+        "sla_due_at": "2026-10-06T16:17:08.103020+00:00",
+        "escalation_level": 0,
+        "escalated_at": "",
+        "reason_code": "",
+        "reason_label": "",
+        "resolution": {},
+        "documents": [],
+        "approved_by": "",
+        "approved_at": "",
+        "resolved_by": "",
+        "resolved_at": "",
+        "auto_source": "",
+        "timeline": [
+          {
+            "event": "dibuka",
+            "label": "Kasus dibuka: Pelanggan salah transfer ke rekening KN yang lain",
+            "actor": "Audit User A",
+            "note": "",
+            "at": "2026-10-05T16:17:08.103020+00:00"
+          }
+        ],
+        "refs": [],
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:17:08.103020+00:00",
+        "updated_at": "2026-10-05T16:17:08.103020+00:00",
+        "playbook": [
+          "Pastikan kedua rekening memang milik perusahaan (bukan antar PT).",
+          "Pindah-bukukan dananya ke rekening tujuan.",
+          "Kedua buku rekening harus menunjukkan mutasinya, dan akun transit kembali nol."
+        ],
+        "actions": [
+          {
+            "code": "pindah_buku",
+            "label": "Pindah-bukukan ke rekening tujuan",
+            "effect": "Dana dipindahkan antar rekening sendiri lewat akun transit sehingga kedua buku rekening jujur dan akun transit kembali nol.",
+            "needs": [
+              "amount",
+              "to_account_id"
+            ],
+            "produces": "2 transaksi kas (keluar + masuk) + 2 jurnal lewat 1-1150 Kas-Bank Transit",
+            "sensitive": false
+          }
+        ],
+        "moves_cash": true,
+        "needs_evidence": false,
+        "reason_codes": [
+          "case_wrong_account"
+        ],
+        "priority": "normal",
+        "age_hours": 0.0,
+        "overdue": false
+      },
+      "http": [
+        400,
+        200
+      ],
+      "response": {
+        "id": "fcs_62b0aeaf2825",
+        "number": "A/CASE-00005",
+        "entity_id": "A",
+        "case_type": "salah_rekening_internal",
+        "case_type_label": "Pelanggan salah transfer ke rekening KN yang lain",
+        "title": "Audit own-bank transfer",
+        "description": "",
+        "amount": 80.0,
+        "customer_id": "",
+        "supplier_id": "",
+        "order_ids": [],
+        "source": {
+          "kind": "manual",
+          "id": "",
+          "label": ""
+        },
+        "status": "resolved",
+        "assignee": "",
+        "attachments": [],
+        "sla_hours": 24,
+        "sla_due_at": "2026-10-06T16:17:08.103020+00:00",
+        "escalation_level": 0,
+        "escalated_at": "",
+        "reason_code": "case_wrong_account",
+        "reason_label": "Salah rekening tujuan",
+        "resolution": {
+          "action": "pindah_buku",
+          "action_label": "Pindah-bukukan ke rekening tujuan",
+          "effect": "Dana dipindahkan antar rekening sendiri lewat akun transit sehingga kedua buku rekening jujur dan akun transit kembali nol.",
+          "produces": "2 transaksi kas (keluar + masuk) + 2 jurnal lewat 1-1150 Kas-Bank Transit",
+          "amount": 80.0,
+          "note": "Local synthetic transfer",
+          "extra": {
+            "from_account_id": "BANK1",
+            "to_account_id": "BANK2",
+            "from_account": "BANK1",
+            "to_account": "BANK2"
+          },
+          "next_action": "",
+          "auto_resolved": false,
+          "at": "2026-10-05T16:17:08.588473+00:00",
+          "by": "Audit User A"
+        },
+        "documents": [
+          {
+            "kind": "cash_transaction",
+            "id": "cash_bbdfcc87b884",
+            "number": "A/CASH-00011",
+            "label": "Kas keluar Rp 80"
+          },
+          {
+            "kind": "journal_entry",
+            "id": "je_24d550a934ea",
+            "number": "A/JE-00017",
+            "label": "Jurnal kas A/CASH-00011"
+          },
+          {
+            "kind": "cash_transaction",
+            "id": "cash_f02716bd39ce",
+            "number": "A/CASH-00012",
+            "label": "Kas masuk Rp 80"
+          },
+          {
+            "kind": "journal_entry",
+            "id": "je_ec911826a53c",
+            "number": "A/JE-00018",
+            "label": "Jurnal kas A/CASH-00012"
+          }
+        ],
+        "approved_by": "",
+        "approved_at": "",
+        "resolved_by": "Audit User A",
+        "resolved_at": "2026-10-05T16:17:08.588473+00:00",
+        "auto_source": "",
+        "timeline": [
+          {
+            "event": "dibuka",
+            "label": "Kasus dibuka: Pelanggan salah transfer ke rekening KN yang lain",
+            "actor": "Audit User A",
+            "note": "",
+            "at": "2026-10-05T16:17:08.103020+00:00"
+          },
+          {
+            "event": "selesai",
+            "label": "Kasus diselesaikan: Pindah-bukukan ke rekening tujuan",
+            "actor": "Audit User A",
+            "note": "Salah rekening tujuan · Rp 80 · 4 dokumen turunan",
+            "at": "2026-10-05T16:17:08.588473+00:00"
+          }
+        ],
+        "refs": [],
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:17:08.103020+00:00",
+        "updated_at": "2026-10-05T16:17:08.588473+00:00",
+        "playbook": [
+          "Pastikan kedua rekening memang milik perusahaan (bukan antar PT).",
+          "Pindah-bukukan dananya ke rekening tujuan.",
+          "Kedua buku rekening harus menunjukkan mutasinya, dan akun transit kembali nol."
+        ],
+        "actions": [
+          {
+            "code": "pindah_buku",
+            "label": "Pindah-bukukan ke rekening tujuan",
+            "effect": "Dana dipindahkan antar rekening sendiri lewat akun transit sehingga kedua buku rekening jujur dan akun transit kembali nol.",
+            "needs": [
+              "amount",
+              "to_account_id"
+            ],
+            "produces": "2 transaksi kas (keluar + masuk) + 2 jurnal lewat 1-1150 Kas-Bank Transit",
+            "sensitive": false
+          }
+        ],
+        "moves_cash": true,
+        "needs_evidence": false,
+        "reason_codes": [
+          "case_wrong_account"
+        ],
+        "priority": "normal",
+        "age_hours": 0.0,
+        "overdue": false
+      },
+      "cash_transactions": [
+        {
+          "id": "cash_820f1034cc27",
+          "number": "A/CASH-00010",
+          "cash_type": "kas_besar",
+          "direction": "out",
+          "amount": 80.0,
+          "category": "pindah buku",
+          "description": "Pindah-buku ke BANK2 · A/CASE-00005",
+          "entity_id": "A",
+          "ref_type": "finance_case",
+          "ref_id": "fcs_62b0aeaf2825",
+          "txn_date": "2026-10-05T16:17:08.351820+00:00",
+          "account_id": "BANK1",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:08.351820+00:00",
+          "updated_at": "2026-10-05T16:17:08.351820+00:00",
+          "contra_account_code": "1-1150",
+          "owner_entity_id": "A"
+        },
+        {
+          "id": "cash_bbdfcc87b884",
+          "number": "A/CASH-00011",
+          "cash_type": "kas_besar",
+          "direction": "out",
+          "amount": 80.0,
+          "category": "pindah buku",
+          "description": "Pindah-buku ke BANK2 · A/CASE-00005",
+          "entity_id": "A",
+          "ref_type": "finance_case",
+          "ref_id": "fcs_62b0aeaf2825",
+          "txn_date": "2026-10-05T16:17:08.553187+00:00",
+          "account_id": "BANK1",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:08.553187+00:00",
+          "updated_at": "2026-10-05T16:17:08.553187+00:00",
+          "contra_account_code": "1-1150",
+          "owner_entity_id": "A"
+        },
+        {
+          "id": "cash_f02716bd39ce",
+          "number": "A/CASH-00012",
+          "cash_type": "kas_besar",
+          "direction": "in",
+          "amount": 80.0,
+          "category": "pindah buku",
+          "description": "Pindah-buku dari BANK1 · A/CASE-00005",
+          "entity_id": "A",
+          "ref_type": "finance_case",
+          "ref_id": "fcs_62b0aeaf2825",
+          "txn_date": "2026-10-05T16:17:08.572070+00:00",
+          "account_id": "BANK2",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:08.572070+00:00",
+          "updated_at": "2026-10-05T16:17:08.572070+00:00",
+          "contra_account_code": "1-1150",
+          "owner_entity_id": "A"
+        }
+      ],
+      "journals": [
+        {
+          "id": "je_847f5d44ee3f",
+          "number": "A/JE-00016",
+          "date": "2026-10-05T16:17:08.351820+00:00",
+          "description": "Kas out · Pindah-buku ke BANK2 · A/CASE-00005",
+          "source": "cash_transaction",
+          "source_type": "cash_transaction",
+          "source_id": "cash_820f1034cc27",
+          "source_label": "A/CASH-00010",
+          "lines": [
+            {
+              "account_code": "1-1150",
+              "account_name": "Kas & Bank Transit (Dana Dalam Perjalanan)",
+              "debit": 80.0,
+              "credit": 0.0,
+              "description": "A/CASH-00010 · Pindah-buku ke BANK2 · A/CASE-00005"
+            },
+            {
+              "account_code": "1-1100",
+              "account_name": "Kas Besar / Bank",
+              "debit": 0.0,
+              "credit": 80.0,
+              "description": "A/CASH-00010 · Pindah-buku ke BANK2 · A/CASE-00005"
+            }
+          ],
+          "total_debit": 80.0,
+          "total_credit": 80.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:08.370551+00:00",
+          "updated_at": "2026-10-05T16:17:08.370551+00:00"
+        },
+        {
+          "id": "je_24d550a934ea",
+          "number": "A/JE-00017",
+          "date": "2026-10-05T16:17:08.553187+00:00",
+          "description": "Kas out · Pindah-buku ke BANK2 · A/CASE-00005",
+          "source": "cash_transaction",
+          "source_type": "cash_transaction",
+          "source_id": "cash_bbdfcc87b884",
+          "source_label": "A/CASH-00011",
+          "lines": [
+            {
+              "account_code": "1-1150",
+              "account_name": "Kas & Bank Transit (Dana Dalam Perjalanan)",
+              "debit": 80.0,
+              "credit": 0.0,
+              "description": "A/CASH-00011 · Pindah-buku ke BANK2 · A/CASE-00005"
+            },
+            {
+              "account_code": "1-1100",
+              "account_name": "Kas Besar / Bank",
+              "debit": 0.0,
+              "credit": 80.0,
+              "description": "A/CASH-00011 · Pindah-buku ke BANK2 · A/CASE-00005"
+            }
+          ],
+          "total_debit": 80.0,
+          "total_credit": 80.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:08.563764+00:00",
+          "updated_at": "2026-10-05T16:17:08.563764+00:00"
+        },
+        {
+          "id": "je_ec911826a53c",
+          "number": "A/JE-00018",
+          "date": "2026-10-05T16:17:08.572070+00:00",
+          "description": "Kas in · Pindah-buku dari BANK1 · A/CASE-00005",
+          "source": "cash_transaction",
+          "source_type": "cash_transaction",
+          "source_id": "cash_f02716bd39ce",
+          "source_label": "A/CASH-00012",
+          "lines": [
+            {
+              "account_code": "1-1100",
+              "account_name": "Kas Besar / Bank",
+              "debit": 80.0,
+              "credit": 0.0,
+              "description": "A/CASH-00012 · Pindah-buku dari BANK1 · A/CASE-00005"
+            },
+            {
+              "account_code": "1-1150",
+              "account_name": "Kas & Bank Transit (Dana Dalam Perjalanan)",
+              "debit": 0.0,
+              "credit": 80.0,
+              "description": "A/CASH-00012 · Pindah-buku dari BANK1 · A/CASE-00005"
+            }
+          ],
+          "total_debit": 80.0,
+          "total_credit": 80.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:08.582673+00:00",
+          "updated_at": "2026-10-05T16:17:08.582673+00:00"
+        }
+      ]
+    },
+    "supplier_refund_race": {
+      "case": {
+        "id": "fcs_f0b2a19d7ef9",
+        "number": "A/CASE-00007",
+        "entity_id": "A",
+        "case_type": "lebih_bayar_supplier",
+        "case_type_label": "Kelebihan bayar ke supplier",
+        "title": "Synthetic supplier advance decision SADV-RACE",
+        "description": "",
+        "amount": 80.0,
+        "customer_id": "",
+        "supplier_id": "SADV-RACE",
+        "order_ids": [],
+        "source": {
+          "kind": "manual",
+          "id": "",
+          "label": ""
+        },
+        "status": "open",
+        "assignee": "",
+        "attachments": [],
+        "sla_hours": 24,
+        "sla_due_at": "2026-10-06T16:17:09.226497+00:00",
+        "escalation_level": 0,
+        "escalated_at": "",
+        "reason_code": "",
+        "reason_label": "",
+        "resolution": {},
+        "documents": [],
+        "approved_by": "",
+        "approved_at": "",
+        "resolved_by": "",
+        "resolved_at": "",
+        "auto_source": "",
+        "timeline": [
+          {
+            "event": "dibuka",
+            "label": "Kasus dibuka: Kelebihan bayar ke supplier",
+            "actor": "Audit User A",
+            "note": "",
+            "at": "2026-10-05T16:17:09.226497+00:00"
+          }
+        ],
+        "refs": [],
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:17:09.226497+00:00",
+        "updated_at": "2026-10-05T16:17:09.226497+00:00",
+        "playbook": [
+          "Pastikan kelebihannya nyata (bandingkan tagihan vs pembayaran).",
+          "Pilih: jadikan uang muka yang dipotongkan pada tagihan berikutnya, atau catat pengembalian dana dari supplier saat uangnya benar-benar masuk."
+        ],
+        "actions": [
+          {
+            "code": "uang_muka_supplier",
+            "label": "Jadikan uang muka supplier",
+            "effect": "Kelebihan bayar berpindah dari utang menjadi uang muka supplier yang bisa dipotongkan pada tagihan/kontrabon berikutnya.",
+            "needs": [
+              "supplier_id",
+              "amount"
+            ],
+            "produces": "Jurnal Dr 1-1400 Uang Muka / Cr 2-1100 Utang Usaha + saldo uang muka supplier",
+            "sensitive": false
+          },
+          {
+            "code": "terima_refund_supplier",
+            "label": "Catat pengembalian dana dari supplier",
+            "effect": "Supplier mengembalikan uangnya; uang muka supplier berkurang.",
+            "needs": [
+              "supplier_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1400 Uang Muka",
+            "sensitive": false
+          }
+        ],
+        "moves_cash": true,
+        "needs_evidence": false,
+        "reason_codes": [
+          "supplier_advance"
+        ],
+        "priority": "normal",
+        "age_hours": 0.0,
+        "overdue": false
+      },
+      "http": [
+        200,
+        200
+      ],
+      "cash_transactions": [
+        {
+          "id": "cash_6272b31dbad2",
+          "number": "A/CASH-00013",
+          "cash_type": "kas_besar",
+          "direction": "in",
+          "amount": 80.0,
+          "category": "refund supplier",
+          "description": "Pengembalian dana dari SADV-RACE · A/CASE-00007",
+          "entity_id": "A",
+          "ref_type": "finance_case",
+          "ref_id": "fcs_f0b2a19d7ef9",
+          "txn_date": "2026-10-05T16:17:09.549637+00:00",
+          "account_id": "",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:09.549637+00:00",
+          "updated_at": "2026-10-05T16:17:09.549637+00:00",
+          "contra_account_code": "1-1400",
+          "owner_entity_id": "A"
+        },
+        {
+          "id": "cash_ed7997a9eac0",
+          "number": "A/CASH-00014",
+          "cash_type": "kas_besar",
+          "direction": "in",
+          "amount": 80.0,
+          "category": "refund supplier",
+          "description": "Pengembalian dana dari SADV-RACE · A/CASE-00007",
+          "entity_id": "A",
+          "ref_type": "finance_case",
+          "ref_id": "fcs_f0b2a19d7ef9",
+          "txn_date": "2026-10-05T16:17:09.550648+00:00",
+          "account_id": "",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:09.550648+00:00",
+          "updated_at": "2026-10-05T16:17:09.550648+00:00",
+          "contra_account_code": "1-1400",
+          "owner_entity_id": "A"
+        }
+      ],
+      "advance_after": -60.0,
+      "fixture_scope": "Original manual advance decision, not full vendor payment chain"
+    },
+    "supplier_advance_fault": {
+      "case": {
+        "id": "fcs_b429c70a4ebe",
+        "number": "A/CASE-00008",
+        "entity_id": "A",
+        "case_type": "lebih_bayar_supplier",
+        "case_type_label": "Kelebihan bayar ke supplier",
+        "title": "Synthetic supplier advance decision SADV-FAULT",
+        "description": "",
+        "amount": 100.0,
+        "customer_id": "",
+        "supplier_id": "SADV-FAULT",
+        "order_ids": [],
+        "source": {
+          "kind": "manual",
+          "id": "",
+          "label": ""
+        },
+        "status": "open",
+        "assignee": "",
+        "attachments": [],
+        "sla_hours": 24,
+        "sla_due_at": "2026-10-06T16:17:09.795383+00:00",
+        "escalation_level": 0,
+        "escalated_at": "",
+        "reason_code": "",
+        "reason_label": "",
+        "resolution": {},
+        "documents": [],
+        "approved_by": "",
+        "approved_at": "",
+        "resolved_by": "",
+        "resolved_at": "",
+        "auto_source": "",
+        "timeline": [
+          {
+            "event": "dibuka",
+            "label": "Kasus dibuka: Kelebihan bayar ke supplier",
+            "actor": "Audit User A",
+            "note": "",
+            "at": "2026-10-05T16:17:09.796455+00:00"
+          }
+        ],
+        "refs": [],
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:17:09.795383+00:00",
+        "updated_at": "2026-10-05T16:17:09.795383+00:00",
+        "playbook": [
+          "Pastikan kelebihannya nyata (bandingkan tagihan vs pembayaran).",
+          "Pilih: jadikan uang muka yang dipotongkan pada tagihan berikutnya, atau catat pengembalian dana dari supplier saat uangnya benar-benar masuk."
+        ],
+        "actions": [
+          {
+            "code": "uang_muka_supplier",
+            "label": "Jadikan uang muka supplier",
+            "effect": "Kelebihan bayar berpindah dari utang menjadi uang muka supplier yang bisa dipotongkan pada tagihan/kontrabon berikutnya.",
+            "needs": [
+              "supplier_id",
+              "amount"
+            ],
+            "produces": "Jurnal Dr 1-1400 Uang Muka / Cr 2-1100 Utang Usaha + saldo uang muka supplier",
+            "sensitive": false
+          },
+          {
+            "code": "terima_refund_supplier",
+            "label": "Catat pengembalian dana dari supplier",
+            "effect": "Supplier mengembalikan uangnya; uang muka supplier berkurang.",
+            "needs": [
+              "supplier_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1400 Uang Muka",
+            "sensitive": false
+          }
+        ],
+        "moves_cash": true,
+        "needs_evidence": false,
+        "reason_codes": [
+          "supplier_advance"
+        ],
+        "priority": "normal",
+        "age_hours": 0.0,
+        "overdue": false
+      },
+      "http": [
+        400,
+        400
+      ],
+      "retry_body": {
+        "detail": "Playbook ini wajib melahirkan jurnal, tetapi tidak ada jurnal yang terbit. Kasus tidak ditutup (INV-CASE-03)."
+      },
+      "advance_after": 200.0,
+      "journals": [
+        {
+          "id": "je_d678ce60fe43",
+          "number": "A/JE-00022",
+          "date": "2026-10-05T16:17:10.025258+00:00",
+          "description": "Penyelesaian kasus keuangan · A/CASE-00008 · uang muka supplier SADV-FAULT",
+          "source": "finance_case",
+          "source_type": "finance_case",
+          "source_id": "fcs_b429c70a4ebe:ap_adv",
+          "source_label": "A/CASE-00008 · uang muka supplier SADV-FAULT",
+          "lines": [
+            {
+              "account_code": "1-1400",
+              "account_name": "Uang Muka & Biaya Dibayar Dimuka",
+              "debit": 100.0,
+              "credit": 0.0,
+              "description": "Kasus keuangan A/CASE-00008 · uang muka supplier SADV-FAULT"
+            },
+            {
+              "account_code": "2-1100",
+              "account_name": "Hutang Usaha",
+              "debit": 0.0,
+              "credit": 100.0,
+              "description": "Kasus keuangan A/CASE-00008 · uang muka supplier SADV-FAULT"
+            }
+          ],
+          "total_debit": 100.0,
+          "total_credit": 100.0,
+          "status": "posted",
+          "entity_id": "A",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:10.031652+00:00",
+          "updated_at": "2026-10-05T16:17:10.031652+00:00"
+        }
+      ]
+    },
+    "employee_two_step": {
+      "fixture_scope": "Explicit SO receivable read-state; original case API and payment/GL executors, not full SO producer",
+      "scenarios": [
+        {
+          "mode": "skip_step_one",
+          "case": {
+            "id": "fcs_145783fe7598",
+            "number": "A/CASE-00010",
+            "entity_id": "A",
+            "case_type": "rekening_pribadi_karyawan",
+            "case_type_label": "Pelanggan transfer ke rekening pribadi karyawan",
+            "title": "Pelanggan transfer ke rekening pribadi karyawan",
+            "description": "",
+            "amount": 80.0,
+            "customer_id": "CEMP-SKIP",
+            "supplier_id": "",
+            "order_ids": [
+              "SOEMP-SKIP"
+            ],
+            "source": {
+              "kind": "manual",
+              "id": "",
+              "label": ""
+            },
+            "status": "open",
+            "assignee": "",
+            "attachments": [
+              {
+                "name": "Synthetic local payment proof",
+                "id": "LOCAL-AUDIT-PROOF"
+              }
+            ],
+            "sla_hours": 24,
+            "sla_due_at": "2026-10-06T16:17:10.893633+00:00",
+            "escalation_level": 0,
+            "escalated_at": "",
+            "reason_code": "",
+            "reason_label": "",
+            "resolution": {},
+            "documents": [],
+            "approved_by": "",
+            "approved_at": "",
+            "resolved_by": "",
+            "resolved_at": "",
+            "auto_source": "",
+            "timeline": [
+              {
+                "event": "dibuka",
+                "label": "Kasus dibuka: Pelanggan transfer ke rekening pribadi karyawan",
+                "actor": "Audit User A",
+                "note": "",
+                "at": "2026-10-05T16:17:10.893633+00:00"
+              }
+            ],
+            "refs": [
+              {
+                "rel": "settles",
+                "doc_type": "sales_order",
+                "doc_id": "SOEMP-SKIP",
+                "doc_number": "SOEMP-SKIP",
+                "note": "kasus keuangan pesanan ini",
+                "at": "2026-10-05T16:17:10.902417+00:00"
+              }
+            ],
+            "created_by": "Audit User A",
+            "created_at": "2026-10-05T16:17:10.893633+00:00",
+            "updated_at": "2026-10-05T16:17:10.903418+00:00",
+            "playbook": [
+              "Catat siapa karyawannya dan pesanan mana yang dibayar (wajib lampiran bukti).",
+              "Langkah 1: akui uangnya dipegang karyawan — piutang pelanggan lunas, berpindah jadi piutang karyawan.",
+              "Langkah 2: setelah karyawan menyetor, catat setorannya sehingga piutang karyawan kembali nol."
+            ],
+            "actions": [
+              {
+                "code": "akui_dipegang_karyawan",
+                "label": "Langkah 1 — akui uang dipegang karyawan",
+                "effect": "Piutang pelanggan lunas dan berpindah menjadi piutang karyawan. Kas belum bertambah karena uangnya belum masuk rekening perusahaan.",
+                "needs": [
+                  "employee_name",
+                  "order_id",
+                  "amount"
+                ],
+                "produces": "Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang + pembayaran menempel di pesanan",
+                "sensitive": false
+              },
+              {
+                "code": "setor_dari_karyawan",
+                "label": "Langkah 2 — catat setoran karyawan",
+                "effect": "Karyawan menyetorkan uangnya; piutang karyawan berkurang.",
+                "needs": [
+                  "amount"
+                ],
+                "produces": "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1280 Piutang Titipan Karyawan",
+                "sensitive": false
+              }
+            ],
+            "moves_cash": true,
+            "needs_evidence": true,
+            "reason_codes": [
+              "case_employee_account"
+            ],
+            "priority": "normal",
+            "age_hours": 0.0,
+            "overdue": false
+          },
+          "http": 200,
+          "response": {
+            "id": "fcs_145783fe7598",
+            "number": "A/CASE-00010",
+            "entity_id": "A",
+            "case_type": "rekening_pribadi_karyawan",
+            "case_type_label": "Pelanggan transfer ke rekening pribadi karyawan",
+            "title": "Pelanggan transfer ke rekening pribadi karyawan",
+            "description": "",
+            "amount": 80.0,
+            "customer_id": "CEMP-SKIP",
+            "supplier_id": "",
+            "order_ids": [
+              "SOEMP-SKIP"
+            ],
+            "source": {
+              "kind": "manual",
+              "id": "",
+              "label": ""
+            },
+            "status": "resolved",
+            "assignee": "",
+            "attachments": [
+              {
+                "name": "Synthetic local payment proof",
+                "id": "LOCAL-AUDIT-PROOF"
+              }
+            ],
+            "sla_hours": 24,
+            "sla_due_at": "2026-10-06T16:17:10.893633+00:00",
+            "escalation_level": 0,
+            "escalated_at": "",
+            "reason_code": "case_employee_account",
+            "reason_label": "Masuk rekening pribadi karyawan",
+            "resolution": {
+              "action": "setor_dari_karyawan",
+              "action_label": "Langkah 2 — catat setoran karyawan",
+              "effect": "Karyawan menyetorkan uangnya; piutang karyawan berkurang.",
+              "produces": "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1280 Piutang Titipan Karyawan",
+              "amount": 80.0,
+              "note": "Local documented two-step flow",
+              "extra": {
+                "employee_name": "Synthetic Employee",
+                "step": 2
+              },
+              "next_action": "",
+              "auto_resolved": false,
+              "at": "2026-10-05T16:17:11.271338+00:00",
+              "by": "Audit User A"
+            },
+            "documents": [
+              {
+                "kind": "cash_transaction",
+                "id": "cash_fb82d2dc5284",
+                "number": "A/CASH-00016",
+                "label": "Kas masuk Rp 80"
+              },
+              {
+                "kind": "journal_entry",
+                "id": "je_b434015ab6c9",
+                "number": "A/JE-00025",
+                "label": "Jurnal kas A/CASH-00016"
+              }
+            ],
+            "approved_by": "",
+            "approved_at": "",
+            "resolved_by": "Audit User A",
+            "resolved_at": "2026-10-05T16:17:11.271338+00:00",
+            "auto_source": "",
+            "timeline": [
+              {
+                "event": "dibuka",
+                "label": "Kasus dibuka: Pelanggan transfer ke rekening pribadi karyawan",
+                "actor": "Audit User A",
+                "note": "",
+                "at": "2026-10-05T16:17:10.893633+00:00"
+              },
+              {
+                "event": "selesai",
+                "label": "Kasus diselesaikan: Langkah 2 — catat setoran karyawan",
+                "actor": "Audit User A",
+                "note": "Masuk rekening pribadi karyawan · Rp 80 · 2 dokumen turunan",
+                "at": "2026-10-05T16:17:11.271338+00:00"
+              }
+            ],
+            "refs": [
+              {
+                "rel": "settles",
+                "doc_type": "sales_order",
+                "doc_id": "SOEMP-SKIP",
+                "doc_number": "SOEMP-SKIP",
+                "note": "kasus keuangan pesanan ini",
+                "at": "2026-10-05T16:17:10.902417+00:00"
+              }
+            ],
+            "created_by": "Audit User A",
+            "created_at": "2026-10-05T16:17:10.893633+00:00",
+            "updated_at": "2026-10-05T16:17:11.271338+00:00",
+            "playbook": [
+              "Catat siapa karyawannya dan pesanan mana yang dibayar (wajib lampiran bukti).",
+              "Langkah 1: akui uangnya dipegang karyawan — piutang pelanggan lunas, berpindah jadi piutang karyawan.",
+              "Langkah 2: setelah karyawan menyetor, catat setorannya sehingga piutang karyawan kembali nol."
+            ],
+            "actions": [
+              {
+                "code": "akui_dipegang_karyawan",
+                "label": "Langkah 1 — akui uang dipegang karyawan",
+                "effect": "Piutang pelanggan lunas dan berpindah menjadi piutang karyawan. Kas belum bertambah karena uangnya belum masuk rekening perusahaan.",
+                "needs": [
+                  "employee_name",
+                  "order_id",
+                  "amount"
+                ],
+                "produces": "Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang + pembayaran menempel di pesanan",
+                "sensitive": false
+              },
+              {
+                "code": "setor_dari_karyawan",
+                "label": "Langkah 2 — catat setoran karyawan",
+                "effect": "Karyawan menyetorkan uangnya; piutang karyawan berkurang.",
+                "needs": [
+                  "amount"
+                ],
+                "produces": "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1280 Piutang Titipan Karyawan",
+                "sensitive": false
+              }
+            ],
+            "moves_cash": true,
+            "needs_evidence": true,
+            "reason_codes": [
+              "case_employee_account"
+            ],
+            "priority": "normal",
+            "age_hours": 0.0,
+            "overdue": false
+          },
+          "cash": [
+            {
+              "id": "cash_fb82d2dc5284",
+              "number": "A/CASH-00016",
+              "cash_type": "kas_besar",
+              "direction": "in",
+              "amount": 80.0,
+              "category": "setoran karyawan",
+              "description": "Setoran Synthetic Employee · A/CASE-00010",
+              "entity_id": "A",
+              "ref_type": "finance_case",
+              "ref_id": "fcs_145783fe7598",
+              "txn_date": "2026-10-05T16:17:11.242360+00:00",
+              "account_id": "",
+              "reconciled": false,
+              "status": "posted",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:17:11.242360+00:00",
+              "updated_at": "2026-10-05T16:17:11.242360+00:00",
+              "contra_account_code": "1-1280",
+              "owner_entity_id": "A"
+            }
+          ],
+          "journals": [
+            {
+              "id": "je_b434015ab6c9",
+              "number": "A/JE-00025",
+              "date": "2026-10-05T16:17:11.242360+00:00",
+              "description": "Kas in · Setoran Synthetic Employee · A/CASE-00010",
+              "source": "cash_transaction",
+              "source_type": "cash_transaction",
+              "source_id": "cash_fb82d2dc5284",
+              "source_label": "A/CASH-00016",
+              "lines": [
+                {
+                  "account_code": "1-1100",
+                  "account_name": "Kas Besar / Bank",
+                  "debit": 80.0,
+                  "credit": 0.0,
+                  "description": "A/CASH-00016 · Setoran Synthetic Employee · A/CASE-00010"
+                },
+                {
+                  "account_code": "1-1280",
+                  "account_name": "Piutang Titipan Karyawan",
+                  "debit": 0.0,
+                  "credit": 80.0,
+                  "description": "A/CASH-00016 · Setoran Synthetic Employee · A/CASE-00010"
+                }
+              ],
+              "total_debit": 80.0,
+              "total_credit": 80.0,
+              "status": "posted",
+              "entity_id": "A",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:17:11.261680+00:00",
+              "updated_at": "2026-10-05T16:17:11.261680+00:00"
+            }
+          ],
+          "employee_receivable": -80.0
+        },
+        {
+          "mode": "PARTIAL",
+          "case": {
+            "id": "fcs_2500e5addb4e",
+            "number": "A/CASE-00011",
+            "entity_id": "A",
+            "case_type": "rekening_pribadi_karyawan",
+            "case_type_label": "Pelanggan transfer ke rekening pribadi karyawan",
+            "title": "Pelanggan transfer ke rekening pribadi karyawan",
+            "description": "",
+            "amount": 80.0,
+            "customer_id": "CEMP-PARTIAL",
+            "supplier_id": "",
+            "order_ids": [
+              "SOEMP-PARTIAL"
+            ],
+            "source": {
+              "kind": "manual",
+              "id": "",
+              "label": ""
+            },
+            "status": "open",
+            "assignee": "",
+            "attachments": [
+              {
+                "name": "Synthetic local payment proof",
+                "id": "LOCAL-AUDIT-PROOF"
+              }
+            ],
+            "sla_hours": 24,
+            "sla_due_at": "2026-10-06T16:17:11.560547+00:00",
+            "escalation_level": 0,
+            "escalated_at": "",
+            "reason_code": "",
+            "reason_label": "",
+            "resolution": {},
+            "documents": [],
+            "approved_by": "",
+            "approved_at": "",
+            "resolved_by": "",
+            "resolved_at": "",
+            "auto_source": "",
+            "timeline": [
+              {
+                "event": "dibuka",
+                "label": "Kasus dibuka: Pelanggan transfer ke rekening pribadi karyawan",
+                "actor": "Audit User A",
+                "note": "",
+                "at": "2026-10-05T16:17:11.561840+00:00"
+              }
+            ],
+            "refs": [
+              {
+                "rel": "settles",
+                "doc_type": "sales_order",
+                "doc_id": "SOEMP-PARTIAL",
+                "doc_number": "SOEMP-PARTIAL",
+                "note": "kasus keuangan pesanan ini",
+                "at": "2026-10-05T16:17:11.580090+00:00"
+              }
+            ],
+            "created_by": "Audit User A",
+            "created_at": "2026-10-05T16:17:11.560547+00:00",
+            "updated_at": "2026-10-05T16:17:11.581222+00:00",
+            "playbook": [
+              "Catat siapa karyawannya dan pesanan mana yang dibayar (wajib lampiran bukti).",
+              "Langkah 1: akui uangnya dipegang karyawan — piutang pelanggan lunas, berpindah jadi piutang karyawan.",
+              "Langkah 2: setelah karyawan menyetor, catat setorannya sehingga piutang karyawan kembali nol."
+            ],
+            "actions": [
+              {
+                "code": "akui_dipegang_karyawan",
+                "label": "Langkah 1 — akui uang dipegang karyawan",
+                "effect": "Piutang pelanggan lunas dan berpindah menjadi piutang karyawan. Kas belum bertambah karena uangnya belum masuk rekening perusahaan.",
+                "needs": [
+                  "employee_name",
+                  "order_id",
+                  "amount"
+                ],
+                "produces": "Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang + pembayaran menempel di pesanan",
+                "sensitive": false
+              },
+              {
+                "code": "setor_dari_karyawan",
+                "label": "Langkah 2 — catat setoran karyawan",
+                "effect": "Karyawan menyetorkan uangnya; piutang karyawan berkurang.",
+                "needs": [
+                  "amount"
+                ],
+                "produces": "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1280 Piutang Titipan Karyawan",
+                "sensitive": false
+              }
+            ],
+            "moves_cash": true,
+            "needs_evidence": true,
+            "reason_codes": [
+              "case_employee_account"
+            ],
+            "priority": "normal",
+            "age_hours": 0.0,
+            "overdue": false
+          },
+          "http": 200,
+          "response": {
+            "id": "fcs_2500e5addb4e",
+            "number": "A/CASE-00011",
+            "entity_id": "A",
+            "case_type": "rekening_pribadi_karyawan",
+            "case_type_label": "Pelanggan transfer ke rekening pribadi karyawan",
+            "title": "Pelanggan transfer ke rekening pribadi karyawan",
+            "description": "",
+            "amount": 80.0,
+            "customer_id": "CEMP-PARTIAL",
+            "supplier_id": "",
+            "order_ids": [
+              "SOEMP-PARTIAL"
+            ],
+            "source": {
+              "kind": "manual",
+              "id": "",
+              "label": ""
+            },
+            "status": "resolved",
+            "assignee": "",
+            "attachments": [
+              {
+                "name": "Synthetic local payment proof",
+                "id": "LOCAL-AUDIT-PROOF"
+              }
+            ],
+            "sla_hours": 24,
+            "sla_due_at": "2026-10-06T16:17:11.560547+00:00",
+            "escalation_level": 0,
+            "escalated_at": "",
+            "reason_code": "case_employee_account",
+            "reason_label": "Masuk rekening pribadi karyawan",
+            "resolution": {
+              "action": "setor_dari_karyawan",
+              "action_label": "Langkah 2 — catat setoran karyawan",
+              "effect": "Karyawan menyetorkan uangnya; piutang karyawan berkurang.",
+              "produces": "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1280 Piutang Titipan Karyawan",
+              "amount": 40.0,
+              "note": "Local documented two-step flow",
+              "extra": {
+                "employee_name": "Synthetic Employee",
+                "step": 2
+              },
+              "next_action": "",
+              "auto_resolved": false,
+              "at": "2026-10-05T16:17:12.480485+00:00",
+              "by": "Audit User A"
+            },
+            "documents": [
+              {
+                "kind": "order_payment",
+                "id": "SOEMP-PARTIAL",
+                "number": "SOEMP-PARTIAL",
+                "label": "Pelunasan Rp 80 menempel di pesanan SOEMP-PARTIAL"
+              },
+              {
+                "kind": "journal_entry",
+                "id": "je_c9dfdc4b6861",
+                "number": "A/JE-00026",
+                "label": "Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang"
+              },
+              {
+                "kind": "cash_transaction",
+                "id": "cash_01f2fb83ea47",
+                "number": "A/CASH-00017",
+                "label": "Kas masuk Rp 40"
+              },
+              {
+                "kind": "journal_entry",
+                "id": "je_5e5936f560cd",
+                "number": "A/JE-00027",
+                "label": "Jurnal kas A/CASH-00017"
+              }
+            ],
+            "approved_by": "",
+            "approved_at": "",
+            "resolved_by": "Audit User A",
+            "resolved_at": "2026-10-05T16:17:12.480485+00:00",
+            "auto_source": "",
+            "timeline": [
+              {
+                "event": "dibuka",
+                "label": "Kasus dibuka: Pelanggan transfer ke rekening pribadi karyawan",
+                "actor": "Audit User A",
+                "note": "",
+                "at": "2026-10-05T16:17:11.561840+00:00"
+              },
+              {
+                "event": "langkah",
+                "label": "Langkah dijalankan: Langkah 1 — akui uang dipegang karyawan",
+                "actor": "Audit User A",
+                "note": "Masuk rekening pribadi karyawan · Rp 80 · 2 dokumen turunan",
+                "at": "2026-10-05T16:17:12.138349+00:00"
+              },
+              {
+                "event": "selesai",
+                "label": "Kasus diselesaikan: Langkah 2 — catat setoran karyawan",
+                "actor": "Audit User A",
+                "note": "Masuk rekening pribadi karyawan · Rp 40 · 2 dokumen turunan",
+                "at": "2026-10-05T16:17:12.480485+00:00"
+              }
+            ],
+            "refs": [
+              {
+                "rel": "settles",
+                "doc_type": "sales_order",
+                "doc_id": "SOEMP-PARTIAL",
+                "doc_number": "SOEMP-PARTIAL",
+                "note": "kasus keuangan pesanan ini",
+                "at": "2026-10-05T16:17:11.580090+00:00"
+              }
+            ],
+            "created_by": "Audit User A",
+            "created_at": "2026-10-05T16:17:11.560547+00:00",
+            "updated_at": "2026-10-05T16:17:12.480485+00:00",
+            "playbook": [
+              "Catat siapa karyawannya dan pesanan mana yang dibayar (wajib lampiran bukti).",
+              "Langkah 1: akui uangnya dipegang karyawan — piutang pelanggan lunas, berpindah jadi piutang karyawan.",
+              "Langkah 2: setelah karyawan menyetor, catat setorannya sehingga piutang karyawan kembali nol."
+            ],
+            "actions": [
+              {
+                "code": "akui_dipegang_karyawan",
+                "label": "Langkah 1 — akui uang dipegang karyawan",
+                "effect": "Piutang pelanggan lunas dan berpindah menjadi piutang karyawan. Kas belum bertambah karena uangnya belum masuk rekening perusahaan.",
+                "needs": [
+                  "employee_name",
+                  "order_id",
+                  "amount"
+                ],
+                "produces": "Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang + pembayaran menempel di pesanan",
+                "sensitive": false
+              },
+              {
+                "code": "setor_dari_karyawan",
+                "label": "Langkah 2 — catat setoran karyawan",
+                "effect": "Karyawan menyetorkan uangnya; piutang karyawan berkurang.",
+                "needs": [
+                  "amount"
+                ],
+                "produces": "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1280 Piutang Titipan Karyawan",
+                "sensitive": false
+              }
+            ],
+            "moves_cash": true,
+            "needs_evidence": true,
+            "reason_codes": [
+              "case_employee_account"
+            ],
+            "priority": "normal",
+            "age_hours": 0.0,
+            "overdue": false
+          },
+          "cash": [
+            {
+              "id": "cash_01f2fb83ea47",
+              "number": "A/CASH-00017",
+              "cash_type": "kas_besar",
+              "direction": "in",
+              "amount": 40.0,
+              "category": "setoran karyawan",
+              "description": "Setoran Synthetic Employee · A/CASE-00011",
+              "entity_id": "A",
+              "ref_type": "finance_case",
+              "ref_id": "fcs_2500e5addb4e",
+              "txn_date": "2026-10-05T16:17:12.463809+00:00",
+              "account_id": "",
+              "reconciled": false,
+              "status": "posted",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:17:12.463809+00:00",
+              "updated_at": "2026-10-05T16:17:12.463809+00:00",
+              "contra_account_code": "1-1280",
+              "owner_entity_id": "A"
+            }
+          ],
+          "journals": [
+            {
+              "id": "je_c9dfdc4b6861",
+              "number": "A/JE-00026",
+              "date": "2026-10-05T16:17:12.104327+00:00",
+              "description": "Penyelesaian kasus keuangan · A/CASE-00011 · uang dipegang Synthetic Employee",
+              "source": "finance_case",
+              "source_type": "finance_case",
+              "source_id": "fcs_2500e5addb4e:emp1",
+              "source_label": "A/CASE-00011 · uang dipegang Synthetic Employee",
+              "lines": [
+                {
+                  "account_code": "1-1280",
+                  "account_name": "Piutang Titipan Karyawan",
+                  "debit": 80.0,
+                  "credit": 0.0,
+                  "description": "Kasus keuangan A/CASE-00011 · uang dipegang Synthetic Employee"
+                },
+                {
+                  "account_code": "1-1200",
+                  "account_name": "Piutang Usaha",
+                  "debit": 0.0,
+                  "credit": 80.0,
+                  "description": "Kasus keuangan A/CASE-00011 · uang dipegang Synthetic Employee"
+                }
+              ],
+              "total_debit": 80.0,
+              "total_credit": 80.0,
+              "status": "posted",
+              "entity_id": "A",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:17:12.125347+00:00",
+              "updated_at": "2026-10-05T16:17:12.125347+00:00"
+            },
+            {
+              "id": "je_5e5936f560cd",
+              "number": "A/JE-00027",
+              "date": "2026-10-05T16:17:12.463809+00:00",
+              "description": "Kas in · Setoran Synthetic Employee · A/CASE-00011",
+              "source": "cash_transaction",
+              "source_type": "cash_transaction",
+              "source_id": "cash_01f2fb83ea47",
+              "source_label": "A/CASH-00017",
+              "lines": [
+                {
+                  "account_code": "1-1100",
+                  "account_name": "Kas Besar / Bank",
+                  "debit": 40.0,
+                  "credit": 0.0,
+                  "description": "A/CASH-00017 · Setoran Synthetic Employee · A/CASE-00011"
+                },
+                {
+                  "account_code": "1-1280",
+                  "account_name": "Piutang Titipan Karyawan",
+                  "debit": 0.0,
+                  "credit": 40.0,
+                  "description": "A/CASH-00017 · Setoran Synthetic Employee · A/CASE-00011"
+                }
+              ],
+              "total_debit": 40.0,
+              "total_credit": 40.0,
+              "status": "posted",
+              "entity_id": "A",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:17:12.475030+00:00",
+              "updated_at": "2026-10-05T16:17:12.475030+00:00"
+            }
+          ],
+          "employee_receivable": 40.0
+        },
+        {
+          "mode": "EXCESS",
+          "case": {
+            "id": "fcs_48cba64b9e01",
+            "number": "A/CASE-00012",
+            "entity_id": "A",
+            "case_type": "rekening_pribadi_karyawan",
+            "case_type_label": "Pelanggan transfer ke rekening pribadi karyawan",
+            "title": "Pelanggan transfer ke rekening pribadi karyawan",
+            "description": "",
+            "amount": 80.0,
+            "customer_id": "CEMP-EXCESS",
+            "supplier_id": "",
+            "order_ids": [
+              "SOEMP-EXCESS"
+            ],
+            "source": {
+              "kind": "manual",
+              "id": "",
+              "label": ""
+            },
+            "status": "open",
+            "assignee": "",
+            "attachments": [
+              {
+                "name": "Synthetic local payment proof",
+                "id": "LOCAL-AUDIT-PROOF"
+              }
+            ],
+            "sla_hours": 24,
+            "sla_due_at": "2026-10-06T16:17:12.666033+00:00",
+            "escalation_level": 0,
+            "escalated_at": "",
+            "reason_code": "",
+            "reason_label": "",
+            "resolution": {},
+            "documents": [],
+            "approved_by": "",
+            "approved_at": "",
+            "resolved_by": "",
+            "resolved_at": "",
+            "auto_source": "",
+            "timeline": [
+              {
+                "event": "dibuka",
+                "label": "Kasus dibuka: Pelanggan transfer ke rekening pribadi karyawan",
+                "actor": "Audit User A",
+                "note": "",
+                "at": "2026-10-05T16:17:12.666033+00:00"
+              }
+            ],
+            "refs": [
+              {
+                "rel": "settles",
+                "doc_type": "sales_order",
+                "doc_id": "SOEMP-EXCESS",
+                "doc_number": "SOEMP-EXCESS",
+                "note": "kasus keuangan pesanan ini",
+                "at": "2026-10-05T16:17:12.675055+00:00"
+              }
+            ],
+            "created_by": "Audit User A",
+            "created_at": "2026-10-05T16:17:12.666033+00:00",
+            "updated_at": "2026-10-05T16:17:12.676069+00:00",
+            "playbook": [
+              "Catat siapa karyawannya dan pesanan mana yang dibayar (wajib lampiran bukti).",
+              "Langkah 1: akui uangnya dipegang karyawan — piutang pelanggan lunas, berpindah jadi piutang karyawan.",
+              "Langkah 2: setelah karyawan menyetor, catat setorannya sehingga piutang karyawan kembali nol."
+            ],
+            "actions": [
+              {
+                "code": "akui_dipegang_karyawan",
+                "label": "Langkah 1 — akui uang dipegang karyawan",
+                "effect": "Piutang pelanggan lunas dan berpindah menjadi piutang karyawan. Kas belum bertambah karena uangnya belum masuk rekening perusahaan.",
+                "needs": [
+                  "employee_name",
+                  "order_id",
+                  "amount"
+                ],
+                "produces": "Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang + pembayaran menempel di pesanan",
+                "sensitive": false
+              },
+              {
+                "code": "setor_dari_karyawan",
+                "label": "Langkah 2 — catat setoran karyawan",
+                "effect": "Karyawan menyetorkan uangnya; piutang karyawan berkurang.",
+                "needs": [
+                  "amount"
+                ],
+                "produces": "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1280 Piutang Titipan Karyawan",
+                "sensitive": false
+              }
+            ],
+            "moves_cash": true,
+            "needs_evidence": true,
+            "reason_codes": [
+              "case_employee_account"
+            ],
+            "priority": "normal",
+            "age_hours": 0.0,
+            "overdue": false
+          },
+          "http": 200,
+          "response": {
+            "id": "fcs_48cba64b9e01",
+            "number": "A/CASE-00012",
+            "entity_id": "A",
+            "case_type": "rekening_pribadi_karyawan",
+            "case_type_label": "Pelanggan transfer ke rekening pribadi karyawan",
+            "title": "Pelanggan transfer ke rekening pribadi karyawan",
+            "description": "",
+            "amount": 80.0,
+            "customer_id": "CEMP-EXCESS",
+            "supplier_id": "",
+            "order_ids": [
+              "SOEMP-EXCESS"
+            ],
+            "source": {
+              "kind": "manual",
+              "id": "",
+              "label": ""
+            },
+            "status": "resolved",
+            "assignee": "",
+            "attachments": [
+              {
+                "name": "Synthetic local payment proof",
+                "id": "LOCAL-AUDIT-PROOF"
+              }
+            ],
+            "sla_hours": 24,
+            "sla_due_at": "2026-10-06T16:17:12.666033+00:00",
+            "escalation_level": 0,
+            "escalated_at": "",
+            "reason_code": "case_employee_account",
+            "reason_label": "Masuk rekening pribadi karyawan",
+            "resolution": {
+              "action": "setor_dari_karyawan",
+              "action_label": "Langkah 2 — catat setoran karyawan",
+              "effect": "Karyawan menyetorkan uangnya; piutang karyawan berkurang.",
+              "produces": "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1280 Piutang Titipan Karyawan",
+              "amount": 100.0,
+              "note": "Local documented two-step flow",
+              "extra": {
+                "employee_name": "Synthetic Employee",
+                "step": 2
+              },
+              "next_action": "",
+              "auto_resolved": false,
+              "at": "2026-10-05T16:17:13.371963+00:00",
+              "by": "Audit User A"
+            },
+            "documents": [
+              {
+                "kind": "order_payment",
+                "id": "SOEMP-EXCESS",
+                "number": "SOEMP-EXCESS",
+                "label": "Pelunasan Rp 80 menempel di pesanan SOEMP-EXCESS"
+              },
+              {
+                "kind": "journal_entry",
+                "id": "je_1dd52f3e9338",
+                "number": "A/JE-00028",
+                "label": "Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang"
+              },
+              {
+                "kind": "cash_transaction",
+                "id": "cash_0aa904da97d4",
+                "number": "A/CASH-00018",
+                "label": "Kas masuk Rp 100"
+              },
+              {
+                "kind": "journal_entry",
+                "id": "je_0f65c1a3f201",
+                "number": "A/JE-00029",
+                "label": "Jurnal kas A/CASH-00018"
+              }
+            ],
+            "approved_by": "",
+            "approved_at": "",
+            "resolved_by": "Audit User A",
+            "resolved_at": "2026-10-05T16:17:13.371963+00:00",
+            "auto_source": "",
+            "timeline": [
+              {
+                "event": "dibuka",
+                "label": "Kasus dibuka: Pelanggan transfer ke rekening pribadi karyawan",
+                "actor": "Audit User A",
+                "note": "",
+                "at": "2026-10-05T16:17:12.666033+00:00"
+              },
+              {
+                "event": "langkah",
+                "label": "Langkah dijalankan: Langkah 1 — akui uang dipegang karyawan",
+                "actor": "Audit User A",
+                "note": "Masuk rekening pribadi karyawan · Rp 80 · 2 dokumen turunan",
+                "at": "2026-10-05T16:17:12.962221+00:00"
+              },
+              {
+                "event": "selesai",
+                "label": "Kasus diselesaikan: Langkah 2 — catat setoran karyawan",
+                "actor": "Audit User A",
+                "note": "Masuk rekening pribadi karyawan · Rp 100 · 2 dokumen turunan",
+                "at": "2026-10-05T16:17:13.371963+00:00"
+              }
+            ],
+            "refs": [
+              {
+                "rel": "settles",
+                "doc_type": "sales_order",
+                "doc_id": "SOEMP-EXCESS",
+                "doc_number": "SOEMP-EXCESS",
+                "note": "kasus keuangan pesanan ini",
+                "at": "2026-10-05T16:17:12.675055+00:00"
+              }
+            ],
+            "created_by": "Audit User A",
+            "created_at": "2026-10-05T16:17:12.666033+00:00",
+            "updated_at": "2026-10-05T16:17:13.371963+00:00",
+            "playbook": [
+              "Catat siapa karyawannya dan pesanan mana yang dibayar (wajib lampiran bukti).",
+              "Langkah 1: akui uangnya dipegang karyawan — piutang pelanggan lunas, berpindah jadi piutang karyawan.",
+              "Langkah 2: setelah karyawan menyetor, catat setorannya sehingga piutang karyawan kembali nol."
+            ],
+            "actions": [
+              {
+                "code": "akui_dipegang_karyawan",
+                "label": "Langkah 1 — akui uang dipegang karyawan",
+                "effect": "Piutang pelanggan lunas dan berpindah menjadi piutang karyawan. Kas belum bertambah karena uangnya belum masuk rekening perusahaan.",
+                "needs": [
+                  "employee_name",
+                  "order_id",
+                  "amount"
+                ],
+                "produces": "Jurnal Dr 1-1280 Piutang Titipan Karyawan / Cr 1-1200 Piutang + pembayaran menempel di pesanan",
+                "sensitive": false
+              },
+              {
+                "code": "setor_dari_karyawan",
+                "label": "Langkah 2 — catat setoran karyawan",
+                "effect": "Karyawan menyetorkan uangnya; piutang karyawan berkurang.",
+                "needs": [
+                  "amount"
+                ],
+                "produces": "Transaksi kas masuk + jurnal Dr Kas-Bank / Cr 1-1280 Piutang Titipan Karyawan",
+                "sensitive": false
+              }
+            ],
+            "moves_cash": true,
+            "needs_evidence": true,
+            "reason_codes": [
+              "case_employee_account"
+            ],
+            "priority": "normal",
+            "age_hours": 0.0,
+            "overdue": false
+          },
+          "cash": [
+            {
+              "id": "cash_0aa904da97d4",
+              "number": "A/CASH-00018",
+              "cash_type": "kas_besar",
+              "direction": "in",
+              "amount": 100.0,
+              "category": "setoran karyawan",
+              "description": "Setoran Synthetic Employee · A/CASE-00012",
+              "entity_id": "A",
+              "ref_type": "finance_case",
+              "ref_id": "fcs_48cba64b9e01",
+              "txn_date": "2026-10-05T16:17:13.342200+00:00",
+              "account_id": "",
+              "reconciled": false,
+              "status": "posted",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:17:13.342200+00:00",
+              "updated_at": "2026-10-05T16:17:13.342200+00:00",
+              "contra_account_code": "1-1280",
+              "owner_entity_id": "A"
+            }
+          ],
+          "journals": [
+            {
+              "id": "je_1dd52f3e9338",
+              "number": "A/JE-00028",
+              "date": "2026-10-05T16:17:12.949647+00:00",
+              "description": "Penyelesaian kasus keuangan · A/CASE-00012 · uang dipegang Synthetic Employee",
+              "source": "finance_case",
+              "source_type": "finance_case",
+              "source_id": "fcs_48cba64b9e01:emp1",
+              "source_label": "A/CASE-00012 · uang dipegang Synthetic Employee",
+              "lines": [
+                {
+                  "account_code": "1-1280",
+                  "account_name": "Piutang Titipan Karyawan",
+                  "debit": 80.0,
+                  "credit": 0.0,
+                  "description": "Kasus keuangan A/CASE-00012 · uang dipegang Synthetic Employee"
+                },
+                {
+                  "account_code": "1-1200",
+                  "account_name": "Piutang Usaha",
+                  "debit": 0.0,
+                  "credit": 80.0,
+                  "description": "Kasus keuangan A/CASE-00012 · uang dipegang Synthetic Employee"
+                }
+              ],
+              "total_debit": 80.0,
+              "total_credit": 80.0,
+              "status": "posted",
+              "entity_id": "A",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:17:12.957142+00:00",
+              "updated_at": "2026-10-05T16:17:12.957142+00:00"
+            },
+            {
+              "id": "je_0f65c1a3f201",
+              "number": "A/JE-00029",
+              "date": "2026-10-05T16:17:13.342200+00:00",
+              "description": "Kas in · Setoran Synthetic Employee · A/CASE-00012",
+              "source": "cash_transaction",
+              "source_type": "cash_transaction",
+              "source_id": "cash_0aa904da97d4",
+              "source_label": "A/CASH-00018",
+              "lines": [
+                {
+                  "account_code": "1-1100",
+                  "account_name": "Kas Besar / Bank",
+                  "debit": 100.0,
+                  "credit": 0.0,
+                  "description": "A/CASH-00018 · Setoran Synthetic Employee · A/CASE-00012"
+                },
+                {
+                  "account_code": "1-1280",
+                  "account_name": "Piutang Titipan Karyawan",
+                  "debit": 0.0,
+                  "credit": 100.0,
+                  "description": "A/CASH-00018 · Setoran Synthetic Employee · A/CASE-00012"
+                }
+              ],
+              "total_debit": 100.0,
+              "total_credit": 100.0,
+              "status": "posted",
+              "entity_id": "A",
+              "created_by": "Audit User A",
+              "created_at": "2026-10-05T16:17:13.360931+00:00",
+              "updated_at": "2026-10-05T16:17:13.360931+00:00"
+            }
+          ],
+          "employee_receivable": -20.0
+        }
+      ]
+    },
+    "escalation": {
+      "target_case_id": "fcs_595823dc2b83",
+      "levels": [
+        1,
+        2,
+        2
+      ],
+      "notifications": [
+        {
+          "id": "ntf_452129e00b82",
+          "entity_id": "A",
+          "recipient_role": "manager",
+          "recipient_user": null,
+          "type": "finance_case",
+          "title": "ESKALASI: Kasus keuangan terlambat — Pengembalian dana ke pelanggan",
+          "body": "A/CASE-00013 · Rp 80 · batas waktu 24 jam terlewat. Perlu keputusan manager.",
+          "link": "finance-cases",
+          "severity": "critical",
+          "ref": "esc:fcs_595823dc2b83:1",
+          "dedupe_key": "finance_case:esc:fcs_595823dc2b83:1:2026-10-05",
+          "read": false,
+          "created_at": "2026-10-05T16:17:14.057539+00:00",
+          "action_type": "finance_case",
+          "action_id": "fcs_595823dc2b83",
+          "action_role": "manager"
+        },
+        {
+          "id": "ntf_6f80674f64e0",
+          "entity_id": "A",
+          "recipient_role": "admin",
+          "recipient_user": null,
+          "type": "finance_case",
+          "title": "ESKALASI: Kasus keuangan terlambat — Pengembalian dana ke pelanggan",
+          "body": "A/CASE-00013 · Rp 80 · batas waktu 24 jam terlewat. Perlu keputusan admin.",
+          "link": "finance-cases",
+          "severity": "critical",
+          "ref": "esc:fcs_595823dc2b83:2",
+          "dedupe_key": "finance_case:esc:fcs_595823dc2b83:2:2026-10-05",
+          "read": false,
+          "created_at": "2026-10-05T16:17:14.230649+00:00",
+          "action_type": "finance_case",
+          "action_id": "fcs_595823dc2b83",
+          "action_role": "admin"
+        }
+      ],
+      "adjudication": "The replay assertion of no notification growth is too broad for progressive SLA escalation."
+    },
+    "closed_period": {
+      "case": {
+        "id": "fcs_30802ae1552d",
+        "number": "A/CASE-00014",
+        "entity_id": "A",
+        "case_type": "refund_pelanggan",
+        "case_type_label": "Pengembalian dana ke pelanggan",
+        "title": "Audit refund CCLOSED",
+        "description": "",
+        "amount": 80.0,
+        "customer_id": "CCLOSED",
+        "supplier_id": "",
+        "order_ids": [],
+        "source": {
+          "kind": "manual",
+          "id": "",
+          "label": ""
+        },
+        "status": "open",
+        "assignee": "",
+        "attachments": [],
+        "sla_hours": 24,
+        "sla_due_at": "2026-10-06T16:17:14.725341+00:00",
+        "escalation_level": 0,
+        "escalated_at": "",
+        "reason_code": "",
+        "reason_label": "",
+        "resolution": {},
+        "documents": [],
+        "approved_by": "",
+        "approved_at": "",
+        "resolved_by": "",
+        "resolved_at": "",
+        "auto_source": "",
+        "timeline": [
+          {
+            "event": "dibuka",
+            "label": "Kasus dibuka: Pengembalian dana ke pelanggan",
+            "actor": "Audit User A",
+            "note": "",
+            "at": "2026-10-05T16:17:14.725341+00:00"
+          }
+        ],
+        "refs": [],
+        "created_by": "Audit User A",
+        "created_at": "2026-10-05T16:17:14.725341+00:00",
+        "updated_at": "2026-10-05T16:17:14.725341+00:00",
+        "playbook": [
+          "Pastikan saldonya benar-benar ada (uang muka pelanggan atau store credit).",
+          "Pilih sumber dananya, lalu catat kas keluarnya. Nominal besar wajib disetujui."
+        ],
+        "actions": [
+          {
+            "code": "refund_pelanggan",
+            "label": "Kembalikan dari uang muka pelanggan",
+            "effect": "Kas keluar mengurangi kewajiban uang muka pelanggan.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1400 Uang Muka Pelanggan / Cr Kas-Bank",
+            "sensitive": true
+          },
+          {
+            "code": "refund_store_credit",
+            "label": "Kembalikan dari saldo kredit toko",
+            "effect": "Saldo kredit toko pelanggan dicairkan menjadi uang.",
+            "needs": [
+              "customer_id",
+              "amount"
+            ],
+            "produces": "Transaksi kas keluar + jurnal Dr 2-1450 Saldo Kredit Pelanggan / Cr Kas-Bank + baris buku store credit",
+            "sensitive": true
+          }
+        ],
+        "moves_cash": true,
+        "needs_evidence": false,
+        "reason_codes": [
+          "customer_refund_request"
+        ],
+        "priority": "normal",
+        "age_hours": 0.0,
+        "overdue": false
+      },
+      "http": 400,
+      "body": {
+        "detail": "Periode Synthetic locked period sudah DITUTUP (terkunci). Jurnal mundur ke tanggal 2026-10-05 memerlukan izin 'Buka Periode' yang disetujui dua orang. Ajukan di Keuangan → Buka Periode (Unlock)."
+      },
+      "transactions": [
+        {
+          "id": "cash_dbf1cbccb403",
+          "number": "A/CASH-00020",
+          "cash_type": "kas_besar",
+          "direction": "out",
+          "amount": 80.0,
+          "category": "refund pelanggan",
+          "description": "Pengembalian dana pelanggan · A/CASE-00014",
+          "entity_id": "A",
+          "ref_type": "ar_refund",
+          "ref_id": "fcs_30802ae1552d",
+          "txn_date": "2026-10-05T16:17:14.966717+00:00",
+          "account_id": "",
+          "reconciled": false,
+          "status": "posted",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-05T16:17:14.966717+00:00",
+          "updated_at": "2026-10-05T16:17:14.966717+00:00",
+          "owner_entity_id": "A"
+        }
+      ],
+      "fixture_scope": "Original receipt before locking; explicit period_closings state, not full closing producer"
+    }
+  },
+  "harness_errors": [],
+  "external_connections": []
+}

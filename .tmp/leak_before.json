@@ -1,0 +1,169 @@
+{
+ "account": "sales.kanda@kainnusantara.id",
+ "endpoints_200": 186,
+ "denied": 199,
+ "leaking_endpoints": 19,
+ "leaks": {
+  "/api/ai/catalog": {
+   "grade": [
+    "grade"
+   ],
+   "lot": [
+    "dye_lot"
+   ]
+  },
+  "/api/customers": {
+   "lot": [
+    "enforce_single_dye_lot",
+    "lot_policy"
+   ]
+  },
+  "/api/dashboard": {
+   "grade": [
+    "grade",
+    "grades"
+   ],
+   "lot": [
+    "batch_lot_rolls",
+    "dye_lot",
+    "dye_lots",
+    "enforce_single_dye_lot",
+    "has_mixed_lot",
+    "lot",
+    "lot_code",
+    "lot_mode",
+    "lot_policy",
+    "lot_selection",
+    "lots"
+   ],
+   "origin": [
+    "origin"
+   ]
+  },
+  "/api/enums": {
+   "grade": [
+    "grade",
+    "grade_change_source"
+   ],
+   "lot": [
+    "lot_source",
+    "lot_status"
+   ]
+  },
+  "/api/inventory/movements": {
+   "lot": [
+    "lot",
+    "lot_id"
+   ]
+  },
+  "/api/inventory/putaway/queue": {
+   "lot": [
+    "lot"
+   ],
+   "grade": [
+    "grade"
+   ]
+  },
+  "/api/inventory/rolls": {
+   "lot": [
+    "dye_lot",
+    "lot",
+    "lot_id",
+    "supplier_lot"
+   ],
+   "grade": [
+    "grade"
+   ]
+  },
+  "/api/lots": {
+   "lot": [
+    "dye_lot",
+    "lot_number",
+    "lot_status",
+    "supplier_lot"
+   ]
+  },
+  "/api/lots/settings": {
+   "lot": [
+    "require_dye_lot",
+    "require_supplier_lot"
+   ]
+  },
+  "/api/lots/stats": {
+   "lot": [
+    "require_dye_lot",
+    "require_supplier_lot",
+    "rolls_in_lots",
+    "rolls_without_lot"
+   ]
+  },
+  "/api/makloon-orders": {
+   "lot": [
+    "lots"
+   ]
+  },
+  "/api/pos/best-sellers": {
+   "grade": [
+    "grade"
+   ]
+  },
+  "/api/product-templates": {
+   "origin": [
+    "origin"
+   ]
+  },
+  "/api/products": {
+   "grade": [
+    "grade"
+   ],
+   "lot": [
+    "batch_lot_rolls",
+    "lot",
+    "lot_code"
+   ],
+   "origin": [
+    "origin"
+   ]
+  },
+  "/api/rnd/reports/my-kpi": {
+   "grade": [
+    "avg_grade",
+    "grade_bands"
+   ]
+  },
+  "/api/sales-orders": {
+   "lot": [
+    "dye_lot",
+    "dye_lots",
+    "has_mixed_lot",
+    "lot",
+    "lot_mode",
+    "lot_selection",
+    "lots"
+   ]
+  },
+  "/api/settings": {
+   "grade": [
+    "grade_thresholds"
+   ],
+   "lot": [
+    "lot_mode",
+    "lot_selection"
+   ]
+  },
+  "/api/settings/effective": {
+   "grade": [
+    "grade_thresholds"
+   ],
+   "lot": [
+    "lot_mode",
+    "lot_selection"
+   ]
+  },
+  "/api/warehouses": {
+   "grade": [
+    "grades"
+   ]
+  }
+ }
+}

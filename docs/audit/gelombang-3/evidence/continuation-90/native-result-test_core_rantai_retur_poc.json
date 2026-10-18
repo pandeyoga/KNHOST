@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_rantai_retur_poc.py",
+    "database": "knhost_audit_native90_759a082981744d0ba1b9b722260fdf12",
+    "exit": 1,
+    "seconds": 57.11,
+    "pass_log_tokens": 5,
+    "fail_log_tokens": 2,
+    "log": "continuation-90\\native-test_core_rantai_retur_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_759a082981744d0ba1b9b722260fdf12 test_core_rantai_retur_poc.py\n==============================================================================\n  POC FASE E-9 — RANTAI JUAL → BELI INTERNAL ANTAR-PT → RETUR BERANTAI\n==============================================================================\n\nLANGKAH 0 — Persiapan (bersihkan sisa POC lama · master produk POC)\n  [poc-stock] DB_NAME='knhost_audit_native90_759a082981744d0ba1b9b722260fdf12' bukan basis data uji — restore stok DIMATIKAN (set KN_GATE_ALLOW_RESTORE=1 bila memang disengaja).\n  ✅ [PASS] Lingkungan POC bersih & produk uji siap (sisa lama dihapus: {'po': 0, 'so': 0, 'sret': 0, 'ict': 0, 'icr': 0, 'pret': 0})\n  ℹ  Data uji: pemasok Toba Craft (sup_f6b560ae6fd8) · pelanggan Butik Bali Indah (cust_butik_bali) alamat addr_002\n\nLANGKAH 1 — Entitas B (CV Kanda Suka) beli dari supplier Toba Craft\n  ✅ [PASS] PO KANDA/PO-00012 ke Toba Craft terbit (40 yard · status pending)\n  ❌ [FAIL] Keputusan QC penerimaan gagal (400 {\"detail\":\"Inspeksi belum memenuhi rencana 'Cek semua': 0/1 roll wajib diinspeksi.\"})\n\nCLEANUP — POC tidak boleh meninggalkan jejak\n  ✅ [PASS] Nol residu (dihapus: {'po': 1, 'so': 0, 'sret': 0, 'ict': 0, 'icr': 0, 'pret': 0})\n  ✅ [PASS] Nol residu jejak (dihapus 4 baris audit & sesi POC · notifikasi kembali seperti semula)\n\n==============================================================================\n  HASIL: 4 PASS · 1 FAIL dari 5 pemeriksaan\n    ✗ Keputusan QC penerimaan gagal (400 {\"detail\":\"Inspeksi belum memenuhi rencana 'Cek semua': 0/1 roll wajib diinspeksi.\"})\n==============================================================================\n"
+  }
+]

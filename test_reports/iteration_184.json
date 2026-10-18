@@ -1,0 +1,50 @@
+{
+  "summary": "L01 testing (backend + frontend). Backend: all 6 requested pytest files pass when run one at a time (53 passed, 1 skipped by design in test_l00_p05_open_issues). New public-URL regression test_l01_sales_field_hidden_api.py passes 8/8: for sales.kanda, products, rolls, SO list/detail, stock-summary and product sub-resources return no grade/lot/dye_lot/supplier_lot/batch_lot_rolls/origin keys and send header x-kn-fields-hidden=grade,lot,origin. Admin and salesadmin.kanda still get grade. The leak scan only flagged policy keys, apart from the /api/lots registry (see minor issues). Frontend: Master Grade (list, add T1 rank 55, deactivate with reason), customer grade rule card (min grade options limited to active grades A/A1/B, save works), role editor (RoleNavTree above the activity buttons, untick a tab, confirm-tabs, saved hidden_views=['orders']), sales.kanda desktop and mobile with manager navigation (no JS errors), and the MKO loss flow (record a loss, status 'Menunggu persetujuan', manager approves, status 'Dibukukan', claim and expense split shown) all work. Problems found: (1) when the recorder approves their own loss, the 403 is returned but the UI shows nothing; (2) grade and origin still reach Sales through SKU codes and product names, plus leftover grade UI pieces on the POS screen; (3) the MKO partner-roll checklist still lists the lost (consumed, 0-yard) roll.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/makloon-orders/{id}/steps/{seq}/partner-rolls", "issue": "Query in makloon_order_service.partner_rolls is only {bucket_ref.id: issue_ref}. It does not filter by status, so a roll already booked as lost (status consumed, length_remaining 0) is still listed. In the UI it shows as 'RL-46159-2 · LOT … — 0 yard' and is pre-ticked in the return/loss checklist. Fix: add status != consumed and length_remaining > 0."},
+      {"endpoint": "GET /api/lots, /api/lots/stats (as sales.kanda)", "issue": "Sales can read the whole LOT registry: 48 lots including legacy_lot_codes (e.g. 'RT--HTMX-XA-XX-XX-KANDA-B'), parent_lot_ids/child_lot_ids, lot_status and rolls_in_lots. Redaction is key-based, so these keys are not in FIELD_KEYS['lot']. Deny /api/lots* when the lot field is hidden, or add these keys."},
+      {"endpoint": "Data/SKU convention (all sales endpoints)", "issue": "The SKU segment layout ARTIKEL-ASAL-WARNA-GRADE-CUSTOMER-LOT (e.g. KNKNT0052-L-HTMX-XA-XX-XX: L = Lokal, XA = grade A) and product names ending in the grade ('LYFLEX ACTIVE HITAM A', 'RIVERA RIB BW A') still show origin and grade to Sales on every screen. Warehouse names also do ('Gudang Retur (grade B/BS/C)'). The requirement says hidden 'di semua layar, API, dan export'. The owner should decide whether to mask the SKU segments and name suffix for Sales or accept this."},
+      {"endpoint": "PUT /api/customers/{id}/grade-rules", "issue": "Error for an inactive non-historical grade (T1) says 'nonaktif (historis)'. The wording should tell inactive and historical apart."},
+      {"endpoint": "MKO detail step.material_value", "issue": "After a loss is booked, the step header still shows 'Di makloon 18,3 yard · nilai bahan Rp 408.000' (the original value). The qty is updated but the value is not."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MakloonOrdersView / MakloonOrderDetailPanel", "issue": "Errors raised inside the MKO detail are not shown. onError={setError} sets state in MakloonOrdersView, but that view returns the detail panel early (line 60-63) without rendering ErrorNotice. The recorder's self-approval 403 (backend log confirms 403) shows no message, and the same applies to failed issue/receive/return. Render ErrorNotice in the detail branch or give the panel its own error state.", "selector": "[data-testid^='mko-loss-approve-']", "priority": "HIGH"},
+      {"component": "MakloonLossList", "issue": "The 'Setujui & klaim mitra' and 'Tolak' buttons show for the user who recorded the loss, who can never approve it. Hide them when loss.recorded_by is the current user.", "selector": "[data-testid^='mko-loss-approve-']", "priority": "MEDIUM"},
+      {"component": "POS PosProductCard / FacetRail (sales role)", "issue": "On desktop and mobile, sales still sees: a 'GRADE' facet group with the text 'Tidak ada pilihan untuk katalog ini.' (facet-grades / facet-empty-grade); an empty black grade badge at the top-right of every product card (product-grade-<id> renders an empty rep.grade); and the subtitle 'N pilihan warna/grade' (mobile: 'N warna/grade'). Hide these when the grade field is hidden.", "selector": "[data-testid='facet-grades'], [data-testid^='product-grade-']", "priority": "MEDIUM"},
+      {"component": "RollInspectionModal", "issue": "predictedGrade is hardcoded to A/A1/A2/B/BS. It can predict A2, which is inactive (server grade_from_points uses active grades only), so the preview can differ from the saved grade. It should use the active grade master.", "selector": "RollInspectionModal", "priority": "LOW"},
+      {"component": "GradeMasterView", "issue": "In 'Semua Entitas' mode, creating a grade fails with the entity-context error, even though the grade master is global. Admin must first pick an entity.", "selector": "[data-testid='grade-new-submit']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Role editor RoleNavTree", "issues": ["Menu labels show raw ids ('sales-orders', 'settings-hub', tab 'penjualan') instead of human labels", "The confirm dialog role-editor-confirm-tabs lists raw view ids ('Menu/tab: orders → disembunyikan')"]},
+      {"screen": "Sales Admin desk grade-rules-card", "issues": ["The floating 'Bantuan & Panduan' button overlaps the right edge of the 'Simpan Aturan' button at 1920x1080"]},
+      {"screen": "AxisEditor FALLBACK_AXES", "issues": ["The fallback grade list hardcodes the inactive grades A2/B1/C (used only if the config does not load)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l01_sales_field_hidden_api.py", "/app/backend/tests/l01_ui_mko_setup.py", "/app/test_reports/pytest/l01_sales_hidden.xml", "/app/test_reports/pytest/l01_test_l01_grade_visibility.xml", "/app/test_reports/pytest/l01_test_l01_material_loss.xml", "/app/test_reports/pytest/l01_test_l01_custom_role.xml", "/app/test_reports/pytest/l01_test_p05_restock_material_revalidation.xml", "/app/test_reports/pytest/l01_test_l00_p05_open_issues.xml", "/app/test_reports/pytest/l01_test_p05_acceptance_acc31_33_34.xml"],
+  "action_items": [
+    "HIGH: Show errors from MakloonOrderDetailPanel while the detail is open (MakloonOrdersView returns early without ErrorNotice), so the self-approval 403 is visible",
+    "Hide the approve/reject buttons in MakloonLossList for the recorder",
+    "partner_rolls(): exclude consumed / zero-length rolls",
+    "Hide the POS grade facet, the empty product-grade badge and the 'warna/grade' wording for roles without field_visibility.grade",
+    "Block /api/lots* for roles with lot hidden, or redact legacy_lot_codes / parent_lot_ids / child_lot_ids / lot_status",
+    "Decide with the owner whether SKU grade/origin segments and the grade suffix in product names must be masked for Sales",
+    "RoleNavTree and confirm dialog: use human-readable menu/tab labels",
+    "RollInspectionModal: base predicted grade on active grades"
+  ],
+  "critical_code_review_comments": [
+    "field_visibility redaction is key-name based: values embedded in strings (SKU, product name, legacy_lot_codes, warehouse names) bypass it",
+    "MakloonOrdersView early-return pattern swallows every onError from the detail panel (pre-existing, but it now hides the L01 segregation-of-duties feedback)",
+    "partner_rolls has no status filter; only the 409 duplicate check protects against re-recording, and only while a loss is pending"
+  ],
+  "updated_files": ["/app/backend/tests/test_l01_sales_field_hidden_api.py", "/app/backend/tests/l01_ui_mko_setup.py"],
+  "success_rate": {"backend": "100% (53/53 requested + 8/8 new; 1 skip by design)", "frontend": "~85% (all flows functional; 1 HIGH UI bug: 403 not displayed; grade remnants on the POS screen for sales)"},
+  "seed_data_creation": "Grade T1 'T1 — Uji tester' rank 55 created and left INACTIVE. MKO-00026 (mko_b1fd588a79d9, ent_ksc, cancelled) with loss mloss_9b7193db2b37 posted (approved by manager) and 18.3 yd still at partner. Created and then deleted the custom role cr_test_l01_sales_uji. Grade rule for cust_603befc48cd1 was set (min B, prefer A1) and then reset to empty.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run each pytest file on its own (-n0, REACT_APP_BACKEND_URL=http://localhost:8001). test_l01_sales_field_hidden_api.py uses the public URL. To create a cancelled MKO with material at the partner: cd /app/backend && REACT_APP_BACKEND_URL=http://localhost:8001 python -m tests.l01_ui_mko_setup. In the return checklist all rolls are pre-ticked; clicking a roll unticks it. The Grade Master UI needs an entity selected (&entity=ent_kanda). Role editor: ?view=entities-access → entities-access-tab-roles → role-card-duplicate-sales."
+}

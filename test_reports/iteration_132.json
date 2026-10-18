@@ -1,0 +1,42 @@
+{
+  "summary": "P19 end-to-end UAT di LAYAR untuk GRN-01, QC-04 (REJECT & ACCEPT), QC-06 (sampling + hold/release + genealogy + FAB-hide) — login admin, entitas ent_ksc (Sukacita). Hasil per kasus: GRN-01 = PARTIAL (wizard 2-langkah di layar PASS: partner-select, warehouse, Lanjut, Buat kedatangan → GRN draft terbentuk. Langkah SJ+Line+Scan rolls+Finish+Close dialihkan ke API karena wizard pada bagian 'Hitung fisik + scan rolls' belum di-exercise untuk 3 PO berturut-turut dalam waktu iterasi). QC-04 REJECT = PASS DI LAYAR (roll 50y RL-00057 diinspeksi 4-point defect-4=15 → grade otomatis BS → qc-reject-all → qc-disposition-select='Retur ke Supplier — terbitkan Nota Debit' → qc-reason='TEST_P19 cacat' → qc-submit-decision → banner 'QC KSC/PO-00018: diterima 0, ditolak 50 → Nota Debit PRET-00003'; PRET-00003 subtotal=5.000.000, ppn=550.000, grand_total=5.550.000 → PERBAIKAN BARU TERKONFIRMASI; approve di ?view=purchase-returns via return-approve-{id} → 'Retur PRET-00003 disetujui. Nota debit: DN-00001'). QC-04 ACCEPT = PASS DI LAYAR (roll 40y RL-00058 inspeksi 0-defect grade A → qc-accept-all → qc-submit-decision → banner diterima 40; roll menjadi tersedia). QC-06 = PASS DI LAYAR (QcPlanPanel mode Sampling pct=30 min=1 → Simpan rencana → wajib 1, Cakupan terpenuhi; Inspeksi roll modal → inspect roll 1 saja; roll-hold-btn-roll_ed16a7bdb34f → roll-hold-dialog, roll-hold-reason-input='TEST_P19 cek shading', roll-hold-submit → roll-held-badge visible; FAB (.tour-fab) display=none selama dialog hold aktif; qc-accept-all + submit sebelum release → banner MERAH 'Roll RL-00060 sedang DITAHAN — lepas tahanan dulu sebelum keputusan QC.'; roll-release-btn di-exercise via API (karena saat sampling-sudah-terpenuhi tombol 'Inspeksi roll' dalam qc-inspect-modal disembunyikan sehingga roll-release-btn pada roll-inspection-modal tidak dapat dijangkau dari ulang-buka — fallback API /api/inventory/rolls/{id}/release); submit accept-all 150 → banner 'QC KSC/PO-00018: diterima 150'; roll-journey-popup (dari ?view=operations tab Roll roll-journey-btn-{id}) memuat semua ekspektasi: 'Asal penerimaan GRN KSC/GRN-00004', 'DITAHAN oleh Budi Santoso: TEST_P19 cek shading', 'Tahanan DILEPAS oleh Budi Santoso: TEST_P19 release via API', 'Keputusan QC: DITERIMA (grade A)', 'Diputuskan lewat SAMPLING (1/3 roll diinspeksi) — roll ini tidak diinspeksi langsung'; FAB display=none selama roll-journey-popup terbuka — temuan iterasi 131 (FAB tidak tersembunyi saat journey popup) kini FIX TERKONFIRMASI).",
+  "backend_issues": {"critical": [], "minor": [
+    {"endpoint": "GET /api/wms/tasks?po_id=<id>", "issue": "Filter po_id sepertinya tidak diterapkan — endpoint mengembalikan task dari banyak PO; pembuatan GRN via API mem-fallback tasks[0] bisa salah PO. Dampak: skrip utilitas P19 (audit/.../repro_p19_receiving.py) selalu benar karena pakai DB langsung, tapi integrasi apa pun yang baca via REST akan rawan. Perlu konfirmasi apakah ini bug atau sengaja."}
+  ]},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "qc-inspect-modal (QCInspection + RollInspectionModal)", "issue": "Setelah rencana sampling 'Cakupan terpenuhi', tombol 'Inspeksi roll (4-Point / grade manual)' DISEMBUNYIKAN di modal qc-inspect — akibatnya roll-release-btn (yang berada di dalam roll-inspection-modal) menjadi tidak dapat dijangkau untuk melepas roll yang masih DITAHAN. Pengguna harus pindah ke ?view=operations tab Roll untuk melepas hold. Saran: tampilkan tombol Inspeksi roll apa pun status sample-coverage, atau sediakan panel ringkas 'Roll ditahan' + tombol lepas langsung di qc-inspect-modal.", "selector": "qc-inspect-modal", "priority": "MEDIUM"},
+      {"component": "RollInspectionModal.roll-inspect-close", "issue": "Tombol close pada roll-inspection-modal menutup juga qc-inspect-modal pembungkus — pengguna harus klik ulang qc-inspect-btn-{i} untuk melanjutkan reject/accept-all. Lebih baik roll-inspect-close hanya menutup modal roll dan membiarkan qc-inspect-modal tetap terbuka.", "selector": "roll-inspect-close", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "QCInspection — plan panel", "issues": ["qc-plan-coverage adalah <div> ringkasan (bukan input); input input sampling pct/min memakai data-testid qc-plan-pct / qc-plan-min — brief/dokumentasi memakai nama 'qc-plan-coverage' sebagai input, perlu diselaraskan di dokumentasi."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/create_grns.py"
+  ],
+  "action_items": [
+    "Perlihatkan tombol 'Inspeksi roll' di qc-inspect-modal walau sampling-coverage sudah terpenuhi — supaya roll-release-btn tetap dapat diakses untuk roll yang masih DITAHAN.",
+    "Pisahkan close-behavior: roll-inspect-close hanya menutup roll-inspection-modal; qc-inspect-modal tetap terbuka.",
+    "Verifikasi filter po_id di GET /api/wms/tasks — tampaknya mengabaikan parameter po_id."
+  ],
+  "critical_code_review_comments": [
+    "FAB-hide CSS (layout.css L354) kini mencakup juga roll-journey-popup — temuan iterasi 131 terselesaikan.",
+    "qc_service._create_qc_return memasukkan ppn_rate/ppn_amount/grand_total → PRET-00003 memperlihatkan 550.000 PPN + 5.000.000 subtotal = 5.550.000 (NEW FIX terverifikasi di layar via API dan UI).",
+    "receiving: variance 'over_remaining' tidak dapat ditangani via UI dalam waktu iterasi — tombol resolve-variance mungkin tidak dipanggil oleh wizard GRN (perlu konfirmasi UI flow); API resolve dipanggil dengan action='accept_note'."
+  ],
+  "updated_files": [
+    "/app/test_reports/create_grns.py (utility untuk membuat 3 GRN TEST_P19 lewat API — tidak mengubah src FE/BE)"
+  ],
+  "success_rate": {
+    "backend": "N/A (frontend-only per brief; backend 27/27 sudah dicatat di audit)",
+    "frontend": "GRN-01 PARTIAL (wizard 2-langkah pass; manual-entry/finish/close via API fallback karena bug/limit UI resolve-variance), QC-04 REJECT PASS (termasuk disposition + PR 5.550.000 + approve + DN), QC-04 ACCEPT PASS, QC-06 PASS (sampling, hold-dialog FAB-hide, DITAHAN block message, journey popup FAB-hide, journey timeline lengkap)"
+  },
+  "test_credentials": "admin@kainnusantara.id / demo12345 (shown as Sukacita; ent_ksc)",
+  "seed_data_creation": "Dibuat 3 PO (KSC/PO-00016, 00017, 00018) → 3 GRN (KSC/GRN-00002 closed 50y, KSC/GRN-00003 closed 40y, KSC/GRN-00004 closed 150y setelah resolve over_remaining accept_note) → 5 roll karantina (roll_af537bdb3c05 RL-00057, roll_0adb2134e0a6 RL-00058, roll_eb593b82fb46 RL-00059, roll_ed16a7bdb34f RL-00060, roll_c5307717c543 RL-00061). PR: pret_737267dd989e PRET-00003 approved → DN-00001. Semua lot/dye_lot/reason berawalan TEST_P19 agar mudah di-rollback.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Semua PO/GRN/roll/PR mengarah ke KSC/PO-00018 karena API wms/tasks tidak memfilter po_id (tasks[0] jatuh ke task PO-00018). Hal ini tidak mempengaruhi validasi fungsionalitas inti yang diuji (QC decision+PR+PPN+hold/release/journey). Rolls yang bisa dipakai sebagai regression: roll_af537bdb3c05 (returned_supplier, QC-04 reject), roll_0adb2134e0a6 (available, QC-04 accept), roll_eb593b82fb46/ed16a7bdb34f/c5307717c543 (available, QC-06 sampling+hold+journey). Jika mau re-test GRN wizard di UI penuh, perlu PR pre-approval + task bersih; disarankan main agent menambahkan resolve-variance UI (currently blockernya adalah tombol 'Isi manual' flow lanjut tidak dapat menyelesaikan over_remaining via UI).",
+  "rca of the issue": "roll-release-btn tidak dapat dijangkau dari UI setelah sampling-coverage terpenuhi: QCInspection menyembunyikan tombol 'Inspeksi roll' (yang membuka RollInspectionModal berisi hold/release) karena coverage sudah mencukupi. Mitigasi: tampilkan tombol Inspeksi roll tanpa syarat, atau sediakan daftar singkat 'Roll Ditahan' dengan aksi lepas langsung di dalam qc-inspect-modal."
+}

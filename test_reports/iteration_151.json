@@ -1,0 +1,56 @@
+{
+  "summary": "Verified A/B/C/D audit fixes for KNHOST ERP. Backend A1 global stock fields and B3 lots filter counts match spec. UI testids for A2 (POS global stock cards), B1 inventory-board, B2 stock-buckets, B3 lots filters, C1 Operasi Gudang hub (?view=operations) tabs & inner wms-tab-*, C2 Barang Masuk tabs + OCR settings link, C3 settings-hub Gudang section + receiving-ocr settings tabs, D1 orders, D2 special-orders, D3 sample-orders all render as expected. Preview-allocation endpoint still functional. One backend gap found: /api/products omits entity_available_qty.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/products", "issue": "Missing 'entity_available_qty' field in product items (dashboard has it; spec says /api/products should also return it alongside stock_scope/available_qty/incoming_so_qty/incoming_restock_qty). All other required global-stock fields present."},
+      {"endpoint": "auth seed", "issue": "No user with role 'warehouse_admin' exists (test_credentials.md references whadmin@ with password demo1234, but 401; roles in DB only include 'warehouse'). Cannot test C3 'warehouse_admin can open Pengaturan and sees only this tab'."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "POS 'Produk Terlaris' curation cards", "issue": "On admin@ POS (?view=sales&entity=ent_kanda) BTK-MEGA-001 and LRK-CLSC-001 Terlaris cards show 'Habis' badge even though their main catalog cards show available 310 global. The 'Terlaris' section still appears to use per-entity availability instead of global.", "selector": "cards near 'Produk Terlaris'", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_selectors": {
+    "A2_pos_cards": ["product-available-*", "product-incoming-restock-*", "product-incoming-so-*", "facet-stock-scope-note"],
+    "B1": ["status-board-search", "status-board-tab-all/empty/short/incoming/interco"],
+    "B2": ["sb-tab-board/holds/wip/pending", "sb-toolbar", "sb-search", "sb-filter-warehouse", "sb-filter-owner"],
+    "B3": ["lot-filter-source/status/stage/warehouse", "lot-search"],
+    "C1_wms_hub": ["view=operations renders hub-tab-operations/goods-receipts/wms-outbound/qc-inspection/inspections/interco-transfers; inner wms-tab-stok/transfer/cycle/health"],
+    "C1_outbound": ["wms-outbound-view"],
+    "C2": ["grn-view-tab-list/variance/legacy", "grn-open-ocr-settings"],
+    "C3": ["receiving-ocr-settings; ocr-settings-tab-profiles/samples/usage/mode; hub-section-settings-hub-Gudang; hub-tab-settings-receiving-ocr"],
+    "D1": ["orders-status-tab-bar", "orders-toolbar", "orders-search-input", "orders-status-detail"],
+    "D2": ["status-tab-bar", "special-order-toolbar", "special-order-search"],
+    "D3": ["sample-filter-bar", "sample-filter-all/waiting_approval", "sample-orders-toolbar", "sample-orders-search"]
+  },
+  "notes_on_spec_vs_actual": {
+    "A1_BTK_MEGA_001_values": "available_qty > entity_available_qty confirmed (test asserted). Exact numbers printed in pytest stdout.",
+    "B3_lots_counts": "all 6 counts match spec exactly (total 34; receiving 1; makloon 10; stage yarn 3; karantina 6; q=BTK 13)",
+    "orders_pager_D1": "orders-pager not rendered — likely because dataset <=20 rows (expected behavior). Spec says 'pagination remains', assumed OK when count exceeds threshold.",
+    "D1_tabs_shipped_done_cancelled": "Only verified orders-status-tab-bar presence. Individual tab testids orders-status-tab-{all,reserved,waiting_stock,confirmed,shipped,done,cancelled} not individually probed."
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_global_stock.py",
+    "/app/test_reports/pytest/iter151.xml"
+  ],
+  "action_items": [
+    "Add 'entity_available_qty' field to /api/products response items (mirror dashboard enrichment).",
+    "Fix 'Produk Terlaris' curation on POS so Habis badge uses global stock scope (same rule as main catalog grid).",
+    "Seed a warehouse_admin role user (e.g. whadmin@kainnusantara.id with demo12345) so C3 role gating can be verified, or clarify intended account."
+  ],
+  "critical_code_review_comments": [
+    "Dashboard and products should share one enrichment function; current drift is why entity_available_qty is missing in /api/products.",
+    "POS 'Produk Terlaris' widget likely bypasses the central stock computation path (sales_stock_service.apply_global) — should use the same source."
+  ],
+  "updated_files": ["/app/backend/tests/test_global_stock.py"],
+  "success_rate": {"backend": "90% (9/10 pytest)", "frontend": "95% (all key testids present; 1 Habis badge inconsistency)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 OK; sales@ OK; whadmin@ 401 for both demo12345 and demo1234 (role missing in DB).",
+  "seed_data_creation": "None (no business records created).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend uses pytest file /app/backend/tests/test_global_stock.py with 10 cases. Login via UI form uses data-testid login-email-input/login-password-input. Operasi Gudang hub view is at ?view=operations (not ?view=wms). Sales user is bound to ent_ksc not ent_kanda — use admin to probe ent_kanda stock."
+}

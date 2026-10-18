@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="5" time="3.831" timestamp="2026-10-06T14:05:02.078222+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="test_generate_creates_special_order_approval" time="1.279"><failure message="AssertionError: expected at least one special_order_approval after generate&#10;assert 0 &gt; 0&#10; +  where 0 = len([])">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_notifications_addressing.py:56: in test_generate_creates_special_order_approval
+    assert len(so_notifs) &gt; 0, "expected at least one special_order_approval after generate"
+E   AssertionError: expected at least one special_order_approval after generate
+E   assert 0 &gt; 0
+E    +  where 0 = len([])</failure></testcase><testcase classname="" name="test_generate_is_idempotent" time="0.471" /><testcase classname="" name="test_sales_does_not_see_special_order_approval" time="0.647" /><testcase classname="" name="test_recipients_are_approvers_only" time="0.051"><failure message="AssertionError: no special_order_approval available&#10;assert []">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_notifications_addressing.py:88: in test_recipients_are_approvers_only
+    assert notifs, "no special_order_approval available"
+E   AssertionError: no special_order_approval available
+E   assert []</failure></testcase><testcase classname="" name="test_entity_isolation_on_notifications" time="0.111" /></testsuite></testsuites>

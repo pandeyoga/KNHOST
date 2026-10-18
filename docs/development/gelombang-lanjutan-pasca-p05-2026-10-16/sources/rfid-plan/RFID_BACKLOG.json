@@ -1,0 +1,527 @@
+{
+  "date": "2026-10-12",
+  "version": "v2-with-CP30EN",
+  "reference_snapshot": "f59b8a60d7b7e078888c537ca93c046afae460a9",
+  "scope": "Chainway UR300 fixed reader, C72 handheld and CP30EN RFID printer",
+  "target_commit": null,
+  "model_validation": "UR300 label/firmware identity pending; C72 variant/SDK pending; CP30EN selected, variant/firmware/media/interface PoC pending",
+  "requirements": [
+    {
+      "id": "RFID-01",
+      "title": "Identitas perangkat, firmware, SDK dan PoC nyata",
+      "primary_stage": "RF00",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-02",
+      "title": "Kontrak API ERP dan compatibility seluruh jalur ingest",
+      "primary_stage": "RF01",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-03",
+      "title": "Aplikasi Android C72 dengan adapter SDK",
+      "primary_stage": "RF02",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-04",
+      "title": "Workflow C72: verifikasi tag, loading, opname dan alamat",
+      "primary_stage": "RF02",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-05",
+      "title": "Adapter fixed reader UR300 dan kontrol lokal",
+      "primary_stage": "RF03",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-06",
+      "title": "Gate passage, arah dan kelengkapan manifest",
+      "primary_stage": "RF03",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-07",
+      "title": "Outbox offline, deduplikasi dan replay terkontrol",
+      "primary_stage": "RF01",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-08",
+      "title": "Device health, deployment dan operasi middleware",
+      "primary_stage": "RF01",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-09",
+      "title": "Identitas operator, scope dan traceability",
+      "primary_stage": "RF01",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-10",
+      "title": "UAT perangkat nyata dan integrasi seluruh rantai WMS",
+      "primary_stage": "RF04",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-11",
+      "title": "Profil CP30EN, firmware, koneksi, media dan PoC encoding",
+      "primary_stage": "RF00",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-12",
+      "title": "Printer connector, routing job, lease dan attempt",
+      "primary_stage": "RF-P",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-13",
+      "title": "Cetak label, tulis EPC dan bukti hasil per item",
+      "primary_stage": "RF-P",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-14",
+      "title": "Gagal cetak, hasil ambigu, reprint dan penggantian tag",
+      "primary_stage": "RF-P",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    },
+    {
+      "id": "RFID-15",
+      "title": "Antarmuka printer, template dan jejak operasional per gudang",
+      "primary_stage": "RF-P",
+      "status": "not_started",
+      "implementation_commit": null,
+      "verified_commit": null,
+      "evidence": [],
+      "open_issues": []
+    }
+  ],
+  "stages": [
+    {
+      "id": "RF00",
+      "title": "PoC perangkat dan pemetaan SDK",
+      "requirements": [
+        "RFID-01",
+        "RFID-11"
+      ],
+      "dependencies": [
+        "P00"
+      ],
+      "status": "not_started",
+      "evidence": []
+    },
+    {
+      "id": "RF01",
+      "title": "API ERP dan fondasi middleware",
+      "requirements": [
+        "RFID-02",
+        "RFID-07",
+        "RFID-08",
+        "RFID-09"
+      ],
+      "dependencies": [
+        "RF00",
+        "P01"
+      ],
+      "status": "not_started",
+      "evidence": []
+    },
+    {
+      "id": "RF02",
+      "title": "Aplikasi dan workflow C72",
+      "requirements": [
+        "RFID-03",
+        "RFID-04"
+      ],
+      "dependencies": [
+        "RF01",
+        "P02"
+      ],
+      "status": "not_started",
+      "evidence": []
+    },
+    {
+      "id": "RF03",
+      "title": "Adapter gate UR300 dan passage",
+      "requirements": [
+        "RFID-05",
+        "RFID-06"
+      ],
+      "dependencies": [
+        "RF01",
+        "P02",
+        "P03"
+      ],
+      "status": "not_started",
+      "evidence": []
+    },
+    {
+      "id": "RF-P",
+      "title": "Connector CP30EN, print-encode, verifikasi dan recovery",
+      "requirements": [
+        "RFID-12",
+        "RFID-13",
+        "RFID-14",
+        "RFID-15"
+      ],
+      "dependencies": [
+        "RF00",
+        "RF01",
+        "RF02",
+        "P02"
+      ],
+      "status": "not_started",
+      "evidence": []
+    },
+    {
+      "id": "RF04",
+      "title": "E2E hardware, pilot dan penutupan integrasi",
+      "requirements": [
+        "RFID-10"
+      ],
+      "dependencies": [
+        "RF02",
+        "RF03",
+        "RF-P",
+        "P03",
+        "P04",
+        "P08"
+      ],
+      "status": "not_started",
+      "evidence": []
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "RACC-01",
+      "requirements": "RFID-01",
+      "title": "Model dan SDK",
+      "expected": "Label UR300, model resmi, firmware, OS dan SDK diverifikasi; C72 varian aktual dicatat; runtime tidak ditebak.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-02",
+      "requirements": "RFID-01, RFID-03, RFID-05",
+      "title": "Read nyata",
+      "expected": "EPC dari tag fisik muncul di callback SDK C72 dan fixed reader; simulator/paste EPC dilabeli terpisah.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-03",
+      "requirements": "RFID-02, RFID-09",
+      "title": "Identitas dan scope",
+      "expected": "Key device valid/invalid/disabled, role operator, wrong warehouse, wrong task dan closed session memberi hasil sesuai otorisasi.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-04",
+      "requirements": "RFID-02, RFID-07",
+      "title": "Kontrak session dan non-session",
+      "expected": "Event_id/captured_at/antenna/RSSI, batas batch, retry, processed=False recovery dan response diuji pada kedua jalur. Jangan menganggap session route setara tanpa tes.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-05",
+      "requirements": "RFID-03",
+      "title": "Trigger dan lifecycle C72",
+      "expected": "Start/stop/suspend/resume/reboot tidak meninggalkan reader aktif atau membuang event/outbox; SDK terpasang cocok dengan module.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-06",
+      "requirements": "RFID-04",
+      "title": "Verify tag",
+      "expected": "Expected vs actual EPC membedakan match/missing/extra; completion tidak memalsukan printing/encoding dan stok tidak bertambah dari scan.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-07",
+      "requirements": "RFID-04, RFID-09",
+      "title": "Loading dan task context",
+      "expected": "Roll hanya memenuhi manifest/task aktif yang dipilih; scan C72 berpindah task tidak masuk sesi lama atau mengonsumsi stok dua kali.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-08",
+      "requirements": "RFID-04, RFID-10",
+      "title": "RFID opname",
+      "expected": "Found/missing/extra/untagged dibanding expected physical scope; laporan RFID tidak otomatis menjadi adjustment qty/jurnal.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-09",
+      "requirements": "RFID-04",
+      "title": "Putaway alamat",
+      "expected": "Bin dibaca/dipilih melalui resolver sah; EPC/RSSI tidak dianggap alamat rak; hold/transit/rules tetap diperiksa ERP.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-10",
+      "requirements": "RFID-05, RFID-06",
+      "title": "Arah dan logical gate",
+      "expected": "Gate in/out, reader multi-port dan sensor/antena diperiksa; satu EPC tidak menjadi bukti arah; mapping lokasi terjaga.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-11",
+      "requirements": "RFID-06",
+      "title": "Manifest dan passage",
+      "expected": "Known-valid, unknown, extra, missing, wrong owner/location, blocked quality dan inactive movement ditangani; partial reads tidak otomatis green final.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-12",
+      "requirements": "RFID-06, RFID-07",
+      "title": "Dwell dan passage baru",
+      "expected": "Tag diam tidak memunculkan bisnis berulang; keluar-masuk atau passage baru dievaluasi kembali; retry transport tetap memakai event_id asli.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-13",
+      "requirements": "RFID-05, RFID-06",
+      "title": "Indikator fisik",
+      "expected": "Lampu/alarm yang didukung mengikuti verdict passage aktual; red tidak ditutupi green tag lain; acknowledgement memerlukan peran sah.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-14",
+      "requirements": "RFID-07",
+      "title": "Offline dan lost ACK",
+      "expected": "Queue bertahan saat jaringan/ERP mati dan proses restart; resend tidak menggandakan effects; kegagalan parsial tidak di-ACK sukses seluruhnya.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-15",
+      "requirements": "RFID-06, RFID-07",
+      "title": "Backlog dan keputusan basi",
+      "expected": "Historical replay hanya direkonsiliasi sesuai kontrak; tidak mengaktifkan lampu hijau atau menganggap shipment lama sebagai izin lewat sekarang.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-16",
+      "requirements": "RFID-08",
+      "title": "Health dan versi",
+      "expected": "Heartbeat sukses tetapi reader gagal/upload gagal ditampilkan berbeda; queue age/version/config tercatat tanpa secret.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-17",
+      "requirements": "RFID-08, RFID-09",
+      "title": "Rotation/deployment",
+      "expected": "Key lama invalid setelah rotation yang sah; service/APK update dan rollback mempertahankan queue serta binding peran/gudang.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-18",
+      "requirements": "RFID-02, RFID-07",
+      "title": "Kapasitas batch/concurrency",
+      "expected": "Batch > limit dipotong client sesuai kontrak, bukan hilang; dua retry dan concurrent sessions tidak mencampur task atau duplikasi record.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-19",
+      "requirements": "RFID-10",
+      "title": "E2E transfer dan cross-dock",
+      "expected": "Stock vs transit routing, actual receipt, tag verification, movement gate dan shipment/SJ konsisten; same-owner/intercompany tidak tercampur.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-20",
+      "requirements": "RFID-10",
+      "title": "Pilot dan rekonsiliasi",
+      "expected": "Unit nyata CP30EN + C72 + UR300 yang tervalidasi menjalani siklus kerja representatif; physical print/encode, EPC/session/passage/qty/owner/dokumen dan recovery cocok pada commit/build tercatat.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-21",
+      "requirements": "RFID-11",
+      "title": "PoC CP30EN",
+      "expected": "Varian/firmware/modul RFID/resolusi/interface/media/SDK aktual tercatat. Payload ERP dicetak dan ditulis pada chip yang benar; C72 membaca EPC tepat. Support keluarga CP30 tidak dianggap bukti seluruh varian.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-22",
+      "requirements": "RFID-12, RFID-09",
+      "title": "Routing dan concurrent connector",
+      "expected": "Job hanya ditarik printer/warehouse/capability yang sesuai; dua connector/heartbeat/polling tidak mengganti attempt aktif atau mencetak job yang sama bersamaan. Lease renewal/reclaim dapat dibedakan.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-23",
+      "requirements": "RFID-13, RFID-15",
+      "title": "EPC chip dan template",
+      "expected": "Label memuat roll/SKU/LOT/qty/unit yang sah; resolusi/ukuran/teks/barcode terbaca. EPC 24 hex chip sama dengan ERP, tidak terpotong atau menulis tag tetangga. QR-only tidak diakui sebagai RFID.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-24",
+      "requirements": "RFID-13, RFID-04",
+      "title": "Printed, encoded dan verified",
+      "expected": "Job sent belum dinyatakan verified. Bukti output/encoding printer serta C72 match/missing/extra tercatat; aktifnya identitas database tidak dianggap verifikasi chip/penempelan fisik.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-25",
+      "requirements": "RFID-12, RFID-13, RFID-14",
+      "title": "Partial batch dan error",
+      "expected": "Batch 10 label dengan 7 sukses dan 3 error/paper out/jam/encode failure. Hanya item yang terbukti berhasil diakui; item gagal/ambigu memiliki status dan PIC. Blank/VOID label ditangani sesuai kemampuan unit/SOP.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-26",
+      "requirements": "RFID-14, RFID-07",
+      "title": "Lost ACK dan crash",
+      "expected": "Putus koneksi/crash sesudah printer menerima/menyelesaikan output tetapi sebelum ACK ERP. Ledger/local/printer/C72 reconciliation membuktikan hasil; ACK diulang tanpa blind reprint atau duplicate physical EPC.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-27",
+      "requirements": "RFID-12, RFID-14",
+      "title": "Lease expire dan printer offline",
+      "expected": "Attempt melebihi TTL, printer kehilangan koneksi, lalu job ditawarkan lagi. Reclaim/renew mempertahankan bukti dan tidak membuat dua printer menghasilkan tag sama; uncertain outcome harus diselesaikan dahulu.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-28",
+      "requirements": "RFID-14, RFID-09",
+      "title": "Reprint dan retag",
+      "expected": "Bedakan retry output belum pasti, label teks rusak dan tag rusak/hilang. Otorisasi/alasan/tag lama/history terjaga; satu roll satu active identity; movement aktif tidak di-bypass; stock dan journey tidak berubah keliru.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-29",
+      "requirements": "RFID-15, RFID-08",
+      "title": "UI printer dan dokumen",
+      "expected": "Antrean/status item/PIC/printer health/attempt/preview/error/C72 proof dapat dibuka. Label internal dan SJ dari gudang pengirim memakai media/perangkat dan sumber data sesuai; CP30EN tidak diasumsikan mencetak semua format dokumen.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    },
+    {
+      "id": "RACC-30",
+      "requirements": "RFID-12, RFID-14, RFID-10",
+      "title": "Recovery setelah ACK server",
+      "expected": "Simulasikan job printed durable lalu efek tag/journey on_printed gagal. Retry/recovery melengkapi efek yang belum selesai tanpa mencetak ulang, mengaktifkan tag salah atau menggandakan audit/stock; ledger ERP dan fisik dapat direkonsiliasi.",
+      "status": "not_run",
+      "verified_commit": null,
+      "evidence": []
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "summary": "Backend-only retest of L02 LN-022-T03 (correction of ISSUED SO via amendment credit/debit note + journal, double-credit guard). Existing suites test_l02_ln022_t03_amendment_note.py + _extended.py: 15/15 pass. New edge suite test_l02_ln022_t03_amendment_note_edge.py (9 tests): 6 pass, 3 fail = 3 real bugs. Combined 21/24. VERIFIED WORKING: same target price twice -> 2nd preview/propose 400 'sudah dikoreksi oleh nota sebelumnya', total CN = one-time delta; two-step 0.9->0.8 credits only the increment, changes[0].from = previous to, SO grand_total unchanged; pending note on same product/field -> preview & propose 400 'menunggu persetujuan' (a different field on the same line is allowed); reject frees the key; stale pending note (its 'from' differs from effective value) -> approve 400 'sudah berubah', stays pending_approval, no CN; line discount_percent and order_discount_percent notes -> credit_note, balanced JE, repeat blocked, order-level pending clash blocked; exactly 1 JE per CN (amendment_credit_note), AR via payments method credit_note, remainder to store credit, double approve 400 and idempotent; un-issued (reserved) order still uses re_derive. FAILURES: (1) race on concurrent propose, (2) over-credit across fields when 2 pending notes on interacting fields are approved one after the other, (3) a credit note after an UNBILLED debit note cuts AR by the debit amount.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/amendments/{id}/decision (approve note)", "priority": "HIGH", "issue": "Over-credit across fields. Two pending notes on the SAME line but different fields (price x0.9 and discount_percent 10) are both allowed, because the clash key is (product_id, field). Each note's delta is frozen at propose time against the same baseline. _assert_note_still_valid only checks each change's own 'from', so both approvals pass. Repro on SO 2,166,120: credited 433,224 but the real reduction (price 0.9 + 10% discount) is 411,562.8, i.e. 21,661.2 too much. order_discount_percent combined with any line field, and line price combined with discount_percent, are affected the same way."},
+      {"endpoint": "POST /api/amendments (credit note after debit note)", "priority": "HIGH", "issue": "_note_baseline counts an applied debit_note as effective value, but debit notes are never billed (awaiting_billing_rule, no JE, AR unchanged). Repro: DN price x1.2, then CN back to the original price gives a CN of 433,224 with ar_applied=433,224 and a JE Cr 1-1200 433,224. The receivable and revenue fall below the original invoice even though the net price change is 0. Either exclude debit notes in awaiting_billing_rule from the baseline, or net the CN against the open DN (cancel/offset the DN) instead of reducing AR."},
+      {"endpoint": "POST /api/amendments (concurrent)", "priority": "MEDIUM", "issue": "TOCTOU: the pending clash check in preview() and the insert in propose() are not atomic. 4 parallel identical proposals created 2-3 pending_approval amendments for the same (product, price) key. The stale guard still stops a 2nd CN when approving (total credited stayed one-time), but duplicate pending docs and approver notifications pile up. Fix: unique partial index or a per-doc lock (e.g. findOneAndUpdate on sales_orders.note_lock / a doc_amendments partial unique index on doc_id+key while pending)."}
+    ],
+    "minor": [
+      {"endpoint": "_note_baseline", "issue": "Status 'approved' is treated as pending. If _apply_note raises after decide() sets status=approved, that key stays locked forever and there is no retry or rollback path."},
+      {"endpoint": "ar_receipt_service.apply_from_case (used by _settle_credit_note)", "issue": "The credit-note payment row is labelled '<CN number> (kasus keuangan)' (a finance-case label). Pass a proper label for amendment credit notes."},
+      {"endpoint": "_settle_credit_note", "issue": "Not atomic: the CN is inserted with status issued, then the AR payment, JE and store credit are written. A failure in between leaves a CN 'issued' with a partial settlement and no reconciliation job."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_l02_ln022_t03_amendment_note.py",
+    "/app/backend/tests/test_l02_ln022_t03_amendment_note_extended.py",
+    "/app/backend/tests/test_l02_ln022_t03_amendment_note_edge.py",
+    "/app/test_reports/pytest/l02_ln022_t03_edge.xml"
+  ],
+  "action_items": [
+    "Fix the cross-field over-credit. Options: (a) clash key = (doc_id) for note methods, so only one pending note per order at a time; or (b) at approve time recompute the delta from the current effective baseline (re-run preview with the stored 'to' values), store the new impact/before/after, and reject if it differs from the proposed delta beyond tolerance.",
+    "Exclude unbilled debit notes (billing_status awaiting_billing_rule) from _note_baseline, or offset a later CN against the open DN, so AR/revenue are never reduced for amounts that were never billed.",
+    "Make the pending-note uniqueness atomic (lock or unique index) so concurrent proposals cannot create duplicate pending notes.",
+    "Optional: handle the stuck 'approved' status, fix the CN payment label, and add a reconciliation path for half-settled CNs."
+  ],
+  "critical_code_review_comments": [
+    "amendment_service.py is 1,020 lines, above the 700-line guideline. Split the note logic (_note_baseline, _apply_note, _settle_credit_note, _assert_note_still_valid) into an amendment_note_service module.",
+    "_assert_note_still_valid compares 'from' per field only. It should validate the whole effective baseline (or the recomputed delta), because the money impact depends on price, discount and order discount together.",
+    "Test fixtures were fragile: test_l02_ln022_t03_amendment_note.py had no pre-cleanup. A crashed run left so_TEST_l022t03 behind and the next run failed with E11000 uq_number (I reproduced this at the start). Notification cleanup used the wrong field (ref_id instead of ref/action_id), which left 72 amendment_approval notifications in the DB. Fixed in the tests and the leftovers were deleted."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_l02_ln022_t03_amendment_note_edge.py (new)",
+    "/app/backend/tests/test_l02_ln022_t03_amendment_note.py (pre-cleanup + notification cleanup)",
+    "/app/backend/tests/test_l02_ln022_t03_amendment_note_extended.py (notification cleanup field ref/action_id)"
+  ],
+  "success_rate": {"backend": "87.5% (21/24); new edge tests 6/9", "frontend": "not tested (backend only)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, manager@kainnusantara.id / demo1234 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None persisted. Tests clone a done SO (ent_kanda, so_dea8053010e9, grand_total 2,166,120, PPN 0) into so_TEST_l022t03e_* and delete everything afterwards: SOs, credit_notes, doc_amendments, journal_entries, store_credit_ledger, doc_refs, notifications (ref/action_id), and the entity config_values sales.allow_item_discount/allow_order_discount (temporarily enabled for ent_kanda, then set back to false and the docs deleted). A DB scan after the run found 0 leftovers.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend; set -a; . ./.env; set +a; export REACT_APP_BACKEND_URL=$(grep REACT_APP_BACKEND_URL ../frontend/.env | cut -d= -f2-); python -m pytest tests/test_l02_ln022_t03_amendment_note*.py -n0 -p no:cacheprovider. The 3 failing edge tests (concurrent, cross_field, unbilled_debit_note_then_credit_note) are the bug repros and should pass once fixed. Line/order discounts are disabled by default (sales.allow_*_discount=false), so the edge suite's disc_on fixture enables them per entity. A 10% change on the source SO is over 5% and goes to pending_approval (manager approves; dual_control is on).",
+  "rca of the issue": "Over-credit: notes on a line are keyed per field, but one money delta depends on several fields (price x (1-disc) x (1-order_disc)). Both pending deltas are computed against the same pre-note baseline, so approving both counts the interaction term (price drop x discount) twice: 44000x0.1x49.23x0.1 = 21,661.2, which matches the observed over-credit exactly. DN->CN: an applied DN changes the effective baseline although nothing was billed, so the later CN reverses an amount that was never booked to AR. Race: check-then-insert without a lock."
+}

@@ -1,0 +1,168 @@
+[
+ {
+  "nav": "nav-zone-kerja",
+  "view": "sales-admin-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-home",
+  "view": "sales-admin-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-approval-inbox",
+  "view": "approval-inbox",
+  "hub_tabs": [
+   "approval-inbox",
+   "price-approvals"
+  ]
+ },
+ {
+  "nav": "nav-sales-admin-desk",
+  "view": "sales-admin-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-zone-modul",
+  "view": "sales-admin-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-my-desk",
+  "view": "my-desk",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-tanya-kn",
+  "view": "tanya-kn",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-sales",
+  "view": "sales",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-special-orders",
+  "view": "special-orders",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-sales-orders",
+  "view": "orders",
+  "hub_tabs": [
+   "orders",
+   "amendments",
+   "returns",
+   "return-policies",
+   "internal-requests"
+  ]
+ },
+ {
+  "nav": "nav-sample-orders",
+  "view": "sample-orders",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-customers-crm",
+  "view": "customers-crm",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-products-pricing",
+  "view": "md-products",
+  "hub_tabs": [
+   "md-products",
+   "cs-price-list"
+  ]
+ },
+ {
+  "nav": "nav-sourcing",
+  "view": "purchase-requisitions",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-rnd-hub",
+  "view": "rnd-samples",
+  "hub_tabs": [
+   "rnd-samples",
+   "rnd-labdip",
+   "rnd-handfeel",
+   "rnd-proofing"
+  ]
+ },
+ {
+  "nav": "nav-marketing-hub",
+  "view": "mkt-calendar",
+  "hub_tabs": [
+   "mkt-calendar",
+   "mkt-analytics",
+   "mkt-campaigns",
+   "mkt-accounts"
+  ]
+ },
+ {
+  "nav": "nav-wms-operations",
+  "view": "operations",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-stock-atp",
+  "view": "inventory-board",
+  "hub_tabs": [
+   "inventory-board",
+   "inventory-lots"
+  ]
+ },
+ {
+  "nav": "nav-logistics",
+  "view": "logistics",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-interco-transactions",
+  "view": "interco-transactions",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-petty-cash",
+  "view": "cash-advances",
+  "hub_tabs": [
+   "cash-advances",
+   "settlements"
+  ]
+ },
+ {
+  "nav": "nav-vehicle-logs",
+  "view": "vehicle-logs",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-zone-alat",
+  "view": "vehicle-logs",
+  "hub_tabs": []
+ },
+ {
+  "nav": "nav-document-center",
+  "view": "document-center",
+  "hub_tabs": [
+   "document-center",
+   "doc-trace",
+   "documents"
+  ]
+ },
+ {
+  "nav": "nav-zone-akun",
+  "view": "document-center",
+  "hub_tabs": [
+   "document-center",
+   "doc-trace",
+   "documents"
+  ]
+ },
+ {
+  "nav": "nav-hr-my-profile",
+  "view": "hr-my-profile",
+  "hub_tabs": []
+ }
+]

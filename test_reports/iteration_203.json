@@ -1,0 +1,27 @@
+{
+  "summary": "Saring Sampel Benang (stage=yarn) verified end-to-end. Backend 7/7 pytest pass: sample SO with yarn (woven & knit) -> 400 SAMPLE_NOT_ALLOWED, no document persisted (also when mixed with fabric sample line); fabric sample SO OK; admin regular yarn SO OK; sales.kanda gets 403 'bahan (tahap yarn)' for both regular and sample. UI (admin, ent_ksc POS): yarn quickview hides quickview-kind-sample, shows quickview-kind-regular + quickview-sample-unavailable note; fabric (Batik Mega Mendung) shows kind-sample and sample add works (5 yard, cart becomes Keranjang Sampel); with sample-locked cart, yarn quickview shows disabled quickview-sample-button 'Benang tidak bisa disampel' and click does nothing (cart stays 1). Checkout step 2: yarn regular line has no toggle-sample chip, fabric line has it; toggling fabric -> mixed-cart-notice; mixed-cart-all-retail and mixed-cart-keep-samples both work; sample-to-retail ('Jadikan ecer', shown when over limit e.g. switch to Hanger) converts line to regular.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ProductQuickView (yarn product while cart locked to Sampel)", "issues": ["Still shows quickview-sample-limit note 'Sampel kain woven: maks 5 yard' and qty label 'Panjang sampel (maks 5 yard)' while unit is kg and the product cannot be sampled — confusing; consider hiding sample-limit/qty block when !sampleable and the cart is sample-locked, and hint 'Kosongkan keranjang untuk pesanan biasa'."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_yarn_sample_block.py", "/app/test_reports/pytest/yarn_sample_block.xml"],
+  "action_items": [
+    "(Optional, low) Hide sample limit note / sample qty label in quickview when product is not sampleable and cart is sample-locked.",
+    "(Optional, low) Defense-in-depth: addToCart in hooks/useAppActions.js accepts extra.is_sample without canSample(product) check — currently only reachable via quickview (guarded), backend also blocks."
+  ],
+  "critical_code_review_comments": [
+    "Backend check is inside the per-item loop before any write, so no partial SO is created (verified by count before/after).",
+    "Sales role hits product_exclusivity 403 before SAMPLE_NOT_ALLOWED — expected per request.",
+    "CheckoutDrawer.toggleSample also guards canSample — good."
+  ],
+  "updated_files": ["/app/backend/tests/test_yarn_sample_block.py"],
+  "success_rate": {"backend": "100% (7/7)", "frontend": "100%"},
+  "seed_data_creation": "Pytest created KSC/SOS-00001 (fabric sample) and KSC/SO-00004 (regular yarn) — both cancelled in teardown (reason 'TEST_ cleanup uji sampel benang'). UI tests did not submit orders (cart only, browser-local).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && set -a && . ./.env && set +a && REACT_APP_BACKEND_URL=<url> python -m pytest tests/test_yarn_sample_block.py -n0 -o addopts=. POS = ?view=sales&entity=ent_ksc; regular add of products with rolls opens roll-reconcile-sheet (reconcile-option-* -> reconcile-confirm). toggle-sample-* chips live in checkout step 2 (click checkout-next once). sample-to-retail only appears when sample qty exceeds kind limit (e.g. click sample-kind-<pid>-hanger)."
+}

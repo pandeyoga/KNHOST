@@ -1,0 +1,5 @@
+# Prompt validasi kembali
+
+Validasi kandidat KNHOST pada SHA yang tertulis di handoff, menggunakan paket docs/audit/wave-2. Baca tracker aktif dan laporan iterasi; jangan menganggap status ready_for_validation sebagai bukti fixed. Pastikan SHA dan working tree sesuai, review diff terhadap akar masalah serta caller, lalu jalankan acceptance dengan hasil bisnis yang benar dan kontrol positif. Gunakan database sintetis, hasil terpisah dari baseline.
+
+Untuk setiap ID laporkan reproduced/fixed/partially fixed/not verifiable beserta bukti actual-versus-expected, regresi dan batas uji. Periksa flow terkait, nilai/GL, scope, retry/concurrency, migrasi dan UI sesuai perubahan. Jangan menutup scope hardware dengan simulator. Update validation_commit, validation_evidence dan history; verified_fixed hanya jika kontrak ID tercapai. Jika gagal, reopened dengan langkah reproduksi pada kandidat. Tutup fase hanya sesuai WORKFLOW. Laporkan sisa cakupan secara eksplisit;242 checkpoint bukan semua code/flow.

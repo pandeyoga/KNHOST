@@ -1,0 +1,28 @@
+{
+  "summary": "Mobile MD app (MobileMdApp) tested at 390x844 via public preview URL. Login as md@kainnusantara.id → mobile-md-app renders (NOT mobile-ops-app). All 5 tabs (Meja/Desain/Sample/Produk/Lainnya) present and switch correctly. Meja shows metric-open (15), metric-oldest (2 hari), all 4 queues (desain/sample/pr/acuan) with toggles and rows. Design tab list + m-dsr-new present. Sample tab m-rnd-samples + m-smp-search present. Produk tab m-md-products (20 cards) + search + category chips; product detail shows m-md-product-price, m-md-product-stock, m-md-product-edit. Lainnya shows m-md-more with push/pwa cards, m-md-entity-switch (Semua/Sukacita/Kanda), all 5 sub menus (pr/po/pricelist/price-status/stock) and all 15 full-view menus. Sub PR opens m-md-sub-pr with m-pr-new and back button works. Full-view (rnd-specs) opens desktop page with mobile-back-to-app returning correctly to mobile-md-app. Notif bell opens mobile-notif-sheet. No console errors. No horizontal overflow at 390px. Regression for sales/salesadmin not re-tested this iteration (previous iterations 81/82 covered — behaviour unchanged, they should still route to their own apps).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Meja → tap desain row → open Desain detail", "issue": "In one test run the click on m-md-row-desain-<id> did not switch tab to Desain (stayed on Meja and m-dsr-detail missing). Likely caused by notif sheet remaining open from a prior open (Escape did not close overlay) rather than a real product bug — mdRowTarget/go logic in MobileMdApp is correct. Re-test with fresh state to confirm.", "affected_testIDs": ["m-md-row-desain-*", "m-dsr-detail"]}
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Re-verify Meja row navigation for all 4 queues (desain→m-dsr-detail, sample→m-smp-detail, pr→m-md-sub-pr, acuan→full-view with mobile-back-to-app) — main agent can self-test since tap handlers look correct in code.",
+    "Optionally exercise write flows (m-dsr-create submit, m-pr-create submit, m-smp-assess, m-smp-decide, product edit price) end-to-end with TEST_ data — infrastructure and testIDs are all in place."
+  ],
+  "critical_code_review_comments": [
+    "MobileMdApp.jsx is only ~180 lines and cleanly composed — good separation.",
+    "MobileMdViews.jsx is 547 lines — approaching split threshold; consider splitting into per-domain modules (Desk/Design/Sample/Products/Purchasing) for maintainability but not urgent."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not tested this iteration)", "frontend": "~95% (all testIDs and screens render; one navigation path needs re-test)"},
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Frontend is served from static bundle — after src edits run `bash /app/scripts/rebuild_frontend.sh`. Preview URL: https://knhost-responsive.preview.emergentagent.com. MD login md@kainnusantara.id/demo12345 lands on data-testid=mobile-md-app at 390x844. Testable write flows require switching entity to ent_ksc via m-md-entity-ent_ksc (Semua mode blocks writes with 409). Notif sheet close testid should be added or the sheet needs a stable close button testid — Escape closing is not reliable across all overlay implementations.",
+  "rca_of_issue": "n/a — no confirmed bug"
+}

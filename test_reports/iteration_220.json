@@ -1,0 +1,42 @@
+{
+  "summary": "LN-031 retest (backend+frontend). Backend: original LN-031 4/4, new extra suite 6/6 (meta can_paper_check per role, designer ownership 403, md 403, archived 400, missing 404, 6x concurrent paper click -> 1 history/1 timeline, uncheck recorded w/o status/acc change, OD-linked design ACC race admin+manager -> exactly one 200 + one 409/400, exactly 1 approve timeline + exactly 1 auto-proofing sample, chain.review.object/object_label + customer_decisions[].object/object_label). LN-030 regression 25/25 + 6/6. Frontend (static build): designer checks/unchecks Print paper in Design Studio Summary -> info 'dicentang <name> · <time>', uncheck shows 'dibatalkan ...', status stays Draf, no API errors; foreign design -> 403 banner shown properly. Special Order detail (sales): od-customer-approval title shows 'objek: Desain (ACC PIC)', od-customer-reminder visible before ACC, ACC via UI -> reminder gone, chip od-customer-decision-object-<id> = 'Desain (ACC PIC)', status chip shown. All features in scope work; only minor UX issues + one pre-existing business-logic concern.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/design-gallery/{id}/lifecycle/approve|request_revision vs POST .../rounds/{v}/paper", "issue": "transition() $set replaces the whole 'versions' array built from a stale read, so a paper check written between the read and the update (same ms window) is lost from versions[].paper/paper_history (timeline event stays). Low probability; fix with positional updates (versions.$.acc/score) instead of a full array $set."},
+      {"endpoint": "POST /api/special-orders/{id}/customer-decision", "issue": "status_history note is always 'Pelanggan ACC sample — ...' even when the object is 'design' (Desain (ACC PIC)). Should use object_label."},
+      {"endpoint": "special_order_phase2.review_ready (pre-existing, in initial commit)", "issue": "For a printing OD, once the PIC approves the design, review is 'ready' with object 'design' even though the auto-proofing sample (e.g. KSC/SMP-00022) is still Draf. Sales can then record customer ACC and the OD goes to 'Terkonfirmasi', skipping proofing kain. Needs an owner decision: when an open proofing sample exists, should the object be 'proofing' (and not ready until it is decided)?"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "DesignDetailPage > Riwayat tab", "issue": "Timeline shows raw event keys 'paper_check' / 'paper_uncheck' with no Indonesian label, and they are counted under the 'Status & keputusan' filter even though they are not decisions", "selector": "Riwayat tab history list", "priority": "LOW"},
+      {"component": "RoundPaperCheck", "issue": "Checkbox is enabled for a designer on another designer's design because canPaper = meta.can_paper_check (role-level only). Clicking it gives a 403 banner. Should also check ownership, like the backend's assert_design_writer.", "selector": "design-round-paper-toggle-<v>", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Special Order detail open", "issue": "The panel first renders 'Belum ada sample yang diputus...' (od-customer-not-ready) from the list row data that has no chain, then switches to ready/reminder after the detail loads. This is a brief wrong-state flash.", "affected_selectors": ["od-customer-not-ready", "od-customer-reminder"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_l03_ln031_extra_iter220.py", "/app/backend/tests/test_l03_ln031_paper_and_acc.py", "/app/test_reports/pytest/ln031_iter220.xml"],
+  "action_items": [
+    "(Low) Add human labels for paper_check/paper_uncheck in the design history renderer, and consider moving them out of the 'Status & keputusan' filter",
+    "(Low) Disable the paper checkbox in the UI when a designer is not the owner/assignee",
+    "(Low) Use object_label in the customer-decision status_history note instead of the hard-coded 'sample'",
+    "(Low) Use positional updates in transition() so a concurrent paper check is not overwritten",
+    "(Owner decision) Printing OD: should customer ACC on 'Desain (ACC PIC)' be allowed while the auto-proofing sample is still open?"
+  ],
+  "critical_code_review_comments": [
+    "design_studio_service.py is 746 lines (>700). Consider splitting the paper/hold helpers into their own module.",
+    "transition(): the atomic guard {id,status,version} is correct; the side effects (dsr sync, on_design_approved, notify) only run for the winner. Good.",
+    "set_paper(): the $elemMatch guard on paper.checked makes it idempotent under concurrency (verified 6 parallel calls).",
+    "assert_design_writer lets anyone through when created_by_id is empty and no request is linked (pre-existing)."
+  ],
+  "updated_files": ["/app/backend/tests/test_l03_ln031_extra_iter220.py"],
+  "success_rate": {"backend": "100% (41/41 across 4 files)", "frontend": "100% of scoped flows (minor UX issues noted)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; designer@, manager@, sales@, md@ /demo1234",
+  "seed_data_creation": "Temporary TEST_ designs (dsgn_TEST_ui31_*) and OD TEST_UI31_OD (SORD-261018-0003) with DSR/proofing sample were created for UI testing and then deleted. The pytest suites clean up after themselves.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run the pytest files one at a time with -n0. The OD-linked ACC race test builds the OD via API (parent_product + printing -> approve -> items[0].design_request_id), inserts a gallery design with request_id and links design_requests.design_id/gallery_ids. Frontend is a static build: changes need scripts/rebuild_frontend.sh."
+}

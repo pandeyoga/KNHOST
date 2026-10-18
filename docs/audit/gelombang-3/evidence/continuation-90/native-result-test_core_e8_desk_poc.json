@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_e8_desk_poc.py",
+    "database": "knhost_audit_native90_d318b12fc98a4493a5c81e509f4c5859",
+    "exit": 0,
+    "seconds": 58.76,
+    "pass_log_tokens": 98,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_core_e8_desk_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "\n  [PASS] BUKTI-MERAH: sales KSC tetap tertutup atas pesanan Kanda (pagar entitas)\n  [PASS] US12 — sales membaca sumber pemenuhannya di perjalanan pesanan  (Kekurangan diambil dari PT lain lewat KANDA/IC-00006 (permintaan KANDA/PIN-00002))\n  [PASS] US16 — pilihan 'ambil dari PT lain' MATI bila stok grup tak cukup, dengan alasan tertulis  (Belum ada badan usaha grup yang stoknya cukup untuk semua baris.)\n  [PASS] BUKTI-MERAH: mode pemenuhan asal-asalan ditolak 400  (HTTP 400)\n  [PASS] BUKTI-MERAH: 'ambil dari PT lain' tanpa memilih sumber ditolak dengan kalimat menuntun  (Pilih badan usaha sumber dulu — daftar kandidat beserta stok & kesiapan harga in)\n\nG · E8.3/E8.5 — layar mati sales & dropdown ikut badan usaha\n  [PASS] E8.3 — sales melihat KUNJUNGANNYA SENDIRI (dulu menu 403)  (HTTP 200)\n  [PASS] kunjungan sendiri membawa KPI ringkas (total · selesai · berbuah order)  ({'total': 2, 'done': 2, 'with_order': 1, 'total_minutes': 80, 'conversion_percent': 50.0})\n  [PASS] hanya kunjungan milik akun yang login (pagar dari sesi, bukan parameter)\n  [PASS] BUKTI-MERAH: daftar kunjungan SELURUH karyawan tetap tertutup untuk sales  (HTTP 403)\n  [PASS] E8.5 — dropdown sales BERBEDA per badan usaha  (KSC=['Ayu Permatasari', 'Bima Saputra', 'Dewi Anggraini'] Kanda=['Citra Lestari'])\n  [PASS] E8.5 — tidak ada sales PT lain yang bocor ke dropdown  ([])\n\n── CLEANUP (INV-GATE-01: nol residu)\n  [PASS] CLEANUP: seluruh dokumen yang dibuat POC dihapus & dokumen lama dipulihkan  (interco_transactions=2 internal_requests=2 journal_entries=2 intercompany_eliminations=1 notifications=6 audit_logs=14 config_values=4 sisa=0)\n\n==============================================================================\n  97/97 PASS\n==============================================================================\n"
+  }
+]

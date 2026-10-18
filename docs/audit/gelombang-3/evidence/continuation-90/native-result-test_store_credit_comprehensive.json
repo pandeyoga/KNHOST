@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_store_credit_comprehensive.py",
+    "database": "knhost_audit_native90_f5e914f9b32849d2b9eeb37c2bb18b09",
+    "exit": 0,
+    "seconds": 48.55,
+    "pass_log_tokens": 12,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_store_credit_comprehensive.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_f5e914f9b32849d2b9eeb37c2bb18b09 test_store_credit_comprehensive.py\n================================================================================\nR5.2 STORE CREDIT COMPREHENSIVE BACKEND TEST\n================================================================================\n\n✅ PASS: Auth - Login\n   User: Budi Santoso\n\n--- Testing Empty State ---\n✅ PASS: GET /store-credit (empty state)\n   Returns array with 0 items\n✅ PASS: GET /store-credit/ledger (all)\n   Returns 0 entries\n\n--- Creating Store Credit via Sales Return ---\n  Found eligible order: SO-0004\n  Created return: SRET-00003\n  ✅ Settled with store_credit: 410700.0\n  Customer: cust_fashion_bandung, Entity: ent_ksc\n✅ PASS: ISSUE - Create store credit via return\n   Amount: 410700.0, CN: CN-00001\n\n--- Testing With Store Credit Data ---\n✅ PASS: GET /store-credit (with data)\n   Found test customer in 1 results\n✅ PASS: GET /store-credit/balance\n   Balance: 410700.0, Entities: 1\n✅ PASS: GET /store-credit/ledger (filtered)\n   Found 1 entries including issue\n✅ PASS: GET /store-credit/open-orders\n   Found 1 open AR orders\n\n--- Testing Redeem ---\n✅ PASS: POST /store-credit/redeem\n   Applied: 1000.0, Number: KSC/SCR-00001\n✅ PASS: Over-redeem validation (400)\n   Correctly rejected\n\n--- Testing Adjust ---\n✅ PASS: POST /store-credit/adjust (+)\n   Balance after: 410200.0\n✅ PASS: POST /store-credit/adjust (-)\n   Balance after: 410000.0\n\n================================================================================\nCOMPREHENSIVE TEST SUMMARY\n================================================================================\nTests Run: 12\nTests Passed: 12\nTests Failed: 0\nSuccess Rate: 100.0%\n================================================================================\n"
+  }
+]

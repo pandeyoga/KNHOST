@@ -1,0 +1,27 @@
+[
+ {
+  "id": "COMM-03",
+  "invariant": "harga khusus disetujui → harga baris SO = harga khusus & total dihitung ulang",
+  "pass": true,
+  "detail": "200/200 price=192375.0 net=384750.0"
+ },
+ {
+  "id": "COMM-03",
+  "invariant": "harga khusus lingkup pesanan TIDAK bisa dipakai SO lain lewat price_approval_id (400)",
+  "pass": false,
+  "detail": "200 {\"id\":\"so_ed5f102a42e5\",\"number\":\"KSC/SO-00036\",\"status\":\"reserved\",\"entity_id\":\"ent_ksc\",\"customer_id\":\"cust_toko_kain\",\"customer_name\":\"Toko Kain Se"
+ },
+ {
+  "id": "COMM-03",
+  "invariant": "harga khusus lingkup pesanan tidak muncul sebagai harga efektif standing",
+  "pass": false,
+  "detail": "200 {\"has_special\":true,\"price_approval_id\":\"pra_e23d67d010a5\",\"requested_price\":192375.0,\"normal_price\":213750.0,\"min_quantity\":0.0,\"valid_until\":\"\"}"
+ },
+ {
+  "id": "COMM-03",
+  "invariant": "standing kedaluwarsa ditolak; di bawah min qty ditolak; berlaku & qty cukup → harga khusus",
+  "pass": true,
+  "detail": "400/400/200"
+ }
+]
+pass=2 fail=2

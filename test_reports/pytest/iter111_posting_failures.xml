@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="5" time="1.439" timestamp="2026-09-30T17:50:55.180371+00:00" hostname="agent-env-884b1ef5-47d1-42d2-8d2f-cc88a45c63d4"><testcase classname="tests.test_posting_failures" name="test_posting_failures_admin_ok" time="0.604" /><testcase classname="tests.test_posting_failures" name="test_posting_failures_sales_forbidden" time="0.441" /><testcase classname="tests.test_posting_failures" name="test_retry_unknown_kind_400" time="0.093" /><testcase classname="tests.test_posting_failures" name="test_retry_missing_id_404" time="0.089" /><testcase classname="tests.test_posting_failures" name="test_failed_cash_txn_surfaces_retry_and_cleanup" time="0.097"><failure message="AssertionError: No asset account for ent_ksc&#10;assert None">tests/test_posting_failures.py:124: in test_failed_cash_txn_surfaces_retry_and_cleanup
+    asyncio.run(_main())
+/usr/local/lib/python3.11/asyncio/runners.py:190: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/asyncio/base_events.py:654: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/test_posting_failures.py:78: in _main
+    assert acc, "No asset account for ent_ksc"
+E   AssertionError: No asset account for ent_ksc
+E   assert None</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,2654 @@
+{
+  "database": "knhost_audit_3749e3eedb6c4ea49d687b8a8c352c96",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "mode": "Actual ASGI lifecycle; opening100 roll from actual service; synthetic masters, default policies",
+  "results": [
+    {
+      "id": "W2-S-C01",
+      "kind": "control",
+      "label": "Order reserves20 from100",
+      "observed": {
+        "available": 80.0,
+        "reserved": 20.0
+      },
+      "expected": {
+        "available": 80,
+        "reserved": 20
+      }
+    },
+    {
+      "id": "W2-S-C02",
+      "kind": "control",
+      "label": "Confirm before verification blocked",
+      "observed": 409,
+      "expected": 409
+    },
+    {
+      "id": "W2-S-C03",
+      "kind": "control",
+      "label": "Confirmed order creates one task20",
+      "observed": [
+        "confirmed",
+        1,
+        20.0
+      ],
+      "expected": [
+        "confirmed",
+        1,
+        20
+      ]
+    },
+    {
+      "id": "W2-S-C04",
+      "kind": "control",
+      "label": "Dispatch before pick blocked",
+      "observed": 400,
+      "expected": 400
+    },
+    {
+      "id": "W2-S-C05",
+      "kind": "control",
+      "label": "Picking commits quantities",
+      "observed": {
+        "available": 80.0,
+        "committed": 20.0
+      },
+      "expected": {
+        "available": 80,
+        "committed": 20
+      }
+    },
+    {
+      "id": "W2-S-C06",
+      "kind": "control",
+      "label": "Over-dispatch rejected",
+      "observed": 400,
+      "expected": 400
+    },
+    {
+      "id": "W2-S-C07",
+      "kind": "control",
+      "label": "Partial dispatch conserves quantity",
+      "observed": [
+        8.0,
+        {
+          "available": 80.0,
+          "committed": 12.0,
+          "in_transit_sales": 8.0
+        }
+      ],
+      "expected": [
+        8,
+        {
+          "available": 80,
+          "committed": 12,
+          "in_transit_sales": 8
+        }
+      ]
+    },
+    {
+      "id": "W2-S-C08",
+      "kind": "control",
+      "label": "Cancel partially shipped order blocked",
+      "observed": 409,
+      "expected": 409
+    },
+    {
+      "id": "W2-S-C09",
+      "kind": "control",
+      "label": "Final dispatch ships only remaining12",
+      "observed": [
+        12.0,
+        20.0,
+        {
+          "available": 80.0,
+          "in_transit_sales": 20.0
+        }
+      ],
+      "expected": [
+        12,
+        20,
+        {
+          "available": 80,
+          "in_transit_sales": 20
+        }
+      ]
+    },
+    {
+      "id": "W2-S-C10",
+      "kind": "control",
+      "label": "Repeat dispatch rejected without extra shipment",
+      "observed": [
+        400,
+        2
+      ],
+      "expected": [
+        400,
+        2
+      ]
+    },
+    {
+      "id": "W2-S-C11",
+      "kind": "control",
+      "label": "Delivery finalizes transit20",
+      "observed": [
+        "done",
+        {
+          "available": 80.0,
+          "delivered": 20.0
+        }
+      ],
+      "expected": [
+        "done",
+        {
+          "available": 80,
+          "delivered": 20
+        }
+      ]
+    },
+    {
+      "id": "W2-S-C12",
+      "kind": "control",
+      "label": "Cancel reserved order restores available",
+      "observed": [
+        "cancelled",
+        {
+          "available": 80.0,
+          "delivered": 20.0
+        }
+      ],
+      "expected": [
+        "cancelled",
+        {
+          "available": 80,
+          "delivered": 20
+        }
+      ]
+    },
+    {
+      "id": "W2-S-C13",
+      "kind": "control",
+      "label": "Repeated cancel rejected and stock preserved",
+      "observed": [
+        409,
+        {
+          "available": 80.0,
+          "delivered": 20.0
+        }
+      ],
+      "expected": [
+        409,
+        {
+          "available": 80,
+          "delivered": 20
+        }
+      ]
+    },
+    {
+      "id": "W2-S-C14",
+      "kind": "control",
+      "label": "Return exceeding delivered quantity rejected",
+      "observed": 400,
+      "expected": 400
+    },
+    {
+      "id": "W2-S-C15",
+      "kind": "control",
+      "label": "Settlement before approval and inspection rejected",
+      "observed": 400,
+      "expected": 400
+    },
+    {
+      "id": "W2-S-C16",
+      "kind": "control",
+      "label": "Return inspection records measured acceptance",
+      "observed": [
+        "done",
+        5.0
+      ],
+      "expected": [
+        "done",
+        5
+      ]
+    },
+    {
+      "id": "W2-S-C17",
+      "kind": "control",
+      "label": "Store credit return restocks into quarantine",
+      "observed": [
+        "credit_settled",
+        50000.0,
+        {
+          "available": 80.0,
+          "delivered": 20.0,
+          "quarantine": 5.0
+        }
+      ],
+      "expected": [
+        "credit_settled",
+        50000,
+        {
+          "available": 80,
+          "delivered": 20,
+          "quarantine": 5
+        }
+      ]
+    },
+    {
+      "id": "W2-S-C18",
+      "kind": "control",
+      "label": "Repeat settlement conserves stock and credit note count",
+      "observed": [
+        {
+          "available": 80.0,
+          "delivered": 20.0,
+          "quarantine": 5.0
+        },
+        1
+      ],
+      "expected": [
+        {
+          "available": 80,
+          "delivered": 20,
+          "quarantine": 5
+        },
+        1
+      ]
+    },
+    {
+      "id": "W2-S-C19",
+      "kind": "control",
+      "label": "Reverse quarantined return restores pre-return stock",
+      "observed": [
+        "cancelled",
+        {
+          "available": 80.0,
+          "delivered": 20.0
+        }
+      ],
+      "expected": [
+        "cancelled",
+        {
+          "available": 80,
+          "delivered": 20
+        }
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "path": "/sales-orders",
+      "status": 200,
+      "body": {
+        "id": "so_8b66eb229619",
+        "number": "A/SO-00001",
+        "status": "reserved",
+        "entity_id": "A",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR",
+          "label": "Audit",
+          "address": "Synthetic address",
+          "city": "Jakarta",
+          "recipient_name": "Synthetic recipient",
+          "phone": "0000000000"
+        },
+        "shipping_address_id": "ADDR",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "P",
+            "sku": "P",
+            "product_name": "Audit fabric",
+            "quantity": 20.0,
+            "unit": "meter",
+            "price": 10000.0,
+            "discount_percent": 0.0,
+            "qty_rolls": null,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 200000.0,
+            "discount_amount": 0.0,
+            "line_total": 200000.0,
+            "base_unit": "meter",
+            "base_quantity": 20.0,
+            "category": "",
+            "line_code": "",
+            "reserved_qty": 20.0,
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_1d1cb21b466b",
+            "product_id": "P",
+            "warehouse_id": "WH",
+            "warehouse_name": "Audit WH",
+            "warehouse_city": "",
+            "owner_entity_id": "A",
+            "quantity": 20.0,
+            "lot": "A/LOT-2610-0001",
+            "lots": [
+              "A/LOT-2610-0001"
+            ],
+            "dye_lot": "LOT-MIGRATED",
+            "dye_lots": [
+              "LOT-MIGRATED"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "20.0 dari Lot A/LOT-2610-0001 (FEFO) \u00b7 Audit WH \u2014 lot tunggal.",
+            "policy_lot_selection": "fefo",
+            "dye_lot_strict": false,
+            "rolls": [
+              {
+                "roll_id": "roll_92e54003f3d4",
+                "roll_no": "RL-00001-1",
+                "lot": "A/LOT-2610-0001",
+                "dye_lot": "LOT-MIGRATED",
+                "length": 20.0
+              }
+            ],
+            "status": "allocated"
+          }
+        ],
+        "total_amount": 200000.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 200000.0,
+        "dpp": 200000.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 200000.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": null,
+        "approval_amount": 200000.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-05T18:15:03.476107+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-02T18:15:03.481363+00:00",
+        "updated_at": "2026-10-02T18:15:03.481363+00:00",
+        "stage": "Reserved",
+        "sub_status": [
+          "siap_disahkan"
+        ]
+      }
+    },
+    {
+      "path": "/sales-orders/so_8b66eb229619/submit-for-approval",
+      "status": 200,
+      "body": {
+        "id": "so_8b66eb229619",
+        "number": "A/SO-00001",
+        "status": "approved",
+        "entity_id": "A",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR",
+          "label": "Audit",
+          "address": "Synthetic address",
+          "city": "Jakarta",
+          "recipient_name": "Synthetic recipient",
+          "phone": "0000000000"
+        },
+        "shipping_address_id": "ADDR",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "P",
+            "sku": "P",
+            "product_name": "Audit fabric",
+            "quantity": 20.0,
+            "unit": "meter",
+            "price": 10000.0,
+            "discount_percent": 0.0,
+            "qty_rolls": null,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 200000.0,
+            "discount_amount": 0.0,
+            "line_total": 200000.0,
+            "base_unit": "meter",
+            "base_quantity": 20.0,
+            "category": "",
+            "line_code": "",
+            "reserved_qty": 20.0,
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_1d1cb21b466b",
+            "product_id": "P",
+            "warehouse_id": "WH",
+            "warehouse_name": "Audit WH",
+            "warehouse_city": "",
+            "owner_entity_id": "A",
+            "quantity": 20.0,
+            "lot": "A/LOT-2610-0001",
+            "lots": [
+              "A/LOT-2610-0001"
+            ],
+            "dye_lot": "LOT-MIGRATED",
+            "dye_lots": [
+              "LOT-MIGRATED"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "20.0 dari Lot A/LOT-2610-0001 (FEFO) \u00b7 Audit WH \u2014 lot tunggal.",
+            "policy_lot_selection": "fefo",
+            "dye_lot_strict": false,
+            "rolls": [
+              {
+                "roll_id": "roll_92e54003f3d4",
+                "roll_no": "RL-00001-1",
+                "lot": "A/LOT-2610-0001",
+                "dye_lot": "LOT-MIGRATED",
+                "length": 20.0
+              }
+            ],
+            "status": "allocated"
+          }
+        ],
+        "total_amount": 200000.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 200000.0,
+        "dpp": 200000.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 200000.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": "",
+        "approval_amount": 200000.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-05T18:15:03.476107+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-02T18:15:03.481363+00:00",
+        "updated_at": "2026-10-02T18:15:03.561484+00:00",
+        "stage": "Approved",
+        "sub_status": [
+          "siap_confirm"
+        ],
+        "approval_note": "Auto-approve (validasi nonaktif, di bawah threshold)"
+      }
+    },
+    {
+      "path": "/sales-orders/so_8b66eb229619/verify",
+      "status": 200,
+      "body": {
+        "order_id": "so_8b66eb229619",
+        "order_number": "A/SO-00001",
+        "verification": {
+          "status": "verified",
+          "by": "Audit User A",
+          "by_id": "U",
+          "by_role": "finance",
+          "at": "2026-10-02T18:15:03.634565+00:00",
+          "note": "Synthetic complete document check",
+          "warnings": [],
+          "checks": [
+            {
+              "id": "alamat",
+              "label": "Alamat & penerima lengkap",
+              "ok": true,
+              "detail": "Lengkap"
+            },
+            {
+              "id": "syarat_bayar",
+              "label": "Syarat pembayaran dipilih",
+              "ok": true,
+              "detail": "Kredit NET 30 Hari"
+            },
+            {
+              "id": "isi_pesanan",
+              "label": "Isi pesanan wajar (ada item, jumlah > 0)",
+              "ok": true,
+              "detail": "1 baris"
+            },
+            {
+              "id": "pajak",
+              "label": "Perlakuan PPN sesuai status badan usaha",
+              "ok": true,
+              "detail": "Non-PKP \u00b7 PPN nol (benar)"
+            },
+            {
+              "id": "npwp",
+              "label": "NPWP pelanggan (bila minta Faktur Pajak)",
+              "ok": true,
+              "detail": "Tidak diminta"
+            },
+            {
+              "id": "kredit",
+              "label": "Tidak tertahan batas kredit",
+              "ok": true,
+              "detail": "Aman"
+            }
+          ]
+        },
+        "blocking_gaps": [],
+        "warnings": [],
+        "ready": true,
+        "checked": 6
+      }
+    },
+    {
+      "path": "/sales-orders/so_8b66eb229619/confirm",
+      "status": 200,
+      "body": {
+        "id": "so_8b66eb229619",
+        "number": "A/SO-00001",
+        "status": "confirmed",
+        "entity_id": "A",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR",
+          "label": "Audit",
+          "address": "Synthetic address",
+          "city": "Jakarta",
+          "recipient_name": "Synthetic recipient",
+          "phone": "0000000000"
+        },
+        "shipping_address_id": "ADDR",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "P",
+            "sku": "P",
+            "product_name": "Audit fabric",
+            "quantity": 20.0,
+            "unit": "meter",
+            "price": 10000.0,
+            "discount_percent": 0.0,
+            "qty_rolls": null,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 200000.0,
+            "discount_amount": 0.0,
+            "line_total": 200000.0,
+            "base_unit": "meter",
+            "base_quantity": 20.0,
+            "category": "",
+            "line_code": "",
+            "unit_cost": 5000.0,
+            "reserved_qty": 20.0,
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_1d1cb21b466b",
+            "product_id": "P",
+            "warehouse_id": "WH",
+            "warehouse_name": "Audit WH",
+            "warehouse_city": "",
+            "owner_entity_id": "A",
+            "quantity": 20.0,
+            "lot": "A/LOT-2610-0001",
+            "lots": [
+              "A/LOT-2610-0001"
+            ],
+            "dye_lot": "LOT-MIGRATED",
+            "dye_lots": [
+              "LOT-MIGRATED"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "20.0 dari Lot A/LOT-2610-0001 (FEFO) \u00b7 Audit WH \u2014 lot tunggal.",
+            "policy_lot_selection": "fefo",
+            "dye_lot_strict": false,
+            "rolls": [
+              {
+                "roll_id": "roll_92e54003f3d4",
+                "roll_no": "RL-00001-1",
+                "lot": "A/LOT-2610-0001",
+                "dye_lot": "LOT-MIGRATED",
+                "length": 20.0
+              }
+            ],
+            "status": "allocated"
+          }
+        ],
+        "total_amount": 200000.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 200000.0,
+        "dpp": 200000.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 200000.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": "",
+        "approval_amount": 200000.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-05T18:15:03.476107+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-02T18:15:03.481363+00:00",
+        "updated_at": "2026-10-02T18:15:03.709789+00:00",
+        "stage": "Confirmed",
+        "sub_status": [
+          "siap_pick"
+        ],
+        "approval_note": "Auto-approve (validasi nonaktif, di bawah threshold)",
+        "status_history": [
+          {
+            "status": "approved",
+            "stage": "verified_by_sales_admin",
+            "timestamp": "2026-10-02T18:15:03.634565+00:00",
+            "user": "Audit User A",
+            "note": "Kelengkapan administratif diverifikasi"
+          }
+        ],
+        "verification": {
+          "status": "verified",
+          "by": "Audit User A",
+          "by_id": "U",
+          "by_role": "finance",
+          "at": "2026-10-02T18:15:03.634565+00:00",
+          "note": "Synthetic complete document check",
+          "warnings": [],
+          "checks": [
+            {
+              "id": "alamat",
+              "label": "Alamat & penerima lengkap",
+              "ok": true,
+              "detail": "Lengkap"
+            },
+            {
+              "id": "syarat_bayar",
+              "label": "Syarat pembayaran dipilih",
+              "ok": true,
+              "detail": "Kredit NET 30 Hari"
+            },
+            {
+              "id": "isi_pesanan",
+              "label": "Isi pesanan wajar (ada item, jumlah > 0)",
+              "ok": true,
+              "detail": "1 baris"
+            },
+            {
+              "id": "pajak",
+              "label": "Perlakuan PPN sesuai status badan usaha",
+              "ok": true,
+              "detail": "Non-PKP \u00b7 PPN nol (benar)"
+            },
+            {
+              "id": "npwp",
+              "label": "NPWP pelanggan (bila minta Faktur Pajak)",
+              "ok": true,
+              "detail": "Tidak diminta"
+            },
+            {
+              "id": "kredit",
+              "label": "Tidak tertahan batas kredit",
+              "ok": true,
+              "detail": "Aman"
+            }
+          ]
+        },
+        "refs": [
+          {
+            "rel": "child",
+            "doc_type": "picking_task",
+            "doc_id": "wms_936537c8dc7d",
+            "doc_number": "PICK-C8DC7D",
+            "note": "pengambilan untuk SO",
+            "at": "2026-10-02T18:15:03.693149+00:00"
+          }
+        ],
+        "fulfillment": {
+          "total_qty": 20.0,
+          "picked_qty": 0.0,
+          "shipped_qty": 0.0,
+          "remaining_qty": 20.0
+        }
+      }
+    },
+    {
+      "path": "/outbound/tasks/wms_936537c8dc7d/scan-pick",
+      "status": 200,
+      "body": {
+        "id": "wms_936537c8dc7d",
+        "entity_id": "A",
+        "flow_type": "outbound",
+        "source_type": "sales_order",
+        "order_id": "so_8b66eb229619",
+        "order_number": "A/SO-00001",
+        "allocation_id": "alloc_1d1cb21b466b",
+        "product_id": "P",
+        "product_name": "Audit fabric",
+        "sku": "P",
+        "quantity": 20.0,
+        "picked_qty": 20.0,
+        "shipped_qty": 0.0,
+        "unit": "meter",
+        "warehouse_id": "WH",
+        "warehouse_name": "Audit WH",
+        "warehouse_city": "",
+        "bin_id": "",
+        "batch": "",
+        "lot": "",
+        "roll_id": "",
+        "status": "packing",
+        "stages": [
+          "created",
+          "picking",
+          "packing",
+          "staging",
+          "dispatched"
+        ],
+        "scan_log": [
+          {
+            "id": "scan_c29bb4b3fcec",
+            "scan_type": "pick",
+            "actual_qty": 20.0,
+            "batch": "",
+            "lot": "",
+            "roll_id": "",
+            "bin_id": "",
+            "actor": "Audit User A",
+            "timestamp": "2026-10-02T18:15:03.764165+00:00"
+          }
+        ],
+        "fulfillment_method": "kirim",
+        "hold_until": "",
+        "created_by": "Audit User A",
+        "created_at": "2026-10-02T18:15:03.678468+00:00",
+        "updated_at": "2026-10-02T18:15:03.764165+00:00",
+        "refs": [
+          {
+            "rel": "parent",
+            "doc_type": "sales_order",
+            "doc_id": "so_8b66eb229619",
+            "doc_number": "A/SO-00001",
+            "note": "pengambilan untuk SO",
+            "at": "2026-10-02T18:15:03.693149+00:00"
+          }
+        ]
+      }
+    },
+    {
+      "path": "/outbound/tasks/wms_936537c8dc7d/dispatch",
+      "status": 200,
+      "body": {
+        "task": {
+          "id": "wms_936537c8dc7d",
+          "entity_id": "A",
+          "flow_type": "outbound",
+          "source_type": "sales_order",
+          "order_id": "so_8b66eb229619",
+          "order_number": "A/SO-00001",
+          "allocation_id": "alloc_1d1cb21b466b",
+          "product_id": "P",
+          "product_name": "Audit fabric",
+          "sku": "P",
+          "quantity": 20.0,
+          "picked_qty": 20.0,
+          "shipped_qty": 8.0,
+          "unit": "meter",
+          "warehouse_id": "WH",
+          "warehouse_name": "Audit WH",
+          "warehouse_city": "",
+          "bin_id": "",
+          "batch": "",
+          "lot": "",
+          "roll_id": "",
+          "status": "partially_shipped",
+          "stages": [
+            "created",
+            "picking",
+            "packing",
+            "staging",
+            "dispatched"
+          ],
+          "scan_log": [
+            {
+              "id": "scan_c29bb4b3fcec",
+              "scan_type": "pick",
+              "actual_qty": 20.0,
+              "batch": "",
+              "lot": "",
+              "roll_id": "",
+              "bin_id": "",
+              "actor": "Audit User A",
+              "timestamp": "2026-10-02T18:15:03.764165+00:00"
+            },
+            {
+              "id": "scan_3df66e5820f3",
+              "scan_type": "dispatch",
+              "actual_qty": 8.0,
+              "actor": "Audit User A",
+              "timestamp": "2026-10-02T18:15:03.869067+00:00"
+            }
+          ],
+          "fulfillment_method": "kirim",
+          "hold_until": "",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-02T18:15:03.678468+00:00",
+          "updated_at": "2026-10-02T18:15:03.869067+00:00",
+          "refs": [
+            {
+              "rel": "parent",
+              "doc_type": "sales_order",
+              "doc_id": "so_8b66eb229619",
+              "doc_number": "A/SO-00001",
+              "note": "pengambilan untuk SO",
+              "at": "2026-10-02T18:15:03.693149+00:00"
+            }
+          ]
+        },
+        "shipment": {
+          "id": "shp_129bba22b6fb",
+          "shipment_no": "A/SJ-00001",
+          "entity_id": "A",
+          "order_id": "so_8b66eb229619",
+          "order_number": "A/SO-00001",
+          "task_id": "wms_936537c8dc7d",
+          "allocation_id": "alloc_1d1cb21b466b",
+          "warehouse_id": "WH",
+          "warehouse_name": "Audit WH",
+          "warehouse_city": "",
+          "product_id": "P",
+          "product_name": "Audit fabric",
+          "sku": "P",
+          "qty": 8.0,
+          "unit": "meter",
+          "qty_rolls": 1,
+          "rolls": [
+            {
+              "roll_id": "roll_fe107cf35dc8",
+              "lot": "A/LOT-2610-0001",
+              "length": 8.0,
+              "unit": "meter"
+            }
+          ],
+          "is_partial": true,
+          "status": "dispatched",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-02T18:15:03.883474+00:00"
+        }
+      }
+    },
+    {
+      "path": "/outbound/tasks/wms_936537c8dc7d/dispatch",
+      "status": 200,
+      "body": {
+        "task": {
+          "id": "wms_936537c8dc7d",
+          "entity_id": "A",
+          "flow_type": "outbound",
+          "source_type": "sales_order",
+          "order_id": "so_8b66eb229619",
+          "order_number": "A/SO-00001",
+          "allocation_id": "alloc_1d1cb21b466b",
+          "product_id": "P",
+          "product_name": "Audit fabric",
+          "sku": "P",
+          "quantity": 20.0,
+          "picked_qty": 20.0,
+          "shipped_qty": 20.0,
+          "unit": "meter",
+          "warehouse_id": "WH",
+          "warehouse_name": "Audit WH",
+          "warehouse_city": "",
+          "bin_id": "",
+          "batch": "",
+          "lot": "",
+          "roll_id": "",
+          "status": "dispatched",
+          "stages": [
+            "created",
+            "picking",
+            "packing",
+            "staging",
+            "dispatched"
+          ],
+          "scan_log": [
+            {
+              "id": "scan_c29bb4b3fcec",
+              "scan_type": "pick",
+              "actual_qty": 20.0,
+              "batch": "",
+              "lot": "",
+              "roll_id": "",
+              "bin_id": "",
+              "actor": "Audit User A",
+              "timestamp": "2026-10-02T18:15:03.764165+00:00"
+            },
+            {
+              "id": "scan_3df66e5820f3",
+              "scan_type": "dispatch",
+              "actual_qty": 8.0,
+              "actor": "Audit User A",
+              "timestamp": "2026-10-02T18:15:03.869067+00:00"
+            },
+            {
+              "id": "scan_9791414187f9",
+              "scan_type": "dispatch",
+              "actual_qty": 12.0,
+              "actor": "Audit User A",
+              "timestamp": "2026-10-02T18:15:04.100799+00:00"
+            }
+          ],
+          "fulfillment_method": "kirim",
+          "hold_until": "",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-02T18:15:03.678468+00:00",
+          "updated_at": "2026-10-02T18:15:04.100799+00:00",
+          "refs": [
+            {
+              "rel": "parent",
+              "doc_type": "sales_order",
+              "doc_id": "so_8b66eb229619",
+              "doc_number": "A/SO-00001",
+              "note": "pengambilan untuk SO",
+              "at": "2026-10-02T18:15:03.693149+00:00"
+            },
+            {
+              "rel": "fulfilled_by",
+              "doc_type": "shipment",
+              "doc_id": "shp_129bba22b6fb",
+              "doc_number": "A/SJ-00001",
+              "note": "dari tugas pengambilan",
+              "at": "2026-10-02T18:15:03.914862+00:00"
+            }
+          ]
+        },
+        "shipment": {
+          "id": "shp_97b9a1b95aa2",
+          "shipment_no": "A/SJ-00002",
+          "entity_id": "A",
+          "order_id": "so_8b66eb229619",
+          "order_number": "A/SO-00001",
+          "task_id": "wms_936537c8dc7d",
+          "allocation_id": "alloc_1d1cb21b466b",
+          "warehouse_id": "WH",
+          "warehouse_name": "Audit WH",
+          "warehouse_city": "",
+          "product_id": "P",
+          "product_name": "Audit fabric",
+          "sku": "P",
+          "qty": 12.0,
+          "unit": "meter",
+          "qty_rolls": 1,
+          "rolls": [
+            {
+              "roll_id": "roll_92e54003f3d4",
+              "lot": "A/LOT-2610-0001",
+              "length": 12.0,
+              "unit": "meter"
+            }
+          ],
+          "is_partial": false,
+          "status": "dispatched",
+          "created_by": "Audit User A",
+          "created_at": "2026-10-02T18:15:04.107297+00:00"
+        }
+      }
+    },
+    {
+      "path": "/sales-orders/so_8b66eb229619/mark-delivered",
+      "status": 200,
+      "body": {
+        "id": "so_8b66eb229619",
+        "number": "A/SO-00001",
+        "status": "done",
+        "entity_id": "A",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR",
+          "label": "Audit",
+          "address": "Synthetic address",
+          "city": "Jakarta",
+          "recipient_name": "Synthetic recipient",
+          "phone": "0000000000"
+        },
+        "shipping_address_id": "ADDR",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "P",
+            "sku": "P",
+            "product_name": "Audit fabric",
+            "quantity": 20.0,
+            "unit": "meter",
+            "price": 10000.0,
+            "discount_percent": 0.0,
+            "qty_rolls": null,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 200000.0,
+            "discount_amount": 0.0,
+            "line_total": 200000.0,
+            "base_unit": "meter",
+            "base_quantity": 20.0,
+            "category": "",
+            "line_code": "",
+            "reserved_qty": 20.0,
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_1d1cb21b466b",
+            "product_id": "P",
+            "warehouse_id": "WH",
+            "warehouse_name": "Audit WH",
+            "warehouse_city": "",
+            "owner_entity_id": "A",
+            "quantity": 20.0,
+            "lot": "A/LOT-2610-0001",
+            "lots": [
+              "A/LOT-2610-0001"
+            ],
+            "dye_lot": "LOT-MIGRATED",
+            "dye_lots": [
+              "LOT-MIGRATED"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "20.0 dari Lot A/LOT-2610-0001 (FEFO) \u00b7 Audit WH \u2014 lot tunggal.",
+            "policy_lot_selection": "fefo",
+            "dye_lot_strict": false,
+            "rolls": [
+              {
+                "roll_id": "roll_92e54003f3d4",
+                "roll_no": "RL-00001-1",
+                "lot": "A/LOT-2610-0001",
+                "dye_lot": "LOT-MIGRATED",
+                "length": 20.0
+              }
+            ],
+            "status": "allocated"
+          }
+        ],
+        "total_amount": 200000.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 200000.0,
+        "dpp": 200000.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 200000.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": "",
+        "approval_amount": 200000.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-05T18:15:03.476107+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-02T18:15:03.481363+00:00",
+        "updated_at": "2026-10-02T18:15:04.332011+00:00",
+        "stage": "Delivered",
+        "sub_status": [],
+        "approval_note": "Auto-approve (validasi nonaktif, di bawah threshold)",
+        "status_history": [
+          {
+            "status": "approved",
+            "stage": "verified_by_sales_admin",
+            "timestamp": "2026-10-02T18:15:03.634565+00:00",
+            "user": "Audit User A",
+            "note": "Kelengkapan administratif diverifikasi"
+          }
+        ],
+        "verification": {
+          "status": "verified",
+          "by": "Audit User A",
+          "by_id": "U",
+          "by_role": "finance",
+          "at": "2026-10-02T18:15:03.634565+00:00",
+          "note": "Synthetic complete document check",
+          "warnings": [],
+          "checks": [
+            {
+              "id": "alamat",
+              "label": "Alamat & penerima lengkap",
+              "ok": true,
+              "detail": "Lengkap"
+            },
+            {
+              "id": "syarat_bayar",
+              "label": "Syarat pembayaran dipilih",
+              "ok": true,
+              "detail": "Kredit NET 30 Hari"
+            },
+            {
+              "id": "isi_pesanan",
+              "label": "Isi pesanan wajar (ada item, jumlah > 0)",
+              "ok": true,
+              "detail": "1 baris"
+            },
+            {
+              "id": "pajak",
+              "label": "Perlakuan PPN sesuai status badan usaha",
+              "ok": true,
+              "detail": "Non-PKP \u00b7 PPN nol (benar)"
+            },
+            {
+              "id": "npwp",
+              "label": "NPWP pelanggan (bila minta Faktur Pajak)",
+              "ok": true,
+              "detail": "Tidak diminta"
+            },
+            {
+              "id": "kredit",
+              "label": "Tidak tertahan batas kredit",
+              "ok": true,
+              "detail": "Aman"
+            }
+          ]
+        },
+        "refs": [
+          {
+            "rel": "child",
+            "doc_type": "picking_task",
+            "doc_id": "wms_936537c8dc7d",
+            "doc_number": "PICK-C8DC7D",
+            "note": "pengambilan untuk SO",
+            "at": "2026-10-02T18:15:03.693149+00:00"
+          },
+          {
+            "rel": "child",
+            "doc_type": "shipment",
+            "doc_id": "shp_129bba22b6fb",
+            "doc_number": "A/SJ-00001",
+            "note": "pengiriman atas pesanan",
+            "at": "2026-10-02T18:15:03.895109+00:00"
+          },
+          {
+            "rel": "child",
+            "doc_type": "shipment",
+            "doc_id": "shp_97b9a1b95aa2",
+            "doc_number": "A/SJ-00002",
+            "note": "pengiriman atas pesanan",
+            "at": "2026-10-02T18:15:04.122867+00:00"
+          }
+        ],
+        "fulfillment": {
+          "total_qty": 20.0,
+          "picked_qty": 20.0,
+          "shipped_qty": 20.0,
+          "remaining_qty": 0.0
+        },
+        "delivered_at": "2026-10-02T18:15:04.328970+00:00"
+      }
+    },
+    {
+      "path": "/sales-orders",
+      "status": 200,
+      "body": {
+        "id": "so_91188b12267b",
+        "number": "A/SO-00002",
+        "status": "reserved",
+        "entity_id": "A",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR",
+          "label": "Audit",
+          "address": "Synthetic address",
+          "city": "Jakarta",
+          "recipient_name": "Synthetic recipient",
+          "phone": "0000000000"
+        },
+        "shipping_address_id": "ADDR",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "P",
+            "sku": "P",
+            "product_name": "Audit fabric",
+            "quantity": 10.0,
+            "unit": "meter",
+            "price": 10000.0,
+            "discount_percent": 0.0,
+            "qty_rolls": null,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 100000.0,
+            "discount_amount": 0.0,
+            "line_total": 100000.0,
+            "base_unit": "meter",
+            "base_quantity": 10.0,
+            "category": "",
+            "line_code": "",
+            "reserved_qty": 10.0,
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_ac78d5fd5090",
+            "product_id": "P",
+            "warehouse_id": "WH",
+            "warehouse_name": "Audit WH",
+            "warehouse_city": "",
+            "owner_entity_id": "A",
+            "quantity": 10.0,
+            "lot": "A/LOT-2610-0001",
+            "lots": [
+              "A/LOT-2610-0001"
+            ],
+            "dye_lot": "LOT-MIGRATED",
+            "dye_lots": [
+              "LOT-MIGRATED"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "10.0 dari Lot A/LOT-2610-0001 (FEFO) \u00b7 Audit WH \u2014 lot tunggal.",
+            "policy_lot_selection": "fefo",
+            "dye_lot_strict": false,
+            "rolls": [
+              {
+                "roll_id": "roll_a00397e4a154",
+                "roll_no": "RL-00001-2",
+                "lot": "A/LOT-2610-0001",
+                "dye_lot": "LOT-MIGRATED",
+                "length": 10.0
+              }
+            ],
+            "status": "allocated"
+          }
+        ],
+        "total_amount": 100000.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 100000.0,
+        "dpp": 100000.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 100000.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": null,
+        "approval_amount": 100000.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-05T18:15:04.472835+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-02T18:15:04.479149+00:00",
+        "updated_at": "2026-10-02T18:15:04.479149+00:00",
+        "stage": "Reserved",
+        "sub_status": [
+          "siap_disahkan"
+        ]
+      }
+    },
+    {
+      "path": "/sales-orders/so_91188b12267b/cancel",
+      "status": 200,
+      "body": {
+        "id": "so_91188b12267b",
+        "number": "A/SO-00002",
+        "status": "cancelled",
+        "entity_id": "A",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "customer_city": "Jakarta",
+        "shipping_address": {
+          "id": "ADDR",
+          "label": "Audit",
+          "address": "Synthetic address",
+          "city": "Jakarta",
+          "recipient_name": "Synthetic recipient",
+          "phone": "0000000000"
+        },
+        "shipping_address_id": "ADDR",
+        "shipping_city": "Jakarta",
+        "items": [
+          {
+            "product_id": "P",
+            "sku": "P",
+            "product_name": "Audit fabric",
+            "quantity": 10.0,
+            "unit": "meter",
+            "price": 10000.0,
+            "discount_percent": 0.0,
+            "qty_rolls": null,
+            "price_source": "global",
+            "price_record_id": "",
+            "subtotal": 100000.0,
+            "discount_amount": 0.0,
+            "line_total": 100000.0,
+            "base_unit": "meter",
+            "base_quantity": 10.0,
+            "category": "",
+            "line_code": "",
+            "reserved_qty": 10.0,
+            "backorder_qty": 0.0
+          }
+        ],
+        "allocations": [
+          {
+            "id": "alloc_ac78d5fd5090",
+            "product_id": "P",
+            "warehouse_id": "WH",
+            "warehouse_name": "Audit WH",
+            "warehouse_city": "",
+            "owner_entity_id": "A",
+            "quantity": 10.0,
+            "lot": "A/LOT-2610-0001",
+            "lots": [
+              "A/LOT-2610-0001"
+            ],
+            "dye_lot": "LOT-MIGRATED",
+            "dye_lots": [
+              "LOT-MIGRATED"
+            ],
+            "lot_mode": "single",
+            "allocation_explanation": "10.0 dari Lot A/LOT-2610-0001 (FEFO) \u00b7 Audit WH \u2014 lot tunggal.",
+            "policy_lot_selection": "fefo",
+            "dye_lot_strict": false,
+            "rolls": [
+              {
+                "roll_id": "roll_a00397e4a154",
+                "roll_no": "RL-00001-2",
+                "lot": "A/LOT-2610-0001",
+                "dye_lot": "LOT-MIGRATED",
+                "length": 10.0
+              }
+            ],
+            "status": "allocated"
+          }
+        ],
+        "total_amount": 100000.0,
+        "line_codes": [],
+        "items_discount_total": 0.0,
+        "order_discount_percent": 0.0,
+        "order_discount_amount": 0.0,
+        "discount_total": 0.0,
+        "net_subtotal": 100000.0,
+        "dpp": 100000.0,
+        "dpp_nilai_lain": false,
+        "effective_rate": 0.0,
+        "ppn_rate": 0.0,
+        "ppn_mode": "excluded",
+        "is_pkp": false,
+        "ppn_amount": 0.0,
+        "grand_total": 100000.0,
+        "needs_tax_invoice": false,
+        "tax_override": "",
+        "tax_mode": "non_ppn",
+        "payment_term_code": "NET30",
+        "payment_term_name": "Kredit NET 30 Hari",
+        "payment_status": "pending",
+        "credit_status_at_order": "active",
+        "credit_warning": false,
+        "credit_hold": false,
+        "credit_override_id": "",
+        "pending_approvals": [],
+        "approval_required": false,
+        "required_approval_role": null,
+        "approval_amount": 100000.0,
+        "is_split_warehouse": false,
+        "sales_name": "Audit User A",
+        "sales_team": [],
+        "source_special_order_id": null,
+        "shipment_policy": "allow_partial_shipment",
+        "fulfillment_method": "kirim",
+        "pickup_date": "",
+        "delivery_date": "",
+        "reservation_expires_at": "2026-10-05T18:15:04.472835+00:00",
+        "allow_backorder": false,
+        "has_backorder": false,
+        "backorders": [],
+        "allocation_policy": {
+          "mode": "auto",
+          "lot_mode": "prefer_single",
+          "lot_selection": "fefo",
+          "location_pref": "single_warehouse"
+        },
+        "has_mixed_lot": false,
+        "has_sample": false,
+        "order_type": "regular",
+        "sample_billing": "",
+        "sample_payment_status": "",
+        "created_by": "U",
+        "sales_id": null,
+        "linked_transfer_ids": [],
+        "intercompany_pending_qty": 0.0,
+        "created_at": "2026-10-02T18:15:04.479149+00:00",
+        "updated_at": "2026-10-02T18:15:04.549373+00:00",
+        "stage": "Cancelled",
+        "sub_status": [
+          "dibatalkan"
+        ]
+      }
+    },
+    {
+      "path": "/sales-returns",
+      "status": 200,
+      "body": {
+        "id": "sret_cbe1a65eebd6",
+        "number": "SRET-00001",
+        "order_id": "so_8b66eb229619",
+        "order_number": "A/SO-00001",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "entity_id": "A",
+        "return_type": "retur",
+        "status": "pending_approval",
+        "items": [
+          {
+            "product_id": "P",
+            "product_name": "",
+            "quantity_returned": 5.0,
+            "unit": "meter",
+            "reason": "",
+            "condition": "ok",
+            "qty_rolls": null,
+            "settle_outcome": "",
+            "settled_qty": 0.0,
+            "replacement_qty": 0.0,
+            "inspection": {},
+            "line_code": ""
+          }
+        ],
+        "line_codes": [],
+        "notes": "",
+        "attachments": [],
+        "stock_adjusted": false,
+        "policy_snapshot": {
+          "id": "",
+          "name": "Default (sistem)",
+          "scope": "global",
+          "scope_ref": "",
+          "window_days": 30,
+          "allowed_return_types": [
+            "retur",
+            "bs",
+            "penggantian",
+            "komplain",
+            "garansi"
+          ],
+          "allowed_outcomes": [
+            "refund",
+            "store_credit",
+            "nego",
+            "reject"
+          ],
+          "restocking_fee_pct": 0.0,
+          "require_inspection": true,
+          "enforce_window": false,
+          "link_to_supplier_window": false,
+          "condition_requirements": "",
+          "custom_fields": {},
+          "is_default": true,
+          "snapshot_at": "2026-10-02T18:15:04.670955+00:00"
+        },
+        "return_deadline": "2026-11-01T18:15:04.328970+00:00",
+        "policy_eligibility": {
+          "eligible": true,
+          "within_window": true,
+          "blocked": false,
+          "reference_date": "2026-10-02T18:15:04.328970+00:00",
+          "window_days": 30,
+          "days_remaining": 29,
+          "require_inspection": true,
+          "supplier_linked": null,
+          "warnings": []
+        },
+        "outcome": "",
+        "inspection_status": "pending",
+        "inspection": {},
+        "settlement": {},
+        "complaint_code": "",
+        "complaint_label": "",
+        "complaint_note": "",
+        "complaint_needs_inspection": false,
+        "complaint_claimable": false,
+        "shipped_to_store_at": "",
+        "shipped_to_customer_at": "",
+        "goods_arrived_at": "",
+        "milestones": [],
+        "inspection_id": "",
+        "inspection_number": "",
+        "inspect_done_at": "",
+        "created_by": "Audit User A",
+        "approved_by": null,
+        "approved_at": null,
+        "inspected_by": null,
+        "inspected_at": null,
+        "settled_by": null,
+        "settled_at": null,
+        "rejected_by": null,
+        "rejected_at": null,
+        "reject_reason": null,
+        "created_at": "2026-10-02T18:15:04.667877+00:00",
+        "updated_at": "2026-10-02T18:15:04.667877+00:00"
+      }
+    },
+    {
+      "path": "/sales-returns/sret_cbe1a65eebd6/approve",
+      "status": 200,
+      "body": {
+        "id": "sret_cbe1a65eebd6",
+        "number": "SRET-00001",
+        "order_id": "so_8b66eb229619",
+        "order_number": "A/SO-00001",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "entity_id": "A",
+        "return_type": "retur",
+        "status": "approved",
+        "items": [
+          {
+            "product_id": "P",
+            "product_name": "",
+            "quantity_returned": 5.0,
+            "unit": "meter",
+            "reason": "",
+            "condition": "ok",
+            "qty_rolls": null,
+            "settle_outcome": "",
+            "settled_qty": 0.0,
+            "replacement_qty": 0.0,
+            "inspection": {},
+            "line_code": ""
+          }
+        ],
+        "line_codes": [],
+        "notes": "",
+        "attachments": [],
+        "stock_adjusted": false,
+        "policy_snapshot": {
+          "id": "",
+          "name": "Default (sistem)",
+          "scope": "global",
+          "scope_ref": "",
+          "window_days": 30,
+          "allowed_return_types": [
+            "retur",
+            "bs",
+            "penggantian",
+            "komplain",
+            "garansi"
+          ],
+          "allowed_outcomes": [
+            "refund",
+            "store_credit",
+            "nego",
+            "reject"
+          ],
+          "restocking_fee_pct": 0.0,
+          "require_inspection": true,
+          "enforce_window": false,
+          "link_to_supplier_window": false,
+          "condition_requirements": "",
+          "custom_fields": {},
+          "is_default": true,
+          "snapshot_at": "2026-10-02T18:15:04.670955+00:00"
+        },
+        "return_deadline": "2026-11-01T18:15:04.328970+00:00",
+        "policy_eligibility": {
+          "eligible": true,
+          "within_window": true,
+          "blocked": false,
+          "reference_date": "2026-10-02T18:15:04.328970+00:00",
+          "window_days": 30,
+          "days_remaining": 29,
+          "require_inspection": true,
+          "supplier_linked": null,
+          "warnings": []
+        },
+        "outcome": "",
+        "inspection_status": "pending",
+        "inspection": {},
+        "settlement": {},
+        "complaint_code": "",
+        "complaint_label": "",
+        "complaint_note": "",
+        "complaint_needs_inspection": false,
+        "complaint_claimable": false,
+        "shipped_to_store_at": "",
+        "shipped_to_customer_at": "",
+        "goods_arrived_at": "",
+        "milestones": [],
+        "inspection_id": "",
+        "inspection_number": "",
+        "inspect_done_at": "",
+        "created_by": "Audit User A",
+        "approved_by": "Audit User A",
+        "approved_at": "2026-10-02T18:15:04.763886+00:00",
+        "inspected_by": null,
+        "inspected_at": null,
+        "settled_by": null,
+        "settled_at": null,
+        "rejected_by": null,
+        "rejected_at": null,
+        "reject_reason": null,
+        "created_at": "2026-10-02T18:15:04.667877+00:00",
+        "updated_at": "2026-10-02T18:15:04.763886+00:00",
+        "refs": [
+          {
+            "rel": "reverses",
+            "doc_type": "sales_order",
+            "doc_id": "so_8b66eb229619",
+            "doc_number": "A/SO-00001",
+            "note": "retur atas pesanan",
+            "at": "2026-10-02T18:15:04.689179+00:00"
+          }
+        ],
+        "approval_notes": ""
+      }
+    },
+    {
+      "path": "/sales-returns/sret_cbe1a65eebd6/inspect/start",
+      "status": 200,
+      "body": {
+        "id": "sret_cbe1a65eebd6",
+        "number": "SRET-00001",
+        "order_id": "so_8b66eb229619",
+        "order_number": "A/SO-00001",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "entity_id": "A",
+        "return_type": "retur",
+        "status": "inspecting",
+        "items": [
+          {
+            "product_id": "P",
+            "product_name": "",
+            "quantity_returned": 5.0,
+            "unit": "meter",
+            "reason": "",
+            "condition": "ok",
+            "qty_rolls": null,
+            "settle_outcome": "",
+            "settled_qty": 0.0,
+            "replacement_qty": 0.0,
+            "inspection": {},
+            "line_code": ""
+          }
+        ],
+        "line_codes": [],
+        "notes": "",
+        "attachments": [],
+        "stock_adjusted": false,
+        "policy_snapshot": {
+          "id": "",
+          "name": "Default (sistem)",
+          "scope": "global",
+          "scope_ref": "",
+          "window_days": 30,
+          "allowed_return_types": [
+            "retur",
+            "bs",
+            "penggantian",
+            "komplain",
+            "garansi"
+          ],
+          "allowed_outcomes": [
+            "refund",
+            "store_credit",
+            "nego",
+            "reject"
+          ],
+          "restocking_fee_pct": 0.0,
+          "require_inspection": true,
+          "enforce_window": false,
+          "link_to_supplier_window": false,
+          "condition_requirements": "",
+          "custom_fields": {},
+          "is_default": true,
+          "snapshot_at": "2026-10-02T18:15:04.670955+00:00"
+        },
+        "return_deadline": "2026-11-01T18:15:04.328970+00:00",
+        "policy_eligibility": {
+          "eligible": true,
+          "within_window": true,
+          "blocked": false,
+          "reference_date": "2026-10-02T18:15:04.328970+00:00",
+          "window_days": 30,
+          "days_remaining": 29,
+          "require_inspection": true,
+          "supplier_linked": null,
+          "warnings": []
+        },
+        "outcome": "",
+        "inspection_status": "in_progress",
+        "inspection": {},
+        "settlement": {},
+        "complaint_code": "",
+        "complaint_label": "",
+        "complaint_note": "",
+        "complaint_needs_inspection": false,
+        "complaint_claimable": false,
+        "shipped_to_store_at": "",
+        "shipped_to_customer_at": "",
+        "goods_arrived_at": "",
+        "milestones": [],
+        "inspection_id": "",
+        "inspection_number": "",
+        "inspect_done_at": "",
+        "created_by": "Audit User A",
+        "approved_by": "Audit User A",
+        "approved_at": "2026-10-02T18:15:04.763886+00:00",
+        "inspected_by": null,
+        "inspected_at": null,
+        "settled_by": null,
+        "settled_at": null,
+        "rejected_by": null,
+        "rejected_at": null,
+        "reject_reason": null,
+        "created_at": "2026-10-02T18:15:04.667877+00:00",
+        "updated_at": "2026-10-02T18:15:04.797699+00:00",
+        "refs": [
+          {
+            "rel": "reverses",
+            "doc_type": "sales_order",
+            "doc_id": "so_8b66eb229619",
+            "doc_number": "A/SO-00001",
+            "note": "retur atas pesanan",
+            "at": "2026-10-02T18:15:04.689179+00:00"
+          }
+        ],
+        "approval_notes": "",
+        "inspection_started_at": "2026-10-02T18:15:04.797699+00:00",
+        "inspection_started_by": "Audit User A"
+      }
+    },
+    {
+      "path": "/sales-returns/sret_cbe1a65eebd6/inspect/complete",
+      "status": 200,
+      "body": {
+        "id": "sret_cbe1a65eebd6",
+        "number": "SRET-00001",
+        "order_id": "so_8b66eb229619",
+        "order_number": "A/SO-00001",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "entity_id": "A",
+        "return_type": "retur",
+        "status": "inspected",
+        "items": [
+          {
+            "product_id": "P",
+            "product_name": "",
+            "quantity_returned": 5.0,
+            "unit": "meter",
+            "reason": "",
+            "condition": "ok",
+            "qty_rolls": null,
+            "settle_outcome": "",
+            "settled_qty": 0.0,
+            "replacement_qty": 0.0,
+            "inspection": {
+              "points": 0.0,
+              "grade": "A",
+              "defects": [],
+              "condition": "ok",
+              "disposition": "restock",
+              "recommended_outcome": "refund",
+              "accepted_qty": 5.0,
+              "gsm_actual": null,
+              "width_actual": null,
+              "thresholds": {
+                "a_max": 20.0,
+                "a1_max": 26.67,
+                "a2_max": 33.33,
+                "b_max": 40.0
+              },
+              "notes": "",
+              "inspected_by": "Audit User A",
+              "inspected_at": "2026-10-02T18:15:04.836528+00:00"
+            },
+            "line_code": ""
+          }
+        ],
+        "line_codes": [],
+        "notes": "",
+        "attachments": [],
+        "stock_adjusted": false,
+        "policy_snapshot": {
+          "id": "",
+          "name": "Default (sistem)",
+          "scope": "global",
+          "scope_ref": "",
+          "window_days": 30,
+          "allowed_return_types": [
+            "retur",
+            "bs",
+            "penggantian",
+            "komplain",
+            "garansi"
+          ],
+          "allowed_outcomes": [
+            "refund",
+            "store_credit",
+            "nego",
+            "reject"
+          ],
+          "restocking_fee_pct": 0.0,
+          "require_inspection": true,
+          "enforce_window": false,
+          "link_to_supplier_window": false,
+          "condition_requirements": "",
+          "custom_fields": {},
+          "is_default": true,
+          "snapshot_at": "2026-10-02T18:15:04.670955+00:00"
+        },
+        "return_deadline": "2026-11-01T18:15:04.328970+00:00",
+        "policy_eligibility": {
+          "eligible": true,
+          "within_window": true,
+          "blocked": false,
+          "reference_date": "2026-10-02T18:15:04.328970+00:00",
+          "window_days": 30,
+          "days_remaining": 29,
+          "require_inspection": true,
+          "supplier_linked": null,
+          "warnings": []
+        },
+        "outcome": "",
+        "inspection_status": "done",
+        "inspection": {
+          "grades": [
+            "A"
+          ],
+          "worst_grade": "A",
+          "total_points": 0.0,
+          "recommended_outcome": "refund",
+          "thresholds": {
+            "a_max": 20.0,
+            "a1_max": 26.67,
+            "a2_max": 33.33,
+            "b_max": 40.0
+          },
+          "notes": "",
+          "inspected_by": "Audit User A",
+          "inspected_at": "2026-10-02T18:15:04.836528+00:00"
+        },
+        "settlement": {},
+        "complaint_code": "",
+        "complaint_label": "",
+        "complaint_note": "",
+        "complaint_needs_inspection": false,
+        "complaint_claimable": false,
+        "shipped_to_store_at": "",
+        "shipped_to_customer_at": "",
+        "goods_arrived_at": "",
+        "milestones": [],
+        "inspection_id": "",
+        "inspection_number": "",
+        "inspect_done_at": "",
+        "created_by": "Audit User A",
+        "approved_by": "Audit User A",
+        "approved_at": "2026-10-02T18:15:04.763886+00:00",
+        "inspected_by": "Audit User A",
+        "inspected_at": "2026-10-02T18:15:04.836528+00:00",
+        "settled_by": null,
+        "settled_at": null,
+        "rejected_by": null,
+        "rejected_at": null,
+        "reject_reason": null,
+        "created_at": "2026-10-02T18:15:04.667877+00:00",
+        "updated_at": "2026-10-02T18:15:04.836528+00:00",
+        "refs": [
+          {
+            "rel": "reverses",
+            "doc_type": "sales_order",
+            "doc_id": "so_8b66eb229619",
+            "doc_number": "A/SO-00001",
+            "note": "retur atas pesanan",
+            "at": "2026-10-02T18:15:04.689179+00:00"
+          }
+        ],
+        "approval_notes": "",
+        "inspection_started_at": "2026-10-02T18:15:04.797699+00:00",
+        "inspection_started_by": "Audit User A"
+      }
+    },
+    {
+      "path": "/sales-returns/sret_cbe1a65eebd6/settle",
+      "status": 200,
+      "body": {
+        "id": "sret_cbe1a65eebd6",
+        "number": "SRET-00001",
+        "order_id": "so_8b66eb229619",
+        "order_number": "A/SO-00001",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "entity_id": "A",
+        "return_type": "retur",
+        "status": "credit_settled",
+        "items": [
+          {
+            "product_id": "P",
+            "product_name": "",
+            "quantity_returned": 5.0,
+            "unit": "meter",
+            "reason": "",
+            "condition": "ok",
+            "qty_rolls": null,
+            "settle_outcome": "store_credit",
+            "settled_qty": 5.0,
+            "replacement_qty": 0.0,
+            "inspection": {
+              "points": 0.0,
+              "grade": "A",
+              "defects": [],
+              "condition": "ok",
+              "disposition": "restock",
+              "recommended_outcome": "refund",
+              "accepted_qty": 5.0,
+              "gsm_actual": null,
+              "width_actual": null,
+              "thresholds": {
+                "a_max": 20.0,
+                "a1_max": 26.67,
+                "a2_max": 33.33,
+                "b_max": 40.0
+              },
+              "notes": "",
+              "inspected_by": "Audit User A",
+              "inspected_at": "2026-10-02T18:15:04.836528+00:00"
+            },
+            "line_code": ""
+          }
+        ],
+        "line_codes": [],
+        "notes": "",
+        "attachments": [],
+        "stock_adjusted": true,
+        "policy_snapshot": {
+          "id": "",
+          "name": "Default (sistem)",
+          "scope": "global",
+          "scope_ref": "",
+          "window_days": 30,
+          "allowed_return_types": [
+            "retur",
+            "bs",
+            "penggantian",
+            "komplain",
+            "garansi"
+          ],
+          "allowed_outcomes": [
+            "refund",
+            "store_credit",
+            "nego",
+            "reject"
+          ],
+          "restocking_fee_pct": 0.0,
+          "require_inspection": true,
+          "enforce_window": false,
+          "link_to_supplier_window": false,
+          "condition_requirements": "",
+          "custom_fields": {},
+          "is_default": true,
+          "snapshot_at": "2026-10-02T18:15:04.670955+00:00"
+        },
+        "return_deadline": "2026-11-01T18:15:04.328970+00:00",
+        "policy_eligibility": {
+          "eligible": true,
+          "within_window": true,
+          "blocked": false,
+          "reference_date": "2026-10-02T18:15:04.328970+00:00",
+          "window_days": 30,
+          "days_remaining": 29,
+          "require_inspection": true,
+          "supplier_linked": null,
+          "warnings": []
+        },
+        "outcome": "store_credit",
+        "inspection_status": "done",
+        "inspection": {
+          "grades": [
+            "A"
+          ],
+          "worst_grade": "A",
+          "total_points": 0.0,
+          "recommended_outcome": "refund",
+          "thresholds": {
+            "a_max": 20.0,
+            "a1_max": 26.67,
+            "a2_max": 33.33,
+            "b_max": 40.0
+          },
+          "notes": "",
+          "inspected_by": "Audit User A",
+          "inspected_at": "2026-10-02T18:15:04.836528+00:00"
+        },
+        "settlement": {
+          "outcome": "store_credit",
+          "settled_at": "2026-10-02T18:15:04.872090+00:00",
+          "settled_by": "Audit User A",
+          "credit_note_number": "CN-00001",
+          "gross_amount": 50000.0,
+          "net_amount": 50000.0,
+          "settlement": "store_credit",
+          "store_credit_amount": 50000.0,
+          "store_credit_ledger_id": "scl_0821ef2f7b97",
+          "store_credit_balance_after": 50000.0
+        },
+        "complaint_code": "",
+        "complaint_label": "",
+        "complaint_note": "",
+        "complaint_needs_inspection": false,
+        "complaint_claimable": false,
+        "shipped_to_store_at": "",
+        "shipped_to_customer_at": "",
+        "goods_arrived_at": "",
+        "milestones": [],
+        "inspection_id": "",
+        "inspection_number": "",
+        "inspect_done_at": "",
+        "created_by": "Audit User A",
+        "approved_by": "Audit User A",
+        "approved_at": "2026-10-02T18:15:04.763886+00:00",
+        "inspected_by": "Audit User A",
+        "inspected_at": "2026-10-02T18:15:04.836528+00:00",
+        "settled_by": "Audit User A",
+        "settled_at": "2026-10-02T18:15:04.872090+00:00",
+        "rejected_by": null,
+        "rejected_at": null,
+        "reject_reason": null,
+        "created_at": "2026-10-02T18:15:04.667877+00:00",
+        "updated_at": "2026-10-02T18:15:04.872090+00:00",
+        "refs": [
+          {
+            "rel": "reverses",
+            "doc_type": "sales_order",
+            "doc_id": "so_8b66eb229619",
+            "doc_number": "A/SO-00001",
+            "note": "retur atas pesanan",
+            "at": "2026-10-02T18:15:04.689179+00:00"
+          },
+          {
+            "rel": "issued",
+            "doc_type": "credit_note",
+            "doc_id": "cn_6c029d012803",
+            "doc_number": "CN-00001",
+            "note": "Diterbitkan oleh retur pelanggan",
+            "at": "2026-10-02T18:15:05.021262+00:00"
+          }
+        ],
+        "approval_notes": "",
+        "inspection_started_at": "2026-10-02T18:15:04.797699+00:00",
+        "inspection_started_by": "Audit User A",
+        "return_owner_entity_id": "A",
+        "return_warehouse_id": "WH",
+        "credit_note_amount": 50000.0,
+        "credit_note_id": "cn_6c029d012803",
+        "credit_note_number": "CN-00001",
+        "settle_notes": ""
+      }
+    },
+    {
+      "path": "/sales-returns/sret_cbe1a65eebd6/settle",
+      "status": 200,
+      "body": {
+        "id": "sret_cbe1a65eebd6",
+        "number": "SRET-00001",
+        "order_id": "so_8b66eb229619",
+        "order_number": "A/SO-00001",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "entity_id": "A",
+        "return_type": "retur",
+        "status": "credit_settled",
+        "items": [
+          {
+            "product_id": "P",
+            "product_name": "",
+            "quantity_returned": 5.0,
+            "unit": "meter",
+            "reason": "",
+            "condition": "ok",
+            "qty_rolls": null,
+            "settle_outcome": "store_credit",
+            "settled_qty": 5.0,
+            "replacement_qty": 0.0,
+            "inspection": {
+              "points": 0.0,
+              "grade": "A",
+              "defects": [],
+              "condition": "ok",
+              "disposition": "restock",
+              "recommended_outcome": "refund",
+              "accepted_qty": 5.0,
+              "gsm_actual": null,
+              "width_actual": null,
+              "thresholds": {
+                "a_max": 20.0,
+                "a1_max": 26.67,
+                "a2_max": 33.33,
+                "b_max": 40.0
+              },
+              "notes": "",
+              "inspected_by": "Audit User A",
+              "inspected_at": "2026-10-02T18:15:04.836528+00:00"
+            },
+            "line_code": ""
+          }
+        ],
+        "line_codes": [],
+        "notes": "",
+        "attachments": [],
+        "stock_adjusted": true,
+        "policy_snapshot": {
+          "id": "",
+          "name": "Default (sistem)",
+          "scope": "global",
+          "scope_ref": "",
+          "window_days": 30,
+          "allowed_return_types": [
+            "retur",
+            "bs",
+            "penggantian",
+            "komplain",
+            "garansi"
+          ],
+          "allowed_outcomes": [
+            "refund",
+            "store_credit",
+            "nego",
+            "reject"
+          ],
+          "restocking_fee_pct": 0.0,
+          "require_inspection": true,
+          "enforce_window": false,
+          "link_to_supplier_window": false,
+          "condition_requirements": "",
+          "custom_fields": {},
+          "is_default": true,
+          "snapshot_at": "2026-10-02T18:15:04.670955+00:00"
+        },
+        "return_deadline": "2026-11-01T18:15:04.328970+00:00",
+        "policy_eligibility": {
+          "eligible": true,
+          "within_window": true,
+          "blocked": false,
+          "reference_date": "2026-10-02T18:15:04.328970+00:00",
+          "window_days": 30,
+          "days_remaining": 29,
+          "require_inspection": true,
+          "supplier_linked": null,
+          "warnings": []
+        },
+        "outcome": "store_credit",
+        "inspection_status": "done",
+        "inspection": {
+          "grades": [
+            "A"
+          ],
+          "worst_grade": "A",
+          "total_points": 0.0,
+          "recommended_outcome": "refund",
+          "thresholds": {
+            "a_max": 20.0,
+            "a1_max": 26.67,
+            "a2_max": 33.33,
+            "b_max": 40.0
+          },
+          "notes": "",
+          "inspected_by": "Audit User A",
+          "inspected_at": "2026-10-02T18:15:04.836528+00:00"
+        },
+        "settlement": {
+          "outcome": "store_credit",
+          "settled_at": "2026-10-02T18:15:04.872090+00:00",
+          "settled_by": "Audit User A",
+          "credit_note_number": "CN-00001",
+          "gross_amount": 50000.0,
+          "net_amount": 50000.0,
+          "settlement": "store_credit",
+          "store_credit_amount": 50000.0,
+          "store_credit_ledger_id": "scl_0821ef2f7b97",
+          "store_credit_balance_after": 50000.0
+        },
+        "complaint_code": "",
+        "complaint_label": "",
+        "complaint_note": "",
+        "complaint_needs_inspection": false,
+        "complaint_claimable": false,
+        "shipped_to_store_at": "",
+        "shipped_to_customer_at": "",
+        "goods_arrived_at": "",
+        "milestones": [],
+        "inspection_id": "",
+        "inspection_number": "",
+        "inspect_done_at": "",
+        "created_by": "Audit User A",
+        "approved_by": "Audit User A",
+        "approved_at": "2026-10-02T18:15:04.763886+00:00",
+        "inspected_by": "Audit User A",
+        "inspected_at": "2026-10-02T18:15:04.836528+00:00",
+        "settled_by": "Audit User A",
+        "settled_at": "2026-10-02T18:15:04.872090+00:00",
+        "rejected_by": null,
+        "rejected_at": null,
+        "reject_reason": null,
+        "created_at": "2026-10-02T18:15:04.667877+00:00",
+        "updated_at": "2026-10-02T18:15:04.872090+00:00",
+        "refs": [
+          {
+            "rel": "reverses",
+            "doc_type": "sales_order",
+            "doc_id": "so_8b66eb229619",
+            "doc_number": "A/SO-00001",
+            "note": "retur atas pesanan",
+            "at": "2026-10-02T18:15:04.689179+00:00"
+          },
+          {
+            "rel": "issued",
+            "doc_type": "credit_note",
+            "doc_id": "cn_6c029d012803",
+            "doc_number": "CN-00001",
+            "note": "Diterbitkan oleh retur pelanggan",
+            "at": "2026-10-02T18:15:05.021262+00:00"
+          }
+        ],
+        "approval_notes": "",
+        "inspection_started_at": "2026-10-02T18:15:04.797699+00:00",
+        "inspection_started_by": "Audit User A",
+        "return_owner_entity_id": "A",
+        "return_warehouse_id": "WH",
+        "credit_note_amount": 50000.0,
+        "credit_note_id": "cn_6c029d012803",
+        "credit_note_number": "CN-00001",
+        "settle_notes": ""
+      }
+    },
+    {
+      "path": "/sales-returns/sret_cbe1a65eebd6/reverse",
+      "status": 200,
+      "body": {
+        "id": "sret_cbe1a65eebd6",
+        "number": "SRET-00001",
+        "order_id": "so_8b66eb229619",
+        "order_number": "A/SO-00001",
+        "customer_id": "C",
+        "customer_name": "Audit customer",
+        "entity_id": "A",
+        "return_type": "retur",
+        "status": "cancelled",
+        "items": [
+          {
+            "product_id": "P",
+            "product_name": "",
+            "quantity_returned": 5.0,
+            "unit": "meter",
+            "reason": "",
+            "condition": "ok",
+            "qty_rolls": null,
+            "settle_outcome": "store_credit",
+            "settled_qty": 5.0,
+            "replacement_qty": 0.0,
+            "inspection": {
+              "points": 0.0,
+              "grade": "A",
+              "defects": [],
+              "condition": "ok",
+              "disposition": "restock",
+              "recommended_outcome": "refund",
+              "accepted_qty": 5.0,
+              "gsm_actual": null,
+              "width_actual": null,
+              "thresholds": {
+                "a_max": 20.0,
+                "a1_max": 26.67,
+                "a2_max": 33.33,
+                "b_max": 40.0
+              },
+              "notes": "",
+              "inspected_by": "Audit User A",
+              "inspected_at": "2026-10-02T18:15:04.836528+00:00"
+            },
+            "line_code": ""
+          }
+        ],
+        "line_codes": [],
+        "notes": "",
+        "attachments": [],
+        "stock_adjusted": false,
+        "policy_snapshot": {
+          "id": "",
+          "name": "Default (sistem)",
+          "scope": "global",
+          "scope_ref": "",
+          "window_days": 30,
+          "allowed_return_types": [
+            "retur",
+            "bs",
+            "penggantian",
+            "komplain",
+            "garansi"
+          ],
+          "allowed_outcomes": [
+            "refund",
+            "store_credit",
+            "nego",
+            "reject"
+          ],
+          "restocking_fee_pct": 0.0,
+          "require_inspection": true,
+          "enforce_window": false,
+          "link_to_supplier_window": false,
+          "condition_requirements": "",
+          "custom_fields": {},
+          "is_default": true,
+          "snapshot_at": "2026-10-02T18:15:04.670955+00:00"
+        },
+        "return_deadline": "2026-11-01T18:15:04.328970+00:00",
+        "policy_eligibility": {
+          "eligible": true,
+          "within_window": true,
+          "blocked": false,
+          "reference_date": "2026-10-02T18:15:04.328970+00:00",
+          "window_days": 30,
+          "days_remaining": 29,
+          "require_inspection": true,
+          "supplier_linked": null,
+          "warnings": []
+        },
+        "outcome": "store_credit",
+        "inspection_status": "done",
+        "inspection": {
+          "grades": [
+            "A"
+          ],
+          "worst_grade": "A",
+          "total_points": 0.0,
+          "recommended_outcome": "refund",
+          "thresholds": {
+            "a_max": 20.0,
+            "a1_max": 26.67,
+            "a2_max": 33.33,
+            "b_max": 40.0
+          },
+          "notes": "",
+          "inspected_by": "Audit User A",
+          "inspected_at": "2026-10-02T18:15:04.836528+00:00"
+        },
+        "settlement": {
+          "outcome": "store_credit",
+          "settled_at": "2026-10-02T18:15:04.872090+00:00",
+          "settled_by": "Audit User A",
+          "credit_note_number": "CN-00001",
+          "gross_amount": 50000.0,
+          "net_amount": 50000.0,
+          "settlement": "store_credit",
+          "store_credit_amount": 50000.0,
+          "store_credit_ledger_id": "scl_0821ef2f7b97",
+          "store_credit_balance_after": 50000.0
+        },
+        "complaint_code": "",
+        "complaint_label": "",
+        "complaint_note": "",
+        "complaint_needs_inspection": false,
+        "complaint_claimable": false,
+        "shipped_to_store_at": "",
+        "shipped_to_customer_at": "",
+        "goods_arrived_at": "",
+        "milestones": [],
+        "inspection_id": "",
+        "inspection_number": "",
+        "inspect_done_at": "",
+        "created_by": "Audit User A",
+        "approved_by": "Audit User A",
+        "approved_at": "2026-10-02T18:15:04.763886+00:00",
+        "inspected_by": "Audit User A",
+        "inspected_at": "2026-10-02T18:15:04.836528+00:00",
+        "settled_by": "Audit User A",
+        "settled_at": "2026-10-02T18:15:04.872090+00:00",
+        "rejected_by": null,
+        "rejected_at": null,
+        "reject_reason": null,
+        "created_at": "2026-10-02T18:15:04.667877+00:00",
+        "updated_at": "2026-10-02T18:15:05.136643+00:00",
+        "refs": [
+          {
+            "rel": "reverses",
+            "doc_type": "sales_order",
+            "doc_id": "so_8b66eb229619",
+            "doc_number": "A/SO-00001",
+            "note": "retur atas pesanan",
+            "at": "2026-10-02T18:15:04.689179+00:00"
+          },
+          {
+            "rel": "issued",
+            "doc_type": "credit_note",
+            "doc_id": "cn_6c029d012803",
+            "doc_number": "CN-00001",
+            "note": "Diterbitkan oleh retur pelanggan",
+            "at": "2026-10-02T18:15:05.021262+00:00"
+          }
+        ],
+        "approval_notes": "",
+        "inspection_started_at": "2026-10-02T18:15:04.797699+00:00",
+        "inspection_started_by": "Audit User A",
+        "return_owner_entity_id": "A",
+        "return_warehouse_id": "WH",
+        "credit_note_amount": 50000.0,
+        "credit_note_id": "cn_6c029d012803",
+        "credit_note_number": "CN-00001",
+        "settle_notes": "",
+        "reversal_je_ids": [
+          "je_8858c24aba86"
+        ],
+        "reversal_reason": "Synthetic return correction",
+        "reversed": true,
+        "reversed_at": "2026-10-02T18:15:05.136643+00:00",
+        "reversed_by": "Audit User A",
+        "_reversal_summary": {
+          "reversal_jes": 1,
+          "rolls_removed": 1,
+          "outcome": "store_credit"
+        }
+      }
+    }
+  ]
+}

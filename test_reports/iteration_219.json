@@ -1,0 +1,28 @@
+{
+  "summary": "Retest of the iteration_218 L03 LN-030 fixes. All 5 fixes are verified. Backend: the regression suite tests/test_l03_ln030_special_order_items.py passed 25/25 (the earlier HOLD-bypass test now passes). The new suite tests/test_l03_ln030_fixes_iter219.py passed 6/6: FIX1 source_type=redesign returns 400 for both an ACC artwork and a HOLD artwork. FIX2 on_design_approved for item 2 uses item 2's own spec (template ptpl_9ca54122578e), leaves the OD-level spec_id unchanged, writes items[1].spec_id and is idempotent on a second call. FIX3 the /approve response includes chain.items for both items. FIX4: artwork put on HOLD before approve → labdip created, proofing not created; after release, POST /route twice → exactly 1 proofing, set as items[].proofing_sample_id; labdip is still 1. FIX5 the redesign design request carries parent_design_code. The probe probe_l03_on_design_approved_spec.py prints OK. Frontend (admin, Playwright): after clicking Setujui, special-order-item-links-1/2 update without a reload ('Desain KSC/DSR-00009 · KSC/SMP-00022 labdip' / 'KSC/SMP-00023 proofing'). Redesign submit opens the new OD with special-order-redesign-of visible. The original OD shows special-order-open-redesign-<id> and it opens the redesign OD. The special-order-origin-filter KNSelect works (redesign → 1 row with badge; special_order → 4 rows, no badge). design-detail-origin-ref shows 'Pesanan khusus SORD-… · induk desain TST-UI-OK' (the code, not the id). Create form: 2 items, source options are only parent_product/approved_artwork/customer_reference, and the artwork picker shows for item 2. Orders header orders-col-total-dpp reads 'Total (DPP)'. All TEST_ fixtures were deleted (special_orders back to 3; design_gallery, md_samples, specs and design_requests TEST_ = 0).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "services/special_order_routing._route_item (proofing for approved_artwork)", "issue": "spec_svc.create_spec runs before smp.create_sample. When create_sample fails (artwork on HOLD), each approve or /route attempt leaves an orphan proofing spec. Create the spec only after the artwork check passes, or reuse/delete it on failure."},
+      {"endpoint": "POST /api/special-orders/{id}/approve", "issue": "Approve still does not re-check HOLD on approved_artwork items up front. It only records a routing_errors entry. Acceptable now that the retry works, but the user only sees this in routing_errors."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "SpecialOrderDetail after approve", "issues": ["Header and list status show 'Terkonfirmasi' with a 'Mulai Produksi' button, while the timeline shows 'Sampling berjalan' and samples are still in draft. The status label and the next action may confuse users. Not in scope; probably pre-existing."]},
+      {"screen": "Redesign OD (draft)", "issues": ["The 'Ubah motif' button is already visible on a draft redesign OD and on a pending OD. This is the open question about allowing redesign before approval."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l03_ln030_special_order_items.py", "/app/backend/tests/test_l03_ln030_fixes_iter219.py", "/app/backend/tests/probe_l03_on_design_approved_spec.py", "/app/test_reports/pytest/l03_219.xml", "/app/test_reports/pytest/l03_fixes_219.xml"],
+  "action_items": ["Optional: avoid creating an orphan proofing spec when proofing sample creation fails (HOLD artwork).", "Product decision: should redesign be blocked while the source OD is draft/pending?"],
+  "critical_code_review_comments": ["special_order_phase2.on_design_approved line 522: `x.get('spec_id') or '' if od_item else od.get('spec_id') or ''` is correct by precedence but hard to read; add parentheses.", "Legacy ODs approved before FIX4 have proofing in sample_ids but no items[].proofing_sample_id, so a /route on them would create a second proofing. Consider a backfill, or a guard on an existing md_samples proofing with the same special_order_item_id + design_id."],
+  "updated_files": ["/app/backend/tests/test_l03_ln030_fixes_iter219.py", "/app/backend/tests/ui_fixtures_l03_219.py", "/app/backend/tests/ui_fixture_l03_219_link.py"],
+  "success_rate": {"backend": "100% (31/31 + probe OK)", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Temporary TEST_ design_gallery fixtures, ODs, samples and design requests; all deleted.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run: cd /app/backend && REACT_APP_BACKEND_URL=<frontend/.env> MONGO_URL=mongodb://localhost:27017 DB_NAME=test_database python -m pytest tests/test_l03_ln030_special_order_items.py tests/test_l03_ln030_fixes_iter219.py -n0 (self-cleaning). UI: python tests/ui_fixtures_l03_219.py up (creates a pending 2-item OD TEST_UI_219), then down to clean up. tests/ui_fixture_l03_219_link.py approves the redesign OD and links a TEST design (hard-coded source OD id; edit it before reuse). The approve confirm button testid is so-approve-confirm-confirm. KNSelect options use the testid pattern <testid>-option-<value>."
+}

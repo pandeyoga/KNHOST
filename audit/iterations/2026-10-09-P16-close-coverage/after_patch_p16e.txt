@@ -1,0 +1,33 @@
+[
+ {
+  "id": "DOC-02",
+  "invariant": "preview faktur (admin) memuat nomor SO, pelanggan & grand total sumber",
+  "pass": true,
+  "detail": "200 len=1961"
+ },
+ {
+  "id": "DOC-02",
+  "invariant": "dokumen tersimpan & tampilan cetak = hasil generate",
+  "pass": true,
+  "detail": "200"
+ },
+ {
+  "id": "DOC-02",
+  "invariant": "pengguna entitas lain tidak bisa preview/cetak dokumen KSC (403/404)",
+  "pass": true,
+  "detail": "404/404"
+ },
+ {
+  "id": "DOC-02",
+  "invariant": "peran tanpa izin dokumen (desainer) ditolak 403",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "DOC-02",
+  "invariant": "sales bukan pemilik: bila detail SO ditolak, preview dokumennya juga ditolak (tidak bocor harga nego)",
+  "pass": true,
+  "detail": "detail=200 doc=200 as=sales@kainnusantara.id"
+ }
+]
+pass=5 fail=0

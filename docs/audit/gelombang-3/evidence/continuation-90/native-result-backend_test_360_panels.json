@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_360_panels.py",
+    "database": "knhost_audit_native90_de8eceace5d945a1af4a2c856f960e05",
+    "exit": 1,
+    "seconds": 45.03,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_360_panels.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_de8eceace5d945a1af4a2c856f960e05 backend_test_360_panels.py\n🔍 Starting 360° Panels Backend Tests\n\n🔍 Logging in as admin...\n✅ Login successful\n🔍 \n=== TESTING SUPPLIER 360 ===\n✅ GET /api/suppliers - PASSED\n   Found 5 suppliers, using sup_grp_ksc_kanda\n✅ Supplier 360 - finance object - PASSED\n   AP: 0.0, Overdue: 0.0, Open PO: 0\n✅ Supplier 360 - purchase_orders with price - PASSED\n   Found 0 POs, items have price field: False\n✅ Supplier 360 - vendor_bills - PASSED\n   Found 0 bills\n✅ Supplier 360 - returns - PASSED\n   Found 0 returns\n✅ Supplier 360 - price_list - PASSED\n   Found 0 price list entries\n✅ Supplier 360 - price_history structure - PASSED\n   Found 0 products with price history\n✅ Supplier 360 - documents - PASSED\n   Found 0 documents with proper structure\n🔍 \n=== TESTING MAKLOON 360 ===\n✅ GET /api/makloons - PASSED\n   Found 7 makloons, using mak_seed_tenun\n✅ Makloon 360 - finance object - PASSED\n   Service AP: 881500.0, Bills: 881500.0, Open orders: 1\n✅ Makloon 360 - orders - PASSED\n   Found 3 orders\n✅ Makloon 360 - service_bills - PASSED\n   Found 2 service bills\n✅ Makloon 360 - documents - PASSED\n   Found 5 documents (SPK + bills)\n✅ Makloon 360 - mak_seed_tenun has AP > 0 - PASSED\n   AP outstanding: 881500.0\n🔍 \n=== TESTING EMPLOYEE 360 ===\n❌ GET /api/hr/employees - FAILED\n   No employees found\n🔍 \n=== TESTING PAYSLIP PDF ===\n⚠️ No payslip ID available, skipping PDF test\n🔍 \n============================================================\n🔍 RESULTS: 14/15 tests passed\n🔍 ============================================================\n\n"
+  }
+]

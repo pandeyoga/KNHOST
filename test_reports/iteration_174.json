@@ -1,0 +1,40 @@
+{
+  "summary": "P02 WMS (IMP-22..25) putaway/lokasi tested — Backend 13/14 passed, 1 skipped. Frontend ?view=wms-locations loads with all required data-testids: lp-hierarchy ('Lokasi > Gudang > Zona > Lemari/Rak > Tingkat > Bin'), lp-kpi-bins/capacity/occupied, lp-unassigned, lp-kpi-orphan (3 roll · 310 yard for WH-JKT), 4 tabs (putaway/structure/bins/orphans) + pa + cuts. Jakarta picker works via button-based dropdown (lp-warehouse). Putaway tab: 39 lp-suggest buttons; suggesting a roll returns suggestions panel w/ 8 chips; lp-check & lp-assign render. Structure tab (admin): lp-save-structure present + 42 bin capacity inputs. Bins tab: lp-bin-grid + 104 lp-bin-card. Orphans tab: lp-orphans + 15 orphan rows + 3 lp-orphan-fix buttons. Backend: resolver bins modern (W01-L1-02) + legacy (A1-01) both OK; POST /api/inventory/putaway logs inventory_movements.movement_type=putaway; roll length/owner unchanged; evaluate_target returns {ok,blocks,capacity,rules,bin_code,bin_id,function}; inspection.hold.held=True rejects to storage bin, accepted at Q01-T1-01 (function=qc); suggest tiers monotonic & excludes full bins; W-OVER-01 cap=3 → 4th roll 409 BIN_CAPACITY_FULL + detail.code; warehouse@ override → 403; admin reason<5 → 400; whadmin reason OK → 200 w/ capacity_override persisted in movement; PUT /api/warehouses/{id}/structure as warehouse@ → 403; delete occupied bin → 409 detail.code=LOCATION_IN_USE; GET /api/warehouses/{id}/orphans works; fix-location reason<5 → 400; Soreang warehouse user cannot GET WH-JKT locations (403); occupancy includes per-unit by_unit + capacity_rolls_total + unassigned.by_unit + orphan.by_unit.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "scripts/seed_p02_kn.py", "issue": "Script HANYA menambah rules/kapasitas ke rak yang sudah ada; TIDAK membuat Rak W02 (single_sku) atau Rak W03 (grade A di Level 1). Akibatnya rak W02/W03 TIDAK tersedia di WH-JKT demo, dan skenario spec 'Rak W02 single_sku', 'W03/L1 grade A' tidak bisa diuji di preview. Satu test case di-SKIP karena ini. Perlu seed yang menciptakan Rak W02 & W03 (atau tambahkan ke base warehouse seed)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p02_wms_putaway.py",
+    "/app/test_reports/pytest/p02_results.xml"
+  ],
+  "action_items": [
+    "Lengkapi seed_p02_kn.py (atau base seed) untuk MEMBUAT Rak W02 dan Rak W03 (dengan Level 1) di WH-JKT — tidak hanya menambah rules ke rak existing. Tanpa ini, uji single_sku (W02) & grade-A-only (W03/L1) tidak bisa dijalankan di lingkungan preview."
+  ],
+  "critical_code_review_comments": [
+    "placement_rules.evaluate_pure(): sudah async-free & idempotent (bagus). Field 'same_lot'/'same_sku' dihitung dari contents dgn exclude_roll — konsisten antara suggest/evaluate/putaway.",
+    "location_service.place_roll(): CAS filter berisi 'bin_id': roll.get('bin_id') or None — jika roll sudah di bin tujuan, update_one no-op (matched=1 via same filter) tapi evaluasi kapasitas sudah mengecualikan roll itu. Perlu diperhatikan jika suatu saat ingin menolak 'putaway no-op'; sekarang silent-success. Minor.",
+    "placement_rules.acquire_bin_lock(): expires fixed 15 detik; tidak ada retry pada klien. Race window kecil tapi acceptable.",
+    "seed_p02_kn.py mengandalkan rak W02/W03 sudah ada di base warehouse — ketergantungan implisit. Idealnya seed-nya self-contained."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_p02_wms_putaway.py"
+  ],
+  "success_rate": {
+    "backend": "93% (13/14 passed, 1 skipped due to seed gap)",
+    "frontend": "100% (semua testids lp-* yg disyaratkan hadir + hierarki Lokasi>Gudang>Zona>Lemari/Rak>Tingkat>Bin tampil, dropdown Jakarta berfungsi, KPI per-unit, orphans 3 roll · 310 yard sesuai spec)"
+  },
+  "test_credentials": "see /app/memory/test_credentials.md — admin@kainnusantara.id/demo12345, whadmin@/warehouse@/warehouse.soreang@ sandi demo1234",
+  "seed_data_creation": "Dijalankan `cd /app/backend && python scripts/seed_p02_kn.py` sekali untuk refresh — set 21 kapasitas (W01-L1..L4 + W-OVER-01) & QC zone Q01. Rolls yang dipakai test di-restore (bin_id, status, grade, inspection) via finalizer fixture.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Retest: `cd /app/backend && python -m pytest tests/test_p02_wms_putaway.py -v -n 0` (serial karena 2 test memakai roll yang sama via function-scoped fixture). pytest.ini default -n 2 loadscope → gunakan `-n 0`. Login UI pakai testid `login-email-input`/`login-password-input`/`login-submit-button` (input type=text, bukan email). lp-warehouse adalah shadcn-button-dropdown — klik lalu klik item teks 'Jakarta'. Rak W02/W03 belum ada di demo (gap seed) → test grade/single_sku SKIP; main agent perlu membuat scripts/seed yang menciptakan racks tsb kalau ingin lulus 14/14.",
+  "rca of the issue": "SEED GAP: scripts/seed_p02_kn.py mengasumsikan Rak W02 (single_sku) & Rak W03/Level 1 (grades=[A]) sudah ada di master `warehouses.zones` dari seed base. Base seed WH-JKT saat ini hanya memiliki Rak A1/A2/B1, Rak W01 (+ W-OVER-01), dan Rak K01. Reproduksi: GET /api/warehouses/wh_jakarta/locations → bin W02-*/W03-* kosong. Mitigasi: tambahkan konstruksi node W02 & W03 di seed_p02_kn.py (atau di base demo seed) dengan struktur levels[].bins + rules sesuai spec; atau pindahkan definisi penuh rak demo ke seed_p02_kn.py sehingga idempoten self-contained."
+}

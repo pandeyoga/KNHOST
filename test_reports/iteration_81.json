@@ -1,0 +1,30 @@
+{
+  "summary": "Mobile-first review of KNHOST Sales/Admin Sales at 390x844. Verified via Playwright against public URL. Admin Sales flow renders mobile-sales-app (NOT mobile-ops-app), Meja tab labelled 'Meja', desk metrics (open/value/oldest) + 20 queue cards visible, verify-dialog opens as bottom sheet with verify-checklist / verify-submit / verify-cancel. Lainnya: entity switch (all/ent_ksc/ent_kanda) with all-note visible, Admin section shows approvals+internal, price-status & sample-orders present, mobile-more-visits correctly ABSENT for admin, no duplicate mobile-more-* ids (27 unique). Internal Requests screen exposes filter chips + m-pin-new. Sales role: mobile-sales-home shows m-home-boards, m-home-commission-breakdown, m-home-commission-total, m-home-trend, m-home-customers, m-home-see-customers; no page-level horizontal scroll at 390px. Sales Lainnya customers section collapsed by default; toggling it (via scrollIntoView+click) reveals mobile-more-crm/leads/visits; visits opens Kunjungan Sales sub screen. Sales Pesanan tab expansion produces mobile-order-detail-<id> with m-journey-<id> and does NOT render mobile-order-admin-actions-<id>. No admin approvals for sales role. No JS console errors captured. Deeper flows not exercised due to time budget — see context_for_next_testing_agent.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Lainnya (both roles)", "issues": [
+        "mobile-more-section-toggle-customers can be covered by fixed bottom tab bar when it lies at the bottom edge of the viewport; Playwright force-click at that Y-coordinate falls through to Keranjang tab. In real thumbs this means users tapping the customers section header while it sits behind the tab bar may inadvertently trigger tab navigation. Consider adding scroll padding/margin so section headers never sit under the fixed bottom-nav (e.g. pb-[76px] on the scroll container or larger tap target above the tab bar)."
+      ]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_81.json"],
+  "action_items": [
+    "Consider adding safe-area bottom padding on the mobile Lainnya scroll container so the customers/stock section headers do not slide beneath the fixed bottom nav — otherwise a genuine thumb tap on the header can trigger tab navigation.",
+    "Next testing agent: exercise verify-submit toast, fulfill-dialog options, open-row navigation (sales_return, internal_request, jatuh_tempo, menunggu_manajer), full m-pin-create submit (with product KNSelect option testids -option-<value>, avail hint, add-line, submit) after picking Sukacita to bypass 409, PIN decide/reject/cancel flows, m-price-status filters, m-sample-orders list, and regression (catalog → mobile-checkout-btn → mobile-place-order-btn → new order, Retur create from shipped order, amend). These were not executed in this run due to session budget."
+  ],
+  "critical_code_review_comments": [
+    "MobileMore.jsx: `defaultOpen={g.open}` uses undefined for customers/stock groups (evaluated as false which is intended). Behaviour is correct; but combined with fixed bottom tab bar, the section header can be visually + interactively overlapped by the nav. Add bottom padding to `.m-subpage-body`/main scroll container.",
+    "MobileMore.jsx GROUPS: `internal` appears in `admin` (sales_admin only) AND `stock` (all roles). The dedupe via shownIds keeps only the first render, so sales role sees `internal` in the stock group — verify this is intentional. No duplicate testids observed at runtime (27 unique)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not tested)", "frontend": "~85% (structural checks + admin & sales role gating + verify dialog open + visits sub screen open); deep-flow coverage limited"},
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Public URL: https://knhost-responsive.preview.emergentagent.com. Viewport 390x844. Login via login-email-input / login-password-input / login-submit-button. Clear localStorage between users. Confirmed working testids so far: mobile-sales-app, mobile-tab-btn-home/catalog/cart/orders/more, m-sales-admin-desk, m-desk-metric-open|value|oldest, m-desk-queue-*, m-desk-action-perlu_verifikasi-*, verify-dialog, verify-checklist, verify-submit, verify-cancel, mobile-entity-switch, mobile-entity-all|ent_ksc|ent_kanda, mobile-entity-all-note, mobile-more-section-{assist,orders,customers,stock,hubs,full,admin(sales_admin only)}, mobile-more-{tanya,amendments,special,sample-orders,returns,special-price,price-status,pricelist,crm,leads,visits(sales only),approvals(sales_admin only),internal}, m-internal-requests, m-pin-filter-{all,submitted}, m-pin-new, mobile-sales-home, m-home-boards, m-home-commission-breakdown, m-home-commission-total, m-home-trend, m-home-customers, m-home-see-customers, m-journey-<id>, mobile-order-detail-<id>. TIP for Playwright: use element.scrollIntoView({block:'center'}) + element.click() (JS) instead of Playwright force=True when clicking Lainnya section headers — force=True hits the fixed bottom tab bar and switches to Cart tab. Untested deep flows listed in action_items.",
+  "rca_of_issue": "Observed 'section toggle click switches to Cart tab' during force-click testing → root cause is that Playwright's force=True click bypasses hit-testing while the fixed bottom tab bar (position:fixed, z-index:high) overlaps the section header when it sits at bottom of the scroll list. Mitigation: (a) test scripts should call element.scrollIntoView({block:'center'}) then element.click(); (b) main agent should add bottom padding on the mobile Lainnya scroll container so headers never sit behind the fixed nav."
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_depth3_enhancements.py",
+    "database": "knhost_audit_native90_b3da523e1489445091198ca57435b1fa",
+    "exit": 1,
+    "seconds": 49.26,
+    "pass_log_tokens": 12,
+    "fail_log_tokens": 2,
+    "log": "continuation-90\\native-backend_test_depth3_enhancements.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "PASS - Status: 200\n\n🔍 Get supplier price-list\n✅ PASS - Status: 200\n   ✓ Reference price: 185000.0\n   ✓ Inflated price (25% above): 231250.0\n\n🔍 Get warehouses\n✅ PASS - Status: 200\n\n🔍 POST /api/purchase-orders (price 25% above price-list)\n   Should create PO with status=waiting_approval and price_deviation.flagged=true\n❌ FAIL - Expected 200, got 400\n   Response: {\"detail\":\"Item BTK-MEGA-001: Grade yang diharapkan wajib dipilih untuk setiap item (tidak ada nilai default) — pilihan: A, A1, A2, B, B1, C, BS.\"}\n\n🔍 Get suppliers\n✅ PASS - Status: 200\n\n🔍 Get supplier price-list\n✅ PASS - Status: 200\n   ✓ Using exact price-list price: 185000.0\n\n🔍 Get warehouses\n✅ PASS - Status: 200\n\n🔍 POST /api/purchase-orders (price at price-list)\n   Should create PO without price_deviation flag (price at price-list)\n❌ FAIL - Expected 200, got 400\n   Response: {\"detail\":\"Item BTK-MEGA-001: Grade yang diharapkan wajib dipilih untuk setiap item (tidak ada nilai default) — pilihan: A, A1, A2, B, B1, C, BS.\"}\n\n================================================================================\n📊 DEPTH #3 ENHANCEMENTS TEST SUMMARY\n================================================================================\nTotal tests run: 14\nTests passed: 12\nTests failed: 2\nSuccess rate: 85.7%\n\n❌ Failed Tests:\n  - POST /api/purchase-orders (price 25% above price-list)\n    Response: {\"detail\":\"Item BTK-MEGA-001: Grade yang diharapkan wajib dipilih untuk setiap item (tidak ada nilai default) — pilihan: A, A1, A2, B, B1, C, BS.\"}\n  - POST /api/purchase-orders (price at price-list)\n    Response: {\"detail\":\"Item BTK-MEGA-001: Grade yang diharapkan wajib dipilih untuk setiap item (tidak ada nilai default) — pilihan: A, A1, A2, B, B1, C, BS.\"}\n================================================================================\n"
+  }
+]

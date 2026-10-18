@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_tahapan_poc.py",
+    "database": "knhost_audit_native90_95edc52715474d5c8e67d6eb8830546f",
+    "exit": "timeout",
+    "seconds": 210.06,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-test_core_tahapan_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "Timeout (0:00:55)!\nThread 0x0001bd0c (most recent call first):\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\pydantic\\_internal\\_generate_schema.py\", line 744 in __init__\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\pydantic\\_internal\\_model_construction.py\", line 667 in complete_model_class\n  File \"C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\integration_env\\Lib\\site-packages\\pydantic\\_internal\\_model_construction.py\", line 0 in __new__\n  File "
+  }
+]

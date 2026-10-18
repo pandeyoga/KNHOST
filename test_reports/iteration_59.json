@@ -1,0 +1,32 @@
+{
+  "summary": "Menguji fitur Marketing baru (iter 58): template konten, duplikasi post, dan tampilan minggu di kalender konten. Backend: 15/15 pytest lulus (duplicate copy fields+idea+history+404+isolasi, template CRUD/permission/validation, filter from_date/to_date). Frontend: mode Minggu, save-as-template, duplicate flow, week add, template picker semuanya berfungsi.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter58_marketing_templates_duplicate.py",
+    "/app/test_reports/pytest/iter58_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "duplicate_payload menyalin field 'assets' dari sumber (baris marketing_ext.py:292), meski deskripsi task menyebut 'attachments/metrics/history lama TIDAK ikut'. Perlu diklarifikasi apakah 'assets' (bahan konten / desain tertaut) memang harus disalin — saat ini tersalin. Dalam pengujian, 'attachments' benar tidak ikut, tetapi 'assets' (yang berbeda) ikut. Tidak dicatat sebagai bug karena spec ambiguous; harap konfirmasi.",
+    "Field posts empty message di tampilan Minggu adalah 'kosong' (tidak berupa placeholder yang lebih ramah); minor cosmetic."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter58_marketing_templates_duplicate.py"
+  ],
+  "success_rate": {"backend": "100% (15/15)", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, X-Entity-Id=ent_ksc",
+  "seed_data_creation": "Hanya data uji (TEST_*) sudah dibersihkan setelah pengujian; tidak ada seed permanen ditambahkan.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Test file /app/backend/tests/test_iter58_marketing_templates_duplicate.py memakai user sales3@kainnusantara.id (ent_kanda-only) untuk uji isolasi entitas. Tampilan minggu default week saat ini (24 Sep 2026) menampilkan 7 kolom Sen-Min; setiap kolom punya tombol mkt-week-add-YYYY-MM-DD yang membuka form konten baru dengan datetime prefill YYYY-MM-DDT10:00. TemplatePicker hanya muncul di form CREATE (tidak di edit).",
+  "rca of the issue": "Tidak ada bug yang perlu di-RCA."
+}

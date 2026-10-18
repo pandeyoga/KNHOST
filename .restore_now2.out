@@ -1,0 +1,53 @@
+=== [1/7] pip install (skip emergentintegrations & litellm: sudah di base image) Sun Sep 27 20:04:50 UTC 2026
+PIP_EXIT=0
+=== [2/7] yarn install Sun Sep 27 20:04:51 UTC 2026
+warning Resolution field "underscore@1.13.8" is incompatible with requested version "underscore@1.13.6"
+warning Resolution field "uuid@11.1.1" is incompatible with requested version "uuid@^8.3.2"
+warning Resolution field "react-router@7.15.1" is incompatible with requested version "react-router@7.15.0"
+warning Resolution field "resolve-url-loader@5.0.0" is incompatible with requested version "resolve-url-loader@^4.0.0"
+warning Resolution field "webpack-dev-server@5.2.6" is incompatible with requested version "webpack-dev-server@^4.6.0"
+warning Resolution field "serialize-javascript@7.0.5" is incompatible with requested version "serialize-javascript@^6.0.0"
+warning Resolution field "@babel/plugin-transform-modules-systemjs@7.29.4" is incompatible with requested version "@babel/plugin-transform-modules-systemjs@^7.29.7"
+warning Resolution field "serialize-javascript@7.0.5" is incompatible with requested version "serialize-javascript@^4.0.0"
+warning Resolution field "nth-check@2.0.1" is incompatible with requested version "nth-check@^1.0.2"
+warning Resolution field "@tootallnate/once@2.0.1" is incompatible with requested version "@tootallnate/once@1"
+warning Resolution field "@eslint/plugin-kit@0.3.4" is incompatible with requested version "@eslint/plugin-kit@^0.2.7"
+YARN_EXIT=0
+=== [3/7] pastikan MongoDB HIDUP (prasyarat bootstrap & seed) Sun Sep 27 20:04:52 UTC 2026
+mongodb: ERROR (already started)
+mongodb SIAP setelah 1x percobaan.
+=== [3b/7] backend/.env: CORS_ORIGINS wajib eksplisit (T-02 gagal-berisik) Sun Sep 27 20:04:52 UTC 2026
+CORS_ORIGINS ok: https://knhost-analytics.preview.emergentagent.com,http://localhost:3000
+=== [4/7] restart backend — bootstrap fondasi menulis ke DB yang HIDUP Sun Sep 27 20:04:52 UTC 2026
+backend: stopped
+backend: started
+backend /api/ -> 200
+=== [5/7] seed_realistic Sun Sep 27 20:05:07 UTC 2026
+[bootstrap] kebersihan data: 34 record dirapikan {'customers': 5, 'suppliers': 6, 'users': 14, 'hr_employees': 2, 'makloons': 7}
+✅ Fondasi bootstrap ditanam ulang (akun md@/wh.admin@: 2/2)
+
+📋 Summary:
+  - 14 Users (admin, sales, manager, warehouse×2)
+  - 18 Products (Batik, Tenun, Lurik, Songket, Ulos, Jumputan, Endek)
+  - 5 Customers
+  - 4 Warehouses (Jakarta, Bandung, Surabaya)
+  - 16 Purchase Orders (PO-00001 → PO-00006)
+  - 10 Sales Orders (SO-0001 → SO-0009)
+  - 17 Inbound tasks · 8 Outbound tasks
+  - 18 inventory balances · 26 movements
+  - 43 inventory rolls (Roll-as-SSOT)
+  - 9 audit logs
+  - 3 Work Order produksi in-house (BOM + HPP)
+SEED_EXIT=0
+=== [6/7] VERIFIKASI FONDASI (gagal berisik, bukan gate merah menyesatkan) Sun Sep 27 20:05:26 UTC 2026
+  OK   expense_categories        8 dok   — kategori pengeluaran petty cash (POC FASE E-4 memeriksanya)
+  OK   gl_accounts              75 dok   — bagan akun baku (COA) — semua jurnal bergantung padanya
+  OK   uoms                      8 dok   — master satuan (FASE U: CM·INCH·KG·MTR·PANEL·PCS·RLL·YRD)
+  fondasi LENGKAP.
+=== [7/7] rebuild frontend Sun Sep 27 20:05:27 UTC 2026
+[rebuild_frontend] starting build at Sun Sep 27 20:05:27 UTC 2026
+[rebuild_frontend] running yarn build (low priority)… tail -f /app/.frontend_build.log
+[rebuild_frontend] BUILD OK at Sun Sep 27 20:06:56 UTC 2026
+[rebuild_frontend] done (bundle baru langsung dilayani — tanpa restart).
+BUILD_EXIT=0
+=== RESTORE DONE Sun Sep 27 20:06:56 UTC 2026

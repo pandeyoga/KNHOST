@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_core_po_board_poc.py",
+    "database": "knhost_audit_native90_9f93727e3c95404e9dd7f8735a764a4f",
+    "exit": 1,
+    "seconds": 79.72,
+    "pass_log_tokens": 52,
+    "fail_log_tokens": 20,
+    "log": "continuation-90\\native-test_core_po_board_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "SC/PO-00016', 'Inspect (inspeksi mutu)'), ('KSC/PO-00015', 'Tenun (Weaving)'), ('KSC/PO-00014', 'PFP — Pre-treatment untuk printing'), ('KSC/PO-00013', 'Screen (pembuatan kasa)'), ('PO-00009', 'PFP — Pre-treatment untuk printing')]\n  [PASS] ≥2 lini terwakili di data demo (tab papan tidak ada yang hampa)  ['printing', 'woven']\n  [PASS] kartu 'PO di papan' == jumlah baris hasil filter (bukan jumlah halaman)  summary=13 total=13 baris=13\n  [PASS] kartu 'lewat estimasi' & 'tanpa sales' == hitung-ulang mandiri  api=1/9 mandiri=1/9\n  [PASS] tiga kartu progres menjumlah TEPAT ke total (tidak ada baris yang hilang/dobel)  7+6+0 vs 13\n\nP9 · CLEANUP + NOL RESIDU (diukur, bukan diklaim)\n  [FAIL] invarian global HIJAU setelah pembersihan (lot & jurnal ikut pulih, nol WARN)\n         → exit=1\n  [FAIL] nol residu: jumlah dokumen tiap koleksi SAMA sebelum & sesudah POC\n         → drift={'inventory_lots': (30, 31), 'journal_entries': (99, 100)}\n  [PASS] master lini kembali PERSIS seperti sebelum POC (urutan tahap tidak tergeser)  [('woven', 'benang→tenun→celup→inspect'), ('knit', 'benang→rajut→celup→inspect'), ('printing', 'proofing→pfp→screen→printing→inspect')]\n  [PASS] nol tanda tahap uji yang tertinggal di PO data demo  0 PO masih menyimpannya\n  [PASS] nol stok hantu: saldo persediaan kembali seperti sebelum POC  22 saldo identik\n\n==============================================================================\n  HASIL: 48 PASS · 4 FAIL dari 52 pemeriksaan\n  GAGAL:\n   - gate `INV-REF (dokumen tak buntu)` HIJAU\n   - gate `INV-LINE-01/02 (pagar lini)` HIJAU\n   - invarian global HIJAU setelah pembersihan (lot & jurnal ikut pulih, nol WARN)\n   - nol residu: jumlah dokumen tiap koleksi SAMA sebelum & sesudah POC\n==============================================================================\n"
+  }
+]

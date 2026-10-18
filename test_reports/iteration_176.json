@@ -1,0 +1,48 @@
+{
+  "summary": "P03 (IMP-21/IMP-26/IMP-27) backend end-to-end verified against KANDA/TRF-00002 (intra, 10 rolls, dispatched → completed). All critical P03 flows PASS: (1) POST /status completed shortcut returns 409 TRANSFER_RECEIPT_REQUIRED while rolls in transit. (2) GET /receipt returns 10 in_transit, sales_order_number KANDA/SO-00004, dest_bins populated. (3) Receive 7 rolls → status partially_received; only 7 rolls landed at GU-KANDA (wh_594ea5facd0a) with status 'reserved' + reserved_ref sales_order (commitment kept). (4) Retry same 7 → results 'already', no extra transfer_in movements inserted. (5) Scanning ROLL-TOTALLY-UNKNOWN-TEST → result 'wrong_roll' + open exception recorded; nothing added to stock. (6) sales_orders.allocations REHOMED to dest warehouse with via_transfer_id; outbound wms_task created at dest. (7) Report 'missing' on in-transit roll works; warehouse.soreang@ (non-supervisor) resolve → 403; whadmin@ (supervisor) resolve return_to_source → roll back at SRG-01 reserved for SO. (8) DELETE while partially_received → 400 with proper message. (9) Rule re-eval at receipt: set dest storage_rules mode=category categories=[XYZ-TEST] via DB (RESTORED after) → receive returns 'blocked_rules', roll stays in_transit; supervisor rule_exception_reason → status 'hold'. (10) Transfer finalized to 'completed' with completion_basis='actual_receipt' once no roll remains in transit. IMP-21 unit tests (assign_packing_groups + pl_summary doc_length/doc_status, rolls_match/subtotal_match/uncertain) PASS. so-options endpoint reachable. 13/14 tests PASS; 1 'damaged short-note' test fails on re-run because the first run already landed the roll (bug — see RCA). All DB mutations restored (dest storage_rules).",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/transfers/{id}/receive (outcome=damaged, note<5 chars)",
+        "issue": "services.transfer_receipt_service.receive() calls _land() BEFORE validating note length. The 400 HTTPException is raised AFTER the CAS already flipped roll status to 'damaged' at destination. The 400 then prevents the subsequent _exception() call, leaving the roll damaged at dest with NO 'damaged' exception recorded. Observable: roll_02d43888dd4d went in_transit_transfer → damaged at wh_594ea5facd0a despite API returning 400. Also, the inventory_movement 'transfer_in' with receipt_outcome='damaged' DID insert.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {"endpoint": "POST /api/transfers/{id}/receive", "issue": "Validation order: validate ln.outcome=='damaged' requires note>=5 upfront before loop body touches _land()."},
+      {"endpoint": "GET /api/transfers/{id}/receipt", "issue": "When exception kind='wrong_roll' from unknown code, exception has empty roll_id/roll_no (expected), but UI will need the raw scanned 'code' field (present)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Operations → Transfer tab → open KANDA/TRF-00002", "issue": "Could not verify UI live because the one-shot test consumed KANDA/TRF-00002 to 'completed'. Entity switch to Kanda Fabric works; 'Transfer' sub-tab button has ambiguous text with 'Buka tab Transfer →' header link — selector collision. Main agent should provide a stable testid like `operations-subtab-transfer`.", "affected_selectors": ["button:has-text('Transfer')"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_p03_transfer_receipt.py",
+    "/app/test_reports/pytest/p03_transfer.xml"
+  ],
+  "action_items": [
+    "FIX (HIGH): In services/transfer_receipt_service.py:receive(), validate `ln.note` length upfront when ln.outcome=='damaged' BEFORE calling _land(). Alternatively, pre-validate all lines before any landing. Current order causes DB mutation despite 400.",
+    "Add stable data-testid for Operations sub-tabs (stok/transfer/opname/kesehatan) to prevent selector collision with hero link 'Buka tab Transfer →'.",
+    "Inter-company APPROVE INTERCO_DEST_RULES was NOT exercised (no suitable waiting inter_entity transfer with foreign-entity owned warehouse available). Suggest a scripted smoke that seeds and tears down such a transfer so this leg is regression-tested in CI."
+  ],
+  "critical_code_review_comments": [
+    "transfer_receipt_service.receive(): the damaged-note validation happens inside the per-line loop AFTER _land(). Move `_reason(ln.note, 'Keterangan kerusakan')` upfront (before _land) OR validate at the FastAPI schema level (TransferReceiveLine Pydantic validator) to guarantee no partial mutation when a damaged line is malformed.",
+    "receive() has no outer transaction/compensation if any line fails after N successful landings. Each landing is idempotent via CAS which is good, but partial outcomes should be clearly reflected (they are — individual results[] per line).",
+    "_rehome_allocation() does not touch the SOURCE wms_task 'in_progress'/'picking' states. The current logic only acts when src_task.status=='created'. Acceptable for the KN flow (allocations are rehomed before picking starts), but add a comment to that effect.",
+    "resolve(action='close_note') explicitly rejects kind 'missing' and 'rule_violation' — good, forces proper disposition.",
+    "owned_by_transfer() guard inside _land/receive via held_cas is correct; verified by observing idempotent 'already' on retry.",
+    "summary.counts correctly reflects {received, received_damaged, in_transit, received_hold}, legacy_note handled."
+  ],
+  "updated_files": ["/app/backend/tests/test_p03_transfer_receipt.py"],
+  "success_rate": {"backend": "~93% (13/14 scenario checks pass; 1 fails only on re-run due to one-shot destructive data)", "frontend": "not fully tested (test transfer consumed; UI loads, entity switch works)"},
+  "test_credentials": "whadmin@kainnusantara.id/demo1234 (warehouse_admin, supervisor), warehouse.soreang@kainnusantara.id/demo1234 (non-supervisor), admin@/demo12345, manager@/demo1234.",
+  "seed_data_creation": "No new seed; destructively consumed KANDA/TRF-00002 as instructed. Dest warehouse (wh_594ea5facd0a) storage_rules temporarily set to {mode:'category', categories:['XYZ-TEST']} then RESTORED to original {mode:'none',categories:[],grades:[]} (idempotent via try/finally).",
+  "retest_needed": true,
+  "main_agent_can_self_test": false,
+  "context_for_next_testing_agent": "KANDA/TRF-00002 is now COMPLETED and cannot be re-used. For future P03 receipt tests, re-seed a fresh dispatched transfer first. test_p03_transfer_receipt.py is a one-shot destructive suite — safe to re-run only on freshly dispatched transfer data. Inter-company INTERCO_DEST_RULES path is still unexercised in automated tests. Also IMP-21 patch_line business-level test is unit-stub only (import check) — needs a GRN fixture to assert ocr_expected_rolls snapshot + corrected marking.",
+  "rca of the issue": "BUG — damaged outcome short-note mutates state despite 400. Root cause: services/transfer_receipt_service.py:receive() per-line order is `kind='damaged'` → viol check → `_land()` (mutates DB) → only AFTER landing does the code call `_reason(ln.note,'Keterangan kerusakan')` for the exception record, which raises HTTPException(400). HTTPException propagates out and short-circuits remaining lines, but the already-performed CAS update + inventory_movement insert are not reverted. Repro: POST /api/transfers/{dispatched_tid}/receive with lines=[{roll_id:<in_transit>,outcome:'damaged',note:'x'}] → 400. Then GET inventory_rolls/<id> shows status=damaged at dest warehouse and NO 'damaged' exception on the transfer. Mitigation: (a) hoist `if ln.outcome=='damaged': _reason(ln.note,'Keterangan kerusakan')` to the TOP of the per-line iteration, OR (b) add a Pydantic validator on TransferReceiveLine (if outcome=='damaged' then len(note.strip())>=5). Option (b) is strongest since it rejects malformed payloads at the FastAPI boundary before any business logic runs."
+}

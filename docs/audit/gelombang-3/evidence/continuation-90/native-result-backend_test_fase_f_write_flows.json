@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_fase_f_write_flows.py",
+    "database": "knhost_audit_native90_0636b2269fea4e67a2339df9896b6fde",
+    "exit": 1,
+    "seconds": 49.49,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_fase_f_write_flows.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "NATIVE90_READY knhost_audit_native90_0636b2269fea4e67a2339df9896b6fde backend_test_fase_f_write_flows.py\n\n======================================================================\nFASE F — Backend Write Flows Test (Iteration 180)\n======================================================================\n\n✅ Login as admin@kainnusantara.id\n\n--- P1 US1+2+8: Spec → Submit → Approve → Release ---\n✅ Create specification\n✅ Submit specification\n✅ Login as manager@kainnusantara.id\n✅ Approve specification → product born\n✅ Product not in orderable list\n✅ Release product to production\n\n--- P1 US9: Proofing without/with design ---\n✅ Login as admin@kainnusantara.id\n❌ Proofing without design REJECTED\n   Details: Status 400, Message: Spesifikasi produk WAJIB — setiap permintaan sample (labdip/handfeel/proofing) lahir bersama spesifikasi target-nya. Isi bagian Spesifikasi atau pilih spesifikasi acuan.\n❌ Create proofing with design\n   Details: Status 400: {\"detail\":\"Spesifikasi produk WAJIB — setiap permintaan sample (labdip/handfeel/proofing) lahir bersama spesifikasi target-nya. Isi bagian Spesifikasi atau pilih spesifikasi acuan.\"}\n\n--- P1 US5+6: Sample → Send → Submit round → Assess ---\n\n--- P1 US10+11: Issue material → stock decreases ---\n\n======================================================================\nRESULTS: 8/10 tests passed\n======================================================================\n\n"
+  }
+]

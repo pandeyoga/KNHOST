@@ -1,0 +1,205 @@
+{
+  "title": "Register tambahan jawaban pemilik 16 Oktober 2026",
+  "source_commit": "64d81f29577dae4daa86ddc64689dec7243804f2",
+  "scope": "Supplement to earlier 126-statement register, not a replacement or new count of all historical requirements.",
+  "return_domain": "deferred",
+  "erp_source_changed": false,
+  "decisions": [
+    {
+      "id": "N01",
+      "owner_reply_point": "1",
+      "statement": "Special Order existing ACC tetap proofing; label tujuan bisa difilter",
+      "clarification_status": "jelas",
+      "current_code_status": "fondasi_ada_perlu_penyelarasan",
+      "evidence": [
+        "E01",
+        "E02",
+        "E03",
+        "E04"
+      ]
+    },
+    {
+      "id": "N02",
+      "owner_reply_point": "2",
+      "statement": "Harga grade alokasi A dan pengajuan ulang harga khusus",
+      "clarification_status": "jelas",
+      "current_code_status": "mekanisme_ada_batas_status_perlu_diselaraskan",
+      "evidence": [
+        "E05",
+        "E06",
+        "E07"
+      ]
+    },
+    {
+      "id": "N03A",
+      "owner_reply_point": "3",
+      "statement": "Form MD Quality dari receiving dan bebas memilih roll uji",
+      "clarification_status": "jelas",
+      "current_code_status": "fondasi_ada_pemakaian_potongan_perlu_dilengkapi",
+      "evidence": [
+        "E08",
+        "E09",
+        "E13"
+      ]
+    },
+    {
+      "id": "N03B",
+      "owner_reply_point": "3",
+      "statement": "Identitas/tag sebelum potong; penerimaan bruto terpisah saldo setelah uji",
+      "clarification_status": "usulan_untuk_ditinjau",
+      "current_code_status": "epc_dan_qty_terpisah_terbukti",
+      "evidence": [
+        "E10",
+        "E11",
+        "E12",
+        "E33"
+      ]
+    },
+    {
+      "id": "N04",
+      "owner_reply_point": "4",
+      "statement": "QC SO seluruh/sampling; toggle checkout default tidak; Meja QC",
+      "clarification_status": "jelas",
+      "current_code_status": "antrean_ada_sumber_SO_perlu_penyelarasan",
+      "evidence": [
+        "E15",
+        "E16"
+      ]
+    },
+    {
+      "id": "N05",
+      "owner_reply_point": "5",
+      "statement": "Form inspect artikel/customer/jenis kain/dua warna/roll/tanggal dan tiga sumber",
+      "clarification_status": "jelas",
+      "current_code_status": "form_agregat_belum_setara_interval",
+      "evidence": [
+        "E17",
+        "E34"
+      ]
+    },
+    {
+      "id": "N06A",
+      "owner_reply_point": "6",
+      "statement": "Interval 15 yard sepuluh kolom; legenda berarti Keterangan",
+      "clarification_status": "jelas",
+      "current_code_status": "layout_dicatat",
+      "evidence": [
+        "E17"
+      ]
+    },
+    {
+      "id": "N06B",
+      "owner_reply_point": "6",
+      "statement": "Kamus cacat dan formula nilai akhir sampai grade",
+      "clarification_status": "menunggu_data_client",
+      "current_code_status": "rumus_existing_belum_dibuktikan_setara",
+      "evidence": [
+        "E14"
+      ]
+    },
+    {
+      "id": "N07",
+      "owner_reply_point": "7",
+      "statement": "Dual naming LOT supplier/KN dan aturan pemetaan",
+      "clarification_status": "menunggu_klarifikasi_client",
+      "current_code_status": "field_terpisah_sudah_ada",
+      "evidence": [
+        "E18",
+        "E19"
+      ]
+    },
+    {
+      "id": "N08A",
+      "owner_reply_point": "8",
+      "statement": "Lokasi banyak gudang; konsolidasi transit; multi-SO satu perjalanan; transit Jakarta",
+      "clarification_status": "jelas",
+      "current_code_status": "logistik_ada_guard_satu_SO_tidak_setara",
+      "evidence": [
+        "E20",
+        "E21",
+        "E23",
+        "E25",
+        "E26"
+      ]
+    },
+    {
+      "id": "N08B",
+      "owner_reply_point": "8",
+      "statement": "SJ per SO per keberangkatan; manifest armada; dokumen internal bukan customer dispatch",
+      "clarification_status": "usulan_untuk_ditinjau",
+      "current_code_status": "dampak_SO_GL_perlu_dijaga",
+      "evidence": [
+        "E20",
+        "E21",
+        "E22",
+        "E24"
+      ]
+    },
+    {
+      "id": "N09",
+      "owner_reply_point": "9",
+      "statement": "Selisih diselesaikan per kasus; amandemen SO bila qty transaksi berubah",
+      "clarification_status": "jelas",
+      "current_code_status": "transfer_aktual_exception_dan_amandemen_ada",
+      "evidence": [
+        "E07",
+        "E26"
+      ]
+    },
+    {
+      "id": "N10",
+      "owner_reply_point": "10",
+      "statement": "Tanggal cutoff, dasar tanggal dan jadwal pembayaran interco",
+      "clarification_status": "menunggu_klarifikasi_client",
+      "current_code_status": "tidak_dibuat_asumsi",
+      "evidence": []
+    },
+    {
+      "id": "N11A",
+      "owner_reply_point": "11",
+      "statement": "Export seluruh data bisnis sesuai akses, filter tanggal, kolom dan preview",
+      "clarification_status": "jelas",
+      "current_code_status": "export_analitik_ada_builder_penuh_belum_terbukti",
+      "evidence": [
+        "E27",
+        "E29",
+        "E36"
+      ]
+    },
+    {
+      "id": "N11B",
+      "owner_reply_point": "11.b",
+      "statement": "Nilai desain adalah skor desain",
+      "clarification_status": "jelas",
+      "current_code_status": "skor_versi_ada",
+      "evidence": [
+        "E31"
+      ]
+    },
+    {
+      "id": "N11C",
+      "owner_reply_point": "11.c",
+      "statement": "Join relevan dan rapor staf designer/Sales lengkap beserta ringkasan",
+      "clarification_status": "jelas",
+      "current_code_status": "rapor_ada_belum_detail_lengkap_custom_period",
+      "evidence": [
+        "E28",
+        "E30",
+        "E31",
+        "E32"
+      ]
+    },
+    {
+      "id": "N11D",
+      "owner_reply_point": "11.c",
+      "statement": "Template rapor, detail/ringkasan dan hubungan antardata yang direkomendasikan",
+      "clarification_status": "usulan_untuk_ditinjau",
+      "current_code_status": "belum_implementasi",
+      "evidence": [
+        "E27",
+        "E28",
+        "E31"
+      ]
+    }
+  ]
+}

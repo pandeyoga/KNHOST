@@ -1,0 +1,35 @@
+{
+  "summary": "Iter91 review-request testing (backend + frontend). All A/B/C/D flows PASS. New endpoint /api/documents/trace/{doc_type}/{doc_id}/print returns proper PDF (jejak-SO-0001.pdf), HTML contains all required markers, depth reduces rows, unknown id → 404. UI: from doc-trace opening a journal shows gl-journal-back-to-trace with label 'Kembali ke Jejak SJ-00001'; clicking returns to doc-trace with SJ-00001 anchor. Normal open from GL list does NOT show the back button. trace-print-pdf downloads jejak-SJ-00001.pdf with no trace-error. SPK makloon regression HTML still contains 'Riwayat Kiriman Bertahap'.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/documents/trace/{doc_type}/{doc_id}/print", "issue": "Both sales@ and warehouse@ returned 200 for sales_order print — request said 'if both have print, just report'. Roles apparently already have document.print permission for sales_order scope. Not a bug per instruction."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verified_flows": [
+    {"flow": "A. Back to trace UI", "result": "PASS. doc-trace search 'SJ-00001' → shp_c847a19b6312, anchor=SJ-00001, opened first je (trace-open-je_6647c1ab079f) → navigated to general-ledger; gl-journal-detail visible; gl-journal-back-to-trace visible with label ' Kembali ke Jejak SJ-00001'. Click → back to doc-trace with anchor SJ-00001 restored. Negative: opening je from gl-journal-row-* (list) → gl-journal-detail visible, back-to-trace NOT visible."},
+    {"flow": "B. Print trace PDF API", "result": "PASS. GET /api/documents/trace/sales_order/{SO-0001}/print → 200 application/pdf, Content-Disposition 'attachment; filename=\"jejak-KSC-SO-0001.pdf\"' (contains SO-0001). format=html contains 'Jejak Dokumen (Audit Trail)', 'Relasi Antar Dokumen', anchor with ★, 'Jurnal Umum'. depth=1 has fewer <tr rows than default. Unknown id → 404."},
+    {"flow": "C. Print trace UI", "result": "PASS. trace-print-pdf click triggered download 'jejak-SJ-00001.pdf'; trace-error absent."},
+    {"flow": "D. Regression", "result": "PASS. doc-trace loads; trace-open-anchor visible; GET /api/pdf/render/makloon_spk/{MKO-00002 id}?format=html → 200 contains 'Riwayat Kiriman Bertahap'."}
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_review_iter91_trace_print.py",
+    "/app/test_reports/pytest/iter91.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "trace_print_service render_trace + router: format is not validated against an allow-list ('pdf'/'html'); an unexpected value falls through the else branch and returns the generated content with default media_type. Minor — consider explicit 400 on invalid format.",
+    "PDF Content-Disposition filename uses '/'→'-' sanitization only; other reserved chars (quotes, non-ASCII) rely on Python .replace('/', '-'). Considered safe for KSC/xxx numbers but worth noting."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_review_iter91_trace_print.py"
+  ],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (A + A-negative + C + D)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, sales@ / warehouse@ same password (ent_ksc).",
+  "seed_data_creation": "None. Read-only testing of trace endpoint + one PDF download in UI.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter91 features all verified. New backend endpoint GET /api/documents/trace/{doc_type}/{doc_id}/print (query: format=pdf|html, depth 1-8) is functional. UI wiring: DocTraceView.jsx sends from_trace on opening journals; GeneralLedger reads focusJe._from_trace and shows gl-journal-back-to-trace with anchor label. Both sales@ and warehouse@ have document.print permission for sales_order in demo data. iter86 xdist/asyncio flake and iter89 seed-bound cases from previous iterations still applicable — not retested here.",
+  "rca of the issue": "N/A — no bugs."
+}

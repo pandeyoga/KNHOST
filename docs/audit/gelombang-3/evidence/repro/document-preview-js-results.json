@@ -1,0 +1,41 @@
+{
+  "commit": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "file": "frontend/src/hooks/useAppActions.js",
+  "mode": "Unmodified Babel-extracted function with original API error replayed through controlled transport",
+  "results": [
+    {
+      "id": "D4-DOC-01-original-route-control",
+      "expected": "http://audit.local/api/document-templates/tmpl_437b60725d91/preview",
+      "actual": "http://audit.local/api/document-templates/tmpl_437b60725d91/preview",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "D4-DOC-01-selected-template-document-type",
+      "expected": "surat_jalan",
+      "actual": "invoice",
+      "note": "Selected Surat Jalan template loses its document type: original hook hardcodes invoice. Source call passes only templateId/orderId.",
+      "status": "observed_difference"
+    },
+    {
+      "id": "D4-DOC-01-original-preview-html",
+      "expected": true,
+      "actual": false,
+      "note": "Original hook processes the original API404 response: notice Not Found, no iframe HTML. Browser DOM not tested.",
+      "status": "observed_difference"
+    }
+  ],
+  "calls": [
+    {
+      "url": "http://audit.local/api/document-templates/tmpl_437b60725d91/preview",
+      "payload": {
+        "document_type": "invoice",
+        "source_id": "SO-DOC",
+        "actor": "Audit User A"
+      }
+    }
+  ],
+  "state": {
+    "notice": "Not Found"
+  }
+}

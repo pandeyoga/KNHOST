@@ -1,0 +1,72 @@
+{
+  "database": "knhost_audit_4f14c67e4a5746ea83f4475973a573a0",
+  "source_commit": "6206f5f5cc3b4aa46acf87762b7c63f245bf35c3",
+  "mode": "Actual complete WO and5000 roll mutations;5001 synthetic input rolls seeded from actual roll template, shared opening lot; no physical production",
+  "results": [
+    {
+      "id": "W2-PCAP-C01",
+      "kind": "control",
+      "label": "Indexed fixture has5001 one-meter material rolls",
+      "observed": 5001,
+      "expected": 5001
+    },
+    {
+      "id": "W2-PCAP-C02",
+      "kind": "control",
+      "label": "Aggregate preflight sees sufficient5001",
+      "observed": [
+        5001.0,
+        5001.0,
+        true
+      ],
+      "expected": [
+        5001,
+        5001,
+        true
+      ]
+    },
+    {
+      "id": "W2-PCAP-F01",
+      "kind": "defect",
+      "label": "WO completes5001 output after consuming only5000",
+      "observed": [
+        "completed",
+        5001.0,
+        5001.0,
+        50010.0
+      ],
+      "expected": [
+        "completed",
+        5001,
+        5000,
+        50000
+      ]
+    },
+    {
+      "id": "W2-PCAP-F02",
+      "kind": "defect",
+      "label": "Unconsumed material remains after claimed complete",
+      "observed": [
+        0,
+        5001
+      ],
+      "expected": [
+        1,
+        5000
+      ]
+    },
+    {
+      "id": "W2-PCAP-C03",
+      "kind": "control",
+      "label": "Movement oracle confirms actual5000 consumed",
+      "observed": [
+        -5001.0,
+        5001
+      ],
+      "expected": [
+        -5000,
+        5000
+      ]
+    }
+  ]
+}

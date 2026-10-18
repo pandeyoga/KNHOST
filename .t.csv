@@ -1,0 +1,5 @@
+name,sales_email,sales_name,code,city,phone,address,npwp
+TEST_A,,,,Bdg,,,
+TEST_B,nobody@x.id,,,,,,
+TEST_C,sales@kainnusantara.id,,,Jkt,,,
+TEST_C,sales@kainnusantara.id,,,,,,

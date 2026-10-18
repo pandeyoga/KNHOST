@@ -1,0 +1,75 @@
+[
+ {
+  "id": "AUTH-04",
+  "invariant": "arsip entitas yang masih punya operasi berjalan tanpa force → 409 + daftar blocker, status tetap aktif",
+  "pass": true,
+  "detail": "409 {\"detail\":{\"message\":\"Badan usaha masih terpakai — belum bisa diarsipkan.\",\"blockers\":[\"1 pengguna masih ber-badan-usaha utama di sini — pindahkan dulu (Citra L"
+ },
+ {
+  "id": "AUTH-04",
+  "invariant": "force tanpa alasan ditolak 400",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "AUTH-04",
+  "invariant": "force + alasan (admin) → archived",
+  "pass": true,
+  "detail": "200 {\"id\":\"ent_kanda\",\"code\":\"KANDA\",\"name\":\"Kanda Fabric\",\"short_name\":\"Kanda Fabric\",\"legal_name\":\"Kanda Fabric\",\"type\":\"C"
+ },
+ {
+  "id": "AUTH-04",
+  "invariant": "dokumen berjalan milik entitas terarsip tidak bisa diubah lewat konteks entitas itu, entitas lain, maupun 'all'",
+  "pass": true,
+  "detail": "hdr=403 ksc=404 all=404 status=reserved {\"detail\":\"Data tidak ditemukan untuk entitas ini\"}"
+ },
+ {
+  "id": "AUTH-04",
+  "invariant": "data lama entitas terarsip tetap bisa dibaca admin",
+  "pass": false,
+  "detail": "404"
+ },
+ {
+  "id": "AUTH-04",
+  "invariant": "aktifkan kembali → tulis ke dokumennya pulih",
+  "pass": true,
+  "detail": "200/200 {\"id\":\"so_358a869eacbc\",\"number\":\"KANDA/SO-00001\",\"customer_id\":\"cust_moda_surabaya\",\"customer_name\""
+ },
+ {
+  "id": "MASTER-05",
+  "invariant": "produk dinonaktifkan: soft (status inactive), stok/roll tidak berubah",
+  "pass": true,
+  "detail": "200"
+ },
+ {
+  "id": "MASTER-05",
+  "invariant": "produk nonaktif ditolak untuk SO baru",
+  "pass": true,
+  "detail": "400 {\"detail\":\"1 produk belum boleh masuk Pesanan Penjualan: Ulos Batak Ragidup (ULS-BTK-001) — produksi. Selesaikan dulu al"
+ },
+ {
+  "id": "MASTER-05",
+  "invariant": "produk nonaktif ditolak untuk PO baru",
+  "pass": true,
+  "detail": "400 {\"detail\":\"1 produk belum boleh masuk Purchase Order: Ulos Batak Ragidup (ULS-BTK-001) — produksi. Selesaikan dulu alur R&D (Spesifikasi → Sample → Ri"
+ },
+ {
+  "id": "MASTER-05",
+  "invariant": "supplier nonaktif ditolak untuk PO baru; PO lamanya tetap ada",
+  "pass": false,
+  "detail": "del=200 po=200 {\"id\":\"po_55b4a6ead610\",\"po_number\":\"KSC/PO-00016\",\"pr_id\":\"\",\"pr_number\":\"\",\"source\":\"manual\",\"source_so_ids\":[],\"sales_user_id\":\"\",\"sales_name\":\"\",\" lama=5"
+ },
+ {
+  "id": "MASTER-01",
+  "invariant": "UOM yang dipakai dokumen tidak bisa dinonaktifkan (409), status tetap",
+  "pass": true,
+  "detail": "409 {\"detail\":\"Satuan MTR masih dipakai 2 dokumen (inventory_movements 1, products 1). Nonaktifkan hanya setelah dokumen itu"
+ },
+ {
+  "id": "MASTER-01",
+  "invariant": "peran sales tidak bisa menonaktifkan produk (403)",
+  "pass": true,
+  "detail": "403"
+ }
+]
+pass=10 fail=2

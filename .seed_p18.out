@@ -1,0 +1,48 @@
+
+🚀 Starting Kain Nusantara Realistic Seed...
+
+✅ Cleared all collections
+✅ Users seeded (with entity assignment) — 13 akun · 7 peran (admin · manager×3 · sales_admin · finance · sales×4 · warehouse×2 · designer) · 2 akun berpagar lini printing (FASE L: sales · FASE P: manajer papan PO)
+✅ UOMs seeded (8 satuan, ber-alias)
+✅ Warehouses seeded (2 bersama · 2 khusus badan usaha)
+✅ Color Library seeded (28 warna Pantone-style)
+✅ Product Lines seeded (3 lini GLOBAL: woven · knit · printing) — FASE L
+✅ Process Stages seeded (10 tahap GLOBAL: benang · tenun · rajut · pfp · pfd · celup · screen · printing · proofing · inspect) — FASE T · termasuk `screen` (kasa) yang TIDAK mengubah kain
+✅ Sample Types seeded (4 jenis GLOBAL — aktif: labdip · handfeel · proofing · nonaktif: bulk_sample) — FASE S
+✅ Complaint Reasons seeded (7 alasan GLOBAL — wajib diperiksa fisik: warna_beda · kotor_stain · sobek_lubang · kurang_yard · handfeel) — FASE I
+Traceback (most recent call last):
+  File "/app/seed_realistic.py", line 7460, in <module>
+    asyncio.run(main())
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/app/seed_realistic.py", line 7163, in main
+    summary = await seed_all(db_instance)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/seed_realistic.py", line 4950, in seed_all
+    await seed_products()
+  File "/app/seed_realistic.py", line 666, in seed_products
+    await db.products.insert_many(products)
+  File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/pymongo/_csot.py", line 107, in csot_wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/pymongo/collection.py", line 755, in insert_many
+    blk.execute(write_concern, session=session)
+  File "/root/.venv/lib/python3.11/site-packages/pymongo/bulk.py", line 576, in execute
+    return self.execute_command(generator, write_concern, session)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/.venv/lib/python3.11/site-packages/pymongo/bulk.py", line 446, in execute_command
+    _raise_bulk_write_error(full_result)
+  File "/root/.venv/lib/python3.11/site-packages/pymongo/bulk.py", line 157, in _raise_bulk_write_error
+    raise BulkWriteError(full_result)
+pymongo.errors.BulkWriteError: batch op errors occurred, full error: {'writeErrors': [{'index': 0, 'code': 11000, 'errmsg': 'E11000 duplicate key error collection: test_database.products index: uniq_sku dup key: { sku: "BTK-MEGA-001" }', 'keyPattern': {'sku': 1}, 'keyValue': {'sku': 'BTK-MEGA-001'}, 'op': {'id': 'prod_batik_mega', 'sku': 'BTK-MEGA-001', 'name': 'Batik Mega Mendung Premium', 'category': 'Batik', 'variant': 'Premium', 'color': 'Biru-Coklat', 'motif': 'Mega Mendung', 'grade': 'A', 'supplier': 'Cirebon Craft', 'base_unit': 'yard', 'price': 185000, 'gramasi': 120, 'lebar': 1.15, 'image': 'https://images.unsplash.com/photo-1761516659766-c092d4b1209d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHw0fHxiYXRpayUyMGluZG9uZXNpYSUyMGZhYnJpYyUyMHRyYWRpdGlvbmFsJTIwdGV4dGlsZSUyMHBhdHRlcm58ZW58MHx8fHwxNzc4NjkyMDU3fDA&ixlib=rb-4.1.0&q=85', 'status': 'active', 'uom_conversions': [], 'batch_lot_rolls': [], 'template_id': 'tpl_batik_mega', 'variant_label': 'Biru-Coklat · Grade A', 'created_at': '2026-04-06T14:02:50.897387+00:00', 'updated_at': '2026-10-01T14:02:50.897391+00:00', 'description': 'Batik Mega Mendung Premium — motif Mega Mendung, warna Biru-Coklat, grade A. Kain Batik premium dari Cirebon Craft; gramasi 120 gsm, lebar 1.15 m. Dijual per yard — panjang tiap roll bervariasi.', 'stage': 'finished', 'color_code': 'KN-BLU-01', 'color_name': 'Biru Indigo', 'color_hex': '#26415E', 'fabric_type': 'woven', 'needs_review': False, 'needs_review_reasons': [], '_id': ObjectId('6ac10b0ac89f31a1d5b77579')}}], 'writeConcernErrors': [], 'nInserted': 0, 'nUpserted': 0, 'nMatched': 0, 'nModified': 0, 'nRemoved': 0, 'upserted': []}
+SEED_EXIT=1

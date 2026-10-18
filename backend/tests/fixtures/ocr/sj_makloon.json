@@ -1,0 +1,39 @@
+{
+ "is_delivery_document": true,
+ "doc_kind": "surat_jalan",
+ "packing_list": [],
+ "annotations": [],
+ "warnings": [],
+ "header": {
+  "supplier_name_printed": "PT TENUN NUSANTARA",
+  "dn_number": "SJ-MKL-0139",
+  "dn_date_text": "07 Agustus 2026",
+  "dn_date": "2026-08-07",
+  "recipient_name": "PT. SUKACITA",
+  "po_refs": ["MKO-00002"],
+  "other_refs": [],
+  "vehicle_plate": ""
+ },
+ "lines": [
+  {
+   "line_no": 1, "page": 1, "row_text": "KAIN GREY KATUN 3 pcs 72,50 yd", "item_code": null,
+   "description": "KAIN GREY KATUN", "color": null, "design_code": null, "lot": "071225", "grade": null,
+   "po_ref": "MKO-00002",
+   "quantities": [
+    {"qty_text": "3", "qty": 3, "unit_text": "pcs", "unit": "pcs", "column_header": null, "role": "delivered_count", "weight_basis": null},
+    {"qty_text": "72,50", "qty": 72.5, "unit_text": "yd", "unit": "yd", "column_header": null, "role": "delivered_length", "weight_basis": null}
+   ],
+   "is_non_stock": false, "legibility": "clear", "handwritten_correction": false
+  },
+  {
+   "line_no": 2, "page": 1, "row_text": "BENANG SISA BS 4,20 kg", "item_code": null,
+   "description": "KAIN GREY KATUN BS", "color": null, "design_code": null, "lot": null, "grade": "BS",
+   "po_ref": "MKO-00002",
+   "quantities": [
+    {"qty_text": "4,20", "qty": 4.2, "unit_text": "kg", "unit": "kg", "column_header": null, "role": "delivered_weight", "weight_basis": "net"}
+   ],
+   "is_non_stock": false, "legibility": "clear", "handwritten_correction": false
+  }
+ ],
+ "totals": []
+}

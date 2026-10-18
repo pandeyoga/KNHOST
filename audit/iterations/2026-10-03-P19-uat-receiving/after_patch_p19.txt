@@ -1,0 +1,185 @@
+  [poc-stock] snapshot 79 dokumen stok dari 3 koleksi — akan dipulihkan di CLEANUP.
+  [92m[poc-stock] stok dipulihkan EKSAK (79 dokumen, 3 koleksi) — nol residu roll & saldo.[0m
+[
+ {
+  "id": "GRN-01",
+  "invariant": "PO dibuat & 1 tugas inbound terbentuk",
+  "pass": true,
+  "detail": "('KSC/PO-00016', 'pending', 1)"
+ },
+ {
+  "id": "GRN-01",
+  "invariant": "GRN closed bernomor KSC/GRN-",
+  "pass": true,
+  "detail": "KSC/GRN-00001"
+ },
+ {
+  "id": "GRN-01",
+  "invariant": "1 roll 50 berstatus karantina (bukan ATP)",
+  "pass": true,
+  "detail": "[('RL-00057', 'quarantine', 50.0)]"
+ },
+ {
+  "id": "GRN-01",
+  "invariant": "balance: quarantine +50, available tetap",
+  "pass": true,
+  "detail": "({'available_qty': 425.0, 'quarantine_qty': 75.0, 'blocked_qty': 0.0, 'on_hand_qty': 550.0}, {'available_qty': 425.0, 'quarantine_qty': 125.0, 'blocked_qty': 0.0, 'on_hand_qty': 600.0})"
+ },
+ {
+  "id": "GRN-01",
+  "invariant": "jurnal GRN posted & seimbang (Dr Persediaan / Cr GRNI)",
+  "pass": true,
+  "detail": "(None, 'goods_receipt', (5000000.0, 5000000.0, [('1-1300', 5000000.0, 0.0), ('2-1150', 0.0, 5000000.0)]))"
+ },
+ {
+  "id": "GRN-01",
+  "invariant": "tugas inbound qc_pending",
+  "pass": true,
+  "detail": "qc_pending"
+ },
+ {
+  "id": "QC-04",
+  "invariant": "inspeksi 4-point tersimpan (grade BS)",
+  "pass": true,
+  "detail": "{\"roll\":{\"id\":\"roll_eb442aac0e49\",\"roll_no\":\"RL-00057\",\"product_id\":\"prod_batik_mega\",\"owner_entity_id\":\"ent_ksc\",\"ownership_type\":\"internal\",\"consignor_ref\":null,\"warehouse_id\":\"wh_jakarta\",\"bin_id\":"
+ },
+ {
+  "id": "QC-04",
+  "invariant": "reject semua → roll returned_supplier & Purchase Return otomatis",
+  "pass": true,
+  "detail": "('returned_supplier', {'id': 'pret_2998e4561ece', 'number': 'PRET-00003', 'supplier_name': 'Cirebon Craft'}, 'rejected')"
+ },
+ {
+  "id": "QC-04",
+  "invariant": "balance: quarantine kembali, on_hand tidak bertambah",
+  "pass": true,
+  "detail": "({'available_qty': 425.0, 'quarantine_qty': 75.0, 'blocked_qty': 0.0, 'on_hand_qty': 550.0}, {'available_qty': 425.0, 'quarantine_qty': 75.0, 'blocked_qty': 0.0, 'on_hand_qty': 550.0})"
+ },
+ {
+  "id": "QC-04",
+  "invariant": "approve retur → Nota Debit terbit",
+  "pass": true,
+  "detail": "('approved', 'DN-00001', 'approved')"
+ },
+ {
+  "id": "QC-04",
+  "invariant": "hutang PO berkurang sebesar nilai retur (termasuk PPN) — retur penuh → sisa hutang 0",
+  "pass": true,
+  "detail": "(5550000.0, 5550000.0, 'settled_by_return', 5000000.0, 550000.0, 5550000.0)"
+ },
+ {
+  "id": "QC-04",
+  "invariant": "jurnal retur posted & seimbang",
+  "pass": true,
+  "detail": "(5550000.0, 5550000.0, [('2-1150', 5550000.0, 0.0), ('1-1300', 0.0, 5000000.0), ('1-1500', 0.0, 550000.0)])"
+ },
+ {
+  "id": "QC-04",
+  "invariant": "PO diretur penuh → status bayar 'settled_by_return' (Lunas lewat retur), outstanding 0",
+  "pass": true,
+  "detail": "('settled_by_return', {'total_amount': 5550000.0, 'gross_total': 5000000.0, 'discount_total': 0.0, 'net_subtotal': 5000000.0, 'dpp': 4583333.33, 'ppn_rate': 12.0, 'ppn_amount': 550000.0, 'grand_total': 5550000.0, 'received_value': 5000000.0, 'returned_amount': 5550000.0, 'amount_paid': 0.0, 'outstanding': 0.0, 'payment_status': 'settled_by_return'})"
+ },
+ {
+  "id": "QC-04",
+  "invariant": "chip filter ?payment=settled_by_return memuat PO ini (unpaid tidak); by_payment terhitung",
+  "pass": true,
+  "detail": "(1, {'by_status': {'completed': 1}, 'by_payment': {'unpaid': 12, 'settled_by_return': 1}, 'total': 1})"
+ },
+ {
+  "id": "QC-04",
+  "invariant": "retur dibalik → status bayar kembali 'unpaid' & outstanding pulih",
+  "pass": true,
+  "detail": "(200, '{\"id\":\"pret_2998e4561ece\",\"number\":\"PRET-00003\",\"supplier_id\":\"sup_0b7c2a9eb7aa\",\"supplier_name\":\"Cirebon Craft\",\"po_id\":\"po_c8c33d88f40c\",\"po_number\"', 'unpaid', 5550000.0)"
+ },
+ {
+  "id": "QC-04",
+  "invariant": "variasi ACCEPT semua → roll available, keluar karantina",
+  "pass": true,
+  "detail": "('available', 'passed')"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "3 roll karantina",
+  "pass": true,
+  "detail": "['quarantine', 'quarantine', 'quarantine']"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "rencana sampling 30% dari 3 roll → wajib 1 roll",
+  "pass": true,
+  "detail": "{'mode': 'sampling', 'sample_pct': 30.0, 'sample_min': 1, 'planned_by': 'Budi Santoso', 'planned_at': '2026-10-04T10:02:15.454755+00:00', 'total_rolls': 3, 'inspected_rolls': 0, 'required_rolls': 1, 'coverage_pct': 0.0, 'met': False}"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "1/3 diinspeksi → cakupan sampling terpenuhi",
+  "pass": true,
+  "detail": "{'mode': 'sampling', 'sample_pct': 30.0, 'sample_min': 1, 'planned_by': 'Budi Santoso', 'planned_at': '2026-10-04T10:02:15.454755+00:00', 'total_rolls': 3, 'inspected_rolls': 1, 'required_rolls': 1, 'coverage_pct': 33.3, 'met': True}"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "hold tanpa alasan memadai → 400",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "hold → status blocked, quarantine −50, blocked +50",
+  "pass": true,
+  "detail": "({'available_qty': 465.0, 'quarantine_qty': 225.0, 'blocked_qty': 0.0, 'on_hand_qty': 740.0}, {'available_qty': 465.0, 'quarantine_qty': 175.0, 'blocked_qty': 50.0, 'on_hand_qty': 740.0})"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "keputusan QC ditolak selama ada roll DITAHAN",
+  "pass": true,
+  "detail": "{\"detail\":\"Roll RL-00060 sedang DITAHAN — lepas tahanan dulu sebelum keputusan QC.\"}"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "release oleh sales (tanpa wms.approve) → 403",
+  "pass": true,
+  "detail": "403"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "release → kembali quarantine; balance pulih",
+  "pass": true,
+  "detail": "('quarantine', {'available_qty': 465.0, 'quarantine_qty': 225.0, 'blocked_qty': 0.0, 'on_hand_qty': 740.0}, {'available_qty': 465.0, 'quarantine_qty': 225.0, 'blocked_qty': 0.0, 'on_hand_qty': 740.0})"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "release roll yang tidak ditahan → 400",
+  "pass": true,
+  "detail": "400"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "roll belum diinspeksi tetap karantina sebelum keputusan",
+  "pass": true,
+  "detail": "['quarantine', 'quarantine', 'quarantine']"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "keputusan sampel berlaku ke sisa lot: 3 roll available; 2 roll tak-terinspeksi ditandai qc_via_sampling",
+  "pass": true,
+  "detail": "[('available', False), ('available', True), ('available', True)]"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "hold roll available → available −50 (keluar ATP); release → pulih",
+  "pass": true,
+  "detail": "({'available_qty': 615.0, 'quarantine_qty': 75.0, 'blocked_qty': 0.0, 'on_hand_qty': 740.0}, {'available_qty': 565.0, 'quarantine_qty': 75.0, 'blocked_qty': 50.0, 'on_hand_qty': 740.0}, {'available_qty': 615.0, 'quarantine_qty': 75.0, 'blocked_qty': 0.0, 'on_hand_qty': 740.0})"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "genealogy roll: asal GRN, sampling, keputusan QC, tahan/lepas",
+  "pass": true,
+  "detail": "Diterima dari pembelian (PO KSC/PO-00018) | Asal penerimaan GRN KSC/GRN-00003 | Tag RFID di-encode — EPC E2A814DE4CBA5641F2818AC1 | Diterima ke gudang (karantina/stok) (PO_KSC/PO-00018) | DITAHAN oleh Budi Santoso: TEST_P19_a50b71 cek shading (quarantine → blocked) | Tahanan DILEPAS oleh Budi Santos"
+ },
+ {
+  "id": "QC-06",
+  "invariant": "genealogy roll terinspeksi memuat event Inspeksi 4-point",
+  "pass": true,
+  "detail": "['Diterima dari pembelian (PO KSC/PO-00018)', 'Asal penerimaan GRN KSC/GRN-00003', 'Tag RFID di-encode — EPC E2E6DAFEF5C2B24B6294B334', 'Diterima ke gudang (karantina/stok) (PO_KSC/PO-00018)', 'Inspeksi 4-point oleh Budi Santoso: 2.0 poin → grade A', 'Grade A → A (Inspeksi QC (4-point))']"
+ }
+]
+pass=30 fail=0

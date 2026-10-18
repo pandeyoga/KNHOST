@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="14" skipped="0" tests="15" time="7.236" timestamp="2026-10-06T14:03:45.531147+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname=".TestAdvanceBeforeShipment" name="test_01_create_order_and_advance_receipt" time="1.001"><failure message="TypeError: 'NoneType' object is not subscriptable">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:149: in test_01_create_order_and_advance_receipt
+    STATE["oid"] = o["id"]
+                   ^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname=".TestAdvanceBeforeShipment" name="test_02_no_sales_order_je_before_shipment" time="0.005"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:159: in test_02_no_sales_order_je_before_shipment
+    assert _je("sales_order", STATE["oid"]) == [], "JE pendapatan lahir sebelum kirim!"
+                              ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestAdvanceBeforeShipment" name="test_03_cash_je_credits_advance_not_receivable" time="0.005"><failure message="KeyError: 'rid_adv'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:168: in test_03_cash_je_credits_advance_not_receivable
+    cash, jes = _cash_je_for_receipt(STATE["rid_adv"])
+                                     ^^^^^^^^^^^^^^^^
+E   KeyError: 'rid_adv'</failure></testcase><testcase classname=".TestAdvanceBeforeShipment" name="test_04_journey_reports_advance_unrecognized" time="0.003"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:178: in test_04_journey_reports_advance_unrecognized
+    r = requests.get(f"{BASE}/sales-orders/{STATE['oid']}/journey", headers=hdr, timeout=60)
+                                            ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestAdvanceBeforeShipment" name="test_05_payment_tagged_advance" time="0.003"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:187: in test_05_payment_tagged_advance
+    r = requests.get(f"{BASE}/sales-orders/{STATE['oid']}", headers=hdr, timeout=60)
+                                            ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestAdvanceBeforeShipment" name="test_06_finance_desk_advance_queue" time="0.656"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:206: in test_06_finance_desk_advance_queue
+    mine = next((x for x in rows if STATE["oid"] in str(x.values()) or
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:206: in &lt;genexpr&gt;
+    mine = next((x for x in rows if STATE["oid"] in str(x.values()) or
+                                    ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestDispatchRecognition" name="test_07_pick_and_dispatch" time="0.003"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:220: in test_07_pick_and_dispatch
+    oid = STATE["oid"]
+          ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestDispatchRecognition" name="test_08_revenue_cogs_and_reclass_je" time="0.002"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:240: in test_08_revenue_cogs_and_reclass_je
+    oid = STATE["oid"]
+          ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestDispatchRecognition" name="test_09_journey_recognized" time="0.003"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:261: in test_09_journey_recognized
+    r = requests.get(f"{BASE}/sales-orders/{STATE['oid']}/journey", headers=hdr, timeout=60)
+                                            ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestDispatchRecognition" name="test_10_idempotent_no_duplicate_je" time="0.004"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:268: in test_10_idempotent_no_duplicate_je
+    oid = STATE["oid"]
+          ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestDispatchRecognition" name="test_11_finance_desk_no_longer_lists_order" time="0.102"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:286: in test_11_finance_desk_no_longer_lists_order
+    assert not any(STATE["oid"] in str(x.values()) for x in rows), \
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:286: in &lt;genexpr&gt;
+    assert not any(STATE["oid"] in str(x.values()) for x in rows), \
+                   ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestReceiptAfterShipment" name="test_12_receipt_after_shipment_credits_receivable" time="0.003"><failure message="KeyError: 'grand_total'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:293: in test_12_receipt_after_shipment_credits_receivable
+    remaining = round(STATE["grand_total"] - STATE["advance"], 2)
+                      ^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'grand_total'</failure></testcase><testcase classname=".TestVoidAdvanceReceipt" name="test_13_void_advance_receipt_reverses_reclass" time="0.003"><failure message="KeyError: 'rid_adv'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:311: in test_13_void_advance_receipt_reverses_reclass
+    rid = STATE["rid_adv"]
+          ^^^^^^^^^^^^^^^^
+E   KeyError: 'rid_adv'</failure></testcase><testcase classname=".TestVoidAdvanceReceipt" name="test_14_advance_account_nets_to_zero" time="0.004"><failure message="KeyError: 'oid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter298_kebpdpt_e2e.py:329: in test_14_advance_account_nets_to_zero
+    oid = STATE["oid"]
+          ^^^^^^^^^^^^
+E   KeyError: 'oid'</failure></testcase><testcase classname=".TestRegression" name="test_15_trial_balance_balanced" time="3.026" /></testsuite></testsuites>

@@ -1,0 +1,30 @@
+{
+  "operation_count": 23,
+  "rfid_operations": 20,
+  "auth_operations": 3,
+  "schema_count": 57,
+  "resolved_reference_count": 251,
+  "validated_example_count": 8,
+  "module_acceptance_criteria": 36,
+  "integration_cases": 12,
+  "legacy_acceptance_mappings": 30,
+  "contract_artifact_validation": "pass: route/auth/ref structure and example field/type/pattern checks",
+  "hardware_uat": "not_run",
+  "deployment_validation": "not_run",
+  "pdf_pages": 36,
+  "pdf_text_and_separation_checks": "pass",
+  "pdf_layout_review": {
+    "pages_rendered": 36,
+    "pages_visually_reviewed": 36,
+    "body_bounds": "pass",
+    "visual_review": "pass",
+    "dense_table_full_page_review": [
+      24,
+      28,
+      29
+    ],
+    "body_font_pt": 10.3,
+    "table_font_pt": 9.0
+  },
+  "package_integrity": "pass: ZIP CRC and SHA256 manifest verified"
+}

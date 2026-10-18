@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="17" skipped="0" tests="18" time="4.545" timestamp="2026-10-06T14:01:59.060147+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname=".TestScanLabelFlow" name="test_01_list_scanned_rolls_initial" time="0.644"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:74: in test_01_list_scanned_rolls_initial
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_02_scan_json" time="0.053"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:89: in test_02_scan_json
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_03_scan_delimited" time="0.058"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:109: in test_03_scan_delimited
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_04_scan_gs1" time="0.050"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:118: in test_04_scan_gs1
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_05_duplicate" time="0.054"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 409&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:128: in test_05_duplicate
+    assert r.status_code == 409, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 409
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_06_unmapped" time="0.054"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:136: in test_06_unmapped
+    assert r.status_code == 400, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_07_not_in_task" time="0.046"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:144: in test_07_not_in_task
+    assert r.status_code == 400, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_08_no_roll_no" time="0.062"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:151: in test_08_no_roll_no
+    assert r.status_code == 400, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_09_undecodable" time="0.063"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:158: in test_09_undecodable
+    assert r.status_code == 400, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_10_over_po" time="0.054"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:165: in test_10_over_po
+    assert r.status_code == 400, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_11_manual_fallback" time="0.058"><failure message="AssertionError: {&quot;detail&quot;:&quot;Inbound task tidak ditemukan&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:175: in test_11_manual_fallback
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Inbound task tidak ditemukan"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_12_confirm_measure_variance" time="0.038"><failure message="KeyError: 'rolls'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:184: in test_12_confirm_measure_variance
+    rolls = r.json()["rolls"]
+            ^^^^^^^^^^^^^^^^^
+E   KeyError: 'rolls'</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_13_putaway" time="0.051"><failure message="KeyError: 'rolls'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:207: in test_13_putaway
+    rolls = r.json()["rolls"]
+            ^^^^^^^^^^^^^^^^^
+E   KeyError: 'rolls'</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_14_delete_manual" time="0.100"><failure message="KeyError: 'rolls'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:231: in test_14_delete_manual
+    m1 = next(x for x in d["rolls"] if x.get("supplier_roll_no") == "TA-M1")
+                         ^^^^^^^^^^
+E   KeyError: 'rolls'</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_15_stats" time="0.052"><failure message="AssertionError: Cirebon supplier not present: []&#10;assert False&#10; +  where False = any(&lt;generator object TestScanLabelFlow.test_15_stats.&lt;locals&gt;.&lt;genexpr&gt; at 0x0000024680520FB0&gt;)">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:251: in test_15_stats
+    assert any("Cirebon" in (n or "") for n in names), f"Cirebon supplier not present: {names}"
+E   AssertionError: Cirebon supplier not present: []
+E   assert False
+E    +  where False = any(&lt;generator object TestScanLabelFlow.test_15_stats.&lt;locals&gt;.&lt;genexpr&gt; at 0x0000024680520FB0&gt;)</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_16_pattern_test_endpoint" time="0.111" /><testcase classname=".TestScanLabelFlow" name="test_17_pattern_get_put_and_scan_meter" time="0.691"><failure message="assert None">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:279: in test_17_pattern_get_put_and_scan_meter
+    assert supp_id
+E   assert None</failure></testcase><testcase classname=".TestScanLabelFlow" name="test_18_complete_task" time="0.099"><failure message="KeyError: 'rolls'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_fase_sl_scan_label.py:318: in test_18_complete_task
+    scanned = r.json()["rolls"]
+              ^^^^^^^^^^^^^^^^^
+E   KeyError: 'rolls'</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,23 @@
+{
+  "summary": "Frontend-only test for Tanya KN chat-box relocation + error messaging. All requested behaviors verified on desktop (1920x800) and mobile (390x844). Static validation of deploy/nginx-web.conf and deploy/edge.sh passed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "TanyaThread renders each entry inside a nested div with the same class 'tanya-thread' — the outer container reuses the same class as the wrapper of each entry; harmless but slightly confusing (could be renamed to 'tanya-thread-entry').",
+    "chatErrorText handles string/object body, ECONNABORTED, and missing response — good coverage. Consider also handling network timeouts explicitly (e.code === 'ERR_NETWORK')."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id / demo12345",
+  "seed_data_creation": "",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Verified: (1) tanya-chat-form sticky at bottom=76px on desktop (y=594) below tanya-empty-state (y=174), below tanya-answer when template result shown; (2) Playwright route 403 with JSON {detail} → toast 'Pertanyaan gagal dikirim' with description 'HTTP 403 — Asisten analitik belum dibuka untuk peran Anda' + tanya-thread-error matches; (3) route.abort() → 'Tidak ada respons dari server (koneksi/proxy terputus).'; (4) Mobile 390x844 tab Tanya: form at y=724 below empty-state (y=218), bottom=8px; (5) Template 'Laporan hari ini' click → tanya-answer above sticky chat form. Static validation: deploy/nginx-web.conf has 'location = /api/ai/chat' with proxy_buffering off + 600s BEFORE 'location /api/'; deploy/edge.sh bash -n OK, nginx host block has proxy_buffering off + 600s.",
+  "rca of the issue": "N/A — verification pass; original bug fixed by (a) chatErrorText parsing text body to JSON before extracting detail (previously with responseType:'text' the body was raw string so 'e.response.data.detail' was undefined → toast had no description), (b) sticky bottom positioning of .tanya-main > .tanya-ask with z-index 6 above floating help button, (c) nginx location = /api/ai/chat added before /api/ so SSE bypasses buffering/gzip."
+}

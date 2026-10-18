@@ -1,0 +1,41 @@
+{
+  "summary": "Iteration 60 — verified 3 items: (1) POST /api/master-data/import-products bulk-optimised path (dry_run 2000 baris < 3 dtk, dup-in-file baris-1 created + baris-2 updated di dry_run & real, SKU kosong → error 'SKU wajib diisi', SKU R&D dengan spec_id → error 'SKU R&D harus diubah melalui alur spesifikasi'). (2) GET /api/reports/stock-aging: independent recompute dari Mongo (aggregate $group $max) COCOK dengan output API untuk threshold 0 & 30 di scope semua / ent_ksc / ent_kanda; isolasi entitas terjaga (produk×gudang tidak saling bocor). (3) POST /api/marketing/posts/{pid}/reschedule: happy path menggeser publish_at + menulis riwayat 'jadwal digeser', format salah → 400, pid tidak ada → 404, same-time → no-op tanpa history extra. Frontend ?view=mkt-calendar&entity=ent_ksc mode Minggu: petunjuk mkt-week-drag-hint tampil, kartu draggable, drag kartu ke kolom hari lain → publish_at berubah + pesan mkt-move-msg hijau; setelah reload publish_at tetap; riwayat berisi 'jadwal digeser 2026-09-25 19:00 → 2026-09-21 19:00'. Kartu published tidak diseret (draggable=false karena movable(p) memfilter status published — verified by code review + kondisi movable).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/reports/stock-aging",
+        "issue": "Sort key `(x.get('days_since_movement') or 9999)` — nilai days=0 (mutasi hari yang sama) diperlakukan sebagai None dan naik ke atas bersama entri tanpa mutasi. Sebaiknya pakai `x.get('days_since_movement') if x.get('days_since_movement') is not None else 9999`. Dampak: urutan sedikit salah hanya saat threshold=0 (kasus edge; produksi default 30 tidak terpengaruh)."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter60_import_stockaging_reschedule.py",
+    "/app/test_reports/pytest/iter60.xml"
+  ],
+  "action_items": [
+    "OPSIONAL (minor): perbaiki bug 'falsy 0' di reporting.py line 75 → gunakan expression eksplisit `is not None` supaya days=0 diurutkan sebagai nilai terkecil, bukan menyatu dengan None=9999."
+  ],
+  "critical_code_review_comments": [
+    "reporting.py:75 — sort key `(x or 9999)` menganggap 0 sebagai None (falsy). Gunakan `is not None` untuk konsisten.",
+    "marketing.py reschedule_post: history push memakai `status: cur.get('status', '')` dan `from: cur.get('status', '')` — keduanya sama; ini menambah field 'from' tanpa perubahan status pada history reschedule (harmless namun tidak informatif). Tidak blocking.",
+    "admin.py import_products: `by_sku` di-mutate saat dry_run untuk baris duplikat — sudah benar sehingga baris kedua yang punya SKU sama terdeteksi 'updated' walaupun tidak dipersist. Tidak ada regresi keamanan; SKU R&D block memakai `existing.get('spec_id')` — bekerja untuk baris yang cocok dengan produk existing. Namun jika CSV mendaftarkan SKU BARU (belum ada di DB) dengan spec_id di baris — TIDAK ada validator; skenario ini tidak ada di alur (spec_id tak berasal dari CSV) → aman."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter60_import_stockaging_reschedule.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (15/15 executed passed, 2 skipped by design: cross-entity 404 skipped karena admin ber-view_all; published-block dilewati karena tidak ada post published di ent_ksc saat run)",
+    "frontend": "100% (drag+drop mode Minggu, hint, pesan, persistensi, riwayat semua OK)"
+  },
+  "seed_data_creation": "Sementara membuat 2 mkt post ent_ksc (mkp_fb166e63803c 'TEST_ITER60_tenun' 2026-09-25T19:00, mkp_81db3712002f 'TEST_ITER60_mendung' 2026-09-27T10:00) untuk uji drag. Keduanya sudah dihapus setelah tes. Tidak ada residual TEST_ products atau mkt posts.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Test file backend: /app/backend/tests/test_iter60_import_stockaging_reschedule.py — jalankan dengan `REACT_APP_BACKEND_URL=... MONGO_URL=... DB_NAME=... pytest -o addopts=''` (pytest.ini default memakai xdist -n 2 yang butuh REACT_APP_BACKEND_URL di env). File juga membersihkan produk berawalan TEST_ dan mkt_posts berawalan TEST_ITER60 di test_zzz_cleanup_test_data. Catatan: data marketing untuk 21-27 Sep 2026 di ent_ksc yang disebut di problem statement (Batik Mega Mendung, Tips Merawat Tenun) TIDAK ADA di DB saat run — testing agent men-seed sementara lalu menghapus; jika main agent ingin data demo persistent, jalankan seeder marketing.",
+  "rca of the issue": "Tidak ada bug blocker. Satu minor: `(x or 9999)` di reporting.py:75 keliru saat days=0. Reproduksi: buat mutation dengan timestamp hari ini, request /reports/stock-aging?days_threshold=0 — entri days=0 akan muncul di atas bersama entri tanpa mutasi (harusnya di bawah). Mitigasi: ganti dengan `x.get('days_since_movement') if x.get('days_since_movement') is not None else 9999`."
+}

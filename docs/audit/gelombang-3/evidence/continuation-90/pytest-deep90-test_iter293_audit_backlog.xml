@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="15" skipped="0" tests="19" time="3.436" timestamp="2026-10-06T14:03:40.056900+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname=".TestAuditBacklog293" name="test_01_l8_non_dispatched_rejected" time="0.615"><failure message="AssertionError: butuh 2 SJ dispatched bebas, ada 0&#10;assert 0 &gt;= 2&#10; +  where 0 = len([])">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:70: in test_01_l8_non_dispatched_rejected
+    assert len(free) &gt;= 2, f"butuh 2 SJ dispatched bebas, ada {len(free)}"
+E   AssertionError: butuh 2 SJ dispatched bebas, ada 0
+E   assert 0 &gt;= 2
+E    +  where 0 = len([])</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_02_create_deliveries" time="0.002"><failure message="KeyError: 'ship_a'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:83: in test_02_create_deliveries
+    "shipment_ids": [state["ship_a"]["id"]], "mode": "own_fleet", "vehicle_plate": "B 1 QA",
+                     ^^^^^^^^^^^^^^^
+E   KeyError: 'ship_a'</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_03_p1_1_driver_write_guard" time="0.605"><failure message="KeyError: 'B'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:104: in test_03_p1_1_driver_write_guard
+    b = state["B"]["id"]
+        ^^^^^^^^^^
+E   KeyError: 'B'</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_04_p1_1_driver_read_allowed" time="0.003"><failure message="KeyError: 'B'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:115: in test_04_p1_1_driver_read_allowed
+    r = driver.get(f"{API}/logistics/deliveries/{state['B']['id']}", timeout=60)
+                                                 ^^^^^^^^^^
+E   KeyError: 'B'</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_05_driver_write_own_allowed" time="0.002"><failure message="KeyError: 'A'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:123: in test_05_driver_write_own_allowed
+    r = driver.post(f"{API}/logistics/deliveries/{state['A']['id']}/photos",
+                                                  ^^^^^^^^^^
+E   KeyError: 'A'</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_06_p1_3_unload" time="0.004"><failure message="KeyError: 'A'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:131: in test_06_p1_3_unload
+    a = state["A"]["id"]
+        ^^^^^^^^^^
+E   KeyError: 'A'</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_07_l2_position_validation_and_delete" time="0.003"><failure message="KeyError: 'A'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:152: in test_07_l2_position_validation_and_delete
+    a = state["A"]["id"]
+        ^^^^^^^^^^
+E   KeyError: 'A'</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_08_l3_my_route_active" time="0.003"><failure message="KeyError: 'A'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:170: in test_08_l3_my_route_active
+    r = driver.post(f"{API}/logistics/my-route", json={"ids": [state["A"]["id"]]}, timeout=60)
+                                                               ^^^^^^^^^^
+E   KeyError: 'A'</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_09_l4_combined_message_and_delivered" time="0.004"><failure message="KeyError: 'A'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:175: in test_09_l4_combined_message_and_delivered
+    a = state["A"]["id"]
+        ^^^^^^^^^^
+E   KeyError: 'A'</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_10_l9_notification_to_sales" time="0.006"><failure message="AssertionError: tidak ada notifikasi logistics_delivered&#10;assert []">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:192: in test_10_l9_notification_to_sales
+    assert notif, "tidak ada notifikasi logistics_delivered"
+E   AssertionError: tidak ada notifikasi logistics_delivered
+E   assert []</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_11_l3_my_route_inactive_rejected" time="0.003"><failure message="KeyError: 'A'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:197: in test_11_l3_my_route_inactive_rejected
+    r = driver.post(f"{API}/logistics/my-route", json={"ids": [state["A"]["id"]]}, timeout=60)
+                                                               ^^^^^^^^^^
+E   KeyError: 'A'</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_12_l1_summary_today_wib" time="0.047" /><testcase classname=".TestAuditBacklog293" name="test_13_p1_2_shipment_carries_logistics" time="0.002"><failure message="KeyError: 'ship_a'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:213: in test_13_p1_2_shipment_carries_logistics
+    sj = DB.shipments.find_one({"id": state["ship_a"]["id"]},
+                                      ^^^^^^^^^^^^^^^
+E   KeyError: 'ship_a'</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_14_g3_ai_status_keys" time="0.036"><failure message="assert False is True">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:225: in test_14_g3_ai_status_keys
+    assert data["demo"] is True
+E   assert False is True</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_15_g3_gemini_test_without_key" time="0.033" /><testcase classname=".TestAuditBacklog293" name="test_16_g8_daily_limit" time="0.042"><failure message="TypeError: 'NoneType' object is not subscriptable">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:235: in test_16_g8_daily_limit
+    state["gid"] = g["id"]
+                   ^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_17_g6_comment_notification_and_delete" time="0.003"><failure message="KeyError: 'gid'">..\..\..\outputs\data-flow-audit-2026-10-05\latest\continuation-90\pytest-deep90-copies\test_iter293_audit_backlog.py:248: in test_17_g6_comment_notification_and_delete
+    gid, fid = state["gid"], state["fid"]
+               ^^^^^^^^^^^^
+E   KeyError: 'gid'</failure></testcase><testcase classname=".TestAuditBacklog293" name="test_18_x5_logistics_division" time="0.052" /><testcase classname=".TestAuditBacklog293" name="test_99_cleanup" time="0.005" /></testsuite></testsuites>

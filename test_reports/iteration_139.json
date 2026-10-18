@@ -1,0 +1,34 @@
+{
+  "summary": "UAT DOC-06 and DESIGN-06 on design 'Salur Endek Kemeja' (SRI-SLR-AO-001, dsgn_185314cd124a). Both scenarios PASS end-to-end via the real preview URL. DOC-06 PASS: as designer, uploading /tmp/bad.png (text with .png ext) via [data-testid=design-upload-artwork] triggered backend 400 and UI rendered a friendly red banner 'File rusak atau isinya bukan gambar/PDF yang sah — periksa file lalu unggah ulang.' with a 'Coba lagi' retry affordance; file was NOT added to the round file list (count stays 0) and page did not crash/blank. /tmp/bad.jpg behaved identically. DESIGN-06 PASS: valid /tmp/ok.png (1x1 PNG) uploaded successfully (file 'ok.png' visible in 'BERKAS DIKIRIM · 1' under Pengajuan awal in later screenshots). Clicking [design-action-submit] + [design-action-confirm] moved design-detail-status from 'Draf' → 'Diajukan'. Manager login (manager@kainnusantara.id) saw [design-action-start_review] → status 'Dalam Review', then [design-action-request_revision] with note 'TEST_UAT perbaiki warna' + confirm → status 'Perlu Revisi'. Back as designer, bell notification panel listed 'Desain SRI-SLR-AO-001: Dalam Review · UNTUK ANDA' and the prior 'SRI-BGA-AO-001: perlu revisi' entry (2/2 unread). Opening the design showed design-detail-status 'Perlu Revisi' and [design-detail-revision-note] 'Catatan revisi penilai: TEST_UAT perbaiki warna — unggah hasil revisi di bawah, lalu Ajukan.' Mobile 390x844: scrollWidth==innerWidth==390 → no horizontal scroll on design detail.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/d1_list.jpeg",
+    "/app/test_reports/d3_badpng.jpeg",
+    "/app/test_reports/d4_badjpg.jpeg",
+    "/app/test_reports/d7_submitted.jpeg",
+    "/app/test_reports/d8_revision.jpeg",
+    "/app/test_reports/d10_bell.jpeg",
+    "/app/test_reports/d11_designer_final.jpeg",
+    "/app/test_reports/d12_mobile.jpeg"
+  ],
+  "action_items": [
+    "Minor observational note (not a bug): the fresh 'SRI-SLR-AO-001 Perlu Revisi' notification did not appear in the designer bell panel within the ~2s window during the automated run — only 'SRI-SLR-AO-001: Dalam Review' was listed alongside the earlier SRI-BGA-AO-001 revision item. The revision status and note are correctly reflected on the design detail itself, so this is likely notification write-propagation timing, not a functional defect; worth a quick manual spot-check."
+  ],
+  "critical_code_review_comments": [
+    "FilesPanel vs RoundsTimeline both expose a [data-testid=design-upload-artwork] input but only FilesPanel wraps uploaded items in a [data-testid=design-files-artwork] container; test selectors that aggregate under design-files-artwork can miss files uploaded through the round timeline. Consider adding a per-round container testid like design-round-files-<n> for cleaner automation.",
+    "The invalid-file error banner is in-page rather than a toast; good UX but any automated test checking the 'toast' role would miss it. Documented via screenshot."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "DOC-06 PASS 100%, DESIGN-06 PASS 100%"},
+  "test_credentials": "designer@kainnusantara.id, manager@kainnusantara.id — demo12345",
+  "seed_data_creation": "On design dsgn_185314cd124a (SRI-SLR-AO-001): uploaded /tmp/ok.png (1x1 PNG) to Pengajuan awal round, submitted to review, manager started review + requested revision with note 'TEST_UAT perbaiki warna'. Current status: 'Perlu Revisi' (Revisi ke-1). DB will be restored from /app/.work/p21_uat snapshot by main agent.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Both DOC-06 (bad-file rejection) and DESIGN-06 (full designer→manager→designer revision loop) are confirmed PASS on preview. Note: file uploads inside RoundsTimeline do NOT register under the [data-testid=design-files-artwork] wrapper — look at [data-testid^=design-file-] inside the round block instead. Mobile layout clean at 390x844.",
+  "rca of the issue": "N/A — no failing cases this iteration."
+}

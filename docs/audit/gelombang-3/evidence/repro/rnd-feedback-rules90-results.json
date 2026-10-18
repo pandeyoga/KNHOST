@@ -1,0 +1,710 @@
+{
+  "candidate": "a904d989b622f7da14c4892d03cf6ef0c43f3084",
+  "database": "knhost_audit_services90_bdd3017d734b42a3ae9dd0d60447ccc5",
+  "observations": [
+    {
+      "id": "spec.patch_title",
+      "expected": "spec_f64d184852f6",
+      "actual": "spec_f64d184852f6",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_strings",
+      "expected": "spec_f64d184852f6",
+      "actual": "spec_f64d184852f6",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_target",
+      "expected": "spec_f64d184852f6",
+      "actual": "spec_f64d184852f6",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_null_numeric",
+      "expected": "spec_f64d184852f6",
+      "actual": "spec_f64d184852f6",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_hint",
+      "expected": "spec_f64d184852f6",
+      "actual": "spec_f64d184852f6",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_color_by_code",
+      "expected": "spec_f64d184852f6",
+      "actual": "spec_f64d184852f6",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_clear_color",
+      "expected": "spec_f64d184852f6",
+      "actual": "spec_f64d184852f6",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_price",
+      "expected": "spec_f64d184852f6",
+      "actual": "spec_f64d184852f6",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_clear_design",
+      "expected": "spec_f64d184852f6",
+      "actual": "spec_f64d184852f6",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.patch_clear_fabric",
+      "expected": "spec_f64d184852f6",
+      "actual": "spec_f64d184852f6",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.numeric_decimal",
+      "expected": 123.45,
+      "actual": 123.45,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.width_cm",
+      "expected": 155,
+      "actual": 155.0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.invalid_hint",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.invalid_color",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.invalid_design",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.invalid_fabric",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.terminal_edit_approved",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.terminal_edit_rejected",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.submit",
+      "expected": "review",
+      "actual": "review",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.repeat_submit",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.reject",
+      "expected": "rejected",
+      "actual": "rejected",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.repeat_reject",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.create_guard_empty_title",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.create_guard_bad_hint",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.create_guard_bad_fabric",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.create_guard_missing_fabric",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "spec.create_guard_bad_stage",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.patch_text",
+      "expected": "smp_ed391b6220cf",
+      "actual": "smp_ed391b6220cf",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.patch_qty_date",
+      "expected": "smp_ed391b6220cf",
+      "actual": "smp_ed391b6220cf",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.patch_color",
+      "expected": "smp_ed391b6220cf",
+      "actual": "smp_ed391b6220cf",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.patch_design_clear",
+      "expected": "smp_ed391b6220cf",
+      "actual": "smp_ed391b6220cf",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.patch_types",
+      "expected": "smp_ed391b6220cf",
+      "actual": "smp_ed391b6220cf",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.patch_customer",
+      "expected": "smp_ed391b6220cf",
+      "actual": "smp_ed391b6220cf",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.unique_types",
+      "expected": [
+        "labdip",
+        "handfeel"
+      ],
+      "actual": [
+        "labdip",
+        "handfeel"
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.requested_qty",
+      "expected": 2.5,
+      "actual": 2.5,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.date_only",
+      "expected": "2099-01-01",
+      "actual": "2099-01-01",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.so_number",
+      "expected": "SO-AUD90",
+      "actual": "SO-AUD90",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.unlink_so",
+      "expected": "",
+      "actual": "",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.invalid_so",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.invalid_color",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.invalid_design",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.invalid_types",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.invalid_proofing_requires_design",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.used_type_cannot_remove",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.terminal_patch_decided",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.terminal_patch_cancelled",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.decided_cancel_guard",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.cancel",
+      "expected": "cancelled",
+      "actual": "cancelled",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.type_normalize_{}",
+      "expected": [],
+      "actual": [],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.type_normalize_{'sample_type': ' LABDIP '}",
+      "expected": [
+        "labdip"
+      ],
+      "actual": [
+        "labdip"
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "sample.type_normalize_{'sample_types': ['', 'labdip', 'LABDIP', 'handfeel']}",
+      "expected": [
+        "labdip",
+        "handfeel"
+      ],
+      "actual": [
+        "labdip",
+        "handfeel"
+      ],
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.empty_edit_no_event",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.patch_brief",
+      "expected": "dsr_ecdcd7ad95e3",
+      "actual": "dsr_ecdcd7ad95e3",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.patch_date",
+      "expected": "dsr_ecdcd7ad95e3",
+      "actual": "dsr_ecdcd7ad95e3",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.patch_type",
+      "expected": "dsr_ecdcd7ad95e3",
+      "actual": "dsr_ecdcd7ad95e3",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.patch_categories",
+      "expected": "dsr_ecdcd7ad95e3",
+      "actual": "dsr_ecdcd7ad95e3",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.patch_line",
+      "expected": "dsr_ecdcd7ad95e3",
+      "actual": "dsr_ecdcd7ad95e3",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.patch_color",
+      "expected": "dsr_ecdcd7ad95e3",
+      "actual": "dsr_ecdcd7ad95e3",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.invalid_brief",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.invalid_target",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.invalid_category",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.invalid_design_category",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.terminal_patch_delivered",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.terminal_patch_approved",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "design.terminal_patch_cancelled",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rnd.missing_65",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rnd.missing_66",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "rnd.missing_67",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.initial_status",
+      "expected": "open",
+      "actual": "open",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.counter_create",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.create_guard_title",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.create_guard_category",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.create_guard_severity",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.create_guard_so",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.edit_guard_empty",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.edit_guard_severity",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.edit_guard_status",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.edit_guard_resolution",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.transition_in_progress",
+      "expected": "in_progress",
+      "actual": "in_progress",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.counter_in_progress",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.transition_resolved",
+      "expected": "resolved",
+      "actual": "resolved",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.counter_resolved",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.transition_in_progress",
+      "expected": "in_progress",
+      "actual": "in_progress",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.counter_in_progress",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.transition_closed",
+      "expected": "closed",
+      "actual": "closed",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.counter_closed",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.closed_cannot_reopen",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.counter_terminal_reject_unchanged",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.initial_assigned",
+      "expected": "in_progress",
+      "actual": "in_progress",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.remove_assignee",
+      "expected": "",
+      "actual": "",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.note_history",
+      "expected": "note",
+      "actual": "note",
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.summary_total",
+      "expected": 2,
+      "actual": 2,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.summary_open",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.summary_resolved",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.summary_high_open",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.summary_overdue",
+      "expected": 0,
+      "actual": 0,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.filtered_list",
+      "expected": 1,
+      "actual": 1,
+      "note": "",
+      "status": "pass"
+    },
+    {
+      "id": "feedback.missing_update",
+      "expected": true,
+      "actual": true,
+      "note": "",
+      "status": "pass"
+    }
+  ],
+  "harness_errors": [],
+  "scope": "Original R&D edit contracts and feedback state/counter consistency.\n\nFresh synthetic template database. Direct service callers are explicitly scoped\nas service verification, not frontend/RBAC verification. Inputs use actual master\nrecords; seeded status/round fixtures only test already existing history guards.\n"
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_bi_finance.py",
+    "database": "knhost_audit_native90_b5b7c81757d746a49c1afccf6f3f1f4c",
+    "exit": 1,
+    "seconds": 47.51,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_bi_finance.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "D\n🔍 Testing BI Year 2026 (with seed data)...\n🔍 July 2026 data: opex=0.0, net_income=0.0\n❌ BI Year 2026 (with seed data) - FAILED: July 2026 should have operational data\n🔍 Testing BI KPI Structure...\n🔍 KPI: revenue=19270379.56, expense=41076000.0, net_income=-21805620.44, gross_margin=55.2%, net_margin=-113.2%\n✅ BI KPI Structure - PASSED\n🔍 Testing BI Ratios Structure...\n🔍 Ratios: current_ratio=6.3, debt_to_equity=0.08\n🔍 Balance: assets=708236887.56, liabilities=52224008.0, equity=656012879.56\n✅ BI Ratios Structure - PASSED\n🔍 Testing BI Entity Comparison...\n🔍 Entity comparison: 2 entities, multi_entity=True\n🔍   Entity: KSC (ent_ksc) - revenue=19270379.56, net_income=-21805620.44\n🔍   Entity: Kanda (ent_kanda) - revenue=9758750.0, net_income=-4188392.88\n✅ BI Entity Comparison - PASSED\n🔍 Testing BI Single Entity Scope...\n🔍 Single entity scope: KSC - revenue=19270379.56\n✅ BI Single Entity Scope - PASSED\n🔍 Testing BI Consistency (Operational Data)...\n🔍 Operational data is consistent across calls\n✅ BI Consistency (Operational Data) - PASSED\n🔍 Testing Regression: Income Statement...\n🔍 Income statement: revenue=19270379.56, net_income=-21805620.44\n✅ Regression: Income Statement - PASSED\n🔍 Testing Regression: Balance Sheet...\n🔍 Balance sheet: assets=708236887.56, liabilities=52224008.0, equity=656012879.56, balanced=True\n✅ Regression: Balance Sheet - PASSED\n🔍 Testing Regression: Trial Balance...\n🔍 Trial balance: debit=1129065299.56, credit=1129065299.56, balanced=True\n✅ Regression: Trial Balance - PASSED\n\n================================================================================\nSUMMARY: 9/10 tests passed\n================================================================================\n\n❌ FAILED TESTS:\n  - BI Year 2026 (with seed data): July 2026 should have operational data\n"
+  }
+]

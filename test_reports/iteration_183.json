@@ -1,0 +1,39 @@
+{
+  "summary": "L00 (P05 open issues) tested. Backend: test_l00_p05_open_issues 5/5, test_p05_acceptance_acc31_33_34 17/17, test_p05_restock_material_revalidation 12/12 (each run in its own invocation). New test_l00_edge_cases.py: 4/5 passed. 5 parallel reval POSTs gave exactly one 200 and four 400s; a different sample_type for the same SKU is allowed; cancel removes open_reval_keys and frees the slot; index uniq_open_revalidation exists. Return-material validation (not cancelled -> 409, reason<5 -> 4xx, roll_ids [] -> 400, unknown roll -> 409, bad seq -> 404) works. FAIL: two concurrent partial returns (different roll subsets) of the same step lose a history entry and over-reverse WIP (failed 2 of 3 runs). Frontend desktop: MKO-00028 partial return via checklist (1/3 rolls) -> history, step stays awaiting; second return of the rest -> 'Bahan Diretur'. DecideModal for a revalidation sample with an ACC round: no decide-approve-spec, decide-revalidation-sku shown. Mobile 390: manager Produk -> mobile-open-makloon-orders -> responsive list + detail OK. MD -> Lainnya -> m-md-full-makloon-orders opens the page but shows 'Permission ditolak: makloon_order.view' (API 403).",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/makloon-orders/{id}/steps/{seq}/return-material", "issue": "Race in return_cancelled_material: it reads the order, moves the rolls, then calls replace_one on the whole order, with no lock or version check. Two concurrent partial returns (e.g. double submit, or two users) both succeed, but the second replace_one overwrites the first's material_returns entry. Observed after both groups were returned: history=1 entry, returned_qty=29.65 (expected 30), status=returned, MKO WIP=-4760 (over-reversed, because the second call saw left=0 and reversed the full remaining_value computed from the stale order). Fix: per-step lock / optimistic concurrency (update_one with filter on updated_at or len(material_returns)) or $push for returns, and recompute value from fresh state.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/makloon-orders/{id}/steps/{seq}/return-material", "issue": "A mixed roll_ids list (valid + already returned or other-step rolls) silently moves only the valid ones without telling the user which rolls were ignored."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MobileMdApp > Lainnya > Order Makloon", "issue": "The MD role has no makloon_order.view in permissions_config.py (md only has makloon:view). The new entry opens Order Makloon with the error 'Permission ditolak: makloon_order.view', 0 orders and GET /api/makloon-orders 403. Either grant md makloon_order:['view'] (owner decision) or hide the entry for md. Same check applies to the mobile-open-makloon-orders button in MobileOpsApp, which is not role-gated.", "selector": "[data-testid='m-md-full-makloon-orders']", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "MKO detail awaiting-return banner (MakloonReturnMaterial)", "issues": ["After a partial return the banner still shows the full step.material_value (Rp 408.000) instead of the value still at the partner (408.000 - returned value)", "After the step closes ('Bahan Diretur'), the per-return history list (mko-return-history) is no longer shown, only the summary 'Retur 30 yard dicatat…'. Consider keeping the per-roll history"]},
+      {"screen": "Mobile 390 header on Order Makloon", "issues": ["The title is truncated ('Order Makloon (Subkon…') and the 'SEMUA BADAN USAHA' breadcrumb wraps onto 3 lines. Cosmetic"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_l00_p05_open_issues.py", "/app/backend/tests/test_l00_edge_cases.py", "/app/test_reports/pytest/test_l00_p05_open_issues.xml", "/app/test_reports/pytest/test_l00_edge_cases.xml", "/app/test_reports/pytest/test_p05_acceptance_acc31_33_34.xml", "/app/test_reports/pytest/test_p05_restock_material_revalidation.xml"],
+  "action_items": [
+    "Make return_cancelled_material concurrency-safe (atomic conditional update or lock per mko/step) so material_returns, returned_qty and the WIP reversal stay consistent under parallel requests. Also disable double-submit in the UI (already done via busy state, but the API must guard)",
+    "Resolve MD access to Order Makloon: add makloon_order view permission for md, or remove the m-md-full-makloon-orders entry for md",
+    "MakloonReturnMaterial banner: show the remaining value at the partner after partial returns"
+  ],
+  "critical_code_review_comments": [
+    "makloon_order_service.return_cancelled_material: read-modify-replace_one pattern without concurrency control (root cause of the HIGH bug)",
+    "rnd_sample_service: unique partial multikey index on open_reval_keys is sound. The backfill in ensure_revalidation_index only logs a warning if old duplicates exist, which leaves the index uncreated silently. Consider surfacing this in a health check",
+    "test_l00_p05_open_issues uses 6 parallel workers, the review asked for 5. Both pass"
+  ],
+  "updated_files": ["/app/backend/tests/test_l00_edge_cases.py"],
+  "success_rate": {"backend": "97% (38/39; concurrency edge case fails)", "frontend": "80% (4/5 flows; MD mobile entry blocked by permission)"},
+  "seed_data_creation": "Created cancelled MKOs labelled TEST_P05ACC (incl. MKO-00028, fully returned via UI) and a temporary revalidation sample KSC/SMP-00040 (brief TEST_L00, deleted afterwards). The output template restock_source was set temporarily and then unset.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run each pytest file in its own invocation (-n0). test_l00_edge_cases.py::TestReturnEdges::test_parallel_partial_returns reproduces the race (flaky, fails about 2 of 3 runs before the fix). Creating an MKO via the _create helper needs restock_source set on the output template (the fixture output_is_makloon does this). DecideModal check: create a reval sample, send it to a supplier as manager, attach a PNG, submit the round with handfeel measurement_fields and assess 'acc', then open rnd-sample-card-existing-<id> > sample-decide-button.",
+  "rca of the issue": "Partial-return race: two requests both load the order with material_returns=[]. Each moves its own disjoint roll set (the per-roll update is atomic, so the stock is correct). Each then calls replace_one, and the last writer wins with only its own return entry. The later request computes left=0 and reverses remaining_value (the full value, because it did not see the first return) as the 'final' part, while the first request had already reversed its pro-rata share, so WIP over-reverses by the first share (-4760). Mitigation: conditional update on a version field, or per-step lock with re-read after moving rolls; use $push for material_returns and compute the value from the GL reversal already posted."
+}

@@ -1,0 +1,119 @@
+{
+  "per_gudang": [
+    {
+      "gudang": "GU-CST",
+      "format": "lama",
+      "bin_satuan_campur": 0,
+      "bin_lebih_kapasitas": 0,
+      "bin": 21
+    },
+    {
+      "gudang": "GU-KANDA",
+      "format": "lama",
+      "bin_satuan_campur": 0,
+      "bin_lebih_kapasitas": 0,
+      "bin": 21
+    },
+    {
+      "gudang": "GU-KSC",
+      "format": "lama",
+      "bin_satuan_campur": 0,
+      "bin_lebih_kapasitas": 0,
+      "bin": 21
+    },
+    {
+      "gudang": "RCM-KNITTING",
+      "format": "baru+lama",
+      "roll_fisik": 10287,
+      "roll_berbin": 8231,
+      "belum_ditempatkan": 2056,
+      "bin_satuan_campur": 0,
+      "bin_lebih_kapasitas": 0,
+      "bin": 201
+    },
+    {
+      "gudang": "RCM-PRINTING",
+      "format": "lama",
+      "roll_fisik": 76,
+      "roll_berbin": 62,
+      "belum_ditempatkan": 14,
+      "bin_satuan_campur": 0,
+      "bin_lebih_kapasitas": 0,
+      "bin": 21
+    },
+    {
+      "gudang": "RCM-RETUR",
+      "format": "lama",
+      "roll_fisik": 71,
+      "roll_berbin": 59,
+      "belum_ditempatkan": 12,
+      "bin_satuan_campur": 0,
+      "bin_lebih_kapasitas": 0,
+      "bin": 21
+    },
+    {
+      "gudang": "RCM-TRANSIT",
+      "format": "lama",
+      "bin_satuan_campur": 0,
+      "bin_lebih_kapasitas": 0,
+      "bin": 21
+    },
+    {
+      "gudang": "RCM-WOVEN",
+      "format": "baru+lama",
+      "roll_fisik": 9957,
+      "belum_ditempatkan": 1985,
+      "roll_berbin": 7972,
+      "bin_satuan_campur": 0,
+      "bin_lebih_kapasitas": 0,
+      "bin": 221
+    },
+    {
+      "gudang": "SRG-01",
+      "format": "lama",
+      "roll_fisik": 2900,
+      "roll_berbin": 2294,
+      "belum_ditempatkan": 606,
+      "bin_satuan_campur": 0,
+      "bin_lebih_kapasitas": 0,
+      "bin": 61
+    },
+    {
+      "gudang": "WH-BDG",
+      "format": "lama",
+      "bin_satuan_campur": 0,
+      "bin_lebih_kapasitas": 0,
+      "bin": 21
+    },
+    {
+      "gudang": "WH-JKT",
+      "format": "baru+lama",
+      "roll_fisik": 23137,
+      "roll_berbin": 18487,
+      "orphan_bin": 3,
+      "belum_ditempatkan": 4650,
+      "transit_berbin": 3,
+      "bin_satuan_campur": 1,
+      "bin_lebih_kapasitas": 1,
+      "bin": 283
+    },
+    {
+      "gudang": "WH-SBY",
+      "format": "lama",
+      "bin_satuan_campur": 0,
+      "bin_lebih_kapasitas": 0,
+      "bin": 21
+    }
+  ],
+  "total": {
+    "bin_satuan_campur": 1,
+    "bin_lebih_kapasitas": 1,
+    "bin": 934,
+    "roll_fisik": 46428,
+    "roll_berbin": 37105,
+    "belum_ditempatkan": 9323,
+    "orphan_bin": 3,
+    "transit_berbin": 3
+  },
+  "dijalankan": "2026-10-11T08:38:25.337981+00:00"
+}

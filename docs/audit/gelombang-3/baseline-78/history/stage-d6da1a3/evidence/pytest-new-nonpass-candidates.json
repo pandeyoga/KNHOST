@@ -1,0 +1,97 @@
+[
+  {
+    "id": "test_iter25_revision_filter.TestRevisionFilter::test_min_revision_zero_returns_all",
+    "candidate": {
+      "id": "test_iter25_revision_filter.TestRevisionFilter::test_min_revision_zero_returns_all",
+      "status": "failure",
+      "seconds": "0.049",
+      "message": "assert 6 == 4",
+      "body": "self = <test_iter25_revision_filter.TestRevisionFilter object at 0x000001E4403BA3C0>\nheaders = {'Authorization': 'Bearer [LOCAL_TEST_TOKEN_REDACTED]', 'X-Entity-Id': 'ent_ksc', 'Content-Type': 'application/json'}\n\n    def test_min_revision_zero_returns_all(self, headers):\n        r = _list(headers, {\"min_revision\": 0})\n        assert r.status_code == 200\n        body = r.json()\n>       assert body[\"total\"] == 4\nE       assert 6 == 4\n\n..\\..\\..\\outputs\\data-flow-audit-2026-10-05\\pytest-copies\\test_iter25_revision_filter.py:52: AssertionError"
+    },
+    "baseline": {
+      "id": "test_iter25_revision_filter.TestRevisionFilter::test_min_revision_zero_returns_all",
+      "status": "passed",
+      "seconds": "0.110",
+      "message": "",
+      "body": ""
+    },
+    "comparison": "changed",
+    "triage": "assertion_or_contract_needs_review"
+  },
+  {
+    "id": "test_iter25_revision_filter.TestRevisionFilter::test_no_min_revision_returns_all_four",
+    "candidate": {
+      "id": "test_iter25_revision_filter.TestRevisionFilter::test_no_min_revision_returns_all_four",
+      "status": "failure",
+      "seconds": "0.509",
+      "message": "AssertionError: {'items': [{'id': 'dsr_abdb057abf96', 'number': 'KSC/DSR-00006', 'entity_id': 'ent_ksc', 'line_code': '', ...}, {'id':...'number': 'KSC/DSR-00001', 'entity_id': 'ent_ksc', 'line_code': '', ...}], 'total': 6, 'page': 1, 'page_size': 50, ...}\nassert 6 == 4",
+      "body": "self = <test_iter25_revision_filter.TestRevisionFilter object at 0x000001E4403BA060>\nheaders = {'Authorization': 'Bearer [LOCAL_TEST_TOKEN_REDACTED]', 'X-Entity-Id': 'ent_ksc', 'Content-Type': 'application/json'}\n\n    def test_no_min_revision_returns_all_four(self, headers):\n        r = _list(headers, {})\n        assert r.status_code == 200, r.text\n        body = r.json()\n>       assert body[\"total\"] == 4, body\nE       AssertionError: {'items': [{'id': 'dsr_abdb057abf96', 'number': 'KSC/DSR-00006', 'entity_id': 'ent_ksc', 'line_code': '', ...}, {'id':...'number': 'KSC/DSR-00001', 'entity_id': 'ent_ksc', 'line_code': '', ...}], 'total': 6, 'page': 1, 'page_size': 50, ...}\nE       assert 6 == 4\n\n..\\..\\..\\outputs\\data-flow-audit-2026-10-05\\pytest-copies\\test_iter25_revision_filter.py:44: AssertionError"
+    },
+    "baseline": {
+      "id": "test_iter25_revision_filter.TestRevisionFilter::test_no_min_revision_returns_all_four",
+      "status": "passed",
+      "seconds": "0.768",
+      "message": "",
+      "body": ""
+    },
+    "comparison": "changed",
+    "triage": "assertion_or_contract_needs_review"
+  },
+  {
+    "id": "test_iter276_g2_md_audit.TestAlurJ::test_J5_designer_hanya_melihat_tiga",
+    "candidate": {
+      "id": "test_iter276_g2_md_audit.TestAlurJ::test_J5_designer_hanya_melihat_tiga",
+      "status": "failure",
+      "seconds": "0.053",
+      "message": "AssertionError: designer melihat 5 DSR (dokumen: 3)\nassert 5 == 3\n +  where 5 = len(['KSC/DSR-00006', 'KSC/DSR-00005', 'KSC/DSR-00004', 'KSC/DSR-00003', 'KSC/DSR-00002'])",
+      "body": "self = <test_iter276_g2_md_audit.TestAlurJ object at 0x000001E4407A9AC0>\nT = {'manager': 'rSbokh_lma1U_cmJ8ezHq3nwCYXq3QK9-7Tjp4fCuuQ', 'mgrprint': 'ayNOoy34ReRuELOo_HEad7uOAv0z4ggHjr-p3q7c1lg', ...igner': '8EITKQgPJO6G3tv3HphQtEBKsPXI3SrXT56v3NImZSA', 'warehouse': 'z8POFfNYnaMubYU0VHcdqKamaTG-yCG7pJZ6OBaBpZg', ...}\n\n    def test_J5_designer_hanya_melihat_tiga(self, T):\n        d = GET(T[\"designer\"], \"/api/design-requests\")\n        assert d.status_code == 200, D(d)\n        nums = [i[\"number\"] for i in d.json()[\"items\"]]\n        print(f\"J5 designer melihat {len(nums)} DSR: {nums}\")\n        assert \"KSC/DSR-00001\" not in nums, \"designer melihat DSR yang belum ditugaskan (deviasi)\"\n>       assert len(nums) == 3, f\"designer melihat {len(nums)} DSR (dokumen: 3)\"\nE       AssertionError: designer melihat 5 DSR (dokumen: 3)\nE       assert 5 == 3\nE        +  where 5 = len(['KSC/DSR-00006', 'KSC/DSR-00005', 'KSC/DSR-00004', 'KSC/DSR-00003', 'KSC/DSR-00002'])\n\n..\\..\\..\\outputs\\data-flow-audit-2026-10-05\\pytest-copies\\test_iter276_g2_md_audit.py:440: AssertionError"
+    },
+    "baseline": {
+      "id": "test_iter276_g2_md_audit.TestAlurJ::test_J5_designer_hanya_melihat_tiga",
+      "status": "passed",
+      "seconds": "0.098",
+      "message": "",
+      "body": ""
+    },
+    "comparison": "changed",
+    "triage": "assertion_or_contract_needs_review"
+  },
+  {
+    "id": "test_sesi14_idempotency::test_idempotency_scan_pick",
+    "candidate": {
+      "id": "test_sesi14_idempotency::test_idempotency_scan_pick",
+      "status": "failure",
+      "seconds": "0.593",
+      "message": "AssertionError: need at least one created outbound wms_task template\nassert None",
+      "body": "headers = {'Authorization': 'Bearer [LOCAL_TEST_TOKEN_REDACTED]', 'X-Entity-Id': 'ent_ksc', 'Content-Type': 'application/json'}\ndb = Database(MongoClient(host=['127.0.0.1:27919'], document_class=dict, tz_aware=False, connect=True, serverselectiontimeoutms=3000), 'knhost_data_audit_pytest')\n\n    def test_idempotency_scan_pick(headers, db):\n        # find any 'created' outbound task and clone into synthetic\n        src = db.wms_tasks.find_one({\"entity_id\": ENT, \"flow_type\": \"outbound\", \"status\": \"created\"})\n>       assert src, \"need at least one created outbound wms_task template\"\nE       AssertionError: need at least one created outbound wms_task template\nE       assert None\n\n..\\..\\..\\outputs\\data-flow-audit-2026-10-05\\pytest-copies\\test_sesi14_idempotency.py:41: AssertionError"
+    },
+    "baseline": {
+      "id": "test_sesi14_idempotency::test_idempotency_scan_pick",
+      "status": "passed",
+      "seconds": "0.797",
+      "message": "",
+      "body": ""
+    },
+    "comparison": "changed",
+    "triage": "assertion_or_contract_needs_review"
+  },
+  {
+    "id": "test_w2_targeted.TestW2_017_ConcurrentDepositUse::test_two_concurrent_receipts_one_wins_one_409",
+    "candidate": {
+      "id": "test_w2_targeted.TestW2_017_ConcurrentDepositUse::test_two_concurrent_receipts_one_wins_one_409",
+      "status": "failure",
+      "seconds": "4.646",
+      "message": "AssertionError: Expected [200, 409], got [(200, '{\"id\":\"arc_0d6f8f802b8f\",\"number\":\"KSC/AR-00012\",\"customer_id\":\"cust_TEST_W2T_6c14e8_5ef48a\",\"customer_name\":\"TEST_W2T_6'), (400, '{\"detail\":\"Deposit tidak cukup (tersedia Rp 20)\"}')]\nassert [200, 400] == [200, 409]\n  \n  At index 1 diff: 400 != 409\n  Use -v to get more diff",
+      "body": "self = <test_w2_targeted.TestW2_017_ConcurrentDepositUse object at 0x000001E442499760>\n\n    def test_two_concurrent_receipts_one_wins_one_409(self):\n        s = admin_session()\n        cust = _make_customer(deposit_balance=100.0)\n        order1 = _make_order_with_ar(cust[\"id\"], grand_total=100.0)\n        order2 = _make_order_with_ar(cust[\"id\"], grand_total=100.0)\n    \n        results: List[Tuple[int, str]] = []\n        lock = threading.Lock()\n    \n        def fire(oid: str):\n            r = s.post(f\"{BASE}/ar-receipts\", json={\n                \"customer_id\": cust[\"id\"], \"entity_id\": ENT,\n                \"amount\": 0, \"use_deposit_amount\": 80.0,\n                \"allocations\": [{\"order_id\": oid, \"amount\": 80.0}],\n            }, timeout=30)\n            with lock:\n                results.append((r.status_code, r.text[:120]))\n                if r.status_code == 200:\n                    try:\n                        _mark(\"ar_receipts\", r.json()[\"id\"])\n                    except Exception:\n                        pass\n    \n        t1 = threading.Thread(target=fire, args=(order1[\"id\"],))\n        t2 = threading.Thread(target=fire, args=(order2[\"id\"],))\n        t1.start(); t2.start(); t1.join(); t2.join()\n    \n        codes = sorted(c for c, _ in results)\n>       assert codes == [200, 409], f\"Expected [200, 409], got {results}\"\nE       AssertionError: Expected [200, 409], got [(200, '{\"id\":\"arc_0d6f8f802b8f\",\"number\":\"KSC/AR-00012\",\"customer_id\":\"cust_TEST_W2T_6c14e8_5ef48a\",\"customer_name\":\"TEST_W2T_6'), (400, '{\"detail\":\"Deposit tidak cukup (tersedia Rp 20)\"}')]\nE       assert [200, 400] == [200, 409]\nE         \nE         At index 1 diff: 400 != 409\nE         Use -v to get more diff\n\n..\\..\\..\\outputs\\data-flow-audit-2026-10-05\\pytest-copies\\test_w2_targeted.py:223: AssertionError"
+    },
+    "baseline": {
+      "id": "test_w2_targeted.TestW2_017_ConcurrentDepositUse::test_two_concurrent_receipts_one_wins_one_409",
+      "status": "passed",
+      "seconds": "1.127",
+      "message": "",
+      "body": ""
+    },
+    "comparison": "changed",
+    "triage": "assertion_or_contract_needs_review"
+  }
+]

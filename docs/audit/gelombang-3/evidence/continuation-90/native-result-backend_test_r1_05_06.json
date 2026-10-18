@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_r1_05_06.py",
+    "database": "knhost_audit_native90_9ed6f18e9f9a4a54abd70fed3a97e354",
+    "exit": 1,
+    "seconds": 75.89,
+    "pass_log_tokens": 0,
+    "fail_log_tokens": 0,
+    "log": "continuation-90\\native-backend_test_r1_05_06.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "  - Available to return: 30 - 6 = 24\n\n🔍 Test #1: R1-06-1: Over-return blocked (qty=9999 > 24 available)\n   POST sales-returns\n   Response: 400\n✅ PASSED\n\n🔍 Test #2: R1-06-2: Within-limit allowed (qty=10, cumulative=16 <= 30)\n   POST sales-returns\n   Response: 200\n✅ PASSED\n\n   Created return ID: sret_bd8e62070ce1\n\n🔍 Test #3: R1-06-3: Cumulative overflow blocked (16+20=36 > 30)\n   POST sales-returns\n   Response: 400\n✅ PASSED\n\n======================================================================\n🧪 R1-05: REORDER SUGGESTIONS ANTI-DUPLICATE PR TESTS\n======================================================================\nTesting product prod_benang_katun (BNG-KTN-001):\n  - Reorder point: 250, Available: ~90\n\n🔍 Test #4: R1-05-1: Reorder suggestions have on_request & existing_prs fields\n   GET purchase-requisitions/reorder-suggestions?entity_id=ent_ksc\n   Response: 200\n   ✓ All 7 items have 'on_request' and 'existing_prs' fields\n✅ PASSED\n\n🔍 Test #5: R1-05-2: Create open PR for prod_benang_katun (qty=100)\n   POST purchase-requisitions\n   Response: 400\n❌ FAILED - Expected 200, got 400\n   Response body: {\"detail\":\"Konversi 'meter' → 'kg' belum punya aturan untuk produk BNG-KTN-001. Tambahkan aturan di Produk & Harga → Konversi Satuan, atau isi gramasi & lebar produk (untuk konversi panjang ↔ berat).\"}\n⚠️  Skipping R1-05-3: Previous test failed to create PR\n⚠️  Skipping R1-05-4: Previous test failed\n⚠️  Skipping R1-05-5: Previous test failed\n\n======================================================================\n📊 TEST SUMMARY\n======================================================================\nTotal tests run: 5\n✅ Passed: 4\n❌ Failed: 1\n\nFailed tests:\n  - R1-05-2: Create open PR for prod_benang_katun (qty=100)\n======================================================================\n"
+  }
+]

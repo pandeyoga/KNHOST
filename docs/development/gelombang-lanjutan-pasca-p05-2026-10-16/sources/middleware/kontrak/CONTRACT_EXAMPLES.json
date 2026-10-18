@@ -1,0 +1,114 @@
+{
+  "events_request": {
+    "schema_version": 2,
+    "batch_id": "batch-example-001",
+    "mode": "live",
+    "config_version": "cfg-example-01",
+    "context": {
+      "kind": "print_verify",
+      "task_context_id": "ctx-example-01"
+    },
+    "events": [
+      {
+        "event_id": "event-example-001",
+        "raw_epc": "E20034120123456789ABCDEF",
+        "epc": "E20034120123456789ABCDEF",
+        "captured_at": "2026-10-13T02:00:00Z",
+        "time_quality": "synced",
+        "antenna": null,
+        "rssi_dbm": null
+      }
+    ]
+  },
+  "events_response": {
+    "request_id": "req-example-01",
+    "batch_id": "batch-example-001",
+    "server_time": "2026-10-13T02:00:01Z",
+    "event_acks": [
+      {
+        "event_id": "event-example-001",
+        "status": "accepted",
+        "durable": true,
+        "processing_status": "completed",
+        "error": null
+      }
+    ]
+  },
+  "gate_close_request": {
+    "logical_gate_id": "gate-example-out",
+    "config_version": "cfg-example-01",
+    "mode": "live",
+    "closing_captured_at": "2026-10-13T02:02:00Z",
+    "boundary_reason": "sensor",
+    "last_event_id": "event-example-020",
+    "observed_event_count": 20,
+    "capture_complete": true,
+    "direction": "out",
+    "direction_evidence": {
+      "source": "fixed_profile",
+      "profile_binding_id": "binding-example-out",
+      "sensor_sequence": []
+    }
+  },
+  "task_bind_request": {
+    "task_id": "task-example-01",
+    "task_version": "tv-example-01",
+    "config_version": "cfg-example-01"
+  },
+  "putaway_complete_request": {
+    "task_context_id": "ctx-example-01",
+    "task_version": "tv-example-01",
+    "action": "commit_putaway",
+    "action_data": {
+      "destination_bin_id": "bin-example-01",
+      "location_version": "lv-example-01",
+      "selected_roll_ids": [
+        "roll-example-01"
+      ],
+      "note": "Penyimpanan dikonfirmasi operator."
+    }
+  },
+  "print_claim_request": {
+    "capabilities": [
+      "rfid_encode",
+      "rfid_print"
+    ],
+    "requested_max_jobs": 1
+  },
+  "print_results_request": {
+    "job_revision": "jv-example-01",
+    "results": [
+      {
+        "result_event_id": "result-example-01",
+        "item_id": "item-example-01",
+        "payload_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "print_status": "unknown",
+        "encode_status": "unknown",
+        "evidence": [
+          {
+            "source": "printer_status",
+            "captured_at": "2026-10-13T02:03:00Z",
+            "native_code": "TIMEOUT",
+            "native_message": "Outcome fisik belum diketahui",
+            "readback_epc": null,
+            "evidence_ref": null,
+            "details": {
+              "transport_sent": true
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "error_response": {
+    "request_id": "req-example-error",
+    "error": {
+      "code": "VERSION_CONFLICT",
+      "message": "Snapshot berubah; review versi terbaru.",
+      "retryable": false,
+      "details": {
+        "task_id": "task-example-01"
+      }
+    }
+  }
+}

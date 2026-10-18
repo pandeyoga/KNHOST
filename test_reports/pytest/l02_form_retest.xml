@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="6" time="70.797" timestamp="2026-10-17T18:59:32.117999+00:00" hostname="agent-env-40cf2857-3d2c-447d-b849-0ff09f193ff6"><testcase classname="tests.test_l02_ln022_form_path_retest" name="test_form_path_salesadmin_and_supersede" time="7.599" /><testcase classname="tests.test_l02_ln022_form_path_retest" name="test_reject_via_price_approvals_mirrors_so" time="0.910" /><testcase classname="tests.test_l02_ln022_form_path_retest" name="test_sod_own_request_price_approvals_403" time="1.042" /><testcase classname="tests.test_l02_ln022_form_path_retest" name="test_sod_own_request_so_panel" time="1.006"><failure message="AssertionError: SoD bypass via SO panel: 200&#10;assert 200 == 403&#10; +  where 200 = &lt;Response [200]&gt;.status_code">H = {'admin': {'Authorization': 'Bearer 4IMe0hKBYzJNeT5a2Od2F0b7rVuev0C_PU6LSXFBNP0', 'X-Entity-Id': 'ent_ksc'}, 'manager'...': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer J3lem6m7S1pDxt9gcmnZ6K76ESe_xvp2UdUmfc7bR-I', 'X-Entity-Id': 'ent_ksc'}}
+
+    def test_sod_own_request_so_panel(H):
+        so = _so(H["admin"])
+        pra = _form(H["manager"], so["id"], P2, 9200)
+        e, _ = _entry(so["id"], pra)
+        r = requests.post(f"{BASE}/sales-orders/{so['id']}/approvals/{e['id']}/decide", headers=H["manager"],
+                          json={"decision": "approve", "notes": "self"})
+        print("self-approve via SO panel:", r.status_code, r.text[:200])
+&gt;       assert r.status_code == 403, f"SoD bypass via SO panel: {r.status_code}"
+E       AssertionError: SoD bypass via SO panel: 200
+E       assert 200 == 403
+E        +  where 200 = &lt;Response [200]&gt;.status_code
+
+tests/test_l02_ln022_form_path_retest.py:133: AssertionError</failure></testcase><testcase classname="tests.test_l02_ln022_form_path_retest" name="test_stale_via_price_approvals_409" time="57.023" /><testcase classname="tests.test_l02_ln022_form_path_retest" name="test_concurrent_submits" time="3.013"><failure message="assert 'diproses' in '{&quot;detail&quot;:{&quot;code&quot;:&quot;SAGA_IN_PROGRESS&quot;,&quot;message&quot;:&quot;Aksi \'so_special_price_request\' atas dokumen ini sedang/pernah berj...pecial_price_request&quot;,&quot;by&quot;:&quot;Rina Kartika&quot;,&quot;started_at&quot;:&quot;2026-10-17T19:00:41.454538+00:00&quot;,&quot;token&quot;:&quot;lk_ebfd18a4c343&quot;}}}'&#10; +  where '{&quot;detail&quot;:{&quot;code&quot;:&quot;SAGA_IN_PROGRESS&quot;,&quot;message&quot;:&quot;Aksi \'so_special_price_request\' atas dokumen ini sedang/pernah berj...pecial_price_request&quot;,&quot;by&quot;:&quot;Rina Kartika&quot;,&quot;started_at&quot;:&quot;2026-10-17T19:00:41.454538+00:00&quot;,&quot;token&quot;:&quot;lk_ebfd18a4c343&quot;}}}' = &lt;Response [409]&gt;.text">H = {'admin': {'Authorization': 'Bearer 4IMe0hKBYzJNeT5a2Od2F0b7rVuev0C_PU6LSXFBNP0', 'X-Entity-Id': 'ent_ksc'}, 'manager'...': 'ent_ksc'}, 'sa': {'Authorization': 'Bearer J3lem6m7S1pDxt9gcmnZ6K76ESe_xvp2UdUmfc7bR-I', 'X-Entity-Id': 'ent_ksc'}}
+
+    def test_concurrent_submits(H):
+        so = _so(H["admin"])
+        pras = [_draft(H["sa"], so["id"], P1, 9000 + i) for i in range(3)]
+        with cf.ThreadPoolExecutor(3) as ex:
+            res = list(ex.map(lambda p: requests.post(f"{BASE}/price-approvals/{p}/submit", headers=H["sa"]), pras))
+        codes = [r.status_code for r in res]
+        print("concurrent submit codes", codes, [r.text[:120] for r in res if r.status_code != 200])
+        assert all(c in (200, 409) for c in codes)
+        for r in res:
+            if r.status_code == 409:
+&gt;               assert "diproses" in r.text
+E               assert 'diproses' in '{"detail":{"code":"SAGA_IN_PROGRESS","message":"Aksi \'so_special_price_request\' atas dokumen ini sedang/pernah berj...pecial_price_request","by":"Rina Kartika","started_at":"2026-10-17T19:00:41.454538+00:00","token":"lk_ebfd18a4c343"}}}'
+E                +  where '{"detail":{"code":"SAGA_IN_PROGRESS","message":"Aksi \'so_special_price_request\' atas dokumen ini sedang/pernah berj...pecial_price_request","by":"Rina Kartika","started_at":"2026-10-17T19:00:41.454538+00:00","token":"lk_ebfd18a4c343"}}}' = &lt;Response [409]&gt;.text
+
+tests/test_l02_ln022_form_path_retest.py:164: AssertionError</failure></testcase></testsuite></testsuites>

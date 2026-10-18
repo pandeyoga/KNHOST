@@ -1,0 +1,27 @@
+{
+  "summary": "Fase 7 – Beralih Penuh ke Kedatangan (GRN). Ran the requested pytest suite (10 files) and verified UI/API for the receiving-mode switch. All 55 backend tests passed (3 skipped by design – MKO-00002 already received). UI: admin sees Mode Penerimaan tab under Goods Receipts, GrnModePanel renders all three entity cards (ent_ksc/ent_kanda/ent_a18f5821ad20) with correct pill, waiting/started/open/closed counters, per-entity switch button, confirm box with reason textarea, disabled state until ≥5 chars, success message and pill flips to 'Kedatangan Barang (GRN)'. Operations view banner + link shows on 'Semua Entitas' when an entity is in grn mode; inbound tab hidden for the grn entity with no legacy_in_flight. API guards verified: warehouse PUT → 403, admin PUT missing reason → 422, switch → mark legacy_in_flight (0 in this dataset). Cleanup completed: ent_kanda switched back to legacy and entity config layer cleared; wms_tasks legacy_in_flight flags cleared (0 matched); all three entities back to legacy. Post-cleanup smoke retest of test_grn_phase7 + test_inbound_complete_characterization passed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_grn_phase7.py",
+    "/app/backend/tests/test_grn_phase6.py",
+    "/app/backend/tests/test_grn_phase5.py",
+    "/app/backend/tests/test_grn_phase4_dn_rules.py",
+    "/app/backend/tests/test_grn_phase4_read.py",
+    "/app/backend/tests/test_grn_phase2.py",
+    "/app/backend/tests/test_grn_phase0.py",
+    "/app/backend/tests/test_grn_phase3_endpoints.py",
+    "/app/backend/tests/test_inbound_complete_characterization.py",
+    "/app/backend/tests/test_wms_advance_expected.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (55 passed, 3 skipped)", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (used); warehouse@kainnusantara.id / demo12345 (403 guard verified)",
+  "seed_data_creation": "none; cleanup fully restored default legacy modes",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All three entities restored to legacy mode; receiving.mode entity layer cleared; wms_tasks legacy_in_flight flags cleared. Prior iterations 69-71 remain green. Fase 7 UI + backend verified end-to-end.",
+  "rca of the issue": ""
+}

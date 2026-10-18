@@ -1,0 +1,193 @@
+{
+  "database": "knhost_audit_b8dfe771eb684f23934abf05e5749c10",
+  "source_commit": "ea874d3b86ecdbaeacded1d2e1c35b71d3fa1b63",
+  "mode": "Actual stock services/Mongo; barrier delays old projection write only; no mocked query result",
+  "results": [
+    {
+      "id": "W2-P-C01",
+      "kind": "control",
+      "label": "Hold4 removes availability but preserves owned",
+      "observed": {
+        "available_qty": 6.0,
+        "hold_qty": 4.0,
+        "wip_qty": 0.0,
+        "on_hand_qty": 10.0,
+        "owned_qty": 10.0,
+        "atp_qty": 6.0
+      },
+      "expected_reproduction": {
+        "available_qty": 6,
+        "hold_qty": 4,
+        "wip_qty": 0,
+        "on_hand_qty": 10,
+        "owned_qty": 10,
+        "atp_qty": 6
+      }
+    },
+    {
+      "id": "W2-P-C02",
+      "kind": "control",
+      "label": "Release restores availability",
+      "observed": {
+        "available_qty": 10.0,
+        "hold_qty": 0.0,
+        "wip_qty": 0.0,
+        "on_hand_qty": 10.0,
+        "owned_qty": 10.0,
+        "atp_qty": 10.0
+      },
+      "expected_reproduction": {
+        "available_qty": 10,
+        "hold_qty": 0,
+        "wip_qty": 0,
+        "on_hand_qty": 10,
+        "owned_qty": 10,
+        "atp_qty": 10
+      }
+    },
+    {
+      "id": "W2-P-C03",
+      "kind": "control",
+      "label": "Repeated release rejected without stock change",
+      "observed": [
+        404,
+        {
+          "available_qty": 10.0,
+          "hold_qty": 0.0,
+          "wip_qty": 0.0,
+          "on_hand_qty": 10.0,
+          "owned_qty": 10.0,
+          "atp_qty": 10.0
+        }
+      ],
+      "expected_reproduction": [
+        404,
+        {
+          "available_qty": 10,
+          "hold_qty": 0,
+          "wip_qty": 0,
+          "on_hand_qty": 10,
+          "owned_qty": 10,
+          "atp_qty": 10
+        }
+      ]
+    },
+    {
+      "id": "W2-P-C04",
+      "kind": "control",
+      "label": "WIP excluded from ATP",
+      "observed": {
+        "available_qty": 6.0,
+        "hold_qty": 0.0,
+        "wip_qty": 4.0,
+        "on_hand_qty": 10.0,
+        "owned_qty": 10.0,
+        "atp_qty": 6.0
+      },
+      "expected_reproduction": {
+        "available_qty": 6,
+        "hold_qty": 0,
+        "wip_qty": 4,
+        "on_hand_qty": 10,
+        "owned_qty": 10,
+        "atp_qty": 6
+      }
+    },
+    {
+      "id": "W2-P-C05",
+      "kind": "control",
+      "label": "WIP complete restores availability",
+      "observed": {
+        "available_qty": 10.0,
+        "hold_qty": 0.0,
+        "wip_qty": 0.0,
+        "on_hand_qty": 10.0,
+        "owned_qty": 10.0,
+        "atp_qty": 10.0
+      },
+      "expected_reproduction": {
+        "available_qty": 10,
+        "hold_qty": 0,
+        "wip_qty": 0,
+        "on_hand_qty": 10,
+        "owned_qty": 10,
+        "atp_qty": 10
+      }
+    },
+    {
+      "id": "W2-P-C06",
+      "kind": "control",
+      "label": "New hold writes current projection before delayed old write",
+      "observed": {
+        "available_qty": 6.0,
+        "hold_qty": 4.0,
+        "wip_qty": 0.0,
+        "on_hand_qty": 10.0,
+        "owned_qty": 10.0,
+        "atp_qty": 6.0
+      },
+      "expected_reproduction": {
+        "available_qty": 6,
+        "hold_qty": 4,
+        "wip_qty": 0,
+        "on_hand_qty": 10,
+        "owned_qty": 10,
+        "atp_qty": 6
+      }
+    },
+    {
+      "id": "W2-P-E01",
+      "kind": "wave1_extension",
+      "label": "GN-13 stale rebuild overwrites newer hold projection",
+      "observed": [
+        {
+          "available": 6.0,
+          "hold": 4.0
+        },
+        {
+          "available_qty": 10.0,
+          "hold_qty": 0.0,
+          "wip_qty": 0.0,
+          "on_hand_qty": 10.0,
+          "owned_qty": 10.0,
+          "atp_qty": 10.0
+        }
+      ],
+      "expected_reproduction": [
+        {
+          "available": 6,
+          "hold": 4
+        },
+        {
+          "available_qty": 10,
+          "hold_qty": 0,
+          "wip_qty": 0,
+          "on_hand_qty": 10,
+          "owned_qty": 10,
+          "atp_qty": 10
+        }
+      ]
+    },
+    {
+      "id": "W2-P-C07",
+      "kind": "control",
+      "label": "Explicit fresh rebuild repairs projection",
+      "observed": {
+        "available_qty": 6.0,
+        "hold_qty": 4.0,
+        "wip_qty": 0.0,
+        "on_hand_qty": 10.0,
+        "owned_qty": 10.0,
+        "atp_qty": 6.0
+      },
+      "expected_reproduction": {
+        "available_qty": 6,
+        "hold_qty": 4,
+        "wip_qty": 0,
+        "on_hand_qty": 10,
+        "owned_qty": 10,
+        "atp_qty": 6
+      }
+    }
+  ]
+}

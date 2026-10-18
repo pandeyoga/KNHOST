@@ -1,0 +1,34 @@
+{
+  "summary": "Validated Wave-2 findings per request: W2-015 (deposit-only AR receipt + void), W2-017 (concurrent deposit use), W2-020 (sales return refund cash failure/retry), W2-022/W2-023 (payroll pay cash account validation + cash_transactions idempotency), plus smoke regressions. Ran existing baseline regressions (25/25 in-process + 6/6 HTTP). Added /app/backend/tests/test_w2_targeted.py with 8 new tests, all passing. Verified frontend VendorBillDetailPanel: makloon_service posted bill hides vb-action-cancel-posted; non-makloon posted bill shows it.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_w2_targeted.py",
+    "/app/test_reports/pytest/w2_targeted.xml",
+    "/app/docs/audit/wave-2/iterations/2026-10-04-W2-P00-P07/regression_w2.py",
+    "/app/docs/audit/wave-2/iterations/2026-10-04-W2-P00-P07/regression_w2_http.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/return_service.py:1322 — _create_credit_note_and_post_gl runs AFTER restock; if CN posting throws, status silently stays at previous (no 409, logged only). Consider surfacing explicit error. Current W2-020 path assumes CN succeeds and only cash_ledger fails — matches review scope.",
+    "services/hr_payroll_service.py pay_run: if cash_ledger retry succeeds on 2nd call, run status stays 'posted' with cash_error until a RETRY of pay. Second /pay request after a cash-ledger failure would re-trigger 'paying' status transition correctly, but the error path logs cash_error but relies on operator to re-click Bayar — acceptable per W2-022 design.",
+    "services/ar_receipt_service.py _post_deposit_gl is NOT invoked when amount>0 AND use_deposit_amount>0 (mixed cash+deposit); _post_cash_in handles cash only. For mixed receipts applied to AR orders, deposit portion GL reclass is NOT separately posted — relies on cash GL covering it. Review if an invariant exists; outside W2-015 scope but worth re-checking."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_w2_targeted.py (new)"
+  ],
+  "success_rate": {"backend": "100% (8/8 + 25/25 + 6/6)", "frontend": "100% (vendor bill makloon rule verified)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (X-Entity-Id: ent_ksc)",
+  "seed_data_creation": "All synthetic data prefixed TEST_W2T_<uuid6>, cleaned up in teardown_module. Also prefix-sweep across customers, sales_orders, sales_returns, ar_receipts, hr_payroll_runs, cash_transactions, journal_entries, credit_notes.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Full W2 suite passes. New tests at /app/backend/tests/test_w2_targeted.py cover HTTP paths for W2-015/017/022/023 and in-process path for W2-020 (monkeypatches services.cash_ledger.record_return_cash with flaky wrapper). Baseline regressions at docs/audit/wave-2/iterations/2026-10-04-W2-P00-P07/ remain the primary W1/W2 harness.",
+  "rca of the issue": "No defects found in the current implementation for W2-015, W2-017, W2-020, W2-022, W2-023. All invariants hold under HTTP + in-process stress."
+}

@@ -1,0 +1,53 @@
+{
+ "stock-buckets": {},
+ "inventory-lots": {},
+ "production": {},
+ "wms-locations": {},
+ "md-warehouses": {},
+ "logistics": {},
+ "cs-rfid-lokasi": {},
+ "cs-rfid-tags": {
+  "rfid-tab-print": {
+   "hits": [
+    "baya Rungkut · 04 Okt, 19.02 · Budi Santoso Klaim TEST Printer RFID kedaluwarsa — bisa diambil printer lain An"
+   ]
+  }
+ },
+ "cs-rfid-devices": {},
+ "cs-rfid-gate": {},
+ "escalations": {},
+ "finance-tower": {},
+ "bi-finance": {},
+ "bank-accounts": {},
+ "cash-management": {},
+ "bank-reconciliation": {},
+ "ar-aging": {},
+ "advance-report": {},
+ "payment-plans": {},
+ "finance-cases": {},
+ "store-credit": {},
+ "tax-invoices": {},
+ "input-tax": {},
+ "cs-pajak": {},
+ "general-ledger": {},
+ "chart-of-accounts": {},
+ "financial-statements": {},
+ "profitability": {},
+ "cashflow-forecast": {},
+ "budget": {},
+ "consolidation": {},
+ "closing": {},
+ "period-unlock": {},
+ "posting-failures": {},
+ "interco-transactions": {},
+ "cash-advances": {},
+ "settlements": {},
+ "reimburse-payables": {},
+ "expense-categories": {},
+ "vehicle-logs": {},
+ "fixed-assets": {},
+ "hr-employees": {},
+ "hr-org-units": {},
+ "hr-attendance": {},
+ "hr-leave": {}
+}

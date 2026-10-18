@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/backend_test_e4.py",
+    "database": "knhost_audit_native90_d2dcc085cef04edb9b6de5ccf570e32a",
+    "exit": 0,
+    "seconds": 53.92,
+    "pass_log_tokens": 46,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-backend_test_e4.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "ICING TESTS ---\n  ℹ️  Test: E4.7.8-9 Price isolation per entity\n  ✅ [PASS] Kanda uses entity price: 172500.0 (source: entity)\n  ✅ [PASS] KSC uses global price: 185000.0 (source: global)\n  ✅ [PASS] Effective prices differ between entities for same product\n  ✅ [PASS] Grid includes all three price columns + source\n  ℹ️  Test: E4.7.10-12 Price lifecycle\n  ✅ [PASS] Test product starts with global price: 165000.0\n  ✅ [PASS] Entity price set successfully\n  ✅ [PASS] Effective price uses entity price immediately\n  ✅ [PASS] Second price set successfully\n  ✅ [PASS] First price auto-closed when second price set (history preserved)\n  ✅ [PASS] Latest price wins\n  ✅ [PASS] Scheduled price set successfully\n  ✅ [PASS] Scheduled price does not affect current price\n  ✅ [PASS] Revert to global succeeds\n  ✅ [PASS] Product reverted to global price\n  ✅ [PASS] Price history preserved (3 records)\n  ℹ️  Test: E4.7.13 Price chain in customer quotes\n  ✅ [PASS] Kanda customer quote uses entity price (172500.0)\n  ✅ [PASS] KSC customer quote uses global price for product without override\n  ✅ [PASS] Quote includes price breakdown (global + entity)\n  ℹ️  Test: E4.7.14 CSV export/import\n  ✅ [PASS] CSV export includes entity prices\n  ✅ [PASS] CSV import applied 1 row (skipped rows without price)\n  ✅ [PASS] Indonesian number format '171.500' parsed correctly as 171500\n  ✅ [PASS] Row without price was skipped (did not clear existing prices)\n  ✅ [PASS] Unknown SKU reported in errors\n\n--- CLEANUP ---\n  ℹ️  Cleaning up test data...\n  ✅ [PASS] Cleanup: {'warehouses': 1, 'entity_prices': 4, 'cycle_count_sessions': 1}\n\n======================================================================\n  HASIL: 45 PASS | 0 FAIL\n======================================================================\n\n✅ SEMUA TEST BACKEND LULUS\n"
+  }
+]

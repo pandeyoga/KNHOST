@@ -1,0 +1,2 @@
+[rebuild_frontend] starting build at Sun Oct  4 13:47:32 UTC 2026
+[rebuild_frontend] running yarn build (low priority)… tail -f /app/.frontend_build.log

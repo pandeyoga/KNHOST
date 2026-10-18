@@ -1,0 +1,13 @@
+[
+  {
+    "script": "backend/test_fase_c_lot_poc.py",
+    "database": "knhost_audit_native90_d203b727653a466b8f8e988ed39197fe",
+    "exit": 0,
+    "seconds": 57.98,
+    "pass_log_tokens": 52,
+    "fail_log_tokens": 1,
+    "log": "continuation-90\\native-test_fase_c_lot_poc.log",
+    "note": "Log token counts are not independently deduplicated test cases. Original assertions unchanged; local deployment adapters only.",
+    "tail": "menemukan SO terdampak (1 order) termasuk lewat lot TURUNAN (split/rework)\n  ✅ [PASS] Recall menyertakan pelanggan + kontak untuk tindakan cepat\n  ✅ [PASS] Total dampak: 2 roll · 4 lot · sisa 90.0\n\nTEST 11 — Label lot (ZPL/QR) memakai label_printer_service existing\n  ✅ [PASS] Label ZPL berisi nomor lot + nilai QR = nomor lot\n  ✅ [PASS] Jumlah cetak label mengikuti permintaan (qty=2)\n\nTEST 12 — Registry enum: lot_source & lot_status in_use (tanpa hardcode FE)\n  ✅ [PASS] Enum lot_source aktif (11 nilai)\n  ✅ [PASS] Enum lot_status aktif (termasuk hold_shade)\n  ✅ [PASS] Keputusan D-26 & D-27 tercatat di registry (dokumen = kode)\n\nTEST 13 — RBAC: sales boleh lihat, tidak boleh ubah penegakan\n  ✅ [PASS] Sales dapat MELIHAT daftar lot (traceability transparan)\n  ✅ [PASS] Sales DITOLAK saat mengubah pengaturan penegakan lot (403)\n\nTEST 14 — Migrasi/backfill idempoten & tidak ada roll tanpa lot\n  ✅ [PASS] Migrasi dry-run melaporkan changed=0 (idempoten)\n  ✅ [PASS] 0 roll tanpa lot di seluruh database (backfill penuh · keputusan #3)\n  ✅ [PASS] String lot lama tersimpan sebagai jejak: ['LOT-001']\n\nTEST 15 — Daftar/filter/paginasi lot + endpoint roll tanpa lot\n  ✅ [PASS] Filter pencarian lot bekerja (4 hasil untuk 'DL-RED')\n  ✅ [PASS] Paginasi lot mengikuti kontrak repo (total 40)\n  ✅ [PASS] Statistik lot: 40 lot · 0 roll tanpa lot · 30 lot data belum lengkap\n  ✅ [PASS] Endpoint roll tanpa lot mengembalikan 0 (data bersih)\n  ✅ [PASS] Detail roll → lot (KSC/LOT-2610-0025) tersedia untuk layar gudang\n  ✅ [PASS] Artifact POC dibersihkan (invarian global tetap bersih)\n\n================================================================\n  PASS 51  |  FAIL 0\n  POC FASE C HIJAU — core lot kelas satu terbukti.\nTimeout (0:00:55)!\nThread 0x0001411c (most recent call first):\n  <no Python frame>\n"
+  }
+]

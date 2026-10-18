@@ -1,0 +1,33 @@
+{
+  "summary": "Gelombang 3 Fase 02 (lanjutan) — pytest service DB_NAME=g3_audit_phase02 LULUS 65/65 (test_g3_phase02b.py 16 + test_g3_phase02.py 21 + test_g3_phase01.py 28). pytest API test_g3_phase02_api.py LULUS 15/15. Total 80/80 sesuai ekspektasi. Smoke API live memverifikasi: GET /api/outbound/so/{so}/loading-check mengembalikan field by_warehouse baik tanpa maupun dengan warehouse_id; POST /api/outbound/so/{so}/loading-check/start?warehouse_id=wh_jakarta berhasil membuka sesi warehouse-scoped (status=open) dan tanpa warehouse_id tetap bekerja (SO-wide). GET /api/stock/pending-so bersih (tidak error) — mengembalikan list kosong karena demo DB tak punya backorder aktif, namun kode (stock_bucket_service.pending_so_board) memang menyetel incoming_total_all, incoming_claimed_by_older, supply_is_forecast, coverage_label dan diuji oleh pytest. UI smoke: tab 'SO Menunggu' pada ?view=stock-buckets dan panel LoadingCheck di ?view=wms-outbound sudah terpasang (import & conditional render benar), namun label 'Perkiraan Tertutup' tidak terlihat karena tak ada data (badge SO Menunggu = 0); LoadingCheckPanel di-mount hanya saat task punya picked>shipped (semua task saat ini Created atau Terkirim). Tidak dapat memverifikasi langsung label FE pada data demo yang kosong — testids ada di source dan rebuild sudah dilakukan main agent.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "wms-outbound / stock-buckets", "issues": ["Tidak ada data demo backorder SO aktif untuk memverifikasi label 'Perkiraan Tertutup' / 'perkiraan masuk … tidak dijamin' secara visual; tidak ada task Outbound dengan picked>shipped untuk render LoadingCheckPanel. Pertimbangkan seed demo kecil agar label baru dapat dilihat & difoto."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_g3_phase02b.py",
+    "/app/backend/tests/test_g3_phase02.py",
+    "/app/backend/tests/test_g3_phase01.py",
+    "/app/backend/tests/test_g3_phase02_api.py"
+  ],
+  "action_items": [
+    "(opsional) Buat skrip seed kecil untuk 1 backorder SO + 1 task outbound sebagian ter-pick agar main agent / QA dapat memverifikasi label FE baru secara visual."
+  ],
+  "critical_code_review_comments": [
+    "stock_bucket_service.pending_so_board: alur FIFO SO tertua dulu + per-SO sisa pasokan jelas, incoming_total_all & incoming_claimed_by_older konsisten (semua=remaining+claimed).",
+    "loading_check_service: _open_q memasukkan warehouse_id ke kunci sesi, kompatibel mundur (tanpa warehouse_id = SO-wide); endpoint start/override/status menerima warehouse_id baik via query maupun payload.",
+    "roll_service CAS filter active_movement None: baik; pengecualian konsisten pada reservasi SO (V3-WMS/PA mutual exclusion).",
+    "Tidak ditemukan ObjectId leak atau regresi list-roll picker/putaway dari sampling kode."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (80/80 pytest)", "frontend": "Smoke OK (render & navigasi); label baru tidak terverifikasi karena data demo kosong"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (dipakai)",
+  "seed_data_creation": "Tidak ada data uji baru dibuat; sesi loading-check uji di-complete sebagai cleanup.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Semua 80 pytest Fase 02 (service + API) hijau. Verifikasi visual label FE pada halaman Pending SO / LoadingCheckPanel membutuhkan seed data backorder SO + task outbound sebagian ter-pick. Testids yang relevan sudah di source: pa-qty-<id>, loading-check-panel, lc-start. Endpoint loading-check mendukung mode SO-wide (kompatibel mundur) dan per-warehouse."
+}

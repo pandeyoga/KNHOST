@@ -1,0 +1,45 @@
+[
+ {
+  "id": "GRN-03",
+  "invariant": "GRN dibuat & siap hitung (review) dengan SJ + baris target tugas PO",
+  "pass": true,
+  "detail": "200 review"
+ },
+ {
+  "id": "GRN-03",
+  "invariant": "versi basi ditolak 409 STATE_CHANGED",
+  "pass": true,
+  "detail": "409 {\"detail\":{\"code\":\"STATE_CHANGED\",\"message\":\"Kedatangan barang ini sudah diubah orang lain. Muat ulang layar.\"}}"
+ },
+ {
+  "id": "GRN-03",
+  "invariant": "konteks entitas lain tidak bisa membaca/membatalkan GRN (403/404), status tetap",
+  "pass": true,
+  "detail": "404/404 review"
+ },
+ {
+  "id": "GRN-03",
+  "invariant": "surat jalan yang sama (beda huruf/tanda baca) dari supplier sama ditolak 409 DN_DUPLICATE",
+  "pass": true,
+  "detail": "start=200 dup=409 {\"detail\":{\"code\":\"DN_DUPLICATE\",\"existing_number\":\"KSC/GRN-00005\",\"message\":\"Surat jalan test_p16c_8db709/sj1 dari Palembang Silk House sudah dicatat"
+ },
+ {
+  "id": "GRN-02",
+  "invariant": "batal saat counting → cancelled, kunci SJ dilepas, tugas PO bebas lagi",
+  "pass": true,
+  "detail": "200 cancelled task_lock=None"
+ },
+ {
+  "id": "GRN-02",
+  "invariant": "batal ulang tidak menambah efek: status, versi, roll & mutasi tetap",
+  "pass": true,
+  "detail": "200 v 6→6"
+ },
+ {
+  "id": "GRN-02",
+  "invariant": "setelah GRN batal, SJ yang sama boleh dihitung di kedatangan lain",
+  "pass": true,
+  "detail": "200 {\"id\":\"grn_3b7499b2cd14\",\"entity_id\":\"ent_ksc\",\"number\":\"KSC/GRN-00006\",\"status\":\"counting\",\"version\":5,\"partner_type\":\""
+ }
+]
+pass=7 fail=0

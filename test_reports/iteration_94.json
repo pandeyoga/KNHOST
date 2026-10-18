@@ -1,0 +1,40 @@
+{
+  "summary": "Iter94 — Tested PO correction learning (backend + desktop UI + mobile UI) and mobile GRN workspace. All 8 requested flows PASS. Backend: PATCH sets ocr_po_ref (only first time), adds 'po_ref' to corrected_fields; revert removes it. Non-sample OCR GRN of Cirebon Craft (KSC/GRN-00002 line 1) → PATCH po → POST /api/ocr-samples/from-grn → dn-profile.corrections now contains 'Baris 1 nomor PO | (kosong) → TEST_PO/XX/9999 | KSC/GRN-00002'. Cleaned up sample + reverted PO. Desktop: grn-line-po-ai-2 badge + grn-edit-po-learn-2 hint verified on GRN-00009 line 2. Mobile 390: /?view=goods-receipts loads GRN page (no redirect), mobile-back-to-app visible, no horizontal overflow on list/detail/samples/profiles/wizard/editor, GRN detail shows grn-lines-cards (grn-line-card-2, target/edit/tolak, Sesuai foto only when unverified), wizard opens as bottom sheet with grn-photo-tips + Buat kedatangan reachable + grn-wizard-files capture=environment, warehouse@ mobile → mobile-open-grn opens GRN page, admin phone Produk tab → mobile-open-grn-ops opens GRN page, ocr-sample-editor opens as full-width bottom sheet (390x832) with stacked line fields + ocr-sample-save (scrollable).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verified_flows": [
+    {"flow": "Backend PATCH po_ref stores ocr_po_ref + corrected_fields", "result": "PASS. GRN-00009 line 2: 3351/SCB/0926 → 3351/SCB/0926-TEST, ocr_po_ref='3351/SCB/0926', corrected_fields=['po_ref']. Revert to AI value → corrected_fields=[]."},
+    {"flow": "Non-sample OCR GRN → from-grn records 'Baris N nomor PO' correction", "result": "PASS. GRN-00002 line 1 (OCR, po=null) → set 'TEST_PO/XX/9999' → from-grn 200 → dn-profiles[sup_44c069fa4f55].corrections now includes {'field':'Baris 1 nomor PO','ocr':'','final':'TEST_PO/XX/9999','grn_number':'KSC/GRN-00002'}. Existing 'Nomor SJ 495→405' correction preserved."},
+    {"flow": "Desktop GRN review PO column badge", "result": "PASS. grn-line-po-ai-2 shows 'AI: 3351/SCB/0926' (strikethrough) alongside corrected value 3351/SCB/0926-TEST."},
+    {"flow": "Desktop edit form learn hint", "result": "PASS. Click grn-line-edit-2 → grn-line-edit-form-2 opens → grn-edit-po-learn-2 visible: 'AI membaca PO «3351/SCB/0926» — koreksi Anda disimpan sebagai petunjuk untuk SJ mitra ini berikutnya.'"},
+    {"flow": "Mobile 390 GRN list & tabs", "result": "PASS. /?view=goods-receipts loads (no redirect); mobile-back-to-app visible; scrollWidth == clientWidth == 390; grn-view-tab-list present."},
+    {"flow": "Mobile GRN detail cards", "result": "PASS. grn-lines-cards + grn-line-card-2 present, grn-lines-table hidden. Card shows PO with 'AI: <s>3351/SCB/0926</s>' badge, grn-line-card-target-2 select + grn-line-card-edit-2 + Tolak. grn-line-card-verify-2 correctly absent because line 2 is already verified. grn-ocr-rotated banner visible. Ubah opens edit form inline with grn-edit-po-learn-2 hint."},
+    {"flow": "Mobile wizard", "result": "PASS. grn-new-button → grn-wizard bottom sheet; grn-wizard-next reachable at bottom-right (bbox x=306 y=796); step-2 shows grn-photo-tips (6 tips); grn-wizard-files capture attribute = 'environment'. Wizard closed without creating."},
+    {"flow": "Mobile warehouse app", "result": "PASS. warehouse@ login 390px → tab Kedatangan/Masuk shows mobile-open-grn card → click → URL becomes /?view=goods-receipts, mobile-back-to-app visible."},
+    {"flow": "Mobile admin phone Produk tab", "result": "PASS. admin@ 390px → mobile-tab-btn-catalog visible, mobile-open-grn-ops button visible → click → GRN page loads."},
+    {"flow": "Mobile sample editor bottom sheet", "result": "PASS. Samples tab → ocr-sample-edit-<id> → ocr-sample-editor opens as full-width bottom sheet (390x832), stacked line fields (ocr-sample-line-N with qty/unit/remove), Tambah baris + ocr-sample-save reachable via scroll. Overflow 390=390."},
+    {"flow": "Mobile Profil SJ tab", "result": "PASS. grn-view-tab-profiles → no horizontal overflow (390=390)."}
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_iter94_po_learning.py",
+    "/app/test_reports/it94_desktop_po_learn.jpg",
+    "/app/test_reports/it94_mobile_grn_cards.jpg",
+    "/app/test_reports/it94_mobile_wizard.jpg",
+    "/app/test_reports/it94_mobile_warehouse.jpg",
+    "/app/test_reports/it94_mobile_ops.jpg",
+    "/app/test_reports/it94_mobile_sample_editor.jpg"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Backend patch_line logic is clean: only first correction stores ocr_po_ref (setdefault), and the corrected_fields set is fully recomputed for 'po_ref' each call (add if different, remove if equal) — this correctly supports full revert. Same shape as the qty/unit/rolls diff branch above.",
+    "GrnLineCard hides 'Sesuai foto' button when line already verified — this diverges from the request wording ('grn-line-card-verify-N if unverified') but matches intent."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter94_po_learning.py"],
+  "success_rate": {"backend": "100% (2/2 pytest cases)", "frontend": "100% (all requested testids/flows verified on desktop 1920 and mobile 390)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345, warehouse@kainnusantara.id / demo12345.",
+  "seed_data_creation": "Test 2 temporarily created & deleted 1 sample from KSC/GRN-00002 (ocs_...). PATCHed PO of KSC/GRN-00002 line 1 and reverted. As a side-effect the Cirebon Craft dn-profile now has an extra correction 'Baris 1 nomor PO | (kosong) → TEST_PO/XX/9999 | KSC/GRN-00002' (acceptable per instructions — profile corrections are historical events; the pre-existing 'Nomor SJ 495→405' is preserved). Also PATCHed GRN-00009 line 2 PO to a test value then reverted, so line 2 still has ocr_po_ref='3351/SCB/0926' and corrected_fields=[]. Line 2's decision was accidentally toggled to reject_line during selector debugging then restored to 'accept' (was 'pending' before) — this only affects verification/decision state, not data.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "PO correction learning fully working end-to-end (patch → ocr_po_ref → corrected_fields → profile.corrections on close/sample). Cirebon Craft profile now has a test correction 'Baris 1 nomor PO' from KSC/GRN-00002. If cleanup desired, PATCH dn-profiles/sup_44c069fa4f55 to remove it. GRN-00009 line 2 is decision=accept, verified=true (was pending); if this matters restore via PATCH decision=pending, verified=false with a fresh version. Backend test: `REACT_APP_BACKEND_URL=<url> pytest backend/tests/test_iter94_po_learning.py -v -s`.",
+  "rca of the issue": "No issue — feature works as specified. Verified backend logic (goods_receipt_service.patch_line lines 454-463) preserves the AI original in line.ocr_po_ref via setdefault and toggles 'po_ref' in corrected_fields based on norm_dn(ocr_po_ref) vs norm_dn(read.po_ref). supplier_dn_profile_service.corrections_from_grn emits 'Baris N nomor PO' when the two values differ, then merges into profile.corrections on GRN close / from-grn. Desktop GrnLineRow.PoValue + LineEditForm learn hint + mobile GrnLineCard all wired to the same fields."
+}
