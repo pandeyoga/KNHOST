@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
-from dependencies import audit, require_permission
+from dependencies import audit, require_any_permission, require_permission
 from entity_scope import entity_ctx, resolve_scope_ids
 from schemas_interco import (
     IntercoActionIn, IntercoCreate, IntercoReasonIn, IntercoReturnCreate,
@@ -418,7 +418,15 @@ async def get_interco_return(ret_id: str, request: Request) -> Dict[str, Any]:
 async def approve_interco_return(ret_id: str, payload: IntercoActionIn,
                                  request: Request) -> Dict[str, Any]:
     """Setujui retur → jurnal pembalik terbit di DUA buku (pembuat ≠ penyetuju)."""
-    actor = await require_permission(request, "interco", "approve")
+    try:
+        _pair = await icret.get_one(ret_id)
+    except icret.IntercoReturnError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    if (_pair.get("returner") or {}).get("mandatory_accept"):
+        # LN-140 — retur internal WAJIB TERIMA (R-10): gudang penerima boleh menerimanya.
+        actor = await require_any_permission(request, [("interco", "approve"), ("interco", "receive")])
+    else:
+        actor = await require_permission(request, "interco", "approve")
     await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
     try:
         res = await icret.approve(ret_id, actor)

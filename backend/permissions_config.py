@@ -369,6 +369,9 @@ DEFAULT_PERMISSIONS = {
         "order": ["view", "print", "approve_price_edit"],   # 2026-10 — setujui harga/diskon override
         "document": ["view", "print"],
         "sales_return": ["view"],
+        # LN-140 — finance PT pemasok wajib melihat retur antar-PT & nilainya (Meja retur internal).
+        "interco": ["view"],
+        "interco_finance": ["view"],
         "ar_receipt": ["view", "create"],      # void → manajer
         "tax_invoice": ["view", "create", "update", "replace", "print"],   # cancel → manajer
         "payment_variance": ["view", "decide"],  # batas nominal tetap dijaga config

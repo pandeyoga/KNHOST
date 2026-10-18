@@ -299,7 +299,7 @@ export const NAV_STRUCTURE = [
       { id: "period-unlock", label: "Buka Periode", icon: Unlock,     roles: ["admin", "manager"] },
       { id: "posting-failures", label: "Posting Gagal", icon: AlertTriangle, roles: ["admin", "manager"] },
       // IA 2026-10 (D2) — saldo/settlement/pinjaman antar-PT = akuntansi grup (dulu di Hutang Pemasok).
-      { id: "interco-transactions", label: "Antar Entitas (Grup)", icon: Briefcase, roles: ["admin", "manager", "warehouse"], view: "interco-transactions" },
+      { id: "interco-transactions", label: "Antar Entitas (Grup)", icon: Briefcase, roles: ["admin", "manager", "warehouse", "finance"], view: "interco-transactions" },
     ],
   },
 

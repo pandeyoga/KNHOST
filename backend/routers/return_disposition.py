@@ -14,7 +14,9 @@ from services import return_disposition_service as rds
 from services import return_grade_impairment as rgi
 from services import storage_service as storage
 
-DECIDE_PERMS = [("sales_return", "approve"), ("interco", "approve")]
+DECIDE_PERMS = [("sales_return", "approve"), ("interco", "approve"), ("interco", "receive")]
+# Buang BS = write-off persediaan → butuh wewenang persetujuan (bukan sekadar penerima barang).
+DISPOSE_PERMS = [("sales_return", "approve"), ("interco", "approve"), ("inventory", "approve_count")]
 VIEW_PERMS = [("sales_return", "view"), ("interco", "view")]
 
 router = APIRouter(prefix="/api", tags=["sales-return-disposition"])
@@ -58,7 +60,7 @@ async def get_disposition(return_id: str, request: Request) -> Any:
 
 
 async def _decide(return_id: str, payload: DecisionIn, request: Request, stage: str) -> Any:
-    user = await require_any_permission(request, DECIDE_PERMS)
+    user = await require_any_permission(request, DISPOSE_PERMS if payload.decision == "dispose" else DECIDE_PERMS)
     ret = await _ret(return_id, request)
     await _assert_owner(request, payload.roll_ids)
     actor = user.get("name", "")

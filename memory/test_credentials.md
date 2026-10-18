@@ -29,7 +29,7 @@ OVERRIDE & BATAL SO (2026-10-06): izin `order.override` (admin, manager, salesad
 
 DATA DEMO 2026-10-05 (seed ulang ala VPS: import_master_produk_kn + import_stok_awal_kn + seed_demo_lengkap_kn + seed_demo_transaksi_kn + seed_demo_harga_internal_kn; data lama DIHAPUS).
 Admin: admin@kainnusantara.id / demo12345. Akun demo lain sandi `demo1234` (@kainnusantara.id): md, manager, finance, salesadmin (Sukacita), salesadmin.kanda, salesadmin.cst, sales, sales2, sales.kanda, sales.cst, warehouse, warehouse.soreang, warehouse.rancamalang, whadmin, designer, sampleadmin, driver.
-Entitas: ent_ksc (Sukacita), ent_kanda (Kanda Fabric), ent_7487424c3f95 (Cipta Sandang).
+Entitas: ent_ksc (Sukacita), ent_kanda (Kanda Fabric), ent_89cbf7444def (Cipta Sandang).
 HARGA INTERNAL (2026-10-05): izin `interco_price.view/set` = admin, md, finance (manager & sales_admin TIDAK). 666 kontrak internal = 70% harga jual standar PT penjual, semua pasangan dua arah, hanya barang ber-stok di PT penjual.
 API: GET /api/interco/prices/access · /summary · /missing?seller_entity_id&buyer_entity_id&only_stock · POST /api/interco/prices/bulk {seller_entity_id,buyer_entity_id,valid_from,items:[{product_id,unit_price}]} · POST /api/interco/prices/request {seller_entity_id,buyer_entity_id,product_id,order_id}.
 Layar: `?view=internal-prices` (admin/md/finance) · Kontrak Mitra & Supplier tombol `contracts-internal-bulk-button`. Dialog pemenuhan: `fulfill-ic-price-missing-<pid>-<ent>`, `fulfill-create-price-<pid>-<ent>` (penetap) / `fulfill-request-price-<pid>-<ent>` (lainnya), modal `internal-price-modal`, `internal-price-input`, `internal-price-save`. POST fulfillment-plan transfer tanpa harga → 400 detail {code:"INTERCO_PRICE_MISSING", message, items[]}.

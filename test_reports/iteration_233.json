@@ -1,0 +1,71 @@
+{
+  "summary": "Iterasi 233 — uji rantai retur + SJ supplier + izin per peran (whadmin/finance/sales/salesadmin/warehouse). Backend: POC rantai retur 46/46 PASS, pytest tests/test_ln091t02_ln093_chain.py 10/10 PASS. UI dijalankan via public URL untuk semua peran yang diminta. Dua temuan izin + satu temuan kecocokan spec config.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/config/values (receiving.supplier_dn_mode=block)", "issue": "Spec review_request mengharapkan 400 ketika mode di-set 'block', namun API mengembalikan 200 (nilai tersimpan). Tidak ada guard sisi server untuk menolak nilai 'block'. Jika niatnya mode block memang DIBOLEHKAN disimpan (hanya menyebabkan complete→400), maka spec perlu diperjelas. Mode telah dikembalikan ke 'warn' setelah uji."},
+      {"endpoint": "GET /api/inbound/tasks?status=open", "issue": "Filter status=open mengembalikan [] padahal task masih ada (received_qty < expected_qty). Filter kemungkinan tidak mengenali kondisi 'belum selesai'. Minor — tanpa filter tetap bisa list."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "InterCo (Antar-PT) · tab Retur Masuk", "issue": "Role finance@ pada entitas CST (?view=interco-transactions&entity=ent_89cbf7444def) TIDAK melihat tab interco-tab-return-inbox. Spec: finance CST wajib bisa melihat retur antar-PT. Workaround: finance-desk sudah menampilkan banner 'Meja retur internal · Buka Retur Masuk' sehingga akses tetap ada melalui jalan pintas, namun tab di layar Antar-PT seharusnya tetap muncul (read-only minimal) untuk konsistensi.", "selector": "[data-testid='interco-tab-return-inbox']", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "role_matrix_findings": {
+    "whadmin@kainnusantara.id (ent_89cbf7444def CST)": {
+      "home": {"return-desk-summary": "PRESENT ✓"},
+      "operations?view=operations&entity=CST": {"inbound-tasks": "0 (CST tidak punya PO terbuka saat ini) — PENTING: tidak bisa menguji modal GRCatchWeight / field gr-supplier-dn tanpa seed PO. Rekomendasi: seed PO uji di CST agar modal Selesaikan Penerimaan dapat divalidasi UI (gr-supplier-dn + gr-supplier-dn-warning)."},
+      "interco-transactions?entity=CST": {"interco-tab-return-inbox": "PRESENT ✓", "ic-return-inbox": "PRESENT ✓, 1 retur (CST/ICR-00016 Diterima·tunggu barang)", "ic-inbox-accept-*": "0 (retur sudah accepted, menunggu rolls)"}
+    },
+    "finance@kainnusantara.id": {
+      "finance-desk / home": {"return-desk-summary": "PRESENT ✓", "banner 'Meja retur internal · Buka Retur Masuk'": "PRESENT ✓ (jalan pintas)"},
+      "interco-transactions?entity=CST": {"interco-tab-return-inbox": "MISSING ✗ (BUG — lihat ui_bugs)"},
+      "bell/notifikasi 'Retur internal masuk … wajib diterima'": "Tidak ditemukan item dengan teks tepat di dropdown lonceng; perlu validasi ulang setelah notifikasi dibuat baru. Backend test test_supplier_deadline_reminder_job_notifies_cst_roles_once PASS, jadi delivery dari service OK. UI dropdown mungkin tidak merender notifikasi lama/sudah dibaca."
+    },
+    "sales@kainnusantara.id (KSC)": {
+      "?view=orders": "Daftar SO tampil ✓",
+      "?view=returns + search DEMO_LN093": "Daftar retur tampil (2 baris) ✓",
+      "return-disposition-panel": "TIDAK TAMPIL ✓ (sesuai spec read-only). action-buttons=0."
+    },
+    "salesadmin@kainnusantara.id (KSC)": {
+      "?view=returns": "Daftar retur tampil ✓",
+      "return-disposition-panel on DEMO_LN093-08710d": "Belum terverifikasi via UI script — klik 'Detail →' pertama membuka DEMO_LN093-52c0fe (status 'selesai' tanpa panel). Perlu uji ulang dengan selektor baris spesifik. Backend test POC+chain PASS untuk flow disposition salesadmin."
+    },
+    "warehouse@kainnusantara.id (KSC)": {
+      "?view=operations&entity=ent_ksc": "Semua tab terlihat: Stok/Transfer/Opname, Barang Masuk, Barang Keluar, QC & Inspeksi, Transfer ✓",
+      "Barang Masuk testids": "hub-tab-goods-receipts, goods-receipts-view ✓",
+      "Barang Keluar": "5 tugas outbound terlihat (outbound-task-wms_*), status badges tampil ✓"
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter233_sj_supplier_mode.py",
+    "/app/backend/tests/test_ln091t02_ln093_chain.py",
+    "/app/backend/test_core_rantai_retur_poc.py"
+  ],
+  "action_items": [
+    "PERBARUI /app/memory/test_credentials.md: entitas CST sekarang ber-id `ent_89cbf7444def` (bukan `ent_7487424c3f95` yang tertulis). Rute `?entity=ent_7487424c3f95` memunculkan banner error 'Badan usaha … tidak ada (mungkin sudah dihapus)'.",
+    "TAMBAH tab Retur Masuk di layar `?view=interco-transactions` untuk role `finance` (minimal read-only) agar konsisten dengan jalan pintas finance-desk & spec (c). Periksa izin VIEW_PERMS di backend/routers/return_disposition.py dan filter rendering di frontend InterCo tab.",
+    "KLARIFIKASI spec `receiving.supplier_dn_mode`: apakah PUT nilai 'block' harus 400 (guard di config save) ATAU boleh disimpan dan hanya POST complete yang menolak? Saat ini config SIMPAN 200. XFAIL ditandai di test_iter233_sj_supplier_mode.py::test_config_set_block_behavior.",
+    "SEED PO uji di entitas CST (atau izinkan POC rantai sebagai sumber) agar modal GRCatchWeight (gr-supplier-dn + gr-supplier-dn-warning) dapat diuji UI pada peran whadmin CST.",
+    "VERIFIKASI notifikasi lonceng 'Retur internal masuk … wajib diterima' tampil untuk finance@/whadmin@/admin@ CST pada dropdown bell UI (bukan hanya DB). Backend test sudah PASS; UI binding yang perlu dicek."
+  ],
+  "critical_code_review_comments": [
+    "/app/memory/test_credentials.md menyimpan ID entitas yang STALE setelah seed terakhir — testing agent lain akan tersesat seperti saya. Patch wajib.",
+    "Return permission matrix sudah bagus di return_disposition.py untuk DECIDE_PERMS; VIEW_PERMS untuk role finance pada tab interco perlu disinkronkan dengan logika rendering tab di komponen InterCo (frontend).",
+    "Tidak ada guard eksplisit untuk nilai 'block' pada `receiving.supplier_dn_mode` di config_catalog_ops.py (hanya enum options). Jika niatnya 'block' terlarang, perlu validator khusus atau hilangkan dari options.",
+    "`backend/tests/test_ln091t02_ln093_chain.py` tidak memuat .env sendiri → bergantung pada caller untuk inject MONGO_URL/DB_NAME. Minor DX issue."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iter233_sj_supplier_mode.py (BARU)"
+  ],
+  "success_rate": {"backend": "100% (POC 46/46 + chain 10/10 + 3 pass + 1 xfail terdokumentasi)", "frontend": "80% (5/6 skenario peran terverifikasi; salesadmin disposition panel perlu uji ulang)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345. Lainnya demo1234. CST entity_id ASLI = ent_89cbf7444def (test_credentials.md tertulis ent_7487424c3f95 — STALE).",
+  "seed_data_creation": "Tidak membuat seed baru. Config `receiving.supplier_dn_mode` sempat di-set 'block' lalu DIKEMBALIKAN ke 'warn'.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "CST entity id = ent_89cbf7444def. Untuk uji penuh field gr-supplier-dn di GRCatchWeightModal perlu seed PO terbuka di CST. Logout UI: klik 'Keluar' + context.clear_cookies + reload; cukup andal. POC `python backend/test_core_rantai_retur_poc.py` adalah smoke paling cepat untuk rantai retur.",
+  "rca of the issue": "Issue utama (tab Retur Masuk hilang untuk finance@): kemungkinan guard di komponen tab InterCo mem-filter role bukan finance. Backend sudah mengizinkan finance di VIEW_PERMS (return_disposition.py). Reproduksi: login finance@ → ?view=interco-transactions&entity=ent_89cbf7444def → tab interco-tab-return-inbox tidak muncul; sedangkan whadmin@ pada URL yang sama → tab muncul."
+}

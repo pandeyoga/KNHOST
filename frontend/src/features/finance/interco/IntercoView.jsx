@@ -291,7 +291,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       )}
       {tab === "return-inbox" && (
         <IntercoReturnInbox entityId={entityId}
-          canAct={can(perms, "interco", "approve") || can(perms, "sales_return", "approve")} />
+          canAct={can(perms, "interco", "approve") || can(perms, "interco", "receive") || can(perms, "sales_return", "approve")} />
       )}
       {tab === "loans" && (
         <IntercoLoansPanel entities={entities} entityId={entityId} canWrite={canWrite} />

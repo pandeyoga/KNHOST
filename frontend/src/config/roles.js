@@ -265,6 +265,8 @@ export const ROLE_NAV = {
       "pembelian", "purchase-orders", "purchasing",
       // 2026-10 — penetap harga internal antar-PT (keputusan pemilik: MD, Finance, Admin)
       "products-pricing", "internal-prices",
+      // LN-140 — retur antar-PT masuk & saldo pasangan PT (hanya-lihat)
+      "interco-transactions",
     ],
     remove: [],
   },
