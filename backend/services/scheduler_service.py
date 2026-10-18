@@ -25,6 +25,7 @@ from db import db
 from core_utils import new_id, now_iso
 from services import alert_service as alerts
 from services import export_schedule as _expsched   # L11 — export terjadwal
+from services import interco_service as _ic_remind   # LN-024 — pengingat bayar antar-PT
 from services import alert_ops_service as ops        # PS-21 — job operasional
 from services import digest_service as digest
 from services import escalation_service as escalation
@@ -227,6 +228,11 @@ JOBS: List[Dict[str, Any]] = [
      "description": "Hari kerja pagi: mengirim prefix statis ke OpenAI agar pertanyaan pertama lebih murah. "
                     "Diam bila ai.prewarm_enabled mati, tanpa kunci, atau mode uji.",
      "kind": "daily", "hour": 6, "minute": 55, "fn": _aichat.job_ai_prewarm, "link": "tanya-kn"},
+    {"id": "interco_payment_reminder", "label": "Pengingat Bayar Antar-PT",
+     "description": "Memberi tahu finance PT pembayar beberapa hari sebelum tanggal bayar antar-PT sesuai cutoff yang "
+                    "diatur (tidak berjalan selama cutoff KLX-03 belum dikonfigurasi).",
+     "kind": "interval", "interval_minutes": 60, "fn": _ic_remind.job_interco_payment_reminder,
+     "link": "interco-transactions"},
     {"id": "export_schedule_dispatch", "label": "Export Terjadwal (Pusat Export)",
      "description": "Menjalankan template export yang dijadwalkan mingguan/bulanan dengan hak akses pemilik saat itu; "
                     "file siap diunduh di Pusat Export → Pekerjaan dan pemilik diberi notifikasi.",

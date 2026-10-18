@@ -851,6 +851,9 @@ class SalesReturnCreate(BaseModel):
     # yang berujung klaim · apakah inspeksi menyetujui keluhan) mustahil dijawab.
     complaint_code: str = ""
     complaint_note: str = ""
+    # LN-083 — kondisi barang yang memengaruhi kelayakan (aturan KLR-08 masih pending/asumsi).
+    hangtag_missing: bool = False
+    cut_by_customer: bool = False
 
 
 class SalesReturnDecision(BaseModel):

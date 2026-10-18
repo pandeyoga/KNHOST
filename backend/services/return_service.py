@@ -177,6 +177,7 @@ async def _post_cn_gl(ret: Dict[str, Any], cn: Dict[str, Any]) -> Dict[str, Any]
             ret, return_net=cn["net_amount"], return_ppn=cn["ppn_amount"], return_cogs=cn["cogs_amount"],
             is_cash=is_cash, settlement=cn.get("settlement", ""),
             cash_account_code=cn.get("refund_account_code", "") if is_cash else "",
+            ar_part=float(cn.get("ar_applied") or 0) if cn.get("settlement") in ("cash", "store_credit") else 0.0,
             credit_note_number=cn["number"])
         je = je or await db.journal_entries.find_one(
             {"source_type": "sales_return", "source_id": ret["id"], "status": {"$ne": "void"}}, {"_id": 0, "id": 1})
@@ -306,9 +307,19 @@ async def _create_credit_note_and_post_gl(
         {"$set": {"credit_note_id": cn["id"], "credit_note_number": cn_number,
                   "credit_note_amount": gross, "updated_at": now}})
     # P20 SALE-05 — nota kredit pengurang piutang juga mengurangi sisa tagihan SO (subledger = GL 1-1200).
-    if settlement == "ar" and gross > 0 and order:
+    # LN-091 — refund/saldo: tagihan SO asal dipotong DULU (disepakati); kelebihan saja yang direfund/jadi saldo.
+    # Cakupan "tagihan lain" (KLR-10) belum diputuskan → asumsi: hanya SO asal.
+    bill_first = False
+    if settlement in ("cash", "store_credit") and gross > 0 and order:
+        from services.return_policy_service import return_assumptions
+        bill_first = bool((await return_assumptions(eid)).get("bill_first", True))
+    if (settlement == "ar" or bill_first) and gross > 0 and order:
         open_amt = round(float(order.get("grand_total") or 0) - sum(float(p.get("amount") or 0) for p in order.get("payments") or []), 2)
         ar_amt = round(min(gross, max(open_amt, 0.0)), 2)
+        cn["excess_amount"] = round(gross - ar_amt, 2)
+        cn["bill_scope"] = "source_order"
+        await db.credit_notes.update_one({"id": cn["id"]}, {"$set": {"excess_amount": cn["excess_amount"],
+                                                                     "bill_scope": "source_order", "ar_applied": 0}})
         if ar_amt > 0:
             from services import ar_receipt_service as _ar
             await _ar.apply_from_case(ret["order_id"], ar_amt, cn["id"], cn_number, method="credit_note")
@@ -396,6 +407,8 @@ async def create_return(
     submit_now: bool = False,
     complaint_code: str = "",
     complaint_note: str = "",
+    hangtag_missing: bool = False,
+    cut_by_customer: bool = False,
 ) -> Dict[str, Any]:
     """
     Buat dokumen sales_return.
@@ -436,7 +449,8 @@ async def create_return(
     return_deadline = ""
     policy_eligibility: Dict[str, Any] = {}
     try:
-        elig = await rps.check_sales_return_eligibility(order, return_type=return_type)
+        elig = await rps.check_sales_return_eligibility(order, return_type=return_type, hangtag_missing=hangtag_missing,
+                                                        cut_by_customer=cut_by_customer)
         policy_snapshot = elig.get("policy", {}) or {}
         return_deadline = elig.get("deadline", "") or ""
         policy_eligibility = {
@@ -507,6 +521,7 @@ async def create_return(
         "policy_snapshot":    policy_snapshot,
         "return_deadline":    return_deadline,
         "policy_eligibility": policy_eligibility,
+        "condition_flags": {"hangtag_missing": bool(hangtag_missing), "cut_by_customer": bool(cut_by_customer)},
         # ── R1 — State machine + outcome ──
         "outcome":            "",         # refund|store_credit|nego|reject (final saat settle)
         "inspection_status":  "pending",  # pending|in_progress|done
@@ -1359,6 +1374,11 @@ async def settle_return(return_id: str, actor: str, outcome: str,
         post_stock = outcome in (st.OUTCOME_REFUND, st.OUTCOME_STORE_CREDIT)
         settlement_type = None if outcome == st.OUTCOME_REFUND else \
             ("store_credit" if outcome == st.OUTCOME_STORE_CREDIT else "nego")
+        if outcome == st.OUTCOME_REFUND:
+            # LN-091 — refund = potong tagihan SO asal dulu, kelebihan dibayar tunai (bukan menggantung di piutang).
+            from services.return_policy_service import return_assumptions
+            if (await return_assumptions(ret.get("entity_id", ""))).get("bill_first", True):
+                settlement_type = "cash"
         # R3 — tujuan penerimaan: LOKASI dipilih user; OWNER tetap = entity SO (GL-safe).
         dest_warehouse = return_warehouse_id or await _resolve_return_warehouse(ret["order_id"])
         dest_owner = ret.get("entity_id", "")
@@ -1381,12 +1401,15 @@ async def settle_return(return_id: str, actor: str, outcome: str,
             settlement.update({"credit_note_number": cn["number"], "gross_amount": cn["gross_amount"],
                                "net_amount": cn.get("net_amount", 0), "settlement": cn.get("settlement", "")})
             # R5.3 — refund TUNAI: catat mutasi kas keluar (buku kas/bank) + akun terpilih.
-            if cn.get("settlement") == "cash" and float(cn.get("gross_amount", 0) or 0) > 0:
+            payout = float(cn.get("excess_amount", cn.get("gross_amount", 0)) or 0)
+            settlement["ar_applied"] = float(cn.get("ar_applied") or 0)
+            settlement["excess_amount"] = payout
+            if cn.get("settlement") == "cash" and payout > 0:
                 try:
                     from services import cash_ledger
                     acc = refund_account_code or "1-1100"
                     ctxn = await cash_ledger.record_return_cash(
-                        direction="out", amount=cn["gross_amount"], account_code=acc,
+                        direction="out", amount=payout, account_code=acc,
                         category="Refund Retur Jual",
                         description=f"Refund tunai retur {ret.get('number', '')} → {ret.get('customer_name', '')}",
                         entity_id=ret.get("entity_id", ""), ref_type="sales_return", ref_id=ret["id"],
@@ -1400,14 +1423,14 @@ async def settle_return(return_id: str, actor: str, outcome: str,
                     logging.getLogger("cash.refund").exception(
                         "Gagal catat kas refund retur %s: %s", return_id, e)
                     cash_failed = str(e)[:300] or "error"   # W2-020 — refund TIDAK boleh final tanpa buku kas
-            if outcome == st.OUTCOME_STORE_CREDIT:
+            if outcome == st.OUTCOME_STORE_CREDIT and payout > 0:
                 # R5.2 — terbitkan saldo store credit ke ledger pelanggan (idempotent).
-                settlement["store_credit_amount"] = cn["gross_amount"]
+                settlement["store_credit_amount"] = payout
                 try:
                     from services import store_credit_service as _sc
                     sc_entry = await _sc.issue(
                         customer_id=ret.get("customer_id"), entity_id=ret.get("entity_id", ""),
-                        amount=cn["gross_amount"], ref_type="sales_return", ref_id=ret["id"],
+                        amount=payout, ref_type="sales_return", ref_id=ret["id"],
                         ref_number=cn["number"], actor=actor, je_id=cn.get("journal_entry_id", ""),
                         customer_name=ret.get("customer_name", ""))
                     if sc_entry:

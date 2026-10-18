@@ -172,6 +172,8 @@ async def create_return(
             submit_now=payload.submit_now,
             complaint_code=payload.complaint_code,
             complaint_note=payload.complaint_note,
+            hangtag_missing=payload.hangtag_missing,
+            cut_by_customer=payload.cut_by_customer,
         )
     except ValueError as e:
         # R1-06 — retur melebihi batas / jenis tak valid → 400 dgn pesan jelas (bukan 500).
@@ -452,6 +454,13 @@ async def settle_return(
         raise HTTPException(status_code=400, detail=(
             "Keputusan akhir (refund / store credit / nego) baru bisa diambil sesudah QC selesai. "
             f"Status retur sekarang: {existing.get('status')}."))
+    from services import return_exception_service as rex
+    try:
+        await rex.assert_settle_allowed(existing, payload.outcome)
+    except ValueError as e:
+        await audit(user.get("name", ""), "sales_return_settle_blocked", "sales_return", return_id,
+                    {"reason": str(e), "outcome": payload.outcome})
+        raise HTTPException(status_code=409, detail=str(e))
     try:
         journey.assert_settle_location(existing, payload.return_warehouse_id)
     except ValueError as e:

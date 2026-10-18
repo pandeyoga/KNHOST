@@ -1203,6 +1203,36 @@ async def payment_schedule(scope_entity_ids: List[str], payer: str = "", payee: 
                                        "tidak diisi; atur di Pengaturan bila sudah ada keputusan/asumsi."}
 
 
+async def job_interco_payment_reminder() -> Dict[str, Any]:
+    """LN-024 — pengingat ke finance PT PEMBAYAR N hari sebelum tanggal bayar (hanya bila cutoff dikonfigurasi)."""
+    from services.notification_service import create_notification
+    entities = [e["id"] for e in await db.business_entities.find({}, {"_id": 0, "id": 1}).to_list(100)]
+    today = _dt.date.fromisoformat(_today())
+    sent, skipped = 0, 0
+    for payer in entities:
+        cfg = await payment_settings(payer)
+        days = int(cfg.get("reminder_days") or 0)
+        sch = await payment_schedule(entities, payer=payer)
+        if sch["cutoff_status"] != "configured" or days <= 0:
+            skipped += len(sch["rows"])
+            continue
+        for r in sch["rows"]:
+            if not r.get("pay_date"):
+                continue
+            left = (_dt.date.fromisoformat(r["pay_date"]) - today).days
+            if 0 <= left <= days:
+                n = await create_notification(
+                    notif_type="interco_payment_due", severity="warning" if left <= 1 else "info",
+                    title=f"Bayar antar-PT {r['pay_date']}: {r['number']}",
+                    body=(f"{r['payer_entity_name']} → {r['payee_entity_name']} · {rupiah(r['remaining'])} "
+                          f"(penuh, per transaksi) · {'hari ini' if left == 0 else f'{left} hari lagi'}. "
+                          "Cutoff berdasarkan pengaturan (ASUMSI sampai KLX-03 diputuskan)."),
+                    link="interco-transactions", entity_id=payer, recipient_role="finance",
+                    ref=f"{r['interco_id']}:{r['pay_date']}", dedupe=True, dedupe_scope="ever")
+                sent += 1 if n else 0
+    return {"created": sent, "skipped_pending_cutoff": skipped, "detail": f"{sent} pengingat bayar antar-PT dikirim"}
+
+
 async def _post_gl_settlement(doc: Dict[str, Any], actor: str) -> None:
     """Post jurnal settlement.
 

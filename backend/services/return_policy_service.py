@@ -295,6 +295,10 @@ RETURN_ASSUMPTION_DEFAULTS: Dict[str, Any] = {
     "customer_window_days": 21, "supplier_window_days": 21,
     "klr08_hangtag_cut": "pending",     # pending | reject | review — KLR-08 belum diputuskan owner
     "klr09_end_event": "pending",       # pending | request | goods_received — KLR-09 belum diputuskan owner
+    "bill_first": True,                 # LN-091 disepakati: potong tagihan SO asal dulu (KLR-10: cakupan = SO asal)
+    "cutloss_return_part": "pending",   # KLR-01: pending | defect_only | defect_plus_shorter | whole_roll
+    "cutloss_value_basis": "pending",   # KLR-02: pending | line_price | net_after_discount
+    "discount_mode": "pending",         # KLR-06/07: pending | approved_exception
 }
 _RECEIPT_VIA = ("inbound", "grn", "goods_receipt", "purchase", "receiving")
 

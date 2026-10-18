@@ -21,6 +21,7 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
   const [shipped, setShipped]       = useState(null);
   const [notes, setNotes]           = useState("");
   const [submitNow, setSubmitNow]   = useState(true);
+  const [cond, setCond]             = useState({ hangtag_missing: false, cut_by_customer: false });
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState(null);
   const [eligibility, setEligibility] = useState(null);
@@ -43,7 +44,7 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
       setChecking(true);
       try {
         const res = await axios.get(`${API}/sales-return-policies/eligibility`, {
-          params: { order_id: orderId, return_type: returnType },
+          params: { order_id: orderId, return_type: returnType, ...cond },
         });
         if (!cancelled) setEligibility(res.data);
       } catch {
@@ -53,7 +54,7 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
       }
     })();
     return () => { cancelled = true; };
-  }, [orderId, returnType]);
+  }, [orderId, returnType, cond]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleOrderChange(id) {
     setOrderId(id); setShipped(null); setItems([]);
@@ -92,7 +93,7 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
       const res = await axios.post(`${API}/sales-returns`, {
         order_id: orderId, return_type: returnType,
         items: validItems.map(({ max, sku, color, ...it }) => ({ ...it, quantity_returned: parseFloat(it.quantity_returned) })),
-        notes, submit_now: submitNow && files.length === 0,
+        notes, submit_now: submitNow && files.length === 0, ...cond,
       }, { headers: { Authorization: `Bearer ${token}` } });
       let doc = res.data;
       if (files.length) {
@@ -269,6 +270,23 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
           )}
           {needsPhotoToSubmit && (
             <p className="text-[11px] text-[#A05000] mt-1" data-testid="return-photo-required-hint">Lampirkan minimal satu foto, atau hapus centang "Langsung kirim" untuk menyimpan draf.</p>
+          )}
+        </div>
+
+        <div className="form-group" data-testid="return-condition-flags">
+          <label className="form-label">Kondisi barang</label>
+          <div className="flex flex-wrap gap-4 text-sm">
+            {[["hangtag_missing", "Hangtag hilang"], ["cut_by_customer", "Kain sudah dipotong customer"]].map(([k, l]) => (
+              <label key={k} className="form-check-label">
+                <input type="checkbox" data-testid={`return-cond-${k}`} checked={cond[k]}
+                       onChange={(e) => setCond((c) => ({ ...c, [k]: e.target.checked }))} /> {l}
+              </label>
+            ))}
+          </div>
+          {(cond.hangtag_missing || cond.cut_by_customer) && (
+            <p className="text-xs text-[#8A4B08] mt-1" data-testid="return-cond-note">
+              Aturan kondisi ini belum diputuskan owner (KLR-08). Retur tetap bisa diajukan, tetapi sebelum diselesaikan wajib pengecualian "kondisi" dengan foto bukti yang disetujui.
+            </p>
           )}
         </div>
 

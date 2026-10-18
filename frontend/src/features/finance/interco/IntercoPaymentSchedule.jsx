@@ -9,7 +9,8 @@ const BASIS = [{ value: "", label: "Belum diputuskan (KLX-03)" }, { value: "rece
   { value: "invoice", label: "Tanggal invoice" }, { value: "document", label: "Tanggal dokumen" }];
 
 function CutoffForm({ cfg, onSaved }) {
-  const [f, setF] = useState({ cutoff_day: cfg.cutoff_day ?? "", payment_day: cfg.payment_day ?? "", basis: cfg.basis ?? "" });
+  const [f, setF] = useState({ cutoff_day: cfg.cutoff_day ?? "", payment_day: cfg.payment_day ?? "", basis: cfg.basis ?? "",
+    reminder_days: cfg.reminder_days ?? 3 });
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
   const save = async () => {
@@ -17,7 +18,8 @@ function CutoffForm({ cfg, onSaved }) {
     const num = (v) => (v === "" || v === null ? null : Math.min(31, Math.max(1, parseInt(v, 10) || 1)));
     try {
       await axios.put(`${API}/settings`, { scope: "global", interco_payment: {
-        allow_netting: false, require_full_payment: true, cutoff_day: num(f.cutoff_day), payment_day: num(f.payment_day), basis: f.basis || null } });
+        allow_netting: false, require_full_payment: true, cutoff_day: num(f.cutoff_day), payment_day: num(f.payment_day), basis: f.basis || null,
+        reminder_days: Math.max(0, Math.min(30, parseInt(f.reminder_days, 10) || 0)) } });
       setOk("Tersimpan."); onSaved();
     } catch (e) { setErr(errText(e)); }
   };
@@ -29,6 +31,9 @@ function CutoffForm({ cfg, onSaved }) {
       <label className="flex flex-col gap-1">Tanggal bayar
         <input data-testid="interco-payment-day" type="number" min={1} max={31} value={f.payment_day} placeholder="akhir bulan"
                onChange={(e) => setF({ ...f, payment_day: e.target.value })} className="field w-28" /></label>
+      <label className="flex flex-col gap-1">Ingatkan (hari sebelum)
+        <input data-testid="interco-reminder-days" type="number" min={0} max={30} value={f.reminder_days}
+               onChange={(e) => setF({ ...f, reminder_days: e.target.value })} className="field w-24" /></label>
       <div className="w-56 flex flex-col gap-1">Basis tanggal
         <KNSelect data-testid="interco-cutoff-basis" value={f.basis} options={BASIS} searchable={false} onValueChange={(v) => setF({ ...f, basis: v })} /></div>
       <button type="button" data-testid="interco-cutoff-save" onClick={save}

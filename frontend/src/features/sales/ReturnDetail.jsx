@@ -15,7 +15,8 @@ import ReturnQuarantinePanel from "./ReturnQuarantinePanel";
 import ReturnChainPanel from "./ReturnChainPanel";
 import ReturnJourneyPanel from "./ReturnJourneyPanel";   // FASE I.F — keluhan + milestone
 import ReturnTimelinePanel from "./ReturnTimelinePanel"; // L08 LN-081 — satu timeline per jalur
-import ReturnEligibilityPanel from "./ReturnEligibilityPanel"; // 2026-06 — jendela retur tampak
+import ReturnEligibilityPanel from "./ReturnEligibilityPanel";
+import ReturnExceptionsPanel from "./ReturnExceptionsPanel"; // 2026-06 — jendela retur tampak
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { DetailHeader, Panel, Cell } from "../../components/DetailParts";
 import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
@@ -211,6 +212,7 @@ export default function ReturnDetail({
 
       {/* Kelayakan kebijakan retur — tampil sebelum keputusan diambil. */}
       <ReturnEligibilityPanel ret={ret} />
+      <ReturnExceptionsPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
 
       {/* FASE I.F — sebab keluhan (master) + perjalanan retur (lembar pemilik).
           Ditaruh SEBELUM panel inspeksi 4-point karena itulah urutan kerjanya:

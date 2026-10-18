@@ -2459,7 +2459,7 @@ async def post_landed_cost(voucher: Dict[str, Any], *, amount: float,
 async def post_sales_return(ret: Dict[str, Any], *, return_net: float, return_ppn: float,
                             return_cogs: float, is_cash: bool = False,
                             settlement: str = "", cash_account_code: str = "",
-                            credit_note_number: str = "") -> Optional[Dict[str, Any]]:
+                            credit_note_number: str = "", ar_part: float = 0.0) -> Optional[Dict[str, Any]]:
     """F3 — Credit Note (retur penjualan) → GL reversal. Idempotent (source_type='sales_return').
       Dr Pendapatan (net) + Dr PPN Keluaran (ppn) / Cr Piutang|Kas|Store-Credit (gross)
       Dr Persediaan (cogs)  / Cr HPP (cogs)   — barang balik ke stok
@@ -2493,8 +2493,13 @@ async def post_sales_return(ret: Dict[str, Any], *, return_net: float, return_pp
             credit_acc, credit_desc = ACC_STORE_CREDIT, "Saldo kredit pelanggan (store credit)"
         else:
             credit_acc, credit_desc = ACC_PIUTANG, "Pengurang piutang"
-        lines.append({"account_code": credit_acc, "debit": 0.0, "credit": gross,
-                      "description": f"{credit_desc} {label}"})
+        ar_part = round(min(max(float(ar_part or 0), 0.0), gross), 2) if credit_acc != ACC_PIUTANG else 0.0
+        if ar_part > 0:   # LN-091 — potong tagihan SO asal dulu, sisanya refund/saldo
+            lines.append({"account_code": ACC_PIUTANG, "debit": 0.0, "credit": ar_part,
+                          "description": f"Pengurang piutang {label}"})
+        if round(gross - ar_part, 2) > 0:
+            lines.append({"account_code": credit_acc, "debit": 0.0, "credit": round(gross - ar_part, 2),
+                          "description": f"{credit_desc} {label}"})
     if return_cogs > EPS:
         lines += _balanced_pair(ACC_PERSEDIAAN, ACC_HPP, return_cogs, f"Barang retur masuk stok {label}")
     return await _insert_entry(

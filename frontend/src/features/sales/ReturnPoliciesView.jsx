@@ -5,6 +5,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import ReturnAssumptionsPanel from "./ReturnAssumptionsPanel";
+import CutlossSimulator from "./CutlossSimulator";
 import axios, { API } from "../../services/apiClient";
 import { ScrollText, Plus, X, Pencil, Power, ShieldCheck } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
@@ -148,6 +149,7 @@ export default function ReturnPoliciesView({ currentUser }) {
       )}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="policy-error" />
       <ReturnAssumptionsPanel canManage={["admin", "manager"].includes(currentUser?.role)} />
+      <CutlossSimulator />
 
       {/* FASE P4 — form kebijakan retur menjadi POP-UP (dulu form panjang ini menyelip
           di atas daftar kebijakan). Logika form tidak diubah. */}

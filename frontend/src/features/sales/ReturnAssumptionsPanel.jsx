@@ -8,13 +8,20 @@ const K8 = [{ value: "pending", label: "Belum diputuskan — tandai pending" }, 
 const K9 = [{ value: "pending", label: "Belum diputuskan — tandai pending" }, { value: "request", label: "Asumsi: cukup pengajuan dalam batas" },
   { value: "goods_received", label: "Asumsi: barang harus tiba dalam batas" }];
 
+const K1 = [{ value: "pending", label: "Belum diputuskan (KLR-01)" }, { value: "defect_only", label: "Asumsi: hanya bagian cacat" },
+  { value: "defect_plus_shorter", label: "Asumsi: cacat + sisi pendek" }, { value: "whole_roll", label: "Asumsi: seluruh roll" }];
+const K2 = [{ value: "pending", label: "Belum diputuskan (KLR-02)" }, { value: "line_price", label: "Asumsi: harga jual SO" },
+  { value: "net_after_discount", label: "Asumsi: harga neto setelah diskon" }];
+const K6 = [{ value: "pending", label: "Belum diputuskan — wajib pengecualian QC" }, { value: "approved_exception", label: "Asumsi: boleh dengan persetujuan" }];
+
 // LN-083 — asumsi sementara batas retur (KLR-08/KLR-09 menunggu owner); tersimpan di Pengaturan global.
 export default function ReturnAssumptionsPanel({ canManage }) {
   const [f, setF] = useState(null);
   const [msg, setMsg] = useState("");
   useEffect(() => {
     axios.get(`${API}/settings/effective`).then((r) => setF({ customer_window_days: 21, supplier_window_days: 21,
-      klr08_hangtag_cut: "pending", klr09_end_event: "pending", ...(r.data.returns || {}) })).catch(() => setF(null));
+      klr08_hangtag_cut: "pending", klr09_end_event: "pending", bill_first: true, cutloss_return_part: "pending",
+      cutloss_value_basis: "pending", discount_mode: "pending", ...(r.data.returns || {}) })).catch(() => setF(null));
   }, []);
   if (!f) return null;
   const save = async () => {
@@ -44,6 +51,14 @@ export default function ReturnAssumptionsPanel({ canManage }) {
         <div className="w-64 flex flex-col gap-1 text-[12px]">KLR-09 kejadian akhir batas
           <KNSelect data-testid="return-assume-klr09" value={f.klr09_end_event} options={K9} searchable={false} disabled={!canManage}
                     onValueChange={(v) => setF({ ...f, klr09_end_event: v })} /></div>
+        {[["cutloss_return_part", "Cutloss: bagian dikembalikan", K1], ["cutloss_value_basis", "Cutloss: basis nilai", K2],
+          ["discount_mode", "Diskon tanpa barang kembali", K6]].map(([k, l, o]) => (
+          <div key={k} className="w-60 flex flex-col gap-1 text-[12px]">{l}
+            <KNSelect data-testid={`return-assume-${k}`} value={f[k]} options={o} searchable={false} disabled={!canManage}
+                      onValueChange={(v) => setF({ ...f, [k]: v })} /></div>
+        ))}
+        <label className="flex items-center gap-1.5 text-[12px]"><input type="checkbox" data-testid="return-assume-bill_first" disabled={!canManage}
+               checked={!!f.bill_first} onChange={(e) => setF({ ...f, bill_first: e.target.checked })} /> Potong tagihan SO asal dulu, sisanya refund/saldo</label>
         {canManage && <button type="button" data-testid="return-assume-save" onClick={save} className="primary-button">Simpan asumsi</button>}
         {msg && <span className="text-[12px]" data-testid="return-assume-msg">{msg}</span>}
       </div>
