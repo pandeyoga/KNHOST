@@ -272,6 +272,9 @@ INHERITED_GLOBAL_VALUES: Dict[str, List[Any]] = {
     # FASE E-4 (E4.2/E4.3) — master berlapis. `""`/None ditoleransi karena baris
     # lama pernah ditulis tanpa stempel sebelum migrasi `migrate_e4_master_scoped.py`.
     "payment_terms": ["all", "", None],
+    # LN-140 — supplier luar milik grup (`entity_id="all"`) dipakai semua PT; dulu hilang
+    # dari daftar & pemilih PO di setiap badan usaha (rantai CST → supplier buntu).
+    "suppliers": ["all"],
     "expense_categories": ["all", "", None],
     "document_templates": ["all", "", None],
     "sales_return_policies": ["all", "", None],
@@ -440,7 +443,7 @@ def assert_entity_access(doc: Dict[str, Any], collection: str, ctx: EntityContex
     if fld is None or not doc:
         return
     ent = doc.get(fld)
-    if ent and ent not in ctx.allowed_entity_ids:
+    if ent and ent not in ctx.allowed_entity_ids and ent not in INHERITED_GLOBAL_VALUES.get(collection, ()):
         raise HTTPException(status_code=404, detail="Data tidak ditemukan untuk entitas ini")
 
 
@@ -457,6 +460,8 @@ def assert_active_entity_access(doc: Dict[str, Any], collection: str, ctx: Entit
     if fld is None or not doc or ctx.view_all:
         return
     ent = doc.get(fld)
+    if ent in INHERITED_GLOBAL_VALUES.get(collection, ()):
+        return
     if ent and ctx.active_entity_id and ent != ctx.active_entity_id:
         raise HTTPException(status_code=404, detail="Data tidak ditemukan untuk entitas ini")
 

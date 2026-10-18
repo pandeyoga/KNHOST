@@ -9,7 +9,7 @@ from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
 from core_utils import new_id, now_iso, safe_doc, DEFAULT_ENTITY_ID
-from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
+from entity_scope import entity_ctx, resolve_list_scope_inherit, assert_entity_access
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope
 from schemas import SupplierCreate, SupplierPriceListCreate, GenericPatch
 from services.supplier_service import resolve_price, compute_scorecard, supplier_360
@@ -37,7 +37,7 @@ async def list_suppliers(request: Request, entity_id: str = None, status: str = 
     query: Dict[str, Any] = {}
     if status:
         query["status"] = status
-    query = resolve_list_scope("suppliers", query, ctx, entity_id)
+    query = resolve_list_scope_inherit("suppliers", query, ctx, entity_id)
     if is_paged(request):
         page, page_size, q, _sort = get_page_params(request)
         if q:

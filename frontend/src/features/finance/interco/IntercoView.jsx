@@ -53,7 +53,11 @@ const TABS = [
 const MONEY_TABS = ["balances", "settlements", "schedule", "loans", "margin"];
 
 export default function IntercoView({ currentUser, selectedEntity, entities = [] }) {
-  const [tab, setTab] = useState("transactions");
+  const [tab, setTab] = useState(() => {
+    const hint = new URLSearchParams(window.location.search).get("tab") || sessionStorage.getItem("interco_tab");
+    sessionStorage.removeItem("interco_tab");
+    return hint || "transactions";
+  });
   const [rows, setRows] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [settlements, setSettlements] = useState([]);

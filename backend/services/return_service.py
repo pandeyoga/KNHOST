@@ -1705,12 +1705,22 @@ async def reject_return(return_id: str, rejected_by: str, reason: str) -> Dict[s
 
 async def _resolve_return_warehouse(order_id: str) -> str:
     """Cari warehouse dari outbound task atau fallback ke gudang pertama."""
+    # LN-140 — tugas pengambilan ditandai `flow_type` (bukan `type`); dulu selalu meleset
+    # sehingga retur jatuh ke gudang PERTAMA grup (bisa gudang khusus PT lain).
     task = await db.wms_tasks.find_one(
-        {"order_id": order_id, "type": "outbound"},
+        {"order_id": order_id, "$or": [{"flow_type": "outbound"}, {"type": "outbound"}]},
         sort=[("created_at", -1)]
     )
     if task and task.get("warehouse_id"):
         return task["warehouse_id"]
-
+    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "entity_id": 1, "allocations": 1}) or {}
+    for a in so.get("allocations") or []:
+        if a.get("warehouse_id"):
+            return a["warehouse_id"]
+    if so.get("entity_id"):
+        from services import warehouse_scope_service as whs
+        rows = await whs.list_for_entity(so["entity_id"], only_active=True)
+        if rows:
+            return rows[0]["id"]
     wh = await db.warehouses.find_one({}, sort=[("created_at", 1)])
     return wh["id"] if wh else "wh_default"

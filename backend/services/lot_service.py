@@ -545,7 +545,7 @@ async def patch_lot(lot_id: str, payload: Dict[str, Any],
              for k, v in payload.items() if k in allowed and v is not None}
     patch = {k: v for k, v in patch.items() if v != (lot.get(k) or "")}
     if not patch:
-        raise LotError("Tidak ada perubahan yang sah untuk disimpan.")
+        return lot   # dipanggil juga oleh inspeksi/penerimaan dengan nilai sama → no-op
     changes = [{"field": k, "before": lot.get(k) or "", "after": v} for k, v in patch.items() if k in IDENTITY_FIELDS]
     if "internal_alias" in patch:
         await _check_alias(lot, patch["internal_alias"])

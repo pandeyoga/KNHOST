@@ -52,6 +52,7 @@ const SalesHome = lazy(() => import("./features/home/SalesHome"));
 const AdminHome = lazy(() => import("./features/home/AdminHome"));
 // EPIC 1 · PS-18 — Dasbor Manajer (antrean persetujuan, target tim, keterlambatan hari ini).
 const ManagerHome = lazy(() => import("./features/home/ManagerHome"));
+const ReturnDeskSummaryCard = lazy(() => import("./features/home/ReturnDeskSummaryCard"));
 const PurchaseOrderManagement = lazy(() => import("./features/admin/PurchaseOrderManagement"));
 const BlanketPOView = lazy(() => import("./features/purchasing/BlanketPOView"));
 // FASE P — Papan PO per lini (progres tahap seperti kertas kerja MD).
@@ -327,6 +328,9 @@ export default function AppViewRouter(props) {
       {activeView === "vehicle-logs" && <VehicleLogsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "consolidation" && <GroupConsolidationView entities={entities} />}
       {activeView === "sales-home" && <SalesHome token={token} user={user} onNavigate={(target) => onNavSelect(target, target)} onOpenDocument={openDocument} />}
+      {["admin-home", "manager-home", "finance-desk", "warehouse-admin-desk"].includes(activeView) && (
+        <ReturnDeskSummaryCard selectedEntity={selectedEntity} onNavigate={(target) => onNavSelect(target, target)} />
+      )}
       {activeView === "admin-home" && <AdminHome token={token} entities={entities} selectedEntity={selectedEntity} onNavigate={(target) => onNavSelect(target, target)} />}
       {activeView === "manager-home" && <ManagerHome selectedEntity={selectedEntity} onNavigate={(target) => onNavSelect(target, target)} />}
       {activeView === "sales" && <SalesPortal data={data} loading={loading} selectedProduct={selectedProduct} breakdown={breakdown} onInspect={inspectProduct} onAdd={addToCart} cart={cart} setCart={setCart} selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer} selectedAddress={selectedAddress} setSelectedAddress={setSelectedAddress} onCreateCustomer={createCustomer} onSubmitOrder={submitOrder} search={search} setSearch={setSearch} onShowDetail={setActiveDetail} settings={settings} paymentTerms={paymentTerms} selectedEntity={selectedEntity} entities={entities} user={user} />}

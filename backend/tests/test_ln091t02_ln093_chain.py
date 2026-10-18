@@ -265,7 +265,6 @@ def test_disposition_photo_on_settled_return_then_dispose():
 
 
 def test_supplier_deadline_reminder_job_notifies_cst_roles_once():
-    import asyncio
     import sys
     sys.path.insert(0, "/app/backend")
     from services import return_disposition_service as rds
@@ -278,7 +277,9 @@ def test_supplier_deadline_reminder_job_notifies_cst_roles_once():
     async def run():
         await rds.job_supplier_deadline_reminder()
         await rds.job_supplier_deadline_reminder()
-    asyncio.run(run())
+    sys.path.insert(0, "/app/backend/tests")
+    from _shared_loop import run as _run
+    _run(run())
     notes = list(DB.notifications.find({"type": "return_supplier_deadline", "ref": {"$regex": f"^{roll}:"}}))
     assert {n["recipient_role"] for n in notes} == {"warehouse_admin", "admin", "finance"}
     assert all(n["entity_id"] == CST for n in notes)

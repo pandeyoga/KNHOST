@@ -42,7 +42,7 @@ def test_identity_change_requires_reason_and_keeps_history(h):
     hist = out["identity_history"][-1]
     assert hist["field"] == "supplier_lot" and hist["before"] == SUP and hist["after"] == SUP + "B"
     r = requests.patch(f"{BASE}/lots/{lot['id']}", headers=h, json={"note": TAG})
-    assert r.status_code == 400  # tidak ada perubahan
+    assert r.status_code == 200 and len(r.json()["identity_history"]) == 1  # tanpa perubahan → no-op
 
 
 def test_alias_off_by_default_then_manual_unique(h):

@@ -48,16 +48,21 @@ DB_NAME = os.environ["DB_NAME"]
 
 # Entitas A = yang menjual ke pelanggan · Entitas B = pemasok internalnya.
 ENT_A = "ent_ksc"          # PT Kain Suka Cita
-ENT_B = "ent_kanda"        # CV Kanda Suka
-WH_B = "wh_tangerang"      # gudang khusus Entitas B
+# LN-140 (2026-10-18): rantai acuan pemilik = Sukacita ← CST; data demo kini tanpa
+# wh_tangerang/Toba Craft. Bisa dialihkan lewat env POC_ENT_B / POC_WH_B / POC_SUP_B.
+ENT_B = os.environ.get("POC_ENT_B", "ent_89cbf7444def")   # CV Cipta Sandang Textile
+WH_B = os.environ.get("POC_WH_B", "wh_b0a0387806e7")      # Rancamalang · Gudang Woven (gudang bersama)
 # Supplier & pelanggan uji dicari lewat NAMA, bukan id.
 # Alasan: `seed_realistic.py` menerbitkan id pemasok secara acak setiap kali dijalankan
 # (`sup_<hex>`), jadi id yang di-hardcode akan basi pada setiap seed ulang — POC harus
 # tetap jalan di kontainer baru tanpa disentuh.
-SUP_B_NAME = "Toba Craft"           # supplier milik Entitas B
+SUP_B_NAME = os.environ.get("POC_SUP_B", "PT Kain Jadi Nusantara")  # supplier luar Entitas B
 CUST_A_NAME = "Butik Bali Indah"    # pelanggan Entitas A (tidak terblokir kredit)
 
 MARK = "FASEE9POC"
+TPL_ID = "tpl_e9_rantai"
+SUP_DN = "SJ-SUP-E9-001"
+SUP_LOT = "234"
 PROD = "prod_e9_rantai"
 # Nama produk uji dipakai juga sebagai snapshot di dokumen (nota kredit, baris retur).
 # Disimpan sebagai konstanta agar `seed_e9_chain_demo.py` bisa menimpanya — dulu nama ini
@@ -123,7 +128,8 @@ def sess(email="admin@kainnusantara.id", entity=""):
     """
     if email not in _TOKENS:
         r = requests.post(f"{API}/auth/login",
-                          json={"email": email, "password": "demo12345"}, timeout=30)
+                          json={"email": email, "password": "demo12345" if email.startswith("admin@") else "demo1234"},
+                          timeout=30)
         if r.status_code == 429:
             raise SystemExit(
                 f"\n  Login {email} terkunci sementara (429): {r.json().get('detail', '')}\n"
@@ -215,7 +221,13 @@ async def wipe(db):
     await db.purchase_returns.delete_many({"id": {"$in": pret_ids}})
     await db.credit_notes.delete_many({"return_id": {"$in": sret_ids}})
     await db.sales_returns.delete_many({"id": {"$in": sret_ids}})
-    await db.shipments.delete_many({"order_id": {"$in": so_ids}})
+    await db.shipments.delete_many({"$or": [{"order_id": {"$in": so_ids}}, {"sales_order_id": {"$in": so_ids}}]})
+    inv_ids = [i["id"] for i in await db.invoices.find({"$or": [{"order_id": {"$in": so_ids}}, {"sales_order_id": {"$in": so_ids}}]},
+                                                       {"_id": 0, "id": 1}).to_list(200)]
+    for iid in inv_ids:
+        await db.journal_entries.delete_many({"source_id": iid})
+    await db.invoices.delete_many({"id": {"$in": inv_ids}})
+    await db.wms_tasks.delete_many({"order_id": {"$in": so_ids}})
     await db.sales_orders.delete_many({"id": {"$in": so_ids}})
     # FASE I — barang yang masuk antrean QC MELAHIRKAN SPK inspeksi otomatis
     # (`inspection_service.ensure_for_qc_task`). Rantai POC ini menerima barang PO di
@@ -249,6 +261,7 @@ async def wipe(db):
     await db.inventory_movements.delete_many({"product_id": PROD})
     await db.inventory_balances.delete_many({"product_id": PROD})
     await db.products.delete_many({"id": PROD})
+    await db.product_templates.delete_many({"id": TPL_ID})
     # Saldo antar-PT dihitung ulang dari transaksi yang TERSISA (bukan dihapus buta).
     try:
         from services import interco_service as ics
@@ -302,14 +315,19 @@ async def make_product(db):
         # `ent_kanda`, dan karena produk dikembalikan apa adanya oleh `/api/products`
         # & dashboard, sales PT-A jadi membaca id badan usaha PT-B (gate isolasi merah).
         "entity_id": None, "reorder_point": 0.0, "reorder_qty": 0.0,
+        "template_id": TPL_ID,
         "notes": MARK, "created_at": now_iso(), "updated_at": now_iso()}}, upsert=True)
+    # P05 — `purchasing.restock_source_unknown=block`: artikel POC wajib bersumber supplier.
+    await db.product_templates.update_one({"id": TPL_ID}, {"$set": {
+        "id": TPL_ID, "name": PROD_NAME, "notes": MARK, "entity_id": None,
+        "restock_source": {"mode": "supplier", "note": MARK, "updated_at": now_iso()}}}, upsert=True)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  LANGKAH 1 — Entitas B beli dari supplier (jejak asal barang lahir di sini)
 # ═══════════════════════════════════════════════════════════════════════════
 def step1_supplier_receipt(adm_b, wh_b):
-    head("LANGKAH 1 — Entitas B (CV Kanda Suka) beli dari supplier Toba Craft")
+    head(f"LANGKAH 1 — Entitas B ({ENT_B}) beli dari supplier {SUP_B_NAME} (SJ {SUP_DN} · lot {SUP_LOT})")
     r = adm_b.post(f"{API}/purchase-orders", json={
         "supplier_id": ST["sup_b"], "warehouse_id": WH_B,
         "items": [{"product_id": PROD, "quantity": PO_QTY, "unit": "yard",
@@ -328,7 +346,7 @@ def step1_supplier_receipt(adm_b, wh_b):
             break
         po = ra.json()
     ST["po"] = po
-    ok(f"PO {po.get('po_number')} ke Toba Craft terbit ({PO_QTY:g} yard · status {po.get('status')})")
+    ok(f"PO {po.get('po_number')} ke {SUP_B_NAME} terbit ({PO_QTY:g} yard · status {po.get('status')})")
 
     rows = adm_b.get(f"{API}/inbound/tasks", timeout=30).json()
     task = next((t for t in rows if t.get("po_id") == po["id"]
@@ -342,11 +360,25 @@ def step1_supplier_receipt(adm_b, wh_b):
         bad(f"scan-receive gagal ({rc.status_code} {rc.text[:200]})")
         return False
     rz = wh_b.post(f"{API}/inbound/tasks/{task['id']}/complete",
-                   json={"notes": f"{MARK} GR"}, timeout=60)
+                   json={"notes": f"{MARK} GR", "supplier_dn": SUP_DN, "supplier_lot": SUP_LOT}, timeout=60)
     if rz.status_code != 200:
         bad(f"Selesaikan penerimaan gagal ({rz.status_code} {rz.text[:200]})")
         return False
     ST["task"] = task
+    # LN-140 — rencana QC "cek semua": setiap roll diinspeksi 4-point dulu.
+    def _rolls():
+        x = wh_b.get(f"{API}/inventory/rolls", params={"product_id": PROD}, timeout=30).json()
+        return x if isinstance(x, list) else (x.get("items") or x.get("rolls") or [])
+    qrolls = _rolls()
+    for rr in qrolls:
+        ri = wh_b.post(f"{API}/inbound/rolls/{rr['id']}/inspect", json={"defects": [], "note": f"{MARK} 4-point",
+                                                                        "supplier_lot": SUP_LOT}, timeout=60)
+        if ri.status_code != 200:
+            bad(f"Inspeksi roll {rr.get('roll_no')} gagal ({ri.status_code} {ri.text[:200]})")
+            return False
+    lot_ok = all(r.get("supplier_lot") == SUP_LOT and r.get("supplier_dn_number") == SUP_DN for r in
+                 _rolls())
+    (ok if qrolls and lot_ok else bad)(f"{len(qrolls)} roll diinspeksi · lot supplier {SUP_LOT} & SJ {SUP_DN} tercatat di roll")
     # Barang masuk KARANTINA dulu (kebijakan QC bawaan) — barang yang belum lolos
     # inspeksi memang tidak boleh dijanjikan ke PT lain. Jadi QC diputuskan di sini,
     # sama seperti yang dilakukan gudang sungguhan.
@@ -501,6 +533,73 @@ async def step3b_notification(db):
     else:
         bad(f"Notifikasi pemenuhan otomatis tidak ada / salah penerima / tak menyebut {so_no}: {n}")
 
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  LANGKAH 3c — LN-140: pengiriman nyata (pick → loading check → dispatch → SJ → terkirim)
+# ═══════════════════════════════════════════════════════════════════════════
+def step3c_delivery(adm_a, mgr_a):
+    head("LANGKAH 3c — Pengiriman ke pelanggan (pick per roll → dispatch → Surat Jalan → terkirim)")
+    so = ST["so"]
+    for path in ("submit-for-approval", "approve", "verify", "confirm"):
+        adm_a.post(f"{API}/sales-orders/{so['id']}/{path}",
+                   json={"notes": f"{MARK} {path}", "note": f"{MARK} {path}"}, timeout=60)
+    tasks = adm_a.get(f"{API}/outbound/tasks", timeout=30).json()
+    tasks = tasks if isinstance(tasks, list) else (tasks.get("items") or [])
+    tasks = [t for t in tasks if t.get("order_id") == so["id"] and t.get("status") != "dispatched"]
+    if not tasks:
+        bad("Tugas picking untuk pesanan tidak terbentuk")
+        return False
+    # Cadangan sebagian roll = reservasi potong: potong fisik → roll anak lahir → verifikasi label.
+    cuts = adm_a.get(f"{API}/inventory/pending-cuts", params={"order_id": so["id"]}, timeout=30).json().get("items") or []
+    picked = []
+    for c in cuts:
+        rc = adm_a.post(f"{API}/inventory/rolls/{c['roll_id']}/reservations/{c['reservation_id']}/cut",
+                        json={"note": f"{MARK} potong untuk SO"}, timeout=60)
+        if rc.status_code != 200:
+            bad(f"Konfirmasi potong {c.get('roll_no')} gagal ({rc.status_code} {rc.text[:200]})")
+            return False
+        child = rc.json()["child"]
+        rv = adm_a.post(f"{API}/inventory/rolls/{child['id']}/verify-identity",
+                        json={"scanned_code": child["roll_no"]}, timeout=30)
+        if rv.status_code != 200:
+            bad(f"Verifikasi label roll anak {child['roll_no']} gagal ({rv.status_code} {rv.text[:200]})")
+            return False
+        picked.append(child)
+    rolls = adm_a.get(f"{API}/inventory/rolls", params={"product_id": PROD}, timeout=30).json()
+    rolls = [r for r in (rolls if isinstance(rolls, list) else rolls.get("items") or [])
+             if (r.get("reserved_ref") or {}).get("id") == so["id"]]
+    for t in tasks:
+        for r in [x for x in rolls if x.get("warehouse_id") == t.get("warehouse_id")]:
+            rp = adm_a.post(f"{API}/outbound/tasks/{t['id']}/scan-pick",
+                            params={"actual_qty": float(r["length_remaining"]), "roll_id": r["id"]}, timeout=30)
+            if rp.status_code != 200:
+                bad(f"scan-pick {r.get('roll_no')} gagal ({rp.status_code} {rp.text[:200]})")
+                return False
+    if not rolls:
+        bad("Tidak ada roll ter-alokasi untuk dipick")
+        return False
+    info(f"{len(cuts)} reservasi potong dikonfirmasi · roll anak {[c['roll_no'] for c in picked]} terverifikasi")
+    ro = mgr_a.post(f"{API}/outbound/so/{so['id']}/loading-check/override",
+                    json={"reason": f"{MARK} roll uji belum bertag RFID"}, timeout=30)
+    if ro.status_code not in (200, 201):
+        bad(f"Override loading check gagal ({ro.status_code} {ro.text[:200]})")
+        return False
+    sj = ""
+    for t in tasks:
+        d = adm_a.post(f"{API}/outbound/tasks/{t['id']}/dispatch", timeout=60)
+        if d.status_code != 200:
+            bad(f"Dispatch gagal ({d.status_code} {d.text[:250]})")
+            return False
+        ship = d.json().get("shipment") or {}
+        sj = ship.get("shipment_no") or ship.get("number") or sj
+    rd = adm_a.post(f"{API}/sales-orders/{so['id']}/mark-delivered", timeout=30)
+    cur = adm_a.get(f"{API}/sales-orders/{so['id']}", timeout=30).json()
+    if rd.status_code == 200 and cur.get("status") in ("done", "delivered", "shipped"):
+        ok(f"{len(rolls)} roll dipick · Surat Jalan {sj} · pesanan {cur['number']} berstatus {cur['status']}")
+        return True
+    bad(f"Tandai terkirim gagal ({rd.status_code} {rd.text[:200]}) status={cur.get('status')}")
+    return False
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  LANGKAH 4 — Customer A retur ke Entitas A (jejak asal diwariskan · E9.5)
@@ -758,7 +857,7 @@ async def step5b_verify_roll_back(db):
 #  LANGKAH 6 — B retur ke supplier ASLINYA (E9.5) atau menyimpannya
 # ═══════════════════════════════════════════════════════════════════════════
 def step6_supplier_return(adm_b):
-    head("LANGKAH 6 — Entitas B meretur barang itu ke supplier ASLINYA (Toba Craft)")
+    head(f"LANGKAH 6 — Entitas B meretur barang itu ke supplier ASLINYA ({SUP_B_NAME})")
     roll_id = ST["rtn_roll"]["id"]
     r = adm_b.get(f"{API}/purchase-returns/source-rolls", params={
         "product_id": PROD, "supplier_id": ST["sup_b"], "po_id": ST["po"]["id"],
@@ -914,6 +1013,8 @@ async def run():
         if not step3_internal_purchase(adm_all, adm_a, wh_b):
             return
         await step3b_notification(db)
+        if not step3c_delivery(adm_a, mgr_a):
+            return
         if not step4_customer_return(adm_a, mgr_a):
             return
         if not step5_interco_return(adm_a, mgr_a, adm_all, wh_b):

@@ -126,3 +126,10 @@ async def download_disposition_photo(return_id: str, att_id: str, request: Reque
         raise HTTPException(status_code=404, detail="Foto tidak ditemukan")
     data, _ = await storage.get_object(att["path"])
     return Response(content=data, media_type=att["content_type"])
+
+
+@router.get("/return-dispositions/summary")
+async def disposition_summary(request: Request, entity_id: str = "") -> Any:
+    """Kartu Beranda: angka retur internal masuk + roll menunggu keputusan + batas supplier ≤ N hari."""
+    await require_any_permission(request, VIEW_PERMS)
+    return await rds.desk_summary(resolve_scope_ids(await entity_ctx(request), entity_id or None))

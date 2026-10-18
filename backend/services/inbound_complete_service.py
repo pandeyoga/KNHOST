@@ -381,6 +381,9 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
                 "po_id": task.get("po_id") or "",
                 "po_number": task.get("po_number", ""),
                 "grn_task_id": task_id,
+                # LN-014 — nomor SJ supplier ikut di roll (label & detail lot tanpa menelusur)
+                "supplier_dn_number": ((payload.supplier_dn or "").strip() if payload else "")
+                                      or task.get("supplier_dn_number", ""),
                 "received_date": now_iso(),
                 "vendor_bill_id": "",          # diisi saat Vendor Bill di-posting
                 "supplier_invoice_no": "",     # diisi saat Vendor Bill di-posting
@@ -508,6 +511,10 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
         # FASE C — hitung ulang agregat lot (turunan roll, bukan $inc) + simpan jejak
         # lot pada tugas GR agar layar penerimaan & QC bisa menampilkannya.
         await _lots.recompute_many([l["id"] for l in _lot_by_dye.values()])
+        _sj = ((payload.supplier_dn or "").strip() if payload else "") or task.get("supplier_dn_number", "")
+        if _sj and _lot_by_dye:
+            await db.inventory_lots.update_many({"id": {"$in": [l["id"] for l in _lot_by_dye.values()]}},
+                                                {"$addToSet": {"supplier_dn_numbers": _sj}})
         _lot_summary = [{"id": l["id"], "lot_number": l["lot_number"],
                          "dye_lot": l.get("dye_lot", "")} for l in _lot_by_dye.values()]
         await db.wms_tasks.update_one({"id": task_id}, {"$set": {

@@ -328,3 +328,22 @@ async def job_supplier_deadline_reminder() -> Dict[str, Any]:
                     ref=f"{r['roll_id']}:{r['supplier_deadline']}:{role}", dedupe=True, dedupe_scope="ever")
                 sent += 1 if n else 0
     return {"created": sent, "detail": f"{sent} pengingat batas retur supplier dikirim"}
+
+
+async def desk_summary(scope_ids: List[str]) -> Dict[str, Any]:
+    """Ringkasan Beranda PT pemasok: retur masuk, roll menunggu keputusan, batas supplier dekat."""
+    from datetime import date
+    box = await inbox(scope_ids)
+    today = date.fromisoformat(_today())
+    due = []
+    for c in box["cases"]:
+        for r in c["rows"]:
+            if not r["supplier_deadline"]:
+                continue
+            a = await return_assumptions(r["owner_entity_id"])
+            left = (date.fromisoformat(r["supplier_deadline"]) - today).days
+            if 0 <= left <= int(a.get("supplier_reminder_days") or 3):
+                due.append({"roll_no": r["roll_no"], "deadline": r["supplier_deadline"], "days_left": left,
+                            "return_number": c["return_number"]})
+    return {"incoming": box["counts"]["incoming"], "rolls": box["counts"]["rolls"],
+            "due_soon": len(due), "due_items": sorted(due, key=lambda x: x["deadline"])[:5]}

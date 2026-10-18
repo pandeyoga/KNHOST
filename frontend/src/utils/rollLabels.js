@@ -38,6 +38,7 @@ export async function printInboundRollLabels(task, rolls, opts = {}) {
 <div class="row"><span class="b">${esc(r.length)} ${esc(r.unit || task.unit || "")}</span> · Grade ${esc(r.grade || "A")}</div>
 <div class="row">Lot ${esc(r.lot || "-")}${r.dye_lot ? ` · Dye ${esc(r.dye_lot)}` : ""}</div>
 ${r.supplier_lot && r.supplier_lot !== r.lot ? `<div class="small">Lot supplier ${esc(r.supplier_lot)}</div>` : ""}
+${r.supplier_dn_number ? `<div class="small">SJ sup. ${esc(r.supplier_dn_number)}</div>` : ""}
 ${r.supplier_roll_no || r.rfid_epc ? `<div class="small">${r.supplier_roll_no ? `Sup ${esc(r.supplier_roll_no)}${r.supplier_sku ? ` · ${esc(r.supplier_sku)}` : ""}` : ""}${r.rfid_epc ? ` · EPC ${esc(r.rfid_epc)}` : ""}</div>` : ""}
 ${r.note ? `<div class="small b">${esc(r.note)}</div>` : ""}
 <div class="small">${esc(task.po_number || "")} · ${esc(task.warehouse_name || task.warehouse_id || "")} · ${new Date().toLocaleDateString("id-ID")}</div>
@@ -70,6 +71,6 @@ export function printCutChildLabels(kids) {
 export function reprintRollLabel(roll, productName) {
   return printInboundRollLabels(
     { product_name: productName || roll.product_name || roll.product_id, unit: roll.unit, warehouse_id: roll.warehouse_id },
-    [{ roll_no: roll.roll_no, length: roll.length_remaining ?? roll.length, unit: roll.unit, grade: roll.grade, lot: roll.lot, supplier_lot: roll.supplier_lot, dye_lot: roll.dye_lot,
+    [{ roll_no: roll.roll_no, length: roll.length_remaining ?? roll.length, unit: roll.unit, grade: roll.grade, lot: roll.lot, supplier_lot: roll.supplier_lot, supplier_dn_number: roll.supplier_dn_number, dye_lot: roll.dye_lot,
        supplier_roll_no: roll.supplier_roll_no, supplier_sku: roll.supplier_sku, rfid_epc: roll.rfid_epc }]);
 }

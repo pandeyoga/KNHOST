@@ -104,7 +104,7 @@ export default function LotDetailPanel({
           <span className="flex items-center gap-1"><Printer size={11} /> Label / QR</span>
         </button>
         <button data-testid="lot-action-print-roll-labels" className="btn-secondary !px-2 !py-1 !text-[10.5px]"
-          disabled={rolls.length === 0} onClick={() => printRollLabelsBulk(rolls.map((r) => ({ ...r, product_name: lot.product_name, lot: lot.lot_number, supplier_lot: r.supplier_lot || lot.supplier_lot, dye_lot: r.dye_lot || lot.dye_lot })))}
+          disabled={rolls.length === 0} onClick={() => printRollLabelsBulk(rolls.map((r) => ({ ...r, product_name: lot.product_name, lot: lot.lot_number, supplier_lot: r.supplier_lot || lot.supplier_lot, supplier_dn_number: r.supplier_dn_number || (lot.supplier_dn_numbers || []).join(", "), dye_lot: r.dye_lot || lot.dye_lot })))}
           title="Cetak label QR semua roll di lot ini (58×40 mm per roll)">
           <span className="flex items-center gap-1"><Printer size={11} /> Label {rolls.length} roll</span>
         </button>
@@ -169,6 +169,7 @@ export default function LotDetailPanel({
                 Nomor lot internal (kanonik, tidak bisa diubah): <b className="font-mono">{lot.lot_number}</b>
                 {lot.supplier_lot ? <> · lot supplier <b className="font-mono" data-testid="lot-supplier-lot-view">{lot.supplier_lot}</b></> : null}
                 {lot.internal_alias ? <> · alias <b data-testid="lot-alias-view">{lot.internal_alias}</b></> : null}
+                {(lot.supplier_dn_numbers || []).length ? <> · SJ supplier <b className="font-mono" data-testid="lot-supplier-dn-view">{lot.supplier_dn_numbers.join(", ")}</b></> : null}
               </p>
               <div className="grid gap-2 px-2.5 py-2 md:grid-cols-2">
                 {[["supplier_lot", "Nomor lot supplier", "mis. SUP-2024-118"],
@@ -289,7 +290,7 @@ export default function LotDetailPanel({
                       <td className="px-2 py-1.5">
                         <button type="button" className="icon-button" data-testid={`lot-roll-reprint-${r.id}`}
                           aria-label={`Cetak ulang label QR ${r.roll_no}`} title="Cetak ulang label QR (rusak/hilang)"
-                          onClick={() => reprintRollLabel({ ...r, lot: lot.lot_number, supplier_lot: r.supplier_lot || lot.supplier_lot, dye_lot: r.dye_lot || lot.dye_lot }, lot.product_name)}>
+                          onClick={() => reprintRollLabel({ ...r, lot: lot.lot_number, supplier_lot: r.supplier_lot || lot.supplier_lot, supplier_dn_number: r.supplier_dn_number || (lot.supplier_dn_numbers || []).join(", "), dye_lot: r.dye_lot || lot.dye_lot }, lot.product_name)}>
                           <Printer size={12} />
                         </button>
                       </td>

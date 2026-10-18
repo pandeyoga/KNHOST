@@ -1615,6 +1615,8 @@ async def run_bootstrap() -> None:
     try:
         from services import lot_migration as _lotm
         _lres = await _lotm.run_all(actor="bootstrap")
+        from services import lot_trace_service as _ltrace
+        await _ltrace.backfill_supplier_dn()   # LN-014 — SJ supplier ke lot/roll lama
         if _lres.get("changed"):
             import logging
             logging.getLogger("bootstrap").info(

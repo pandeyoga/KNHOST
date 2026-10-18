@@ -259,12 +259,12 @@ MATCH_FIELDS = (("lot_number", "Nomor lot internal"), ("supplier_lot", "Lot supp
 async def _origin(lot: Dict[str, Any]) -> Dict[str, Any]:
     ref = lot.get("source_ref") or {}
     out = {"ref_type": ref.get("type", ""), "ref_number": ref.get("number", ""),
-           "po_number": "", "supplier_dn_numbers": []}
+           "po_number": "", "supplier_dn_numbers": list(lot.get("supplier_dn_numbers") or [])}
     if ref.get("type") == "wms_task" and ref.get("id"):
         t = await db.wms_tasks.find_one({"id": ref["id"]}, {"_id": 0, "po_number": 1, "supplier_dn_number": 1,
                                                           "supplier_dn_numbers": 1, "code": 1}) or {}
         out["po_number"] = t.get("po_number", "")
-        out["supplier_dn_numbers"] = sorted({*(t.get("supplier_dn_numbers") or []),
+        out["supplier_dn_numbers"] = sorted({*out["supplier_dn_numbers"], *(t.get("supplier_dn_numbers") or []),
                                              *([t["supplier_dn_number"]] if t.get("supplier_dn_number") else [])})
         out["ref_number"] = out["ref_number"] or t.get("code", "")
     elif ref.get("type") == "purchase_order" and ref.get("id"):
@@ -299,3 +299,20 @@ async def identity_trace(code: str, scope_ids: List[str], limit: int = 50) -> Di
         })
     return {"code": code, "rows": rows,
             "note": "Nomor lot internal adalah identitas kanonik; lot supplier, dye lot dan alias hanya acuan."}
+
+
+async def backfill_supplier_dn() -> Dict[str, int]:
+    """LN-014 — isi SJ supplier pada lot/roll lama dari tugas penerimaan (idempoten)."""
+    lots = rolls = 0
+    async for t in db.wms_tasks.find({"$or": [{"supplier_dn_number": {"$nin": ["", None]}},
+                                               {"supplier_dn_numbers.0": {"$exists": True}}]},
+                                     {"_id": 0, "id": 1, "supplier_dn_number": 1, "supplier_dn_numbers": 1, "lot_ids": 1}):
+        sjs = sorted({*(t.get("supplier_dn_numbers") or []), *([t["supplier_dn_number"]] if t.get("supplier_dn_number") else [])})
+        r = await db[ROLLS].update_many({"grn_task_id": t["id"], "supplier_dn_number": {"$in": ["", None]}},
+                                        {"$set": {"supplier_dn_number": ", ".join(sjs)}})
+        rolls += r.modified_count
+        lot_ids = list(t.get("lot_ids") or []) or await db[COLL].distinct("id", {"source_ref.id": t["id"]})
+        if lot_ids:
+            r = await db[COLL].update_many({"id": {"$in": lot_ids}}, {"$addToSet": {"supplier_dn_numbers": {"$each": sjs}}})
+            lots += r.modified_count
+    return {"lots": lots, "rolls": rolls}
