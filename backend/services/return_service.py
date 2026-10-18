@@ -1026,7 +1026,7 @@ async def release_quarantine(return_id: str, actor: str,
     q_rolls = [r for r in rolls if r.get("status") == "quarantine"]
     if not q_rolls:
         raise ValueError("Tidak ada roll karantina untuk retur ini")
-    _ret_doc = await db.sales_returns.find_one({"id": return_id}, {"_id": 0, "number": 1}) or {}
+    _ret_doc = await db.sales_returns.find_one({"id": return_id}, {"_id": 0, "number": 1, "entity_id": 1}) or {}
     ret_number = _ret_doc.get("number", return_id)
     dmap = {d.get("roll_id"): d for d in (decisions or []) if d.get("roll_id")}
     # INV-ATOMIC-01 — klaim retur sesudah roll karantina ditentukan, sebelum roll/JE/mutasi
@@ -1038,6 +1038,7 @@ async def release_quarantine(return_id: str, actor: str,
     combos: set = set()
     released, scrapped, regraded = 0, 0, 0
     writeoff_total = 0.0
+    impairment_total = 0.0
     writeoff_jes: List[Dict[str, Any]] = []
     for r in q_rolls:
         d = dmap.get(r["id"], {})
@@ -1102,6 +1103,12 @@ async def release_quarantine(return_id: str, actor: str,
         if grade_hist_entry:
             _roll_update["$push"] = {"grade_history": grade_hist_entry}
         await db.inventory_rolls.update_one({"id": r["id"]}, _roll_update)
+        if action != "scrap" and grade != old_grade:
+            from services import return_grade_impairment as _rgi
+            imp = await _rgi.record({"id": return_id, "number": ret_number, "entity_id": _ret_doc.get("entity_id", "")},
+                                    r, old_grade, grade, actor)
+            if imp:
+                impairment_total = round(impairment_total + imp["amount"], 2)
         await db.inventory_movements.insert_one({
             "id": new_id("mov"), "product_id": r["product_id"], "warehouse_id": r["warehouse_id"],
             "owner_entity_id": r["owner_entity_id"],
@@ -1126,7 +1133,8 @@ async def release_quarantine(return_id: str, actor: str,
     ret = await db.sales_returns.find_one({"id": return_id})
     ret.pop("_id", None)
     ret["_release_summary"] = {"released": released, "scrapped": scrapped, "regraded": regraded,
-                               "writeoff_total": writeoff_total, "writeoff_jes": writeoff_jes}
+                               "writeoff_total": writeoff_total, "writeoff_jes": writeoff_jes,
+                               "grade_impairment_total": impairment_total}
     return ret
 
 

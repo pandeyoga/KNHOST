@@ -590,7 +590,9 @@ async def create_from_sales_return(sales_return_id: str, actor: str,
     if not rolls:
         raise ValueError("Tidak ada roll karantina/available dari retur jual ini untuk diretur ke supplier.")
 
-    entity_id = sr.get("entity_id") or rolls[0].get("owner_entity_id") or DEFAULT_ENTITY_ID
+    # LN-093 — sesudah retur internal, roll milik PT pemasok (CST): retur beli terbit di PT pemilik roll.
+    owners = {r.get("owner_entity_id") for r in rolls if r.get("owner_entity_id")}
+    entity_id = (owners.pop() if len(owners) == 1 else sr.get("entity_id")) or DEFAULT_ENTITY_ID
     wh_id = warehouse_id or rolls[0].get("warehouse_id", "")
 
     # L09 LN-093 — supplier & PO diambil dari PROVENANCE tiap roll (bukan PO terbaru produk

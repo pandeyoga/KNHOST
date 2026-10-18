@@ -1916,6 +1916,26 @@ async def post_inventory_writeoff(*, roll_id: str, entity_id: str, amount: float
         source_id=sid, entity_id=entity_id or "", created_by="system", source_label=lbl)
 
 
+async def post_return_grade_impairment(*, source_id: str, entity_id: str, amount: float,
+                                       label: str = "", date: str = "") -> Optional[Dict[str, Any]]:
+    """LN-091-T02 — penurunan nilai roll retur yang turun grade (terpisah dari kredit pelanggan).
+      Dr 5-9500 Beban Kerugian Persediaan / Cr 1-1300 Persediaan. Idempotent per source_id."""
+    amount = round(float(amount or 0), 2)
+    if not source_id or amount <= EPS or await _already_posted("return_grade_impairment", source_id):
+        return None
+    await seed_default_coa()
+    lines = [
+        {"account_code": ACC_WRITEOFF, "debit": amount, "credit": 0.0,
+         "description": f"Kerugian turun grade {label}"},
+        {"account_code": ACC_PERSEDIAAN, "debit": 0.0, "credit": amount,
+         "description": f"Penurunan nilai persediaan {label}"},
+    ]
+    return await _insert_entry(
+        lines=lines, description=f"Kerugian turun grade {label}", date=date or now_iso(),
+        source_type="return_grade_impairment", source_id=source_id, entity_id=entity_id or "",
+        created_by="system", source_label=label)
+
+
 async def post_sample_material_issue(*, movement_id: str, entity_id: str, amount: float,
                                      label: str = "", note: str = "",
                                      date: str = "",

@@ -14,6 +14,24 @@ const K2 = [{ value: "pending", label: "Belum diputuskan (KLR-02)" }, { value: "
   { value: "net_after_discount", label: "Asumsi: harga neto setelah diskon" }];
 const K6 = [{ value: "pending", label: "Belum diputuskan — wajib pengecualian QC" }, { value: "approved_exception", label: "Asumsi: boleh dengan persetujuan" }];
 
+const GRADES = ["A", "A1", "A2", "B", "B1", "C", "BS"];
+const DEF_FACTORS = { A: 100, A1: 95, A2: 90, B: 70, B1: 60, C: 40, BS: 10 };
+
+// LN-091-T02 — % harga daftar per grade; selisih grade lama vs baru = kerugian turun grade.
+function GradeFactors({ value, disabled, onChange }) {
+  const v = { ...DEF_FACTORS, ...(value || {}) };
+  return (
+    <div className="flex flex-wrap items-end gap-2 text-[12px]" data-testid="return-assume-grade-factors">
+      <span className="w-full text-[#8A4B08]">Harga daftar per grade (% dari harga produk) — dasar kerugian turun grade:</span>
+      {GRADES.map((g) => (
+        <label key={g} className="flex flex-col gap-1">{g}
+          <input type="number" min={0} max={100} disabled={disabled} data-testid={`return-assume-grade-${g}`} value={v[g]}
+            onChange={(e) => onChange({ ...v, [g]: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })} className="field w-16" /></label>
+      ))}
+    </div>
+  );
+}
+
 // LN-083 — asumsi sementara batas retur (KLR-08/KLR-09 menunggu owner); tersimpan di Pengaturan global.
 export default function ReturnAssumptionsPanel({ canManage }) {
   const [f, setF] = useState(null);
@@ -59,6 +77,10 @@ export default function ReturnAssumptionsPanel({ canManage }) {
         ))}
         <label className="flex items-center gap-1.5 text-[12px]"><input type="checkbox" data-testid="return-assume-bill_first" disabled={!canManage}
                checked={!!f.bill_first} onChange={(e) => setF({ ...f, bill_first: e.target.checked })} /> Potong tagihan SO asal dulu, sisanya refund/saldo</label>
+      </div>
+      <GradeFactors value={f.grade_price_factors} disabled={!canManage}
+        onChange={(g) => setF({ ...f, grade_price_factors: g })} />
+      <div className="flex flex-wrap items-center gap-3">
         {canManage && <button type="button" data-testid="return-assume-save" onClick={save} className="primary-button">Simpan asumsi</button>}
         {msg && <span className="text-[12px]" data-testid="return-assume-msg">{msg}</span>}
       </div>

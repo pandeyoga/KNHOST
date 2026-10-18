@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ShieldAlert, Check, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
+import ReturnCameraButton from "./ReturnCameraButton";
 
 const KINDS = [
   { value: "condition", label: "Kondisi barang (hangtag hilang / kain dipotong)" },
@@ -11,11 +12,12 @@ const KINDS = [
 const STATUS = { pending: ["Menunggu keputusan", "#B45309"], approved: ["Disetujui", "#1B7F4B"], rejected: ["Ditolak", "#C62828"] };
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
 
-function RequestForm({ ret, onDone }) {
+function RequestForm({ ret, onDone, onPhoto }) {
   const photos = (ret.attachments || []).filter((a) => !a.is_deleted && (a.content_type || "").startsWith("image/"));
   const [f, setF] = useState({ kind: "condition", reason: "", attachment_ids: [] });
   const [err, setErr] = useState("");
   const toggle = (id) => setF((x) => ({ ...x, attachment_ids: x.attachment_ids.includes(id) ? x.attachment_ids.filter((i) => i !== id) : [...x.attachment_ids, id] }));
+  const captured = (att) => { setF((x) => ({ ...x, attachment_ids: [...x.attachment_ids, att.id] })); onPhoto?.(); };
   const submit = async () => {
     setErr("");
     try { await axios.post(`${API}/sales-returns/${ret.id}/exceptions`, f); setF({ kind: f.kind, reason: "", attachment_ids: [] }); onDone(); }
@@ -27,8 +29,11 @@ function RequestForm({ ret, onDone }) {
       <textarea data-testid="return-exception-reason" className="field w-full text-sm" rows={2} value={f.reason}
                 placeholder="Alasan pengecualian (min. 10 karakter)" onChange={(e) => setF({ ...f, reason: e.target.value })} />
       <div className="text-xs">
-        <p className="font-semibold mb-1">Foto bukti (dari Lampiran retur):</p>
-        {!photos.length && <p className="text-[#8E8E93]" data-testid="return-exception-no-photo">Belum ada foto. Unggah foto di bagian Lampiran retur dulu.</p>}
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <p className="font-semibold">Foto bukti:</p>
+          <ReturnCameraButton returnId={ret.id} onUploaded={captured} testId="return-exception-camera" />
+        </div>
+        {!photos.length && <p className="text-[#8E8E93]" data-testid="return-exception-no-photo">Belum ada foto. Ambil foto langsung dari kamera, atau unggah di bagian Lampiran retur.</p>}
         <div className="flex flex-wrap gap-3">
           {photos.map((a) => (
             <label key={a.id} className="inline-flex items-center gap-1">
@@ -89,7 +94,7 @@ export default function ReturnExceptionsPanel({ ret, canApprove, onChanged }) {
         )}
         {!terminal && <button type="button" data-testid="return-exception-toggle" onClick={() => setOpen(!open)} className="ml-auto text-xs text-[#0058CC] font-semibold">{open ? "Tutup" : "Ajukan pengecualian"}</button>}
       </div>
-      {open && <RequestForm ret={ret} onDone={() => { setOpen(false); onChanged?.(); }} />}
+      {open && <RequestForm ret={ret} onPhoto={() => onChanged?.()} onDone={() => { setOpen(false); onChanged?.(); }} />}
       <div className="divide-y divide-[#F0F0F3]">
         {list.map((x) => <ExceptionRow key={x.id} ret={ret} x={x} canApprove={canApprove} onDone={() => onChanged?.()} />)}
       </div>

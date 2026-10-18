@@ -450,7 +450,12 @@ async def return_warehouse_task(ret_id: str, payload: IntercoActionIn,
 async def cancel_interco_return(ret_id: str, payload: IntercoReasonIn,
                                 request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "interco", "return")
-    await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    doc = await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    ctx = await entity_ctx(request)
+    head = doc.get("returner") or doc
+    if head.get("mandatory_accept") and ctx.active_entity_id == head.get("seller_entity_id"):
+        raise HTTPException(status_code=400, detail="PT pemasok wajib menerima retur internal ini (R-10) — "
+                                                    "pembatalan hanya oleh PT yang mengembalikan.")
     try:
         res = await icret.cancel(ret_id, actor.get("name", ""), payload.reason)
     except icret.IntercoReturnError as exc:

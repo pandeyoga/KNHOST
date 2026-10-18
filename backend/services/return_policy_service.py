@@ -299,6 +299,8 @@ RETURN_ASSUMPTION_DEFAULTS: Dict[str, Any] = {
     "cutloss_return_part": "pending",   # KLR-01: pending | defect_only | defect_plus_shorter | whole_roll
     "cutloss_value_basis": "pending",   # KLR-02: pending | line_price | net_after_discount
     "discount_mode": "pending",         # KLR-06/07: pending | approved_exception
+    # LN-091-T02 — % harga daftar per grade (selisih lama vs baru = kerugian turun grade)
+    "grade_price_factors": {"A": 100, "A1": 95, "A2": 90, "B": 70, "B1": 60, "C": 40, "BS": 10},
 }
 _RECEIPT_VIA = ("inbound", "grn", "goods_receipt", "purchase", "receiving")
 

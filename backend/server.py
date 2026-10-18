@@ -306,6 +306,8 @@ from routers import export_center as _export_center  # noqa: E402 — L11 Pusat 
 app.include_router(_export_center.router)
 from routers import sales_return_exceptions as _srx  # noqa: E402 — LN-083/LN-092
 app.include_router(_srx.router)
+from routers import return_disposition as _rdisp  # noqa: E402 — LN-093 / LN-091-T02
+app.include_router(_rdisp.router)
 
 
 @app.get("/api/")

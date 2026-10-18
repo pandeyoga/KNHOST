@@ -13,6 +13,8 @@ import ReturnInspectPanel from "./ReturnInspectPanel";
 import ReturnSettleModal from "./ReturnSettleModal";
 import ReturnQuarantinePanel from "./ReturnQuarantinePanel";
 import ReturnChainPanel from "./ReturnChainPanel";
+import ReturnGradeLossPanel from "./ReturnGradeLossPanel";
+import ReturnDispositionPanel from "./ReturnDispositionPanel";
 import ReturnJourneyPanel from "./ReturnJourneyPanel";   // FASE I.F — keluhan + milestone
 import ReturnTimelinePanel from "./ReturnTimelinePanel"; // L08 LN-081 — satu timeline per jalur
 import ReturnEligibilityPanel from "./ReturnEligibilityPanel";
@@ -340,6 +342,8 @@ export default function ReturnDetail({
 
       {/* FASE E-9 (E9.6 · US29) — rantai retur utuh: pelanggan → antar-PT → beli/simpan */}
       <ReturnChainPanel docId={ret.id} />
+      <ReturnGradeLossPanel ret={ret} />
+      <ReturnDispositionPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
 
       <ReturnSettleModal ret={ret} open={showSettleModal}
         onClose={() => setShowSettleModal(false)} onSettle={onSettle} />
