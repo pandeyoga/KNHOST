@@ -1,0 +1,34 @@
+{
+  "summary": "Export Terjadwal (schedule) + LN-083 return assumptions/eligibility + LN-024 interco cutoff/schedule + L10 Pindah Bin: all 22 backend tests pass (9 lanjutan + 6 l11_export_center + 7 l11_finance_staff_templates). Frontend UI verified end-to-end on preview URL as admin@kainnusantara.id/demo12345: (1) Pusat Export ?view=export-center&entity=ent_ksc — tab Template, created TEST_SCHED_* template, clicked export-template-schedule-edit-<id> → export-schedule-form-<id> renders with export-schedule-frequency, export-schedule-weekday/day, export-schedule-time, export-schedule-period, export-schedule-active, export-schedule-save; after save the label export-template-schedule-<id> shows 'tiap tanggal 1 07:00 WIB · bulan lalu · berikutnya 1 Nov 2026, 00.00'; export-template-schedule-test-<id> fires immediate run → export-templates-notice 'Uji jadwal \"TEST_SCHED_…\": 3 baris ((semua tanggal)).'; template cleanup via delete OK. (2) Transaksi Antar Entitas ?view=interco-transactions — tab interco-tab-schedule renders interco-schedule-panel with interco-cutoff-status showing the KLX-03 pending note ('Cutoff & basis tanggal pembayaran belum diputuskan (KLX-03)') and interco-cutoff-form with interco-cutoff-day/payment-day/basis/save all present. (3) Pengaturan → Kebijakan Retur Jual ?view=return-policies — return-assumptions-panel shows ASUMSI SEMENTARA block with customer/supplier window defaults=21, KNSelects return-assume-klr08/klr09 pre-set to 'Belum diputuskan — tandai pending', return-assume-save → return-assume-msg 'Asumsi tersimpan.' (4) WMS Lokasi ?view=wms-locations tab lp-tab-structure — lp-save-structure visible, 21 lp-bin-<binId>-move KNSelect 'Pindah ke…' rendered for each bin as required. No console errors, no overlays blocking.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Pusat Export · ScheduleForm", "issues": ["Minor: weekly/monthly weekday vs day_of_month field toggles are present via export-schedule-weekday/export-schedule-day testids — not visually distinguished until frequency changes; acceptable but a short helper line could clarify."]},
+      {"screen": "Interco · Jadwal Bayar form", "issues": ["Save does trigger a reload (onSaved=load) but when 'basis' is empty the status stays 'pending_KLX-03' without a success toast — the status label itself updates, which is adequate; a small 'Tersimpan' hint would be nicer."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_lanjutan_sched_returns_interco.py",
+    "/app/backend/tests/test_l11_export_center.py",
+    "/app/backend/tests/test_l11_finance_staff_templates.py",
+    "/app/test_reports/pytest/iter228.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "export_schedule.py / scheduler_service.py — dispatcher runs per owner's current RBAC; failure path sets template.last_schedule_error and surfaces in UI via export-template-schedule-error-<id>. Clean separation.",
+    "return_policy_service.customer_reference uses SJ (shipment) as reference_source — matches assumption text 'batas customer dihitung dari SJ'. Supplier deadlines grouped per receiving date (independent, expired supplier never blocks customer) — correct.",
+    "interco_service.create_settlement rejects method='netting' with 400 'Netting dinonaktifkan' and partial applied_amount with 400 'harus dibayar penuh'; _period_for returns null when cutoff_day/basis empty → UI shows pending_KLX-03 — consistent across API & UI.",
+    "StructureEditor.moveBin updates local structure; if a bin holds stock the existing LOCATION_MIGRATION_REASON 409 flow prompts for reason before PUT /warehouses/{id}/structure — unchanged, good.",
+    "ReturnAssumptionsPanel defaults customer_window_days & supplier_window_days to 21 from settings.returns; admin-only save gates by canManage; consistent with backend DEFAULT_GLOBAL_SETTINGS."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (22/22)", "frontend": "100% core flows (export schedule, interco schedule, return assumptions, pindah bin)"},
+  "test_credentials": "admin@kainnusantara.id / demo12345",
+  "seed_data_creation": "Backend pytest fixtures create TEST_-prefixed interco transactions, settlement candidates, sales returns & settings snapshots; teardown restores system_settings (returns, interco_payment) and deletes TEST_ data. Frontend test created and deleted a TEST_SCHED_<ts> export template via UI.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All four L-features green. Keep REACT_APP_BACKEND_URL=http://localhost:8001 and run: cd /app/backend && python -m pytest tests/test_lanjutan_sched_returns_interco.py tests/test_l11_export_center.py tests/test_l11_finance_staff_templates.py -n0. Do NOT run tests/test_interco_g6.py (wipes interco collections). Interco demo DB has 0 transactions by default; UI schedule tab therefore shows empty rows + KLX-03 note (expected). Export schedule UI requires at least one template to appear in tab Template — create via Buat export → export-template-name/save first. Pindah Bin testids: lp-bin-<binId>-move (KNSelect).",
+  "rca of the issue": "N/A — no bugs found this iteration."
+}

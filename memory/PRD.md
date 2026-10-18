@@ -1369,3 +1369,11 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - Cakupan: 67 dataset, unmapped = 0. Template export pribadi (simpan/jalankan/buka/hapus).
 - Tes: test_l11_finance_staff_templates.py 7/7 + test_l11_export_center.py 6/6; iteration_227 100%.
 - Berikutnya: review owner untuk format rapor (DES-03), sisa L10, LN-024 interco, item KLR/KLX dengan asumsi configurable.
+
+## 2026-10-18 (3) — status in_progress
+- Export terjadwal: template mingguan/bulanan (periode bergulir), dispatcher `export_schedule_dispatch` dengan hak pemilik, notifikasi saat siap, uji jadwal.
+- L10: aksi Pindah bin di editor struktur; uji LN-100-T02 gudang shared woven-only.
+- LN-024: netting & bayar sebagian antar-PT ditolak; Jadwal Bayar per transaksi; cutoff KLX-03 configurable (kosong = pending).
+- LN-083: batas customer 21 hari dari SJ & supplier 21 hari per receiving roll (independen), KLR-08/09 pending/asumsi configurable.
+- Tes: test_lanjutan_sched_returns_interco.py 9/9; iteration_228 100%.
+- Berikutnya: alur pengecualian retur + input hangtag di form retur, penerimaan interco end-to-end, LN-091/092 (refund/cutloss) dengan asumsi, reviewer/owner validasi.

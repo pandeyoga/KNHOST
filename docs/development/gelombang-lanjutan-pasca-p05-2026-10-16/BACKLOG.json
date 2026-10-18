@@ -759,13 +759,15 @@
         "LN-024-T02",
         "LN-024-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L02/report-ln024.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "E1 (sesi 2026-10-18)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -1246,13 +1248,15 @@
         "LN-083-T02",
         "LN-083-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L08/report-ln083.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "E1 (sesi 2026-10-18)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },

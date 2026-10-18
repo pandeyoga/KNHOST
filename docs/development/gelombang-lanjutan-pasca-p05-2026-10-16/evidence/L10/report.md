@@ -59,3 +59,8 @@ Keputusan owner (chat 2026-10-18): hilang → wajib hitung ulang lalu dihapus sa
 - Pengaman: roll hilang yang masih dialokasikan/dipesan/dipindah → exception `missing_allocated` (tidak dihapus); qty berubah sejak snapshot → "bergerak setelah snapshot", bukan hilang.
 - `GET /api/warehouses/{id}/locations` → `binned_rolls`, `binned_by_unit`; KPI layar "Terisi di Rak".
 - Tes: test_l10_ln101_roll_count.py 4/4, test_l10_ops01_t1.py 8/8, test_l10_t1_review.py 12/12.
+
+## Sesi 2026-10-18 (lanjutan): sisa LN-100
+- **Editor struktur — aksi "Pindah ke…" per bin** (`lp-bin-<id>-move`): bin dipindah ke tingkat lain dengan ID tetap. Saat disimpan, bin berisi stok/tugas memicu 409 `LOCATION_MIGRATION_REASON` → UI meminta alasan, lalu migrasi tercatat.
+- **LN-100-T02**: `test_lanjutan_sched_returns_interco.py::test_ln100_t02_shared_woven_node`. Pada gudang shared Rancamalang Woven dengan node woven-only, roll woven Sukacita & CST diterima tanpa gudang owner fiktif, sedangkan roll knit ditolak ("Jenis kain 'knit' tidak diizinkan … (hanya woven)").
+- Masih terbuka: batas nilai kerugian opname (owner: belum ada) dan verifikasi LN-102-T02.

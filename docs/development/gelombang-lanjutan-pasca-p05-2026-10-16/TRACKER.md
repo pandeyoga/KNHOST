@@ -42,7 +42,7 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-021 | L02 | Roll picker dan perubahan alokasi yang sah | in_progress | evidence/L02/report.md |
 | LN-022 | L02 | Harga grade dan pengajuan ulang Special Price | in_progress | evidence/L02/report.md |
 | LN-023 | L02 | AR, AP, revisi PO dan dampak finansial | in_progress | evidence/L02/report.md |
-| LN-024 | L02 | Utang/piutang interco dan pembayaran per transaksi | not_started | belum ada |
+| LN-024 | L02 | Utang/piutang interco dan pembayaran per transaksi | in_progress | evidence/L02/report-ln024.md |
 | LN-030 | L03 | Sumber desain, multi-produk dan status HOLD | implemented_pending_validation | evidence/L03/report.md, evidence/L03/owner_decisions_2026-10-18.md |
 | LN-031 | L03 | Round designer dan persetujuan yang sudah ada | implemented_pending_validation | evidence/L03/report.md |
 | LN-032 | L03 | Uji kain sesuai lini dan proofing printing berulang | implemented_pending_validation | evidence/L03/report.md |
@@ -62,7 +62,7 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-080 | L08 | Form retur dan menu yang jelas | in_progress | evidence/L08/report.md |
 | LN-081 | L08 | Pisahkan perjalanan fisik, QC, keputusan dan saldo | in_progress | evidence/L08/report.md |
 | LN-082 | L08 | Identitas unik, potongan dan larangan kembali ke customer asal | in_progress | evidence/L08/report.md |
-| LN-083 | L08 | Batas waktu, eligibility dan bukti keputusan | not_started | belum ada |
+| LN-083 | L08 | Batas waktu, eligibility dan bukti keputusan | in_progress | evidence/L08/report-ln083.md |
 | LN-090 | L09 | Tukar barang sampai customer | in_progress | evidence/L09/report.md |
 | LN-091 | L09 | Refund/saldo, potong tagihan dan nilai histori | not_started | belum ada |
 | LN-092 | L09 | Cutloss dan discount hanya setelah kebijakan final | not_started | belum ada |

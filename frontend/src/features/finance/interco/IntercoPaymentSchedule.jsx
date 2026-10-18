@@ -11,13 +11,14 @@ const BASIS = [{ value: "", label: "Belum diputuskan (KLX-03)" }, { value: "rece
 function CutoffForm({ cfg, onSaved }) {
   const [f, setF] = useState({ cutoff_day: cfg.cutoff_day ?? "", payment_day: cfg.payment_day ?? "", basis: cfg.basis ?? "" });
   const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
   const save = async () => {
-    setErr("");
+    setErr(""); setOk("");
     const num = (v) => (v === "" || v === null ? null : Math.min(31, Math.max(1, parseInt(v, 10) || 1)));
     try {
       await axios.put(`${API}/settings`, { scope: "global", interco_payment: {
         allow_netting: false, require_full_payment: true, cutoff_day: num(f.cutoff_day), payment_day: num(f.payment_day), basis: f.basis || null } });
-      onSaved();
+      setOk("Tersimpan."); onSaved();
     } catch (e) { setErr(errText(e)); }
   };
   return (
@@ -33,6 +34,7 @@ function CutoffForm({ cfg, onSaved }) {
       <button type="button" data-testid="interco-cutoff-save" onClick={save}
               className="rounded-lg bg-[#0F172A] text-white px-4 py-2 font-semibold">Simpan asumsi</button>
       {err && <span className="text-[#C62828]" data-testid="interco-cutoff-error">{err}</span>}
+      {ok && <span className="text-[#1B7F4B]" data-testid="interco-cutoff-saved">{ok}</span>}
     </div>
   );
 }
