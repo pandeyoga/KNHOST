@@ -4,6 +4,7 @@
  * Koleksi kanonik: sales_return_policies (prefix srp_). Endpoint: /api/sales-return-policies.
  */
 import { useEffect, useMemo, useState } from "react";
+import ReturnAssumptionsPanel from "./ReturnAssumptionsPanel";
 import axios, { API } from "../../services/apiClient";
 import { ScrollText, Plus, X, Pencil, Power, ShieldCheck } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
@@ -146,6 +147,7 @@ export default function ReturnPoliciesView({ currentUser }) {
         </div>
       )}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="policy-error" />
+      <ReturnAssumptionsPanel canManage={["admin", "manager"].includes(currentUser?.role)} />
 
       {/* FASE P4 — form kebijakan retur menjadi POP-UP (dulu form panjang ini menyelip
           di atas daftar kebijakan). Logika form tidak diubah. */}

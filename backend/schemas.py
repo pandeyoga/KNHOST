@@ -725,6 +725,8 @@ class SettingsUpdate(BaseModel):
     allocation: Optional[Dict[str, Any]] = None   # Sub-fase 1.7 — allocation policy
     purchasing: Optional[Dict[str, Any]] = None   # Depth #3 — procurement (deviasi harga, dll)
     commission: Optional[Dict[str, Any]] = None   # EPIC4 — strategi & mekanik insentif
+    returns: Optional[Dict[str, Any]] = None      # LN-083 — asumsi batas retur (KLR-08/09 pending)
+    interco_payment: Optional[Dict[str, Any]] = None   # LN-024 — pembayaran antar-PT (KLX-03 pending)
 
 
 class PaymentTermPayload(BaseModel):

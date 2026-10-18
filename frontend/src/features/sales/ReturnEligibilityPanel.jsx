@@ -28,7 +28,10 @@ export default function ReturnEligibilityPanel({ ret }) {
   if (!el || !ACTIVE.includes(ret?.status)) return null;
 
   const late = el.deadline && !el.within_window;
-  const tone = el.eligible && !late
+  const pending = el.decision === "pending_decision";
+  const tone = pending
+    ? { cls: "border-[#D6E4F5] bg-[#F3F7FC] text-[#0058CC]", Icon: CalendarClock, label: "Dalam batas — sebagian aturan menunggu keputusan owner" }
+    : el.eligible && !late
     ? { cls: "border-[#BFE3CC] bg-[#F2FBF5] text-[#1B7F4B]", Icon: CheckCircle2, label: "Dalam jendela retur" }
     : el.blocked
       ? { cls: "border-[#F3C1C1] bg-[#FDF0F0] text-[#C62828]", Icon: ShieldAlert, label: "Di luar jendela — kebijakan MEMBLOKIR" }
@@ -41,7 +44,7 @@ export default function ReturnEligibilityPanel({ ret }) {
         <span className="inline-flex items-center gap-1.5"><Icon size={13} /> {tone.label}</span>
         {el.deadline && (
           <span className="inline-flex items-center gap-1 font-normal" data-testid="return-eligibility-deadline">
-            <CalendarClock size={12} /> Jendela {el.window_days} hari · deadline <b>{fmtDate(el.deadline)}</b>
+            <CalendarClock size={12} /> Jendela {el.window_days} hari dari {el.reference_source?.type === "shipment" ? `SJ ${el.reference_source.number}` : "tanggal pesanan"} · deadline <b>{fmtDate(el.deadline)}</b>
             {el.days_remaining != null && (
               <b className="tabular-nums">
                 {el.days_remaining >= 0 ? ` (sisa ${el.days_remaining} hari)` : ` (lewat ${Math.abs(el.days_remaining)} hari)`}
@@ -56,6 +59,18 @@ export default function ReturnEligibilityPanel({ ret }) {
           <span className="font-normal">Tipe diizinkan: <b>{el.allowed_return_types.join(", ")}</b></span>
         )}
       </div>
+      {(el.pending_decisions || []).map((p) => (
+        <p key={p.code} className="mt-1 text-[11px] font-normal" data-testid={`return-eligibility-pending-${p.code}`}>• <b>{p.code}</b>: {p.message}</p>
+      ))}
+      {(el.supplier_linked?.receivings || []).length > 0 && (
+        <p className="mt-1 text-[11px] font-normal" data-testid="return-eligibility-supplier">
+          Klaim ke supplier (terpisah, tidak memengaruhi customer):{" "}
+          {el.supplier_linked.receivings.map((g) => `${g.po_number || "PO"} terima ${fmtDate(g.receipt_date)} → batas ${fmtDate(g.deadline)}${g.within_window ? "" : " (lewat)"}`).join(" · ")}
+        </p>
+      )}
+      {el.assumptions?.is_assumption && (
+        <p className="mt-1 text-[10.5px] font-normal opacity-80">Asumsi sementara: customer {el.assumptions.customer_window_days} hari, supplier {el.assumptions.supplier_window_days} hari (dapat diubah di Kebijakan Retur).</p>
+      )}
       {(el.warnings || []).map((w, i) => (
         <p key={i} className="mt-1 text-[11px] font-normal" data-testid={`return-eligibility-warning-${i}`}>• {w}</p>
       ))}

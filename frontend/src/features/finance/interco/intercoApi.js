@@ -60,7 +60,6 @@ export const PPN_MODES = [
 ];
 
 export const SETTLEMENT_METHODS = [
-  { value: "netting", label: "Netting (saling hapus, tanpa uang)" },
   { value: "transfer", label: "Transfer bank" },
   { value: "cash", label: "Kas" },
 ];

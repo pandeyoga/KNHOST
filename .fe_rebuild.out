@@ -1,4 +1,4 @@
-[rebuild_frontend] starting build at Sun Oct 18 17:48:58 UTC 2026
+[rebuild_frontend] starting build at Sun Oct 18 18:10:04 UTC 2026
 [rebuild_frontend] running yarn build (low priority)… tail -f /app/.frontend_build.log
-[rebuild_frontend] BUILD OK at Sun Oct 18 17:49:47 UTC 2026
+[rebuild_frontend] BUILD OK at Sun Oct 18 18:10:55 UTC 2026
 [rebuild_frontend] done (bundle baru langsung dilayani — tanpa restart).

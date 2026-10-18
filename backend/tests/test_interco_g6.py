@@ -195,30 +195,15 @@ def test_09_ship_receive_invoice_cycle(client):
 
 
 def test_10_partial_settlement(client):
+    """LN-024 — netting & pembayaran sebagian antar-PT ditolak (penuh per transaksi)."""
     sid = STATE["seller_id"]
-    payload = {
-        "payer_entity_id": "ent_kanda",
-        "payee_entity_id": "ent_ksc",
-        "method": "netting",
-        "transactions": [{"interco_id": sid, "applied_amount": 200000}],
-    }
-    r = client.post(f"{BASE}/api/interco/settlements", json=payload)
-    assert r.status_code == 200, r.text
-    d = r.json()
-    assert abs(d["total_applied"] - 200000) < 0.01
-    STATE["partial_settle_id"] = d["id"]
-
-    # Transaction NOT yet settled
+    for method, amount in (("netting", None), ("transfer", 200000)):
+        pick = {"interco_id": sid, **({"applied_amount": amount} if amount else {})}
+        r = client.post(f"{BASE}/api/interco/settlements", json={
+            "payer_entity_id": "ent_kanda", "payee_entity_id": "ent_ksc", "method": method, "transactions": [pick]})
+        assert r.status_code == 400, r.text
     r = client.get(f"{BASE}/api/interco/transactions/{sid}")
-    doc = r.json()
-    assert doc["seller"]["status"] == "invoiced"
-    assert abs(doc["seller"]["settled_amount"] - 200000) < 0.01
-
-    # Accounts outstanding reduced
-    r = client.get(f"{BASE}/api/interco/accounts")
-    rows = r.json()
-    ar = [x for x in rows if x["from_entity_id"] == "ent_ksc" and x["to_entity_id"] == "ent_kanda"][0]
-    assert abs(ar["outstanding"] - 355000) < 0.01
+    assert r.json()["seller"]["status"] == "invoiced"
 
 
 def test_11_full_settlement_marks_settled(client):
@@ -226,13 +211,13 @@ def test_11_full_settlement_marks_settled(client):
     payload = {
         "payer_entity_id": "ent_kanda",
         "payee_entity_id": "ent_ksc",
-        "method": "netting",
-        "transactions": [{"interco_id": sid}],  # full remainder
+        "method": "transfer",
+        "transactions": [{"interco_id": sid}],  # penuh
     }
     r = client.post(f"{BASE}/api/interco/settlements", json=payload)
     assert r.status_code == 200, r.text
     d = r.json()
-    assert abs(d["total_applied"] - 355000) < 0.01
+    assert abs(d["total_applied"] - 555000) < 0.01
 
     # Transaction settled
     r = client.get(f"{BASE}/api/interco/transactions/{sid}")

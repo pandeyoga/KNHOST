@@ -227,6 +227,14 @@ async def get_ica(from_entity_id: str, to_entity_id: str,
 
 
 # ── Settlement (netting) ─────────────────────────────────────────────────────
+@router.get("/interco/payment-schedule")
+async def interco_payment_schedule(request: Request, payer_entity_id: str = "", payee_entity_id: str = "") -> Dict[str, Any]:
+    """LN-024 — utang antar-PT per transaksi + periode bayar (bila cutoff KLX-03 sudah dikonfigurasi)."""
+    await require_permission(request, "interco_finance", "view")
+    scope = await _scope(request, "")
+    return await ics.payment_schedule(scope, payer=payer_entity_id, payee=payee_entity_id)
+
+
 @router.get("/interco/settlements")
 async def list_ics(request: Request, entity_id: str = "",
                    limit: int = 200) -> List[Dict[str, Any]]:

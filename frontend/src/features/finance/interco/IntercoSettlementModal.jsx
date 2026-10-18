@@ -89,8 +89,8 @@ export default function IntercoSettlementModal({
           <div>
             <h2 className="text-lg font-semibold text-[#1D1D1F]">Settlement Antar-PT</h2>
             <p className="text-xs text-[#6E6E73] mt-0.5">
-              Satu dokumen menutup banyak transaksi. Bawaan: transfer bank. Pilih
-              netting hanya bila PT pembayar juga punya piutang balik ke penerima.
+              Setiap transaksi dibayar penuh, tanpa netting silang tagihan (LN-024). Satu dokumen boleh
+              memuat beberapa transaksi, rinciannya tetap per transaksi.
             </p>
           </div>
           <button onClick={onClose} data-testid="interco-settle-close" className="p-1.5 hover:bg-[#F2F2F5] rounded-lg">
@@ -158,7 +158,8 @@ export default function IntercoSettlementModal({
                             min="0"
                             step="0.01"
                             value={selected[r.id]}
-                            onChange={(e) => setSelected((p) => ({ ...p, [r.id]: e.target.value }))}
+                            readOnly
+                            title="Pembayaran antar-PT harus penuh per transaksi"
                             data-testid={`interco-settle-amount-${r.id}`}
                             className="w-28 text-right px-2 py-1 text-sm border border-[#E5E5EA] rounded"
                           />

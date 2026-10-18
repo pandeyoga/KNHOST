@@ -23,6 +23,7 @@ Keputusan pemilik (mengikat, 2026-07-30):
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import datetime as _dt
 from typing import Any, Dict, List, Optional, Tuple
 
 from core_utils import (
@@ -956,6 +957,11 @@ async def create_settlement(payload: Dict[str, Any], actor: str = "") -> Dict[st
     if not picks:
         raise IntercoError("Minimal satu transaksi harus dipilih untuk settlement.")
 
+    pay_cfg = await payment_settings(payer)
+    method_req = (payload.get("method") or "transfer").strip().lower()
+    if method_req == "netting" and not pay_cfg["allow_netting"]:
+        raise IntercoError("Netting dinonaktifkan: pembayaran antar-PT dilakukan penuh per transaksi tanpa saling "
+                           "hapus (LN-024). Pilih metode transfer/kas.")
     total_applied = 0.0
     applied_rows: List[Dict[str, Any]] = []
     for p in picks:
@@ -985,6 +991,10 @@ async def create_settlement(payload: Dict[str, Any], actor: str = "") -> Dict[st
             raise IntercoError(
                 f"Nilai yang diterapkan {rupiah(applied)} melebihi sisa transaksi "
                 f"{seller_doc.get('number')} ({rupiah(remaining)}).")
+        if pay_cfg["require_full_payment"] and applied < remaining - EPS:
+            raise IntercoError(
+                f"Transaksi {seller_doc.get('number')} harus dibayar penuh ({rupiah(remaining)}); "
+                "pembayaran sebagian antar-PT tidak diizinkan (LN-024).")
         applied = round(applied, 2)
         total_applied += applied
         applied_rows.append({
@@ -1122,6 +1132,75 @@ async def create_settlement(payload: Dict[str, Any], actor: str = "") -> Dict[st
         print(f"[interco] tautan settlement gagal: {exc}")
 
     return safe_doc(doc)
+
+
+async def payment_settings(entity_id: str = "") -> Dict[str, Any]:
+    from services.config_service import DEFAULT_GLOBAL_SETTINGS, get_effective_settings
+    eff = await get_effective_settings(entity_id or None)
+    return {**DEFAULT_GLOBAL_SETTINGS["interco_payment"], **(eff.get("interco_payment") or {})}
+
+
+_BASIS = {"invoice": ("invoiced_at", "Tanggal invoice"), "receipt": ("received_at", "Tanggal barang diterima"),
+          "document": ("doc_date", "Tanggal dokumen")}
+
+
+def _period_for(day: str, cutoff: int, pay_day: Optional[int]) -> Dict[str, str]:
+    """Transaksi s.d. tanggal cutoff → periode bulan itu; setelahnya → bulan berikutnya."""
+    import calendar
+    from datetime import date as _d
+    d = _d.fromisoformat(day[:10])
+    y, m = (d.year, d.month) if d.day <= cutoff else ((d.year + 1, 1) if d.month == 12 else (d.year, d.month + 1))
+    last = calendar.monthrange(y, m)[1]
+    pay = min(int(pay_day), last) if pay_day else last
+    return {"period": f"{y:04d}-{m:02d}", "pay_date": f"{y:04d}-{m:02d}-{pay:02d}"}
+
+
+async def payment_schedule(scope_entity_ids: List[str], payer: str = "", payee: str = "") -> Dict[str, Any]:
+    """LN-024 — daftar utang antar-PT PER TRANSAKSI (tidak digabung/netting). Periode bayar hanya diisi bila
+    cutoff & basis sudah dikonfigurasi; bila belum (KLX-03 pending) tanggal tidak diasumsikan."""
+    q: Dict[str, Any] = {"role": "seller", "status": {"$in": list(OPEN_STATUSES)},
+                         "buyer_entity_id": {"$in": scope_entity_ids}}
+    if payer:
+        q["buyer_entity_id"] = payer
+    if payee:
+        q["seller_entity_id"] = payee
+    docs = await db[COLL_ICT].find(q, {"_id": 0}).sort("created_at", 1).to_list(2000)
+    cfg = await payment_settings(payer)
+    basis = _BASIS.get(cfg.get("basis") or "")
+    ready = bool(basis and cfg.get("cutoff_day"))
+    today = _today()
+    rows = []
+    for d in docs:
+        remaining = round(float(d.get("grand_total") or 0) - float(d.get("settled_amount") or 0)
+                          - float(d.get("returned_amount") or 0), 2)
+        if remaining <= EPS:
+            continue
+        bdate = (d.get(basis[0]) or "") if basis else ""
+        row = {"interco_id": d["id"], "number": d.get("number"), "counterpart_number": d.get("counterpart_number"),
+               "payer_entity_id": d["buyer_entity_id"], "payer_entity_name": d.get("buyer_entity_name", ""),
+               "payee_entity_id": d["seller_entity_id"], "payee_entity_name": d.get("seller_entity_name", ""),
+               "status": d.get("status"), "grand_total": float(d.get("grand_total") or 0), "remaining": remaining,
+               "received_at": d.get("received_at") or "", "invoiced_at": d.get("invoiced_at") or "",
+               "doc_date": d.get("doc_date") or (d.get("created_at") or "")[:10], "due_date": d.get("due_date") or "",
+               "basis_date": bdate, "period": None, "pay_date": None}
+        if ready and bdate:
+            row.update(_period_for(bdate, int(cfg["cutoff_day"]), cfg.get("payment_day")))
+        row["age_days"] = (_dt.date.fromisoformat(today) - _dt.date.fromisoformat(row["doc_date"][:10])).days \
+            if row["doc_date"] else None
+        rows.append(row)
+    pairs: Dict[str, Dict[str, Any]] = {}
+    for r in rows:
+        k = f"{r['payer_entity_id']}>{r['payee_entity_id']}"
+        p = pairs.setdefault(k, {"payer_entity_id": r["payer_entity_id"], "payer_entity_name": r["payer_entity_name"],
+                                 "payee_entity_id": r["payee_entity_id"], "payee_entity_name": r["payee_entity_name"],
+                                 "count": 0, "remaining": 0.0})
+        p["count"] += 1
+        p["remaining"] = round(p["remaining"] + r["remaining"], 2)
+    return {"rows": rows, "pairs": list(pairs.values()), "config": cfg,
+            "cutoff_status": "configured" if ready else "pending_KLX-03",
+            "basis_label": basis[1] if basis else None, "netting": "disabled" if not cfg["allow_netting"] else "allowed",
+            "note": None if ready else "Cutoff & basis tanggal pembayaran belum diputuskan (KLX-03) — periode bayar "
+                                       "tidak diisi; atur di Pengaturan bila sudah ada keputusan/asumsi."}
 
 
 async def _post_gl_settlement(doc: Dict[str, Any], actor: str) -> None:

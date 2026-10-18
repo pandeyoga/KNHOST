@@ -14,6 +14,7 @@ from db import db
 from dependencies import audit, require_permission
 from entity_scope import entity_ctx
 from services import export_engine as eng
+from services import export_schedule as sched
 from services.export_registry import DATASETS, coverage
 from services.storage_service import STORAGE_DIR
 
@@ -91,7 +92,8 @@ async def preview(payload: PreviewIn, request: Request) -> Any:
 def _job_public(j: Dict[str, Any]) -> Dict[str, Any]:
     return {k: j.get(k) for k in ("id", "dataset", "dataset_label", "format", "status", "total_rows", "written_rows",
                                   "partitions", "file_name", "size", "created_at", "finished_at", "expires_at",
-                                  "error", "filter_text", "date_text", "retry_of", "entity_ids", "columns")}
+                                  "error", "filter_text", "date_text", "retry_of", "entity_ids", "columns", "trigger",
+                                  "template_id")}
 
 
 async def _run(job: Dict[str, Any], plan: Dict[str, Any], rows_per_sheet: int) -> None:
@@ -103,6 +105,13 @@ async def _run(job: Dict[str, Any], plan: Dict[str, Any], rows_per_sheet: int) -
         await db.export_jobs.update_one({"id": job["id"]}, {"$set": {
             "status": "done", **res, "file_path": str(path), "size": path.stat().st_size,
             "finished_at": now_iso(), "count_matches": res["written_rows"] == job["total_rows"]}})
+        if job.get("trigger") in ("schedule", "manual_schedule"):
+            from services.notification_service import create_notification
+            await create_notification(
+                notif_type="export_schedule", title=f"Export terjadwal siap: {job['dataset_label']}",
+                body=f"{res['written_rows']:,} baris · {job['date_text']} · unduh di Pusat Export → Pekerjaan (24 jam)."
+                .replace(",", "."), link="export-center", entity_id=(job.get("entity_ids") or [None])[0],
+                recipient_user=job["user_id"], recipient_role="", ref=job["id"], dedupe=False)
     except Exception as exc:  # noqa: BLE001 — job gagal dicatat, bukan senyap
         log.exception("export job %s gagal", job["id"])
         await db.export_jobs.update_one({"id": job["id"]}, {"$set": {"status": "failed", "error": str(exc)[:300],
@@ -112,7 +121,11 @@ async def _run(job: Dict[str, Any], plan: Dict[str, Any], rows_per_sheet: int) -
 async def _create_job(spec: Dict[str, Any], fmt: str, rows_per_sheet: int, request: Request,
                       retry_of: str = "") -> Dict[str, Any]:
     user = await require_permission(request, "data_export", "export")
-    ctx = await entity_ctx(request)
+    return await create_job_for(user, await entity_ctx(request), spec, fmt, rows_per_sheet, retry_of)
+
+
+async def create_job_for(user: Dict[str, Any], ctx, spec: Dict[str, Any], fmt: str, rows_per_sheet: int,
+                         retry_of: str = "", trigger: str = "manual", template_id: str = "") -> Dict[str, Any]:
     plan = await eng.build_plan(spec, user, ctx)
     if plan["ds"].get("summary_by") and not spec.get("group_by") and fmt == "xlsx":
         # LN-112 — rapor: detail + ringkasan per staf dari filter/periode yang sama.
@@ -130,7 +143,8 @@ async def _create_job(spec: Dict[str, Any], fmt: str, rows_per_sheet: int, reque
            "rows_per_sheet": rows_per_sheet, "columns": [c["key"] for c in plan["columns"]], "status": "queued",
            "total_rows": total, "written_rows": 0, "partitions": [], "entity_ids": plan["entity_ids"],
            "filter_text": plan["filter_text"], "date_text": plan["date_text"], "retry_of": retry_of,
-           "file_name": f"{ds['id']}_{created.strftime('%Y%m%d_%H%M%S')}.{fmt}",
+           "file_name": f"{ds['id']}_{created.strftime('%Y%m%d_%H%M%S')}.{fmt}", "trigger": trigger,
+           "template_id": template_id,
            "created_at": created.isoformat(), "expires_at": (created + timedelta(hours=JOB_TTL_HOURS)).isoformat()}
     await db.export_jobs.insert_one(dict(job))
     await audit(user.get("name", ""), "export.create", "export_jobs", job["id"],
@@ -214,16 +228,27 @@ async def download_job(job_id: str, request: Request) -> Any:
     return FileResponse(str(path), media_type=media, filename=job["file_name"])
 
 
+class ScheduleIn(BaseModel):
+    active: bool = True
+    frequency: str = Field("weekly", pattern="^(weekly|monthly)$")
+    weekday: int = Field(0, ge=0, le=6)            # 0 = Senin
+    day_of_month: int = Field(1, ge=1, le=28)
+    time: str = Field("07:00", pattern=r"^\d{2}:\d{2}$")
+    period: str = Field("previous", pattern="^(previous|as_saved)$")   # minggu/bulan lalu vs periode tersimpan
+
+
 class TemplateIn(BaseModel):
     name: str = Field(..., min_length=3, max_length=80)
     spec: ExportSpec
     format: str = Field("xlsx", pattern="^(xlsx|csv)$")
     rows_per_sheet: int = Field(eng.EXCEL_MAX_ROWS, ge=100, le=eng.EXCEL_MAX_ROWS)
+    schedule: Optional[ScheduleIn] = None
 
 
 def _tpl_public(t: Dict[str, Any]) -> Dict[str, Any]:
     return {k: t.get(k) for k in ("id", "name", "spec", "format", "rows_per_sheet", "dataset", "dataset_label",
-                                  "created_at", "last_run_at", "run_count")}
+                                  "created_at", "last_run_at", "run_count", "schedule", "last_scheduled_job",
+                                  "last_schedule_error")}
 
 
 @router.get("/templates")
@@ -244,6 +269,8 @@ async def save_template(payload: TemplateIn, request: Request) -> Any:
     doc = {"id": existing["id"] if existing else new_id("ext"), "user_id": user["id"], "name": name, "spec": spec,
            "format": payload.format, "rows_per_sheet": payload.rows_per_sheet, "dataset": plan["ds"]["id"],
            "dataset_label": plan["ds"]["label"], "updated_at": now_iso()}
+    if payload.schedule:
+        doc["schedule"] = sched.build(payload.schedule.dict(), ctx)
     if existing:
         await db.export_templates.update_one({"id": existing["id"]}, {"$set": doc})
     else:
@@ -273,3 +300,23 @@ async def run_template(tpl_id: str, request: Request) -> Any:
     job = await _create_job(t["spec"], t["format"], t.get("rows_per_sheet") or eng.EXCEL_MAX_ROWS, request)
     await db.export_templates.update_one({"id": tpl_id}, {"$set": {"last_run_at": now_iso()}, "$inc": {"run_count": 1}})
     return job
+
+
+@router.put("/templates/{tpl_id}/schedule")
+async def set_schedule(tpl_id: str, payload: ScheduleIn, request: Request) -> Any:
+    user = await require_permission(request, "data_export", "export")
+    await _own_tpl(tpl_id, user)
+    ctx = await entity_ctx(request)
+    s = sched.build(payload.dict(), ctx)
+    await db.export_templates.update_one({"id": tpl_id}, {"$set": {"schedule": s, "last_schedule_error": ""}})
+    return _tpl_public(await _own_tpl(tpl_id, user))
+
+
+@router.post("/templates/{tpl_id}/schedule/run-now")
+async def run_schedule_now(tpl_id: str, request: Request) -> Any:
+    """Uji jadwal: menjalankan persis seperti dispatcher (identitas pemilik + periode bergulir)."""
+    user = await require_permission(request, "data_export", "export")
+    t = await _own_tpl(tpl_id, user)
+    if not t.get("schedule"):
+        raise HTTPException(status_code=409, detail="Template belum dijadwalkan")
+    return await sched.run_template(t, trigger="manual_schedule")

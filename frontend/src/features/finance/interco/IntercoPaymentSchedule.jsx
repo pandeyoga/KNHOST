@@ -1,0 +1,94 @@
+import { useEffect, useState } from "react";
+import { CalendarClock, Info } from "lucide-react";
+import axios, { API } from "../../../services/apiClient";
+import KNSelect from "../../../components/KNSelect";
+
+const rp = (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}`;
+const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
+const BASIS = [{ value: "", label: "Belum diputuskan (KLX-03)" }, { value: "receipt", label: "Tanggal barang diterima" },
+  { value: "invoice", label: "Tanggal invoice" }, { value: "document", label: "Tanggal dokumen" }];
+
+function CutoffForm({ cfg, onSaved }) {
+  const [f, setF] = useState({ cutoff_day: cfg.cutoff_day ?? "", payment_day: cfg.payment_day ?? "", basis: cfg.basis ?? "" });
+  const [err, setErr] = useState("");
+  const save = async () => {
+    setErr("");
+    const num = (v) => (v === "" || v === null ? null : Math.min(31, Math.max(1, parseInt(v, 10) || 1)));
+    try {
+      await axios.put(`${API}/settings`, { scope: "global", interco_payment: {
+        allow_netting: false, require_full_payment: true, cutoff_day: num(f.cutoff_day), payment_day: num(f.payment_day), basis: f.basis || null } });
+      onSaved();
+    } catch (e) { setErr(errText(e)); }
+  };
+  return (
+    <div data-testid="interco-cutoff-form" className="flex flex-wrap items-end gap-2 text-[12px]">
+      <label className="flex flex-col gap-1">Tanggal cutoff
+        <input data-testid="interco-cutoff-day" type="number" min={1} max={31} value={f.cutoff_day} placeholder="—"
+               onChange={(e) => setF({ ...f, cutoff_day: e.target.value })} className="field w-24" /></label>
+      <label className="flex flex-col gap-1">Tanggal bayar
+        <input data-testid="interco-payment-day" type="number" min={1} max={31} value={f.payment_day} placeholder="akhir bulan"
+               onChange={(e) => setF({ ...f, payment_day: e.target.value })} className="field w-28" /></label>
+      <div className="w-56 flex flex-col gap-1">Basis tanggal
+        <KNSelect data-testid="interco-cutoff-basis" value={f.basis} options={BASIS} searchable={false} onValueChange={(v) => setF({ ...f, basis: v })} /></div>
+      <button type="button" data-testid="interco-cutoff-save" onClick={save}
+              className="rounded-lg bg-[#0F172A] text-white px-4 py-2 font-semibold">Simpan asumsi</button>
+      {err && <span className="text-[#C62828]" data-testid="interco-cutoff-error">{err}</span>}
+    </div>
+  );
+}
+
+export default function IntercoPaymentSchedule({ canConfigure }) {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState("");
+  const load = () => axios.get(`${API}/interco/payment-schedule`).then((r) => setData(r.data)).catch((e) => setErr(errText(e)));
+  useEffect(() => { load(); }, []);
+  if (err) return <p className="text-sm text-[#C62828]" data-testid="interco-schedule-error">{err}</p>;
+  if (!data) return <div className="h-24 rounded-xl bg-[#F5F5F7] animate-pulse" />;
+  const pending = data.cutoff_status !== "configured";
+  return (
+    <div data-testid="interco-schedule-panel" className="space-y-4">
+      <div className={`rounded-xl border p-3 text-[12.5px] flex gap-2 ${pending ? "border-[#F5E0C3] bg-[#FDF6EC] text-[#8A4B08]" : "border-[#BFE3CC] bg-[#F2FBF5] text-[#1B7F4B]"}`}
+           data-testid="interco-cutoff-status">
+        <Info size={15} className="shrink-0 mt-0.5" />
+        <div>
+          {pending ? data.note : <>Cutoff tanggal <b>{data.config.cutoff_day}</b> · bayar tanggal <b>{data.config.payment_day || "akhir bulan"}</b> · basis <b>{data.basis_label}</b>. <b>ASUMSI</b> sampai KLX-03 diputuskan owner.</>}
+          <p className="mt-1">Pembayaran penuh per transaksi, netting antar tagihan <b>dinonaktifkan</b>. Saldo setiap PT dihitung sendiri-sendiri.</p>
+        </div>
+      </div>
+      {canConfigure && <CutoffForm cfg={data.config} onSaved={load} />}
+      <div className="flex flex-wrap gap-2">
+        {data.pairs.map((p) => (
+          <div key={`${p.payer_entity_id}>${p.payee_entity_id}`} className="rounded-lg border border-[#E5E5EA] bg-white px-3 py-2 text-[12px]"
+               data-testid={`interco-pair-${p.payer_entity_id}-${p.payee_entity_id}`}>
+            <b>{p.payer_entity_name}</b> → {p.payee_entity_name}: {p.count} transaksi · {rp(p.remaining)}
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-[#E5E5EA] bg-white">
+        <table className="min-w-full text-[12.5px]">
+          <thead className="bg-[#F7F7F9] text-left text-[#3A3A3C]">
+            <tr>{["No.", "Pembayar → Penerima", "Status", "Diterima", "Invoice", "Sisa (bayar penuh)", "Umur", "Periode bayar"].map((h) => <th key={h} className="px-3 py-2 font-semibold whitespace-nowrap">{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {data.rows.map((r) => (
+              <tr key={r.interco_id} className="border-t border-[#F0F0F3]" data-testid={`interco-schedule-row-${r.interco_id}`}>
+                <td className="px-3 py-2 font-mono">{r.number}</td>
+                <td className="px-3 py-2">{r.payer_entity_name} → {r.payee_entity_name}</td>
+                <td className="px-3 py-2">{r.status}</td>
+                <td className="px-3 py-2">{(r.received_at || "").slice(0, 10) || "—"}</td>
+                <td className="px-3 py-2">{(r.invoiced_at || "").slice(0, 10) || "—"}</td>
+                <td className="px-3 py-2 text-right tabular-nums">{rp(r.remaining)}</td>
+                <td className="px-3 py-2 tabular-nums">{r.age_days ?? "—"} hari</td>
+                <td className="px-3 py-2" data-testid={`interco-schedule-period-${r.interco_id}`}>
+                  {r.period ? <span className="inline-flex items-center gap-1"><CalendarClock size={12} /> {r.pay_date}</span>
+                            : <span className="text-[#B45309]">Menunggu KLX-03</span>}
+                </td>
+              </tr>
+            ))}
+            {!data.rows.length && <tr><td colSpan={8} className="px-3 py-6 text-center text-[#8E8E93]">Tidak ada utang antar-PT terbuka.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

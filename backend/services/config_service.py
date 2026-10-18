@@ -16,6 +16,12 @@ GLOBAL_SCOPE = "global"
 
 # Default global settings (seed sekali, lalu editable dari Admin → Pengaturan)
 DEFAULT_GLOBAL_SETTINGS: Dict[str, Any] = {
+    # LN-083 — ASUMSI sementara (menunggu owner KLR-08/KLR-09); nilai dapat diubah di Pengaturan.
+    "returns": {"customer_window_days": 21, "supplier_window_days": 21,
+                "klr08_hangtag_cut": "pending", "klr09_end_event": "pending"},
+    # LN-024 — pembayaran antar-PT: penuh per transaksi, tanpa netting; cutoff menunggu KLX-03 (kosong = pending).
+    "interco_payment": {"allow_netting": False, "require_full_payment": True,
+                        "cutoff_day": None, "payment_day": None, "basis": None},
     "tax": {
         "ppn_rate": 12.0,            # % — tarif resmi UU HPP (sejak 2025)
         # F-10 Coretax — DPP Nilai Lain = 11/12 × harga jual (PMK 131/2024) untuk barang

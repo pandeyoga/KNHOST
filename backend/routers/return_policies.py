@@ -72,6 +72,8 @@ async def sales_return_eligibility(
     request: Request,
     order_id: str = Query(...),
     return_type: str = Query(""),
+    hangtag_missing: bool = Query(False),
+    cut_by_customer: bool = Query(False),
 ) -> Dict[str, Any]:
     """Evaluasi kelayakan & deadline retur jual untuk sebuah order (R0)."""
     await require_permission(request, "sales_return", "view")
@@ -83,7 +85,24 @@ async def sales_return_eligibility(
     ent = order.get("entity_id")
     if ent and ent not in ctx.allowed_entity_ids:
         raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan untuk entitas ini")
-    return await rps.check_sales_return_eligibility(order, return_type=return_type)
+    return await rps.check_sales_return_eligibility(order, return_type=return_type, hangtag_missing=hangtag_missing,
+                                                    cut_by_customer=cut_by_customer)
+
+
+@router.get("/return-policies/supplier-deadlines")
+async def supplier_claim_deadlines(request: Request, po_id: str = Query(...)) -> Dict[str, Any]:
+    """LN-083-T02 — batas klaim supplier per receiving roll pada satu PO."""
+    await require_permission(request, "purchase_return", "view")
+    ctx = await entity_ctx(request)
+    po = await db.purchase_orders.find_one({"id": po_id}, {"_id": 0, "id": 1, "po_number": 1, "entity_id": 1})
+    if not po or (po.get("entity_id") and po["entity_id"] not in ctx.allowed_entity_ids):
+        raise HTTPException(status_code=404, detail="PO tidak ditemukan")
+    assume = await rps.return_assumptions(po.get("entity_id", ""))
+    rolls = await db.inventory_rolls.find({"po_id": po_id}, {"_id": 0, "id": 1, "po_id": 1, "acquired": 1,
+                                                            "created_at": 1, "received_at": 1}).to_list(5000)
+    rows = await rps.supplier_deadlines(rolls, int(assume["supplier_window_days"]))
+    return {"po_id": po_id, "po_number": po.get("po_number"), "receivings": rows,
+            "assumptions": {**assume, "is_assumption": True}}
 
 
 # ─── CREATE ──────────────────────────────────────────────────────────────────

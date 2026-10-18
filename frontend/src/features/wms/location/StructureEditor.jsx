@@ -1,4 +1,5 @@
 import { Plus, Trash2, Save, MapPin, Layers } from "lucide-react";
+import KNSelect from "../../../components/KNSelect";
 import NodeRulesEditor from "./NodeRulesEditor";
 import { TERMS, uid, fmtUnits } from "./locUtils";
 
@@ -6,6 +7,17 @@ import { TERMS, uid, fmtUnits } from "./locUtils";
 export default function StructureEditor({ zones, setZones, occByBin, canEdit, saving, onSave }) {
   const update = (fn) => setZones((prev) => { const n = JSON.parse(JSON.stringify(prev)); fn(n); return n; });
   const addZone = () => update((n) => n.push({ id: uid("zone"), name: `${TERMS.zone} ${String.fromCharCode(65 + n.length)}`, racks: [] }));
+  // L10 LN-100-T03 — pindah bin ke tingkat lain; ID bin tetap, migrasi berisi stok minta alasan saat simpan.
+  const levels = zones.flatMap((z) => (z.racks || []).flatMap((r) => (r.levels || []).map((l) => ({
+    value: l.id, label: `${z.name} › ${r.name} › ${l.name}` }))));
+  const moveBin = (binId, toLevelId) => update((n) => {
+    const all = n.flatMap((z) => (z.racks || []).flatMap((r) => r.levels || []));
+    const from = all.find((l) => (l.bins || []).some((b) => b.id === binId));
+    const to = all.find((l) => l.id === toLevelId);
+    if (!from || !to || from === to) return;
+    const idx = from.bins.findIndex((b) => b.id === binId);
+    (to.bins = to.bins || []).push(from.bins.splice(idx, 1)[0]);
+  });
   return (
     <div className="space-y-3" data-testid="lp-structure-editor">
       <div className="flex flex-wrap justify-between items-center gap-2">
@@ -39,7 +51,8 @@ export default function StructureEditor({ zones, setZones, occByBin, canEdit, sa
                   onAdd={() => update((n) => n[zi].racks[ri].levels.push({ id: uid("level"), name: `${TERMS.level} ${n[zi].racks[ri].levels.length + 1}`, bins: [] }))} addLabel={TERMS.level} />
                 <div className="pl-3 mt-1 space-y-1.5">
                   {(r.levels || []).map((l, li) => (
-                    <LevelBlock key={l.id} level={l} path={[zi, ri, li]} update={update} occByBin={occByBin} canEdit={canEdit} />
+                    <LevelBlock key={l.id} level={l} path={[zi, ri, li]} update={update} occByBin={occByBin} canEdit={canEdit}
+                      levels={levels} onMove={moveBin} />
                   ))}
                 </div>
               </div>
@@ -51,7 +64,7 @@ export default function StructureEditor({ zones, setZones, occByBin, canEdit, sa
   );
 }
 
-function LevelBlock({ level, path: [zi, ri, li], update, occByBin, canEdit }) {
+function LevelBlock({ level, path: [zi, ri, li], update, occByBin, canEdit, levels, onMove }) {
   const lv = (n) => n[zi].racks[ri].levels[li];
   return (
     <div className="rounded bg-white border border-[#EFF0F2] p-2">
@@ -63,7 +76,8 @@ function LevelBlock({ level, path: [zi, ri, li], update, occByBin, canEdit }) {
         {(level.bins || []).map((b, bi) => (
           <BinRow key={b.id} bin={b} occ={occByBin[b.id]} canEdit={canEdit} testId={`lp-bin-${b.id}`}
             onChange={(v) => update((n) => { lv(n).bins[bi] = { ...lv(n).bins[bi], ...v }; })}
-            onDelete={() => update((n) => lv(n).bins.splice(bi, 1))} />
+            onDelete={() => update((n) => lv(n).bins.splice(bi, 1))}
+            moveOptions={levels.filter((o) => o.value !== level.id)} onMove={(to) => onMove(b.id, to)} />
         ))}
       </div>
     </div>
@@ -83,7 +97,7 @@ function NodeRow({ node, depthLabel, canEdit, testId, onChange, onDelete, onAdd,
   );
 }
 
-function BinRow({ bin, occ, canEdit, testId, onChange, onDelete }) {
+function BinRow({ bin, occ, canEdit, testId, onChange, onDelete, moveOptions, onMove }) {
   return (
     <div data-testid={testId} className="flex flex-wrap items-center gap-2 rounded bg-[#F5F5F7] px-2 py-1">
       <input value={bin.code || ""} disabled={!canEdit} onChange={(e) => onChange({ code: e.target.value })} data-testid={`${testId}-code`}
@@ -95,7 +109,12 @@ function BinRow({ bin, occ, canEdit, testId, onChange, onDelete }) {
       </label>
       <span className="text-[10px] text-[#6B6B73]" data-testid={`${testId}-occupied`}>{occ ? `${occ.roll_count} roll · ${fmtUnits(occ.occupied_by_unit)}` : "kosong"}</span>
       <NodeRulesEditor node={bin} testId={testId} onChange={(v) => canEdit && onChange({ function: v.function, rules: v.rules })} />
-      {canEdit && <button data-testid={`${testId}-delete`} onClick={onDelete} className="ml-auto text-[#C0341D] hover:bg-[#FBE9E7] rounded p-0.5"><Trash2 size={11} /></button>}
+      {canEdit && moveOptions.length > 0 && (
+        <div className="w-44 ml-auto" title="Pindah bin ke tingkat lain (ID & isi tetap; bila berisi stok, simpan meminta alasan migrasi)">
+          <KNSelect data-testid={`${testId}-move`} value="" placeholder="Pindah ke…" options={moveOptions} onValueChange={(v) => v && onMove(v)} />
+        </div>
+      )}
+      {canEdit && <button data-testid={`${testId}-delete`} onClick={onDelete} className={`${moveOptions.length ? "" : "ml-auto "}text-[#C0341D] hover:bg-[#FBE9E7] rounded p-0.5`}><Trash2 size={11} /></button>}
     </div>
   );
 }

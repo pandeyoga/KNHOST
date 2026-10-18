@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Play, Trash2, FolderOpen } from "lucide-react";
+import { Play, Trash2, FolderOpen, CalendarClock } from "lucide-react";
+import ScheduleForm, { scheduleLabel } from "./ScheduleForm";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 
@@ -9,6 +10,7 @@ export default function TemplatesPanel({ onUse, onRan, refreshKey }) {
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState("");
   const load = () => axios.get(`${API}/export-center/templates`).then((r) => setItems(r.data.items || [])).catch((e) => setError(errText(e)));
   useEffect(() => { load(); }, [refreshKey]); // eslint-disable-line
 
@@ -19,6 +21,14 @@ export default function TemplatesPanel({ onUse, onRan, refreshKey }) {
       setMsg(`“${t.name}” dijalankan: ${r.data.total_rows.toLocaleString("id-ID")} baris — lihat tab Pekerjaan.`);
       load(); onRan?.();
     } catch (e) { setError(errText(e)); }
+  };
+  const runSchedule = async (t) => {
+    setError(null); setMsg("");
+    try {
+      const r = await axios.post(`${API}/export-center/templates/${t.id}/schedule/run-now`);
+      setMsg(`Uji jadwal “${t.name}”: ${r.data.total_rows.toLocaleString("id-ID")} baris (${r.data.date_text}).`);
+      load(); onRan?.();
+    } catch (e) { setError(errText(e)); load(); }
   };
   const remove = async (t) => {
     setError(null);
@@ -41,7 +51,17 @@ export default function TemplatesPanel({ onUse, onRan, refreshKey }) {
             <span className="text-[#6B6B73]">{t.dataset_label}</span>
             <span className="uppercase text-[10.5px] font-bold text-[#6B6B73]">{t.format}</span>
             <span className="text-[#8E8E93]">{t.spec?.columns?.length || 0} kolom · dipakai {t.run_count || 0}×</span>
+            {t.schedule && (
+              <span data-testid={`export-template-schedule-${t.id}`} className="inline-flex items-center gap-1 text-[#0058CC]">
+                <CalendarClock size={12} /> {scheduleLabel(t.schedule)}
+                {t.schedule.active && t.schedule.next_run_at && ` · berikutnya ${new Date(t.schedule.next_run_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}`}
+              </span>
+            )}
             <span className="ml-auto flex items-center gap-3">
+              <button type="button" data-testid={`export-template-schedule-edit-${t.id}`} onClick={() => setEditing(editing === t.id ? "" : t.id)}
+                      className="inline-flex items-center gap-1 text-[#0058CC] font-semibold"><CalendarClock size={12} /> {t.schedule ? "Ubah jadwal" : "Jadwalkan"}</button>
+              {t.schedule && <button type="button" data-testid={`export-template-schedule-test-${t.id}`} onClick={() => runSchedule(t)}
+                      className="text-[#0058CC] font-semibold">Uji jadwal</button>}
               <button type="button" data-testid={`export-template-run-${t.id}`} onClick={() => run(t)}
                       className="inline-flex items-center gap-1 rounded-full bg-[#0058CC] text-white px-3 py-1 font-semibold"><Play size={12} /> Export sekarang</button>
               <button type="button" data-testid={`export-template-use-${t.id}`} onClick={() => onUse(t)}
@@ -49,6 +69,8 @@ export default function TemplatesPanel({ onUse, onRan, refreshKey }) {
               <button type="button" data-testid={`export-template-delete-${t.id}`} onClick={() => remove(t)}
                       className="inline-flex items-center gap-1 text-[#C0341D] font-semibold"><Trash2 size={12} /> Hapus</button>
             </span>
+            {t.last_schedule_error && <p className="w-full text-[11.5px] text-[#C0341D]" data-testid={`export-template-schedule-error-${t.id}`}>Jadwal terakhir gagal: {t.last_schedule_error}</p>}
+            {editing === t.id && <ScheduleForm tpl={t} onCancel={() => setEditing("")} onSaved={() => { setEditing(""); setMsg(`Jadwal “${t.name}” tersimpan.`); load(); }} />}
           </div>
         ))}
       </div>

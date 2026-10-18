@@ -24,6 +24,7 @@ import { apiErrorText } from "../../../utils/apiError";
 import { can } from "../../../config/roles";
 import IntercoCreateModal from "./IntercoCreateModal";
 import IntercoSettlementModal from "./IntercoSettlementModal";
+import IntercoPaymentSchedule from "./IntercoPaymentSchedule";
 import IntercoDetailPanel from "./IntercoDetailPanel";
 import InternalContractWizardModal from "./InternalContractWizardModal";
 import IntercoCancelModal from "./IntercoCancelModal";
@@ -40,13 +41,14 @@ const TABS = [
   { id: "transactions", label: "Daftar Transaksi", icon: ArrowRightLeft },
   { id: "balances",     label: "Saldo Antar-PT",   icon: Wallet },
   { id: "settlements",  label: "Settlement",       icon: Layers },
+  { id: "schedule",     label: "Jadwal Bayar",     icon: Layers },
   { id: "returns",      label: "Retur Antar-PT",   icon: Undo2 },
   { id: "loans",        label: "Pinjaman Antar-PT", icon: Wallet },
   { id: "margin",       label: "Rapor Margin",     icon: TrendingUp },
 ];
 
 // Tab yang bicara UANG antar-PT — dipagari izin `interco_finance` (E-0/E0.8f).
-const MONEY_TABS = ["balances", "settlements", "loans", "margin"];
+const MONEY_TABS = ["balances", "settlements", "schedule", "loans", "margin"];
 
 export default function IntercoView({ currentUser, selectedEntity, entities = [] }) {
   const [tab, setTab] = useState("transactions");
@@ -270,6 +272,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
         />
       )}
       {tab === "settlements" && <SettlementsPanel rows={settlements} />}
+      {tab === "schedule" && <IntercoPaymentSchedule canConfigure={currentUser?.role === "admin"} />}
       {tab === "returns" && (
         <IntercoReturnsPanel
           rows={returns} canWrite={canWrite}

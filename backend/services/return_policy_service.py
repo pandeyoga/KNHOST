@@ -291,14 +291,74 @@ async def _linked_supplier_deadline(order: Dict[str, Any],
             "origin_untraceable": True}
 
 
+RETURN_ASSUMPTION_DEFAULTS: Dict[str, Any] = {
+    "customer_window_days": 21, "supplier_window_days": 21,
+    "klr08_hangtag_cut": "pending",     # pending | reject | review — KLR-08 belum diputuskan owner
+    "klr09_end_event": "pending",       # pending | request | goods_received — KLR-09 belum diputuskan owner
+}
+_RECEIPT_VIA = ("inbound", "grn", "goods_receipt", "purchase", "receiving")
+
+
+async def return_assumptions(entity_id: str = "") -> Dict[str, Any]:
+    from services.config_service import get_effective_settings
+    eff = await get_effective_settings(entity_id or None)
+    return {**RETURN_ASSUMPTION_DEFAULTS, **(eff.get("returns") or {})}
+
+
+async def customer_reference(order: Dict[str, Any]) -> Dict[str, Any]:
+    """LN-083 — tanggal acuan customer = SJ penjualan (bukan tanggal SO). Disimpan beserta sumbernya."""
+    shps = await db.shipments.find({"order_id": order.get("id"), "status": {"$nin": ["cancelled", "void", "draft"]}},
+                                   {"_id": 0, "shipment_no": 1, "dispatched_at": 1, "created_at": 1}).to_list(200)
+    rows = [{"number": x.get("shipment_no", ""), "date": x.get("dispatched_at") or x.get("created_at") or ""} for x in shps]
+    rows = [r for r in rows if r["date"]]
+    if rows:
+        last = max(rows, key=lambda r: r["date"])
+        return {"type": "shipment", "number": last["number"], "date": last["date"], "all": rows}
+    date = _order_reference_date(order)
+    return {"type": "order_field", "number": order.get("number", ""), "date": date, "all": []}
+
+
+def _roll_receipt(r: Dict[str, Any]) -> Dict[str, str]:
+    acq = r.get("acquired") or {}
+    if acq.get("via") in _RECEIPT_VIA and acq.get("date"):
+        return {"date": acq["date"], "source": f"penerimaan roll ({acq.get('via')})"}
+    return {"date": r.get("received_at") or r.get("created_at") or "", "source": "roll tercatat di gudang"}
+
+
+async def supplier_deadlines(rolls: List[Dict[str, Any]], fallback_days: int) -> List[Dict[str, Any]]:
+    """LN-083-T02 — deadline klaim supplier per RECEIVING roll (bukan tanggal PO terakhir)."""
+    groups: Dict[tuple, Dict[str, Any]] = {}
+    po_cache: Dict[str, Any] = {}
+    for r in rolls:
+        rec = _roll_receipt(r)
+        po_id = _roll_po_id(r)
+        if not po_id:
+            continue
+        if po_id not in po_cache:
+            po = await db.purchase_orders.find_one({"id": po_id}, {"_id": 0}) if po_id else None
+            sup = await db.suppliers.find_one({"id": po.get("supplier_id")}, {"_id": 0}) if po and po.get("supplier_id") else None
+            win = int(resolve_supplier_return_policy(sup, po)["policy"].get("window_days") or fallback_days) \
+                if sup and (sup.get("return_policy") or {}).get("window_days") else fallback_days
+            po_cache[po_id] = {"po": po or {}, "supplier": sup or {}, "window": win}
+        meta = po_cache[po_id]
+        key = (po_id, rec["date"][:10])
+        g = groups.setdefault(key, {
+            "po_id": po_id, "po_number": meta["po"].get("po_number", ""), "supplier_name": meta["supplier"].get("name", ""),
+            "receipt_date": rec["date"], "source": rec["source"], "window_days": meta["window"],
+            "deadline": compute_deadline(rec["date"], meta["window"]), "roll_ids": []})
+        g["roll_ids"].append(r.get("id"))
+    return sorted(groups.values(), key=lambda g: g["receipt_date"])
+
+
 async def check_sales_return_eligibility(order: Dict[str, Any],
                                          return_type: str = "",
-                                         on_date: Any = None) -> Dict[str, Any]:
-    """Evaluasi kelayakan retur jual untuk sebuah order pada `on_date` (default now).
+                                         on_date: Any = None,
+                                         hangtag_missing: bool = False,
+                                         cut_by_customer: bool = False) -> Dict[str, Any]:
+    """Kelayakan retur jual (LN-083): batas customer dari SJ, independen dari batas supplier.
 
-    Mengembalikan: policy terpilih (+snapshot), deadline, sisa hari, apakah dalam
-    window, apakah diblok (enforce), daftar peringatan, dan deadline supplier-linked
-    (informasional) bila policy `link_to_supplier_window`.
+    Batas supplier (per receiving roll) hanya informasi untuk klaim lanjutan ke supplier dan TIDAK
+    pernah menolak customer. KLR-08/KLR-09 yang belum diputuskan dilaporkan sebagai pending.
     """
     now = parse_dt(on_date) or datetime.now(timezone.utc)
     categories = list({it.get("category") for it in (order.get("items") or []) if it.get("category")})
@@ -307,23 +367,26 @@ async def check_sales_return_eligibility(order: Dict[str, Any],
         categories=categories,
         entity_id=order.get("entity_id", ""),
     )
+    assume = await return_assumptions(order.get("entity_id", ""))
+    if policy.get("is_default"):
+        policy = {**policy, "window_days": int(assume["customer_window_days"])}
 
-    ref_date = _order_reference_date(order)
+    ref = await customer_reference(order)
+    ref_date = ref["date"]
     window_days = int(policy.get("window_days") or 0)
     deadline = compute_deadline(ref_date, window_days)
 
-    # Deadline linked ke supplier (opsional) — bisa lebih ketat.
-    supplier_linked: Dict[str, Any] = {}
-    if policy.get("link_to_supplier_window"):
-        supplier_linked = await _linked_supplier_deadline(order, window_days)
-        sl_deadline = supplier_linked.get("deadline") or ""
-        if sl_deadline:
-            # Deadline efektif = yang paling ketat (paling awal).
-            d1, d2 = parse_dt(deadline), parse_dt(sl_deadline)
-            if d1 and d2:
-                deadline = min(d1, d2).isoformat()
-            elif d2:
-                deadline = sl_deadline
+    rolls = await db.inventory_rolls.find(
+        {"reserved_ref.type": "sales_order", "reserved_ref.id": order.get("id", "")},
+        {"_id": 0, "id": 1, "po_id": 1, "acquired": 1, "acquired_history": 1, "created_at": 1, "received_at": 1}).to_list(2000)
+    sup_rows = await supplier_deadlines(rolls, int(assume["supplier_window_days"])) if rolls else []
+    for g in sup_rows:
+        d = parse_dt(g["deadline"])
+        g["within_window"] = bool(d and now <= d)
+    supplier_linked: Dict[str, Any] = {
+        "source": "roll_receipts" if sup_rows else "untraceable", "receivings": sup_rows,
+        "origin_untraceable": not sup_rows, "independent_of_customer": True,
+        "any_expired": any(not g["within_window"] for g in sup_rows)}
 
     dl = parse_dt(deadline)
     within_window = True
@@ -333,7 +396,7 @@ async def check_sales_return_eligibility(order: Dict[str, Any],
         days_remaining = (dl - now).days
 
     warnings: List[str] = []
-    # Cek jenis retur diizinkan
+    pending: List[Dict[str, str]] = []
     type_ok = True
     if return_type:
         allowed = policy.get("allowed_return_types") or []
@@ -342,19 +405,38 @@ async def check_sales_return_eligibility(order: Dict[str, Any],
             warnings.append(
                 f"Jenis retur '{return_type}' tidak diizinkan oleh kebijakan '{policy.get('name')}'.")
     if not ref_date:
-        warnings.append("Tanggal pengiriman order tidak diketahui — deadline tak dapat dihitung.")
+        warnings.append("Tanggal SJ pengiriman tidak diketahui — deadline tak dapat dihitung.")
     if dl and not within_window:
-        msg = (f"Di luar jendela retur ({window_days} hari). "
-               f"Deadline {deadline[:10]}.")
-        warnings.append(msg)
+        warnings.append(f"Di luar jendela retur customer ({window_days} hari dari SJ {ref.get('number') or ''}). "
+                        f"Deadline {deadline[:10]}.")
+    if dl and within_window and assume["klr09_end_event"] == "pending":
+        pending.append({"code": "KLR-09", "message": "Pengajuan masih dalam batas. Apakah barang juga harus tiba di "
+                        "gudang dalam 21 hari belum diputuskan owner — status akhir menunggu keputusan."})
+    condition_block = False
+    if hangtag_missing or cut_by_customer:
+        mode = assume["klr08_hangtag_cut"]
+        what = " & ".join(x for x, f in (("hangtag hilang", hangtag_missing), ("kain sudah dipotong", cut_by_customer)) if f)
+        if mode == "pending":
+            pending.append({"code": "KLR-08", "message": f"Kondisi {what}: aturan belum diputuskan owner — "
+                            "tidak otomatis ditolak/diterima."})
+        elif mode == "reject":
+            condition_block = True
+            warnings.append(f"Kondisi {what} ditolak (asumsi KLR-08 = tolak).")
+        else:
+            warnings.append(f"Kondisi {what} wajib diperiksa (asumsi KLR-08 = periksa).")
     needs_admin_review = bool(supplier_linked.get("origin_untraceable"))
     if needs_admin_review:
-        warnings.append("Asal barang tidak diketahui (roll tidak terlacak sampai PO) — batas retur memakai "
-                        "kebijakan retur penjualan saja; perlu diperiksa Sales Admin.")
+        warnings.append("Asal barang tidak terlacak sampai receiving — batas klaim supplier tidak dapat dihitung; "
+                        "batas customer tetap berlaku.")
+    elif supplier_linked["any_expired"]:
+        warnings.append("Batas klaim ke supplier sudah lewat untuk sebagian receiving — retur customer TETAP dinilai "
+                        "dengan batasnya sendiri.")
 
     enforce = bool(policy.get("enforce_window"))
-    blocked = bool(enforce and dl is not None and not within_window)
-    eligible = type_ok and (within_window or not enforce)
+    blocked = bool(enforce and dl is not None and not within_window) or condition_block
+    eligible = type_ok and (within_window or not enforce) and not condition_block
+    decision = "blocked" if blocked else ("outside_window" if dl and not within_window else
+                                          ("pending_decision" if pending else ("eligible" if eligible else "review")))
 
     return {
         "order_id": order.get("id", ""),
@@ -362,8 +444,10 @@ async def check_sales_return_eligibility(order: Dict[str, Any],
         "customer_id": order.get("customer_id", ""),
         "eligible": eligible,
         "blocked": blocked,
+        "decision": decision,
         "within_window": within_window,
         "reference_date": ref_date,
+        "reference_source": {k: ref[k] for k in ("type", "number", "date")},
         "window_days": window_days,
         "deadline": deadline,
         "days_remaining": days_remaining,
@@ -371,10 +455,12 @@ async def check_sales_return_eligibility(order: Dict[str, Any],
         "restocking_fee_pct": float(policy.get("restocking_fee_pct") or 0),
         "allowed_return_types": policy.get("allowed_return_types") or [],
         "allowed_outcomes": policy.get("allowed_outcomes") or [],
-        "supplier_linked": supplier_linked or None,
+        "supplier_linked": supplier_linked,
         "origin_untraceable": needs_admin_review,
         "needs_admin_review": needs_admin_review,
+        "pending_decisions": pending,
+        "assumptions": {**assume, "is_assumption": True},
         "warnings": warnings,
-        "policy": snapshot_sales_policy(policy),
+        "policy": {**snapshot_sales_policy(policy), "assumptions": assume},
         "evaluated_at": now_iso(),
     }

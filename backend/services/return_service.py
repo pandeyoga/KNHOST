@@ -449,6 +449,11 @@ async def create_return(
             "require_inspection": elig.get("require_inspection"),
             "supplier_linked": elig.get("supplier_linked"),
             "warnings": elig.get("warnings", []),
+            # LN-083 — sumber tanggal & keputusan yang belum final ikut tersimpan (auditable).
+            "decision": elig.get("decision"),
+            "reference_source": elig.get("reference_source"),
+            "pending_decisions": elig.get("pending_decisions", []),
+            "assumptions": elig.get("assumptions"),
         }
     except Exception:  # noqa: BLE001 — resolusi policy tak boleh menggagalkan pembuatan retur
         policy_snapshot, return_deadline, policy_eligibility = {}, "", {}

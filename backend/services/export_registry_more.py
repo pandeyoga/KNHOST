@@ -106,7 +106,20 @@ STAFF = [
 ]
 
 M, H = ("product", "view"), ("hr", "view")
+IC = ("interco_finance", "view")
 MORE = [
+    S("interco_transactions", "Transaksi Antar-PT (per sisi)", "Keuangan", "interco_transactions", IC,
+      "number:No.|counterpart_number:No. pasangan|role:Sisi (penjual/pembeli)|seller_entity_name:PT penjual"
+      "|buyer_entity_name:PT pembeli|status:Status|grand_total:Total:m|settled_amount:Dibayar:m|returned_amount:Diretur:m"
+      "|received_at:Barang diterima:t|invoiced_at:Diinvoice:t|due_date:Jatuh tempo:d|entity_id:ID badan usaha",
+      "created_at:Tanggal dibuat:t|received_at:Tanggal diterima:t|invoiced_at:Tanggal invoice:t",
+      grain="1 baris = 1 dokumen per sisi (penjual & pembeli terpisah, tidak digabung)"),
+    S("interco_settlements", "Pembayaran Antar-PT", "Keuangan", "interco_settlements", IC,
+      "number:No.|payer_entity_name:PT pembayar|payee_entity_name:PT penerima|method:Metode|total_applied:Dibayar:m"
+      "|settle_date:Tanggal bayar:d|status:Status|entity_id:ID badan usaha", "settle_date:Tanggal bayar:d"),
+    S("interco_accounts", "Saldo Antar-PT per Pasangan", "Keuangan", "interco_accounts", IC,
+      "from_entity_name:Dari PT|to_entity_name:Ke PT|role:Jenis (piutang/utang)|outstanding:Saldo terbuka:m"
+      "|open_count:Transaksi terbuka:n|settled_amount:Sudah dibayar:m|entity_id:ID badan usaha", date=""),
     S("business_entities", "Badan Usaha", "Master", "business_entities", ("entity", "view"),
       "short_name:Nama singkat|legal_name:Nama legal|type:Jenis|npwp:NPWP|city:Kota|doc_prefix:Prefix|status:Status", joins=[]),
     S("color_library", "Pustaka Warna", "Master", "color_library", ("color", "view"),
@@ -233,4 +246,5 @@ EXCLUDED_MORE = {
     "supplier_dn_profiles": "Profil OCR surat jalan pemasok (teknis)", "rfid_devices": "Konfigurasi perangkat RFID",
     "rfid_passages": "Log gerbang RFID mentah (observasi, bukan transaksi)",
     "store_credit_redemptions": "Turunan saldo kredit (lihat Uang Masuk/Retur)",
+    "intercompany_eliminations": "Jurnal eliminasi konsolidasi (turunan dari transaksi antar-PT)",
 }
