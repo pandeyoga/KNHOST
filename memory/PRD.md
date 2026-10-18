@@ -1391,3 +1391,10 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - Foto kamera HP (`capture=environment`) di form pengecualian & bukti buang BS.
 - Tes: test_ln091t02_ln093_chain.py 7/7; iteration_230 100%.
 - Berikutnya: inbox CST untuk retur internal masuk, validasi owner/reviewer L09, KLR pending.
+
+## 2026-10-18 (6) — status in_progress
+- LN-093 Meja CST: tab Antar-PT → "Retur Masuk" (`interco-tab-return-inbox`): retur internal wajib terima (terima / tugas gudang) + roll menunggu keputusan tahap 2, bisa dipakai akun yang hanya punya akses CST (tanpa data pelanggan Sukacita). API GET /api/return-dispositions/inbox; foto bukti keputusan POST/GET /api/sales-returns/{id}/disposition/photos (boleh walau retur pelanggan selesai). Izin keputusan: sales_return.approve ATAU interco.approve.
+- Pengingat batas supplier: job harian 07:30 `return_supplier_deadline_reminder` → warehouse_admin/admin/finance PT pemilik roll, N = returns.supplier_reminder_days (bawaan 3), sekali per roll/batas/peran. Batas = kebijakan supplier (bila ada) atau supplier_window_days 21.
+- LN-014: nomor lot internal kanonik; ubah lot supplier/dye/supplier/alias pada lot berisi roll wajib alasan + `identity_history`; alias internal ASUMSI `lot.alias_mode` off|manual & `lot.alias_unique_scope` (KLX-01 pending); GET /api/lots/identity-trace (lot internal vs supplier, PO/SJ asal, roll retur); label roll menampilkan lot internal + lot supplier terpisah. Fix: unduh lampiran retur (get_object tuple).
+- Tes: test_ln091t02_ln093_chain.py 10/10, test_ln014_lot_identity.py 3/3; iteration_231 100%.
+- Berikutnya: LN-140 uji rantai end-to-end, validasi owner KLX-01/KLR pending, L12/L13 butuh perangkat.

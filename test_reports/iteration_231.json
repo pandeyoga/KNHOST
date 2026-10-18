@@ -1,0 +1,27 @@
+{
+  "summary": "LN-093 Daftar Retur CST (inbox) + Pengingat Batas Supplier (job notifikasi) + Foto disposisi pada retur selesai + LN-014 Lot internal vs Lot supplier (riwayat, alias configurable, telusur identitas) — ALL GREEN. Backend: 13/13 pytest (test_ln091t02_ln093_chain.py 10/10, test_ln014_lot_identity.py 3/3). Frontend admin@kainnusantara.id entitas Cipta Sandang: tab interco-tab-return-inbox menampilkan CST/ICR-00016 (dari KSC/ICR-00016) dengan ic-inbox-accept-icr_496d922ada6f + kasus DEMO_LN093 dengan 3 baris disposition-check-<rollId> (kasus DEMO_LN093-08710d 1 roll + 52c0fe 2 roll); customer_name Sukacita tidak diekspos. 'Terima retur' sukses → status 'Diterima · tunggu barang · Wajib diterima'. 'Simpan sebagai stok' (keep-stock) dengan reason 'simpan sebagai stok uji' pada roll DEMO_LN093-a6bc sukses — baris hilang dari pending (menyisakan kasus 52c0fe). Action bar disposition-keep-stock/supplier-return/dispose/camera + disposition-reason tampil setelah checkbox roll dipilih. Kebijakan Retur: return-assume-supplier_reminder_days (default 3) tersimpan ke global (3→4 reload=4, dibalik ke 3). Lot & Silsilah ?view=inventory-lots&entity=ent_ksc: lot-identity-trace (lot-trace-input/submit/empty 'Tidak ada lot dengan acuan 234') + 20 lot-row + Detail → lot-canonical-number 'KSC/LOT-2610-0123', lot-edit-internal_alias disabled (alias_mode off → benar), lot-edit-reason + lot-edit-save tersedia. lot-identity-history conditional (hanya tampil setelah ada perubahan — diverifikasi via pytest test_identity_change_requires_reason_and_keeps_history).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_ln091t02_ln093_chain.py",
+    "/app/backend/tests/test_ln014_lot_identity.py",
+    "/app/test_reports/pytest/iter231.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "return_disposition_service.inbox() memakai projection eksplisit untuk interco_returns (role=receiver + mandatory_accept) tanpa customer_name/field pelanggan Sukacita — sesuai privasi inter-entitas; counts.incoming/rolls memberi agregat untuk badge menu.",
+    "job_supplier_deadline_reminder() memakai create_notification dedupe ref '<roll_id>:<deadline>:<role>' scope=ever → aman untuk cron harian (uji idempotensi 2 pemanggilan menghasilkan tepat 3 notifikasi untuk 3 peran warehouse_admin/admin/finance di entitas pemilik). settings.returns.supplier_reminder_days per-entitas → scoping sudah benar via return_assumptions(entity_id).",
+    "upload_disposition_photo tidak menolak retur status 'refund_settled' (sengaja — jalur disposisi terpisah dari siklus retur pelanggan). validate_upload + content_type.startswith('image/') memblokir non-foto. GET download juga memverifikasi header entitas (via _ret) sehingga CST bisa unduh foto walau retur dibuat PT lain.",
+    "lot_service._check_alias membaca cfg.alias_mode (off|manual) dari system_settings.scope=lot — bila 'off' tolak 400 'KLX-01 ...' (sesuai spesifikasi: alias default OFF, pending keputusan KLX-01). lot.alias_unique_scope entity_supplier (default) vs entity dicek dengan query dedupe terpisah → uji lintas supplier membuktikan uniqueness bisa dipertegas.",
+    "lot_trace_service.identity_trace query atas supplier_lot + lot_number + internal_alias; matched_on label jelas; row.return_rolls menampilkan roll return via source_roll_ids. Panel UI LotIdentityTrace memberi empty-state yang informatif.",
+    "ReturnAssumptionsPanel membentuk payload PUT /api/settings scope=global; default supplier_reminder_days=3 di-merge dari API dan fallback FE — konsisten dengan return_policy_service.DEFAULTS."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "100% core UI testids verified"},
+  "test_credentials": "admin@kainnusantara.id / demo12345 (lintas-entitas); X-Entity-Id ent_89cbf7444def (CST), ent_ksc (Sukacita).",
+  "seed_data_creation": "Memakai seed yang ada (DEMO_LN093-08710d sret_DEMO_LN093_08710d + CST/ICR-00016 di ent_ksc). Tidak ada seed baru dibuat; test ln014 pakai TEST_LN014_<rand> prefix dengan teardown.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "LN-093 inbox CST + supplier deadline reminder + photo-on-settled stabil. LN-014 identity-trace + alias configurable (off default) + history pada lot berisi roll stabil. Catatan: alias_mode harus dikembalikan ke 'off' setelah uji manual (tes pytest otomatis unset di teardown fixture). Dual-control retur: pembuat retur = admin ⇒ uji 'Terima retur' di UI tetap sukses (status interco_return → approved + flag warehouse_transfer dibuat); bila ingin menguji penolakan dual-control, pakai akun berbeda sebagai pembuat retur awal.",
+  "rca of the issue": "N/A — tidak ada bug. Semua test lulus sesuai spesifikasi LN-093 & LN-014. Pytest env memerlukan MONGO_URL & DB_NAME dari backend/.env (localhost:27017 + test_database); REACT_APP_BACKEND_URL=http://localhost:8001 untuk pytest internal."
+}
