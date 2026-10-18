@@ -1384,3 +1384,10 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - LN-092: simulasi cutloss (3 skenario) & diskon; posting cutloss dikunci; nego wajib pengecualian QC.
 - LN-024: pengingat bayar antar-PT ke finance N hari sebelum tanggal bayar.
 - Tes: test_ln091_092_returns_exceptions.py 5/5; iteration_229 100%.
+
+## 2026-10-18 (5) — status in_progress
+- LN-091-T02: kerugian turun grade saat release karantina = selisih harga daftar grade lama vs baru (faktor % per grade di Kebijakan Retur, `returns.grade_price_factors`), dibatasi nilai buku; jurnal Dr 5-9500/Cr 1-1300 (`return_grade_impairment`), koleksi `return_grade_impairments`; kredit pelanggan & invoice tidak berubah. Panel `return-grade-loss-panel`.
+- LN-093: panel "Tujuan barang retur" — tahap 1 (Sukacita) simpan / retur internal ke CST (pasangan interco_returns `mandatory_accept`, CST tidak bisa membatalkan, gudang fisik tetap); tahap 2 (CST) simpan / retur supplier (retur beli di entitas CST, ditolak bila lewat 21 hari) / buang BS (foto wajib + write-off). Lewat masa supplier → otomatis simpan tanpa ubah status QC. Klaim atomik per roll (retry aman). API `/api/sales-returns/{id}/disposition[/internal|/supplier]`, `/grade-impairments`.
+- Foto kamera HP (`capture=environment`) di form pengecualian & bukti buang BS.
+- Tes: test_ln091t02_ln093_chain.py 7/7; iteration_230 100%.
+- Berikutnya: inbox CST untuk retur internal masuk, validasi owner/reviewer L09, KLR pending.
