@@ -218,7 +218,7 @@ Dampak: Validasi akhir requirement yang tergantung item ini; tidak memblok semua
 
 ## OPS-01 — SOP pelaksanaan stock opname
 
-Jenis: operational_policy. Status: **resolved 2026-10-18** (keputusan owner via chat; lihat evidence/L10/report.md sesi 3). Requirement: LN-101.
+Jenis: operational_policy. Status: **pending**. Requirement: LN-101.
 
 Kebutuhan opname jelas, parameter freeze/cutoff/delta, recount dan otorisasi adjustment harus dicocokkan dengan fitur/SOP yang benar-benar berlaku.
 

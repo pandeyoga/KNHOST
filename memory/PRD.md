@@ -1355,3 +1355,10 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - 6 tes lama + LN-033 disesuaikan (fixture dinamis). Semua 75 tes terkait lulus. iteration_223.
 - Terbuka: (selesai 2026-10-18 lanjutan) md kini boleh mencatat hasil uji ulang cukup `rnd.decide` (keputusan owner); pemilih kontrak existing `reval-contract-select` di modal hasil + endpoint `GET /api/rnd/samples/{id}/contract-options`.
 
+
+
+## 2026-10-18 — L11 Pusat Export (LN-110 + LN-113), status in_progress
+- Repo pandeyoga/KNHOST di-clone ke /app; preview memakai bundle statis (rebuild: `bash /app/scripts/rebuild_frontend.sh`), data demo `bash /app/scripts/restore_local_demo.sh`.
+- Dibangun: registry 20 dataset + cakupan seluruh koleksi, pembuat export (kolom/relasi to-one, periode WIB, filter DAN/ATAU berkurung, urutan, pratinjau), job XLSX berpartisi + Ringkasan / CSV, unduh pemilik saja dengan izin diperiksa ulang, retry tervalidasi ulang, pengaman formula. Izin baru `data_export.view|export`.
+- Bukti: docs/development/gelombang-lanjutan-pasca-p05-2026-10-16/evidence/L11/report.md; tes backend/tests/test_l11_export_center.py (6/6); testing agent iteration_226 100%.
+- Backlog berikutnya: LN-111 join Finance (ordered/shipped/invoiced/cash), LN-112 rapor Designer & Sales (DES-03), pemetaan 70 koleksi yang belum dipetakan, sisa L10 (gudang bersama, aksi pindah bin), LN-024 interco AR/AP (asumsi cutoff configurable), item KLR/KLX dengan asumsi configurable.

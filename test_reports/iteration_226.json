@@ -1,0 +1,19 @@
+{
+  "summary": "L11 LN-110/LN-113 Pusat Export: ran existing pytest suite + extra sales-ownership scope probe + full frontend UI walkthrough as admin and sales.kanda. All 6 backend tests pass (preview = exported XLSX rows for nested AND/OR filter; coverage lists every collection; big dataset partitioned not truncated; sales field security 403 FIELD_NOT_ALLOWED + SKU masking + PO unavailable; owner-only download, ACCESS_CHANGED on revoke + retry re-validates; formula cell safety XLSX/CSV). Frontend admin flow: sidebar 'Pusat Export' under Alat renders, dataset picker (23 datasets), 25 columns toggle, preview-button → export-preview-total='11 baris cocok', nested filter (add-cond-0 + add-group-0) available, tabs Pekerjaan (job rows present) and Cakupan data (coverage-panel). As sales.kanda: inventory_rolls shows export-hidden-columns note ('Tidak tersedia untuk peran Anda: Grade, LOT, Dye lot, HPP satuan, Grade'), export-dataset-unavailable section renders PO + 8 other locked datasets, empty-value condition correctly ignored by preview (returns scoped 6 rows == /api/sales-orders ownership). sales.kanda sales_orders preview = own SOs only (6 numbers match).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_l11_export_center.py"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "export_center.py 209 LOC, export_engine.py 410 LOC, export_registry.py 273 LOC — within file-size budget. Clean async/await, no raw _id leaks, Pydantic validation with proper 403/409/410/413/404 responses. Download endpoint re-checks dataset_access + columns + entity scope before serving file (LN-113). File-path containment check uses EXPORT_DIR in path.parents — good.",
+    "Minor: _TASKS set grows across job runs (bounded by discard callback) — fine, but asyncio tasks are not awaited at shutdown; consider adding a lifespan hook if large exports are in-flight on reload.",
+    "Minor: list_jobs mutates persisted doc shape in-memory to show status 'expired' but never writes it back — acceptable for display; just note the state is derived."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; sales.kanda@kainnusantara.id/demo1234 (ent_kanda); manager@, finance@ /demo1234",
+  "seed_data_creation": "pytest fixture inserts customers id=cust_TEST_exp_<tag> with name starting '=' for formula-safety test; teardown deletes and $addToSet restores manager.field_visibility.grade.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "L11 Pusat Export is green end-to-end. If modifying export_engine.py (CMP ops, partitioning) rerun tests/test_l11_export_center.py -n0. Frontend testids: export-dataset-<id>, export-dataset-unavailable (section, no per-id suffix), export-hidden-columns (note under columns), export-preview-total, export-tab-jobs/coverage, export-coverage-panel. UI empty-value conditions are stripped client-side before POST — do not rely on UI to send partial filter nodes."
+}

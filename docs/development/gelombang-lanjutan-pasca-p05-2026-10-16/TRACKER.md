@@ -21,7 +21,7 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | L08 Menu Retur terpadu, penerimaan, QC dan lineage roll | in_progress | 0/4 | 0/13 | KLR-08, KLR-09 | [Buka](phases/L08.md) |
 | L09 Tukar, kompensasi, retur interco dan supplier end-to-end | in_progress | 0/4 | 0/13 | KLR-01, KLR-02, KLR-03, KLR-04, KLR-05, KLR-06, KLR-07, KLR-09, KLR-10, KLR-11 | [Buka](phases/L09.md) |
 | L10 Putaway, stock opname, dashboard dan Meja User | not_started | 0/3 | 0/9 | OPS-01 | [Buka](phases/L10.md) |
-| L11 Pusat export, join bisnis dan rapor staf | not_started | 0/4 | 0/12 | DES-03 | [Buka](phases/L11.md) |
+| L11 Pusat export, join bisnis dan rapor staf | in_progress | 0/4 | 0/12 | DES-03 | [Buka](phases/L11.md) |
 | L12 Kesiapan ERP untuk middleware Chainway dan UAT tiga perangkat | not_started | 0/3 | 0/56 | HW-01 | [Buka](phases/L12.md) |
 | L13 Absensi langsung perangkat ke ERP | not_started | 0/2 | 0/6 | HR-01, HW-02 | [Buka](phases/L13.md) |
 | L14 Integrasi, migrasi, UAT dan penutupan gelombang | not_started | 0/4 | 0/15 | UAT-01 | [Buka](phases/L14.md) |
@@ -70,10 +70,10 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-100 | L10 | Alamat fisik dan putaway yang dapat dipakai | in_progress | evidence/L10/report.md |
 | LN-101 | L10 | Stock opname fisik, identitas, qty dan rekonsiliasi | in_progress | evidence/L10/report.md |
 | LN-102 | L10 | Dashboard stok dan antrean Meja User yang konsisten | in_progress | evidence/L10/report.md |
-| LN-110 | L11 | Registry seluruh data bisnis dan builder export | not_started | belum ada |
+| LN-110 | L11 | Registry seluruh data bisnis dan builder export | in_progress | evidence/L11/report.md |
 | LN-111 | L11 | Join relevan, grain dan Finance analytics | not_started | belum ada |
 | LN-112 | L11 | Rapor Designer dan Sales lengkap | not_started | belum ada |
-| LN-113 | L11 | Keamanan field dan konsistensi pekerjaan export | not_started | belum ada |
+| LN-113 | L11 | Keamanan field dan konsistensi pekerjaan export | in_progress | evidence/L11/report.md |
 | LN-120 | L12 | Parity kontrak dan pemisahan modul | not_started | belum ada |
 | LN-121 | L12 | UR300/C72: durability, context dan keputusan bisnis | not_started | belum ada |
 | LN-122 | L12 | CP30EN print/encode/verify dan reprint yang aman | not_started | belum ada |

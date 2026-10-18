@@ -346,7 +346,7 @@
         "backend/routers/ai_analytics.py"
       ],
       "implementation_notes": "",
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
       "evidence": [],
@@ -1449,13 +1449,15 @@
         "LN-110-T02",
         "LN-110-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L11/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "E1 (sesi 2026-10-18)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -1517,13 +1519,15 @@
         "LN-113-T02",
         "LN-113-T03"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L11/report.md"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "E1 (sesi 2026-10-18)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
