@@ -1,0 +1,30 @@
+{
+  "summary": "L11 LN-111/LN-112 + template export + full coverage: all 13 backend tests pass (7 new in test_l11_finance_staff_templates.py: no-row-multiplication for sales_finance per-SO sub-aggregations incl. group_by customer_name _rows=1; attribution via SO.sales_name not current customer owner; date basis order.created_at vs ar_receipts.receipt_date with 'Tanggal terima uang' date_text; designer_report unwinds versions with score mean ignoring nulls (A: 8 rows, scored 2, score 1.5; B: 7 rows, scored 3, score 1.5), is_revision count; sales_report split 60/40 giving attributed_net 1.2M/0.8M, after_returns 1.08M, cash 720k; XLSX Ringkasan + Ringkasan-per-Sales sheet totals=2M; templates save/list/run owner-only (manager→404) + sales.kanda saving grade→403 + delete; coverage.summary.unmapped==0). Regression suite test_l11_export_center.py: 6/6 pass. Frontend admin walkthrough: datasets sales_finance/designer_report/sales_report buttons present; selecting dataset shows export-group-by (step 5) and sales_report shows export-report-note ('Rapor: file XLSX berisi detail + sheet Ringkasan per Sales…'); sales_finance preview returns '11 baris cocok'. Template flow (after switching from 'Semua Entitas' view-only mode to Sukacita): export-template-name + export-template-save → export-notice 'Template … tersimpan'; tab templates shows export-templates-panel with export-template-run-/use-/delete-<id>; run → export-templates-notice '… dijalankan: 3 baris'; use template loads spec and sets ?entity=ent_ksc; delete removes it; Pekerjaan tab lists both LN-110 jobs (Analitik Penjualan, Pelanggan, Mutasi Stok, Pesanan Penjualan) and LN-112 'Rapor Sales (atribusi split)' XLSX rows, confirming LN-110/LN-113 regression intact.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Pusat Export — mode 'Semua Entitas' (view-only)", "issues": ["Template save button is still clickable in 'hanya lihat' mode (admin with scope=all). Save appears to no-op silently (no export-notice, no error). Not blocking since the whole page shows the yellow 'mode ini hanya untuk melihat' banner, but a disabled state or inline hint would be clearer."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_l11_finance_staff_templates.py",
+    "/app/backend/tests/test_l11_export_center.py",
+    "/app/test_reports/pytest/l11_iter227.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "export_registry_more.py groups 'Analitik Keuangan' / 'Rapor Staf' render dataset buttons correctly, but the human-readable group heading text was not found in rendered page body in 'Semua Entitas' mode — verify ExportCenterView.jsx renders the group label chip; harmless as datasets are reachable by testid.",
+    "sales_finance sub-aggregation pipeline (per-SO reduce for shipments / ar allocations / returns) is the correct fix for row multiplication — kept group_by summation producing _rows=1 per SO. Good.",
+    "designer_report score averaging ignores null entries (scored flag) — correctly avoids pulling the mean down to zero for unscored versions.",
+    "Template model enforces current RBAC at save (sales.kanda saving inventory_rolls.grade → 403) and re-validates on run; owner-only run (other user → 404) — good scoping."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "100% core flows"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; manager@, finance@, sales.kanda@ /demo1234",
+  "seed_data_creation": "Module-scoped pytest fixture seeds TEST_-prefixed customer/SO/shipments/ar_receipts/sales_return/design_gallery and cleans up export_templates matching ^TEST_ at teardown. Frontend test created and deleted its own TEST_UI_<ts> template via UI.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "L11 LN-111/112 + templates + full coverage are green. If modifying export_registry_more.py / export_engine.py build_plan sub-aggregations rerun both test_l11_*.py (-n0). Frontend testids added: export-group-by (step 5 select), export-report-note (sales_report/designer_report), export-template-name, export-template-save, export-notice, export-tab-templates, export-templates-panel, export-template-run-<id>, export-template-use-<id>, export-template-delete-<id>, export-templates-notice. 'Semua Entitas' is view-only — switch entity (click Sukacita/Kanda/Cipta) before saving templates. Demo DB has no invoices → invoiced_value=0 (expected)."
+}

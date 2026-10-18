@@ -34,3 +34,30 @@ Filter: pohon `{op: and|or, items: [...]}` (kurung bertingkat ≤4, ≤40 kondis
 - 70 koleksi belum dipetakan (terlihat di tab Cakupan). Ini belum memenuhi "seluruh data bisnis". Perlu putaran pemetaan lanjutan.
 - Job berjalan in-process. Bila backend restart saat job berjalan, job tetap "Diproses" dan bisa dijalankan ulang lewat "Ulangi".
 - LN-111 (join finance/ordered vs shipped vs cash) dan LN-112 (rapor, menunggu DES-03) belum dikerjakan. Reviewer terpisah & owner belum ada, jadi status maksimal in_progress.
+
+
+## Sesi 2026-10-18 (2): LN-111, LN-112, cakupan penuh, template export (in_progress)
+
+### LN-111 Analitik Keuangan
+- Dataset **Analitik Penjualan → Kas per SO** (`sales_finance`, grup "Analitik Keuangan"). Grain 1 SO. Nilai *Dipesan* (total SO / neto), *Qty & nilai dikirim* (Σ shipments × harga neto item), *Ditagih* (Σ invoices.amount), *Retur*, *Penjualan bersih*, *Kas diterima* (Σ alokasi kwitansi AR) dan *Sisa tagihan*.
+- Setiap anak diagregasi per SO lewat `$lookup` + `$group` lebih dulu, baru digabung. Item × bayar × kirim tidak pernah dikalikan.
+- Basis tanggal dipilih dan diberi label: tanggal pesanan / tanggal terkirim. Dataset **Kas Diterima per Alokasi SO** (`cash_allocations`) memakai basis "tanggal terima uang".
+- Atribusi memakai `sales_name` pada transaksi, bukan penugasan pelanggan saat ini.
+- Mode **Ringkasan** (`group_by`, ≤3 kolom) berlaku untuk semua dataset: angka dijumlah/dirata-rata dari grain yang sama, plus "Jumlah baris". Relasi tidak diizinkan dalam mode ini.
+
+### LN-112 Rapor Staf (format = usulan, DES-03 masih pending)
+- **Rapor Designer** (`designer_report`): 1 baris = 1 versi desain. Pembuat desain, penanggung jawab versi, dan penilai dibedakan. Skor kosong tetap kosong; rata-rata mengabaikan yang belum dinilai. Tersedia penanda ronde revisi.
+- **Rapor Sales** (`sales_report`): 1 baris = SO × anggota tim. Porsi diambil dari `split_pct`; tanpa tim berarti 100% sales SO. Penjualan, retur, bersih, dan kas teratribusi dipisah.
+- Export XLSX rapor otomatis menambah sheet "Ringkasan per <staf>" dengan filter dan periode yang sama. Totalnya cocok dengan detail.
+
+### Cakupan
+- 67 dataset. Koleksi tersisa dipetakan (master, keuangan, pembelian, gudang, R&D, SDM). Kamus/konfigurasi/teknis/privasi dikecualikan dengan alasan eksplisit. Hasilnya: **unmapped = 0** (62 dipetakan, 47 dikecualikan pada DB demo).
+
+### Template export
+- `GET/POST /api/export-center/templates`, `DELETE /templates/{id}`, `POST /templates/{id}/run`. Template bersifat pribadi (`export_templates`, user-scoped) dan di-upsert per nama. Isinya divalidasi dengan hak saat disimpan dan saat dijalankan; pengguna lain → 404.
+- UI: tombol "Simpan template" di pembuat export, tab **Template** (Export sekarang · Buka · Hapus).
+
+### Uji
+- `tests/test_l11_finance_staff_templates.py` 7/7 (LN-111-T01/T02/T03, LN-112-T01..T03, template, cakupan) + regresi `tests/test_l11_export_center.py` 6/6.
+- Testing agent iteration_227: backend 13/13, UI 100%.
+- Catatan: data demo tidak berisi invoice, jadi "Ditagih" bernilai 0 di demo.

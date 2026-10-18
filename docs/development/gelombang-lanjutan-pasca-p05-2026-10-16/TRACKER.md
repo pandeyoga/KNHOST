@@ -71,8 +71,8 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-101 | L10 | Stock opname fisik, identitas, qty dan rekonsiliasi | in_progress | evidence/L10/report.md |
 | LN-102 | L10 | Dashboard stok dan antrean Meja User yang konsisten | in_progress | evidence/L10/report.md |
 | LN-110 | L11 | Registry seluruh data bisnis dan builder export | in_progress | evidence/L11/report.md |
-| LN-111 | L11 | Join relevan, grain dan Finance analytics | not_started | belum ada |
-| LN-112 | L11 | Rapor Designer dan Sales lengkap | not_started | belum ada |
+| LN-111 | L11 | Join relevan, grain dan Finance analytics | in_progress | evidence/L11/report.md |
+| LN-112 | L11 | Rapor Designer dan Sales lengkap | in_progress | evidence/L11/report.md |
 | LN-113 | L11 | Keamanan field dan konsistensi pekerjaan export | in_progress | evidence/L11/report.md |
 | LN-120 | L12 | Parity kontrak dan pemisahan modul | not_started | belum ada |
 | LN-121 | L12 | UR300/C72: durability, context dan keputusan bisnis | not_started | belum ada |

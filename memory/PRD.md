@@ -1362,3 +1362,10 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - Dibangun: registry 20 dataset + cakupan seluruh koleksi, pembuat export (kolom/relasi to-one, periode WIB, filter DAN/ATAU berkurung, urutan, pratinjau), job XLSX berpartisi + Ringkasan / CSV, unduh pemilik saja dengan izin diperiksa ulang, retry tervalidasi ulang, pengaman formula. Izin baru `data_export.view|export`.
 - Bukti: docs/development/gelombang-lanjutan-pasca-p05-2026-10-16/evidence/L11/report.md; tes backend/tests/test_l11_export_center.py (6/6); testing agent iteration_226 100%.
 - Backlog berikutnya: LN-111 join Finance (ordered/shipped/invoiced/cash), LN-112 rapor Designer & Sales (DES-03), pemetaan 70 koleksi yang belum dipetakan, sisa L10 (gudang bersama, aksi pindah bin), LN-024 interco AR/AP (asumsi cutoff configurable), item KLR/KLX dengan asumsi configurable.
+
+## 2026-10-18 (2) — L11 lanjutan, status in_progress
+- LN-111: dataset Analitik Penjualan→Kas per SO (dipesan/dikirim/ditagih/retur/kas, tanpa perkalian) + Kas per Alokasi (basis tanggal uang), mode Ringkasan (group_by) di semua dataset.
+- LN-112: Rapor Designer (per versi, skor kosong ≠ 0) & Rapor Sales (atribusi split) + sheet Ringkasan per staf.
+- Cakupan: 67 dataset, unmapped = 0. Template export pribadi (simpan/jalankan/buka/hapus).
+- Tes: test_l11_finance_staff_templates.py 7/7 + test_l11_export_center.py 6/6; iteration_227 100%.
+- Berikutnya: review owner untuk format rapor (DES-03), sisa L10, LN-024 interco, item KLR/KLX dengan asumsi configurable.
