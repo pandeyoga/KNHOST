@@ -78,7 +78,7 @@ export function MobileSampleOrders({ canCancel = false }) {
   const shown = (rows || []).filter((o) => !status || o.status === status);
   return (
     <div className="space-y-2" data-testid="m-sample-orders">
-      <p className="rounded-xl border border-[#EFF0F2] bg-white px-3 py-2 text-[11px] m-muted">Buat pesanan sampel dari <b>Katalog</b>: buka produk → pilih <b>Sampel</b> → checkout (gratis / berbayar).</p>
+      <p className="rounded-xl border border-[#EFF0F2] bg-white px-3 py-2 text-[11px] m-muted">Buat pesanan sampel dari <b>Katalog</b>: buka produk → pilih <b>Order sampel</b> → checkout (gratis / berbayar).</p>
       <Chips items={SAMPLE_FILTERS} value={status} onChange={setStatus} prefix="m-sample-filter" />
       {err && <div className="notice-bar danger text-xs" data-testid="m-sample-error">{err}</div>}
       {msg && <div className="notice-bar success text-xs" data-testid="m-sample-msg">{msg}</div>}

@@ -47,9 +47,9 @@
 /* Main scroll area */
 .m-main {
   flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-padding-bottom: 96px;
-  padding: 14px 14px calc(80px + env(safe-area-inset-bottom));
+  padding: 14px 14px calc(100px + env(safe-area-inset-bottom));
 }
-.m-main.m-flush { padding: 0 0 calc(72px + env(safe-area-inset-bottom)); }
+.m-main.m-flush { padding: 0 0 calc(96px + env(safe-area-inset-bottom)); }
 
 /* Bottom tab bar */
 .m-tabbar {
@@ -142,3 +142,10 @@
 [data-testid="m-home-boards"] [data-testid$="-list"] { grid-template-columns: minmax(0, 1fr); }
 [data-testid="m-home-boards"] [data-testid$="-list"] > div { min-width: 0; flex-wrap: wrap; row-gap: 4px; }
 [data-testid="m-home-boards"] [data-testid$="-list"] > div > button:first-child { flex-basis: 100%; }
+
+/* Harga Khusus (layar desktop PriceApprovals) di HP: kepala membungkus, tab digeser horizontal. */
+.m-price-approvals .section-head { flex-wrap: wrap; row-gap: 8px; }
+.m-price-approvals .section-head > div:last-child { width: 100%; }
+.m-price-approvals .section-head > div:last-child > div:first-child { flex: 1; min-width: 0; }
+.m-price-approvals .tab-bar { overflow-x: auto; flex-wrap: nowrap; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+.m-price-approvals .tab-bar .tab-button { flex-shrink: 0; }

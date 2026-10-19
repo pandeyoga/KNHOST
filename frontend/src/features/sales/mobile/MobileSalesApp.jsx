@@ -76,7 +76,7 @@ export default function MobileSalesApp(props) {
     selectedAddress, setSelectedAddress, onSubmitOrder, paymentTerms,
     selectedEntity, entities, notifications = [], unreadCount = 0,
     onMarkAllRead, onForceDesktop, allowRollPick = true, initialSub = null, onOpenFull, onRefresh, onSelectEntity,
-    onPollNotifications, onMarkRead,
+    onPollNotifications, onMarkRead, settings, onCreateCustomer, notice = "",
   } = props;
   const isAdmin = user?.role === "sales_admin";
   const tabs = isAdmin ? [DESK_TAB, ...TABS.slice(1)] : TABS;
@@ -147,6 +147,7 @@ export default function MobileSalesApp(props) {
 
       <main className={`m-main ${tab === "catalog" ? "m-flush" : ""}`} data-testid={`mobile-view-${tab}`}>
         <OfflineBanner />
+        {notice && !/^(Sistem siap|Login berhasil)/.test(notice) && <div data-testid="mobile-sales-notice" className="mb-2 rounded-lg border border-[#CBDFFF] bg-[#F2F7FF] px-3 py-2 text-[11.5px] text-[#31465F]">{notice}</div>}
         {tab === "home" && !isAdmin && <MobileSalesHome token={token} user={user} onNewOrder={goCatalog} onOpenTab={setTab} onAskKn={() => openSub("tanya")} onOpenSub={openSub} onOpenFull={onOpenFull} />}
         {tab === "home" && isAdmin && (
           <MobileSalesAdminDesk selectedEntity={selectedEntity} onOpenOrder={openOrder}
@@ -163,6 +164,7 @@ export default function MobileSalesApp(props) {
             selectedCustomer={selectedCustomer} setSelectedCustomer={setSelectedCustomer}
             selectedAddress={selectedAddress} setSelectedAddress={setSelectedAddress}
             paymentTerms={paymentTerms} onSubmitOrder={onSubmitOrder} onAdd={onAdd} user={user} onRefresh={onRefresh}
+            settings={settings} onCreateCustomer={onCreateCustomer}
             entityId={selectedEntity} onBrowse={goCatalog} onDone={() => setTab("orders")} />
         )}
         {tab === "orders" && <MobileOrders orders={data?.orders || []} loading={loading} onBrowse={goCatalog} onRefresh={onRefresh}

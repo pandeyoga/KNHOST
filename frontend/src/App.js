@@ -390,6 +390,7 @@ function App() {
   }
   if (salesMobileRole && wantMobile && !responsiveWorkspace) {
     return (
+      <EntityScopeProvider selectedEntity={selectedEntity} entities={entities} canSwitch pickEntity={onSelectEntity}>
       <MobileSalesApp
         initialSub={wantsTanya ? "tanya" : null}
         onOpenFull={openFullView}
@@ -409,6 +410,9 @@ function App() {
         selectedAddress={selectedAddress}
         setSelectedAddress={setSelectedAddress}
         onSubmitOrder={actions.submitOrder}
+        onCreateCustomer={actions.createCustomer}
+        settings={settings}
+        notice={notice}
         paymentTerms={paymentTerms}
         selectedEntity={selectedEntity}
         entities={entities}
@@ -420,6 +424,7 @@ function App() {
         onSelectEntity={onSelectEntity}
         onForceDesktop={() => { localStorage.setItem("kn_force_desktop", "1"); setForceDesktop(true); }}
       />
+      </EntityScopeProvider>
     );
   }
 

@@ -13,7 +13,8 @@ import { BadgePercent, MapPin, Boxes, ArrowLeftRight, BadgeCheck, ShieldQuestion
 import { MobileSpecialPrice, MobileVisits, MobileStock } from "./MobileFieldViews";
 import MobileInternalRequests from "./MobileInternalRequests";
 import { MobileInstallCard, MobilePushCard, dropPushSubscription } from "./MobilePwa";
-import { MobilePriceStatus, MobileSampleOrders, MobileApprovalWatch } from "./MobileExtraViews";
+import { MobileSampleOrders, MobileApprovalWatch } from "./MobileExtraViews";
+import PriceApprovals from "../PriceApprovals";
 import { entityShortById } from "../../../utils/entityLabel";
 
 const MENU = [
@@ -21,7 +22,7 @@ const MENU = [
   { id: "special-price", label: "Minta Harga Khusus", desc: "Ajukan harga nego pelanggan + bukti chat", icon: BadgePercent },
   { id: "visits", label: "Kunjungan Sales", desc: "Check-in / check-out di lokasi pelanggan", icon: MapPin, roles: ["sales"] },
   { id: "internal", label: "Permintaan Internal (PIN)", desc: "Minta barang dari PT lain saat stok kurang", icon: ArrowLeftRight },
-  { id: "price-status", label: "Status Harga Khusus", desc: "Pantau pengajuan harga khusus Anda", icon: BadgeCheck },
+  { id: "price-status", label: "Harga Khusus Saya", desc: "Semua status (draf, menunggu, digantikan, diakhiri…) · ubah, kirim, lampiran", icon: BadgeCheck },
   { id: "sample-orders", label: "Pesanan Sampel", desc: "Sampel kain gratis / berbayar & statusnya", icon: Scissors },
   { id: "approvals", label: "Pantau Persetujuan", desc: "Dokumen menunggu keputusan manajer (hanya-lihat)", icon: ShieldQuestion, roles: ["sales_admin"] },
   { id: "stock", label: "Status Stok", desc: "Tersedia vs dipesan per gudang (hanya-lihat)", icon: Boxes },
@@ -37,8 +38,8 @@ const GROUPS = [
   { id: "assist", label: "Asisten & laporan", items: ["tanya"], open: true },
   { id: "admin", label: "Admin Sales", items: ["approvals", "internal"], open: true, roles: ["sales_admin"] },
   { id: "orders", label: "Pesanan & harga", items: ["amendments", "special", "sample-orders", "returns", "special-price", "price-status", "pricelist"], open: true },
-  { id: "customers", label: "Pelanggan & lapangan", items: ["crm", "leads", "visits"] },
-  { id: "stock", label: "Stok & pemenuhan", items: ["stock", "internal"] },
+  { id: "customers", label: "Pelanggan & lapangan", items: ["crm", "leads", "visits"], open: true },
+  { id: "stock", label: "Stok & pemenuhan", items: ["stock", "internal"], open: true },
 ];
 const allowed = (item, role) => !item.roles || item.roles.includes(role);
 
@@ -62,7 +63,7 @@ const FULL_VIEWS = [
 ];
 
 const TITLES = { tanya: "Tanya KN", amendments: "Koreksi & Amandemen", leads: "Prospek (Lead)", crm: "Pelanggan (CRM)", returns: "Retur Penjualan", special: "Special Order", pricelist: "Daftar Harga",
-  "special-price": "Minta Harga Khusus", visits: "Kunjungan Sales", stock: "Status Stok", internal: "Permintaan Internal", "price-status": "Status Harga Khusus",
+  "special-price": "Minta Harga Khusus", visits: "Kunjungan Sales", stock: "Status Stok", internal: "Permintaan Internal", "price-status": "Harga Khusus Saya",
   "sample-orders": "Pesanan Sampel", approvals: "Pantau Persetujuan" };
 
 function FullViewMenu({ onOpenFull, role }) {
@@ -106,7 +107,7 @@ export default function MobileMore({ user, token, selectedEntity, entities, onLo
           {sub === "crm" && <MobileCustomers selectedEntity={selectedEntity} user={user} onRefresh={onRefresh} onStartOrder={onStartOrder} />}
           {sub === "returns" && <MobileReturns user={user} initialOrder={subParam?.order || null} focusId={subParam?.id || null} />}
           {sub === "internal" && <MobileInternalRequests user={user} focusId={subParam?.id || null} />}
-          {sub === "price-status" && <MobilePriceStatus onNew={() => setSub("special-price")} />}
+          {sub === "price-status" && <div className="m-price-approvals"><PriceApprovals currentUser={user} /></div>}
           {sub === "sample-orders" && <MobileSampleOrders canCancel={(user?.permissions?.sample_order || []).includes("cancel")} />}
           {sub === "approvals" && <MobileApprovalWatch />}
           {sub === "special" && <MobileSpecialOrders focusId={subParam?.id || null} />}

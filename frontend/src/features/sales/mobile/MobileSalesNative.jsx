@@ -1,3 +1,4 @@
+import { ReturnStatusPill } from "../ReturnShared";
 import { useEffect, useMemo, useState } from "react";
 import useUomConversions from "../../../hooks/useUomConversions";   // INV-UOM-02 — satuan dari master
 import { Search, ChevronRight, ArrowLeft, Plus } from "lucide-react";
@@ -8,8 +9,6 @@ import { offlinePost } from "../../../utils/offlineQueue";
 import { MobileReturnActions, MobileSpecialOrderDetail, OdStatus } from "./MobileSalesFlows";
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "-");
-const RET_STATUS = { draft: "Draf", submitted: "Diajukan", approved: "Disetujui", received: "Diterima", settled: "Selesai", rejected: "Ditolak", completed: "Selesai",
-  pending_approval: "Menunggu persetujuan", pending_process: "Menunggu diproses", inspected: "Diperiksa", credit_settled: "Selesai (kredit)", quarantine: "Karantina", cancelled: "Dibatalkan" };
 
 /** Retur jual versi HP: daftar kartu + buat retur dari pesanan pelanggan (alasan + baris). */
 export function MobileReturns({ user, initialOrder = null, focusId = null }) {
@@ -31,7 +30,7 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
       <button className="m-subpage-back" onClick={() => setSel(null)} data-testid="m-return-back"><ArrowLeft size={17} /> Retur</button>
       <div className="m-card p-4 space-y-1 text-[12.5px]">
         <p className="text-[15px] font-bold">{sel.number}</p>
-        <p className="m-muted">{sel.customer_name} · {fmtDate(sel.created_at)} · <b>{RET_STATUS[sel.status] || sel.status}</b></p>
+        <p className="m-muted">{sel.customer_name} · {fmtDate(sel.created_at)} · <ReturnStatusPill status={sel.status} /></p>
         <p className="m-muted">Alasan: {sel.reason || sel.complaint_reason || sel.complaint_note || sel.notes || "-"}</p>
         {sel.order_number && <p className="m-muted">Atas pesanan {sel.order_number}</p>}
         {(sel.items || []).map((it, i) => <div key={i} className="flex justify-between border-t border-[#EFF0F2] pt-1"><span>{it.product_name}</span><span className="tabular-nums">{it.quantity_returned ?? it.quantity} {it.unit}{it.reason ? ` · ${it.reason}` : ""}</span></div>)}
@@ -46,7 +45,7 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
       {rows && rows.length === 0 && <p className="text-xs m-muted" data-testid="m-returns-empty">Belum ada retur.</p>}
       {(rows || []).map((r) => (
         <button key={r.id} className="m-card m-press w-full p-3 text-left" onClick={() => setSel(r)} data-testid={`m-return-${r.id}`}>
-          <div className="flex items-center gap-2"><div className="min-w-0 flex-1"><p className="text-[13px] font-bold">{r.number} <span className="ml-1 rounded bg-[#F2F3F5] px-1.5 text-[10px] font-semibold">{RET_STATUS[r.status] || r.status}</span></p><p className="truncate text-[11px] m-muted">{r.customer_name} · {fmtDate(r.created_at)} · {formatCurrency(r.total_amount || r.grand_total || 0)}</p></div><ChevronRight size={16} className="text-[#C7C7CC]" /></div>
+          <div className="flex items-center gap-2"><div className="min-w-0 flex-1"><p className="text-[13px] font-bold">{r.number} <span className="ml-1 inline-block align-middle"><ReturnStatusPill status={r.status} /></span></p><p className="truncate text-[11px] m-muted">{r.customer_name} · {fmtDate(r.created_at)} · {formatCurrency(r.total_amount || r.grand_total || 0)}</p></div><ChevronRight size={16} className="text-[#C7C7CC]" /></div>
         </button>
       ))}
     </div>
