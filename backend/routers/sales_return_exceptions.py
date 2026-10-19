@@ -93,6 +93,43 @@ class CompensationIn(BaseModel):
     note: str = ""
 
 
+class ReplacementLine(BaseModel):
+    product_id: str
+    qty_yard: float = Field(..., gt=0)
+
+
+class ReplacementIn(BaseModel):
+    items: List[ReplacementLine]
+
+
+@router.get("/sales-returns/{return_id}/replacement")
+async def replacement_preview(return_id: str, request: Request) -> Any:
+    await require_permission(request, "sales_return", "view")
+    ret = await _ret(return_id, request)
+    from services import return_replacement_service as rr
+    return {"obligation": await rr.obligation(ret), "order_id": ret.get("replacement_order_id", ""),
+            "order_number": ret.get("replacement_order_number", ""), "summary": ret.get("replacement_summary") or {}}
+
+
+@router.post("/sales-returns/{return_id}/replacement-order")
+async def create_replacement_order(return_id: str, payload: ReplacementIn, request: Request) -> Any:
+    user = await require_permission(request, "order", "create")
+    await require_permission(request, "sales_return", "update")
+    ret = await _ret(return_id, request)
+    from services import atomic_claim as saga
+    from services import return_replacement_service as rr
+    await saga.claim("sales_returns", return_id, "sales_return_replacement_order",
+                     precondition={"replacement_order_id": {"$in": [None, ""]}}, actor=user.get("name", ""))
+    try:
+        out = await rr.create(ret, [x.dict() for x in payload.items], request, user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        await saga.release("sales_returns", return_id)
+    await audit(user.get("name", ""), "sales_return_replacement_order", "sales_return", return_id, out)
+    return out
+
+
 @router.post("/sales-returns/{return_id}/cutloss")
 async def record_cutloss(return_id: str, payload: CutlossRecordIn, request: Request) -> Any:
     user = await require_permission(request, "sales_return", "record_cutloss")

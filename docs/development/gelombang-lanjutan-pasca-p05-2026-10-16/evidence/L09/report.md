@@ -23,3 +23,12 @@ Belum ber-SHA GitHub. Hanya bagian yang TIDAK bergantung keputusan pending yang 
 ## Bukti
 - `backend/tests/test_l09_ln093_ln090.py` 4/4 (3 supplier/PO berbeda → 3 retur beli; roll tanpa asal → 400 lalu manual OK; 4 klik paralel → 1 sukses, 2 retur beli; pengganti sebelum QC → 400 tanpa movement/jurnal).
 - `backend/tests/test_l08_ln081_journey.py` 4/4 (disesuaikan: kirim pengganti saat masih `approved` kini 400).
+
+## Update 2026-10-19 (sesi lanjutan) — LN-090-T02/T03 pesanan pengganti nyata (KLR-03/04/05)
+- **Alur:** retur jenis `penggantian` → QC selesai → selesaikan sebagai **Store Credit** (Credit Note harga transaksi awal; saldo customer) → `POST /api/sales-returns/{id}/replacement-order` {items:[{product_id, qty_yard}]} (izin `order.create` + `sales_return.update`, klaim atomik; kedua kali → 400/409).
+- **Kewajiban (KLR-03):** `GET /api/sales-returns/{id}/replacement` → qty **aktual QC** (`inspection.accepted_qty`) dikonversi ke **yard** lewat master UoM; bila faktor yard belum ada di master produk → ditampilkan sebagai error konversi (tidak diasumsikan).
+- **Pesanan pengganti:** SO biasa lewat `create_order` yang sama (alokasi/ATP, QC, picking, SJ, POD), artikel/warna wajib sama dengan barang diretur, flag QC mengikuti SO awal (`qc_request.mode`). Harga = harga transaksi asal (KLR-05) melalui harga khusus sekali pakai (`price_approvals.source=return_replacement`, sesudah dipakai `scope=order` + `so_id`, tidak bocor ke SO lain). SO menyimpan `replacement_for_return`, retur menyimpan `replacement_order_id/number/summary`, relasi dokumen `doc_refs`.
+- **Selisih (KLR-04):** saldo retur dipakai otomatis ke SO pengganti (`store_credit.redeem` beralokasi). Pengganti lebih → `to_bill` = sisa tagihan SO; kurang → `remaining_credit` tetap saldo customer (pakai/refund lewat alur saldo).
+- UI: `return-replacement-panel` (replacement-obligation-table, replacement-qty-<pid>, replacement-create, replacement-summary, replacement-to-bill, replacement-hint, replacement-error).
+- **Uji:** `backend/tests/test_ln090_replacement_order.py` 2/2 (gerbang store credit & artikel sama; SO pengganti 12 yd vs kewajiban 10 yd → harga asal 30.000, saldo 300.000 terpakai, selisih ditagih, harga khusus sekali pakai).
+- **Belum:** pemaksaan grade sama pada alokasi roll pengganti (grade QC disimpan di kewajiban; alokasi memakai aturan grade pelanggan existing).
