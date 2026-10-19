@@ -56,7 +56,7 @@ export default function RollReconcileSheet({ open, productId, entityId, targetQt
   return (
     <div className="fixed inset-0 z-[150] flex items-end justify-center sm:items-center" data-testid="roll-reconcile-sheet">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl">
+      <div className="relative z-10 flex w-full max-w-md flex-col rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl" style={{ maxHeight: "min(90vh, 90dvh)" }}>
         <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
           <div>
             <h3 className="text-[14px] font-bold text-[#1C1C1E]">Genapkan ke Roll Utuh</h3>
@@ -65,7 +65,7 @@ export default function RollReconcileSheet({ open, productId, entityId, targetQt
           <button data-testid="reconcile-close" onClick={onClose} className="text-[#6B6B73]" aria-label="Tutup"><X size={18} /></button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto px-4 py-3">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
           {loading && <div data-testid="reconcile-loading" className="flex items-center justify-center gap-2 py-8 text-[12px] text-[#6B6B73]"><Loader2 size={15} className="animate-spin" /> Menghitung opsi roll…</div>}
           {error && <div data-testid="reconcile-error" className="py-6 text-center text-[12px] text-[#C0392B]">{error}</div>}
           {!loading && !error && keys.length === 0 && <div data-testid="reconcile-empty" className="py-6 text-center text-[12px] text-[#8E8E93]">Tidak ada roll tersedia untuk produk ini.</div>}
@@ -107,7 +107,7 @@ export default function RollReconcileSheet({ open, productId, entityId, targetQt
           })}
         </div>
 
-        <div className="border-t border-[#EFF0F2] px-4 py-3">
+        <div className="flex-shrink-0 border-t border-[#EFF0F2] px-4 pt-3" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom))" }}>
           <p data-testid="reconcile-summary" className="mb-2 text-[11px] text-[#6B6B73]">
             {chosen ? <>Final <b className="tabular-nums">{chosen.roll_count} roll · {formatQty(chosen.total_qty)} {baseUnit}</b> · selisih <b className="tabular-nums">{chosen.delta > 0 ? "+" : ""}{formatQty(chosen.delta || 0)}</b> vs diminta {formatQty(targetQty)}</> : "Pilih salah satu opsi pembulatan — qty faktur mengikuti hasil final."}
           </p>

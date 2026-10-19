@@ -62,7 +62,7 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
           </div>
           <button data-testid="mobile-quickview-close" onClick={onClose} aria-label="Tutup" className="text-[#6B6B73]"><X size={18} /></button>
         </div>
-        <div className="overflow-y-auto px-4 pb-4" style={{ maxHeight: "74vh" }}>
+        <div className="m-sheet-scroll px-4" data-testid="mobile-quickview-scroll">
           <ProductGallery product={selected} testId="mobile-quickview-gallery" compact />
           <div className="mt-2 flex items-end justify-between">
             <p data-testid="mobile-quickview-price" className="text-[20px] font-bold tabular-nums">{selected ? formatCurrency(unitPrice) : "—"}{selected && <span className="text-[11px] font-medium text-[#8E8E93]">/{unit}</span>}</p>
@@ -119,7 +119,8 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
                   <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Qty</label>
                   <div className="flex items-center rounded-lg border border-[#E5E5EA]">
                     <button data-testid="mobile-quickview-qty-minus" className="px-3 py-2.5 text-[#6B6B73]" onClick={() => step(-1)} aria-label="Kurangi"><Minus size={15} /></button>
-                    <input data-testid="mobile-quickview-qty-input" type="number" min="1" className="w-full border-x border-[#E5E5EA] bg-transparent py-2 text-center text-[15px] outline-none" value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} />
+                    <input data-testid="mobile-quickview-qty-input" type="number" min="1" inputMode="decimal"
+                      onFocus={(e) => setTimeout(() => e.target.closest(".m-sheet-scroll")?.querySelector("[data-testid=mobile-quickview-add]")?.scrollIntoView({ block: "end", behavior: "smooth" }), 350)} className="w-full border-x border-[#E5E5EA] bg-transparent py-2 text-center text-[15px] outline-none" value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} />
                     <button data-testid="mobile-quickview-qty-plus" className="px-3 py-2.5 text-[#6B6B73]" onClick={() => step(1)} aria-label="Tambah"><Plus size={15} /></button>
                   </div>
                 </div>

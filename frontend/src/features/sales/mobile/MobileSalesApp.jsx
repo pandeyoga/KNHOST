@@ -49,7 +49,7 @@ export function NotifSheet({ notifications, onClose, onMarkAll, onOpen }) {
             <button onClick={onClose} aria-label="Tutup" className="text-[#6B6B73]" data-testid="mobile-notif-close"><X size={18} /></button>
           </div>
         </div>
-        <div className="overflow-y-auto px-4 py-2" style={{ maxHeight: "60vh" }}>
+        <div className="m-sheet-scroll px-4 py-2">
           {notifications.length === 0 ? (
             <div className="py-12 text-center text-[13px] m-muted">Belum ada notifikasi.</div>
           ) : notifications.map((n) => (

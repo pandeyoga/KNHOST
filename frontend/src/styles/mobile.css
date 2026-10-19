@@ -115,6 +115,10 @@
 .m-sheet-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.42); }
 .m-sheet { position: relative; width: 100%; max-width: 520px; background: #fff; border-radius: 18px 18px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,0.18); max-height: 88vh; display: flex; flex-direction: column; animation: m-sheet-up 240ms cubic-bezier(.2,.8,.2,1); }
 @keyframes m-sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+/* Lembar bawah mengikuti tinggi layar yang benar-benar terlihat (toolbar browser / keyboard HP) — isi selalu bisa digulir sampai tombol aksi. */
+.m-sheet { max-height: 88dvh; }
+.m-sheet-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.m-shell .modal-card { max-height: 92dvh !important; }
 .m-sheet-grip { width: 38px; height: 4px; border-radius: 2px; background: #D6D7DC; margin: 8px auto 4px; }
 
 /* Tampilan penuh dari aplikasi HP → tombol kembali mengambang. */
