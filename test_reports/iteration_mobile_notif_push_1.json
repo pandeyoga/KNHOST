@@ -1,0 +1,37 @@
+{
+  "summary": "Tested the KNHOST mobile + RBAC changes. Mobile 390x844 (sales@): the quick view no longer shows 'Isi per roll'. mobile-quickview-add sits inside mobile-quickview-footer, outside the scroll area, and is visible without scrolling (y=798..834). --kn-vvh is set. The sample button sits in the footer. Per Roll mode hides the footer and shows RollPicker. Add -> RollReconcileSheet -> confirm -> cart count 1. Notif sheet: unread count header, severity/unread/type filters, filter count, address tags (Untuk Anda/role/Umum), escalation tag, type+time meta, per-item mark read, mark all, load more (20->25 + list-end), push banner hide, siren button. md@ m-md-notif-btn opens the same sheet. Warehouse shell shows the push banner. Push API: public-key non-empty, status, subscribe/unsubscribe roundtrip, 422 validation, 401 without login. Desktop admin: POS quick view has no 'Isi per roll'. Admin view tabs are only integrations+audit, Jejak Audit renders, and there is no 'Matriks Izin'. The role editor drawer opens (31 module rows + save). API: a custom role level patch persists to permission_settings.matrix. Found and fixed 2 regressions (see updated_files).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/notifications/read-all, POST /api/notifications/{id}/read", "issue": "This was already the case before this change. 'read' is a single flag on the notification document, so marking a role-wide or 'all' notification as read marks it read for everyone. Reproduced: sales@ 'Semua dibaca' made md@ see 0 unread on the same 'Umum' notifications. This matters more now that mobile and push are in place. Suggest a per-user read state (a read_by list)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ProductQuickView (desktop POS)", "issue": "FIXED by tester. Wrapping qty mode in a <>…</> fragment turned the JS comment '/* Qty + Satuan (FIXED ke base_unit — F2 UoM SSOT) */' into literal text in the modal. Changed it to {/* */}.", "selector": "[data-testid=quickview-product-name]", "priority": "HIGH"},
+      {"component": "Deep link ?view=permission-matrix", "issue": "FIXED by tester. Removing the hub tab made resolveDeepLinkTarget return null, so ?view=permission-matrix went to Beranda/Control Tower instead of Badan Usaha & Akses > Peran & Hak Akses. Added a hidden alias tab in hubTabs.js (admin, manager). Verified that entities-access-tab-roles now has aria-selected=true.", "selector": "[data-testid=entities-access-tab-roles]", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "MobileNotifSheet", "issues": ["The unread count in the header comes from loaded notifications only (notifications.filter(!read)), not from the server unreadCount. With more than 20 unread it will show too few. Pass the unreadCount prop.", "The push banner inside the sheet is the full card (about 150px tall, with a 'Cara membuka pengaturan' button) rather than a compact banner, and it pushes the first notification down.", "The 'Belum dibaca' chip is cut off at the right edge (horizontal scroll, no visual hint)."]},
+      {"screen": "Desktop ?view=permission-matrix", "issue_note": "", "issues": ["The hub tab 'Badan Usaha & Akses' is not highlighted while the alias view is active.", "The AdminView subtitle still says 'hak akses'.", "The hub shows the 'Organisasi & Akses' section label twice."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_mobile_push_rbac_iter_notif.py", "/app/test_reports/pytest/pytest_mobile_push.xml"],
+  "action_items": [
+    "Check the 2 tester fixes (ProductQuickView comment, hidden permission-matrix alias in hubTabs.js). The frontend was rebuilt.",
+    "MobileNotifSheet: use the server unreadCount for the header count.",
+    "Consider per-user read state for role/'all' notifications.",
+    "Optional: a more compact push banner inside the notif sheet; highlight the hub tab for the alias view."
+  ],
+  "critical_code_review_comments": [
+    "push.py /push/subscribe upserts by endpoint without checking user_id, so the device's owner gets reassigned when another account subscribes on the same browser. This is acceptable for shared devices, but dropPushSubscription on logout is the only safeguard in MobileShell; confirm the sales/MD apps also call it on logout.",
+    "Inline approve in the notif sheet (mobile-notif-approve) was not exercised: there was no po_approve/vendor_bill_approve notification for a role that uses the mobile sheet."
+  ],
+  "updated_files": ["/app/frontend/src/components/ProductQuickView.jsx", "/app/frontend/src/config/hubTabs.js", "/app/backend/tests/test_mobile_push_rbac_iter_notif.py"],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "~90% (2 regressions found and fixed, retested OK)"},
+  "seed_data_creation": "Temporarily inserted 25 notifications ntf_TEST_00..24 (sales/all/recipient_user=user_sales_01) and deleted them afterwards. TEST custom role and TEST push subscription were created and deleted inside the tests.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Mobile login: /?mobile=1, login-email-input + input[type=password] + button 'Masuk'. Catalog detail: mobile-detail-<id>. Adding a roll product opens roll-reconcile-sheet (reconcile-option-round_up|round_down|exact_cut, reconcile-confirm). Demo accounts have 0 notifications; seed directly in db.notifications with the ntf_TEST_ prefix and clean up afterwards. Role API prefix is /api/access (roles, modules). Run pytest with backend .env sourced (conftest needs MONGO_URL)."
+}

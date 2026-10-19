@@ -163,7 +163,7 @@ export function MobilePushCard({ compact = false }) {
   };
 
   const active = supported && perm === "granted" && subscribed;
-  if (compact && (active || !supported)) return null;
+  if (compact && (active || (!supported && !iosNeedsInstall))) return null;
   return (
     <div className={`m-card p-3 ${compact ? "my-2 border-[#CBDFFF] bg-[#F7FAFF]" : ""}`} data-testid={compact ? "m-push-banner" : "m-push-card"}>
       <div className="flex items-center gap-3">
@@ -217,12 +217,20 @@ export function MobilePushCard({ compact = false }) {
 /** Ajakan ringkas mengaktifkan push — hilang sendiri bila sudah aktif/tidak didukung, bisa ditutup. */
 export function MobilePushBanner() {
   const [hidden, setHidden] = useState(() => localStorage.getItem("kn_push_banner_hidden") === "1");
-  if (hidden) return null;
-  return (
-    <div className="relative" data-testid="m-push-banner-wrap">
-      <MobilePushCard compact />
-      <button type="button" aria-label="Sembunyikan" data-testid="m-push-banner-hide" className="absolute right-2 top-3 text-[11px] font-semibold text-[#8E8E93]"
-        onClick={() => { localStorage.setItem("kn_push_banner_hidden", "1"); setHidden(true); }}>Nanti</button>
-    </div>
-  );
+  const [open, setOpen] = useState(false);
+  const iosInstall = isIOS() && !isStandalone();
+  const needed = iosInstall || (pushSupported() && Notification.permission !== "granted");
+  if (hidden || !needed) return null;
+  if (!open) {
+    return (
+      <div className="my-2 flex items-center gap-2 rounded-xl border border-[#CBDFFF] bg-[#F7FAFF] px-3 py-2" data-testid="m-push-banner-wrap">
+        <BellRing size={15} className="shrink-0 text-[#0058CC]" />
+        <p className="min-w-0 flex-1 text-[11.5px] text-[#31465F]">{iosInstall ? "Pasang aplikasi ke layar utama agar notifikasi muncul di HP." : "Terima notifikasi di HP walau aplikasi ditutup."}</p>
+        <button type="button" className="shrink-0 text-[11.5px] font-bold text-[#0058CC]" onClick={() => setOpen(true)} data-testid="m-push-banner-open">Aktifkan</button>
+        <button type="button" aria-label="Sembunyikan" data-testid="m-push-banner-hide" className="shrink-0 text-[11px] font-semibold text-[#8E8E93]"
+          onClick={() => { localStorage.setItem("kn_push_banner_hidden", "1"); setHidden(true); }}>Nanti</button>
+      </div>
+    );
+  }
+  return <div data-testid="m-push-banner-wrap"><MobilePushCard compact /></div>;
 }

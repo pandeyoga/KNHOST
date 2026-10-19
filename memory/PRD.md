@@ -1,5 +1,14 @@
 # PRD — Kain Nusantara ERP (lanjutan dari repo github.com/kakjsbsbs/KN)
 
+## 2026-10-19 — Perbaikan versi HP: notifikasi lengkap, tombol iOS, push notif, hak akses satu pintu (iteration_mobile_notif_push_1)
+- Permintaan user: hapus "Isi per roll" (HP & desktop); notifikasi HP selengkap desktop; tombol Tambah di popup POS tidak terlihat di iOS Safari; push notif di HP; duplikasi hak akses (Matriks Izin vs Badan Usaha & Akses) → pakai yang terbaru.
+- `RollLengthStrip` dihapus. `MobileNotifSheet.jsx` baru (filter tingkat/belum dibaca/jenis, tag alamat, eskalasi, setujui inline, tandai dibaca per item, muat lebih banyak, sirine) dipakai Sales/Admin Sales/MD.
+- iOS: tombol tambah pindah ke kaki lembar `m-sheet-foot` (di luar area gulir); tinggi lembar = visualViewport (`--kn-vvh`, index.js) juga untuk RollReconcileSheet.
+- Push: kunci VAPID di backend/.env (preview), docker-compose + install_vps.sh membuat kunci otomatis di VPS; banner ringkas aktivasi di lembar notifikasi & shell HP gudang/ops; logout melepas langganan.
+- Matriks Izin lama (AdminView tab permissions, PermissionMatrixRecords, updatePermissions) DIHAPUS; `?view=permission-matrix` → Badan Usaha & Akses tab Peran & Hak Akses. Kedua layar memang menulis `permission_settings.matrix` yang sama, editor baru mencakup 75/75 resource → tidak ada data hilang. Endpoint GET/PUT /api/permissions tetap ada untuk kompatibilitas.
+- Backlog: status "dibaca" notifikasi masih satu flag bersama (bukan per pengguna) — dibaca satu orang = dibaca semua penerima peran/umum.
+
+
 ## 2026-10-18 — L10: LN-100/LN-102 diuji & diperbaiki + LN-101 opname per roll (iteration_224)
 - Diambil ulang dari GitHub pandeyoga/KNHOST (e4ee6cd), data demo dipulihkan, backend/.env + REACT_APP_BACKEND_URL.
 - Fix: migrasi struktur tidak lagi terpicu bin seed yang kelebihan isi; Meja Saya dedupe giliran per dokumen + tautan baris benar (row.link, tujuan per jenis dokumen, PO → Barang Masuk).

@@ -57,7 +57,7 @@ function NotifRow({ n, onOpen, onMarkRead, canApprove, approving, onApprove }) {
 }
 
 /** Lembar notifikasi HP — fitur setara lonceng desktop (filter, alamat, setujui, muat lebih banyak). */
-export function NotifSheet({ notifications = [], onClose, onMarkAll, onOpen, onMarkRead, total = 0, hasMore = false, onLoadMore, onApprove, currentUserRole = "" }) {
+export function NotifSheet({ notifications = [], unreadCount, onClose, onMarkAll, onOpen, onMarkRead, total = 0, hasMore = false, onLoadMore, onApprove, currentUserRole = "" }) {
   const [sev, setSev] = useState("");
   const [type, setType] = useState("");
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -71,7 +71,7 @@ export function NotifSheet({ notifications = [], onClose, onMarkAll, onOpen, onM
     return Object.entries(c).map(([k, v]) => ({ value: k, label: `${typeLabel(k)} (${v})` })).sort((a, b) => a.label.localeCompare(b.label));
   }, [notifications]);
   const filtered = useMemo(() => notifications.filter((n) => (!sev || (n.severity || "info") === sev) && (!type || n.type === type) && (!unreadOnly || !n.read)), [notifications, sev, type, unreadOnly]);
-  const unread = notifications.filter((n) => !n.read).length;
+  const unread = unreadCount ?? notifications.filter((n) => !n.read).length;
   const hasFilter = Boolean(sev || type || unreadOnly);
 
   const approve = async (n) => { setApproving(n.id); try { await onApprove?.(n); } finally { setApproving(null); } };
@@ -99,11 +99,12 @@ export function NotifSheet({ notifications = [], onClose, onMarkAll, onOpen, onM
           </div>
         </div>
         <div className="border-b border-[#EFF0F2] px-4 pb-2" data-testid="mobile-notif-filters">
-          <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4">
+          <div className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4" style={{ maskImage: "linear-gradient(90deg,#000 88%,transparent)", WebkitMaskImage: "linear-gradient(90deg,#000 88%,transparent)" }}>
             {SEV_CHIPS.map((c) => (
               <button key={c.key || "all"} type="button" data-testid={`mobile-notif-filter-sev-${c.key || "all"}`} className={chip(sev === c.key)} onClick={() => setSev(c.key)}>{c.label}</button>
             ))}
             <button type="button" data-testid="mobile-notif-filter-unread" className={chip(unreadOnly)} onClick={() => setUnreadOnly((v) => !v)}>Belum dibaca</button>
+            <span className="w-4 shrink-0" />
           </div>
           <div className="mt-2 flex items-center gap-2">
             <select data-testid="mobile-notif-filter-type" value={type} onChange={(e) => setType(e.target.value)} aria-label="Filter jenis notifikasi"

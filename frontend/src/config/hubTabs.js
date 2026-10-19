@@ -199,6 +199,8 @@ export const HUB_TABS = {
     { view: "scheduler",         label: "Penjadwal & Notifikasi", roles: ["admin", "manager"], section: "Sistem" },
     { view: "admin",             label: "Integrasi & Audit",     roles: ["admin"], section: "Sistem" },
     { view: "entities-access",   label: "Badan Usaha & Akses",   roles: ["admin", "manager"], section: "Organisasi & Akses" },
+    // Alias deep-link lama `?view=permission-matrix` → Badan Usaha & Akses tab Peran & Hak Akses.
+    { view: "permission-matrix", label: "Peran & Hak Akses",     roles: ["admin", "manager"], hidden: true },
     { view: "approval-rules",    label: "Aturan Persetujuan",    roles: ["admin"], section: "Organisasi & Akses" },
     // master BERLAPIS global → badan usaha (override per BU; editor lengkap ada di domainnya).
     { view: "entity-masters",    label: "Master per Badan Usaha", roles: ["admin", "manager"], section: "Organisasi & Akses" },

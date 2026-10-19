@@ -157,7 +157,7 @@ export default function MobileMdApp({ user, entities, selectedEntity, notificati
           <Bell size={18} />{unreadCount > 0 && <span className="m-badge" data-testid="m-md-notif-count">{unreadCount > 99 ? "99+" : unreadCount}</span>}
         </button>
       </header>
-      {notifOpen && <NotifSheet {...notifProps} notifications={notifications} onClose={() => setNotifOpen(false)} onMarkAll={onMarkAllRead} onMarkRead={onMarkRead} onOpen={openNotif} />}
+      {notifOpen && <NotifSheet {...notifProps} unreadCount={unreadCount} notifications={notifications} onClose={() => setNotifOpen(false)} onMarkAll={onMarkAllRead} onMarkRead={onMarkRead} onOpen={openNotif} />}
       <main className="m-main" data-testid={`m-md-view-${tab}`}>
         {tab === "desk" && <MobileMdDesk selectedEntity={selectedEntity} onOpenRow={(r, q) => go(mdRowTarget(r, q))} />}
         {tab === "design" && <MobileDesignRequests focusId={focus.design} />}

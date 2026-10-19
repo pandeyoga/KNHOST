@@ -229,7 +229,7 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
           )}
 
           {mode === "qty" ? (<>
-            /* Qty + Satuan (FIXED ke base_unit — F2 UoM SSOT) */
+            {/* Qty + Satuan (FIXED ke base_unit — F2 UoM SSOT) */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{isSampleKind ? `Panjang sample (maks ${limit?.max_qty} ${limit?.unit})` : "Jumlah (Qty)"}</label>

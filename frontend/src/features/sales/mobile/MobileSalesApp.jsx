@@ -99,7 +99,7 @@ export default function MobileSalesApp(props) {
         </button>
       </header>
 
-      {notifOpen && <NotifSheet {...notifProps} notifications={notifications} onClose={() => setNotifOpen(false)} onMarkAll={onMarkAllRead} onMarkRead={onMarkRead} onOpen={openNotif} />}
+      {notifOpen && <NotifSheet {...notifProps} unreadCount={unreadCount} notifications={notifications} onClose={() => setNotifOpen(false)} onMarkAll={onMarkAllRead} onMarkRead={onMarkRead} onOpen={openNotif} />}
 
       <main className={`m-main ${tab === "catalog" ? "m-flush" : ""}`} data-testid={`mobile-view-${tab}`}>
         <OfflineBanner />
