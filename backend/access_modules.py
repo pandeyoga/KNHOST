@@ -265,6 +265,7 @@ ACTION_LABEL = {
     "propose": "Usulkan", "random_check": "Random check", "receive": "Terima", "release": "Rilis", "reopen": "Buka kembali", "release_hold": "Lepas HOLD desain (PIC Designer)", "paper_check": "Centang print paper per ronde (Designer)", "choose_route": "Pilih jalur pemenuhan (supplier/makloon)", "override_default": "Menyimpang dari sumber default master", "realize": "Realisasi PR → PO/MKO", "pic_decide": "Keputusan PIC atas uji ulang gagal", "override_fail": "Override hasil uji gagal (tetap tercatat gagal)", "assess_labdip": "Catat hasil labdip", "assess_handfeel": "Catat hasil handfeel", "assess_proofing": "Catat hasil proofing", "decide_labdip": "Setujui hasil labdip", "decide_handfeel": "Setujui hasil handfeel", "decide_proofing": "Setujui hasil proofing",
     "replace": "Ganti", "report": "Laporan", "resolve": "Selesaikan kasus", "return": "Retur", "run": "Jalankan", "scan": "Scan",
     "send": "Kirim", "settle": "Lunasi", "ship": "Kirim barang", "sign": "Tandatangani", "submit": "Ajukan", "tax": "Pajak",
+    "record_cutloss": "Catat qty cacat cutloss (QC)", "decide_compensation": "Putus nilai cutloss/diskon retur",
     "record_loss": "Catat susut/hilang di mitra", "approve_loss": "Setujui susut di atas toleransi",
     "activate": "Aktif / nonaktifkan", "grade": "Lihat grade", "lot": "Lihat LOT", "origin": "Lihat asal lokal/impor",
     "commercial": "POV komersial (grade selalu tersembunyi)",

@@ -59,7 +59,7 @@ OUTCOME_LABEL: Dict[str, str] = {
 TRANSITIONS: Dict[str, Set[str]] = {
     DRAFT:            {PENDING_APPROVAL, CANCELLED},
     PENDING_APPROVAL: {APPROVED, REJECTED, DRAFT, CANCELLED},
-    APPROVED:         {INSPECTING, REJECTED, CANCELLED},
+    APPROVED:         {INSPECTING, REJECTED, CANCELLED, NEGO_SETTLED},   # KLR-06 — diskon dari foto/video
     INSPECTING:       {INSPECTED, REJECTED},
     INSPECTED:        {REFUND_SETTLED, CREDIT_SETTLED, NEGO_SETTLED, REJECTED},
     # R5.4 — reversal/koreksi: state settled boleh dibatalkan (→ cancelled) via reverse_settlement.

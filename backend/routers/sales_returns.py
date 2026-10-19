@@ -174,6 +174,7 @@ async def create_return(
             complaint_note=payload.complaint_note,
             hangtag_missing=payload.hangtag_missing,
             cut_by_customer=payload.cut_by_customer,
+            replacement_proof=payload.replacement_proof,
         )
     except ValueError as e:
         # R1-06 — retur melebihi batas / jenis tak valid → 400 dgn pesan jelas (bukan 500).
@@ -447,7 +448,11 @@ async def settle_return(
     await _need_evidence(existing, "settle")
     # L08 LN-081-T02 — keputusan final (refund/kompensasi) hanya sesudah QC; percobaan yang
     # ditolak tetap terekam (siapa, izin apa, bukti keputusan apa).
-    if existing.get("status") != "inspected":
+    comp_lines = (existing.get("compensation") or {}).get("lines") or []
+    photo_discount = (payload.outcome == "nego" and (existing.get("compensation") or {}).get("status") == "decided"
+                      and comp_lines and all(x["kind"] == "discount" and x.get("evidence_ids") for x in comp_lines)
+                      and existing.get("status") == "approved")   # KLR-06 — diskon dari foto/video tanpa QC fisik
+    if existing.get("status") != "inspected" and not photo_discount:
         await audit(user.get("name", ""), "sales_return_settle_blocked", "sales_return", return_id,
                     {"status": existing.get("status"), "outcome": payload.outcome,
                      "permission": "sales_return.approve", "decision_note": payload.decision_note})
@@ -461,6 +466,10 @@ async def settle_return(
         await audit(user.get("name", ""), "sales_return_settle_blocked", "sales_return", return_id,
                     {"reason": str(e), "outcome": payload.outcome})
         raise HTTPException(status_code=409, detail=str(e))
+    try:
+        cond_decision = rex.condition_decision(existing, payload.decision_note, user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     try:
         journey.assert_settle_location(existing, payload.return_warehouse_id)
     except ValueError as e:
@@ -485,6 +494,8 @@ async def settle_return(
                 "permission": "sales_return.approve", "at": now_iso(), "outcome": payload.outcome,
                 "note": (payload.decision_note or "").strip(),
                 "attachment_ids": list(payload.decision_attachment_ids or [])}
+    if cond_decision:
+        decision["condition_decision"] = cond_decision
     await db.sales_returns.update_one({"id": return_id}, {"$set": {"decision": decision}})
     doc["decision"] = decision
     await audit(user.get("name", ""), "sales_return_settled", "sales_return", return_id,

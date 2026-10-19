@@ -85,38 +85,65 @@ def test_ln091_split_helper():
     assert split_credit(30, 20, False) == {"ar_part": 0, "excess": 30}
 
 
-def test_ln092_cutloss_simulation_locked_and_reconciles():
+def test_ln092_cutloss_simulation_final_rule():
     r = requests.post(f"{BASE}/sales-returns/cutloss/simulate", headers=ADMIN,
                       json={"roll_length": 120, "defect_from": 46, "defect_to": 60, "unit_price": 1000}).json()
-    sc = {s["code"]: s for s in r["scenarios"]}
-    assert sc["defect_only"]["returned_qty"] == 15 and sc["defect_only"]["customer_keeps"] == 105
-    assert sc["defect_plus_shorter"]["returned_qty"] == 60 and sc["defect_plus_shorter"]["restock_good_qty"] == 45
-    assert sc["whole_roll"]["returned_qty"] == 120 and all(s["reconciles"] for s in r["scenarios"])
-    assert r["selected"] is None and r["posting_locked"] and not r["final"]
-    d = requests.post(f"{BASE}/sales-returns/discount/simulate", headers=ADMIN,
-                      json={"qty_affected": 100, "unit_price": 1000, "pct": 10}).json()
-    assert d["discount_value"] == 10000 and d["stock_movement"] == 0 and d["requires_exception"]
+    assert r["customer_pieces"] == [45, 60] and r["compensation_qty"] == 15 and r["compensation_value"] == 15000
+    assert r["reconciles"] and r["final"]
+    d = requests.post(f"{BASE}/sales-returns/discount/simulate", headers=ADMIN, json={"qty_affected": 15, "amount": 25000}).json()
+    assert d["discount_value"] == 25000 and d["stock_movement"] == 0
 
 
-def test_ln092_t02_nego_requires_approved_exception_and_ln083_condition_gate():
-    _, rid = _seed(elig={"decision": "pending_decision", "pending_decisions": [{"code": "KLR-08"}]})
-    s = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=ADMIN, json={"outcome": "nego"})
-    assert s.status_code == 409 and "KLR-08" in s.text
+def test_ln083_klr08_condition_is_warning_finance_note_required():
+    _, rid = _seed(elig={"decision": "eligible", "pending_decisions": []})
+    DB.sales_returns.update_one({"id": rid}, {"$set": {"condition_flags": {"hangtag_missing": True, "cut_by_customer": False}}})
     bad = requests.post(f"{BASE}/sales-returns/{rid}/exceptions", headers=ADMIN,
-                        json={"kind": "condition", "reason": "Hangtag hilang dari pabrik", "attachment_ids": [f"pdf_{rid}"]})
-    assert bad.status_code == 400 and "foto" in bad.text
-    ok = requests.post(f"{BASE}/sales-returns/{rid}/exceptions", headers=ADMIN,
-                       json={"kind": "condition", "reason": "Hangtag hilang dari pabrik", "attachment_ids": [f"att_{rid}"]})
-    assert ok.status_code == 200, ok.text
-    eid = ok.json()["id"]
-    own = requests.post(f"{BASE}/sales-returns/{rid}/exceptions/{eid}/decide", headers=ADMIN, json={"approve": True})
-    assert own.status_code == 400 and "sendiri" in own.text
-    dec = requests.post(f"{BASE}/sales-returns/{rid}/exceptions/{eid}/decide", headers=MGR, json={"approve": True, "note": "ok foto"})
-    assert dec.status_code == 200 and dec.json()["status"] == "approved"
-    s2 = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=ADMIN, json={"outcome": "nego"})
-    assert s2.status_code == 409 and "KLR-06" in s2.text      # diskon tanpa barang tetap butuh QC exception
+                        json={"kind": "condition", "reason": "Hangtag hilang dari pabrik", "attachment_ids": [f"att_{rid}"]})
+    assert bad.status_code == 400 and "KLR-08" in bad.text
+    s = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=ADMIN, json={"outcome": "refund"})
+    assert s.status_code == 400 and "catatan keputusan Finance" in s.text
+
+
+FIN, _ = _login("finance@kainnusantara.id")
+
+
+def test_ln092_cutloss_recorded_by_md_valued_by_finance_and_settled_as_nego():
+    so, rid = _seed(elig={"decision": "eligible", "pending_decisions": []})
+    DB.sales_orders.update_one({"id": so}, {"$set": {"items": [{"product_id": "pX", "quantity": 120, "line_total": 108000}]}})
+    DB.sales_returns.update_one({"id": rid}, {"$set": {"items": [{"product_id": "pX", "product_name": "TEST", "unit": "yard",
+                                                                  "quantity_returned": 120}]}})
+    s = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=ADMIN, json={"outcome": "nego"})
+    assert s.status_code == 409 and "Finance" in s.text
+    no = requests.post(f"{BASE}/sales-returns/{rid}/cutloss", headers=FIN, json={"product_id": "pX", "defect_yard": 15})
+    assert no.status_code == 403
+    c = requests.post(f"{BASE}/sales-returns/{rid}/cutloss", headers=ADMIN, json={"product_id": "pX", "defect_yard": 15})
+    assert c.status_code == 200 and c.json()["qty_base"] == 15, c.text
+    pv = requests.get(f"{BASE}/sales-returns/{rid}/compensation", headers=ADMIN).json()
+    assert pv["cutloss"][0]["unit_price"] == 900 and pv["cutloss"][0]["amount"] == 13500
+    d = requests.post(f"{BASE}/sales-returns/{rid}/compensation", headers=FIN,
+                      json={"lines": [{"kind": "cutloss", "product_id": "pX"}], "note": "cacat 15 yd sesuai QC"})
+    assert d.status_code == 200 and d.json()["total"] == 13500, d.text
+    st = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=ADMIN, json={"outcome": "nego"})
+    assert st.status_code == 200, st.text
+    cn = DB.credit_notes.find_one({"return_id": rid})
+    assert cn["net_amount"] == 13500 and cn["lines"][0]["quantity"] == 15 and cn["cogs_amount"] == 0
+
+
+def test_ln092_discount_from_photo_without_goods():
+    _, rid = _seed(status="approved", elig={"decision": "eligible", "pending_decisions": []})
+    DB.sales_returns.update_one({"id": rid}, {"$set": {"items": [{"product_id": "pX", "product_name": "TEST", "unit": "yard",
+                                                                  "quantity_returned": 20}]}})
+    bad = requests.post(f"{BASE}/sales-returns/{rid}/compensation", headers=FIN,
+                        json={"lines": [{"kind": "discount", "product_id": "pX", "qty": 25, "amount": 1000}], "note": "foto noda"})
+    assert bad.status_code == 400
+    d = requests.post(f"{BASE}/sales-returns/{rid}/compensation", headers=FIN,
+                      json={"lines": [{"kind": "discount", "product_id": "pX", "qty": 5, "amount": 7500,
+                                       "evidence_ids": [f"att_{rid}"]}], "note": "foto noda 5 yd"})
+    assert d.status_code == 200, d.text
+    st = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=ADMIN, json={"outcome": "nego"})
+    assert st.status_code == 200, st.text
     doc = DB.sales_returns.find_one({"id": rid})
-    assert doc["exceptions"][0]["eligibility_snapshot"]["decision"] == "pending_decision"
+    assert doc["status"] == "nego_settled" and DB.credit_notes.find_one({"return_id": rid})["net_amount"] == 7500
 
 
 def test_ln024_payment_reminder_job():

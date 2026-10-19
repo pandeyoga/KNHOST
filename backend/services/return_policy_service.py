@@ -293,12 +293,7 @@ async def _linked_supplier_deadline(order: Dict[str, Any],
 
 RETURN_ASSUMPTION_DEFAULTS: Dict[str, Any] = {
     "customer_window_days": 21, "supplier_window_days": 21,
-    "klr08_hangtag_cut": "pending",     # pending | reject | review — KLR-08 belum diputuskan owner
-    "klr09_end_event": "pending",       # pending | request | goods_received — KLR-09 belum diputuskan owner
     "bill_first": True,                 # LN-091 disepakati: potong tagihan SO asal dulu (KLR-10: cakupan = SO asal)
-    "cutloss_return_part": "pending",   # KLR-01: pending | defect_only | defect_plus_shorter | whole_roll
-    "cutloss_value_basis": "pending",   # KLR-02: pending | line_price | net_after_discount
-    "discount_mode": "pending",         # KLR-06/07: pending | approved_exception
     # LN-091-T02 — % harga daftar per grade (selisih lama vs baru = kerugian turun grade)
     "grade_price_factors": {"A": 100, "A1": 95, "A2": 90, "B": 70, "B1": 60, "C": 40, "BS": 10},
     "supplier_reminder_days": 3,        # LN-093 — pengingat ke PT pemasok sebelum masa retur supplier habis
@@ -357,15 +352,24 @@ async def supplier_deadlines(rolls: List[Dict[str, Any]], fallback_days: int) ->
     return sorted(groups.values(), key=lambda g: g["receipt_date"])
 
 
+CONDITION_CHECKLIST = {
+    "hangtag_missing": "Hangtag hilang",
+    "cut_by_customer": "Kain sudah dipotong customer",
+    "replacement_proof": "Ada bukti pengganti (foto/nota pengganti hangtag)",
+}
+
+
 async def check_sales_return_eligibility(order: Dict[str, Any],
                                          return_type: str = "",
                                          on_date: Any = None,
                                          hangtag_missing: bool = False,
-                                         cut_by_customer: bool = False) -> Dict[str, Any]:
+                                         cut_by_customer: bool = False,
+                                         replacement_proof: bool = False) -> Dict[str, Any]:
     """Kelayakan retur jual (LN-083): batas customer dari SJ, independen dari batas supplier.
 
     Batas supplier (per receiving roll) hanya informasi untuk klaim lanjutan ke supplier dan TIDAK
-    pernah menolak customer. KLR-08/KLR-09 yang belum diputuskan dilaporkan sebagai pending.
+    pernah menolak customer. KLR-09: batas dinilai pada TANGGAL PENGAJUAN (`on_date`), bukan tanggal
+    barang tiba. KLR-08: kondisi barang = checklist informasi + peringatan; Finance memutus saat settle.
     """
     now = parse_dt(on_date) or datetime.now(timezone.utc)
     categories = list({it.get("category") for it in (order.get("items") or []) if it.get("category")})
@@ -416,21 +420,14 @@ async def check_sales_return_eligibility(order: Dict[str, Any],
     if dl and not within_window:
         warnings.append(f"Di luar jendela retur customer ({window_days} hari dari SJ {ref.get('number') or ''}). "
                         f"Deadline {deadline[:10]}.")
-    if dl and within_window and assume["klr09_end_event"] == "pending":
-        pending.append({"code": "KLR-09", "message": "Pengajuan masih dalam batas. Apakah barang juga harus tiba di "
-                        "gudang dalam 21 hari belum diputuskan owner — status akhir menunggu keputusan."})
+    checklist = {"hangtag_missing": bool(hangtag_missing), "cut_by_customer": bool(cut_by_customer),
+                 "replacement_proof": bool(replacement_proof)}
+    condition_review = hangtag_missing or cut_by_customer
+    if condition_review:
+        what = " & ".join(CONDITION_CHECKLIST[k].lower() for k in ("hangtag_missing", "cut_by_customer") if checklist[k])
+        proof = "ada bukti pengganti" if replacement_proof else "tanpa bukti pengganti"
+        warnings.append(f"Perhatian: {what} ({proof}). Tidak diblokir sistem — Finance memutus saat penyelesaian.")
     condition_block = False
-    if hangtag_missing or cut_by_customer:
-        mode = assume["klr08_hangtag_cut"]
-        what = " & ".join(x for x, f in (("hangtag hilang", hangtag_missing), ("kain sudah dipotong", cut_by_customer)) if f)
-        if mode == "pending":
-            pending.append({"code": "KLR-08", "message": f"Kondisi {what}: aturan belum diputuskan owner — "
-                            "tidak otomatis ditolak/diterima."})
-        elif mode == "reject":
-            condition_block = True
-            warnings.append(f"Kondisi {what} ditolak (asumsi KLR-08 = tolak).")
-        else:
-            warnings.append(f"Kondisi {what} wajib diperiksa (asumsi KLR-08 = periksa).")
     needs_admin_review = bool(supplier_linked.get("origin_untraceable"))
     if needs_admin_review:
         warnings.append("Asal barang tidak terlacak sampai receiving — batas klaim supplier tidak dapat dihitung; "
@@ -466,6 +463,9 @@ async def check_sales_return_eligibility(order: Dict[str, Any],
         "origin_untraceable": needs_admin_review,
         "needs_admin_review": needs_admin_review,
         "pending_decisions": pending,
+        "condition_checklist": checklist,
+        "condition_review_required": bool(condition_review),
+        "evaluated_on": "request_date",
         "assumptions": {**assume, "is_assumption": True},
         "warnings": warnings,
         "policy": {**snapshot_sales_policy(policy), "assumptions": assume},

@@ -17,8 +17,9 @@ def approved(ret: Dict[str, Any], kind: str) -> bool:
 
 
 async def request(ret: Dict[str, Any], kind: str, reason: str, attachment_ids, actor: Dict[str, Any]) -> Dict[str, Any]:
-    if kind not in KINDS:
-        raise ValueError("Jenis pengecualian tidak dikenal")
+    if kind not in KINDS or kind == "condition":
+        raise ValueError("Jenis pengecualian tidak dikenal" if kind not in KINDS else
+                         "Kondisi hangtag/kain dipotong tidak perlu pengecualian (KLR-08): cukup checklist, Finance memutus saat penyelesaian.")
     if len((reason or "").strip()) < 10:
         raise ValueError("Alasan pengecualian minimal 10 karakter")
     atts = {a["id"]: a for a in ret.get("attachments") or [] if not a.get("is_deleted")}
@@ -56,17 +57,20 @@ async def decide(ret: Dict[str, Any], exc_id: str, approve: bool, note: str, act
     return {**exc, **upd}
 
 
+def condition_decision(ret: Dict[str, Any], note: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+    """KLR-08 — kondisi barang hanya peringatan; keputusan Finance dicatat saat settle (catatan wajib)."""
+    flags = ret.get("condition_flags") or {}
+    if not (flags.get("hangtag_missing") or flags.get("cut_by_customer")):
+        return {}
+    if len((note or "").strip()) < 5:
+        raise ValueError("Barang ditandai hangtag hilang / kain dipotong: tulis catatan keputusan Finance (min. 5 karakter).")
+    return {"checklist": flags, "note": note.strip(), "decided_by": actor.get("name", ""),
+            "decided_by_id": actor.get("id", ""), "decided_at": now_iso()}
+
+
 async def assert_settle_allowed(ret: Dict[str, Any], outcome: str) -> None:
-    from services.return_policy_service import return_assumptions
     elig = ret.get("policy_eligibility") or {}
-    pend = {p.get("code") for p in elig.get("pending_decisions") or []}
-    if "KLR-08" in pend and not approved(ret, "condition"):
-        raise ValueError("Kondisi hangtag hilang / kain dipotong belum punya aturan final (KLR-08). "
-                         "Ajukan pengecualian 'kondisi' dengan foto dan minta persetujuan sebelum diselesaikan.")
     if elig.get("decision") in ("outside_window", "blocked") and not approved(ret, "window"):
         raise ValueError("Retur di luar batas waktu. Ajukan pengecualian 'batas waktu' dengan alasan & foto.")
-    if outcome == "nego":
-        assume = await return_assumptions(ret.get("entity_id", ""))
-        if assume.get("discount_mode", "pending") == "pending" and not approved(ret, "discount_no_goods"):
-            raise ValueError("Diskon tanpa barang kembali belum punya kebijakan final (KLR-06/07). "
-                             "Wajib pengecualian QC yang disetujui beserta foto bukti.")
+    if outcome == "nego" and (ret.get("compensation") or {}).get("status") != "decided":
+        raise ValueError("Penyelesaian cutloss/diskon butuh keputusan nilai dari Finance dulu (KLR-02/KLR-06).")

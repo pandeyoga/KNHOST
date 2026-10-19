@@ -18,8 +18,7 @@ GLOBAL_SCOPE = "global"
 DEFAULT_GLOBAL_SETTINGS: Dict[str, Any] = {
     # LN-083 — ASUMSI sementara (menunggu owner KLR-08/KLR-09); nilai dapat diubah di Pengaturan.
     "returns": {"customer_window_days": 21, "supplier_window_days": 21,
-                "klr08_hangtag_cut": "pending", "klr09_end_event": "pending", "bill_first": True,
-                "cutloss_return_part": "pending", "cutloss_value_basis": "pending", "discount_mode": "pending",
+                "bill_first": True,
                 "grade_price_factors": {"A": 100, "A1": 95, "A2": 90, "B": 70, "B1": 60, "C": 40, "BS": 10},
                 "supplier_reminder_days": 3},
     # LN-024 — pembayaran antar-PT: penuh per transaksi, tanpa netting; cutoff menunggu KLX-03 (kosong = pending).

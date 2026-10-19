@@ -854,6 +854,7 @@ class SalesReturnCreate(BaseModel):
     # LN-083 — kondisi barang yang memengaruhi kelayakan (aturan KLR-08 masih pending/asumsi).
     hangtag_missing: bool = False
     cut_by_customer: bool = False
+    replacement_proof: bool = False
 
 
 class SalesReturnDecision(BaseModel):

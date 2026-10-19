@@ -5,7 +5,6 @@ import KNSelect from "../../components/KNSelect";
 import ReturnCameraButton from "./ReturnCameraButton";
 
 const KINDS = [
-  { value: "condition", label: "Kondisi barang (hangtag hilang / kain dipotong)" },
   { value: "window", label: "Di luar batas waktu retur" },
   { value: "discount_no_goods", label: "Diskon tanpa barang kembali (QC exception)" },
 ];
@@ -14,7 +13,7 @@ const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.de
 
 function RequestForm({ ret, onDone, onPhoto }) {
   const photos = (ret.attachments || []).filter((a) => !a.is_deleted && (a.content_type || "").startsWith("image/"));
-  const [f, setF] = useState({ kind: "condition", reason: "", attachment_ids: [] });
+  const [f, setF] = useState({ kind: "window", reason: "", attachment_ids: [] });
   const [err, setErr] = useState("");
   const toggle = (id) => setF((x) => ({ ...x, attachment_ids: x.attachment_ids.includes(id) ? x.attachment_ids.filter((i) => i !== id) : [...x.attachment_ids, id] }));
   const captured = (att) => { setF((x) => ({ ...x, attachment_ids: [...x.attachment_ids, att.id] })); onPhoto?.(); };
@@ -89,7 +88,7 @@ export default function ReturnExceptionsPanel({ ret, canApprove, onChanged }) {
         <ShieldAlert size={14} className="text-[#B45309]" /> Pengecualian retur
         {(flags.hangtag_missing || flags.cut_by_customer) && (
           <span className="text-xs font-normal text-[#8A4B08]" data-testid="return-condition-flags-view">
-            Kondisi: {[flags.hangtag_missing && "hangtag hilang", flags.cut_by_customer && "kain dipotong"].filter(Boolean).join(", ")}
+            Kondisi: {[flags.hangtag_missing && "hangtag hilang", flags.cut_by_customer && "kain dipotong", flags.replacement_proof && "ada bukti pengganti"].filter(Boolean).join(", ")} · Finance memutus saat penyelesaian
           </span>
         )}
         {!terminal && <button type="button" data-testid="return-exception-toggle" onClick={() => setOpen(!open)} className="ml-auto text-xs text-[#0058CC] font-semibold">{open ? "Tutup" : "Ajukan pengecualian"}</button>}
@@ -98,7 +97,7 @@ export default function ReturnExceptionsPanel({ ret, canApprove, onChanged }) {
       <div className="divide-y divide-[#F0F0F3]">
         {list.map((x) => <ExceptionRow key={x.id} ret={ret} x={x} canApprove={canApprove} onDone={() => onChanged?.()} />)}
       </div>
-      {!list.length && !open && <p className="text-xs text-[#8E8E93]">Belum ada pengecualian. Wajib bila kondisi barang ditandai, retur lewat batas, atau diskon tanpa barang kembali.</p>}
+      {!list.length && !open && <p className="text-xs text-[#8E8E93]">Belum ada pengecualian. Wajib bila retur lewat batas atau diskon tanpa barang kembali.</p>}
     </div>
   );
 }

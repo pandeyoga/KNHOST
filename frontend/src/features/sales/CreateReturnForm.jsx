@@ -21,7 +21,7 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
   const [shipped, setShipped]       = useState(null);
   const [notes, setNotes]           = useState("");
   const [submitNow, setSubmitNow]   = useState(true);
-  const [cond, setCond]             = useState({ hangtag_missing: false, cut_by_customer: false });
+  const [cond, setCond]             = useState({ hangtag_missing: false, cut_by_customer: false, replacement_proof: false });
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState(null);
   const [eligibility, setEligibility] = useState(null);
@@ -287,7 +287,7 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
         <div className="form-group" data-testid="return-condition-flags">
           <label className="form-label">Kondisi barang</label>
           <div className="flex flex-wrap gap-4 text-sm">
-            {[["hangtag_missing", "Hangtag hilang"], ["cut_by_customer", "Kain sudah dipotong customer"]].map(([k, l]) => (
+            {[["hangtag_missing", "Hangtag hilang"], ["cut_by_customer", "Kain sudah dipotong customer"], ["replacement_proof", "Ada bukti pengganti (foto/nota)"]].map(([k, l]) => (
               <label key={k} className="form-check-label">
                 <input type="checkbox" data-testid={`return-cond-${k}`} checked={cond[k]}
                        onChange={(e) => setCond((c) => ({ ...c, [k]: e.target.checked }))} /> {l}
@@ -296,7 +296,7 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
           </div>
           {(cond.hangtag_missing || cond.cut_by_customer) && (
             <p className="text-xs text-[#8A4B08] mt-1" data-testid="return-cond-note">
-              Aturan kondisi ini belum diputuskan owner (KLR-08). Retur tetap bisa diajukan, tetapi sebelum diselesaikan wajib pengecualian "kondisi" dengan foto bukti yang disetujui.
+              Perhatian: kondisi ini tidak memblokir retur. Finance memutus saat penyelesaian dan wajib menulis catatan keputusan.
             </p>
           )}
         </div>

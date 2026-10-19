@@ -74,6 +74,7 @@ async def sales_return_eligibility(
     return_type: str = Query(""),
     hangtag_missing: bool = Query(False),
     cut_by_customer: bool = Query(False),
+    replacement_proof: bool = Query(False),
 ) -> Dict[str, Any]:
     """Evaluasi kelayakan & deadline retur jual untuk sebuah order (R0)."""
     await require_permission(request, "sales_return", "view")
@@ -86,7 +87,8 @@ async def sales_return_eligibility(
     if ent and ent not in ctx.allowed_entity_ids:
         raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan untuk entitas ini")
     return await rps.check_sales_return_eligibility(order, return_type=return_type, hangtag_missing=hangtag_missing,
-                                                    cut_by_customer=cut_by_customer)
+                                                    cut_by_customer=cut_by_customer,
+                                                    replacement_proof=replacement_proof)
 
 
 @router.get("/return-policies/supplier-deadlines")

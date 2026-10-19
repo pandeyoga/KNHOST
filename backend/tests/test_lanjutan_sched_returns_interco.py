@@ -139,11 +139,12 @@ def test_ln083_t02_supplier_deadline_per_receiving():
     assert all(row["window_days"] == 21 for row in rows)
 
 
-def test_ln083_t03_pending_rules_not_assumed():
+def test_ln083_t03_klr08_checklist_warning_klr09_request_date():
     so, _ = _seed_order(sj_days_ago=2, rec_days_ago=[2])
     e = _elig(so, hangtag_missing=True, cut_by_customer=True)
-    codes = {p["code"] for p in e["pending_decisions"]}
-    assert codes == {"KLR-08", "KLR-09"} and e["decision"] == "pending_decision" and not e["blocked"]
+    assert not e["pending_decisions"] and e["decision"] == "eligible" and not e["blocked"]
+    assert e["condition_review_required"] and e["condition_checklist"]["hangtag_missing"]
+    assert any("Finance memutus" in w for w in e["warnings"]) and e["evaluated_on"] == "request_date"
     late, _ = _seed_order(sj_days_ago=30, rec_days_ago=[30])
     assert _elig(late)["decision"] == "outside_window"
 

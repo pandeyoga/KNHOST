@@ -89,7 +89,9 @@ async def view(ret: Dict[str, Any]) -> Dict[str, Any]:
         await _heal_cancelled(r)
         origin = await interco_origin_of_roll(r)
         g = dl.get(r["id"]) or {}
-        expired = bool(g.get("deadline")) and g["deadline"][:10] < _today()
+        # KLR-09 — batas supplier berlaku sampai klaim DIKIRIM: klaim = keputusan "retur ke supplier" hari ini.
+        claim_date = _today()
+        expired = bool(g.get("deadline")) and g["deadline"][:10] < claim_date
         stage = _stage(r, origin)
         if stage == "supplier_pending" and expired and await _auto_keep(r):
             stage = "supplier_keep"
@@ -105,6 +107,7 @@ async def view(ret: Dict[str, Any]) -> Dict[str, Any]:
             "supplier_name": r.get("supplier_name") or g.get("supplier_name", ""),
             "po_number": r.get("po_number") or g.get("po_number", ""),
             "supplier_deadline": (g.get("deadline") or "")[:10], "supplier_window_expired": expired,
+            "claim_date": claim_date,
             "stage": stage, "internal": disp.get("internal"), "supplier": disp.get("supplier"),
             "sellable": _sellable(r),
         })

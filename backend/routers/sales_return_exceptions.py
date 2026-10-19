@@ -1,4 +1,4 @@
-"""LN-083/LN-092 — pengecualian retur + simulasi cutloss/diskon (posting dikunci selama KLR pending)."""
+"""LN-083/LN-092 — pengecualian retur, cutloss (qty cacat QC) & diskon (nilai diputus Finance)."""
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, HTTPException, Request
@@ -8,6 +8,7 @@ from db import db
 from dependencies import audit, require_permission
 from entity_scope import assert_entity_access, entity_ctx
 from services import return_exception_service as rex
+from services import return_compensation_service as comp
 from services import return_settlement_policy as rsp
 
 router = APIRouter(prefix="/api", tags=["sales-return-exceptions"])
@@ -69,8 +70,70 @@ class CutlossIn(BaseModel):
 
 class DiscountIn(BaseModel):
     qty_affected: float = Field(..., gt=0)
-    unit_price: float = Field(..., ge=0)
-    pct: float = Field(..., gt=0, le=100)
+    amount: float = Field(..., gt=0)
+
+
+class CutlossRecordIn(BaseModel):
+    product_id: str
+    defect_yard: float = Field(..., gt=0)
+    roll_id: str = ""
+    note: str = ""
+
+
+class CompLine(BaseModel):
+    kind: str
+    product_id: str
+    qty: float = 0
+    amount: float = 0
+    evidence_ids: List[str] = Field(default_factory=list)
+
+
+class CompensationIn(BaseModel):
+    lines: List[CompLine]
+    note: str = ""
+
+
+@router.post("/sales-returns/{return_id}/cutloss")
+async def record_cutloss(return_id: str, payload: CutlossRecordIn, request: Request) -> Any:
+    user = await require_permission(request, "sales_return", "record_cutloss")
+    ret = await _ret(return_id, request)
+    try:
+        out = await comp.record_cutloss(ret, payload.product_id, payload.defect_yard, payload.roll_id, payload.note, user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await audit(user.get("name", ""), "sales_return_cutloss_recorded", "sales_return", return_id, out)
+    return out
+
+
+@router.get("/sales-returns/{return_id}/compensation")
+async def get_compensation(return_id: str, request: Request) -> Any:
+    await require_permission(request, "sales_return", "view")
+    return await comp.preview(await _ret(return_id, request))
+
+
+@router.post("/sales-returns/{return_id}/compensation")
+async def decide_compensation(return_id: str, payload: CompensationIn, request: Request) -> Any:
+    user = await require_permission(request, "sales_return", "decide_compensation")
+    ret = await _ret(return_id, request)
+    try:
+        out = await comp.decide(ret, [x.dict() for x in payload.lines], payload.note, user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await audit(user.get("name", ""), "sales_return_compensation_decided", "sales_return", return_id,
+                {"total": out["total"], "lines": out["lines"], "note": out["note"]})
+    return out
+
+
+@router.delete("/sales-returns/{return_id}/compensation")
+async def revoke_compensation(return_id: str, request: Request) -> Any:
+    user = await require_permission(request, "sales_return", "decide_compensation")
+    ret = await _ret(return_id, request)
+    try:
+        await comp.revoke(ret, user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await audit(user.get("name", ""), "sales_return_compensation_revoked", "sales_return", return_id, {})
+    return {"ok": True}
 
 
 @router.post("/sales-returns/cutloss/simulate")

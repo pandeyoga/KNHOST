@@ -26,3 +26,12 @@
 
 ## Uji
 - `tests/test_ln091_092_returns_exceptions.py` 5/5. Testing agent iteration_229: backend 27/27, UI 100%.
+
+## Update 2026-10-19 (sesi lanjutan) — LN-092 cutloss & diskon final (KLR-01/02/06/07)
+- **Cutloss:** `POST /api/sales-returns/{id}/cutloss` {product_id, defect_yard, roll_id?, note} — izin baru `sales_return.record_cutloss` (admin, manager, md, md_quality). Qty cacat dalam **yard**; produk ber-satuan dasar kg dikonversi otomatis lewat master UoM (`to_base_qty`). Tidak boleh melebihi qty retur.
+- **Nilai:** `GET /api/sales-returns/{id}/compensation` → harga **transaksi awal neto** (line_total ÷ qty dasar, dikurangi diskon header) × qty cacat. `POST /api/sales-returns/{id}/compensation` {lines:[{kind: cutloss|discount, product_id, qty, amount, evidence_ids}], note} — izin baru `sales_return.decide_compensation` (admin, manager, **finance**). Diskon = nominal rupiah per item untuk qty cacat (qty ≤ qty retur). `DELETE` = batalkan keputusan.
+- **Penyelesaian:** outcome `nego` wajib keputusan Finance; Credit Note memakai nilai keputusan (`credit_amount`), tanpa gerak stok/COGS. Diskon dengan bukti foto/video boleh diselesaikan dari status `approved` tanpa QC fisik (transisi `approved → nego_settled`, dijaga router).
+- Setelan asumsi `cutloss_return_part`, `cutloss_value_basis`, `discount_mode` dihapus; simulator menampilkan aturan final (120 yd, cacat 46–60 → customer 45 + 60 yd, kompensasi 15 yd).
+- UI: panel `return-compensation-panel` di detail retur (cutloss-record-form, cutloss-defect-yard, cutloss-record-submit, compensation-decide-form, discount-qty-<pid>, discount-amount-<pid>, compensation-evidence-<att>, compensation-note, compensation-decide-submit, compensation-decided, compensation-settle-photo, compensation-revoke).
+- **Uji:** `test_ln092_cutloss_simulation_final_rule`, `test_ln092_cutloss_recorded_by_md_valued_by_finance_and_settled_as_nego`, `test_ln092_discount_from_photo_without_goods` (lulus).
+- **Tidak diasumsikan:** persetujuan customer atas bentuk potongan (owner tidak menyebut); pemecahan fisik roll di stok tidak dimodelkan (barang tetap di customer).

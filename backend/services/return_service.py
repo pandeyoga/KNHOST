@@ -250,7 +250,10 @@ async def _create_credit_note_and_post_gl(
         qty = float(item.get("quantity_returned", 0) or 0)
         if qty <= 0:
             continue
-        if pid in lines_by_pid:
+        if item.get("credit_amount") is not None:   # LN-092 — nilai kompensasi diputus Finance
+            line_net = round(float(item["credit_amount"]), 2)
+            unit_price = round(line_net / qty, 4)
+        elif pid in lines_by_pid:
             line_net = round(_consume_lines(lines_by_pid[pid], qty), 2)
             unit_price = round(line_net / qty, 4)
         else:
@@ -409,6 +412,7 @@ async def create_return(
     complaint_note: str = "",
     hangtag_missing: bool = False,
     cut_by_customer: bool = False,
+    replacement_proof: bool = False,
 ) -> Dict[str, Any]:
     """
     Buat dokumen sales_return.
@@ -449,8 +453,10 @@ async def create_return(
     return_deadline = ""
     policy_eligibility: Dict[str, Any] = {}
     try:
-        elig = await rps.check_sales_return_eligibility(order, return_type=return_type, hangtag_missing=hangtag_missing,
-                                                        cut_by_customer=cut_by_customer)
+        elig = await rps.check_sales_return_eligibility(order, return_type=return_type, on_date=now,
+                                                        hangtag_missing=hangtag_missing,
+                                                        cut_by_customer=cut_by_customer,
+                                                        replacement_proof=replacement_proof)
         policy_snapshot = elig.get("policy", {}) or {}
         return_deadline = elig.get("deadline", "") or ""
         policy_eligibility = {
@@ -468,6 +474,8 @@ async def create_return(
             "reference_source": elig.get("reference_source"),
             "pending_decisions": elig.get("pending_decisions", []),
             "assumptions": elig.get("assumptions"),
+            "evaluated_on": "request_date", "request_date": now,
+            "condition_review_required": elig.get("condition_review_required", False),
         }
     except Exception:  # noqa: BLE001 — resolusi policy tak boleh menggagalkan pembuatan retur
         policy_snapshot, return_deadline, policy_eligibility = {}, "", {}
@@ -521,7 +529,8 @@ async def create_return(
         "policy_snapshot":    policy_snapshot,
         "return_deadline":    return_deadline,
         "policy_eligibility": policy_eligibility,
-        "condition_flags": {"hangtag_missing": bool(hangtag_missing), "cut_by_customer": bool(cut_by_customer)},
+        "condition_flags": {"hangtag_missing": bool(hangtag_missing), "cut_by_customer": bool(cut_by_customer),
+                            "replacement_proof": bool(replacement_proof)},
         # ── R1 — State machine + outcome ──
         "outcome":            "",         # refund|store_credit|nego|reject (final saat settle)
         "inspection_status":  "pending",  # pending|in_progress|done
@@ -1372,6 +1381,9 @@ async def settle_return(return_id: str, actor: str, outcome: str,
         if item_outcome == st.OUTCOME_REJECT or qty <= 0:
             continue
         effective.append({**it, "quantity_returned": qty})
+    if outcome == st.OUTCOME_NEGO:
+        from services import return_compensation_service as _comp
+        effective = _comp.settle_items(ret) or effective
 
     now = now_iso()
     settlement: Dict[str, Any] = {"outcome": outcome, "settled_at": now, "settled_by": actor}

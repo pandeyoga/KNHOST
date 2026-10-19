@@ -398,6 +398,21 @@ async def _finalize_supplier_return_financials(ret: Dict[str, Any], actor: str, 
 
 # ─── R4 — Supplier RMA lifecycle ─────────────────────────────────────────────
 
+async def _claim_window_check(ret: Dict[str, Any], sent_at: str) -> Dict[str, Any]:
+    """KLR-09 — batas klaim supplier = tanggal klaim diajukan/dikirim (bukan tanggal barang berangkat/diterima supplier)."""
+    from services import return_policy_service as rps
+    ids = [rid for it in ret.get("items", []) for rid in (it.get("roll_ids") or [])]
+    if not ids:
+        return {"sent_at": sent_at, "receivings": [], "late_roll_ids": [], "within_window": None}
+    rolls = await db.inventory_rolls.find({"id": {"$in": ids}}, {"_id": 0, "id": 1, "po_id": 1, "acquired": 1,
+                                                                "acquired_history": 1, "created_at": 1, "received_at": 1}).to_list(len(ids))
+    assume = await rps.return_assumptions(ret.get("entity_id", ""))
+    rows = await rps.supplier_deadlines(rolls, int(assume["supplier_window_days"]))
+    late = [rid for g in rows if g.get("deadline") and sent_at[:10] > g["deadline"][:10] for rid in g["roll_ids"]]
+    return {"sent_at": sent_at, "receivings": rows, "late_roll_ids": late,
+            "within_window": (not late) if rows else None, "evaluated_on": "claim_sent_date"}
+
+
 async def ship_to_supplier(return_id: str, actor: str, notes: str = "",
                            carrier: str = "", tracking_no: str = "") -> Dict[str, Any]:
     """requested_supplier → shipped_supplier. Barang dikirim ke supplier.
@@ -436,8 +451,9 @@ async def ship_to_supplier(return_id: str, actor: str, notes: str = "",
         if pid and wid and eid:
             await rebuild_balance(pid, wid, eid)
 
+    claim_check = await _claim_window_check(ret, ret.get("submitted_at") or ret.get("created_at") or now)
     await db.purchase_returns.update_one({"id": return_id}, _saga.finish_set({
-        "supplier_status": prs.SHIPPED, "shipped_at": now, "shipped_by": actor,
+        "supplier_status": prs.SHIPPED, "shipped_at": now, "shipped_by": actor, "claim_window_check": claim_check,
         "ship_notes": notes, "carrier": carrier, "tracking_no": tracking_no, "updated_at": now}))
     return safe_doc(await db.purchase_returns.find_one({"id": return_id}, {"_id": 0}))
 

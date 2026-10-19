@@ -627,5 +627,10 @@ DEFAULT_PERMISSIONS["md"]["rnd"] = list(DEFAULT_PERMISSIONS["md"]["rnd"]) + ["pi
 # Isi dataset tetap dijaga izin modul sumbernya, scope entitas/lokasi dan visibilitas field.
 for _role in ("admin", "manager", "finance", "sales_admin", "sales", "md", "warehouse_admin", "designer"):
     DEFAULT_PERMISSIONS[_role]["data_export"] = ["view", "export"]
+# L09 LN-092 — cutloss: MD mencatat qty cacat saat QC; nilai cutloss/diskon diputus Finance (KLR-01/02/06/07).
+for _role, _acts in {"admin": ["record_cutloss", "decide_compensation"], "manager": ["record_cutloss", "decide_compensation"],
+                     "finance": ["decide_compensation"], "md": ["record_cutloss"], "md_quality": ["record_cutloss"]}.items():
+    _cur = DEFAULT_PERMISSIONS[_role].setdefault("sales_return", ["view"])
+    DEFAULT_PERMISSIONS[_role]["sales_return"] = list(_cur) + [x for x in _acts if x not in _cur]
 EXTRA_ACTIONS = {"sales_pov": ["commercial"]}
 
