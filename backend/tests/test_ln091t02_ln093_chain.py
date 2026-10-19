@@ -11,7 +11,7 @@ from pymongo import MongoClient
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
 TAG = f"TEST_LN093_{uuid.uuid4().hex[:5]}"
-KSC, CST = "ent_ksc", "ent_89cbf7444def"
+KSC, CST = "ent_ksc", DB.business_entities.find_one({"doc_prefix": "CST"})["id"]
 PO = DB.purchase_orders.find_one({"po_number": "CST/PO-00001"})
 TPL = DB.inventory_rolls.find_one({"owner_entity_id": CST, "status": "available"})
 PRICE = float(DB.products.find_one({"id": TPL["product_id"]})["price"])

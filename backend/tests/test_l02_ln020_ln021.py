@@ -21,7 +21,7 @@ def _tok(email, pwd):
 def H():
     tpl_roll = DB.inventory_rolls.find_one({"owner_entity_id": ENT, "status": "available", "unit": "yard"}, {"_id": 0})
     tpl_prod = DB.products.find_one({"id": tpl_roll["product_id"]}, {"_id": 0})
-    DB.products.insert_one({**tpl_prod, "id": PID, "sku": "TEST-L021", "name": "TEST_L021 KAIN"})
+    DB.products.insert_one({**tpl_prod, "id": PID, "sku": "TEST-L021", "name": "TEST_L021 KAIN", "variant_key": f"TEST_{PID}"})
     for i, ln in enumerate([100] * 9 + [105]):
         roll = {k: v for k, v in tpl_roll.items() if k not in (
             "reserved_ref", "reserved_for_order", "length_reservations", "length_reserved", "active_movement",

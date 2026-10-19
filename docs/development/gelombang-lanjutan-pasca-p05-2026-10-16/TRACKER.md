@@ -37,7 +37,7 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-011 | L01 | Stage, jenis kain, supplier/color dan master lifecycle | in_progress | evidence/L01/report.md |
 | LN-012 | L01 | Grade dinamis, rank customer dan konfigurasi POS | in_progress | evidence/L01/report.md, evidence/L01/field_leak_scan_sales_before.json, evidence/L01/field_leak_scan_sales_after.json |
 | LN-013 | L01 | Default restock dan konteks entitas MD | in_progress | evidence/L01/report.md, evidence/L01/field_leak_scan_sales_before.json, evidence/L01/field_leak_scan_sales_after.json |
-| LN-014 | L01 | LOT supplier dan identitas LOT internal | not_started | belum ada |
+| LN-014 | L01 | LOT supplier dan identitas LOT internal | in_progress | evidence/L14/report.md (T3/T4), backend/tests/test_ln014_lot_identity.py, tests/test_ln140_chain_fixes.py |
 | LN-020 | L02 | ATP, Keep/Pending dan satuan pada SO | in_progress | evidence/L02/report.md |
 | LN-021 | L02 | Roll picker dan perubahan alokasi yang sah | in_progress | evidence/L02/report.md |
 | LN-022 | L02 | Harga grade dan pengajuan ulang Special Price | in_progress | evidence/L02/report.md |
@@ -79,7 +79,7 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-122 | L12 | CP30EN print/encode/verify dan reprint yang aman | not_started | belum ada |
 | LN-130 | L13 | Kontrak direct attendance dan raw log | not_started | belum ada |
 | LN-131 | L13 | Attendance turunan, koreksi dan aturan HR | not_started | belum ada |
-| LN-140 | L14 | Rantai bisnis dan Finance pada satu kandidat rilis | not_started | belum ada |
+| LN-140 | L14 | Rantai bisnis dan Finance pada satu kandidat rilis | in_progress | evidence/L14/report.md, backend/test_core_rantai_retur_poc.py (46/46) |
 | LN-141 | L14 | Migrasi dan batas cakupan yang terukur | not_started | belum ada |
 | LN-142 | L14 | UAT dan definisi selesai | not_started | belum ada |
 | LN-033 | L03 | Rute pemenuhan supplier/makloon dari R&D dan Pesanan Khusus | in_progress | evidence/L03/report.md |

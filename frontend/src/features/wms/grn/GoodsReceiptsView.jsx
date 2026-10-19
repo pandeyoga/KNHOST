@@ -12,7 +12,7 @@ import { STATUS, errText, grnApi } from "./grnApi";
 
 const FILTERS = [["", "Semua"], ["draft,review", "Tinjau SJ"], ["counting", "Hitung"], ["reconcile,closing", "Rekonsiliasi"], ["closed", "Ditutup"], ["rejected,cancelled", "Batal/Tolak"]];
 const CREATE_ROLES = ["admin", "warehouse", "warehouse_admin"];
-const LEGACY_ROLES = ["admin", "warehouse", "manager"];
+const LEGACY_ROLES = ["admin", "warehouse", "warehouse_admin", "manager"];   // LN-140 — admin gudang setara staf gudang
 const SETTINGS_ROLES = ["admin", "manager", "warehouse_admin"];
 const mkoPreset = () => {
   const q = new URLSearchParams(window.location.search);

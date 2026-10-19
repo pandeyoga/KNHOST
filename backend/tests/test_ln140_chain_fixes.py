@@ -9,7 +9,7 @@ from pymongo import MongoClient
 sys.path.insert(0, "/app/backend")
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
-CST = "ent_89cbf7444def"
+CST = DB.business_entities.find_one({"doc_prefix": "CST"})["id"]
 TAG = f"TEST_LN140_{uuid.uuid4().hex[:5]}"
 
 

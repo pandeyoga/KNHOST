@@ -26,6 +26,7 @@ class RolePatch(BaseModel):
     levels: Optional[Dict[str, str]] = None
     permissions: Optional[Dict[str, List[str]]] = None
     hidden_views: Optional[List[str]] = None
+    expected_version: Optional[str] = None
 
 
 class RolePreview(BaseModel):

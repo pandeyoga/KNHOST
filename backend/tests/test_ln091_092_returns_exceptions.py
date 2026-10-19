@@ -16,6 +16,10 @@ T = uuid.uuid4().hex[:6]
 LOOP = asyncio.new_event_loop()
 
 
+def _CST():
+    return DB.business_entities.find_one({"doc_prefix": "CST"})["id"]
+
+
 def _login(email, pw="demo1234"):
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pw})
     assert r.status_code == 200, r.text
@@ -122,7 +126,7 @@ def test_ln024_payment_reminder_job():
              "remaining": 1000.0, "pay_date": pay}]
 
     async def fake_schedule(entities, payer="", payee=""):
-        return {"cutoff_status": "configured", "rows": rows if payer == "ent_89cbf7444def" else []}
+        return {"cutoff_status": "configured", "rows": rows if payer == _CST() else []}
 
     async def fake_settings(entity_id=""):
         return {"reminder_days": 3}
@@ -139,4 +143,4 @@ def test_ln024_payment_reminder_job():
     a, b = LOOP.run_until_complete(run())
     assert a["created"] == 1 and b["created"] == 0   # tidak dobel
     n = DB.notifications.find_one({"type": "interco_payment_due", "ref": f"TEST_{T}:{pay}"})
-    assert n and n["recipient_role"] == "finance" and n["entity_id"] == "ent_89cbf7444def"
+    assert n and n["recipient_role"] == "finance" and n["entity_id"] == _CST()

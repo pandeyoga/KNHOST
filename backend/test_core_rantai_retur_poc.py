@@ -50,7 +50,7 @@ DB_NAME = os.environ["DB_NAME"]
 ENT_A = "ent_ksc"          # PT Kain Suka Cita
 # LN-140 (2026-10-18): rantai acuan pemilik = Sukacita ← CST; data demo kini tanpa
 # wh_tangerang/Toba Craft. Bisa dialihkan lewat env POC_ENT_B / POC_WH_B / POC_SUP_B.
-ENT_B = os.environ.get("POC_ENT_B", "ent_89cbf7444def")   # CV Cipta Sandang Textile
+ENT_B = os.environ.get("POC_ENT_B") or __import__("pymongo").MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]].business_entities.find_one({"doc_prefix": "CST"})["id"]   # CV Cipta Sandang Textile
 WH_B = os.environ.get("POC_WH_B", "wh_b0a0387806e7")      # Rancamalang · Gudang Woven (gudang bersama)
 # Supplier & pelanggan uji dicari lewat NAMA, bukan id.
 # Alasan: `seed_realistic.py` menerbitkan id pemasok secara acak setiap kali dijalankan

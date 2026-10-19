@@ -4,6 +4,8 @@ Sumber kebenaran izin tetap `permission_settings.matrix` (dibaca `dependencies.p
 Berkas ini menerjemahkan 3 tingkat per modul (none/view/manage) ke matriks aksi, dan menjaga
 registry peran (`role_registry.ROLES`) tetap memuat peran kustom yang tersimpan di basis data.
 """
+import hashlib
+import json
 import re
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
@@ -81,6 +83,13 @@ async def _assert_label_unique(label: str, exclude_id: str = "") -> None:
                                 detail=f"Nama peran “{label}” sudah dipakai. Pilih nama lain.")
 
 
+def _version(perms: Dict[str, Any], hidden: List[str], doc: Dict[str, Any]) -> str:
+    """LN-015 — sidik isi peran untuk deteksi konflik simpan antar-admin."""
+    raw = json.dumps([{k: sorted(v or []) for k, v in sorted(perms.items())}, sorted(hidden),
+                      doc.get("label", ""), doc.get("description", "")], sort_keys=True)
+    return hashlib.sha1(raw.encode()).hexdigest()[:12]
+
+
 def _role_view(rid: str, matrix: Dict[str, Any], users: Dict[str, int],
                custom_docs: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     entry = reg.ROLES.get(rid) or {}
@@ -108,6 +117,7 @@ def _role_view(rid: str, matrix: Dict[str, Any], users: Dict[str, int],
         "turn_alerts": _turn_alerts(perms),
         "updated_at": doc.get("updated_at", ""),
         "hidden_views": sorted(_HIDDEN.get(rid, [])),
+        "version": _version(perms, _HIDDEN.get(rid, []), doc),
     }
 
 
@@ -212,6 +222,11 @@ async def update_role(rid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     if rid not in reg.ROLES:
         raise HTTPException(status_code=404, detail="Peran tidak ditemukan.")
     custom = bool(reg.ROLES[rid].get("custom"))
+    expected = (payload.get("expected_version") or "").strip()
+    if expected and (await get_role(rid))["version"] != expected:
+        raise HTTPException(status_code=409, detail={
+            "code": "ROLE_VERSION_CONFLICT",
+            "message": "Peran ini baru saja diubah admin lain. Muat ulang versi terbaru lalu ulangi perubahan Anda — tidak ada yang ditimpa."})
     matrix = await _matrix()
     changes: Dict[str, Any] = {}
     if "levels" in payload and payload["levels"] is not None:
@@ -282,6 +297,7 @@ async def delete_custom(rid: str) -> Dict[str, Any]:
     matrix = await _matrix()
     matrix.pop(rid, None)
     await _save_matrix(matrix)
+    await db.permission_settings.update_one({"id": "default"}, {"$unset": {f"hidden_views.{rid}": ""}})
     await db.custom_roles.delete_one({"id": rid})
     await sync_registry()
     return {"id": rid, "deleted": True}

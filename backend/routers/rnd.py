@@ -109,6 +109,21 @@ async def _spec_guard(spec_id: str, ctx) -> Dict[str, Any]:
     return doc
 
 
+async def _require_typed(request: Request, action: str, sample_id: str) -> Dict[str, Any]:
+    """LN-015-T03 — `rnd.<action>` umum ATAU `rnd.<action>_<jenis>` untuk SEMUA jenis uji sample."""
+    from dependencies import current_user, has_permission
+    user = await current_user(request)
+    if await has_permission(user, "rnd", action):
+        return user
+    doc = await smp.get_sample(sample_id)
+    types = smp.types_of(doc or {})
+    missing = [t for t in types if not await has_permission(user, "rnd", f"{action}_{t}")]
+    if doc and types and not missing:
+        return user
+    need = " / ".join(f"rnd.{action}_{t}" for t in (missing or ["<jenis>"]))
+    raise HTTPException(status_code=403, detail=f"Permission ditolak: rnd.{action} atau {need}")
+
+
 async def _sample_guard(sample_id: str, ctx) -> Dict[str, Any]:
     doc = await smp.get_sample(sample_id)
     if not doc:
@@ -559,7 +574,7 @@ async def submit_round(sample_id: str, round_id: str, payload: RoundSubmitBody,
 @router.post("/rnd/samples/{sample_id}/rounds/{round_id}/assess")
 async def assess_round(sample_id: str, round_id: str, payload: RoundAssessBody,
                        request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "rnd", "assess")
+    actor = await _require_typed(request, "assess", sample_id)
     ctx = await entity_ctx(request)
     await _sample_guard(sample_id, ctx)
     try:
@@ -576,7 +591,7 @@ async def assess_round(sample_id: str, round_id: str, payload: RoundAssessBody,
 async def decide_sample(sample_id: str, payload: SampleDecideBody,
                         request: Request) -> Dict[str, Any]:
     """Pilih pemenang → kontrak harga (Fase E) + barang supplier terbentuk."""
-    actor = await require_permission(request, "rnd", "decide")
+    actor = await _require_typed(request, "decide", sample_id)
     ctx = await entity_ctx(request)
     cur = await _sample_guard(sample_id, ctx)
     if cur.get("purpose") == "revalidation" and cur.get("revalidation"):
@@ -588,6 +603,9 @@ async def decide_sample(sample_id: str, payload: SampleDecideBody,
         await audit(actor.get("name", ""), "rnd_revalidation_decided", "md_samples", sample_id,
                     {"number": doc.get("number"), "decision": doc.get("decision")}, reason=payload.note)
         return doc
+    from dependencies import has_permission
+    if not await has_permission(actor, "rnd", "decide"):
+        raise HTTPException(status_code=403, detail="Permission ditolak: rnd.decide — keputusan ini membuat kontrak harga; ACC teknis per jenis uji tidak memberi hak kontrak.")
     # PS-20 (D-14) — tahap "ACC Sample" kini mengikat (matriks persetujuan divisi).
     ev = await amx.guard("sample_acc", actor, cur, cur.get("entity_id", ""), action="approve")
     try:

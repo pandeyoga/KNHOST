@@ -248,3 +248,34 @@ EXCLUDED_MORE = {
     "store_credit_redemptions": "Turunan saldo kredit (lihat Uang Masuk/Retur)",
     "intercompany_eliminations": "Jurnal eliminasi konsolidasi (turunan dari transaksi antar-PT)",
 }
+
+# LN-140 (2026-10-18) — koleksi baru sejak registry L11 dipetakan / dikecualikan beralasan.
+_RET = ("sales_return", "view")
+MORE += [
+    S("return_grade_impairments", "Kerugian Turun Grade Retur", "Penjualan", "return_grade_impairments", _RET,
+      "return_number:No. retur|roll_no:Roll|grade_before:Grade lama|grade_after:Grade baru|qty:Qty:n|unit:Satuan"
+      "|list_price:Harga daftar:m|unit_loss:Rugi/satuan:m|amount:Kerugian:m|je_number:Jurnal|entity_id:ID badan usaha",
+      grain="1 baris = 1 roll retur yang turun grade (terpisah dari kredit pelanggan)"),
+    S("interco_returns", "Retur Antar-PT (per sisi)", "Keuangan", "interco_returns", IC,
+      "number:No.|counterpart_number:No. pasangan|role:Sisi|buyer_entity_name:PT pengembali|seller_entity_name:PT penerima"
+      "|status:Status|grand_total:Nilai:m|reason:Alasan|source_sales_return_number:Retur pelanggan asal|mandatory_accept:Wajib terima"
+      "|entity_id:ID badan usaha", grain="1 baris = 1 dokumen retur antar-PT per sisi"),
+    S("roll_cost_history", "Riwayat Nilai Roll", "Gudang", "roll_cost_history", ("inventory", "view"),
+      "roll_id:ID roll|reason:Sebab|old_unit_cost:Nilai lama:m|new_unit_cost:Nilai baru:m|ref_number:Dokumen|actor:Oleh",
+      joins=[], grain="1 baris = 1 perubahan nilai satuan roll"),
+    S("store_credit_ledger", "Mutasi Kredit Toko Pelanggan", "Keuangan", "store_credit_ledger", ("store_credit", "view"),
+      "customer_name:Pelanggan|type:Jenis|amount:Nilai:m|balance_after:Saldo:m|ref_number:Dokumen|entity_id:ID badan usaha"),
+    S("mdq_cuts", "Potongan MD Quality", "Gudang", "mdq_cuts", ("inventory", "view"),
+      "roll_no:Roll|length:Panjang:n|unit:Satuan|status:Status|entity_id:ID badan usaha"),
+    S("price_approvals", "Persetujuan Harga", "Penjualan", "price_approvals", ("order", "view"),
+      "order_number:Pesanan|status:Status|requested_by:Pengaju|decided_by:Pemutus|entity_id:ID badan usaha"),
+    S("logistics_deliveries", "Pengiriman Logistik", "Logistik", "logistics_deliveries", ("logistics", "view"),
+      "number:No.|status:Status|driver_name:Sopir|entity_id:ID badan usaha"),
+]
+EXCLUDED_MORE.update({
+    "bin_locks": "Kunci transaksi bin (teknis)", "return_create_locks": "Kunci transaksi retur (teknis)",
+    "location_migrations": "Catatan migrasi lokasi (teknis)", "custom_roles": "Konfigurasi peran (Pengaturan)",
+    "customer_grade_rules": "Konfigurasi rank pelanggan (Pengaturan)", "process_recipes": "Master resep proses (Pengaturan)",
+    "design_categories": "Kamus kategori desain", "client_dataset_imports": "Log impor dataset (teknis)",
+    "approval_matrix_log": "Jejak audit matriks persetujuan",
+})

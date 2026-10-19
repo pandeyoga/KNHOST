@@ -1,0 +1,44 @@
+{
+  "summary": "Iterasi 234 — RETEST iter_233 + perbaikan izin interco & SJ supplier. Backend regresi semua lulus (POC rantai retur 46/46 + pytest 19 passed, 1 xfailed terdokumentasi). HIGH bug sebelumnya (finance@ tanpa tab Retur Masuk) KINI SUDAH DIPERBAIKI. Satu temuan baru: whadmin@ tidak melihat sub-tab 'Scan Terima per PO' di Operasi Gudang → Barang Masuk, yang diperlukan oleh spec untuk alur receiving CST/PO-00018.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Barang Masuk · sub-tab 'Scan Terima per PO'", "issue": "whadmin@ (warehouse_admin) di entitas CST TIDAK melihat sub-tab 'Scan Terima per PO' di layar Operasi Gudang → Barang Masuk, padahal admin@ melihatnya (dan task CST/PO-00018 wms_4eb855712541 waiting_goods memang ada untuk gudang wh_64c0d0178421). Akibatnya alur spec '…login whadmin@ CST → Operasi Gudang → Barang Masuk → terima qty (scan-receive / form) → Selesaikan Penerimaan → modal GR gr-supplier-dn/gr-supplier-dn-warning' TIDAK dapat dilakukan oleh whadmin.", "selector": "button:has-text(\"Scan Terima per PO\")", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "retest_matrix": {
+    "iter_233_HIGH_finance_interco_tab": "FIXED ✓ (finance@ CST /?view=interco-transactions&entity=ent_89cbf7444def menampilkan interco-tab-return-inbox, canAct=false (0 ic-inbox-accept-* button) — benar menurut bisnis finance read-only)",
+    "finance_desk_return_desk_open_shortcut": "FIXED ✓ (return-desk-open button -> interco-transactions&entity=ent_89cbf7444def, mendarat di tab Retur Masuk interco-tab-return-inbox)",
+    "bell_notif_finance_whadmin": "VERIFIED ✓ ('Retur internal masuk (1)' tampil di lonceng finance@ CST)",
+    "whadmin_interco_accept_permission": "PARTIAL — tab interco-tab-return-inbox tampil utk whadmin@ CST, namun 0 ic-inbox-accept-* button tampil karena koleksi interco_returns KOSONG di DB. Spec meminta buat retur internal baru dulu via API/UI sebelum menguji terima; belum tersedia seed. Permission matrix di backend return_disposition.py (DECIDE_PERMS) + routers/interco.py approve_interco_return mandatory_accept=interco.receive sudah terlihat benar lewat regresi pytest.",
+    "receiving_supplier_dn_mode_default_warn": "VERIFIED ✓ (DB config_values key=receiving.supplier_dn_mode value='warn')",
+    "GR_modal_gr-supplier-dn_fields": "NOT_VERIFIED (perlu scan label atau input manual kemudian 'Selesaikan Penerimaan' pada task wms_4eb855712541; tombol Selesaikan hanya muncul setelah ≥1 roll diterima — tidak bisa diotomasi tanpa scanner. UI task TERBUKA dengan input scan-label-input/scan-label-camera-toggle/Input Manual).",
+    "sales_salesadmin_warehouse_read_only": "iter_233 sudah memverifikasi; tidak diulang penuh di iter ini."
+  },
+  "test_report_links": [
+    "/app/backend/test_core_rantai_retur_poc.py (46/46 PASS)",
+    "/app/backend/tests/test_ln091t02_ln093_chain.py (10 PASS)",
+    "/app/backend/tests/test_ln140_chain_fixes.py (3 PASS)",
+    "/app/backend/tests/test_ln014_lot_identity.py (3 PASS)",
+    "/app/backend/tests/test_iter233_sj_supplier_mode.py (3 PASS, 1 xfail terdokumentasi)"
+  ],
+  "action_items": [
+    "Tambahkan sub-tab 'Scan Terima per PO' untuk peran warehouse_admin (whadmin@) di layar Operasi Gudang → Barang Masuk, atau samakan guard sub-tab dengan izin yang sama dengan Kedatangan (SJ & OCR)/Selisih Supplier. Spec iter 234 memerlukan whadmin menjalankan scan-receive & Selesaikan Penerimaan di sana.",
+    "Seed/CREATE retur internal baru (via API POST /api/sales-returns/{id}/disposition/internal pada DEMO_LN093-08710d atau endpoint setara) agar ic-inbox-accept-* dapat diuji di UI untuk whadmin@ CST. Setelah itu validasi tombol 'Terima retur' muncul dan POST sukses tanpa interco.approve (hanya interco.receive).",
+    "Verifikasi gr-supplier-dn + gr-supplier-dn-warning di modal GRCatchWeightModal perlu input manual roll (atau scan). Pertimbangkan menyediakan jalur 'Input Manual qty' sederhana untuk uji otomatis supaya alur modal GR dapat divalidasi UI oleh agen testing."
+  ],
+  "critical_code_review_comments": [
+    "Guard sub-tab 'Scan Terima per PO' tampaknya memerlukan izin yang lebih luas daripada warehouse_admin. Periksa frontend operations/warehouse hub tabs (hub-tab-goods-receipts) & kondisi rendering 'Scan Terima per PO' — kemungkinan menggunakan izin lain (admin only) alih-alih wms.scan_receive.",
+    "ic-inbox-accept-* button kemungkinan dirender hanya ketika status interco_return=pending_accept AND must_accept=true. Kondisi tersebut benar; namun database preview tidak memiliki item seperti itu, perlu seeder/skenario UAT khusus."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (POC 46/46 + 19 pytest pass + 1 xfail terdokumentasi)", "frontend": "~80% (fix utama iter_233 terverifikasi; whadmin missing subtab = HIGH baru; GR modal fields belum terverifikasi karena perlu input scan)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345. Lainnya /demo1234. CST entity_id = ent_89cbf7444def.",
+  "seed_data_creation": "Tidak membuat seed baru. receiving.supplier_dn_mode tetap 'warn'.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "iter_233 HIGH (finance interco tab) sudah FIXED. Fokus iter berikutnya: (a) permission sub-tab 'Scan Terima per PO' untuk whadmin, (b) seed retur internal pending accept lalu uji ic-inbox-accept-* di UI whadmin CST, (c) jalur input manual pada modal GR agar gr-supplier-dn + warning dapat divalidasi tanpa scanner fisik. CST entity id = ent_89cbf7444def. Task uji ada: wms_4eb855712541 (CST/PO-00018 ALICE KNIT 10 A, 30 kg, wh_64c0d0178421).",
+  "rca of the issue": "whadmin tidak melihat sub-tab 'Scan Terima per PO': kemungkinan rendering tab di komponen Barang Masuk mengecek izin yang hanya diberikan admin (misal 'inbound.scan_per_po' atau sejenis) alih-alih izin umum warehouse_admin. Reproduksi: login whadmin@kainnusantara.id/demo1234 → ?view=operations&entity=ent_89cbf7444def → klik 'Barang Masuk' → tampak hanya 2 sub-tab (Kedatangan, Selisih Supplier). Login admin@/demo12345 pada rute yang sama → 3 sub-tab termasuk 'Scan Terima per PO'."
+}

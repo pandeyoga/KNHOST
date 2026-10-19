@@ -46,7 +46,7 @@ def art():
     pids = []
     for i, c in enumerate(COLORS):
         pid = f"prod_l06_{TAG}_{i}"
-        DB.products.insert_one({**base, "id": pid, "sku": f"L06{TAG}-{c}", "name": f"ARTIKEL L06 {c}", "color": c, "color_name": c,
+        DB.products.insert_one({**base, "id": pid, "variant_key": f"TEST_{pid}", "sku": f"L06{TAG}-{c}", "name": f"ARTIKEL L06 {c}", "color": c, "color_name": c,
                                 "template_id": TPL, "_l06": TAG, "price": 10000})
         pids.append(pid)
     rolls = {}
@@ -126,7 +126,7 @@ def test_ln060_t04_hanger_not_forced_up(h, art):
     assert r.json()["items"][0]["quantity"] == 0.25 and r.json()["items"][0]["sample_kind"] == "hanger"
     bad = _so(h, [_line(art["pids"][1], 0.6, "hanger")])
     assert bad.status_code == 400 and "SAMPLE_LIMIT" in bad.text
-    knit = DB.products.find_one({"fabric_type": "knit", "base_unit": "kg", "price": {"$gt": 0}, "lifecycle": {"$in": [None, "produksi"]}}, {"_id": 0})
+    knit = DB.products.find_one({"fabric_type": "knit", "base_unit": "kg", "price": {"$gt": 0}, "lifecycle": {"$in": [None, "produksi"]}, "exclusive_customer_id": {"$in": [None, ""]}}, {"_id": 0})
     ok = _so(h, [{"product_id": knit["id"], "quantity": 2.0, "unit": "kg", "base_quantity": 2.0, "is_sample": True, "sample_kind": "hanger"}])
     assert ok.status_code == 200, ok.text[:300]
     over = _so(h, [{"product_id": knit["id"], "quantity": 2.5, "unit": "kg", "base_quantity": 2.5, "is_sample": True, "sample_kind": "hanger"}])

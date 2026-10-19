@@ -639,10 +639,12 @@
         "LN-014-T01",
         "LN-014-T02"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L14/report.md (T3/T4), backend/tests/test_ln014_lot_identity.py, tests/test_ln140_chain_fixes.py"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
       "implementer": null,
@@ -1721,10 +1723,12 @@
         "LN-140-T01",
         "LN-140-T02"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L14/report.md, backend/test_core_rantai_retur_poc.py (46/46)"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
       "implementer": null,

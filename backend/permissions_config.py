@@ -618,6 +618,9 @@ for _role in ("sales", "sales_admin", "finance"):
     DEFAULT_PERMISSIONS[_role]["od_fulfillment"] = ["view"]
 # L03 LN-034 — keputusan PIC atas uji ulang gagal & override eksplisit (terpisah dari ACC teknis/kontrak).
 DEFAULT_PERMISSIONS["admin"]["rnd"] = list(DEFAULT_PERMISSIONS["admin"]["rnd"]) + ["pic_decide", "override_fail"]
+# LN-015-T03 — ACC teknis per jenis uji; `assess`/`decide` umum tetap mencakup semua jenis.
+RND_TYPED_ACTIONS = [f"{a}_{t}" for a in ("assess", "decide") for t in ("labdip", "handfeel", "proofing")]
+DEFAULT_PERMISSIONS["admin"]["rnd"] = list(DEFAULT_PERMISSIONS["admin"]["rnd"]) + RND_TYPED_ACTIONS
 DEFAULT_PERMISSIONS["manager"]["rnd"] = list(DEFAULT_PERMISSIONS["manager"]["rnd"]) + ["pic_decide", "override_fail"]
 DEFAULT_PERMISSIONS["md"]["rnd"] = list(DEFAULT_PERMISSIONS["md"]["rnd"]) + ["pic_decide"]
 # L11 LN-110/LN-113 — Pusat Export: lihat dataset/preview vs membuat & mengunduh file dipisah.

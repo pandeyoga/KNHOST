@@ -14,7 +14,7 @@ sys.path.insert(0, "/app/backend")
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.environ.get("DB_NAME", "test_database")]
 T = uuid.uuid4().hex[:6]
-CST = "ent_89cbf7444def"
+CST = DB.business_entities.find_one({"doc_prefix": "CST"})["id"]
 
 
 def _login(email, pw="demo1234", ent="ent_ksc"):

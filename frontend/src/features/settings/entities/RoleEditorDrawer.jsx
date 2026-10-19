@@ -3,7 +3,7 @@
  * 3 tingkat per modul, template "salin dari peran", pratinjau menu, dan
  * ringkasan perubahan sebelum disimpan.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { X, Save, Loader2, ShieldCheck, Copy, Trash2, RotateCcw, Info, Lock } from "lucide-react";
 
 import KNSelect from "../../../components/KNSelect";
@@ -30,8 +30,10 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   const custom = editing ? Boolean(role.custom) : true;
   const originalPerms = useMemo(() => permsOf(role || template), [role, template]);
   const original = useMemo(() => Object.fromEntries(Object.entries(levelsFromPerms(originalPerms, modules)).map(([k, v]) => [k, v.level])), [originalPerms, modules]);
-  const [label, setLabel] = useState(role?.label || (template ? `${template.label} (salinan)` : ""));
-  const [description, setDescription] = useState(role?.description || template?.description || "");
+  const initLabel = role?.label || (template ? `${template.label} (salinan)` : "");
+  const initDesc = role?.description || template?.description || "";
+  const [label, setLabel] = useState(initLabel);
+  const [description, setDescription] = useState(initDesc);
   const [baseRole, setBaseRole] = useState(role?.base_role || (template ? (template.custom ? template.base_role : template.id) : ""));
   const [perms, setPerms] = useState(originalPerms);
   const originalHidden = useMemo(() => new Set(role?.hidden_views || template?.hidden_views || []), [role, template]);
@@ -44,6 +46,8 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   const [danger, setDanger] = useState(null);   // null | "delete" | "reset"
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [discard, setDiscard] = useState(false);
+  const [conflict, setConflict] = useState(false);
   const levelInfo = useMemo(() => levelsFromPerms(perms, modules), [perms, modules]);
   const levels = useMemo(() => Object.fromEntries(Object.entries(levelInfo).map(([k, v]) => [k, v.level])), [levelInfo]);
 
@@ -63,6 +67,17 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   const nothingOn = modules.every((m) => levels[m.id] === "none");
   const canSave = !locked && !nameError && (changes.length > 0 || hiddenChanged.length > 0 || (!editing) || label !== role?.label || description !== (role?.description || ""));
 
+  const dirty = !locked && (changes.length > 0 || hiddenChanged.length > 0 || label !== initLabel || description !== initDesc);
+  const requestClose = () => { if (busy) return; if (dirty) setDiscard(true); else onClose?.(); };
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (discard) setDiscard(false); else if (confirm) setConfirm(false); else if (danger) setDanger(null); else requestClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
   const copyFrom = (rid) => {
     const src = roles.find((r) => r.id === rid);
     if (!src) return;
@@ -81,7 +96,7 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
       if (editing) {
         res = await patchAccessRole(role.id, {
           ...(custom ? { label: label.trim(), description: description.trim() } : {}),
-          permissions: perms, hidden_views: [...hidden],
+          permissions: perms, hidden_views: [...hidden], expected_version: role.version,
         });
         onSaved?.(`Hak akses peran “${res.label}” disimpan. ${res.users} akun terpengaruh — berlaku otomatis dalam ≤1 menit.`);
       } else {
@@ -90,6 +105,7 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
         onSaved?.(`Peran “${res.label}” dibuat. Berikan ke akun lewat tab Akun & Akses.`);
       }
     } catch (e) {
+      setConflict(e.response?.status === 409 && e.response?.data?.detail?.code === "ROLE_VERSION_CONFLICT");
       setError(errText(e, "Gagal menyimpan peran.")); onError?.(errText(e, "Gagal menyimpan peran.")); setConfirm(false);
     } finally { setBusy(false); }
   };
@@ -110,7 +126,7 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
 
   return (
     <div className="modal-overlay" data-testid="role-editor-drawer"
-         onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose?.(); }}>
+         onClick={(e) => { if (e.target === e.currentTarget) requestClose(); }}>
       <div className="modal-card" style={{ maxWidth: 1080, width: "96vw" }}>
         <div className="flex items-start gap-2 border-b border-[#EFF0F2] px-4 py-3">
           <ShieldCheck size={16} className="mt-0.5 text-[#0058CC]" />
@@ -124,7 +140,7 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
               Pilih tingkat akses tiap modul. Perubahan berlaku untuk semua akun dengan peran ini.
             </p>
           </div>
-          <button type="button" className="icon-button" aria-label="Tutup" data-testid="role-editor-close" onClick={onClose}><X size={14} /></button>
+          <button type="button" className="icon-button" aria-label="Tutup" data-testid="role-editor-close" onClick={requestClose}><X size={14} /></button>
         </div>
 
         <div className="grid gap-3 p-4 lg:grid-cols-[1fr_300px]" style={{ maxHeight: "68vh", overflowY: "auto" }}>
@@ -221,7 +237,8 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
           </div>
         </div>
 
-        {error && <div className="notice-bar danger !py-1.5 mx-4 mb-2" data-testid="role-editor-error"><span className="text-[11.5px]">{error}</span></div>}
+        {error && <div className="notice-bar danger !py-1.5 mx-4 mb-2" data-testid="role-editor-error"><span className="text-[11.5px]">{error}</span>
+          {conflict && <button type="button" className="secondary-button ml-2 !py-0.5" data-testid="role-editor-reload" onClick={() => onRefresh?.()}>Muat ulang versi terbaru</button>}</div>}
 
         <div className="flex flex-wrap items-center gap-2 border-t border-[#EFF0F2] px-4 py-3">
           {editing && custom && (
@@ -236,7 +253,7 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
             </button>
           )}
           <div className="ml-auto flex gap-2">
-            <button type="button" className="secondary-button" data-testid="role-editor-cancel" onClick={onClose}>Batal</button>
+            <button type="button" className="secondary-button" data-testid="role-editor-cancel" onClick={requestClose}>Batal</button>
             <button type="button" className="primary-button" data-testid="role-editor-save" disabled={busy || !canSave} onClick={() => setConfirm(true)}>
               {busy ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
               {editing ? "Simpan Perubahan" : "Buat Peran"}
@@ -247,6 +264,21 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
         {danger && (
           <RoleDangerDialog kind={danger} roleLabel={role.label} busy={busy}
                             onCancel={() => setDanger(null)} onConfirm={danger === "delete" ? remove : reset} />
+        )}
+
+        {discard && (
+          <div className="modal-overlay" data-testid="role-editor-discard" onClick={(e) => { if (e.target === e.currentTarget) setDiscard(false); }}>
+            <div className="modal-card p-4" style={{ maxWidth: 420, width: "92vw" }}>
+              <h4 className="text-[13px] font-bold">Buang perubahan yang belum disimpan?</h4>
+              <p className="mt-1 text-[11px] text-[#6B6B73]" data-testid="role-editor-discard-summary">
+                {changes.length} modul dan {hiddenChanged.length} menu/tab berubah{label !== initLabel || description !== initDesc ? ", nama/keterangan juga diubah" : ""}. Pilihan Anda akan hilang bila ditutup.
+              </p>
+              <div className="mt-3 flex justify-end gap-2">
+                <button type="button" className="secondary-button" data-testid="role-editor-discard-keep" autoFocus onClick={() => setDiscard(false)}>Lanjut mengedit</button>
+                <button type="button" className="primary-button !bg-[#A8221A]" data-testid="role-editor-discard-confirm" onClick={() => { setDiscard(false); onClose?.(); }}>Buang &amp; tutup</button>
+              </div>
+            </div>
+          </div>
         )}
 
         {confirm && (

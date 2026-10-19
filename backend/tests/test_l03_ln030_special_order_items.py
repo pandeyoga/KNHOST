@@ -240,7 +240,7 @@ class TestMultiItem:
 # ── T02 validation ────────────────────────────────────────────────────────────
 class TestArtworkValidation:
     @pytest.mark.parametrize("did,needle", [(D_HOLD, "HOLD"), (D_DRAFT, "ACC"), (D_OTHER, "badan usaha"),
-                                            ("dsgn_nope_x", "tidak ditemukan")])
+                                            ("dsgn_nope_x", "tidak ditemukan")], ids=["hold", "draft", "other", "missing"])
     def test_invalid_artwork_400(self, H, did, needle):
         pc = DB.products.count_documents({})
         r = _create(H, [{"source_type": "approved_artwork", "source_design_id": did,

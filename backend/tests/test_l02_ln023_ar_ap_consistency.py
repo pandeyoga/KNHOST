@@ -44,11 +44,11 @@ def _cleanup():
 @pytest.fixture(scope="module", autouse=True)
 def fixtures():
     _cleanup()
-    cust = DB.customers.find_one({"id": "cust_butik_bali"}, {"_id": 0})
+    cust = DB.customers.find_one({"id": "cust_butik_bali"}, {"_id": 0}) or DB.customers.find_one({"id": {"$not": {"$regex": "TEST"}}}, {"_id": 0})
     cust.update({"id": CUST, "code": "TEST_LN023", "name": "TEST_LN023 Customer", "entity_id": ENT, "credit_limit": 0, "status": "active",
                  "deposit_balance": 0})
     DB.customers.insert_one(dict(cust))
-    so = DB.sales_orders.find_one({"id": "so_97e1a0a7a24c"}, {"_id": 0})
+    so = DB.sales_orders.find_one({"id": "so_97e1a0a7a24c"}, {"_id": 0}) or DB.sales_orders.find_one({"entity_id": ENT, "items.0": {"$exists": True}, "id": {"$not": {"$regex": "TEST"}}}, {"_id": 0})
     so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
                "status": "confirmed", "payments": [], "paid_total": 0, "payment_status": "pending",
                "grand_total": GT, "allocations": [], "refs": []})
