@@ -1,5 +1,12 @@
 # PRD — Kain Nusantara ERP (lanjutan dari repo github.com/kakjsbsbs/KN)
 
+## 2026-10-19 (b) — Dibaca per orang, 3 jenis sample di POS, menu Retur terpadu
+- Notifikasi: `read_by` per user (services/notification_read.py); siaran tidak lagi hilang untuk orang lain; pribadi tetap ditutup global; eskalasi lewati siaran yang sudah dibaca seseorang. Tes 8/8 (tests/test_notification_read_per_user.py).
+- POS (desktop & HP): Pesanan Sample → pilih Standar / Hanger (per baris, batas maksimal) / Catalogue (membuka form Catalogue artikel itu, hanya kain yard). `sample_kind` ikut ke keranjang.
+- Menu Retur (hub `returns-hub`): Retur Pelanggan · Retur Antar-PT (view `interco-returns`) · Retur ke Supplier · Kebijakan Retur. Tab lama di Pesanan, Hutang Pemasok, Pengaturan, dan tab retur di Antar Entitas dipindah ke sini.
+- Belum diuji testing agent: 3 jenis sample & menu Retur terpadu.
+
+
 ## 2026-10-19 — Perbaikan versi HP: notifikasi lengkap, tombol iOS, push notif, hak akses satu pintu (iteration_mobile_notif_push_1)
 - Permintaan user: hapus "Isi per roll" (HP & desktop); notifikasi HP selengkap desktop; tombol Tambah di popup POS tidak terlihat di iOS Safari; push notif di HP; duplikasi hak akses (Matriks Izin vs Badan Usaha & Akses) → pakai yang terbaru.
 - `RollLengthStrip` dihapus. `MobileNotifSheet.jsx` baru (filter tingkat/belum dibaca/jenis, tag alamat, eskalasi, setujui inline, tandai dibaca per item, muat lebih banyak, sirine) dipakai Sales/Admin Sales/MD.
