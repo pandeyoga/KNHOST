@@ -1,0 +1,67 @@
+{
+  "summary": "Tested backend grade visibility (pytest tests/test_l01_grade_visibility.py 14/14 pass, API /api/dashboard for sales has no 'grade' key, ALICE KNIT variants no longer end with ' | A') and the UI changes on desktop (1920x900) + mobile (390x844) as the sales user. Most requirements PASS. Two issues found: (A) a raw JSX comment is rendering as plain text inside the sales POS quickview (ProductQuickView.jsx line 233), (B) scroll restore from a Lainnya 'Fitur lainnya · tampilan penuh' entry does not work — pressing back ('Kembali ke aplikasi HP' / mobile-back-to-app) lands the user on the Beranda tab with window.scrollY=0 instead of returning to the Lainnya tab at the previous scroll position.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "ProductQuickView (desktop POS, Sales)", "issue": "Line 233 '/* Qty + Satuan (FIXED ke base_unit — F2 UoM SSOT) */' is not wrapped in JSX braces, so it renders as literal text inside every product quickview on desktop POS.", "selector": "div[data-testid='product-quickview']", "priority": "HIGH"},
+      {"component": "MobileMore scroll restore", "issue": "After opening a Lainnya entry (e.g. mobile-full-logistics 'Pengiriman') and tapping back (mobile-back-to-app / 'Kembali ke aplikasi HP'), the mobile app returns to the Beranda tab with scrollY=0 rather than restoring the previous Lainnya scroll position. Switching bottom tabs home→more also returns scrollY=0. The .m-main container has clientHeight === scrollHeight so MORE_SCROLL probably watches el.scrollTop on a non-scrolling container; actual scrolling is on window.", "selector": ".m-main / mobile-back-to-app", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verifications": {
+    "backend": {
+      "pytest_grade_visibility": "14/14 passed (tests/test_l01_grade_visibility.py including test_grade_follows_role_config_for_sales)",
+      "api_dashboard_sales_no_grade_key": true,
+      "variant_suffix_|A_stripped": true,
+      "sample_variant_name": "ALICE KNIT (94139 - 45) 10 (no trailing | A)"
+    },
+    "desktop_pos_sales": {
+      "no_grade_facet": true,
+      "no_grade_badge_on_cards": true,
+      "quickview_roll_lengths_data_testid": "quickview-roll-lengths with '150 yd / 50 yd / 150 yd / 50 yd'",
+      "roll_picker_roll_len_text": "150 yd / 50 yd (no 'm ≈ … yd')",
+      "roll_dual_count": 0,
+      "sidebar_rename": "'POS' and 'R&D' present; 'Kasir & Portal' / 'Riset & Sampel' absent",
+      "sampel_text_hits_on_pos": 0,
+      "pesanan_sample_label": "'Pesanan Sample' (not Sampel)"
+    },
+    "mobile_sales": {
+      "mobile_sales_app": true,
+      "mobile_quickview_unit_fixed_present": true,
+      "mobile_quickview_unit_select_present": false,
+      "mobile_quickview_roll_lengths_text": "150 yd / 50 yd / 150 yd / 50 yd (qty mode)",
+      "sample_mode_hides_roll_lengths_and_qty": true,
+      "catalog_sheet_sampel_hits": 0,
+      "order_sample_label": "'Order sample' (not Sampel)",
+      "hub_lengkap_items": ["Pesanan (SO)", "Koreksi & Amandemen", "Retur & Barang Sisa", "Permintaan Internal (PIN)", "CRM & Pelanggan", "Kunjungan Sales", "Produk & Varian", "Harga per Pelanggan", "Status Stok & ATP", "Lot & Silsilah"],
+      "fitur_lainnya_full_items": ["Permintaan Sample R&D", "Pengiriman", "Kas Kecil", "Kendaraan", "Marketing & Sosmed", "Pusat Dokumen", "Profil & Kehadiran Saya", "Jejak Dokumen"],
+      "forbidden_items_present": "none of Operasi Gudang / PR / Transaksi Antar-PT / Kebijakan Retur / Kasus Keuangan appear",
+      "force_desktop_shows_switch_btn_and_LS_set": true,
+      "switch_to_mobile_restores_mobile_and_clears_LS": true,
+      "reload_after_switch_keeps_mobile": true
+    }
+  },
+  "scroll_restore_rca": {
+    "observed": "window.scrollY=889 before navigation; after mobile-back-to-app window.scrollY=0 and the bottom-tab UI shows Beranda highlighted.",
+    "root_cause_hypothesis": "MobileMore.jsx tracks scroll on .m-main (MORE_SCROLL) but on sales mobile the actual scrolling element is the window, not .m-main (its clientHeight === scrollHeight === 1677). So the saved scrollTop is always 0 and never restores. Separately, the back-to-app flow routes to the Home tab rather than restoring the active tab=more.",
+    "mitigation": "Capture scroll from window (or whichever ancestor is actually scrollable) and restore both the active bottom tab and the scroll position after mobile-back-to-app; or make .m-main the overflow-y:auto container so el.scrollTop reflects reality."
+  },
+  "test_report_links": ["/app/backend/tests/test_l01_grade_visibility.py"],
+  "action_items": [
+    "Fix ProductQuickView.jsx line 233: wrap the comment in {/* ... */} or delete it to prevent it from rendering as text in sales POS quickview.",
+    "Fix mobile scroll restore so returning from a Lainnya full-view entry (mobile-back-to-app / 'Kembali ke aplikasi HP') restores (a) the Lainnya tab as active and (b) the previous scroll position. Current MORE_SCROLL reads .m-main.scrollTop which is always 0 because window is the scroll container."
+  ],
+  "critical_code_review_comments": [
+    "frontend/src/components/ProductQuickView.jsx:233 — unbraced JSX comment leaks to UI.",
+    "MobileMore scroll restore logic likely binds to the wrong scroll container on sales mobile."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "85%"},
+  "test_credentials": "sales@kainnusantara.id / demo1234, admin@kainnusantara.id / demo12345",
+  "seed_data_creation": "none",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Grade visibility backend fully correct. Sidebar renames (POS/R&D) and 'Sample' text are already live. RollPicker uses yd/kg only (no dual m display). Two UI defects remain: (1) stray '/* Qty + Satuan ... */' text visible in desktop POS quickview, (2) Lainnya scroll restore broken because .m-main isn't the actual scrolling container; back button also returns to Beranda tab instead of Lainnya.",
+  "rca of the issue": "See scroll_restore_rca above and ProductQuickView.jsx:233 unbraced comment."
+}
