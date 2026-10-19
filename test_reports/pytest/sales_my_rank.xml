@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="5" failures="0" skipped="0" tests="5" time="0.239" timestamp="2026-10-19T06:32:37.776009+00:00" hostname="agent-env-72c385ab-6fa0-4efe-8385-288d2f554cf9"><testcase classname="tests.test_sales_my_rank" name="test_my_rank_sales_ok" time="0.000"><error message="failed on setup with &quot;KeyError: 'MONGO_URL'&quot;">tests/conftest.py:26: in pytest_runtest_setup
+    pymongo.MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]].login_attempts.delete_many({"locked_until": {"$exists": True}})
+                        ^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'MONGO_URL'</error></testcase><testcase classname="tests.test_sales_my_rank" name="test_my_rank_sales_kanda_ok" time="0.000"><error message="failed on setup with &quot;KeyError: 'MONGO_URL'&quot;">tests/conftest.py:26: in pytest_runtest_setup
+    pymongo.MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]].login_attempts.delete_many({"locked_until": {"$exists": True}})
+                        ^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'MONGO_URL'</error></testcase><testcase classname="tests.test_sales_my_rank" name="test_my_rank_ignores_other_sales_id" time="0.000"><error message="failed on setup with &quot;KeyError: 'MONGO_URL'&quot;">tests/conftest.py:26: in pytest_runtest_setup
+    pymongo.MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]].login_attempts.delete_many({"locked_until": {"$exists": True}})
+                        ^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'MONGO_URL'</error></testcase><testcase classname="tests.test_sales_my_rank" name="test_leaderboard_forbidden_for_sales" time="0.000"><error message="failed on setup with &quot;KeyError: 'MONGO_URL'&quot;">tests/conftest.py:26: in pytest_runtest_setup
+    pymongo.MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]].login_attempts.delete_many({"locked_until": {"$exists": True}})
+                        ^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'MONGO_URL'</error></testcase><testcase classname="tests.test_sales_my_rank" name="test_leaderboard_ok_for_manager" time="0.000"><error message="failed on setup with &quot;KeyError: 'MONGO_URL'&quot;">tests/conftest.py:26: in pytest_runtest_setup
+    pymongo.MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]].login_attempts.delete_many({"locked_until": {"$exists": True}})
+                        ^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'MONGO_URL'</error></testcase></testsuite></testsuites>

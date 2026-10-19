@@ -1425,3 +1425,11 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - Status retur pakai ReturnStatusPill (label Indonesia); grup menu Pelanggan & Stok terbuka; padding bawah agar baris terakhir tak tertutup tab bar.
 - Catatan: credit-status 403 untuk sales pada pelanggan yang tidak di-assign ke dia (can_access_customer) — banner kredit tidak tampil (desktop sama); gate kredit tetap di server.
 - Tahap 2 (belum): Retur HP lengkap (foto/kebijakan/roll/cutloss), OD multi-baris, Stok ATP/Incoming/antar-PT/Lot, CRM Interaksi/Penagihan/Sales Force, Dasbor & detail SO — layar HP ringkas khusus (keputusan user).
+
+## 2026-10-19 (3) — Mobile Sales Tahap 2 (iteration_238: backend 5/5, frontend 100%)
+- Retur HP = CreateReturnForm desktop (cek kebijakan/deadline/blokir, barang dari Surat Jalan, pilih per roll, foto wajib bila kebijakan) + tombol kamera (capture) yang menambah foto; detail retur: unggah bukti via kamera (status draft..inspected), catatan bila sudah diproses.
+- Pesanan Khusus HP = CreateSpecialOrderForm desktop (multi-baris, spesifikasi, kategori desain) + langkah baru "Gambar referensi" (kamera/galeri, maks 10, diunggah ke /special-orders/{id}/references sesudah simpan — juga berlaku di desktop). Detail OD HP: daftar item, spesifikasi, galeri referensi + tambah foto.
+- Stok & ATP HP (MobileStockAtp.jsx): /inventory/status-board — tab Semua/Habis/ATP Kurang/Akan Datang/Antar-PT, kartu ATP/tersedia/dipesan/akan datang, PT saya, badge antar-PT + "Minta" (InternalRequestCreateModal), rincian per gudang.
+- Penagihan & Target HP (MobileCollectionTargets.jsx): pengingat tagih (tandai diingatkan, catat hasil follow-up), target/pencapaian, insentif, proyeksi, KPI, riwayat 6 bulan, peringkat saya via GET /api/sales/my-rank (baru; tanpa angka rekan; leaderboard tetap khusus manager).
+- Catatan data: pengingat tagih & status kredit mengikuti pelanggan yang di-assign ke sales (assigned_sales_id); Ayu (sales@) belum punya pelanggan ter-assign → kosong; Citra (sales.kanda@) punya 6.
+- Belum diuji ujung-ke-ujung: simpan retur baru & simpan OD multi-baris + gambar (form dirender & unggah gambar dicoba; logika simpan = desktop).

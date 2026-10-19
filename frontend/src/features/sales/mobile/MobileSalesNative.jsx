@@ -37,6 +37,9 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
         {(sel.items || []).map((it, i) => <div key={i} className="flex justify-between border-t border-[#EFF0F2] pt-1"><span>{it.product_name}</span><span className="tabular-nums">{it.quantity_returned ?? it.quantity} {it.unit}{it.reason ? ` · ${it.reason}` : ""}</span></div>)}
         <div className="flex justify-between border-t border-[#EFF0F2] pt-1 font-bold"><span>Total</span><span className="tabular-nums">{formatCurrency(sel.total_amount || sel.grand_total || 0)}</span></div>
       </div>
+      {!["draft", "submitted", "approved", "received", "inspected"].includes(sel.status) && (
+        <p className="px-1 text-[11px] m-muted" data-testid="m-return-evidence-closed">Bukti foto: {(sel.attachments || []).length} · retur sudah diproses, bukti tidak bisa ditambah lagi.</p>
+      )}
       {["draft", "submitted", "approved", "received", "inspected"].includes(sel.status) && (
         <div className="m-card flex items-center justify-between gap-2 p-3 text-[12px]" data-testid="m-return-evidence">
           <span className="m-muted">Bukti foto: <b className="text-[#1C1C1E]">{(sel.attachments || []).length}</b></span>
