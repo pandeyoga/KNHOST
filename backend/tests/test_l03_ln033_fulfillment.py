@@ -204,6 +204,23 @@ def test_t08_route_change_after_cancel_keeps_history(H):
     assert DB.purchase_orders.count_documents({"special_order_id": od_id, "status": {"$ne": "cancelled"}}) == 0
 
 
+def test_t08_cancel_endpoint_cancels_active_po_keeps_history(H):
+    od_id, (k1,) = _od(H, [P_SUP])
+    doc = _realize(H, od_id, k1).json()["result"]["doc"]
+    url = f"{BASE}/special-orders/{od_id}/fulfillment/{k1}/cancel"
+    assert requests.post(url, json={"reason": "uji batal oleh sales"}, headers=H["sales"]).status_code == 403
+    assert requests.post(url, json={"reason": "x"}, headers=H["admin"]).status_code == 422
+    r = requests.post(url, json={"reason": "supplier tidak sanggup"}, headers=H["admin"])
+    assert r.status_code == 200, r.text
+    assert DB.purchase_orders.find_one({"id": doc["id"]})["status"] == "cancelled"
+    st = DB.special_orders.find_one({"id": od_id})["fulfillment"][k1]
+    assert st["history"][-1]["action"] == "cancel_docs"
+    assert requests.post(url, json={"reason": "ulang batal lagi"}, headers=H["admin"]).status_code == 400
+    _recipe()
+    assert _route(H, od_id, k1, "makloon", "ganti ke makloon").status_code == 200
+
+
+
 def test_t01_release_guard_no_fallback(H):
     prod = DB.products.find_one({"template_id": TPL["supplier"], "id": {"$ne": P_SUP["id"]}}, {"_id": 0, "id": 1, "sku": 1, "lifecycle": 1, "spec_id": 1})
     DB.products.update_one({"id": prod["id"]}, {"$set": {"lifecycle": "labdip", "spec_id": ""}})

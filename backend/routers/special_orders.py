@@ -682,6 +682,45 @@ async def fulfillment_realize(order_id: str, item_key: str, payload: Fulfillment
     return {"result": res, "fulfillment": await ful.progress(await _fresh(order_id))}
 
 
+class FulfillmentCancelBody(BaseModel):
+    reason: str = Field(..., min_length=5, max_length=300)
+
+
+@router.post("/special-orders/{order_id}/fulfillment/{item_key}/cancel")
+async def fulfillment_cancel(order_id: str, item_key: str, payload: FulfillmentCancelBody, request: Request) -> Dict[str, Any]:
+    """L03 LN-033 T08 — batalkan PO/MKO aktif satu item OD lewat aturan modul asal; histori tetap."""
+    user = await current_user(request)
+    od = await _od_or_404(order_id, request)
+    from services import special_order_fulfillment as ful
+    from services.makloon_order_service import cancel_order as cancel_mko
+    from routers.purchase_orders_extra import cancel_purchase_order
+    if not await ful._can(user, "cancel"):  # noqa: SLF001
+        raise HTTPException(status_code=403, detail="Permission ditolak: od_fulfillment.cancel (membatalkan dokumen pengadaan OD).")
+    try:
+        n = ful._need((await ful.progress(od))["items"], item_key)  # noqa: SLF001
+    except ValueError as exc:
+        raise _ful_http(exc) from exc
+    live = n["active_docs"]
+    if not live:
+        raise HTTPException(status_code=400, detail="Tidak ada PO/MKO aktif untuk item ini.")
+    done = []
+    for d in live:
+        if d["type"] == "po" and float(d.get("received_qty") or 0) > 0:
+            raise HTTPException(status_code=409, detail=f"{d.get('number') or d['id']} sudah ada penerimaan — gunakan amandemen/retur PO.")
+        if d["type"] == "po":
+            await cancel_purchase_order(d["id"], request)
+        else:
+            await cancel_mko(d["id"], reason=payload.reason, actor_name=user.get("name", ""))
+        done.append(d.get("number") or d["id"])
+    entry = {"at": now_iso(), "by": user.get("name", ""), "action": "cancel_docs", "docs": done, "reason": payload.reason}
+    await db.special_orders.update_one({"id": order_id}, {"$push": {f"fulfillment.{item_key}.history": entry},
+                                                          "$set": {f"fulfillment.{item_key}.status": "cancelled_docs",
+                                                                   "updated_at": now_iso()}})
+    await audit(user.get("name", ""), "special_order_fulfillment_cancel", "special_order", order_id,
+                {"item": item_key, "docs": done}, reason=payload.reason)
+    return {"cancelled": done, "fulfillment": await ful.progress(await _fresh(order_id))}
+
+
 @router.post("/special-orders/{order_id}/prepare-shipment")
 async def prepare_shipment(order_id: str, request: Request) -> Dict[str, Any]:
     """Fase 4 — ulangi otomatisasi pengiriman: reservasi stok SO OD + tugas Surat Jalan."""

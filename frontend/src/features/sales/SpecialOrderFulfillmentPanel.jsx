@@ -48,12 +48,27 @@ function RouteEditor({ n, can, busy, onSave }) {
         <button type="button" className="secondary-button !py-1 text-[11px]" disabled={busy || !route || route === n.route || (deviation && !reason.trim())}
           onClick={() => onSave(n.key, route, reason)} data-testid={`od-ful-route-save-${n.key}`}>Simpan jalur</button>
       )}
-      {locked && <span className="text-[10.5px] text-[#6B6B73]" data-testid={`od-ful-route-locked-${n.key}`}>Ganti jalur: batalkan/amandemen dokumen aktif dulu di modul PO/Order Makloon.</span>}
+      {locked && <span className="text-[10.5px] text-[#6B6B73]" data-testid={`od-ful-route-locked-${n.key}`}>Ganti jalur: batalkan dokumen aktif dulu (tombol di bawah) atau amandemen di modul PO/Order Makloon.</span>}
     </div>
   );
 }
 
-function NeedCard({ n, can, busy, onSave, onRealize }) {
+function CancelDocs({ n, can, busy, onCancel }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  if (!can.cancel || n.active_docs.length === 0) return null;
+  if (!open) return <button type="button" className="secondary-button mt-1.5 !py-1 text-[11px]" onClick={() => setOpen(true)} data-testid={`od-ful-cancel-open-${n.key}`}>Batalkan dokumen aktif</button>;
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+      <input className="field w-64 text-[11px]" placeholder="Alasan pembatalan (min. 5 karakter)" value={reason} onChange={(e) => setReason(e.target.value)} data-testid={`od-ful-cancel-reason-${n.key}`} />
+      <button type="button" className="secondary-button !py-1 text-[11px] text-[#C0392B]" disabled={busy || reason.trim().length < 5}
+        onClick={() => onCancel(n.key, reason.trim())} data-testid={`od-ful-cancel-submit-${n.key}`}>Batalkan {n.active_docs.map((d) => d.number || d.id).join(", ")}</button>
+      <button type="button" className="text-[11px] text-[#6B6B73]" onClick={() => setOpen(false)} data-testid={`od-ful-cancel-close-${n.key}`}>Tutup</button>
+    </div>
+  );
+}
+
+function NeedCard({ n, can, busy, onSave, onRealize, onCancel }) {
   return (
     <div className="rounded-lg border border-[#EFF0F2] p-2.5" data-testid={`od-ful-item-${n.key}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -73,6 +88,7 @@ function NeedCard({ n, can, busy, onSave, onRealize }) {
       {n.docs.map((d) => <DocRow key={d.id} d={d} />)}
       {n.history_docs.length > 0 && <p className="mt-1 text-[10.5px] text-[#9A9BA3]" data-testid={`od-ful-history-${n.key}`}>Riwayat: {n.history_docs.map((d) => `${d.type.toUpperCase()} ${d.number || d.id} (${docStatus(d.status || "cancelled")})`).join(", ")}</p>}
       <RouteEditor n={n} can={can} busy={busy} onSave={onSave} />
+      <CancelDocs n={n} can={can} busy={busy} onCancel={onCancel} />
       {can.realize && ["ready", "error", "needs_data"].includes(n.status) && (
         <button type="button" className="primary-button mt-1.5 !py-1 text-[11px]" disabled={busy} onClick={() => onRealize(n.key)} data-testid={`od-ful-realize-${n.key}`}>
           {busy ? <Loader2 size={12} className="spin" /> : <PackageCheck size={12} />} {n.status === "ready" ? "Realisasi pengadaan" : "Ulangi realisasi"}
@@ -100,6 +116,7 @@ export default function SpecialOrderFulfillmentPanel({ order, onUpdated }) {
   };
   const onSave = (key, route, reason) => act(() => axios.post(`${API}/special-orders/${order.id}/fulfillment/${key}/route`, { route, reason }));
   const onRealize = (key) => act(() => axios.post(`${API}/special-orders/${order.id}/fulfillment/${key}/realize`, {}));
+  const onCancel = (key, reason) => act(() => axios.post(`${API}/special-orders/${order.id}/fulfillment/${key}/cancel`, { reason }));
   return (
     <section className="section-card !p-3" data-testid="od-fulfillment">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -108,7 +125,7 @@ export default function SpecialOrderFulfillmentPanel({ order, onUpdated }) {
       </div>
       <p className="mb-2 text-[11px] text-[#6B6B73]">Rilis master ≠ pengadaan. Harga terkunci tidak berarti PO/MKO sudah lahir — status di bawah per item.</p>
       {err && <p className="mb-2 text-[11px] text-[#C0392B]" data-testid="od-ful-error">{err}</p>}
-      <div className="grid gap-2">{data.items.map((n) => <NeedCard key={n.key} n={n} can={data.can || {}} busy={busy} onSave={onSave} onRealize={onRealize} />)}</div>
+      <div className="grid gap-2">{data.items.map((n) => <NeedCard key={n.key} n={n} can={data.can || {}} busy={busy} onSave={onSave} onRealize={onRealize} onCancel={onCancel} />)}</div>
     </section>
   );
 }
