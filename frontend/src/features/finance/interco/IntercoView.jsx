@@ -51,12 +51,14 @@ const TABS = [
 
 // Tab yang bicara UANG antar-PT — dipagari izin `interco_finance` (E-0/E0.8f).
 const MONEY_TABS = ["balances", "settlements", "schedule", "loans", "margin"];
+// L08 — tab retur tampil di menu Retur terpadu (view `interco-returns`), bukan di layar transaksi.
+const RETURN_TABS = ["returns", "return-inbox"];
 
-export default function IntercoView({ currentUser, selectedEntity, entities = [] }) {
+export default function IntercoView({ currentUser, selectedEntity, entities = [], only = null }) {
   const [tab, setTab] = useState(() => {
     const hint = new URLSearchParams(window.location.search).get("tab") || sessionStorage.getItem("interco_tab");
     sessionStorage.removeItem("interco_tab");
-    return hint || "transactions";
+    return (only && !only.includes(hint) ? only[0] : hint) || "transactions";
   });
   const [rows, setRows] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -89,7 +91,8 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
   // di bawah, peran yang hanya mengurus BARANG (Admin Sales, gudang) akan membuka tab
   // yang pasti 403 — layar penuh galat merah yang bukan salah penggunanya.
   const canMoney = can(perms, "interco_finance", "view");
-  const tabs = TABS.filter((t) => canMoney || !MONEY_TABS.includes(t.id));
+  const tabs = TABS.filter((t) => (canMoney || !MONEY_TABS.includes(t.id))
+    && (only ? only.includes(t.id) : !RETURN_TABS.includes(t.id)));
   const entityId = selectedEntity?.id || "";
 
   useEffect(() => {
@@ -353,8 +356,8 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           onCreated={(res) => {
             setReturnDoc(null);
             showMsg(`Retur ${res?.returner?.number || ""} dibuat sebagai draf — minta rekan `
-                    + "lain menyetujuinya (pembuat ≠ penyetuju)");
-            setTab("returns");
+                    + "lain menyetujuinya (pembuat ≠ penyetuju). Lihat di menu Retur › Retur Antar-PT");
+            if (tabs.some((t) => t.id === "returns")) setTab("returns");
             refresh();
           }}
         />

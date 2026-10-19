@@ -1,0 +1,27 @@
+{
+  "summary": "Tested per-user read status for notifications (read_by) on backend and frontend. Backend: wrote a new pytest file with 8 tests, all passing. It covers: broadcast notifications for 'all' and for a role (A reads, B stays unread, B's unread-count does not drop, raw global read stays false, unread_only works per user, marking read again is safe and does not duplicate entries); read-all by A affects only A; personal notifications are closed globally; the 'Giliran saya' queue (/api/desks/me) drops a turn notification once it is read; paged list items carry the read value for each user and contain no read_by; IDOR attempts on another user's or another role's notification, or on an unknown id, return 404 and change nothing. Frontend: desktop bell as sales@ (marking one item read takes the badge from 3 to 2; 'Semua' clears the badge; Mongo still shows read=false with read_by=[sales]). Mobile notification sheet at 390px as sales2@: it still showed all 3 test notifications as unread after sales@ had read them all. Marking one item read takes the count from 3 to 2, 'Semua dibaca' takes it to 0, and the bell badge disappears. All ntf_TEST_ data was removed and sales@'s state was restored.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/notifications, POST /api/notifications/{id}/read", "issue": "personalize() removes read_by but not read_at_by. Every user in the audience therefore receives a map of the other readers' user ids and their read timestamps. This is a small privacy leak and inconsistent with hiding read_by. Fix: out.pop('read_at_by', None), or reduce it to the caller's own read_at."},
+      {"endpoint": "services/scheduler_service.py:538", "issue": "Global unread stats still count {read: False}, so broadcasts that have been read per user still count as unread. This only affects the metric."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_notification_read_per_user.py", "/app/test_reports/pytest/notif_read_per_user.xml"],
+  "action_items": [
+    "Optional: pop read_at_by in services/notification_read.personalize (or turn it into the caller's own read_at)",
+    "Optional: consider an index on notifications.read_by because unread_for() queries it on every unread-count poll"
+  ],
+  "critical_code_review_comments": [
+    "notification_read.py looks correct: the personal branch (recipient_user == uid) sets read globally and $addToSet read_by; the shared branch only does $addToSet. The base filter unread_for(uid) makes calling it again a no-op.",
+    "escalation_service treats a broadcast as handled once anyone has read it ('read_by.0' exists). This matches the request, but a broadcast read by one person will no longer escalate for the others. Confirm this is the intended product behaviour.",
+    "digest_service unread calculation per user is consistent with unread_for."
+  ],
+  "updated_files": ["/app/backend/tests/test_notification_read_per_user.py"],
+  "success_rate": {"backend": "100% (8/8)", "frontend": "100%"},
+  "seed_data_creation": "Temporary ntf_TEST_* notifications were inserted directly into Mongo and deleted afterwards. The read_at_by/read_by changes made to sales@'s real notifications during the read-all test were restored.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && set -a && . ./.env && set +a && REACT_APP_BACKEND_URL=<url> python -m pytest tests/test_notification_read_per_user.py -n0. User ids: sales@ = user_sales_01. Desktop testids: notif-bell, notif-badge, notif-read-<id>, notif-mark-all-button. Mobile: mobile-notif-btn, mobile-notif-read-<id>, mobile-notif-markall, mobile-notif-unread-count."
+}

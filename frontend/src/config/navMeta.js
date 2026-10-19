@@ -41,8 +41,10 @@ export const PAGE_META = {
   "sample-orders":        { kicker: "Penjualan",      title: "Pesanan Sample (SOS) \u00b7 Terpisah dari SO Biasa" },
   amendments:             { kicker: "Keuangan \u00b7 Kendali", title: "Pusat Amandemen \u00b7 Koreksi Ber-alasan & Ber-jejak" },
   "tax-invoices":         { kicker: "Keuangan \u00b7 Pajak", title: "Faktur Pajak Keluaran" },
-  "returns":              { kicker: "Penjualan",      title: "Retur & Barang Sisa" },
-  "return-policies":      { kicker: "Pengaturan · Penjualan", title: "Kebijakan Retur Jual" },
+  "returns":              { kicker: "Retur",          title: "Retur Pelanggan & Barang Sisa" },
+  "returns-hub":          { kicker: "Retur",          title: "Retur \u00b7 Pelanggan \u00b7 Antar-PT \u00b7 Supplier" },
+  "interco-returns":      { kicker: "Retur",          title: "Retur Antar-PT \u00b7 Keluar & Masuk" },
+  "return-policies":      { kicker: "Retur", title: "Kebijakan Retur Jual" },
   "special-orders":       { kicker: "Penjualan",      title: "Pesanan Khusus (OD)" },
   // FASE E-7 (E7d) — permintaan barang antar badan usaha. Tanpa baris ini judul layar
   // jatuh ke cadangan "Kain Nusantara" / kicker "Workspace" (pengguna kehilangan konteks).
@@ -103,7 +105,7 @@ export const PAGE_META = {
   "md-warehouses":        { kicker: "Gudang",         title: "Gudang (Master) \u00b7 Lokasi & Bin" },
   "purchase-approval":    { kicker: "Persetujuan",      title: "Persetujuan Pembelian" },
   "cash-management":      { kicker: "Keuangan",       title: "Transaksi Kas" },
-  "purchase-returns":     { kicker: "Pembelian",      title: "Retur Pembelian (Nota Debit)" },
+  "purchase-returns":     { kicker: "Retur",          title: "Retur ke Supplier (Nota Debit)" },
   "vendor-bills":         { kicker: "Pembelian",      title: "Tagihan Supplier · 3-Way Matching" },
   "landed-cost":          { kicker: "Pembelian",      title: "Landed Cost · Alokasi HPP Roll" },
   "input-tax":            { kicker: "Keuangan \u00b7 Pajak", title: "Faktur Pajak Masukan · PPN Masukan & Rekap" },

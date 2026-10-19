@@ -99,7 +99,7 @@ export default function MobileCatalog({ data, loading, onAdd, onInspect, entityI
       )}
 
       {activeGroup && (
-        <MobileQuickView specialMap={priceMap} group={activeGroup} entityId={entityId} onAdd={onAdd}
+        <MobileQuickView specialMap={priceMap} group={activeGroup} entityId={entityId} onAdd={onAdd} customerId={selectedCustomer?.id || ""}
           rndEnforcement={data?.rnd_policy?.lifecycle_enforcement || "block"}
           allowRollPick={allowRollPick}
           onClose={() => setActiveGroup(null)} />

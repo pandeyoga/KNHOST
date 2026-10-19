@@ -12,6 +12,7 @@ import { overlayDismiss } from "@/utils/overlayDismiss";
 import { blocksOrder, lifecycleLabel, notOrderableReason } from "../utils/lifecycle";
 import { pickPrice, sourceMeta } from "../hooks/useEffectivePrices";
 import { sampleLimit, clampSampleQty, canSample } from "../utils/sampleOrder";
+import SampleKindChooser from "./SampleKindChooser";
 import SalesStockSummary from "./SalesStockSummary";
 
 /**
@@ -25,7 +26,7 @@ import SalesStockSummary from "./SalesStockSummary";
  * ditulis di layar beserta jalan keluarnya (bukan sekadar tombol mati).
  */
 export default function ProductQuickView({ open, group, specialMap = {}, onAdd, onClose,
-  entityId = "", rndEnforcement = "block", allowRollPick = true, cartKind = "" }) {
+  entityId = "", rndEnforcement = "block", allowRollPick = true, cartKind = "", customerId = "" }) {
   const variants = useMemo(() => group?.variants || [], [group]);
   const [selectedId, setSelectedId] = useState(null);
   const [qty, setQty] = useState(1);
@@ -36,6 +37,7 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
   const kindLocked = !!cartKind;
   const [showLabel, setShowLabel] = useState(false);
   const [showReconcile, setShowReconcile] = useState(false);   // C2 — genapkan roll
+  const [sampleKind, setSampleKind] = useState("standard");   // L06 — standar | hanger (catalogue = pesanan sendiri)
 
   // Pilih varian default saat popup dibuka.
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
     setSelectedId(firstAvail.id);
     setQty(1);
     setMode("qty");
-    setOrderKind(cartKind || "regular");
+    setOrderKind(cartKind || "regular"); setSampleKind("standard");
     setShowReconcile(false); setShowLabel(false);
   }, [open, group?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -74,7 +76,8 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
   const lineTotal = special ? unitPrice * (Number(qty) || 0) : mergedLineTotal(selected, qty, unitPrice);
   const isSampleKind = orderKind === "sample";
   const sampleable = canSample(selected);
-  const limit = selected ? sampleLimit(selected) : null;
+  const limit = selected ? sampleLimit(selected, sampleKind) : null;
+  const chooseSampleKind = (k) => { setSampleKind(k); if (selected) setQty(sampleLimit(selected, k).max_qty); };
   const step = (d) => setQty((q) => {
     const next = Number(q || 1) + d;
     if (isSampleKind) return Math.max(0.5, Math.min(limit?.max_qty || 5, next));
@@ -83,7 +86,7 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
   const pickKind = (k) => {
     if (kindLocked) return;
     setOrderKind(k);
-    if (k === "sample") { setMode("qty"); setQty(selected ? sampleLimit(selected).max_qty : 5); }
+    if (k === "sample") { setMode("qty"); setQty(selected ? sampleLimit(selected, sampleKind).max_qty : 5); }
     else setQty(1);
   };
   // FASE F — varian terpilih belum sah dijual?
@@ -207,7 +210,11 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
                 <p data-testid="quickview-sample-unavailable" className="mt-1.5 text-[10.5px] text-[#6B6B73]">Benang tidak bisa dipesan sebagai sample — sample hanya untuk kain yang dipotong dari roll.</p>
               )}
               {isSampleKind && limit && (
-                <p data-testid="quickview-sample-limit" className="mt-1.5 text-[10.5px] text-[#9A5B00]">Sample kain <b>{limit.label}</b>: maks <b>{limit.max_qty} {limit.unit}</b> per bahan · dipotong gudang dari roll (RFID) · gratis/berbayar dipilih saat checkout.</p>
+                <>
+                <SampleKindChooser product={selected} kind={sampleKind} onKind={chooseSampleKind} templateId={selected?.template_id || ""}
+                  customerId={customerId} entityId={entityId} testIdPrefix="quickview" />
+                <p data-testid="quickview-sample-limit" className="mt-1.5 text-[10.5px] text-[#9A5B00]">Sample {sampleKind === "hanger" ? "hanger" : "standar"} kain <b>{limit.label}</b>: maks <b>{limit.max_qty} {limit.unit}</b> per bahan · dipotong gudang dari roll (RFID) · gratis/berbayar dipilih saat checkout.</p>
+                </>
               )}
             </div>
           )}
@@ -237,7 +244,7 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
                   <button data-testid="quickview-qty-minus" className="px-3 py-2 text-[#6B6B73] hover:bg-[#F5F5F7]" onClick={() => step(-1)} aria-label="Kurangi"><Minus size={14} /></button>
                   <input data-testid="quickview-qty-input" type="number" min={isSampleKind ? "0.1" : "1"} step={isSampleKind ? "0.5" : "1"} max={isSampleKind ? limit?.max_qty : undefined}
                     className="w-full border-x border-[#E5E5EA] bg-transparent py-2 text-center text-[14px] outline-none" value={qty}
-                    onChange={(e) => setQty(isSampleKind ? clampSampleQty(selected, e.target.value) || 0.5 : Math.max(1, Number(e.target.value) || 1))} />
+                    onChange={(e) => setQty(isSampleKind ? clampSampleQty(selected, e.target.value, sampleKind) || 0.5 : Math.max(1, Number(e.target.value) || 1))} />
                   <button data-testid="quickview-qty-plus" className="px-3 py-2 text-[#6B6B73] hover:bg-[#F5F5F7]" onClick={() => step(1)} aria-label="Tambah"><Plus size={14} /></button>
                 </div>
               </div>
@@ -272,7 +279,7 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
               {isSampleKind ? (
                 <button data-testid="quickview-sample-button" className="primary-button flex-1 justify-center py-2.5 !bg-[#9A5B00] hover:!bg-[#7A4700]" disabled={avail <= 0 || blocked || !sampleable || !(qty > 0)}
                   title="Pesanan Sample — dipotong gudang dari roll; gratis/berbayar dipilih saat checkout"
-                  onClick={() => { if (blocked || avail <= 0 || !sampleable) return; onAdd(selected, clampSampleQty(selected, qty), baseUnit, { is_sample: true }); onClose(); }}>
+                  onClick={() => { if (blocked || avail <= 0 || !sampleable) return; onAdd(selected, clampSampleQty(selected, qty, sampleKind), baseUnit, { is_sample: true, sample_kind: sampleKind }); onClose(); }}>
                   <Scissors size={15} /> {!sampleable ? "Benang tidak bisa disampel" : avail <= 0 ? "Stok Habis" : `Tambah Sample (${qty} ${baseUnit})`}
                 </button>
               ) : (

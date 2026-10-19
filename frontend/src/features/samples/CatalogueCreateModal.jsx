@@ -9,7 +9,7 @@ import { cataloguePreview, catalogueTemplates, createCatalogueOrder } from "./sa
 const rows = (d) => (Array.isArray(d) ? d : d?.items || []);
 
 /** L06 LN-060 — Pesanan Sample Catalogue: 1 yd tiap warna TERSEDIA + 2 yd satu warna soft (komponen terpisah). */
-export default function CatalogueCreateModal({ open, onClose, entityId, onCreated }) {
+export default function CatalogueCreateModal({ open, onClose, entityId, onCreated, initialTemplateId = "", initialCustomerId = "" }) {
   const [customers, setCustomers] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [form, setForm] = useState({ customer_id: "", template_id: "", soft: "", billing: "free" });
@@ -21,9 +21,10 @@ export default function CatalogueCreateModal({ open, onClose, entityId, onCreate
   useEffect(() => {
     if (!open) return;
     setErr(""); setPreview(null);
+    if (initialTemplateId || initialCustomerId) setForm((f) => ({ ...f, template_id: initialTemplateId || f.template_id, customer_id: initialCustomerId || f.customer_id, soft: "" }));
     axios.get(`${API}/customers`, { params: { with_credit: false } }).then((r) => setCustomers(rows(r.data))).catch(() => {});
     catalogueTemplates(entityId ? { entity_id: entityId } : {}).then((r) => setTemplates(rows(r))).catch(() => setTemplates([]));
-  }, [open, entityId]);
+  }, [open, entityId, initialTemplateId, initialCustomerId]);
   useEffect(() => {
     if (!form.template_id) { setPreview(null); return; }
     cataloguePreview({ template_id: form.template_id, soft_product_id: form.soft || undefined, ...(entityId ? { entity_id: entityId } : {}) })

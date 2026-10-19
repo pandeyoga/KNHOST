@@ -48,6 +48,7 @@ import {
   Unlock,
   BellRing,
   FileSpreadsheet,
+  RotateCcw,
 } from "lucide-react";
 
 // HUB TABS (tab per hub) dipindah ke `hubTabs.js` — re-export agar impor lama tetap jalan.
@@ -178,6 +179,17 @@ export const NAV_STRUCTURE = [
       // Sales hanya melihat tab "Harga per Pelanggan" di hub ini (tab lain admin/manager).
       { id: "products-pricing", label: "Produk & Harga",     icon: Layers3,     roles: ["admin", "manager", "sales"], hub: "products-pricing" },
     ],
+  },
+
+  // ── RETUR (L08 LN-080) — SATU menu untuk semua arah retur: pelanggan, antar-PT, supplier,
+  // plus kebijakannya. Alur & keputusan tiap arah tetap terpisah (layar yang sama seperti dulu).
+  {
+    type:  "standalone",
+    id:    "returns-hub",
+    label: "Retur",
+    icon:  RotateCcw,
+    roles: ["admin", "manager", "sales", "sales_admin", "warehouse", "finance"],
+    hub:   "returns-hub",
   },
 
   // ── PEMBELIAN ────────────────────────────────────────────────────────────────

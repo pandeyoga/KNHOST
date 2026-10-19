@@ -18,6 +18,7 @@ def personalize(doc: Dict[str, Any], uid: str) -> Dict[str, Any]:
     out = dict(doc)
     out["read"] = bool(doc.get("read")) or uid in (doc.get("read_by") or [])
     out.pop("read_by", None)
+    out.pop("read_at_by", None)
     return out
 
 

@@ -10,12 +10,13 @@ import RollPicker from "../../../components/RollPicker";
 import RollReconcileSheet from "../../../components/RollReconcileSheet";
 import { blocksOrder, lifecycleLabel, notOrderableReason } from "../../../utils/lifecycle";
 import { sampleLimit, clampSampleQty, canSample } from "../../../utils/sampleOrder";
+import SampleKindChooser from "../../../components/SampleKindChooser";
 
 /** EPIC-VAR — bottom-sheet detail produk + pemilih varian (versi MOBILE).
  * SALES REVAMP V2: mode "Per yard" / "Beli per Roll"; inventory = total global saja.
  * FASE F: varian yang belum dirilis ke produksi tidak bisa ditambahkan. */
 export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose, entityId = "",
-  rndEnforcement = "block", allowRollPick = true }) {
+  rndEnforcement = "block", allowRollPick = true, customerId = "" }) {
   const variants = useMemo(() => group?.variants || [], [group]);
   const [selectedId, setSelectedId] = useState(null);
   const [qty, setQty] = useState(1);
@@ -23,12 +24,13 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
   const [mode, setMode] = useState("qty");
   const [showReconcile, setShowReconcile] = useState(false);
   const [kind, setKind] = useState("buy");   // "buy" | "sample" — sample = Pesanan Sample (SOS-) terpisah
+  const [sampleKind, setSampleKind] = useState("standard");
 
   useEffect(() => {
     if (!group || variants.length === 0) return;
     const fa = variants.find((v) => Number(v.available_qty || 0) > 0) || variants[0];
     setSelectedId(fa.id); setQty(1); setUnit(fa.base_unit || "meter"); setMode("qty");
-    setShowReconcile(false); setKind("buy");
+    setShowReconcile(false); setKind("buy"); setSampleKind("standard");
   }, [group?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selected = useMemo(() => variants.find((v) => v.id === selectedId) || null, [variants, selectedId]);
@@ -48,14 +50,15 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
   const rollCount = Number(selected?.roll_count || 0);
   const lineTotal = special ? unitPrice * (Number(qty) || 0) : mergedLineTotal(selected, qty, unitPrice);
   const step = (d) => setQty((q) => (kind === "sample" && selected
-    ? Math.max(0.5, Math.min(sampleLimit(selected).max_qty, Number(q || 0) + d * 0.5))
+    ? Math.max(0.5, Math.min(sampleLimit(selected, sampleKind).max_qty, Number(q || 0) + d * 0.5))
     : Math.max(1, Number(q || 1) + d)));
   const blocked = !selected || blocksOrder(selected, rndEnforcement);
-  const chooseVariant = v => { setSelectedId(v?.id || null); setMode("qty"); setShowReconcile(false); if (kind === "sample" && v) setQty(sampleLimit(v).max_qty); };
+  const chooseVariant = v => { setSelectedId(v?.id || null); setMode("qty"); setShowReconcile(false); if (kind === "sample" && v) setQty(sampleLimit(v, sampleKind).max_qty); };
   const sampleable = !!selected && canSample(selected);
-  const limit = selected ? sampleLimit(selected) : null;
+  const limit = selected ? sampleLimit(selected, sampleKind) : null;
+  const chooseSampleKind = (k) => { setSampleKind(k); if (selected) setQty(sampleLimit(selected, k).max_qty); };
   const isSample = kind === "sample";
-  const chooseKind = (k) => { setKind(k); setMode("qty"); if (k === "sample" && selected) { setQty(sampleLimit(selected).max_qty); setUnit(selected.base_unit || "meter"); } else setQty(1); };
+  const chooseKind = (k) => { setKind(k); setMode("qty"); if (k === "sample" && selected) { setQty(sampleLimit(selected, sampleKind).max_qty); setUnit(selected.base_unit || "meter"); } else setQty(1); };
 
   return (
     <div className="m-sheet-wrap" data-testid="mobile-quickview">
@@ -118,6 +121,8 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
                 <button type="button" data-testid="mobile-quickview-kind-sample" onClick={() => chooseKind("sample")} disabled={!sampleable}
                   className={`flex items-center justify-center gap-1 rounded-md border px-2 py-2 text-[12px] font-semibold disabled:opacity-40 ${isSample ? "border-[#9A5B00] bg-[#FFF3D6] text-[#9A5B00]" : "border-[#E5E5EA] bg-white text-[#3C3C43]"}`}><Scissors size={13} /> Order sample</button>
               </div>
+              {isSample && selected && <SampleKindChooser product={selected} kind={sampleKind} onKind={chooseSampleKind} templateId={selected.template_id || ""}
+                customerId={customerId} entityId={entityId} testIdPrefix="mobile-quickview" />}
               {isSample && limit && <p data-testid="mobile-quickview-sample-hint" className="mt-1.5 text-[10.5px] leading-snug text-[#9A5B00]">Pesanan Sample (SOS-) terpisah dari order biasa — maks {limit.max_qty} {limit.base_unit} ({limit.label}). Gratis/berbayar dipilih saat checkout.</p>}
             </div>
           )}
@@ -140,7 +145,7 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
                   <div className="flex items-center rounded-lg border border-[#E5E5EA]">
                     <button data-testid="mobile-quickview-qty-minus" className="px-3 py-2.5 text-[#6B6B73]" onClick={() => step(-1)} aria-label="Kurangi"><Minus size={15} /></button>
                     <input data-testid="mobile-quickview-qty-input" type="number" min={isSample ? "0.5" : "1"} step={isSample ? "0.5" : "1"} inputMode="decimal"
-                      className="w-full border-x border-[#E5E5EA] bg-transparent py-2 text-center text-[15px] outline-none" value={qty} onChange={(e) => setQty(isSample && selected ? (clampSampleQty(selected, e.target.value) || 0.5) : Math.max(1, Number(e.target.value) || 1))} />
+                      className="w-full border-x border-[#E5E5EA] bg-transparent py-2 text-center text-[15px] outline-none" value={qty} onChange={(e) => setQty(isSample && selected ? (clampSampleQty(selected, e.target.value, sampleKind) || 0.5) : Math.max(1, Number(e.target.value) || 1))} />
                     <button data-testid="mobile-quickview-qty-plus" className="px-3 py-2.5 text-[#6B6B73]" onClick={() => step(1)} aria-label="Tambah"><Plus size={15} /></button>
                   </div>
                 </div>
@@ -173,7 +178,7 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
             {isSample ? (
             <button data-testid="mobile-quickview-add-sample" disabled={avail <= 0 || blocked || !sampleable || !(qty > 0)}
               className="primary-button w-full justify-center py-3 text-[14px] !bg-[#9A5B00]"
-              onClick={() => { if (blocked || avail <= 0 || !sampleable) return; onAdd(selected, clampSampleQty(selected, qty), baseUnit, { is_sample: true }); onClose(); }}>
+              onClick={() => { if (blocked || avail <= 0 || !sampleable) return; onAdd(selected, clampSampleQty(selected, qty, sampleKind), baseUnit, { is_sample: true, sample_kind: sampleKind }); onClose(); }}>
               <Scissors size={16} /> {avail <= 0 ? "Stok Habis" : `Tambah Sample (${qty} ${baseUnit})`}
             </button>
             ) : (

@@ -5,7 +5,7 @@ import { can } from "../config/roles";
 import { formatQty } from "../utils/formatters";
 import { offlinePost } from "../utils/offlineQueue";
 import { blocksOrder, isOrderable, notOrderableReason } from "../utils/lifecycle";
-import { sampleLimit, clampSampleQty } from "../utils/sampleOrder";
+import { sampleLimit, clampSampleQty, SAMPLE_KINDS } from "../utils/sampleOrder";
 import { sirenOnNewAlarms } from "../utils/sirenAlarm";
 import { askConfirm } from "@/services/confirmService";
 
@@ -262,11 +262,12 @@ export function useAppActions(state) {
     }
     // §3-C — "Jual sebagai sample": satu baris per produk, panjang potongan, harga master sample/manual.
     if (wantSample) {
-      const lim = sampleLimit(product);
-      const len = clampSampleQty(product, Number(qty) > 0 ? Number(qty) : lim.max_qty) || lim.max_qty;
+      const kind = extra.sample_kind || "standard";
+      const lim = sampleLimit(product, kind);
+      const len = clampSampleQty(product, Number(qty) > 0 ? Number(qty) : lim.max_qty, kind) || lim.max_qty;
       setCart((current) => [...current.filter((item) => item.product.id !== product.id),
-        { product, quantity: len, unit: product.base_unit, is_sample: true, sample_price: null }]);
-      setNotice(`${product.name} — sample ${len} ${product.base_unit} masuk keranjang sample (maks ${lim.max_qty} ${lim.unit} untuk ${lim.label}).`);
+        { product, quantity: len, unit: product.base_unit, is_sample: true, sample_kind: kind, sample_price: null }]);
+      setNotice(`${product.name} — sample ${SAMPLE_KINDS[kind]?.label.toLowerCase() || ""} ${len} ${product.base_unit} masuk keranjang sample (maks ${lim.max_qty} ${lim.unit} untuk ${lim.label}).`);
       return;
     }
     // SALES REVAMP V2 — Mode "Beli per Roll": pilih roll spesifik (utuh), qty = Σ panjang roll.

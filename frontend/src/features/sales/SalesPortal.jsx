@@ -241,6 +241,7 @@ export function SalesPortal({
         entityId={selectedEntity && selectedEntity !== "all" ? selectedEntity : (selectedCustomer?.entity_id || "")}
         rndEnforcement={rndEnforcement}
         cartKind={cart.length === 0 ? "" : (sampleMode ? "sample" : "regular")}
+        customerId={selectedCustomer?.id || ""}
         allowRollPick={!(user?.role === "sales" && settings?.allocation?.roll_pick_sales === false)}
       />
 

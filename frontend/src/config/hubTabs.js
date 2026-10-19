@@ -20,7 +20,7 @@ export const HUB_TABS = {
   "sales-orders": [
     { view: "orders",            label: "Pesanan (SO)",          roles: ["admin", "sales", "manager"] },
     { view: "amendments",        label: "Koreksi & Amandemen",   roles: ["admin", "sales", "manager"] },
-    { view: "returns",           label: "Retur & Barang Sisa",   roles: ["admin", "sales", "manager"] },
+    // L08 — "Retur & Barang Sisa" PINDAH ke menu tunggal "Retur" (hub returns-hub).
     // FASE E-7 (E7d) — jalur yang dulu buntu: papan stok bilang "tersedia di badan
     // usaha lain", tetapi seluruh menu Antar Entitas 403 untuk sales. Di sini sales
     // MENGAJUKAN, admin/manajer MENINDAK (jadi transaksi antar-PT G-6).
@@ -73,7 +73,13 @@ export const HUB_TABS = {
     { view: "contra-bons",       label: "Kontrabon (Tukar Faktur)", roles: ["admin", "manager", "warehouse"] },
     // IA 2026-10 (D2) — "Antar Entitas" PINDAH ke grup Akuntansi & Pajak (view sama, fitur utuh).
     { view: "landed-cost",       label: "Landed Cost (HPP)",     roles: ["admin", "manager"] },
-    { view: "purchase-returns",  label: "Retur Pembelian (Nota Debit)", roles: ["admin", "manager", "warehouse"] },
+  ],
+  // L08 LN-080 — menu Retur terpadu: semua arah retur di satu tempat (tiap tab = layar aslinya).
+  "returns-hub": [
+    { view: "returns",           label: "Retur Pelanggan",       roles: ["admin", "sales", "manager"] },
+    { view: "interco-returns",   label: "Retur Antar-PT",        roles: ["admin", "manager", "warehouse", "finance", "sales_admin"] },
+    { view: "purchase-returns",  label: "Retur ke Supplier (Nota Debit)", roles: ["admin", "manager", "warehouse"] },
+    { view: "return-policies",   label: "Kebijakan Retur",       roles: ["admin", "manager"] },
   ],
   // FASE F — R&D: hulu rantai (spesifikasi → labdip/proofing → kontrak).
   // warehouse ikut melihat karena dialah yang mengeluarkan bahan sample (PS-19).
@@ -214,7 +220,6 @@ export const HUB_TABS = {
     { view: "settings-receiving-ocr", label: "Penerimaan & OCR", roles: ["admin", "manager", "warehouse_admin"], section: "Gudang" },
     // 2026-10 (T6) — pengaturan yang dulu menumpang di menu operasional. Fitur & hak akses TETAP.
     { view: "cs-rfid-devices",   label: "Perangkat RFID",         roles: ["admin"], section: "Gudang" },
-    { view: "return-policies",   label: "Kebijakan Retur",        roles: ["admin", "manager"], section: "Penjualan" },
     { view: "amendment-reasons", label: "Label Alasan Amandemen", roles: ["admin", "manager"], section: "Penjualan" },
     { view: "incentive-rates",   label: "Rate Insentif Sales",    roles: ["admin", "manager"], section: "Penjualan" },
     { view: "expense-categories", label: "Kategori Beban",        roles: ["admin", "manager"], section: "Keuangan" },

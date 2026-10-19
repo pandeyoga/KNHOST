@@ -454,6 +454,7 @@ export default function AppViewRouter(props) {
       {activeView === "vendor-bills" && <VendorBillsView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "contra-bons" && <ContraBonsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "interco-transactions" && <IntercoView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
+      {activeView === "interco-returns" && <IntercoView key="interco-returns" currentUser={user} selectedEntity={selectedEntity} entities={entities} only={["returns", "return-inbox"]} />}
       {activeView === "internal-requests" && <InternalRequestsView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "design-requests" && <DesignRequestsView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "logistics" && <LogisticsView currentUser={user} selectedEntity={selectedEntity} focusDelivery={logisticsFocus} onFocusConsumed={onLogisticsFocusConsumed} />}
