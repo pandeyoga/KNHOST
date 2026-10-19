@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api")
 @router.get("/customers")
 async def list_customers(request: Request, entity_id: str = None,
                          segment: str = None, credit_status: str = None,
-                         assigned_sales_id: str = None, with_credit: bool = True) -> Any:
+                         assigned_sales_id: str = None, with_credit: bool = True, for_order: bool = False) -> Any:
     actor = await require_permission(request, "customer", "view")
     ctx = await entity_ctx(request)
     base: Dict[str, Any] = {}
@@ -31,6 +31,12 @@ async def list_customers(request: Request, entity_id: str = None,
     if assigned_sales_id:
         base["assigned_sales_id"] = assigned_sales_id
     base = resolve_list_scope("customers", base, ctx, entity_id)  # entity isolation
+    if for_order and actor.get("role") == "sales":
+        # Pemilih pelanggan untuk membuat pesanan (POS / Pesanan Khusus): sama dengan daftar POS —
+        # semua pelanggan entitas, field ringkas saja, tanpa data kredit/AR pelanggan sales lain.
+        rows = await db.customers.find(base, {"_id": 0, "id": 1, "name": 1, "code": 1, "city": 1, "phone": 1, "entity_id": 1,
+                                              "assigned_sales_id": 1, "segment": 1, "addresses": 1, "default_payment_term": 1}).sort("name", 1).to_list(3000)
+        return rows
     query = scope_query(actor, base)  # row-level: sales -> own customers
 
     if is_paged(request):

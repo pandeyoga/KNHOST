@@ -73,7 +73,6 @@ function MobileReturnCreate({ onBack, onDone, initialOrder = null }) {
   }).catch(() => {});
   return (
     <div className="space-y-2 p-3" data-testid="m-return-create">
-      <button className="m-subpage-back" onClick={onBack} data-testid="m-return-create-back"><ArrowLeft size={17} /> Retur</button>
       <div className="m-card m-return-form p-3">
         <CreateReturnForm variant="modal" orders={orders} onLoadOrders={loadOrders} initialOrderId={initialOrder?.id || ""}
           onCreated={() => onDone()} onCancel={onBack} />

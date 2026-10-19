@@ -40,7 +40,7 @@ export default function CreateSpecialOrderForm({ token, onCreated, onCancel }) {
 
   useEffect(() => {
     const H = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-    axios.get(`${API}/customers`, { params: { limit: 500 }, ...H }).then((r) => setCustomers(Array.isArray(r.data) ? r.data : r.data?.items || [])).catch(() => {});
+    axios.get(`${API}/customers`, { params: { limit: 500, for_order: true, with_credit: false }, ...H }).then((r) => setCustomers(Array.isArray(r.data) ? r.data : r.data?.items || [])).catch(() => {});
     listColors().then((c) => setColors(Array.isArray(c) ? c : c?.items || [])).catch(() => {});
     axios.get(`${API}/product-templates`, H).then((r) => setTemplates(Array.isArray(r.data) ? r.data : r.data?.items || [])).catch(() => {});
     axios.get(`${API}/design-requests/meta`, H).then((r) => setCats({ pattern: r.data?.categories?.pattern || [], design: r.data?.categories?.design || [] })).catch(() => {});
