@@ -82,6 +82,7 @@ async def job_escalation_scan() -> Dict[str, Any]:
 
     candidates = await db.notifications.find({
         "read": False,
+        "read_by.0": {"$exists": False},   # siaran yang sudah dibaca seseorang = sudah ditangani
         "created_at": {"$lt": cutoff},
         "$or": [{"escalation_level": {"$exists": False}}, {"escalation_level": 0}],
     }, {"_id": 0}).sort("created_at", 1).to_list(500)

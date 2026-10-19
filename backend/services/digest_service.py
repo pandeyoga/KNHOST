@@ -121,7 +121,7 @@ async def summarize_for(user_id: Optional[str], role: str, day: str,
         ents = await allowed_entities_for(user_doc)
         q = {"$and": [q, {"entity_id": {"$in": list(ents) + [None, ""]}}]}
     rows = await db.notifications.find(
-        q, {"_id": 0, "type": 1, "title": 1, "severity": 1, "read": 1}).to_list(MAX_SCAN)
+        q, {"_id": 0, "type": 1, "title": 1, "severity": 1, "read": 1, "read_by": 1}).to_list(MAX_SCAN)
 
     groups: Dict[str, Dict[str, Any]] = {}
     total = unread = 0
@@ -130,7 +130,7 @@ async def summarize_for(user_id: Optional[str], role: str, day: str,
         if wa.SEVERITY_RANK.get(sev, 1) < min_rank:
             continue
         total += 1
-        if not r.get("read"):
+        if not r.get("read") and user_id not in (r.get("read_by") or []):
             unread += 1
         key = r.get("type") or "lainnya"
         g = groups.setdefault(key, {"type": key, "label": group_label(key), "count": 0,

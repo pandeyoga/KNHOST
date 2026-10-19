@@ -6,13 +6,12 @@ WebSocket realtime menyusul di Fase 5 (lihat KN_14 §8.2).
 """
 from typing import Any, Dict, List, Optional  # noqa: F401
 from fastapi import APIRouter, HTTPException, Request
-from pymongo import ReturnDocument
 from db import db
 from dependencies import current_user, require_role
-from core_utils import now_iso
 from entity_scope import entity_ctx, resolve_scope_ids
 from pagination import envelope, fetch_page, get_page_params, is_paged
 from services.notification_service import generate_system_notifications
+from services.notification_read import mark_read as _mark_read_for, personalize, unread_for
 
 router = APIRouter(prefix="/api")
 
@@ -67,43 +66,42 @@ async def list_notifications(
     layar — pesan ke-101 tak terjangkau dari mana pun. Tanpa parameter halaman bentuk
     responsnya tetap array telanjang (kompatibel mundur).
     """
+    uid = (await current_user(request))["id"]
     query = await _scope_query(request, entity_id)
     if unread_only:
-        query = {"$and": [query, {"read": False}]}
+        query = {"$and": [query, unread_for(uid)]}
     if is_paged(request):
         page, page_size, _q, _sort = get_page_params(request)
         items, total = await fetch_page(db.notifications, query, page, page_size,
                                         sort_field="created_at", sort_dir=-1)
-        return envelope(items, total, page, page_size)
-    return await db.notifications.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+        return envelope([personalize(i, uid) for i in items], total, page, page_size)
+    rows = await db.notifications.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return [personalize(r, uid) for r in rows]
 
 
 @router.get("/notifications/unread-count")
 async def unread_count(request: Request, entity_id: str = None) -> Dict[str, int]:
-    query = {"$and": [await _scope_query(request, entity_id), {"read": False}]}
+    uid = (await current_user(request))["id"]
+    query = {"$and": [await _scope_query(request, entity_id), unread_for(uid)]}
     return {"count": await db.notifications.count_documents(query)}
 
 
 @router.post("/notifications/read-all")
 async def mark_all_read(request: Request, entity_id: str = None) -> Dict[str, Any]:
-    query = {"$and": [await _scope_query(request, entity_id), {"read": False}]}
-    result = await db.notifications.update_many(query, {"$set": {"read": True, "read_at": now_iso()}})
-    return {"updated": result.modified_count}
+    uid = (await current_user(request))["id"]
+    return {"updated": await _mark_read_for(await _scope_query(request, entity_id), uid)}
 
 
 @router.post("/notifications/{notification_id}/read")
 async def mark_read(notification_id: str, request: Request) -> Dict[str, Any]:
     """Tandai satu notifikasi terbaca — hanya bila notifikasi itu memang milik
     audiens & entitas pengguna (anti-IDOR: dulu `id` saja sudah cukup)."""
-    scope = await _scope_query(request)
-    notification = await db.notifications.find_one_and_update(
-        {"$and": [{"id": notification_id}, scope]},
-        {"$set": {"read": True, "read_at": now_iso()}},
-        projection={"_id": 0}, return_document=ReturnDocument.AFTER
-    )
-    if not notification:
+    uid = (await current_user(request))["id"]
+    query = {"$and": [{"id": notification_id}, await _scope_query(request)]}
+    if not await db.notifications.find_one(query, {"_id": 1}):
         raise HTTPException(status_code=404, detail="Notifikasi tidak ditemukan")
-    return notification
+    await _mark_read_for(query, uid)
+    return personalize(await db.notifications.find_one(query, {"_id": 0}), uid)
 
 
 @router.post("/notifications/generate")
