@@ -3,6 +3,7 @@ import { Scissors, BadgePercent, Trash2 } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import { canCurrent } from "../../config/roles";
+import CutlossSplitPanel from "./CutlossSplitPanel";
 
 const rp = (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}`;
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
@@ -10,11 +11,12 @@ const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "rejected"
 
 function CutlossForm({ ret, onDone }) {
   const opts = (ret.items || []).map((it) => ({ value: it.product_id, label: it.product_name || it.product_id }));
-  const [f, setF] = useState({ product_id: opts[0]?.value || "", defect_yard: "", roll_id: "", note: "" });
+  const [f, setF] = useState({ product_id: opts[0]?.value || "", defect_yard: "", roll_id: "", note: "", defect_from: "", defect_to: "", treatment: "" });
   const [err, setErr] = useState("");
   const submit = async () => {
     setErr("");
-    try { await axios.post(`${API}/sales-returns/${ret.id}/cutloss`, { ...f, defect_yard: Number(f.defect_yard) }); setF({ ...f, defect_yard: "", note: "" }); onDone(); }
+    const pos = f.defect_from !== "" && f.defect_to !== "" ? { defect_from: Number(f.defect_from), defect_to: Number(f.defect_to) } : { defect_from: null, defect_to: null };
+    try { await axios.post(`${API}/sales-returns/${ret.id}/cutloss`, { ...f, ...pos, defect_yard: Number(f.defect_yard) || 0 }); setF({ ...f, defect_yard: "", note: "", defect_from: "", defect_to: "" }); onDone(); }
     catch (e) { setErr(errText(e)); }
   };
   return (
@@ -22,6 +24,12 @@ function CutlossForm({ ret, onDone }) {
       <div className="w-56"><KNSelect data-testid="cutloss-product" value={f.product_id} options={opts} searchable={false} onValueChange={(v) => setF({ ...f, product_id: v })} /></div>
       <label className="flex flex-col gap-1">Qty cacat (yard)
         <input data-testid="cutloss-defect-yard" type="number" min={0} step="0.01" className="field w-28" value={f.defect_yard} onChange={(e) => setF({ ...f, defect_yard: e.target.value })} /></label>
+      <label className="flex flex-col gap-1">Posisi cacat yard awal–akhir (opsional)
+        <span className="flex gap-1"><input data-testid="cutloss-defect-from" type="number" min={0} className="field w-20" placeholder="dari" value={f.defect_from} onChange={(e) => setF({ ...f, defect_from: e.target.value })} />
+        <input data-testid="cutloss-defect-to" type="number" min={0} className="field w-20" placeholder="sampai" value={f.defect_to} onChange={(e) => setF({ ...f, defect_to: e.target.value })} /></span></label>
+      <fieldset className="flex flex-col gap-1" data-testid="cutloss-treatment">Potongan cacat
+        <span className="flex gap-2">{[["bs", "Masuk stok BS"], ["dispose", "Dibuang"]].map(([v, l]) => (
+          <label key={v} className="flex items-center gap-1"><input type="radio" name="cutloss-treatment" data-testid={`cutloss-treatment-${v}`} checked={f.treatment === v} onChange={() => setF({ ...f, treatment: v })} />{l}</label>))}</span></fieldset>
       <label className="flex flex-col gap-1">No. roll (opsional)
         <input data-testid="cutloss-roll" className="field w-32" value={f.roll_id} onChange={(e) => setF({ ...f, roll_id: e.target.value })} /></label>
       <input data-testid="cutloss-note" className="field w-48" placeholder="Catatan QC" value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} />
@@ -100,12 +108,13 @@ export default function ReturnCompensationPanel({ ret, canApprove, onChanged }) 
         <span className="text-xs font-normal text-[#6B6B73]">{pv.basis}</span></div>
       {pv.cutloss.length > 0 && (
         <table className="min-w-full text-xs" data-testid="cutloss-table">
-          <thead className="text-left text-[#6B6B73]"><tr>{["Produk", "Roll", "Cacat (yd)", "Qty kompensasi", "Harga neto", "Nilai", "Dicatat"].map((h) => <th key={h} className="py-1 pr-3">{h}</th>)}</tr></thead>
+          <thead className="text-left text-[#6B6B73]"><tr>{["Produk", "Roll", "Cacat (yd)", "Qty kompensasi", "Harga neto", "Nilai", "Dicatat", "Potongan roll"].map((h) => <th key={h} className="py-1 pr-3">{h}</th>)}</tr></thead>
           <tbody>{pv.cutloss.map((c) => (
             <tr key={c.id} data-testid={`cutloss-row-${c.id}`}>
               <td className="pr-3">{c.product_name}</td><td className="pr-3">{c.roll_id || "—"}</td><td className="pr-3">{c.defect_yard}</td>
               <td className="pr-3">{c.qty} {c.unit_base}{c.converted ? " (konversi otomatis)" : ""}</td>
               <td className="pr-3">{rp(c.unit_price)}</td><td className="pr-3 font-semibold">{rp(c.amount)}</td><td>{c.recorded_by}</td>
+              <td className="pl-2"><CutlossSplitPanel ret={ret} c={c} onDone={refresh} /></td>
             </tr>))}</tbody>
         </table>
       )}

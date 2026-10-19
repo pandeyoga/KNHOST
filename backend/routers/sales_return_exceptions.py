@@ -1,5 +1,5 @@
 """LN-083/LN-092 — pengecualian retur, cutloss (qty cacat QC) & diskon (nilai diputus Finance)."""
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -75,9 +75,12 @@ class DiscountIn(BaseModel):
 
 class CutlossRecordIn(BaseModel):
     product_id: str
-    defect_yard: float = Field(..., gt=0)
+    defect_yard: float = Field(0, ge=0)
     roll_id: str = ""
     note: str = ""
+    defect_from: Optional[float] = Field(None, ge=0)
+    defect_to: Optional[float] = Field(None, gt=0)
+    treatment: str = ""
 
 
 class CompLine(BaseModel):
@@ -193,10 +196,50 @@ async def record_cutloss(return_id: str, payload: CutlossRecordIn, request: Requ
     user = await require_permission(request, "sales_return", "record_cutloss")
     ret = await _ret(return_id, request)
     try:
-        out = await comp.record_cutloss(ret, payload.product_id, payload.defect_yard, payload.roll_id, payload.note, user)
+        out = await comp.record_cutloss(ret, payload.product_id, payload.defect_yard, payload.roll_id, payload.note, user,
+                                        payload.defect_from, payload.defect_to, payload.treatment)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     await audit(user.get("name", ""), "sales_return_cutloss_recorded", "sales_return", return_id, out)
+    return out
+
+
+async def _split_call(fn, return_id: str, ctl_id: str, request: Request, action: str, with_actor: bool = True):
+    user = await require_permission(request, "sales_return", action)
+    ret = await _ret(return_id, request)
+    try:
+        return user, (await fn(ret, ctl_id, user) if with_actor else await fn(ret, ctl_id))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/sales-returns/{return_id}/cutloss/{ctl_id}/split-preview")
+async def cutloss_split_preview(return_id: str, ctl_id: str, request: Request) -> Any:
+    from services import return_cutloss_split_service as split
+    return (await _split_call(split.preview, return_id, ctl_id, request, "view", False))[1]
+
+
+@router.post("/sales-returns/{return_id}/cutloss/{ctl_id}/split")
+async def cutloss_split(return_id: str, ctl_id: str, request: Request) -> Any:
+    """CUT-01/04 — pecah roll cutloss setelah QC: potongan baik, BS, atau dibuang."""
+    from services import return_cutloss_split_service as split
+    user, out = await _split_call(split.execute, return_id, ctl_id, request, "split_cutloss")
+    await audit(user.get("name", ""), "sales_return_cutloss_split", "sales_return", return_id, out)
+    return out
+
+
+@router.post("/sales-returns/{return_id}/cutloss/{ctl_id}/return-shipment")
+async def cutloss_return_shipment(return_id: str, ctl_id: str, request: Request) -> Any:
+    """CUT-05 — SJ baru untuk potongan baik, merujuk SJ & SO asal."""
+    from services import return_cutloss_split_service as split
+    user, out = await _split_call(split.create_return_sj, return_id, ctl_id, request, "split_cutloss")
+    await audit(user.get("name", ""), "sales_return_cutloss_return_sj", "sales_return", return_id, out)
     return out
 
 

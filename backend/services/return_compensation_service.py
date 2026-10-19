@@ -5,7 +5,7 @@ dikonversi otomatis lewat master UoM. Customer menerima potongan baik; kompensas
 (neto setelah diskon) × qty cacat. Diskon: nominal rupiah per item untuk qty cacat, boleh tanpa barang kembali
 (bukti foto/video); nilainya diputus Finance. Keduanya diselesaikan sebagai `nego` (Credit Note tanpa gerak stok).
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from core_utils import new_id, now_iso
 from db import db
@@ -36,14 +36,24 @@ def _item(ret: Dict[str, Any], product_id: str) -> Dict[str, Any]:
 
 
 async def record_cutloss(ret: Dict[str, Any], product_id: str, defect_yard: float, roll_id: str,
-                         note: str, actor: Dict[str, Any]) -> Dict[str, Any]:
+                         note: str, actor: Dict[str, Any], defect_from: Optional[float] = None,
+                         defect_to: Optional[float] = None, treatment: str = "") -> Dict[str, Any]:
     from services.roll_service import to_base_qty
     if ret.get("status") not in ("received", "inspecting", "inspected", "approved"):
         raise ValueError(f"Qty cacat dicatat saat QC (status sekarang: {ret.get('status')}).")
     if (ret.get("compensation") or {}).get("status") == "decided":
         raise ValueError("Kompensasi sudah diputus Finance — batalkan keputusan dulu untuk mengubah qty cacat.")
+    if defect_from is not None and defect_to is not None:
+        if not (0 <= defect_from < defect_to):
+            raise ValueError("Posisi cacat: yard awal harus lebih kecil dari yard akhir")
+        defect_yard = round(defect_to - defect_from, 2)
     if defect_yard <= 0:
         raise ValueError("Qty cacat (yard) harus lebih dari 0")
+    if treatment:
+        from services import return_cutloss_split_service as split
+        if treatment not in split.TREATMENTS:
+            raise ValueError("Perlakuan potongan cacat: bs | dispose")
+        await split.assert_can_choose(actor, ret.get("entity_id", ""))
     it = _item(ret, product_id)
     prod = await db.products.find_one({"id": product_id}, {"_id": 0}) or {}
     base = (prod.get("base_unit") or it.get("unit") or "yard").lower()
@@ -53,7 +63,8 @@ async def record_cutloss(ret: Dict[str, Any], product_id: str, defect_yard: floa
         raise ValueError(f"Qty cacat {qty_base:g} {base} melebihi qty retur {limit:g} {base}.")
     entry = {"id": new_id("ctl"), "product_id": product_id, "product_name": it.get("product_name", ""),
              "roll_id": roll_id or "", "defect_yard": round(defect_yard, 2), "qty_base": qty_base, "unit_base": base,
-             "converted": base != QC_UNIT, "note": (note or "").strip(), "recorded_by": actor.get("name", ""),
+             "converted": base != QC_UNIT, "note": (note or "").strip(), "treatment": treatment or "",
+             "defect_from": defect_from, "defect_to": defect_to, "recorded_by": actor.get("name", ""),
              "recorded_by_id": actor.get("id", ""), "recorded_at": now_iso()}
     others = [c for c in ret.get("cutloss") or [] if not (c["product_id"] == product_id and c.get("roll_id", "") == entry["roll_id"])]
     await db.sales_returns.update_one({"id": ret["id"]}, {"$set": {"cutloss": others + [entry], "updated_at": now_iso()}})
