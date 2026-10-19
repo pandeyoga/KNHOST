@@ -713,9 +713,22 @@ async def fulfillment_cancel(order_id: str, item_key: str, payload: FulfillmentC
             await cancel_mko(d["id"], reason=payload.reason, actor_name=user.get("name", ""))
         done.append(d.get("number") or d["id"])
     entry = {"at": now_iso(), "by": user.get("name", ""), "action": "cancel_docs", "docs": done, "reason": payload.reason}
-    await db.special_orders.update_one({"id": order_id}, {"$push": {f"fulfillment.{item_key}.history": entry},
-                                                          "$set": {f"fulfillment.{item_key}.status": "cancelled_docs",
-                                                                   "updated_at": now_iso()}})
+    st = n["state"]
+    # Sama dengan ganti jalur: dokumen batal diarsip, PR lama dipensiunkan → realisasi ulang membuat PR baru.
+    archived = [{**d, "archived_at": entry["at"], "cancel_reason": payload.reason} for d in n["docs"]]
+    if st.get("pr_id"):
+        archived.append({"type": "pr", "id": st["pr_id"], "number": st.get("pr_number", ""), "archived_at": entry["at"]})
+    await db.special_orders.update_one({"id": order_id}, {
+        "$push": {f"fulfillment.{item_key}.history": entry, f"fulfillment.{item_key}.history_docs": {"$each": archived}},
+        "$set": {f"fulfillment.{item_key}.status": "planned", f"fulfillment.{item_key}.docs": [],
+                 f"fulfillment.{item_key}.pr_id": "", f"fulfillment.{item_key}.pr_number": "",
+                 f"fulfillment.{item_key}.error": "", "updated_at": now_iso()}})
+    if st.get("pr_id"):
+        await db.purchase_requisitions.update_one({"id": st["pr_id"]}, {"$set": {"source_item_key": f"{item_key}#retired"}})
+        try:
+            await pr_svc.cancel_requisition(st["pr_id"])
+        except ValueError:
+            pass   # PR sudah terminal (converted) — jejak tetap ada
     await audit(user.get("name", ""), "special_order_fulfillment_cancel", "special_order", order_id,
                 {"item": item_key, "docs": done}, reason=payload.reason)
     return {"cancelled": done, "fulfillment": await ful.progress(await _fresh(order_id))}

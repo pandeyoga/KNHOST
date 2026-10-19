@@ -135,6 +135,21 @@ async def _apply_credit(ret: Dict[str, Any], so: Dict[str, Any], actor: Dict[str
         return {"applied": 0.0, "issued": float(info.get("issued") or 0), "error": str(getattr(e, "detail", None) or e)}
 
 
+async def on_replacement_cancelled(so: Dict[str, Any], actor: Dict[str, Any]) -> None:
+    """SO pengganti dibatalkan → saldo retur yang dipakai dikembalikan & retur boleh membuat pengganti baru."""
+    from services import store_credit_service as sc
+    rid = (so.get("replacement_for_return") or {}).get("return_id")
+    async for red in db.store_credit_redemptions.find({"allocations.order_id": so["id"], "status": {"$ne": "void"}},
+                                                      {"_id": 0, "id": 1}):
+        await sc.reverse_redemption(red["id"], reason=f"SO pengganti {so.get('number', '')} dibatalkan", actor=actor)
+    if rid:
+        await db.sales_returns.update_one({"id": rid, "replacement_order_id": so["id"]}, {
+            "$set": {"replacement_order_id": "", "replacement_order_number": "", "updated_at": now_iso()},
+            "$unset": {"replacement_summary": ""},
+            "$push": {"replacement_history": {"order_id": so["id"], "order_number": so.get("number", ""),
+                                              "cancelled_at": now_iso(), "by": actor.get("name", "")}}})
+
+
 def _summary(obl: List[Dict[str, Any]], so: Dict[str, Any], applied: Dict[str, Any]) -> Dict[str, Any]:
     credit = round(float(applied.get("issued") or 0) or sum(r["value"] for r in obl), 2)
     total = round(float(so.get("grand_total") or 0), 2)

@@ -1,0 +1,44 @@
+{
+  "summary": "Tested Fase 1-3 (LN-090 replacement grade, cosmetic KNSelect, LN-033 T08 cancel, LN-012-T04 grey hidden, LN-102-T02 desk cards). Main's pytest re-run: ln090 3/3, ln033 9/9, Imp12 6/6, ln102 7/7 all pass. New T1 tests (public URL): test_t1_phase123_extra.py 9/9 pass (Ganti Roll candidates show 'Pengganti retur wajib grade A' + reallocate 409, sales SO with grey -> 403 even with setting ['yarn'], desk cards count==len(rows) no dupes, tugas_wms rows have flow_type/po_id); test_t1_ln033_cancel_edges.py 1/2 (MKO cancel OK; re-realize same route after cancel FAILS). UI (Playwright): replacement table 'Grade wajib' column + replacement-grade-<pid>=A (sold grade from roll, not QC grade B), amber replacement-conv-missing for kg product without yard factor, replacement-create creates SO with required_grade A and only grade-A roll; ReturnLogisticsPanel KNSelect (combobox, 2 options) -> select 'Ditanggung customer' + save -> 'Tersimpan.' and persisted; InspectLineModal ins-grade-input KNSelect with '— saran sistem —' + master grades, select/reset works; OD fulfillment cancel UI: open -> reason<5 disables submit -> submit cancels PO, route select unlocked; Meja Saya (warehouse) inbound row -> goods-receipts (Scan Terima per PO with the PO selected), outbound row -> wms-outbound.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/special-orders/{id}/fulfillment/{key}/realize (after /cancel, same route)", "issue": "After cancelling the active PO, fulfillment status becomes 'ready' and UI shows 'Realisasi pengadaan', but realize returns 400 'Tidak ada baris PEMBELIAN yang masih perlu direalisasikan (sudah terealisasi...)' and item flips to 'error' (Ulangi realisasi loops with same 400). RCA: fulfillment_cancel (routers/special_orders.py ~L706) cancels PO/MKO but does not reopen the PR line(s) (PR stays converted / lines keep realized po ref) so pr_sourcing_service.realize_to_po -> _open_lines(pr,'purchase') is empty. Only switching route works. Fix: on cancel_docs, reset PR line realization (po_id/mko_id/realized flags) and PR status back to 'approved', or create a fresh PR on re-realize; or hide realize button and tell user to change route.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/sales-orders/{id}/cancel (replacement SO from LN-090)", "issue": "Cancelling a replacement SO does not reverse the store_credit_ledger 'redeem' (customer balance stays 0) and sales_returns.replacement_order_id still points to the cancelled SO, so a new replacement order cannot be created. Credit effectively lost."},
+      {"endpoint": "tests/test_p01_imp_12_13_14_15_20.py::test_sales_cannot_create_so_with_grey_product", "issue": "Weak test: payload lacks shipping_address_id so it passes on 422 (validation) without ever hitting the grey guard; accepts any 4xx. Verified separately with valid payload (cust_toko_kain/addr_001) that 403 is returned — please tighten assertion to ==403."},
+      {"endpoint": "GET /api/desks/me tugas_wms", "issue": "Inbound task row shows raw task id (e.g. wms_d4123f86023b) as number and '0.0 yard' quantity; queue title 'Tugas picking & packing' also contains inbound (receive) tasks. Use PO number / remaining qty and a neutral title."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SpecialOrderFulfillmentPanel", "issue": "After cancel, the cancelled PO stays in the main docs list (od-ful-doc) and od-ful-history is not rendered; cancel reason/history (cancel_docs) not visible anywhere in panel. Also 'Realisasi pengadaan' button offered although backend rejects (see backend critical).", "selector": "[data-testid^=od-ful-history-]", "priority": "MEDIUM"},
+      {"component": "ReturnReplacementPanel", "issue": "Row with missing yard factor still renders editable replacement-qty input; entering qty gives raw backend error text. Consider disabling input for that row.", "selector": "[data-testid=replacement-qty-<pid>]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "InspectLineModal grade select", "issues": ["Option labels duplicate the code: 'A · A — Mutu terbaik' (grade name already contains code)."]},
+      {"screen": "Return detail header", "issues": ["Status chip shows 'Selesai:' with trailing colon and no value for credit_settled returns."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_t1_phase123_extra.py", "/app/backend/tests/test_t1_ln033_cancel_edges.py", "/app/backend/tests/seed_t1_ln090_ui.py", "/app/backend/tests/seed_t1_ln033_ui.py", "/app/test_reports/pytest/t1_phase123.xml"],
+  "action_items": [
+    "Fix LN-033 T08: after fulfillment cancel, same-route re-realization must work (reopen PR lines) or the UI must not offer realize",
+    "Reverse store-credit redeem and clear sales_returns.replacement_order_id when a replacement SO is cancelled",
+    "Show cancelled docs + cancel reason under od-ful-history in fulfillment panel",
+    "Tighten Imp12 grey SO test to valid payload + assert 403",
+    "Optional: tugas_wms inbound row number/qty/title; grade option label duplication"
+  ],
+  "critical_code_review_comments": [
+    "routers/special_orders.py fulfillment_cancel: loops cancel per doc without transaction; if second cancel fails, first is cancelled but no history entry pushed",
+    "workDeskApi.rowLink: inbound wms_task without po_id (e.g. transfer/makloon receipt) falls back to ROLE_DESK_TARGET.wms_task = wms-outbound (Barang Keluar) — wrong screen for non-PO inbound",
+    "test_ln090_replacement_order.py teardown does not delete store_credit_ledger rows it issues (I removed sr_TEST_* ledger rows)"
+  ],
+  "updated_files": ["/app/backend/tests/test_t1_phase123_extra.py", "/app/backend/tests/test_t1_ln033_cancel_edges.py", "/app/backend/tests/seed_t1_ln090_ui.py", "/app/backend/tests/seed_t1_ln033_ui.py"],
+  "success_rate": {"backend": "95% (35/36 incl. main suites; 1 failing edge)", "frontend": "100% of requested UI flows work; 2 minor UI issues"},
+  "seed_data_creation": "Temporary TEST_ return/SO, TEST roll, TEST inspection, TEST special order (all deleted). Side effects that remain: KSC/SO-00009 (cancelled replacement SO from UI test, real number), KSC/PO-00015 (cancelled, deleted doc), catalog.sales_hidden_stages restored to ['grey','yarn'].",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run tests per file with -n0 -p no:randomly. Seeds: python tests/seed_t1_ln090_ui.py (return sr_TEST_T1UI_ln090, search 'TEST_RET-T1UI' in ?view=returns&entity=ent_ksc; --clear) and REACT_APP_BACKEND_URL=http://localhost:8001 python tests/seed_t1_ln033_ui.py (OD with active PO; cleanup by deleting special_orders title ^TEST_LN033 and linked PR/PO). Desk: warehouse@ Meja Saya ?view=my-desk, testids my-desk-action-<taskId>. Inspection grade test needed a non-po_receipt inspection (ins-line-inspect-<lineId>).",
+  "rca of the issue": "LN-033 re-realize: cancel endpoint only flips PO/MKO to cancelled and pushes history; PR line keeps its realized marker so _open_lines() finds nothing. Repro: create OD (supplier route) -> realize (PO) -> POST /fulfillment/{key}/cancel {reason} -> POST /fulfillment/{key}/realize => 400. Mitigation: reopen PR lines in cancel or skip cancelled-doc lines in _open_lines."
+}

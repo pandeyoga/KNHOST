@@ -175,7 +175,7 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
             </p>
             <div className="mt-2 flex items-center gap-2 text-[12px]">Grade hasil QC
               <div className="w-48"><KNSelect data-testid="ins-grade-input" className="field" value={form.grade} onValueChange={(v) => set({ grade: v })}
-                options={[{ value: "", label: "— saran sistem —" }, ...grades.map((g) => ({ value: g.code, label: `${g.code} · ${g.name}` }))]} /></div>
+                options={[{ value: "", label: "— saran sistem —" }, ...grades.map((g) => ({ value: g.code, label: g.name?.startsWith(g.code) ? g.name : `${g.code} · ${g.name}` }))]} /></div>
             </div>
           </div>
         ) : !showQc ? null : (

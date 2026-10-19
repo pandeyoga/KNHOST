@@ -104,7 +104,7 @@ async def warehouse_queues(scope, ids) -> List[Dict[str, Any]]:
     samples = await _find("wms_tasks", {**sq, "task_subtype": "sample_cut", "status": {"$in": ["created", "picking"]}, "picked_qty": {"$in": [0, 0.0, None]}})
     return [
         _queue("tugas_wms", "Tugas picking & packing", "Kerjakan urut umur tugas.",
-               [_row(ref_type="wms_task", ref_id=t["id"], number=t.get("number") or t.get("order_number") or t.get("ref_number") or t["id"],
+               [_row(ref_type="wms_task", ref_id=t["id"], number=t.get("number") or t.get("order_number") or t.get("po_number") or t.get("ref_number") or t["id"],
                      title=t.get("customer_name") or t.get("product_name") or t.get("type", "tugas"),
                      subtitle=" · ".join(x for x in (t.get("flow_type") or t.get("type", ""), f"{t.get('quantity', '')} {t.get('unit', '')}".strip()) if x),
                      age_days=_age_days(t.get("created_at")), badge=t.get("status", ""), action="Kerjakan",

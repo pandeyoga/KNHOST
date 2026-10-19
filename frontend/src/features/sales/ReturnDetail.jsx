@@ -187,7 +187,7 @@ export default function ReturnDetail({
           )}
           {["refund_settled", "credit_settled", "nego_settled"].includes(ret.status) && (
             <div className="info-chip success" data-testid="return-outcome-chip">
-              <CheckCircle2 size={13} /> Selesai: {OUTCOME_LABEL[ret.outcome] || ret.outcome}
+              <CheckCircle2 size={13} /> Selesai{ret.outcome ? `: ${OUTCOME_LABEL[ret.outcome] || ret.outcome}` : ""}
               {ret.settled_by ? ` · oleh ${ret.settled_by}` : ""}
             </div>
           )}

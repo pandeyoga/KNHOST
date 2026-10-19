@@ -41,7 +41,7 @@ export default function ReturnReplacementPanel({ ret, onChanged, onNavigate }) {
             <td className="pr-3">{o.qty_base} {o.unit_base}</td>
             <td className="pr-3">{o.qty_yard ?? <span className="text-[#8A5A00]" title={o.conversion_error} data-testid={`replacement-conv-missing-${o.product_id}`}>Faktor yard↔{o.unit_base} belum diatur di master produk</span>}</td>
             <td className="pr-3">{rp(o.unit_price_base)}/{o.unit_base}</td><td className="pr-3">{rp(o.value)}</td>
-            <td>{canCreate ? <input data-testid={`replacement-qty-${o.product_id}`} type="number" className="field w-24" value={qty[o.product_id] ?? ""}
+            <td>{canCreate && !o.conversion_error ? <input data-testid={`replacement-qty-${o.product_id}`} type="number" className="field w-24" value={qty[o.product_id] ?? ""}
                                     onChange={(e) => setQty({ ...qty, [o.product_id]: e.target.value })} /> : "—"}</td>
           </tr>))}</tbody>
       </table>

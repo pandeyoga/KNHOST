@@ -120,14 +120,16 @@ class TestImp12HiddenStages:
         items = r_admin.json().get("items") if isinstance(r_admin.json(), dict) else r_admin.json()
         if not items:
             pytest.skip("no grey products seeded")
-        grey_pid = items[0]["id"]
-        # minimal SO payload — any 4xx (403 ideal) is acceptable so long as not 2xx
+        grey = [p for p in items if str(p.get("stage") or "").lower() == "grey"]
+        if not grey:
+            pytest.skip("no grey products seeded")
+        grey_pid = grey[0]["id"]
         payload = {
-            "customer_id": "cust_2e7a9e8618ca", "notes": "TEST_imp12_grey",
-            "items": [{"product_id": grey_pid, "quantity": 1, "unit_price": 10000, "unit": "m"}],
+            "customer_id": "cust_toko_kain", "shipping_address_id": "addr_001", "notes": "TEST_imp12_grey",
+            "items": [{"product_id": grey_pid, "quantity": 1, "unit": "yard"}],
         }
         r = requests.post(f"{BASE_URL}/api/sales-orders", headers=_h(tokens["sales"]), json=payload, timeout=30)
-        assert r.status_code in (400, 403, 409, 422), f"expected rejection, got {r.status_code}: {r.text[:300]}"
+        assert r.status_code == 403, f"expected 403 grey guard, got {r.status_code}: {r.text[:300]}"
         # best-effort cleanup if a 2xx snuck through
         if r.status_code < 300:
             try:

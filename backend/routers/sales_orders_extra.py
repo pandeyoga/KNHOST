@@ -919,4 +919,7 @@ async def cancel_order(order_id: str, request: Request, payload: Optional[SoCanc
     except Exception as exc:  # noqa: BLE001
         import logging
         logging.getLogger(__name__).error("Gagal reversal GL utk order %s: %s", order_id, exc)
+    if order.get("replacement_for_return"):
+        from services import return_replacement_service as rpl
+        await rpl.on_replacement_cancelled(order, actor)
     return strip_cost_fields(result, actor.get("role"))

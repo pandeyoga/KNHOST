@@ -94,6 +94,23 @@ def test_ln090_replacement_same_grade_as_sold():
     grades = {g["grade"] for g in DB.inventory_rolls.find({"id": {"$in": ids}}, {"grade": 1})}
     assert grades <= {ref["grade"]}, grades
 
+def test_ln090_cancel_replacement_restores_credit_and_allows_new():
+    so, rid, pid = _seed(accepted=5.0)
+    cust = DB.sales_returns.find_one({"id": rid})["customer_id"]
+    _issue(rid, cust, 150000)
+    r = requests.post(f"{BASE}/sales-returns/{rid}/replacement-order", headers=ADMIN, json={"items": [{"product_id": pid, "qty_yard": 5}]})
+    assert r.status_code == 200, r.text
+    new_id = r.json()["order"]["id"]
+    c = requests.post(f"{BASE}/sales-orders/{new_id}/cancel", headers=ADMIN, json={"reason": "TEST batal pengganti"})
+    assert c.status_code == 200, c.text
+    ret = DB.sales_returns.find_one({"id": rid})
+    assert not ret.get("replacement_order_id") and ret["replacement_history"][-1]["order_id"] == new_id
+    assert DB.store_credit_redemptions.count_documents({"allocations.order_id": new_id, "status": {"$ne": "void"}}) == 0
+    r2 = requests.post(f"{BASE}/sales-returns/{rid}/replacement-order", headers=ADMIN, json={"items": [{"product_id": pid, "qty_yard": 5}]})
+    assert r2.status_code == 200 and r2.json()["summary"]["credit_applied"] > 0, r2.text
+
+
+
 
 
 def teardown_module(_m):
@@ -104,3 +121,4 @@ def teardown_module(_m):
     DB.sales_returns.delete_many({"id": {"$in": rets}})
     DB.sales_orders.delete_many({"id": {"$regex": f"^so_TEST_RPL_{T}"}})
     DB.price_approvals.delete_many({"replacement_return_id": {"$in": rets}})
+    DB.store_credit_ledger.delete_many({"ref_id": {"$in": rets}})
