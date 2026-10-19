@@ -114,7 +114,7 @@ async def create_outbound_tasks_for_order(order_id: str, actor_name: str) -> Lis
         await _refs.safe_link(("picking_task", task["id"]), ("sales_order", order_id),
                               "parent", note="pengambilan untuk SO")
         created.append(safe_doc(task))
-    # §3-C — baris "Jual sebagai sampel" → tugas potong (outbound bersubtipe sample_cut).
+    # §3-C — baris "Jual sebagai sample" → tugas potong (outbound bersubtipe sample_cut).
     if order.get("has_sample") or any(i.get("is_sample") for i in order.get("items", [])):
         from services import sample_sale_service as _smp
         created.extend(await _smp.create_sample_cut_tasks(

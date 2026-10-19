@@ -37,6 +37,7 @@ import {
   Clock3,
   PackageCheck,
   Sparkles,
+  Smartphone,
 } from "lucide-react";
 
 
@@ -368,6 +369,7 @@ function App() {
   // Fitur tanpa layar HP khusus dibuka "tampilan penuh" (mobileVisit) + tombol kembali ke aplikasi HP.
   const responsiveWorkspace = ['md-products', 'product-templates', 'rnd-specs', 'goods-receipts', 'makloon-orders', 'inspections'].includes(activeView) || mobileVisit;
   const goDesktop = () => { localStorage.setItem("kn_force_desktop", "1"); setForceDesktop(true); };
+  const goMobile = () => { localStorage.removeItem("kn_force_desktop"); setForceDesktop(false); setMobileVisit(false); };
   const openFullView = (navId, view) => { setMobileVisit(true); handleNavSelect(navId, view); };
   const backToMobile = () => { setMobileVisit(false); handleNavSelect("home"); };
   const wantsTanya = activeView === "tanya-kn";
@@ -609,6 +611,14 @@ function App() {
             setActiveTour(null);
           }}
         />
+      )}
+
+      {/* Kembali ke tampilan HP sesudah memilih "Tampilan Desktop" di layar kecil. */}
+      {forceDesktop && (
+        <button type="button" onClick={goMobile} data-testid="switch-to-mobile-btn"
+          className="fixed bottom-4 left-1/2 z-[70] flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#0058CC] px-4 py-2.5 text-[13px] font-semibold text-white shadow-lg">
+          <Smartphone size={15} /> Tampilan HP
+        </button>
       )}
 
       {/* Floating Help Button */}

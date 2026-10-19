@@ -131,7 +131,7 @@ SCOPED_COLLECTIONS = {
     "inventory_lots",                 # Fase C — lot kelas satu (D-10/D-26)
     "wms_tasks", "shipments",
     "goods_receipts", "supplier_dn_profiles",   # GRN Fase 2
-    "ocr_samples", "ocr_sample_runs",   # Sampel Uji OCR
+    "ocr_samples", "ocr_sample_runs",   # Sample Uji OCR
     # FASE I — dokumen inspeksi (SPK QC). `qc_inspections` DICABUT pada commit yang
     # sama: koleksi itu terdaftar di sini sejak lama dengan **0 dokumen dan tanpa satu
     # pun penulis** (drift D2). Membiarkan nama mati di registry membuat gate

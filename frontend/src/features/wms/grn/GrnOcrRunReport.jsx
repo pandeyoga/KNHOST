@@ -37,7 +37,7 @@ function SampleResult({ r }) {
   );
 }
 
-/** Ringkasan uji: akurasi per field vs target + hasil per sampel. */
+/** Ringkasan uji: akurasi per field vs target + hasil per sample. */
 export default function GrnOcrRunReport({ run }) {
   const sum = run.summary || {};
   const acc = sum.accuracy || {};
@@ -47,7 +47,7 @@ export default function GrnOcrRunReport({ run }) {
       <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
         <p className="font-bold">Uji {(run.created_at || "").slice(0, 16).replace("T", " ")} · {run.model}{run.orient_model ? " + putar otomatis" : ""}</p>
         <p data-testid="ocr-run-status" className="text-[#6B6B73]">
-          {run.status === "running" ? <span className="inline-flex items-center gap-1 text-[#0058CC]"><Loader2 size={12} className="animate-spin" /> {run.done}/{run.total} sampel…</span> : `${run.total} sampel`} · biaya US${(run.cost_usd || 0).toFixed(3)}
+          {run.status === "running" ? <span className="inline-flex items-center gap-1 text-[#0058CC]"><Loader2 size={12} className="animate-spin" /> {run.done}/{run.total} sample…</span> : `${run.total} sample`} · biaya US${(run.cost_usd || 0).toFixed(3)}
           {run.status === "done" && <b data-testid="ocr-run-gate" className={`ml-2 ${sum.gate_pass ? "text-[#0F766E]" : "text-[#B4231F]"}`}>{sum.gate_pass ? "LULUS target" : "Belum lulus target"}</b>}
         </p>
       </div>

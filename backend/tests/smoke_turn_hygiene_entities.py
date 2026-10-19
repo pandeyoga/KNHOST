@@ -36,7 +36,7 @@ ok(by_id["ent_ksc"]["doc_prefix"] == "KSC" and by_id["ent_kanda"]["doc_prefix"] 
 wh = sess("warehouse@kainnusantara.id")
 before = {n["id"] for n in wh.get(f"{API}/notifications", params={"limit": 200}).json() if n.get("type") == "turn"} if isinstance(wh.get(f"{API}/notifications").json(), list) else set()
 r = admin.post(f"{API}/sample-requests", json={"customer_id": "cust_toko_kain", "product_id": "prod_batik_mega", "length": 0.5, "notes": f"TEST_turn_{tag}", "entity_id": "ent_ksc"})
-ok(r.status_code == 200, f"buat permintaan sampel: {r.status_code}")
+ok(r.status_code == 200, f"buat permintaan sample: {r.status_code}")
 smp = r.json()
 time.sleep(2)
 notes = wh.get(f"{API}/notifications", params={"limit": 200}).json()

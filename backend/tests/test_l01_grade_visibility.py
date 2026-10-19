@@ -68,7 +68,8 @@ class TestFieldVisibility:
         n = lambda d: len(d.get("items", d) if isinstance(d, dict) else d)
         assert n(a) == n(b)
 
-    def test_grade_cannot_be_opened_for_sales_pov(self, adm, sales):
+    def test_grade_follows_role_config_for_sales(self, adm, sales):
+        """Keputusan customer 2026-10-19: grade sales mengikuti konfigurasi peran (dulu: selalu tertutup)."""
         m = DB.permission_settings.find_one({"id": "default"})["matrix"]
         before = list(m["sales"].get("field_visibility", []))
         DB.permission_settings.update_one({"id": "default"}, {"$set": {"matrix.sales.field_visibility": ["grade", "lot"]}})
@@ -77,7 +78,7 @@ class TestFieldVisibility:
             # cache middleware 15 dtk — pakai sesi baru supaya tidak menunggu
             s2 = _login("sales.kanda@kainnusantara.id", "demo1234")
             keys = _walk_keys(requests.get(f"{BASE}/api/inventory/rolls?limit=50", headers=s2, timeout=60).json(), set())
-            assert "grade" not in keys          # POV komersial: grade tetap tertutup
+            assert "grade" in keys              # diberi hak lihat grade → terlihat
             assert "lot" in keys or "dye_lot" in keys or True  # LOT boleh dibuka lewat konfigurasi
             assert from_req().status_code == 200
         finally:

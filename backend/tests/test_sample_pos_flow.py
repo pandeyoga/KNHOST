@@ -1,4 +1,4 @@
-"""§3-C (2026-09-16) — Jual sampel = baris SO ber-`is_sample` + tugas potong gudang (sample_cut).
+"""§3-C (2026-09-16) — Jual sample = baris SO ber-`is_sample` + tugas potong gudang (sample_cut).
 
 Alur: POS checkout (is_sample, harga manual) → approve/verify/confirm → tugas outbound
 bersubtipe sample_cut → gudang pindai EPC roll induk + panjang aktual → roll anak reserved,

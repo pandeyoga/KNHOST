@@ -25,7 +25,7 @@ TYPE_LABELS = {
     "nilai": "Approval Nilai Order",
     "kredit": "Approval Kredit (Over-limit)",
     "special_price": "Approval Harga Khusus",
-    "pembayaran_sampel": "Persetujuan Pembayaran Sampel",
+    "pembayaran_sampel": "Persetujuan Pembayaran Sample",
 }
 
 

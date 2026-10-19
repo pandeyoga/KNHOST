@@ -73,7 +73,7 @@ export default function TransferCreateForm({
         )}
         {formData.source_warehouse_id && newItem.product_id && (
           <div className="mt-3" data-testid="transfer-roll-picker">
-            <RollPicker
+            <RollPicker showDual
               key={`${newItem.product_id}-${formData.source_warehouse_id}`}
               productId={newItem.product_id}
               warehouseId={formData.source_warehouse_id}

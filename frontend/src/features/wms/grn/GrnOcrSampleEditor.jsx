@@ -6,7 +6,7 @@ import { errText, sampleApi } from "./grnApi";
 const UNITS = ["yard", "meter", "kg", "pcs"];
 const blank = () => ({ description: "", qty: "", unit: "yard", rolls: "", po_ref: "", is_non_stock: false });
 
-/** Ubah kunci jawaban sampel: nomor & tanggal SJ + baris (qty, satuan, roll, PO). */
+/** Ubah kunci jawaban sample: nomor & tanggal SJ + baris (qty, satuan, roll, PO). */
 export default function GrnOcrSampleEditor({ sample, onClose, onSaved }) {
   const a = sample.answer || {};
   const [label, setLabel] = useState(sample.label || "");
@@ -29,7 +29,7 @@ export default function GrnOcrSampleEditor({ sample, onClose, onSaved }) {
         </div>
         <div className="space-y-3 p-4 text-[11px]">
           <div className="grid gap-2 sm:grid-cols-3">
-            <label className="sm:col-span-3"><span className="font-semibold">Nama sampel</span><input data-testid="ocr-sample-label" className={inputCls} value={label} onChange={(e) => setLabel(e.target.value)} /></label>
+            <label className="sm:col-span-3"><span className="font-semibold">Nama sample</span><input data-testid="ocr-sample-label" className={inputCls} value={label} onChange={(e) => setLabel(e.target.value)} /></label>
             <label className="sm:col-span-2"><span className="font-semibold">Nomor SJ</span><input data-testid="ocr-sample-dn" className={`${inputCls} font-mono`} value={dn} onChange={(e) => setDn(e.target.value)} /></label>
             <label><span className="font-semibold">Tanggal SJ</span><input data-testid="ocr-sample-date" type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} /></label>
           </div>

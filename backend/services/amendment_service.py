@@ -315,7 +315,7 @@ def _apply_changes(items: List[Dict[str, Any]], changes: List[Dict[str, Any]]
             raise AmendmentError("Jumlah harus lebih dari nol. Untuk membatalkan baris, "
                                  "gunakan pembatalan pesanan atau retur.")
         if field == "price" and new <= 0 and not item.get("is_sample"):
-            raise AmendmentError("Harga satuan tidak boleh 0 kecuali baris sampel (KN-E03).")
+            raise AmendmentError("Harga satuan tidak boleh 0 kecuali baris sample (KN-E03).")
         if abs(old - new) < 0.0001:
             continue
         if field == "quantity":

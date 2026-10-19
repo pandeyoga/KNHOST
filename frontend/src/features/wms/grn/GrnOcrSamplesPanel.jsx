@@ -39,7 +39,7 @@ function SampleCard({ s, checked, onCheck, onEdit, onDelete }) {
   );
 }
 
-/** Sampel Uji OCR: SJ nyata + kunci jawaban → ukur ketepatan baca AI sebelum dipakai harian. */
+/** Sample Uji OCR: SJ nyata + kunci jawaban → ukur ketepatan baca AI sebelum dipakai harian. */
 export default function GrnOcrSamplesPanel() {
   const [samples, setSamples] = useState([]);
   const [sel, setSel] = useState([]);
@@ -58,7 +58,7 @@ export default function GrnOcrSamplesPanel() {
   }, [run?.status, run?.id]);
   const start = async () => { setErr(""); try { setRun(await sampleApi.startRun(sel)); } catch (e) { setErr(errText(e)); } };
   const remove = async (s) => {
-    if (!(await askConfirm({ title: "Hapus sampel?", message: `"${s.label}" tidak ikut diuji lagi. Foto di kedatangan asal tetap ada.`, confirmLabel: "Hapus" }))) return;
+    if (!(await askConfirm({ title: "Hapus sample?", message: `"${s.label}" tidak ikut diuji lagi. Foto di kedatangan asal tetap ada.`, confirmLabel: "Hapus" }))) return;
     try { await sampleApi.del(s.id); setSamples((xs) => xs.filter((x) => x.id !== s.id)); setSel((xs) => xs.filter((x) => x !== s.id)); } catch (e) { setErr(errText(e)); }
   };
   const busy = run?.status === "running";
@@ -66,16 +66,16 @@ export default function GrnOcrSamplesPanel() {
     <div className="space-y-3" data-testid="ocr-samples-panel">
       <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-[#EFF0F2] bg-white p-3">
         <div className="max-w-2xl space-y-1 text-[11px] text-[#3C3C43]">
-          <p className="flex items-center gap-1.5 text-[12.5px] font-bold text-[#1C1C1E]"><FlaskConical size={14} /> Sampel Uji OCR</p>
+          <p className="flex items-center gap-1.5 text-[12.5px] font-bold text-[#1C1C1E]"><FlaskConical size={14} /> Sample Uji OCR</p>
           <p>Kumpulan surat jalan nyata beserta jawaban yang benar. Jalankan uji untuk mengukur ketepatan baca sebelum dipakai harian. Target: nomor SJ ≥ 98%, qty & satuan ≥ 95%.</p>
-          <p className="text-[#0F766E]"><GraduationCap size={12} className="mr-1 inline -mt-0.5" />Tambah sampel dari kedatangan yang sudah dicek (tombol <b>Jadikan sampel uji</b>) — koreksi Anda sekaligus menjadi petunjuk AI untuk SJ mitra yang sama.</p>
+          <p className="text-[#0F766E]"><GraduationCap size={12} className="mr-1 inline -mt-0.5" />Tambah sample dari kedatangan yang sudah dicek (tombol <b>Jadikan sample uji</b>) — koreksi Anda sekaligus menjadi petunjuk AI untuk SJ mitra yang sama.</p>
           <div className="flex items-center gap-2 pt-1">
             <div className="h-1.5 w-40 overflow-hidden rounded-full bg-[#EFF0F2]"><div className="h-full rounded-full bg-[#0058CC]" style={{ width: `${Math.min(100, (samples.length / TARGET) * 100)}%` }} /></div>
-            <span data-testid="ocr-samples-count" className="text-[10.5px] font-semibold">{samples.length}/{TARGET} sampel disarankan</span>
+            <span data-testid="ocr-samples-count" className="text-[10.5px] font-semibold">{samples.length}/{TARGET} sample disarankan</span>
           </div>
         </div>
         <button data-testid="ocr-samples-run" className="primary-button max-sm:w-full max-sm:justify-center" disabled={busy || !samples.length} onClick={start}>
-          <Play size={13} /> {sel.length ? `Uji ${sel.length} sampel terpilih` : "Uji semua sampel"}
+          <Play size={13} /> {sel.length ? `Uji ${sel.length} sample terpilih` : "Uji semua sample"}
         </button>
       </div>
       <ErrorBox text={err} />
@@ -84,7 +84,7 @@ export default function GrnOcrSamplesPanel() {
         {samples.map((s) => <SampleCard key={s.id} s={s} checked={sel.includes(s.id)} onCheck={() => setSel((xs) => (xs.includes(s.id) ? xs.filter((x) => x !== s.id) : [...xs, s.id]))}
           onEdit={() => setEdit(s)} onDelete={() => remove(s)} />)}
       </div>
-      {!samples.length && <p data-testid="ocr-samples-empty" className="text-[11px] text-[#6B6B73]">Belum ada sampel di badan usaha ini.</p>}
+      {!samples.length && <p data-testid="ocr-samples-empty" className="text-[11px] text-[#6B6B73]">Belum ada sample di badan usaha ini.</p>}
       {edit && <GrnOcrSampleEditor sample={edit} onClose={() => setEdit(null)} onSaved={(s) => { setSamples((xs) => xs.map((x) => (x.id === s.id ? s : x))); setEdit(null); }} />}
     </div>
   );

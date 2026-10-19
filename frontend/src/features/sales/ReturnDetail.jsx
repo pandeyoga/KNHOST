@@ -1,4 +1,5 @@
 /** Sub-fase 1.11 — Return detail panel with approve/reject/upload. */
+import { canSeeGrade } from "../../config/roles";
 import { useState, useRef, useEffect } from "react";
 import { AskKnButton } from "../../components/AskKnButton";
 import axios, { API } from "../../services/apiClient";
@@ -227,7 +228,7 @@ export default function ReturnDetail({
       <EvidenceBanner ev={enriched?.evidence} hasFiles={attachments.length > 0} />
 
       {/* R2 — Inspeksi 4-point (approved → inspecting → inspected) */}
-      <ReturnInspectPanel ret={ret} onStartInspect={onStartInspect} onCompleteInspect={onCompleteInspect} />
+      {canSeeGrade(currentUser) && <ReturnInspectPanel ret={ret} onStartInspect={onStartInspect} onCompleteInspect={onCompleteInspect} />}
 
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Panel icon={Package} title={`Item yang diretur · ${(ret.items || []).length}`} testId="return-items-panel">
@@ -342,7 +343,7 @@ export default function ReturnDetail({
 
       {/* FASE E-9 (E9.6 · US29) — rantai retur utuh: pelanggan → antar-PT → beli/simpan */}
       <ReturnChainPanel docId={ret.id} />
-      <ReturnGradeLossPanel ret={ret} />
+      {canSeeGrade(currentUser) && <ReturnGradeLossPanel ret={ret} />}
       <ReturnDispositionPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
 
       <ReturnSettleModal ret={ret} open={showSettleModal}

@@ -17,7 +17,7 @@ const HIST_TABS = [
   { key: "orders", label: "Pesanan" },
   { key: "documents", label: "Dokumen" },
   { key: "prices", label: "Harga Khusus" },
-  { key: "samples", label: "Sampel" },
+  { key: "samples", label: "Sample" },
   { key: "followups", label: "Penagihan" },
   { key: "overrides", label: "Override Kredit" },
 ];

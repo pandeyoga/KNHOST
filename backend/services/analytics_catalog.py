@@ -55,7 +55,7 @@ DATED_SOURCES = {"fact", "returns", "journal", "targets", "collections", "purcha
 
 _O = (("order", "view"),)
 _AR = (("ar_receipt", "view"), ("order", "view"))
-_NOTE_LIVE = "pesanan hidup (bukan batal/draft/kedaluwarsa/ditolak), tanpa sampel"
+_NOTE_LIVE = "pesanan hidup (bukan batal/draft/kedaluwarsa/ditolak), tanpa sample"
 
 
 def M(label: str, source: str, agg: str, unit: str, definition: str, *, perms: Tuple = _O,
@@ -88,8 +88,8 @@ METRICS: Dict[str, Dict[str, Any]] = {
     "recognized_revenue": M("Pendapatan diakui", "journal", "sum", "idr",
                             "Σ kredit − debit akun 4-1000 di jurnal posted (diakui saat barang dikirim, sudah dikurangi retur)",
                             perms=(("accounting", "view"),), date_basis="tanggal jurnal (WIB)"),
-    "sample_orders_count": M("Pesanan sampel", "fact_sample", "orders", "count",
-                             "Jumlah pesanan hidup bertipe sampel", additive=False),
+    "sample_orders_count": M("Pesanan sample", "fact_sample", "orders", "count",
+                             "Jumlah pesanan hidup bertipe sample", additive=False),
     "sales_target": M("Target penjualan", "targets", "sum", "idr", "Target penjualan bulanan (sales_targets)",
                       date_basis="bulan target"),
     "target_achievement_pct": M("Pencapaian target", "targets", "derived", "pct",

@@ -1,4 +1,4 @@
-"""Saring Sampel Benang — produk tahap 'yarn' tidak boleh dipesan sebagai sampel (SAMPLE_NOT_ALLOWED)."""
+"""Saring Sample Benang — produk tahap 'yarn' tidak boleh dipesan sebagai sample (SAMPLE_NOT_ALLOWED)."""
 import os
 
 import pytest
@@ -30,7 +30,7 @@ def ctx():
     cust = db.customers.find_one({"id": "cust_toko_kain"}, {"_id": 0})
     yield {"admin": admin, "fab": fab, "cust": cust}
     for oid in CREATED:
-        requests.post(f"{BASE}/sales-orders/{oid}/cancel", json={"reason": "TEST_ cleanup uji sampel benang"}, headers=admin, timeout=20)
+        requests.post(f"{BASE}/sales-orders/{oid}/cancel", json={"reason": "TEST_ cleanup uji sample benang"}, headers=admin, timeout=20)
 
 
 def _payload(ctx, items, order_type="sample", billing="free"):
@@ -47,7 +47,7 @@ def test_sample_order_with_yarn_rejected(ctx, pid):
     assert r.status_code == 400, r.text
     d = r.json()["detail"]
     assert d["code"] == "SAMPLE_NOT_ALLOWED" and d["product_id"] == pid
-    assert "benang" in d["message"].lower() and "sampel" in d["message"].lower()
+    assert "benang" in d["message"].lower() and "sample" in d["message"].lower()
     assert db.sales_orders.count_documents({}) == before
 
 

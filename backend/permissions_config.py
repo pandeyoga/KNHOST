@@ -263,7 +263,7 @@ DEFAULT_PERMISSIONS = {
         # konfirmasi → dokumen → memproses retur.
         # TIDAK punya: tax_invoice · ar_receipt · payment_variance.decide · cash ·
         # accounting · vendor_bill (sisi uang & pajak tetap `finance`/manager/admin).
-        # REVISI SAMPEL — pesanan sampel BUKAN meja ini (hanya lihat).
+        # REVISI SAMPEL — pesanan sample BUKAN meja ini (hanya lihat).
         "sample_order": ["view"],
         "product": ["view"],
         "color": ["view"],
@@ -344,7 +344,7 @@ DEFAULT_PERMISSIONS = {
     "finance": {
         "field_visibility": ["grade", "lot", "origin"],   # L01 LN-012 — lihat atribut stok
         "goods_receipt": ["view"],   # GRN Fase 2 — Kedatangan Barang (§4.7)
-        # REVISI SAMPEL — Finance menyetujui PEMBAYARAN sampel berbayar (bersama Admin Sampel).
+        # REVISI SAMPEL — Finance menyetujui PEMBAYARAN sample berbayar (bersama Admin Sample).
         "sample_order": ["view", "approve_payment"],
         # KASIR / FINANCE — sisi UANG MASUK & PAJAK KELUARAN.
         # CATATAN: sisi HUTANG (vendor_bill.pay, contra_bon, landed_cost) TETAP
@@ -376,7 +376,7 @@ DEFAULT_PERMISSIONS = {
         "tax_invoice": ["view", "create", "update", "replace", "print"],   # cancel → manajer
         "payment_variance": ["view", "decide"],  # batas nominal tetap dijaga config
         # Papan antrean persetujuan (`/approvals/backlog`) — finance memutus selisih bayar &
-        # menyetujui pembayaran sampel, jadi ia harus MELIHAT antreannya (tanpa menyetujui SO).
+        # menyetujui pembayaran sample, jadi ia harus MELIHAT antreannya (tanpa menyetujui SO).
         "approval": ["view"],
         "penalty": ["view", "issue"],          # waive/adjust → manajer
         "payment_plan": ["view", "update"],
@@ -548,8 +548,8 @@ DEFAULT_PERMISSIONS = {
         "field_visibility": ["grade", "lot", "origin"],   # L01 LN-012 — lihat atribut stok
         "logistics": ["view", "update"],
     },
-    # REVISI SAMPEL (2026-09-17) — ADMIN SAMPEL: pemilik alur pesanan sampel (SOS-).
-    # Menyetujui pembayaran sampel berbayar (bersama finance), meneruskan ke gudang
+    # REVISI SAMPEL (2026-09-17) — ADMIN SAMPEL: pemilik alur pesanan sample (SOS-).
+    # Menyetujui pembayaran sample berbayar (bersama finance), meneruskan ke gudang
     # (confirm), memantau potong/kirim. TIDAK menyentuh SO roll biasa selain melihat.
     "sample_admin": {
         "field_visibility": ["grade", "lot", "origin"],   # L01 LN-012 — lihat atribut stok

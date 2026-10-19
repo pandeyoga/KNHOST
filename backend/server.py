@@ -213,9 +213,9 @@ from routers import ai_assist  # noqa: E402  — Tanya KN: draf tindakan & perin
 app.include_router(ai_assist.router)
 from routers import data_hygiene  # noqa: E402  — Kebersihan Data (EYD/telepon otomatis) + peta giliran (2026-09)
 app.include_router(data_hygiene.router)
-from routers import sample_sales  # noqa: E402  — §3-C Jual Sampel (2026-09)
+from routers import sample_sales  # noqa: E402  — §3-C Jual Sample (2026-09)
 app.include_router(sample_sales.router)
-from routers import sample_orders  # noqa: E402  — REVISI SAMPEL: Pesanan Sampel (SMP-) + Meja Admin Sampel
+from routers import sample_orders  # noqa: E402  — REVISI SAMPEL: Pesanan Sample (SMP-) + Meja Admin Sample
 app.include_router(sample_orders.router)
 from routers import cutting  # noqa: E402  — L06 LN-061 Meja Cutting / Admin Cutting
 app.include_router(cutting.router)

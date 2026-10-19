@@ -197,7 +197,7 @@ QC_MODES = ("all", "sampling")
 
 
 def plan_sample_size(n_rolls: int, pct: float, min_rolls: int) -> int:
-    """PG01 — ukuran sampel = max(min, ceil(pct% × n)), dibatasi jumlah roll."""
+    """PG01 — ukuran sample = max(min, ceil(pct% × n)), dibatasi jumlah roll."""
     import math
     if n_rolls <= 0:
         return 0
@@ -234,9 +234,9 @@ async def set_qc_plan(task: Dict[str, Any], mode: str, sample_pct: float, sample
     plan: Dict[str, Any] = {"mode": mode, "planned_by": actor.get("name", ""), "planned_at": now_iso()}
     if mode == "sampling":
         if not (0 < float(sample_pct or 0) <= 100):
-            raise ValueError("Persentase sampel harus 1–100%.")
+            raise ValueError("Persentase sample harus 1–100%.")
         if int(sample_min or 0) < 1:
-            raise ValueError("Minimal roll sampel harus ≥ 1.")
+            raise ValueError("Minimal roll sample harus ≥ 1.")
         plan.update(sample_pct=float(sample_pct), sample_min=int(sample_min))
     await db.wms_tasks.update_one({"id": task["id"], "status": "qc_pending"},
                                   {"$set": {"qc_plan": plan, "updated_at": now_iso()},
@@ -323,11 +323,11 @@ async def process_qc_decision(
     except Exception as e:
         await _saga.mark_failed("wms_tasks", task_id, str(e))
         raise
-    # PG01 — cakupan tercatat: keputusan sampel berlaku eksplisit untuk sisa lot
+    # PG01 — cakupan tercatat: keputusan sample berlaku eksplisit untuk sisa lot
     set_fields["qc_coverage"] = {**coverage, "decision_applies_to_uninspected": coverage["inspected_rolls"] < coverage["total_rolls"]}
     result["qc_coverage"] = set_fields["qc_coverage"]
     if set_fields["qc_coverage"]["decision_applies_to_uninspected"] and result.get("roll_ids"):
-        # QC-06 — tandai roll yang diputuskan lewat hasil sampel (tidak diinspeksi langsung)
+        # QC-06 — tandai roll yang diputuskan lewat hasil sample (tidak diinspeksi langsung)
         await db.inventory_rolls.update_many(
             {"id": {"$in": result["roll_ids"]}, "inspection.inspected_at": {"$exists": False}},
             {"$set": {"qc_via_sampling": {"task_id": task_id, "at": now_iso(),

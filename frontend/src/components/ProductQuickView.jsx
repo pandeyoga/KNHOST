@@ -6,6 +6,7 @@ import ProductColorTriad from "./ProductColorTriad";
 import VariantAxisPicker from "./VariantAxisPicker";
 import { ProductGallery } from "./ProductGallery";
 import LabelPrinterModal from "./LabelPrinterModal";
+import RollLengthStrip from "./RollLengthStrip";
 import RollPicker from "./RollPicker";
 import RollReconcileSheet from "./RollReconcileSheet";
 import { overlayDismiss } from "@/utils/overlayDismiss";
@@ -188,8 +189,8 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
             </div>
           )}
 
-          {/* REVISI SAMPEL — LANGKAH WAJIB setelah pilih bahan: Order Biasa (PO) atau Order Sampel.
-              Sampel dibatasi: woven maks 5 yard · knitting maks 2 kg (default = maksimum). */}
+          {/* REVISI SAMPEL — LANGKAH WAJIB setelah pilih bahan: Order Biasa (PO) atau Order Sample.
+              Sample dibatasi: woven maks 5 yard · knitting maks 2 kg (default = maksimum). */}
           {selected && !blocked && (
             <div data-testid="quickview-kind-toggle" className={`rounded-lg border p-2 ${isSampleKind ? "border-[#F3D9A4] bg-[#FFF9EC]" : "border-[#EFF0F2] bg-[#FAFBFC]"}`}>
               <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-[#6B6B73]">Jenis pesanan {kindLocked && <span className="ml-1 rounded-full bg-[#E5E5EA] px-1.5 py-0.5 text-[9px] normal-case text-[#3C3C43]">mengikuti keranjang</span>}</p>
@@ -200,14 +201,14 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
                 </button>
                 {sampleable && <button type="button" data-testid="quickview-kind-sample" onClick={() => pickKind("sample")} disabled={kindLocked && orderKind !== "sample"}
                   className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-[12px] font-semibold transition disabled:opacity-40 ${isSampleKind ? "border-[#9A5B00] bg-[#FFF3D6] text-[#9A5B00]" : "border-[#E5E5EA] bg-white text-[#3C3C43] hover:border-[#9A9BA3]"}`}>
-                  <Scissors size={13} /> Pesanan Sampel
+                  <Scissors size={13} /> Pesanan Sample
                 </button>}
               </div>
               {!sampleable && (
-                <p data-testid="quickview-sample-unavailable" className="mt-1.5 text-[10.5px] text-[#6B6B73]">Benang tidak bisa dipesan sebagai sampel — sampel hanya untuk kain yang dipotong dari roll.</p>
+                <p data-testid="quickview-sample-unavailable" className="mt-1.5 text-[10.5px] text-[#6B6B73]">Benang tidak bisa dipesan sebagai sample — sample hanya untuk kain yang dipotong dari roll.</p>
               )}
               {isSampleKind && limit && (
-                <p data-testid="quickview-sample-limit" className="mt-1.5 text-[10.5px] text-[#9A5B00]">Sampel kain <b>{limit.label}</b>: maks <b>{limit.max_qty} {limit.unit}</b> per bahan · dipotong gudang dari roll (RFID) · gratis/berbayar dipilih saat checkout.</p>
+                <p data-testid="quickview-sample-limit" className="mt-1.5 text-[10.5px] text-[#9A5B00]">Sample kain <b>{limit.label}</b>: maks <b>{limit.max_qty} {limit.unit}</b> per bahan · dipotong gudang dari roll (RFID) · gratis/berbayar dipilih saat checkout.</p>
               )}
             </div>
           )}
@@ -228,11 +229,11 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
           </div>
           )}
 
-          {mode === "qty" ? (
+          {mode === "qty" ? (<>
             /* Qty + Satuan (FIXED ke base_unit — F2 UoM SSOT) */
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{isSampleKind ? `Panjang sampel (maks ${limit?.max_qty} ${limit?.unit})` : "Jumlah (Qty)"}</label>
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">{isSampleKind ? `Panjang sample (maks ${limit?.max_qty} ${limit?.unit})` : "Jumlah (Qty)"}</label>
                 <div className={`flex items-center rounded-md border ${isSampleKind ? "border-[#F3D9A4]" : "border-[#E5E5EA]"}`}>
                   <button data-testid="quickview-qty-minus" className="px-3 py-2 text-[#6B6B73] hover:bg-[#F5F5F7]" onClick={() => step(-1)} aria-label="Kurangi"><Minus size={14} /></button>
                   <input data-testid="quickview-qty-input" type="number" min={isSampleKind ? "0.1" : "1"} step={isSampleKind ? "0.5" : "1"} max={isSampleKind ? limit?.max_qty : undefined}
@@ -244,10 +245,10 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
               <div className="min-w-0">
                 <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Satuan</label>
                 <div data-testid="quickview-unit-fixed" className="field flex items-center bg-[#F5F5F7] font-semibold text-[#3C3C43]">{baseUnit}</div>
-                <p className="mt-1 text-[10px] text-[#9A9BA3]">{rollCount} roll · panjang per roll bervariasi</p>
               </div>
             </div>
-          ) : selected && !blocked ? (
+            {!isSampleKind && <RollLengthStrip productId={selected?.id} entityId={entityId} baseUnit={baseUnit} rollCount={rollCount} testId="quickview-roll-lengths" />}
+          </>) : selected && !blocked ? (
             <RollPicker
               productId={selected.id}
               entityId={entityId}
@@ -272,9 +273,9 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
             <div className="flex gap-2">
               {isSampleKind ? (
                 <button data-testid="quickview-sample-button" className="primary-button flex-1 justify-center py-2.5 !bg-[#9A5B00] hover:!bg-[#7A4700]" disabled={avail <= 0 || blocked || !sampleable || !(qty > 0)}
-                  title="Pesanan Sampel — dipotong gudang dari roll; gratis/berbayar dipilih saat checkout"
+                  title="Pesanan Sample — dipotong gudang dari roll; gratis/berbayar dipilih saat checkout"
                   onClick={() => { if (blocked || avail <= 0 || !sampleable) return; onAdd(selected, clampSampleQty(selected, qty), baseUnit, { is_sample: true }); onClose(); }}>
-                  <Scissors size={15} /> {!sampleable ? "Benang tidak bisa disampel" : avail <= 0 ? "Stok Habis" : `Tambah Sampel (${qty} ${baseUnit})`}
+                  <Scissors size={15} /> {!sampleable ? "Benang tidak bisa disampel" : avail <= 0 ? "Stok Habis" : `Tambah Sample (${qty} ${baseUnit})`}
                 </button>
               ) : (
                 <button data-testid="quickview-add-button" className="primary-button flex-1 justify-center py-2.5" disabled={avail <= 0 || blocked} onClick={() => {

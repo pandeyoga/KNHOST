@@ -17,7 +17,7 @@ const openPrint = (html) => { const w = window.open("", "_blank", "width=420,hei
 const LABEL_CSS = `@page{size:58mm 40mm;margin:2mm}body{font-family:Arial,sans-serif;margin:0;width:54mm}section{page-break-after:always;padding-bottom:2mm;display:flex;gap:2mm}
 .qr{width:22mm;height:22mm;flex:none}.txt{flex:1;min-width:0}.no{font-size:17px;font-weight:800;letter-spacing:.3px;word-break:break-all}.row{font-size:10px;margin-top:2px}.b{font-weight:700}.small{font-size:8.5px;color:#444;margin-top:3px}.bc{display:block;width:100%;height:8mm;margin-top:2px}`;
 
-/** Label kecil 58mm untuk potongan sampel: QR nomor roll anak, pelanggan, panjang, produk, SO. */
+/** Label kecil 58mm untuk potongan sample: QR nomor roll anak, pelanggan, panjang, produk, SO. */
 export async function printSampleLabel(r) {
   const qr = await qrFor(r.child_roll_no);
   openPrint(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Label ${esc(r.child_roll_no)}</title><style>${LABEL_CSS}</style></head>

@@ -95,10 +95,10 @@ def target_so(admin):
 def test_feedback_create_with_assignee_becomes_in_progress(admin, target_so, created_ids):
     payload = {
         "order_id": target_so["id"],
-        "title": "QA Warna roll ke-2 lebih gelap dari sampel",
+        "title": "QA Warna roll ke-2 lebih gelap dari sample",
         "category": "kualitas",
         "severity": "tinggi",
-        "description": "Perbedaan warna terlihat pada roll ke-2 dibanding sampel awal.",
+        "description": "Perbedaan warna terlihat pada roll ke-2 dibanding sample awal.",
         "assignee_name": "Rina Kartika",
         "due_date": "2026-09-05",
     }

@@ -3,7 +3,14 @@ import { Scissors, FlaskConical, Truck, Briefcase, Wallet, Car, Megaphone, FileT
 import { roleLabel } from "../../../config/roles";
 import TanyaKnView from "../../tanya/TanyaKnView";
 import MobileAmendments from "./MobileAmendments";
+import { useEffect, useLayoutEffect } from "react";
 import MoreSection from "./MoreSection";
+import { buildNavigation, hubTabsForRole } from "../../../config/navigationConfig";
+import { HUB_TABS } from "../../../config/hubTabs";
+
+// Posisi scroll daftar Lainnya diingat selama aplikasi terbuka (kembali dari sub-halaman / pindah tab).
+const MORE_SCROLL = { y: 0 };
+const scroller = () => document.querySelector(".m-main");
 import MobileCustomers from "./MobileCustomers";
 import MobileHubMenu from "./MobileHubMenu";
 import MobileLeads from "./MobileLeads";
@@ -26,7 +33,7 @@ const MENU = [
   { id: "visits", label: "Kunjungan Sales", desc: "Check-in / check-out di lokasi pelanggan", icon: MapPin, roles: ["sales"] },
   { id: "internal", label: "Permintaan Internal (PIN)", desc: "Minta barang dari PT lain saat stok kurang", icon: ArrowLeftRight },
   { id: "price-status", label: "Harga Khusus Saya", desc: "Semua status (draf, menunggu, digantikan, diakhiri…) · ubah, kirim, lampiran", icon: BadgeCheck },
-  { id: "sample-orders", label: "Pesanan Sampel", desc: "Sampel kain gratis / berbayar & statusnya", icon: Scissors },
+  { id: "sample-orders", label: "Pesanan Sample", desc: "Sample kain gratis / berbayar & statusnya", icon: Scissors },
   { id: "approvals", label: "Pantau Persetujuan", desc: "Dokumen menunggu keputusan manajer (hanya-lihat)", icon: ShieldQuestion, roles: ["sales_admin"] },
   { id: "stock", label: "Stok & ATP", desc: "Siap janji, akan datang, peluang antar-PT per gudang", icon: Boxes },
   { id: "order-dashboard", label: "Dasbor Pesanan", desc: "Omzet, status, tren 8 minggu, pelanggan teratas & butuh tindakan", icon: BarChart3 },
@@ -46,11 +53,19 @@ const GROUPS = [
   { id: "customers", label: "Pelanggan & lapangan", items: ["order-dashboard", "crm", "collection", "leads", "visits"], open: true },
   { id: "stock", label: "Stok & pemenuhan", items: ["stock", "internal"], open: true },
 ];
-const allowed = (item, role) => !item.roles || item.roles.includes(role);
+// Hanya menu yang memang ada di sidebar desktop peran ini (roles + peran custom + menu tersembunyi).
+const navIdsFor = (role) => new Set(buildNavigation(role).filter((e) => !e.comingSoon).map((e) => e.id));
+const allowed = (item, role) => {
+  if (item.roles && !item.roles.includes(role)) return false;
+  if (!navIdsFor(role).has(item.nav)) return false;
+  const tabs = hubTabsForRole(item.nav, role);   // view tab hub (mis. Kebijakan Retur) juga harus terlihat untuk peran ini
+  return !tabs.length || item.view === item.nav || tabs.some((t) => t.view === item.view) || !HUB_VIEWS.has(item.view);
+};
+const HUB_VIEWS = new Set(Object.values(HUB_TABS).flat().map((t) => t.view));
 
 // Fitur desktop yang belum punya layar HP khusus → dibuka dalam tampilan penuh (responsif) + tombol kembali.
 const FULL_VIEWS = [
-  { nav: "rnd-hub", view: "rnd-samples", label: "Permintaan Sample R&D", desc: "Ajukan & pantau sampel R&D", icon: FlaskConical },
+  { nav: "rnd-hub", view: "rnd-samples", label: "Permintaan Sample R&D", desc: "Ajukan & pantau sample R&D", icon: FlaskConical },
   { nav: "logistics", view: "logistics", label: "Pengiriman", desc: "Lacak surat jalan & status kirim", icon: Truck },
   { nav: "finance-cases", view: "finance-cases", label: "Kasus Keuangan", desc: "Selisih bayar, klaim, sengketa", icon: Briefcase },
   { nav: "petty-cash", view: "cash-advances", label: "Kas Kecil", desc: "Pengajuan dana & pertanggungjawaban", icon: Wallet },
@@ -69,7 +84,7 @@ const FULL_VIEWS = [
 
 const TITLES = { tanya: "Tanya KN", amendments: "Koreksi & Amandemen", leads: "Prospek (Lead)", crm: "Pelanggan (CRM)", returns: "Retur Penjualan", special: "Special Order", pricelist: "Daftar Harga",
   "special-price": "Minta Harga Khusus", visits: "Kunjungan Sales", stock: "Stok & ATP", collection: "Penagihan & Target", "order-dashboard": "Dasbor Pesanan", internal: "Permintaan Internal", "price-status": "Harga Khusus Saya",
-  "sample-orders": "Pesanan Sampel", approvals: "Pantau Persetujuan" };
+  "sample-orders": "Pesanan Sample", approvals: "Pantau Persetujuan" };
 
 function FullViewMenu({ onOpenFull, role }) {
   return (
@@ -92,6 +107,21 @@ function FullViewMenu({ onOpenFull, role }) {
 }
 
 export default function MobileMore({ onOpenOrder, user, token, selectedEntity, entities, onLogout, onForceDesktop, sub, setSub, onOpenFull, orders, onRefresh, subParam, onSelectEntity, onStartOrder }) {
+  useLayoutEffect(() => {
+    const el = scroller();
+    if (!el) return undefined;
+    if (sub) { el.scrollTo(0, 0); return undefined; }
+    el.scrollTo(0, MORE_SCROLL.y);
+    const raf = requestAnimationFrame(() => el.scrollTo(0, MORE_SCROLL.y));   // sesudah grup terbuka ter-render
+    return () => cancelAnimationFrame(raf);
+  }, [sub]);
+  useEffect(() => {
+    if (sub) return undefined;
+    const el = scroller();
+    const save = () => { MORE_SCROLL.y = el?.scrollTop || 0; };
+    el?.addEventListener("scroll", save, { passive: true });
+    return () => el?.removeEventListener("scroll", save);
+  }, [sub]);
   const role = user?.role;
   const switchable = (entities || []).filter((e) => (user?.allowed_entity_ids || []).includes(e.id));
   const shownIds = new Set();

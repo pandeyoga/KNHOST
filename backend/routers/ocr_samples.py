@@ -1,4 +1,4 @@
-"""Sampel Uji OCR — `/api/ocr-samples`: kumpulan SJ nyata + kunci jawaban untuk mengukur ketepatan baca."""
+"""Sample Uji OCR — `/api/ocr-samples`: kumpulan SJ nyata + kunci jawaban untuk mengukur ketepatan baca."""
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Request

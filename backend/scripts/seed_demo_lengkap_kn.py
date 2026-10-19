@@ -39,7 +39,7 @@ async def cst_id() -> str:
     return ent["id"]
 
 
-# ─── 1. Master referensi (warna, lini, tahapan proses, jenis sampel, alasan keluhan, motif) ─────────────
+# ─── 1. Master referensi (warna, lini, tahapan proses, jenis sample, alasan keluhan, motif) ─────────────
 async def seed_reference_masters() -> None:
     import seed_realistic as sr
     sr.init_with_db(db)
@@ -415,7 +415,7 @@ async def main() -> None:
     api = Api()
     try:
         sys_admin = await api.system_admin()
-        log("1/5 Master referensi (warna, lini produk, tahapan proses, jenis sampel, alasan keluhan, motif)")
+        log("1/5 Master referensi (warna, lini produk, tahapan proses, jenis sample, alasan keluhan, motif)")
         await seed_reference_masters()
         log("2/5 Struktur gudang: Rancamalang (Transit, Woven, Knitting, Printing, Retur) · Soreang (Kanda) · Jakarta (Sukacita)")
         whs = await seed_warehouses(sys_admin, cst)

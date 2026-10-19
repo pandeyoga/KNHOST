@@ -2,7 +2,7 @@
 berikutnya diberi tahu di lonceng (dalam aplikasi), dan pemberitahuan tahap sebelumnya ditutup.
 
 Cakupan tahap 1 (keputusan pemilik 2026-09): Sales Order, Purchase Order, Retur Penjualan,
-Retur Pembelian, Permintaan Sampel.
+Retur Pembelian, Permintaan Sample.
 
 Mekanisme (tahan terhadap jalur transisi yang tersebar):
   * `after_audit()` — dipanggil dari `dependencies.audit()` (fire-and-forget) → cek 1 dokumen seketika.

@@ -168,7 +168,7 @@ const VehicleLogsView = lazy(() => import("./features/pettycash/VehicleLogsView"
 const PdfTemplateDesigner = lazy(() => import("./features/pdf/PdfTemplateDesigner"));
 const RoleDesk = lazy(() => import("./features/desks/RoleDesk"));
 const TanyaKnView = lazy(() => import("./features/tanya/TanyaKnView"));   // Tanya KN F3
-// REVISI SAMPEL — meja & daftar pesanan sampel
+// REVISI SAMPEL — meja & daftar pesanan sample
 const SampleAdminDesk = lazy(() => import("./features/samples/SampleAdminDesk"));
 const SampleOrdersView = lazy(() => import("./features/samples/SampleOrdersView"));
 const DocumentCenter = lazy(() => import("./features/documents/DocumentCenter"));
@@ -360,7 +360,7 @@ export default function AppViewRouter(props) {
       {activeView === "my-desk" && <RoleDesk desk="me" selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {activeView === "tanya-kn" && <TanyaKnView selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "warehouse-admin-desk" && <RoleDesk desk="warehouse_admin" selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
-      {/* REVISI SAMPEL — Meja Admin Sampel + daftar Pesanan Sampel (SMP-) terpisah dari SO biasa */}
+      {/* REVISI SAMPEL — Meja Admin Sample + daftar Pesanan Sample (SMP-) terpisah dari SO biasa */}
       {activeView === "sample-admin-desk" && <SampleAdminDesk currentUser={user} selectedEntity={selectedEntity} onOpenDocument={openDocument} />}
       {activeView === "sample-orders" && <SampleOrdersView user={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "returns" && (

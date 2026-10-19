@@ -15,7 +15,7 @@ const COLL_LABEL = {
   wms_tasks: "Tugas gudang", sales_orders: "Pesanan penjualan", warehouse_transfers: "Transfer gudang",
   cycle_count_sessions: "Stock opname", purchase_returns: "Retur Pembelian", sales_returns: "Retur Penjualan",
   putaway_orders: "Perintah putaway", vendor_bills: "Tagihan supplier",
-  payment_variance_decisions: "Keputusan selisih bayar", ar_receipts: "Kwitansi pembayaran", sample_requests: "Permintaan sampel", crm_leads: "Prospek (lead)", period_closings: "Tutup buku periode",
+  payment_variance_decisions: "Keputusan selisih bayar", ar_receipts: "Kwitansi pembayaran", sample_requests: "Permintaan sample", crm_leads: "Prospek (lead)", period_closings: "Tutup buku periode",
   product_categories: "Kategori produk", special_orders: "Pesanan khusus", esign_requests: "Permintaan tanda tangan", tax_invoices_in: "Faktur pajak masukan", landed_cost_vouchers: "Voucher landed cost",
   makloon_orders: "Order makloon", rfid_verify_sessions: "Sesi verifikasi RFID", product_templates: "Template produk", rfqs: "RFQ", products: "Produk", business_entities: "Badan usaha",
 };

@@ -93,7 +93,7 @@ class TestUsersSuccess:
         db.users.delete_one({"id": uid})
 
 
-# ── (2) permintaan sampel kini baris SO ber-is_sample (lihat test_sample_pos_flow) ──
+# ── (2) permintaan sample kini baris SO ber-is_sample (lihat test_sample_pos_flow) ──
 
 # ── (3) Payroll runs 2× bersamaan → satu run id ────────────────────────────────
 class TestPayrollRaceSingleRun:

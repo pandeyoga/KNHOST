@@ -153,7 +153,7 @@ async def list_orders(request: Request, status: str = None, customer_id: str = N
     actor = await require_permission(request, "order", "view")
     await expire_old_reservations()
     ctx = await entity_ctx(request)
-    # REVISI SAMPEL — daftar SO biasa TIDAK memuat pesanan sampel (SMP-); ada daftarnya sendiri.
+    # REVISI SAMPEL — daftar SO biasa TIDAK memuat pesanan sample (SMP-); ada daftarnya sendiri.
     query = {"order_type": {"$ne": "sample"}}
     if status:
         # UI/UX 2026-06 — kartu pipeline daftar pesanan menyaring per TAHAP yang

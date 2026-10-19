@@ -5,7 +5,7 @@ Maret 2025, entitas KSC (hitung manual):
   SO A 10 Mar — tim sales 60/40 (sales_01/sales_02), diskon baris 100.000 + diskon pesanan 10%,
        PPN DPP nilai lain → bersih 1.350.000 · kotor 1.600.000 · diskon 250.000 · PPN 148.500 · HPP 800.000
   SO F 15 Mar 23.59 WIB — tanpa sales, pembuat admin → sales pelanggan (sales_03) · bersih 2.000.000 · 20 kg
-  SO B 1 Apr 00.30 WIB (31 Mar UTC) → BUKAN Maret · SO C batal · SO D sampel · SO E entitas Kanda
+  SO B 1 Apr 00.30 WIB (31 Mar UTC) → BUKAN Maret · SO C batal · SO D sample · SO E entitas Kanda
   SO G 10 Feb — pelanggan Toko Kain (pembanding) bersih 500.000
 """
 import os

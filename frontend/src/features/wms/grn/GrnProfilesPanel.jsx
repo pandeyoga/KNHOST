@@ -21,7 +21,7 @@ function LearnedBox({ p, onPatch }) {
           {p.corrections.map((c, i) => <li key={i}>{c.field}: <span className="font-mono text-[#B4231F] line-through">{c.ocr}</span> → <span className="font-mono font-semibold">{c.final}</span> <span className="text-[#8E8E93]">({c.grn_number})</span></li>)}
           <li><button data-testid={`grn-profile-corrections-clear-${id}`} className="text-[10px] text-[#B4231F]" onClick={() => onPatch(id, { clear_corrections: true })}>Lupakan semua koreksi</button></li>
         </ul>
-      ) : <p className="text-[10.5px] text-[#8E8E93]">Belum ada koreksi — dipelajari saat kedatangan ditutup atau dijadikan sampel uji.</p>}
+      ) : <p className="text-[10.5px] text-[#8E8E93]">Belum ada koreksi — dipelajari saat kedatangan ditutup atau dijadikan sample uji.</p>}
     </div>
   );
 }

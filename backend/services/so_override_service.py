@@ -31,7 +31,7 @@ class OverrideError(Exception):
 async def lock_reason(order: Dict[str, Any]) -> str:
     """'' bila SO masih boleh di-override; selain itu kalimat alasan terkunci."""
     if order.get("order_type") == "sample":
-        return "Pesanan sampel diurus Admin Sampel — tidak lewat override SO."
+        return "Pesanan sample diurus Admin Sample — tidak lewat override SO."
     if order.get("status") not in EDITABLE_STATUSES:
         return f"Pesanan sudah di tahap '{order.get('status')}' — override hanya sebelum picking."
     started = await db.wms_tasks.find_one(

@@ -244,7 +244,7 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
     waiting = await pending_handoffs(order_id)
     if waiting:
         raise HTTPException(status_code=400, detail=(
-            f"{len(waiting)} hasil potong sampel belum diterima Admin Cutting ({', '.join(w for w in waiting if w) or '-'}) — "
+            f"{len(waiting)} hasil potong sample belum diterima Admin Cutting ({', '.join(w for w in waiting if w) or '-'}) — "
             "serahkan ke Admin Cutting dulu sebelum kirim."))
     if await db.rfid_verify_sessions.find_one(_open_q(order_id, warehouse_id), {"_id": 0, "id": 1}):
         raise HTTPException(status_code=400, detail="Final Loading Check masih berjalan — selesaikan dulu sebelum kirim.")

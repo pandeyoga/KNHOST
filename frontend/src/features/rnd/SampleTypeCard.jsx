@@ -1,5 +1,5 @@
 /**
- * SampleTypeCard — kartu galeri sampel per jenis (cermin `DesignCard` Desain & Pattern):
+ * SampleTypeCard — kartu galeri sample per jenis (cermin `DesignCard` Desain & Pattern):
  * sampul = foto bukti terbaru untuk jenis itu, nomor mono, judul, supplier, status, skor.
  */
 import { Droplets } from "lucide-react";

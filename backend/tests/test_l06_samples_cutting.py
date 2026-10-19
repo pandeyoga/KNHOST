@@ -1,4 +1,4 @@
-"""L06 — sampel 3 jenis + catalogue terurai (LN-060), cutting lintas lokasi/owner + Admin Cutting (LN-061),
+"""L06 — sample 3 jenis + catalogue terurai (LN-060), cutting lintas lokasi/owner + Admin Cutting (LN-061),
 ecer berbayar potong roll (LN-062). Data uji: artikel 9 warna buatan sendiri (dibersihkan di teardown)."""
 import os
 import uuid

@@ -63,7 +63,7 @@ export default function QcPlanPanel({ taskId, onCoverage, onOpenRolls }) {
             Terinspeksi <b data-testid="qc-plan-inspected">{cov.inspected_rolls}</b>/{cov.total_rolls} roll · wajib{" "}
             <b data-testid="qc-plan-required">{cov.required_rolls}</b>
             {cov.mode === "sampling" && cov.met && cov.inspected_rolls < cov.total_rolls
-              ? " · keputusan sampel berlaku untuk sisa lot" : ""}
+              ? " · keputusan sample berlaku untuk sisa lot" : ""}
           </span>
           <span data-testid="qc-plan-met" className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${cov.met ? "bg-[#E7F7EC] text-[#1B7E3B]" : "bg-[#FFF1E0] text-[#8C4A00]"}`}>
             {cov.met ? "Cakupan terpenuhi" : "Belum terpenuhi"}

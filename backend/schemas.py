@@ -503,7 +503,7 @@ class SalesOrderItemIn(BaseModel):
     # ber-`factor_per_document=true` (mis. PANEL); dijaga `uom_service.line_factor`.
     unit_factor: Optional[float] = Field(None, gt=0)
     unit_factor_to: str = ""
-    # §3-C — "Jual sebagai sampel": harga dari master sampel (atau manual), dipenuhi lewat
+    # §3-C — "Jual sebagai sample": harga dari master sample (atau manual), dipenuhi lewat
     # permintaan potong ke gudang (tugas outbound bersubtipe sample_cut), bukan reservasi FEFO.
     is_sample: bool = False
     sample_price: Optional[float] = Field(None, ge=0)
@@ -538,7 +538,7 @@ class SalesOrderCreate(BaseModel):
     pickup_date: str = ""                  # ISO date; wajib bila fulfillment_method=="ambil" (hold picking s/d tgl ini)
     delivery_date: str = ""                # ISO date OPSIONAL; request tgl pengiriman bila fulfillment_method=="kirim" (tak boleh di masa lalu)
     # REVISI SAMPEL — jenis pesanan dipilih SEBELUM checkout: "regular" (PO biasa) | "sample".
-    # Sampel TIDAK boleh digabung dengan baris roll biasa; nomor & alur persetujuannya terpisah.
+    # Sample TIDAK boleh digabung dengan baris roll biasa; nomor & alur persetujuannya terpisah.
     order_type: str = "regular"
     sample_billing: str = ""               # "free" | "paid" — wajib bila order_type=="sample"
     catalogue: Optional[CatalogueSpecIn] = None   # L06 LN-060 — server menyusun baris dari komponen catalogue

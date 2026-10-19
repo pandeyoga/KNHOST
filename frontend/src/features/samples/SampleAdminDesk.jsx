@@ -1,7 +1,7 @@
 /**
- * SampleAdminDesk — REVISI SAMPEL: MEJA ADMIN SAMPEL (POV tim sampel).
+ * SampleAdminDesk — REVISI SAMPEL: MEJA ADMIN SAMPEL (POV tim sample).
  * Antrean per tahap: ACC pembayaran (berbayar) → teruskan ke gudang → dipotong → dikirim/diambil → selesai.
- * Satu tindakan per baris; pantau membuka daftar Pesanan Sampel dengan baris terpilih.
+ * Satu tindakan per baris; pantau membuka daftar Pesanan Sample dengan baris terpilih.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Scissors, RefreshCw, Inbox, Layers, ShieldAlert } from "lucide-react";
@@ -25,7 +25,7 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
       const params = {};
       if (selectedEntity && selectedEntity !== "all") params.entity_id = selectedEntity;
       setData(await sampleDesk(params)); setError("");
-    } catch (e) { setError(apiErrorText(e, "Gagal memuat Meja Admin Sampel.")); }
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat Meja Admin Sample.")); }
     finally { setLoading(false); }
   }, [selectedEntity]);
   useEffect(() => { load(); }, [load]);
@@ -36,7 +36,7 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
     if (row.action_kind === "approve_payment" || row.action_kind === "confirm") {
       setBusyRef(row.ref_id); setError("");
       try {
-        if (row.action_kind === "approve_payment") { await approveSamplePayment(row.ref_id); flash(`${row.number}: pembayaran sampel disetujui — kini siap diteruskan ke gudang.`); }
+        if (row.action_kind === "approve_payment") { await approveSamplePayment(row.ref_id); flash(`${row.number}: pembayaran sample disetujui — kini siap diteruskan ke gudang.`); }
         else { const r = await confirmSampleOrder(row.ref_id); flash(`${row.number} diteruskan ke gudang — ${r?.tasks_created ?? ""} tugas potong lahir.`); }
         await load();
       } catch (e) { setError(apiErrorText(e, "Aksi gagal.")); }
@@ -58,12 +58,12 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
         <div className="section-head">
           <div className="flex min-w-0 items-center gap-2">
             <Scissors size={15} className="text-[#9A5B00]" />
-            <span className="kicker">Admin Sampel</span>
-            <h2 data-testid="sample-desk-title">{data?.title || "Meja Admin Sampel"}</h2>
+            <span className="kicker">Admin Sample</span>
+            <h2 data-testid="sample-desk-title">{data?.title || "Meja Admin Sample"}</h2>
           </div>
           <button data-testid="sample-desk-refresh" className="icon-button" onClick={load} aria-label="Muat ulang meja"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
         </div>
-        <p className="px-3 pt-2 text-[11.5px] leading-relaxed text-[#6B6B73]">Pesanan sampel dari sales (SOS-): <b>sampel berbayar</b> disetujui pembayarannya dulu (Finance/Admin Sampel), <b>sampel gratis</b> langsung siap. Lalu <b>teruskan ke gudang</b> → gudang memotong dari roll (pindai RFID, catat panjang aktual) → dikirim / diambil pelanggan.</p>
+        <p className="px-3 pt-2 text-[11.5px] leading-relaxed text-[#6B6B73]">Pesanan sample dari sales (SOS-): <b>sample berbayar</b> disetujui pembayarannya dulu (Finance/Admin Sample), <b>sample gratis</b> langsung siap. Lalu <b>teruskan ke gudang</b> → gudang memotong dari roll (pindai RFID, catat panjang aktual) → dikirim / diambil pelanggan.</p>
         <section data-testid="sample-desk-metrics" className="grid gap-3 p-3 sm:grid-cols-3">
           <Metric icon={Inbox} label="Perlu Tindakan Saya" value={openItems} tone="rgba(255,149,0,.16)" testId="sample-desk-metric-open" />
           <Metric icon={Layers} label="Antrean Aktif" value={queues.filter((q) => q.count > 0).length} tone="rgba(154,91,0,.14)" testId="sample-desk-metric-queues" />

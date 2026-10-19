@@ -309,7 +309,7 @@ export default function OrdersView({
                               data-testid={`order-sample-chip-${order.id}`}
                               className="rounded-sm bg-[#FFF3D6] px-1 py-0.5 text-[8.5px] font-bold uppercase tracking-wide text-[#9A5B00]"
                             >
-                              Sampel
+                              Sample
                             </span>
                           )}
                         </div>

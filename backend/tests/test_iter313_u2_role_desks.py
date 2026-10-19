@@ -108,7 +108,7 @@ def test_giliran_saya_sample_flow(tokens):
     if "admin" not in tokens or "warehouse" not in tokens:
         pytest.skip("need admin+warehouse")
     # KN-A08 (audit 2026-09-21) — rute /api/sample-requests SUDAH DIHAPUS; uji ini
-    # menunjuk endpoint mati. Isolasi sampel kini diuji di tests/test_kn_audit_2026_09_21.py.
+    # menunjuk endpoint mati. Isolasi sample kini diuji di tests/test_kn_audit_2026_09_21.py.
     pytest.skip("endpoint /sample-requests dihapus — lihat tests/test_kn_audit_2026_09_21.py")
     payload = {"customer_id": "cust_toko_kain", "product_id": "prod_batik_mega", "length": 0.5, "entity_id": ENTITY}
     r = requests.post(f"{BASE_URL}/api/sample-requests", headers=_headers(tokens["admin"]), json=payload, timeout=15)

@@ -87,7 +87,7 @@ async def sales_queues(actor, scope, ids) -> List[Dict[str, Any]]:
         _queue("so_menunggu", "Pesanan saya menunggu", "Menunggu ACC manajer atau stok — pantau, jangan janji tanggal kirim dulu.", _so_rows(waiting, "Lihat"), action_label="Lihat", owner="sales"),
         _queue("so_konfirmasi", "Disetujui — konfirmasi ke pelanggan", "Kabari pelanggan; admin sales akan memproses.", _so_rows(approved, "Lihat"), action_label="Lihat", owner="sales"),
         _queue("so_ditolak", "Ditolak / dibatalkan (7 hari)", "Hubungi pelanggan & ajukan ulang bila perlu.", _so_rows(rejected, "Lihat"), action_label="Lihat", owner="sales"),
-        _queue("sampel_saya", "Pesanan sampel saya", "Pesanan berisi baris sampel yang sedang dipotong / disiapkan gudang.",
+        _queue("sampel_saya", "Pesanan sample saya", "Pesanan berisi baris sample yang sedang dipotong / disiapkan gudang.",
                _so_rows(samples, "Lihat"), action_label="Lihat", owner="sales", value_kind="count", value_label="Item"),
     ]
 
@@ -113,7 +113,7 @@ async def warehouse_queues(scope, ids) -> List[Dict[str, Any]]:
                [_row(ref_type="purchase_order", ref_id=o["id"], number=o.get("po_number") or o.get("number", ""), title=o.get("supplier_name", "—"),
                      value=o.get("grand_total") or 0, age_days=_age_days(o.get("updated_at")), badge=o.get("status", ""), action="Terima") for o in po],
                action_label="Terima", owner="warehouse"),
-        _queue("sampel_potong", "Sampel untuk dipotong", "Permintaan potong sampel dari pesanan sales — pindai roll, potong, catat panjang.",
+        _queue("sampel_potong", "Sample untuk dipotong", "Permintaan potong sample dari pesanan sales — pindai roll, potong, catat panjang.",
                [_row(ref_type="wms_task", ref_id=t["id"], number=t.get("order_number", ""), title=t.get("customer_name", "—"), subtitle=t.get("product_name", ""),
                      age_days=_age_days(t.get("created_at")), badge=t.get("status", ""), action="Potong") for t in samples],
                action_label="Potong", owner="warehouse", value_kind="count", value_label="Item"),

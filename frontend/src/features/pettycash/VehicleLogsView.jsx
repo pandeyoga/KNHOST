@@ -241,7 +241,7 @@ function LogFormModal({ form, vehicles, entities, selectedEntity, onClose, onSav
           </F>
           <F label="No. Polisi (manual)"><input data-testid="veh-log-nopol" className="form-input" value={f.no_polisi} onChange={(e) => upd("no_polisi", e.target.value)} placeholder="B 1234 XX" /></F>
           <F label="Tanggal"><KNDatePicker data-testid="veh-log-tanggal" value={f.tanggal} onChange={(v) => upd("tanggal", v)} clearable={false} /></F>
-          <F label="Tujuan"><input data-testid="veh-log-tujuan" className="form-input" value={f.tujuan} onChange={(e) => upd("tujuan", e.target.value)} placeholder="mis. Kirim sampel ke pelanggan" /></F>
+          <F label="Tujuan"><input data-testid="veh-log-tujuan" className="form-input" value={f.tujuan} onChange={(e) => upd("tujuan", e.target.value)} placeholder="mis. Kirim sample ke pelanggan" /></F>
           <F label="KM Awal"><input type="number" data-testid="veh-log-kmawal" className="form-input text-right" value={f.km_awal} onChange={(e) => upd("km_awal", e.target.value)} /></F>
           <F label="KM Akhir"><input type="number" data-testid="veh-log-kmakhir" className="form-input text-right" value={f.km_akhir} onChange={(e) => upd("km_akhir", e.target.value)} /></F>
           <F label="BBM (Rp)"><MoneyInput testId="veh-log-bbm" className="form-input text-right" value={f.bbm} onChange={(v) => upd("bbm", v)} /></F>

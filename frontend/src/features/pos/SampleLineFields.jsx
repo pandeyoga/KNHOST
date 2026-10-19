@@ -4,9 +4,9 @@ import axios, { API } from "../../services/apiClient";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { SAMPLE_KINDS, sampleLimit } from "../../utils/sampleOrder";
 
-const SRC = { master_sampel: "master harga sampel", harga_daftar: "harga daftar", manual_sampel: "harga manual" };
+const SRC = { master_sampel: "master harga sample", harga_daftar: "harga daftar", manual_sampel: "harga manual" };
 
-/** §3-C — baris "Jual sebagai sampel" di checkout: quote harga sampel + saran roll FIFO + harga manual. */
+/** §3-C — baris "Jual sebagai sample" di checkout: quote harga sample + saran roll FIFO + harga manual. */
 export function SampleLineFields({ item, onUpdateSample, billing = "", onToggleSample }) {
   const pid = item.product.id;
   const unit = item.product.base_unit || "meter";
@@ -18,7 +18,7 @@ export function SampleLineFields({ item, onUpdateSample, billing = "", onToggleS
     let cancelled = false;
     const t = setTimeout(() => axios.get(`${API}/sample-quote`, { params: { product_id: pid, length: len } })
       .then((r) => { if (cancelled) return; setQuote(r.data); setErr(""); onUpdateSample(pid, { sample_unit_price: Number(r.data.price_per_unit || 0), sample_source: r.data.source, suggested_roll_no: r.data.suggested_roll?.roll_no || "" }); })
-      .catch(() => { if (!cancelled) setErr("Harga sampel tidak bisa dimuat."); }), 300);
+      .catch(() => { if (!cancelled) setErr("Harga sample tidak bisa dimuat."); }), 300);
     return () => { cancelled = true; clearTimeout(t); };
   }, [pid, len]); // eslint-disable-line
   const manual = item.sample_price;
@@ -26,7 +26,7 @@ export function SampleLineFields({ item, onUpdateSample, billing = "", onToggleS
   const isFree = billing === "free";
   return (
     <div data-testid={`sample-fields-${pid}`} className="mt-2 rounded-md border border-[#F3D9A4] bg-[#FFF9EC] p-2 text-[11px]">
-      <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[#9A5B00]"><Scissors size={11} /> Sampel {isFree ? "gratis" : billing === "paid" ? "berbayar" : ""} — permintaan potong ke gudang</p>
+      <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[#9A5B00]"><Scissors size={11} /> Sample {isFree ? "gratis" : billing === "paid" ? "berbayar" : ""} — permintaan potong ke gudang</p>
       {quote && (
         <p data-testid={`sample-quote-${pid}`} className="mt-1 text-[#3C3C43]">
           {!isFree && <>{SRC[quote.source] || quote.source}: <b>{formatCurrency(quote.price_per_unit)}</b>/{unit} · </>}
@@ -54,7 +54,7 @@ export function SampleLineFields({ item, onUpdateSample, billing = "", onToggleS
   );
 }
 
-/** L06 LN-060 — jenis sampel (batas maksimal, tidak memaksa naik) + jalur ecer berbayar bila melebihi batas. */
+/** L06 LN-060 — jenis sample (batas maksimal, tidak memaksa naik) + jalur ecer berbayar bila melebihi batas. */
 function SampleKindPicker({ item, onUpdateSample, onToggleSample }) {
   const pid = item.product.id;
   const kind = item.sample_kind || "standard";
@@ -72,7 +72,7 @@ function SampleKindPicker({ item, onUpdateSample, onToggleSample }) {
       </div>
       {over && (
         <p data-testid={`sample-over-limit-${pid}`} className="mt-1 text-[#B23B14]">
-          Melebihi batas sampel {SAMPLE_KINDS[kind].label.toLowerCase()} — kurangi, atau jual sebagai <b>ecer berbayar</b> (pesanan biasa terpisah).
+          Melebihi batas sample {SAMPLE_KINDS[kind].label.toLowerCase()} — kurangi, atau jual sebagai <b>ecer berbayar</b> (pesanan biasa terpisah).
           {onToggleSample && <button type="button" data-testid={`sample-to-retail-${pid}`} className="ml-1 underline font-semibold" onClick={() => onToggleSample(pid)}>Jadikan ecer</button>}
         </p>
       )}

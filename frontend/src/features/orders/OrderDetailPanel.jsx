@@ -289,7 +289,7 @@ export function OrderDetailPanel({
                 <p data-testid={`order-item-sample-status-${item.product_id}`} className="mt-0.5 text-[10px] text-[#9A5B00]">
                   {item.sample_cut_status === "cut"
                     ? <>Dipotong dari <b>{item.cut_roll_no}</b> → <b>{item.child_roll_no}</b>{item.off_suggestion_reason ? ` · bukan saran: ${item.off_suggestion_reason}` : ""}</>
-                    : <>Menunggu potong gudang · saran FIFO {item.suggested_roll_no || "—"} · harga {item.sample_price_source === "manual_sampel" ? "manual" : item.sample_price_source === "master_sampel" ? "master sampel" : "daftar"}</>}
+                    : <>Menunggu potong gudang · saran FIFO {item.suggested_roll_no || "—"} · harga {item.sample_price_source === "manual_sampel" ? "manual" : item.sample_price_source === "master_sampel" ? "master sample" : "daftar"}</>}
                 </p>
               )}
               {Number(item.backorder_qty) > 0 && (

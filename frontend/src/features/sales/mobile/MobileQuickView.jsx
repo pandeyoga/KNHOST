@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { X, Plus, Minus, ShoppingBag, Scissors } from "lucide-react";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
-import { unitOptions, convFactor } from "../../../utils/uom";
+import { convFactor } from "../../../utils/uom";
 import { pickPrice } from "../../../hooks/useEffectivePrices";
 import { variantLabel, mergedLineTotal } from "../../../utils/variants";
 import VariantAxisPicker from "../../../components/VariantAxisPicker";
 import { ProductGallery } from "../../../components/ProductGallery";
-import KNSelect from "../../../components/KNSelect";
+import RollLengthStrip from "../../../components/RollLengthStrip";
 import RollPicker from "../../../components/RollPicker";
 import RollReconcileSheet from "../../../components/RollReconcileSheet";
 import { blocksOrder, lifecycleLabel, notOrderableReason } from "../../../utils/lifecycle";
@@ -23,7 +23,7 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
   const [unit, setUnit] = useState("meter");
   const [mode, setMode] = useState("qty");
   const [showReconcile, setShowReconcile] = useState(false);
-  const [kind, setKind] = useState("buy");   // "buy" | "sample" — sampel = Pesanan Sampel (SOS-) terpisah
+  const [kind, setKind] = useState("buy");   // "buy" | "sample" — sample = Pesanan Sample (SOS-) terpisah
 
   useEffect(() => {
     if (!group || variants.length === 0) return;
@@ -110,16 +110,16 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
             </div>
           )}
 
-          {/* Beli biasa vs Pesanan Sampel (cermin desktop ProductQuickView) */}
+          {/* Beli biasa vs Pesanan Sample (cermin desktop ProductQuickView) */}
           {!blocked && (
             <div data-testid="mobile-quickview-kind" className={`mt-3 rounded-lg border p-2 ${isSample ? "border-[#F3D9A4] bg-[#FFF9EC]" : "border-[#EFF0F2] bg-[#FAFBFC]"}`}>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button" data-testid="mobile-quickview-kind-buy" onClick={() => chooseKind("buy")}
                   className={`flex items-center justify-center gap-1 rounded-md border px-2 py-2 text-[12px] font-semibold ${!isSample ? "border-[#0058CC] bg-[#EAF2FF] text-[#0058CC]" : "border-[#E5E5EA] bg-white text-[#3C3C43]"}`}><ShoppingBag size={13} /> Order biasa</button>
                 <button type="button" data-testid="mobile-quickview-kind-sample" onClick={() => chooseKind("sample")} disabled={!sampleable}
-                  className={`flex items-center justify-center gap-1 rounded-md border px-2 py-2 text-[12px] font-semibold disabled:opacity-40 ${isSample ? "border-[#9A5B00] bg-[#FFF3D6] text-[#9A5B00]" : "border-[#E5E5EA] bg-white text-[#3C3C43]"}`}><Scissors size={13} /> Order sampel</button>
+                  className={`flex items-center justify-center gap-1 rounded-md border px-2 py-2 text-[12px] font-semibold disabled:opacity-40 ${isSample ? "border-[#9A5B00] bg-[#FFF3D6] text-[#9A5B00]" : "border-[#E5E5EA] bg-white text-[#3C3C43]"}`}><Scissors size={13} /> Order sample</button>
               </div>
-              {isSample && limit && <p data-testid="mobile-quickview-sample-hint" className="mt-1.5 text-[10.5px] leading-snug text-[#9A5B00]">Pesanan Sampel (SOS-) terpisah dari order biasa — maks {limit.max_qty} {limit.base_unit} ({limit.label}). Gratis/berbayar dipilih saat checkout.</p>}
+              {isSample && limit && <p data-testid="mobile-quickview-sample-hint" className="mt-1.5 text-[10.5px] leading-snug text-[#9A5B00]">Pesanan Sample (SOS-) terpisah dari order biasa — maks {limit.max_qty} {limit.base_unit} ({limit.label}). Gratis/berbayar dipilih saat checkout.</p>}
             </div>
           )}
 
@@ -147,14 +147,15 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
                 </div>
                 <div className="min-w-0">
                   <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Satuan</label>
-                  <KNSelect data-testid="mobile-quickview-unit-select" className="field w-full" value={selected ? unit : ""} disabled={!selected || isSample} onValueChange={setUnit} options={selected ? unitOptions(selected) : []} />
+                  <div data-testid="mobile-quickview-unit-fixed" className="field flex items-center bg-[#F5F5F7] font-semibold text-[#3C3C43]">{baseUnit}</div>
                 </div>
               </div>
+              {!isSample && <RollLengthStrip productId={selected?.id} entityId={entityId} baseUnit={baseUnit} rollCount={rollCount} testId="mobile-quickview-roll-lengths" />}
               {isSample ? (
               <button data-testid="mobile-quickview-add-sample" disabled={avail <= 0 || blocked || !sampleable || !(qty > 0)}
                 className="primary-button mt-4 w-full justify-center py-3 text-[14px] !bg-[#9A5B00]"
                 onClick={() => { if (blocked || avail <= 0 || !sampleable) return; onAdd(selected, clampSampleQty(selected, qty), baseUnit, { is_sample: true }); onClose(); }}>
-                <Scissors size={16} /> {avail <= 0 ? "Stok Habis" : `Tambah Sampel (${qty} ${baseUnit})`}
+                <Scissors size={16} /> {avail <= 0 ? "Stok Habis" : `Tambah Sample (${qty} ${baseUnit})`}
               </button>
               ) : (
               <button data-testid="mobile-quickview-add" disabled={avail <= 0 || blocked}

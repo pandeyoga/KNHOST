@@ -6,7 +6,7 @@ import { notifySuccess } from "../../utils/feedback";
 import { formatQty } from "../../utils/formatters";
 import { printSampleLabel } from "../../utils/rollLabels";
 
-/** §3-C — panel gudang: potong sampel dari roll induk yang dipindai (RFID/QR/nomor roll), catat panjang aktual. */
+/** §3-C — panel gudang: potong sample dari roll induk yang dipindai (RFID/QR/nomor roll), catat panjang aktual. */
 export default function SampleCutPanel({ task, onCut }) {
   const [code, setCode] = useState("");
   const [length, setLength] = useState(String(task.quantity ?? ""));
@@ -21,7 +21,7 @@ export default function SampleCutPanel({ task, onCut }) {
         : { epc: code.trim(), actual_length: Number(length) || undefined, reason };
       const { data } = await axios.post(`${API}/outbound/tasks/${task.id}/cut-sample`, body);
       setDone(data.cut);
-      notifySuccess("Sampel dipotong", `${data.cut.cut_roll_no} → ${data.cut.child_roll_no} · ${formatQty(data.cut.length)} ${data.cut.unit}. Lanjut kirim.`);
+      notifySuccess("Sample dipotong", `${data.cut.cut_roll_no} → ${data.cut.child_roll_no} · ${formatQty(data.cut.length)} ${data.cut.unit}. Lanjut kirim.`);
       onCut?.(data.task);
     } catch (e) { setErr(apiErrorText(e, "Potong gagal.")); }
     finally { setBusy(false); }
@@ -36,7 +36,7 @@ export default function SampleCutPanel({ task, onCut }) {
   }
   return (
     <div data-testid={`sample-cut-panel-${task.id}`} className="rounded-lg border border-[#F3D9A4] bg-[#FFF9EC] p-2.5 space-y-2 text-[11px]">
-      <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[#9A5B00]"><Scissors size={11} /> Permintaan potong sampel</p>
+      <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[#9A5B00]"><Scissors size={11} /> Permintaan potong sample</p>
       <p className="text-[#3C3C43]">Untuk <b>{task.customer_name}</b> · diminta <b>{formatQty(task.quantity)} {task.unit}</b> · saran FIFO: <b data-testid={`sample-cut-suggested-${task.id}`}>{task.suggested_roll_no || "tidak ada"}</b>. Cari roll dengan handheld RFID, potong, lalu catat panjang aktual — sisa yard roll induk & stok diperbarui otomatis.</p>
       <div>
         <label className="block text-[10px] font-semibold text-[#6B6B73] mb-1">Panjang aktual dipotong ({task.unit})</label>

@@ -56,7 +56,7 @@ export default function CheckoutDrawer({
   const [spNotice, setSpNotice] = useState({});          // {productId: {message, applied}}
   const [spRefresh, setSpRefresh] = useState(0);         // trigger re-load harga khusus efektif
   const canApprovePrice = ["admin", "manager"].includes(user?.role);
-  // REVISI SAMPEL — keranjang satu jenis; mode sampel punya pilihan Gratis/Berbayar (wajib) & tanpa lot/backorder.
+  // REVISI SAMPEL — keranjang satu jenis; mode sample punya pilihan Gratis/Berbayar (wajib) & tanpa lot/backorder.
   const sampleMode = isSampleCart(cart);
   const mixedCart = cart.some((it) => it.is_sample) && cart.some((it) => !it.is_sample);
   const [sampleBilling, setSampleBilling] = useState("");   // "free" | "paid"
@@ -87,7 +87,7 @@ export default function CheckoutDrawer({
     refreshKey: spRefresh,
   });
 
-  // ATP / alokasi preview — debounced (baris sampel dikecualikan: dipenuhi lewat potong gudang).
+  // ATP / alokasi preview — debounced (baris sample dikecualikan: dipenuhi lewat potong gudang).
   const stockCart = useMemo(() => cart.filter((i) => !i.is_sample), [cart]);
   const sampleCount = cart.length - stockCart.length;
   useEffect(() => {
@@ -128,7 +128,7 @@ export default function CheckoutDrawer({
   }, [open, stockCart, entityFor, selectedCustomer]); // eslint-disable-line
 
   // Harga per baris SETELAH menghormati qty minimum aturan harga khusus.
-  // §3-C — baris sampel: harga manual sales → harga master sampel (quote) → harga daftar.
+  // §3-C — baris sample: harga manual sales → harga master sample (quote) → harga daftar.
   const linePrices = useMemo(() => {
     const out = {};
     cart.forEach((i) => {
@@ -178,9 +178,9 @@ export default function CheckoutDrawer({
   const updateQty = (id, q) => setCart(cart.map((it) => it.product.id === id ? { ...it, quantity: it.is_sample ? clampSampleQty(it.product, q, it.sample_kind) : (Number(q) || 0) } : it));
   const updateDiscount = (id, d) => setCart(cart.map((it) => it.product.id === id ? { ...it, discount_percent: Math.max(0, Math.min(100, Number(d) || 0)) } : it));
   const remove = (id) => setCart(cart.filter((it) => it.product.id !== id));
-  // §3-C — toggle per baris dilepas (REVISI SAMPEL: keranjang satu jenis; sampel dipilih di QuickView).
+  // §3-C — toggle per baris dilepas (REVISI SAMPEL: keranjang satu jenis; sample dipilih di QuickView).
   const updateSample = (id, patch) => setCart((cur) => cur.map((it) => it.product.id === id ? { ...it, ...patch } : it));
-  // Sampel ↔ ecer: ke ecer jumlah dipertahankan (dijual sebagai potongan berbayar biasa).
+  // Sample ↔ ecer: ke ecer jumlah dipertahankan (dijual sebagai potongan berbayar biasa).
   const toggleSample = (id) => setCart((cur) => cur.map((it) => {
     if (it.product.id !== id) return it;
     if (it.is_sample) return { ...it, is_sample: false, sample_kind: undefined, sample_price: null };
@@ -235,10 +235,10 @@ export default function CheckoutDrawer({
         {/* Header + stepper */}
         <div className="border-b border-[#EFF0F2] bg-white px-4 py-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-[15px] font-bold">{sampleMode ? <span data-testid="checkout-sample-title" className="flex items-center gap-2"><Scissors size={15} className="text-[#9A5B00]" /> Checkout Pesanan Sampel</span> : "Checkout"}</h2>
+            <h2 className="text-[15px] font-bold">{sampleMode ? <span data-testid="checkout-sample-title" className="flex items-center gap-2"><Scissors size={15} className="text-[#9A5B00]" /> Checkout Pesanan Sample</span> : "Checkout"}</h2>
             <button data-testid="checkout-close" className="icon-button" onClick={onClose} aria-label="Tutup"><X size={18} /></button>
           </div>
-          {sampleMode && <p data-testid="checkout-sample-banner" className="mt-1.5 rounded-md border border-[#F3D9A4] bg-[#FFF9EC] px-2.5 py-1.5 text-[11px] text-[#9A5B00]">Pesanan <b>SAMPEL</b> (nomor SOS-) — terpisah dari pesanan roll biasa. Diurus <b>Admin Sampel</b>, dipotong gudang dari roll (RFID), lalu dikirim / diambil.</p>}
+          {sampleMode && <p data-testid="checkout-sample-banner" className="mt-1.5 rounded-md border border-[#F3D9A4] bg-[#FFF9EC] px-2.5 py-1.5 text-[11px] text-[#9A5B00]">Pesanan <b>SAMPEL</b> (nomor SOS-) — terpisah dari pesanan roll biasa. Diurus <b>Admin Sample</b>, dipotong gudang dari roll (RFID), lalu dikirim / diambil.</p>}
           <div className="mt-3 flex items-center">
             {STEPS.map((s, i) => {
               const Icon = s.icon;
@@ -304,7 +304,7 @@ export default function CheckoutDrawer({
                                 <span data-testid={`step1-item-rollmode-${it.product.id}`} className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-[#EAF2FF] px-1.5 py-0.5 text-[9px] font-bold text-[#0058CC]"><Layers size={9} /> per roll · qty terkunci</span>
                               )}
                               {it.is_sample && (
-                                <span data-testid={`step1-item-sample-${it.product.id}`} className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-[#FFF3D6] px-1.5 py-0.5 text-[9px] font-bold text-[#9A5B00]"><Scissors size={9} /> sampel · potong gudang</span>
+                                <span data-testid={`step1-item-sample-${it.product.id}`} className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-[#FFF3D6] px-1.5 py-0.5 text-[9px] font-bold text-[#9A5B00]"><Scissors size={9} /> sample · potong gudang</span>
                               )}
                             </p>
                           </div>
@@ -356,20 +356,20 @@ export default function CheckoutDrawer({
               {cart.length === 0 && <p data-testid="checkout-empty" className="rounded-md border border-dashed border-[#E5E5EA] bg-white p-3 text-[12px] text-[#6B6B73]">Keranjang kosong.</p>}
               {sampleMode && cart.length > 0 && (
                 <div data-testid="sample-billing-choice" className="rounded-md border border-[#F3D9A4] bg-[#FFF9EC] p-3">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-[#9A5B00]">Skema sampel — wajib dipilih</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-[#9A5B00]">Skema sample — wajib dipilih</p>
                   <div className="mt-2 grid grid-cols-2 gap-2">
                     <button type="button" data-testid="sample-billing-free" onClick={() => setSampleBilling("free")}
                       className={`flex items-center justify-center gap-1.5 rounded-md border px-2 py-2 text-[12px] font-semibold ${sampleBilling === "free" ? "border-[#126E2C] bg-[#EAF7EE] text-[#126E2C]" : "border-[#E5E5EA] bg-white text-[#6B6B73]"}`}>
-                      <Gift size={14} /> Sampel Gratis
+                      <Gift size={14} /> Sample Gratis
                     </button>
                     <button type="button" data-testid="sample-billing-paid" onClick={() => setSampleBilling("paid")}
                       className={`flex items-center justify-center gap-1.5 rounded-md border px-2 py-2 text-[12px] font-semibold ${sampleBilling === "paid" ? "border-[#9A5B00] bg-[#FFF3D6] text-[#9A5B00]" : "border-[#E5E5EA] bg-white text-[#6B6B73]"}`}>
-                      <Banknote size={14} /> Sampel Berbayar
+                      <Banknote size={14} /> Sample Berbayar
                     </button>
                   </div>
                   <p data-testid="sample-billing-hint" className="mt-1.5 text-[10.5px] text-[#6B6B73]">
-                    {sampleBilling === "free" ? "Gratis → langsung masuk meja Admin Sampel → diteruskan ke gudang."
-                      : sampleBilling === "paid" ? "Berbayar → Finance/Admin Sampel menyetujui pembayaran dulu → baru masuk tim sampel."
+                    {sampleBilling === "free" ? "Gratis → langsung masuk meja Admin Sample → diteruskan ke gudang."
+                      : sampleBilling === "paid" ? "Berbayar → Finance/Admin Sample menyetujui pembayaran dulu → baru masuk tim sample."
                         : "Pilih gratis atau berbayar untuk melanjutkan."}
                   </p>
                 </div>
@@ -492,7 +492,7 @@ export default function CheckoutDrawer({
               </button>
             ) : (
               <button data-testid="checkout-submit" className={`primary-button ${sampleMode ? "!bg-[#9A5B00] hover:!bg-[#7A4700]" : ""}`} disabled={!canWrite || mixedCart || !selectedCustomer || !selectedAddress || cart.length === 0 || lotPlan.loading || creditBlocked || pickupInvalid || deliveryInvalid || teamInvalid || billingInvalid || !!priceError} title={priceError ? "Harga pelanggan gagal dimuat — muat ulang dulu." : writeBlockHint} onClick={handleSubmitClick}>
-                <PackageCheck size={14} /> {!canWrite ? "Pilih Badan Usaha Dulu" : mixedCart ? "Pisahkan Sampel & Ecer" : billingInvalid ? "Pilih Gratis/Berbayar" : creditBlocked ? "Terblokir Kredit" : pickupInvalid ? "Pilih Tanggal Ambil" : teamInvalid ? "Perbaiki Tim Sales" : deliveryInvalid ? "Tanggal Kirim Tak Valid" : requiresLotConfirmation ? "Tinjau Lot & Buat" : sampleMode ? `Buat Pesanan Sampel (${sampleBilling === "free" ? "Gratis" : "Berbayar"})` : "Buat Sales Order"}
+                <PackageCheck size={14} /> {!canWrite ? "Pilih Badan Usaha Dulu" : mixedCart ? "Pisahkan Sample & Ecer" : billingInvalid ? "Pilih Gratis/Berbayar" : creditBlocked ? "Terblokir Kredit" : pickupInvalid ? "Pilih Tanggal Ambil" : teamInvalid ? "Perbaiki Tim Sales" : deliveryInvalid ? "Tanggal Kirim Tak Valid" : requiresLotConfirmation ? "Tinjau Lot & Buat" : sampleMode ? `Buat Pesanan Sample (${sampleBilling === "free" ? "Gratis" : "Berbayar"})` : "Buat Sales Order"}
               </button>
             )}
           </div>

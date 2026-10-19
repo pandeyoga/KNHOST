@@ -251,22 +251,22 @@ export function useAppActions(state) {
     if (!isOrderable(product) && String(rndEnforcementRef.current) === "warn") {
       setNotice(`Perhatian: ${notOrderableReason(product)}`);
     }
-    // REVISI SAMPEL — keranjang SATU jenis: sampel tidak boleh bercampur dengan roll/yard biasa.
+    // REVISI SAMPEL — keranjang SATU jenis: sample tidak boleh bercampur dengan roll/yard biasa.
     const wantSample = !!(extra && extra.is_sample);
     const cartNow = cart || [];
     if (cartNow.length > 0 && cartNow.every((i) => !!i.is_sample) !== wantSample) {
       setNotice(wantSample
-        ? "Keranjang sedang berisi ORDER BIASA (PO). Sampel harus dibuat sebagai Pesanan Sampel terpisah — selesaikan/kosongkan keranjang dulu."
-        : "Keranjang sedang berisi ORDER SAMPEL. Pembelian roll/yard biasa tidak boleh digabung — selesaikan/kosongkan keranjang sampel dulu.");
+        ? "Keranjang sedang berisi ORDER BIASA (PO). Sample harus dibuat sebagai Pesanan Sample terpisah — selesaikan/kosongkan keranjang dulu."
+        : "Keranjang sedang berisi ORDER SAMPEL. Pembelian roll/yard biasa tidak boleh digabung — selesaikan/kosongkan keranjang sample dulu.");
       return;
     }
-    // §3-C — "Jual sebagai sampel": satu baris per produk, panjang potongan, harga master sampel/manual.
+    // §3-C — "Jual sebagai sample": satu baris per produk, panjang potongan, harga master sample/manual.
     if (wantSample) {
       const lim = sampleLimit(product);
       const len = clampSampleQty(product, Number(qty) > 0 ? Number(qty) : lim.max_qty) || lim.max_qty;
       setCart((current) => [...current.filter((item) => item.product.id !== product.id),
         { product, quantity: len, unit: product.base_unit, is_sample: true, sample_price: null }]);
-      setNotice(`${product.name} — sampel ${len} ${product.base_unit} masuk keranjang sampel (maks ${lim.max_qty} ${lim.unit} untuk ${lim.label}).`);
+      setNotice(`${product.name} — sample ${len} ${product.base_unit} masuk keranjang sample (maks ${lim.max_qty} ${lim.unit} untuk ${lim.label}).`);
       return;
     }
     // SALES REVAMP V2 — Mode "Beli per Roll": pilih roll spesifik (utuh), qty = Σ panjang roll.
@@ -349,7 +349,7 @@ export function useAppActions(state) {
         confirm_makloon_override: Boolean(extra.confirm_makloon_override),
         needs_tax_invoice: Boolean(extra.needs_tax_invoice),
         tax_override: extra.tax_override || "",
-        // REVISI SAMPEL — jenis pesanan & skema bayar sampel (SOS-, meja Admin Sampel)
+        // REVISI SAMPEL — jenis pesanan & skema bayar sample (SOS-, meja Admin Sample)
         order_type: extra.order_type || (cart.length > 0 && cart.every((i) => i.is_sample) ? "sample" : "regular"),
         sample_billing: extra.sample_billing || "",
         items: cart.map((item) => {
@@ -359,7 +359,7 @@ export function useAppActions(state) {
             discount_percent: 0,
             price_approval_id: sp && sp.has_special ? (sp.price_approval_id || "") : "",
           };
-          // §3-C — baris sampel: harga master sampel / manual, dipenuhi lewat permintaan potong gudang.
+          // §3-C — baris sample: harga master sample / manual, dipenuhi lewat permintaan potong gudang.
           if (item.is_sample) {
             return { ...base, unit: item.product.base_unit || item.unit, price_approval_id: "", is_sample: true,
               sample_kind: item.sample_kind || "standard",
@@ -385,7 +385,7 @@ export function useAppActions(state) {
       const tail = o.ppn_amount > 0 ? ` · PPN ${formatQty(o.ppn_amount)}` : "";
       const isSmp = o.order_type === "sample";
       setNotice(isSmp
-        ? `${o.number} (Pesanan Sampel ${o.sample_billing === "free" ? "GRATIS" : "BERBAYAR"}) dibuat — ${o.sample_billing === "paid" ? "menunggu persetujuan pembayaran Finance/Admin Sampel." : "langsung masuk meja Admin Sampel."}`
+        ? `${o.number} (Pesanan Sample ${o.sample_billing === "free" ? "GRATIS" : "BERBAYAR"}) dibuat — ${o.sample_billing === "paid" ? "menunggu persetujuan pembayaran Finance/Admin Sample." : "langsung masuk meja Admin Sample."}`
         : `${o.number} dibuat (${o.status.replaceAll("_", " ")})${tail}. Grand total Rp ${formatQty(o.grand_total)}.`);
       setCart([]);
       setActiveView(isSmp ? "sample-orders" : "orders");

@@ -1,17 +1,17 @@
-// REVISI SAMPEL — batas sampel per baris (cermin backend `sample_sale_service.SAMPLE_LIMITS`):
-// woven maks 5 yard · knitting maks 2 kg. Default qty saat pilih "Order Sampel" = maksimum.
+// REVISI SAMPEL — batas sample per baris (cermin backend `sample_sale_service.SAMPLE_LIMITS`):
+// woven maks 5 yard · knitting maks 2 kg. Default qty saat pilih "Order Sample" = maksimum.
 export const SAMPLE_LIMITS = {
   woven: { max_qty: 5, unit: "yard", label: "woven" },
   knit: { max_qty: 2, unit: "kg", label: "knitting" },
 };
 
-// L06 LN-060 — batas MAKSIMAL per jenis sampel (cermin backend SAMPLE_KINDS); bukan qty wajib.
+// L06 LN-060 — batas MAKSIMAL per jenis sample (cermin backend SAMPLE_KINDS); bukan qty wajib.
 export const SAMPLE_KINDS = {
   standard: { label: "Standar", limits: { woven: 5, knit: 2 } },
   hanger: { label: "Hanger", limits: { woven: 0.5, knit: 2 } },
 };
 
-// Benang (tahap yarn) bukan kain — tidak bisa dipotong jadi sampel (cermin backend SAMPLE_NOT_ALLOWED).
+// Benang (tahap yarn) bukan kain — tidak bisa dipotong jadi sample (cermin backend SAMPLE_NOT_ALLOWED).
 export const SAMPLE_BLOCKED_STAGES = ["yarn"];
 export const canSample = (product) => !SAMPLE_BLOCKED_STAGES.includes(String(product?.stage || "").toLowerCase());
 

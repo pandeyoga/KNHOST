@@ -29,7 +29,7 @@ function TaskList({ type, focusTaskId, onFocused }) {
   }, [focusTaskId, rows]); // eslint-disable-line
   if (err) return <div className="notice-bar danger m-4" data-testid="mw-task-error">{String(err)}</div>;
   if (rows === null) return <div className="p-6 text-center text-sm"><Loader2 className="animate-spin inline" size={16} /> Memuat…</div>;
-  const label = { inbound: "barang masuk", outbound: "barang keluar", sample_cut: "potong sampel" }[type] || type;
+  const label = { inbound: "barang masuk", outbound: "barang keluar", sample_cut: "potong sample" }[type] || type;
   if (!rows.length) return <div className="p-8 text-center text-sm text-[#6E6E73]" data-testid="mw-task-empty">Tidak ada tugas {label} yang terbuka.</div>;
   const Actions = { inbound: InboundActions, outbound: OutboundActions, sample_cut: SampleCutActions }[type];
   return (
@@ -185,7 +185,7 @@ export default function MobileWarehouseApp(props) {
   const tabs = [
     { id: "inbound", label: "Masuk", icon: PackageCheck, render: () => <><GrnEntryCard onOpen={() => props.onNavigate?.("wms-operations", "goods-receipts")} />{list("inbound")}</> },
     { id: "outbound", label: "Keluar", icon: ClipboardList, render: () => list("outbound") },
-    { id: "sample", label: "Sampel", icon: Scissors, render: () => list("sample_cut") },
+    { id: "sample", label: "Sample", icon: Scissors, render: () => list("sample_cut") },
     { id: "scan", label: "Pindai", icon: ScanLine, render: ({ setTab }) => <ScanPanel onOpenTask={(tab, taskId) => { setFocus({ type: { inbound: "inbound", outbound: "outbound", sample: "sample_cut" }[tab], taskId }); setTab(tab); }} /> },
     { id: "untagged", label: "Belum Tag", icon: Tags, render: () => <UntaggedPanel /> },
   ];

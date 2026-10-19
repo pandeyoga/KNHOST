@@ -47,8 +47,8 @@ def hidden_for(perms: Dict[str, Any]) -> Set[str]:
     if "*" in fv:
         fv = set(FIELDS)
     hidden = {f for f in FIELDS if f not in fv}
-    if "commercial" in set(perms.get("sales_pov") or []):
-        hidden.add("grade")
+    # Grade untuk sales mengikuti konfigurasi Manajemen Peran (field_visibility) — tidak dipaksa
+    # tersembunyi oleh POV komersial (sebagian sales memang diberi hak lihat grade).
     return hidden
 
 
@@ -76,7 +76,7 @@ async def hidden_for_user(user: Dict[str, Any]) -> Set[str]:
 
 # Kode SKU KN: ARTIKEL(9)-ASAL(1)-WARNA(4)-GRADE(2)-CUSTOMER(2)-LOT(2) — segmen yang dirahasiakan disamarkan.
 _SKU_RE = re.compile(r"\b([A-Z0-9]{9})-([A-Z])-([A-Z0-9]{4})-([A-Z0-9]{2})-([A-Z0-9]{2})-([A-Z0-9]{2})\b")
-_NAME_KEYS = ("name", "product_name", "variant_name", "display_name", "label", "title", "item_name", "description")
+_NAME_KEYS = ("name", "product_name", "variant_name", "variant", "display_name", "label", "title", "item_name", "description")
 
 
 def _mask_sku(text: str, hidden: Set[str]) -> str:
@@ -127,6 +127,9 @@ def _strip_name(name: str, grades: Set[str], hidden: Set[str]) -> str:
     if m:
         lot, name = m.group(0), name[: m.start()]
     for grade in sorted(grades, key=len, reverse=True):
+        if "grade" in hidden and name.endswith(" | " + grade):   # varian impor "ARTIKEL | IMPOR | 10 | A"
+            name = name[: -len(grade) - 3]
+            break
         if "grade" in hidden and name.endswith(" " + grade):
             name = name[: -len(grade) - 1]
             break

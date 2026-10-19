@@ -110,10 +110,10 @@ export const ROLE_REGISTRY = {
     order: 10,
     newIn: "R-9",
   },
-  // REVISI SAMPEL — peran ke-11: Admin Sampel (pesanan sampel SOS-). Cermin `backend/role_registry.py`.
+  // REVISI SAMPEL — peran ke-11: Admin Sample (pesanan sample SOS-). Cermin `backend/role_registry.py`.
   sample_admin: {
-    label: "Admin Sampel",
-    longLabel: "Admin Sampel (alur pesanan sampel)",
+    label: "Admin Sample",
+    longLabel: "Admin Sample (alur pesanan sample)",
     rank: 2,
     crossEntity: false,
     scopeHint: "1 badan usaha (bisa ditugaskan ke beberapa)",
@@ -253,7 +253,7 @@ export const ROLE_NAV = {
       "document-center", "doc-trace",
       // Penjualan: hanya MELIHAT pesanan & retur (untuk menagih & mencocokkan)
       "penjualan", "sales-orders", "orders", "returns",
-      // REVISI SAMPEL — menyetujui pembayaran sampel berbayar dari daftar Pesanan Sampel
+      // REVISI SAMPEL — menyetujui pembayaran sample berbayar dari daftar Pesanan Sample
       "sample-orders",
       "customers-crm",
       // Keuangan: uang masuk, piutang, denda, kas, pajak keluaran
@@ -302,7 +302,7 @@ export const ROLE_NAV = {
     ],
     remove: [],
   },
-  // REVISI SAMPEL — Admin Sampel: meja sampel + daftar pesanan sampel + pantau gudang/logistik. Tidak mewarisi siapa pun.
+  // REVISI SAMPEL — Admin Sample: meja sample + daftar pesanan sample + pantau gudang/logistik. Tidak mewarisi siapa pun.
   sample_admin: {
     inherit: null,
     add: [
@@ -417,4 +417,10 @@ export function setPreviewRoleNav(rule) {
 export function can(perms, module, action) {
   const actions = (perms || {})[module] || [];
   return actions.includes(action) || actions.includes("*");
+}
+
+/** Hak lihat grade dari Manajemen Peran (field_visibility). Data grade juga disamarkan server bila tidak berhak. */
+export function canSeeGrade(user) {
+  const fv = user?.permissions?.field_visibility || [];
+  return fv.includes("*") || fv.includes("grade");
 }

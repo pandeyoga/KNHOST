@@ -228,7 +228,7 @@ def g6_backlog_satu_pintu(cl):
     print(f"\n{B}▶ G6 — `GET /approvals/backlog`: satu sumber untuk beranda & Pusat Persetujuan{X}")
     # Sesi 4 (2026-09): finance TIDAK punya `order.approve` (SoD: bukan pemutus pesanan).
     # Sesi audit 2026-09-21: finance DIBERI `approval.view` — papan antrean memuat selisih
-    # bayar & pembayaran sampel yang memang keputusannya; hanya melihat, tidak memutuskan.
+    # bayar & pembayaran sample yang memang keputusannya; hanya melihat, tidak memutuskan.
     boleh = ("admin", "manager", "sales_admin", "finance")   # `approval.view`/`order.approve`
     tolak = ("sales", "warehouse")                # bukan pemutus/pengejar approval
     for role in boleh:

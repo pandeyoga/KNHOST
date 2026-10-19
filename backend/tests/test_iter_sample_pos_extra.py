@@ -1,12 +1,12 @@
-"""Extra coverage untuk fitur Jual Sampel POS (iterasi tester).
+"""Extra coverage untuk fitur Jual Sample POS (iterasi tester).
 
 Cakupan tambahan di luar test_sample_pos_flow.py:
 - GET /sample-quote punya `source` & `suggested_roll`
 - /sample-requests LAMA harus 404 (dihapus)
-- Mixed cart (roll biasa + sampel) -> SO 200 & has_sample true
+- Mixed cart (roll biasa + sample) -> SO 200 & has_sample true
 - Tanpa sample_price -> harga ikut quote (source harga_daftar / master_sampel)
 - cut-sample: TAG_UNKNOWN & REASON_REQUIRED
-- Master harga sampel: GET /sample-prices, PUT lalu quote -> source master_sampel
+- Master harga sample: GET /sample-prices, PUT lalu quote -> source master_sampel
 """
 import os
 import pytest
@@ -78,7 +78,7 @@ def test_mixed_cart_and_price_from_quote(ctx):
     regular_line = next(it for it in so["items"] if not it.get("is_sample"))
     assert sample_line["fulfillment_mode"] == "sample_cut"
     assert regular_line.get("fulfillment_mode") != "sample_cut"
-    # Harga sampel ikut quote (source non-manual)
+    # Harga sample ikut quote (source non-manual)
     assert sample_line["price_source"] in ("master_sampel", "harga_daftar", "harga_daftar_default")
     assert abs(float(sample_line["price"]) - float(q["price_per_unit"])) < 0.01
 
@@ -86,7 +86,7 @@ def test_mixed_cart_and_price_from_quote(ctx):
 # --- cut-sample error cases ---
 def test_cut_sample_tag_unknown_and_reason_required(ctx):
     prod, cust, roll = ctx["prod"], ctx["cust"], ctx["roll"]
-    # Buat SO sampel & bawa ke confirmed
+    # Buat SO sample & bawa ke confirmed
     mgr = _login("manager@kainnusantara.id")
     r = requests.post(f"{BASE}/sales-orders", headers=ctx["admin"], json={
         "customer_id": cust["id"], "shipping_address_id": cust["addresses"][0]["id"], "entity_id": "ent_ksc",
@@ -127,7 +127,7 @@ def test_cut_sample_tag_unknown_and_reason_required(ctx):
         assert r.json().get("detail", {}).get("code") == "REASON_REQUIRED"
 
 
-# --- Master harga sampel ---
+# --- Master harga sample ---
 def test_sample_prices_admin_and_master_source(ctx):
     r = requests.get(f"{BASE}/sample-prices", headers=ctx["admin"], timeout=15)
     assert r.status_code == 200, r.text

@@ -125,7 +125,7 @@ export default function SampleFormModal({ selectedEntity, prefill, lockType = ""
   };
 
   return (
-    <FormModal open onClose={onClose} title={lockType ? `Sampel ${lockLabel} Baru` : "Permintaan Sample Baru"}
+    <FormModal open onClose={onClose} title={lockType ? `Sample ${lockLabel} Baru` : "Permintaan Sample Baru"}
       subtitle="Setiap permintaan lahir bersama SPESIFIKASI produk target-nya — saat ACC, spesifikasi ikut ACC dan SKU lahir di master."
       icon={Beaker} size="lg" testId="sample-form-modal"
       onSubmit={submit} submitLabel={isExisting ? "Simpan Uji Tambahan" : "Simpan Permintaan + Spesifikasi"} busy={saving} error={err}

@@ -1,6 +1,6 @@
-"""§3-C Jual Sampel — master harga sampel per induk, quote untuk POS, dan aksi potong gudang.
+"""§3-C Jual Sample — master harga sample per induk, quote untuk POS, dan aksi potong gudang.
 
-Permintaan sampel TIDAK lagi dokumen terpisah: ia baris SO ber-`is_sample` (lihat
+Permintaan sample TIDAK lagi dokumen terpisah: ia baris SO ber-`is_sample` (lihat
 `services/sample_sale_service.py`). Router ini hanya menyisakan master harga, quote,
 dan aksi potong atas tugas outbound bersubtipe `sample_cut`.
 """
@@ -54,7 +54,7 @@ async def put_sample_price(template_id: str, payload: SamplePriceIn, request: Re
 
 @router.get("/sample-quote")
 async def sample_quote(request: Request, product_id: str, length: float) -> Dict[str, Any]:
-    """POS: harga sampel per satuan + saran roll FIFO untuk baris 'Jual sebagai sampel'."""
+    """POS: harga sample per satuan + saran roll FIFO untuk baris 'Jual sebagai sample'."""
     await require_permission(request, "order", "view")
     ctx = await entity_ctx(request)
     product = await db.products.find_one({"id": product_id}, {"_id": 0})

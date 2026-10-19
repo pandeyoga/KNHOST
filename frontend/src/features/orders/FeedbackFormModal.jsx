@@ -74,7 +74,7 @@ export default function FeedbackFormModal({ order, meta, row, onClose, onDone })
               <div className="grid gap-1.5">
                 <label className="text-[11px] font-bold uppercase text-[#6B6B73]">Judul singkat *</label>
                 <input className="form-input" value={f.title} onChange={(e) => set("title", e.target.value)}
-                  data-testid="feedback-title-input" placeholder="Mis. warna roll ke-2 lebih gelap dari sampel" />
+                  data-testid="feedback-title-input" placeholder="Mis. warna roll ke-2 lebih gelap dari sample" />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="grid gap-1.5">

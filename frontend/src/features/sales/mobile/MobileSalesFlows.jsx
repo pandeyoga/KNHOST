@@ -231,10 +231,10 @@ function OdCustomerDecision({ od, onChanged }) {
   const history = od.customer_decisions || [];
   return (
     <div className="m-card p-3" data-testid="m-od-customer-decision">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Persetujuan pelanggan atas sampel</p>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Persetujuan pelanggan atas sample</p>
       {od.customer_decision === "acc" && <p className="mt-1 text-[12px] font-semibold text-[#1B7F4B]" data-testid="m-od-customer-acc">Pelanggan sudah ACC · {od.customer_decision_at || ""}</p>}
-      {!review.ready && <p className="mt-1 text-[11.5px] m-muted" data-testid="m-od-customer-not-ready">Aktif setelah R&D menutup sampling (pemenang sampel / desain ACC).</p>}
-      {review.ready && review.sample && <p className="mt-1 text-[11.5px]">Dasar: sampel <b>{review.sample.number}</b></p>}
+      {!review.ready && <p className="mt-1 text-[11.5px] m-muted" data-testid="m-od-customer-not-ready">Aktif setelah R&D menutup sampling (pemenang sample / desain ACC).</p>}
+      {review.ready && review.sample && <p className="mt-1 text-[11.5px]">Dasar: sample <b>{review.sample.number}</b></p>}
       {canDecide && (
         <>
           <div className="mt-2 grid grid-cols-3 gap-1.5">

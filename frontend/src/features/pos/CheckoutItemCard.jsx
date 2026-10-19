@@ -55,19 +55,19 @@ export function CheckoutItemCard({
         </div>
         <div className="flex items-center gap-1">
           {isSample && (
-            <span data-testid={`sample-badge-${pid}`} className="inline-flex items-center gap-1 rounded-full border border-[#9A5B00] bg-[#FFF3D6] px-2 py-0.5 text-[9.5px] font-bold text-[#9A5B00]"><Scissors size={10} /> Sampel · maks {lim.max_qty} {lim.unit}</span>
+            <span data-testid={`sample-badge-${pid}`} className="inline-flex items-center gap-1 rounded-full border border-[#9A5B00] bg-[#FFF3D6] px-2 py-0.5 text-[9.5px] font-bold text-[#9A5B00]"><Scissors size={10} /> Sample · maks {lim.max_qty} {lim.unit}</span>
           )}
           {onToggleSample && (isSample || canSample(item.product)) && (
-            <button data-testid={`toggle-sample-${pid}`} onClick={() => onToggleSample?.(pid)} title={isSample ? "Kembalikan ke penjualan roll biasa" : "Jual sebagai sampel (permintaan potong ke gudang)"}
+            <button data-testid={`toggle-sample-${pid}`} onClick={() => onToggleSample?.(pid)} title={isSample ? "Kembalikan ke penjualan roll biasa" : "Jual sebagai sample (permintaan potong ke gudang)"}
               className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9.5px] font-bold ${isSample ? "border-[#9A5B00] bg-[#FFF3D6] text-[#9A5B00]" : "border-[#E5E5EA] text-[#6B6B73] hover:bg-[#F5F5F7]"}`}>
-              <Scissors size={10} /> {isSample ? "Sampel" : "Jual sbg sampel"}
+              <Scissors size={10} /> {isSample ? "Sample" : "Jual sbg sample"}
             </button>
           )}
           <button data-testid={`remove-cart-item-button-${pid}`} className="icon-button" onClick={() => onRemove(pid)} aria-label="Hapus"><XCircle size={14} /></button>
         </div>
       </div>
       <div className="mt-2">
-        <label className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">{isSample ? `Panjang sampel (${baseUnit}) · maks ${lim.max_qty}` : `Qty (${baseUnit})`}</label>
+        <label className="text-[9px] font-bold uppercase tracking-wide text-[#8E8E93]">{isSample ? `Panjang sample (${baseUnit}) · maks ${lim.max_qty}` : `Qty (${baseUnit})`}</label>
         <input data-testid={`cart-item-qty-input-${pid}`} className="field" type="number" min={isSample ? "0.1" : "1"} step={isSample ? "0.5" : "1"} max={isSample ? lim.max_qty : undefined} value={item.quantity} onChange={(e) => onUpdateQty(pid, e.target.value)} />
         <p data-testid={`cart-item-rolls-${pid}`} className="mt-1 text-[10px] text-[#9A9BA3]">{rollCount} roll tersedia · {isSample ? `dipotong gudang dari roll (RFID) · kain ${lim.label} maks ${lim.max_qty} ${lim.unit}` : `dijual per ${baseUnit}`}</p>
       </div>

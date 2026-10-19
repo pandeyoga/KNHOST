@@ -1,7 +1,7 @@
 /**
  * Layar HP tambahan untuk sales & Admin Sales:
  *  - MobilePriceStatus  : status pengajuan harga khusus saya (menunggu/disetujui/ditolak).
- *  - MobileSampleOrders : Pesanan Sampel (SOS-) + rinciannya (dulu hanya tampilan penuh).
+ *  - MobileSampleOrders : Pesanan Sample (SOS-) + rinciannya (dulu hanya tampilan penuh).
  *  - MobileApprovalWatch: Admin Sales memantau persetujuan yang nyangkut (hanya-lihat, E8.1b).
  */
 import { useEffect, useState } from "react";
@@ -67,24 +67,24 @@ export function MobileSampleOrders({ canCancel = false }) {
   const [open, setOpen] = useState(null);
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
-  const load = () => axios.get(`${API}/sample-orders`).then((r) => setRows(list(r.data))).catch((e) => { setRows([]); setErr(errText(e, "Gagal memuat pesanan sampel.")); });
+  const load = () => axios.get(`${API}/sample-orders`).then((r) => setRows(list(r.data))).catch((e) => { setRows([]); setErr(errText(e, "Gagal memuat pesanan sample.")); });
   useEffect(() => { load(); }, []);
   const cancel = async (o) => {
     const note = await askReason({ title: `Batalkan ${o.number}?`, danger: true });
     if (!note) return;
     try { await axios.post(`${API}/sample-orders/${o.id}/cancel`, { note }); setMsg(`${o.number} dibatalkan.`); setErr(""); load(); }
-    catch (e) { setErr(errText(e, "Gagal membatalkan sampel.")); }
+    catch (e) { setErr(errText(e, "Gagal membatalkan sample.")); }
   };
   const shown = (rows || []).filter((o) => !status || o.status === status);
   return (
     <div className="space-y-2" data-testid="m-sample-orders">
-      <p className="rounded-xl border border-[#EFF0F2] bg-white px-3 py-2 text-[11px] m-muted">Buat pesanan sampel dari <b>Katalog</b>: buka produk → pilih <b>Order sampel</b> → checkout (gratis / berbayar).</p>
+      <p className="rounded-xl border border-[#EFF0F2] bg-white px-3 py-2 text-[11px] m-muted">Buat pesanan sample dari <b>Katalog</b>: buka produk → pilih <b>Order sample</b> → checkout (gratis / berbayar).</p>
       <Chips items={SAMPLE_FILTERS} value={status} onChange={setStatus} prefix="m-sample-filter" />
       {err && <div className="notice-bar danger text-xs" data-testid="m-sample-error">{err}</div>}
       {msg && <div className="notice-bar success text-xs" data-testid="m-sample-msg">{msg}</div>}
       {rows === null && <p className="text-xs m-muted">Memuat…</p>}
       {rows && shown.length === 0 && (
-        <div className="flex flex-col items-center gap-2 py-10 text-center" data-testid="m-sample-empty"><Scissors size={28} className="text-[#C7C7CC]" /><p className="text-xs m-muted">Belum ada pesanan sampel.</p></div>
+        <div className="flex flex-col items-center gap-2 py-10 text-center" data-testid="m-sample-empty"><Scissors size={28} className="text-[#C7C7CC]" /><p className="text-xs m-muted">Belum ada pesanan sample.</p></div>
       )}
       {shown.map((o) => {
         const isOpen = open === o.id;
@@ -107,9 +107,9 @@ export function MobileSampleOrders({ canCancel = false }) {
                 {(o.items || []).map((it, i) => (
                   <div key={i} className="flex justify-between py-0.5"><span className="min-w-0 flex-1 truncate">{it.product_name}</span><span className="tabular-nums">{formatQty(it.quantity)} {it.unit}</span></div>
                 ))}
-                <p className="mt-1 text-[10.5px] m-muted">Sampel dipotong gudang setelah dikonfirmasi Admin Sampel{o.sample_billing === "paid" ? " (berbayar: setelah pembayaran disetujui Finance)" : ""}.</p>
+                <p className="mt-1 text-[10.5px] m-muted">Sample dipotong gudang setelah dikonfirmasi Admin Sample{o.sample_billing === "paid" ? " (berbayar: setelah pembayaran disetujui Finance)" : ""}.</p>
                 {canCancel && ["waiting_approval", "approved"].includes(o.status) && (
-                  <button className="secondary-button mt-2 w-full py-2 text-[12px]" onClick={() => cancel(o)} data-testid={`m-sample-cancel-${o.id}`}>Batalkan sampel</button>
+                  <button className="secondary-button mt-2 w-full py-2 text-[12px]" onClick={() => cancel(o)} data-testid={`m-sample-cancel-${o.id}`}>Batalkan sample</button>
                 )}
               </div>
             )}

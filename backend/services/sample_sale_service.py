@@ -1,6 +1,6 @@
-"""§3-C Jual Sampel — SATU alur dengan pesanan roll (keputusan pemilik 2026-09-16).
+"""§3-C Jual Sample — SATU alur dengan pesanan roll (keputusan pemilik 2026-09-16).
 
-Baris SO ber-`is_sample=true`: harga dari master harga sampel per INDUK produk (fallback
+Baris SO ber-`is_sample=true`: harga dari master harga sample per INDUK produk (fallback
 harga daftar) atau harga manual sales; TIDAK direservasi FEFO saat checkout — gudang
 menerima tugas outbound bersubtipe `sample_cut` (permintaan potong) yang dipenuhi dengan
 memindai roll induk (RFID/QR), memotong, dan mencatat panjang aktual. Potongan lahir
@@ -21,11 +21,11 @@ from services.roll_service import insert_child_roll, rebuild_balance
 
 REMNANT_THRESHOLD = 2.0   # sisa induk < 2 satuan → ditandai is_remnant
 
-# REVISI SAMPEL (klien 17 Sep): woven maks 5 yard · knitting maks 2 kg per baris sampel.
-SAMPLE_BLOCKED_STAGES = ("yarn",)   # benang bukan kain → tidak dipotong jadi sampel
+# REVISI SAMPEL (klien 17 Sep): woven maks 5 yard · knitting maks 2 kg per baris sample.
+SAMPLE_BLOCKED_STAGES = ("yarn",)   # benang bukan kain → tidak dipotong jadi sample
 SAMPLE_LIMITS = {"woven": {"max_qty": 5.0, "unit": "yard", "label": "woven"},
                  "knit": {"max_qty": 2.0, "unit": "kg", "label": "knitting"}}
-# L06 LN-060 — tiga jenis sampel. Batas = MAKSIMAL (bukan qty wajib); catalogue punya komposisi sendiri.
+# L06 LN-060 — tiga jenis sample. Batas = MAKSIMAL (bukan qty wajib); catalogue punya komposisi sendiri.
 SAMPLE_KINDS = {
     "standard": {"label": "Standar", "limits": {"woven": 5.0, "knit": 2.0}},
     "hanger": {"label": "Hanger", "limits": {"woven": 0.5, "knit": 2.0}},
@@ -40,7 +40,7 @@ SAMPLE_PAYMENT_APPROVERS = ("finance", "sample_admin", "manager", "admin")
 def norm_kind(kind: Optional[str]) -> str:
     k = (kind or "standard").strip().lower()
     if k not in SAMPLE_KINDS:
-        raise HTTPException(status_code=400, detail=f"Jenis sampel '{kind}' tidak dikenal (standard/hanger/catalogue).")
+        raise HTTPException(status_code=400, detail=f"Jenis sample '{kind}' tidak dikenal (standard/hanger/catalogue).")
     return k
 
 
@@ -56,13 +56,13 @@ def sample_limit_for(product: Dict[str, Any], kind: str = "standard") -> Dict[st
 def assert_sample_qty(product: Dict[str, Any], base_qty: float, kind: str = "standard") -> None:
     lim = sample_limit_for(product, kind)
     if base_qty <= 0:
-        raise HTTPException(status_code=400, detail=f"Sampel {product.get('name')}: panjang/berat harus > 0.")
+        raise HTTPException(status_code=400, detail=f"Sample {product.get('name')}: panjang/berat harus > 0.")
     if kind == "catalogue":
         return   # komposisi catalogue divalidasi build_catalogue (1 yd/warna + 2 yd soft)
     if base_qty > lim["max_qty"] + 0.0001:
         raise HTTPException(status_code=400, detail={
             "code": "SAMPLE_LIMIT", "product_id": product.get("id"), "max_qty": lim["max_qty"], "kind": kind,
-            "message": (f"Sampel {lim['kind_label'].lower()} {product.get('name')}: maks {lim['max_qty']:g} {lim['limit_unit']} "
+            "message": (f"Sample {lim['kind_label'].lower()} {product.get('name')}: maks {lim['max_qty']:g} {lim['limit_unit']} "
                         f"untuk kain {lim['fabric_label']} (diminta {base_qty:g} {lim['base_unit']}). "
                         "Lebih dari itu jual sebagai ECER berbayar (pesanan biasa).")})
 
@@ -88,7 +88,7 @@ def assert_location_kind(wh: Optional[Dict[str, Any]], kind: str) -> None:
     if kind not in warehouse_caps(wh):
         raise HTTPException(status_code=400, detail={
             "code": "LOCATION_KIND_NOT_ALLOWED", "warehouse_id": (wh or {}).get("id"),
-            "message": f"Lokasi {(wh or {}).get('name', '?')} tidak diizinkan memotong sampel {SAMPLE_KINDS[kind]['label'].lower()}."})
+            "message": f"Lokasi {(wh or {}).get('name', '?')} tidak diizinkan memotong sample {SAMPLE_KINDS[kind]['label'].lower()}."})
 
 
 # ── L06 LN-060 — catalogue terurai: 1 yd per warna tersedia + 2 yd satu warna soft ──
@@ -124,7 +124,7 @@ async def build_catalogue(template_id: str, entity_id: str, soft_product_id: str
         raise HTTPException(status_code=404, detail="Artikel (template) tidak ditemukan / belum punya warna.")
     if any((p.get("base_unit") or "yard") != "yard" for p in prods):
         raise HTTPException(status_code=400, detail={"code": "CATALOGUE_UNIT",
-                            "message": "Catalogue memakai 1 yard per warna — artikel ini bukan satuan yard (pakai sampel standar/hanger)."})
+                            "message": "Catalogue memakai 1 yard per warna — artikel ini bukan satuan yard (pakai sample standar/hanger)."})
     free = await _free_by_product([p["id"] for p in prods], entity_id, await warehouses_for("catalogue"))
     avail = [p for p in prods if free.get(p["id"], 0) >= CATALOGUE_BASE_QTY - 0.0001]
     if not avail:
@@ -172,7 +172,7 @@ async def suggest_roll(product_id: str, length: float, entity_ids: List[str],
 
 
 async def resolve_sample_price(product: Dict[str, Any], manual_price: Optional[float]) -> Dict[str, Any]:
-    """Harga per satuan dasar untuk baris sampel: manual sales (>0) menang, lalu master, lalu daftar."""
+    """Harga per satuan dasar untuk baris sample: manual sales (>0) menang, lalu master, lalu daftar."""
     if manual_price is not None and float(manual_price) > 0:
         return {"price_per_unit": round(float(manual_price), 2), "source": "manual_sampel", "unit": product.get("base_unit") or "yard"}
     return await sample_price_for(product)
@@ -207,7 +207,7 @@ async def annotate_sample_line(item: Dict[str, Any], entity_id: str) -> None:
 
 
 async def request_internal_supply(order: Dict[str, Any], actor: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """L06 LN-061-T01 — baris sampel bersumber stok PT lain → draf pembelian internal tertaut SO (ownership dulu)."""
+    """L06 LN-061-T01 — baris sample bersumber stok PT lain → draf pembelian internal tertaut SO (ownership dulu)."""
     from services import interco_service as ic
     by_seller: Dict[str, List[Dict[str, Any]]] = {}
     for it in order.get("items", []):
@@ -219,7 +219,7 @@ async def request_internal_supply(order: Dict[str, Any], actor: Dict[str, Any]) 
         try:
             doc = await ic.create({"seller_entity_id": seller, "buyer_entity_id": order.get("entity_id"), "items": items,
                                    "source_order_id": order["id"], "source_order_number": order.get("number", ""),
-                                   "notes": f"Pembelian internal untuk sampel {order.get('number', '')} (stok milik PT lain)."},
+                                   "notes": f"Pembelian internal untuk sample {order.get('number', '')} (stok milik PT lain)."},
                                   actor=actor.get("name", ""), actor_user=actor)
             buyer = (doc or {}).get("buyer") or {}
             out.append({"seller_entity_id": seller, "pair_id": (doc or {}).get("pair_id", ""),
@@ -242,7 +242,7 @@ async def _fallback_warehouse(product_id: str, entity_id: str) -> Optional[str]:
 
 async def create_sample_cut_tasks(order: Dict[str, Any], actor_name: str, init_status: str, stages: List[str],
                                   warehouses: Dict[str, Any], method: str, hold_until: str) -> List[Dict[str, Any]]:
-    """Tugas outbound bersubtipe `sample_cut` per baris sampel (dipanggil saat SO confirmed)."""
+    """Tugas outbound bersubtipe `sample_cut` per baris sample (dipanggil saat SO confirmed)."""
     created: List[Dict[str, Any]] = []
     for item in order.get("items", []):
         if not item.get("is_sample"):
@@ -268,7 +268,7 @@ async def create_sample_cut_tasks(order: Dict[str, Any], actor_name: str, init_s
         }
         await db.wms_tasks.insert_one(task)
         from services import doc_refs_service as _refs
-        await _refs.safe_link(("picking_task", task["id"]), ("sales_order", order["id"]), "parent", note="permintaan potong sampel untuk SO")
+        await _refs.safe_link(("picking_task", task["id"]), ("sales_order", order["id"]), "parent", note="permintaan potong sample untuk SO")
         created.append(safe_doc(task))
     return created
 
@@ -293,9 +293,9 @@ async def _resolve_roll(product_id: str, sku: str, take: float, unit: str, roll_
     if roll.get("product_id") != product_id:
         raise HTTPException(status_code=400, detail={"code": "ROLL_WRONG_PRODUCT", "message": f"Roll {roll.get('roll_no')} bukan produk {sku} — ambil roll produk yang benar."})
     if roll.get("status") != "available":
-        raise HTTPException(status_code=409, detail={"code": "ROLL_NOT_AVAILABLE", "message": f"Roll {roll.get('roll_no')} berstatus {roll.get('status')} (terikat pesanan) — tidak boleh dipotong untuk sampel."})
+        raise HTTPException(status_code=409, detail={"code": "ROLL_NOT_AVAILABLE", "message": f"Roll {roll.get('roll_no')} berstatus {roll.get('status')} (terikat pesanan) — tidak boleh dipotong untuk sample."})
     if entity_id and roll.get("owner_entity_id") and roll.get("owner_entity_id") != entity_id:
-        raise HTTPException(status_code=400, detail={"code": "ROLL_WRONG_ENTITY", "message": f"Roll {roll.get('roll_no')} milik badan usaha lain — pesanan sampel ini milik {entity_id}."})
+        raise HTTPException(status_code=400, detail={"code": "ROLL_WRONG_ENTITY", "message": f"Roll {roll.get('roll_no')} milik badan usaha lain — pesanan sample ini milik {entity_id}."})
     if float(roll.get("length_remaining") or 0) < take:
         raise HTTPException(status_code=400, detail={"code": "ROLL_TOO_SHORT", "message": f"Sisa roll {roll.get('length_remaining')} < {take} {unit}."})
     return roll
@@ -319,7 +319,7 @@ async def _reprice_order_line(order: Dict[str, Any], product_id: str, take: floa
         "dpp": pricing["dpp"], "dpp_nilai_lain": pricing.get("dpp_nilai_lain", False),
         "effective_rate": pricing.get("effective_rate", pricing["ppn_rate"]), "ppn_amount": pricing["ppn_amount"],
         "grand_total": pricing["grand_total"], "approval_amount": pricing["grand_total"], "updated_at": now_iso()},
-        "$push": {"timeline": {"event": "qty_adjusted", "label": "Panjang sampel disesuaikan saat potong",
+        "$push": {"timeline": {"event": "qty_adjusted", "label": "Panjang sample disesuaikan saat potong",
                                "actor": actor_name, "at": now_iso(), "note": note}}})
 
 
@@ -328,11 +328,11 @@ async def cut_sample_task(task_id: str, payload: Dict[str, Any], actor: Dict[str
     if not task:
         raise HTTPException(status_code=404, detail="Tugas tidak ditemukan")
     if task.get("task_subtype") != "sample_cut":
-        raise HTTPException(status_code=400, detail="Tugas ini bukan permintaan potong sampel")
+        raise HTTPException(status_code=400, detail="Tugas ini bukan permintaan potong sample")
     if task.get("status") == "scheduled":
         raise HTTPException(status_code=400, detail="Tugas pengambilan masih di-hold (terjadwal). Rilis dulu sebelum memotong.")
     if task.get("status") not in ("created", "picking") or float(task.get("picked_qty") or 0) > 0:
-        raise HTTPException(status_code=409, detail=f"Sampel sudah dipotong / tugas berstatus {task.get('status')}")
+        raise HTTPException(status_code=409, detail=f"Sample sudah dipotong / tugas berstatus {task.get('status')}")
     order = await db.sales_orders.find_one({"id": task.get("order_id")}, {"_id": 0})
     if not order:
         raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan")

@@ -133,11 +133,11 @@ export const NAV_STRUCTURE = [
     roles: [],
     view:  "warehouse-admin-desk",
   },
-  // REVISI SAMPEL — Meja Admin Sampel (peran `sample_admin` lewat ROLE_NAV).
+  // REVISI SAMPEL — Meja Admin Sample (peran `sample_admin` lewat ROLE_NAV).
   {
     type: "standalone",
     id:    "sample-admin-desk",
-    label: "Meja Sampel",
+    label: "Meja Sample",
     icon:  Scissors,
     roles: [],
     view:  "sample-admin-desk",
@@ -156,7 +156,7 @@ export const NAV_STRUCTURE = [
       { id: "finance-desk",         label: "Meja Finance",     icon: Landmark,      roles: ["admin"], view: "finance-desk" },
       { id: "md-desk",              label: "Meja MD",          icon: Palette,       roles: ["admin"], view: "md-desk" },
       { id: "warehouse-admin-desk", label: "Meja Gudang",      icon: Warehouse,     roles: ["admin"], view: "warehouse-admin-desk" },
-      { id: "sample-admin-desk",    label: "Meja Sampel",      icon: Scissors,      roles: ["admin"], view: "sample-admin-desk" },
+      { id: "sample-admin-desk",    label: "Meja Sample",      icon: Scissors,      roles: ["admin"], view: "sample-admin-desk" },
     ],
   },
 
@@ -168,12 +168,12 @@ export const NAV_STRUCTURE = [
     icon:    ShoppingCart,
     roles:   ["admin", "sales", "manager"],
     items: [
-      { id: "sales",            label: "Kasir & Portal", icon: ShoppingBag, roles: ["admin", "sales"] },
+      { id: "sales",            label: "POS", icon: ShoppingBag, roles: ["admin", "sales"] },
       // SPECIAL ORDER — permintaan produk custom pelanggan (referensi/pattern/warna/handfeel) → routing ke Desainer & R&D.
       { id: "special-orders",   label: "Pesanan Khusus", icon: Sparkles, roles: ["admin", "sales", "manager", "sales_admin"], view: "special-orders" },
       { id: "sales-orders",     label: "Pesanan",    icon: FileText,    roles: ["admin", "sales", "manager"], hub: "sales-orders" },
-      // REVISI SAMPEL — daftar pesanan sampel TERPISAH dari SO biasa (klien: "jangan digabung").
-      { id: "sample-orders",    label: "Pesanan Sampel", icon: Scissors, roles: ["admin", "sales", "manager"], view: "sample-orders" },
+      // REVISI SAMPEL — daftar pesanan sample TERPISAH dari SO biasa (klien: "jangan digabung").
+      { id: "sample-orders",    label: "Pesanan Sample", icon: Scissors, roles: ["admin", "sales", "manager"], view: "sample-orders" },
       { id: "customers-crm",    label: "Pelanggan",    icon: Users,       roles: ["admin", "sales", "manager"], hub: "customers-crm" },
       // Sales hanya melihat tab "Harga per Pelanggan" di hub ini (tab lain admin/manager).
       { id: "products-pricing", label: "Produk & Harga",     icon: Layers3,     roles: ["admin", "manager", "sales"], hub: "products-pricing" },
@@ -202,7 +202,7 @@ export const NAV_STRUCTURE = [
   {
     type:  "standalone",
     id:    "rnd-hub",
-    label: "Riset & Sampel",
+    label: "R&D",
     icon:  FlaskConical,
     roles: ["admin", "manager", "sales", "warehouse"],
     hub:   "rnd-hub",

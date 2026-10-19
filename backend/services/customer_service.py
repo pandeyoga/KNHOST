@@ -286,7 +286,7 @@ async def customer_360(customer_id: str) -> Optional[Dict[str, Any]]:
     overrides = await db.credit_overrides.find(
         {"customer_id": customer_id}, {"_id": 0}
     ).sort("created_at", -1).to_list(50)
-    # §3-C — riwayat sampel yang pernah dipotong untuk pelanggan ini (baris SO ber-is_sample)
+    # §3-C — riwayat sample yang pernah dipotong untuk pelanggan ini (baris SO ber-is_sample)
     sample_orders = await db.sales_orders.find(
         {"customer_id": customer_id, "has_sample": True},
         {"_id": 0, "id": 1, "number": 1, "status": 1, "items": 1, "created_at": 1}

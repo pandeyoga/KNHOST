@@ -2,12 +2,12 @@
 
 Struktur campuran seperti kondisi migrasi: WH-JKT, RCM-WOVEN, RCM-KNITTING = format baru (zona → rak → level → bin);
 gudang lain = format lama (rak → bin). Zona dipisah per satuan (W = yard, K = kg). ±80% roll fisik ditempatkan
-(deterministik per id roll), ±20% tetap belum ditempatkan. Sampel data bermasalah untuk uji P02 diberi tanda
+(deterministik per id roll), ±20% tetap belum ditempatkan. Sample data bermasalah untuk uji P02 diberi tanda
 `sim_anomaly` dan dapat dihapus. Bin id deterministik per kode gudang → sama di preview & VPS.
 Idempoten: dijalankan ulang hanya melengkapi.
   python scripts/seed_simulasi_bin_kn.py                  isi / lengkapi
   python scripts/seed_simulasi_bin_kn.py --cek [--json f] diagnosis saja (read-only)
-  python scripts/seed_simulasi_bin_kn.py --hapus-anomali  kembalikan sampel bermasalah
+  python scripts/seed_simulasi_bin_kn.py --hapus-anomali  kembalikan sample bermasalah
   python scripts/seed_simulasi_bin_kn.py --hapus-semua    batalkan seluruh simulasi
 """
 import argparse
@@ -244,7 +244,7 @@ async def main() -> None:
         print("Simulasi bin dibatalkan:", await remove_all())
         return
     if a.hapus_anomali:
-        print("Sampel bermasalah dikembalikan:", await remove_anomalies(), "roll")
+        print("Sample bermasalah dikembalikan:", await remove_anomalies(), "roll")
         return
     if not a.cek:
         built = placed = 0
@@ -256,7 +256,7 @@ async def main() -> None:
         anom = await seed_anomalies()
         await db.migrations.update_one({"id": FLAG}, {"$set": {"batch": BATCH, "updated_at": now_iso()},
                                                       "$inc": {"roll_ditempatkan": placed}}, upsert=True)
-        print(f"Struktur baru: {built} gudang · roll ditempatkan: {placed} · sampel bermasalah: {anom or 'sudah ada'}")
+        print(f"Struktur baru: {built} gudang · roll ditempatkan: {placed} · sample bermasalah: {anom or 'sudah ada'}")
     d = await diagnose()
     _print(d)
     if a.json:

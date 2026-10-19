@@ -7,7 +7,7 @@ import GrnModePanel from "../wms/grn/GrnModePanel";
 const OCR_ROLES = ["admin", "manager", "warehouse_admin"];
 const TABS = [
   { key: "profiles", label: "Profil SJ", roles: OCR_ROLES, Panel: GrnProfilesPanel },
-  { key: "samples", label: "Sampel Uji OCR", roles: OCR_ROLES, Panel: GrnOcrSamplesPanel },
+  { key: "samples", label: "Sample Uji OCR", roles: OCR_ROLES, Panel: GrnOcrSamplesPanel },
   { key: "usage", label: "Biaya OCR", roles: OCR_ROLES, Panel: GrnOcrUsagePanel },
   { key: "mode", label: "Mode Penerimaan", roles: ["admin", "manager"], Panel: GrnModePanel },
 ];

@@ -336,7 +336,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                 </div>
               )}
 
-              {/* §3-C — permintaan potong sampel: pindai roll induk + panjang aktual menggantikan scan-pick */}
+              {/* §3-C — permintaan potong sample: pindai roll induk + panjang aktual menggantikan scan-pick */}
               {selectedTask.task_subtype === "sample_cut" && Number(selectedTask.picked_qty || 0) <= 0 && !['dispatched', 'escalated', 'scheduled'].includes(selectedTask.status) && (
                 <SampleCutPanel task={selectedTask} onCut={(t) => { setTasks(prev => prev.map(x => x.id === t.id ? t : x)); setSelectedTask(t); }} />
               )}
@@ -397,7 +397,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                   </>)}
                   {selectedTask.task_subtype === "sample_cut" && (
                     <p data-testid={`outbound-sample-cut-info-${selectedTask.id}`} className="rounded-lg border border-[#BFE6CC] bg-[#F1FBF4] p-2 text-[11px] text-[#126E2C]">
-                      Sampel sudah dipotong dari <b>{selectedTask.parent_roll_no}</b> → <b>{selectedTask.child_roll_no}</b> ({formatQty(selectedTask.picked_qty)} {selectedTask.unit}). Lanjutkan pengiriman di bawah.
+                      Sample sudah dipotong dari <b>{selectedTask.parent_roll_no}</b> → <b>{selectedTask.child_roll_no}</b> ({formatQty(selectedTask.picked_qty)} {selectedTask.unit}). Lanjutkan pengiriman di bawah.
                     </p>
                   )}
 

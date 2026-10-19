@@ -210,7 +210,7 @@ export const HUB_TABS = {
     { view: "pdf-templates",     label: "Template PDF",          roles: ["admin"], section: "Kamus & Dokumen" },
     // B3 — template dokumen dasar: kertas/orientasi/urutan bagian (dulu tab di Master Data & Audit).
     { view: "doc-templates-basic", label: "Template Dokumen Dasar", roles: ["admin"], section: "Kamus & Dokumen" },
-    // 2026-10 — Profil SJ · Sampel Uji OCR · Biaya OCR · Mode Penerimaan (dulu tab di Barang Masuk).
+    // 2026-10 — Profil SJ · Sample Uji OCR · Biaya OCR · Mode Penerimaan (dulu tab di Barang Masuk).
     { view: "settings-receiving-ocr", label: "Penerimaan & OCR", roles: ["admin", "manager", "warehouse_admin"], section: "Gudang" },
     // 2026-10 (T6) — pengaturan yang dulu menumpang di menu operasional. Fitur & hak akses TETAP.
     { view: "cs-rfid-devices",   label: "Perangkat RFID",         roles: ["admin"], section: "Gudang" },

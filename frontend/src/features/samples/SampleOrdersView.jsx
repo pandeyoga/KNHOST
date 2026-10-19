@@ -1,6 +1,6 @@
 /**
- * SampleOrdersView — REVISI SAMPEL: daftar Pesanan Sampel (SOS-) TERPISAH dari SO roll biasa.
- * Sales melihat pesanan sampelnya sendiri; admin/manajer/Admin Sampel/Finance melihat semua.
+ * SampleOrdersView — REVISI SAMPEL: daftar Pesanan Sample (SOS-) TERPISAH dari SO roll biasa.
+ * Sales melihat pesanan sampelnya sendiri; admin/manajer/Admin Sample/Finance melihat semua.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Scissors, RefreshCw, Gift, Banknote, XCircle, CheckCircle2, Truck, PackageCheck } from "lucide-react";
@@ -28,7 +28,7 @@ const FILTERS = [
 
 const CUT = { requested: "menunggu potong", cut: "sudah dipotong", awaiting_internal: "menunggu pembelian internal (stok PT lain)" };
 const KIND = { standard: "Standar", hanger: "Hanger", catalogue: "Catalogue" };
-const TABS = [["orders", "Pesanan Sampel"], ["desk", "Meja Cutting"], ["locations", "Lokasi Cutting"]];
+const TABS = [["orders", "Pesanan Sample"], ["desk", "Meja Cutting"], ["locations", "Lokasi Cutting"]];
 
 export default function SampleOrdersView({ user, selectedEntity = "all", focusDoc, onClearFocus }) {
   const [orders, setOrders] = useState([]);
@@ -55,7 +55,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
       if (filter !== "all") params.status = filter;
       const [rows, st] = await Promise.all([listSampleOrders(params), sampleStats(params.entity_id ? { entity_id: params.entity_id } : {})]);
       setOrders(rows); setStats(st); setError("");
-    } catch (e) { setError(apiErrorText(e, "Gagal memuat pesanan sampel.")); }
+    } catch (e) { setError(apiErrorText(e, "Gagal memuat pesanan sample.")); }
     finally { setLoading(false); }
   }, [selectedEntity, filter]);
   useEffect(() => { load(); }, [load]);
@@ -83,7 +83,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
         <button key={k} role="tab" aria-selected={tab === k} data-testid={`sample-tab-${k}`} onClick={() => setTab(k)}
           className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${tab === k ? "bg-[#9A5B00] text-white" : "bg-[#F5F5F7] text-[#3C3C43] hover:bg-[#FFF3D6]"}`}>{l}</button>
       ))}
-      {canCancel && <button data-testid="sample-catalogue-create" className="secondary-button ml-auto" onClick={() => setShowCat(true)}>+ Sampel Catalogue</button>}
+      {canCancel && <button data-testid="sample-catalogue-create" className="secondary-button ml-auto" onClick={() => setShowCat(true)}>+ Sample Catalogue</button>}
       <CatalogueCreateModal open={showCat} onClose={() => setShowCat(false)} entityId={selectedEntity !== "all" ? selectedEntity : ""}
         onCreated={(so) => { flash(`${so.number} (catalogue) dibuat.`); setTab("orders"); load(); }} />
     </div>
@@ -108,11 +108,11 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
           <div className="flex min-w-0 items-center gap-2">
             <Scissors size={15} className="text-[#9A5B00]" />
             <span className="kicker">Penjualan</span>
-            <h2 data-testid="sample-orders-title">Pesanan Sampel (SOS)</h2>
+            <h2 data-testid="sample-orders-title">Pesanan Sample (SOS)</h2>
           </div>
           <button data-testid="sample-orders-refresh" className="icon-button" onClick={load} aria-label="Muat ulang"><RefreshCw size={14} className={loading ? "animate-spin" : ""} /></button>
         </div>
-        <p className="px-3 pt-2 text-[11.5px] text-[#6B6B73]">Pesanan sampel <b>terpisah</b> dari pesanan roll/yard biasa (SO). Gratis → langsung ke Admin Sampel; berbayar → disetujui Finance/Admin Sampel dulu → diteruskan ke gudang untuk dipotong dari roll (RFID) → dikirim / diambil.</p>
+        <p className="px-3 pt-2 text-[11.5px] text-[#6B6B73]">Pesanan sample <b>terpisah</b> dari pesanan roll/yard biasa (SO). Gratis → langsung ke Admin Sample; berbayar → disetujui Finance/Admin Sample dulu → diteruskan ke gudang untuk dipotong dari roll (RFID) → dikirim / diambil.</p>
         <div data-testid="sample-orders-metrics" className="grid gap-3 p-3 sm:grid-cols-4">
           <Metric label="Total" value={stats?.total ?? "—"} testId="sample-metric-total" />
           <Metric label="Gratis / Berbayar" value={stats ? `${stats.free} / ${stats.paid}` : "—"} testId="sample-metric-billing" />
@@ -133,7 +133,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
       <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
         <section className="section-card overflow-hidden">
           {loading && orders.length === 0 ? <p className="p-6 text-center text-[12px] text-[#6B6B73]">Memuat…</p>
-            : shown.length === 0 ? <p data-testid="sample-orders-empty" className="p-8 text-center text-[12px] text-[#6B6B73]">{q.trim() ? `Tidak ada pesanan sampel yang cocok dengan “${q.trim()}”.` : "Belum ada pesanan sampel untuk saringan ini."}</p>
+            : shown.length === 0 ? <p data-testid="sample-orders-empty" className="p-8 text-center text-[12px] text-[#6B6B73]">{q.trim() ? `Tidak ada pesanan sample yang cocok dengan “${q.trim()}”.` : "Belum ada pesanan sample untuk saringan ini."}</p>
             : (
               <table className="w-full text-[12px]">
                 <thead><tr className="border-b border-[#EFF0F2] text-left text-[10px] uppercase tracking-wide text-[#8E8E93]"><th className="px-3 py-2">Nomor</th><th className="px-3 py-2">Pelanggan</th><th className="px-3 py-2">Skema</th><th className="px-3 py-2">Item</th><th className="px-3 py-2">Status</th><th className="px-3 py-2 text-right">Nilai</th></tr></thead>
@@ -155,10 +155,10 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
         </section>
 
         <aside className="section-card" data-testid="sample-order-detail">
-          {!sel ? <p className="p-6 text-center text-[12px] text-[#6B6B73]">Pilih pesanan sampel untuk melihat detail & tindakan.</p> : (
+          {!sel ? <p className="p-6 text-center text-[12px] text-[#6B6B73]">Pilih pesanan sample untuk melihat detail & tindakan.</p> : (
             <div className="p-3 space-y-3 text-[12px]">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Pesanan Sampel</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Pesanan Sample</p>
                 <p data-testid="sample-detail-number" className="text-[16px] font-bold text-[#9A5B00]">{sel.number}</p>
                 <p className="font-semibold">{sel.customer_name}</p>
                 <p className="text-[#6B6B73]">{sel.fulfillment_method === "ambil" ? <><PackageCheck size={11} className="inline" /> Diambil di gudang {sel.pickup_date}</> : <><Truck size={11} className="inline" /> Dikirim ke {sel.shipping_city || sel.customer_city}</>}</p>
@@ -177,7 +177,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
               {sel.sample_billing === "paid" && <p className="text-right text-[13px] font-bold tabular-nums">Total {formatCurrency(sel.grand_total)}</p>}
               {sel.sample_billing === "paid" && (
                 <p data-testid="sample-detail-payment" className={`rounded-md px-2.5 py-1.5 text-[11px] ${sel.sample_payment_status === "approved" ? "bg-[#EAF7EE] text-[#126E2C]" : "bg-[#FFF3D6] text-[#9A5B00]"}`}>
-                  {sel.sample_payment_status === "approved" ? <><CheckCircle2 size={11} className="inline" /> Pembayaran disetujui {sel.sample_payment_approved_by}</> : "Pembayaran belum disetujui Finance/Admin Sampel."}
+                  {sel.sample_payment_status === "approved" ? <><CheckCircle2 size={11} className="inline" /> Pembayaran disetujui {sel.sample_payment_approved_by}</> : "Pembayaran belum disetujui Finance/Admin Sample."}
                 </p>
               )}
               <div className="flex flex-wrap gap-2">
@@ -188,7 +188,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
                   <button data-testid="sample-detail-confirm" className="primary-button" disabled={busy === sel.id} onClick={() => run(() => confirmSampleOrder(sel.id), `${sel.number} diteruskan ke gudang — tugas potong lahir.`)}><Scissors size={13} /> Teruskan ke Gudang</button>
                 )}
                 {canCancel && ["waiting_approval", "approved"].includes(sel.status) && (
-                  <button data-testid="sample-detail-cancel" className="secondary-button" disabled={busy === sel.id} onClick={() => run(() => cancelSampleOrder(sel.id, "Dibatalkan dari daftar pesanan sampel"), `${sel.number} dibatalkan.`)}><XCircle size={13} /> Batalkan</button>
+                  <button data-testid="sample-detail-cancel" className="secondary-button" disabled={busy === sel.id} onClick={() => run(() => cancelSampleOrder(sel.id, "Dibatalkan dari daftar pesanan sample"), `${sel.number} dibatalkan.`)}><XCircle size={13} /> Batalkan</button>
                 )}
               </div>
               <div>

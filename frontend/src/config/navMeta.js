@@ -37,8 +37,8 @@ export const PAGE_META = {
   "my-desk":              { kicker: "Kerja saya",     title: "Meja Saya \u00b7 Giliran & Antrean Peran" },
   "tanya-kn":             { kicker: "Asisten analitik", title: "Tanya KN \u00b7 Laporan & Pertanyaan Data" },
   "warehouse-admin-desk": { kicker: "Admin Gudang",   title: "Meja Admin Gudang \u00b7 Operasi Gudang & Logistik" },
-  "sample-admin-desk":    { kicker: "Admin Sampel",   title: "Meja Admin Sampel \u00b7 Antrean Pesanan Sampel" },
-  "sample-orders":        { kicker: "Penjualan",      title: "Pesanan Sampel (SOS) \u00b7 Terpisah dari SO Biasa" },
+  "sample-admin-desk":    { kicker: "Admin Sample",   title: "Meja Admin Sample \u00b7 Antrean Pesanan Sample" },
+  "sample-orders":        { kicker: "Penjualan",      title: "Pesanan Sample (SOS) \u00b7 Terpisah dari SO Biasa" },
   amendments:             { kicker: "Keuangan \u00b7 Kendali", title: "Pusat Amandemen \u00b7 Koreksi Ber-alasan & Ber-jejak" },
   "tax-invoices":         { kicker: "Keuangan \u00b7 Pajak", title: "Faktur Pajak Keluaran" },
   "returns":              { kicker: "Penjualan",      title: "Retur & Barang Sisa" },
@@ -88,9 +88,9 @@ export const PAGE_META = {
   // FASE F — R&D (hulu rantai: spesifikasi → labdip/proofing → kontrak).
   "rnd-specs":            { kicker: "R&D",             title: "Spesifikasi Produk (R&D) \u00b7 Target Kain, Warna & Desain" },
   "rnd-samples":          { kicker: "R&D",             title: "Permintaan Sample \u00b7 Labdip / Handfeel / Proofing" },
-  "rnd-labdip":           { kicker: "R&D",             title: "Labdip (Master) \u00b7 Sampel Warna per Supplier" },
-  "rnd-handfeel":         { kicker: "R&D",             title: "Handfeel (Master) \u00b7 Sampel Pegangan & Konstruksi Kain" },
-  "rnd-proofing":         { kicker: "R&D",             title: "Proofing (Master) \u00b7 Sampel Cetak Desain" },
+  "rnd-labdip":           { kicker: "R&D",             title: "Labdip (Master) \u00b7 Sample Warna per Supplier" },
+  "rnd-handfeel":         { kicker: "R&D",             title: "Handfeel (Master) \u00b7 Sample Pegangan & Konstruksi Kain" },
+  "rnd-proofing":         { kicker: "R&D",             title: "Proofing (Master) \u00b7 Sample Cetak Desain" },
   "rnd-reports":          { kicker: "R&D",             title: "Laporan R&D \u00b7 SLA Round & Tahap Produk" },
   // PS-18 — menu DESAINER (terpisah dari R&D): orang + karyanya.
   "designer-kpi":         { kicker: "Desainer",        title: "KPI Desainer \u00b7 Tepat Waktu, Pengulangan & Eskalasi SLA" },
@@ -213,7 +213,7 @@ export const ROLE_HOME_REGISTRY = {
   // Sesi #087 — MD & Admin Gudang mendarat di mejanya.
   md:              { view: "md-desk", navId: "md-desk" },
   warehouse_admin: { view: "warehouse-admin-desk", navId: "warehouse-admin-desk" },
-  // REVISI SAMPEL — Admin Sampel mendarat di mejanya.
+  // REVISI SAMPEL — Admin Sample mendarat di mejanya.
   sample_admin:    { view: "sample-admin-desk", navId: "sample-admin-desk" },
   // P05 IMP-16 — peran mutu mendarat di SPK Inspeksi.
   md_quality:      { view: "inspections", navId: "wms-operations" },

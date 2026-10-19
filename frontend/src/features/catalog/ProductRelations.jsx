@@ -6,7 +6,7 @@ import { catalogError } from "./catalogApi";
 
 const STATUS_CLS = { approved: "pill-success", active: "pill-success", draft: "pill-muted", review: "pill-info", revision: "pill-warning" };
 
-/** Tab "R&D & asal desain": spesifikasi terkait, hitungan sampel, jejak desain. */
+/** Tab "R&D & asal desain": spesifikasi terkait, hitungan sample, jejak desain. */
 export const ProductRelations = ({ product, caps, onCreate }) => {
   const [rows, setRows] = useState(null); const [error, setError] = useState("");
   useEffect(() => { let live = true; setRows(null); setError(""); axios.get(`${API}/products/${product.id}/catalog-relations`).then(r => { if (live) setRows(r.data); }).catch(e => { if (live) setError(catalogError(e)); }); return () => { live = false; }; }, [product.id]);
@@ -19,7 +19,7 @@ export const ProductRelations = ({ product, caps, onCreate }) => {
       {loading && <p data-testid="relations-loading" className="text-sm text-[#737780]">Memuat hubungan…</p>}
       {rows?.specs.map(s => <button data-testid={`relations-spec-${s.id}`} key={s.id} className="relation-row" onClick={() => openRnd({ view: "rnd-specs", specId: s.id })}><span><strong>{s.number}</strong><span>{s.title}</span></span><span className="flex items-center gap-2"><span className={`status-pill ${STATUS_CLS[s.status] || "pill-muted"}`}>{s.status}</span><span className="status-pill pill-muted">{s.lifecycle}</span><ArrowUpRight size={15} /></span></button>)}
       {rows && !rows.specs.length && <p data-testid="relations-empty" className="relation-empty">Belum ada spesifikasi R&D terkait varian ini.</p>}
-      {rows && <p data-testid="relations-sample-count" className="mt-3 text-xs text-[#737780]"><b className="text-[#1c1c1e]">{rows.sample_count}</b> permintaan sampel dalam entitas aktif.</p>}
+      {rows && <p data-testid="relations-sample-count" className="mt-3 text-xs text-[#737780]"><b className="text-[#1c1c1e]">{rows.sample_count}</b> permintaan sample dalam entitas aktif.</p>}
       {caps.rnd_create && !product.spec_id && product.lifecycle && product.lifecycle !== "produksi" && <button data-testid="relations-create-spec" className="primary-button mt-3" onClick={onCreate}><FlaskConical size={14} />Buat spesifikasi untuk varian ini</button>}
     </div>
     <div className="info-card">

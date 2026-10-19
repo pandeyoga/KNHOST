@@ -425,7 +425,7 @@ async def sync_permission_revocations() -> None:
     # ke tagihan terbuka & selisih ditangani finance. Ditambahkan tanpa mencabut aksi lain.
     GRANT = {"sales": {"ar_receipt": ["create"]},
              # Sesi audit 2026-09-21 — finance melihat papan antrean persetujuan (selisih bayar
-             # & pembayaran sampel adalah keputusannya); hanya `view`.
+             # & pembayaran sample adalah keputusannya); hanya `view`.
              "finance": {"approval": ["view"], "interco_price": ["view", "set"]},
              # 2026-10 — penetap harga internal antar-PT (keputusan pemilik: MD, Finance, Admin).
              "md": {"interco_price": ["view", "set"]},
@@ -1667,8 +1667,8 @@ async def run_bootstrap() -> None:
               {"id": "user_whadmin_01", "name": "Hendra Kepala Gudang", "email": "wh.admin@kainnusantara.id",
                "role": "warehouse_admin", "home_entity_id": "ent_ksc", "allowed_entity_ids": ["ent_ksc", "ent_kanda"],
                "division": "logistics"},
-              # REVISI SAMPEL (2026-09-17) — akun demo Admin Sampel (meja pesanan sampel SOS-).
-              {"id": "user_smpadmin_01", "name": "Yoga Admin Sampel", "email": "sampleadmin@kainnusantara.id",
+              # REVISI SAMPEL (2026-09-17) — akun demo Admin Sample (meja pesanan sample SOS-).
+              {"id": "user_smpadmin_01", "name": "Yoga Admin Sample", "email": "sampleadmin@kainnusantara.id",
                "role": "sample_admin", "home_entity_id": "ent_ksc", "allowed_entity_ids": ["ent_ksc", "ent_kanda"],
                "division": "sales"}):
         if _demo_on() and not await db.users.find_one({"email": u["email"]}, {"_id": 1}):

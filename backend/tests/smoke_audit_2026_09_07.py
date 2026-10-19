@@ -1,4 +1,4 @@
-"""Smoke audit 2026-09-07: R-3a (isolasi detail sampel), R-7 (rnd_gate blanket/RFQ), INV-PERF-01 generator."""
+"""Smoke audit 2026-09-07: R-3a (isolasi detail sample), R-7 (rnd_gate blanket/RFQ), INV-PERF-01 generator."""
 import sys, uuid, requests
 
 API = [l.split("=", 1)[1].strip() for l in open("/app/frontend/.env") if l.startswith("REACT_APP_BACKEND_URL=")][0] + "/api"
@@ -22,7 +22,7 @@ admin = sess("admin@kainnusantara.id")
 tag = uuid.uuid4().hex[:6].upper()
 
 # ── R-3a — KN-A08 (audit 2026-09-21): blok lama memukul /api/sample-requests (rute mati).
-# Isolasi pesanan sampel kini diuji di tests/test_kn_audit_2026_09_21.py (dipanggil gate.sh).
+# Isolasi pesanan sample kini diuji di tests/test_kn_audit_2026_09_21.py (dipanggil gate.sh).
 made = {}
 
 # ── INV-PERF-01: generator tetap benar (idempoten + tolak SKU bentrok) ───────

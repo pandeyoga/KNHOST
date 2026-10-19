@@ -8,7 +8,7 @@ import { cataloguePreview, catalogueTemplates, createCatalogueOrder } from "./sa
 
 const rows = (d) => (Array.isArray(d) ? d : d?.items || []);
 
-/** L06 LN-060 — Pesanan Sampel Catalogue: 1 yd tiap warna TERSEDIA + 2 yd satu warna soft (komponen terpisah). */
+/** L06 LN-060 — Pesanan Sample Catalogue: 1 yd tiap warna TERSEDIA + 2 yd satu warna soft (komponen terpisah). */
 export default function CatalogueCreateModal({ open, onClose, entityId, onCreated }) {
   const [customers, setCustomers] = useState([]);
   const [templates, setTemplates] = useState([]);
@@ -45,7 +45,7 @@ export default function CatalogueCreateModal({ open, onClose, entityId, onCreate
   };
 
   return (
-    <FormModal open={open} onClose={onClose} title="Sampel Catalogue" subtitle="1 yard tiap warna tersedia + 2 yard satu warna soft"
+    <FormModal open={open} onClose={onClose} title="Sample Catalogue" subtitle="1 yard tiap warna tersedia + 2 yard satu warna soft"
       icon={BookOpen} testId="catalogue-create" onSubmit={submit} submitLabel="Buat Pesanan Catalogue" busy={busy} error={err}>
       <div className="grid gap-3 text-[12px]">
         <label className="grid gap-1"><span className="field-label">Pelanggan</span>

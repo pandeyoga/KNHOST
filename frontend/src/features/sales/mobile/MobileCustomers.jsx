@@ -9,7 +9,7 @@ import MobileCustomerForm from "./MobileCustomerForm";
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) : "-");
 const STATUS_ID = { unpaid: "Belum bayar", partial: "Sebagian", paid: "Lunas", overdue: "Jatuh tempo" };
 
-/** Pelanggan versi HP: daftar kartu + detail 360 satu layar (piutang, pesanan, kwitansi, sampel). */
+/** Pelanggan versi HP: daftar kartu + detail 360 satu layar (piutang, pesanan, kwitansi, sample). */
 export default function MobileCustomers({ selectedEntity, user, onRefresh, onStartOrder }) {
   const [rows, setRows] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -90,7 +90,7 @@ export function MobileCustomerDetail({ customer: base, onBack, onUpdated, onStar
       {err && <div className="notice-bar danger text-xs">{String(err)}</div>}
       <div className="flex gap-1 text-xs">
         <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
-          {[["ar", "Tagihan"], ["followups", "Tindak lanjut"], ["addresses", "Alamat"], ["orders", "Pesanan"], ["receipts", "Kwitansi"], ["samples", "Sampel"]].map(([id, l]) => (
+          {[["ar", "Tagihan"], ["followups", "Tindak lanjut"], ["addresses", "Alamat"], ["orders", "Pesanan"], ["receipts", "Kwitansi"], ["samples", "Sample"]].map(([id, l]) => (
             <button key={id} className={`h-9 shrink-0 rounded-lg px-3 font-semibold ${tab === id ? "bg-[#0058CC] text-white" : "bg-[#F2F3F5]"}`} onClick={() => setTab(id)} data-testid={`m-customer-tab-${id}`}>{l}</button>
           ))}
         </div>
@@ -108,7 +108,7 @@ export function MobileCustomerDetail({ customer: base, onBack, onUpdated, onStar
       {d && tab === "receipts" && ((d.payments || []).length === 0 ? <p className="text-xs m-muted p-2">Belum ada kwitansi.</p> : (d.payments || []).slice(0, 30).map((p) => (
         <div key={p.id} className="m-card p-3 text-[12px] flex items-center gap-2" data-testid={`m-customer-receipt-${p.id}`}><Receipt size={14} className="text-[#1B7F4B]" /><div className="flex-1"><b>{p.number}</b><p className="text-[11px] m-muted">{fmtDate(p.created_at)} · {p.method || ""}</p></div><span className="tabular-nums font-bold">{formatCurrency(p.amount)}</span></div>
       )))}
-      {d && tab === "samples" && ((d.sample_history || []).length === 0 ? <p className="text-xs m-muted p-2">Belum ada sampel.</p> : (d.sample_history || []).map((s) => (
+      {d && tab === "samples" && ((d.sample_history || []).length === 0 ? <p className="text-xs m-muted p-2">Belum ada sample.</p> : (d.sample_history || []).map((s) => (
         <div key={s.id || s.number} className="m-card p-3 text-[12px]" data-testid={`m-customer-sample-${s.id || s.number}`}><div className="flex justify-between"><b>{s.number}</b><span>{s.status}</span></div><p className="text-[11px] m-muted">{s.product_name} · {s.length} {s.unit}{s.child_roll_no ? ` · ${s.child_roll_no}` : ""}</p></div>
       )))}
       {d && tab === "followups" && (

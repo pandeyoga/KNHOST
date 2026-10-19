@@ -17,7 +17,7 @@ export default function CheckoutStep3({
   const today = new Date().toISOString().slice(0, 10);
   const [pickDate, setPickDate] = useState(!!deliveryDate);
   const freeSample = sampleMode && sampleBilling === "free";
-  // Sampel gratis: tampilkan "Free", bukan "Rp 0".
+  // Sample gratis: tampilkan "Free", bukan "Rp 0".
   const money = (v, isFreeLine = freeSample) => (isFreeLine && !(Number(v) > 0) ? "Free" : formatCurrency(v));
   return (
     <div data-testid="checkout-step-3" className="space-y-3">
@@ -61,7 +61,7 @@ export default function CheckoutStep3({
                 <button type="button" data-testid="sample-delivery-admin"
                   onClick={() => { setPickDate(false); setDeliveryDate(""); }}
                   className={`rounded-md border px-2 py-1.5 text-[11.5px] font-semibold ${!pickDate ? "border-[#0058CC] bg-[#EFF4FF] text-[#0058CC]" : "border-[#EFF0F2] bg-white text-[#6B6B73]"}`}>
-                  Disesuaikan Admin Sampel
+                  Disesuaikan Admin Sample
                 </button>
                 <button type="button" data-testid="sample-delivery-pick" onClick={() => setPickDate(true)}
                   className={`rounded-md border px-2 py-1.5 text-[11.5px] font-semibold ${pickDate ? "border-[#0058CC] bg-[#EFF4FF] text-[#0058CC]" : "border-[#EFF0F2] bg-white text-[#6B6B73]"}`}>
@@ -74,7 +74,7 @@ export default function CheckoutStep3({
                 value={deliveryDate || ""} onChange={setDeliveryDate} />
             )}
             <p className="mt-1 text-[10px] text-[#6B6B73]" data-testid="delivery-date-hint">{sampleMode && !pickDate
-              ? "Tanggal kirim sampel dijadwalkan oleh Admin Sampel setelah sampel dipotong."
+              ? "Tanggal kirim sample dijadwalkan oleh Admin Sample setelah sample dipotong."
               : "Kosongkan bila mengikuti jadwal gudang. Bila diisi: request tanggal kirim — tidak boleh tanggal yang sudah lewat."}</p>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function CheckoutStep3({
       <div className="rounded-md border border-[#EFF0F2] bg-white p-3 text-[11.5px] text-[#6B6B73]">
         <div className="flex items-center gap-1.5 text-[#1C1C1E]"><CreditCard size={13} /><span className="font-semibold">Pemenuhan</span></div>
         <p className="mt-1">{hasBackorderLine ? (allowBackorder ? "Sebagian via backorder (disetujui)." : "Ada baris kurang stok — aktifkan backorder di langkah 2.") : "Semua baris dapat dipenuhi dari stok entitas."}</p>
-        {sampleCount > 0 && <p data-testid="checkout-sample-fulfillment-note" className="mt-0.5 text-[#9A5B00]">{sampleCount} baris sampel → permintaan potong ke admin gudang saat pesanan dikonfirmasi (pindai roll RFID, potong, catat panjang aktual), lalu ikut dikirim bersama pesanan.</p>}
+        {sampleCount > 0 && <p data-testid="checkout-sample-fulfillment-note" className="mt-0.5 text-[#9A5B00]">{sampleCount} baris sample → permintaan potong ke admin gudang saat pesanan dikonfirmasi (pindai roll RFID, potong, catat panjang aktual), lalu ikut dikirim bersama pesanan.</p>}
         {requiresLotConfirmation && <p className="mt-0.5 text-[#6B219A]">{mixedLotLines.length} item beda lot — konfirmasi saat kirim.</p>}
       </div>
     </div>

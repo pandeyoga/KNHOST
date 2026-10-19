@@ -1,7 +1,7 @@
 /**
  * SampleTypeGalleryView — galeri **per JENIS sampling** (Labdip · Handfeel · Proofing), dibuat
  * SEMIRIP mungkin dengan "Desain & Pattern (Master)" di hub Desainer: KPI → pencarian +
- * saringan → grid kartu bersampul foto bukti. Tombol "Sampel <Jenis> Baru" membuka modal
+ * saringan → grid kartu bersampul foto bukti. Tombol "Sample <Jenis> Baru" membuka modal
  * permintaan dengan jenis itu sudah terpilih (terkunci). Klik kartu → rincian dengan tab
  * jenis ini aktif. Mekanisme server tetap `md_samples` (satu permintaan bisa >1 jenis).
  */
@@ -62,7 +62,7 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
       const res = await listSamples(params);
       setRows(res?.items || []);
       setError("");
-    } catch (e) { setError(errMsg(e, `Gagal memuat sampel ${label}.`)); } finally { setLoading(false); }
+    } catch (e) { setError(errMsg(e, `Gagal memuat sample ${label}.`)); } finally { setLoading(false); }
   }, [selectedEntity, code, f.line]);
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
@@ -129,7 +129,7 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
             <button className="secondary-button" onClick={load} data-testid={`sample-gallery-refresh-${code}`}><RefreshCw size={13} /> Muat ulang</button>
             {canCreate && (
               <button className="primary-button" data-testid={`sample-gallery-create-${code}`} onClick={() => setCreating(true)}>
-                <Plus size={13} /> Sampel {label} Baru
+                <Plus size={13} /> Sample {label} Baru
               </button>
             )}
           </div>
@@ -187,8 +187,8 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
           ) : filtered.length === 0 ? (
             <div className="py-12 text-center text-[12px] text-[#6B6B73]" data-testid={`sample-gallery-empty-${code}`}>
               <FlaskConical className="mx-auto mb-2 text-gray-300" size={28} />
-              {(activeFilters || f.q.trim()) ? <p>Tidak ada sampel {label.toLowerCase()} yang cocok dengan saringan saat ini.</p>
-                : <p>Belum ada sampel {label.toLowerCase()}. Klik <b>Sampel {label} Baru</b> — jenis sudah terpilih, tinggal tulis brief & target.</p>}
+              {(activeFilters || f.q.trim()) ? <p>Tidak ada sample {label.toLowerCase()} yang cocok dengan saringan saat ini.</p>
+                : <p>Belum ada sample {label.toLowerCase()}. Klik <b>Sample {label} Baru</b> — jenis sudah terpilih, tinggal tulis brief & target.</p>}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4" data-testid={`sample-gallery-grid-${code}`}>
@@ -200,10 +200,10 @@ export default function SampleTypeGalleryView({ code, currentUser, selectedEntit
 
       {creating && (
         <SampleFormModal selectedEntity={selectedEntity} lockType={code} onClose={() => setCreating(false)}
-          onSaved={(res) => { setCreating(false); setOkMsg(`Sampel ${label} ${res?.number || ""} tersimpan.`); load(); if (res?.id) setOpenId(res.id); }} />
+          onSaved={(res) => { setCreating(false); setOkMsg(`Sample ${label} ${res?.number || ""} tersimpan.`); load(); if (res?.id) setOpenId(res.id); }} />
       )}
       {openId && (
-        <DetailModal framed onClose={() => setOpenId(null)} label={`Rincian sampel ${label}`} testId="sample-detail-modal">
+        <DetailModal framed onClose={() => setOpenId(null)} label={`Rincian sample ${label}`} testId="sample-detail-modal">
           <SampleDetailPanel sampleId={openId} currentUser={currentUser} types={types} initialType={code}
             onClose={() => setOpenId(null)} onChanged={load} />
         </DetailModal>

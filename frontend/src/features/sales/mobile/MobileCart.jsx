@@ -8,7 +8,7 @@ import { useEffectivePrices, pickPrice, sourceMeta } from "../../../hooks/useEff
 import { clampSampleQty, isSampleCart } from "../../../utils/sampleOrder";
 
 /** Keranjang HP — checkout memakai CheckoutDrawer desktop (3 langkah: pelanggan & alamat → termin & lot → review)
- * supaya HP setara desktop: kirim/ambil sendiri, faktur pajak, gate kredit, lot campur, sampel gratis/berbayar, minta harga khusus per baris. */
+ * supaya HP setara desktop: kirim/ambil sendiri, faktur pajak, gate kredit, lot campur, sample gratis/berbayar, minta harga khusus per baris. */
 export default function MobileCart({
   cart, setCart, data, selectedCustomer, setSelectedCustomer,
   selectedAddress, setSelectedAddress, paymentTerms = [], onSubmitOrder, onAdd,
@@ -47,7 +47,7 @@ export default function MobileCart({
     <div data-testid="mobile-cart" className="space-y-3" style={{ paddingBottom: "110px" }}>
       <div className="flex items-center gap-2">
         {sampleCart ? <Scissors size={16} className="text-[#9A5B00]" /> : <ShoppingCart size={16} className="text-[#0058CC]" />}
-        <h2 className="m-section-title">{sampleCart ? "Keranjang Sampel" : "Keranjang"} ({cart.length})</h2>
+        <h2 className="m-section-title">{sampleCart ? "Keranjang Sample" : "Keranjang"} ({cart.length})</h2>
       </div>
       {sampleCart && <p data-testid="mobile-cart-sample-banner" className="rounded-lg border border-[#F3D9A4] bg-[#FFF9EC] px-3 py-2 text-[11px] text-[#9A5B00]">Pesanan <b>SAMPEL</b> (SOS-) — dipotong gudang dari roll. Gratis / berbayar dipilih saat checkout.</p>}
       <div className="space-y-2.5">
@@ -59,7 +59,7 @@ export default function MobileCart({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[12.5px] font-semibold">{it.product.name}</p>
                 {it.is_sample ? (
-                  <p className="text-[11px] font-semibold text-[#9A5B00]" data-testid={`mobile-cart-sample-${it.product.id}`}><Scissors size={10} className="mr-0.5 inline" /> Sampel · {formatQty(it.quantity)} {it.unit}</p>
+                  <p className="text-[11px] font-semibold text-[#9A5B00]" data-testid={`mobile-cart-sample-${it.product.id}`}><Scissors size={10} className="mr-0.5 inline" /> Sample · {formatQty(it.quantity)} {it.unit}</p>
                 ) : (
                   <p className="text-[11px] tabular-nums m-muted" data-testid={`mobile-cart-price-${it.product.id}`}>
                     {formatCurrency(unitPrice(it))}/{it.unit}
@@ -92,7 +92,7 @@ export default function MobileCart({
 
       <div className="m-cta-bar">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-[12px] m-muted">{sampleCart ? "Sampel" : "Estimasi subtotal"}</span>
+          <span className="text-[12px] m-muted">{sampleCart ? "Sample" : "Estimasi subtotal"}</span>
           <span data-testid="mobile-cart-subtotal" className="text-[16px] font-bold tabular-nums">{sampleCart ? `${cart.length} item` : formatCurrency(subtotal)}</span>
         </div>
         <button data-testid="mobile-checkout-btn" className={`primary-button w-full justify-center py-3 ${sampleCart ? "!bg-[#9A5B00]" : ""}`} onClick={() => setCheckout(true)}>

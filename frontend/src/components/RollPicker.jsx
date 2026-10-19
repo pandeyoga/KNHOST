@@ -23,7 +23,10 @@ export const dualLen = (qty, unit = "meter") => {
   return `${formatQty(m)} m ≈ ${formatQty(yd)} yd`;
 };
 
-export default function RollPicker({ productId, entityId, unitPrice = 0, baseUnit = "meter", onConfirm, warehouseId = "", confirmLabel = "", showOwner }) {
+/** Satuan jual dari master (yard/kg) — sales tidak melihat konversi meter. */
+export const unitShort = (u) => (/^y(ar)?d/i.test(u || "") ? "yd" : /^kg|kilo/i.test(u || "") ? "kg" : (u || ""));
+
+export default function RollPicker({ productId, entityId, unitPrice = 0, baseUnit = "meter", onConfirm, warehouseId = "", confirmLabel = "", showOwner, showDual = false }) {
   const ownerVisible = showOwner ?? canSeeSourcing();
   const [page, setPage] = useState(0);
   const [data, setData] = useState({ items: [], total: 0 });
@@ -139,8 +142,8 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
                       </div>
                     </div>
                     <span className="shrink-0 text-right">
-                      <span className="block text-[12.5px] font-bold tabular-nums text-[#1C1C1E]">{formatQty(r.length_remaining)}</span>
-                      <span className="block text-[9px] text-[#8E8E93]" data-testid={`roll-dual-${r.id}`}>{dualLen(r.length_remaining, data.base_unit || baseUnit)}</span>
+                      <span className="block text-[12.5px] font-bold tabular-nums text-[#1C1C1E]" data-testid={`roll-len-${r.id}`}>{formatQty(r.length_remaining)} <span className="text-[10px] font-semibold text-[#6B6B73]">{unitShort(data.base_unit || baseUnit)}</span></span>
+                      {showDual && <span className="block text-[9px] text-[#8E8E93]" data-testid={`roll-dual-${r.id}`}>{dualLen(r.length_remaining, data.base_unit || baseUnit)}</span>}
                     </span>
                   </button>
                 </li>
@@ -171,9 +174,9 @@ export default function RollPicker({ productId, entityId, unitPrice = 0, baseUni
         <div className="flex items-center justify-between">
           <div className="text-[11px] text-[#6B6B73]">
             <span data-testid="roll-picker-count" className="font-semibold text-[#1C1C1E]">{selList.length}</span> roll dipilih ·{" "}
-            <span data-testid="roll-picker-total-qty" className="font-semibold tabular-nums text-[#1C1C1E]">{formatQty(Math.round(totalQty * 100) / 100)} {baseUnit}</span>
+            <span data-testid="roll-picker-total-qty" className="font-semibold tabular-nums text-[#1C1C1E]">{formatQty(Math.round(totalQty * 100) / 100)} {unitShort(data.base_unit || baseUnit)}</span>
           </div>
-          <div className="text-right text-[12px] font-bold tabular-nums text-[#0058CC]" data-testid="roll-picker-subtotal">{unitPrice ? formatCurrency(subtotal) : dualLen(totalQty, data.base_unit || baseUnit)}</div>
+          <div className="text-right text-[12px] font-bold tabular-nums text-[#0058CC]" data-testid="roll-picker-subtotal">{unitPrice ? formatCurrency(subtotal) : showDual ? dualLen(totalQty, data.base_unit || baseUnit) : ""}</div>
         </div>
         <button type="button" data-testid="roll-picker-confirm" disabled={!selList.length} onClick={confirm}
           className="primary-button mt-2 w-full justify-center py-2 text-[12px] disabled:opacity-50">

@@ -1,5 +1,5 @@
 """Iterasi 23 tester — cakupan spesifik permintaan review:
-- A: Pesanan Sampel (SOS-) create, mixed→400 SAMPLE_MIXED, limit→400 SAMPLE_LIMIT,
+- A: Pesanan Sample (SOS-) create, mixed→400 SAMPLE_MIXED, limit→400 SAMPLE_LIMIT,
      list/desk/stats, confirm-paid-sebelum-approve→409, approve-payment→confirm→cancel
 - B: Design Studio revisi (kategori pattern/design, tambah kategori, next-code,
      designer create → SRI-BTK-PG-###, request-revision otomatis buka ronde, 

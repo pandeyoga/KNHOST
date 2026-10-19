@@ -5,7 +5,7 @@ import { cuttingLocations, setCuttingCaps } from "./sampleApi";
 
 const CAPS = [["standard", "Standar"], ["hanger", "Hanger"], ["catalogue", "Catalogue"]];
 
-/** L06 LN-061 — kemampuan cutting per lokasi (aturan yang SAMA dipakai API pembuatan sampel). */
+/** L06 LN-061 — kemampuan cutting per lokasi (aturan yang SAMA dipakai API pembuatan sample). */
 export default function CuttingLocations({ canEdit }) {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
@@ -18,7 +18,7 @@ export default function CuttingLocations({ canEdit }) {
   return (
     <section data-testid="cutting-locations" className="section-card overflow-x-auto">
       <ErrorNotice message={error} onDismiss={() => setError("")} testId="cutting-locations-error" />
-      <p className="px-3 pt-2 text-[11.5px] text-[#6B6B73]">Centang jenis sampel yang boleh dipotong di tiap lokasi. Mis. lokasi yang hanya standar tidak otomatis bisa catalogue.</p>
+      <p className="px-3 pt-2 text-[11.5px] text-[#6B6B73]">Centang jenis sample yang boleh dipotong di tiap lokasi. Mis. lokasi yang hanya standar tidak otomatis bisa catalogue.</p>
       <table className="w-full min-w-[480px] text-[12px]">
         <thead><tr className="border-b border-[#EFF0F2] text-left text-[10px] uppercase tracking-wide text-[#8E8E93]">
           <th className="px-3 py-2">Lokasi</th>{CAPS.map(([k, l]) => <th key={k} className="px-3 py-2 text-center">{l}</th>)}</tr></thead>

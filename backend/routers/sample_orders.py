@@ -1,7 +1,7 @@
-"""REVISI SAMPEL (klien 17 Sep) — Pesanan Sampel (SOS-) terpisah dari SO roll biasa.
+"""REVISI SAMPEL (klien 17 Sep) — Pesanan Sample (SOS-) terpisah dari SO roll biasa.
 
-Alur: POS (sales pilih "Order Sampel", gratis/berbayar) → berbayar: persetujuan pembayaran
-Finance/Admin Sampel → Admin Sampel meneruskan ke gudang (confirm → tugas `sample_cut`)
+Alur: POS (sales pilih "Order Sample", gratis/berbayar) → berbayar: persetujuan pembayaran
+Finance/Admin Sample → Admin Sample meneruskan ke gudang (confirm → tugas `sample_cut`)
 → gudang pindai roll RFID, potong, catat panjang → packing → kirim / diambil.
 Dokumennya tetap di koleksi `sales_orders` (order_type="sample") supaya gudang, SJ, dan
 riwayat pelanggan memakai mesin yang sama; yang berbeda: nomor, penyetuju, meja kerja.
@@ -37,9 +37,9 @@ def _base_q(ctx, entity_id: Optional[str]) -> Dict[str, Any]:
 async def _load(order_id: str, request: Request) -> Dict[str, Any]:
     order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     if not order:
-        raise HTTPException(status_code=404, detail="Pesanan sampel tidak ditemukan")
+        raise HTTPException(status_code=404, detail="Pesanan sample tidak ditemukan")
     if order.get("order_type") != "sample":
-        raise HTTPException(status_code=400, detail=f"{order.get('number')} bukan pesanan sampel — gunakan alur SO biasa.")
+        raise HTTPException(status_code=400, detail=f"{order.get('number')} bukan pesanan sample — gunakan alur SO biasa.")
     # KN-A07 — kembali ke penjaga KETAT (aktif), seketat daftarnya (R-3a).
     assert_active_entity_access(order, "sales_orders", await entity_ctx(request))
     return order
@@ -138,7 +138,7 @@ def _rows(docs: List[Dict[str, Any]], action: str, kind: str) -> List[Dict[str, 
 
 @router.get("/sample-orders/desk")
 async def sample_desk(request: Request, entity_id: str = None) -> Dict[str, Any]:
-    """Meja Admin Sampel — antrean per tahap, satu tindakan per baris."""
+    """Meja Admin Sample — antrean per tahap, satu tindakan per baris."""
     actor = await require_permission(request, "sample_order", "view")
     q = _base_q(await entity_ctx(request), entity_id)
 
@@ -152,19 +152,19 @@ async def sample_desk(request: Request, entity_id: str = None) -> Dict[str, Any]
     selesai = await find({"status": "done", "updated_at": {"$gte": _days_ago(7)}})
     can_pay = actor.get("role") in SAMPLE_PAYMENT_APPROVERS
     return {
-        "title": "Meja Admin Sampel", "role": actor.get("role"),
+        "title": "Meja Admin Sample", "role": actor.get("role"),
         "queues": [
-            _queue("bayar_sampel", "Sampel berbayar — menunggu persetujuan pembayaran",
-                   "Pastikan pembayaran/kesepakatan bayar sampel sudah ada, lalu setujui. Baru setelah itu masuk ke tim sampel.",
+            _queue("bayar_sampel", "Sample berbayar — menunggu persetujuan pembayaran",
+                   "Pastikan pembayaran/kesepakatan bayar sample sudah ada, lalu setujui. Baru setelah itu masuk ke tim sample.",
                    _rows(bayar, "Setujui Bayar" if can_pay else "Lihat", "approve_payment" if can_pay else "open"),
                    action_label="Setujui Bayar", owner="sample_admin"),
             _queue("siap_gudang", "Siap diteruskan ke gudang", "Gratis atau pembayaran sudah disetujui — teruskan agar gudang memotong dari roll (RFID).",
                    _rows(siap, "Teruskan ke Gudang", "confirm"), action_label="Teruskan ke Gudang", owner="sample_admin", value_kind="count", value_label="Pesanan"),
             _queue("di_gudang", "Sedang dipotong / disiapkan gudang", "Gudang memindai roll induk, memotong, mencatat panjang aktual, lalu packing.",
                    _rows(gudang, "Pantau", "open"), action_label="Pantau", owner="warehouse", value_kind="count", value_label="Pesanan"),
-            _queue("kirim_ambil", "Dikirim / siap diambil", "Sampel sudah keluar gudang — pastikan sampai ke pelanggan.",
+            _queue("kirim_ambil", "Dikirim / siap diambil", "Sample sudah keluar gudang — pastikan sampai ke pelanggan.",
                    _rows(kirim, "Lihat", "open"), action_label="Lihat", owner="warehouse", value_kind="count", value_label="Pesanan"),
-            _queue("selesai", "Selesai (7 hari)", "Sampel yang sudah diterima pelanggan.",
+            _queue("selesai", "Selesai (7 hari)", "Sample yang sudah diterima pelanggan.",
                    _rows(selesai, "Lihat", "open"), action_label="Lihat", owner="sample_admin", value_kind="count", value_label="Pesanan"),
         ],
         "not_my_desk": ["Pesanan roll/yard biasa (SO-) → Meja Admin Sales", "Uang masuk & faktur pajak → Meja Finance"],
@@ -175,10 +175,10 @@ async def sample_desk(request: Request, entity_id: str = None) -> Dict[str, Any]
 async def approve_payment(order_id: str, payload: NoteIn, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "sample_order", "approve_payment")
     if actor.get("role") not in SAMPLE_PAYMENT_APPROVERS:
-        raise HTTPException(status_code=403, detail="Persetujuan pembayaran sampel hanya oleh Finance atau Admin Sampel.")
+        raise HTTPException(status_code=403, detail="Persetujuan pembayaran sample hanya oleh Finance atau Admin Sample.")
     order = await _load(order_id, request)
     if order.get("sample_billing") != "paid":
-        raise HTTPException(status_code=400, detail=f"{order['number']} sampel gratis — tidak ada pembayaran yang perlu disetujui.")
+        raise HTTPException(status_code=400, detail=f"{order['number']} sample gratis — tidak ada pembayaran yang perlu disetujui.")
     if order.get("status") == "approved":
         return order
     if order.get("status") != "waiting_approval":
@@ -200,14 +200,14 @@ async def approve_payment(order_id: str, payload: NoteIn, request: Request) -> D
 
 @router.post("/sample-orders/{order_id}/confirm")
 async def confirm_sample(order_id: str, request: Request) -> Dict[str, Any]:
-    """Admin Sampel meneruskan ke gudang: SO → confirmed, lahir tugas outbound `sample_cut`."""
+    """Admin Sample meneruskan ke gudang: SO → confirmed, lahir tugas outbound `sample_cut`."""
     actor = await require_permission(request, "sample_order", "confirm")
     order = await _load(order_id, request)
     if order.get("status") == "confirmed":
         return order
     if order.get("sample_billing") == "paid" and order.get("sample_payment_status") != "approved":
         raise HTTPException(status_code=409, detail={"code": "SAMPLE_PAYMENT_PENDING",
-                            "message": f"{order['number']} sampel berbayar — pembayaran belum disetujui Finance/Admin Sampel."})
+                            "message": f"{order['number']} sample berbayar — pembayaran belum disetujui Finance/Admin Sample."})
     await so_transition(order_id, ["approved"], "confirmed", actor["name"], "sample_forwarded_to_warehouse",
                         {"forwarded_by": actor["name"]})
     tasks = await create_outbound_tasks_for_order(order_id, actor["name"])

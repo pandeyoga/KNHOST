@@ -225,7 +225,7 @@ class TestFN14Surplus:
         # Approve with zero_cost_reason → 200, tersimpan
         rok = admin.post(f"{BASE}/api/cycle-count/sessions/{sid0}/approve",
                         json={"reason": "audit",
-                              "zero_cost_reason": "Barang sampel hibah, HPP nol"},
+                              "zero_cost_reason": "Barang sample hibah, HPP nol"},
                         timeout=20)
         assert rok.status_code == 200, rok.text
         body = rok.json()

@@ -205,7 +205,7 @@ JOBS: List[Dict[str, Any]] = [
      "link": "operations"},
     # ── 2026-09 — giliran Anda ───────────────────────────────────────────
     {"id": "turn_scan", "label": "Pemberitahuan Giliran Anda",
-     "description": "Menyapu SO, PO, retur penjualan/pembelian, dan permintaan sampel: setiap dokumen "
+     "description": "Menyapu SO, PO, retur penjualan/pembelian, dan permintaan sample: setiap dokumen "
                     "yang berpindah tahap memberi tahu peran yang harus bertindak berikutnya (lonceng), "
                     "dan menutup pemberitahuan tahap sebelumnya. Jaring pengaman untuk transisi yang "
                     "tidak lewat jejak audit; satu pemberitahuan per (dokumen, tahap, orang).",

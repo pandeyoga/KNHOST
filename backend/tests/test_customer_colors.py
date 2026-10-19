@@ -163,7 +163,7 @@ class TestUseRequestFlow:
 
     def test_sales_create_request_success(self, sales, sjt_color_id):
         r = sales.post(f"{BASE_URL}/api/color-library/{sjt_color_id}/use-requests",
-                       json={"target_customer_id": "", "reason": "Butuh warna ini untuk sampel umum"})
+                       json={"target_customer_id": "", "reason": "Butuh warna ini untuk sample umum"})
         assert r.status_code == 200, r.text[:300]
         row = r.json()
         assert row["status"] == "pending"

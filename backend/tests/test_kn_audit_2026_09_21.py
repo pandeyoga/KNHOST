@@ -1,4 +1,4 @@
-"""Regresi audit KN 2026-09-21 — penjaga entitas jalur TULIS & isolasi sampel (R-3a).
+"""Regresi audit KN 2026-09-21 — penjaga entitas jalur TULIS & isolasi sample (R-3a).
 
 Menggantikan uji R-3a lama yang memukul `/api/sample-requests` (rute sudah dihapus; KN-A08).
 Semua uji memakai data demo `seed_realistic.py` (admin@kainnusantara.id / demo12345, entitas
@@ -63,12 +63,12 @@ def _first_doc(sess, path, params=None):
     return None
 
 
-# ── KN-A07 / R-3a — pesanan sampel: detail & aksi mengikuti badan usaha AKTIF ────
+# ── KN-A07 / R-3a — pesanan sample: detail & aksi mengikuti badan usaha AKTIF ────
 def test_sample_order_isolated_by_active_entity():
     admin = _sess()
     doc = _first_doc(admin, "sample-orders")
     if not doc:
-        pytest.skip("tidak ada pesanan sampel demo")
+        pytest.skip("tidak ada pesanan sample demo")
     ent = doc["entity_id"]
     same = admin.get(f"{API}/sample-orders/{doc['id']}", headers={"X-Entity-Id": ent}, timeout=20)
     cross = admin.get(f"{API}/sample-orders/{doc['id']}", headers={"X-Entity-Id": _other(ent)}, timeout=20)

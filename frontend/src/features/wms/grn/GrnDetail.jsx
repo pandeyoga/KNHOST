@@ -35,7 +35,7 @@ export default function GrnDetail({ grnId, user, onBack }) {
     try { onChange(await grnApi.post(grn.id, "cancel", { expected_version: grn.version, reason })); } catch (e) { setErr(errText(e)); }
   };
   const makeSample = async () => {
-    const label = await askText({ title: "Jadikan sampel uji OCR?", message: "Foto SJ dan isian yang sudah Anda cek disimpan sebagai jawaban benar untuk mengukur ketepatan baca. Koreksi Anda juga jadi petunjuk AI untuk SJ mitra ini berikutnya.", reasonLabel: "Nama sampel (boleh kosong)", reasonRequired: false, reasonPlaceholder: `${grn.partner_name} ${grn.dn?.number || ""}`.trim(), confirmLabel: "Simpan sampel" });
+    const label = await askText({ title: "Jadikan sample uji OCR?", message: "Foto SJ dan isian yang sudah Anda cek disimpan sebagai jawaban benar untuk mengukur ketepatan baca. Koreksi Anda juga jadi petunjuk AI untuk SJ mitra ini berikutnya.", reasonLabel: "Nama sample (boleh kosong)", reasonRequired: false, reasonPlaceholder: `${grn.partner_name} ${grn.dn?.number || ""}`.trim(), confirmLabel: "Simpan sample" });
     if (label === null) return;
     try { await sampleApi.fromGrn(grn.id, label || `${grn.partner_name} ${grn.dn?.number || ""}`.trim()); setSampled(true); } catch (e) { setErr(errText(e)); }
   };
@@ -55,8 +55,8 @@ export default function GrnDetail({ grnId, user, onBack }) {
         </div>
         <GrnStepper status={grn.status} />
         {canSample && (sampled
-          ? <span data-testid="grn-sample-saved" className="text-[11px] font-semibold text-[#0F766E]">Tersimpan sebagai sampel uji</span>
-          : <button data-testid="grn-make-sample" className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0058CC]" onClick={makeSample}><FlaskConical size={13} /> Jadikan sampel uji</button>)}
+          ? <span data-testid="grn-sample-saved" className="text-[11px] font-semibold text-[#0F766E]">Tersimpan sebagai sample uji</span>
+          : <button data-testid="grn-make-sample" className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0058CC]" onClick={makeSample}><FlaskConical size={13} /> Jadikan sample uji</button>)}
         {["draft", "reading", "review", "counting"].includes(grn.status) && COUNT_ROLES.includes(role) && (
           <button data-testid="grn-cancel" className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#B4231F]" onClick={cancel}><XCircle size={13} /> Batalkan</button>
         )}

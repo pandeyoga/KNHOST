@@ -118,7 +118,7 @@ export function SampleCutActions({ task, onCut, onDone }) {
     setBusy(true); setMsg(null);
     try {
       const body = useSuggested ? { roll_id: task.suggested_roll_id, actual_length: parseFloat(length) || undefined } : { epc, actual_length: parseFloat(length) || undefined, reason };
-      const r = await offlinePost(`${API}/outbound/tasks/${task.id}/cut-sample`, body, { label: `Potong sampel ${task.order_number || task.id}` });
+      const r = await offlinePost(`${API}/outbound/tasks/${task.id}/cut-sample`, body, { label: `Potong sample ${task.order_number || task.id}` });
       if (r.queued) { setMsg({ ok: true, text: "Offline — potongan tersimpan di HP; label bisa dicetak setelah sinkron." }); return; }
       // Hasil + tombol cetak diangkat ke induk (TaskList) supaya tetap tampil setelah kartu tugas hilang dari daftar.
       onCut?.(r.data.cut);

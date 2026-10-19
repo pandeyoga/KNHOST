@@ -189,18 +189,18 @@ ROLES: Dict[str, Dict[str, Any]] = {
         "order": 10,
         "new_in": "R9",
     },
-    # REVISI SAMPEL (2026-09-17) — PERAN KE-11: Admin Sampel. Pesanan sampel (SOS-) dipisah
-    # dari SO roll biasa; yang mengurusnya (setujui pembayaran sampel berbayar, teruskan
+    # REVISI SAMPEL (2026-09-17) — PERAN KE-11: Admin Sample. Pesanan sample (SOS-) dipisah
+    # dari SO roll biasa; yang mengurusnya (setujui pembayaran sample berbayar, teruskan
     # ke gudang untuk dipotong) adalah meja ini — BUKAN Admin Sales.
     "sample_admin": {
-        "label": "Admin Sampel",
-        "long_label": "Admin Sampel (alur pesanan sampel)",
+        "label": "Admin Sample",
+        "long_label": "Admin Sample (alur pesanan sample)",
         "rank": 2,
         "cross_entity": False,
         "home_view": "sample-admin-desk",
         "home_nav_id": "sample-admin-desk",
         "scope_hint": "1 badan usaha (bisa ditugaskan ke beberapa)",
-        "description": ("Mengelola pesanan sampel dari sales: menyetujui pembayaran sampel berbayar, "
+        "description": ("Mengelola pesanan sample dari sales: menyetujui pembayaran sample berbayar, "
                         "meneruskan permintaan potong ke gudang, memantau sampai terkirim/diambil."),
         "order": 11,
         "new_in": "SMP",

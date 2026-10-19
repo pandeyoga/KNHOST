@@ -1,6 +1,6 @@
-"""Sampel Uji OCR — foto SJ nyata + kunci jawaban yang dicek manusia, untuk mengukur ketepatan baca sebelum dipakai harian.
+"""Sample Uji OCR — foto SJ nyata + kunci jawaban yang dicek manusia, untuk mengukur ketepatan baca sebelum dipakai harian.
 
-Koleksi `ocr_samples` (sampel) & `ocr_sample_runs` (hasil uji). Uji memakai jalur baca yang sama dengan GRN
+Koleksi `ocr_samples` (sample) & `ocr_sample_runs` (hasil uji). Uji memakai jalur baca yang sama dengan GRN
 (putar otomatis → petunjuk mitra → model utama), dicatat di `ai_usage_log` (feature `ocr_dn`, role `eval`) agar ikut rem anggaran.
 """
 import asyncio
@@ -40,7 +40,7 @@ def clean_answer(a: Dict[str, Any]) -> Dict[str, Any]:
 
 async def create(entity_id: str, *, label: str, partner_id: str, partner_name: str, files: List[Dict[str, Any]],
                  answer: Dict[str, Any], actor: str, source_grn_id: str = "", source_grn_number: str = "") -> Dict[str, Any]:
-    doc = {"id": new_id("ocs"), "entity_id": entity_id, "label": label.strip()[:120] or partner_name or "Sampel SJ",
+    doc = {"id": new_id("ocs"), "entity_id": entity_id, "label": label.strip()[:120] or partner_name or "Sample SJ",
            "partner_id": partner_id, "partner_name": partner_name, "files": files, "answer": clean_answer(answer),
            "source_grn_id": source_grn_id, "source_grn_number": source_grn_number, "last_result": None,
            "created_by": actor, "created_at": now_iso(), "updated_at": now_iso()}
@@ -53,11 +53,11 @@ async def create_from_grn(grn_id: str, label: str, actor: Dict[str, Any], ctx: A
     from services.supplier_dn_profile_service import record_corrections
     grn = await load(grn_id, ctx)
     if grn.get("status") not in _READY:
-        raise HTTPException(status_code=400, detail="Sampel hanya dari kedatangan yang surat jalannya sudah dicek (Tinjau SJ ke atas).")
+        raise HTTPException(status_code=400, detail="Sample hanya dari kedatangan yang surat jalannya sudah dicek (Tinjau SJ ke atas).")
     if not grn.get("files"):
         raise HTTPException(status_code=400, detail="Kedatangan ini tidak punya foto surat jalan.")
     if await db.ocr_samples.find_one({"source_grn_id": grn_id}):
-        raise HTTPException(status_code=409, detail="Kedatangan ini sudah dijadikan sampel uji.")
+        raise HTTPException(status_code=409, detail="Kedatangan ini sudah dijadikan sample uji.")
     cfg = await go.ocr_config(grn["entity_id"])
     dn = grn.get("dn") or {}
     answer = {"dn_number": dn.get("number"), "dn_date": dn.get("date"), "supplier_name": dn.get("supplier_name_printed"),
@@ -72,7 +72,7 @@ async def create_from_grn(grn_id: str, label: str, actor: Dict[str, Any], ctx: A
 async def _get(sample_id: str, entity_id: str) -> Dict[str, Any]:
     doc = await db.ocr_samples.find_one({"id": sample_id, "entity_id": entity_id}, {"_id": 0})
     if not doc:
-        raise HTTPException(status_code=404, detail="Sampel uji tidak ditemukan.")
+        raise HTTPException(status_code=404, detail="Sample uji tidak ditemukan.")
     return doc
 
 
@@ -168,7 +168,7 @@ async def start_run(entity_id: str, sample_ids: List[str], actor: str) -> Dict[s
     flt: Dict[str, Any] = {"entity_id": entity_id, **({"id": {"$in": sample_ids}} if sample_ids else {})}
     samples = await db.ocr_samples.find(flt, {"_id": 0, "id": 1, "label": 1}).to_list(200)
     if not samples:
-        raise HTTPException(status_code=400, detail="Belum ada sampel uji untuk dijalankan.")
+        raise HTTPException(status_code=400, detail="Belum ada sample uji untuk dijalankan.")
     if await db.ocr_sample_runs.find_one({"entity_id": entity_id, "status": "running"}):
         raise HTTPException(status_code=409, detail="Masih ada uji yang berjalan. Tunggu sampai selesai.")
     cfg = await go.ocr_config(entity_id)
@@ -211,13 +211,13 @@ async def _run(run_id: str, entity_id: str, actor: str) -> None:
         sample = await db.ocr_samples.find_one({"id": res["sample_id"]}, {"_id": 0})
         try:
             if not sample:
-                raise OcrError("OCR_SAMPLE", "Sampel sudah dihapus.")
+                raise OcrError("OCR_SAMPLE", "Sample sudah dihapus.")
             await go._budget_guard(cfg, entity_id)
             out = await _one(sample, cfg, run_id, actor)
         except OcrError as e:
             out = {"status": "failed", "error_code": e.code, "error": e.message}
-        except Exception as e:  # noqa: BLE001 — satu sampel gagal tidak menghentikan uji
-            logger.exception("uji sampel %s gagal", res["sample_id"])
+        except Exception as e:  # noqa: BLE001 — satu sample gagal tidak menghentikan uji
+            logger.exception("uji sample %s gagal", res["sample_id"])
             out = {"status": "failed", "error_code": "OCR_INTERNAL", "error": f"{type(e).__name__}: {str(e)[:160]}"}
         results[i] = {**res, **out}
         total_cost += out.get("cost_usd", 0.0)

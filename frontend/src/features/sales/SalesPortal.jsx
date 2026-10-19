@@ -163,7 +163,7 @@ export function SalesPortal({
         <div data-testid="pos-cart-kind-banner" className={`mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-[12px] ${sampleMode ? "border-[#F3D9A4] bg-[#FFF9EC] text-[#9A5B00]" : "border-[#CBDFFF] bg-[#F2F7FF] text-[#0058CC]"}`}>
           <span className="flex items-center gap-2 font-semibold">
             {sampleMode ? <Scissors size={14} /> : <ShoppingBag size={14} />}
-            {cart.some((i) => i.is_sample) && !sampleMode ? "Keranjang CAMPUR (sampel + ecer) — pisahkan dulu di checkout sebelum membuat pesanan." : sampleMode ? "Keranjang: PESANAN SAMPEL (SOS) — hanya bahan sampel, maks 5 yard woven / 2 kg knitting per bahan." : "Keranjang: ORDER BIASA (PO) — pembelian roll/yard, nomor SO."}
+            {cart.some((i) => i.is_sample) && !sampleMode ? "Keranjang CAMPUR (sample + ecer) — pisahkan dulu di checkout sebelum membuat pesanan." : sampleMode ? "Keranjang: PESANAN SAMPEL (SOS) — hanya bahan sample, maks 5 yard woven / 2 kg knitting per bahan." : "Keranjang: ORDER BIASA (PO) — pembelian roll/yard, nomor SO."}
           </span>
           <button data-testid="pos-cart-kind-clear" className="text-[11px] font-semibold underline" onClick={() => setCart([])}>Kosongkan untuk ganti jenis</button>
         </div>
@@ -226,7 +226,7 @@ export function SalesPortal({
             <span data-testid="cart-badge-count" className={`absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white px-1 text-[11px] font-bold ${sampleMode ? "text-[#9A5B00]" : "text-[#0058CC]"}`}>{cartCount}</span>
           </span>
           <span className="text-left">
-            <span data-testid="cart-badge-kind" className="block text-[10px] font-medium uppercase tracking-wide text-white/70">{sampleMode ? "Keranjang Sampel" : "Keranjang"}</span>
+            <span data-testid="cart-badge-kind" className="block text-[10px] font-medium uppercase tracking-wide text-white/70">{sampleMode ? "Keranjang Sample" : "Keranjang"}</span>
             <span data-testid="cart-badge-subtotal" className="block text-[14px] font-bold tabular-nums">{formatCurrency(cartSubtotal)}</span>
           </span>
         </button>

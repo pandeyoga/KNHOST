@@ -86,7 +86,7 @@ async def _validate_min_cut(items: List[Dict[str, Any]], entity_id: str) -> None
 
 @router.post("/sales-orders")
 async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str, Any]:
-    # L06 — Pesanan Sampel cukup izin sample_order.create (Admin Sampel tidak membuat SO roll biasa).
+    # L06 — Pesanan Sample cukup izin sample_order.create (Admin Sample tidak membuat SO roll biasa).
     is_sample_order = (payload.order_type or "").strip().lower() == "sample"
     actor = await require_permission(request, *(("sample_order", "create") if is_sample_order else ("order", "create")))
     # Diskon manual DIHAPUS untuk SEMUA role — potongan harga HANYA via "Ajukan Harga
@@ -140,7 +140,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     if payload.catalogue:
         from services import sample_sale_service as _smpc
         if (payload.order_type or "").strip().lower() != "sample":
-            raise HTTPException(status_code=400, detail="Catalogue hanya untuk Pesanan Sampel.")
+            raise HTTPException(status_code=400, detail="Catalogue hanya untuk Pesanan Sample.")
         if not (payload.catalogue.soft_product_id or "").strip():
             raise HTTPException(status_code=400, detail="Pilih satu warna soft (+2 yd) untuk catalogue.")
         catalogue_doc = await _smpc.build_catalogue(
@@ -150,7 +150,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
                                           sample_kind="catalogue")
                          for pid, q in _smpc.catalogue_items(catalogue_doc).items()]
     elif any((it.sample_kind or "").strip().lower() == "catalogue" for it in payload.items):
-        raise HTTPException(status_code=400, detail="Sampel catalogue dibuat lewat komposisi catalogue (template + warna soft).")
+        raise HTTPException(status_code=400, detail="Sample catalogue dibuat lewat komposisi catalogue (template + warna soft).")
     # S-5 (Gelombang 2) — lookup produk TERARAH by id (bukan cap 100 pertama katalog).
     prod_ids = list({it.product_id for it in payload.items})
     products = {p["id"]: p for p in await db.products.find(
@@ -161,7 +161,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     await rnd_gate.assert_orderable(list(products.values()), entity_id=payload.entity_id or "",
                                     where="Pesanan Penjualan")
     fixed_factors = await load_fixed_factors()   # Sub-fase 1.13 — peta faktor UOM (FIXED)
-    # REVISI SAMPEL — jenis pesanan diputus di POS sebelum checkout. Sampel & roll biasa
+    # REVISI SAMPEL — jenis pesanan diputus di POS sebelum checkout. Sample & roll biasa
     # TIDAK boleh bercampur dalam satu dokumen: nomor, penyetuju, dan meja kerjanya berbeda.
     from services import sample_sale_service as _smp
     order_type = (getattr(payload, "order_type", "regular") or "regular").strip().lower()
@@ -171,13 +171,13 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     sample_billing = (getattr(payload, "sample_billing", "") or "").strip().lower()
     if is_sample_order:
         if sample_billing not in _smp.SAMPLE_BILLINGS:
-            raise HTTPException(status_code=400, detail="Pesanan sampel wajib memilih: sampel gratis (free) atau berbayar (paid).")
+            raise HTTPException(status_code=400, detail="Pesanan sample wajib memilih: sample gratis (free) atau berbayar (paid).")
         for it in payload.items:
             it.is_sample = True
     elif any(getattr(it, "is_sample", False) for it in payload.items):
         raise HTTPException(status_code=400, detail={
-            "code": "SAMPLE_MIXED", "message": "Baris sampel tidak boleh digabung dengan pembelian roll/yard biasa. "
-                                               "Buat Pesanan Sampel terpisah dari menu Order Sampel di POS."})
+            "code": "SAMPLE_MIXED", "message": "Baris sample tidak boleh digabung dengan pembelian roll/yard biasa. "
+                                               "Buat Pesanan Sample terpisah dari menu Order Sample di POS."})
     # Resolusi entitas penjual lebih awal (dibutuhkan untuk validasi harga khusus)
     # FASE E-1 (E1.10) — badan usaha penjual: payload → pelanggan → KONTEKS AKTIF.
     # `DEFAULT_ENTITY_ID` hanya cadangan terakhir (skrip/seed di luar request).
@@ -221,13 +221,13 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
                 special_meta = {"special_order_price": True, "special_order_number": _od.get("number", ""),
                                 "cost_price": _pr.get("cost_price"), "margin_pct": _pr.get("margin_pct"),
                                 "normal_price": round(base_sell_price * sell_factor, 2)}
-        # §3-C — baris SAMPEL: harga master sampel per induk (atau manual sales); harga
+        # §3-C — baris SAMPEL: harga master sample per induk (atau manual sales); harga
         # khusus/langganan tidak berlaku, dan unit dipaksa satuan dasar (panjang potongan).
         if getattr(item_in, "is_sample", False):
             if str(product.get("stage") or "").lower() in _smp.SAMPLE_BLOCKED_STAGES:
                 raise HTTPException(status_code=400, detail={
                     "code": "SAMPLE_NOT_ALLOWED", "product_id": product.get("id"),
-                    "message": f"'{product.get('name') or product.get('sku')}' adalah benang \u2014 tidak bisa dipesan sebagai sampel."})
+                    "message": f"'{product.get('name') or product.get('sku')}' adalah benang \u2014 tidak bisa dipesan sebagai sample."})
             sp = await _smp.resolve_sample_price(product, getattr(item_in, "sample_price", None))
             if is_sample_order and sample_billing == "free":
                 sp = {"price_per_unit": 0.0, "source": "sampel_gratis", "unit": product.get("base_unit") or "yard"}
@@ -332,8 +332,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     credit_gate = await evaluate_credit_gate(customer, pricing["grand_total"])
     credit_needs_approval = bool(credit_gate["blocked"] and not credit_gate["override"])
     if is_sample_order:
-        # Sampel: bukan persetujuan nilai/kredit manajer — gerbangnya PEMBAYARAN (bila berbayar),
-        # diputus Finance/Admin Sampel, lalu Admin Sampel meneruskan ke gudang.
+        # Sample: bukan persetujuan nilai/kredit manajer — gerbangnya PEMBAYARAN (bila berbayar),
+        # diputus Finance/Admin Sample, lalu Admin Sample meneruskan ke gudang.
         appr = {"requires_approval": False, "required_role": ""}
         credit_needs_approval = False
     order_id = new_id("so")
@@ -395,7 +395,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     warehouses_map = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(200)}
     try:
         for item in items:
-            # ── §3-C Sampel — TANPA reservasi FEFO: gudang memotong dari roll yang dipindai ──
+            # ── §3-C Sample — TANPA reservasi FEFO: gudang memotong dari roll yang dipindai ──
             if item.get("is_sample"):
                 from services import sample_sale_service as _smp
                 await _smp.annotate_sample_line(item, entity_id)
@@ -501,7 +501,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     #   - waiting_stock : 0 reserved (pure backorder — menunggu stok masuk)
     #   - draft         : tidak ada apa-apa
     total_reserved = round(sum(float(it.get("reserved_qty", 0) or 0) for it in items), 2)
-    # §3-C — baris sampel menunggu potong gudang (bukan backorder): pesanan boleh lanjut
+    # §3-C — baris sample menunggu potong gudang (bukan backorder): pesanan boleh lanjut
     # ke persetujuan/konfirmasi seperti pesanan ter-reservasi.
     if total_reserved > 0.01 or total_pending_ic > 0.01 or has_sample:
         initial_status = "reserved"
@@ -510,8 +510,8 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     else:
         initial_status = "draft"
     if is_sample_order:
-        # Gratis → langsung ke meja Admin Sampel (siap diteruskan ke gudang);
-        # berbayar → menunggu persetujuan pembayaran Finance/Admin Sampel.
+        # Gratis → langsung ke meja Admin Sample (siap diteruskan ke gudang);
+        # berbayar → menunggu persetujuan pembayaran Finance/Admin Sample.
         initial_status = "waiting_approval" if sample_billing == "paid" else "approved"
     # F5 — Unified Approval SSOT: kumpulkan pending_approvals (nilai + kredit) saat create.
     settings_eff = await get_effective_settings(entity_id)
@@ -520,7 +520,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     if is_sample_order and sample_billing == "paid":
         pending_approvals.append(so_approvals.make_approval(
             "pembayaran_sampel", required_role="finance",
-            reason=f"Sampel berbayar {rupiah(pricing['grand_total'])} — pembayaran perlu disetujui Finance/Admin Sampel.",
+            reason=f"Sample berbayar {rupiah(pricing['grand_total'])} — pembayaran perlu disetujui Finance/Admin Sample.",
             requested_by=actor["name"], requested_by_id=actor["id"], amount=pricing["grand_total"],
         ))
     if appr["requires_approval"]:
@@ -622,10 +622,10 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
             "location_pref": alloc_policy.get("location_pref"),
         },
         "has_mixed_lot": has_mixed_lot,
-        # §3-C — ada baris "Jual sebagai sampel" (permintaan potong ke gudang saat confirmed)
+        # §3-C — ada baris "Jual sebagai sample" (permintaan potong ke gudang saat confirmed)
         "has_sample": has_sample,
         "catalogue": catalogue_doc,   # L06 LN-060 — komponen dasar & soft disimpan TERPISAH
-        # REVISI SAMPEL — jenis pesanan & skema bayar sampel (nomor SMP-, meja Admin Sampel).
+        # REVISI SAMPEL — jenis pesanan & skema bayar sample (nomor SMP-, meja Admin Sample).
         "order_type": order_type,
         "sample_billing": sample_billing if is_sample_order else "",
         "sample_payment_status": ("awaiting_approval" if sample_billing == "paid" else "not_required") if is_sample_order else "",
