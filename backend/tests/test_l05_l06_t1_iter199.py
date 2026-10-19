@@ -237,7 +237,7 @@ def test_receive_rejects_other_owner_warehouse(admin, synthetic_cut_task):
     tid, roll = synthetic_cut_task
     # KSC roll → send to Kanda dedicated warehouse → should be 400 CUTTING_DEST_OTHER_OWNER
     r = requests.post(f"{BASE}/cutting/tasks/{tid}/receive",
-                     json={"to_warehouse_id": "wh_1a2ab1e044fe"}, headers=admin, timeout=30)
+                     json={"to_warehouse_id": DB.warehouses.find_one({"code": "GU-KANDA"})["id"]}, headers=admin, timeout=30)
     assert r.status_code == 400, r.text[:200]
     detail = r.json().get("detail", {})
     code = detail.get("code") if isinstance(detail, dict) else ""
@@ -290,7 +290,7 @@ def test_receive_shared_warehouse_ok(admin):
     try:
         # wh_bf256327b163 is sharing_mode='shared' with empty entity_ids
         r = requests.post(f"{BASE}/cutting/tasks/{tid}/receive",
-                         json={"to_warehouse_id": "wh_bf256327b163"}, headers=admin, timeout=60)
+                         json={"to_warehouse_id": DB.warehouses.find_one({"code": "RCM-WOVEN"})["id"]}, headers=admin, timeout=60)
         assert r.status_code == 200, r.text[:300]
         # Need to move roll back and clear movements
         DB.inventory_rolls.update_one({"id": roll["id"]},

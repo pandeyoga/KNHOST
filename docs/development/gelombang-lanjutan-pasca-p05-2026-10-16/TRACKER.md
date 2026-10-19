@@ -74,7 +74,7 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-111 | L11 | Join relevan, grain dan Finance analytics | in_progress | evidence/L11/report.md |
 | LN-112 | L11 | Rapor Designer dan Sales lengkap | in_progress | evidence/L11/report.md |
 | LN-113 | L11 | Keamanan field dan konsistensi pekerjaan export | in_progress | evidence/L11/report.md |
-| LN-120 | L12 | Parity kontrak dan pemisahan modul | not_started | belum ada |
+| LN-120 | L12 | Parity kontrak dan pemisahan modul | in_progress | evidence/L12/LN-120_parity_matrix.md (T01 matrix, T02 tes identitas device); MW-INT menunggu HW-01 |
 | LN-121 | L12 | UR300/C72: durability, context dan keputusan bisnis | not_started | belum ada |
 | LN-122 | L12 | CP30EN print/encode/verify dan reprint yang aman | not_started | belum ada |
 | LN-130 | L13 | Kontrak direct attendance dan raw log | not_started | belum ada |

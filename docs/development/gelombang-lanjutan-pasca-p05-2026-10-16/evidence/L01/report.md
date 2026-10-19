@@ -173,3 +173,13 @@ Owner memutuskan: disamarkan untuk peran tanpa izin grade, asal, atau LOT.
   - Per mitra ditampilkan: beban susut wajar, piutang klaim, potongan tagihan, klaim selisih hasil, dan yang menunggu. Ada baris rinci dan filter periode/mitra.
   - Akses: izin record_loss / approve_loss / claim_approve / gl / vendor_bill / accounting. Sales ditolak (403).
 - **Pengujian:** test_l01_dataset_recap 5, test_l01_dataset_edge 11, iteration_186–187. Gabung varian dan pemecahan keranjang lulus di desktop dan HP.
+
+## 6. Lanjutan 2026-10-19 — LN-015 (T03, T05, T06, T08)
+
+- **T03 ACC teknis per jenis uji**: aksi baru `rnd.assess_labdip|handfeel|proofing` ("Catat hasil …") dan `rnd.decide_labdip|handfeel|proofing` ("Setujui hasil …"). `assess`/`decide` umum tetap mencakup semua jenis. Server: `routers/rnd.py::_require_typed` — sample hanya boleh dinilai bila peran punya aksi umum ATAU aksi bertipe untuk SEMUA jenis uji sample itu. ACC bertipe **tidak** membuka keputusan yang membuat kontrak harga (sample non-revalidasi tetap butuh `rnd.decide`), tidak membuka `pic_decide` maupun contract-options. Aksi baru tidak diberikan otomatis ke peran selain Admin (tidak ada perluasan hak diam-diam).
+- **T05**: keputusan PIC atomik (update bersyarat status) — tes serentak sudah ada di `test_l03_ln034_revalidation.py`.
+- **T06**: izin dibaca ulang dari DB setiap request (perubahan berlaku pada request berikutnya — diuji). Simpan peran membawa `expected_version` (sidik isi peran); versi berbeda → 409 `ROLE_VERSION_CONFLICT`, tidak menimpa; editor menampilkan tombol "Muat ulang versi terbaru". Non-admin tetap tidak bisa mengubah perannya sendiri.
+- **T08**: editor peran memperingatkan perubahan belum disimpan (tutup ×, Batal, klik luar, Escape) dengan ringkasan jumlah modul/menu yang berubah; error simpan tidak menghapus pilihan.
+- **Bug diperbaiki**: hapus peran custom kini juga menghapus `hidden_views` miliknya (sebelumnya peran baru ber-slug sama mewarisi tab tersembunyi lama).
+- Tes: `tests/test_ln015_typed_rnd_and_role_version.py` (9 lulus), `tests/test_l01_custom_role.py`.
+- Belum: T01 inventaris lengkap seluruh aksi lintas fase, T02/T04/T07 diuji ulang khusus, UAT tablet T08 oleh pengguna.

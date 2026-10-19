@@ -1570,13 +1570,16 @@
         "MW-INT-11",
         "MW-INT-12"
       ],
-      "status": "not_started",
+      "status": "in_progress",
       "implementation_commit": null,
       "verified_commit": null,
-      "evidence": [],
+      "evidence": [
+        "evidence/L12/LN-120_parity_matrix.md",
+        "backend/tests/test_ln120_device_identity.py"
+      ],
       "reviewer": null,
       "owner_approval_ref": null,
-      "implementer": null,
+      "implementer": "agent E1 (Emergent)",
       "assessed_target_commit": null,
       "impact_assessment_ref": null
     },
@@ -1859,9 +1862,10 @@
       "implementation_commit": null,
       "verified_commit": null,
       "evidence": [
-        "evidence/L01/report.md",
+        "backend/tests/test_ln015_typed_rnd_and_role_version.py",
+        "evidence/L01/field_leak_scan_sales_after.json",
         "evidence/L01/field_leak_scan_sales_before.json",
-        "evidence/L01/field_leak_scan_sales_after.json"
+        "evidence/L01/report.md"
       ],
       "reviewer": null,
       "owner_approval_ref": null,

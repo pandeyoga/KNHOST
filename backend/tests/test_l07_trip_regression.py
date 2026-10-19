@@ -8,7 +8,8 @@ from pymongo import MongoClient
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
 RESET = {"logistics_id": None, "logistics_number": None, "logistics_status": None, "logistics_mode": None}
-SO1, SO2 = "so_7f6b0f78e8d8", "so_d755b1b5ab40"
+_SJ = {x["shipment_no"]: x["order_id"] for x in DB.shipments.find({"entity_id": "ent_ksc", "shipment_no": {"$regex": "^KSC/SJ-0000[1-4]$"}}, {"_id": 0})}
+SO1, SO2 = _SJ.get("KSC/SJ-00001"), next((v for v in _SJ.values() if v != _SJ.get("KSC/SJ-00001")), None)
 
 
 def _login(email, pw):

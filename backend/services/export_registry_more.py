@@ -271,6 +271,9 @@ MORE += [
       "order_number:Pesanan|status:Status|requested_by:Pengaju|decided_by:Pemutus|entity_id:ID badan usaha"),
     S("logistics_deliveries", "Pengiriman Logistik", "Logistik", "logistics_deliveries", ("logistics", "view"),
       "number:No.|status:Status|driver_name:Sopir|entity_id:ID badan usaha"),
+    S("po_variance_tasks", "Tugas Selisih Penerimaan PO", "Pembelian", "po_variance_tasks", ("purchase_order", "view"),
+      "po_number:No. PO|supplier_name:Supplier|product_name:Produk|ordered_qty:Dipesan|received_qty:Diterima|short_qty:Kurang|"
+      "unit:Satuan|status:Status|assignee_name:Penanggung jawab|entity_id:ID badan usaha"),
 ]
 EXCLUDED_MORE.update({
     "bin_locks": "Kunci transaksi bin (teknis)", "return_create_locks": "Kunci transaksi retur (teknis)",
@@ -278,4 +281,5 @@ EXCLUDED_MORE.update({
     "customer_grade_rules": "Konfigurasi rank pelanggan (Pengaturan)", "process_recipes": "Master resep proses (Pengaturan)",
     "design_categories": "Kamus kategori desain", "client_dataset_imports": "Log impor dataset (teknis)",
     "approval_matrix_log": "Jejak audit matriks persetujuan",
+    "rfid_print_jobs": "Antrean cetak label RFID (operasional perangkat)",
 })

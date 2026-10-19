@@ -32,7 +32,7 @@ from _shared_loop import run as _run  # noqa: E402
 
 def test_return_warehouse_uses_outbound_task_then_entity_default():
     from services.return_service import _resolve_return_warehouse
-    so_id, wh = f"so_{TAG}", "wh_b0a0387806e7"
+    so_id, wh = f"so_{TAG}", DB.warehouses.find_one({"code": "RCM-WOVEN"})["id"]
     DB.sales_orders.insert_one({"id": so_id, "entity_id": CST, "notes": TAG, "allocations": []})
     DB.wms_tasks.insert_one({"id": f"wms_{TAG}", "order_id": so_id, "flow_type": "outbound", "warehouse_id": wh,
                              "created_at": "2026-10-18", "notes": TAG})

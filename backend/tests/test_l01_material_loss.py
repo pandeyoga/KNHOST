@@ -3,7 +3,7 @@ di atas toleransi → persetujuan terpisah → klaim mitra (1-1260). Pencatat �
 import pytest
 import requests
 
-from tests.test_p05_acceptance_acc31_33_34 import BASE, DB, _create, _login, _tpl, _wip
+from tests.test_p05_acceptance_acc31_33_34 import BASE, DB, _create, _login, _tpl, _wip, cancel_test_mkos
 
 
 @pytest.fixture(scope="module")
@@ -22,7 +22,9 @@ def output_is_makloon():
     tpl = DB.product_templates.find_one({"id": out["template_id"]}, {"_id": 0, "id": 1, "restock_source": 1})
     before = tpl.get("restock_source")
     DB.product_templates.update_one({"id": tpl["id"]}, {"$set": {"restock_source": {"mode": "makloon", "note": "TEST_L01"}}})
+    cancel_test_mkos()
     yield
+    cancel_test_mkos()
     if before:
         DB.product_templates.update_one({"id": tpl["id"]}, {"$set": {"restock_source": before}})
 

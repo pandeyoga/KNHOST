@@ -27,6 +27,14 @@ def adm():
     return _login("admin@kainnusantara.id", "demo12345")
 
 
+def cancel_test_mkos():
+    """MKO uji (TEST_P05ACC) yang tertinggal memegang cadangan bahan — batalkan supaya uji bisa diulang."""
+    h = _login("admin@kainnusantara.id", "demo12345")
+    for m in DB.makloon_orders.find({"status": {"$in": ["draft", "in_process"]}, "notes": {"$regex": "^TEST_P05ACC"}},
+                                    {"_id": 0, "id": 1}):
+        requests.post(f"{BASE}/api/makloon-orders/{m['id']}/cancel", json={"reason": "TEST_P05ACC bersih-bersih"}, headers=h, timeout=60)
+
+
 @pytest.fixture(scope="module", autouse=True)
 def output_is_makloon():
     """Artikel hasil MKO uji diatur 'makloon' selama uji (DEC-07: unknown=block), lalu dikembalikan."""
@@ -35,7 +43,9 @@ def output_is_makloon():
     before = tpl.get("restock_source")
     DB.product_templates.update_one({"id": tpl["id"]}, {"$set": {"restock_source": {
         "mode": "makloon", "note": "TEST_P05ACC"}}})
+    cancel_test_mkos()
     yield
+    cancel_test_mkos()
     DB.md_samples.delete_many({"brief": {"$regex": "^TEST_P05ACC"}})
     if before:
         DB.product_templates.update_one({"id": tpl["id"]}, {"$set": {"restock_source": before}})

@@ -204,7 +204,7 @@ def test_ln024_t03_cutoff_pending_then_configured():
 # ── LN-100-T02 ─────────────────────────────────────────────────────────────
 def test_ln100_t02_shared_woven_node():
     from services import placement_rules as pr
-    wh = DB.warehouses.find_one({"id": "wh_b0a0387806e7"}, {"_id": 0})
+    wh = DB.warehouses.find_one({"code": "RCM-WOVEN"}, {"_id": 0})
     assert wh["sharing_mode"] == "shared"
     wh = {**wh, "zones": [{"id": "z1", "name": "Zona T", "racks": [{"id": "r1", "name": "Rak T", "levels": [
         {"id": "l1", "name": "Tingkat 1", "bins": [{"id": "b1", "code": f"TEST-{T}", "capacity_rolls": 10,

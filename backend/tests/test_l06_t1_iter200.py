@@ -43,7 +43,7 @@ def sampleadmin():
 @pytest.fixture(scope="module")
 def knit_product():
     """Pick any knit (kg) product; sample limit check uses product.fabric_type regardless of stock."""
-    p = DB.products.find_one({"base_unit": "kg", "fabric_type": "knit"}, {"_id": 0, "id": 1, "name": 1})
+    p = DB.products.find_one({"base_unit": "kg", "fabric_type": "knit", "exclusive_customer_id": {"$in": [None, ""]}}, {"_id": 0, "id": 1, "name": 1})
     if not p:
         pytest.skip("no knit product in DB")
     return p

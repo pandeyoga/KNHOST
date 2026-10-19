@@ -93,7 +93,7 @@ def test_resave_unchanged_structure_no_migration(adm):
 
 
 # LN-100-T02 — rules.fabric_types woven on a node of a SHARED warehouse (RCM-WOVEN): woven roll of other entity accepted, knit rejected
-SHWH = "wh_6b2c7ef462be"
+SHWH = DB.warehouses.find_one({"code": "RCM-WOVEN"})["id"]
 
 
 def test_fabric_rule_evaluate(adm):
