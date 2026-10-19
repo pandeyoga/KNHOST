@@ -83,6 +83,7 @@ function Collection({ selectedEntity }) {
             <div className="min-w-0">
               <p className="truncate text-[13px] font-bold">{r.customer_name}</p>
               <p className="text-[11px] m-muted">{r.order_number} · jatuh tempo {fmtDate(r.due_date)}</p>
+              {r.via_own_order && <span className="mt-0.5 inline-block rounded bg-[#EEF4FF] px-1.5 text-[9.5px] font-semibold text-[#0058CC]" data-testid={`m-collection-own-${r.order_id}`}>Pesanan Anda · pelanggan sales lain</span>}
             </div>
             <div className="text-right">
               <p className="text-[13px] font-bold tabular-nums">{formatCurrency(r.outstanding)}</p>

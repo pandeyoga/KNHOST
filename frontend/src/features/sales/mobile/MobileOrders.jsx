@@ -23,7 +23,7 @@ const ACTIVE = ["reserved", "waiting_approval", "approved", "confirmed", "partia
 const PRE_CONFIRM = ["reserved", "waiting_approval", "approved", "waiting_stock"];
 const SHIPPED = ["shipped", "partially_shipped", "dispatched", "delivered", "done"];
 
-export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh, role, focusId, onReturn }) {
+export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh, role, focusId, onReturn, onDashboard }) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
   const [open, setOpen] = useState(focusId || null);
@@ -63,6 +63,7 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
       <div className="mb-2 flex items-center gap-2">
         <ClipboardList size={16} className="text-[#0058CC]" />
         <h2 className="m-section-title">Pesanan Saya</h2>
+        {onDashboard && <button className="ml-auto rounded-full border border-[#0058CC] px-3 py-1 text-[11.5px] font-semibold text-[#0058CC]" onClick={onDashboard} data-testid="mobile-orders-dashboard-btn">Dasbor</button>}
       </div>
 
       {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"} mb-2 text-xs`} data-testid="mobile-orders-msg">{msg.text}</div>}

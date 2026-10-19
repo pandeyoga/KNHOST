@@ -1,4 +1,4 @@
-import { Users, RotateCcw, FileStack, Tags, Monitor, LogOut, ChevronRight, ArrowLeft, UserCircle, Target, Sparkles } from "lucide-react";
+import { Users, RotateCcw, FileStack, Tags, Monitor, LogOut, ChevronRight, ArrowLeft, UserCircle, Target, Sparkles , BarChart3 } from "lucide-react";
 import { Scissors, FlaskConical, Truck, Briefcase, Wallet, Car, Megaphone, FileText, UserCheck, ExternalLink, FileEdit } from "lucide-react";
 import { roleLabel } from "../../../config/roles";
 import TanyaKnView from "../../tanya/TanyaKnView";
@@ -13,6 +13,7 @@ import { BadgePercent, MapPin, Boxes, ArrowLeftRight, BadgeCheck, ShieldQuestion
 import { MobileSpecialPrice, MobileVisits } from "./MobileFieldViews";
 import MobileStockAtp from "./MobileStockAtp";
 import MobileCollectionTargets from "./MobileCollectionTargets";
+import MobileOrderDashboard from "./MobileOrderDashboard";
 import MobileInternalRequests from "./MobileInternalRequests";
 import { MobileInstallCard, MobilePushCard, dropPushSubscription } from "./MobilePwa";
 import { MobileSampleOrders, MobileApprovalWatch } from "./MobileExtraViews";
@@ -28,6 +29,7 @@ const MENU = [
   { id: "sample-orders", label: "Pesanan Sampel", desc: "Sampel kain gratis / berbayar & statusnya", icon: Scissors },
   { id: "approvals", label: "Pantau Persetujuan", desc: "Dokumen menunggu keputusan manajer (hanya-lihat)", icon: ShieldQuestion, roles: ["sales_admin"] },
   { id: "stock", label: "Stok & ATP", desc: "Siap janji, akan datang, peluang antar-PT per gudang", icon: Boxes },
+  { id: "order-dashboard", label: "Dasbor Pesanan", desc: "Omzet, status, tren 8 minggu, pelanggan teratas & butuh tindakan", icon: BarChart3 },
   { id: "collection", label: "Penagihan & Target", desc: "Pengingat tagih, follow-up, target, komisi & peringkat", icon: Wallet },
   { id: "leads", label: "Prospek (Lead)", desc: "Catat calon pelanggan, geser tahap, jadikan pelanggan", icon: Target },
   { id: "crm", label: "Pelanggan (CRM)", desc: "Kelola pelanggan & insentif", icon: Users },
@@ -41,7 +43,7 @@ const GROUPS = [
   { id: "assist", label: "Asisten & laporan", items: ["tanya"], open: true },
   { id: "admin", label: "Admin Sales", items: ["approvals", "internal"], open: true, roles: ["sales_admin"] },
   { id: "orders", label: "Pesanan & harga", items: ["amendments", "special", "sample-orders", "returns", "special-price", "price-status", "pricelist"], open: true },
-  { id: "customers", label: "Pelanggan & lapangan", items: ["crm", "collection", "leads", "visits"], open: true },
+  { id: "customers", label: "Pelanggan & lapangan", items: ["order-dashboard", "crm", "collection", "leads", "visits"], open: true },
   { id: "stock", label: "Stok & pemenuhan", items: ["stock", "internal"], open: true },
 ];
 const allowed = (item, role) => !item.roles || item.roles.includes(role);
@@ -66,7 +68,7 @@ const FULL_VIEWS = [
 ];
 
 const TITLES = { tanya: "Tanya KN", amendments: "Koreksi & Amandemen", leads: "Prospek (Lead)", crm: "Pelanggan (CRM)", returns: "Retur Penjualan", special: "Special Order", pricelist: "Daftar Harga",
-  "special-price": "Minta Harga Khusus", visits: "Kunjungan Sales", stock: "Stok & ATP", collection: "Penagihan & Target", internal: "Permintaan Internal", "price-status": "Harga Khusus Saya",
+  "special-price": "Minta Harga Khusus", visits: "Kunjungan Sales", stock: "Stok & ATP", collection: "Penagihan & Target", "order-dashboard": "Dasbor Pesanan", internal: "Permintaan Internal", "price-status": "Harga Khusus Saya",
   "sample-orders": "Pesanan Sampel", approvals: "Pantau Persetujuan" };
 
 function FullViewMenu({ onOpenFull, role }) {
@@ -89,7 +91,7 @@ function FullViewMenu({ onOpenFull, role }) {
   );
 }
 
-export default function MobileMore({ user, token, selectedEntity, entities, onLogout, onForceDesktop, sub, setSub, onOpenFull, orders, onRefresh, subParam, onSelectEntity, onStartOrder }) {
+export default function MobileMore({ onOpenOrder, user, token, selectedEntity, entities, onLogout, onForceDesktop, sub, setSub, onOpenFull, orders, onRefresh, subParam, onSelectEntity, onStartOrder }) {
   const role = user?.role;
   const switchable = (entities || []).filter((e) => (user?.allowed_entity_ids || []).includes(e.id));
   const shownIds = new Set();
@@ -106,6 +108,7 @@ export default function MobileMore({ user, token, selectedEntity, entities, onLo
           {sub === "special-price" && <MobileSpecialPrice selectedEntity={selectedEntity} />}
           {sub === "visits" && <MobileVisits />}
           {sub === "collection" && <MobileCollectionTargets selectedEntity={selectedEntity} />}
+          {sub === "order-dashboard" && <MobileOrderDashboard selectedEntity={selectedEntity} onOpenOrder={onOpenOrder} />}
           {sub === "stock" && <MobileStockAtp user={user} selectedEntity={selectedEntity} />}
           {sub === "leads" && <MobileLeads />}
           {sub === "crm" && <MobileCustomers selectedEntity={selectedEntity} user={user} onRefresh={onRefresh} onStartOrder={onStartOrder} />}

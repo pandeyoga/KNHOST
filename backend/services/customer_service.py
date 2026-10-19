@@ -336,15 +336,35 @@ async def can_access_customer(user: Dict[str, Any], customer: Dict[str, Any]) ->
     # INV-ENTITY-01 (KN-076-IDOR-READ-SUBRES P0): isolasi lintas-entitas untuk role ter-scope.
     # Dokumen customer di luar entitas yang diizinkan aktor → TOLAK, walau assigned_sales_id cocok
     # (seed bisa meng-assign sales ke customer entitas lain — tetap tak boleh diakses lintas-PT).
-    ent = customer.get("entity_id")
-    allowed = user.get("allowed_entity_ids") or (
-        [user.get("home_entity_id")] if user.get("home_entity_id") else []
-    )
-    if ent and allowed and ent not in allowed:
+    if not _entity_allowed(user, customer):
         return False
     if role == "sales":
         return customer.get("assigned_sales_id") == user.get("id")
     return True
+
+
+def _entity_allowed(user: Dict[str, Any], customer: Dict[str, Any]) -> bool:
+    ent = customer.get("entity_id")
+    allowed = user.get("allowed_entity_ids") or (
+        [user.get("home_entity_id")] if user.get("home_entity_id") else []
+    )
+    return not (ent and allowed and ent not in allowed)
+
+
+async def can_collect_customer(user: Dict[str, Any], customer: Dict[str, Any]) -> bool:
+    """Penagihan: pelanggan milik sales ATAU pelanggan yang pernah ia pesankan (pesanan buatannya)."""
+    if await can_access_customer(user, customer):
+        return True
+    if user.get("role") != "sales" or not _entity_allowed(user, customer):
+        return False
+    return bool(await db.sales_orders.find_one({"customer_id": customer.get("id"), "sales_id": user.get("id")}, {"_id": 1}))
+
+
+def can_view_credit(user: Dict[str, Any], customer: Dict[str, Any]) -> bool:
+    """Status kredit saat checkout: sales boleh melihat pelanggan mana pun yang bisa ia pesankan (entitas sama)."""
+    if user.get("role") in ("admin", "manager"):
+        return True
+    return _entity_allowed(user, customer)
 
 
 async def collection_worklist(
@@ -352,8 +372,11 @@ async def collection_worklist(
 ) -> List[Dict[str, Any]]:
     """Daftar tagihan (order outstanding) untuk follow-up penagihan (KN_17 paragraf 7)."""
     cust_filter: Dict[str, Any] = {}
-    if user.get("role") == "sales":
-        cust_filter["assigned_sales_id"] = user.get("id")
+    own_sales = user.get("id") if user.get("role") == "sales" else None
+    if own_sales:
+        # Pelanggan miliknya DITAMBAH pelanggan dari pesanan yang ia buat sendiri.
+        own_cids = await db.sales_orders.distinct("customer_id", {"sales_id": own_sales})
+        cust_filter["$or"] = [{"assigned_sales_id": own_sales}, {"id": {"$in": own_cids}}]
     elif sales_id:
         cust_filter["assigned_sales_id"] = sales_id
     if entity_id and entity_id != "all":
@@ -366,8 +389,12 @@ async def collection_worklist(
     rows: List[Dict[str, Any]] = []
     if not cust_ids:
         return rows
+    assigned_ids = [c["id"] for c in customers if not own_sales or c.get("assigned_sales_id") == own_sales]
+    oq: Dict[str, Any] = {"customer_id": {"$in": cust_ids}}
+    if own_sales:
+        oq = {"$or": [{"customer_id": {"$in": assigned_ids}}, {"customer_id": {"$in": cust_ids}, "sales_id": own_sales}]}
     orders = await db.sales_orders.find(
-        {"customer_id": {"$in": cust_ids}},
+        oq,
         {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
          "status": 1, "payment_status": 1, "grand_total": 1, "total_amount": 1,
          "payments": 1, "created_at": 1, "sales_name": 1, "payment_term_code": 1,
@@ -396,6 +423,7 @@ async def collection_worklist(
             "days_late": days_late,
             "overdue": days_late > 0,
             "sales_name": o.get("sales_name", ""),
+            "via_own_order": bool(own_sales and c.get("assigned_sales_id") != own_sales),
         })
     rows.sort(key=lambda r: r["days_late"], reverse=True)
     return rows

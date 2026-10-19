@@ -15,7 +15,7 @@ from schemas import (
     CreditOverrideCreate, CreditOverrideDecision, CollectionFollowupCreate,
 )
 from services.customer_service import (
-    customer_360, compute_customer_credit, can_access_customer, collection_worklist,
+    customer_360, compute_customer_credit, can_access_customer, can_collect_customer, can_view_credit, collection_worklist,
     evaluate_credit_gate, collection_reminders,
 )
 from services.sales_force_service import sales_kpi, compute_commission, leaderboard, commission_history
@@ -170,7 +170,7 @@ async def get_credit_status(customer_id: str, request: Request, amount: float = 
     if not customer:
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
     # INV-ENTITY-01 (KN-079-IDOR-CREDIT-STATUS P1): konsisten dgn /360 — cegah bocor kredit/AR lintas-PT.
-    if not await can_access_customer(actor, customer):
+    if not can_view_credit(actor, customer):
         raise HTTPException(status_code=403, detail="Customer ini bukan milik Anda")
     gate = await evaluate_credit_gate(customer, float(amount or 0))
     return {
@@ -195,7 +195,7 @@ async def mark_reminder(payload: CollectionFollowupCreate, request: Request) -> 
     customer = safe_doc(await db.customers.find_one({"id": payload.customer_id}, {"_id": 0}))
     if not customer:
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
-    if not await can_access_customer(actor, customer):
+    if not await can_collect_customer(actor, customer):
         raise HTTPException(status_code=403, detail="Customer ini bukan milik Anda")
     doc = {
         "id": new_id("cfu"), "customer_id": payload.customer_id, "customer_name": customer.get("name", ""),
@@ -215,7 +215,7 @@ async def add_followup(customer_id: str, payload: CollectionFollowupCreate, requ
     customer = safe_doc(await db.customers.find_one({"id": customer_id}, {"_id": 0}))
     if not customer:
         raise HTTPException(status_code=404, detail="Customer tidak ditemukan")
-    if not await can_access_customer(actor, customer):
+    if not await can_collect_customer(actor, customer):
         raise HTTPException(status_code=403, detail="Customer ini bukan milik Anda")
     doc = {
         "id": new_id("cfu"),
@@ -269,6 +269,14 @@ async def get_leaderboard(request: Request, period: str = None, entity_id: str =
     if not entity_id:   # angka papan peringkat mengikuti badan usaha aktif (sama dengan AR Aging)
         entity_id = "all" if ctx.view_all else ctx.active_entity_id
     return await leaderboard(period=period, entity_id=entity_id)
+
+
+@router.get("/sales/order-dashboard")
+async def get_order_dashboard(request: Request, sales_id: str = None, entity_id: str = None) -> Dict[str, Any]:
+    """Dasbor Pesanan HP — sales selalu data miliknya sendiri (sales_id diabaikan)."""
+    from services.sales_order_dashboard import order_dashboard
+    sid, entity_id = await _kpi_scope(request, sales_id, entity_id)
+    return await order_dashboard(sid, entity_id)
 
 
 @router.get("/sales/my-rank")
