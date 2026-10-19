@@ -1405,3 +1405,14 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - SJ supplier tampil di detail lot (`lot-supplier-dn-view`) dan label roll ("SJ sup. …").
 - Kartu Beranda `return-desk-summary` (admin/manager/finance/warehouse_admin): retur internal masuk, roll menunggu keputusan, batas supplier dekat → tombol ke tab Retur Masuk. API GET /api/return-dispositions/summary.
 - Tes: test_ln140_chain_fixes.py 3/3 (+ tests/_shared_loop.py); iteration_232 100%.
+
+## 2026-10-19 — validasi menyeluruh + LN-015/LN-120 (status in_progress)
+- Akar masalah regresi pytest: (1) mongod preview mewarisi batas 1024 file descriptor dari supervisord → crash "Too many open files" (fix lingkungan: `prlimit --pid $(pgrep mongod) --nofile=65536:1048576`, ulangi tiap mongod restart); (2) ~330 modul tes masing-masing membuat MongoClient → kini satu klien per proses (`tests/conftest.py`); (3) tes bersandi salah mengunci akun bersama 15 menit → conftest menghapus lockout sebelum tiap tes; (4) data demo terkuras/ID acak → tes dicari via doc_prefix/code, cleanup MKO TEST_P05ACC.
+- Hasil: 73 file tes gelombang (L00–L14, LN-*, P05, iter23x) lulus per file (-n0) di data segar; POC rantai 46/46. Tes lama di luar gelombang yang memakai sandi lama (manager demo12345/"password") di luar cakupan.
+- LN-015: aksi R&D bertipe `rnd.assess_|decide_ labdip|handfeel|proofing` (tidak membuka kontrak/pic_decide); konflik versi peran 409 ROLE_VERSION_CONFLICT + tombol muat ulang; peringatan perubahan belum disimpan di editor peran (Esc/×/Batal/luar); hapus peran custom membersihkan hidden_views. Tes test_ln015_typed_rnd_and_role_version.py 9/9.
+- LN-120: parity matrix OPENAPI_RFID_V2 vs ERP (evidence/L12/LN-120_parity_matrix.md: 4 ADA/14 SEBAGIAN/5 GAP), tes identitas device test_ln120_device_identity.py 8/8. MW-INT menunggu HW-01 (unit nyata).
+- Export Center: dataset baru "Tugas Selisih Penerimaan PO"; rfid_print_jobs dikecualikan.
+- Mode "Semua Entitas" pada Kebijakan Retur & template export memang boleh tulis (endpoint dikecualikan entity_write_guard) — bukan bug.
+- Data demo dipulihkan (restore_local_demo.sh + seed_ln093_ui.py); CST = ent_3b296822daf9.
+- iteration_235: backend 17/17, frontend 6/7 (temuan sales.cst tak bisa buka Retur Masuk = sesuai desain: notifikasi untuk warehouse_admin/admin/finance).
+- Berikutnya: LN-034 (P2) setelah dicek user; LN-015-T01 inventaris aksi lengkap; L12/L13 butuh perangkat (HW-01/HW-02).

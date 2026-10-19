@@ -1,0 +1,43 @@
+{
+  "summary": "Iter 235 — FE+BE validation of role editor discard dialog, R&D typed actions UI, backend version conflict, retur DEMO_LN093 admin detail, Export Center po_variance_tasks dataset, cross-role chain screens. Backend regresi: tests/test_ln015_typed_rnd_and_role_version.py (9) + tests/test_ln120_device_identity.py (8) = 17/17 PASS. Frontend: 6/7 flows OK. 1 temuan: sales.cst@ TIDAK bisa membuka ?view=interco-transactions (peran 'sales' tidak punya izin interco di permissions_config.py), sehingga interco-tab-return-inbox tidak muncul (silently redirect ke Beranda). Alur yang sama di iter_234 utk finance@ sudah terverifikasi (finance punya interco.view).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "InterCoTransactions (sales role)", "issue": "sales.cst@ membuka ?view=interco-transactions&entity=<CST> silent-redirect ke Beranda; tidak ada interco-tab-* yang dirender karena role 'sales' tidak memiliki interco.* di backend permissions_config.py. Review request mewajibkan tab Retur Masuk tampil utk sales.cst@. Perlu klarifikasi: tambahkan interco:[view] (minimal view-only) ke role sales, ATAU update spec ke finance@. Backend permission matrix: sales role tidak punya kunci 'interco'.", "selector": "[data-testid=\"interco-tab-return-inbox\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified": [
+    "Role editor discard dialog (admin, entities-access tab roles) — role-card-duplicate-sales membuka role-editor-drawer; close tanpa perubahan TIDAK menampilkan role-editor-discard-summary (benar); setelah ubah role-editor-label, Escape menampilkan discard-summary; role-editor-discard-keep tetap buka; role-editor-cancel + role-editor-discard-confirm menutup drawer.",
+    "Custom role 'TEST_UI PIC Proofing' (?view=entities-access&entity=ent_ksc) tersimpan via role-editor-save → role-editor-confirm-save (toast 'Peran \"TEST_UI PIC Proofing\" dibuat'), dihapus kembali via role-editor-delete → role-editor-danger-confirm. GET /api/access/roles/<rid> setelah hapus = 404.",
+    "role-module-advanced-rnd memperlihatkan aktivitas R&D baru: 'Catat hasil labdip', 'Catat hasil handfeel', 'Catat hasil proofing', 'Setujui hasil labdip', 'Setujui hasil handfeel', 'Setujui hasil proofing' (ditampilkan terpisah per tipe, bukan satu string gabungan — label dari access_modules.py).",
+    "Backend version conflict: tests/test_ln015_typed_rnd_and_role_version.py 9/9 PASS (GET returns version; PATCH stale → 409 ROLE_VERSION_CONFLICT; typed R&D rnd.assess_proofing hanya memperbolehkan sampel proofing).",
+    "Backend device identity: tests/test_ln120_device_identity.py 8/8 PASS.",
+    "Admin ?view=returns&entity=ent_ksc search 'DEMO_LN093' → 1 baris return-row-sret_DEMO_LN093_9195ad, klik membuka detail dengan return-disposition-panel + return-grade-loss-panel (count=1 keduanya).",
+    "Admin Kebijakan Retur: return-assumptions-panel tampil (mode 'Semua Entitas' tetap bisa dibuka — exempt from write guard sesuai spec).",
+    "Admin Pusat Export ?view=export-center: dataset export-dataset-po_variance_tasks hadir dan export-preview-button menghasilkan export-preview-total ('0 baris cocok' pada DB saat ini — tanpa error).",
+    "whadmin@ ?view=operations&entity=CST: hub-tab-operations, hub-tab-goods-receipts, hub-tab-wms-outbound, hub-tab-qc-inspection semuanya tampil; tidak ada 403 dead-end.",
+    "finance@ ?view=accounts-receivable & ?view=finance-desk: tidak ada elemen error/403 di halaman."
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_ln015_typed_rnd_and_role_version.py (9/9 PASS)",
+    "/app/backend/tests/test_ln120_device_identity.py (8/8 PASS)"
+  ],
+  "action_items": [
+    "Klarifikasi/putuskan: apakah peran 'sales' harus memiliki interco.view supaya sales.cst@ bisa melihat tab Retur Masuk (ic-return-inbox) sesuai review request? Jika YA — tambahkan 'interco': ['view'] di permissions_config.py untuk role 'sales' (dan verify RBAC guard interco_router), lalu re-test. Jika spec yang keliru, update tests/spec supaya mengharapkan role finance@ (sudah lulus di iter_234)."
+  ],
+  "critical_code_review_comments": [
+    "RoleEditorDrawer.jsx discard dialog bekerja sempurna termasuk guard 'tidak ada perubahan → close langsung'.",
+    "Access_modules.py: labels R&D baru tampil per-tipe (Catat hasil labdip/handfeel/proofing) — review request menyebut dua label gabungan, tapi implementasi memilih per-tipe (lebih granular & cocok dengan RND_TYPED_ACTIONS). Tidak masalah.",
+    "ExportRegistry: dataset po_variance_tasks aktif. rfid_print_jobs sudah dikecualikan sesuai spec."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (17/17 target tests)", "frontend": "~86% (6/7 flows OK; 1 permission mismatch sales.cst interco)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; whadmin@, finance@, sales.cst@ /demo1234. CST entity_id=ent_3b296822daf9 (post-restore).",
+  "seed_data_creation": "Hanya ciptakan+hapus custom role cr_test_ui_pic_proofing (cleanup selesai, custom_roles kosong lagi).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "iter_235: role editor + R&D typed labels + backend version conflict + return DEMO_LN093 search + export po_variance_tasks dataset semuanya OK. Satu pertanyaan desain terbuka: sales role tidak punya interco.view sehingga sales.cst@ tidak bisa membuka interco-transactions UI, sedangkan iter_234 memverifikasi flow sama untuk finance@. Jangan uji ulang backend yg sudah PASS kecuali ada perubahan.",
+  "rca of the issue": "Sales.cst@ interco access: backend/permissions_config.py role 'sales' tidak mendefinisikan modul 'interco' (dibandingkan dengan admin/manager/finance/sales_admin yang punya 'interco':['view',...]). UI RouteGuard mengarahkan ke Beranda ketika view=interco-transactions diminta oleh role tanpa interco.view. Mitigasi: tambahkan `'interco': ['view']` ke sales atau buat typed sub-permission misal `interco_return.view` untuk sales (RBAC lebih sempit — hanya tab Retur Masuk)."
+}
