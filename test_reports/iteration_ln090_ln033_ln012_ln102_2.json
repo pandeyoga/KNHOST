@@ -1,0 +1,35 @@
+{
+  "summary": "Retest only. Backend (public URL): new tests/test_t1_retest_ln033_ln090.py 2/2 + test_t1_ln033_cancel_edges.py 2/2 pass. LN-033 T08: after cancel, PO cancelled, PR source_item_key '<key>#retired', status 'ready', active_docs empty, PO+PR in history_docs, second cancel 400, same-route realize 200 creating new PR+PO (different ids), only new PO active. LN-090: cancelling replacement SO voids store_credit_redemption, clears replacement_order_id, appends replacement_history, new replacement SO reuses the same credit_applied. UI (Playwright): OD panel cancel -> od-ful-doc list empty, od-ful-history-<key> shows PO+PR, od-ful-realize-<key> creates PR-00045/PO-00028 with no error. Meja Saya (warehouse@) inbound row shows 'KSC/PO-00001' and 'Kerjakan' opens Barang Masuk > Scan Terima per PO with that PO selected. Return detail: return-outcome-chip shows 'Selesai' (no trailing colon); replacement-qty only for yard-capable row, kg row shows replacement-conv-missing and '—'. InspectLineModal grade label verified in code (name starting with code is not prefixed again); the Barang Masuk grade select also shows 'A — Mutu terbaik'.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/special-orders/{id}/fulfillment/{key}/cancel", "issue": "history_docs keeps a copy of the PO taken before the cancel, so status stays 'pending' even though the real PO is 'cancelled'. The UI then shows 'Riwayat: PO KSC/PO-00027 (pending)'. Fix: in the archived list set status='cancelled' for the docs that were cancelled (routers/special_orders.py ~L718)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SpecialOrderPricingPanel od-po-chip", "issue": "Shows order.chain.po[0], which is the old cancelled PO (green chip '...Dibatalkan'), even after re-realize created a new active PO. Prefer the latest non-cancelled PO, or use neutral/red styling for a cancelled one.", "selector": "[data-testid=od-po-chip]", "priority": "LOW"},
+      {"component": "SpecialOrderFulfillmentPanel cancel form", "issue": "After cancel and re-realize, the cancel form for the new PO opens again by itself with the old reason already filled in ('Batalkan KSC/PO-00028'). Reset the open/reason state after a successful cancel.", "selector": "[data-testid^=od-ful-cancel-reason-]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Meja Saya warehouse tugas_wms", "issues": ["Inbound row still shows 'inbound · 0.0 yard'; queue title 'Tugas picking & packing' also covers receive tasks (optional, carried over)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_t1_retest_ln033_ln090.py", "/app/backend/tests/test_t1_ln033_cancel_edges.py", "/app/test_reports/pytest/t1_retest_ln033_ln090.xml"],
+  "action_items": [
+    "Mark archived docs as status 'cancelled' in fulfillment_cancel history_docs",
+    "od-po-chip: show the active PO, not chain.po[0]",
+    "Reset the cancel form state in SpecialOrderFulfillmentPanel after a successful cancel"
+  ],
+  "critical_code_review_comments": [
+    "fulfillment_cancel still cancels several docs one by one with no rollback. If a later cancel fails, nothing is written to history or archived for the docs already cancelled."
+  ],
+  "updated_files": ["/app/backend/tests/test_t1_retest_ln033_ln090.py"],
+  "success_rate": {"backend": "100% (4/4)", "frontend": "100% of requested retest flows; 2 low-priority leftover issues"},
+  "seed_data_creation": "Temporary OD TEST_LN033_T1UI (KSC/PO-00027 cancelled, PR-00044/45, PO-00028) and sr_TEST_T1UI_ln090. All cleared. Number sequences advanced.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run tests per file with -n0 -p no:randomly. test_t1_retest_ln033_ln090.py reuses the helpers and cleanup from test_l03_ln033_fulfillment and test_ln090_replacement_order. UI seeds: seed_t1_ln033_ui.py (REACT_APP_BACKEND_URL=http://localhost:8001; --clear) and seed_t1_ln090_ui.py (--clear). Open the OD via ?view=special-orders&entity=ent_ksc -> view-special-order-<id>.",
+  "rca of the issue": "Stale '(pending)' in history: fulfillment_cancel builds `archived` from n['docs'] (snapshot from progress() before the cancel calls), so each status is the pre-cancel value."
+}

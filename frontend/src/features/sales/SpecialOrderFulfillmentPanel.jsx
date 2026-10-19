@@ -57,12 +57,13 @@ function CancelDocs({ n, can, busy, onCancel }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   if (!can.cancel || n.active_docs.length === 0) return null;
+  const submit = async () => { await onCancel(n.key, reason.trim()); setOpen(false); setReason(""); };
   if (!open) return <button type="button" className="secondary-button mt-1.5 !py-1 text-[11px]" onClick={() => setOpen(true)} data-testid={`od-ful-cancel-open-${n.key}`}>Batalkan dokumen aktif</button>;
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-2">
       <input className="field w-64 text-[11px]" placeholder="Alasan pembatalan (min. 5 karakter)" value={reason} onChange={(e) => setReason(e.target.value)} data-testid={`od-ful-cancel-reason-${n.key}`} />
       <button type="button" className="secondary-button !py-1 text-[11px] text-[#C0392B]" disabled={busy || reason.trim().length < 5}
-        onClick={() => onCancel(n.key, reason.trim())} data-testid={`od-ful-cancel-submit-${n.key}`}>Batalkan {n.active_docs.map((d) => d.number || d.id).join(", ")}</button>
+        onClick={submit} data-testid={`od-ful-cancel-submit-${n.key}`}>Batalkan {n.active_docs.map((d) => d.number || d.id).join(", ")}</button>
       <button type="button" className="text-[11px] text-[#6B6B73]" onClick={() => setOpen(false)} data-testid={`od-ful-cancel-close-${n.key}`}>Tutup</button>
     </div>
   );

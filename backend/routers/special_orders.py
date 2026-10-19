@@ -715,7 +715,8 @@ async def fulfillment_cancel(order_id: str, item_key: str, payload: FulfillmentC
     entry = {"at": now_iso(), "by": user.get("name", ""), "action": "cancel_docs", "docs": done, "reason": payload.reason}
     st = n["state"]
     # Sama dengan ganti jalur: dokumen batal diarsip, PR lama dipensiunkan → realisasi ulang membuat PR baru.
-    archived = [{**d, "archived_at": entry["at"], "cancel_reason": payload.reason} for d in n["docs"]]
+    archived = [{**d, "status": "cancelled" if (d.get("number") or d["id"]) in done else d.get("status"),
+                 "archived_at": entry["at"], "cancel_reason": payload.reason} for d in n["docs"]]
     if st.get("pr_id"):
         archived.append({"type": "pr", "id": st["pr_id"], "number": st.get("pr_number", ""), "archived_at": entry["at"]})
     await db.special_orders.update_one({"id": order_id}, {

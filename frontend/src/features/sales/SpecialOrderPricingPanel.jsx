@@ -52,7 +52,8 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
     try { const r = await axios.post(`${API}/special-orders/${order.id}/procure`, { warehouse_id: order.procurement_warehouse_id || "" }); onUpdated?.(r.data.special_order); }
     catch (e) { setErr(e.response?.data?.detail || "Gagal membuat PR/PO."); } finally { setBusy(false); }
   };
-  const po = ((order.chain || {}).po || [])[0];
+  const pos = (order.chain || {}).po || [];
+  const po = pos.find((p) => p.status !== "cancelled") || pos[0];
 
   if (!accd && !locked) {
     return (
