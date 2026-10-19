@@ -5,19 +5,30 @@ import KNSelect from "../../../components/KNSelect";
 
 const rp = (v) => `Rp ${Number(v || 0).toLocaleString("id-ID")}`;
 const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.detail || e.message;
-const BASIS = [{ value: "", label: "Belum diputuskan (KLX-03)" }, { value: "receipt", label: "Tanggal barang diterima" },
+const BASIS = [{ value: "", label: "Belum diatur" }, { value: "receipt", label: "Tanggal barang diterima" },
   { value: "invoice", label: "Tanggal invoice" }, { value: "document", label: "Tanggal dokumen" }];
 
+// LN-024 KLX-03 — cutoff, tanggal bayar & acuan periode dapat dikonfigurasi (semua PT atau per PT pembayar).
 function CutoffForm({ cfg, onSaved }) {
   const [f, setF] = useState({ cutoff_day: cfg.cutoff_day ?? "", payment_day: cfg.payment_day ?? "", basis: cfg.basis ?? "",
     reminder_days: cfg.reminder_days ?? 3 });
+  const [scope, setScope] = useState("global");
+  const [ents, setEnts] = useState([]);
+  useEffect(() => { axios.get(`${API}/entities`).then((r) => setEnts(Array.isArray(r.data) ? r.data : r.data?.items || [])).catch(() => setEnts([])); }, []);
+  useEffect(() => {
+    if (scope === "global") return;
+    axios.get(`${API}/settings/effective`, { params: { entity_id: scope } }).then((r) => {
+      const c = r.data.interco_payment || {};
+      setF({ cutoff_day: c.cutoff_day ?? "", payment_day: c.payment_day ?? "", basis: c.basis ?? "", reminder_days: c.reminder_days ?? 3 });
+    }).catch(() => {});
+  }, [scope]);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
   const save = async () => {
     setErr(""); setOk("");
     const num = (v) => (v === "" || v === null ? null : Math.min(31, Math.max(1, parseInt(v, 10) || 1)));
     try {
-      await axios.put(`${API}/settings`, { scope: "global", interco_payment: {
+      await axios.put(`${API}/settings`, { scope, interco_payment: {
         allow_netting: false, require_full_payment: true, cutoff_day: num(f.cutoff_day), payment_day: num(f.payment_day), basis: f.basis || null,
         reminder_days: Math.max(0, Math.min(30, parseInt(f.reminder_days, 10) || 0)) } });
       setOk("Tersimpan."); onSaved();
@@ -25,6 +36,9 @@ function CutoffForm({ cfg, onSaved }) {
   };
   return (
     <div data-testid="interco-cutoff-form" className="flex flex-wrap items-end gap-2 text-[12px]">
+      <div className="w-56 flex flex-col gap-1">Berlaku untuk (PT pembayar)
+        <KNSelect data-testid="interco-cutoff-scope" value={scope} searchable={false} onValueChange={setScope}
+                  options={[{ value: "global", label: "Semua PT" }, ...ents.map((e) => ({ value: e.id, label: e.short_name || e.name || e.id }))]} /></div>
       <label className="flex flex-col gap-1">Tanggal cutoff
         <input data-testid="interco-cutoff-day" type="number" min={1} max={31} value={f.cutoff_day} placeholder="—"
                onChange={(e) => setF({ ...f, cutoff_day: e.target.value })} className="field w-24" /></label>
@@ -37,7 +51,7 @@ function CutoffForm({ cfg, onSaved }) {
       <div className="w-56 flex flex-col gap-1">Basis tanggal
         <KNSelect data-testid="interco-cutoff-basis" value={f.basis} options={BASIS} searchable={false} onValueChange={(v) => setF({ ...f, basis: v })} /></div>
       <button type="button" data-testid="interco-cutoff-save" onClick={save}
-              className="rounded-lg bg-[#0F172A] text-white px-4 py-2 font-semibold">Simpan asumsi</button>
+              className="rounded-lg bg-[#0F172A] text-white px-4 py-2 font-semibold">Simpan pengaturan</button>
       {err && <span className="text-[#C62828]" data-testid="interco-cutoff-error">{err}</span>}
       {ok && <span className="text-[#1B7F4B]" data-testid="interco-cutoff-saved">{ok}</span>}
     </div>
@@ -58,7 +72,7 @@ export default function IntercoPaymentSchedule({ canConfigure }) {
            data-testid="interco-cutoff-status">
         <Info size={15} className="shrink-0 mt-0.5" />
         <div>
-          {pending ? data.note : <>Cutoff tanggal <b>{data.config.cutoff_day}</b> · bayar tanggal <b>{data.config.payment_day || "akhir bulan"}</b> · basis <b>{data.basis_label}</b>. <b>ASUMSI</b> sampai KLX-03 diputuskan owner.</>}
+          {pending ? data.note : <>Cutoff tanggal <b>{data.config.cutoff_day}</b> · bayar tanggal <b>{data.config.payment_day || "akhir bulan"}</b> · acuan periode <b>{data.basis_label}</b> (dapat diubah, KLX-03).</>}
           <p className="mt-1">Pembayaran penuh per transaksi, netting antar tagihan <b>dinonaktifkan</b>. Saldo setiap PT dihitung sendiri-sendiri.</p>
         </div>
       </div>

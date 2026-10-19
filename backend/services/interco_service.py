@@ -1168,14 +1168,20 @@ async def payment_schedule(scope_entity_ids: List[str], payer: str = "", payee: 
     cfg = await payment_settings(payer)
     basis = _BASIS.get(cfg.get("basis") or "")
     ready = bool(basis and cfg.get("cutoff_day"))
+    cfg_by_payer: Dict[str, Dict[str, Any]] = {}   # KLX-03 — pengaturan boleh per PT pembayar
     today = _today()
     rows = []
     for d in docs:
+        pcfg = cfg_by_payer.get(d["buyer_entity_id"])
+        if pcfg is None:
+            pcfg = cfg_by_payer[d["buyer_entity_id"]] = await payment_settings(d["buyer_entity_id"])
+        pbasis = _BASIS.get(pcfg.get("basis") or "")
+        pready = bool(pbasis and pcfg.get("cutoff_day"))
         remaining = round(float(d.get("grand_total") or 0) - float(d.get("settled_amount") or 0)
                           - float(d.get("returned_amount") or 0), 2)
         if remaining <= EPS:
             continue
-        bdate = (d.get(basis[0]) or "") if basis else ""
+        bdate = (d.get(pbasis[0]) or "") if pbasis else ""
         row = {"interco_id": d["id"], "number": d.get("number"), "counterpart_number": d.get("counterpart_number"),
                "payer_entity_id": d["buyer_entity_id"], "payer_entity_name": d.get("buyer_entity_name", ""),
                "payee_entity_id": d["seller_entity_id"], "payee_entity_name": d.get("seller_entity_name", ""),
@@ -1183,8 +1189,9 @@ async def payment_schedule(scope_entity_ids: List[str], payer: str = "", payee: 
                "received_at": d.get("received_at") or "", "invoiced_at": d.get("invoiced_at") or "",
                "doc_date": d.get("doc_date") or (d.get("created_at") or "")[:10], "due_date": d.get("due_date") or "",
                "basis_date": bdate, "period": None, "pay_date": None}
-        if ready and bdate:
-            row.update(_period_for(bdate, int(cfg["cutoff_day"]), cfg.get("payment_day")))
+        if pready and bdate:
+            row.update(_period_for(bdate, int(pcfg["cutoff_day"]), pcfg.get("payment_day")))
+            row["basis_label"] = pbasis[1]
         row["age_days"] = (_dt.date.fromisoformat(today) - _dt.date.fromisoformat(row["doc_date"][:10])).days \
             if row["doc_date"] else None
         rows.append(row)
@@ -1197,10 +1204,10 @@ async def payment_schedule(scope_entity_ids: List[str], payer: str = "", payee: 
         p["count"] += 1
         p["remaining"] = round(p["remaining"] + r["remaining"], 2)
     return {"rows": rows, "pairs": list(pairs.values()), "config": cfg,
-            "cutoff_status": "configured" if ready else "pending_KLX-03",
+            "cutoff_status": "configured" if (ready or any(r.get("period") for r in rows)) else "not_configured",
             "basis_label": basis[1] if basis else None, "netting": "disabled" if not cfg["allow_netting"] else "allowed",
-            "note": None if ready else "Cutoff & basis tanggal pembayaran belum diputuskan (KLX-03) — periode bayar "
-                                       "tidak diisi; atur di Pengaturan bila sudah ada keputusan/asumsi."}
+            "note": None if ready else "Cutoff & acuan periode pembayaran belum diatur — periode bayar & pengingat "
+                                       "belum jalan. Atur di form di bawah (semua PT atau per PT pembayar, KLX-03)."}
 
 
 async def job_interco_payment_reminder() -> Dict[str, Any]:

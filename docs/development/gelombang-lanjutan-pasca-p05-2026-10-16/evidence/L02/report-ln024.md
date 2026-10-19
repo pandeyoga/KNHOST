@@ -25,3 +25,8 @@ Navigasi: **Transaksi Antar Entitas → tab Jadwal Bayar** (izin `interco_financ
 - Job scheduler `interco_payment_reminder` (tiap jam). Notifikasi ke peran **finance** PT pembayar bila `pay_date` ≤ `reminder_days` (bawaan 3) hari lagi, satu kali per transaksi × tanggal bayar.
 - Tidak berjalan selama cutoff KLX-03 belum dikonfigurasi. Isian "Ingatkan (hari sebelum)" ada di tab Jadwal Bayar.
 - Tes: `test_ln091_092_returns_exceptions.py::test_ln024_payment_reminder_job`.
+
+## Update 2026-10-19 (sesi lanjutan) — KLX-03 cutoff configurable
+- Cutoff, tanggal bayar, acuan periode (tanggal terima / invoice / dokumen) dan hari pengingat diatur di tab Jadwal Bayar antar-PT; **berlaku untuk semua PT atau per PT pembayar** (`interco-cutoff-scope`, simpan ke `system_settings` scope entitas).
+- `payment_schedule` membaca pengaturan **per PT pembayar** tiap transaksi (bukan hanya global); status `configured` | `not_configured`. Pengingat berjalan begitu pengaturan diisi. Label "ASUMSI/KLX-03 pending" dihapus.
+- **Uji:** `test_ln024_t03_cutoff_pending_then_configured`, `test_ln024_klx03_config_per_payer_entity` (lulus).

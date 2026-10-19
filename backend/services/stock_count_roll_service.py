@@ -4,7 +4,7 @@ Memakai sesi `cycle_count_sessions` yang sama (field `roll_count`), bukan engine
 Cutoff/delta: snapshot dibekukan saat scope dipilih; tiap scan menyimpan saldo LIVE roll saat
 discan. Selisih = fisik − live-saat-scan, sehingga gerakan yang sudah diposting tidak diulang.
 Roll yang berubah sesudah discan → wajib hitung ulang (CAS gagal), bukan ditimpa.
-Hilang / roll asing TIDAK di-adjust otomatis — kebijakan OPS-01 masih pending.
+Hilang / roll asing mengikuti SOP OPS-01 (hitung ulang → ACC); tanpa batas nilai kerugian (owner 2026-10-19).
 """
 from __future__ import annotations
 

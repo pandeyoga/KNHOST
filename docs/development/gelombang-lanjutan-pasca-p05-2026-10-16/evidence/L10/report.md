@@ -64,3 +64,6 @@ Keputusan owner (chat 2026-10-18): hilang → wajib hitung ulang lalu dihapus sa
 - **Editor struktur — aksi "Pindah ke…" per bin** (`lp-bin-<id>-move`): bin dipindah ke tingkat lain dengan ID tetap. Saat disimpan, bin berisi stok/tugas memicu 409 `LOCATION_MIGRATION_REASON` → UI meminta alasan, lalu migrasi tercatat.
 - **LN-100-T02**: `test_lanjutan_sched_returns_interco.py::test_ln100_t02_shared_woven_node`. Pada gudang shared Rancamalang Woven dengan node woven-only, roll woven Sukacita & CST diterima tanpa gudang owner fiktif, sedangkan roll knit ditolak ("Jenis kain 'knit' tidak diizinkan … (hanya woven)").
 - Masih terbuka: batas nilai kerugian opname (owner: belum ada) dan verifikasi LN-102-T02.
+
+## Update 2026-10-19 (sesi lanjutan) — OPS-01 tanpa batas nilai kerugian
+- Diperiksa `stock_count_roll_service`, `cycle_count_service`, `stock_count_service`, `routers/cycle_count.py`, katalog konfigurasi & aturan persetujuan: **tidak ada ambang nilai kerugian opname** yang memicu persetujuan tambahan. ACC tetap satu izin `inventory.approve_count`. Docstring "OPS-01 masih pending" diperbarui.

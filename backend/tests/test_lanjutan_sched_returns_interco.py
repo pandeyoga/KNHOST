@@ -192,7 +192,7 @@ def test_ln024_t03_cutoff_pending_then_configured():
     _ict("ent_ksc", CST, 1)
     hdr = {**ADMIN, "X-Entity-Id": "all"}
     sch = requests.get(f"{BASE}/interco/payment-schedule?payer_entity_id={CST}", headers=hdr).json()
-    assert sch["cutoff_status"] == "pending_KLX-03" and all(r["period"] is None for r in sch["rows"])
+    assert sch["cutoff_status"] == "not_configured" and all(r["period"] is None for r in sch["rows"])
     DB.system_settings.update_one({"scope": "global"}, {"$set": {"interco_payment": {
         "allow_netting": False, "require_full_payment": True, "cutoff_day": 25, "payment_day": 28, "basis": "receipt"}}})
     sch = requests.get(f"{BASE}/interco/payment-schedule?payer_entity_id={CST}", headers=hdr).json()
@@ -200,6 +200,22 @@ def test_ln024_t03_cutoff_pending_then_configured():
     from services.interco_service import _period_for
     assert _period_for("2026-10-25", 25, 28) == {"period": "2026-10", "pay_date": "2026-10-28"}
     assert _period_for("2026-10-26", 25, 28) == {"period": "2026-11", "pay_date": "2026-11-28"}
+
+
+def test_ln024_klx03_config_per_payer_entity():
+    _ict("ent_ksc", CST, 1)
+    hdr = {**ADMIN, "X-Entity-Id": "all"}
+    DB.system_settings.update_one({"scope": "global"}, {"$unset": {"interco_payment": ""}})
+    r = requests.put(f"{BASE}/settings", headers=hdr, json={"scope": CST, "interco_payment": {
+        "allow_netting": False, "require_full_payment": True, "cutoff_day": 20, "payment_day": 5, "basis": "document"}})
+    assert r.status_code == 200, r.text
+    try:
+        sch = requests.get(f"{BASE}/interco/payment-schedule", headers=hdr).json()
+        cst_rows = [x for x in sch["rows"] if x["payer_entity_id"] == CST]
+        other = [x for x in sch["rows"] if x["payer_entity_id"] != CST]
+        assert cst_rows and all(x["period"] for x in cst_rows) and all(x["period"] is None for x in other)
+    finally:
+        DB.system_settings.update_one({"scope": CST}, {"$unset": {"interco_payment": ""}})
 
 
 # ── LN-100-T02 ─────────────────────────────────────────────────────────────

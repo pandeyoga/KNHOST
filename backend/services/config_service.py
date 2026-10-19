@@ -21,7 +21,7 @@ DEFAULT_GLOBAL_SETTINGS: Dict[str, Any] = {
                 "bill_first": True,
                 "grade_price_factors": {"A": 100, "A1": 95, "A2": 90, "B": 70, "B1": 60, "C": 40, "BS": 10},
                 "supplier_reminder_days": 3},
-    # LN-024 — pembayaran antar-PT: penuh per transaksi, tanpa netting; cutoff menunggu KLX-03 (kosong = pending).
+    # LN-024 — pembayaran antar-PT: penuh per transaksi, tanpa netting; KLX-03: cutoff/tanggal bayar/acuan configurable.
     "interco_payment": {"allow_netting": False, "require_full_payment": True,
                         "cutoff_day": None, "payment_day": None, "basis": None, "reminder_days": 3},
     "tax": {
