@@ -556,7 +556,7 @@ E("hr.payroll_commission_mode", group="sdm", type="enum", default="accrue_then_s
 # ═══════════════════════════════════════════════════════════════════════════
 # P01 (IMP-12 / IMP-20) — kelayakan jual per tahap & cakupan lokasi kerja gudang
 # ═══════════════════════════════════════════════════════════════════════════
-E("catalog.sales_hidden_stages", group="stok-satuan", type="list", default=["grey", "pfd", "pfp", "yarn"],
+E("catalog.sales_hidden_stages", group="stok-satuan", type="list", default=["grey", "yarn"],
   scopes=("global",),
   options=({"value": "yarn", "label": "Benang"}, {"value": "grey", "label": "Grey / Greige"},
            {"value": "pfd", "label": "PFD"}, {"value": "pfp", "label": "PFP"},
@@ -564,9 +564,11 @@ E("catalog.sales_hidden_stages", group="stok-satuan", type="list", default=["gre
            {"value": "byproduct", "label": "Produk samping"}),
   label="Tahap bahan yang disembunyikan dari Sales",
   help="Kode tahap barang yang tidak muncul di pemilih produk Sales (katalog, pesanan, POS). "
-       "Bahan tetap terlihat oleh MD, pembelian, gudang, dan makloon. Kode: yarn, grey, pfd, pfp, finished, remnant, byproduct.",
+       "Bahan tetap terlihat oleh MD, pembelian, gudang, dan makloon. Greige (grey) SELALU disembunyikan dari Sales "
+       "(keputusan owner LN-012) walau tidak dicentang; PFD/PFP boleh dijual bila tidak dicentang. "
+       "Kode: yarn, grey, pfd, pfp, finished, remnant, byproduct.",
   impact="Sales tidak melihat dan tidak bisa memesan barang dengan tahap di daftar ini — juga lewat API langsung.",
-  example="['grey','pfd','pfp','yarn'] → Sales hanya melihat barang jadi, sisa potong, dan produk samping",
+  example="['grey','yarn'] (bawaan) → Sales melihat PFD/PFP, barang jadi, sisa potong, produk samping; greige tidak pernah",
   consumers=("services/product_exclusivity.py:visibility_query", "routers/sales_orders.py"),
   risk="medium")
 

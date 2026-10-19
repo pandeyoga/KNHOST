@@ -25,7 +25,9 @@ VALID = {GENERAL, EXCLUSIVE}
 # IMP-12 (P01) — tahap bahan yang TIDAK tampil bagi Sales; nilai hidup = setting
 # `catalog.sales_hidden_stages` (dimuat ulang tiap 15 detik lewat `refresh_hidden_stages`).
 STAGE_SETTING_KEY = "catalog.sales_hidden_stages"
-DEFAULT_HIDDEN_STAGES = ["grey", "pfd", "pfp", "yarn"]
+# LN-012 (owner): greige tidak untuk customer (selalu disembunyikan); PFD/PFP boleh dijual sesuai konfigurasi.
+ALWAYS_HIDDEN_STAGES = ["grey"]
+DEFAULT_HIDDEN_STAGES = ["grey", "yarn"]
 _STAGES: Dict[str, Any] = {"at": 0.0, "hidden": list(DEFAULT_HIDDEN_STAGES)}
 
 
@@ -38,7 +40,8 @@ async def refresh_hidden_stages() -> List[str]:
     if time.monotonic() - _STAGES["at"] > 15:
         from services.config_resolver import value_of
         val = await value_of(STAGE_SETTING_KEY)
-        _STAGES["hidden"] = [str(v).strip().lower() for v in (val if isinstance(val, list) else DEFAULT_HIDDEN_STAGES) if v]
+        vals = [str(v).strip().lower() for v in (val if isinstance(val, list) else DEFAULT_HIDDEN_STAGES) if v]
+        _STAGES["hidden"] = list(dict.fromkeys(ALWAYS_HIDDEN_STAGES + vals))
         _STAGES["at"] = time.monotonic()
     return _STAGES["hidden"]
 

@@ -40,12 +40,12 @@ def tokens():
 
 # ------------------ IMP-12: hidden stages for sales ------------------
 class TestImp12HiddenStages:
-    def test_sales_products_hide_grey_pfd_pfp_yarn(self, tokens):
+    def test_sales_products_hide_grey_yarn(self, tokens):
         r = requests.get(f"{BASE_URL}/api/products?paginate=true&limit=500", headers=_h(tokens["sales"]), timeout=30)
         assert r.status_code == 200, r.text
         data = r.json()
         items = data.get("items") if isinstance(data, dict) else data
-        hidden = {"grey", "pfd", "pfp", "yarn", "benang"}
+        hidden = {"grey", "yarn", "benang"}
         bad = [p for p in items if str(p.get("stage") or "").lower() in hidden]
         assert not bad, f"sales saw hidden-stage products: {[(p.get('sku'), p.get('stage')) for p in bad[:5]]}"
 
@@ -54,7 +54,7 @@ class TestImp12HiddenStages:
         assert r.status_code == 200, r.text
         data = r.json()
         items = data.get("items") if isinstance(data, dict) else data
-        hidden = {"grey", "pfd", "pfp", "yarn", "benang"}
+        hidden = {"grey", "yarn", "benang"}
         bad = [t for t in items if str(t.get("stage") or "").lower() in hidden]
         assert not bad, f"sales saw hidden-stage templates: {[(t.get('code'), t.get('stage')) for t in bad[:5]]}"
 
@@ -91,9 +91,29 @@ class TestImp12HiddenStages:
             # Restore
             restore = requests.put(f"{BASE_URL}/api/config/values", headers=_h(tokens["admin"]), timeout=30,
                                    json={"items": [{"key": "catalog.sales_hidden_stages",
-                                                     "value": ["grey", "pfd", "pfp", "yarn"],
+                                                     "value": ["grey", "yarn"],
                                                      "scope_type": "global", "reason": "restore"}]})
             assert restore.status_code in (200, 201), restore.text
+
+    def test_ln012_t04_pfd_sellable_grey_never(self, tokens):
+        import time
+        put = requests.put(f"{BASE_URL}/api/config/values", headers=_h(tokens["admin"]), timeout=30,
+                           json={"items": [{"key": "catalog.sales_hidden_stages", "value": ["yarn"],
+                                             "scope_type": "global", "reason": "LN-012-T04 uji"}]})
+        assert put.status_code in (200, 201), put.text
+        try:
+            time.sleep(16)   # cache tahap 15 dtk
+            seen = set()
+            for st in ("pfd", "pfp", "grey"):
+                r = requests.get(f"{BASE_URL}/api/products?paginate=true&stage={st}&limit=20", headers=_h(tokens["sales"]), timeout=30)
+                d = r.json()
+                seen |= {str(p.get("stage")).lower() for p in (d.get("items") if isinstance(d, dict) else d)}
+            assert "grey" not in seen, "greige tidak boleh tampil bagi Sales walau tidak dicentang"
+            assert seen & {"pfd", "pfp"}, "PFD/PFP harus tampil bila tidak disembunyikan"
+        finally:
+            requests.put(f"{BASE_URL}/api/config/values", headers=_h(tokens["admin"]), timeout=30,
+                         json={"items": [{"key": "catalog.sales_hidden_stages", "value": ["grey", "yarn"],
+                                           "scope_type": "global", "reason": "restore"}]})
 
     def test_sales_cannot_create_so_with_grey_product(self, tokens):
         r_admin = requests.get(f"{BASE_URL}/api/products?paginate=true&stage=grey&limit=5", headers=_h(tokens["admin"]), timeout=30)

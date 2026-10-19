@@ -248,6 +248,10 @@ export function docLinkTarget(doc) {
 
 export function rowLink(row, queueId = "", desk = "sales_admin") {
   if (desk === "md" || desk === "warehouse_admin" || desk === "me") {
+    if (row?.ref_type === "wms_task" && row?.flow_type === "inbound" && row?.po_id) {   // LN-102-T02 — tugas terima → Barang Masuk
+      const w = WH_DESK_TARGET.purchase_order;
+      return { view: w.view, nav_id: w.nav_id, focus_type: w.focus_type, focus_id: row.po_id, number: row?.number, tab: w.tab };
+    }
     const t = ((desk === "warehouse_admin" || (desk === "me" && queueId === "po_terima")) && WH_DESK_TARGET[row?.ref_type])
       || ROLE_DESK_TARGET[row?.ref_type] || ROW_TARGET[row?.ref_type] || ROW_TARGET.sales_order;
     return { view: t.view, nav_id: t.nav_id, focus_type: t.focus_type, focus_id: row?.ref_id, number: row?.number, tab: t.tab };
