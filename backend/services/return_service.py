@@ -311,7 +311,7 @@ async def _create_credit_note_and_post_gl(
                   "credit_note_amount": gross, "updated_at": now}})
     # P20 SALE-05 — nota kredit pengurang piutang juga mengurangi sisa tagihan SO (subledger = GL 1-1200).
     # LN-091 — refund/saldo: tagihan SO asal dipotong DULU (disepakati); kelebihan saja yang direfund/jadi saldo.
-    # Cakupan "tagihan lain" (KLR-10) belum diputuskan → asumsi: hanya SO asal.
+    # KLR-10 (owner 2026-10-19): hanya SO asal; utang SO lain TIDAK dipotong — kelebihan = pilihan customer refund/saldo.
     bill_first = False
     if settlement in ("cash", "store_credit") and gross > 0 and order:
         from services.return_policy_service import return_assumptions
@@ -1315,7 +1315,8 @@ async def _finish_return_transfer(transfer: Dict[str, Any], return_id: str, roll
 
 async def settle_return(return_id: str, actor: str, outcome: str,
                         item_decisions: List[Dict] = None, notes: str = "",
-                        return_warehouse_id: str = "", refund_account_code: str = "") -> Dict[str, Any]:
+                        return_warehouse_id: str = "", refund_account_code: str = "",
+                        nego_payout: str = "") -> Dict[str, Any]:
     """Selesaikan retur dengan salah satu outcome finansial (R1):
       refund       → Credit Note + refund (tunai/AR) + barang masuk stok → refund_settled
       store_credit → Credit Note (potong bon) + barang masuk stok → credit_settled (ledger saldo di R5)
@@ -1394,6 +1395,8 @@ async def settle_return(return_id: str, actor: str, outcome: str,
         post_stock = outcome in (st.OUTCOME_REFUND, st.OUTCOME_STORE_CREDIT)
         settlement_type = None if outcome == st.OUTCOME_REFUND else \
             ("store_credit" if outcome == st.OUTCOME_STORE_CREDIT else "nego")
+        if outcome == st.OUTCOME_NEGO and nego_payout in ("refund", "store_credit"):
+            settlement_type = "cash" if nego_payout == "refund" else "store_credit"   # KLR-10 — pilihan customer
         if outcome == st.OUTCOME_REFUND:
             # LN-091 — refund = potong tagihan SO asal dulu, kelebihan dibayar tunai (bukan menggantung di piutang).
             from services.return_policy_service import return_assumptions
@@ -1443,7 +1446,7 @@ async def settle_return(return_id: str, actor: str, outcome: str,
                     logging.getLogger("cash.refund").exception(
                         "Gagal catat kas refund retur %s: %s", return_id, e)
                     cash_failed = str(e)[:300] or "error"   # W2-020 — refund TIDAK boleh final tanpa buku kas
-            if outcome == st.OUTCOME_STORE_CREDIT and payout > 0:
+            if cn.get("settlement") == "store_credit" and payout > 0:
                 # R5.2 — terbitkan saldo store credit ke ledger pelanggan (idempotent).
                 settlement["store_credit_amount"] = payout
                 try:

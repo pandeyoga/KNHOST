@@ -20,6 +20,7 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
   const [outcome, setOutcome] = useState("refund");
   const [notes, setNotes] = useState("");
   const [decisionNote, setDecisionNote] = useState("");   // L08 LN-081 — bukti keputusan di luar sistem
+  const [payout, setPayout] = useState("store_credit");   // KLR-10 — nego: customer pilih refund / saldo
   const physLocs = Object.values(ret.roll_locations || {});
   const physNames = [...new Set(physLocs.map((l) => l.warehouse_name || l.to_warehouse_name).filter(Boolean))];
   const [busy, setBusy] = useState(false);
@@ -61,7 +62,8 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
         settle_qty: d.include ? (parseFloat(d.settle_qty) || 0) : -1,
       }));
       await onSettle(ret, outcome, item_decisions, notes, movesStock && !physLocs.length ? returnWarehouseId : "",
-                     outcome === "refund" ? refundAccount : "", decisionNote);
+                     outcome === "refund" || (outcome === "nego" && payout === "refund") ? refundAccount : "", decisionNote,
+                     outcome === "nego" ? payout : "");
       onClose();
     } finally { setBusy(false); }
   }
@@ -175,6 +177,16 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
           </table>
         </div>
 
+        {outcome === "nego" && (
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs" data-testid="settle-nego-payout">
+            <span className="font-semibold">Kompensasi untuk customer (KLR-10):</span>
+            {[["store_credit", "Jadi saldo"], ["refund", "Refund tunai"], ["", "Kurangi piutang SO asal saja"]].map(([v, l]) => (
+              <label key={v || "ar"} className="inline-flex items-center gap-1">
+                <input type="radio" name="nego-payout" data-testid={`settle-payout-${v || "ar"}`} checked={payout === v} onChange={() => setPayout(v)} /> {l}
+              </label>))}
+            <span className="text-[#6B6B73]">Tagihan SO asal yang belum lunas dipotong dulu; utang SO lain tidak ikut dipotong.</span>
+          </div>
+        )}
         <input data-testid="settle-decision-note" className="field mt-3 w-full"
           placeholder="Bukti keputusan (mis. ACC Pak Budi via WA 12/10, nego disepakati Rp …)"
           value={decisionNote} onChange={(e) => setDecisionNote(e.target.value)} />

@@ -915,6 +915,8 @@ class SalesReturnSettle(BaseModel):
     # L08 LN-081 — bukti keputusan (mis. "ACC Pak Budi via WA 12/10") + lampiran yang mendukung.
     decision_note: str = ""
     decision_attachment_ids: List[str] = []
+    # LN-091 KLR-10 — nego (cutloss/diskon): customer memilih refund atau saldo; "" = pengurang piutang SO asal.
+    payout: str = ""
 
 
 class RollOwnershipTransferInput(BaseModel):

@@ -93,6 +93,45 @@ class CompensationIn(BaseModel):
     note: str = ""
 
 
+LOGISTICS_TYPES = {"customer_return": "Ongkir retur dari customer", "qc_trip": "Perjalanan Jakarta–Rancamalang (QC)",
+                   "replacement_shipping": "Kirim barang pengganti"}
+BEARERS = {"company": "Ditanggung perusahaan", "customer": "Ditanggung customer"}
+
+
+class LogisticsCost(BaseModel):
+    type: str
+    bearer: str
+    amount: float = Field(0, ge=0)
+    note: str = ""
+
+
+class LogisticsIn(BaseModel):
+    costs: List[LogisticsCost]
+
+
+@router.put("/sales-returns/{return_id}/logistics")
+async def set_logistics(return_id: str, payload: LogisticsIn, request: Request) -> Any:
+    """LN-091 KLR-11 — penanggung 3 jenis biaya logistik dipilih per kasus (perusahaan / customer)."""
+    user = await require_permission(request, "sales_return", "update")
+    ret = await _ret(return_id, request)
+    if ret.get("status") in ("refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"):
+        raise HTTPException(status_code=400, detail="Retur sudah selesai — biaya logistik tidak bisa diubah")
+    rows, seen = [], set()
+    for c in payload.costs:
+        if c.type not in LOGISTICS_TYPES or c.bearer not in BEARERS:
+            raise HTTPException(status_code=400, detail="Jenis biaya / penanggung tidak dikenal")
+        if c.type in seen:
+            raise HTTPException(status_code=400, detail=f"{LOGISTICS_TYPES[c.type]} diisi dua kali")
+        seen.add(c.type)
+        rows.append({**c.dict(), "label": LOGISTICS_TYPES[c.type], "bearer_label": BEARERS[c.bearer]})
+    doc = {"costs": rows, "customer_total": round(sum(r["amount"] for r in rows if r["bearer"] == "customer"), 2),
+           "company_total": round(sum(r["amount"] for r in rows if r["bearer"] == "company"), 2),
+           "updated_by": user.get("name", ""), "updated_at": __import__("core_utils").now_iso()}
+    await db.sales_returns.update_one({"id": return_id}, {"$set": {"logistics_costs": doc}})
+    await audit(user.get("name", ""), "sales_return_logistics_set", "sales_return", return_id, doc)
+    return doc
+
+
 class ReplacementLine(BaseModel):
     product_id: str
     qty_yard: float = Field(..., gt=0)

@@ -35,3 +35,12 @@
 - UI: panel `return-compensation-panel` di detail retur (cutloss-record-form, cutloss-defect-yard, cutloss-record-submit, compensation-decide-form, discount-qty-<pid>, discount-amount-<pid>, compensation-evidence-<att>, compensation-note, compensation-decide-submit, compensation-decided, compensation-settle-photo, compensation-revoke).
 - **Uji:** `test_ln092_cutloss_simulation_final_rule`, `test_ln092_cutloss_recorded_by_md_valued_by_finance_and_settled_as_nego`, `test_ln092_discount_from_photo_without_goods` (lulus).
 - **Tidak diasumsikan:** persetujuan customer atas bentuk potongan (owner tidak menyebut); pemecahan fisik roll di stok tidak dimodelkan (barang tetap di customer).
+
+## Update 2026-10-19 (sesi lanjutan) — LN-091 KLR-10 & KLR-11
+- **KLR-10:** cakupan potong tagihan tetap **hanya SO asal**; utang SO lain tidak dipotong. Untuk penyelesaian `nego` (cutloss/diskon) customer memilih `payout`: `store_credit` (saldo) | `refund` (kas) | "" (pengurang piutang SO asal). Refund/saldo memakai jalur Credit Note + buku kas / ledger saldo existing (tagihan SO asal yang masih terbuka dipotong dulu, sisanya dibayar/jadi saldo). UI: `settle-nego-payout` (`settle-payout-store_credit|refund|ar`) di modal Selesaikan; `compensation-payout` di penyelesaian diskon foto.
+- **KLR-11:** `PUT /api/sales-returns/{id}/logistics` {costs:[{type: customer_return|qc_trip|replacement_shipping, bearer: company|customer, amount, note}]} (izin `sales_return.update`, terkunci setelah retur selesai). Total per penanggung disimpan; snapshot ikut ke `decision.logistics_costs` saat settle. UI `return-logistics-panel` (logistics-bearer-<type>, logistics-amount-<type>, logistics-note-<type>, logistics-save, logistics-totals).
+- **Tidak diasumsikan:** posting otomatis biaya ongkir (penagihan ke customer / beban perusahaan) — dicatat sebagai keputusan per kasus; penagihan/pembebanan lewat modul tagihan/biaya existing.
+- **Uji:** `test_ln091_klr10_nego_payout_choice_saldo_with_source_paid`, `test_ln091_klr11_logistics_bearer_per_case` (lulus).
+
+## LN-093 (KLR-09) — catatan
+- Retur internal Sukacita → CST tidak memiliki batas waktu tersendiri di kode; batas yang berlaku: customer (tanggal pengajuan, LN-083) dan supplier (sampai klaim dikirim). Pada disposisi CST, lewat-batas supplier dinilai pada hari keputusan "Retur ke supplier" (= klaim dibuat/dikirim, `claim_date` tampil di baris disposisi); retur beli menyimpan `claim_window_check` berdasar tanggal pengajuan klaim.

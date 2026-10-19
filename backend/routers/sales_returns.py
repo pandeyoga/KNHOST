@@ -487,7 +487,8 @@ async def settle_return(
             item_decisions=[d.dict() for d in payload.item_decisions],
             notes=payload.notes,
             return_warehouse_id=payload.return_warehouse_id,
-            refund_account_code=payload.refund_account_code)
+            refund_account_code=payload.refund_account_code,
+            nego_payout=(payload.payout or "").strip())
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     decision = {"by": user.get("name", user.get("email", "")), "role": user.get("role", ""),
@@ -496,6 +497,8 @@ async def settle_return(
                 "attachment_ids": list(payload.decision_attachment_ids or [])}
     if cond_decision:
         decision["condition_decision"] = cond_decision
+    if existing.get("logistics_costs"):
+        decision["logistics_costs"] = existing["logistics_costs"]   # KLR-11 — snapshot penanggung ongkir
     await db.sales_returns.update_one({"id": return_id}, {"$set": {"decision": decision}})
     doc["decision"] = decision
     await audit(user.get("name", ""), "sales_return_settled", "sales_return", return_id,

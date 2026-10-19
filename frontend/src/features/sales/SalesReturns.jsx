@@ -160,9 +160,9 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     }
   }
 
-  async function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode, decisionNote) {
+  async function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode, decisionNote, payout) {
     try {
-      const body = { outcome, item_decisions: itemDecisions || [], notes: notes || "", decision_note: decisionNote || "" };
+      const body = { outcome, item_decisions: itemDecisions || [], notes: notes || "", decision_note: decisionNote || "", payout: payout || "" };
       if (returnWarehouseId) body.return_warehouse_id = returnWarehouseId;
       if (refundAccountCode) body.refund_account_code = refundAccountCode;
       const res = await axios.post(`${API}/sales-returns/${ret.id}/settle`, body);

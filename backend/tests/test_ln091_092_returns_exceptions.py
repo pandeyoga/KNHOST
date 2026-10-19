@@ -171,3 +171,32 @@ def test_ln024_payment_reminder_job():
     assert a["created"] == 1 and b["created"] == 0   # tidak dobel
     n = DB.notifications.find_one({"type": "interco_payment_due", "ref": f"TEST_{T}:{pay}"})
     assert n and n["recipient_role"] == "finance" and n["entity_id"] == _CST()
+
+
+def test_ln091_klr10_nego_payout_choice_saldo_with_source_paid():
+    so, rid = _seed(open_total=0.0, credit=30.0, elig={"decision": "eligible", "pending_decisions": []})
+    DB.sales_returns.update_one({"id": rid}, {"$set": {"items": [{"product_id": "pX", "product_name": "TEST", "unit": "yard",
+                                                                  "quantity_returned": 1}], "customer_id": ADMIN_U.get("_x", "cust_x")}})
+    if not DB.customers.find_one({"id": "cust_x"}):
+        DB.customers.insert_one({"id": "cust_x", "name": "TEST cust", "entity_id": "ent_ksc", "TEST": True})
+    d = requests.post(f"{BASE}/sales-returns/{rid}/compensation", headers=FIN,
+                      json={"lines": [{"kind": "discount", "product_id": "pX", "qty": 1, "amount": 10, "evidence_ids": [f"att_{rid}"]}],
+                            "note": "diskon noda kecil"})
+    assert d.status_code == 200, d.text
+    st = requests.post(f"{BASE}/sales-returns/{rid}/settle", headers=ADMIN, json={"outcome": "nego", "payout": "store_credit"})
+    assert st.status_code == 200, st.text
+    cn = DB.credit_notes.find_one({"return_id": rid})
+    assert cn["settlement"] == "store_credit" and cn.get("ar_applied", 0) == 0 and cn["excess_amount"] == 10
+    assert DB.store_credit_ledger.find_one({"ref_id": rid, "type": "issue"})["amount"] == 10
+    DB.customers.delete_many({"id": "cust_x", "TEST": True})
+
+
+def test_ln091_klr11_logistics_bearer_per_case():
+    _, rid = _seed(elig={"decision": "eligible", "pending_decisions": []})
+    bad = requests.put(f"{BASE}/sales-returns/{rid}/logistics", headers=ADMIN, json={"costs": [{"type": "x", "bearer": "company"}]})
+    assert bad.status_code == 400
+    ok = requests.put(f"{BASE}/sales-returns/{rid}/logistics", headers=ADMIN, json={"costs": [
+        {"type": "customer_return", "bearer": "customer", "amount": 50000},
+        {"type": "qc_trip", "bearer": "company", "amount": 120000},
+        {"type": "replacement_shipping", "bearer": "customer", "amount": 30000}]})
+    assert ok.status_code == 200 and ok.json()["customer_total"] == 80000 and ok.json()["company_total"] == 120000

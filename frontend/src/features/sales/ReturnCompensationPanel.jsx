@@ -79,6 +79,7 @@ function DecideForm({ ret, pv, onDone }) {
 export default function ReturnCompensationPanel({ ret, canApprove, onChanged }) {
   const [pv, setPv] = useState(null);
   const [msg, setMsg] = useState("");
+  const [payout, setPayout] = useState("store_credit");
   const load = useCallback(() => axios.get(`${API}/sales-returns/${ret.id}/compensation`).then((r) => setPv(r.data)).catch(() => setPv(null)), [ret.id]);
   useEffect(() => { load(); }, [load, ret.updated_at]);
   if (!pv) return null;
@@ -89,7 +90,7 @@ export default function ReturnCompensationPanel({ ret, canApprove, onChanged }) 
   const photoOnly = decided && comp.lines.every((x) => x.kind === "discount" && x.evidence_ids?.length) && ret.status === "approved";
   const settle = async () => {
     setMsg("");
-    try { await axios.post(`${API}/sales-returns/${ret.id}/settle`, { outcome: "nego", decision_note: comp.note }); refresh(); }
+    try { await axios.post(`${API}/sales-returns/${ret.id}/settle`, { outcome: "nego", decision_note: comp.note, payout }); refresh(); }
     catch (e) { setMsg(errText(e)); }
   };
   const revoke = async () => { setMsg(""); try { await axios.delete(`${API}/sales-returns/${ret.id}/compensation`); refresh(); } catch (e) { setMsg(errText(e)); } };
@@ -116,6 +117,10 @@ export default function ReturnCompensationPanel({ ret, canApprove, onChanged }) 
           <p className="text-[#6B6B73]">{comp.note}</p>
           {!terminal && (
             <div className="flex flex-wrap gap-2">
+              {photoOnly && canApprove && (
+                <select data-testid="compensation-payout" className="field text-xs" value={payout} onChange={(e) => setPayout(e.target.value)}>
+                  <option value="store_credit">Jadi saldo</option><option value="refund">Refund tunai</option><option value="">Kurangi piutang SO asal</option>
+                </select>)}
               {photoOnly && canApprove && <button type="button" data-testid="compensation-settle-photo" onClick={settle} className="primary-button text-xs">Selesaikan diskon (tanpa barang kembali)</button>}
               {canCurrent("sales_return", "decide_compensation") && <button type="button" data-testid="compensation-revoke" onClick={revoke} className="secondary-button text-xs"><Trash2 size={12} /> Batalkan keputusan</button>}
             </div>
