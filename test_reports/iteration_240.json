@@ -1,0 +1,37 @@
+{
+  "summary": "Retest of 'Uji Simpan Lengkap' Mobile Sales HP at 390x844 as Ayu (sales@kainnusantara.id/demo1234). FIX VERIFY GET /api/customers?for_order=true&with_credit=false (as Ayu, role sales) → 200 with 4 customers (Butik Bali Indah, Konveksi Maju Bersama, Moda Surabaya Fashion, Toko Kain Sejahtera); plain GET /api/customers for Ayu → [] (still assigned-only). CreateSpecialOrderForm picker now populated — regression fix PASSED. SAVE PESANAN KHUSUS end-to-end PASSED: Lainnya→mobile-more-special→m-special-new→special-order-form; picked Toko Kain Sejahtera via od-customer cmdk, title 'TEST_ OD HP', added 2 item rows via od-item-add (desc + qty 50/30 + Lab Dip / Hand Feel chips), uploaded 1 reference image via od-ref-input, opened od-delivery date popover and picked day 20 → POST /api/special-orders returned 200 → SORD-261019-0003 appears in m-special list as 'Menunggu persetujuan · Toko Kain Sejahtera · TEST_ OD HP (+1 baris) · kirim 20 Okt' (card uses m-special-sord_* testid). Detail page m-od-detail shows m-od-items with 2 rows (TEST baris 1 rayon navy 50 meter · labdip, TEST baris 2 katun merah 30 meter · handfeel), m-od-references counter 'GAMBAR REFERENSI (2)' after adding 1 more file via m-od-ref-input (initial 1 → 2 ✓). SAVE RETUR end-to-end PASSED (SO-00001 'done'): Lainnya→mobile-more-returns→m-return-new; return-order-select combobox opened and 'KSC/SO-00001 — Toko Kain Sejahtera (done)' selected → return-eligibility-banner shows 'Kebijakan: Default · Deadline retur: 2026-11-09 (20 hari lagi) · Inspeksi Wajib Setelah Disetujui'; item-roll-* chips (6) rendered, selected 1 (DENIM TENCEL TAUPE 114.98 yard), reason 'TEST_ cacat' in return-notes-input, uploaded 1 photo via return-camera-input → return-photo-list.children=1, clicked save-return-btn → POST /api/sales-returns 200 → SRET-00001 created (status pending_approval, 1 attachment). Opened from m-return-sret_cfaaaebe1ca4; detail shows evidence count 1 via m-return-evidence-closed banner. REGRESSION PASSED: duplicate '← Retur' back link inside create-return page is removed (only 'Kembali' header remains; no '← Retur' button detected on either list or new-return form).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/customers (plain, role=sales)", "issue": "Still returns [] for Ayu by design (assigned-only), while for_order=true branch returns 4. Behavior is as documented in iteration_239 action item ('plain list stays assigned-only'); flagging only because other sales flows (collection worklist, credit-status) still use the broader own-order union — the asymmetry remains intentional per spec."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MobileReturns detail (MobileSalesNative.jsx L40-48)", "issue": "Add-evidence block gated on status in ['draft','submitted','approved','received','inspected'] but the just-created SRET-00001 has status 'pending_approval' (confirmed via GET /api/sales-returns). Result: m-return-evidence-closed renders with 'retur sudah diproses, bukti tidak bisa ditambah lagi' and m-return-camera button is NOT shown, so uploading a 2nd photo via m-return-camera is impossible for the common post-submit state. Spec explicitly requires adding one more photo via m-return-camera after save.", "selector": "[data-testid='m-return-evidence'], [data-testid='m-return-camera']", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Mobile Lainnya page (390x844)", "issues": ["Playwright-automation note (non-user-facing): the 'mobile-more-returns' row in the Lainnya grid can sit under the fixed bottom tabbar (m-tabbar) after section expansion — real-tap works, but scripted click with force=True on viewport 390x844 was intercepted and switched to tab=cart. Workaround used in tests: element.click() via JS. Consider adding bottom padding (pb-safe + tabbar height) to the Lainnya scroll container so no row overlaps the tabbar."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_sales_collection_rule_dashboard.py"],
+  "action_items": [
+    "FIX MobileReturns.jsx L40 allowed-status list: add 'pending_approval' (and probably 'picked'/'submitted' aliases that the backend actually emits). Current list excludes 'pending_approval' which is the normal post-submit state, so the user cannot add a 2nd evidence photo via m-return-camera as spec requires.",
+    "Consider adding pb-32 (or safe-area padding) to the Lainnya scroll container so the last menu row (Retur Penjualan when sections expand) doesn't visually sit under the bottom tabbar on 390x844 viewports."
+  ],
+  "critical_code_review_comments": [
+    "Positive: for_order=true branch in /app/backend/routers/customers.py correctly returns full entity customer list for role=sales without credit enrichment — matches POS list and unblocks Pesanan Khusus save (verified 4 customers).",
+    "Positive: Pesanan Khusus save produced SORD-261019-0003 with items=2 & references=1 persisted; list card label '(+1 baris)' renders exactly as per spec.",
+    "Positive: Return save produced SRET-00001 with 1 attachment; return-eligibility-banner surfaces deadline + inspection policy as per spec.",
+    "Positive: Regression — duplicate '← Retur' back link removed; only the 'Kembali' header remains in both list and create-return screens.",
+    "Bug: Evidence-add gating in MobileReturns.jsx (status whitelist missing 'pending_approval'); same test file could be extended to assert add-evidence is possible after submit."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (customers?for_order=true=4, plain=0, special-orders POST 200, sales-returns POST 200)", "frontend": "6/7 PASSED — SAVE Pesanan Khusus + add 2nd ref ✓, SAVE Retur ✓, regression ← Retur removed ✓, customer picker ✓; only the add-2nd-evidence after save FAILED due to status gating bug"},
+  "test_credentials": "sales@kainnusantara.id/demo1234 (Ayu); admin@kainnusantara.id/demo12345",
+  "seed_data_creation": "SORD-261019-0003 'TEST_ OD HP' (pending_approval, Toko Kain Sejahtera, 2 items, 1 ref uploaded in form + 1 added in detail = 2 refs). SRET-00001 (pending_approval, KSC/SO-00001, 1 roll DENIM TENCEL TAUPE 114.98 yard, reason 'TEST_ cacat', 1 attachment). Both are TEST_* / draft demo rows safe to keep.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "(1) The scripted Playwright click on [data-testid='mobile-more-returns'] can be intercepted by the bottom tabbar even with force=True on 390x844 — use `await page.evaluate(\"()=>document.querySelector(selector)?.click()\")` to JS-click any Lainnya grid row that sits near the viewport bottom (same for mobile-more-special when sections expand). (2) return-order-select is a shadcn combobox (role=combobox, not native select); open with click then click [role='option']. (3) After save, SRET goes to status 'pending_approval' which currently hides m-return-camera (frontend bug — status whitelist missing 'pending_approval'). (4) od-customer / od-delivery are cmdk/Popover — use click-open then click option/day (not fill). (5) The customer-list fix uses /api/customers?for_order=true&with_credit=false — do NOT retest the plain /api/customers for sales (it will remain []). (6) m-od-ref-input works for adding references on the detail page even for status=pending_approval (verified)."
+}
