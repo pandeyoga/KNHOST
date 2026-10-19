@@ -83,9 +83,10 @@ class TestKeepPending:
         nums = {x["number"] for x in it}
         assert "KANDA/SO-00003" in nums
 
-    def test_sales_role_403(self, sls):
+    def test_sales_role_view_only(self, sls):
+        # ACC-KP-01 (owner 2026-10-19D): Sales boleh MELIHAT Keep/Pending (dibatasi pesanan miliknya), tidak mengubah.
         r = requests.get(f"{BASE}/api/sales/keep-pending", headers=sls, timeout=30)
-        assert r.status_code == 403
+        assert r.status_code == 200
 
 
 # -----------------------------

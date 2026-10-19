@@ -92,6 +92,12 @@ async def sales_queues(actor, scope, ids) -> List[Dict[str, Any]]:
     ]
 
 
+def _task_qty(t: Dict[str, Any]) -> str:
+    """Temuan 2026-10-19D — tugas terima menyimpan qty di expected_qty; jangan tampilkan '0.0 yard'."""
+    q = float(t.get("quantity") or t.get("expected_qty") or t.get("total_qty") or 0)
+    return f"{q:g} {t.get('unit', '')}".strip() if q > 0 else ""
+
+
 async def warehouse_queues(scope, ids) -> List[Dict[str, Any]]:
     sq = _scope_q(scope, ids)
     # KN-D07 — status yang NYATA ditulis mesin tugas gudang (created/scheduled/picking/packing/
@@ -103,10 +109,10 @@ async def warehouse_queues(scope, ids) -> List[Dict[str, Any]]:
     po = await _find("purchase_orders", {**sq, "status": {"$in": ["pending", "receiving"]}})
     samples = await _find("wms_tasks", {**sq, "task_subtype": "sample_cut", "status": {"$in": ["created", "picking"]}, "picked_qty": {"$in": [0, 0.0, None]}})
     return [
-        _queue("tugas_wms", "Tugas picking & packing", "Kerjakan urut umur tugas.",
+        _queue("tugas_wms", "Tugas gudang (terima, picking & kirim)", "Kerjakan urut umur tugas.",
                [_row(ref_type="wms_task", ref_id=t["id"], number=t.get("number") or t.get("order_number") or t.get("po_number") or t.get("ref_number") or t["id"],
                      title=t.get("customer_name") or t.get("product_name") or t.get("type", "tugas"),
-                     subtitle=" · ".join(x for x in (t.get("flow_type") or t.get("type", ""), f"{t.get('quantity', '')} {t.get('unit', '')}".strip()) if x),
+                     subtitle=" · ".join(x for x in (t.get("flow_type") or t.get("type", ""), _task_qty(t)) if x),
                      age_days=_age_days(t.get("created_at")), badge=t.get("status", ""), action="Kerjakan",
                      extra={"flow_type": t.get("flow_type") or "", "po_id": t.get("po_id") or ""}) for t in tasks],
                action_label="Kerjakan", owner="warehouse", value_kind="count", value_label="Tugas"),

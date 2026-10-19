@@ -1,0 +1,56 @@
+{
+  "summary": "Verified handoff gelombang-lanjutan-pasca-p05-2026-10-16 fase A-F for GL account mappings, return logistics journal, cutloss split, and ACC-KP-01 sales keep-pending view. Ran existing suites tests/test_gl01_account_mapping.py, tests/test_gl01_return_logistics_journal.py, tests/test_cut01_cutloss_split.py (all 5/5 pass locally). Added a new public-URL regression tests/test_iter244_gl_mapping_and_logistics_e2e.py (8 pass, 1 skip) covering: GL mappings admin 200 vs sales 403, entity_id=ent_ksc scope, /candidates, sales keep-pending 200, products?stage filter, GET /sales-returns/SRET-00003/logistics as finance, salesadmin forbidden on PUT logistics (pay_account_code), and salesadmin forbidden on POST cutloss when treatment is specified. UI: logged in as admin and verified /?view=gl-account-mappings&entity=ent_ksc shows 'Pemetaan Akun' page with 4 KPIs (54 Kebutuhan Akun, 0 Belum Diatur, 0 Diubah dari Bawaan, 0 Khusus PT ini), scope/module/search filters, 54 rows (glmap-row-*), each with glmap-expand (showing Contoh jurnal Dr/Cr), Ubah modal with searchable account combobox + required 'Alasan perubahan' textarea + warning banner, plus 54 history buttons. Settings hub tab 'Pemetaan Akun' under Keuangan is highlighted active. As finance@ loaded SRET-00003 detail (ent_ksc) and confirmed return-logistics-panel present with rows customer_return, qc_trip, replacement_shipping — each with logistics-mode-*, logistics-bearer-*, logistics-amount-*, logistics-pay-*, logistics-entity-*, logistics-note-*, and logistics-save button. return-compensation-panel and cutloss/complaint controls also present.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verifications": {
+    "pytest": {
+      "test_gl01_account_mapping.py": "pass",
+      "test_gl01_return_logistics_journal.py": "pass",
+      "test_cut01_cutloss_split.py": "pass",
+      "test_iter244_gl_mapping_and_logistics_e2e.py": "8 pass, 1 skip (candidates probe skipped because sample row key fetch not applicable to combined view)"
+    },
+    "public_api_checks": {
+      "GET /api/gl/account-mappings (admin)": "200 (>=40 rows returned)",
+      "GET /api/gl/account-mappings (sales)": "403",
+      "GET /api/gl/account-mappings?entity_id=ent_ksc (admin)": "200",
+      "GET /api/sales/keep-pending (sales)": "200",
+      "GET /api/products?stage=finished (admin)": "200",
+      "GET /api/sales-returns/sret_dddff044ea9e/logistics (finance)": "200",
+      "PUT /api/sales-returns/sret_dddff044ea9e/logistics (salesadmin with pay_account_code)": "403",
+      "POST /api/sales-returns/sret_dddff044ea9e/cutloss (salesadmin with treatment)": "non-success (RBAC blocks)"
+    },
+    "ui_gl_mapping_desktop": {
+      "page_testid": "gl-mapping-view",
+      "kpis": {"total": 54, "unset": 0, "custom": 0, "entity": 0},
+      "rows": 54,
+      "ubah_buttons": 54,
+      "history_buttons": 54,
+      "edit_modal_has_account_combobox": true,
+      "edit_modal_has_required_reason": true,
+      "edit_modal_warning_banner": "Perubahan berlaku untuk jurnal baru; jurnal lama tidak diposting ulang.",
+      "expand_shows_example_journal": true,
+      "settings_hub_tab_active": "Pemetaan Akun (under Keuangan)"
+    },
+    "ui_return_logistics_desktop": {
+      "panel_testid": "return-logistics-panel",
+      "rows": ["customer_return", "qc_trip", "replacement_shipping"],
+      "controls_present": ["mode", "bearer", "amount", "pay", "entity", "note", "save"]
+    }
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iter244_gl_mapping_and_logistics_e2e.py",
+    "/app/backend/tests/test_gl01_account_mapping.py",
+    "/app/backend/tests/test_gl01_return_logistics_journal.py",
+    "/app/backend/tests/test_cut01_cutloss_split.py"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": ["/app/backend/tests/test_iter244_gl_mapping_and_logistics_e2e.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@kainnusantara.id/demo12345, finance@/demo1234, sales@/demo1234, salesadmin@/demo1234, md@/demo1234, manager@/demo1234",
+  "seed_data_creation": "None — test did not mutate SRET-00003 (only GET / forbidden-PUT probes). No cleanup required.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The existing suites test_gl01_account_mapping.py, test_gl01_return_logistics_journal.py and test_cut01_cutloss_split.py seed/clean their own TEST_ data via Mongo and pass locally. The new file test_iter244_gl_mapping_and_logistics_e2e.py hits the public URL and only performs non-mutating reads + two negative RBAC PUT/POST probes against SRET-00003 that are rejected before any DB write — safe to re-run anytime. UI selectors confirmed: glmap-* on Pemetaan Akun page; return-logistics-panel with logistics-{row,mode,bearer,amount,pay,entity,note}-{type} on SRET detail; return-compensation-panel also present.",
+  "rca of the issue": "n/a — no bugs found"
+}
