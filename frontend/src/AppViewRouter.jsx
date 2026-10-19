@@ -234,17 +234,17 @@ export default function AppViewRouter(props) {
     inspectProduct, addToCart, createCustomer, submitOrder, mutateOrder,
     payInvoice, releaseReservation, markDelivered, generateDocument, generateLabel,
     approvePurchaseOrder, adminCreate, adminPatch, adminDelete, importMaster, exportMaster,
-    updatePermissions, seedDemo, previewTemplate, refreshAudit,
+    seedDemo, previewTemplate, refreshAudit,
     createInboundTask, createOutboundTasks, scanTask, advanceTask, issueTaxInvoice,
   } = actions;
 
   // Master-data CRUD props (AdminView dipakai ulang di beberapa domain hub via `only`).
   const adminProps = {
-    data, loading, users, uoms, templates, entities, permissions, previewHtml,
+    data, loading, users, uoms, templates, entities, previewHtml,
     auditLogs, auditFilters, setAuditFilters,
     onAdminCreate: adminCreate, onAdminPatch: adminPatch, onAdminDelete: adminDelete,
     onImportMaster: importMaster, onExportMaster: exportMaster,
-    onUpdatePermissions: updatePermissions, onPreviewTemplate: previewTemplate,
+    onPreviewTemplate: previewTemplate,
     onRefreshAudit: refreshAudit, onShowDetail: setActiveDetail,
     // FASE F — kolom Tahap Produk butuh identitas aktor (wewenang rilis) + muat ulang.
     currentUser: user, onReload: actions.loadAll,
@@ -265,16 +265,17 @@ export default function AppViewRouter(props) {
       {activeView === "admin" && <AdminView {...adminProps} onSeedDemo={seedDemo} only={["integrations", "audit"]} />}
       {/* IA 2026-10 — fitur yang dulu tab di "Master Data & Audit", kini di domainnya (komponen sama = fitur utuh). */}
       {activeView === "customers-master" && <AdminView {...adminProps} only={["customers"]} />}
-      {activeView === "permission-matrix" && <AdminView {...adminProps} only={["permissions"]} />}
-      {activeView === "doc-templates-basic" && <AdminView {...adminProps} only={["templates"]} />}
-      {/* FASE E-3 — badan usaha & akun kini punya layarnya sendiri (bukan tab Master Data). */}
-      {activeView === "entities-access" && (
+      {/* Matriks Izin lama DIHAPUS (duplikat) — satu pintu: Badan Usaha & Akses → Peran & Hak Akses.
+          Tautan/bookmark lama diarahkan ke tab itu. */}
+      {(activeView === "entities-access" || activeView === "permission-matrix") && (
         <EntitiesAccessView
           currentUser={user}
           selectedEntity={selectedEntity}
+          initialTab={activeView === "permission-matrix" ? "roles" : "entities"}
           onNavigate={(view) => onNavSelect(view, view)}
         />
       )}
+      {activeView === "doc-templates-basic" && <AdminView {...adminProps} only={["templates"]} />}
       {activeView === "pdf-templates" && <PdfTemplateDesigner currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "document-center" && <DocumentCenter currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "doc-trace" && (

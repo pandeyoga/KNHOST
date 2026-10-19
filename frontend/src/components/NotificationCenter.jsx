@@ -8,12 +8,12 @@ const SEVERITY_ICON = { warning: AlertTriangle, critical: AlertTriangle, info: I
 const ROLE_RANK = { sales: 1, warehouse: 1, manager: 2, admin: 3 };
 // Tagihan vendor kampanye: Finance/Manager/Admin (aturan server sama; PO tetap pangkat).
 const BILL_APPROVERS = ["finance", "manager", "admin"];
-const canActOn = (userRole, requiredRole, actionType = "") =>
+export const canActOn = (userRole, requiredRole, actionType = "") =>
   actionType === "vendor_bill_approve" ? BILL_APPROVERS.includes(userRole)
     : (ROLE_RANK[userRole] || 0) >= (ROLE_RANK[requiredRole] || 99);
 
 // R6.6 — label ramah-manusia per tipe notifikasi (untuk filter jenis).
-const TYPE_LABEL = {
+export const TYPE_LABEL = {
   campaign_bill_approval: "Tagihan kampanye",
   escalation: "Eskalasi",
   ar_overdue: "Piutang jatuh tempo",
@@ -46,16 +46,16 @@ const TYPE_LABEL = {
   turn: "Giliran Anda",
   so_qc_requested: "Permintaan QC pesanan",
 };
-const typeLabel = (t) => TYPE_LABEL[t] || (t || "lainnya").replace(/_/g, " ");
+export const typeLabel = (t) => TYPE_LABEL[t] || (t || "lainnya").replace(/_/g, " ");
 
-const SEV_CHIPS = [
+export const SEV_CHIPS = [
   { key: "", label: "Semua" },
   { key: "critical", label: "Penting" },
   { key: "warning", label: "Perhatian" },
   { key: "info", label: "Info" },
 ];
 
-function timeAgo(iso) {
+export function timeAgo(iso) {
   if (!iso) return "";
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
   if (diff < 60) return "baru saja";

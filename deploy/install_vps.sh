@@ -88,6 +88,15 @@ fi
 # CORS mengikuti host yang dilayani (T-02: backend menolak start bila CORS_ORIGINS kosong/'*')
 CORS="https://$DOMAIN${EXTRA_HOSTS:+,https://$EXTRA_HOSTS}"
 grep -q '^CORS_ORIGINS=' "$ENV_FILE" && sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=$CORS|" "$ENV_FILE" || echo "CORS_ORIGINS=$CORS" >> "$ENV_FILE"
+# Push notif HP (Web Push): kunci VAPID dibuat sekali, tidak ditimpa (ganti kunci = semua HP harus aktifkan ulang).
+if ! grep -q '^VAPID_PRIVATE_KEY=' "$ENV_FILE"; then
+  TMPK=$(mktemp); openssl ecparam -name prime256v1 -genkey -noout -out "$TMPK" 2>/dev/null
+  PRIV=$(openssl ec -in "$TMPK" -outform DER 2>/dev/null | tail -c +8 | head -c 32 | base64 | tr '+/' '-_' | tr -d '=\n')
+  PUB=$(openssl ec -in "$TMPK" -pubout -outform DER 2>/dev/null | tail -c 65 | base64 | tr '+/' '-_' | tr -d '=\n')
+  rm -f "$TMPK"
+  { echo "VAPID_PUBLIC_KEY=$PUB"; echo "VAPID_PRIVATE_KEY=$PRIV"; } >> "$ENV_FILE"
+  echo "Kunci VAPID (push notif HP) dibuat."
+fi
 
 log "6/8 Build & jalankan (build pertama ±5–10 menit)"
 compose build --pull

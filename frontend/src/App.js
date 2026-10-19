@@ -375,12 +375,16 @@ function App() {
   const wantsTanya = activeView === "tanya-kn";
   // Admin Sales mewarisi wilayah kerja sales (ROLE_NAV) → aplikasi HP sales + Meja Admin Sales.
   const salesMobileRole = ["sales", "sales_admin"].includes(user.role);
+  const notifProps = {
+    total: notifMeta.total, hasMore: notifMeta.has_more, currentUserRole: user?.role,
+    onLoadMore: () => loadMoreNotifications(notifMeta.page + 1), onApprove: approveFromNotification,
+  };
   // MD / Merchandiser → aplikasi HP khusus (Meja MD, desain, sample, produk, PR).
   if (wantMobile && !responsiveWorkspace && user.role === "md") {
     return (
       <MobileMdApp user={user} entities={entities} selectedEntity={selectedEntity}
         notifications={notifications} unreadCount={unreadCount} onMarkAllRead={markAllNotificationsRead}
-        onMarkRead={markNotificationRead} onPollNotifications={actions.loadNotifications}
+        onMarkRead={markNotificationRead} onPollNotifications={actions.loadNotifications} notifProps={notifProps}
         onOpenFull={openFullView} onLogout={logout} onForceDesktop={goDesktop} onSelectEntity={onSelectEntity} />
     );
   }
@@ -423,6 +427,7 @@ function App() {
         onMarkAllRead={markAllNotificationsRead}
         onMarkRead={markNotificationRead}
         onPollNotifications={actions.loadNotifications}
+        notifProps={notifProps}
         onSelectEntity={onSelectEntity}
         onForceDesktop={() => { localStorage.setItem("kn_force_desktop", "1"); setForceDesktop(true); }}
       />

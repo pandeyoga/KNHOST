@@ -6,7 +6,6 @@ import { pickPrice } from "../../../hooks/useEffectivePrices";
 import { variantLabel, mergedLineTotal } from "../../../utils/variants";
 import VariantAxisPicker from "../../../components/VariantAxisPicker";
 import { ProductGallery } from "../../../components/ProductGallery";
-import RollLengthStrip from "../../../components/RollLengthStrip";
 import RollPicker from "../../../components/RollPicker";
 import RollReconcileSheet from "../../../components/RollReconcileSheet";
 import { blocksOrder, lifecycleLabel, notOrderableReason } from "../../../utils/lifecycle";
@@ -141,7 +140,7 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
                   <div className="flex items-center rounded-lg border border-[#E5E5EA]">
                     <button data-testid="mobile-quickview-qty-minus" className="px-3 py-2.5 text-[#6B6B73]" onClick={() => step(-1)} aria-label="Kurangi"><Minus size={15} /></button>
                     <input data-testid="mobile-quickview-qty-input" type="number" min={isSample ? "0.5" : "1"} step={isSample ? "0.5" : "1"} inputMode="decimal"
-                      onFocus={(e) => setTimeout(() => e.target.closest(".m-sheet-scroll")?.querySelector("[data-testid^=mobile-quickview-add]")?.scrollIntoView({ block: "end", behavior: "smooth" }), 350)} className="w-full border-x border-[#E5E5EA] bg-transparent py-2 text-center text-[15px] outline-none" value={qty} onChange={(e) => setQty(isSample && selected ? (clampSampleQty(selected, e.target.value) || 0.5) : Math.max(1, Number(e.target.value) || 1))} />
+                      className="w-full border-x border-[#E5E5EA] bg-transparent py-2 text-center text-[15px] outline-none" value={qty} onChange={(e) => setQty(isSample && selected ? (clampSampleQty(selected, e.target.value) || 0.5) : Math.max(1, Number(e.target.value) || 1))} />
                     <button data-testid="mobile-quickview-qty-plus" className="px-3 py-2.5 text-[#6B6B73]" onClick={() => step(1)} aria-label="Tambah"><Plus size={15} /></button>
                   </div>
                 </div>
@@ -150,25 +149,6 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
                   <div data-testid="mobile-quickview-unit-fixed" className="field flex items-center bg-[#F5F5F7] font-semibold text-[#3C3C43]">{baseUnit}</div>
                 </div>
               </div>
-              {!isSample && <RollLengthStrip productId={selected?.id} entityId={entityId} baseUnit={baseUnit} rollCount={rollCount} testId="mobile-quickview-roll-lengths" />}
-              {isSample ? (
-              <button data-testid="mobile-quickview-add-sample" disabled={avail <= 0 || blocked || !sampleable || !(qty > 0)}
-                className="primary-button mt-4 w-full justify-center py-3 text-[14px] !bg-[#9A5B00]"
-                onClick={() => { if (blocked || avail <= 0 || !sampleable) return; onAdd(selected, clampSampleQty(selected, qty), baseUnit, { is_sample: true }); onClose(); }}>
-                <Scissors size={16} /> {avail <= 0 ? "Stok Habis" : `Tambah Sample (${qty} ${baseUnit})`}
-              </button>
-              ) : (
-              <button data-testid="mobile-quickview-add" disabled={avail <= 0 || blocked}
-                className="primary-button mt-4 w-full justify-center py-3 text-[14px]"
-                onClick={() => {
-                  if (blocked || avail <= 0) return;
-                  if (rollCount > 0 && allowRollPick && !(selected?.merged_members?.length > 1)) { setShowReconcile(true); }
-                  else { onAdd(selected, qty, unit); onClose(); }
-                }}>
-                <ShoppingBag size={16} /> {!selected ? "Kombinasi tidak tersedia" : blocked ? "Belum boleh dijual"
-                  : avail <= 0 ? "Stok Habis" : `Tambah ${qty} ${unit} · ${formatCurrency(lineTotal)}`}
-              </button>
-              )}
             </>
           ) : selected && !blocked ? (
             <div className="mt-3">
@@ -186,6 +166,30 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
             </div>
           ) : null}
         </div>
+        {/* Tombol aksi di kaki lembar (di luar area gulir) — selalu terlihat di Safari iOS
+            walau bilah alamat ada di bawah. */}
+        {mode === "qty" && (
+          <div className="m-sheet-foot" data-testid="mobile-quickview-footer">
+            {isSample ? (
+            <button data-testid="mobile-quickview-add-sample" disabled={avail <= 0 || blocked || !sampleable || !(qty > 0)}
+              className="primary-button w-full justify-center py-3 text-[14px] !bg-[#9A5B00]"
+              onClick={() => { if (blocked || avail <= 0 || !sampleable) return; onAdd(selected, clampSampleQty(selected, qty), baseUnit, { is_sample: true }); onClose(); }}>
+              <Scissors size={16} /> {avail <= 0 ? "Stok Habis" : `Tambah Sample (${qty} ${baseUnit})`}
+            </button>
+            ) : (
+            <button data-testid="mobile-quickview-add" disabled={avail <= 0 || blocked}
+              className="primary-button w-full justify-center py-3 text-[14px]"
+              onClick={() => {
+                if (blocked || avail <= 0) return;
+                if (rollCount > 0 && allowRollPick && !(selected?.merged_members?.length > 1)) { setShowReconcile(true); }
+                else { onAdd(selected, qty, unit); onClose(); }
+              }}>
+              <ShoppingBag size={16} /> {!selected ? "Kombinasi tidak tersedia" : blocked ? "Belum boleh dijual"
+                : avail <= 0 ? "Stok Habis" : `Tambah ${qty} ${unit} · ${formatCurrency(lineTotal)}`}
+            </button>
+            )}
+          </div>
+        )}
       </div>
 
       {selected && !blocked && <RollReconcileSheet

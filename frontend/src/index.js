@@ -9,6 +9,17 @@ import { installOverlayStack } from "@/utils/overlayStack";
 
 installOverlayStack();
 
+// iOS Safari: tinggi area yang BENAR-BENAR terlihat (bilah alamat bawah / keyboard) → --kn-vvh,
+// dipakai lembar bawah HP agar tombol aksinya tidak tertutup toolbar.
+const syncViewportHeight = () => {
+  const h = window.visualViewport?.height || window.innerHeight;
+  document.documentElement.style.setProperty("--kn-vvh", `${Math.round(h)}px`);
+};
+syncViewportHeight();
+window.visualViewport?.addEventListener("resize", syncViewportHeight);
+window.addEventListener("resize", syncViewportHeight);
+window.addEventListener("orientationchange", syncViewportHeight);
+
 // Suppress benign "ResizeObserver loop ..." error yang dimunculkan overlay dev
 // CRA saat Radix Popover/cmdk mengukur layout. Tidak berdampak fungsional &
 // tidak muncul di production build.

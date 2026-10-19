@@ -54,9 +54,9 @@ export default function RollReconcileSheet({ open, productId, entityId, targetQt
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-end justify-center sm:items-center" data-testid="roll-reconcile-sheet">
+    <div className="fixed inset-x-0 top-0 z-[150] flex items-end justify-center sm:items-center" style={{ height: "var(--kn-vvh, 100dvh)" }} data-testid="roll-reconcile-sheet">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 flex w-full max-w-md flex-col rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl" style={{ maxHeight: "min(90vh, 90dvh)" }}>
+      <div className="relative z-10 flex w-full max-w-md flex-col rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl" style={{ maxHeight: "calc(var(--kn-vvh, 100dvh) * 0.92)" }}>
         <div className="flex items-center justify-between border-b border-[#EFF0F2] px-4 py-3">
           <div>
             <h3 className="text-[14px] font-bold text-[#1C1C1E]">Genapkan ke Roll Utuh</h3>

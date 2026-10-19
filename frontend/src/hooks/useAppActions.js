@@ -593,19 +593,6 @@ export function useAppActions(state) {
     }
   };
 
-  const updatePermissions = async (matrix, persist = true) => {
-    setPermissions((current) => ({ ...current, matrix }));
-    if (!persist) return;
-    try {
-      const response = await axios.put(`${API}/permissions`, { matrix, version: permVersion.current });
-      permVersion.current = response.data.version;
-      setPermissions((current) => ({ ...current, matrix: response.data.matrix }));
-      setNotice("Permission matrix berhasil disimpan.");
-    } catch (error) {
-      setNotice(error.response?.data?.detail || "Gagal menyimpan permission.");
-    }
-  };
-
   const seedDemo = async () => {
     const ok = await askConfirm({
       title: "Ganti SELURUH data operasional dengan data demo?",
@@ -801,7 +788,7 @@ export function useAppActions(state) {
     issueTaxInvoice,
     approvePurchaseOrder,
     adminCreate, adminPatch, adminDelete, importMaster, exportMaster,
-    updatePermissions, seedDemo, previewTemplate, refreshAudit,
+    seedDemo, previewTemplate, refreshAudit,
     createInboundTask, createOutboundTasks, scanTask, advanceTask,
     loadNotifications, loadMoreNotifications,
     markNotificationRead, markAllNotificationsRead, generateNotifications,

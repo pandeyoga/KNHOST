@@ -16,7 +16,7 @@ export const PAGE_META = {
   "documents":            { kicker: "Alat",           title: "Pusat Cetak · Dokumen PDF & Label" },
   "admin":                { kicker: "Pengaturan",     title: "Integrasi & Audit" },
   "customers-master":     { kicker: "Pelanggan",      title: "Impor/Ekspor & Status Pelanggan" },
-  "permission-matrix":    { kicker: "Pengaturan",     title: "Matriks Izin (semua peran)" },
+  "permission-matrix":    { kicker: "Pengaturan",     title: "Badan Usaha & Akses \u00b7 Peran & Hak Akses" },
   "doc-templates-basic":  { kicker: "Pengaturan",     title: "Template Dokumen Dasar" },
   "escalations":          { kicker: "Gudang",         title: "Eskalasi Gudang" },
   "home":                 { kicker: "Kerja Saya",     title: "Beranda" },

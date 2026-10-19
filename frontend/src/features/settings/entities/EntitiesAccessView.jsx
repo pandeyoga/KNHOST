@@ -34,8 +34,8 @@ const TABS = [
   { key: "readiness", label: "Kesiapan", icon: ClipboardCheck },
 ];
 
-export default function EntitiesAccessView({ currentUser, selectedEntity, onNavigate }) {
-  const [tab, setTab] = useState("entities");
+export default function EntitiesAccessView({ currentUser, selectedEntity, onNavigate, initialTab = "entities" }) {
+  const [tab, setTab] = useState(initialTab);
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

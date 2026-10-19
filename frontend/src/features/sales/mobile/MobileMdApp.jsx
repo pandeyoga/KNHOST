@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Bell, ClipboardList, Palette, FlaskConical, Package, Menu, Layers, ChevronRight, LogOut, Monitor, FileStack, ShoppingBag, Tags, BadgeCheck, Boxes,
   ScrollText, Droplet, Hand, Stamp, BarChart3, Images, LayoutTemplate, FolderTree, Ruler, FileSearch, Truck, SearchCheck, Route, UserCheck, ArrowLeft } from "lucide-react";
 import { entityShortById } from "../../../utils/entityLabel";
-import { NotifSheet } from "./MobileSalesApp";
+import { NotifSheet } from "./MobileNotifSheet";
 import { MobileInstallCard, MobilePushCard, dropPushSubscription, syncPushSubscription } from "./MobilePwa";
 import { MobileDesignRequests, MobileMdDesk, MobileMdProducts, MobilePoWatch, MobilePurchaseRequisitions, MobileRndSamples, mdRowTarget } from "./MobileMdViews";
 import { MobilePricelist } from "./MobileSalesNative";
@@ -113,7 +113,7 @@ function MdMore({ user, entities, selectedEntity, onSelectEntity, sub, setSub, s
 const NOTIF_TAB = { "design-requests": "design", "rnd-samples": "sample", "rnd-hub": "sample", "md-products": "products", "products-pricing": "products", "md-desk": "desk" };
 
 export default function MobileMdApp({ user, entities, selectedEntity, notifications = [], unreadCount = 0, onMarkAllRead, onMarkRead, onPollNotifications,
-  onOpenFull, onLogout, onForceDesktop, onSelectEntity }) {
+  onOpenFull, onLogout, onForceDesktop, onSelectEntity, notifProps = {} }) {
   const [tab, setTab] = useState("desk");
   const [focus, setFocus] = useState({});
   const [sub, setSub] = useState(null);
@@ -157,7 +157,7 @@ export default function MobileMdApp({ user, entities, selectedEntity, notificati
           <Bell size={18} />{unreadCount > 0 && <span className="m-badge" data-testid="m-md-notif-count">{unreadCount > 99 ? "99+" : unreadCount}</span>}
         </button>
       </header>
-      {notifOpen && <NotifSheet notifications={notifications} onClose={() => setNotifOpen(false)} onMarkAll={onMarkAllRead} onOpen={openNotif} />}
+      {notifOpen && <NotifSheet {...notifProps} notifications={notifications} onClose={() => setNotifOpen(false)} onMarkAll={onMarkAllRead} onMarkRead={onMarkRead} onOpen={openNotif} />}
       <main className="m-main" data-testid={`m-md-view-${tab}`}>
         {tab === "desk" && <MobileMdDesk selectedEntity={selectedEntity} onOpenRow={(r, q) => go(mdRowTarget(r, q))} />}
         {tab === "design" && <MobileDesignRequests focusId={focus.design} />}

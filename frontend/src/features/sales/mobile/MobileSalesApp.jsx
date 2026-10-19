@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Home, Store, ShoppingCart, ClipboardList, Menu, Bell, Layers, X, CheckCheck, ClipboardCheck } from "lucide-react";
+import { Home, Store, ShoppingCart, ClipboardList, Menu, Bell, Layers, ClipboardCheck } from "lucide-react";
+import { NotifSheet } from "./MobileNotifSheet";
 import MobileSalesAdminDesk from "./MobileSalesAdminDesk";
 import { syncPushSubscription } from "./MobilePwa";
 import MobileSalesHome from "./MobileSalesHome";
@@ -11,7 +12,6 @@ import MobileMore from "./MobileMore";
 import { entityShortById } from "../../../utils/entityLabel";
 
 // Admin Sales mewarisi menu sales (ROLE_NAV) — beda satu: beranda = Meja Admin Sales.
-const ChevronRightIcon = () => <span className="self-center text-[#C7C7CC]">›</span>;
 // link notifikasi (id view desktop) → layar HP.
 const NOTIF_SUB = { "internal-requests": "internal", "special-orders": "special", "price-approvals": "price-status", "sales-returns": "returns",
   returns: "returns", amendments: "amendments", "customers-crm": "crm", crm: "crm", "sample-orders": "sample-orders", leads: "leads", "crm-leads": "leads" };
@@ -25,50 +25,6 @@ const TABS = [
   { id: "more", label: "Lainnya", icon: Menu },
 ];
 
-const fmtAgo = (s) => {
-  if (!s) return "";
-  const m = Math.max(0, Math.round((Date.now() - new Date(s).getTime()) / 60000));
-  if (m < 1) return "baru saja";
-  if (m < 60) return `${m} mnt lalu`;
-  if (m < 1440) return `${Math.round(m / 60)} jam lalu`;
-  return new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
-};
-
-export function NotifSheet({ notifications, onClose, onMarkAll, onOpen }) {
-  return (
-    <div className="m-sheet-wrap" data-testid="mobile-notif-sheet">
-      <div className="m-sheet-backdrop" onClick={onClose} />
-      <div className="m-sheet">
-        <div className="m-sheet-grip" />
-        <div className="flex items-center justify-between px-4 py-2 border-b border-[#EFF0F2]">
-          <h3 className="m-section-title">Notifikasi</h3>
-          <div className="flex items-center gap-2">
-            {onMarkAll && notifications.length > 0 && (
-              <button data-testid="mobile-notif-markall" onClick={onMarkAll} className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#0058CC]"><CheckCheck size={14} /> Tandai dibaca</button>
-            )}
-            <button onClick={onClose} aria-label="Tutup" className="text-[#6B6B73]" data-testid="mobile-notif-close"><X size={18} /></button>
-          </div>
-        </div>
-        <div className="m-sheet-scroll px-4 py-2">
-          {notifications.length === 0 ? (
-            <div className="py-12 text-center text-[13px] m-muted">Belum ada notifikasi.</div>
-          ) : notifications.map((n) => (
-            <button key={n.id} type="button" className="m-list-row m-press w-full text-left" onClick={() => onOpen?.(n)} data-testid={`mobile-notif-${n.id}`}>
-              <span className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${n.read ? "bg-[#D6D7DC]" : n.severity === "critical" ? "bg-[#FF3B30]" : "bg-[#0058CC]"}`} />
-              <div className="min-w-0 flex-1">
-                <p className={`text-[12.5px] leading-tight ${n.read ? "font-medium text-[#3C3C43]" : "font-semibold"}`}>{n.title || n.type}</p>
-                {n.body && <p className="text-[11.5px] m-muted leading-snug mt-0.5">{n.body}</p>}
-                <p className="mt-0.5 text-[10px] text-[#AEAEB2]">{fmtAgo(n.created_at)}</p>
-              </div>
-              {n.link && <ChevronRightIcon />}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function MobileSalesApp(props) {
   const {
     user, token, onLogout, data, loading, cart, setCart,
@@ -76,7 +32,7 @@ export default function MobileSalesApp(props) {
     selectedAddress, setSelectedAddress, onSubmitOrder, paymentTerms,
     selectedEntity, entities, notifications = [], unreadCount = 0,
     onMarkAllRead, onForceDesktop, allowRollPick = true, initialSub = null, onOpenFull, onRefresh, onSelectEntity,
-    onPollNotifications, onMarkRead, settings, onCreateCustomer, notice = "",
+    onPollNotifications, onMarkRead, settings, onCreateCustomer, notice = "", notifProps = {},
   } = props;
   const isAdmin = user?.role === "sales_admin";
   const tabs = isAdmin ? [DESK_TAB, ...TABS.slice(1)] : TABS;
@@ -143,7 +99,7 @@ export default function MobileSalesApp(props) {
         </button>
       </header>
 
-      {notifOpen && <NotifSheet notifications={notifications} onClose={() => setNotifOpen(false)} onMarkAll={onMarkAllRead} onOpen={openNotif} />}
+      {notifOpen && <NotifSheet {...notifProps} notifications={notifications} onClose={() => setNotifOpen(false)} onMarkAll={onMarkAllRead} onMarkRead={onMarkRead} onOpen={openNotif} />}
 
       <main className={`m-main ${tab === "catalog" ? "m-flush" : ""}`} data-testid={`mobile-view-${tab}`}>
         <OfflineBanner />

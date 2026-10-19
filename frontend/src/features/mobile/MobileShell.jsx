@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Layers, Bell, Monitor, LogOut } from "lucide-react";
 import { entityShortById } from "../../utils/entityLabel";
+import { MobilePushBanner, syncPushSubscription, dropPushSubscription } from "../sales/mobile/MobilePwa";
 
 /**
  * §3-A — SATU cangkang mobile bersama untuk semua peran (bottom-nav per peran).
@@ -9,6 +10,7 @@ import { entityShortById } from "../../utils/entityLabel";
 export default function MobileShell({ user, tabs, entities = [], selectedEntity, unreadCount = 0, onLogout, onForceDesktop, testId = "mobile-shell", initialTab, topSlot = null }) {
   const [tab, setTab] = useState(initialTab || tabs[0]?.id);
   useEffect(() => { if (initialTab) setTab(initialTab); }, [initialTab]);
+  useEffect(() => { syncPushSubscription(); }, [user?.id]);
   const active = tabs.find((t) => t.id === tab) || tabs[0];
   return (
     <div className="m-shell" data-testid={testId}>
@@ -19,10 +21,10 @@ export default function MobileShell({ user, tabs, entities = [], selectedEntity,
           <span className="t2">{entityShortById(entities, selectedEntity) || user?.role}</span>
         </div>
         <button className="m-act" data-testid="mobile-force-desktop" onClick={onForceDesktop} aria-label="Tampilan desktop"><Monitor size={18} /></button>
-        <button className="m-act" data-testid="mobile-logout" onClick={onLogout} aria-label="Keluar"><LogOut size={18} /></button>
+        <button className="m-act" data-testid="mobile-logout" onClick={async () => { await dropPushSubscription(); onLogout?.(); }} aria-label="Keluar"><LogOut size={18} /></button>
         {unreadCount > 0 && <span className="m-badge" data-testid="mobile-unread"><Bell size={10} /> {unreadCount}</span>}
       </header>
-      <main className="m-main" data-testid={`mobile-view-${active?.id}`}>{topSlot}{active?.render?.({ setTab })}</main>
+      <main className="m-main" data-testid={`mobile-view-${active?.id}`}>{topSlot}<MobilePushBanner />{active?.render?.({ setTab })}</main>
       <nav className="m-tabbar" data-testid="mobile-tabbar">
         {tabs.map((t) => {
           const Icon = t.icon; const on = t.id === tab;

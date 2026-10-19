@@ -6,7 +6,6 @@ import ProductColorTriad from "./ProductColorTriad";
 import VariantAxisPicker from "./VariantAxisPicker";
 import { ProductGallery } from "./ProductGallery";
 import LabelPrinterModal from "./LabelPrinterModal";
-import RollLengthStrip from "./RollLengthStrip";
 import RollPicker from "./RollPicker";
 import RollReconcileSheet from "./RollReconcileSheet";
 import { overlayDismiss } from "@/utils/overlayDismiss";
@@ -247,7 +246,6 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
                 <div data-testid="quickview-unit-fixed" className="field flex items-center bg-[#F5F5F7] font-semibold text-[#3C3C43]">{baseUnit}</div>
               </div>
             </div>
-            {!isSampleKind && <RollLengthStrip productId={selected?.id} entityId={entityId} baseUnit={baseUnit} rollCount={rollCount} testId="quickview-roll-lengths" />}
           </>) : selected && !blocked ? (
             <RollPicker
               productId={selected.id}

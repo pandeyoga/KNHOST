@@ -1,12 +1,11 @@
 import KNDatePicker from "@/components/KNDatePicker";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import MoneyInput from "@/components/MoneyInput";
-import { RefreshCw, Settings, Plus, Save, ShieldCheck, UserCog, Check, AlertTriangle, ChevronUp, ChevronDown, Filter } from "lucide-react";
+import { RefreshCw, Settings, Plus, Save, UserCog, Check, AlertTriangle, ChevronUp, ChevronDown, Filter } from "lucide-react";
 import CategoryManager from "./CategoryManager";
 import IntegrationsPanel from "./IntegrationsPanel";
 import GeminiIntegrationPanel from "./GeminiIntegrationPanel";
 import OpenAiIntegrationPanel from "./OpenAiIntegrationPanel";
-import PermissionMatrixRecords from "./PermissionMatrixRecords";
 import { auditActionLabel } from "../../config/auditLabels";   // X-2
 import KNSelect from "../../components/KNSelect";
 import FormModal from "../../components/FormModal";
@@ -26,7 +25,6 @@ export default function AdminView({
   data,
   uoms,
   templates,
-  permissions,
   previewHtml,
   auditLogs,
   auditFilters,
@@ -36,7 +34,6 @@ export default function AdminView({
   onAdminDelete,
   onImportMaster,
   onExportMaster,
-  onUpdatePermissions,
   onPreviewTemplate,
   onRefreshAudit,
   onShowDetail,
@@ -175,7 +172,7 @@ export default function AdminView({
   // dan formulir generik di sini tidak punya pagar itu: gudang bisa lahir tanpa mode.
   // Satu pintu saja → layar "Gudang (Master)" (`features/wms/warehouses`).
   const ALL_TABS = [
-    ["products", "Produk"], ["categories", "Kategori"], ["customers", "Pelanggan"], ["uoms", "Satuan (UOM)"], ["integrations", "Integrasi AI"], ["templates", "Template Dokumen"], ["permissions", "Hak Akses"], ["audit", "Jejak Audit"],
+    ["products", "Produk"], ["categories", "Kategori"], ["customers", "Pelanggan"], ["uoms", "Satuan (UOM)"], ["integrations", "Integrasi AI"], ["templates", "Template Dokumen"], ["audit", "Jejak Audit"],
   ];
   const TAB_SINGULAR = { products: "Produk", customers: "Pelanggan", uoms: "Satuan", templates: "Template Dokumen" };
   const SECTION_LABEL = { header: "Kop surat", customer: "Data pelanggan", items: "Daftar barang", allocation: "Alokasi roll", signature: "Tanda tangan", footer: "Catatan kaki" };
@@ -414,11 +411,8 @@ export default function AdminView({
         </FormModal>
         <div className="section-card">
           <div className="section-head flex items-center justify-between gap-2">
-            <h2>{tab === "permissions" ? "Matriks Hak Akses per Peran" : tab === "audit" ? "Jejak Audit" : `Daftar ${tabLabel[tab] || "Data"}`}</h2>
-            {tab === "permissions" && (
-              <button data-testid="save-permissions-button" className="primary-button" onClick={() => onUpdatePermissions(permissions.matrix)}><ShieldCheck size={14} /> Simpan Hak Akses</button>
-            )}
-            {!["permissions", "audit", "integrations"].includes(tab) && (
+            <h2>{tab === "audit" ? "Jejak Audit" : `Daftar ${tabLabel[tab] || "Data"}`}</h2>
+            {!["audit", "integrations"].includes(tab) && (
               <button type="button" data-testid="admin-toggle-import-export" className="secondary-button text-[11px]"
                 onClick={() => setShowImportExport((v) => !v)}>
                 {showImportExport ? "Tutup Impor / Ekspor" : "Impor / Ekspor CSV"}
@@ -426,7 +420,7 @@ export default function AdminView({
             )}
           </div>
           <div className="section-body">
-          {!["permissions", "audit", "integrations"].includes(tab) && showImportExport && <div data-testid="admin-import-export-panel" className="mb-3 grid gap-2 rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5">
+          {!["audit", "integrations"].includes(tab) && showImportExport && <div data-testid="admin-import-export-panel" className="mb-3 grid gap-2 rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-2.5">
             <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Impor / Ekspor massal — {tabLabel[tab] || currentResource}</p>
             <p className="text-[10.5px] text-[#6B6B73]">Unggah CSV/XLSX untuk membuat atau memperbarui banyak baris sekaligus. Gunakan <b>Pratinjau (dry-run)</b> dulu untuk melihat dampaknya tanpa menyimpan.</p>
             {currentResource === "customers" && (
@@ -461,10 +455,6 @@ export default function AdminView({
               </div>
             )}
           </div>}
-          {tab === "permissions" && <div className="grid gap-2">
-            <p className="text-[11.5px] text-[#6B6B73]" data-testid="permission-matrix-hint">Klik pil izin untuk mengubahnya. Perubahan hanya tampil di layar sampai tombol <b>Simpan Hak Akses</b> ditekan.</p>
-            <PermissionMatrixRecords matrix={permissions.matrix} onUpdatePermissions={onUpdatePermissions} />
-          </div>}
           {tab === "audit" && <div data-testid="audit-history-records" className="grid gap-2">
             {(auditLogs || []).slice(0, auditShown).map((log) => <button data-testid={`audit-row-${log.id}`} key={log.id} className="rounded-md border border-[#EFF0F2] bg-[#FAFBFC] interactive-card p-2.5 text-left" onClick={() => onShowDetail({ title: auditActionLabel(log.action), body: `Dicatat oleh ${log.actor} pada ${log.entity_type}. Kunci aksi: ${log.action}`, facts: [{ label: "Sumber Daya", value: `${log.entity_type} · ${log.entity_id}` }, { label: "Badan Usaha", value: log.scope_entity_name || log.scope_entity_id || "Tingkat grup" }, { label: "Peran", value: log.role || "—" }, { label: "Waktu", value: new Date(log.timestamp).toLocaleString("id-ID") }], target: "admin", cta: "Tetap di Audit" })}><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-[12.5px] font-semibold">{auditActionLabel(log.action)} <span className="text-[10px] font-mono font-normal text-[#9A9BA3]" title="kunci aksi">{log.action}</span></p><p className="text-[10.5px] font-semibold text-[#0058CC]">{new Date(log.timestamp).toLocaleString("id-ID")}</p></div><p className="mt-0.5 text-[11.5px] text-[#3C3C43]">{log.actor} • {log.entity_type} • {log.entity_id}{log.scope_entity_name ? ` • ${log.scope_entity_name}` : ""}</p><p className="mt-1 line-clamp-2 text-[10.5px] text-[#3C3C43]">{JSON.stringify(log.after ?? log.details ?? {}).slice(0, 240)}</p></button>)}
             {(auditLogs || []).length > auditShown && (
@@ -474,7 +464,7 @@ export default function AdminView({
             )}
             {(auditLogs || []).length === 0 && <p data-testid="audit-empty" className="px-3 py-6 text-center text-[12px] text-[#6B6B73]">Tidak ada jejak audit untuk filter ini.</p>}
           </div>}
-          {!['permissions', 'audit', 'integrations'].includes(tab) && <>
+          {!['audit', 'integrations'].includes(tab) && <>
           <div className="grid gap-2">
             {tab === "products" && (
               <>

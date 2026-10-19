@@ -115,7 +115,7 @@ export function MobileInstallCard() {
   );
 }
 
-export function MobilePushCard() {
+export function MobilePushCard({ compact = false }) {
   const supported = pushSupported();
   const [perm, setPerm] = useState(supported ? Notification.permission : "unsupported");
   const [subscribed, setSubscribed] = useState(false);
@@ -163,8 +163,9 @@ export function MobilePushCard() {
   };
 
   const active = supported && perm === "granted" && subscribed;
+  if (compact && (active || !supported)) return null;
   return (
-    <div className="m-card p-3" data-testid="m-push-card">
+    <div className={`m-card p-3 ${compact ? "my-2 border-[#CBDFFF] bg-[#F7FAFF]" : ""}`} data-testid={compact ? "m-push-banner" : "m-push-card"}>
       <div className="flex items-center gap-3">
         <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${active ? "bg-[#E6F6EC]" : "bg-[#EAF2FF]"}`}>
           {active ? <BellRing size={18} className="text-[#1B7F4B]" /> : <BellOff size={18} className="text-[#0058CC]" />}
@@ -208,6 +209,20 @@ export function MobilePushCard() {
         </div>
       )}
       {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"} mt-2 text-xs`} data-testid="m-push-msg">{msg.text}</div>}
+      {compact && iosNeedsInstall && !active && <div className="mt-2"><MobileInstallCard /></div>}
+    </div>
+  );
+}
+
+/** Ajakan ringkas mengaktifkan push — hilang sendiri bila sudah aktif/tidak didukung, bisa ditutup. */
+export function MobilePushBanner() {
+  const [hidden, setHidden] = useState(() => localStorage.getItem("kn_push_banner_hidden") === "1");
+  if (hidden) return null;
+  return (
+    <div className="relative" data-testid="m-push-banner-wrap">
+      <MobilePushCard compact />
+      <button type="button" aria-label="Sembunyikan" data-testid="m-push-banner-hide" className="absolute right-2 top-3 text-[11px] font-semibold text-[#8E8E93]"
+        onClick={() => { localStorage.setItem("kn_push_banner_hidden", "1"); setHidden(true); }}>Nanti</button>
     </div>
   );
 }
