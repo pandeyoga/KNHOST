@@ -27,8 +27,6 @@ export default function LotDetailPanel({
   onSaveIdentity, onSplit, onMerge, onRework, onStatus, onLabel, savingIdentity, saveMsg,
 }) {
   const [draft, setDraft] = useState({ supplier_lot: "", dye_lot: "", shade_ref: "", note: "", internal_alias: "", reason: "" });
-  const [aliasMode, setAliasMode] = useState("off");
-  useEffect(() => { lotApi.settings().then((s) => setAliasMode(s.alias_mode || "off")).catch(() => {}); }, []);
   const [queueBusy, setQueueBusy] = useState(false);
   const [queueInfo, setQueueInfo] = useState("");
   const queueLabels = async () => {
@@ -167,20 +165,20 @@ export default function LotDetailPanel({
               </div>
               <p className="px-2.5 pt-2 text-[10.5px] text-[#3C3C43]" data-testid="lot-canonical-number">
                 Nomor lot internal (kanonik, tidak bisa diubah): <b className="font-mono">{lot.lot_number}</b>
-                {lot.supplier_lot ? <> · lot supplier <b className="font-mono" data-testid="lot-supplier-lot-view">{lot.supplier_lot}</b></> : null}
-                {lot.internal_alias ? <> · alias <b data-testid="lot-alias-view">{lot.internal_alias}</b></> : null}
+                {lot.supplier_lot ? <> · LOT pabrik <b className="font-mono" data-testid="lot-supplier-lot-view">{lot.supplier_lot}</b></> : null}
+                {lot.internal_alias ? <> · LOT KN <b data-testid="lot-alias-view">{lot.internal_alias}</b></> : null}
                 {(lot.supplier_dn_numbers || []).length ? <> · SJ supplier <b className="font-mono" data-testid="lot-supplier-dn-view">{lot.supplier_dn_numbers.join(", ")}</b></> : null}
               </p>
               <div className="grid gap-2 px-2.5 py-2 md:grid-cols-2">
-                {[["supplier_lot", "Nomor lot supplier", "mis. SUP-2024-118"],
+                {[["supplier_lot", "LOT pabrik (supplier)", "mis. 234"],
                   ["dye_lot", "Dye lot / batch warna", "mis. DL-RED-01"],
                   ["shade_ref", "Referensi shade", "mis. SHADE-A / Pantone 18-1663"],
                   ["note", "Catatan", "mis. hasil kiriman kedua supplier A"],
-                  ["internal_alias", aliasMode === "manual" ? "Alias internal (ASUMSI, KLX-01)" : "Alias internal — belum aktif (KLX-01)", "mis. KN A"],
+                  ["internal_alias", "LOT KN (diisi user, KLX-01)", "mis. KN A"],
                   ["reason", "Alasan perubahan identitas", "wajib bila lot sudah berisi roll"]].map(([k, label, ph]) => (
                   <label key={k} className="grid gap-1">
                     <span className="text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">{label}</span>
-                    <input data-testid={`lot-edit-${k}`} className="field" disabled={!canEdit || (k === "internal_alias" && aliasMode !== "manual")}
+                    <input data-testid={`lot-edit-${k}`} className="field" disabled={!canEdit}
                       value={draft[k]} placeholder={ph}
                       onChange={(e) => setDraft({ ...draft, [k]: e.target.value })} />
                   </label>

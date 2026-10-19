@@ -115,12 +115,12 @@ E("lot.require_dye_lot", group="lot", type="bool", default=True, scopes=G,
   related=("allocation.dye_lot_strict",), risk="medium",
   roles=_MANAGER_TOO)
 
-E("lot.alias_mode", group="lot", type="enum", default="off",
-  options=({"value": "off", "label": "Belum dipakai (menunggu KLX-01)"},
-           {"value": "manual", "label": "ASUMSI: alias internal diisi manual per lot"}),
+E("lot.alias_mode", group="lot", type="enum", default="manual",
+  options=({"value": "manual", "label": "LOT KN diisi user per lot (KLX-01)"},
+           {"value": "off", "label": "Sama dengan manual (KLX-01 sudah diputuskan)"}),
   scopes=G,
   label="Alias lot internal (mis. supplier 234 → KN A)",
-  help="LN-014 — alias internal TIDAK pernah dibuat otomatis selama KLX-01 belum diputuskan.",
+  help="LN-014/KLX-01 — dua kode: LOT pabrik + LOT KN. LOT KN diisi bebas oleh user; tidak ada pola/reset otomatis.",
   impact="Mode manual mengizinkan petugas mengisi alias per lot dengan jejak riwayat; nomor lot internal tetap tidak berubah.",
   example="manual → lot KSC/LOT-2610-0001 (supplier 234) boleh diberi alias 'KN A'",
   consumers=("services/lot_service.py",), risk="medium", roles=_MANAGER_TOO)

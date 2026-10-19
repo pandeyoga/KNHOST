@@ -183,3 +183,10 @@ Owner memutuskan: disamarkan untuk peran tanpa izin grade, asal, atau LOT.
 - **Bug diperbaiki**: hapus peran custom kini juga menghapus `hidden_views` miliknya (sebelumnya peran baru ber-slug sama mewarisi tab tersembunyi lama).
 - Tes: `tests/test_ln015_typed_rnd_and_role_version.py` (9 lulus), `tests/test_l01_custom_role.py`.
 - Belum: T01 inventaris lengkap seluruh aksi lintas fase, T02/T04/T07 diuji ulang khusus, UAT tablet T08 oleh pengguna.
+
+## Update 2026-10-19 (sesi lanjutan) — LN-014/LN-040 dua kode LOT (KLX-01)
+- **Dua kode:** `supplier_lot` = LOT pabrik, `internal_alias` = **LOT KN** (diisi user). Nomor lot sistem (`lot_number`) tetap identitas kanonik dan tidak berubah.
+- **LOT KN baru per SJ:** `lot_service.resolve_or_create` (sumber `receiving`) tidak lagi memakai ulang lot dari penerimaan lain walau nomor lot/LOT pabriknya sama — penerimaan berikutnya membuat lot baru (LOT pabrik tetap tercatat). Penerimaan yang sama tetap idempoten.
+- **Penamaan bebas:** gerbang `lot.alias_mode` dan blok keunikan alias dihapus; pola & reset LOT KN diputuskan user (tidak diatur sistem). Perubahan pada lot berisi roll tetap wajib alasan + `identity_history`.
+- UI detail lot: label "LOT pabrik (supplier)" dan "LOT KN (diisi user, KLX-01)", selalu bisa diisi oleh pemegang izin ubah lot.
+- **Uji:** `tests/test_ln014_lot_identity.py` 4/4 (`test_klx01_lot_kn_free_input_no_system_pattern`, `test_klx01_same_factory_lot_next_receipt_gets_new_kn_lot`).

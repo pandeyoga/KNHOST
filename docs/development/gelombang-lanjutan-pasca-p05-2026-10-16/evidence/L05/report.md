@@ -73,3 +73,10 @@ Belum ber-SHA. Acceptance tetap `not_run`; hasil lokal dicatat di `actual_result
 ## Blocker
 - **KLX-02:** kode cacat, rumus, dan ambang grade client.
 - **L09:** roll pengganti dari tukar barang.
+
+## Update 2026-10-19 (sesi lanjutan) — LN-052 form inspeksi manual (KLX-02)
+- Kode cacat, poin dan **grade diisi petugas** di form inspeksi (`grade` baru pada `POST /api/inspections/{id}/lines/{lid}/inspect`, wajib grade aktif dari Master Grade; tidak sah → 400). Grade kosong → saran sistem dari total poin.
+- `grade_rule.status` = `manual_user_input` (bukan lagi `candidate_unvalidated`), `grade_source` = `user` | `system_suggestion`, `suggested_grade` tersimpan. Hasil lama tetap berlabel "kandidat" (riwayat tidak diubah).
+- UI: `ins-grade-input` (pilihan dari `/api/master/grades` aktif), lencana `ins-line-grade-source-<id>` ("diisi QC" / "saran sistem").
+- **Uji:** `tests/test_l05_interval_form.py` 5/5 (`test_klx02_grade_filled_by_user_overrides_suggestion`).
+- **Belum:** D2 (ambang poin di 2 tempat) & D3 (daftar grade hardcode di FE lain) menunggu persetujuan owner — tidak diubah; saran sistem masih memakai ambang existing.

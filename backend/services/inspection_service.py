@@ -826,6 +826,12 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
             qc.normalize_interval_defects(payload.get("defects") or [], payload.get("inspect_length_yard"))
         except qc.IntervalError as exc:
             raise InspectionError(str(exc)) from exc
+        if str(payload.get("grade") or "").strip():   # KLX-02 — grade diisi user, wajib dari master aktif
+            from services import grade_service as _gs
+            try:
+                _gs.normalize_or_raise(payload.get("grade"), "Grade QC")
+            except Exception as exc:  # noqa: BLE001
+                raise InspectionError(str(exc)) from exc
         result = await qc.inspect_roll(
             safe_doc(roll), [d for d in (payload.get("defects") or [])],
             payload.get("gsm_actual"), payload.get("width_actual"),
@@ -841,7 +847,7 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
             inspection_id=doc.get("id", ""), inspection_number=doc.get("number", ""),
             quality_from_roll=(part == "qc"),
             inspect_length_yard=payload.get("inspect_length_yard"),
-            header=hdr)
+            header=hdr, grade_input=str(payload.get("grade") or ""))
         # RINGKASAN, bukan sumber angka: disalin dari hasil pemanggilan di atas.
         patch.update({
             "points_snapshot": result.get("points"),

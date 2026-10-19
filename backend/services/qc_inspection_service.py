@@ -54,8 +54,8 @@ def compute_points(defects: List[Dict[str, Any]]) -> float:
 INTERVAL_YARD = 15.0
 MIN_INTERVALS = 10           # form kertas: 0–150 yard; roll lebih panjang → interval berlanjut
 RULE_VERSION = "4point_sum_v1"
-# KLX-02 (kode cacat, rumus & ambang grade client) BELUM diputuskan → hasil = kandidat, bukan bukti final.
-RULE_STATUS = "candidate_unvalidated"
+# KLX-02 (owner 2026-10-19): kode cacat, poin & grade DIISI USER di form; sistem hanya menyimpan + memberi saran.
+RULE_STATUS = "manual_user_input"
 
 
 class IntervalError(ValueError):
@@ -173,6 +173,7 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
                        quality_from_roll: bool = False,
                        inspect_length_yard: Optional[float] = None,
                        header: Optional[Dict[str, Any]] = None,
+                       grade_input: str = "",
                        ) -> Dict[str, Any]:
     """Catat inspeksi 4-point pada 1 roll → hitung poin & grade → update roll.
 
@@ -222,7 +223,9 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
 
     th = await grade_thresholds(roll.get("owner_entity_id"))
     points = compute_points(defects)
-    grade = grade_from_points(points, th)
+    suggested = grade_from_points(points, th)
+    from services import grade_service as _gs
+    grade = _gs.normalize_or_raise(grade_input, "Grade QC") if (grade_input or "").strip() else suggested
 
     norm_defects = normalize_interval_defects(defects, inspect_length_yard)
 
@@ -249,7 +252,8 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
         "stock_qty": float(roll.get("length_remaining") or 0), "stock_unit": roll.get("unit", ""),
         "header": {k: v for k, v in (header or {}).items() if v not in (None, "")},
     }
-    rule = {"version": RULE_VERSION, "status": RULE_STATUS, "pending_decision": "KLX-02",
+    rule = {"version": RULE_VERSION, "status": RULE_STATUS, "decision": "KLX-02",
+            "grade_source": "user" if (grade_input or "").strip() else "system_suggestion", "suggested_grade": suggested,
             "thresholds": th, "grades": [g["value"] for g in _dr.GRADES if g.get("active", True) is not False]}
     inspection = {
         "points": points, "grade": grade,
@@ -281,7 +285,8 @@ async def inspect_roll(roll: Dict[str, Any], defects: List[Dict[str, Any]],
     from services import grade_service
     grade_result = await grade_service.set_roll_grade(
         roll["id"], grade, source="qc_inspection",
-        reason=f"Inspeksi 4-point: {points} poin (ambang A≤{th['a_max']}, B≤{th['b_max']})",
+        reason=(f"Inspeksi 4-point: {points} poin · grade diisi QC" if (grade_input or "").strip() else
+                f"Inspeksi 4-point: {points} poin (saran sistem, ambang A≤{th['a_max']}, B≤{th['b_max']})"),
         actor=actor, extra={"points": points, "inspection_note": note or ""})
     updated = await db.inventory_rolls.find_one_and_update(
         {"id": roll["id"]},

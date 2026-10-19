@@ -45,22 +45,30 @@ def test_identity_change_requires_reason_and_keeps_history(h):
     assert r.status_code == 200 and len(r.json()["identity_history"]) == 1  # tanpa perubahan → no-op
 
 
-def test_alias_off_by_default_then_manual_unique(h):
+def test_klx01_lot_kn_free_input_no_system_pattern(h):
     a, b = _lot(h, SUP + "X"), _lot(h, SUP + "Y")
-    r = requests.patch(f"{BASE}/lots/{a['id']}", headers=h, json={"internal_alias": f"KN-{TAG}", "reason": "alias uji"})
-    assert r.status_code == 400 and "KLX-01" in r.json()["detail"]
-    DB.system_settings.update_one({"scope": "lot"}, {"$set": {"alias_mode": "manual"}}, upsert=True)
-    r = requests.patch(f"{BASE}/lots/{a['id']}", headers=h, json={"internal_alias": f"KN-{TAG}", "reason": "alias uji"})
-    assert r.status_code == 200, r.text
-    dup = requests.patch(f"{BASE}/lots/{b['id']}", headers=h, json={"internal_alias": f"KN-{TAG}", "reason": "alias uji"})
-    assert dup.status_code == 400 and a["lot_number"] in dup.json()["detail"]
-    other_sup = _lot(h, SUP + "Z", supplier_id="sup_other")
-    ok = requests.patch(f"{BASE}/lots/{other_sup['id']}", headers=h, json={"internal_alias": f"KN-{TAG}", "reason": "alias supplier lain"})
-    assert ok.status_code == 200, ok.text
-    DB.system_settings.update_one({"scope": "lot"}, {"$set": {"alias_unique_scope": "entity"}})
-    c = _lot(h, SUP + "W", supplier_id="sup_third")
-    assert requests.patch(f"{BASE}/lots/{c['id']}", headers=h,
-                          json={"internal_alias": f"KN-{TAG}", "reason": "lintas supplier"}).status_code == 400
+    r = requests.patch(f"{BASE}/lots/{a['id']}", headers=h, json={"internal_alias": f"KN-{TAG}", "reason": "LOT KN user"})
+    assert r.status_code == 200 and r.json()["internal_alias"] == f"KN-{TAG}", r.text
+    assert r.json()["lot_number"] == a["lot_number"] and r.json()["supplier_lot"] == SUP + "X"   # dua kode
+    same = requests.patch(f"{BASE}/lots/{b['id']}", headers=h, json={"internal_alias": f"KN-{TAG}", "reason": "pola reset user"})
+    assert same.status_code == 200, same.text   # pola/reset diputuskan user, sistem tidak memblok
+
+
+def test_klx01_same_factory_lot_next_receipt_gets_new_kn_lot(h):
+    import asyncio
+    from services import lot_service as ls
+
+    async def run():
+        kw = dict(product_id=TPL["product_id"], owner_entity_id="ent_ksc", source="receiving", supplier_lot=SUP + "R")
+        first = await ls.resolve_or_create(**kw, source_ref={"type": "wms_task", "id": f"{TAG}-SJ1"})
+        again = await ls.resolve_or_create(**kw, source_ref={"type": "wms_task", "id": f"{TAG}-SJ1"})
+        nxt = await ls.resolve_or_create(**kw, lot_code=first["lot_number"], source_ref={"type": "wms_task", "id": f"{TAG}-SJ2"})
+        for x in (first, nxt):
+            await ls.db.inventory_lots.update_one({"id": x["id"]}, {"$set": {"note": TAG}})
+        return first, again, nxt
+    first, again, nxt = asyncio.new_event_loop().run_until_complete(run())
+    assert again["id"] == first["id"]                      # penerimaan sama → idempoten
+    assert nxt["id"] != first["id"] and nxt["supplier_lot"] == SUP + "R"   # SJ berikutnya → LOT KN baru
 
 
 def test_trace_by_supplier_lot_shows_both_identities_and_return_rolls(h):

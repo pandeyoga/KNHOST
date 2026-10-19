@@ -56,6 +56,8 @@ class InspectionLineInspect(BaseModel):
     shade_ref: str = ""
     # P05 IMP-16 — bagian yang diisi: md_quality (warna/handfeel) | qc (4-point/ukur) | "" = keduanya
     part: str = ""
+    # L05 LN-052 KLX-02 — grade diisi user (form manual); kosong = saran sistem dari total poin.
+    grade: str = ""
 
 
 class RandomCheckCreate(BaseModel):

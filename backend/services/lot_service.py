@@ -43,7 +43,7 @@ DEFAULT_SETTINGS: Dict[str, Any] = {
     "auto_create_on_receiving": True,  # 1 batch penerimaan = 1 lot (per dye lot)
     "status_on_receipt": "karantina",
     "number_format": "LOT-YYMM-####",
-    "alias_mode": "off",               # LN-014 — off | manual (KLX-01 pending; tak ada alias otomatis)
+    "alias_mode": "manual",            # LN-014/KLX-01 — LOT KN selalu diisi user (tanpa pola/reset otomatis)
     "alias_unique_scope": "entity_supplier",  # entity_supplier | entity
 }
 # LN-014 — field identitas yang perubahannya wajib beralasan & tercatat (nomor lot internal TIDAK bisa diubah).
@@ -247,16 +247,23 @@ async def resolve_or_create(*, product_id: str, owner_entity_id: str = "",
     """
     owner = owner_entity_id or DEFAULT_ENTITY_ID
     code = (lot_code or "").strip()
+    # KLX-01 — penerimaan: LOT KN baru per SJ/penerimaan; lot dari penerimaan lain TIDAK dipakai ulang
+    # walau nomor/LOT pabriknya sama.
+    def _other_receipt(doc: Dict[str, Any]) -> bool:
+        return source == "receiving" and bool(source_ref and source_ref.get("id")) and \
+            (doc.get("source_ref") or {}).get("id") != source_ref["id"]
     if code:
         exist = await find_by_number(code)
         if exist and exist.get("product_id") == product_id and \
-                exist.get("owner_entity_id") == owner:
+                exist.get("owner_entity_id") == owner and not _other_receipt(exist):
             return safe_doc(exist)
         legacy = await db[COLL].find_one(
             {"legacy_lot_codes": code, "product_id": product_id,
              "owner_entity_id": owner}, {"_id": 0})
-        if legacy:
+        if legacy and not _other_receipt(legacy):
             return safe_doc(legacy)
+        if exist or legacy:
+            code = ""
     if source_ref and source_ref.get("id"):
         # 1 batch dokumen + 1 dye lot = 1 lot (granularitas D-10)
         q = {"source_ref.id": source_ref["id"], "product_id": product_id,
@@ -565,19 +572,8 @@ async def patch_lot(lot_id: str, payload: Dict[str, Any],
 
 
 async def _check_alias(lot: Dict[str, Any], alias: str) -> None:
-    cfg = await get_settings(lot.get("owner_entity_id", ""))
-    if cfg.get("alias_mode", "off") != "manual":
-        raise LotError("Alias lot internal belum diaktifkan (KLX-01 belum diputuskan). "
-                       "Aktifkan asumsi 'lot.alias_mode = manual' di Pusat Pengaturan bila perlu.")
-    if not alias:
-        return
-    q: Dict[str, Any] = {"internal_alias": alias, "owner_entity_id": lot.get("owner_entity_id"),
-                         "id": {"$ne": lot["id"]}}
-    if cfg.get("alias_unique_scope", "entity_supplier") == "entity_supplier":
-        q["supplier_id"] = lot.get("supplier_id") or ""
-    other = await db[COLL].find_one(q, {"_id": 0, "lot_number": 1})
-    if other:
-        raise LotError(f"Alias '{alias}' sudah dipakai lot {other['lot_number']}.")
+    """KLX-01 (owner 2026-10-19) — LOT KN = input bebas user; pola penamaan & reset tidak diatur sistem."""
+    return None
 
 
 # ═══════════════════════════════════════════════════════════════════════════

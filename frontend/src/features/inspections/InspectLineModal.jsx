@@ -13,6 +13,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { Ruler } from "lucide-react";
+import axios, { API } from "../../services/apiClient";
 import FormModal from "../../components/FormModal";
 import KNSelect from "../../components/KNSelect";
 import QtyDual from "../../components/QtyDual";
@@ -40,8 +41,10 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
   const [inspectLen, setInspectLen] = useState("");
   const [form, setForm] = useState({
     gsm_actual: "", width_actual: "", color_result: "", handfeel_result: "",
-    handfeel_score: "", delta_e: "", remark: "",
+    handfeel_score: "", delta_e: "", remark: "", grade: "",
   });
+  const [grades, setGrades] = useState([]);
+  useEffect(() => { axios.get(`${API}/master/grades`).then((r) => setGrades((r.data || []).filter((g) => g.active !== false))).catch(() => setGrades([])); }, []);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
@@ -65,6 +68,7 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
       handfeel_score: line.handfeel_score ?? "",
       delta_e: line.delta_e ?? "",
       remark: line.remark || "",
+      grade: line.grade_rule?.grade_source === "user" ? (line.grade || "") : "",
     });
     setErr("");
   }, [open, line]);
@@ -108,6 +112,7 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
         handfeel_result: form.handfeel_result,
         handfeel_score: form.handfeel_score === "" ? null : Number(form.handfeel_score),
         delta_e: form.delta_e === "" ? null : Number(form.delta_e),
+        grade: form.grade || "",
         remark: form.remark,
       });
       onSaved?.(fresh);
@@ -165,10 +170,15 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
               ))}
             </div>
             <p data-testid="ins-points-preview" className="mt-1 text-[11px] text-[#6B6B73]">
-              Perkiraan poin: <strong className="tabular-nums">{previewPoints}</strong>{" "}
-              — grade akhir dihitung server dari ambang yang berlaku, bukan di layar ini. Rumus & ambang
-              masih <b>kandidat (KLX-02 belum diputuskan)</b>; hasil disimpan beserta versi aturannya.
+              Total poin: <strong className="tabular-nums">{previewPoints}</strong>{" "}
+              — kode cacat, poin & grade diisi petugas (KLX-02). Bila grade dikosongkan, sistem memakai saran dari total poin.
             </p>
+            <label className="mt-2 flex items-center gap-2 text-[12px]">Grade hasil QC
+              <select data-testid="ins-grade-input" className="field w-40" value={form.grade} onChange={(e) => set({ grade: e.target.value })}>
+                <option value="">— saran sistem —</option>
+                {grades.map((g) => <option key={g.code} value={g.code}>{g.code} · {g.name}</option>)}
+              </select>
+            </label>
           </div>
         ) : !showQc ? null : (
           <p data-testid="ins-line-no-roll" className="text-[11px] text-[#6B6B73]">

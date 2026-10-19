@@ -56,7 +56,7 @@ def test_t02_165_yard_multiple_defects_same_interval_kept(fx):
     assert d10["from_yard"] == 150 and d10["to_yard"] == 165 and d10["code"] == "OS"
     assert ln["inspect_form"]["intervals"] == 11 and ln["inspect_form"]["inspect_length_yard"] == 165
     assert ln["points_snapshot"] == 2 + 4 + 3
-    assert ln["grade_rule"]["status"] == "candidate_unvalidated" and ln["grade_rule"]["pending_decision"] == "KLX-02"
+    assert ln["grade_rule"]["status"] == "manual_user_input" and ln["grade_rule"]["grade_source"] == "system_suggestion"
     hdr = ln["inspect_form"]["header"]
     assert hdr["customer_name"] == "TEST Customer" and hdr["roll_no"] == roll.get("roll_no") and hdr["inspected_date"]
     # interval di luar panjang → ditolak jelas
@@ -99,3 +99,14 @@ def test_ln050_t03_random_from_scan_and_scope():
     finally:
         DB.inspections.delete_one({"id": doc["id"]})
         DB.inventory_rolls.replace_one({"id": roll["id"]}, roll)
+
+
+def test_klx02_grade_filled_by_user_overrides_suggestion(fx):
+    iid, roll = fx("yard")
+    bad = _inspect(_h(), iid, {"inspect_length_yard": 30, "grade": "ZZ", "defects": [{"interval": 1, "code": "SL", "point_value": 1, "count": 1}]})
+    assert bad.status_code == 400
+    r = _inspect(_h(), iid, {"inspect_length_yard": 30, "grade": "B", "defects": [{"interval": 1, "code": "SL", "point_value": 1, "count": 1}]})
+    assert r.status_code == 200, r.text[:300]
+    ln = DB.inspections.find_one({"id": iid})["lines"][0]
+    assert ln["grade_rule"]["grade_source"] == "user" and ln["grade_rule"]["status"] == "manual_user_input"
+    assert DB.inventory_rolls.find_one({"id": roll["id"]})["grade"] == "B"
