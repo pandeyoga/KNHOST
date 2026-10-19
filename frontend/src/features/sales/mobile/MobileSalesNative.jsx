@@ -1,11 +1,12 @@
 import { ReturnStatusPill } from "../ReturnShared";
+import CreateReturnForm from "../CreateReturnForm";
+import CreateSpecialOrderForm from "../CreateSpecialOrderForm";
+import ReturnCameraButton from "../ReturnCameraButton";
 import { useEffect, useMemo, useState } from "react";
-import useUomConversions from "../../../hooks/useUomConversions";   // INV-UOM-02 — satuan dari master
 import { Search, ChevronRight, ArrowLeft, Plus } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatCurrency } from "../../../utils/formatters";
 import KNSelect from "../../../components/KNSelect";
-import { offlinePost } from "../../../utils/offlineQueue";
 import { MobileReturnActions, MobileSpecialOrderDetail, OdStatus } from "./MobileSalesFlows";
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "-");
@@ -36,6 +37,12 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
         {(sel.items || []).map((it, i) => <div key={i} className="flex justify-between border-t border-[#EFF0F2] pt-1"><span>{it.product_name}</span><span className="tabular-nums">{it.quantity_returned ?? it.quantity} {it.unit}{it.reason ? ` · ${it.reason}` : ""}</span></div>)}
         <div className="flex justify-between border-t border-[#EFF0F2] pt-1 font-bold"><span>Total</span><span className="tabular-nums">{formatCurrency(sel.total_amount || sel.grand_total || 0)}</span></div>
       </div>
+      {["draft", "submitted", "approved", "received", "inspected"].includes(sel.status) && (
+        <div className="m-card flex items-center justify-between gap-2 p-3 text-[12px]" data-testid="m-return-evidence">
+          <span className="m-muted">Bukti foto: <b className="text-[#1C1C1E]">{(sel.attachments || []).length}</b></span>
+          <ReturnCameraButton returnId={sel.id} onUploaded={load} testId="m-return-camera" />
+        </div>
+      )}
       <MobileReturnActions ret={sel} onChanged={load} />
     </div>);
   return (
@@ -52,47 +59,21 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
   );
 }
 
+const RETURNABLE = ["confirmed", "partially_picked", "picked", "partially_shipped", "shipped", "done"];
+
+/** Buat retur di HP = form desktop (cek kebijakan, barang dari Surat Jalan, pilih per roll, foto kamera wajib bila kebijakan meminta). */
 function MobileReturnCreate({ onBack, onDone, initialOrder = null }) {
-  const [customers, setCustomers] = useState([]);
-  const [cid, setCid] = useState(initialOrder?.customer_id || "");
-  const [orders, setOrders] = useState([]);
-  const [oid, setOid] = useState(initialOrder?.id || "");
-  const [reasons, setReasons] = useState([]);
-  const [reason, setReason] = useState("");
-  const [qty, setQty] = useState({});
-  const [notes, setNotes] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState(null);
-  useEffect(() => {
-    axios.get(`${API}/customers`).then((r) => setCustomers(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => {});
-    axios.get(`${API}/sales-returns/meta/complaint-reasons`).then((r) => setReasons(r.data?.items || r.data?.reasons || r.data || [])).catch(() => {});
-  }, []);
-  useEffect(() => { if (!cid) return; axios.get(`${API}/sales-orders`, { params: { customer_id: cid } }).then((r) => setOrders((Array.isArray(r.data) ? r.data : r.data.items || []).filter((o) => ["shipped", "partially_shipped", "delivered", "completed", "dispatched", "done"].includes(o.status)))).catch(() => setOrders([])); }, [cid]);
-  const order = orders.find((o) => o.id === oid);
-  const submit = async () => {
-    setBusy(true); setMsg(null);
-    try {
-      const items = (order?.items || []).filter((it) => Number(qty[it.product_id] || 0) > 0).map((it) => ({ product_id: it.product_id, product_name: it.product_name, quantity_returned: Number(qty[it.product_id]), unit: it.unit, reason }));
-      const r = await offlinePost(`${API}/sales-returns`, { order_id: oid, return_type: "retur", complaint_code: reason, complaint_note: notes, notes, items }, { label: `Retur ${order?.number || ""}` });
-      if (r.queued) { setMsg({ ok: true, text: "Offline — retur tersimpan di HP, dikirim saat sinyal kembali." }); return; }
-      setMsg({ ok: true, text: `Retur ${r.data?.number || ""} dibuat (draf).` }); setTimeout(onDone, 800);
-    } catch (e) { const d = e.response?.data?.detail; setMsg({ ok: false, text: (d && (d.message || (typeof d === "string" ? d : JSON.stringify(d)))) || "Gagal membuat retur." }); }
-    finally { setBusy(false); }
-  };
-  const reasonOpts = (reasons || []).map((x) => (typeof x === "string" ? { value: x, label: x } : { value: x.value || x.code || x.id, label: x.label || x.name }));
+  const [orders, setOrders] = useState(initialOrder ? [initialOrder] : []);
+  const loadOrders = () => axios.get(`${API}/sales-orders`).then((r) => {
+    const all = Array.isArray(r.data) ? r.data : r.data.items || [];
+    setOrders(all.filter((o) => RETURNABLE.includes(o.status)));
+  }).catch(() => {});
   return (
     <div className="space-y-2 p-3" data-testid="m-return-create">
       <button className="m-subpage-back" onClick={onBack} data-testid="m-return-create-back"><ArrowLeft size={17} /> Retur</button>
-      <div className="m-card p-3 space-y-2">
-        <KNSelect value={cid} onValueChange={(v) => { setCid(v); setOid(""); }} options={customers.map((c) => ({ value: c.id, label: c.name }))} placeholder="Pilih pelanggan" data-testid="m-return-customer" />
-        <KNSelect value={oid} onValueChange={setOid} options={orders.map((o) => ({ value: o.id, label: `${o.number} · ${fmtDate(o.created_at)}` }))} placeholder={cid ? (orders.length ? "Pilih pesanan terkirim" : "Tidak ada pesanan terkirim") : "Pilih pelanggan dulu"} data-testid="m-return-order" />
-        <KNSelect value={reason} onValueChange={setReason} options={reasonOpts} placeholder="Alasan retur" data-testid="m-return-reason" />
-        {(order?.items || []).map((it) => (
-          <div key={it.product_id} className="flex items-center gap-2 text-[12px]" data-testid={`m-return-line-${it.product_id}`}><div className="flex-1 min-w-0"><b className="truncate block">{it.product_name}</b><span className="m-muted">dikirim {it.quantity} {it.unit}</span></div><input type="number" inputMode="decimal" className="w-24 rounded-lg border border-[#E5E5EA] p-1.5 text-right" placeholder="0" value={qty[it.product_id] ?? ""} onChange={(e) => setQty({ ...qty, [it.product_id]: e.target.value })} data-testid={`m-return-qty-${it.product_id}`} /></div>
-        ))}
-        <textarea className="w-full rounded-xl border border-[#E5E5EA] p-2 text-sm" rows={2} placeholder="Catatan / keluhan pelanggan" value={notes} onChange={(e) => setNotes(e.target.value)} data-testid="m-return-notes" />
-        {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"} text-xs`} data-testid="m-return-msg">{msg.text}</div>}
-        <button className="primary-button w-full py-3" disabled={busy || !oid || !reason || !Object.values(qty).some((v) => Number(v) > 0)} onClick={submit} data-testid="m-return-submit">{busy ? "Menyimpan…" : "Ajukan retur"}</button>
+      <div className="m-card m-return-form p-3">
+        <CreateReturnForm variant="modal" orders={orders} onLoadOrders={loadOrders} initialOrderId={initialOrder?.id || ""}
+          onCreated={() => onDone()} onCancel={onBack} />
       </div>
     </div>
   );
@@ -117,7 +98,7 @@ export function MobileSpecialOrders({ focusId = null }) {
       {(rows || []).map((s) => (
         <button key={s.id} className="m-card m-press w-full p-3 text-left" onClick={() => setOpenId(s.id)} data-testid={`m-special-${s.id}`}>
           <div className="flex items-center justify-between gap-2 text-[13px]"><b>{s.number || s.id}</b><OdStatus status={s.status} /></div>
-          <p className="text-[11px] m-muted truncate">{s.customer_name} · {s.custom_item?.description || s.custom_item?.name || "-"} · kirim {fmtDate(s.expected_delivery)}</p>
+          <p className="text-[11px] m-muted truncate">{s.customer_name} · {s.title || s.items?.[0]?.description || s.custom_item?.description || s.custom_item?.name || "-"}{(s.items || []).length > 1 ? ` (+${s.items.length - 1} baris)` : ""} · kirim {fmtDate(s.expected_delivery)}</p>
           {s.quoted_price != null && <p className="text-[11px] tabular-nums">Penawaran {formatCurrency(s.quoted_price)}</p>}
         </button>
       ))}
@@ -125,43 +106,9 @@ export function MobileSpecialOrders({ focusId = null }) {
   );
 }
 
+/** Pesanan khusus di HP = form desktop (multi-baris, spesifikasi teknis, kategori desain, gambar referensi + kamera). */
 function MobileSpecialOrderCreate({ onBack, onDone }) {
-  const { unitOptions: _uomOpts } = useUomConversions();   // INV-UOM-02
-  const uomAllOptions = _uomOpts();
-  const [customers, setCustomers] = useState([]);
-  const [f, setF] = useState({ customer_id: "", name: "", description: "", quantity: "", unit: "yard", target_price: "", expected_delivery: "", notes: "" });
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState(null);
-  useEffect(() => { axios.get(`${API}/customers`).then((r) => setCustomers(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => {}); }, []);
-  const set = (k) => (e) => setF({ ...f, [k]: e?.target ? e.target.value : e });
-  const cust = customers.find((c) => c.id === f.customer_id);
-  const submit = async () => {
-    setBusy(true); setMsg(null);
-    try {
-      const body = { customer_id: f.customer_id, entity_id: cust?.entity_id || "", shipping_address_id: (cust?.addresses || [])[0]?.id || "", expected_delivery: new Date(f.expected_delivery).toISOString(), notes: f.notes, submit_for_approval: true,
-        custom_item: { description: f.name, specifications: { detail: f.description }, quantity: Number(f.quantity), unit: f.unit, target_price: Number(f.target_price || 0), notes: f.description } };
-      const r = await offlinePost(`${API}/special-orders`, body, { label: `Pesanan khusus ${cust?.name || ""}` });
-      if (r.queued) { setMsg({ ok: true, text: "Offline — pesanan khusus tersimpan di HP." }); return; }
-      setMsg({ ok: true, text: `Pesanan khusus ${r.data?.number || ""} diajukan.` }); setTimeout(onDone, 800);
-    } catch (e) { const d = e.response?.data?.detail; setMsg({ ok: false, text: (d && (d.message || (typeof d === "string" ? d : JSON.stringify(d)))) || "Gagal mengajukan." }); }
-    finally { setBusy(false); }
-  };
-  return (
-    <div className="space-y-2 p-3" data-testid="m-special-create">
-      <button className="m-subpage-back" onClick={onBack} data-testid="m-special-back"><ArrowLeft size={17} /> Pesanan khusus</button>
-      <div className="m-card p-3 space-y-2">
-        <KNSelect value={f.customer_id} onValueChange={set("customer_id")} options={customers.map((c) => ({ value: c.id, label: c.name }))} placeholder="Pilih pelanggan" data-testid="m-special-customer" />
-        <input className="w-full rounded-xl border border-[#E5E5EA] p-2.5 text-sm" placeholder="Nama barang (mis. Batik motif custom)" value={f.name} onChange={set("name")} data-testid="m-special-name" />
-        <textarea className="w-full rounded-xl border border-[#E5E5EA] p-2.5 text-sm" rows={3} placeholder="Spesifikasi: bahan, warna, motif, lebar, finishing…" value={f.description} onChange={set("description")} data-testid="m-special-desc" />
-        <div className="flex gap-2"><input type="number" inputMode="decimal" className="flex-1 rounded-xl border border-[#E5E5EA] p-2.5 text-sm" placeholder="Jumlah" value={f.quantity} onChange={set("quantity")} data-testid="m-special-qty" /><KNSelect value={f.unit} onValueChange={set("unit")} options={uomAllOptions} data-testid="m-special-unit" /></div>
-        <input type="number" inputMode="decimal" className="w-full rounded-xl border border-[#E5E5EA] p-2.5 text-sm" placeholder="Harga target per satuan (Rp, boleh 0)" value={f.target_price} onChange={set("target_price")} data-testid="m-special-target-price" />
-        <input type="date" className="w-full rounded-xl border border-[#E5E5EA] p-2.5 text-sm" value={f.expected_delivery} onChange={set("expected_delivery")} data-testid="m-special-date" />
-        <textarea className="w-full rounded-xl border border-[#E5E5EA] p-2.5 text-sm" rows={2} placeholder="Catatan" value={f.notes} onChange={set("notes")} data-testid="m-special-notes" />
-        {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"} text-xs`} data-testid="m-special-msg">{msg.text}</div>}
-        <button className="primary-button w-full py-3" disabled={busy || !f.customer_id || !f.name || !f.quantity || !f.expected_delivery} onClick={submit} data-testid="m-special-submit">{busy ? "Mengirim…" : "Ajukan"}</button>
-      </div>
-    </div>
-  );
+  return <CreateSpecialOrderForm onCancel={onBack} onCreated={() => onDone()} />;
 }
 
 /** Daftar harga versi HP: harga efektif per pelanggan (umum → PT → pelanggan → khusus) dalam kartu. */

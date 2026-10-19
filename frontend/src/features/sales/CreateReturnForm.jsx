@@ -1,12 +1,12 @@
 /** Sub-fase 1.11 — Create return form. */
 import { useState, useEffect } from "react";
 import axios, { API } from "../../services/apiClient";
-import { AlertCircle, ArrowLeft, CalendarClock, Loader2, Paperclip, RotateCcw, ShieldCheck, Trash2, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Camera, CalendarClock, Loader2, Paperclip, RotateCcw, ShieldCheck, Trash2, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 
 
 export default function CreateReturnForm({ orders, token, onCreated, onCancel,
-                                           onLoadOrders, variant = "page" }) {
+                                           onLoadOrders, variant = "page", initialOrderId = "" }) {
   // FASE P4 — `variant="modal"`: lepas chrome halaman (tombol kembali + judul besar)
   // karena FormModal sudah menyediakannya; tanpa ini pengguna melihat DUA judul.
   const isModal = variant === "modal";
@@ -30,7 +30,7 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
   const [files, setFiles]           = useState([]);
   const [evPolicy, setEvPolicy]     = useState(null);
 
-  useEffect(() => { onLoadOrders(); }, []); // eslint-disable-line
+  useEffect(() => { onLoadOrders(); if (initialOrderId) handleOrderChange(initialOrderId); }, []); // eslint-disable-line
   useEffect(() => {
     axios.get(`${API}/sales-returns/meta/evidence-policy`).then((r) => setEvPolicy(r.data?.required || {})).catch(() => {});
   }, []);
@@ -261,11 +261,22 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
 
         <div className="form-group">
           <label className="form-label">Bukti foto {evPolicy?.submit ? <span className="req">* (wajib sebelum diajukan)</span> : <span className="text-[10.5px] text-[#6B6B73]">(boleh dilengkapi kemudian)</span>}</label>
-          <input data-testid="return-photo-input" type="file" accept="image/*,.pdf" multiple className="form-input"
-            onChange={(e) => setFiles(Array.from(e.target.files || []))} />
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Kamera HP langsung (capture) — foto ditambahkan ke daftar, bukan menimpa. */}
+            <label data-testid="return-camera-capture" className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#0058CC] px-3 py-1.5 text-xs font-semibold text-[#0058CC]">
+              <Camera size={13} /> Ambil foto
+              <input data-testid="return-camera-input" type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) setFiles((cur) => [...cur, f]); e.target.value = ""; }} />
+            </label>
+            <input data-testid="return-photo-input" type="file" accept="image/*,.pdf" multiple className="form-input min-w-0 flex-1"
+              onChange={(e) => { const add = Array.from(e.target.files || []); setFiles((cur) => [...cur, ...add]); e.target.value = ""; }} />
+          </div>
           {files.length > 0 && (
             <div className="mt-1 flex flex-wrap gap-1.5" data-testid="return-photo-list">
-              {files.map((f) => <span key={f.name} className="text-[10.5px] rounded-full border border-[#E1E4EA] px-2 py-0.5"><Paperclip size={10} className="inline mr-1" />{f.name}</span>)}
+              {files.map((f, i) => (
+                <span key={`${f.name}-${i}`} className="inline-flex items-center text-[10.5px] rounded-full border border-[#E1E4EA] px-2 py-0.5"><Paperclip size={10} className="inline mr-1" />{f.name || `foto-${i + 1}.jpg`}
+                  <button type="button" className="ml-1 text-[#C62828]" data-testid={`return-photo-remove-${i}`} onClick={() => setFiles((cur) => cur.filter((_, j) => j !== i))} aria-label="Hapus foto"><X size={10} /></button></span>
+              ))}
             </div>
           )}
           {needsPhotoToSubmit && (

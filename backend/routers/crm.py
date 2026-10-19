@@ -271,6 +271,16 @@ async def get_leaderboard(request: Request, period: str = None, entity_id: str =
     return await leaderboard(period=period, entity_id=entity_id)
 
 
+@router.get("/sales/my-rank")
+async def get_my_rank(request: Request, period: str = None, entity_id: str = None) -> Dict[str, Any]:
+    """Peringkat SAYA (posisi dari N) tanpa membuka angka rekan sales — untuk layar HP sales."""
+    sales_id, entity_id = await _kpi_scope(request, None, entity_id)
+    rows = await leaderboard(period=period, entity_id=entity_id)
+    mine = next((r for r in rows if r.get("sales_id") == sales_id), None)
+    return {"period": period, "rank": mine.get("rank") if mine else None, "total": len(rows),
+            "total_sales": float(mine.get("total_sales") or 0) if mine else 0.0}
+
+
 @router.get("/sales/commission")
 async def get_commission(request: Request, sales_id: str = None, period: str = Query(...), entity_id: str = None) -> Dict[str, Any]:
     sales_id, entity_id = await _kpi_scope(request, sales_id, entity_id)

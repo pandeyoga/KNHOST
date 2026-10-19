@@ -11,6 +11,7 @@ import { ArrowLeft, Camera, Check, MessageCircle, Phone, Plus, RotateCcw, Send, 
 import axios, { API } from "../../../services/apiClient";
 import LocationFields, { locationIncomplete } from "../../../components/LocationFields";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
+import { useProofBlob } from "../../rnd/ProofImage";
 
 export const errText = (e, fb) => {
   const d = e?.response?.data?.detail;
@@ -288,8 +289,28 @@ export function MobileSpecialOrderDetail({ id, onBack }) {
       <div className="m-card p-4">
         <div className="flex items-start justify-between gap-2"><p className="text-[15px] font-bold">{od.number}</p><OdStatus status={od.status} testId="m-od-status" /></div>
         <p className="text-[12px] text-[#3C3C43]">{od.customer_name}</p>
-        <p className="mt-1 text-[13px] font-semibold">{item.description || item.name}</p>
-        <p className="text-[11.5px] m-muted">{formatQty(item.quantity)} {item.unit} · target kirim {fmtDate(od.expected_delivery)}{item.target_price ? ` · target ${formatCurrency(item.target_price)}/${item.unit}` : ""}</p>
+        {od.title && <p className="mt-1 text-[13px] font-semibold" data-testid="m-od-title">{od.title}</p>}
+        {(od.items || []).length > 0 ? (
+          <div className="mt-1.5 space-y-1.5" data-testid="m-od-items">
+            {od.items.map((it, i) => (
+              <div key={it.key || i} className="rounded-lg border border-[#EFF0F2] p-2 text-[11.5px]" data-testid={`m-od-item-${i}`}>
+                <p className="font-semibold">{i + 1}. {it.description || "-"}</p>
+                <p className="m-muted">{formatQty(it.quantity)} {it.unit}{it.target_price ? ` · target ${formatCurrency(it.target_price)}/${it.unit}` : ""}{(it.request_types || []).length ? ` · ${it.request_types.join(", ")}` : ""}</p>
+                {it.notes && <p className="m-muted">{it.notes}</p>}
+              </div>
+            ))}
+            <p className="text-[11px] m-muted">Target kirim {fmtDate(od.expected_delivery)}</p>
+          </div>
+        ) : (<>
+          <p className="mt-1 text-[13px] font-semibold">{item.description || item.name}</p>
+          <p className="text-[11.5px] m-muted">{formatQty(item.quantity)} {item.unit} · target kirim {fmtDate(od.expected_delivery)}{item.target_price ? ` · target ${formatCurrency(item.target_price)}/${item.unit}` : ""}</p>
+        </>)}
+        {od.spec && Object.values(od.spec).some((v) => v) && (
+          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 rounded-xl bg-[#F7F8FA] p-2.5 text-[11px]" data-testid="m-od-spec">
+            {[["fabric_type", "Jenis kain"], ["gramasi", "Gramasi"], ["lebar", "Lebar"], ["color_new_note", "Warna"], ["sku_hint", "Petunjuk SKU"], ["notes", "Catatan"]]
+              .filter(([k]) => od.spec[k]).map(([k, l]) => <p key={k}><span className="m-muted">{l}: </span>{String(od.spec[k])}</p>)}
+          </div>
+        )}
         {item.specifications && Object.keys(item.specifications).length > 0 && (
           <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 rounded-xl bg-[#F7F8FA] p-2.5 text-[11px]" data-testid="m-od-specs">
             {Object.entries(item.specifications).map(([k, v]) => <p key={k}><span className="m-muted capitalize">{k}: </span>{String(v)}</p>)}
@@ -311,6 +332,7 @@ export function MobileSpecialOrderDetail({ id, onBack }) {
           </div>
         </div>
       )}
+      <OdReferences od={od} onChanged={load} />
       <OdCustomerDecision od={od} onChanged={(m) => { setMsg(m); load(); }} />
       {(od.status_history || []).length > 0 && (
         <div className="m-card p-3" data-testid="m-od-history">
@@ -320,6 +342,46 @@ export function MobileSpecialOrderDetail({ id, onBack }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function OdReferences({ od, onChanged }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const refs = od.references || [];
+  const upload = async (files) => {
+    setBusy(true); setErr("");
+    try {
+      for (const f of Array.from(files || [])) {
+        const fd = new FormData(); fd.append("file", f, f.name || `referensi-${Date.now()}.jpg`);
+        await axios.post(`${API}/special-orders/${od.id}/references`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      }
+      onChanged?.();
+    } catch (e) { setErr(errText(e, "Gagal mengunggah gambar.")); } finally { setBusy(false); }
+  };
+  return (
+    <div className="m-card p-3" data-testid="m-od-references">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Gambar referensi ({refs.length})</p>
+        <label className={`inline-flex items-center gap-1 rounded-lg border border-[#0058CC] px-2.5 py-1 text-[11px] font-semibold text-[#0058CC] ${busy ? "opacity-50" : ""}`} data-testid="m-od-ref-camera">
+          <Camera size={12} /> {busy ? "Mengunggah…" : "Tambah foto"}
+          <input type="file" accept="image/*" capture="environment" className="hidden" disabled={busy} data-testid="m-od-ref-input" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
+        </label>
+      </div>
+      {refs.length === 0 ? <p className="text-[11px] m-muted">Belum ada foto swatch / pattern dari pelanggan.</p> : (
+        <div className="grid grid-cols-4 gap-1.5">{refs.map((r) => <RefThumb key={r.id} url={`${API}/special-orders/${od.id}/references/${r.id}`} meta={r} />)}</div>
+      )}
+      {err && <p className="mt-1 text-[11px] text-[#C62828]" data-testid="m-od-ref-error">{err}</p>}
+    </div>
+  );
+}
+
+function RefThumb({ url, meta }) {
+  const { src, status } = useProofBlob(url, meta.content_type?.startsWith("image/"));
+  return (
+    <div className="overflow-hidden rounded-lg border border-[#E5E5EA] bg-[#F5F5F7]" data-testid={`m-od-ref-${meta.id}`}>
+      <div className="flex aspect-square items-center justify-center">{status === "ok" && src ? <img src={src} alt={meta.filename} className="h-full w-full object-cover" /> : <Camera size={14} className="text-[#B5B5BC]" />}</div>
     </div>
   );
 }

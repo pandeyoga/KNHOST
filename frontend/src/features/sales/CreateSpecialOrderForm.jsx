@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from "react";
 import useUomConversions from "../../hooks/useUomConversions";   // INV-UOM-02 — satuan dari master
-import { Palette, Sparkles } from "lucide-react";
+import { Camera, ImagePlus, Palette, Sparkles, X } from "lucide-react";
 import FormModal from "../../components/FormModal";
 import KNDatePicker from "../../components/KNDatePicker";
 import KNSelect from "../../components/KNSelect";
@@ -27,6 +27,8 @@ export default function CreateSpecialOrderForm({ token, onCreated, onCancel }) {
   const [items, setItems] = useState([blankItem()]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [refFiles, setRefFiles] = useState([]);   // gambar referensi (swatch/pattern/foto kain) — diunggah sesudah OD tersimpan
+  const addRefs = (list) => setRefFiles((cur) => [...cur, ...Array.from(list || [])].slice(0, 10));
   const [f, setF] = useState({
     customer_id: "", title: "", request_types: [], detail_level: "reference", reference_notes: "",
     template_id: "", fabric_type: "woven", gramasi: "", lebar: "", color_id: "", color_new_note: "", sku_hint: "", spec_notes: "",
@@ -65,7 +67,13 @@ export default function CreateSpecialOrderForm({ token, onCreated, onCancel }) {
         pattern_category_code: f.pattern_category_code, design_category_code: f.design_category_code,
       };
       const res = await axios.post(`${API}/special-orders`, payload, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
-      onCreated(res.data);
+      const failed = [];
+      for (const file of refFiles) {
+        const fd = new FormData(); fd.append("file", file, file.name || `referensi-${Date.now()}.jpg`);
+        try { await axios.post(`${API}/special-orders/${res.data.id}/references`, fd, { headers: { "Content-Type": "multipart/form-data" } }); }
+        catch (e) { failed.push(file.name || "foto"); }
+      }
+      onCreated(failed.length ? { ...res.data, _refs_failed: failed } : res.data);
     } catch (e) { setErr(e.response?.data?.detail || e.message); setBusy(false); }
   };
 
@@ -142,7 +150,34 @@ export default function CreateSpecialOrderForm({ token, onCreated, onCancel }) {
           </div>
         </Step>
 
-        <Step n={5} title="Tenggat & catatan">
+        <Step n={5} title="Gambar referensi (opsional)">
+          <div className="flex flex-wrap items-center gap-2" data-testid="od-refs">
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#0058CC] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[#0058CC]" data-testid="od-ref-camera">
+              <Camera size={13} /> Ambil foto
+              <input type="file" accept="image/*" capture="environment" className="hidden" data-testid="od-ref-camera-input" onChange={(e) => { addRefs(e.target.files); e.target.value = ""; }} />
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#E5E5EA] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[#3C3C43]" data-testid="od-ref-pick">
+              <ImagePlus size={13} /> Pilih gambar
+              <input type="file" accept="image/*,.pdf" multiple className="hidden" data-testid="od-ref-input" onChange={(e) => { addRefs(e.target.files); e.target.value = ""; }} />
+            </label>
+            <Hint>Foto swatch / pattern / kain fisik pelanggan — ikut ke Desainer & R&D. Maks 10.</Hint>
+          </div>
+          {refFiles.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2" data-testid="od-ref-list">
+              {refFiles.map((file, i) => (
+                <span key={`${file.name}-${i}`} className="relative inline-block">
+                  {file.type?.startsWith("image/")
+                    ? <img src={URL.createObjectURL(file)} alt={file.name} className="h-16 w-16 rounded-lg border border-[#E5E5EA] object-cover" />
+                    : <span className="flex h-16 w-16 items-center justify-center rounded-lg border border-[#E5E5EA] bg-white p-1 text-center text-[9px]">{file.name}</span>}
+                  <button type="button" className="absolute -right-1.5 -top-1.5 rounded-full bg-[#C62828] p-0.5 text-white" data-testid={`od-ref-remove-${i}`}
+                    onClick={() => setRefFiles((cur) => cur.filter((_, j) => j !== i))} aria-label="Hapus gambar"><X size={10} /></button>
+                </span>
+              ))}
+            </div>
+          )}
+        </Step>
+
+        <Step n={6} title="Tenggat & catatan">
           <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Tenggat kirim *"><KNDatePicker data-testid="od-delivery" value={f.expected_delivery} onChange={(v) => set("expected_delivery", v)} /></Field>
             <Field label="Catatan pesanan" wide><input className="field" data-testid="od-notes" value={f.notes} onChange={(e) => set("notes", e.target.value)} /></Field>

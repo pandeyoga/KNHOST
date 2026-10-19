@@ -10,7 +10,9 @@ import MobileLeads from "./MobileLeads";
 import { MobileReturns, MobileSpecialOrders, MobilePricelist } from "./MobileSalesNative";
 import MobilePendingQueue from "./MobilePendingQueue";
 import { BadgePercent, MapPin, Boxes, ArrowLeftRight, BadgeCheck, ShieldQuestion, Warehouse, ClipboardList, Building2, ScrollText, Route } from "lucide-react";
-import { MobileSpecialPrice, MobileVisits, MobileStock } from "./MobileFieldViews";
+import { MobileSpecialPrice, MobileVisits } from "./MobileFieldViews";
+import MobileStockAtp from "./MobileStockAtp";
+import MobileCollectionTargets from "./MobileCollectionTargets";
 import MobileInternalRequests from "./MobileInternalRequests";
 import { MobileInstallCard, MobilePushCard, dropPushSubscription } from "./MobilePwa";
 import { MobileSampleOrders, MobileApprovalWatch } from "./MobileExtraViews";
@@ -25,7 +27,8 @@ const MENU = [
   { id: "price-status", label: "Harga Khusus Saya", desc: "Semua status (draf, menunggu, digantikan, diakhiri…) · ubah, kirim, lampiran", icon: BadgeCheck },
   { id: "sample-orders", label: "Pesanan Sampel", desc: "Sampel kain gratis / berbayar & statusnya", icon: Scissors },
   { id: "approvals", label: "Pantau Persetujuan", desc: "Dokumen menunggu keputusan manajer (hanya-lihat)", icon: ShieldQuestion, roles: ["sales_admin"] },
-  { id: "stock", label: "Status Stok", desc: "Tersedia vs dipesan per gudang (hanya-lihat)", icon: Boxes },
+  { id: "stock", label: "Stok & ATP", desc: "Siap janji, akan datang, peluang antar-PT per gudang", icon: Boxes },
+  { id: "collection", label: "Penagihan & Target", desc: "Pengingat tagih, follow-up, target, komisi & peringkat", icon: Wallet },
   { id: "leads", label: "Prospek (Lead)", desc: "Catat calon pelanggan, geser tahap, jadikan pelanggan", icon: Target },
   { id: "crm", label: "Pelanggan (CRM)", desc: "Kelola pelanggan & insentif", icon: Users },
   { id: "returns", label: "Retur Penjualan", desc: "Pengajuan & status retur", icon: RotateCcw },
@@ -38,7 +41,7 @@ const GROUPS = [
   { id: "assist", label: "Asisten & laporan", items: ["tanya"], open: true },
   { id: "admin", label: "Admin Sales", items: ["approvals", "internal"], open: true, roles: ["sales_admin"] },
   { id: "orders", label: "Pesanan & harga", items: ["amendments", "special", "sample-orders", "returns", "special-price", "price-status", "pricelist"], open: true },
-  { id: "customers", label: "Pelanggan & lapangan", items: ["crm", "leads", "visits"], open: true },
+  { id: "customers", label: "Pelanggan & lapangan", items: ["crm", "collection", "leads", "visits"], open: true },
   { id: "stock", label: "Stok & pemenuhan", items: ["stock", "internal"], open: true },
 ];
 const allowed = (item, role) => !item.roles || item.roles.includes(role);
@@ -63,7 +66,7 @@ const FULL_VIEWS = [
 ];
 
 const TITLES = { tanya: "Tanya KN", amendments: "Koreksi & Amandemen", leads: "Prospek (Lead)", crm: "Pelanggan (CRM)", returns: "Retur Penjualan", special: "Special Order", pricelist: "Daftar Harga",
-  "special-price": "Minta Harga Khusus", visits: "Kunjungan Sales", stock: "Status Stok", internal: "Permintaan Internal", "price-status": "Harga Khusus Saya",
+  "special-price": "Minta Harga Khusus", visits: "Kunjungan Sales", stock: "Stok & ATP", collection: "Penagihan & Target", internal: "Permintaan Internal", "price-status": "Harga Khusus Saya",
   "sample-orders": "Pesanan Sampel", approvals: "Pantau Persetujuan" };
 
 function FullViewMenu({ onOpenFull, role }) {
@@ -102,7 +105,8 @@ export default function MobileMore({ user, token, selectedEntity, entities, onLo
           {sub === "amendments" && <MobileAmendments orders={orders} onRefresh={onRefresh} />}
           {sub === "special-price" && <MobileSpecialPrice selectedEntity={selectedEntity} />}
           {sub === "visits" && <MobileVisits />}
-          {sub === "stock" && <MobileStock />}
+          {sub === "collection" && <MobileCollectionTargets selectedEntity={selectedEntity} />}
+          {sub === "stock" && <MobileStockAtp user={user} selectedEntity={selectedEntity} />}
           {sub === "leads" && <MobileLeads />}
           {sub === "crm" && <MobileCustomers selectedEntity={selectedEntity} user={user} onRefresh={onRefresh} onStartOrder={onStartOrder} />}
           {sub === "returns" && <MobileReturns user={user} initialOrder={subParam?.order || null} focusId={subParam?.id || null} />}

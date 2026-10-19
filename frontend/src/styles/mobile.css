@@ -149,3 +149,10 @@
 .m-price-approvals .section-head > div:last-child > div:first-child { flex: 1; min-width: 0; }
 .m-price-approvals .tab-bar { overflow-x: auto; flex-wrap: nowrap; white-space: nowrap; -webkit-overflow-scrolling: touch; }
 .m-price-approvals .tab-bar .tab-button { flex-shrink: 0; }
+
+/* Form retur desktop di HP: baris barang ditumpuk 2 kolom, kepala tabel disembunyikan. */
+.m-return-form .form-items-header { display: none; }
+.m-return-form .form-items-row { grid-template-columns: 1fr 1fr; row-gap: 6px; border-top: 1px solid #EFF0F2; padding-top: 8px; }
+.m-return-form .form-items-row > :first-child { grid-column: 1 / -1; }
+.m-return-form .form-actions { position: sticky; bottom: 0; background: #fff; padding-top: 8px; display: flex; gap: 8px; }
+.m-return-form .form-actions > button { flex: 1; justify-content: center; padding-top: 10px; padding-bottom: 10px; }
