@@ -12,6 +12,8 @@ FastAPI routers/services, MongoDB `test_database`, React feature folders, static
 - 2026-10-19 (sesi B): 15 keputusan owner KLR-01..11, KLX-01..03, OPS-01 (lihat evidence/HANDOFF_SESI_2026-10-19B.md).
 - 2026-10-19 (sesi C): Fase 1 LN-090 grade sama untuk pengganti; Fase 2 LN-033 T08 batal PO/MKO per item OD; Fase 3 LN-012-T04 greige selalu tersembunyi & PFD/PFP dijual, LN-102-T02 kartu Meja Saya; Fase 4 perbaikan hasil uji (realisasi ulang setelah batal, batal SO pengganti kembalikan saldo). Detail: evidence/HANDOFF_SESI_2026-10-19C.md.
 
+- 2026-10-19 (sesi D): keputusan owner CUT-01 (potongan cacat cutloss: BS atau dibuang, user memilih) & GL-01 (konfigurasi pemetaan akun terpusat, UI ramah) DICATAT, belum diimplementasi. Rancangan: RANCANGAN_PEMETAAN_AKUN_DAN_CUTLOSS.md; rencana fase A–F + daftar persetujuan CUT-02..05, GL-02..08: evidence/HANDOFF_SESI_2026-10-19D.md.
+
 ## Backlog
 - P0: keputusan pending DATA-01, DES-02..04, HW-01/02, HR-01, UAT-01.
 - P1: pemecahan fisik roll cutloss & posting ongkir retur (butuh keputusan); duplikasi D1–D8 (butuh persetujuan); tes TestKeepPending basi; filter stage di /api/products.
