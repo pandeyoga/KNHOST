@@ -1,7 +1,6 @@
 import { ReturnStatusPill } from "../ReturnShared";
 import CreateReturnForm from "../CreateReturnForm";
 import CreateSpecialOrderForm from "../CreateSpecialOrderForm";
-import ReturnCameraButton from "../ReturnCameraButton";
 import { useEffect, useMemo, useState } from "react";
 import { Search, ChevronRight, ArrowLeft, Plus } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
@@ -37,15 +36,6 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
         {(sel.items || []).map((it, i) => <div key={i} className="flex justify-between border-t border-[#EFF0F2] pt-1"><span>{it.product_name}</span><span className="tabular-nums">{it.quantity_returned ?? it.quantity} {it.unit}{it.reason ? ` · ${it.reason}` : ""}</span></div>)}
         <div className="flex justify-between border-t border-[#EFF0F2] pt-1 font-bold"><span>Total</span><span className="tabular-nums">{formatCurrency(sel.total_amount || sel.grand_total || 0)}</span></div>
       </div>
-      {RETURN_CLOSED.includes(sel.status) && (
-        <p className="px-1 text-[11px] m-muted" data-testid="m-return-evidence-closed">Bukti foto: {(sel.attachments || []).length} · retur sudah selesai/ditolak, bukti tidak bisa ditambah lagi.</p>
-      )}
-      {!RETURN_CLOSED.includes(sel.status) && (
-        <div className="m-card flex items-center justify-between gap-2 p-3 text-[12px]" data-testid="m-return-evidence">
-          <span className="m-muted">Bukti foto: <b className="text-[#1C1C1E]">{(sel.attachments || []).length}</b></span>
-          <ReturnCameraButton returnId={sel.id} onUploaded={load} testId="m-return-camera" />
-        </div>
-      )}
       <MobileReturnActions ret={sel} onChanged={load} />
     </div>);
   return (
@@ -62,7 +52,6 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
   );
 }
 
-const RETURN_CLOSED = ["refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"];   // = return_state.TERMINAL_STATES
 const RETURNABLE = ["confirmed", "partially_picked", "picked", "partially_shipped", "shipped", "done"];
 
 /** Buat retur di HP = form desktop (cek kebijakan, barang dari Surat Jalan, pilih per roll, foto kamera wajib bila kebijakan meminta). */

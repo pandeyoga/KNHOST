@@ -1,0 +1,26 @@
+{
+  "summary": "Retest of HIGH bug from iteration_240 (SRET-00001 pending_approval hid m-return-camera). FIX VERIFIED on mobile 390x844 as Ayu (sales@kainnusantara.id/demo1234): Lainnya → mobile-more-returns → opened m-return-sret_cfaaaebe1ca4 (status pending_approval). m-return-evidence block is now visible with text 'Bukti foto: 1 / Ambil foto'; m-return-camera visible; uploaded a tiny PNG via the camera button's file input → UI updated to 'Bukti foto: 2' and GET /api/sales-returns/sret_cfaaaebe1ca4 returns attachments length 2 (initial 1 → 2). Terminal-state return (sret_DEMO_LN093_9195ad, status refund_settled) opened: m-return-evidence-closed shows 'Bukti foto: 1 · retur sudah selesai/ditolak, bukti tidak bisa ditambah lagi.' and m-return-camera is NOT rendered — matches new RETURN_CLOSED whitelist (refund_settled, credit_settled, nego_settled, rejected, cancelled). Quick regression: m-return-new opens the create form (return-order-select combobox visible); mobile-more-special still loads (4 SORD cards including SORD-261019-0003 'Menunggu persetujuan'). Verified via public URL only.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MobileReturnActions (frontend/src/features/sales/mobile/MobileSalesFlows.jsx L395)", "issue": "Second camera/photo picker ('m-return-photo' / 'Ambil / pilih foto bukti' button) is still rendered on terminal-state returns because it uses a different, incomplete terminal list: `const terminal = [\"settled\",\"credit_settled\",\"rejected\",\"cancelled\",\"completed\"].includes(ret.status)`. This list is missing 'refund_settled' and 'nego_settled' AND includes a legacy 'settled'/'completed' value, so on sret_DEMO_LN093_9195ad (refund_settled) the PhotoPicker remains visible under the 'retur sudah selesai/ditolak…' banner. Spec says 'no camera button' on terminal states. Backend POST /api/sales-returns/{id}/attachments would 400 anyway, but the UI is inconsistent with the correctly-fixed RETURN_CLOSED list in MobileSalesNative.jsx. Fix: replace that inline list with the same RETURN_CLOSED constant (refund_settled, credit_settled, nego_settled, rejected, cancelled).", "selector": "[data-testid='m-return-photo-input']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "In MobileSalesFlows.jsx L395, align `terminal` with the shared RETURN_CLOSED list used in MobileSalesNative.jsx so the m-return-photo PhotoPicker is also hidden on refund_settled / nego_settled (and the obsolete 'settled'/'completed' values are dropped)."
+  ],
+  "critical_code_review_comments": [
+    "Positive: MobileSalesNative.jsx RETURN_CLOSED now mirrors backend return_state.TERMINAL_STATES — camera correctly shows for pending_approval and hides for refund_settled; upload path (1→2 attachments) works end-to-end.",
+    "DRY: terminal-status gating is duplicated in two files (MobileSalesNative.jsx RETURN_CLOSED and MobileSalesFlows.jsx MobileReturnActions `terminal`) and the two lists disagree. Extract a single shared constant (e.g. RETURN_TERMINAL_STATES) and import in both places to prevent drift."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only retest)", "frontend": "4/4 primary checks PASS — camera visible + upload 1→2 on pending_approval ✓, closed banner + no m-return-camera on refund_settled ✓, m-return-new form ✓, mobile-more-special list ✓. One related duplicate-picker inconsistency found (reported above)."},
+  "test_credentials": "sales@kainnusantara.id / demo1234 (Ayu, role=sales)",
+  "seed_data_creation": "SRET-00001 now has attachments length 2 (was 1 from iteration_240). No new orders/returns created.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "(1) Login UI prefills admin creds; click the 'Sales' role chip then overwrite inputs[0]/[1] with sales creds. (2) Returns list card testid uses the raw SRET id, preserving case (e.g. m-return-sret_DEMO_LN093_9195ad — uppercase); don't lowercase. (3) Terminal-state returns don't appear in search but DO appear in the normal list for the sales user. (4) Fixed bug confirmed: RETURN_CLOSED in MobileSalesNative.jsx matches backend TERMINAL_STATES. (5) Secondary inconsistency: MobileSalesFlows.jsx MobileReturnActions still uses an outdated local list — needs the same fix for full UI consistency."
+}

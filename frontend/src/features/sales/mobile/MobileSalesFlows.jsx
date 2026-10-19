@@ -392,7 +392,7 @@ export function MobileReturnActions({ ret, onChanged }) {
   const [files, setFiles] = useState([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
-  const terminal = ["settled", "credit_settled", "rejected", "cancelled", "completed"].includes(ret.status);
+  const terminal = ["refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"].includes(ret.status);   // = return_state.TERMINAL_STATES
   const submit = async () => {
     setBusy(true); setMsg(null);
     try { await axios.post(`${API}/sales-returns/${ret.id}/submit`); setMsg({ ok: true, text: `${ret.number} diajukan — menunggu diproses gudang/manajer.` }); onChanged?.(); }
@@ -415,6 +415,7 @@ export function MobileReturnActions({ ret, onChanged }) {
           {files.length > 0 && <button className="secondary-button flex w-full items-center justify-center gap-1.5 py-2.5 text-[12px]" disabled={busy} onClick={upload} data-testid="m-return-upload"><Plus size={14} /> Unggah {files.length} bukti</button>}
         </>
       )}
+      {terminal && <p className="text-[11px] m-muted" data-testid="m-return-evidence-closed">Bukti foto: {(ret.attachments || []).length} · retur sudah selesai/ditolak, bukti tidak bisa ditambah lagi.</p>}
       {msg && <div className={`notice-bar ${msg.ok ? "success" : "danger"} text-xs`} data-testid="m-return-action-msg">{msg.text}</div>}
     </div>
   );
