@@ -222,6 +222,7 @@ export const HUB_TABS = {
     { view: "cs-rfid-devices",   label: "Perangkat RFID",         roles: ["admin"], section: "Gudang" },
     { view: "amendment-reasons", label: "Label Alasan Amandemen", roles: ["admin", "manager"], section: "Penjualan" },
     { view: "incentive-rates",   label: "Rate Insentif Sales",    roles: ["admin", "manager"], section: "Penjualan" },
+    { view: "gl-account-mappings", label: "Pemetaan Akun",       roles: ["admin", "manager", "finance"], section: "Keuangan" },
     { view: "expense-categories", label: "Kategori Beban",        roles: ["admin", "manager"], section: "Keuangan" },
     { view: "bank-recon-rules",  label: "Aturan & Template Bank", roles: ["admin", "manager"], section: "Keuangan" },
     { view: "hr-attendance-setup", label: "Shift & Geofence",     roles: ["admin", "manager"], section: "SDM" },

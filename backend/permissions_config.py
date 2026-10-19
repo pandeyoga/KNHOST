@@ -632,5 +632,16 @@ for _role, _acts in {"admin": ["record_cutloss", "decide_compensation"], "manage
                      "finance": ["decide_compensation"], "md": ["record_cutloss"], "md_quality": ["record_cutloss"]}.items():
     _cur = DEFAULT_PERMISSIONS[_role].setdefault("sales_return", ["view"])
     DEFAULT_PERMISSIONS[_role]["sales_return"] = list(_cur) + [x for x in _acts if x not in _cur]
+# GL-01/GL-08 — Pemetaan Akun: Finance boleh mengubah tanpa persetujuan kedua (berlaku untuk jurnal baru).
+for _role, _acts in {"admin": ["view", "update"], "finance": ["view", "update"], "manager": ["view"]}.items():
+    DEFAULT_PERMISSIONS[_role]["gl_mapping"] = _acts
+# GL-04 — Finance memilih akun pembayaran ongkir retur (kas/bank/hutang ekspedisi).
+for _role in ("admin", "finance", "manager"):
+    _cur = DEFAULT_PERMISSIONS[_role].setdefault("sales_return", ["view"])
+    DEFAULT_PERMISSIONS[_role]["sales_return"] = list(_cur) + [x for x in ["post_logistics"] if x not in _cur]
+# CUT-01/CUT-02 — proses pemecahan roll cutloss (siapa yang memilih BS/Dibuang diatur di Pusat Pengaturan).
+for _role in ("admin", "manager", "md", "md_quality"):
+    _cur = DEFAULT_PERMISSIONS[_role].setdefault("sales_return", ["view"])
+    DEFAULT_PERMISSIONS[_role]["sales_return"] = list(_cur) + [x for x in ["split_cutloss"] if x not in _cur]
 EXTRA_ACTIONS = {"sales_pov": ["commercial"]}
 

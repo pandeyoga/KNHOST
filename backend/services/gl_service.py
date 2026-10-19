@@ -219,6 +219,12 @@ CASH_IN_KEYWORDS = [
 ]
 
 
+async def account_for(key: str, entity_id: Optional[str] = None) -> str:
+    """GL-01 — akun efektif sebuah kebutuhan (PT → global → bawaan registri)."""
+    from services import gl_mapping_service as _glm
+    return await _glm.account_for(key, entity_id)
+
+
 def _cash_account(txn: Dict[str, Any]) -> str:
     return ACC_KAS_KECIL if txn.get("cash_type") == "kas_kecil" else ACC_KAS_BESAR
 
@@ -446,7 +452,7 @@ def _norm_lines(raw_lines: List[Dict[str, Any]], names: Dict[str, str]) -> List[
             "description": str(ln.get("description", "") or "").strip(),
         }
         # Digitalisasi Sukacita — bawa metadata voucher opsional bila ada
-        for extra in ("job", "memo", "tax_code"):
+        for extra in ("job", "memo", "tax_code", "mapping_key"):
             if ln.get(extra) not in (None, ""):
                 norm[extra] = ln.get(extra)
         out.append(norm)
@@ -585,6 +591,8 @@ async def _insert_entry(*, lines: List[Dict[str, Any]], description: str, date: 
                         ref: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Insert jurnal seimbang. Caller MEMASTIKAN balance (helper auto-post).
     `ref` (opsional) = tautan dokumen induk, mis. {"order_id": ...} untuk jurnal per surat jalan."""
+    from services import gl_mapping_service as _glm  # GL-01 — akun dari Pemetaan Akun
+    lines = await _glm.remap_lines(lines, entity_id or DEFAULT_ENTITY_ID, source_type)
     names = await _account_names([l["account_code"] for l in lines])
     norm = _norm_lines(lines, names)
     norm = [ln for ln in norm if ln["debit"] or ln["credit"] or ln["debit"] != ln["debit"]]  # buang baris 0/0

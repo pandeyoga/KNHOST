@@ -110,8 +110,8 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
              "bank-reconciliation", "finance-cases"]},
     {"id": "accounting", "group": "Keuangan", "label": "Akuntansi & Tutup Buku",
      "description": "Buku besar, laporan keuangan, anggaran, aset tetap, tutup buku & buka periode.",
-     "resources": ["accounting", "period", "budget", "fixed_asset"],
-     "nav": ["keuangan", "ledger", "general-ledger", "chart-of-accounts", "fin-reports",
+     "resources": ["accounting", "period", "budget", "fixed_asset", "gl_mapping"],
+     "nav": ["keuangan", "ledger", "general-ledger", "chart-of-accounts", "gl-account-mappings", "fin-reports",
              "financial-statements", "profitability", "cashflow-forecast", "budget",
              "consolidation", "closing", "period-unlock", "kas-aset", "fixed-assets"]},
     {"id": "petty_cash", "group": "Keuangan", "label": "Kas Kecil (PD / LPJ)",
@@ -224,7 +224,7 @@ def public_catalog() -> List[Dict[str, Any]]:
 
 #: Label manusia untuk sumber daya izin (dipakai "Konfigurasi lanjutan" di editor peran).
 RESOURCE_LABEL = {
-    "accounting": "Akuntansi & Buku Besar", "approval": "Matriks Persetujuan", "ar_receipt": "Kwitansi / Uang Masuk (AR)",
+    "accounting": "Akuntansi & Buku Besar", "gl_mapping": "Pemetaan Akun", "approval": "Matriks Persetujuan", "ar_receipt": "Kwitansi / Uang Masuk (AR)",
     "audit": "Jejak Audit", "budget": "Anggaran", "cash": "Kas & Bank", "cash_advance": "Kasbon / Uang Muka",
     "cash_settlement": "Pertanggungjawaban Kas", "color": "Pustaka Warna", "contra_bon": "Kontrabon",
     "customer": "Pelanggan", "design_request": "Permintaan Desain", "document": "Dokumen & Cetak",
@@ -265,7 +265,8 @@ ACTION_LABEL = {
     "propose": "Usulkan", "random_check": "Random check", "receive": "Terima", "release": "Rilis", "reopen": "Buka kembali", "release_hold": "Lepas HOLD desain (PIC Designer)", "paper_check": "Centang print paper per ronde (Designer)", "choose_route": "Pilih jalur pemenuhan (supplier/makloon)", "override_default": "Menyimpang dari sumber default master", "realize": "Realisasi PR → PO/MKO", "pic_decide": "Keputusan PIC atas uji ulang gagal", "override_fail": "Override hasil uji gagal (tetap tercatat gagal)", "assess_labdip": "Catat hasil labdip", "assess_handfeel": "Catat hasil handfeel", "assess_proofing": "Catat hasil proofing", "decide_labdip": "Setujui hasil labdip", "decide_handfeel": "Setujui hasil handfeel", "decide_proofing": "Setujui hasil proofing",
     "replace": "Ganti", "report": "Laporan", "resolve": "Selesaikan kasus", "return": "Retur", "run": "Jalankan", "scan": "Scan",
     "send": "Kirim", "settle": "Lunasi", "ship": "Kirim barang", "sign": "Tandatangani", "submit": "Ajukan", "tax": "Pajak",
-    "record_cutloss": "Catat qty cacat cutloss (QC)", "decide_compensation": "Putus nilai cutloss/diskon retur",
+    "record_cutloss": "Catat qty cacat cutloss (QC)", "split_cutloss": "Proses pemecahan roll cutloss",
+    "post_logistics": "Pilih akun & jurnal ongkir retur", "decide_compensation": "Putus nilai cutloss/diskon retur",
     "record_loss": "Catat susut/hilang di mitra", "approve_loss": "Setujui susut di atas toleransi",
     "activate": "Aktif / nonaktifkan", "grade": "Lihat grade", "lot": "Lihat LOT", "origin": "Lihat asal lokal/impor",
     "commercial": "POV komersial (grade selalu tersembunyi)",

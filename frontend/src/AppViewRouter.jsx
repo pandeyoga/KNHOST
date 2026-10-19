@@ -163,6 +163,7 @@ const RfidLocationsView = lazy(() => import("./features/rfid/RfidLocationsView")
 const CashAdvancesView = lazy(() => import("./features/pettycash/CashAdvancesView"));
 const SettlementsView = lazy(() => import("./features/pettycash/SettlementsView"));
 const ExpenseCategoriesView = lazy(() => import("./features/pettycash/ExpenseCategoriesView"));
+const GLAccountMappingView = lazy(() => import("./features/finance/GLAccountMappingView"));
 const ReimbursePayablesView = lazy(() => import("./features/pettycash/ReimbursePayablesView"));
 const VehicleLogsView = lazy(() => import("./features/pettycash/VehicleLogsView"));
 const PdfTemplateDesigner = lazy(() => import("./features/pdf/PdfTemplateDesigner"));
@@ -325,6 +326,7 @@ export default function AppViewRouter(props) {
       {activeView === "cash-advances" && <CashAdvancesView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "settlements" && <SettlementsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "expense-categories" && <ExpenseCategoriesView currentUser={user} />}
+      {activeView === "gl-account-mappings" && <GLAccountMappingView currentUser={user} />}
       {activeView === "reimburse-payables" && <ReimbursePayablesView selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "vehicle-logs" && <VehicleLogsView currentUser={user} selectedEntity={selectedEntity} entities={entities} />}
       {activeView === "consolidation" && <GroupConsolidationView entities={entities} />}

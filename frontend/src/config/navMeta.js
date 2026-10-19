@@ -160,6 +160,7 @@ export const PAGE_META = {
   "cash-advances":        { kicker: "Kas & Petty Cash", title: "Pengajuan Dana (PD) · Cash Advance" },
   "settlements":          { kicker: "Kas & Petty Cash", title: "Pertanggungjawaban (LPJ) · Petty Cash" },
   "expense-categories":   { kicker: "Pengaturan · Keuangan", title: "Kategori Beban → Akun COA" },
+  "gl-account-mappings":  { kicker: "Pengaturan · Keuangan", title: "Pemetaan Akun" },
   "reimburse-payables":   { kicker: "Kas & Petty Cash", title: "Hutang Reimburse Karyawan · Umur Hutang" },
   "vehicle-logs":         { kicker: "Aset & GA",      title: "Penggunaan & Biaya Kendaraan" },
   "fixed-assets":         { kicker: "Kas & Aset",     title: "Aset Tetap \u00b7 Penyusutan & Disposal" },

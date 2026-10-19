@@ -195,6 +195,8 @@ app.include_router(_sales_p04.router)
 from routers import restock_sources as _restock_sources  # noqa: E402 — P05 sumber restock artikel
 app.include_router(_restock_sources.router)
 app.include_router(_so_override.router)
+from routers import gl_mappings as _gl_mappings  # noqa: E402 — GL-01 pemetaan akun terpusat
+app.include_router(_gl_mappings.router)
 from routers import product_media
 app.include_router(product_media.router)
 from routers import customer_feedback  # noqa: E402  — feedback/komplain pelanggan per SO (2026-09)
