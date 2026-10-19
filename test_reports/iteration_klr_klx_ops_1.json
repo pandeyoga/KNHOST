@@ -1,0 +1,22 @@
+{
+  "summary": "KLR/KLX/OPS follow-up. Backend: ran all 6 requested pytest files one at a time with -n0 against localhost:8001. 40/40 passed (ln091_092 9, lanjutan_sched 10, ln090 2, ln014 4, l05_interval 5, ln091t02_ln093 10). UI (admin@, desktop): (1) Opened a return detail in ent_ksc. return-compensation-panel, cutloss-record-form, compensation-decide-form, return-logistics-panel, logistics-bearer/amount-customer_return and logistics-save all render. Saving amount 15000 shows logistics-msg 'Tersimpan.' and the header updates to 'perusahaan Rp 15.000'. (2) The CreateReturnForm modal shows return-cond-hangtag_missing, return-cond-cut_by_customer and return-cond-replacement_proof. The note is hidden at first; checking hangtag shows return-cond-note 'tidak memblokir retur ...'. (3) In Kebijakan Retur, return-assumptions-panel has 0 <select> (KLR-08/09 appear only as text references). Clicking cutloss-simulate makes cutloss-pieces show '45 yd + 60 yd · qty cacat 15 yd · kompensasi Rp 750.000 ✓ seimbang'. (4) In interco-transactions, interco-tab-schedule shows interco-cutoff-form and interco-cutoff-scope. (5) Inspections: the only inspection is CST/INS-00001 (ent_516de8174539, status was draft). After assigning it, the ins-line-qc button appears, and the QC modal shows ins-grade-input with the options saran sistem/A/A1/B/BS.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Return detail > return-compensation-panel", "issues": ["MICROFLEX HITAM A (stock unit kg) shows a red error in the obligation column: \"Konversi unit 'yard' -> 'kg' tidak tersedia ... Tambahkan faktor di uom_conversions\". This looks like a data gap: the demo seed has no yard->kg factor for this product. It could confuse users. Consider a softer message or adding the seed factor."]},
+      {"screen": "Return detail > return-logistics-panel", "issues": ["The native <select> for the bearer stretches full width while the Rp/Catatan inputs are tiny. The layout is unbalanced, and other screens use KNSelect."]},
+      {"screen": "InspectLineModal QC", "issues": ["ins-grade-input is a native <select> (w-40), which doesn't match the KNSelect used elsewhere in the modal. Cosmetic only."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_ln091_092_returns_exceptions.py", "/app/backend/tests/test_lanjutan_sched_returns_interco.py", "/app/backend/tests/test_ln090_replacement_order.py", "/app/backend/tests/test_ln014_lot_identity.py", "/app/backend/tests/test_l05_interval_form.py", "/app/backend/tests/test_ln091t02_ln093_chain.py"],
+  "action_items": ["Optional: add a yard<->kg uom_conversion to the demo seed for MICROFLEX (or show a softer warning) in ReturnCompensationPanel", "Optional cosmetic: use KNSelect / tidier layout in ReturnLogisticsPanel and the ins-grade-input select"],
+  "critical_code_review_comments": ["The QC grade select only appears for status assigned/in_progress plus a roll line. Draft SPKs show only the MD Quality button. This is expected, but the testid is not reachable until the inspection is assigned."],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (40/40)", "frontend": "100% (6/6 requested UI checks)"},
+  "seed_data_creation": "Data changed: the first return in ent_ksc now has customer_return logistics = company Rp 15.000. CST/INS-00001 (ent_516de8174539) is now assigned to Budi Santoso (admin), so its status moved from draft to assigned.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run each test file on its own with -n0 and REACT_APP_BACKEND_URL=http://localhost:8001 after sourcing backend/.env. The only inspection is in Cipta Sandang (ent_516de8174539); ins-line-qc-<id> needs it assigned (ins-assign-select -> ins-assign-button). Do not run test_interco_g6.py."
+}
