@@ -51,7 +51,8 @@ export function hubForView(view, role) {
   const own = (HUB_TABS[hubId] || []).find((t) => t.view === view);
   const allowed = tabs.some((t) => t.view === view) || (own?.hidden && roleCanSee(own.roles, role, own.view));
   if (!tabs.length || !allowed) return null;
-  return { hubId, tabs };
+  // Alias hidden menyorot tab induknya (`aliasOf`) agar posisi pengguna tetap terlihat.
+  return { hubId, tabs, activeTab: own?.hidden ? own.aliasOf || view : view };
 }
 
 // Untuk item hub: view default = tab pertama yang boleh diakses role tsb.

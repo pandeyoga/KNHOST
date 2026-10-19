@@ -1,0 +1,48 @@
+{
+  "summary": "Tested the session items on backend and frontend. Backend: 9/9 tests passed in the new pytest file, and 5/5 in the existing test_l06_sample_kind_l08_returns_hub.py. UI checks: scheduler KPI, alias tab highlighting, unified Retur hub (4 tabs, deep links, role access), Retur Pelanggan draft smoke, and POS Pesanan Sample (desktop + mobile 390x844). One real bug found: the Catalogue modal opened from the POS quick view does not keep the selected customer or the auto-filled article (both show '— pilih —'), on desktop and mobile. Two minor backend issues on Sales Returns: rejecting a draft gives HTTP 500, and a draft cannot be cancelled or deleted.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/sales-returns/{id}/reject", "issue": "Calling it on a DRAFT return gives HTTP 500. return_state.assert_transition raises ValueError ('draft' → 'rejected' not allowed) and the router does not catch it. It should return 400/409 with the message."},
+      {"endpoint": "/api/sales-returns (draft lifecycle)", "issue": "There is no cancel or delete endpoint for sales returns, although the state machine allows draft→cancelled. Users cannot throw away a mistaken draft, and the tester had to remove test draft SRET-00004 directly from Mongo."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CatalogueCreateModal (opened from SampleKindChooser in ProductQuickView and MobileQuickView)", "issue": "Customer and article are not pre-filled. Both selects show '— pilih —'. React props confirm KNSelect value='' even though SampleKindChooser receives templateId=ptpl_36967cf5513b and customerId=cust_acea95611294. The preview list still appears, which is misleading: the user sees a composition but the 'Buat' button errors with 'Pilih pelanggan, artikel...'. If the user picks customer and article by hand, the order is created correctly (KSC/SOS-00012, 13 yd, then cancelled).", "selector": "[data-testid=catalogue-customer], [data-testid=catalogue-template]", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Catalogue creation from POS", "issue": "No success feedback. SampleKindChooser does not pass onCreated, so after a successful create the modal just closes with no toast and no SOS number shown.", "affected_selectors": ["catalogue-create"]}
+    ],
+    "design_issues": []
+  },
+  "verified_ok": [
+    "GET /api/scheduler/summary notifications_unread = 45, same as Mongo count({read:{$ne:true},'read_by.0':{$exists:false}}). UI card sched-kpi-notif shows '45 belum dibaca siapa pun · 0 eskalasi terbuka'.",
+    "Alias tab highlighting: ?view=permission-matrix → hub-tab-entities-access aria-current=page, and the inner tab entities-access-tab-roles is selected. ?view=inspections → hub-tab-qc-inspection. ?view=interco-transfers → hub-tab-operations. ?view=entities-access → normal highlighting.",
+    "Retur hub (admin): sidebar 'Retur' opens 4 tabs (hub-tab-returns / interco-returns / purchase-returns / return-policies). Each loads without page errors and the active tab is highlighted. Deep links ?view=returns|purchase-returns|interco-returns|return-policies land in the hub. No return tabs found in Pesanan, Pengaturan, Hutang Pemasok or Antar Entitas hubs (code: return views exist only in hubTabs returns-hub).",
+    "Role access: sales@ → only Retur Pelanggan; the tab bar is hidden because there is a single tab, and the other return views redirect to sales-home. finance@ → Retur Pelanggan + Retur Antar-PT; purchase-returns and return-policies redirect. API: sales@ GET /sales-returns 200, finance@ GET /interco/returns 200.",
+    "Retur Pelanggan smoke: create-return-btn → return-order-select (KSC/SO-00002 shipped) → item-roll-<rollId> chips appear → qty fills to 117.37 after picking a roll → saved as draft with submit-now-check unchecked (SRET-00004, POST 200). The draft was then removed from the DB.",
+    "POS desktop: quickview-kind-sample → quickview-sample-kinds with standard (maks 5 yard), hanger (maks 0,5 yard), catalogue (1 yd/warna + 2 yd soft). Quick view caps qty (hanger 3→0.5, standard 8→5). Adding to cart works and the badge shows 'Keranjang Sample'. While the cart holds sample lines, quickview-kind-regular is disabled. In checkout step 2, switching the line to hanger with 4 yd shows sample-over-limit-<pid> with a 'Jadikan ecer' (sample-to-retail-<pid>) button. A knit (kg) product has the catalogue button disabled, and standard/hanger show 'maks 2 kg'.",
+    "Server: standard 5.5 yd and hanger 0.6 yd → 400 detail.code=SAMPLE_LIMIT (max_qty 5 / 0.5). A regular order containing an is_sample line → 400 SAMPLE_MIXED. Catalogue preview for a kg template → 400 CATALOGUE_UNIT. Catalogue create works; total = colours + 2, and the order appears in GET /sample-orders and in the Pesanan Sample menu (?view=sample-orders).",
+    "POS mobile 390x844: MobileQuickView shows mobile-quickview-sample-kind-standard|hanger|catalogue with the same limits, hanger qty is capped at 0.5, and Catalogue opens the modal (same prefill bug as desktop)."
+  ],
+  "test_report_links": ["/app/backend/tests/test_iter_sched_unread_sample_kinds_returns_hub.py", "/app/backend/tests/test_l06_sample_kind_l08_returns_hub.py", "/app/test_reports/pytest/iter_sched_sample_returns.xml"],
+  "action_items": [
+    "HIGH: Fix the CatalogueCreateModal prefill. Likely cause: on the first render customers and templates are still empty, so KNSelect takes the Radix path (fewer than 6 options) with a value that matches no item. Radix then calls onValueChange(''), which wipes form.customer_id and form.template_id. The preview request already sent then resolves and leaves a stale preview on screen. Possible fixes: apply initialCustomerId/initialTemplateId after the options load, or in KNSelect ignore onValueChange('') when the current value is not in the options. Also clear the preview when template_id becomes empty after an async response arrives.",
+    "Pass onCreated from SampleKindChooser (desktop + mobile) and show a toast with the SOS number, or navigate to Pesanan Sample.",
+    "Sales returns: map the ValueError from reject_return (and other return_state transitions) to HTTP 409. Add a cancel action for drafts (POST /sales-returns/{id}/cancel, draft→cancelled) plus a UI button.",
+    "Optional: ?view=sales-returns is not a registered view and falls back to the home page. Add an alias to returns if old links or notifications use it (none found in the DB right now)."
+  ],
+  "critical_code_review_comments": [
+    "CatalogueCreateModal: the preview useEffect has no stale-response guard. A preview from an old template_id can be shown after the template is cleared.",
+    "finance@ sees the Retur Pelanggan tab even though hubTabs roles for 'returns' are [admin, sales, manager]. Visibility probably comes from permissions (sales_return.view). Confirm this is intended."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter_sched_unread_sample_kinds_returns_hub.py (new)"],
+  "success_rate": {"backend": "100% (14/14 pytest); 2 minor issues found outside the pytest scope", "frontend": "~90% (all flows work; Catalogue prefill broken on desktop + mobile)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; sales@, finance@ demo1234",
+  "seed_data_creation": "Pytest created sample SOs KSC/SOS-00003..00011 (cancelled in teardown). UI-created KSC/SOS-00012 (catalogue) was cancelled through the API. Draft retur SRET-00004 (sret_02c0f0d79465) was deleted from Mongo because no cancel endpoint exists. Roll roll_55f3a8e97916 was not modified.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && set -a && . ./.env && set +a && REACT_APP_BACKEND_URL=https://kn-retur-sample.preview.emergentagent.com python -m pytest tests/test_iter_sched_unread_sample_kinds_returns_hub.py -n0 -o addopts=. POS test product: ATHENA STRETCH (template ptpl_36967cf5513b, pid prod_73368d6e046b), customer Konveksi Maju Bersama (cust_acea95611294, no credit block). Knit product: CHIKITA KNIT. To retest the catalogue fix: open the quick view → kind-sample → sample-kind-catalogue, then check that catalogue-customer and catalogue-template show the preselected values. In the browser tool, avoid '\\n' and str() inside scripts (they break the wrapper).",
+  "rca of the issue": "Catalogue prefill: the modal sets form.template_id and form.customer_id from the initial props when it opens, which starts the preview fetch. At that moment the options lists are empty, so both KNSelects use the Radix Select path with a value that matches no item. Radix fires onValueChange('') and the form values are cleared. The earlier preview request then resolves after preview was set to null, so a stale preview stays visible. Evidence: React fiber props show KNSelect value='' while SampleKindChooser props hold templateId/customerId. Repro: POS → choose customer → ATHENA STRETCH → Pesanan Sample → Catalogue."
+}

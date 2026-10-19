@@ -29,7 +29,7 @@ const NEXT_HINT = {
   inspected: "Langkah berikutnya: pilih outcome (refund / store credit / nego) — tombol \"Selesaikan\".",
 };
 
-export default function ReturnStepper({ status }) {
+export default function ReturnStepper({ status, draftDiscarded = false }) {
   const dead = status === "rejected" || status === "cancelled";
   const stage = STAGE_OF[status] ?? 0;
 
@@ -56,7 +56,7 @@ export default function ReturnStepper({ status }) {
         {dead && (
           <span data-testid="return-step-dead"
             className="flex items-center gap-1.5 rounded-full border border-[#F3C1C1] bg-[#FDF0F0] px-2.5 py-1 text-[11px] font-bold text-[#C62828]">
-            <X size={11} /> {status === "rejected" ? "Ditolak" : "Dibatalkan (reversal)"}
+            <X size={11} /> {status === "rejected" ? "Ditolak" : draftDiscarded ? "Draf dibuang" : "Dibatalkan (reversal)"}
           </span>
         )}
       </div>

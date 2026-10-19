@@ -204,6 +204,17 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     }
   }
 
+  async function handleCancelDraft(ret) {
+    if (!window.confirm(`Buang draf ${ret.number}? Draf tidak bisa dipulihkan.`)) return;
+    try {
+      const res = await axios.post(`${API}/sales-returns/${ret.id}/cancel-draft`, {});
+      setNotice(`${ret.number} dibuang.`);
+      setSelected(res.data); load();
+    } catch (e) {
+      setError("Gagal membuang draf: " + (e.response?.data?.detail || e.message));
+    }
+  }
+
   if (selected) {
     return (
       <ReturnDetail
@@ -215,6 +226,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
         onApprove={handleApprove}
         onReject={handleReject}
         onSubmit={handleSubmit}
+        onCancelDraft={handleCancelDraft}
         onStartInspect={handleStartInspect}
         onCompleteInspect={handleCompleteInspect}
         onSettle={handleSettle}

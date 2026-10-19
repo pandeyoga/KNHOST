@@ -535,7 +535,8 @@ async def summary() -> Dict[str, Any]:
     failed_today = await db.sys_scheduler_runs.count_documents(
         {"started_at": {"$gte": day}, "status": "failed"})
     notif_today = await db.notifications.count_documents({"created_at": {"$gte": day}})
-    unread = await db.notifications.count_documents({"read": False})
+    unread = await db.notifications.count_documents(
+        {"read": {"$ne": True}, "read_by.0": {"$exists": False}})
     cfg_all = await effective_config()
     enabled = sum(1 for c in cfg_all.values() if c.get("enabled", True))
     return {

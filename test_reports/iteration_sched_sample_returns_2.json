@@ -1,0 +1,42 @@
+{
+  "summary": "Retest of the fixes from iteration_sched_sample_returns_1. Fixed and verified: (1) POS Catalogue modal prefill on desktop (admin) and mobile 390x844 (sales2@) - the customer and article are prefilled, the preview shows, and submit works without re-selecting; the modal closes and a toast '<SOS> (catalogue) dibuat' appears (KSC/SOS-00016 and KSC/SOS-00017, both later cancelled). (2) Draft sales return: reject now gives 400; cancel-draft gives 200 and status cancelled, a second call or a non-draft return gives 400, an unknown id gives 404, and no stock movement or journal is created. In the UI, 'Buang Draf' with confirm sets the status to Dibatalkan. (3) Regression OK: ?view=permission-matrix highlights hub-tab-entities-access (aria-current=page), and sched-kpi-notif is shown. New issue found: for role sales, the Catalogue modal cannot be used if the customer chosen in POS is not their own customer.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CatalogueCreateModal (role sales)", "issue": "The modal loads customers with GET /api/customers?with_credit=false and does NOT pass for_order=true. For role sales, scope_query only returns their own customers (sales@ gets 0, sales2@ gets 1). POS/checkout loads customers with for_order and shows all 4 entity customers. Result: sales@ picks Konveksi Maju Bersama in POS, opens Catalogue, and catalogue-customer shows a blank value (the value has no matching option). Submit then fails with 'Pilih pelanggan, artikel, dan warna soft.' and the user cannot choose any customer. Fix: add for_order: true to the params in CatalogueCreateModal (line 25).", "selector": "[data-testid=catalogue-customer]", "priority": "HIGH"},
+      {"component": "SampleKindChooser catalogue button (role sales_admin)", "issue": "salesadmin@ does not have sample_order.create. The Catalogue button is still enabled, but the modal only shows a 'Permission ditolak: sample_order.create' error with an empty article. Hide or disable the button based on permission.", "selector": "[data-testid=mobile-quickview-sample-kind-catalogue]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ReturnDetail for a discarded draft", "issues": ["The stepper shows 'Dibatalkan (reversal)', which is misleading for a draft that was never processed (it should read 'Draf dibuang').", "The cancelled draft still shows 'Tandai sekarang' (SJ Kirim Toko / Barang sampai / Kirim pengganti) and the 'Simpan sebab' editor. These should be read-only for terminal status."]}
+    ]
+  },
+  "verified_ok": [
+    "Desktop admin POS: pos-customer-select = Konveksi Maju Bersama, then ATHENA STRETCH quickview, quickview-kind-sample, quickview-sample-kind-catalogue. catalogue-customer='Konveksi Maju Bersama', catalogue-template='ATHENA STRETCH', the preview shows 11 colours, soft gives Total 13 yd, submit works, the modal closes and the toast 'KSC/SOS-00016 (catalogue) dibuat' appears. In the DB the customer_id is cust_acea95611294 and the template is ptpl_36967cf5513b.",
+    "Mobile 390x844 sales2@ (customer selected via the cart checkout, then back to catalog): mobile-quickview-sample-kind-catalogue opens with the prefilled customer and article, and the toast 'KSC/SOS-00017 (catalogue) dibuat' appears.",
+    "API: POST /sales-returns/{draft}/reject gives 400 with a string detail. POST /cancel-draft gives 200 with status=cancelled and no _id; a second call gives 400; a pending/approved return gives 400 and its status is unchanged; an unknown id gives 404. No stock_movements or journal documents reference the return.",
+    "UI Retur: create-return-btn, then return-order-select KSC/SO-00002, item-roll-roll_55f3a8e97916 (qty 117.37), submit-now-check unchecked, save gives draft SRET-00006. cancel-draft-return-btn 'Buang Draf' with confirm gives notice 'SRET-00006 dibuang.' and the Dibatalkan badge; the Buang/Kirim buttons disappear.",
+    "Regression: ?view=permission-matrix highlights hub-tab-entities-access with aria-current=page. ?view=scheduler sched-kpi-notif shows '57 belum dibaca siapa pun · 0 eskalasi terbuka'. The previous pytest file passes 9/9."
+  ],
+  "test_report_links": ["/app/backend/tests/test_iter_sales_return_cancel_draft.py", "/app/backend/tests/test_iter_sched_unread_sample_kinds_returns_hub.py", "/app/test_reports/pytest/iter_return_cancel_draft.xml"],
+  "action_items": [
+    "HIGH: CatalogueCreateModal, change the customer load to axios.get(`${API}/customers`, { params: { with_credit: false, for_order: true } }) so that role sales can create a catalogue for any entity customer, consistent with POS. Then rebuild the frontend.",
+    "LOW: disable or hide the Catalogue button (and the sample kinds) when the user does not have sample_order.create.",
+    "LOW: ReturnDetail cancelled-draft view should use a stepper label 'Draf dibuang' and hide the journey/complaint actions for terminal status."
+  ],
+  "critical_code_review_comments": [
+    "cancel-draft uses permission sales_return.update. Check that this is intended. sales@ can update their own returns, but there is no ownership check beyond entity access.",
+    "CatalogueCreateModal still shows the stale preview when the customer is missing. submit() only reports a generic error, even though the real cause is that the customer is not in the list."
+  ],
+  "updated_files": ["/app/backend/tests/test_iter_sales_return_cancel_draft.py (new)"],
+  "success_rate": {"backend": "100% (5/5 new + 9/9 regression)", "frontend": "~85% (all requested flows pass for admin/sales2; Catalogue is blocked for sales@ due to customer scope)"},
+  "test_credentials": "admin@kainnusantara.id/demo12345; sales@, sales2@, salesadmin@ demo1234. Admin on mobile gets the ops app (no POS); use sales2@ (owns cust_acea95611294) for the mobile POS catalogue.",
+  "seed_data_creation": "KSC/SOS-00016 (so_5f701e144888) and KSC/SOS-00017 (so_e3e2ead52c8e) were created and then cancelled via the API. Pytest draft and UI draft SRET-00006 (sret_0117bf254f88) were cancelled, then deleted from Mongo. Mobile sample carts are client-only.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Mobile POS customer selection: add a sample to the cart, then mobile-tab-btn-cart, mobile-checkout-btn, checkout-customer-select-option-<id>, checkout-close, then reopen the quickview. To retest the sales@ fix: log in as sales@ (who owns 0 customers), pick Konveksi Maju in the checkout, then open Catalogue; catalogue-customer must show the name. Run: cd /app/backend && set -a && . ./.env && set +a && REACT_APP_BACKEND_URL=https://kn-retur-sample.preview.emergentagent.com python -m pytest tests/test_iter_sales_return_cancel_draft.py -n0 -o addopts=",
+  "rca of the issue": "Catalogue for sales@: backend/routers/customers.py list_customers applies scope_query (own customers only for sales) unless for_order=true. POS uses for_order and the modal does not. So initialCustomerId is set, but it is not in the options, and customers.find() in submit returns undefined."
+}

@@ -28,7 +28,7 @@ const TERMINAL = ["refund_settled", "credit_settled", "nego_settled", "rejected"
 
 export default function ReturnDetail({
   ret, token, canApprove, currentUser,
-  onApprove, onReject, onSubmit, onStartInspect, onCompleteInspect, onSettle, onReverse, onBack,
+  onApprove, onReject, onSubmit, onCancelDraft, onStartInspect, onCompleteInspect, onSettle, onReverse, onBack,
   onAttachmentUploaded, notice, onClearNotice, onNavigate, onReturnChanged,
 }) {
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -157,6 +157,11 @@ export default function ReturnDetail({
               <FileText size={13} /> Kirim untuk Persetujuan
             </button>
           )}
+          {ret.status === "draft" && onCancelDraft && (
+            <button data-testid="cancel-draft-return-btn" className="secondary-button" onClick={() => onCancelDraft(ret)}>
+              <XCircle size={13} /> Buang Draf
+            </button>
+          )}
           {ret.status === "pending_approval" && canApprove && (
             <button data-testid="approve-return-btn" className="primary-button" onClick={() => onApprove(ret)}>
               <Check size={13} /> Setujui (Manager)
@@ -198,6 +203,11 @@ export default function ReturnDetail({
               <XCircle size={13} /> Ditolak oleh {ret.rejected_by} · Alasan: {ret.reject_reason}
             </div>
           )}
+          {ret.status === "cancelled" && !ret.reversed && (
+            <div className="info-chip danger" data-testid="return-draft-discarded-chip">
+              <XCircle size={13} /> Draf dibuang{ret.cancelled_by ? ` oleh ${ret.cancelled_by}` : ""}
+            </div>
+          )}
           {ret.status === "cancelled" && ret.reversed && (
             <div className="info-chip danger" data-testid="return-reversed-chip">
               <RotateCcw size={13} /> Dibatalkan (Pembalikan){ret.reversed_by ? ` oleh ${ret.reversed_by}` : ""}
@@ -211,7 +221,7 @@ export default function ReturnDetail({
         className="mb-3 rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2" />
 
       {/* UI/UX 2026-06 — SEDANG DI MANA dokumen ini & APA langkah berikutnya. */}
-      <ReturnStepper status={ret.status} />
+      <ReturnStepper status={ret.status} draftDiscarded={ret.status === "cancelled" && !ret.reversed} />
 
       {/* Kelayakan kebijakan retur — tampil sebelum keputusan diambil. */}
       <ReturnEligibilityPanel ret={ret} />
@@ -220,7 +230,7 @@ export default function ReturnDetail({
       {/* FASE I.F — sebab keluhan (master) + perjalanan retur (lembar pemilik).
           Ditaruh SEBELUM panel inspeksi 4-point karena itulah urutan kerjanya:
           keluhan dicatat → barang berjalan → baru diperiksa. */}
-      <ReturnJourneyPanel ret={ret} canEdit={!isTerminal || canApprove}
+      <ReturnJourneyPanel ret={ret} canEdit={ret.status !== "cancelled" && (!isTerminal || canApprove)}
         onChanged={(fresh) => onReturnChanged?.(fresh)} />
 
       <ReturnTimelinePanel ret={ret} canEdit={!isTerminal} onChanged={refetchReturn} />

@@ -257,7 +257,7 @@ export default function SchedulerView({ currentUser, onNavigate }) {
                  sub={summary?.failed_today ? `${summary.failed_today} gagal` : "tanpa kegagalan"} />
         <KpiCard testId="sched-kpi-notif" label="Notifikasi Hari Ini" icon={Bell} accent="#C77700"
                  value={summary?.notifications_today ?? 0}
-                 sub={`${summary?.notifications_unread ?? 0} belum dibaca · ${summary?.escalation?.open ?? 0} eskalasi terbuka`} />
+                 sub={`${summary?.notifications_unread ?? 0} belum dibaca siapa pun · ${summary?.escalation?.open ?? 0} eskalasi terbuka`} />
         <KpiCard testId="sched-kpi-wa" label="Pesan WhatsApp" icon={MessageCircle} accent="#1B7F4B"
                  value={summary?.wa?.total ?? 0}
                  sub={`${summary?.wa?.today ?? 0} hari ini · ${wa.enabled

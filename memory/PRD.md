@@ -1,5 +1,13 @@
 # PRD — Kain Nusantara ERP (lanjutan dari repo github.com/kakjsbsbs/KN)
 
+## 2026-10-19 (c) — 2 item terbuka ditutup, sample POS & Retur dites, review plan + cek duplikasi
+- Lingkungan: repo a323e48 → /app; backend/.env + CORS eksplisit, KN_DEMO_DATA, SEED_DEMO_ENABLED, SESSION_COOKIE_SECURE, OCR_ALLOW_MOCK; restore_local_demo.sh; FE dibangun (rebuild_frontend.sh).
+- Penjadwal: notifications_unread = belum dibaca siapa pun (read≠true & read_by kosong). Tab alias hidden punya `aliasOf` → ?view=permission-matrix menyorot "Badan Usaha & Akses".
+- Dites (iteration_sched_sample_returns_1/2): 3 jenis sample POS desktop+HP, menu Retur 4 tab + akses peran. Perbaikan: prefill modal Catalogue (pelanggan/artikel), for_order untuk sales, toast nomor SOS, tombol Catalogue nonaktif tanpa sample_order.create (`canCurrent` di roles.js); reject draf 500→400; baru POST /sales-returns/{id}/cancel-draft + tombol "Buang Draf".
+- Laporan review & duplikasi: docs/development/gelombang-lanjutan-pasca-p05-2026-10-16/REVIEW_STATUS_DAN_DUPLIKASI_2026-10-19.md (D1–D8, menunggu persetujuan penggabungan).
+- Terbuka: ?view=sales-returns tidak dialihkan ke Retur (opsional); semua requirement plan menunggu reviewer/owner + 23 keputusan pending.
+
+
 ## 2026-10-19 (b) — Dibaca per orang, 3 jenis sample di POS, menu Retur terpadu
 - Notifikasi: `read_by` per user (services/notification_read.py); siaran tidak lagi hilang untuk orang lain; pribadi tetap ditutup global; eskalasi lewati siaran yang sudah dibaca seseorang. Tes 8/8 (tests/test_notification_read_per_user.py).
 - POS (desktop & HP): Pesanan Sample → pilih Standar / Hanger (per baris, batas maksimal) / Catalogue (membuka form Catalogue artikel itu, hanya kain yard). `sample_kind` ikut ke keranjang.

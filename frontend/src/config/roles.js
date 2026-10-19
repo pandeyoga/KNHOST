@@ -419,6 +419,11 @@ export function can(perms, module, action) {
   return actions.includes(action) || actions.includes("*");
 }
 
+/** Izin akun aktif tanpa prop drilling; admin (konteks kosong) = boleh. Server tetap menegakkan. */
+export function canCurrent(module, action) {
+  return !ACCESS.current || can(ACCESS.current.perms, module, action);
+}
+
 /** Hak lihat grade dari Manajemen Peran (field_visibility). Data grade juga disamarkan server bila tidak berhak. */
 export function canSeeGrade(user) {
   const fv = user?.permissions?.field_visibility || [];

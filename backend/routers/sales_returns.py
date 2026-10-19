@@ -700,14 +700,37 @@ async def reject_return(
         raise HTTPException(status_code=404, detail="Return tidak ditemukan")
     existing.pop("_id", None)
     assert_entity_access(existing, "sales_returns", ctx)
-    doc = await return_service.reject_return(
-        return_id=return_id,
-        rejected_by=user.get("name", user.get("email", "")),
-        reason=payload.notes,
-    )
+    try:
+        doc = await return_service.reject_return(
+            return_id=return_id,
+            rejected_by=user.get("name", user.get("email", "")),
+            reason=payload.notes,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     await audit(user.get("name", ""), "sales_return_rejected", "sales_return", return_id,
                 {"reason": payload.notes})
     return doc
+
+
+@router.post("/sales-returns/{return_id}/cancel-draft")
+async def cancel_draft_return(return_id: str, request: Request) -> Dict[str, Any]:
+    """Buang retur yang masih draf (belum diajukan; tanpa efek stok/jurnal)."""
+    user = await require_permission(request, "sales_return", "update")
+    ctx = await entity_ctx(request)
+    existing = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Return tidak ditemukan")
+    assert_entity_access(existing, "sales_returns", ctx)
+    now = now_iso()
+    res = await db.sales_returns.update_one(
+        {"id": return_id, "status": "draft"},
+        {"$set": {"status": "cancelled", "cancelled_at": now, "updated_at": now,
+                  "cancelled_by": user.get("name", user.get("email", ""))}})
+    if not res.modified_count:
+        raise HTTPException(status_code=400, detail="Hanya retur berstatus draf yang bisa dibuang.")
+    await audit(user.get("name", ""), "sales_return_draft_cancelled", "sales_return", return_id, {})
+    return await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
 
 
 # ─── ATTACHMENTS ─────────────────────────────────────────────────────────────

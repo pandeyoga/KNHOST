@@ -119,9 +119,9 @@ export const HUB_TABS = {
     { view: "qc-inspection",     label: "QC & Inspeksi",         roles: ["admin", "warehouse", "manager"] },
     // 2026-10 (T5.3) — Dokumen Inspeksi digabung ke tab "QC & Inspeksi" (sub-tab). Entri `hidden`
     // tetap ada agar deep-link `inspections` menyorot hub ini.
-    { view: "inspections",       label: "Dokumen Inspeksi (INS)", roles: ["admin", "warehouse", "manager"], hidden: true },
+    { view: "inspections",       label: "Dokumen Inspeksi (INS)", roles: ["admin", "warehouse", "manager"], hidden: true, aliasOf: "qc-inspection" },
     // 2026-10 (T5.2) — Transfer Antar-Entitas kini sub-tab di "Stok, Transfer & Opname" › Transfer.
-    { view: "interco-transfers", label: "Transfer Antar-Entitas", roles: ["admin", "warehouse", "manager"], hidden: true },
+    { view: "interco-transfers", label: "Transfer Antar-Entitas", roles: ["admin", "warehouse", "manager"], hidden: true, aliasOf: "operations" },
   ],
   "stock-atp": [
     { view: "inventory-board",   label: "Status Stok & ATP",     roles: ["admin", "warehouse", "manager", "sales"] },
@@ -206,7 +206,7 @@ export const HUB_TABS = {
     { view: "admin",             label: "Integrasi & Audit",     roles: ["admin"], section: "Sistem" },
     { view: "entities-access",   label: "Badan Usaha & Akses",   roles: ["admin", "manager"], section: "Organisasi & Akses" },
     // Alias deep-link lama `?view=permission-matrix` → Badan Usaha & Akses tab Peran & Hak Akses.
-    { view: "permission-matrix", label: "Peran & Hak Akses",     roles: ["admin", "manager"], hidden: true },
+    { view: "permission-matrix", label: "Peran & Hak Akses",     roles: ["admin", "manager"], hidden: true, aliasOf: "entities-access" },
     { view: "approval-rules",    label: "Aturan Persetujuan",    roles: ["admin"], section: "Organisasi & Akses" },
     // master BERLAPIS global → badan usaha (override per BU; editor lengkap ada di domainnya).
     { view: "entity-masters",    label: "Master per Badan Usaha", roles: ["admin", "manager"], section: "Organisasi & Akses" },

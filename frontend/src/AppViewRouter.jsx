@@ -256,7 +256,7 @@ export default function AppViewRouter(props) {
         <HubTabs
           hubId={hubInfo.hubId}
           tabs={hubInfo.tabs}
-          activeView={activeView}
+          activeView={hubInfo.activeTab || activeView}
           onSelect={(view, tab) => onNavSelect(hubInfo.hubId, view, tab)}
         />
       )}

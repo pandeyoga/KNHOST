@@ -22,14 +22,16 @@ export default function CatalogueCreateModal({ open, onClose, entityId, onCreate
     if (!open) return;
     setErr(""); setPreview(null);
     if (initialTemplateId || initialCustomerId) setForm((f) => ({ ...f, template_id: initialTemplateId || f.template_id, customer_id: initialCustomerId || f.customer_id, soft: "" }));
-    axios.get(`${API}/customers`, { params: { with_credit: false } }).then((r) => setCustomers(rows(r.data))).catch(() => {});
+    axios.get(`${API}/customers`, { params: { with_credit: false, for_order: true } }).then((r) => setCustomers(rows(r.data))).catch(() => {});
     catalogueTemplates(entityId ? { entity_id: entityId } : {}).then((r) => setTemplates(rows(r))).catch(() => setTemplates([]));
   }, [open, entityId, initialTemplateId, initialCustomerId]);
   useEffect(() => {
-    if (!form.template_id) { setPreview(null); return; }
+    if (!form.template_id) { setPreview(null); return undefined; }
+    let live = true;
     cataloguePreview({ template_id: form.template_id, soft_product_id: form.soft || undefined, ...(entityId ? { entity_id: entityId } : {}) })
-      .then((p) => { setPreview(p); setErr(""); })
-      .catch((e) => { setPreview(null); setErr(apiErrorText(e, "Komposisi catalogue tidak bisa disusun.")); });
+      .then((p) => { if (live) { setPreview(p); setErr(""); } })
+      .catch((e) => { if (live) { setPreview(null); setErr(apiErrorText(e, "Komposisi catalogue tidak bisa disusun.")); } });
+    return () => { live = false; };
   }, [form.template_id, form.soft, entityId]);
 
   const submit = async () => {
@@ -51,10 +53,10 @@ export default function CatalogueCreateModal({ open, onClose, entityId, onCreate
       <div className="grid gap-3 text-[12px]">
         <label className="grid gap-1"><span className="field-label">Pelanggan</span>
           <KNSelect data-testid="catalogue-customer" aria-label="Pelanggan" placeholder="— pilih —" value={form.customer_id}
-            onValueChange={(v) => set("customer_id", v)} options={customers.map((c) => ({ value: c.id, label: c.name }))} /></label>
+            onValueChange={(v) => { if (v) set("customer_id", v); }} options={customers.map((c) => ({ value: c.id, label: c.name }))} /></label>
         <label className="grid gap-1"><span className="field-label">Artikel (woven, yard)</span>
           <KNSelect data-testid="catalogue-template" aria-label="Artikel" placeholder={templates.length ? "— pilih —" : "Tidak ada artikel ber-stok di badan usaha ini"}
-            value={form.template_id} onValueChange={(v) => setForm((f) => ({ ...f, template_id: v, soft: "" }))}
+            value={form.template_id} onValueChange={(v) => { if (v) setForm((f) => ({ ...f, template_id: v, soft: "" })); }}
             options={templates.map((t) => ({ value: t.id, label: t.name || t.code || t.id }))} /></label>
         <div className="grid grid-cols-2 gap-2">
           {["free", "paid"].map((b) => (
