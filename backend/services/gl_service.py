@@ -225,6 +225,11 @@ async def account_for(key: str, entity_id: Optional[str] = None) -> str:
     return await _glm.account_for(key, entity_id)
 
 
+async def _known(key: str) -> List[str]:
+    from services import gl_mapping_service as _glm
+    return await _glm.known_codes(key)
+
+
 def _cash_account(txn: Dict[str, Any]) -> str:
     return ACC_KAS_KECIL if txn.get("cash_type") == "kas_kecil" else ACC_KAS_BESAR
 
@@ -1410,14 +1415,15 @@ async def post_intercompany_transfer(transfer: Dict[str, Any]) -> Dict[str, Any]
 
 async def suspense_report(scope: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Saldo & daftar jurnal yang menyentuh akun Suspense (wajib nol sebelum tutup buku)."""
-    q = {**(scope or {}), "status": {"$ne": "void"}, "lines.account_code": ACC_SUSPENSE}
+    sus = await _known("lain.suspense")
+    q = {**(scope or {}), "status": {"$ne": "void"}, "lines.account_code": {"$in": sus}}
     entries = await db.journal_entries.find(q, {"_id": 0}).sort("date", -1).to_list(2000)
     balance = 0.0
     items: List[Dict[str, Any]] = []
     for je in entries:
         d = c = 0.0
         for l in je.get("lines", []):
-            if l.get("account_code") == ACC_SUSPENSE:
+            if l.get("account_code") in sus:
                 d += float(l.get("debit", 0) or 0)
                 c += float(l.get("credit", 0) or 0)
         balance += d - c
@@ -1431,14 +1437,15 @@ async def suspense_report(scope: Optional[Dict[str, Any]] = None) -> Dict[str, A
 
 async def suspense_balance(entity_id: str, as_of: str = "") -> float:
     """Saldo bersih (debit − kredit) akun Suspense per entitas s/d tanggal `as_of`."""
+    sus = await _known("lain.suspense")
     q: Dict[str, Any] = {"entity_id": entity_id, "status": {"$ne": "void"},
-                         "lines.account_code": ACC_SUSPENSE}
+                         "lines.account_code": {"$in": sus}}
     if as_of:
         q["date"] = {"$lte": as_of[:10] + "T23:59:59.9999"}
     bal = 0.0
     async for je in db.journal_entries.find(q, {"_id": 0, "lines": 1}):
         for l in je.get("lines", []):
-            if l.get("account_code") == ACC_SUSPENSE:
+            if l.get("account_code") in sus:
                 bal += float(l.get("debit", 0) or 0) - float(l.get("credit", 0) or 0)
     return round(bal, 2)
 
@@ -2041,13 +2048,14 @@ async def post_penalty_payment(*, penalty_id: str, entity_id: str, amount: float
 
 async def penalty_receivable_balance(entity_id: str = "") -> float:
     """Saldo akun 1-1270 (Piutang Denda) dari jurnal — bahan INV-PEN-03."""
-    flt: Dict[str, Any] = {"status": {"$ne": "void"}, "lines.account_code": ACC_PIUTANG_DENDA}
+    codes = await _known("penjualan.piutang_denda")
+    flt: Dict[str, Any] = {"status": {"$ne": "void"}, "lines.account_code": {"$in": codes}}
     if entity_id and entity_id != "all":
         flt["entity_id"] = entity_id
     total = 0.0
     async for je in db.journal_entries.find(flt, {"_id": 0, "lines": 1}):
         for ln in je.get("lines") or []:
-            if ln.get("account_code") == ACC_PIUTANG_DENDA:
+            if ln.get("account_code") in codes:
                 total += float(ln.get("debit") or 0) - float(ln.get("credit") or 0)
     return round(total, 2)
 
@@ -2307,28 +2315,30 @@ async def customer_advance_balance(entity_id: str = "") -> float:
     Nilai positif = kewajiban (uang pelanggan yang kami tahan). Dihitung
     kredit − debit supaya arahnya sesuai sifat akun kewajiban.
     """
+    codes = await _known("penjualan.uang_muka_pelanggan")
     flt: Dict[str, Any] = {"status": {"$ne": "void"},
-                           "lines.account_code": ACC_UANG_MUKA_PELANGGAN}
+                           "lines.account_code": {"$in": codes}}
     if entity_id and entity_id != "all":
         flt["entity_id"] = entity_id
     total = 0.0
     async for je in db.journal_entries.find(flt, {"_id": 0, "lines": 1}):
         for ln in je.get("lines") or []:
-            if ln.get("account_code") == ACC_UANG_MUKA_PELANGGAN:
+            if ln.get("account_code") in codes:
                 total += float(ln.get("credit") or 0) - float(ln.get("debit") or 0)
     return round(total, 2)
 
 
 async def variance_writeoff_total(entity_id: str = "") -> float:
     """Σ beban selisih pembayaran (6-9100) — bahan invarian & laporan."""
+    codes = await _known("penjualan.selisih_bayar")
     flt: Dict[str, Any] = {"status": {"$ne": "void"},
-                           "lines.account_code": ACC_SELISIH_BAYAR}
+                           "lines.account_code": {"$in": codes}}
     if entity_id and entity_id != "all":
         flt["entity_id"] = entity_id
     total = 0.0
     async for je in db.journal_entries.find(flt, {"_id": 0, "lines": 1}):
         for ln in je.get("lines") or []:
-            if ln.get("account_code") == ACC_SELISIH_BAYAR:
+            if ln.get("account_code") in codes:
                 total += float(ln.get("debit") or 0) - float(ln.get("credit") or 0)
     return round(total, 2)
 
@@ -3326,12 +3336,13 @@ async def inventory_drift_explain(entity_id: str) -> Dict[str, Any]:
                 zero_cost_ref = _roll_ref(r)
 
     gl_by_source: Dict[str, float] = {}
+    inv_codes = await _known("persediaan.persediaan")
     async for je in db.journal_entries.find(
-            {"entity_id": entity_id, "lines.account_code": ACC_PERSEDIAAN,
+            {"entity_id": entity_id, "lines.account_code": {"$in": inv_codes},
              "status": {"$ne": "void"}},
             {"_id": 0, "source_type": 1, "lines": 1}):
         for line in je.get("lines", []):
-            if line.get("account_code") != ACC_PERSEDIAAN:
+            if line.get("account_code") not in inv_codes:
                 continue
             key = str(je.get("source_type") or "tanpa sumber")
             gl_by_source[key] = round(

@@ -150,7 +150,8 @@ AR_DEFINITIONS = {
 
 async def recognized_by_order(order_ids: List[str]) -> Dict[str, float]:
     """Σ piutang yang lahir per pesanan (Dr 1-1200/kas dari jurnal penjualan & per surat jalan)."""
-    from services.gl_service import ACC_PIUTANG, ACC_KAS_BESAR
+    from services.gl_mapping_service import known_codes
+    codes = set(await known_codes("penjualan.piutang")) | set(await known_codes("kas_bank.kas_besar"))
     out: Dict[str, float] = {}
     if not order_ids:
         return out
@@ -161,7 +162,7 @@ async def recognized_by_order(order_ids: List[str]) -> Dict[str, float]:
             {"_id": 0, "source_type": 1, "source_id": 1, "ref": 1, "lines": 1}):
         oid = je["source_id"] if je["source_type"] == "sales_order" else (je.get("ref") or {}).get("order_id")
         amt = sum(float(l.get("debit") or 0) for l in je.get("lines") or []
-                  if l.get("account_code") in (ACC_PIUTANG, ACC_KAS_BESAR))
+                  if l.get("account_code") in codes)
         out[oid] = round(out.get(oid, 0.0) + amt, 2)
     return out
 

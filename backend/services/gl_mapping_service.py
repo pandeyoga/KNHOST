@@ -67,6 +67,16 @@ async def remap_lines(lines: List[Dict[str, Any]], entity_id: str, source_type: 
     return out
 
 
+async def known_codes(key: str) -> List[str]:
+    """Semua akun yang pernah dipakai kebutuhan ini (bawaan + pemetaan kini + riwayat) — untuk pembaca saldo
+    supaya jurnal lama (akun lama) dan jurnal baru (akun pemetaan) sama-sama terbaca."""
+    codes = {reg.require(key)["default"]}
+    codes |= {r["account_code"] for (k, _), r in (await _rows()).items() if k == key}
+    async for h in db[HIST].find({"key": key}, {"_id": 0, "from_code": 1, "to_code": 1}):
+        codes |= {h.get("from_code"), h.get("to_code")} - {None, ""}
+    return sorted(codes)
+
+
 async def _accounts(entity_id: str) -> Dict[str, Dict[str, Any]]:
     from services.gl_service import effective_accounts
     return await effective_accounts(None, entity_id or None)
