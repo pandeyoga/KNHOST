@@ -1914,10 +1914,10 @@
         "Apakah ada cara lain atau keputusan berbeda per kasus? Jika customer menerima dua potong, apakah bentuk dua potong itu harus disetujui customer terlebih dahulu?",
         "Untuk pilihan pertama, 45 yard yang masih baik ikut tertahan di perusahaan. Apakah itu memang yang dimaksud cutloss?"
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Pilihan (b): customer menerima dua potong baik; kompensasi hanya senilai qty yang benar-benar cacat (tidak kelipatan 15 yd). Saat QC, MD input yard cacat saja; mesin QC satuan yard, produk master kg dikonversi otomatis.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-092"
       ],
@@ -1932,10 +1932,10 @@
         "Apakah nilai kompensasi dihitung dari qty yang disetujui dikalikan harga transaksi awal setelah diskon/harga khusus, atau menggunakan nilai lain yang disepakati?",
         "Mohon satu contoh angka lengkap dari kasus 120 yard tadi: harga awal, qty yang dikompensasi dan nilai akhir. Jika berbeda karena jenis cacat/kondisi, mohon jelaskan dasar kesepakatannya."
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Nilai kompensasi = harga transaksi awal (setelah diskon/harga khusus) x qty yang disetujui.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-092"
       ],
@@ -1950,10 +1950,10 @@
         "Jika dua roll yang disetujui untuk ditukar totalnya 195 yard, kewajiban penggantinya dua roll atau 195 yard?",
         "Patokan qty tersebut berasal dari qty yang dahulu dikirim, qty yang benar-benar kembali, atau qty yang disetujui setelah pemeriksaan? Mohon contoh bila qty pengiriman awal dan qty yang kembali berbeda."
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Pengganti dihitung dalam yard (yard = source of truth), memakai qty aktual final yang diterima saat QC.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-090"
       ],
@@ -1968,10 +1968,10 @@
         "Jika roll pengganti total 205 yard, apakah tambahan 10 yard dibayar customer, dibebaskan, atau diputus per kasus?",
         "Jika pengganti total 190 yard, apakah kekurangan lima yard harus dikirim kemudian, diselesaikan menjadi nilai yang dapat direfund/menjadi saldo, atau ditutup dengan kesepakatan tertentu?"
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Pengganti lebih: selisih tetap dibayar customer. Pengganti kurang: kekurangan diselesaikan sebagai refund atau saldo.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-090"
       ],
@@ -1986,10 +1986,10 @@
         "Selisih qty memakai harga transaksi asal setelah diskon/harga khusus, harga yang berlaku saat penggantian, atau harga khusus yang disepakati kembali?",
         "Jika harga saat ini berbeda dari harga awal, apakah qty yang sekadar mengganti kewajiban lama tetap menggunakan nilai lama, dan hanya selisihnya yang dinilai? Mohon contoh supaya tagihan tidak dihitung dua kali."
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Selisih dinilai dengan harga transaksi asal.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-090"
       ],
@@ -2004,10 +2004,10 @@
         "Apakah discount tanpa pengembalian barang merupakan pengecualian pemeriksaan fisik di Rancamalang dan boleh diputus berdasarkan foto/video serta bukti lain?",
         "Atau tetap perlu barang/bagian contoh dikirim ke Rancamalang untuk diperiksa? Jika demikian, bagian apa yang dikirim sementara sisanya tetap digunakan customer?"
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Boleh diputus berdasarkan foto/video tanpa barang dikirim; nilai/harga discount tetap keputusan Finance.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-092"
       ],
@@ -2022,10 +2022,10 @@
         "Discount ditentukan sebagai persentase, nominal rupiah, atau nilai per yard/kg?",
         "Potongan berlaku hanya pada qty yang cacat, satu roll, atau seluruh item/tagihan yang disepakati? Mohon satu contoh qty, harga awal dan nilai discount akhir."
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Discount berupa nominal rupiah per item, hanya untuk qty yang cacat.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-092"
       ],
@@ -2040,10 +2040,10 @@
         "Bagaimana perlakuan untuk: hangtag hilang tetapi roll masih utuh; hangtag ada tetapi kain sudah dipotong; dan hangtag hilang sekaligus kain sudah dipotong?",
         "Untuk masing-masing kondisi, apakah ditolak, tetap dapat diperiksa, atau hanya diperbolehkan penyelesaian tertentu? Bukti pengganti apa yang dapat dipakai jika hangtag hilang?"
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Tidak ada aturan pasti (keputusan manusia). Jadikan checklist informasi kondisi hangtag/potongan/bukti; Finance memutus final; sistem hanya memberi peringatan, tidak memblok.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-083"
       ],
@@ -2058,10 +2058,10 @@
         "Jika customer mengajukan pada hari ke-20 tetapi barang baru diterima di Jakarta atau Rancamalang pada hari ke-24, apakah klaim tetap dalam batas waktu?",
         "Untuk supplier, apakah batas 21 hari berlaku sampai pengajuan klaim dikirim, sampai barang diberangkatkan, atau sampai barang diterima supplier? Perjalanan Jakarta–Rancamalang tidak boleh menimbulkan asumsi tanggal yang berbeda."
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Customer: batas 21 hari dihitung sampai tanggal pengajuan (ajukan hari ke-20, barang tiba hari ke-24 tetap sah). Supplier: batas 21 hari sampai klaim dikirim.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-083",
         "LN-093"
@@ -2077,10 +2077,10 @@
         "Jika SO asal retur sudah lunas, tetapi customer masih berutang pada SO lain di entitas yang sama, apakah nilai retur harus digunakan melunasi tagihan lain itu terlebih dahulu?",
         "Atau pengurangan wajib hanya untuk tagihan SO asal, sehingga customer boleh memilih refund/saldo walaupun mempunyai tagihan lain?"
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Customer boleh memilih refund atau saldo; tidak wajib dipakai melunasi tagihan SO lain.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-091"
       ],
@@ -2095,10 +2095,10 @@
         "Siapa menanggung biaya pengembalian dari customer, perjalanan Jakarta–Rancamalang untuk QC, dan pengiriman pengganti?",
         "Apakah perlakuannya berbeda bila klaim diterima atau ditolak? Jika melibatkan Sukacita dan CST, apakah ada ketentuan pembagian biaya internal atau diputus per kasus?"
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Penanggung ongkir retur, perjalanan QC Jakarta-Rancamalang dan kirim pengganti bisa keduanya: dijadikan opsi yang dipilih per kasus.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-091"
       ],
@@ -2114,10 +2114,10 @@
         "Jika LOT pabrik yang sama datang pada SJ berikutnya untuk artikel/warna yang sama, apakah nama LOT KN tetap sama atau baru?",
         "Jika KN mempunyai nama sendiri, bagaimana urutan penamaannya dan kapan mulai dari awal lagi? Mohon contoh praktik yang dipakai."
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Bisa dua kode (LOT pabrik + LOT KN). LOT pabrik sama di SJ berikutnya tidak memakai LOT KN yang sudah ada (LOT KN baru). Penamaan/reset LOT KN diputuskan user (input bebas).",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-014",
         "LN-040"
@@ -2134,10 +2134,10 @@
         "Mohon satu contoh roll yang sudah selesai diperiksa: panjang inspect, temuan per interval, langkah perhitungan angka hasil akhir, kemudian alasan masuk Grade A/A1/B atau grade aktif lainnya.",
         "Apakah penentuan grade hanya memakai jumlah poin atau juga panjang/lebar kain? Jika ada kriteria tambahan, mohon ditunjukkan pada contoh tersebut."
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Sementara user sendiri mengisi kode cacat, poin dan grade; ERP hanya menyediakan form. Otomatisasi menyusul bila ada info baru.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-052"
       ],
@@ -2153,10 +2153,10 @@
         "Transaksi masuk periode pembayaran berdasarkan tanggal invoice, penerimaan barang, atau acuan lain?",
         "Transaksi setelah cutoff dibayar periode berikutnya atau ada ketentuan lain? Mohon contoh dua transaksi di sekitar cutoff."
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "Dibuat dulu dan bisa dikonfigurasi (cutoff, tanggal bayar, acuan periode).",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-19",
       "affected_requirements": [
         "LN-024"
       ],
@@ -2255,10 +2255,10 @@
       "questions": [
         "Setelah cek kode existing, catat kebijakan mana sudah ada dan mana memerlukan keputusan owner; jangan membuat threshold atau freeze global tanpa dasar."
       ],
-      "status": "pending",
-      "answer": null,
-      "answer_ref": null,
-      "confirmed_by": null,
+      "status": "resolved",
+      "answer": "SOP opname sesuai jawaban owner 2026-10-18 (evidence/L10/report.md); tidak ada batas nilai kerugian yang memerlukan persetujuan tambahan.",
+      "answer_ref": "evidence/DECISIONS_OWNER_2026-10-19.md",
+      "confirmed_by": "owner (pandeyoga) via chat 2026-10-18 dan 2026-10-19",
       "affected_requirements": [
         "LN-101"
       ],

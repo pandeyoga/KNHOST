@@ -8,7 +8,7 @@ Usulan desain dapat dikembangkan sebagai prototype untuk direview; belum menjadi
 
 ## KLR-01 — Cutloss: bagian kain yang diterima kembali oleh customer
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-092.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-092.
 
 Contoh: satu roll 120 yard diperiksa QC. Yard ke-46 sampai ke-60 cacat, yaitu 15 yard; yard ke-1–45 baik (45 yard), dan yard ke-61–120 baik (60 yard).
 
@@ -18,9 +18,11 @@ Contoh: satu roll 120 yard diperiksa QC. Yard ke-46 sampai ke-60 cacat, yaitu 15
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Pilihan (b): customer menerima dua potong baik; kompensasi hanya senilai qty yang benar-benar cacat (tidak kelipatan 15 yd). Saat QC, MD input yard cacat saja; mesin QC satuan yard, produk master kg dikonversi otomatis.
+
 ## KLR-02 — Cutloss: dasar perhitungan nilai kompensasi
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-092.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-092.
 
 Setelah bagian yang dikembalikan dan qty kompensasi disepakati, nilai uangnya masih perlu dipastikan. Angka kompensasi tidak otomatis berarti seluruhnya dibayar tunai, karena pengurangan tagihan lebih dahulu serta pilihan refund/saldo sudah disepakati.
 
@@ -29,9 +31,11 @@ Setelah bagian yang dikembalikan dan qty kompensasi disepakati, nilai uangnya ma
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Nilai kompensasi = harga transaksi awal (setelah diskon/harga khusus) x qty yang disetujui.
+
 ## KLR-03 — Tukar barang: jumlah pengganti mengikuti roll atau yard/kg?
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-090.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-090.
 
 Warna dan grade pengganti tetap sama sesuai keputusan yang sudah diberikan. Namun panjang/berat setiap roll tidak selalu sama.
 
@@ -40,9 +44,11 @@ Warna dan grade pengganti tetap sama sesuai keputusan yang sudah diberikan. Namu
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Pengganti dihitung dalam yard (yard = source of truth), memakai qty aktual final yang diterima saat QC.
+
 ## KLR-04 — Tukar barang: perlakuan qty pengganti yang lebih atau kurang
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-090.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-090.
 
 Contoh sementara: kewajiban pengganti sudah ditetapkan 195 yard. Roll pengganti yang tersedia tidak selalu tepat 195 yard.
 
@@ -51,9 +57,11 @@ Contoh sementara: kewajiban pengganti sudah ditetapkan 195 yard. Roll pengganti 
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Pengganti lebih: selisih tetap dibayar customer. Pengganti kurang: kekurangan diselesaikan sebagai refund atau saldo.
+
 ## KLR-05 — Tukar barang: harga yang dipakai untuk menilai selisih
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-090.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-090.
 
 Pertanyaan ini berlaku bila kelebihan/kekurangan qty pengganti memang dinilai uang. Bukan menanyakan ulang aturan harga SO normal.
 
@@ -62,9 +70,11 @@ Pertanyaan ini berlaku bila kelebihan/kekurangan qty pengganti memang dinilai ua
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Selisih dinilai dengan harga transaksi asal.
+
 ## KLR-06 — Discount tanpa barang kembali: bagaimana syarat pemeriksaannya?
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-092.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-092.
 
 Penjelasan sebelumnya menyebut discount untuk kain cacat yang tetap dipakai customer. Aturan terbaru menyebut keputusan kompensasi final sesudah QC inspect dan QC retur dilakukan di Rancamalang. Untuk barang yang tidak kembali, cara memenuhi syarat ini belum jelas.
 
@@ -73,9 +83,11 @@ Penjelasan sebelumnya menyebut discount untuk kain cacat yang tetap dipakai cust
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Boleh diputus berdasarkan foto/video tanpa barang dikirim; nilai/harga discount tetap keputusan Finance.
+
 ## KLR-07 — Discount: nilai potongan berlaku untuk bagian mana?
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-092.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-092.
 
 Barang tetap pada customer, sehingga tidak ada stok retur masuk untuk keseluruhan barang itu. Besarnya koreksi nilai belum dijelaskan.
 
@@ -84,9 +96,11 @@ Barang tetap pada customer, sehingga tidak ada stok retur masuk untuk keseluruha
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Discount berupa nominal rupiah per item, hanya untuk qty yang cacat.
+
 ## KLR-08 — Syarat klaim bila hangtag hilang atau kain sudah dipotong customer
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-083.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-083.
 
 Catatan sebelumnya menyebut kondisi ini kebanyakan ditolak, tetapi bisa berakhir cutloss/discount. Belum ada aturan yang membedakan kasusnya.
 
@@ -95,9 +109,11 @@ Catatan sebelumnya menyebut kondisi ini kebanyakan ditolak, tetapi bisa berakhir
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Tidak ada aturan pasti (keputusan manusia). Jadikan checklist informasi kondisi hangtag/potongan/bukti; Finance memutus final; sistem hanya memberi peringatan, tidak memblok.
+
 ## KLR-09 — Batas 21 hari: pengajuan harus masuk kapan?
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-083, LN-093.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-083, LN-093.
 
 Tanggal awal sudah jelas: customer dari SJ penjualan terkait; supplier dari penerimaan gudang asal, per receiving. Yang perlu dipastikan adalah kejadian apa yang harus masih berada dalam 21 hari.
 
@@ -106,9 +122,11 @@ Tanggal awal sudah jelas: customer dari SJ penjualan terkait; supplier dari pene
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Customer: batas 21 hari dihitung sampai tanggal pengajuan (ajukan hari ke-20, barang tiba hari ke-24 tetap sah). Supplier: batas 21 hari sampai klaim dikirim.
+
 ## KLR-10 — Pengurangan tagihan: hanya SO asal atau termasuk tagihan lain?
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-091.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-091.
 
 Sudah disepakati nilai retur mengurangi tagihan terlebih dahulu; kelebihannya boleh direfund atau menjadi saldo. Belum ditentukan cakupan tagihan yang dikurangi.
 
@@ -117,9 +135,11 @@ Sudah disepakati nilai retur mengurangi tagihan terlebih dahulu; kelebihannya bo
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Customer boleh memilih refund atau saldo; tidak wajib dipakai melunasi tagihan SO lain.
+
 ## KLR-11 — Siapa menanggung ongkir retur, perjalanan QC dan penggantian?
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-091.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-091.
 
 Barang dapat diterima di Jakarta, lalu dikirim ke Rancamalang untuk QC; pengganti kemudian dikirim ke customer. Ini dapat melibatkan beberapa perjalanan.
 
@@ -128,9 +148,11 @@ Barang dapat diterima di Jakarta, lalu dikirim ke Rancamalang untuk QC; penggant
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Penanggung ongkir retur, perjalanan QC Jakarta-Rancamalang dan kirim pengganti bisa keduanya: dijadikan opsi yang dipilih per kasus.
+
 ## KLX-01 — Kode LOT supplier dan LOT internal KN
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-014, LN-040.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-014, LN-040.
 
 Ada kemungkinan SJ pabrik menulis LOT 234 sementara KN menyebut kelompok yang sama LOT A. Ini masih perlu konfirmasi client.
 
@@ -140,9 +162,11 @@ Ada kemungkinan SJ pabrik menulis LOT 234 sementara KN menyebut kelompok yang sa
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Bisa dua kode (LOT pabrik + LOT KN). LOT pabrik sama di SJ berikutnya tidak memakai LOT KN yang sudah ada (LOT KN baru). Penamaan/reset LOT KN diputuskan user (input bebas).
+
 ## KLX-02 — Kode cacat dan cara menghitung hasil inspect
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-052.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-052.
 
 Form inspect sudah disepakati satu baris per roll dan posisi cacat per 15 yard. Kode cacat, hitungan nilai akhir dan ambang grade belum lengkap.
 
@@ -152,9 +176,11 @@ Form inspect sudah disepakati satu baris per roll dan posisi cacat per 15 yard. 
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
 
+Jawaban tercatat: Sementara user sendiri mengisi kode cacat, poin dan grade; ERP hanya menyediakan form. Otomatisasi menyusul bila ada info baru.
+
 ## KLX-03 — Cutoff dan jadwal pembayaran pembelian antar-entitas
 
-Jenis: client_policy. Status: **pending**. Requirement: LN-024.
+Jenis: client_policy. Status: **resolved**. Requirement: LN-024.
 
 Barang/transaksi antar-entitas berlangsung lebih dahulu dan pembayaran dijadwalkan akhir bulan. Pembayaran penuh per transaksi tanpa netting sudah disepakati.
 
@@ -163,6 +189,8 @@ Barang/transaksi antar-entitas berlangsung lebih dahulu dan pembayaran dijadwalk
 - Transaksi setelah cutoff dibayar periode berikutnya atau ada ketentuan lain? Mohon contoh dua transaksi di sekitar cutoff.
 
 Dampak: Finalisasi perilaku cabang terkait; pekerjaan independen dapat berjalan.
+
+Jawaban tercatat: Dibuat dulu dan bisa dikonfigurasi (cutoff, tanggal bayar, acuan periode).
 
 ## DATA-01 — Dataset master bahan, supplier dan warna
 
@@ -218,13 +246,15 @@ Dampak: Validasi akhir requirement yang tergantung item ini; tidak memblok semua
 
 ## OPS-01 — SOP pelaksanaan stock opname
 
-Jenis: operational_policy. Status: **pending**. Requirement: LN-101.
+Jenis: operational_policy. Status: **resolved**. Requirement: LN-101.
 
 Kebutuhan opname jelas, parameter freeze/cutoff/delta, recount dan otorisasi adjustment harus dicocokkan dengan fitur/SOP yang benar-benar berlaku.
 
 - Setelah cek kode existing, catat kebijakan mana sudah ada dan mana memerlukan keputusan owner; jangan membuat threshold atau freeze global tanpa dasar.
 
 Dampak: Validasi akhir requirement yang tergantung item ini; tidak memblok semua fase.
+
+Jawaban tercatat: SOP opname sesuai jawaban owner 2026-10-18 (evidence/L10/report.md); tidak ada batas nilai kerugian yang memerlukan persetujuan tambahan.
 
 ## HW-01 — Unit, SDK, firmware dan profile RFID aktual
 

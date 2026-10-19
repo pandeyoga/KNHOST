@@ -4,23 +4,23 @@ Dihasilkan dari BACKLOG.json. Ubah status pada BACKLOG, lalu render ulang; janga
 
 Baseline: `64d81f29577dae4daa86ddc64689dec7243804f2`. Kandidat final: `belum ditetapkan`.
 
-Requirement tervalidasi: **0/56**. Acceptance PASS: **0/230**. Keputusan pending: **23/24**.
+Requirement tervalidasi: **0/56**. Acceptance PASS: **0/230**. Keputusan pending: **8/24**.
 
 Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan seluruh sumber tidak berarti code coverage 100 persen. Status awal not_started adalah sengaja, karena paket belum mengimplementasikan perubahan.
 
 | Fase | Status | Requirement tervalidasi | Acceptance PASS | Pending terkait | Prompt |
 |---|---|---|---|---|---|
 | L00 Baseline, penyelarasan keputusan, dan kontrak perubahan | in_progress | 0/3 | 0/6 | — | [Buka](phases/L00.md) |
-| L01 Custom role, master data, grade, dan konfigurasi visibilitas | in_progress | 0/6 | 0/23 | DATA-01, DES-04, KLX-01 | [Buka](phases/L01.md) |
-| L02 Penjualan, alokasi roll, harga khusus dan konsistensi Finance | not_started | 0/5 | 0/15 | KLX-03 | [Buka](phases/L02.md) |
+| L01 Custom role, master data, grade, dan konfigurasi visibilitas | in_progress | 0/6 | 0/23 | DATA-01, DES-04 | [Buka](phases/L01.md) |
+| L02 Penjualan, alokasi roll, harga khusus dan konsistensi Finance | not_started | 0/5 | 0/15 | — | [Buka](phases/L02.md) |
 | L03 Special Order, Designer, uji kain dan rute supplier/makloon | in_progress | 0/5 | 0/27 | — | [Buka](phases/L03.md) |
-| L04 Receiving, RFID identity, MD Quality, UOM dan material makloon | in_progress | 0/4 | 0/10 | KLX-01 | [Buka](phases/L04.md) |
-| L05 Meja QC dan form inspect tiga sumber | not_started | 0/3 | 0/9 | KLX-02 | [Buka](phases/L05.md) |
+| L04 Receiving, RFID identity, MD Quality, UOM dan material makloon | in_progress | 0/4 | 0/10 | — | [Buka](phases/L04.md) |
+| L05 Meja QC dan form inspect tiga sumber | not_started | 0/3 | 0/9 | — | [Buka](phases/L05.md) |
 | L06 Sampel, Admin Cutting dan penjualan ecer | not_started | 0/3 | 0/9 | — | [Buka](phases/L06.md) |
 | L07 Picking, transit, multi-SO dispatch dan perjalanan antar lokasi | not_started | 0/3 | 0/7 | DES-02 | [Buka](phases/L07.md) |
-| L08 Menu Retur terpadu, penerimaan, QC dan lineage roll | in_progress | 0/4 | 0/13 | KLR-08, KLR-09 | [Buka](phases/L08.md) |
-| L09 Tukar, kompensasi, retur interco dan supplier end-to-end | in_progress | 0/4 | 0/13 | KLR-01, KLR-02, KLR-03, KLR-04, KLR-05, KLR-06, KLR-07, KLR-09, KLR-10, KLR-11 | [Buka](phases/L09.md) |
-| L10 Putaway, stock opname, dashboard dan Meja User | not_started | 0/3 | 0/9 | OPS-01 | [Buka](phases/L10.md) |
+| L08 Menu Retur terpadu, penerimaan, QC dan lineage roll | in_progress | 0/4 | 0/13 | — | [Buka](phases/L08.md) |
+| L09 Tukar, kompensasi, retur interco dan supplier end-to-end | in_progress | 0/4 | 0/13 | — | [Buka](phases/L09.md) |
+| L10 Putaway, stock opname, dashboard dan Meja User | not_started | 0/3 | 0/9 | — | [Buka](phases/L10.md) |
 | L11 Pusat export, join bisnis dan rapor staf | in_progress | 0/4 | 0/12 | DES-03 | [Buka](phases/L11.md) |
 | L12 Kesiapan ERP untuk middleware Chainway dan UAT tiga perangkat | not_started | 0/3 | 0/56 | HW-01 | [Buka](phases/L12.md) |
 | L13 Absensi langsung perangkat ke ERP | not_started | 0/2 | 0/6 | HR-01, HW-02 | [Buka](phases/L13.md) |
@@ -74,7 +74,7 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-111 | L11 | Join relevan, grain dan Finance analytics | in_progress | evidence/L11/report.md |
 | LN-112 | L11 | Rapor Designer dan Sales lengkap | in_progress | evidence/L11/report.md |
 | LN-113 | L11 | Keamanan field dan konsistensi pekerjaan export | in_progress | evidence/L11/report.md |
-| LN-120 | L12 | Parity kontrak dan pemisahan modul | in_progress | evidence/L12/LN-120_parity_matrix.md (T01 matrix, T02 tes identitas device); MW-INT menunggu HW-01 |
+| LN-120 | L12 | Parity kontrak dan pemisahan modul | in_progress | evidence/L12/LN-120_parity_matrix.md, backend/tests/test_ln120_device_identity.py |
 | LN-121 | L12 | UR300/C72: durability, context dan keputusan bisnis | not_started | belum ada |
 | LN-122 | L12 | CP30EN print/encode/verify dan reprint yang aman | not_started | belum ada |
 | LN-130 | L13 | Kontrak direct attendance dan raw log | not_started | belum ada |
@@ -84,5 +84,5 @@ Angka di atas adalah kemajuan implementasi/verifikasi gelombang ini. Pemetaan se
 | LN-142 | L14 | UAT dan definisi selesai | not_started | belum ada |
 | LN-033 | L03 | Rute pemenuhan supplier/makloon dari R&D dan Pesanan Khusus | in_progress | evidence/L03/report.md |
 | LN-143 | L14 | Validasi produksi Pesanan Khusus hingga penerimaan, Finance dan pengiriman | not_started | belum ada |
-| LN-015 | L01 | Detail UI/UX dan otorisasi custom role lintas modul | in_progress | evidence/L01/report.md, evidence/L01/field_leak_scan_sales_before.json, evidence/L01/field_leak_scan_sales_after.json |
+| LN-015 | L01 | Detail UI/UX dan otorisasi custom role lintas modul | in_progress | backend/tests/test_ln015_typed_rnd_and_role_version.py, evidence/L01/field_leak_scan_sales_after.json, evidence/L01/field_leak_scan_sales_before.json, evidence/L01/report.md |
 | LN-034 | L03 | Revalidasi produk per supplier, kontrak terpisah dan keputusan PIC | in_progress | evidence/L03/report.md |
