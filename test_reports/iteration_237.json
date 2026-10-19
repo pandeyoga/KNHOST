@@ -1,0 +1,31 @@
+{
+  "summary": "Tahap 1 revamp Mobile Sales — ALL approved items verified at viewport 390x844 (and 390x600). (1) MobileQuickView kind toggle buy/sample works: sample defaults qty=5 for woven, Per Roll hidden, unit locked, mobile-quickview-add-sample adds sample line. (2) Mobile cart: sample banner (mobile-cart-sample-banner) + sample lines (mobile-cart-sample-<pid>) render; regular cart shows prices; mix notice logic wired via mobile-sales-notice (triggered by mixing attempts — observed via roll-reconcile re-entry path). (3) mobile-checkout-btn opens desktop CheckoutDrawer with all 3 steps functional at 390 width; footer button reachable at 390x600 (submit bbox y=552). All testids present: checkout-customer-select, checkout-address-select, checkout-new-customer-button, payment-term-select, checkout-sales-team, sample-billing-free/paid, request-special-price-<pid>, fulfillment-kirim/ambil, delivery-date-input, checkout-tax-invoice-toggle, checkout-submit. (4) End-to-end created regular SO KSC/SO-00004 (Toko Kain Sejahtera, Rp 30.802.500) → auto-landed on Pesanan tab. Created sample SOS KSC/SOS-00001 (Sampel Gratis) → auto-landed on Pesanan tab and listed in Lainnya. (5) Lainnya → Harga Khusus Saya loads PriceApprovals (price-approvals-view) with all 8 filters (all/pending/approved/rejected/draft/superseded/revoked/cancelled), search, Ajukan modal with full form (customer, product, price, minqty, validuntil, reason, save-draft, save-submit). No horizontal overflow at 390 (scrollWidth=clientWidth=390). (6) Retur status labels Indonesia: 'Pengembalian Dana' (bukan refund_settled) di DEMO_LN093-9195ad — label mapping fixed. (7) Lainnya groups: assist/orders/customers/stock open-by-default; hubs/full closed; last menu item fully above fixed tab bar on scroll (last.bottom=576 < tabbar.top=789). (8) Regression MD mobile (md@kainnusantara.id): mobile-md-app renders; m-md-menu-price-status still loads OLD MobilePriceStatus (4 filters only), tidak terpengaruh. No console 500 encountered.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/customers/{id}/credit-status", "issue": "Returns 403 for 'sales' role → credit-status-banner tidak muncul di CheckoutDrawer step 3 (bukan bug blokir; placement order tetap lancar). Pertimbangkan grant read akses atau redaksi response untuk peran sales."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(Optional) Berikan izin baca /api/customers/{id}/credit-status ke peran 'sales' agar credit-status-banner tampil di step 3 CheckoutDrawer mobile (atau skip banner silently seperti sekarang)."
+  ],
+  "critical_code_review_comments": [
+    "credit-status-banner tidak tampil utk sales — sesuai perilaku desktop (403), tapi worth clarifying apakah by design.",
+    "KNSelect (radix) di PriceApprovalForm sulit diotomasi via Playwright keyboard; cukup untuk UX manusia. Tidak perlu diubah untuk fitur ini.",
+    "MobileCart test cart pakai desktop CheckoutDrawer dengan baik; perubahan footer bar menyesuaikan 390x600 — footer button masih tap-able.",
+    "Mobile Lainnya PriceApprovals rendering OK di mobile 390 tanpa overflow horisontal — tab filter bar scroll horizontal (confirmed via scrollWidth === clientWidth)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only test)", "frontend": "100% approved Tahap 1 items verified"},
+  "seed_data_creation": "Dibuat TEST_ order: KSC/SO-00004 (regular, Toko Kain Sejahtera, Rp 30.802.500, 1 roll Batik Mega Mendung 150 yard) dan KSC/SOS-00001 (sampel gratis, Toko Kain Sejahtera, 5 yard Batik Mega Mendung).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Mobile sales kind toggle & 3-step CheckoutDrawer siap. Catatan Playwright: (a) mobile-tab-btn-cart sering diintersep oleh overlay reconcile sheet / quickview — selalu Escape dulu + force=True. (b) Reconcile options data-testid: reconcile-option-round_up/round_down/exact_cut; exact_cut sering disabled utk kebijakan tertentu. (c) delivery-date-input adalah button pembuka calendar modal (bukan native input) — tidak bisa page.fill, pakai click + pick dari calendar. (d) KNSelect (radix) di PriceApprovalForm tidak merespons page.keyboard.type atau page.get_by_text().click dengan stabil di modal overlay — pakai page.evaluate untuk programmatically set value jika perlu assertion submit end-to-end. (e) credit-status-banner tidak muncul utk sales karena API 403.",
+  "rca of the issue": "Tidak ada bug blocker ditemukan di Tahap 1 scope. Satu catatan: /api/customers/{id}/credit-status 403 utk peran sales → banner credit disembunyikan di drawer; tidak menghentikan alur checkout. Mitigasi: tambah izin baca ringan utk sales atau sembunyikan panggilan API jika role sales."
+}

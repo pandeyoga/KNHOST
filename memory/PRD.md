@@ -1416,3 +1416,12 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - Data demo dipulihkan (restore_local_demo.sh + seed_ln093_ui.py); CST = ent_3b296822daf9.
 - iteration_235: backend 17/17, frontend 6/7 (temuan sales.cst tak bisa buka Retur Masuk = sesuai desain: notifikasi untuk warehouse_admin/admin/finance).
 - Berikutnya: LN-034 (P2) setelah dicek user; LN-015-T01 inventaris aksi lengkap; L12/L13 butuh perangkat (HW-01/HW-02).
+
+## 2026-10-19 (2) — Mobile Sales Tahap 1 (status done, iteration_236 review, iteration_237 100%)
+- Bug: popup Tambah barang tak bisa digulir (keyboard/toolbar HP) → .m-sheet 88dvh + .m-sheet-scroll flex; RollReconcileSheet flex+dvh; viewport meta interactive-widget=resizes-content; fokus Qty menggulir ke tombol.
+- Katalog HP: pilihan Order biasa / Order sampel (mobile-quickview-kind-*), sampel maks 5 yd woven / 2 kg knit → Pesanan Sampel SOS- dari HP.
+- Keranjang HP: checkout memakai CheckoutDrawer desktop (3 langkah: pelanggan&alamat → termin&lot → review): kirim/ambil sendiri, faktur pajak, minta harga khusus per baris, lot campur, sampel gratis/berbayar, backorder. EntityScopeProvider membungkus MobileSalesApp; notice sistem tampil di HP (mobile-sales-notice).
+- Lainnya → "Harga Khusus Saya" = PriceApprovals desktop (8 filter, ubah/kirim/hapus draf, lampiran). MD tetap MobilePriceStatus lama.
+- Status retur pakai ReturnStatusPill (label Indonesia); grup menu Pelanggan & Stok terbuka; padding bawah agar baris terakhir tak tertutup tab bar.
+- Catatan: credit-status 403 untuk sales pada pelanggan yang tidak di-assign ke dia (can_access_customer) — banner kredit tidak tampil (desktop sama); gate kredit tetap di server.
+- Tahap 2 (belum): Retur HP lengkap (foto/kebijakan/roll/cutloss), OD multi-baris, Stok ATP/Incoming/antar-PT/Lot, CRM Interaksi/Penagihan/Sales Force, Dasbor & detail SO — layar HP ringkas khusus (keputusan user).
