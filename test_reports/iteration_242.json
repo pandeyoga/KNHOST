@@ -1,0 +1,40 @@
+{
+  "summary": "Retested SALES mobile return-evidence picker consistency on 390x844. All three scenarios pass: pending return shows exactly one PhotoPicker (no duplicate camera/evidence blocks), upload path works and persists attachments; terminal return shows evidence-closed notice. Draft-return branch not reachable in seed data but code path (data-testid=m-return-submit-draft) is correctly gated to status==='draft'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verifications": {
+    "pending_sret_cfaaaebe1ca4": {
+      "picker_count": 1,
+      "m-return-photo-btn": 1,
+      "m-return-camera": 0,
+      "m-return-evidence": 0,
+      "m-return-evidence-closed": 0,
+      "attachments_text": "2 bukti sudah terlampir",
+      "upload_message": "1 bukti terunggah.",
+      "api_attachments_before": 2,
+      "api_attachments_after": 3
+    },
+    "settled_sret_DEMO_LN093_9195ad": {
+      "m-return-photo-btn": 0,
+      "m-return-upload": 0,
+      "m-return-evidence-closed": 1,
+      "closed_text": "Bukti foto: 1 · retur sudah selesai/ditolak, bukti tidak bisa ditambah lagi."
+    },
+    "draft_return": "No draft return present in seed; code path at line 410 of MobileSalesFlows.jsx shows m-return-submit-draft only when ret.status === 'draft', confirmed via source review."
+  },
+  "note_on_testid_naming": "PhotoPicker in MobileSalesFlows.jsx:187-206 exposes testIds `${testId}-btn` and `${testId}-input` (not the bare `m-return-photo`). The request text referred to the picker by its prefix. Behaviour is correct; no action needed.",
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": [],
+  "success_rate": {"frontend": "100%"},
+  "test_credentials": "sales@kainnusantara.id / demo1234",
+  "seed_data_creation": "One PNG attachment uploaded to sret_cfaaaebe1ca4 during test (attachments 2 -> 3).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Return-evidence picker now unified via single PhotoPicker + terminal-closed notice using server terminal states (refund_settled, credit_settled, nego_settled, rejected, cancelled). Note the picker testIds are m-return-photo-btn / m-return-photo-input (suffixed)."
+}

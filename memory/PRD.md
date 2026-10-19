@@ -1433,3 +1433,10 @@ Permintaan pengguna (asli): "lanjutkan development dari repo pandeyoga/KNHOST, b
 - Penagihan & Target HP (MobileCollectionTargets.jsx): pengingat tagih (tandai diingatkan, catat hasil follow-up), target/pencapaian, insentif, proyeksi, KPI, riwayat 6 bulan, peringkat saya via GET /api/sales/my-rank (baru; tanpa angka rekan; leaderboard tetap khusus manager).
 - Catatan data: pengingat tagih & status kredit mengikuti pelanggan yang di-assign ke sales (assigned_sales_id); Ayu (sales@) belum punya pelanggan ter-assign → kosong; Citra (sales.kanda@) punya 6.
 - Belum diuji ujung-ke-ujung: simpan retur baru & simpan OD multi-baris + gambar (form dirender & unggah gambar dicoba; logika simpan = desktop).
+
+## 2026-10-19 (4) — Uji Simpan, Aturan Tagihan Sales, Dasbor Pesanan HP (iteration_239–242, 100%)
+- Aturan tagihan: collection_worklist untuk sales = pelanggan assigned ∪ pesanan buatannya (row via_own_order); mark/follow-up pakai can_collect_customer; credit-status pakai can_view_credit (entitas sama, untuk checkout). GET /api/customers?for_order=true (sales: semua pelanggan entitas, field ringkas tanpa kredit) dipakai form Pesanan Khusus; /customers biasa tetap assigned-only.
+- Dasbor Pesanan HP: GET /api/sales/order-dashboard (services/sales_order_dashboard.py) — omzet bulan ini vs lalu, 4 status, tren 8 minggu, top 5 pelanggan 90 hari, butuh tindakan (ditolak/menunggu/draf/belum lunas); sales = data sendiri. UI MobileOrderDashboard (tombol "Dasbor" di tab Pesanan + menu Lainnya), tap baris → buka pesanan.
+- Uji simpan nyata di HP: SORD-261019-0003 (2 baris + 2 gambar), SRET-00001 (roll, foto, kebijakan Default) — data TEST di preview.
+- Bukti retur: satu PhotoPicker (MobileReturnActions) dengan daftar terminal = server (refund/credit/nego_settled, rejected, cancelled).
+- Tes: tests/test_sales_collection_rule_dashboard.py 7/7.
