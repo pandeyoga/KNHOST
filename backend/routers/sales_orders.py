@@ -269,6 +269,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
             "price_source": ((entity_price_map.get(product["id"]) or {}).get("source", "global")
                              if not special_meta else ("special_approval" if special_meta.get("special_price") else special_meta.get("sample_price_source", "global"))),
             "price_record_id": (entity_price_map.get(product["id"]) or {}).get("record_id") or "",
+            **({"required_grade": item_in.required_grade.strip()} if item_in.required_grade.strip() else {}),
             **special_meta,
         })
     number = await next_doc_number("sales_orders", "number", "SOS-" if is_sample_order else "SO-", entity_id=entity_id)
@@ -450,6 +451,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
                 item["product_id"], item["base_quantity"], customer_city, entity_id, order_id,
                 allow_partial=payload.allow_backorder, policy=alloc_policy, customer_id=payload.customer_id,
                 makloon_override=payload.confirm_makloon_override, makloon_prompt=True,
+                required_grade=item.get("required_grade", ""),
             )
             reserved_qty = round(sum(float(a.get("quantity", 0) or 0) for a in allocs), 2)
             mk_overlap = round(sum(float(a.get("makloon_overlap_qty", 0) or 0) for a in allocs), 2)

@@ -1083,7 +1083,7 @@ def makloon_block_detail(product_id: str, guard: Dict[str, Any], quantity: float
 async def allocate_and_reserve_rolls(
     product_id: str, quantity: float, city: str, owner_entity_id: str, order_id: str,
     allow_partial: bool = False, policy: Optional[Dict[str, Any]] = None, customer_id: str = "",
-    makloon_override: bool = False, makloon_prompt: bool = False,
+    makloon_override: bool = False, makloon_prompt: bool = False, required_grade: str = "",
 ) -> List[Dict[str, Any]]:
     """Reservasi roll owner-scoped untuk 1 baris order — POLICY-AWARE (Sub-fase 1.7).
 
@@ -1100,6 +1100,8 @@ async def allocate_and_reserve_rolls(
     warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(100)}
 
     rolls = await _available_rolls_for_order(product_id, owner_entity_id, order_id, customer_id)
+    if required_grade:  # LN-090 — pengganti retur: hanya roll grade yang sama dengan yang dijual
+        rolls = [r for r in rolls if (r.get("grade") or "") == required_grade]
     plan = _build_allocation_plan(rolls, quantity, city, warehouses, pol)
     guard = await makloon_guard(product_id, owner_entity_id, plan["total_available"], quantity, pol,
                                 override=makloon_override, prompt=makloon_prompt)

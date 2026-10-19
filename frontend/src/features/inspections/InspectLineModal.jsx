@@ -173,12 +173,10 @@ export default function InspectLineModal({ open, onClose, doc, line, meta, onSav
               Total poin: <strong className="tabular-nums">{previewPoints}</strong>{" "}
               — kode cacat, poin & grade diisi petugas (KLX-02). Bila grade dikosongkan, sistem memakai saran dari total poin.
             </p>
-            <label className="mt-2 flex items-center gap-2 text-[12px]">Grade hasil QC
-              <select data-testid="ins-grade-input" className="field w-40" value={form.grade} onChange={(e) => set({ grade: e.target.value })}>
-                <option value="">— saran sistem —</option>
-                {grades.map((g) => <option key={g.code} value={g.code}>{g.code} · {g.name}</option>)}
-              </select>
-            </label>
+            <div className="mt-2 flex items-center gap-2 text-[12px]">Grade hasil QC
+              <div className="w-48"><KNSelect data-testid="ins-grade-input" className="field" value={form.grade} onValueChange={(v) => set({ grade: v })}
+                options={[{ value: "", label: "— saran sistem —" }, ...grades.map((g) => ({ value: g.code, label: `${g.code} · ${g.name}` }))]} /></div>
+            </div>
           </div>
         ) : !showQc ? null : (
           <p data-testid="ins-line-no-roll" className="text-[11px] text-[#6B6B73]">

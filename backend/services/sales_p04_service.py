@@ -253,6 +253,13 @@ def grade_block_reason(rule: Optional[Dict[str, Any]], grade: str, line_is_bs: b
     return ""
 
 
+def required_grade_reason(item: Dict[str, Any], grade: str) -> str:
+    req = (item or {}).get("required_grade") or ""
+    if req and grade != req:
+        return f"Pengganti retur wajib grade {req} (sama dengan yang dijual)"
+    return ""
+
+
 def _rank(g: str) -> int:
     return grade_rank(g) or 99
 
@@ -302,7 +309,7 @@ async def candidates(order: Dict[str, Any], product_id: str, limit: int = 120) -
             reasons.append(STATUS_LABEL.get(r.get("status"), r.get("status")))
         if r["id"] in picking:
             reasons.append("Sedang dalam pengambilan gudang")
-        gr = grade_block_reason(rule, r.get("grade") or "", line_is_bs)
+        gr = required_grade_reason(item, r.get("grade") or "") or grade_block_reason(rule, r.get("grade") or "", line_is_bs)
         if gr:
             reasons.append(gr)
         eligible = not reasons
@@ -324,7 +331,7 @@ async def assert_rolls_allowed(order: Dict[str, Any], product_id: str, roll_ids:
     line_is_bs = (item.get("quality_class") == "bs") or (item.get("grade") == "BS")
     rule = await get_rule(order.get("customer_id") or "")
     async for r in db.inventory_rolls.find({"id": {"$in": roll_ids}}, {"_id": 0, "roll_no": 1, "grade": 1}):
-        why = grade_block_reason(rule, r.get("grade") or "", line_is_bs)
+        why = required_grade_reason(item, r.get("grade") or "") or grade_block_reason(rule, r.get("grade") or "", line_is_bs)
         if why:
             raise ValueError(f"Roll {r.get('roll_no')}: {why}.")
 

@@ -509,6 +509,7 @@ class SalesOrderItemIn(BaseModel):
     sample_price: Optional[float] = Field(None, ge=0)
     sample_kind: str = "standard"        # L06 LN-060 — standard | hanger | catalogue
     cut_warehouse_id: str = ""           # L06 LN-061 — lokasi potong pilihan (divalidasi kemampuan lokasi)
+    required_grade: str = ""             # LN-090 — pengganti retur wajib grade sama dengan yang dijual
 
 
 class CatalogueSpecIn(BaseModel):

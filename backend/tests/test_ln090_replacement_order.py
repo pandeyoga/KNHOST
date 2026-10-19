@@ -1,6 +1,7 @@
 """LN-090 T02/T03 — pesanan pengganti nyata (KLR-03/04/05): qty dari QC (yard), harga asal, saldo → selisih."""
-import asyncio
 import os
+import subprocess
+import sys
 import uuid
 
 import requests
@@ -37,9 +38,10 @@ def _seed(status="credit_settled", rtype="penggantian", accepted=10.0):
 
 
 def _issue(rid, cust, amount):
-    from services import store_credit_service as sc
-    asyncio.new_event_loop().run_until_complete(sc.issue(customer_id=cust, entity_id="ent_ksc", amount=amount,
-                                                        ref_type="sales_return", ref_id=rid, ref_number="TEST", actor="test"))
+    code = ("import asyncio; from services import store_credit_service as sc; "
+            f"asyncio.run(sc.issue(customer_id='{cust}', entity_id='ent_ksc', amount={amount}, "
+            f"ref_type='sales_return', ref_id='{rid}', ref_number='TEST', actor='test'))")
+    subprocess.run([sys.executable, "-c", code], check=True, cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def test_ln090_t03_requires_store_credit_and_same_article():
@@ -72,6 +74,26 @@ def test_ln090_t02_t03_replacement_order_original_price_and_difference():
     assert again.status_code in (400, 409)
     appr = DB.price_approvals.find_one({"replacement_return_id": rid})
     assert appr["scope"] == "order" and appr["so_id"] == new["id"]  # harga sekali pakai
+
+
+def test_ln090_replacement_same_grade_as_sold():
+    so, rid, pid = _seed(accepted=5.0)
+    ref = DB.inventory_rolls.find_one({"product_id": pid, "owner_entity_id": "ent_ksc", "status": "available",
+                                       "grade": {"$nin": [None, "", "BS"]}}, {"_id": 0, "id": 1, "grade": 1})
+    assert ref, "butuh roll available prod_batik_mega di KSC"
+    DB.sales_returns.update_one({"id": rid}, {"$set": {"items.0.roll_ids": [ref["id"]]}})
+    pv = requests.get(f"{BASE}/sales-returns/{rid}/replacement", headers=ADMIN).json()
+    assert pv["obligation"][0]["sold_grade"] == ref["grade"]
+    _issue(rid, DB.sales_returns.find_one({"id": rid})["customer_id"], 150000)
+    r = requests.post(f"{BASE}/sales-returns/{rid}/replacement-order", headers=ADMIN,
+                      json={"items": [{"product_id": pid, "qty_yard": 5}]})
+    assert r.status_code == 200, r.text
+    new = DB.sales_orders.find_one({"id": r.json()["order"]["id"]})
+    assert new["items"][0]["required_grade"] == ref["grade"]
+    ids = [x["roll_id"] for a in new.get("allocations") or [] for x in a.get("rolls") or []]
+    grades = {g["grade"] for g in DB.inventory_rolls.find({"id": {"$in": ids}}, {"grade": 1})}
+    assert grades <= {ref["grade"]}, grades
+
 
 
 def teardown_module(_m):

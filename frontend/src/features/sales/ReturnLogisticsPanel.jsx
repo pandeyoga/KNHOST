@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Truck } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import KNSelect from "../../components/KNSelect";
+
+const BEARER_OPTS = [{ value: "company", label: "Ditanggung perusahaan" }, { value: "customer", label: "Ditanggung customer" }];
 
 const TYPES = [["customer_return", "Ongkir retur dari customer"], ["qc_trip", "Perjalanan Jakarta–Rancamalang (QC)"],
   ["replacement_shipping", "Kirim barang pengganti"]];
@@ -27,9 +30,8 @@ export default function ReturnLogisticsPanel({ ret, onChanged }) {
       {TYPES.map(([t, label]) => (
         <div key={t} className="flex flex-wrap items-center gap-2">
           <span className="w-60">{label}</span>
-          <select data-testid={`logistics-bearer-${t}`} disabled={locked} className="field text-xs" value={f[t].bearer} onChange={(e) => setF({ ...f, [t]: { ...f[t], bearer: e.target.value } })}>
-            <option value="company">Ditanggung perusahaan</option><option value="customer">Ditanggung customer</option>
-          </select>
+          <div className="w-52"><KNSelect data-testid={`logistics-bearer-${t}`} disabled={locked} className="field text-xs" value={f[t].bearer}
+            options={BEARER_OPTS} onValueChange={(v) => setF({ ...f, [t]: { ...f[t], bearer: v } })} /></div>
           <input data-testid={`logistics-amount-${t}`} disabled={locked} type="number" min={0} placeholder="Rp" className="field w-28" value={f[t].amount}
                  onChange={(e) => setF({ ...f, [t]: { ...f[t], amount: e.target.value } })} />
           <input data-testid={`logistics-note-${t}`} disabled={locked} className="field w-48" placeholder="Catatan" value={f[t].note}

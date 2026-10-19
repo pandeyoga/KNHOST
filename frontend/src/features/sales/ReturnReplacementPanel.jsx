@@ -33,11 +33,13 @@ export default function ReturnReplacementPanel({ ret, onChanged, onNavigate }) {
       <div className="flex items-center gap-2 text-sm font-semibold"><Repeat size={14} className="text-[#0058CC]" /> Pesanan pengganti
         <span className="text-xs font-normal text-[#6B6B73]">Kewajiban = qty aktual QC (yard) · harga transaksi asal</span></div>
       <table className="min-w-full" data-testid="replacement-obligation-table">
-        <thead className="text-left text-[#6B6B73]"><tr>{["Produk", "Qty QC", "Kewajiban (yd)", "Harga asal", "Nilai", "Pengganti (yd)"].map((h) => <th key={h} className="py-1 pr-3">{h}</th>)}</tr></thead>
+        <thead className="text-left text-[#6B6B73]"><tr>{["Produk", "Grade wajib", "Qty QC", "Kewajiban (yd)", "Harga asal", "Nilai", "Pengganti (yd)"].map((h) => <th key={h} className="py-1 pr-3">{h}</th>)}</tr></thead>
         <tbody>{pv.obligation.map((o) => (
           <tr key={o.product_id} data-testid={`replacement-row-${o.product_id}`}>
-            <td className="pr-3">{o.product_name}</td><td className="pr-3">{o.qty_base} {o.unit_base}</td>
-            <td className="pr-3">{o.qty_yard ?? <span className="text-[#C62828]">{o.conversion_error}</span>}</td>
+            <td className="pr-3">{o.product_name}</td>
+            <td className="pr-3" data-testid={`replacement-grade-${o.product_id}`}>{o.sold_grade || "—"}</td>
+            <td className="pr-3">{o.qty_base} {o.unit_base}</td>
+            <td className="pr-3">{o.qty_yard ?? <span className="text-[#8A5A00]" title={o.conversion_error} data-testid={`replacement-conv-missing-${o.product_id}`}>Faktor yard↔{o.unit_base} belum diatur di master produk</span>}</td>
             <td className="pr-3">{rp(o.unit_price_base)}/{o.unit_base}</td><td className="pr-3">{rp(o.value)}</td>
             <td>{canCreate ? <input data-testid={`replacement-qty-${o.product_id}`} type="number" className="field w-24" value={qty[o.product_id] ?? ""}
                                     onChange={(e) => setQty({ ...qty, [o.product_id]: e.target.value })} /> : "—"}</td>

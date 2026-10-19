@@ -26,6 +26,16 @@ async def _yard_factor(prod: Dict[str, Any]) -> float:
     return float(await to_base_qty(prod, 1.0, QC_UNIT))
 
 
+async def _sold_grade(it: Dict[str, Any]) -> str:
+    """Grade saat dijual: roll yang diretur sebelum regrade QC (`regraded_from`), selain itu grade roll."""
+    ids = it.get("roll_ids") or []
+    async for r in db.inventory_rolls.find({"id": {"$in": ids}}, {"_id": 0, "grade": 1, "regraded_from": 1}):
+        g = r.get("regraded_from") or r.get("grade") or ""
+        if g:
+            return g
+    return it.get("grade") or ""
+
+
 async def obligation(ret: Dict[str, Any]) -> List[Dict[str, Any]]:
     order = await db.sales_orders.find_one({"id": ret["order_id"]}, {"_id": 0}) or {}
     rows = []
@@ -43,7 +53,7 @@ async def obligation(ret: Dict[str, Any]) -> List[Dict[str, Any]]:
         price = await _net_unit_price(order, pid)
         rows.append({"product_id": pid, "product_name": it.get("product_name", ""), "unit_base": prod.get("base_unit", ""),
                      "qty_base": round(base_qty, 4), "qty_yard": round(base_qty / f, 2) if f else None, "conversion_error": conv_err,
-                     "grade": insp.get("grade", ""), "unit_price_base": price, "value": round(base_qty * price, 2)})
+                     "grade": insp.get("grade", ""), "sold_grade": await _sold_grade(it), "unit_price_base": price, "value": round(base_qty * price, 2)})
     return rows
 
 
@@ -80,7 +90,7 @@ async def create(ret: Dict[str, Any], items: List[Dict[str, Any]], request, acto
         await pas.insert(appr)
         approvals.append(appr["id"])
         lines.append({"product_id": pid, "quantity": qty_base, "unit": prod.get("base_unit") or "yard",
-                      "price_approval_id": appr["id"]})
+                      "price_approval_id": appr["id"], "required_grade": obl[pid].get("sold_grade", "")})
     if not lines:
         raise ValueError("Minimal satu baris pengganti")
     qc_mode = (order.get("qc_request") or {}).get("mode") or "none"
