@@ -724,6 +724,8 @@ async def reject_return(
         raise HTTPException(status_code=400, detail=str(e))
     await audit(user.get("name", ""), "sales_return_rejected", "sales_return", return_id,
                 {"reason": payload.notes})
+    from services import return_logistics_service as _rl  # GL-01 — jurnal ongkir dibalik saat retur ditolak
+    await _rl.reverse_all(existing, f"Retur {existing.get('number', '')} ditolak", user)
     return doc
 
 

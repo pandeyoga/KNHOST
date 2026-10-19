@@ -55,10 +55,11 @@ async def remap_lines(lines: List[Dict[str, Any]], entity_id: str, source_type: 
     for ln in lines:
         ln = dict(ln)
         key = ln.pop("account_key", None)
+        fixed = ln.pop("fixed_account", False)
         if key:
             ln["account_code"] = await account_for(key, entity_id)
             ln["mapping_key"] = key
-        elif remap and ln.get("account_code") in reg.REMAP_BY_DEFAULT:
+        elif remap and not fixed and ln.get("account_code") in reg.REMAP_BY_DEFAULT:
             k = reg.REMAP_BY_DEFAULT[ln["account_code"]]
             code = await account_for(k, entity_id)
             if code != ln["account_code"]:

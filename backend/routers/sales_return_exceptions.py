@@ -93,15 +93,14 @@ class CompensationIn(BaseModel):
     note: str = ""
 
 
-LOGISTICS_TYPES = {"customer_return": "Ongkir retur dari customer", "qc_trip": "Perjalanan Jakarta–Rancamalang (QC)",
-                   "replacement_shipping": "Kirim barang pengganti"}
-BEARERS = {"company": "Ditanggung perusahaan", "customer": "Ditanggung customer"}
-
-
 class LogisticsCost(BaseModel):
     type: str
-    bearer: str
+    bearer: str = "company"
+    mode: str = "third_party"
     amount: float = Field(0, ge=0)
+    vat_amount: float = Field(0, ge=0)
+    pay_account_code: str = ""
+    charged_entity_id: str = ""
     note: str = ""
 
 
@@ -109,25 +108,45 @@ class LogisticsIn(BaseModel):
     costs: List[LogisticsCost]
 
 
+@router.get("/sales-returns/{return_id}/logistics")
+async def logistics_context(return_id: str, request: Request) -> Any:
+    """Pilihan cara kirim, akun pembayaran (Finance), PT pembeban, PPN ongkir & jurnal yang aktif."""
+    user = await require_permission(request, "sales_return", "view")
+    ret = await _ret(return_id, request)
+    from dependencies import has_permission
+    from services import return_logistics_service as rl
+    ctx = await entity_ctx(request)
+    ents = await db.business_entities.find({"id": {"$in": list(ctx.allowed_entity_ids or [])}},
+                                           {"_id": 0, "id": 1, "name": 1}).to_list(50)
+    return {"logistics_costs": ret.get("logistics_costs") or {}, "types": rl.TYPES, "modes": rl.MODES,
+            "bearer_options": [{"mode": m, "bearer": b, "label": l} for (m, b), l in rl.BEARER_LABEL.items()],
+            "vat_enabled": await rl.vat_enabled(ret.get("entity_id", "")),
+            "can_post": await has_permission(user, "sales_return", "post_logistics"),
+            "pay_accounts": await rl.pay_accounts(ret.get("entity_id", "")), "entities": ents,
+            "default_entity_id": ret.get("entity_id", "")}
+
+
 @router.put("/sales-returns/{return_id}/logistics")
 async def set_logistics(return_id: str, payload: LogisticsIn, request: Request) -> Any:
-    """LN-091 KLR-11 — penanggung 3 jenis biaya logistik dipilih per kasus (perusahaan / customer)."""
-    user = await require_permission(request, "sales_return", "update")
+    """LN-091 KLR-11 + GL-01 — cara kirim & penanggung per kasus; jurnal ongkir otomatis."""
+    from dependencies import require_any_permission
+    user = await require_any_permission(request, [("sales_return", "update"), ("sales_return", "post_logistics")])
     ret = await _ret(return_id, request)
     if ret.get("status") in ("refund_settled", "credit_settled", "nego_settled", "rejected", "cancelled"):
         raise HTTPException(status_code=400, detail="Retur sudah selesai — biaya logistik tidak bisa diubah")
-    rows, seen = [], set()
+    from dependencies import has_permission
+    from services import return_logistics_service as rl
+    ctx = await entity_ctx(request)
     for c in payload.costs:
-        if c.type not in LOGISTICS_TYPES or c.bearer not in BEARERS:
-            raise HTTPException(status_code=400, detail="Jenis biaya / penanggung tidak dikenal")
-        if c.type in seen:
-            raise HTTPException(status_code=400, detail=f"{LOGISTICS_TYPES[c.type]} diisi dua kali")
-        seen.add(c.type)
-        rows.append({**c.dict(), "label": LOGISTICS_TYPES[c.type], "bearer_label": BEARERS[c.bearer]})
-    doc = {"costs": rows, "customer_total": round(sum(r["amount"] for r in rows if r["bearer"] == "customer"), 2),
-           "company_total": round(sum(r["amount"] for r in rows if r["bearer"] == "company"), 2),
-           "updated_by": user.get("name", ""), "updated_at": __import__("core_utils").now_iso()}
-    await db.sales_returns.update_one({"id": return_id}, {"$set": {"logistics_costs": doc}})
+        if c.charged_entity_id and c.charged_entity_id not in (ctx.allowed_entity_ids or []):
+            raise HTTPException(status_code=403, detail="Tidak berhak membebankan ke PT ini")
+    try:
+        doc = await rl.save(ret, [c.dict() for c in payload.costs], user,
+                            await has_permission(user, "sales_return", "post_logistics"))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     await audit(user.get("name", ""), "sales_return_logistics_set", "sales_return", return_id, doc)
     return doc
 

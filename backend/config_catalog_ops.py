@@ -638,3 +638,20 @@ E("returns.block_resend_to_origin_customer", group="retur", type="bool", default
   consumers=("services/return_identity_service.py:block_policy_on", "services/roll_service.py:_available_rolls_for_order",
              "services/sales_order_helpers.py:reserve_roll_mode_item"),
   permission=("sales_return", "policy"), risk="medium")
+
+
+E("returns.logistics_vat_enabled", group="retur", type="bool", default=False, scopes=("global", "entity"),
+  label="Catat PPN masukan atas ongkir retur",
+  help="Bila aktif, form biaya logistik retur menampilkan isian PPN (untuk ekspedisi PKP) dan jurnal ongkir "
+       "mencatat PPN masukan terpisah. Bila mati, ongkir dicatat bruto.",
+  impact="Jurnal ongkir ditanggung perusahaan: Dr Beban ongkir + Dr PPN masukan / Cr kas-bank-hutang.",
+  example="Aktif → ongkir Rp 110.000 dicatat Rp 100.000 beban + Rp 10.000 PPN masukan",
+  consumers=("services/return_logistics_service.py:vat_enabled",), permission=("sales_return", "policy"), risk="low")
+
+E("returns.cutloss_treatment_roles", group="retur", type="list", default=["md", "md_quality"], scopes=("global", "entity"),
+  label="Peran yang memilih potongan cacat cutloss: masuk BS atau dibuang",
+  help="Peran di daftar ini boleh memilih perlakuan potongan cacat saat mencatat cutloss dan memproses pemecahan roll. "
+       "Admin dan manajer selalu boleh.",
+  impact="Peran lain tetap bisa mencatat qty cacat, tetapi pilihan BS/Dibuang dan tombol 'Proses potongan' ditolak.",
+  example="[md, md_quality] → MD dan MD Quality yang memutus BS atau dibuang",
+  consumers=("services/return_cutloss_split_service.py:assert_can_choose",), permission=("sales_return", "policy"), risk="low")
