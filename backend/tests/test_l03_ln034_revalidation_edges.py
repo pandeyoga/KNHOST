@@ -124,7 +124,10 @@ def test_contract_reference_options(H):
     other = {**ct, "id": cid + "_x", "contract_number": f"TEST/SCT-{TAG}-X", "product_id": PRODS[0]["id"]}
     # AUD-RND-03 — keputusan owner 2026-10-21: kontrak DIHENTIKAN boleh jadi referensi historis
     term = {**ct, "id": cid + "_t", "contract_number": f"TEST/SCT-{TAG}-T", "status": "terminated"}
-    DB.supplier_contracts.insert_many([dict(ct), dict(other), dict(term)])
+    # keputusan owner 2026-10-21 (lanjutan): kedaluwarsa & batal juga boleh jadi referensi
+    exp = {**ct, "id": cid + "_e", "contract_number": f"TEST/SCT-{TAG}-E", "status": "expired"}
+    can = {**ct, "id": cid + "_c", "contract_number": f"TEST/SCT-{TAG}-C", "status": "cancelled"}
+    DB.supplier_contracts.insert_many([dict(ct), dict(other), dict(term), dict(exp), dict(can)])
     try:
         r = _create(H, SUPS[1], pid=PRODS[1]["id"])
         assert r.status_code in (200, 201), r.text
@@ -134,7 +137,8 @@ def test_contract_reference_options(H):
         ids = [c["id"] for c in opts.json()["items"]]
         assert cid in ids and other["id"] not in ids
         assert term["id"] in ids, "kontrak dihentikan harus tampil sebagai pilihan referensi"
-        assert {c["id"]: c["status"] for c in opts.json()["items"]}[term["id"]] == "terminated"
+        st = {c["id"]: c["status"] for c in opts.json()["items"]}
+        assert st[term["id"]] == "terminated" and st[exp["id"]] == "expired" and st[can["id"]] == "cancelled"
         assert requests.get(f"{BASE}/rnd/samples/{sid}/contract-options", headers=H["sales"]).status_code == 403
         _assessed(sid, SUPS[1], "acc")
         assert _post(H, f"/rnd/samples/{sid}/decide", {"result": "pass", "contract_id": other["id"]}, who="md").status_code == 400
@@ -145,4 +149,4 @@ def test_contract_reference_options(H):
         after = DB.supplier_contracts.find_one({"id": cid}, {"_id": 0})
         assert after == ct
     finally:
-        DB.supplier_contracts.delete_many({"id": {"$in": [cid, other["id"], term["id"]]}})
+        DB.supplier_contracts.delete_many({"id": {"$in": [cid, other["id"], term["id"], exp["id"], can["id"]]}})

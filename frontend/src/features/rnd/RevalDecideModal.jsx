@@ -7,6 +7,8 @@ import { Field, Footer, Hint } from "./RndField";
 import { revalContractOptions } from "./rndApi";
 
 const TYPE = { purchase: "pembelian", makloon: "makloon" };
+// AUD-RND-03 — keputusan owner 2026-10-21: kontrak tidak aktif boleh jadi referensi historis (diberi label).
+const HISTORIC = { terminated: "dihentikan", expired: "kedaluwarsa", cancelled: "batal" };
 
 function ContractField({ sampleId, value, onChange }) {
   const [rows, setRows] = useState([]);
@@ -17,7 +19,7 @@ function ContractField({ sampleId, value, onChange }) {
     <Field label="Referensi kontrak existing (opsional — hanya dicatat, isi kontrak tidak diubah)">
       <KNSelect data-testid="reval-contract-select" className="field" value={value} searchable
         options={[{ value: "", label: rows.length ? "— tanpa referensi kontrak —" : "— tidak ada kontrak supplier ini —" },
-          ...rows.map((c) => ({ value: c.id, label: `${c.contract_number} · ${TYPE[c.contract_type] || c.contract_type}${c.product_id ? "" : " · umum"}${c.valid_to ? ` · s.d. ${c.valid_to}` : ""}${c.status === "terminated" ? " · dihentikan (referensi historis)" : ""}` }))]}
+          ...rows.map((c) => ({ value: c.id, label: `${c.contract_number} · ${TYPE[c.contract_type] || c.contract_type}${c.product_id ? "" : " · umum"}${c.valid_to ? ` · s.d. ${c.valid_to}` : ""}${HISTORIC[c.status] ? ` · ${HISTORIC[c.status]} (referensi historis)` : ""}` }))]}
         onValueChange={onChange} />
     </Field>
   );
