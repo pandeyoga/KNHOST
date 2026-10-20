@@ -156,7 +156,9 @@ def test_override_keeps_fail_and_contract_ref_validated(H):
 
 def test_t01_proofing_uses_existing_approved_artwork(H):
     src = DB.design_gallery.find_one({"id": {"$not": {"$regex": "^dsgn_TEST_"}}}, {"_id": 0})
-    design = {**src, "id": f"dsgn_TEST_{TAG}", "code": f"T34-{TAG}", "status": "on_hold_test", "on_hold": True, "version": 3}
+    # AUD-RND-02 — versi 3 benar-benar ada & di-ACC (fixture lama mengklaim versi 3 tanpa riwayatnya)
+    design = {**src, "id": f"dsgn_TEST_{TAG}", "code": f"T34-{TAG}", "status": "on_hold_test", "on_hold": True, "version": 3,
+              "versions": [{"version": 1, "acc": True}, {"version": 2}, {"version": 3, "acc": True}], "approved_version": 3}
     DB.design_gallery.insert_one(dict(design))
     DB.md_specs.insert_one({"id": SPEC_TEST, "product_id": PROD["id"], "design_id": design["id"], "design_version": design.get("version") or 1,
                             "created_at": "2099-01-01T00:00:00", "status": "approved", "title": f"TEST_{TAG}"})

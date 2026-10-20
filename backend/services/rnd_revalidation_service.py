@@ -46,11 +46,33 @@ async def existing_artwork(body: Dict[str, Any], pid: str) -> Dict[str, Any]:
     did = (body.get("design_id") or spec.get("design_id") or "").strip()
     if not did:
         raise RevalError("Proofing uji ulang butuh artwork existing yang sudah disetujui — SKU ini tidak punya artwork.")
-    d = await db.design_gallery.find_one({"id": did}, {"_id": 0, "id": 1, "status": 1, "version": 1, "on_hold": 1, "code": 1})
+    d = await db.design_gallery.find_one({"id": did}, {"_id": 0, "id": 1, "status": 1, "version": 1, "on_hold": 1, "code": 1,
+                                                       "versions": 1, "approved_version": 1})
     if not d or d.get("status") not in DESIGN_OK or d.get("on_hold"):
         raise RevalError("Artwork acuan belum disetujui atau sedang HOLD — proofing uji ulang hanya memakai artwork ACC.")
-    ver = int(body.get("design_version") or spec.get("design_version") or d.get("version") or 1)
+    try:
+        ver = int(body.get("design_version") or spec.get("design_version") or d.get("approved_version") or d.get("version") or 1)
+    except (TypeError, ValueError) as exc:
+        raise RevalError("Versi artwork harus angka.") from exc
+    approved_version_of(d, ver)
     return {"design_id": did, "design_version": ver}
+
+
+def approved_version_of(d: Dict[str, Any], ver: int) -> None:
+    """AUD-RND-02 — versi artwork yang direferensikan WAJIB ada di riwayat versi desain dan sudah di-ACC
+    (penanda `acc` pada versi itu, atau `approved_version`). Desain lama tanpa penanda ACC per versi hanya
+    menerima versi yang sedang berlaku (statusnya sudah dicek ACC)."""
+    versions = {int(v.get("version") or 0): v for v in d.get("versions") or [] if v.get("version") is not None}
+    current = int(d.get("version") or 1)
+    code = d.get("code") or d.get("id")
+    if (versions and ver not in versions) or (not versions and ver != current):
+        have = ", ".join(str(v) for v in sorted(versions)) or str(current)
+        raise RevalError(f"Versi artwork {ver} tidak ada pada desain {code} (versi tersedia: {have}).")
+    marked = any(v.get("acc") for v in versions.values()) or bool(d.get("approved_version"))
+    ok = bool((versions.get(ver) or {}).get("acc")) or ver == int(d.get("approved_version") or 0) \
+        or (not marked and ver == current)
+    if not ok:
+        raise RevalError(f"Versi artwork {ver} desain {code} belum di-ACC — proofing uji ulang hanya memakai versi yang disetujui.")
 
 
 async def cycle_context(pid: str, supplier_id: str, types: List[str]) -> Dict[str, Any]:
@@ -113,6 +135,24 @@ async def contract_options(cur: Dict[str, Any]) -> List[Dict[str, Any]]:
     return rows
 
 
+def _types_of(cur: Dict[str, Any]) -> List[str]:
+    from services.rnd_sample_service import types_of   # impor lambat: rnd_sample_service memanggil modul ini
+    return types_of(cur)
+
+
+def final_rounds(cur: Dict[str, Any], sid: str) -> Dict[str, Dict[str, Any]]:
+    """Round FINAL (round_no terbesar) per jenis uji untuk supplier siklus ini — hanya round yang sudah dinilai.
+    Round tanpa `type_code` dihitung untuk jenis tunggal dokumen; bila dokumen punya >1 jenis, ia ambigu & diabaikan."""
+    types = _types_of(cur)
+    out: Dict[str, Dict[str, Any]] = {}
+    rows = [r for r in cur.get("rounds") or [] if r.get("supplier_id") == sid and r.get("result")]
+    for r in sorted(rows, key=lambda r: (r.get("round_no") or 0, r.get("assessed_at") or "")):
+        t = (r.get("type_code") or "").strip().lower() or (types[0] if len(types) == 1 else "")
+        if t:
+            out[t] = r
+    return out
+
+
 async def decide(cur: Dict[str, Any], payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
     """Hasil teknis uji ulang: pass → selesai; fail → Menunggu keputusan PIC. Tanpa harga, tanpa kontrak baru."""
     rv = cur.get("revalidation") or {}
@@ -122,19 +162,32 @@ async def decide(cur: Dict[str, Any], payload: Dict[str, Any], actor: Dict[str, 
         raise RevalError("Pilih hasil teknis uji ulang: lulus atau gagal.")
     if payload.get("supplier_id") and rv.get("supplier_id") and payload["supplier_id"] != rv["supplier_id"]:
         raise RevalError("Hasil uji ulang hanya untuk supplier siklus ini — supplier lain dibuat siklus terpisah.")
-    rounds = [r for r in cur.get("rounds") or [] if r.get("supplier_id") == sid and r.get("result")]
     note = (payload.get("note") or "").strip()
-    if result == "pass" and not any(r.get("result") == "acc" for r in rounds):
-        raise RevalError("Belum ada round ACC dari supplier ini — tidak bisa dinyatakan lulus.")
+    # AUD-RND-01 — dasar keputusan = round FINAL per jenis uji (bukan "ada round ACC di mana pun" + round terakhir).
+    types = _types_of(cur)
+    finals = final_rounds(cur, sid)
+    basis = [finals[t] for t in types if t in finals] or [r for t, r in finals.items()]
+    if result == "pass":
+        missing = [t for t in types if t not in finals]
+        if not types or missing:
+            raise RevalError("Belum semua jenis uji punya round yang dinilai"
+                             + (f": {', '.join(missing)}" if missing else "") + " — tidak bisa dinyatakan lulus.")
+        not_acc = [f"{t} ({finals[t].get('result')})" for t in types if finals[t].get("result") != "acc"]
+        if not_acc:
+            raise RevalError("Tidak bisa dinyatakan lulus — round terakhir per jenis uji belum ACC: "
+                             + ", ".join(not_acc) + ".")
     if result == "fail" and len(note) < 5:
         raise RevalError("Tulis alasan/temuan kegagalan (min. 5 karakter) — dibaca PIC saat memutus tindak lanjut.")
     contract_ref = await _validate_contract_ref(payload["contract_id"], cur, sid) if payload.get("contract_id") else {}
-    last = rounds[-1] if rounds else {}
+    last = max(basis, key=lambda r: (r.get("round_no") or 0, r.get("assessed_at") or "")) if basis else {}
     name = actor.get("name", "")
     decision = {"result": result, "result_label": "Lulus" if result == "pass" else "Gagal",
                 "supplier_id": sid, "supplier_name": rv.get("supplier_name", ""), "note": note,
                 "reason_code": payload.get("reason_code") or "", "decided_by": name, "decided_at": now_iso(),
                 "round_id": last.get("id", ""), "round_no": last.get("round_no"), "score": last.get("score"),
+                "basis_rounds": [{"type": t, "round_id": finals[t].get("id", ""), "round_no": finals[t].get("round_no"),
+                                  "result": finals[t].get("result"), "score": finals[t].get("score")}
+                                 for t in types if t in finals],
                 "cycle_no": rv.get("cycle_no"), "reference": rv.get("reference"), "types": cur.get("sample_types") or [],
                 "product_id": cur.get("product_id", ""), "product_sku": cur.get("product_sku", ""),
                 "design_id": cur.get("design_id", ""), "design_version": cur.get("design_version"),
