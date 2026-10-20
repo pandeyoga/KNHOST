@@ -6,7 +6,14 @@ Tahap 2 (pemilik = PT penjual internal, mis. CST): `keep`, `supplier_return` (se
 retur supplier belum lewat) atau `dispose` (BS dibuang dengan foto bukti + jurnal write-off).
 Masa retur supplier lewat → otomatis `keep`, status roll TIDAK diubah (QC/grade/hold tetap berlaku).
 Klaim atomik per roll → retry/klik ganda tidak melipatgandakan dokumen.
+
+AUD-RET-01 — buang BS dapat DILANJUTKAN sesudah gangguan: qty & nilai per roll dikunci saat klaim
+(`disposition.supplier.plan`), langkah per roll idempoten (jurnal per roll, perubahan roll bersyarat
+`disposal_key`, pergerakan sekali, rebuild saldo). Bila gangguan terjadi sesudah sebagian tersimpan, jejak
+operasi TIDAK dihapus: klaim ditandai `failed` (tahap `supplier_dispose_failed`) dan retry keputusan buang
+yang sama melanjutkan sisa langkah tanpa jurnal/pengurangan stok ganda.
 """
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 from core_utils import new_id, now_iso, rupiah, timeline_entry
@@ -21,6 +28,7 @@ STAGE1 = {"keep": "Simpan di pemilik sekarang", "return_internal": "Kembalikan k
 STAGE2 = {"keep": "Simpan sebagai stok", "supplier_return": "Retur ke supplier", "dispose": "Buang (BS) dengan bukti"}
 GONE = ("consumed", "returned_supplier", "damaged", "sold")
 UNSELLABLE_GRADES = ("BS",)
+DISPOSE_LEASE_MIN = 10   # klaim buang "processing" lebih tua dari ini = proses mati → boleh dilanjutkan
 
 
 class DispositionError(ValueError):
@@ -38,8 +46,19 @@ async def _rolls(return_id: str, roll_ids: List[str] = None) -> List[Dict[str, A
     return await db.inventory_rolls.find(q, {"_id": 0}).to_list(1000)
 
 
+def _dispose_resumable(sup: Dict[str, Any]) -> bool:
+    if sup.get("decision") != "dispose":
+        return False
+    if sup.get("status") == "failed":
+        return True
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=DISPOSE_LEASE_MIN)).isoformat()
+    return sup.get("status") == "processing" and (sup.get("at") or "") < cutoff
+
+
 def _stage(r: Dict[str, Any], origin: Dict[str, Any]) -> str:
     disp = r.get("disposition") or {}
+    if _dispose_resumable(disp.get("supplier") or {}):
+        return "supplier_dispose_failed"     # AUD-RET-01 — buang BS terhenti di tengah; lanjutkan
     if r.get("status") in GONE:
         return "closed"
     if not origin:
@@ -210,24 +229,41 @@ async def decide_internal(ret: Dict[str, Any], roll_ids: List[str], decision: st
     return {"decision": decision, "rolls": len(roll_ids), "interco_returns": created}
 
 
+def _dispose_key(ret: Dict[str, Any], roll_id: str) -> str:
+    return f"dispose:{ret['id']}:{roll_id}"
+
+
+def _dispose_plan(r: Dict[str, Any]) -> Dict[str, float]:
+    qty = float(r.get("length_remaining") or 0)
+    return {"qty": qty, "amount": round(qty * float(r.get("unit_cost") or r.get("base_unit_cost") or 0), 2)}
+
+
 async def _dispose(ret: Dict[str, Any], rolls: List[Dict[str, Any]], reason: str, actor: str) -> float:
+    """AUD-RET-01 — tiap langkah idempoten per roll; qty/nilai dari rencana yang dikunci saat klaim."""
     total = 0.0
     combos = set()
     for r in rolls:
-        qty = float(r.get("length_remaining") or 0)
-        amount = round(qty * float(r.get("unit_cost") or r.get("base_unit_cost") or 0), 2)
+        plan = ((r.get("disposition") or {}).get("supplier") or {}).get("plan") or _dispose_plan(r)
+        qty, amount = float(plan["qty"]), float(plan["amount"])
+        dkey = _dispose_key(ret, r["id"])
         je = await gl_service.post_inventory_writeoff(roll_id=r["id"], entity_id=r.get("owner_entity_id", ""),
                                                        amount=amount, reason=f"BS dibuang · {reason}",
                                                        label=f"{r.get('roll_no') or r['id']} (retur {ret.get('number', '')})")
-        await db.inventory_rolls.update_one({"id": r["id"]}, {"$set": {
+        if not je:   # sudah diposting pada percobaan sebelumnya (idempoten per roll)
+            je = await db.journal_entries.find_one({"source_type": "inventory_writeoff", "source_id": r["id"],
+                                                    "status": {"$ne": "void"}}, {"_id": 0, "id": 1})
+        await db.inventory_rolls.update_one({"id": r["id"], "disposal_key": {"$ne": dkey}}, {"$set": {
             "status": "damaged", "length_remaining": 0, "disposed_qty": qty, "disposed_at": now_iso(),
-            "writeoff_amount": amount, "writeoff_je_id": (je or {}).get("id", ""), "updated_at": now_iso()}})
-        await db.inventory_movements.insert_one({
-            "id": new_id("mov"), "product_id": r["product_id"], "warehouse_id": r.get("warehouse_id", ""),
-            "owner_entity_id": r.get("owner_entity_id", ""), "type": "return_disposal", "movement_type": "return_disposal",
-            "direction": "out", "quantity": round(qty, 2), "unit": r.get("unit", ""), "roll_id": r["id"], "qty_rolls": 1,
-            "ref_type": "sales_return", "ref_id": ret["id"], "source_document": ret["id"], "timestamp": now_iso(),
-            "notes": f"BS dibuang (retur {ret.get('number', '')}) · {reason} · write-off {rupiah(amount)}"})
+            "writeoff_amount": amount, "writeoff_je_id": (je or {}).get("id", ""), "disposal_key": dkey,
+            "updated_at": now_iso()}})
+        if not await db.inventory_movements.find_one({"roll_id": r["id"], "movement_type": "return_disposal",
+                                                      "ref_id": ret["id"]}, {"_id": 1}):
+            await db.inventory_movements.insert_one({
+                "id": new_id("mov"), "product_id": r["product_id"], "warehouse_id": r.get("warehouse_id", ""),
+                "owner_entity_id": r.get("owner_entity_id", ""), "type": "return_disposal", "movement_type": "return_disposal",
+                "direction": "out", "quantity": round(qty, 2), "unit": r.get("unit", ""), "roll_id": r["id"], "qty_rolls": 1,
+                "ref_type": "sales_return", "ref_id": ret["id"], "source_document": ret["id"], "timestamp": now_iso(),
+                "notes": f"BS dibuang (retur {ret.get('number', '')}) · {reason} · write-off {rupiah(amount)}"})
         combos.add((r["product_id"], r.get("warehouse_id", ""), r.get("owner_entity_id", "")))
         total += amount
     for pid, wid, eid in combos:
@@ -235,10 +271,61 @@ async def _dispose(ret: Dict[str, Any], rolls: List[Dict[str, Any]], reason: str
     return round(total, 2)
 
 
+async def _dispose_started(ret: Dict[str, Any], roll_ids: List[str]) -> bool:
+    """Sudah ada bagian buang BS yang tersimpan (jurnal / roll / pergerakan)? Bila ya, jejak tidak boleh dihapus."""
+    if await db.journal_entries.find_one({"source_type": "inventory_writeoff", "source_id": {"$in": roll_ids},
+                                          "status": {"$ne": "void"}}, {"_id": 1}):
+        return True
+    if await db.inventory_rolls.find_one({"id": {"$in": roll_ids},
+                                          "disposal_key": {"$in": [_dispose_key(ret, r) for r in roll_ids]}}, {"_id": 1}):
+        return True
+    return bool(await db.inventory_movements.find_one({"roll_id": {"$in": roll_ids}, "movement_type": "return_disposal",
+                                                       "ref_id": ret["id"]}, {"_id": 1}))
+
+
+async def _mark_failed(roll_ids: List[str], error: str) -> None:
+    await db.inventory_rolls.update_many({"id": {"$in": roll_ids}, "disposition.supplier.decision": "dispose"},
+                                         {"$set": {"disposition.supplier.status": "failed",
+                                                   "disposition.supplier.error": str(error)[:300],
+                                                   "disposition.supplier.failed_at": now_iso()}})
+
+
+async def _resume_dispose(ret: Dict[str, Any], roll_ids: List[str], actor: str) -> Dict[str, Any]:
+    """Lanjutkan buang BS yang terhenti: ambil alih klaim (failed / processing kedaluwarsa) secara atomik per roll,
+    lalu jalankan langkah idempoten yang sama. Alasan & foto bukti memakai keputusan awal."""
+    await _pick(ret, roll_ids, "supplier_dispose_failed")
+    rolls = await _rolls(ret["id"], roll_ids)
+    taken: List[str] = []
+    for r in rolls:
+        sup = (r.get("disposition") or {}).get("supplier") or {}
+        res = await db.inventory_rolls.update_one(
+            {"id": r["id"], "disposition.supplier.decision": "dispose", "disposition.supplier.status": sup.get("status"),
+             "disposition.supplier.at": sup.get("at")},
+            {"$set": {"disposition.supplier.status": "processing", "disposition.supplier.at": now_iso(),
+                      "disposition.supplier.resumed_by": actor}})
+        if not res.modified_count:
+            await _mark_failed(taken, "ambil alih dibatalkan")
+            raise DispositionError("Sebagian roll sedang dilanjutkan pengguna lain — muat ulang halaman.")
+        taken.append(r["id"])
+    reason = (((rolls[0].get("disposition") or {}).get("supplier") or {}).get("reason") or "").strip()
+    try:
+        total = await _dispose(ret, await _rolls(ret["id"], roll_ids), reason, actor)
+    except Exception as exc:
+        await _mark_failed(roll_ids, str(exc))
+        raise
+    await _finish(roll_ids, "supplier", {"writeoff_total": total})
+    await _log(ret, "Buang BS dilanjutkan", actor, f"{len(roll_ids)} roll BS dibuang · write-off {rupiah(total)}")
+    return {"decision": "dispose", "rolls": len(roll_ids), "writeoff_total": total, "resumed": True}
+
+
 async def decide_supplier(ret: Dict[str, Any], roll_ids: List[str], decision: str, reason: str,
                           attachment_ids: List[str], actor: str) -> Dict[str, Any]:
     if decision not in STAGE2:
         raise DispositionError("Keputusan tahap 2 tidak dikenal.")
+    if decision == "dispose" and roll_ids:
+        stages = {x["roll_id"]: x["stage"] for x in (await view(ret))["rows"]}
+        if all(stages.get(r) == "supplier_dispose_failed" for r in roll_ids):
+            return await _resume_dispose(ret, roll_ids, actor)
     if len((reason or "").strip()) < 5:
         raise DispositionError("Alasan wajib diisi (minimal 5 huruf).")
     picked = await _pick(ret, roll_ids, "supplier_pending")
@@ -251,7 +338,10 @@ async def decide_supplier(ret: Dict[str, Any], roll_ids: List[str], decision: st
             raise DispositionError("Buang BS wajib melampirkan minimal satu foto bukti.")
     entry = {"decision": decision, "status": "processing", "reason": reason.strip(), "by": actor, "at": now_iso(),
              "attachment_ids": list(attachment_ids or [])}
-    await _claim(roll_ids, "supplier", entry)
+    if decision == "dispose":   # AUD-RET-01 — rencana qty/nilai per roll dikunci bersama klaim (CAS qty)
+        await _claim_dispose(ret, roll_ids, entry)
+    else:
+        await _claim(roll_ids, "supplier", entry)
     out: Dict[str, Any] = {"decision": decision, "rolls": len(roll_ids)}
     try:
         if decision == "supplier_return":
@@ -268,11 +358,28 @@ async def decide_supplier(ret: Dict[str, Any], roll_ids: List[str], decision: st
         else:
             await _finish(roll_ids, "supplier", {})
             note = f"{len(roll_ids)} roll disimpan {picked[0]['owner_name']} (status QC/grade tidak diubah)"
-    except Exception:
-        await _release(roll_ids, "supplier")
+    except Exception as exc:
+        if decision == "dispose" and await _dispose_started(ret, roll_ids):
+            await _mark_failed(roll_ids, str(exc))   # sebagian sudah tersimpan → jejak dipertahankan, retry melanjutkan
+        else:
+            await _release(roll_ids, "supplier")
         raise
     await _log(ret, f"Keputusan {STAGE2[decision].lower()}", actor, note)
     return out
+
+
+async def _claim_dispose(ret: Dict[str, Any], roll_ids: List[str], entry: Dict[str, Any]) -> None:
+    done: List[str] = []
+    for r in await _rolls(ret["id"], roll_ids):
+        plan = _dispose_plan(r)
+        res = await db.inventory_rolls.update_one(
+            {"id": r["id"], "disposition.supplier": {"$exists": False}, "length_remaining": r.get("length_remaining"),
+             "status": {"$nin": list(GONE)}},
+            {"$set": {"disposition.supplier": {**entry, "plan": plan}}})
+        if not res.modified_count:
+            await _release(done, "supplier")
+            raise DispositionError("Sebagian roll sudah diputuskan atau berubah — muat ulang halaman.")
+        done.append(r["id"])
 
 
 _AWAIT_SUPPLIER = {"origin_type": "return", "disposition.internal.decision": "return_internal",

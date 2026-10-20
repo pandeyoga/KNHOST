@@ -12,6 +12,7 @@ const STAGE = {
   supplier_keep: ["Disimpan sebagai stok", "#1B7F4B"],
   supplier_supplier_return: ["Retur ke supplier", "#0058CC"],
   supplier_dispose: ["BS dibuang", "#C62828"],
+  supplier_dispose_failed: ["Buang BS terhenti — lanjutkan", "#C62828"],
   closed: ["Selesai", "#6B6B73"],
   no_internal_origin: ["Bukan dari PT internal", "#8E8E93"],
   other_owner: ["Pemilik lain", "#8E8E93"],
@@ -20,7 +21,7 @@ const errText = (e) => e.response?.data?.detail?.message || e.response?.data?.de
 
 export function DispositionRow({ r, checked, onToggle }) {
   const [label, color] = STAGE[r.stage] || [r.stage, "#6B6B73"];
-  const actionable = r.stage === "internal_pending" || r.stage === "supplier_pending";
+  const actionable = ["internal_pending", "supplier_pending", "supplier_dispose_failed"].includes(r.stage);
   return (
     <tr data-testid={`disposition-row-${r.roll_id}`}>
       <td className="px-2 py-1.5">{actionable && <input type="checkbox" data-testid={`disposition-check-${r.roll_id}`} checked={checked} onChange={onToggle} />}</td>
@@ -35,7 +36,9 @@ export function DispositionRow({ r, checked, onToggle }) {
         data-testid={`disposition-stage-${r.roll_id}`}>{label}</span>
         {(r.internal?.interco_return_number || r.supplier?.purchase_return_numbers) && (
           <span className="block text-[10px] font-mono text-[#6E6E73]">{r.internal?.interco_return_number}{r.supplier?.purchase_return_numbers ? ` ${r.supplier.purchase_return_numbers}` : ""}</span>)}
-        {r.supplier?.auto && <span className="block text-[10px] text-[#6E6E73]">otomatis: masa supplier lewat</span>}</td>
+        {r.supplier?.auto && <span className="block text-[10px] text-[#6E6E73]">otomatis: masa supplier lewat</span>}
+        {r.stage === "supplier_dispose_failed" && r.supplier?.error && (
+          <span className="block text-[10px] text-[#C62828]" data-testid={`disposition-error-${r.roll_id}`}>Terhenti: {r.supplier.error}</span>)}</td>
     </tr>
   );
 }
@@ -60,6 +63,19 @@ export function DispositionActionBar({ returnId, imgs, stage, sel, rows, onDone,
     <button type="button" data-testid={testid} disabled={busy || disabled || !sel.length} onClick={() => go(decision)}
       className="secondary-button !py-1 text-[11.5px] disabled:opacity-40">{label}</button>
   );
+  if (stage === "supplier_dispose_failed") {
+    // AUD-RET-01 — buang BS terhenti di tengah: lanjutkan langkah yang tertinggal (alasan & foto memakai keputusan awal)
+    return (
+      <div className="mt-2 space-y-2 rounded-lg border border-[#F5C2C0] bg-[#FFF7F7] p-2.5" data-testid="disposition-actions">
+        <p className="text-[11px] text-[#6E6E73]">Buang BS sebelumnya terhenti di tengah. Melanjutkan hanya menyelesaikan langkah yang tertinggal — jurnal & stok tidak dihitung dua kali.</p>
+        <div className="flex items-center gap-2">
+          {btn("dispose", "Lanjutkan buang BS", "disposition-dispose-resume")}
+          {busy && <Loader2 size={13} className="spin" />}
+        </div>
+        {msg && <p className="text-[11px]" data-testid="disposition-msg">{msg}</p>}
+      </div>
+    );
+  }
   return (
     <div className="mt-2 space-y-2 rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] p-2.5" data-testid="disposition-actions">
       <input data-testid="disposition-reason" className="field w-full text-xs" placeholder="Alasan keputusan (min. 5 huruf)" value={reason} onChange={(e) => setReason(e.target.value)} />
