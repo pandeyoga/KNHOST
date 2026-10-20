@@ -8,6 +8,8 @@ Hilang / roll asing mengikuti SOP OPS-01 (hitung ulang → ACC); tanpa batas nil
 """
 from __future__ import annotations
 
+import hashlib
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
@@ -164,10 +166,128 @@ async def _movement(roll: Dict[str, Any], qty: float, mtype: str, ref: str, extr
         "unit_cost": float(roll.get("unit_cost") or roll.get("base_unit_cost") or 0), "timestamp": now_iso(), **extra})
 
 
-async def apply_scan(session: Dict[str, Any], scan: Dict[str, Any], kinds: List[str], actor: str) -> Dict[str, Any]:
-    """Satu baris scan → koreksi alamat dan/atau qty (CAS terhadap saldo live saat scan). Idempoten per baris."""
+# ─── AUD-WMS-01 — catatan operasi bertahap per baris (tahan restart, idempoten) ──────────────────────────────
+# Urutan: (1) catatan operasi `roll_count.ops.<kunci>` ditulis di sesi (token, lease, snapshot roll, syarat CAS,
+# perubahan, rencana pergerakan & jurnal) → (2) roll diubah lewat CAS SEKALIGUS diberi penanda `count_op` = token →
+# (3) pergerakan, jurnal, saldo agregat → (4) operasi ditandai selesai & penanda dicabut. Retry sesudah gangguan di
+# batas mana pun membaca catatan itu: roll yang membawa token SENDIRI = perubahan milik sendiri → lanjutkan (3)–(4);
+# roll tanpa token → CAS dicoba dengan syarat yang sama (gagal = roll diubah transaksi lain → recount). Lease
+# memastikan hanya satu pemroses yang melanjutkan; lease dilepas saat error dan kedaluwarsa bila proses mati.
+OPS = "roll_count.ops"
+LEASE_TTL = 120   # detik
+BUSY = "Baris ini sedang diproses pemroses lain (atau proses sebelumnya terhenti < 2 menit lalu) — finalisasi lagi sebentar lagi."
+
+
+def _cutoff(seconds: int) -> str:
+    return (datetime.now(timezone.utc) - timedelta(seconds=seconds)).isoformat()
+
+
+async def _movement_once(roll: Dict[str, Any], qty: float, mtype: str, ref: str, extra: Dict[str, Any]) -> None:
+    """Pergerakan sekali per (ref, jenis, roll) — aman diulang saat melanjutkan operasi yang terputus."""
+    if not await db.inventory_movements.find_one({"source_document": ref, "movement_type": mtype, "roll_id": roll["id"]},
+                                                 {"_id": 1}):
+        await _movement(roll, qty, mtype, ref, extra)
+
+
+async def _cas_op(op: Dict[str, Any]) -> bool:
+    cas = {"id": op["roll"]["id"], **op["cas"], "status": {"$in": PHYSICAL_ROLL_STATUSES}}
+    res = await db.inventory_rolls.update_one(cas, {"$set": {**op["upd"], "count_op": op["token"]}})
+    return res.modified_count == 1
+
+
+async def _owned(op: Dict[str, Any]) -> bool:
+    return bool(await db.inventory_rolls.find_one({"id": op["roll"]["id"], "count_op": op["token"]}, {"_id": 1}))
+
+
+async def _take_lease(session_id: str, key: str, op: Dict[str, Any]) -> Optional[str]:
+    lid, path = new_id("lse"), f"{OPS}.{key}"
+    res = await db.cycle_count_sessions.update_one(
+        {"id": session_id, f"{path}.token": op["token"], f"{path}.status": "pending",
+         "$or": [{f"{path}.lease": None}, {f"{path}.lease.at": {"$lt": _cutoff(LEASE_TTL)}}]},
+        {"$set": {f"{path}.lease": {"id": lid, "at": now_iso()}}})
+    return lid if res.modified_count == 1 else None
+
+
+async def _drop_lease(session_id: str, key: str, lid: str) -> None:
+    await db.cycle_count_sessions.update_one({"id": session_id, f"{OPS}.{key}.lease.id": lid},
+                                             {"$set": {f"{OPS}.{key}.lease": None}})
+
+
+async def _drop_op(session_id: str, key: str, token: str) -> None:
+    await db.cycle_count_sessions.update_one({"id": session_id, f"{OPS}.{key}.token": token}, {"$unset": {f"{OPS}.{key}": ""}})
+
+
+async def _finish_op(session: Dict[str, Any], key: str, op: Dict[str, Any]) -> Dict[str, Any]:
+    """Langkah SESUDAH roll berubah. Tiap langkah idempoten: pergerakan dicek per ref, jurnal idempoten per
+    source_id, rebuild saldo selalu aman — jadi dapat diulang sampai tuntas."""
     from services import gl_service as gl
+    ref, roll, out = op["ref"], op["roll"], dict(op["result"])
+    for m in op.get("movements") or []:
+        await _movement_once(roll, float(m["qty"]), m["type"], ref, m.get("extra") or {})
+    jr = op.get("journal")
+    if jr:
+        je = await gl.post_cycle_count_variance(source_id=ref, entity_id=roll.get("owner_entity_id", ""),
+                                                amount_signed=float(jr["amount_signed"]), label=jr.get("label") or ref)
+        if not je:   # sudah diposting pada percobaan sebelumnya (atau nilainya nol)
+            je = await db.journal_entries.find_one({"source_type": "cycle_count_variance", "source_id": ref,
+                                                    "status": {"$ne": "void"}}, {"_id": 0, "id": 1})
+        out["journal_id"] = (je or {}).get("id")
+    if op.get("rebuild"):
+        await rebuild_balance(roll["product_id"], roll["warehouse_id"], roll.get("owner_entity_id", ""))
+    await db.cycle_count_sessions.update_one({"id": session["id"], f"{OPS}.{key}.token": op["token"]},
+                                             {"$set": {f"{OPS}.{key}.status": "done", f"{OPS}.{key}.result": out,
+                                                       f"{OPS}.{key}.lease": None, f"{OPS}.{key}.done_at": now_iso()}})
+    await db.inventory_rolls.update_one({"id": roll["id"], "count_op": op["token"]}, {"$unset": {"count_op": ""}})
+    return out
+
+
+async def _drive(session: Dict[str, Any], key: str, op: Dict[str, Any], lid: str, conflict: str) -> Dict[str, Any]:
+    """Pemegang lease: pastikan roll berubah TEPAT sekali, lalu tuntaskan sisa langkah."""
+    try:
+        if not await _owned(op) and not await _cas_op(op):
+            await _drop_op(session["id"], key, op["token"])
+            return {"status": "recount", "message": conflict, "at": now_iso()}
+        return await _finish_op(session, key, op)
+    except Exception:
+        await _drop_lease(session["id"], key, lid)
+        raise
+
+
+async def _resume_op(session: Dict[str, Any], key: str, conflict: str) -> Optional[Dict[str, Any]]:
+    """Hasil operasi milik sendiri (selesai/dilanjutkan) — None bila tidak ada catatan untuk baris ini."""
+    sess = await db.cycle_count_sessions.find_one({"id": session["id"]}, {"_id": 0, f"{OPS}.{key}": 1}) or {}
+    op = ((sess.get("roll_count") or {}).get("ops") or {}).get(key)
+    if not op:
+        return None
+    if op.get("status") == "done":
+        await db.inventory_rolls.update_one({"id": op["roll"]["id"], "count_op": op["token"]}, {"$unset": {"count_op": ""}})
+        return op["result"]
+    lid = await _take_lease(session["id"], key, op)
+    if not lid:
+        return {"status": "recount", "message": BUSY, "at": now_iso()}
+    return await _drive(session, key, op, lid, conflict)
+
+
+async def _apply_op(session: Dict[str, Any], key: str, cas_fields: Dict[str, Any], upd: Dict[str, Any],
+                    op: Dict[str, Any], conflict: str) -> Dict[str, Any]:
+    lid = new_id("lse")
+    op = {**op, "cas": cas_fields, "upd": upd, "token": new_id("cop"), "status": "pending", "at": now_iso(),
+          "lease": {"id": lid, "at": now_iso()}}
+    res = await db.cycle_count_sessions.update_one({"id": session["id"], f"{OPS}.{key}": {"$exists": False}},
+                                                   {"$set": {f"{OPS}.{key}": op}})
+    if res.modified_count != 1:
+        return {"status": "recount", "message": BUSY, "at": now_iso()}
+    return await _drive(session, key, op, lid, conflict)
+
+
+async def apply_scan(session: Dict[str, Any], scan: Dict[str, Any], kinds: List[str], actor: str) -> Dict[str, Any]:
+    """Satu baris scan → koreksi alamat dan/atau qty (CAS terhadap saldo live saat scan). Idempoten per baris;
+    AUD-WMS-01: gangguan sesudah roll berubah dilanjutkan oleh retry (lihat catatan operasi di atas)."""
     ref = f"{session['id']}:roll:{scan['roll_id']}"
+    key = f"scan_{scan['roll_id']}"
+    resumed = await _resume_op(session, key, "Roll berubah sesudah discan — hitung ulang roll ini.")
+    if resumed is not None:
+        return resumed
     if "foreign" in kinds and not scan.get("live_warehouse_id"):
         return {"status": "exception", "message": "Roll milik badan usaha di luar akses Anda — serahkan ke penyetuju yang berwenang.", "at": now_iso()}
     cas = {"id": scan["roll_id"], "length_remaining": scan["live_qty"], "bin_id": scan["live_bin_id"],
@@ -186,37 +306,41 @@ async def apply_scan(session: Dict[str, Any], scan: Dict[str, Any], kinds: List[
     roll = {k: v for k, v in roll.items() if k in ROLL_FIELDS}
     upd: Dict[str, Any] = {"updated_at": now_iso()}
     out: Dict[str, Any] = {"status": "applied", "at": now_iso(), "by": actor}
+    movements: List[Dict[str, Any]] = []
     if "wrong_address" in kinds:
         b = next((x for x in flatten_bins(await db.warehouses.find_one({"id": roll["warehouse_id"]}, {"_id": 0}) or {})
                   if x["bin_id"] == scan["bin_id"]), None)
         upd.update({"bin_id": scan["bin_id"], "bin_code": (b or {}).get("code", "")})
         out["relocated"] = {"from": roll.get("bin_id"), "to": scan["bin_id"]}
+        movements.append({"qty": 0.0, "type": "cycle_count_relocation",
+                          "extra": {"from_bin_id": roll.get("bin_id"), "to_bin_id": scan["bin_id"]}})
     diff = 0.0
     if "qty_diff" in kinds:
         diff = round(float(scan["measured_qty"]) - float(scan["live_qty"]), 4)
         upd["length_remaining"] = round(float(scan["measured_qty"]), 4)
         if upd["length_remaining"] <= EPS:
             upd["status"] = "consumed"
-    res = await db.inventory_rolls.update_one(cas, {"$set": upd})
-    if res.modified_count != 1:
-        return {"status": "recount", "message": "Roll berubah bersamaan — hitung ulang roll ini.", "at": now_iso()}
-    if "relocated" in out:
-        await _movement(roll, 0.0, "cycle_count_relocation", ref, {"from_bin_id": roll.get("bin_id"), "to_bin_id": scan["bin_id"]})
+    journal = None
     if abs(diff) > EPS:
         cost = float(roll.get("unit_cost") or roll.get("base_unit_cost") or 0)
-        await _movement(roll, diff, "cycle_count_adjustment", ref, {})
-        je = await gl.post_cycle_count_variance(source_id=ref, entity_id=roll.get("owner_entity_id", ""),
-                                                amount_signed=round(diff * cost, 2),
-                                                label=f"Opname {session.get('name', session['id'])} · {roll.get('roll_no')}")
-        out.update({"qty_diff": diff, "value": round(diff * cost, 2), "journal_id": (je or {}).get("id")})
-        await rebuild_balance(roll["product_id"], roll["warehouse_id"], roll.get("owner_entity_id", ""))
-    return out
+        out.update({"qty_diff": diff, "value": round(diff * cost, 2), "journal_id": None})
+        movements.append({"qty": diff, "type": "cycle_count_adjustment", "extra": {}})
+        journal = {"amount_signed": round(diff * cost, 2),
+                   "label": f"Opname {session.get('name', session['id'])} · {roll.get('roll_no')}"}
+    return await _apply_op(session, key, {"length_remaining": scan["live_qty"], "bin_id": scan["live_bin_id"]}, upd,
+                           {"ref": ref, "roll": roll, "movements": movements, "journal": journal,
+                            "rebuild": abs(diff) > EPS, "result": out},
+                           "Roll berubah bersamaan — hitung ulang roll ini.")
 
 
 async def write_off_missing(session: Dict[str, Any], e: Dict[str, Any], actor: str) -> Dict[str, Any]:
-    """OPS-01 — roll hilang yang SUDAH dihitung ulang → keluar stok + jurnal kerugian (sekali per roll)."""
-    from services import gl_service as gl
+    """OPS-01 — roll hilang yang SUDAH dihitung ulang → keluar stok + jurnal kerugian (sekali per roll).
+    AUD-WMS-01: memakai catatan operasi bertahap yang sama dengan `apply_scan`."""
     ref = f"{session['id']}:missing:{e['roll_id']}"
+    key = f"missing_{e['roll_id']}"
+    resumed = await _resume_op(session, key, "Roll berubah sejak snapshot — tidak dihapus, hitung ulang.")
+    if resumed is not None:
+        return resumed
     cas = {"id": e["roll_id"], "warehouse_id": session["warehouse_id"], "bin_id": e["bin_id"],
            "length_remaining": e["qty"], "status": {"$in": PHYSICAL_ROLL_STATUSES}}
     roll = await db.inventory_rolls.find_one(cas, {**ROLL_FIELDS, "length_reserved": 1, "active_movement": 1})
@@ -227,19 +351,18 @@ async def write_off_missing(session: Dict[str, Any], e: Dict[str, Any], actor: s
         return {"status": "exception", "message": "Roll hilang masih dialokasikan/dipesan atau sedang dipindah — "
                 "lepas alokasi pesanan dulu, baru dihapus.", "at": now_iso()}
     roll = {k: v for k, v in roll.items() if k in ROLL_FIELDS}
-    res = await db.inventory_rolls.update_one(cas, {"$set": {
-        "length_remaining": 0.0, "status": "consumed", "updated_at": now_iso(),
-        "lost_in_count": {"session_id": session["id"], "qty": e["qty"], "by": actor, "at": now_iso()}}})
-    if res.modified_count != 1:
-        return {"status": "recount", "message": "Roll berubah bersamaan — tidak dihapus.", "at": now_iso()}
     cost = float(roll.get("unit_cost") or roll.get("base_unit_cost") or 0)
-    await _movement(roll, -float(e["qty"]), "cycle_count_write_off", ref, {"qty_rolls": -1})
-    je = await gl.post_cycle_count_variance(source_id=ref, entity_id=roll.get("owner_entity_id", ""),
-                                            amount_signed=-round(float(e["qty"]) * cost, 2),
-                                            label=f"Opname {session.get('name', session['id'])} · hilang {roll.get('roll_no')}")
-    await rebuild_balance(roll["product_id"], roll["warehouse_id"], roll.get("owner_entity_id", ""))
-    return {"status": "applied", "written_off": e["qty"], "value": -round(float(e["qty"]) * cost, 2),
-            "journal_id": (je or {}).get("id"), "at": now_iso(), "by": actor}
+    value = -round(float(e["qty"]) * cost, 2)
+    upd = {"length_remaining": 0.0, "status": "consumed", "updated_at": now_iso(),
+           "lost_in_count": {"session_id": session["id"], "qty": e["qty"], "by": actor, "at": now_iso()}}
+    op = {"ref": ref, "roll": roll, "rebuild": True,
+          "movements": [{"qty": -float(e["qty"]), "type": "cycle_count_write_off", "extra": {"qty_rolls": -1}}],
+          "journal": {"amount_signed": value,
+                      "label": f"Opname {session.get('name', session['id'])} · hilang {roll.get('roll_no')}"},
+          "result": {"status": "applied", "written_off": e["qty"], "value": value, "journal_id": None,
+                     "at": now_iso(), "by": actor}}
+    return await _apply_op(session, key, {"warehouse_id": session["warehouse_id"], "bin_id": e["bin_id"],
+                                          "length_remaining": e["qty"]}, upd, op, "Roll berubah bersamaan — tidak dihapus.")
 
 
 async def create_found_roll(session: Dict[str, Any], scan: Dict[str, Any], spec: Dict[str, Any], actor: str,
@@ -252,13 +375,20 @@ async def create_found_roll(session: Dict[str, Any], scan: Dict[str, Any], spec:
     cost, basis = await scs.surplus_unit_cost(spec["product_id"], session["warehouse_id"], spec["owner_entity_id"])
     if cost <= 0 and not zero_cost_reason:
         return {"status": "exception", "message": "Tidak ada biaya acuan — isi alasan biaya nol.", "at": now_iso()}
+    # AUD-WMS-01 — identitas roll deterministik per (sesi, baris scan): retry sesudah gangguan (mis. jurnal gagal)
+    # mengembalikan roll yang SAMA, bukan membuat roll kedua; jurnal idempoten per source_id.
+    rid = "roll_" + hashlib.sha1(f"{session['id']}:found:{scan['id']}".encode()).hexdigest()[:12]
     roll = await create_inbound_roll(spec["product_id"], session["warehouse_id"], spec["owner_entity_id"], round(qty, 2),
-                                     bin_id=scan["bin_id"], acquired_via="cycle_count_found", ref_id=session["id"],
+                                     roll_id=rid, bin_id=scan["bin_id"], acquired_via="cycle_count_found", ref_id=session["id"],
                                      created_by=actor, unit_cost=cost, lot=f"OPN-{session['id'][-8:].upper()}",
                                      lot_source="adjustment", lot_source_ref={"type": "cycle_count_found", "session_id": session["id"], "code": scan["code"]})
     await db.inventory_rolls.update_one({"id": roll["id"]}, {"$set": {"opname_found_code": scan["code"]}})
-    je = await gl.post_cycle_count_variance(source_id=f"{session['id']}:found:{scan['id']}", entity_id=spec["owner_entity_id"],
+    src = f"{session['id']}:found:{scan['id']}"
+    je = await gl.post_cycle_count_variance(source_id=src, entity_id=spec["owner_entity_id"],
                                             amount_signed=round(qty * cost, 2),
                                             label=f"Opname {session.get('name', session['id'])} · ditemukan {scan['code']}")
+    if not je:   # sudah diposting pada percobaan sebelumnya
+        je = await db.journal_entries.find_one({"source_type": "cycle_count_variance", "source_id": src,
+                                                "status": {"$ne": "void"}}, {"_id": 0, "id": 1})
     return {"status": "applied", "new_roll_id": roll["id"], "new_roll_no": roll.get("roll_no"), "qty": qty, "unit_cost": cost,
             "cost_basis": basis, "value": round(qty * cost, 2), "journal_id": (je or {}).get("id"), "at": now_iso(), "by": actor}
