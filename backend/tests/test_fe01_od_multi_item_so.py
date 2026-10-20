@@ -55,7 +55,9 @@ def cleanup():
     for so in DB.sales_orders.find({"source_special_order_id": {"$in": OD_IDS}, "status": {"$ne": "cancelled"}}, {"_id": 0, "id": 1}):
         requests.post(f"{BASE}/sales-orders/{so['id']}/cancel", json={"reason": "TEST FE-01 bersih-bersih"}, headers=adm)
     DB.md_samples.delete_many({"special_order_id": {"$in": OD_IDS}})
-    DB.md_specs.delete_many({"special_order_id": {"$in": OD_IDS}})
+    spec_ids = [i.get("spec_id") for od in DB.special_orders.find({"id": {"$in": OD_IDS}}, {"_id": 0, "items.spec_id": 1})
+                for i in od.get("items") or [] if i.get("spec_id")]
+    DB.md_specs.delete_many({"$or": [{"special_order_id": {"$in": OD_IDS}}, {"id": {"$in": spec_ids}}]})
     DB.special_orders.delete_many({"id": {"$in": OD_IDS}})
     for pid, snap in SNAP.items():
         unset = {f: "" for f in PRODUCT_FIELDS if f not in snap}

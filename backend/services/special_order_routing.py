@@ -183,6 +183,8 @@ async def route_on_approve(od: Dict[str, Any], actor: Dict[str, Any], entity_id:
     if od.get("items"):
         links: Dict[str, Any] = {}
         for item in od["items"]:
+            if item.get("status") == "cancelled":   # FE-01 lanjutan — item batal tidak dirutekan ke desain/R&D
+                continue
             await _route_item(od, item, actor, entity_id, links)
         if links:
             links["routed_at"] = now_iso()

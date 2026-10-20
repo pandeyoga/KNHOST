@@ -96,6 +96,19 @@ def items_of(od: Dict[str, Any]) -> List[Dict[str, Any]]:
     return list(od.get("items") or [])
 
 
+# FE-01 lanjutan — keputusan owner 2026-10-21: item OD dapat dibatalkan SATU PER SATU. Item batal
+# tidak dihapus (jejak & alasannya tetap), tetapi tidak lagi ikut harga, pengadaan, ACC, maupun SO.
+ITEM_CANCELLED = "cancelled"
+
+
+def is_active_item(item: Dict[str, Any]) -> bool:
+    return (item or {}).get("status") != ITEM_CANCELLED
+
+
+def active_items(od: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return [i for i in od.get("items") or [] if is_active_item(i)]
+
+
 async def _design_of_request(req_id: str) -> Dict[str, Any]:
     req = await db.design_requests.find_one({"id": req_id}, {"_id": 0, "design_id": 1, "gallery_ids": 1}) if req_id else None
     ids = ([req.get("design_id")] if (req or {}).get("design_id") else []) + list(reversed((req or {}).get("gallery_ids") or []))

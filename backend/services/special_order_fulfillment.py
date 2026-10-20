@@ -59,12 +59,14 @@ async def _default_route(product: Dict[str, Any]) -> Dict[str, Any]:
 async def needs(od: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Kebutuhan pemenuhan: satu per item (OD multi-item) atau satu `main` (OD lama)."""
     pricing = od.get("pricing") or {}
-    items = list(od.get("items") or [])
+    all_items = list(od.get("items") or [])
+    # FE-01 lanjutan — item yang dibatalkan tidak lagi dipenuhi/dihargai.
+    items = [it for it in all_items if it.get("status") != "cancelled"]
     raw: List[Dict[str, Any]] = []
-    if items:
+    if all_items:
         for it in items:
             dec = await _item_decision(od, it["id"])
-            if not dec and len(items) == 1:
+            if not dec and len(all_items) == 1:
                 dec = {k: pricing.get(k) for k in ("product_id", "product_sku", "supplier_id", "supplier_name", "contract_number", "sample_number")}
                 dec["price"] = pricing.get("cost_price")
             raw.append({"key": it["id"], "item_id": it["id"], "line_no": it.get("line_no"), "description": it.get("description", ""),

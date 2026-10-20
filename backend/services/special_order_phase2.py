@@ -39,6 +39,8 @@ class ODConflict(ODError):
 def _od_request_types(od: Dict[str, Any]) -> List[str]:
     out = [str(t).lower() for t in od.get("request_types") or []]
     for it in od.get("items") or []:
+        if it.get("status") == "cancelled":   # FE-01 lanjutan — item batal tidak menentukan jenis uji
+            continue
         out += [str(t).lower() for t in it.get("request_types") or []]
     return list(dict.fromkeys(out))
 
@@ -277,7 +279,8 @@ PRICE_LINE_KEYS = ("key", "item_id", "line_no", "description", "product_id", "pr
 
 
 def is_multi_item(od: Dict[str, Any]) -> bool:
-    """OD ≥2 item memakai harga per item. OD lama / satu item tetap jalur header (custom_item = item itu)."""
+    """OD ≥2 item memakai harga per item. OD lama / satu item tetap jalur header (custom_item = item itu).
+    Dihitung dari SEMUA item (termasuk yang dibatalkan): membatalkan satu item tidak mengubah jalur harga OD."""
     return len(od.get("items") or []) >= MULTI_ITEM_MIN
 
 
@@ -344,7 +347,8 @@ async def item_price_lines(od: Dict[str, Any], margin: float, item_margins: Opti
             # header hanya AGREGAT rincian (bukan sumber harga kedua); qty dijumlah hanya bila satuannya sama
             "quantity": round(sum(ln["quantity"] for ln in lines), 3) if one_unit else 0.0,
             "unit": next(iter(units)) if one_unit else "",
-            "target_total": round(sum(float(i.get("subtotal") or 0) for i in od.get("items") or []), 2)}
+            "target_total": round(sum(float(i.get("subtotal") or 0) for i in od.get("items") or []
+                                      if i.get("status") != "cancelled"), 2)}
 
 
 async def _items_preview(od: Dict[str, Any], margin_pct: Optional[float], item_margins: Optional[Dict[str, Any]]) -> Dict[str, Any]:
@@ -411,6 +415,52 @@ async def _lock_items(od: Dict[str, Any], margin: Optional[float], payload: Dict
         raise ODError("Harga OD ini baru saja dikunci oleh pihak lain. Muat ulang.")
     await _sync_item_skus(od, pricing)
     return pricing
+
+
+# ─── FE-01 lanjutan — batal satu item OD ─────────────────────────────────────
+CANCEL_ITEM_BLOCKED = ("cancelled", "shipped", "done")
+
+
+def check_item_cancellable(od: Dict[str, Any], item_id: str) -> Dict[str, Any]:
+    """Aturan batal per item (keputusan owner 2026-10-21; default dipilih implementer):
+    * OD belum batal/terkirim/selesai dan BELUM dikonversi ke SO (sesudah SO → koreksi SO);
+    * item ada & masih aktif; harus tersisa ≥1 item aktif lain (semua batal = batalkan OD)."""
+    if od.get("status") in CANCEL_ITEM_BLOCKED:
+        raise ODError(f"Pesanan khusus berstatus {od.get('status')} — item tidak bisa dibatalkan.")
+    if od.get("linked_sales_order_id"):
+        raise ODConflict(f"Sudah dikonversi ke SO {od.get('linked_sales_order_number') or ''} — "
+                         "ubah item lewat koreksi/amandemen SO.")
+    items = od.get("items") or []
+    item = next((i for i in items if i.get("id") == item_id), None)
+    if not item:
+        raise ODError("Item tidak ditemukan pada Pesanan Khusus ini.")
+    if item.get("status") == "cancelled":
+        raise ODConflict("Item ini sudah dibatalkan.")
+    if not [i for i in items if i.get("id") != item_id and i.get("status") != "cancelled"]:
+        raise ODError("Ini item aktif terakhir — batalkan seluruh Pesanan Khusus, bukan per item.")
+    return item
+
+
+def after_item_cancel_sets(od: Dict[str, Any], item_id: str) -> Dict[str, Any]:
+    """Field header yang dihitung ulang sesudah satu item batal: target total, ringkasan item pertama,
+    dan rincian harga terkunci (baris item batal dibuang; harga item lain TIDAK berubah)."""
+    rest = [i for i in od.get("items") or [] if i.get("id") != item_id and i.get("status") != "cancelled"]
+    first = rest[0]
+    ci = dict(od.get("custom_item") or {})
+    ci.update({"quantity": first.get("quantity"), "unit": first.get("unit"), "target_price": first.get("target_price")})
+    sets: Dict[str, Any] = {"custom_item": ci}
+    pr = od.get("pricing") or {}
+    if pr.get("locked") and pr.get("mode") == "items":
+        lines = [ln for ln in pr.get("items") or [] if ln.get("item_id") != item_id]
+        units = {ln.get("unit") for ln in lines}
+        one_unit = len(units) == 1
+        total = round(sum(float(ln.get("total") or 0) for ln in lines), 2)
+        sets.update({"pricing.items": lines, "pricing.item_count": len(lines), "pricing.total": total,
+                     "pricing.quantity": round(sum(float(ln.get("quantity") or 0) for ln in lines), 3) if one_unit else 0.0,
+                     "pricing.unit": next(iter(units)) if one_unit else "", "total_amount": total})
+    else:
+        sets["total_amount"] = round(sum(float(i.get("subtotal") or 0) for i in rest), 2)
+    return sets
 
 
 # ─── Harga final ──────────────────────────────────────────────────────────────
@@ -681,6 +731,8 @@ async def on_design_approved(design: Dict[str, Any], actor: Dict[str, Any]) -> O
         return None
     entity_id = od.get("entity_id", "")
     od_item = next((i for i in od.get("items") or [] if i.get("id") == (req or {}).get("special_order_item_id")), None)
+    if (od_item or {}).get("status") == "cancelled":   # FE-01 lanjutan — item batal tidak memicu proofing
+        return None
     # L03 LN-030 — OD multi-item: proofing memakai spesifikasi item-nya sendiri, bukan spec OD.
     spec_id = (od_item or {}).get("spec_id") or "" if od_item else od.get("spec_id") or ""
     if not spec_id:

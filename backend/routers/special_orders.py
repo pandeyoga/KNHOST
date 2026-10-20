@@ -708,17 +708,26 @@ async def fulfillment_cancel(order_id: str, item_key: str, payload: FulfillmentC
     user = await current_user(request)
     od = await _od_or_404(order_id, request)
     from services import special_order_fulfillment as ful
-    from services.makloon_order_service import cancel_order as cancel_mko
-    from routers.purchase_orders_extra import cancel_purchase_order
     if not await ful._can(user, "cancel"):  # noqa: SLF001
         raise HTTPException(status_code=403, detail="Permission ditolak: od_fulfillment.cancel (membatalkan dokumen pengadaan OD).")
     try:
         n = ful._need((await ful.progress(od))["items"], item_key)  # noqa: SLF001
     except ValueError as exc:
         raise _ful_http(exc) from exc
-    live = n["active_docs"]
-    if not live:
+    if not n["active_docs"]:
         raise HTTPException(status_code=400, detail="Tidak ada PO/MKO aktif untuk item ini.")
+    done = await _cancel_item_docs(od, n, payload.reason, user, request)
+    return {"cancelled": done, "fulfillment": await ful.progress(await _fresh(order_id))}
+
+
+async def _cancel_item_docs(od: Dict[str, Any], n: Dict[str, Any], reason: str, user: Dict[str, Any],
+                            request: Request) -> list:
+    """Batalkan PO/MKO aktif satu item lewat aturan modul asal; arsipkan dokumen & pensiunkan PR.
+    Dipakai batal dokumen pengadaan (LN-033 T08) dan batal item OD (FE-01 lanjutan)."""
+    from services.makloon_order_service import cancel_order as cancel_mko
+    from routers.purchase_orders_extra import cancel_purchase_order
+    order_id, item_key = od["id"], n["key"]
+    live = n["active_docs"]
     done = []
     for d in live:
         if d["type"] == "po" and float(d.get("received_qty") or 0) > 0:
@@ -726,13 +735,13 @@ async def fulfillment_cancel(order_id: str, item_key: str, payload: FulfillmentC
         if d["type"] == "po":
             await cancel_purchase_order(d["id"], request)
         else:
-            await cancel_mko(d["id"], reason=payload.reason, actor_name=user.get("name", ""))
+            await cancel_mko(d["id"], reason=reason, actor_name=user.get("name", ""))
         done.append(d.get("number") or d["id"])
-    entry = {"at": now_iso(), "by": user.get("name", ""), "action": "cancel_docs", "docs": done, "reason": payload.reason}
+    entry = {"at": now_iso(), "by": user.get("name", ""), "action": "cancel_docs", "docs": done, "reason": reason}
     st = n["state"]
     # Sama dengan ganti jalur: dokumen batal diarsip, PR lama dipensiunkan → realisasi ulang membuat PR baru.
     archived = [{**d, "status": "cancelled" if (d.get("number") or d["id"]) in done else d.get("status"),
-                 "archived_at": entry["at"], "cancel_reason": payload.reason} for d in n["docs"]]
+                 "archived_at": entry["at"], "cancel_reason": reason} for d in n["docs"]]
     if st.get("pr_id"):
         archived.append({"type": "pr", "id": st["pr_id"], "number": st.get("pr_number", ""), "archived_at": entry["at"]})
     await db.special_orders.update_one({"id": order_id}, {
@@ -747,8 +756,88 @@ async def fulfillment_cancel(order_id: str, item_key: str, payload: FulfillmentC
         except ValueError:
             pass   # PR sudah terminal (converted) — jejak tetap ada
     await audit(user.get("name", ""), "special_order_fulfillment_cancel", "special_order", order_id,
-                {"item": item_key, "docs": done}, reason=payload.reason)
-    return {"cancelled": done, "fulfillment": await ful.progress(await _fresh(order_id))}
+                {"item": item_key, "docs": done}, reason=reason)
+    return done
+
+
+class ItemCancelBody(BaseModel):
+    reason: str = Field(..., min_length=5, max_length=300)
+
+
+@router.post("/special-orders/{order_id}/items/{item_id}/cancel")
+async def cancel_special_order_item(order_id: str, item_id: str, payload: ItemCancelBody, request: Request) -> Dict[str, Any]:
+    """FE-01 lanjutan — keputusan owner 2026-10-21: batalkan SATU item OD (bukan seluruh OD).
+
+    Urutan: periksa semua syarat dulu (tanpa mengubah apa pun) → batalkan PO/MKO aktif item (butuh
+    od_fulfillment.cancel; ditolak bila barang sudah diterima/bahan sudah dikirim) → batalkan sample
+    R&D & permintaan desain item yang masih berjalan → tandai item batal + hitung ulang header/harga.
+    Item tidak dihapus: jejak, alasan, dan dokumen turunannya tetap terbaca."""
+    user = await require_permission(request, "order", "update")
+    od = await _od_or_404(order_id, request)
+    from services import special_order_fulfillment as ful
+    from services import rnd_sample_service as smp
+    from services import design_request_service as dreq
+    try:
+        item = p2.check_item_cancellable(od, item_id)
+    except p2.ODConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except p2.ODError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    reason = payload.reason.strip()
+    need = next((r for r in (await ful.progress(od))["items"] if r["key"] == item_id), None)
+    live = (need or {}).get("active_docs") or []
+    if live:
+        if not await ful._can(user, "cancel"):  # noqa: SLF001
+            raise HTTPException(status_code=403, detail="Item punya PO/MKO aktif — membatalkannya butuh izin "
+                                                        "od_fulfillment.cancel.")
+        sent = [d.get("number") or d["id"] for d in live if d.get("issued")]
+        if sent:
+            raise HTTPException(status_code=409, detail=f"{', '.join(sent)} sudah ada penerimaan/bahan terkirim — "
+                                                        "selesaikan lewat amandemen/retur PO atau modul makloon dulu.")
+    own_ids = [x for x in [item.get("rnd_sample_id")] + list(item.get("sample_ids") or []) if x]
+    samples = await db.md_samples.find({"$or": [{"special_order_id": order_id, "special_order_item_id": item_id},
+                                                {"id": {"$in": own_ids}}],
+                                        "status": {"$nin": ["cancelled", "decided"]}},
+                                       {"_id": 0, "id": 1, "number": 1, "status": 1}).to_list(50)
+    held = [s.get("number") or s["id"] for s in samples if s.get("status") == "pending_pic"]
+    if held:
+        raise HTTPException(status_code=409, detail=f"Sample {', '.join(held)} menunggu keputusan PIC uji ulang — "
+                                                    "catat keputusan PIC dulu.")
+    # PO/MKO aktif dibatalkan; PR yang belum jadi PO ikut dipensiunkan (tanpa ini PR yatim tetap hidup).
+    docs = await _cancel_item_docs(od, need, reason, user, request) if (live or ((need or {}).get("state") or {}).get("pr_id")) else []
+    why = f"Item OD {od.get('number')} dibatalkan: {reason}"
+    cancelled_samples = []
+    for s in samples:
+        await smp.cancel_sample(s["id"], why, user.get("name", ""))
+        cancelled_samples.append(s.get("number") or s["id"])
+    cancelled_request = ""
+    req_id = item.get("design_request_id") or ""
+    if req_id:
+        try:
+            await dreq.cancel(req_id, user, why)
+            cancelled_request = req_id
+        except dreq.DesignRequestError:
+            pass   # sudah selesai/dibatalkan — jejaknya tetap
+    fresh = await _fresh(order_id)
+    sets = p2.after_item_cancel_sets(fresh, item_id)
+    stamp = now_iso()
+    note = f"Item {item.get('line_no')} ({item.get('description', '')}) dibatalkan — {reason}"
+    res = await db.special_orders.update_one(
+        {"id": order_id, "linked_sales_order_id": {"$in": [None, ""]},
+         "items": {"$elemMatch": {"id": item_id, "status": {"$ne": "cancelled"}}}},
+        {"$set": {**sets, "items.$[it].status": "cancelled", "items.$[it].cancelled_at": stamp,
+                  "items.$[it].cancelled_by": user.get("name", ""), "items.$[it].cancel_reason": reason,
+                  "updated_at": stamp},
+         "$push": {"status_history": {"status": fresh.get("status"), "timestamp": stamp,
+                                      "user": user.get("email", ""), "note": note}}},
+        array_filters=[{"it.id": item_id}])
+    if res.matched_count == 0:
+        raise HTTPException(status_code=409, detail="Pesanan khusus baru saja berubah (item sudah batal atau SO sudah lahir). Muat ulang.")
+    await audit(user.get("name", ""), "special_order_item_cancelled", "special_order", order_id,
+                {"item": item_id, "line_no": item.get("line_no"), "docs": docs, "samples": cancelled_samples,
+                 "design_request": cancelled_request}, reason=reason)
+    return {"special_order": safe_doc(await _fresh(order_id)), "cancelled_docs": docs,
+            "cancelled_samples": cancelled_samples, "cancelled_design_request": cancelled_request}
 
 
 @router.post("/special-orders/{order_id}/prepare-shipment")
@@ -1100,7 +1189,7 @@ async def convert_special_order_to_so(order_id: str, request: Request) -> Dict[s
             raise HTTPException(status_code=409, detail="Harga Pesanan Khusus multi-item ini dikunci dengan format lama "
                                                         "(satu produk) — minta admin membuka kunci lalu kunci ulang agar semua item ikut ke SO.")
         lines = sorted(pr.get("items") or [], key=lambda ln: ln.get("line_no") or 0)
-        if {ln.get("item_id") for ln in lines} != {i["id"] for i in so.get("items") or []} or any(not ln.get("product_id") for ln in lines):
+        if {ln.get("item_id") for ln in lines} != {i["id"] for i in so.get("items") or [] if i.get("status") != "cancelled"} or any(not ln.get("product_id") for ln in lines):
             raise HTTPException(status_code=409, detail="Rincian harga terkunci tidak sama dengan item Pesanan Khusus — "
                                                         "buka kunci lalu kunci ulang harga.")
         so_items = [SalesOrderItemIn(product_id=ln["product_id"], quantity=float(ln["quantity"]), unit=ln["unit"],

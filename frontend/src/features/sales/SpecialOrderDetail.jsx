@@ -421,7 +421,13 @@ export default function SpecialOrderDetail({
 
       {/* Main content */}
       <SpecialOrderItemsPanel order={order} canEdit={can(perms, "order", "create")}
-        onCreated={(o) => { setOkMsg(`Pesanan redesign ${o.number} dibuat (draf) dengan tautan ke ${order.number}.`); onUpdate && onUpdate(o); }} />
+        onCreated={(o) => { setOkMsg(`Pesanan redesign ${o.number} dibuat (draf) dengan tautan ke ${order.number}.`); onUpdate && onUpdate(o); }}
+        canCancelItem={can(perms, "order", "update")}
+        onItemCancelled={(res) => {
+          const extra = [...(res.cancelled_docs || []), ...(res.cancelled_samples || [])];
+          setOkMsg(`Item dibatalkan.${extra.length ? ` Ikut dibatalkan: ${extra.join(", ")}.` : ""}`);
+          onUpdate && onUpdate(res.special_order);
+        }} />
       {(order.redesigns || []).length > 0 && (
         <div className="mb-3 flex flex-wrap gap-1.5 text-[11px]" data-testid="special-order-redesign-links">
           {(order.redesigns || []).map((r) => (
