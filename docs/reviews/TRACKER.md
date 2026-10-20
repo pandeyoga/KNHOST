@@ -50,6 +50,16 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 | AUD-MIG-02 | Rollback menghapus perubahan operasional setelah migrasi | BE | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | AUD-RET-01 | Pembuangan BS gagal di tengah proses dan retry tidak memulihkan | BE | open | ya — kode (kelas ketahanan) | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 
+## Uji pra-UAT — paket 2026-10-21
+
+Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F-17); laporan hasil di
+`docs/uat/2026-10-21/hasil/`.
+
+| ID | Judul | Prio | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
+|---|---|---|---|---|---|---|
+| F-11 | Gudang & QC tidak bisa memproses perjalanan & QC retur (403 `sales_return.update`) | P1 | implemented_pending_review | ya — direproduksi runtime di `193c048` | `6e1112b` | [F-11-F-12](../uat/2026-10-21/hasil/F-11-F-12.md) |
+| F-12 | QC retur bisa dimulai & diselesaikan tanpa barang diterima | P1 | implemented_pending_review | ya — direproduksi runtime di `193c048` | `6e1112b` | [F-11-F-12](../uat/2026-10-21/hasil/F-11-F-12.md) |
+
 ## Temuan tambahan dari implementer (menunggu konfirmasi reviewer)
 
 | ID usulan | Judul | Status | Laporan |
@@ -70,6 +80,7 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | F-11/F-12 implemented_pending_review (`6e1112b`, [F-11-F-12](../uat/2026-10-21/hasil/F-11-F-12.md)): scan perjalanan retur menerima `wms.scan`, QC retur menerima `qc.inspect`; QC hanya sesudah semua roll klaim diterima/tiba (baris tanpa roll: tonggak Barang sampai); diskon foto KLR-06 tetap. Catatan: Gudang/QC belum punya akses layar retur (`sales_return.view`) |
 | 2026-10-21 | Claude Code | Jawaban owner putaran 2 ([laporan](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md#bagian-2--jawaban-owner-putaran-kedua-2026-10-21)): kontrak kedaluwarsa/batal (`1ad79cb`), batal item sesudah SO + notifikasi MD (`a3f7936`), backend role_in (`b69fe0d`), sisir lanjutan FE (`fc477ce`); 3 pertanyaan lama terjawab, 2 baru |
 | 2026-10-21 | Claude Code | FE-10..13 implemented_pending_review (`85ddd1c`, [UI-05](2026-10-20/hasil/UI-05.md)): satuan sumber antrean QC, status muat penerimaan transfer, neraca belum diketahui netral, tanda saldo kumulatif |
 | 2026-10-21 | Claude Code | FE-06..09 implemented_pending_review (`c5fd627`, [UI-04](2026-10-20/hasil/UI-04.md)): target antrean harga khusus + fokus dokumen + guardrail desk_targets, error aksi retur di layar aktif, form retur aman balapan, pemilih SO retur server-side |
