@@ -104,15 +104,15 @@ export default function IntercoSettlementModal({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium text-[#3C3C43] mb-1">PT Pembayar</label>
-              <KNSelect value={payer} onChange={setPayer} options={entOptions} data-testid="interco-settle-payer" />
+              <KNSelect value={payer} onValueChange={setPayer} options={entOptions} data-testid="interco-settle-payer" />
             </div>
             <div>
               <label className="block text-xs font-medium text-[#3C3C43] mb-1">PT Penerima</label>
-              <KNSelect value={payee} onChange={setPayee} options={entOptions} data-testid="interco-settle-payee" />
+              <KNSelect value={payee} onValueChange={setPayee} options={entOptions} data-testid="interco-settle-payee" />
             </div>
             <div>
               <label className="block text-xs font-medium text-[#3C3C43] mb-1">Metode</label>
-              <KNSelect value={method} onChange={setMethod} options={SETTLEMENT_METHODS} data-testid="interco-settle-method" />
+              <KNSelect value={method} onValueChange={setMethod} options={SETTLEMENT_METHODS} data-testid="interco-settle-method" />
             </div>
           </div>
 

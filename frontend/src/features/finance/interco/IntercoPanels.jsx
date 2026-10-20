@@ -29,7 +29,7 @@ export function TransactionsPanel({
       <OptionTabs testId="interco-filter-status" value={fStatus} onChange={setFStatus}
         options={STATUS_FILTERS} countOf={(v) => (v === (fStatus || "") ? rows.length : undefined)} />
       <div className="flex flex-wrap items-center gap-3">
-        <KNSelect data-testid="interco-filter-role" value={fRole} onChange={setFRole}
+        <KNSelect data-testid="interco-filter-role" value={fRole} onValueChange={setFRole}
                   options={ROLE_FILTERS} className="min-w-[190px]" placeholder="Peran" />
         {srch.searchBox}
         {srch.pager}

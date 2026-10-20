@@ -156,7 +156,13 @@ export function KNSelect({
   searchable,
   "data-testid": testId,
   "aria-label": ariaLabel,
+  onChange,
 }) {
+  // FE-02 — kontraknya `onValueChange`; `onChange` dulu dibuang diam-diam sehingga pilihan tidak tersimpan.
+  if (process.env.NODE_ENV !== "production" && typeof onChange === "function" && typeof onValueChange !== "function") {
+    // eslint-disable-next-line no-console
+    console.error(`KNSelect${testId ? ` [${testId}]` : ""}: gunakan prop onValueChange, bukan onChange — pilihan tidak akan tersimpan.`);
+  }
   const useSearch =
     searchable === true || (searchable !== false && options.length >= SEARCH_THRESHOLD);
 

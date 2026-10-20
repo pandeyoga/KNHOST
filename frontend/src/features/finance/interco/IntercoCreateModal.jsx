@@ -106,16 +106,16 @@ export default function IntercoCreateModal({
           {err && <ErrorNotice message={err} onDismiss={() => setErr("")} />}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="PT Penjual" hint="menerbitkan Pesanan Jual + Surat Jalan + Faktur internal">
-              <KNSelect value={seller} onChange={setSeller} options={entOptions} data-testid="interco-create-seller" />
+              <KNSelect value={seller} onValueChange={setSeller} options={entOptions} data-testid="interco-create-seller" />
             </Field>
             <Field label="PT Pembeli" hint="menerbitkan Pesanan Beli internal + Tagihan internal">
-              <KNSelect value={buyer} onChange={setBuyer} options={entOptions} data-testid="interco-create-buyer" />
+              <KNSelect value={buyer} onValueChange={setBuyer} options={entOptions} data-testid="interco-create-buyer" />
             </Field>
             <Field label="Mode Harga" hint="Harga tetap: diambil dari kontrak internal yang aktif">
-              <KNSelect value={pricingMode} onChange={setPricingMode} options={PRICING_MODES} data-testid="interco-create-pricing" />
+              <KNSelect value={pricingMode} onValueChange={setPricingMode} options={PRICING_MODES} data-testid="interco-create-pricing" />
             </Field>
             <Field label="Mode PPN" hint="Ikut PKP: mengikuti status PKP PT penjual">
-              <KNSelect value={ppnMode} onChange={setPpnMode} options={PPN_MODES} data-testid="interco-create-ppn" />
+              <KNSelect value={ppnMode} onValueChange={setPpnMode} options={PPN_MODES} data-testid="interco-create-ppn" />
             </Field>
           </div>
 
@@ -136,7 +136,7 @@ export default function IntercoCreateModal({
                   <div className="col-span-6">
                     <KNSelect
                       value={it.product_id}
-                      onChange={(v) => setItem(i, { product_id: v })}
+                      onValueChange={(v) => setItem(i, { product_id: v })}
                       options={prodOptions}
                       placeholder="Pilih produk"
                     />
