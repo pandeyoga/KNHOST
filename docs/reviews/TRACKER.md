@@ -50,6 +50,17 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 | AUD-MIG-02 | Rollback menghapus perubahan operasional setelah migrasi | BE | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | AUD-RET-01 | Pembuangan BS gagal di tengah proses dan retry tidak memulihkan | BE | open | ya — kode (kelas ketahanan) | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 
+## Uji pra-UAT — paket 2026-10-21
+
+Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F-17); laporan hasil di
+`docs/uat/2026-10-21/hasil/`.
+
+| ID | Judul | Prio | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
+|---|---|---|---|---|---|---|
+| F-05 | Alokasi SO tidak mengikuti roll anak setelah potong (pick dari daftar ditolak) | P1 | implemented_pending_review | ya — direproduksi runtime di `193c048` | `98695cf` | [F-05-F-03-F-01](../uat/2026-10-21/hasil/F-05-F-03-F-01.md) |
+| F-03 | Grade & LOT bocor ke Sales lewat `variant_label` | P1 | implemented_pending_review | ya — direproduksi runtime di `193c048` | `3f8ce21` | [F-05-F-03-F-01](../uat/2026-10-21/hasil/F-05-F-03-F-01.md) |
+| F-01 | Login cepat per peran gagal (seed `demo1234` vs tombol `demo12345`) | P1* | implemented_pending_review | ya — direproduksi runtime di `193c048` (data acuan restore) | `941a9c2` | [F-05-F-03-F-01](../uat/2026-10-21/hasil/F-05-F-03-F-01.md) |
+
 ## Temuan tambahan dari implementer (menunggu konfirmasi reviewer)
 
 | ID usulan | Judul | Status | Laporan |
@@ -70,6 +81,7 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | F-05/F-03/F-01 implemented_pending_review (`98695cf`, `3f8ce21`, `941a9c2`, [F-05-F-03-F-01](../uat/2026-10-21/hasil/F-05-F-03-F-01.md)): alokasi SO ditautkan ke roll anak saat potong + sidik harga khusus stabil; segmen asal/grade/LOT `variant_label` disaring per field_visibility; satu sandi demo `demo12345` untuk semua akun seed (93 tes lama disesuaikan) |
 | 2026-10-21 | Claude Code | Jawaban owner putaran 2 ([laporan](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md#bagian-2--jawaban-owner-putaran-kedua-2026-10-21)): kontrak kedaluwarsa/batal (`1ad79cb`), batal item sesudah SO + notifikasi MD (`a3f7936`), backend role_in (`b69fe0d`), sisir lanjutan FE (`fc477ce`); 3 pertanyaan lama terjawab, 2 baru |
 | 2026-10-21 | Claude Code | FE-10..13 implemented_pending_review (`85ddd1c`, [UI-05](2026-10-20/hasil/UI-05.md)): satuan sumber antrean QC, status muat penerimaan transfer, neraca belum diketahui netral, tanda saldo kumulatif |
 | 2026-10-21 | Claude Code | FE-06..09 implemented_pending_review (`c5fd627`, [UI-04](2026-10-20/hasil/UI-04.md)): target antrean harga khusus + fokus dokumen + guardrail desk_targets, error aksi retur di layar aktif, form retur aman balapan, pemilih SO retur server-side |
