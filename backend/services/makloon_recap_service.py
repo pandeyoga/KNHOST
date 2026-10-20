@@ -5,6 +5,10 @@ Menggabungkan dua sumber klaim yang sudah ada di order makloon:
     potong tagihan jasa, menunggu persetujuan.
   * `steps[].claim` — selisih hasil saat terima (FASE D): diajukan/menunggu/disetujui per aksi.
 Hasil: ringkasan per mitra + baris rinci untuk penagihan & evaluasi.
+
+AUD-MKL-02 — ringkasan & rincian dihitung dari himpunan yang SAMA dan utuh: order dibaca lewat cursor (tanpa batas
+5.000), rincian tidak dipotong diam-diam. Layar memakai halaman rincian (`rows_offset`/`rows_limit`) dengan
+`rows_total`; Excel meminta semua rincian (`rows_limit=None`).
 """
 from typing import Any, Dict, List, Optional
 
@@ -18,13 +22,16 @@ def _in_range(at: str, date_from: str, date_to: str) -> bool:
     return (not date_from or d >= date_from) and (not date_to or d <= date_to)
 
 
+TOTAL_KEYS = ("loss_events", "loss_qty", "loss_expense", "loss_claim", "loss_deducted", "loss_pending",
+              "variance_claims", "variance_claim_amount", "variance_pending", "receivable_total", "deducted_total")
+
+
 async def recap(entity_filter: Optional[Dict[str, Any]] = None, *, date_from: str = "", date_to: str = "",
-                makloon_id: str = "") -> Dict[str, Any]:
+                makloon_id: str = "", rows_offset: int = 0, rows_limit: Optional[int] = 1000) -> Dict[str, Any]:
     q: Dict[str, Any] = dict(entity_filter or {})
     if makloon_id:
         q["steps.makloon_id"] = makloon_id
-    orders = await db.makloon_orders.find(q, {"_id": 0, "id": 1, "mko_number": 1, "entity_id": 1, "status": 1,
-                                              "steps": 1}).to_list(5000)
+    orders = db.makloon_orders.find(q, {"_id": 0, "id": 1, "mko_number": 1, "entity_id": 1, "status": 1, "steps": 1})
     acc: Dict[str, Dict[str, Any]] = {}
     rows: List[Dict[str, Any]] = []
 
@@ -37,7 +44,7 @@ async def recap(entity_filter: Optional[Dict[str, Any]] = None, *, date_from: st
             "variance_claims": 0, "variance_claim_amount": 0.0, "variance_pending": 0,
             "receivable_total": 0.0, "deducted_total": 0.0})
 
-    for o in orders:
+    async for o in orders:
         for s in o.get("steps") or []:
             if makloon_id and s.get("makloon_id") != makloon_id:
                 continue
@@ -92,6 +99,8 @@ async def recap(entity_filter: Optional[Dict[str, Any]] = None, *, date_from: st
         partners.append({k: (round(v, 2) if isinstance(v, float) else v) for k, v in a.items()})
     partners.sort(key=lambda p: -(p["receivable_total"] + p["deducted_total"] + p["loss_expense"]))
     rows.sort(key=lambda r: r.get("at") or "", reverse=True)
-    tot = {k: round(sum(p[k] for p in partners), 2) for k in
-           ("loss_expense", "receivable_total", "deducted_total", "loss_pending", "variance_pending")}
-    return {"partners": partners, "rows": rows[:1000], "totals": tot}
+    tot = {k: round(sum(p[k] for p in partners), 2) for k in TOTAL_KEYS}
+    off = max(0, int(rows_offset or 0))
+    page = rows[off:] if rows_limit is None else rows[off:off + max(0, int(rows_limit))]
+    return {"partners": partners, "rows": page, "rows_total": len(rows), "rows_offset": off,
+            "rows_limit": rows_limit, "totals": tot}

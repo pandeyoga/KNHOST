@@ -5,6 +5,7 @@ import { formatCurrency, formatQty } from "../../../utils/formatters";
 
 const SETTLE = { potong_bon: "Potong tagihan jasa", tagih_ganti: "Tagih ganti rugi", terima_catatan: "Diterima (catatan)" };
 const STATUS = { posted: "Dibukukan", pending_approval: "Menunggu persetujuan", rejected: "Ditolak", approved: "Disetujui" };
+const PAGE = 200;   // AUD-MKL-02 — rincian per halaman; ringkasan & Excel tetap utuh
 
 function Kpi({ label, value, testId, tone = "" }) {
   return (
@@ -23,6 +24,7 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [partner, setPartner] = useState("");
+  const [offset, setOffset] = useState(0);
 
   const download = async () => {
     setBusy(true); setErr("");
@@ -39,24 +41,30 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
   const load = useCallback(async () => {
     setBusy(true); setErr("");
     try {
-      const { data: d } = await axios.get(`${API}/makloon-claims/recap`, { params: { date_from: from, date_to: to, makloon_id: partner } });
+      const { data: d } = await axios.get(`${API}/makloon-claims/recap`, {
+        params: { date_from: from, date_to: to, makloon_id: partner, rows_offset: offset, rows_limit: PAGE } });
       setData(d);
     } catch (e) { setErr(e.response?.data?.detail || "Gagal memuat rekap."); }
     finally { setBusy(false); }
-  }, [from, to, partner]);
+  }, [from, to, partner, offset]);
   useEffect(() => { load(); }, [load, selectedEntity]);
+  // halaman di luar jangkauan (mis. ganti badan usaha) → kembali ke halaman pertama
+  useEffect(() => { if (data && offset > 0 && offset >= (data.rows_total || 0)) setOffset(0); }, [data, offset]);
 
   const [partnerOpts, setPartnerOpts] = useState([]);
   useEffect(() => { if (data && !partner && !from && !to) setPartnerOpts(data.partners || []); }, [data, partner, from, to]);
   const t = data?.totals || {};
   const rows = (data?.rows || []).filter((r) => !partner || r.makloon_id === partner);
+  const total = data?.rows_total ?? rows.length;
+  const first = total ? (data?.rows_offset || 0) + 1 : 0;
+  const last = (data?.rows_offset || 0) + (data?.rows || []).length;
   return (
     <section className="space-y-3" data-testid="makloon-claim-recap">
       <div className="flex flex-wrap items-end gap-2">
         <h2 className="mr-auto flex items-center gap-2 text-[15px] font-bold"><Scale size={16} /> Rekap Susut & Klaim Mitra</h2>
-        <label className="text-[11px]">Dari<input type="date" className="field ml-1 !py-1" value={from} onChange={(e) => setFrom(e.target.value)} data-testid="recap-from" /></label>
-        <label className="text-[11px]">Sampai<input type="date" className="field ml-1 !py-1" value={to} onChange={(e) => setTo(e.target.value)} data-testid="recap-to" /></label>
-        <select className="field !w-auto !py-1 text-[12px]" value={partner} onChange={(e) => setPartner(e.target.value)} data-testid="recap-partner">
+        <label className="text-[11px]">Dari<input type="date" className="field ml-1 !py-1" value={from} onChange={(e) => { setFrom(e.target.value); setOffset(0); }} data-testid="recap-from" /></label>
+        <label className="text-[11px]">Sampai<input type="date" className="field ml-1 !py-1" value={to} onChange={(e) => { setTo(e.target.value); setOffset(0); }} data-testid="recap-to" /></label>
+        <select className="field !w-auto !py-1 text-[12px]" value={partner} onChange={(e) => { setPartner(e.target.value); setOffset(0); }} data-testid="recap-partner">
           <option value="">Semua mitra</option>
           {partnerOpts.map((p) => <option key={p.makloon_id} value={p.makloon_id}>{p.makloon_name}</option>)}
         </select>
@@ -99,6 +107,18 @@ export default function MakloonClaimRecapView({ selectedEntity }) {
           </tbody>
         </table>
       </div>
+      {total > 0 && (
+        <div className="flex flex-wrap items-center gap-2 text-[11.5px] text-[#636366]" data-testid="recap-rows-paging">
+          <span className="mr-auto" data-testid="recap-rows-range">
+            Rincian {first.toLocaleString("id-ID")}–{last.toLocaleString("id-ID")} dari {total.toLocaleString("id-ID")} kejadian
+            {total > PAGE ? " · Excel memuat semua rincian" : ""}
+          </span>
+          <button className="secondary-button !py-1 text-[11.5px]" disabled={busy || offset === 0}
+            onClick={() => setOffset(Math.max(0, offset - PAGE))} data-testid="recap-rows-prev">Sebelumnya</button>
+          <button className="secondary-button !py-1 text-[11.5px]" disabled={busy || last >= total}
+            onClick={() => setOffset(offset + PAGE)} data-testid="recap-rows-next">Berikutnya</button>
+        </div>
+      )}
       <div className="overflow-x-auto rounded-xl border border-[#E5E5EA] bg-white">
         <table className="w-full text-[11.5px]" data-testid="recap-rows-table">
           <thead className="bg-[#F7F7F9] text-left text-[10.5px] uppercase text-[#8E8E93]">

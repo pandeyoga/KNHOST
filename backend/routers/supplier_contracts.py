@@ -200,10 +200,8 @@ async def partner_scorecard(request: Request, entity_id: Optional[str] = None) -
     return await mcs.partner_scorecard(flt)
 
 
-@router.get("/makloon-claims/recap")
-async def makloon_claim_recap(request: Request, entity_id: Optional[str] = None, date_from: str = "",
-                              date_to: str = "", makloon_id: str = "") -> Dict[str, Any]:
-    """L01 — rekap susut, klaim & potongan tagihan per mitra makloon (penagihan & evaluasi)."""
+async def _claim_recap(request: Request, entity_id: Optional[str], date_from: str, date_to: str, makloon_id: str,
+                       rows_offset: int = 0, rows_limit: Optional[int] = 1000) -> Dict[str, Any]:
     from dependencies import require_any_permission
     from services import makloon_recap_service as mrs
     await require_any_permission(request, [("makloon_order", "record_loss"), ("makloon_order", "approve_loss"),
@@ -211,18 +209,34 @@ async def makloon_claim_recap(request: Request, entity_id: Optional[str] = None,
                                            ("vendor_bill", "view"), ("accounting", "view")])
     ctx = await entity_ctx(request)
     flt = resolve_list_scope("makloon_orders", {}, ctx, entity_id)
-    return await mrs.recap(flt, date_from=date_from[:10], date_to=date_to[:10], makloon_id=makloon_id)
+    return await mrs.recap(flt, date_from=date_from[:10], date_to=date_to[:10], makloon_id=makloon_id,
+                           rows_offset=rows_offset, rows_limit=rows_limit)
+
+
+@router.get("/makloon-claims/recap")
+async def makloon_claim_recap(request: Request, entity_id: Optional[str] = None, date_from: str = "",
+                              date_to: str = "", makloon_id: str = "", rows_offset: int = 0,
+                              rows_limit: int = 1000) -> Dict[str, Any]:
+    """L01 — rekap susut, klaim & potongan tagihan per mitra makloon (penagihan & evaluasi).
+    AUD-MKL-02 — rincian per halaman (`rows_offset`, `rows_limit` maks 1.000) + `rows_total`; ringkasan selalu utuh."""
+    if rows_offset < 0 or not 1 <= rows_limit <= 1000:
+        raise HTTPException(status_code=400, detail="rows_offset minimal 0 dan rows_limit 1-1.000.")
+    return await _claim_recap(request, entity_id, date_from, date_to, makloon_id, rows_offset, rows_limit)
+
+
+ROWS_PER_SHEET = 100_000   # AUD-MKL-02 — rincian lengkap dibagi ke beberapa sheet bila sangat besar
 
 
 @router.get("/makloon-claims/recap.xlsx")
 async def makloon_claim_recap_xlsx(request: Request, entity_id: Optional[str] = None, date_from: str = "",
                                    date_to: str = "", makloon_id: str = ""):
-    """L01 — unduh Excel rekap susut & klaim per mitra (lampiran penagihan bulanan)."""
+    """L01 — unduh Excel rekap susut & klaim per mitra (lampiran penagihan bulanan).
+    AUD-MKL-01 — kolom memakai kontrak data JSON rekap (`loss_claim`, `loss_deducted`); AUD-MKL-02 — SEMUA rincian."""
     import io
     from fastapi.responses import Response
     from openpyxl import Workbook
     from openpyxl.styles import Font
-    data = await makloon_claim_recap(request, entity_id, date_from, date_to, makloon_id)
+    data = await _claim_recap(request, entity_id, date_from, date_to, makloon_id, 0, None)
     wb = Workbook()
     ws = wb.active
     ws.title = "Ringkasan per Mitra"
@@ -234,32 +248,39 @@ async def makloon_claim_recap_xlsx(request: Request, entity_id: Optional[str] = 
             "Klaim selisih menunggu", "Total ditagih ke mitra (Rp)"]
     ws.append(head)
     for p in data["partners"]:
-        ws.append([p["makloon_name"], p["loss_events"], p["loss_qty"], p["loss_expense"], p["loss_claim_receivable"],
-                   p["loss_claim_deducted"], p["variance_claims"], p["variance_claim_amount"], p["loss_pending"],
-                   p["variance_pending"], p["receivable_total"] + p["deducted_total"]])
+        ws.append([p["makloon_name"], p["loss_events"], p["loss_qty"], p["loss_expense"], p["loss_claim"],
+                   p["loss_deducted"], p["variance_claims"], p["variance_claim_amount"], p["loss_pending"],
+                   p["variance_pending"], round(p["receivable_total"] + p["deducted_total"], 2)])
     t = data["totals"]
-    ws.append(["TOTAL", None, None, t["loss_expense"], None, None, None, None, t["loss_pending"],
-               t["variance_pending"], t["receivable_total"] + t["deducted_total"]])
+    ws.append(["TOTAL", t["loss_events"], t["loss_qty"], t["loss_expense"], t["loss_claim"], t["loss_deducted"],
+               t["variance_claims"], t["variance_claim_amount"], t["loss_pending"], t["variance_pending"],
+               round(t["receivable_total"] + t["deducted_total"], 2)])
     for c in ws[2] + ws[ws.max_row]:
         c.font = Font(bold=True)
-    ws2 = wb.create_sheet("Rincian")
-    ws2.append(["Tanggal", "Jenis", "No. MKO", "Langkah", "Mitra", "Qty", "Satuan", "Beban (Rp)", "Klaim (Rp)",
-                "Penyelesaian", "No. tagihan dipotong", "Status", "Alasan"])
-    for c in ws2[1]:
-        c.font = Font(bold=True)
+    ws.append([])
+    ws.append([f"Rincian: {data['rows_total']} baris (lengkap) di sheet Rincian."])
     kind = {"susut": "Susut/hilang", "selisih": "Klaim selisih"}
     from db import db as _db
     bids = list({r["bill_id"] for r in data["rows"] if r.get("bill_id")})
     bno = {b["id"]: b.get("bill_number") or b["id"] async for b in _db.vendor_bills.find(
         {"id": {"$in": bids}}, {"_id": 0, "id": 1, "bill_number": 1})}
     settle = {"tagih_ganti": "Tagih ganti rugi", "potong_bon": "Potong tagihan jasa"}
-    for r in data["rows"]:
-        ws2.append([(r.get("at") or "")[:10], kind.get(r.get("kind"), r.get("kind")), r.get("mko_number"),
-                    r.get("step_seq"), r.get("makloon_name"), r.get("qty"), r.get("unit"), r.get("expense"),
-                    r.get("claim"), settle.get(r.get("settle"), r.get("settle") or ""), bno.get(r.get("bill_id"), ""),
-                    r.get("status"), r.get("reason")])
-    for sheet in (ws, ws2):
-        for col in sheet.columns:
+    rows = data["rows"]
+    sheets = []
+    for i in range(0, max(len(rows), 1), ROWS_PER_SHEET):
+        ws2 = wb.create_sheet("Rincian" if i == 0 else f"Rincian ({i // ROWS_PER_SHEET + 1})")
+        ws2.append(["Tanggal", "Jenis", "No. MKO", "Langkah", "Mitra", "Qty", "Satuan", "Beban (Rp)", "Klaim (Rp)",
+                    "Penyelesaian", "No. tagihan dipotong", "Status", "Alasan"])
+        for c in ws2[1]:
+            c.font = Font(bold=True)
+        for r in rows[i:i + ROWS_PER_SHEET]:
+            ws2.append([(r.get("at") or "")[:10], kind.get(r.get("kind"), r.get("kind")), r.get("mko_number"),
+                        r.get("step_seq"), r.get("makloon_name"), r.get("qty"), r.get("unit"), r.get("expense"),
+                        r.get("claim"), settle.get(r.get("settle"), r.get("settle") or ""), bno.get(r.get("bill_id"), ""),
+                        r.get("status"), r.get("reason")])
+        sheets.append(ws2)
+    for sheet in [ws] + sheets:
+        for col in sheet.iter_cols(max_row=min(sheet.max_row, 500)):
             width = max(len(str(c.value or "")) for c in col[1:] or col)
             sheet.column_dimensions[col[0].column_letter].width = min(max(10, width + 2), 50)
     buf = io.BytesIO()
