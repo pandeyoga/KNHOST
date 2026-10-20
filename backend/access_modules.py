@@ -40,7 +40,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "resources": ["purchase_order", "purchase_requisition", "rfq", "purchase_return"],
      "nav": ["pembelian", "sourcing", "reorder", "purchase-requisitions", "rfq",
              "purchase-orders", "purchasing", "po-board", "blanket-po",
-             "approval-inbox", "purchase-approval", "accounts-payable", "purchase-returns", "returns-hub"]},
+             "approval-inbox", "purchase-approval", "purchase-returns", "returns-hub"]},   # FE-03: tab Hutang milik modul payable
     {"id": "supplier", "group": "Pembelian", "label": "Pemasok & Makloon",
      "description": "Master pemasok, mitra makloon, kontrak, barang supplier, resep proses & order makloon.",
      "resources": ["supplier", "supplier_contract", "supplier_item", "makloon",
@@ -56,7 +56,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
     {"id": "interco", "group": "Pembelian", "label": "Transaksi Antar Badan Usaha",
      "description": "Jual-beli antar PT dalam grup, settlement, dan saldo pasangan PT.",
      "resources": ["interco", "interco_finance", "interco_price"],
-     "nav": ["pembelian", "accounts-payable", "interco-transactions", "interco-returns", "returns-hub"]},
+     "nav": ["pembelian", "interco-transactions", "interco-returns", "returns-hub"]},   # FE-03: tab Hutang milik modul payable
     {"id": "rnd", "group": "Produk & Desain", "label": "Riset & Sample (R&D)",
      "description": "Spesifikasi produk, permintaan sample, labdip, handfeel, proofing, dan laporan R&D.",
      "resources": ["rnd"],
@@ -74,14 +74,15 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
     {"id": "warehouse_ops", "group": "Gudang", "label": "Operasi Gudang (WMS)",
      "description": "Barang masuk/keluar, lokasi rak, data gudang, label, produksi in-house, RFID.",
      "resources": ["wms", "goods_receipt", "warehouse", "label", "production"],
-     "nav": ["gudang", "wms-operations", "operations", "qc-inspection", "wms-locations",
-             "md-warehouses", "production", "escalations", "rfid", "cs-rfid-lokasi",
+     # FE-03 — tab Barang Masuk/Keluar & hub RFID ikut modul ini (dulu `rfid` = ID tak dikenal menu).
+     "nav": ["gudang", "wms-operations", "operations", "goods-receipts", "wms-outbound", "qc-inspection",
+             "wms-locations", "md-warehouses", "production", "escalations", "rfid-hub", "cs-rfid-lokasi",
              "cs-rfid-tags", "cs-rfid-devices", "cs-rfid-gate"]},
     {"id": "inventory", "group": "Gudang", "label": "Stok & Persediaan",
      "description": "Status stok & ATP, lot & silsilah, stock opname, transfer antar gudang/entitas.",
      "resources": ["inventory", "transfer"],
      "nav": ["gudang", "stock-atp", "inventory-board", "stock-buckets", "inventory-lots",
-             "wms-operations", "interco-transfers", "cs-stock-analytics"]},
+             "wms-operations", "operations", "interco-transfers", "cs-stock-analytics"]},   # FE-03: tab tampak dari alias interco-transfers
     {"id": "inspection", "group": "Gudang", "label": "Inspeksi & QC",
      "description": "SPK inspeksi, hasil pemeriksaan warna/handfeel, keputusan terima/tolak.",
      "resources": ["inspection"],
@@ -89,11 +90,11 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
     {"id": "md_quality", "group": "Gudang", "label": "MD Quality",
      "description": "Warna & handfeel vs sample ACC (penerimaan PO & hasil makloon), lepas/tolak tahanan.",
      "resources": ["md_quality"],
-     "nav": ["gudang", "wms-operations", "inspections"]},
+     "nav": ["gudang", "wms-operations", "qc-inspection", "inspections"]},   # FE-03: tab tampak dari alias inspections
     {"id": "qc", "group": "Gudang", "label": "QC (4-point & random check)",
      "description": "Cacat 4-point & grade per roll, random check roll di stok.",
      "resources": ["qc"],
-     "nav": ["gudang", "wms-operations", "inspections"]},
+     "nav": ["gudang", "wms-operations", "qc-inspection", "inspections"]},   # FE-03: tab tampak dari alias inspections
     {"id": "logistics", "group": "Gudang", "label": "Pengiriman & Kendaraan",
      "description": "Pengiriman (ekspedisi/armada), foto muat & POD, log kendaraan.",
      "resources": ["logistics", "vehicle_log"],
@@ -113,7 +114,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "resources": ["accounting", "period", "budget", "fixed_asset", "gl_mapping"],
      "nav": ["keuangan", "ledger", "general-ledger", "chart-of-accounts", "gl-account-mappings", "fin-reports",
              "financial-statements", "profitability", "cashflow-forecast", "budget",
-             "consolidation", "closing", "period-unlock", "kas-aset", "fixed-assets"]},
+             "consolidation", "closing", "period-unlock", "posting-failures", "kas-aset", "fixed-assets"]},
     {"id": "petty_cash", "group": "Keuangan", "label": "Kas Kecil (PD / LPJ)",
      "description": "Pengajuan dana, pertanggungjawaban, kategori beban.",
      "resources": ["cash_advance", "cash_settlement"],
@@ -132,8 +133,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
     {"id": "reports", "group": "Alat", "label": "Laporan & Analitik",
      "description": "Dasbor analitik, margin & HPP, BI keuangan/SDM, jejak audit.",
      "resources": ["reports", "audit"],
-     "nav": ["analytics", "reports", "costing", "bi-finance", "cs-bi-hrd", "cs-bi-sales",
-             "cs-bi-stock"]},
+     "nav": ["analytics", "reports", "costing", "bi-finance", "cs-bi-hrd"]},   # FE-03: cs-bi-sales/stock tidak ada lagi di menu
     {"id": "data_export", "group": "Alat", "label": "Pusat Export Data",
      "description": "Memilih dataset, kolom, filter & periode lalu mengunduh XLSX/CSV. Isi tetap dibatasi izin modul "
                     "sumber, badan usaha/lokasi, dan visibilitas field (grade/LOT/HPP).",

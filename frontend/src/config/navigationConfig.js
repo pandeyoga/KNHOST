@@ -8,7 +8,7 @@ import { PAGE_META, ROLE_HOME_REGISTRY, GUIDANCE_MAP } from "./navMeta";
 // FASE E-8 (E8.1) — SATU definisi "boleh lihat menu ini?" (termasuk dua peran baru
 // `sales_admin` & `finance`). Dulu keputusannya `roles.includes(role)` yang disalin di
 // 5 tempat di berkas ini; peran baru harus ditambahkan ke ~40 baris `navStructure.js`.
-import { roleCanSee } from "./roles";
+import { isModuleNavRole, navExplicitlyHidden, roleCanSee } from "./roles";
 
 // Re-export data (backward-compat untuk konsumen yang import dari navigationConfig).
 export { HUB_TABS, NAV_STRUCTURE } from "./navStructure";
@@ -56,6 +56,13 @@ export function hubForView(view, role) {
 }
 
 // Untuk item hub: view default = tab pertama yang boleh diakses role tsb.
+/** FE-03 — item hub yang semua tabnya tak terlihat oleh role = pintu mati (view hub tidak punya
+ *  renderer sendiri); jangan ditampilkan. Hub tanpa daftar tab tidak terpengaruh. */
+function hubWithoutTabs(item, role) {
+  if (!item.hub || !(HUB_TABS[item.hub] || []).some((t) => !t.hidden)) return false;
+  return hubTabsForRole(item.hub, role).length === 0;
+}
+
 function withHubView(item, role) {
   if (!item.hub) return item;
   const tabs = hubTabsForRole(item.hub, role);
@@ -103,12 +110,19 @@ export function buildNavGroups(role, opts = {}) {
   const result = [];
   const comingSoonItems = [];
   for (const entry of NAV_STRUCTURE) {
-    if (!roleCanSee(entry.roles, role, entry.groupId || entry.id)) continue;
+    const ownVisible = roleCanSee(entry.roles, role, entry.groupId || entry.id);
     if (entry.type === "standalone") {
+      if (!ownVisible || hubWithoutTabs(entry, role)) continue;
       if (entry.comingSoon) comingSoonItems.push(entry);
       else result.push(withHubView(entry, role));
     } else if (entry.type === "group") {
-      const roleItems = entry.items.filter(item => roleCanSee(item.roles, role, item.id));
+      // FE-03 — peran kustom: induk tampil bila ada ANAK yang sah (katalog modul memberi menu anak,
+      // mis. `interco-transactions`, tanpa ID grup `akuntansi`). Anak tetap disaring satu per satu,
+      // jadi induk tidak membuka anak tak berizin; induk yang DISEMBUNYIKAN eksplisit tetap tertutup.
+      // Peran bawaan tetap memakai `roles` grup (rancangan menu tertulis).
+      if (!ownVisible && (!isModuleNavRole(role) || navExplicitlyHidden(role, entry.groupId))) continue;
+      const roleItems = entry.items.filter(item => roleCanSee(item.roles, role, item.id) && !hubWithoutTabs(item, role));
+      if (!ownVisible && roleItems.length === 0) continue;
       const liveItems = roleItems.filter(item => !item.comingSoon).map(item => withHubView(item, role));
       const soonItems = roleItems.filter(item => item.comingSoon);
       if (liveItems.length > 0) result.push({ ...entry, items: liveItems });

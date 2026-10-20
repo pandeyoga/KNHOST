@@ -183,6 +183,8 @@ STATIK=(
   "guard:modal_dismiss (INV-UI-01, modal auto-close)|python scripts/guardrails/verify_modal_dismiss.py"
   # FE-02 (review 2026-10-20) — KNSelect hanya menerima onValueChange; onChange dibuang diam-diam.
   "guard:knselect_contract (FE-02, pilihan wajib onValueChange)|python scripts/guardrails/verify_knselect_contract.py"
+  # FE-03 — katalog modul akses (menu peran kustom) wajib selaras dengan menu/hub/tab frontend.
+  "guard:access_catalog_nav (FE-03, katalog modul ↔ menu)|python scripts/guardrails/verify_access_catalog_nav.py"
   # FASE P4 — konsistensi tombol "Buat": WAJIB pop-up, bukan form yang menyelip di tengah
   # halaman (form inline mendorong daftar data ke bawah lipatan sehingga pengguna sering
   # tak sadar formnya terbuka lalu menyimpulkan "tombolnya tidak berfungsi"). Penjaga ini

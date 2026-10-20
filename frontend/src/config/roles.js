@@ -354,6 +354,21 @@ function accessBlocks(role, id) {
   return Array.isArray(res) && res.length > 0 && !res.some((r) => (a.perms[r] || []).length > 0);
 }
 
+/** FE-03 — peran yang menunya DITURUNKAN dari katalog modul (peran kustom & pratinjau editor
+ *  peran). Peran bawaan memakai rancangan menu tertulis (`roles` grup + overlay ROLE_NAV). */
+export function isModuleNavRole(role) {
+  return role === "__preview" || !!ROLE_REGISTRY[role]?.custom;
+}
+
+/** FE-03 — disembunyikan EKSPLISIT (menu disembunyikan di pengaturan peran, modul bertingkat
+ *  "tidak ada", atau izin baca sumbernya tidak ada) — bukan sekadar "tidak tercantum". */
+export function navExplicitlyHidden(role, id) {
+  if (!id) return false;
+  if (accessBlocks(role, id)) return true;
+  const rule = ROLE_NAV[role];
+  return !!(rule && rule.remove.includes(id));
+}
+
 export function roleCanSee(roles, role, id, depth = 0) {
   if (depth === 0 && accessBlocks(role, id)) return false;
   const rule = ROLE_NAV[role];
