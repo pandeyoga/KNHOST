@@ -65,11 +65,13 @@ docker compose -f docker-compose.dev.yml ps
 Build pertama ±5–15 menit (pip + yarn). Kompilasi pertama frontend ±1–3 menit — pantau:
 `docker compose -f docker-compose.dev.yml logs -f frontend` sampai muncul `Compiled`.
 
-**Isi data demo** (sekali, atau kapan pun ingin reset ke data realistis; ±10 menit):
+**Isi data acuan** (dipakai sesi development & reviewer; ±5 menit; MENGHAPUS isi DB lokal):
 ```bash
-docker compose -f docker-compose.dev.yml exec backend python /app/seed_realistic.py
+bash scripts/dev_restore_demo.sh
 ```
-Lalu buka http://localhost:3000.
+Jalankan dari root repo lewat Git Bash. Lalu buka http://localhost:3000. Alternatif data contoh
+lama yang lebih kecil: `docker compose -f docker-compose.dev.yml exec backend python /app/seed_realistic.py`
+(±10 menit; data Interco & SPK printing tidak ikut).
 
 > **Git Bash:** path `/app/...` diubah otomatis menjadi path Windows
 > (`can't open file '/app/backend/C:/Program Files/Git/app/...'`). Jalankan

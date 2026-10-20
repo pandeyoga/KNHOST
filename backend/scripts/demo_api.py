@@ -28,6 +28,9 @@ class Session:
         headers = {"Authorization": f"Bearer {self.token}"}
         if entity:
             headers["X-Entity-Id"] = entity
+        # Satu klien dipakai banyak akun: `extract_token` mendahulukan cookie sesi, jadi cookie login
+        # akun lain akan menimpa Bearer ini bila cookie tidak Secure (dev http, SESSION_COOKIE_SECURE=false).
+        self.client.cookies.clear()
         r = await self.client.request(method, f"/api{path}", json=json, params=params, headers=headers)
         if r.status_code >= 400:
             try:
@@ -64,6 +67,7 @@ class Api:
         if r.status_code != 200:
             raise ApiError("POST", "/auth/login", r.status_code, f"{email}: {r.text[:300]}")
         body = r.json()
+        self.client.cookies.clear()  # identitas tiap sesi hanya lewat Bearer — lihat Session.call
         self._sessions[email] = Session(self.client, body["token"], body["user"])
         return self._sessions[email]
 

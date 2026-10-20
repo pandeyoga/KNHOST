@@ -32,7 +32,7 @@ docker compose -f docker-compose.dev.yml exec backend bash  # di dalamnya repo =
 * `supervisorctl restart backend` → `docker compose -f docker-compose.dev.yml restart backend`.
 * Script Python/Bash dijalankan **di dalam container backend**:
   `docker compose -f docker-compose.dev.yml exec backend python /app/scripts/<script>.py`.
-* Seed ulang data demo: `... exec backend python /app/seed_realistic.py`.
+* Data acuan (sama dengan yang dipakai reviewer): `bash scripts/dev_restore_demo.sh` dari host.
 * Login demo: `admin@kainnusantara.id` / `demo12345`.
 * `backend/.env` & `frontend/.env` tidak di-commit. Jangan pernah commit kunci/rahasia.
 
