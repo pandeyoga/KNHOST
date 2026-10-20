@@ -3,32 +3,30 @@
 MIG-01: fulfillment `{}` dianggap kandidat tetapi update mensyaratkan field tidak ada → laporan "matched" tanpa tulisan.
 MIG-02: rollback menghapus state migrasi walau sudah dipakai operasional (versi 2, route makloon, MKO, riwayat).
 Migrasi dijalankan in-process terhadap DATABASE TERISOLASI (`kn_test_mig_<tag>`, dibuang di akhir) — data demo tidak
-tersentuh; `db` modul skrip diganti klien Motor ke database itu. Satu event loop untuk seluruh modul.
+tersentuh; `db` modul skrip diganti klien Motor ke database itu. Event loop bersama `tests/_shared_loop.py`.
 Jalankan: cd /app/backend && python -m pytest tests/test_aud_mig_0102.py -p no:randomly -n 0 -q
 """
-import asyncio
 import importlib.util
 import os
+import sys
 import uuid
 
 import pytest
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import MongoClient
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _shared_loop import run  # noqa: E402
+
 URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 ISO = f"kn_test_mig_{uuid.uuid4().hex[:6]}"
 DB = MongoClient(URL)[ISO]
-LOOP = asyncio.new_event_loop()
 SCRIPT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
                       "scripts", "migrate_l03_ln033_fulfillment.py")
 _spec = importlib.util.spec_from_file_location("mig_ln033", SCRIPT)
 mig = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(mig)
 PROD = "prod_TEST_MIG"
-
-
-def run(coro):
-    return LOOP.run_until_complete(coro)
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -39,7 +37,6 @@ def isolated_db():
     yield
     mig.db = old
     MongoClient(URL).drop_database(ISO)
-    LOOP.close()
 
 
 @pytest.fixture(autouse=True)

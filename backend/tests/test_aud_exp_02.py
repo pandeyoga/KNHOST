@@ -4,10 +4,9 @@ Kini sumber dibaca SEKALI ke snapshot (`export_snap_<job>`, unik per dokumen sum
 dan nilai join dibaca dari snapshot itu. Uji memakai engine sebenarnya atas koleksi uji terisolasi; perubahan sumber
 disuntikkan DI ANTARA batch penulisan (insert, hapus, ubah field filter, ubah field urut, ubah nilai, ubah join).
 Pada kode lama (fetch skip/limit per batch) penyuntik yang sama dipasang pada `fetch` — itulah bukti merahnya.
-Uji tingkat layanan memakai SATU event loop untuk seluruh modul (klien Motor modul `db` terikat ke loop pertama).
+Uji tingkat layanan memakai event loop BERSAMA `tests/_shared_loop.py` (klien Motor modul `db` terikat ke loop pertama).
 Jalankan: cd /app/backend && python -m pytest tests/test_aud_exp_02.py -p no:randomly -n 0 -q
 """
-import asyncio
 import csv
 import os
 import sys
@@ -17,18 +16,16 @@ import pytest
 from openpyxl import load_workbook
 from pymongo import MongoClient
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _shared_loop import run  # noqa: E402
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from services import export_engine as eng  # noqa: E402
 
 DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.environ.get("DB_NAME", "test_database")]
-LOOP = asyncio.new_event_loop()
 TAG = uuid.uuid4().hex[:6]
 SRC, CUST = f"test_exp02_{TAG}", f"test_exp02c_{TAG}"
 TMP = os.path.join("/tmp", f"exp02_{TAG}")
-
-
-def run(coro):
-    return LOOP.run_until_complete(coro)
 
 
 COLS = [{"key": "id", "label": "ID", "type": "text", "path": "id", "source": "base"},
@@ -68,12 +65,6 @@ def fresh():
     yield
     DB[SRC].drop()
     DB[CUST].drop()
-
-
-@pytest.fixture(scope="module", autouse=True)
-def close_loop():
-    yield
-    LOOP.close()
 
 
 def _inject(monkeypatch, mutate):

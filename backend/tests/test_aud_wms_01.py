@@ -4,7 +4,7 @@ Kini tiap baris koreksi memakai catatan operasi bertahap (`roll_count.ops.<kunci
 ditulis atomik bersama perubahan roll. Retry sesudah gangguan di batas mana pun MELANJUTKAN langkah yang tertinggal
 (pergerakan, jurnal, saldo agregat) — perubahan milik sendiri dibedakan dari perubahan transaksi lain.
 
-Uji tingkat layanan memakai SATU event loop untuk seluruh modul (klien Motor modul `db` terikat ke loop pertama);
+Uji tingkat layanan memakai event loop BERSAMA `tests/_shared_loop.py` (klien Motor modul `db` terikat ke loop pertama);
 gangguan disuntikkan dengan monkeypatch. Uji dua pengguna bersamaan juga dijalankan lewat API finalisasi.
 Jalankan: cd /app/backend && python -m pytest tests/test_aud_wms_01.py -p no:randomly -n 0 -q
 """
@@ -18,13 +18,15 @@ import pytest
 import requests
 from pymongo import MongoClient
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _shared_loop import run  # noqa: E402
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from services import gl_service as gl  # noqa: E402
 from services import stock_count_roll_service as rcs  # noqa: E402
 
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.environ.get("DB_NAME", "test_database")]
-LOOP = asyncio.new_event_loop()
 WH, OWNER = "wh_jakarta", "ent_ksc"
 TAG = uuid.uuid4().hex[:6]
 WH_DOC = DB.warehouses.find_one({"id": WH}, {"_id": 0})
@@ -33,10 +35,6 @@ B1, B2 = LEVEL["bins"][0], LEVEL["bins"][1]
 PROD = DB.products.find_one({"stage": "finished", "status": "active"}, {"_id": 0, "id": 1, "base_unit": 1})
 UNIT = PROD.get("base_unit") or "meter"
 ROLLS, SESSIONS = [], []
-
-
-def run(coro):
-    return LOOP.run_until_complete(coro)
 
 
 def _roll(qty=100.0, bin_doc=B1):
@@ -103,7 +101,6 @@ def cleanup():
     DB.journal_entries.delete_many({"source_type": "cycle_count_variance", "source_id": {"$regex": rx}})
     DB.cycle_count_sessions.delete_many({"id": {"$in": SESSIONS}})
     run(rcs.rebuild_balance(PROD["id"], WH, OWNER))
-    LOOP.close()
 
 
 # ─── Gangguan di tiap batas penulisan sesudah roll berubah → retry melanjutkan ───────────────────────────────
