@@ -1,0 +1,40 @@
+EFFE.                                                                    [100%]
+=================================== ERRORS ====================================
+__________ ERROR at setup of TestClientDataset.test_sales_forbidden ___________
+backend\tests\test_l01_dataset_recap.py:25: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_dataset_recap.py:14: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+______ ERROR at setup of TestClaimRecap.test_recap_shape_and_permission _______
+backend\tests\test_l01_dataset_recap.py:25: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_dataset_recap.py:14: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+================================== FAILURES ===================================
+___________ TestClientDataset.test_dry_run_reports_without_writing ____________
+backend\tests\test_l01_dataset_recap.py:45: in test_dry_run_reports_without_writing
+    files={"file": ("ds.csv", _csv(p, sup), "text/csv")})
+                              ^^^^^^^^^^^^
+backend\tests\test_l01_dataset_recap.py:31: in _csv
+    f",,{p['sku']},finished,knitting,,,{sup['code']},TEST-L01-SUP,Test Item,Hitam Test,TST-01,TEST_L01 Hitam\n"
+         ^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_________________ TestClientDataset.test_commit_then_rollback _________________
+backend\tests\test_l01_dataset_recap.py:59: in test_commit_then_rollback
+    b, p, sup = self.S["batch"], self.S["p"], self.S["sup"]
+                ^^^^^^^^^^^^^^^
+E   KeyError: 'batch'
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l01_dataset_recap.py::TestClientDataset::test_dry_run_reports_without_writing
+FAILED backend\tests\test_l01_dataset_recap.py::TestClientDataset::test_commit_then_rollback
+ERROR backend\tests\test_l01_dataset_recap.py::TestClientDataset::test_sales_forbidden
+ERROR backend\tests\test_l01_dataset_recap.py::TestClaimRecap::test_recap_shape_and_permission
+2 failed, 1 passed, 2 errors in 1.06s

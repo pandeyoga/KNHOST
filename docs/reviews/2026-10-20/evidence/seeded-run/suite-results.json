@@ -1,0 +1,416 @@
+[
+  {
+    "file": "test_l00_edge_cases.py",
+    "exit_code": 1,
+    "seconds": 5.6,
+    "tail": "t_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n______________ ERROR at setup of TestReturnEdges.test_validation ______________\nbackend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n_______ ERROR at setup of TestReturnEdges.test_parallel_partial_returns _______\nbackend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l00_edge_cases.py::TestRevalFive::test_five_parallel\nERROR backend\\tests\\test_l00_edge_cases.py::TestRevalFive::test_index_exists\nERROR backend\\tests\\test_l00_edge_cases.py::TestReturnEdges::test_setup - Typ...\nERROR backend\\tests\\test_l00_edge_cases.py::TestReturnEdges::test_validation\nERROR backend\\tests\\test_l00_edge_cases.py::TestReturnEdges::test_parallel_partial_returns\n5 errors in 1.31s\n"
+  },
+  {
+    "file": "test_l00_p05_open_issues.py",
+    "exit_code": 1,
+    "seconds": 7.9,
+    "tail": "e_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n_ ERROR at setup of TestPartialMaterialReturn.test_partner_rolls_and_partial_return _\nbackend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n_ ERROR at setup of TestPartialMaterialReturn.test_return_rest_closes_step_and_wip_zero _\nbackend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l00_p05_open_issues.py::TestRevalidationRace::test_parallel_requests_only_one_created\nERROR backend\\tests\\test_l00_p05_open_issues.py::TestRevalidationRace::test_cancel_frees_slot\nERROR backend\\tests\\test_l00_p05_open_issues.py::TestPartialMaterialReturn::test_cancel_after_issue\nERROR backend\\tests\\test_l00_p05_open_issues.py::TestPartialMaterialReturn::test_partner_rolls_and_partial_return\nERROR backend\\tests\\test_l00_p05_open_issues.py::TestPartialMaterialReturn::test_return_rest_closes_step_and_wip_zero\n5 errors in 1.38s\n"
+  },
+  {
+    "file": "test_l01_custom_role.py",
+    "exit_code": 0,
+    "seconds": 6.7,
+    "tail": "...                                                                      [100%]\n3 passed in 2.85s\n"
+  },
+  {
+    "file": "test_l01_dataset_edge.py",
+    "exit_code": 0,
+    "seconds": 4.0,
+    "tail": "..sss...sss                                                              [100%]\n5 passed, 6 skipped in 1.75s\n"
+  },
+  {
+    "file": "test_l01_dataset_recap.py",
+    "exit_code": 1,
+    "seconds": 3.6,
+    "tail": "de == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n================================== FAILURES ===================================\n___________ TestClientDataset.test_dry_run_reports_without_writing ____________\nbackend\\tests\\test_l01_dataset_recap.py:45: in test_dry_run_reports_without_writing\n    files={\"file\": (\"ds.csv\", _csv(p, sup), \"text/csv\")})\n                              ^^^^^^^^^^^^\nbackend\\tests\\test_l01_dataset_recap.py:31: in _csv\n    f\",,{p['sku']},finished,knitting,,,{sup['code']},TEST-L01-SUP,Test Item,Hitam Test,TST-01,TEST_L01 Hitam\\n\"\n         ^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n_________________ TestClientDataset.test_commit_then_rollback _________________\nbackend\\tests\\test_l01_dataset_recap.py:59: in test_commit_then_rollback\n    b, p, sup = self.S[\"batch\"], self.S[\"p\"], self.S[\"sup\"]\n                ^^^^^^^^^^^^^^^\nE   KeyError: 'batch'\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l01_dataset_recap.py::TestClientDataset::test_dry_run_reports_without_writing\nFAILED backend\\tests\\test_l01_dataset_recap.py::TestClientDataset::test_commit_then_rollback\nERROR backend\\tests\\test_l01_dataset_recap.py::TestClientDataset::test_sales_forbidden\nERROR backend\\tests\\test_l01_dataset_recap.py::TestClaimRecap::test_recap_shape_and_permission\n2 failed, 1 passed, 2 errors in 1.06s\n"
+  },
+  {
+    "file": "test_l01_fabric_xlsx_color.py",
+    "exit_code": 1,
+    "seconds": 5.5,
+    "tail": "FF.                                                                      [100%]\n================================== FAILURES ===================================\n_________________ test_add_fabric_type_and_import_accepts_it __________________\nbackend\\tests\\test_l01_fabric_xlsx_color.py:33: in test_add_fabric_type_and_import_accepts_it\n    csv = f\"kode_artikel,nama_artikel,sku,tahap,jenis_kain\\n,,{p['sku']},finished,{code}\\n\"\n                                                               ^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n_______________________________ test_recap_xlsx _______________________________\nbackend\\tests\\test_l01_fabric_xlsx_color.py:47: in test_recap_xlsx\n    assert r.status_code == 200 and \"spreadsheetml\" in r.headers[\"content-type\"]\nE   assert (500 == 200)\nE    +  where 500 = <Response [500]>.status_code\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l01_fabric_xlsx_color.py::test_add_fabric_type_and_import_accepts_it\nFAILED backend\\tests\\test_l01_fabric_xlsx_color.py::test_recap_xlsx - assert ...\n2 failed, 1 passed in 3.17s\n"
+  },
+  {
+    "file": "test_l01_grade_visibility.py",
+    "exit_code": 3221225480,
+    "seconds": 16.1,
+    "tail": "tus\n    raise HTTPError(http_error_msg, response=self)\nE   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login\n================================== FAILURES ===================================\n____________________ TestGradeMaster.test_owner_active_set ____________________\nbackend\\tests\\test_l01_grade_visibility.py:102: in test_owner_active_set\n    assert rows[\"B1\"][\"rolls_using\"] > 0                      # histori tetap ada\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert 0 > 0\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l01_grade_visibility.py::TestGradeMaster::test_owner_active_set\nERROR backend\\tests\\test_l01_grade_visibility.py::TestFieldVisibility::test_sales_never_receives_grade_lot_origin\nERROR backend\\tests\\test_l01_grade_visibility.py::TestFieldVisibility::test_sales_admin_and_admin_still_see\nERROR backend\\tests\\test_l01_grade_visibility.py::TestFieldVisibility::test_sales_grade_filter_is_ignored\nERROR backend\\tests\\test_l01_grade_visibility.py::TestFieldVisibility::test_grade_cannot_be_opened_for_sales_pov\nERROR backend\\tests\\test_l01_grade_visibility.py::TestFieldVisibility::test_pdf_redacts_for_sales\nERROR backend\\tests\\test_l01_grade_visibility.py::TestGradeMaster::test_sales_cannot_manage\nERROR backend\\tests\\test_l01_grade_visibility.py::TestSkuAndNameMasking::test_sales_sees_masked_sku_and_name\n1 failed, 6 passed, 2 warnings, 7 errors in 2.38s\n"
+  },
+  {
+    "file": "test_l01_material_loss.py",
+    "exit_code": 1,
+    "seconds": 3.5,
+    "tail": "test_l01_material_loss.py:21: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n________ ERROR at setup of TestLossDeductBillAndTolerance.test_cleanup ________\nbackend\\tests\\test_l01_material_loss.py:21: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l01_material_loss.py::TestMaterialLoss::test_setup_cancelled_mko\nERROR backend\\tests\\test_l01_material_loss.py::TestMaterialLoss::test_sales_cannot_record\nERROR backend\\tests\\test_l01_material_loss.py::TestMaterialLoss::test_over_tolerance_pending_and_sod\nERROR backend\\tests\\test_l01_material_loss.py::TestMaterialLoss::test_within_tolerance_auto_and_closes\nERROR backend\\tests\\test_l01_material_loss.py::TestLossDeductBillAndTolerance::test_setup\nERROR backend\\tests\\test_l01_material_loss.py::TestLossDeductBillAndTolerance::test_step_tolerance_endpoint\nERROR backend\\tests\\test_l01_material_loss.py::TestLossDeductBillAndTolerance::test_deduct_bill\nERROR backend\\tests\\test_l01_material_loss.py::TestLossDeductBillAndTolerance::test_cleanup\n8 errors in 1.18s\n"
+  },
+  {
+    "file": "test_l01_sales_field_hidden_api.py",
+    "exit_code": 1,
+    "seconds": 4.1,
+    "tail": "ssssssFs                                                                 [100%]\n================================== FAILURES ===================================\n_______________ TestPrivilegedSeesGrade.test_admin_rolls_grade ________________\nbackend\\tests\\test_l01_sales_field_hidden_api.py:91: in test_admin_rolls_grade\n    assert \"grade\" in _keys(r.json())\nE   AssertionError: assert 'grade' in set()\nE    +  where set() = _keys([])\nE    +    where [] = json()\nE    +      where json = <Response [200]>.json\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l01_sales_field_hidden_api.py::TestPrivilegedSeesGrade::test_admin_rolls_grade\n1 failed, 7 skipped in 1.01s\n"
+  },
+  {
+    "file": "test_l01_sku_mask_settle_tol.py",
+    "exit_code": 1,
+    "seconds": 4.4,
+    "tail": "________\nbackend\\tests\\test_l01_sku_mask_settle_tol.py:134: in test_tolerance_after_closed_409\n    url = f\"{BASE}/api/makloon-orders/{self.S['mko']['id']}/steps/1/tolerance\"\n                                       ^^^^^^^^^^^^^\nE   KeyError: 'mko'\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_admin_sees_raw\nFAILED backend\\tests\\test_l01_sku_mask_settle_tol.py::TestTagihGantiAndTolerance::test_setup\nFAILED backend\\tests\\test_l01_sku_mask_settle_tol.py::TestTagihGantiAndTolerance::test_potong_bon_without_bill_400\nFAILED backend\\tests\\test_l01_sku_mask_settle_tol.py::TestTagihGantiAndTolerance::test_tagih_ganti_path\nFAILED backend\\tests\\test_l01_sku_mask_settle_tol.py::TestTagihGantiAndTolerance::test_tolerance_after_closed_409\nERROR backend\\tests\\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_products_masked_for_sales\nERROR backend\\tests\\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_sales_orders_and_rolls_masked\nERROR backend\\tests\\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_so_detail_masked\nERROR backend\\tests\\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_grade_suffix_stripped_where_no_sku_sibling\nERROR backend\\tests\\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_names_with_grade_and_lot_inside_not_leaking\nERROR backend\\tests\\test_l01_sku_mask_settle_tol.py::TestTagihGantiAndTolerance::test_tolerance_validation\n5 failed, 1 passed, 6 errors in 1.83s\n"
+  },
+  {
+    "file": "test_l02_ln020_ln021.py",
+    "exit_code": 0,
+    "seconds": 3.8,
+    "tail": "...                                                                      [100%]\n3 passed in 1.40s\n"
+  },
+  {
+    "file": "test_l02_ln020_t02_t03_extra.py",
+    "exit_code": 1,
+    "seconds": 3.7,
+    "tail": "2_ln020_t02_t03_extra.py:16: in _tok\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n_____________ test_foreign_so_hidden_from_sales_visible_to_admin ______________\nbackend\\tests\\test_l02_ln020_t02_t03_extra.py:124: in test_foreign_so_hidden_from_sales_visible_to_admin\n    headers=_h(\"sales.kanda@kainnusantara.id\", ent=\"ent_kanda\")).json()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l02_ln020_t02_t03_extra.py:21: in _h\n    h = {\"Authorization\": f\"Bearer {_tok(email, pwd)}\"}\n                                    ^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l02_ln020_t02_t03_extra.py:16: in _tok\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l02_ln020_t02_t03_extra.py::TestKeepPendingScope::test_sales_can_read_and_is_scoped\nFAILED backend\\tests\\test_l02_ln020_t02_t03_extra.py::TestKeepPendingScope::test_sales_admin_sees_entity_superset\nFAILED backend\\tests\\test_l02_ln020_t02_t03_extra.py::TestKeepPendingScope::test_pending_no_supplier_or_owner_names\nFAILED backend\\tests\\test_l02_ln020_t02_t03_extra.py::test_foreign_so_hidden_from_sales_visible_to_admin\n4 failed, 5 passed in 1.39s\n"
+  },
+  {
+    "file": "test_l02_ln022_form_path_retest.py",
+    "exit_code": 0,
+    "seconds": 5.4,
+    "tail": "......                                                                   [100%]\n6 passed in 3.06s\n"
+  },
+  {
+    "file": "test_l02_ln022_ln021_extra.py",
+    "exit_code": 1,
+    "seconds": 4.3,
+    "tail": "...F                                                                     [100%]\n================================== FAILURES ===================================\n________________ test_reallocate_updates_roll_lines_roll_mode _________________\nbackend\\tests\\test_l02_ln022_ln021_extra.py:118: in test_reallocate_updates_roll_lines_roll_mode\n    assert r1, \"no spare roll\"\nE   AssertionError: no spare roll\nE   assert None\n-------------------------- Captured stdout teardown ---------------------------\ncancel so_3d6c472c808a 200\ncancel so_a2b50cecdb93 200\ncancel so_0613f842012b 200\nORPHAN reserved rolls after cancel: 0\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l02_ln022_ln021_extra.py::test_reallocate_updates_roll_lines_roll_mode\n1 failed, 3 passed in 1.86s\n"
+  },
+  {
+    "file": "test_l02_ln022_special_price.py",
+    "exit_code": 0,
+    "seconds": 4.9,
+    "tail": ".....                                                                    [100%]\n5 passed in 2.39s\n"
+  },
+  {
+    "file": "test_l02_ln022_t03_amendment_note.py",
+    "exit_code": 0,
+    "seconds": 3.6,
+    "tail": "..                                                                       [100%]\n2 passed in 1.29s\n"
+  },
+  {
+    "file": "test_l02_ln022_t03_amendment_note_edge.py",
+    "exit_code": 0,
+    "seconds": 5.3,
+    "tail": ".........                                                                [100%]\n9 passed in 2.92s\n"
+  },
+  {
+    "file": "test_l02_ln022_t03_amendment_note_extended.py",
+    "exit_code": 1,
+    "seconds": 4.8,
+    "tail": "..........F..                                                            [100%]\n================================== FAILURES ===================================\n___________________ test_qty_decrease_below_shipped_blocked ___________________\nbackend\\tests\\test_l02_ln022_t03_amendment_note_extended.py:214: in test_qty_decrease_below_shipped_blocked\n    assert r.status_code == 400 and \"reservasi\" in r.text\nE   assert (200 == 400)\nE    +  where 200 = <Response [200]>.status_code\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l02_ln022_t03_amendment_note_extended.py::test_qty_decrease_below_shipped_blocked\n1 failed, 12 passed in 2.78s\n"
+  },
+  {
+    "file": "test_l02_ln023_ar_ap_consistency.py",
+    "exit_code": 1,
+    "seconds": 4.1,
+    "tail": "........F                                                                [100%]\n================================== FAILURES ===================================\n________________ TestT02POClose.test_variance_task_short_close ________________\nbackend\\tests\\test_l02_ln023_ar_ap_consistency.py:225: in test_variance_task_short_close\n    out = subprocess.run([\"python\", \"-c\", code], cwd=\"/app/backend\", capture_output=True, text=True)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nC:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\subprocess.py:548: in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nC:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\subprocess.py:1026: in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\nC:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\subprocess.py:1538: in _execute_child\n    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,\nE   NotADirectoryError: [WinError 267] The directory name is invalid\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l02_ln023_ar_ap_consistency.py::TestT02POClose::test_variance_task_short_close\n1 failed, 8 passed in 1.75s\n"
+  },
+  {
+    "file": "test_l02_ln023_t01_ar_split_surfaces.py",
+    "exit_code": 0,
+    "seconds": 5.7,
+    "tail": "............                                                             [100%]\n12 passed in 3.57s\n"
+  },
+  {
+    "file": "test_l02_ln023_t01_cross_surface_demo.py",
+    "exit_code": 1,
+    "seconds": 3.8,
+    "tail": "..F                                                                      [100%]\n================================== FAILURES ===================================\n_______________________ test_sales_kpi_kanda_invariant ________________________\nbackend\\tests\\test_l02_ln023_t01_cross_surface_demo.py:70: in test_sales_kpi_kanda_invariant\n    h = _login(\"sales.kanda@kainnusantara.id\", \"demo1234\", \"ent_kanda\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l02_ln023_t01_cross_surface_demo.py:16: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l02_ln023_t01_cross_surface_demo.py::test_sales_kpi_kanda_invariant\n1 failed, 2 passed in 1.42s\n"
+  },
+  {
+    "file": "test_l03_ln030_fixes_iter219.py",
+    "exit_code": 2,
+    "seconds": 3.4,
+    "tail": "\n=================================== ERRORS ====================================\n___________ ERROR collecting tests/test_l03_ln030_fixes_iter219.py ____________\nbackend\\tests\\test_l03_ln030_fixes_iter219.py:17: in <module>\n    TPL_A, TPL_B = [t[\"id\"] for t in DB.product_templates.find({\"status\": \"active\"}, {\"id\": 1}).sort(\"name\", 1).limit(2)]\n    ^^^^^^^^^^^^\nE   ValueError: not enough values to unpack (expected 2, got 1)\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l03_ln030_fixes_iter219.py - ValueError: not enough ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.98s\n"
+  },
+  {
+    "file": "test_l03_ln030_special_order_items.py",
+    "exit_code": 1,
+    "seconds": 4.4,
+    "tail": "artwork_400[draft]\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_invalid_artwork_400[other]\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_invalid_artwork_400[missing]\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_bad_source_type_and_no_types\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_redesign_source_type_cannot_bypass_hold\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_legacy_payload\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_customer_reference_labdip_handfeel\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestHoldRelease::test_release_forbidden[designer]\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestHoldRelease::test_release_forbidden[sales]\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestHoldRelease::test_meta_can_release\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestHoldRelease::test_release_allowed_then_rehold[md]\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestHoldRelease::test_release_allowed_then_rehold[manager]\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestHoldRelease::test_release_allowed_then_rehold[admin]\nERROR backend\\tests\\test_l03_ln030_special_order_items.py::TestHoldRelease::test_released_artwork_usable\n25 errors in 2.05s\n"
+  },
+  {
+    "file": "test_l03_ln031_extra_iter220.py",
+    "exit_code": 1,
+    "seconds": 4.3,
+    "tail": "_code\n_______________ ERROR at setup of test_concurrent_paper_clicks ________________\nbackend\\tests\\test_l03_ln031_extra_iter220.py:71: in H\n    \"md\": _login(\"md@kainnusantara.id\")}\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln031_extra_iter220.py:29: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n________ ERROR at setup of test_od_design_acc_race_and_decision_object ________\nbackend\\tests\\test_l03_ln031_extra_iter220.py:71: in H\n    \"md\": _login(\"md@kainnusantara.id\")}\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln031_extra_iter220.py:29: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l03_ln031_extra_iter220.py::test_meta_can_paper_check\nERROR backend\\tests\\test_l03_ln031_extra_iter220.py::test_designer_ownership\nERROR backend\\tests\\test_l03_ln031_extra_iter220.py::test_md_role_forbidden\nERROR backend\\tests\\test_l03_ln031_extra_iter220.py::test_archived_and_missing\nERROR backend\\tests\\test_l03_ln031_extra_iter220.py::test_concurrent_paper_clicks\nERROR backend\\tests\\test_l03_ln031_extra_iter220.py::test_od_design_acc_race_and_decision_object\n6 errors in 2.17s\n"
+  },
+  {
+    "file": "test_l03_ln031_paper_and_acc.py",
+    "exit_code": 0,
+    "seconds": 4.0,
+    "tail": "....                                                                     [100%]\n4 passed in 1.60s\n"
+  },
+  {
+    "file": "test_l03_ln032_extra_iter221.py",
+    "exit_code": 0,
+    "seconds": 4.7,
+    "tail": "......                                                                   [100%]\n6 passed in 2.27s\n"
+  },
+  {
+    "file": "test_l03_ln032_reproofing.py",
+    "exit_code": 0,
+    "seconds": 4.5,
+    "tail": "....                                                                     [100%]\n4 passed in 2.00s\n"
+  },
+  {
+    "file": "test_l03_ln033_fulfillment.py",
+    "exit_code": 2,
+    "seconds": 3.0,
+    "tail": "\n=================================== ERRORS ====================================\n____________ ERROR collecting tests/test_l03_ln033_fulfillment.py _____________\nbackend\\tests\\test_l03_ln033_fulfillment.py:15: in <module>\n    TPL = {m: DB.product_templates.find_one({\"restock_source.mode\": m}, {\"_id\": 0, \"id\": 1})[\"id\"] for m in (\"supplier\", \"makloon\", \"both\")}\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l03_ln033_fulfillment.py - TypeError: 'NoneType' obj...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.72s\n"
+  },
+  {
+    "file": "test_l03_ln033_fulfillment_edges.py",
+    "exit_code": 2,
+    "seconds": 3.2,
+    "tail": "\n=================================== ERRORS ====================================\n_________ ERROR collecting tests/test_l03_ln033_fulfillment_edges.py __________\nbackend\\tests\\test_l03_ln033_fulfillment_edges.py:14: in <module>\n    TPL = {m: DB.product_templates.find_one({\"restock_source.mode\": m}, {\"_id\": 0, \"id\": 1})[\"id\"] for m in (\"supplier\", \"makloon\", \"both\")}\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l03_ln033_fulfillment_edges.py - TypeError: 'NoneTyp...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.98s\n"
+  },
+  {
+    "file": "test_l03_ln034_revalidation.py",
+    "exit_code": 2,
+    "seconds": 2.9,
+    "tail": "\n=================================== ERRORS ====================================\n____________ ERROR collecting tests/test_l03_ln034_revalidation.py ____________\nbackend\\tests\\test_l03_ln034_revalidation.py:13: in <module>\n    SUP_A, SUP_B = [s[\"id\"] for s in DB.suppliers.find({\"entity_id\": \"all\"}, {\"_id\": 0, \"id\": 1}).sort(\"name\", 1).limit(2)]\n    ^^^^^^^^^^^^\nE   ValueError: not enough values to unpack (expected 2, got 1)\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l03_ln034_revalidation.py - ValueError: not enough v...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.72s\n"
+  },
+  {
+    "file": "test_l03_ln034_revalidation_edges.py",
+    "exit_code": 1,
+    "seconds": 3.3,
+    "tail": "@kainnusantara.id\"),\n                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln034_revalidation_edges.py:22: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n______________ ERROR at setup of test_contract_reference_options ______________\nbackend\\tests\\test_l03_ln034_revalidation_edges.py:28: in H\n    return {\"admin\": _login(\"admin@kainnusantara.id\", \"demo12345\"), \"md\": _login(\"md@kainnusantara.id\"),\n                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln034_revalidation_edges.py:22: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l03_ln034_revalidation_edges.py::test_create_validation\nERROR backend\\tests\\test_l03_ln034_revalidation_edges.py::test_partners_and_empty_eligibility\nERROR backend\\tests\\test_l03_ln034_revalidation_edges.py::test_decide_guards_and_operational_note\nERROR backend\\tests\\test_l03_ln034_revalidation_edges.py::test_sales_permissions\nERROR backend\\tests\\test_l03_ln034_revalidation_edges.py::test_contract_reference_options\n5 errors in 1.37s\n"
+  },
+  {
+    "file": "test_l04_ln040_real_ocr.py",
+    "exit_code": 2,
+    "seconds": 2.6,
+    "tail": "\n=================================== ERRORS ====================================\n______________ ERROR collecting tests/test_l04_ln040_real_ocr.py ______________\nbackend\\tests\\test_l04_ln040_real_ocr.py:86: in <module>\n    @pytest.mark.skipif(not _has_key(), reason=\"kunci OpenAI tidak ada\")\n                            ^^^^^^^^^^\nbackend\\tests\\test_l04_ln040_real_ocr.py:36: in _has_key\n    env_txt = open(\"/app/backend/.env\").read()\n              ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   FileNotFoundError: [Errno 2] No such file or directory: '/app/backend/.env'\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l04_ln040_real_ocr.py - FileNotFoundError: [Errno 2]...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.78s\n"
+  },
+  {
+    "file": "test_l04_ln041_mdq_select.py",
+    "exit_code": 1,
+    "seconds": 3.1,
+    "tail": "=============\n_______ ERROR at setup of test_t01_select_two_rolls_from_different_lots _______\nbackend\\tests\\test_l04_ln041_mdq_select.py:35: in fx\n    yield {\"iid\": iid, \"lines\": lines, \"rolls\": rolls, \"tok\": _login(\"mdquality@kainnusantara.id\", \"demo1234\"),\n                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l04_ln041_mdq_select.py:15: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n_ ERROR at setup of test_t02_mismatch_then_human_accept_is_separate_and_audited _\nbackend\\tests\\test_l04_ln041_mdq_select.py:35: in fx\n    yield {\"iid\": iid, \"lines\": lines, \"rolls\": rolls, \"tok\": _login(\"mdquality@kainnusantara.id\", \"demo1234\"),\n                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l04_ln041_mdq_select.py:15: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l04_ln041_mdq_select.py::test_t01_select_two_rolls_from_different_lots\nERROR backend\\tests\\test_l04_ln041_mdq_select.py::test_t02_mismatch_then_human_accept_is_separate_and_audited\n2 errors in 0.74s\n"
+  },
+  {
+    "file": "test_l04_ln043_material_ledger.py",
+    "exit_code": 1,
+    "seconds": 3.4,
+    "tail": "24: in pytest_fixture_setup\n    return (yield)\n            ^^^^^\nbackend\\tests\\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n_______ ERROR at setup of test_t03_actual_output_differs_from_forecast ________\nbackend\\tests\\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n____ ERROR at setup of test_t02_cancel_after_issue_partial_return_and_loss ____\nbackend\\tests\\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l04_ln043_material_ledger.py::test_t01_commit_600_then_partial_issue\nERROR backend\\tests\\test_l04_ln043_material_ledger.py::test_t03_actual_output_differs_from_forecast\nERROR backend\\tests\\test_l04_ln043_material_ledger.py::test_t02_cancel_after_issue_partial_return_and_loss\n3 errors in 1.02s\n"
+  },
+  {
+    "file": "test_l04_mdq_cut.py",
+    "exit_code": 1,
+    "seconds": 4.1,
+    "tail": "..F.                                                                     [100%]\n================================== FAILURES ===================================\n_______________________ TestMdqCut.test_sales_forbidden _______________________\nbackend\\tests\\test_l04_mdq_cut.py:77: in test_sales_forbidden\n    s = _login(\"sales.kanda@kainnusantara.id\", \"demo1234\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l04_mdq_cut.py:15: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l04_mdq_cut.py::TestMdqCut::test_sales_forbidden - ...\n1 failed, 3 passed, 1 warning in 1.72s\n"
+  },
+  {
+    "file": "test_l04_mdq_cut_edge.py",
+    "exit_code": 1,
+    "seconds": 3.9,
+    "tail": "..FF..                                                                   [100%]\n================================== FAILURES ===================================\n__________ TestMdqCutEdge.test_md_roles_allowed[md@kainnusantara.id] __________\nbackend\\tests\\test_l04_mdq_cut_edge.py:84: in test_md_roles_allowed\n    tok = _login(email, \"demo1234\")\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l04_mdq_cut_edge.py:15: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n______ TestMdqCutEdge.test_md_roles_allowed[mdquality@kainnusantara.id] _______\nbackend\\tests\\test_l04_mdq_cut_edge.py:84: in test_md_roles_allowed\n    tok = _login(email, \"demo1234\")\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l04_mdq_cut_edge.py:15: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l04_mdq_cut_edge.py::TestMdqCutEdge::test_md_roles_allowed[md@kainnusantara.id]\nFAILED backend\\tests\\test_l04_mdq_cut_edge.py::TestMdqCutEdge::test_md_roles_allowed[mdquality@kainnusantara.id]\n2 failed, 4 passed in 1.56s\n"
+  },
+  {
+    "file": "test_l05_interval_form.py",
+    "exit_code": 0,
+    "seconds": 4.2,
+    "tail": "....                                                                     [100%]\n4 passed in 2.19s\n"
+  },
+  {
+    "file": "test_l05_l06_t1_iter198.py",
+    "exit_code": 1,
+    "seconds": 5.0,
+    "tail": "ogin(email)\n        ^^^^^^^^^^^^^\nbackend\\tests\\test_l05_l06_t1_iter198.py:19: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n_______________________ test_cutting_desk_queues_shape ________________________\nbackend\\tests\\test_l05_l06_t1_iter198.py:104: in test_cutting_desk_queues_shape\n    h = _login(\"sampleadmin@kainnusantara.id\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l05_l06_t1_iter198.py:19: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n________________________ test_real_catalogue_soft_flow ________________________\nbackend\\tests\\test_l05_l06_t1_iter198.py:168: in test_real_catalogue_soft_flow\n    assert bad.status_code == 400\nE   assert 200 == 400\nE    +  where 200 = <Response [200]>.status_code\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l05_l06_t1_iter198.py::test_qc_request_notifies_qc_user_via_api\nFAILED backend\\tests\\test_l05_l06_t1_iter198.py::test_cutting_caps_forbidden_for_sampleadmin_and_sales\nFAILED backend\\tests\\test_l05_l06_t1_iter198.py::test_cutting_desk_queues_shape\nFAILED backend\\tests\\test_l05_l06_t1_iter198.py::test_real_catalogue_soft_flow\n4 failed, 10 passed, 1 skipped in 2.70s\n"
+  },
+  {
+    "file": "test_l05_l06_t1_iter199.py",
+    "exit_code": 1,
+    "seconds": 4.7,
+    "tail": "_owner_warehouse __________________\nbackend\\tests\\test_l05_l06_t1_iter199.py:241: in test_receive_rejects_other_owner_warehouse\n    assert r.status_code == 400, r.text[:200]\nE   AssertionError: {\"detail\":\"Lokasi tujuan Admin Cutting tidak ditemukan.\"}\nE   assert 404 == 400\nE    +  where 404 = <Response [404]>.status_code\n______________________ test_receive_shared_warehouse_ok _______________________\nbackend\\tests\\test_l05_l06_t1_iter199.py:294: in test_receive_shared_warehouse_ok\n    assert r.status_code == 200, r.text[:300]\nE   AssertionError: {\"detail\":\"Lokasi tujuan Admin Cutting tidak ditemukan.\"}\nE   assert 404 == 200\nE    +  where 404 = <Response [404]>.status_code\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l05_l06_t1_iter199.py::test_qc_notification_to_qc_user\nFAILED backend\\tests\\test_l05_l06_t1_iter199.py::test_receive_rejects_other_owner_warehouse\nFAILED backend\\tests\\test_l05_l06_t1_iter199.py::test_receive_shared_warehouse_ok\nERROR backend\\tests\\test_l05_l06_t1_iter199.py::test_cutting_desk_rows_have_roll_owner\nERROR backend\\tests\\test_l05_l06_t1_iter199.py::test_sampleadmin_catalogue_preview_allowed\nERROR backend\\tests\\test_l05_l06_t1_iter199.py::test_sampleadmin_catalogue_templates_allowed\nERROR backend\\tests\\test_l05_l06_t1_iter199.py::test_sampleadmin_cannot_create_regular_so\nERROR backend\\tests\\test_l05_l06_t1_iter199.py::test_sampleadmin_can_create_sample_so\n3 failed, 8 passed, 5 errors in 2.30s\n"
+  },
+  {
+    "file": "test_l05_replacement_extra_t1.py",
+    "exit_code": 0,
+    "seconds": 7.4,
+    "tail": "..............                                                           [100%]\n14 passed in 5.19s\n"
+  },
+  {
+    "file": "test_l05_so_qc_reject_notify.py",
+    "exit_code": 0,
+    "seconds": 3.5,
+    "tail": "..                                                                       [100%]\n2 passed in 1.40s\n"
+  },
+  {
+    "file": "test_l05_so_qc_request.py",
+    "exit_code": 3221225480,
+    "seconds": 11.7,
+    "tail": ".....                                                                    [100%]\n5 passed, 1 warning in 3.94s\n"
+  },
+  {
+    "file": "test_l05_so_qc_request_api_t1.py",
+    "exit_code": 0,
+    "seconds": 4.5,
+    "tail": "......                                                                   [100%]\n6 passed in 2.10s\n"
+  },
+  {
+    "file": "test_l05_so_qc_retest_t1.py",
+    "exit_code": 0,
+    "seconds": 3.8,
+    "tail": "..                                                                       [100%]\n2 passed in 1.56s\n"
+  },
+  {
+    "file": "test_l06_cutting_wait_config.py",
+    "exit_code": 0,
+    "seconds": 3.2,
+    "tail": ".                                                                        [100%]\n1 passed in 0.93s\n"
+  },
+  {
+    "file": "test_l06_cutting_wait_config_extra.py",
+    "exit_code": 0,
+    "seconds": 3.8,
+    "tail": "..........                                                               [100%]\n10 passed in 1.56s\n"
+  },
+  {
+    "file": "test_l06_samples_cutting.py",
+    "exit_code": 1,
+    "seconds": 5.2,
+    "tail": "...F....                                                                 [100%]\n================================== FAILURES ===================================\n_____________________ test_ln060_t04_hanger_not_forced_up _____________________\nbackend\\tests\\test_l06_samples_cutting.py:130: in test_ln060_t04_hanger_not_forced_up\n    ok = _so(h, [{\"product_id\": knit[\"id\"], \"quantity\": 2.0, \"unit\": \"kg\", \"base_quantity\": 2.0, \"is_sample\": True, \"sample_kind\": \"hanger\"}])\n                                ^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l06_samples_cutting.py::test_ln060_t04_hanger_not_forced_up\n1 failed, 7 passed in 2.96s\n"
+  },
+  {
+    "file": "test_l06_t1_iter200.py",
+    "exit_code": 1,
+    "seconds": 3.8,
+    "tail": "....ssE...                                                               [100%]\n=================================== ERRORS ====================================\n____________ ERROR at setup of test_cutting_desk_shape_thresholds _____________\nbackend\\tests\\test_l06_t1_iter200.py:40: in sampleadmin\n    return _login(\"sampleadmin@kainnusantara.id\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l06_t1_iter200.py:29: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l06_t1_iter200.py::test_cutting_desk_shape_thresholds\n7 passed, 2 skipped, 1 error in 1.72s\n"
+  },
+  {
+    "file": "test_l07_trip_manifest.py",
+    "exit_code": 1,
+    "seconds": 3.1,
+    "tail": "F...s                                                                    [100%]\n================================== FAILURES ===================================\n________________ test_ln070_picking_list_keeps_orders_separate ________________\nbackend\\tests\\test_l07_trip_manifest.py:20: in test_ln070_picking_list_keeps_orders_separate\n    assert cands and all(c[\"order_number\"].startswith(\"KSC/\") for c in cands)\nE   AssertionError: assert ([{'order_id': 'so_003', 'order_number': 'SO-0003', 'warehouses': ['Gudang Jakarta Utara'], 'fulfillment_method': 'kiri...': 'so_005', 'order_number': 'SO-0005', 'warehouses': ['Gudang Surabaya Rungkut'], 'fulfillment_method': 'kirim', ...}] and False)\nE    +  where False = all(<generator object test_ln070_picking_list_keeps_orders_separate.<locals>.<genexpr> at 0x0000018FB8C7ACF0>)\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l07_trip_manifest.py::test_ln070_picking_list_keeps_orders_separate\n1 failed, 3 passed, 1 skipped in 1.10s\n"
+  },
+  {
+    "file": "test_l07_trip_regression.py",
+    "exit_code": 1,
+    "seconds": 4.0,
+    "tail": "or object test_candidates_only_ksc.<locals>.<genexpr> at 0x000001AC1409B6B0>)\n_______________________ test_multi_order_delivery_full ________________________\nbackend\\tests\\test_l07_trip_regression.py:103: in test_multi_order_delivery_full\n    ids = [s[\"KSC/SJ-00001\"], s[\"KSC/SJ-00002\"], s[\"KSC/SJ-00003\"], s[\"KSC/SJ-00004\"]]\n           ^^^^^^^^^^^^^^^^^\nE   KeyError: 'KSC/SJ-00001'\n______________________ test_pickup_order_cannot_combine _______________________\nbackend\\tests\\test_l07_trip_regression.py:137: in test_pickup_order_cannot_combine\n    json={\"shipment_ids\": [s[\"KSC/SJ-00001\"], s[\"KSC/SJ-00003\"]], \"mode\": \"self_pickup\"})\n                           ^^^^^^^^^^^^^^^^^\nE   KeyError: 'KSC/SJ-00001'\n__________________ test_single_order_delivery_and_transition __________________\nbackend\\tests\\test_l07_trip_regression.py:156: in test_single_order_delivery_and_transition\n    json={\"shipment_ids\": [s[\"KSC/SJ-00002\"]], \"mode\": \"expedition\", \"courier_name\": \"TEST_JNE\"})\n                           ^^^^^^^^^^^^^^^^^\nE   KeyError: 'KSC/SJ-00002'\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l07_trip_regression.py::test_candidates_only_ksc - ...\nFAILED backend\\tests\\test_l07_trip_regression.py::test_multi_order_delivery_full\nFAILED backend\\tests\\test_l07_trip_regression.py::test_pickup_order_cannot_combine\nFAILED backend\\tests\\test_l07_trip_regression.py::test_single_order_delivery_and_transition\n4 failed, 4 passed in 1.98s\n"
+  },
+  {
+    "file": "test_l08_evidence_identity.py",
+    "exit_code": 3221225480,
+    "seconds": 10.1,
+    "tail": "1_partial_claim_becomes_numbered_child\n    roll = shipped_roll(h, 1)\n           ^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l08_evidence_identity.py:56: in shipped_roll\n    data = requests.get(f\"{BASE}/sales-returns/returnable\", headers=h, params={\"order_id\": SO[\"id\"]}).json()\n                                                                                           ^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n__________________ test_t03_block_resend_to_origin_customer ___________________\nbackend\\tests\\test_l08_evidence_identity.py:184: in test_t03_block_resend_to_origin_customer\n    returned = DB.inventory_rolls.find_one({\"return_id\": {\"$exists\": True}, \"returned_from_customer_ids\": SO[\"customer_id\"]})\n                                                                                                          ^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l08_evidence_identity.py::test_t03_evidence_optional_by_default\nFAILED backend\\tests\\test_l08_evidence_identity.py::test_t03_evidence_required_at_submit\nFAILED backend\\tests\\test_l08_evidence_identity.py::test_t01_whole_roll_keeps_identity_and_reverse_restores\nFAILED backend\\tests\\test_l08_evidence_identity.py::test_t01_partial_claim_becomes_numbered_child\nFAILED backend\\tests\\test_l08_evidence_identity.py::test_t03_block_resend_to_origin_customer\n5 failed, 5 passed, 1 warning in 1.96s\n"
+  },
+  {
+    "file": "test_l08_ln081_journey.py",
+    "exit_code": 2,
+    "seconds": 3.0,
+    "tail": "\n=================================== ERRORS ====================================\n______________ ERROR collecting tests/test_l08_ln081_journey.py _______________\nbackend\\tests\\test_l08_ln081_journey.py:13: in <module>\n    RCM_TRANSIT = DB.warehouses.find_one({\"name\": \"Rancamalang \u00b7 Gudang Transit\"})[\"id\"]\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l08_ln081_journey.py - TypeError: 'NoneType' object ...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.71s\n"
+  },
+  {
+    "file": "test_l08_returnable_rolls.py",
+    "exit_code": 2,
+    "seconds": 3.4,
+    "tail": "\n=================================== ERRORS ====================================\n_____________ ERROR collecting tests/test_l08_returnable_rolls.py _____________\nbackend\\tests\\test_l08_returnable_rolls.py:11: in <module>\n    SHIPPED_SO = DB.sales_orders.find_one({\"number\": \"KSC/SO-00001\"})[\"id\"]      # done, SJ-00001/00002\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l08_returnable_rolls.py - TypeError: 'NoneType' obje...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 1.11s\n"
+  },
+  {
+    "file": "test_l08_returnable_rolls_extra.py",
+    "exit_code": 2,
+    "seconds": 2.8,
+    "tail": "\n=================================== ERRORS ====================================\n__________ ERROR collecting tests/test_l08_returnable_rolls_extra.py __________\nbackend\\tests\\test_l08_returnable_rolls_extra.py:11: in <module>\n    SHIPPED_SO = DB.sales_orders.find_one({\"number\": \"KSC/SO-00001\"})[\"id\"]\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l08_returnable_rolls_extra.py - TypeError: 'NoneType...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.72s\n"
+  },
+  {
+    "file": "test_l09_ln093_extra.py",
+    "exit_code": 1,
+    "seconds": 3.1,
+    "tail": "===========================\n________________________ test_yard_roll_unit_preserved ________________________\nbackend\\tests\\test_l09_ln093_extra.py:54: in test_yard_roll_unit_preserved\n    rid, rolls = make_case([{\"supplier_id\": PO_A[\"supplier_id\"], \"po_id\": PO_A[\"id\"]}], tpl=TPL_YARD)\n                                            ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n______________ test_mixed_known_and_unknown_with_manual_supplier ______________\nbackend\\tests\\test_l09_ln093_extra.py:68: in test_mixed_known_and_unknown_with_manual_supplier\n    rid, rolls = make_case([{\"supplier_id\": PO_B[\"supplier_id\"], \"po_id\": PO_B[\"id\"]}, {}])\n                                            ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n_________________________ test_get_detail_shows_links _________________________\nbackend\\tests\\test_l09_ln093_extra.py:83: in test_get_detail_shows_links\n    rid, _ = make_case([{\"supplier_id\": PO_A[\"supplier_id\"], \"po_id\": PO_A[\"id\"]}])\n                                        ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l09_ln093_extra.py::test_yard_roll_unit_preserved\nFAILED backend\\tests\\test_l09_ln093_extra.py::test_mixed_known_and_unknown_with_manual_supplier\nFAILED backend\\tests\\test_l09_ln093_extra.py::test_get_detail_shows_links - T...\n3 failed, 9 passed in 1.12s\n"
+  },
+  {
+    "file": "test_l09_ln093_ln090.py",
+    "exit_code": 1,
+    "seconds": 3.2,
+    "tail": "============= FAILURES ===================================\n_______________ test_t02_split_by_roll_provenance_not_latest_po _______________\nbackend\\tests\\test_l09_ln093_ln090.py:51: in test_t02_split_by_roll_provenance_not_latest_po\n    {\"supplier_id\": PO_A[\"supplier_id\"], \"po_id\": PO_A[\"id\"], \"po_number\": PO_A[\"po_number\"]},\n                    ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n________________ test_unknown_provenance_needs_manual_supplier ________________\nbackend\\tests\\test_l09_ln093_ln090.py:78: in test_unknown_provenance_needs_manual_supplier\n    json={\"supplier_id\": PO_A[\"supplier_id\"], \"bypass_import_policy\": True})\n                         ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n_____________________ test_parallel_create_makes_one_set ______________________\nbackend\\tests\\test_l09_ln093_ln090.py:84: in test_parallel_create_makes_one_set\n    rid, _ = make_case([{\"supplier_id\": PO_A[\"supplier_id\"], \"po_id\": PO_A[\"id\"]},\n                                        ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l09_ln093_ln090.py::test_t02_split_by_roll_provenance_not_latest_po\nFAILED backend\\tests\\test_l09_ln093_ln090.py::test_unknown_provenance_needs_manual_supplier\nFAILED backend\\tests\\test_l09_ln093_ln090.py::test_parallel_create_makes_one_set\n3 failed, 1 passed in 1.04s\n"
+  },
+  {
+    "file": "test_l10_ln100_ln102_stock_tree.py",
+    "exit_code": 2,
+    "seconds": 2.6,
+    "tail": "\n=================================== ERRORS ====================================\n__________ ERROR collecting tests/test_l10_ln100_ln102_stock_tree.py __________\nbackend\\tests\\test_l10_ln100_ln102_stock_tree.py:15: in <module>\n    ZONE = next(z for z in WH_DOC[\"zones\"] if z[\"id\"] == \"zone_sim_wh_jkt_w\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   StopIteration\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l10_ln100_ln102_stock_tree.py - StopIteration\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.72s\n"
+  },
+  {
+    "file": "test_l10_ln101_roll_count.py",
+    "exit_code": 2,
+    "seconds": 2.6,
+    "tail": "\n=================================== ERRORS ====================================\n_____________ ERROR collecting tests/test_l10_ln101_roll_count.py _____________\nbackend\\tests\\test_l10_ln101_roll_count.py:14: in <module>\n    ZONE = next(z for z in WH_DOC[\"zones\"] if z[\"id\"] == \"zone_sim_wh_jkt_w\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   StopIteration\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l10_ln101_roll_count.py - StopIteration\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.73s\n"
+  },
+  {
+    "file": "test_l10_ops01_t1.py",
+    "exit_code": 2,
+    "seconds": 2.4,
+    "tail": "\n=================================== ERRORS ====================================\n_________________ ERROR collecting tests/test_l10_ops01_t1.py _________________\nbackend\\tests\\test_l10_ops01_t1.py:12: in <module>\n    _env = open(os.path.join(os.path.dirname(__file__), \"..\", \".env\")).read()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\work\\\\KNHOST-plan-audit-2026-10-19\\\\backend\\\\tests\\\\..\\\\.env'\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l10_ops01_t1.py - FileNotFoundError: [Errno 2] No su...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.70s\n"
+  },
+  {
+    "file": "test_l10_t1_review.py",
+    "exit_code": 2,
+    "seconds": 2.4,
+    "tail": "\n=================================== ERRORS ====================================\n________________ ERROR collecting tests/test_l10_t1_review.py _________________\nbackend\\tests\\test_l10_t1_review.py:11: in <module>\n    _env = open(os.path.join(os.path.dirname(__file__), \"..\", \".env\")).read()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\work\\\\KNHOST-plan-audit-2026-10-19\\\\backend\\\\tests\\\\..\\\\.env'\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_l10_t1_review.py - FileNotFoundError: [Errno 2] No s...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.74s\n"
+  },
+  {
+    "file": "test_l11_export_center.py",
+    "exit_code": 1,
+    "seconds": 5.5,
+    "tail": "..FF..                                                                   [100%]\n================================== FAILURES ===================================\n______________________ test_t03_partitions_not_truncated ______________________\nbackend\\tests\\test_l11_export_center.py:85: in test_t03_partitions_not_truncated\n    assert total > 5000\nE   assert 117 > 5000\n______________ test_ln113_t01_sales_cannot_inject_hidden_fields _______________\nbackend\\tests\\test_l11_export_center.py:95: in test_ln113_t01_sales_cannot_inject_hidden_fields\n    s = _login(\"sales.kanda@kainnusantara.id\", ent=\"ent_kanda\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l11_export_center.py:21: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l11_export_center.py::test_t03_partitions_not_truncated\nFAILED backend\\tests\\test_l11_export_center.py::test_ln113_t01_sales_cannot_inject_hidden_fields\n2 failed, 4 passed in 3.37s\n"
+  },
+  {
+    "file": "test_l11_finance_staff_templates.py",
+    "exit_code": 1,
+    "seconds": 5.9,
+    "tail": ".....FF                                                                  [100%]\n================================== FAILURES ===================================\n_____________________ test_templates_save_run_owner_only ______________________\nbackend\\tests\\test_l11_finance_staff_templates.py:141: in test_templates_save_run_owner_only\n    s = _login(\"sales.kanda@kainnusantara.id\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l11_finance_staff_templates.py:21: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code\n__________________________ test_coverage_no_unmapped __________________________\nbackend\\tests\\test_l11_finance_staff_templates.py:150: in test_coverage_no_unmapped\n    assert c[\"summary\"][\"unmapped\"] == 0, [r[\"collection\"] for r in c[\"collections\"] if r[\"status\"] == \"unmapped\"]\nE   AssertionError: ['bank_statement_formats', 'bank_statement_lines', 'budgets', 'customer_prices', 'fin_budget_rules', 'fin_depreciation_entries', ...]\nE   assert 15 == 0\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_l11_finance_staff_templates.py::test_templates_save_run_owner_only\nFAILED backend\\tests\\test_l11_finance_staff_templates.py::test_coverage_no_unmapped\n2 failed, 5 passed in 3.70s\n"
+  },
+  {
+    "file": "test_lanjutan_sched_returns_interco.py",
+    "exit_code": 1,
+    "seconds": 6.6,
+    "tail": "........F                                                                [100%]\n================================== FAILURES ===================================\n______________________ test_ln100_t02_shared_woven_node _______________________\nbackend\\tests\\test_lanjutan_sched_returns_interco.py:208: in test_ln100_t02_shared_woven_node\n    assert wh[\"sharing_mode\"] == \"shared\"\n           ^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nFAILED backend\\tests\\test_lanjutan_sched_returns_interco.py::test_ln100_t02_shared_woven_node\n1 failed, 8 passed, 1 warning in 4.19s\n"
+  },
+  {
+    "file": "test_ln014_lot_identity.py",
+    "exit_code": 0,
+    "seconds": 3.2,
+    "tail": "...                                                                      [100%]\n3 passed in 1.08s\n"
+  },
+  {
+    "file": "test_ln015_typed_rnd_and_role_version.py",
+    "exit_code": 0,
+    "seconds": 4.2,
+    "tail": ".........                                                                [100%]\n9 passed in 1.95s\n"
+  },
+  {
+    "file": "test_ln091_092_returns_exceptions.py",
+    "exit_code": 3221225480,
+    "seconds": 11.3,
+    "tail": ".....                                                                    [100%]\n5 passed, 1 warning in 3.84s\n"
+  },
+  {
+    "file": "test_ln091t02_ln093_chain.py",
+    "exit_code": 2,
+    "seconds": 2.8,
+    "tail": "\n=================================== ERRORS ====================================\n_____________ ERROR collecting tests/test_ln091t02_ln093_chain.py _____________\nbackend\\tests\\test_ln091t02_ln093_chain.py:17: in <module>\n    PRICE = float(DB.products.find_one({\"id\": TPL[\"product_id\"]})[\"price\"])\n                                              ^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable\n=========================== short test summary info ===========================\nERROR backend\\tests\\test_ln091t02_ln093_chain.py - TypeError: 'NoneType' obje...\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.79s\n"
+  },
+  {
+    "file": "test_ln120_device_identity.py",
+    "exit_code": 0,
+    "seconds": 3.5,
+    "tail": "........                                                                 [100%]\n8 passed in 1.19s\n"
+  },
+  {
+    "file": "test_ln140_chain_fixes.py",
+    "exit_code": 3221225480,
+    "seconds": 8.8,
+    "tail": "...                                                                      [100%]\n3 passed, 1 warning in 1.91s\n"
+  }
+]

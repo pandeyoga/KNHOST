@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="4" time="1.667" timestamp="2026-10-19T13:34:06.880693+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l03_ln031_paper_and_acc" name="test_paper_check_records_round_actor_time_without_approval" time="0.352" /><testcase classname="tests.test_l03_ln031_paper_and_acc" name="test_paper_uncheck_and_unknown_round" time="0.040" /><testcase classname="tests.test_l03_ln031_paper_and_acc" name="test_paper_check_forbidden_for_sales" time="0.279"><failure message="AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend\tests\test_l03_ln031_paper_and_acc.py:69: in test_paper_check_forbidden_for_sales
+    h = _login("sales@kainnusantara.id")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln031_paper_and_acc.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_l03_ln031_paper_and_acc" name="test_concurrent_pic_acc_only_once" time="0.282"><failure message="AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend\tests\test_l03_ln031_paper_and_acc.py:75: in test_concurrent_pic_acc_only_once
+    h2 = _login("manager@kainnusantara.id")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln031_paper_and_acc.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase></testsuite></testsuites>

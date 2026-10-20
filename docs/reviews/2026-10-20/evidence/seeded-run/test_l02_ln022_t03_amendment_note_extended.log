@@ -1,0 +1,10 @@
+..........F..                                                            [100%]
+================================== FAILURES ===================================
+___________________ test_qty_decrease_below_shipped_blocked ___________________
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:214: in test_qty_decrease_below_shipped_blocked
+    assert r.status_code == 400 and "reservasi" in r.text
+E   assert (200 == 400)
+E    +  where 200 = <Response [200]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_qty_decrease_below_shipped_blocked
+1 failed, 12 passed in 2.78s

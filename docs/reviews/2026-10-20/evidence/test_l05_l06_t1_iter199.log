@@ -1,0 +1,85 @@
+FE.EEEE..F.F..F.                                                         [100%]
+=================================== ERRORS ====================================
+__________ ERROR at setup of test_cutting_desk_rows_have_roll_owner ___________
+backend\tests\test_l05_l06_t1_iter199.py:44: in sampleadmin
+    return _login("sampleadmin@kainnusantara.id")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+________ ERROR at setup of test_sampleadmin_catalogue_preview_allowed _________
+backend\tests\test_l05_l06_t1_iter199.py:44: in sampleadmin
+    return _login("sampleadmin@kainnusantara.id")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_______ ERROR at setup of test_sampleadmin_catalogue_templates_allowed ________
+backend\tests\test_l05_l06_t1_iter199.py:44: in sampleadmin
+    return _login("sampleadmin@kainnusantara.id")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_________ ERROR at setup of test_sampleadmin_cannot_create_regular_so _________
+backend\tests\test_l05_l06_t1_iter199.py:44: in sampleadmin
+    return _login("sampleadmin@kainnusantara.id")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+___________ ERROR at setup of test_sampleadmin_can_create_sample_so ___________
+backend\tests\test_l05_l06_t1_iter199.py:44: in sampleadmin
+    return _login("sampleadmin@kainnusantara.id")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+================================== FAILURES ===================================
+___________________ test_cutting_locations_include_sharing ____________________
+backend\tests\test_l05_l06_t1_iter199.py:75: in test_cutting_locations_include_sharing
+    assert sample, "no dedicated warehouses in cutting locations list"
+E   AssertionError: no dedicated warehouses in cutting locations list
+E   assert []
+_______________________ test_qc_notification_to_qc_user _______________________
+backend\tests\test_l05_l06_t1_iter199.py:179: in test_qc_notification_to_qc_user
+    qc = _login("qc@kainnusantara.id")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_________________ test_receive_rejects_other_owner_warehouse __________________
+backend\tests\test_l05_l06_t1_iter199.py:241: in test_receive_rejects_other_owner_warehouse
+    assert r.status_code == 400, r.text[:200]
+E   AssertionError: {"detail":"Lokasi tujuan Admin Cutting tidak ditemukan."}
+E   assert 404 == 400
+E    +  where 404 = <Response [404]>.status_code
+______________________ test_receive_shared_warehouse_ok _______________________
+backend\tests\test_l05_l06_t1_iter199.py:294: in test_receive_shared_warehouse_ok
+    assert r.status_code == 200, r.text[:300]
+E   AssertionError: {"detail":"Lokasi tujuan Admin Cutting tidak ditemukan."}
+E   assert 404 == 200
+E    +  where 404 = <Response [404]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l05_l06_t1_iter199.py::test_cutting_locations_include_sharing
+FAILED backend\tests\test_l05_l06_t1_iter199.py::test_qc_notification_to_qc_user
+FAILED backend\tests\test_l05_l06_t1_iter199.py::test_receive_rejects_other_owner_warehouse
+FAILED backend\tests\test_l05_l06_t1_iter199.py::test_receive_shared_warehouse_ok
+ERROR backend\tests\test_l05_l06_t1_iter199.py::test_cutting_desk_rows_have_roll_owner
+ERROR backend\tests\test_l05_l06_t1_iter199.py::test_sampleadmin_catalogue_preview_allowed
+ERROR backend\tests\test_l05_l06_t1_iter199.py::test_sampleadmin_catalogue_templates_allowed
+ERROR backend\tests\test_l05_l06_t1_iter199.py::test_sampleadmin_cannot_create_regular_so
+ERROR backend\tests\test_l05_l06_t1_iter199.py::test_sampleadmin_can_create_sample_so
+4 failed, 7 passed, 5 errors in 2.34s

@@ -1,0 +1,24 @@
+..FF..                                                                   [100%]
+================================== FAILURES ===================================
+__________ TestMdqCutEdge.test_md_roles_allowed[md@kainnusantara.id] __________
+backend\tests\test_l04_mdq_cut_edge.py:84: in test_md_roles_allowed
+    tok = _login(email, "demo1234")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l04_mdq_cut_edge.py:15: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+______ TestMdqCutEdge.test_md_roles_allowed[mdquality@kainnusantara.id] _______
+backend\tests\test_l04_mdq_cut_edge.py:84: in test_md_roles_allowed
+    tok = _login(email, "demo1234")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l04_mdq_cut_edge.py:15: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l04_mdq_cut_edge.py::TestMdqCutEdge::test_md_roles_allowed[md@kainnusantara.id]
+FAILED backend\tests\test_l04_mdq_cut_edge.py::TestMdqCutEdge::test_md_roles_allowed[mdquality@kainnusantara.id]
+2 failed, 4 passed in 1.71s

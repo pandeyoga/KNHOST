@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="3" time="3.165" timestamp="2026-10-19T13:41:32.928431+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l01_fabric_xlsx_color" name="test_add_fabric_type_and_import_accepts_it" time="0.405"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l01_fabric_xlsx_color.py:33: in test_add_fabric_type_and_import_accepts_it
+    csv = f"kode_artikel,nama_artikel,sku,tahap,jenis_kain\n,,{p['sku']},finished,{code}\n"
+                                                               ^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname="tests.test_l01_fabric_xlsx_color" name="test_recap_xlsx" time="0.809"><failure message="assert (500 == 200)&#10; +  where 500 = &lt;Response [500]&gt;.status_code">backend\tests\test_l01_fabric_xlsx_color.py:47: in test_recap_xlsx
+    assert r.status_code == 200 and "spreadsheetml" in r.headers["content-type"]
+E   assert (500 == 200)
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_l01_fabric_xlsx_color" name="test_products_carry_supplier_color_code" time="0.399" /></testsuite></testsuites>

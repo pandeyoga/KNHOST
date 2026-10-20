@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="4" time="1.212" timestamp="2026-10-19T13:36:37.961546+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l09_ln093_ln090" name="test_t02_split_by_roll_provenance_not_latest_po" time="0.340"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l09_ln093_ln090.py:51: in test_t02_split_by_roll_provenance_not_latest_po
+    {"supplier_id": PO_A["supplier_id"], "po_id": PO_A["id"], "po_number": PO_A["po_number"]},
+                    ^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname="tests.test_l09_ln093_ln090" name="test_unknown_provenance_needs_manual_supplier" time="0.020"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l09_ln093_ln090.py:78: in test_unknown_provenance_needs_manual_supplier
+    json={"supplier_id": PO_A["supplier_id"], "bypass_import_policy": True})
+                         ^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname="tests.test_l09_ln093_ln090" name="test_parallel_create_makes_one_set" time="0.001"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l09_ln093_ln090.py:84: in test_parallel_create_makes_one_set
+    rid, _ = make_case([{"supplier_id": PO_A["supplier_id"], "po_id": PO_A["id"]},
+                                        ^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname="tests.test_l09_ln093_ln090" name="test_ln090_t01_replacement_blocked_before_qc" time="0.038" /></testsuite></testsuites>

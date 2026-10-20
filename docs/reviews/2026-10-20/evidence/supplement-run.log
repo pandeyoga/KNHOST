@@ -1,0 +1,48 @@
+..............F.......F...F........F.........F                           [100%]
+================================== FAILURES ===================================
+____________________ TestGradeMaster.test_owner_active_set ____________________
+work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l01_grade_visibility.py:102: in test_owner_active_set
+    assert rows["B1"]["rolls_using"] > 0                      # histori tetap ada
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert 0 > 0
+__________ TestSkuAndNameMasking.test_sales_sees_masked_sku_and_name __________
+work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l01_grade_visibility.py:205: in test_sales_sees_masked_sku_and_name
+    mine = next((x for x in rows if x["id"] == p["id"]), None)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l01_grade_visibility.py:205: in <genexpr>
+    mine = next((x for x in rows if x["id"] == p["id"]), None)
+                                               ^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+___________________________ TestMdqCut.test_cleanup ___________________________
+work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l04_mdq_cut.py:104: in test_cleanup
+    asyncio.run(_rb())
+..\..\..\..\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+..\..\..\..\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l04_mdq_cut.py:103: in _rb
+    await rebuild_balance(*sgm)
+work\KNHOST-plan-audit-2026-10-19\backend\services\roll_service.py:266: in rebuild_balance
+    tk = await db.inventory_balances.find_one_and_update(
+E   RuntimeError: Task <Task pending name='Task-2' coro=<TestMdqCut.test_cleanup.<locals>._rb() running at C:\Users\abc\Documents\Codex\2026-09-28\sya\work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l04_mdq_cut.py:103> cb=[_run_until_complete_cb() at C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\base_events.py:181]> got Future <Future pending cb=[_chain_future.<locals>._call_check_cancel() at C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\asyncio\futures.py:389]> attached to a different loop
+______________________ test_t03_partitions_not_truncated ______________________
+work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l11_export_center.py:85: in test_t03_partitions_not_truncated
+    assert total > 5000
+E   assert 117 > 5000
+__________________________ test_coverage_no_unmapped __________________________
+work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l11_finance_staff_templates.py:150: in test_coverage_no_unmapped
+    assert c["summary"]["unmapped"] == 0, [r["collection"] for r in c["collections"] if r["status"] == "unmapped"]
+E   AssertionError: ['bank_statement_formats', 'bank_statement_lines', 'budgets', 'customer_prices', 'fin_budget_rules', 'fin_depreciation_entries', ...]
+E   assert 16 == 0
+=========================== short test summary info ===========================
+FAILED work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l01_grade_visibility.py::TestGradeMaster::test_owner_active_set
+FAILED work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l01_grade_visibility.py::TestSkuAndNameMasking::test_sales_sees_masked_sku_and_name
+FAILED work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l04_mdq_cut.py::TestMdqCut::test_cleanup
+FAILED work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l11_export_center.py::test_t03_partitions_not_truncated
+FAILED work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l11_finance_staff_templates.py::test_coverage_no_unmapped
+5 failed, 41 passed, 2 warnings in 15.07s

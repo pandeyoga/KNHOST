@@ -1,0 +1,74 @@
+[
+  {
+    "id": "AUD-MIG-01",
+    "scenario": "Apply legacy migration with empty fulfillment object versus missing field",
+    "reported_matched": 2,
+    "empty_object_result": {},
+    "absent_field_result": {
+      "main": {
+        "route": "purchase",
+        "default_route": "",
+        "source_mode": "legacy",
+        "reason": "migrasi linked_po_id",
+        "deviation": false,
+        "version": 1,
+        "status": "realized",
+        "migrated": true,
+        "migrated_at": "2026-10-19T12:05:13.871672+00:00",
+        "pr_id": "",
+        "pr_number": "",
+        "docs": [
+          {
+            "type": "po",
+            "id": "po-absent",
+            "number": "PO-absent",
+            "pr_id": "",
+            "product_id": "p",
+            "quantity": 10.0,
+            "unit": "kg",
+            "created_at": ""
+          }
+        ]
+      }
+    },
+    "expected": "Both matched legacy orders get reference mapping, or report unsuccessful write explicitly"
+  },
+  {
+    "id": "AUD-MIG-02",
+    "scenario": "Rollback migration after mapped item has operational version 2 and new document link",
+    "before": {
+      "fulfillment": {
+        "main": {
+          "route": "makloon",
+          "default_route": "",
+          "source_mode": "legacy",
+          "reason": "migrasi linked_po_id",
+          "deviation": false,
+          "version": 2,
+          "status": "realized",
+          "migrated": true,
+          "migrated_at": "2026-10-19T12:05:13.871672+00:00",
+          "pr_id": "",
+          "pr_number": "",
+          "docs": [
+            {
+              "id": "mko-new",
+              "type": "mko"
+            }
+          ],
+          "history": [
+            {
+              "after": "makloon",
+              "reason": "approved operational change"
+            }
+          ]
+        }
+      }
+    },
+    "after": {
+      "fulfillment": {}
+    },
+    "new_mko_still_exists": true,
+    "expected": "Refuse destructive rollback of changed migrated state; preserve subsequent operational links/history"
+  }
+]

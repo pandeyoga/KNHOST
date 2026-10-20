@@ -1,0 +1,78 @@
+# Kain Nusantara ERP — lingkungan DEVELOPMENT lokal (Windows + Docker Desktop).
+# Produksi/VPS tetap memakai deploy/docker-compose.yml — berkas ini JANGAN dipakai di VPS.
+#
+#   docker compose -f docker-compose.dev.yml up -d --build    # nyalakan
+#   docker compose -f docker-compose.dev.yml logs -f backend  # log
+#   docker compose -f docker-compose.dev.yml down             # matikan (data Mongo tetap)
+#
+# Panduan lengkap: docs/LOCAL_DEV.md
+name: kn-dev
+
+services:
+  mongo:
+    image: mongo:7
+    command: ["mongod", "--bind_ip_all", "--quiet", "--wiredTigerCacheSizeGB", "1"]
+    ports:
+      - "127.0.0.1:27017:27017"   # untuk MongoDB Compass / script dari host
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.backend.dev
+    # Bootstrap fondasi (COA, uoms, expense_categories) hanya jalan saat backend START,
+    # jadi backend wajib menunggu Mongo sehat (pelajaran .restore_env.sh).
+    depends_on:
+      mongo:
+        condition: service_healthy
+    env_file: backend/.env
+    environment:
+      MONGO_URL: mongodb://mongo:27017      # menimpa nilai localhost di backend/.env
+      LOCAL_STORAGE_DIR: /data/uploads      # unggahan di volume, bukan di folder repo
+      WATCHFILES_FORCE_POLLING: "true"      # event file dari folder Windows tidak sampai ke container
+    working_dir: /app/backend
+    command: ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001",
+              "--reload", "--reload-dir", "/app/backend"]
+    ports:
+      - "127.0.0.1:8001:8001"
+    volumes:
+      - .:/app                              # repo di /app supaya script lama (/app/...) tetap jalan
+      - uploads:/data/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8001/api/"]
+      interval: 15s
+      timeout: 5s
+      start_period: 120s
+      retries: 10
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.frontend.dev
+    depends_on:
+      - backend
+    env_file: frontend/.env
+    environment:
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      BROWSER: none
+      PORT: "3000"
+      NODE_OPTIONS: --max-old-space-size=4096
+    working_dir: /app/frontend
+    command: ["yarn", "start:dev"]
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - ./frontend:/app/frontend
+      - fe_node_modules:/app/frontend/node_modules   # node_modules Linux, terpisah dari host
+
+volumes:
+  mongo_data:
+  uploads:
+  fe_node_modules:

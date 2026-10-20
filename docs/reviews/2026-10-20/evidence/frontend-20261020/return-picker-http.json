@@ -1,0 +1,14 @@
+{
+  "id": "FE-SR-06",
+  "commit": "8dab383f764df80737bfe02f887422b3fd72aa70",
+  "scenario": "201 newer draft orders hide an otherwise recent shipped SO from nonpaged source picker",
+  "fixture_inserted": 202,
+  "nonpaged_http": 200,
+  "nonpaged_count": 200,
+  "shipped_in_picker_source": false,
+  "eligible_after_frontend_filter": 0,
+  "paged_search_http": 200,
+  "paged_search_finds_shipped": true,
+  "shipped_age_minutes": 30,
+  "fixture_removed": 202
+}

@@ -1,0 +1,64 @@
+EEEEEE                                                                   [100%]
+=================================== ERRORS ====================================
+_________________ ERROR at setup of test_meta_can_paper_check _________________
+backend\tests\test_l03_ln031_extra_iter220.py:71: in H
+    "md": _login("md@kainnusantara.id")}
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln031_extra_iter220.py:29: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+__________________ ERROR at setup of test_designer_ownership __________________
+backend\tests\test_l03_ln031_extra_iter220.py:71: in H
+    "md": _login("md@kainnusantara.id")}
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln031_extra_iter220.py:29: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+__________________ ERROR at setup of test_md_role_forbidden ___________________
+backend\tests\test_l03_ln031_extra_iter220.py:71: in H
+    "md": _login("md@kainnusantara.id")}
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln031_extra_iter220.py:29: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_________________ ERROR at setup of test_archived_and_missing _________________
+backend\tests\test_l03_ln031_extra_iter220.py:71: in H
+    "md": _login("md@kainnusantara.id")}
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln031_extra_iter220.py:29: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_______________ ERROR at setup of test_concurrent_paper_clicks ________________
+backend\tests\test_l03_ln031_extra_iter220.py:71: in H
+    "md": _login("md@kainnusantara.id")}
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln031_extra_iter220.py:29: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+________ ERROR at setup of test_od_design_acc_race_and_decision_object ________
+backend\tests\test_l03_ln031_extra_iter220.py:71: in H
+    "md": _login("md@kainnusantara.id")}
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln031_extra_iter220.py:29: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l03_ln031_extra_iter220.py::test_meta_can_paper_check
+ERROR backend\tests\test_l03_ln031_extra_iter220.py::test_designer_ownership
+ERROR backend\tests\test_l03_ln031_extra_iter220.py::test_md_role_forbidden
+ERROR backend\tests\test_l03_ln031_extra_iter220.py::test_archived_and_missing
+ERROR backend\tests\test_l03_ln031_extra_iter220.py::test_concurrent_paper_clicks
+ERROR backend\tests\test_l03_ln031_extra_iter220.py::test_od_design_acc_race_and_decision_object
+6 errors in 2.17s

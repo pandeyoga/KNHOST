@@ -1,0 +1,22 @@
+FFF.........                                                             [100%]
+================================== FAILURES ===================================
+________________________ test_yard_roll_unit_preserved ________________________
+backend\tests\test_l09_ln093_extra.py:54: in test_yard_roll_unit_preserved
+    rid, rolls = make_case([{"supplier_id": PO_A["supplier_id"], "po_id": PO_A["id"]}], tpl=TPL_YARD)
+                                            ^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+______________ test_mixed_known_and_unknown_with_manual_supplier ______________
+backend\tests\test_l09_ln093_extra.py:68: in test_mixed_known_and_unknown_with_manual_supplier
+    rid, rolls = make_case([{"supplier_id": PO_B["supplier_id"], "po_id": PO_B["id"]}, {}])
+                                            ^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_________________________ test_get_detail_shows_links _________________________
+backend\tests\test_l09_ln093_extra.py:83: in test_get_detail_shows_links
+    rid, _ = make_case([{"supplier_id": PO_A["supplier_id"], "po_id": PO_A["id"]}])
+                                        ^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l09_ln093_extra.py::test_yard_roll_unit_preserved
+FAILED backend\tests\test_l09_ln093_extra.py::test_mixed_known_and_unknown_with_manual_supplier
+FAILED backend\tests\test_l09_ln093_extra.py::test_get_detail_shows_links - T...
+3 failed, 9 passed in 1.37s

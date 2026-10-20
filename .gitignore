@@ -29,3 +29,6 @@ frontend/node_modules/.cache/default-development/1.pack
 /yarn.lock
 .emergent/cron/
 backend/uploads/exports/
+
+# Bukti paket review audit (docs/reviews/) wajib ikut ter-commit, termasuk log.
+!docs/reviews/**/*.log

@@ -1,0 +1,82 @@
+EEEEEEEEEEEEE                                                            [100%]
+=================================== ERRORS ====================================
+_____________ ERROR at setup of test_status_marks_issued[shipped] _____________
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+________ ERROR at setup of test_status_marks_issued[partially_shipped] ________
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+______________ ERROR at setup of test_status_marks_issued[done] _______________
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_____________ ERROR at setup of test_sales_order_je_marks_issued ______________
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+__________________ ERROR at setup of test_void_je_not_issued __________________
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_____________ ERROR at setup of test_not_issued_re_derive_applies _____________
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_ ERROR at setup of test_credit_note_partial_paid_splits_ar_and_store_credit __
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_______ ERROR at setup of test_credit_note_fully_paid_all_store_credit ________
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_____ ERROR at setup of test_credit_note_double_approve_and_self_approve ______
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+________ ERROR at setup of test_debit_note_no_journal_order_unchanged _________
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+__________ ERROR at setup of test_qty_decrease_below_shipped_blocked __________
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_ ERROR at setup of test_repeat_same_price_correction_does_not_double_credit __
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_______ ERROR at setup of test_second_correction_credits_only_increment _______
+backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_status_marks_issued[shipped]
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_status_marks_issued[partially_shipped]
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_status_marks_issued[done]
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_sales_order_je_marks_issued
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_void_je_not_issued
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_not_issued_re_derive_applies
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_credit_note_partial_paid_splits_ar_and_store_credit
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_credit_note_fully_paid_all_store_credit
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_credit_note_double_approve_and_self_approve
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_debit_note_no_journal_order_unchanged
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_qty_decrease_below_shipped_blocked
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_repeat_same_price_correction_does_not_double_credit
+ERROR backend\tests\test_l02_ln022_t03_amendment_note_extended.py::test_second_correction_credits_only_increment
+13 errors in 0.92s

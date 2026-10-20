@@ -1,0 +1,97 @@
+EFEEEEFEFFF.                                                             [100%]
+=================================== ERRORS ====================================
+________ ERROR at setup of TestSkuMask.test_products_masked_for_sales _________
+backend\tests\test_l01_sku_mask_settle_tol.py:20: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234", ent="ent_kanda")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_p05_acceptance_acc31_33_34.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+______ ERROR at setup of TestSkuMask.test_sales_orders_and_rolls_masked _______
+backend\tests\test_l01_sku_mask_settle_tol.py:20: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234", ent="ent_kanda")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_p05_acceptance_acc31_33_34.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_____________ ERROR at setup of TestSkuMask.test_so_detail_masked _____________
+backend\tests\test_l01_sku_mask_settle_tol.py:20: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234", ent="ent_kanda")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_p05_acceptance_acc31_33_34.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_ ERROR at setup of TestSkuMask.test_grade_suffix_stripped_where_no_sku_sibling _
+backend\tests\test_l01_sku_mask_settle_tol.py:20: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234", ent="ent_kanda")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_p05_acceptance_acc31_33_34.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_ ERROR at setup of TestSkuMask.test_names_with_grade_and_lot_inside_not_leaking _
+backend\tests\test_l01_sku_mask_settle_tol.py:20: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234", ent="ent_kanda")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_p05_acceptance_acc31_33_34.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+___ ERROR at setup of TestTagihGantiAndTolerance.test_tolerance_validation ____
+backend\tests\test_l01_sku_mask_settle_tol.py:20: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234", ent="ent_kanda")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_p05_acceptance_acc31_33_34.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+================================== FAILURES ===================================
+_______________________ TestSkuMask.test_admin_sees_raw _______________________
+backend\tests\test_l01_sku_mask_settle_tol.py:47: in test_admin_sees_raw
+    assert "KNKNT0005-I-10XX-XA-XX-XX" in skus
+E   AssertionError: assert 'KNKNT0005-I-10XX-XA-XX-XX' in {'BNG-KTN-001', 'BNG-KTN-SISA', 'BTK-MEGA-001', 'BTK-MEGA-002', 'BTK-MEGA-003', 'DNM-BDG-001', ...}
+____________________ TestTagihGantiAndTolerance.test_setup ____________________
+backend\tests\test_l01_sku_mask_settle_tol.py:90: in test_setup
+    mko = _create(adm, 30, "TEST_L01 tagih ganti")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_p05_acceptance_acc31_33_34.py:79: in _create
+    st = t["steps"][0]
+         ^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_________ TestTagihGantiAndTolerance.test_potong_bon_without_bill_400 _________
+backend\tests\test_l01_sku_mask_settle_tol.py:109: in test_potong_bon_without_bill_400
+    url = f"{BASE}/api/makloon-orders/{self.S['mko']['id']}/steps/1/material-loss"
+                                       ^^^^^^^^^^^^^
+E   KeyError: 'mko'
+______________ TestTagihGantiAndTolerance.test_tagih_ganti_path _______________
+backend\tests\test_l01_sku_mask_settle_tol.py:122: in test_tagih_ganti_path
+    url = f"{BASE}/api/makloon-orders/{self.S['mko']['id']}/steps/1/material-loss/{self.S['loss']['id']}/decide"
+                                       ^^^^^^^^^^^^^
+E   KeyError: 'mko'
+_________ TestTagihGantiAndTolerance.test_tolerance_after_closed_409 __________
+backend\tests\test_l01_sku_mask_settle_tol.py:134: in test_tolerance_after_closed_409
+    url = f"{BASE}/api/makloon-orders/{self.S['mko']['id']}/steps/1/tolerance"
+                                       ^^^^^^^^^^^^^
+E   KeyError: 'mko'
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_admin_sees_raw
+FAILED backend\tests\test_l01_sku_mask_settle_tol.py::TestTagihGantiAndTolerance::test_setup
+FAILED backend\tests\test_l01_sku_mask_settle_tol.py::TestTagihGantiAndTolerance::test_potong_bon_without_bill_400
+FAILED backend\tests\test_l01_sku_mask_settle_tol.py::TestTagihGantiAndTolerance::test_tagih_ganti_path
+FAILED backend\tests\test_l01_sku_mask_settle_tol.py::TestTagihGantiAndTolerance::test_tolerance_after_closed_409
+ERROR backend\tests\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_products_masked_for_sales
+ERROR backend\tests\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_sales_orders_and_rolls_masked
+ERROR backend\tests\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_so_detail_masked
+ERROR backend\tests\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_grade_suffix_stripped_where_no_sku_sibling
+ERROR backend\tests\test_l01_sku_mask_settle_tol.py::TestSkuMask::test_names_with_grade_and_lot_inside_not_leaking
+ERROR backend\tests\test_l01_sku_mask_settle_tol.py::TestTagihGantiAndTolerance::test_tolerance_validation
+5 failed, 1 passed, 6 errors in 1.83s

@@ -1,0 +1,162 @@
+{
+  "project": "ERP Kain Nussantara",
+  "producer": "PT Kubus Teknologi Indonesia",
+  "review_date": "2026-10-20",
+  "frontend_review_commit": "8dab383f764df80737bfe02f887422b3fd72aa70",
+  "prior_backend_review_commit": "63c38bd11b49ddfb59cbbfdb915c2e11e16d5c9c",
+  "source_modified": false,
+  "pushed": false,
+  "all_code_all_flows_complete": false,
+  "browser_full_review_complete": false,
+  "counts": {
+    "source_files_parsed": 953,
+    "parse_errors": 0,
+    "static_controls_in_selected_element_categories": 4202,
+    "renderer_view_ids": 151,
+    "http_call_sites_inventoried": 1662,
+    "shapes_matching_openapi": 1596,
+    "dynamic_possible": 21,
+    "unresolved_helpers_or_dynamic": 45,
+    "additional_bounded_method_path_combinations": 92,
+    "consolidated_frontend_findings": 13,
+    "browser_failure_observations": 4
+  },
+  "build": "Production frontend succeeded with warnings, cached dependencies reused; not clean lockfile install",
+  "browser_limit": "Latest built app exercised via same-origin harness adapting API base only; Admin,warehouse_admin,Manager logins succeeded. Buyer/payee,warehouse access and dead navigation reproduced. Not all buttons/roles/flows clicked.",
+  "findings": [
+    {
+      "id": "FE-01",
+      "title": "Special Order multi-produk kehilangan item/qty saat pricing dan konversi",
+      "priority": "P1",
+      "domain_finding_ids": [
+        "FE-SR-04"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "HTTP terbaru; fixture terminal R&D disiapkan langsung"
+    },
+    {
+      "id": "FE-02",
+      "title": "Kontrol pilihan Interco tidak memperbarui nilai",
+      "priority": "P1",
+      "domain_finding_ids": [
+        "FE-WF-01"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "Browser buyer/payee selections fail; original callback and contract scan support cause"
+    },
+    {
+      "id": "FE-03",
+      "title": "Peta modul akses tidak mengikuti menu/hub terbaru",
+      "priority": "P1",
+      "domain_finding_ids": [
+        "FNA-01"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "Evaluasi fungsi navigasi asli"
+    },
+    {
+      "id": "FE-04",
+      "title": "Tombol/petugas dibatasi nama role meski izin efektif berbeda",
+      "priority": "P2",
+      "domain_finding_ids": [
+        "FNA-03",
+        "FE-SR-03",
+        "FE-WF-02",
+        "FE-WF-03",
+        "FE-WF-04"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "Render JSX dan trace permission; beberapa cabang hanya statis"
+    },
+    {
+      "id": "FE-05",
+      "title": "Data Gudang menolak Admin Gudang yang berizin",
+      "priority": "P2",
+      "domain_finding_ids": [
+        "FNA-02"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "HTTP403 and actual warehouse_admin browser page; effective permissions confirmed"
+    },
+    {
+      "id": "FE-06",
+      "title": "Target Harga Khusus dari Meja Saya tidak dirender",
+      "priority": "P2",
+      "domain_finding_ids": [
+        "FNA-04"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "Actual Manager browser opens view=approvals with empty main; resolver source verified"
+    },
+    {
+      "id": "FE-07",
+      "title": "Error retur tidak terlihat dan modal menutup saat gagal",
+      "priority": "P2",
+      "domain_finding_ids": [
+        "FE-SR-01"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "Callback aktual dengan simulasi penolakan API"
+    },
+    {
+      "id": "FE-08",
+      "title": "Respons SO lama menimpa pilihan SO baru di form retur",
+      "priority": "P2",
+      "domain_finding_ids": [
+        "FE-SR-02"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "Callback aktual dengan urutan respons terkontrol"
+    },
+    {
+      "id": "FE-09",
+      "title": "Pemilih SO retur diam-diam terbatas 200 pesanan",
+      "priority": "P2",
+      "domain_finding_ids": [
+        "FE-SR-06"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "HTTP terbaru dengan 202 fixture sementara dan pencarian pembanding"
+    },
+    {
+      "id": "FE-10",
+      "title": "Antrean QC salah label satuan dan agregasi campuran",
+      "priority": "P2",
+      "domain_finding_ids": [
+        "FE-SR-05"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "Trace kontrak data dan render source; belum posting stock-loss"
+    },
+    {
+      "id": "FE-11",
+      "title": "Error awal penerimaan transfer tertutup loading",
+      "priority": "P2",
+      "domain_finding_ids": [
+        "FE-WF-05"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "Render JSX state error/data kosong"
+    },
+    {
+      "id": "FE-12",
+      "title": "Neraca unknown ditampilkan Seimbang",
+      "priority": "P2",
+      "domain_finding_ids": [
+        "FE-WF-06"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "Render KPI asli"
+    },
+    {
+      "id": "FE-13",
+      "title": "Tooltip defisit kas menghapus tanda negatif",
+      "priority": "P2",
+      "domain_finding_ids": [
+        "FE-WF-07"
+      ],
+      "status": "confirmed_open_on_reviewed_commit",
+      "evidence_level": "Formatter asli dengan saldo negatif"
+    }
+  ]
+}

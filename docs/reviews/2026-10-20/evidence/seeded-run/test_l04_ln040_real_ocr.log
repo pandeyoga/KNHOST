@@ -1,0 +1,14 @@
+
+=================================== ERRORS ====================================
+______________ ERROR collecting tests/test_l04_ln040_real_ocr.py ______________
+backend\tests\test_l04_ln040_real_ocr.py:86: in <module>
+    @pytest.mark.skipif(not _has_key(), reason="kunci OpenAI tidak ada")
+                            ^^^^^^^^^^
+backend\tests\test_l04_ln040_real_ocr.py:36: in _has_key
+    env_txt = open("/app/backend/.env").read()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: '/app/backend/.env'
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l04_ln040_real_ocr.py - FileNotFoundError: [Errno 2]...
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.78s

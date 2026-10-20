@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="2" failures="2" skipped="0" tests="5" time="1.151" timestamp="2026-10-19T13:32:39.697973+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l01_dataset_recap.TestClientDataset" name="test_sales_forbidden" time="0.038"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l01_dataset_recap.py:25: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_dataset_recap.py:14: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l01_dataset_recap.TestClientDataset" name="test_dry_run_reports_without_writing" time="0.293"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l01_dataset_recap.py:45: in test_dry_run_reports_without_writing
+    files={"file": ("ds.csv", _csv(p, sup), "text/csv")})
+                              ^^^^^^^^^^^^
+backend\tests\test_l01_dataset_recap.py:31: in _csv
+    f",,{p['sku']},finished,knitting,,,{sup['code']},TEST-L01-SUP,Test Item,Hitam Test,TST-01,TEST_L01 Hitam\n"
+         ^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname="tests.test_l01_dataset_recap.TestClientDataset" name="test_commit_then_rollback" time="0.001"><failure message="KeyError: 'batch'">backend\tests\test_l01_dataset_recap.py:59: in test_commit_then_rollback
+    b, p, sup = self.S["batch"], self.S["p"], self.S["sup"]
+                ^^^^^^^^^^^^^^^
+E   KeyError: 'batch'</failure></testcase><testcase classname="tests.test_l01_dataset_recap.TestClaimRecap" name="test_recap_shape_and_permission" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l01_dataset_recap.py:25: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_dataset_recap.py:14: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l01_dataset_recap.TestClaimRecap" name="test_recap_matches_posted_losses" time="0.024" /></testsuite></testsuites>

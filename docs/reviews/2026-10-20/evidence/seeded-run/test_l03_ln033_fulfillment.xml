@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.717" timestamp="2026-10-19T13:43:21.238297+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="tests.test_l03_ln033_fulfillment" time="0.000"><error message="collection failure">backend\tests\test_l03_ln033_fulfillment.py:15: in &lt;module&gt;
+    TPL = {m: DB.product_templates.find_one({"restock_source.mode": m}, {"_id": 0, "id": 1})["id"] for m in ("supplier", "makloon", "both")}
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase></testsuite></testsuites>

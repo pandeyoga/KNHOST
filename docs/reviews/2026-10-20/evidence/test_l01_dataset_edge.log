@@ -1,0 +1,14 @@
+..sssF.ssss                                                              [100%]
+================================== FAILURES ===================================
+_____________________ TestDatasetEdge.test_manager_access _____________________
+backend\tests\test_l01_dataset_edge.py:82: in test_manager_access
+    m = _login("manager@kainnusantara.id", "demo1234")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_dataset_edge.py:17: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l01_dataset_edge.py::TestDatasetEdge::test_manager_access
+1 failed, 3 passed, 7 skipped in 1.72s

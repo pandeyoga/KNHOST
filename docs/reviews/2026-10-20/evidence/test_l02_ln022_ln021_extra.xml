@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="4" failures="0" skipped="0" tests="4" time="1.399" timestamp="2026-10-19T13:33:25.610489+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l02_ln022_ln021_extra" name="test_superseded_fields_and_reject_superseded" time="0.572"><error message="failed on setup with &quot;KeyError: 'token'&quot;">backend\tests\test_l02_ln022_ln021_extra.py:26: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_ln021_extra.py:21: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'</error></testcase><testcase classname="tests.test_l02_ln022_ln021_extra" name="test_stale_reject_works_and_not_locked" time="0.002"><error message="failed on setup with &quot;KeyError: 'token'&quot;">backend\tests\test_l02_ln022_ln021_extra.py:26: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_ln021_extra.py:21: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'</error></testcase><testcase classname="tests.test_l02_ln022_ln021_extra" name="test_parallel_approve_only_one_wins" time="0.001"><error message="failed on setup with &quot;KeyError: 'token'&quot;">backend\tests\test_l02_ln022_ln021_extra.py:26: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_ln021_extra.py:21: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'</error></testcase><testcase classname="tests.test_l02_ln022_ln021_extra" name="test_reallocate_updates_roll_lines_roll_mode" time="0.001"><error message="failed on setup with &quot;KeyError: 'token'&quot;">backend\tests\test_l02_ln022_ln021_extra.py:26: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_ln021_extra.py:21: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'</error></testcase></testsuite></testsuites>

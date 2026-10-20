@@ -1,0 +1,40 @@
+EEEE                                                                     [100%]
+=================================== ERRORS ====================================
+_______ ERROR at setup of test_superseded_fields_and_reject_superseded ________
+backend\tests\test_l02_ln022_ln021_extra.py:26: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_ln021_extra.py:21: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+__________ ERROR at setup of test_stale_reject_works_and_not_locked ___________
+backend\tests\test_l02_ln022_ln021_extra.py:26: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_ln021_extra.py:21: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+____________ ERROR at setup of test_parallel_approve_only_one_wins ____________
+backend\tests\test_l02_ln022_ln021_extra.py:26: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_ln021_extra.py:21: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+_______ ERROR at setup of test_reallocate_updates_roll_lines_roll_mode ________
+backend\tests\test_l02_ln022_ln021_extra.py:26: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_ln021_extra.py:21: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l02_ln022_ln021_extra.py::test_superseded_fields_and_reject_superseded
+ERROR backend\tests\test_l02_ln022_ln021_extra.py::test_stale_reject_works_and_not_locked
+ERROR backend\tests\test_l02_ln022_ln021_extra.py::test_parallel_approve_only_one_wins
+ERROR backend\tests\test_l02_ln022_ln021_extra.py::test_reallocate_updates_roll_lines_roll_mode
+4 errors in 1.40s

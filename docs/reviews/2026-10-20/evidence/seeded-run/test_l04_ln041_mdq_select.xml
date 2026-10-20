@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="2" failures="0" skipped="0" tests="2" time="0.736" timestamp="2026-10-19T13:43:36.388060+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l04_ln041_mdq_select" name="test_t01_select_two_rolls_from_different_lots" time="0.016"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l04_ln041_mdq_select.py:35: in fx
+    yield {"iid": iid, "lines": lines, "rolls": rolls, "tok": _login("mdquality@kainnusantara.id", "demo1234"),
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l04_ln041_mdq_select.py:15: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l04_ln041_mdq_select" name="test_t02_mismatch_then_human_accept_is_separate_and_audited" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l04_ln041_mdq_select.py:35: in fx
+    yield {"iid": iid, "lines": lines, "rolls": rolls, "tok": _login("mdquality@kainnusantara.id", "demo1234"),
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l04_ln041_mdq_select.py:15: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase></testsuite></testsuites>

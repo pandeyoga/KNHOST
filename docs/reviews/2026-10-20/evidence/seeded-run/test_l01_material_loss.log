@@ -1,0 +1,52 @@
+EEEEEEEE                                                                 [100%]
+=================================== ERRORS ====================================
+_________ ERROR at setup of TestMaterialLoss.test_setup_cancelled_mko _________
+backend\tests\test_l01_material_loss.py:21: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_________ ERROR at setup of TestMaterialLoss.test_sales_cannot_record _________
+backend\tests\test_l01_material_loss.py:21: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+___ ERROR at setup of TestMaterialLoss.test_over_tolerance_pending_and_sod ____
+backend\tests\test_l01_material_loss.py:21: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+__ ERROR at setup of TestMaterialLoss.test_within_tolerance_auto_and_closes ___
+backend\tests\test_l01_material_loss.py:21: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_________ ERROR at setup of TestLossDeductBillAndTolerance.test_setup _________
+backend\tests\test_l01_material_loss.py:21: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_ ERROR at setup of TestLossDeductBillAndTolerance.test_step_tolerance_endpoint _
+backend\tests\test_l01_material_loss.py:21: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+______ ERROR at setup of TestLossDeductBillAndTolerance.test_deduct_bill ______
+backend\tests\test_l01_material_loss.py:21: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+________ ERROR at setup of TestLossDeductBillAndTolerance.test_cleanup ________
+backend\tests\test_l01_material_loss.py:21: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l01_material_loss.py::TestMaterialLoss::test_setup_cancelled_mko
+ERROR backend\tests\test_l01_material_loss.py::TestMaterialLoss::test_sales_cannot_record
+ERROR backend\tests\test_l01_material_loss.py::TestMaterialLoss::test_over_tolerance_pending_and_sod
+ERROR backend\tests\test_l01_material_loss.py::TestMaterialLoss::test_within_tolerance_auto_and_closes
+ERROR backend\tests\test_l01_material_loss.py::TestLossDeductBillAndTolerance::test_setup
+ERROR backend\tests\test_l01_material_loss.py::TestLossDeductBillAndTolerance::test_step_tolerance_endpoint
+ERROR backend\tests\test_l01_material_loss.py::TestLossDeductBillAndTolerance::test_deduct_bill
+ERROR backend\tests\test_l01_material_loss.py::TestLossDeductBillAndTolerance::test_cleanup
+8 errors in 1.18s

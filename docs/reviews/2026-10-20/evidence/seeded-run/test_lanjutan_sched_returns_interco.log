@@ -1,0 +1,10 @@
+........F                                                                [100%]
+================================== FAILURES ===================================
+______________________ test_ln100_t02_shared_woven_node _______________________
+backend\tests\test_lanjutan_sched_returns_interco.py:208: in test_ln100_t02_shared_woven_node
+    assert wh["sharing_mode"] == "shared"
+           ^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+FAILED backend\tests\test_lanjutan_sched_returns_interco.py::test_ln100_t02_shared_woven_node
+1 failed, 8 passed, 1 warning in 4.19s

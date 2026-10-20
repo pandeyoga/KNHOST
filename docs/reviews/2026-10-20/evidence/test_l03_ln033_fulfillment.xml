@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="1.055" timestamp="2026-10-19T13:34:18.480007+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="tests.test_l03_ln033_fulfillment" time="0.000"><error message="collection failure">backend\tests\test_l03_ln033_fulfillment.py:14: in &lt;module&gt;
+    SUP = DB.suppliers.find_one({"entity_id": "all"}, {"_id": 0, "id": 1}, sort=[("name", 1)])["id"]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase></testsuite></testsuites>

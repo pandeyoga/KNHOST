@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="3.002" timestamp="2026-10-19T13:32:43.865297+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l01_fabric_xlsx_color" name="test_add_fabric_type_and_import_accepts_it" time="0.402"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l01_fabric_xlsx_color.py:33: in test_add_fabric_type_and_import_accepts_it
+    csv = f"kode_artikel,nama_artikel,sku,tahap,jenis_kain\n,,{p['sku']},finished,{code}\n"
+                                                               ^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname="tests.test_l01_fabric_xlsx_color" name="test_recap_xlsx" time="0.439"><failure message="KeyError: 'token'">backend\tests\test_l01_fabric_xlsx_color.py:50: in test_recap_xlsx
+    s = _h("sales.kanda@kainnusantara.id", "demo1234")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_fabric_xlsx_color.py:16: in _h
+    return {"Authorization": f"Bearer {r.json()['token']}"}
+                                       ^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'</failure></testcase><testcase classname="tests.test_l01_fabric_xlsx_color" name="test_products_carry_supplier_color_code" time="0.627"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l01_fabric_xlsx_color.py:58: in test_products_carry_supplier_color_code
+    p = next((x for x in rows if x["id"] == si["product_id"]), None)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_fabric_xlsx_color.py:58: in &lt;genexpr&gt;
+    p = next((x for x in rows if x["id"] == si["product_id"]), None)
+                                            ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase></testsuite></testsuites>

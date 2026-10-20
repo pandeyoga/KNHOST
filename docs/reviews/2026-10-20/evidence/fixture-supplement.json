@@ -1,0 +1,26 @@
+{
+  "database": "kn_plan_audit_20261019",
+  "account_fixture_source": "scripts.seed_demo_lengkap_kn.accounts",
+  "accounts": [
+    "md@kainnusantara.id",
+    "manager@kainnusantara.id",
+    "finance@kainnusantara.id",
+    "salesadmin@kainnusantara.id",
+    "salesadmin.kanda@kainnusantara.id",
+    "salesadmin.cst@kainnusantara.id",
+    "sales@kainnusantara.id",
+    "sales2@kainnusantara.id",
+    "sales.kanda@kainnusantara.id",
+    "sales.cst@kainnusantara.id",
+    "warehouse@kainnusantara.id",
+    "warehouse.soreang@kainnusantara.id",
+    "warehouse.rancamalang@kainnusantara.id",
+    "whadmin@kainnusantara.id",
+    "designer@kainnusantara.id",
+    "sampleadmin@kainnusantara.id",
+    "driver@kainnusantara.id",
+    "mdquality@kainnusantara.id",
+    "qc@kainnusantara.id"
+  ],
+  "added_supplier": "audit_global_supplier_b"
+}

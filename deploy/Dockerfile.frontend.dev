@@ -1,0 +1,19 @@
+# Kain Nusantara frontend — image DEVELOPMENT lokal (dipakai docker-compose.dev.yml).
+# Hanya berisi node_modules; kode frontend di-mount dari host dan dijalankan dengan
+# `craco start` (hot reload). Produksi tetap deploy/Dockerfile.frontend.
+# Setelah package.json berubah: lihat "Dependency berubah" di docs/LOCAL_DEV.md.
+FROM node:20-alpine
+WORKDIR /app/frontend
+
+COPY frontend/package.json ./
+COPY deploy/frontend-yarnlock.txt ./yarn.lock
+# @emergentbase/visual-edits = paket privat Emergent (craco.config.js sudah menangani bila
+# tidak terpasang) — dibuang dari package.json & lock, sama seperti deploy/Dockerfile.frontend.
+# `s/\r$//` dulu: bila lock ber-CRLF, pola baris kosong `^$` tidak cocok dan sed menghapus sisa lock.
+RUN node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));for(const k of ['dependencies','devDependencies']){if(p[k])delete p[k]['@emergentbase/visual-edits'];}fs.writeFileSync('package.json',JSON.stringify(p,null,2));" \
+    && sed -i 's/\r$//' yarn.lock \
+    && sed -i '/^"@emergentbase\/visual-edits@/,/^$/d' yarn.lock \
+    && yarn install --non-interactive --network-timeout 600000 --network-concurrency 4 \
+    && yarn cache clean
+
+EXPOSE 3000

@@ -1,0 +1,68 @@
+[
+  {
+    "id": "FE-SR-01",
+    "test": "actual ReturnSettleModal.confirm + actual SalesReturns.handleSettle, backend rejection injected",
+    "actual": {
+      "modal_closed": true,
+      "busy": false,
+      "errors": [
+        "Gagal settle: AUDIT: QC/evidence gate rejected settlement"
+      ]
+    },
+    "expected": {
+      "modal_closed": false,
+      "visible_error_in_detail": true
+    },
+    "source": {
+      "parent_line": 163,
+      "child_line": 55
+    },
+    "limit": "Callback behavior verified; no browser DOM in this harness. Parent error UI is rendered only after early-return detail branch."
+  },
+  {
+    "id": "FE-SR-02",
+    "test": "actual handleOrderChange, earlier request resolves after newer request",
+    "actual": {
+      "selected_order": "SO-B",
+      "product_rows": [
+        "product-A"
+      ]
+    },
+    "expected": {
+      "selected_order": "SO-B",
+      "product_rows": [
+        "product-B"
+      ]
+    },
+    "source_line": 59,
+    "limit": "Deterministic callback race verified; backend rejection/data integrity not evaluated by this test."
+  },
+  {
+    "id": "FE-SR-03",
+    "test": "Actual literal role condition in SpecialOrderDetail line435 compared with permission-based API",
+    "actual": [
+      {
+        "role": "admin",
+        "button_canEdit": true
+      },
+      {
+        "role": "manager",
+        "button_canEdit": true
+      },
+      {
+        "role": "sales",
+        "button_canEdit": true
+      },
+      {
+        "role": "sales_admin",
+        "button_canEdit": true
+      },
+      {
+        "role": "audit_custom_sales",
+        "button_canEdit": false
+      }
+    ],
+    "expected": "Custom role with order.update can use customer-decision API and should expose permitted action.",
+    "limit": "Static gate evaluation. Full custom role API scenario is documented separately."
+  }
+]

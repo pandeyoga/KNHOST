@@ -1,0 +1,279 @@
+{
+  "project": "ERP Kain Nussantara",
+  "baseline_commit": "63c38bd11b49ddfb59cbbfdb915c2e11e16d5c9c",
+  "audited_at": "2026-10-19/2026-10-20",
+  "production_code_changed": false,
+  "browser_tested_in_this_subaudit": false,
+  "coverage": {
+    "builtin_role_variants": 13,
+    "custom_one_module_variants": 31,
+    "custom_all_modules_variant": 1,
+    "renderer_view_ids_detected": 150,
+    "jsx_ssr_cases": 15,
+    "jsx_components": 5
+  },
+  "findings": [
+    {
+      "id": "FNA-01",
+      "priority": "P1",
+      "title": "Katalog akses tidak mengikuti induk menu dan tab terbaru",
+      "status": "confirmed",
+      "evidence_type": "actual_navigation_function_evaluation_and_static_trace",
+      "scenario": "Role kustom baru tanpa acuan diberi satu modul Kelola penuh; modul lain Tidak ada.",
+      "actual": {
+        "interco": [
+          "hr-my-profile"
+        ],
+        "accounting": [
+          "fixed-assets",
+          "hr-my-profile"
+        ],
+        "warehouse_ops_missing": [
+          "goods-receipts",
+          "wms-outbound",
+          "rfid-hub"
+        ]
+      },
+      "expected": "Menu modul yang berizin tersedia melalui induk grup/hub yang sah, tanpa memperluas izin API atau scope.",
+      "root_cause": "access_modules.nav tertinggal dari pemindahan akuntansi/RFID serta penambahan tab GRN/outbound.",
+      "references": [
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/access_modules.py",
+          "line": 56
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/access_modules.py",
+          "line": 74
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/access_modules.py",
+          "line": 111
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/access_modules.py",
+          "line": 210
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/config/navStructure.js",
+          "line": 259
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/config/navStructure.js",
+          "line": 290
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/config/navigationConfig.js",
+          "line": 105
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/services/custom_role_service.py",
+          "line": 239
+        }
+      ],
+      "acceptance_ids": [
+        "LN-015-T01",
+        "LN-015-T02",
+        "LN-015-T04"
+      ],
+      "evidence_files": [
+        "navigation-inventory.json",
+        "navigation-role-views.csv",
+        "access_catalog.json"
+      ],
+      "done_when": "Role tanpa acuan interco/akuntansi/WMS/GRN/RFID memiliki menu sesuai izin dan scope; preview dan sesi aktual sama; parity induk-anak/view-resource otomatis diuji.",
+      "limits": "Tidak melakukan login browser sebagai role kustom; klaim hasil berasal dari fungsi navigasi asli yang dievaluasi."
+    },
+    {
+      "id": "FNA-02",
+      "priority": "P2",
+      "title": "Halaman Data Gudang menolak Admin Gudang yang diberi akses",
+      "status": "confirmed_static_trace",
+      "evidence_type": "frontend_backend_call_chain",
+      "scenario": "Role warehouse_admin membuka Data Gudang dari menu warisan warehouse.",
+      "actual": "Frontend meminta warehouses?scope=all; backend mengembalikan 403 karena role bukan admin/manager/warehouse. Gate canManage juga menolak role ini walau warehouse.create/update tersedia.",
+      "expected": "Memuat gudang yang sah dalam scope akun dan menyediakan tindakan sesuai izin.",
+      "references": [
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/config/roles.js",
+          "line": 294
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/permissions_config.py",
+          "line": 527
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/wms/warehouses/WarehouseMasterView.jsx",
+          "line": 58
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/wms/warehouses/WarehouseMasterView.jsx",
+          "line": 83
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/wms/warehouses/warehouseApi.js",
+          "line": 11
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/routers/warehouses.py",
+          "line": 36
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/routers/warehouses.py",
+          "line": 165
+        }
+      ],
+      "acceptance_ids": [
+        "LN-015-T01",
+        "LN-015-T04"
+      ],
+      "evidence_files": [
+        "REVIEW_FRONTEND_ACCESS_NAVIGATION.md",
+        "access_catalog.json"
+      ],
+      "done_when": "Admin Gudang dan custom role berizin dapat membuka master dalam scope; read-only tidak melihat mutasi; gudang luar scope tetap ditolak.",
+      "limits": "Belum ada pengujian HTTP/browser dengan identitas warehouse_admin dalam subaudit ini."
+    },
+    {
+      "id": "FNA-03",
+      "priority": "P2",
+      "title": "Tombol dan pilihan petugas masih mengikuti nama role, bukan izin rinci",
+      "status": "confirmed",
+      "evidence_type": "isolated_actual_jsx_ssr_15_cases_and_endpoint_comparison",
+      "scenario": "Role kustom mempunyai izin create tetapi nama role berbeda dari daftar tetap; pembanding Manager hanya mempunyai view.",
+      "actual": "Role kustom kehilangan tombol Buat OD, Buat SPK, Gudang baru, Kedatangan baru, Tambah Badan Usaha. Manager view-only tetap melihat tombol Buat OD/SPK/Gudang. Pilihan officers juga mengecualikan akun role kustom.",
+      "expected": "Setiap tombol memakai izin aksi yang sama dengan API beserta status/scope/penugasan; pilihan petugas berdasarkan capability dan scope.",
+      "references": [
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/sales/SpecialOrders.jsx",
+          "line": 118
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/routers/special_orders.py",
+          "line": 195
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/sales/SpecialOrderDetail.jsx",
+          "line": 43
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/inspections/InspectionsView.jsx",
+          "line": 73
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/routers/inspections.py",
+          "line": 178
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/inspections/InspectionDetailPanel.jsx",
+          "line": 56
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/routers/inspections.py",
+          "line": 193
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/wms/grn/GoodsReceiptsView.jsx",
+          "line": 14
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/routers/goods_receipts.py",
+          "line": 33
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/wms/grn/GrnDetail.jsx",
+          "line": 12
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/routers/goods_receipts.py",
+          "line": 266
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/wms/warehouses/WarehouseMasterView.jsx",
+          "line": 58
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/routers/warehouses.py",
+          "line": 176
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/settings/entities/EntitiesAccessView.jsx",
+          "line": 47
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/routers/entities.py",
+          "line": 142
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/routers/inspections.py",
+          "line": 58
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/services/inspection_service.py",
+          "line": 500
+        }
+      ],
+      "acceptance_ids": [
+        "LN-015-T01",
+        "LN-015-T03",
+        "LN-015-T04",
+        "LN-015-T06"
+      ],
+      "evidence_files": [
+        "button-render.json",
+        "REVIEW_FRONTEND_ACCESS_NAVIGATION.md"
+      ],
+      "done_when": "Role kustom dengan izin/status/scope sama mendapatkan kemampuan UI sama; pencabutan izin diterapkan; API tetap memeriksa semua aksi; petugas kustom berizin bisa dipilih.",
+      "limits": "SSR tidak menjalankan klik/effect API; child/API imports diisolasi. Tidak ada klaim bypass backend."
+    },
+    {
+      "id": "FNA-04",
+      "priority": "P2",
+      "title": "Meja Saya mengarahkan pengajuan Harga Khusus ke view approvals yang tidak ada",
+      "status": "confirmed",
+      "evidence_type": "actual_rowLink_docLinkTarget_and_router_parity",
+      "scenario": "Manager membuka pengajuan pending di antrean Permintaan harga khusus pada Meja Saya.",
+      "actual": "rowLink menghasilkan view=approvals; App menetapkan activeView langsung; AppViewRouter hanya merender price-approvals.",
+      "expected": "Membuka view price-approvals dan fokus ke pengajuan yang diklik.",
+      "references": [
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/backend/services/role_desk_service.py",
+          "line": 72
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/sales_admin/workDeskApi.js",
+          "line": 217
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/features/desks/RoleDesk.jsx",
+          "line": 74
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/App.js",
+          "line": 299
+        },
+        {
+          "path": "C:/Users/abc/Documents/Codex/2026-09-28/sya/work/KNHOST-plan-audit-2026-10-19/frontend/src/AppViewRouter.jsx",
+          "line": 344
+        }
+      ],
+      "acceptance_ids": [
+        "LN-102-T02",
+        "LN-015-T01"
+      ],
+      "evidence_files": [
+        "navigation-inventory.json"
+      ],
+      "done_when": "Klik antrean membuka pengajuan yang benar; fokus pengajuan didukung; seluruh target rowLink mempunyai renderer yang sah.",
+      "limits": "Dibuktikan dengan evaluasi fungsi dan trace router; belum diklaim klik browser."
+    }
+  ],
+  "excluded_false_positives": [
+    "home is a valid alias resolved by App.handleNavSelect",
+    "unmapped hr-my-profile is deliberately available via ALWAYS_NAV"
+  ],
+  "limitations": [
+    "No claim of all-button interaction UAT",
+    "No claim of financial correctness or device UAT",
+    "SSR API/child imports are stubbed; underlying top-level JSX and permission gates are actual code"
+  ]
+}

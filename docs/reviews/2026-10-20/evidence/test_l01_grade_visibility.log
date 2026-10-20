@@ -1,0 +1,81 @@
+EEEEEFE......E                                                           [100%]
+=================================== ERRORS ====================================
+_ ERROR at setup of TestFieldVisibility.test_sales_never_receives_grade_lot_origin _
+backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login
+_ ERROR at setup of TestFieldVisibility.test_sales_admin_and_admin_still_see __
+backend\tests\test_l01_grade_visibility.py:33: in sadm
+    return _login("salesadmin.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login
+__ ERROR at setup of TestFieldVisibility.test_sales_grade_filter_is_ignored ___
+backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login
+_ ERROR at setup of TestFieldVisibility.test_grade_cannot_be_opened_for_sales_pov _
+backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login
+______ ERROR at setup of TestFieldVisibility.test_pdf_redacts_for_sales _______
+backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login
+_________ ERROR at setup of TestGradeMaster.test_sales_cannot_manage __________
+backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login
+_ ERROR at setup of TestSkuAndNameMasking.test_sales_sees_masked_sku_and_name _
+backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login
+================================== FAILURES ===================================
+____________________ TestGradeMaster.test_owner_active_set ____________________
+backend\tests\test_l01_grade_visibility.py:102: in test_owner_active_set
+    assert rows["B1"]["rolls_using"] > 0                      # histori tetap ada
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert 0 > 0
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l01_grade_visibility.py::TestGradeMaster::test_owner_active_set
+ERROR backend\tests\test_l01_grade_visibility.py::TestFieldVisibility::test_sales_never_receives_grade_lot_origin
+ERROR backend\tests\test_l01_grade_visibility.py::TestFieldVisibility::test_sales_admin_and_admin_still_see
+ERROR backend\tests\test_l01_grade_visibility.py::TestFieldVisibility::test_sales_grade_filter_is_ignored
+ERROR backend\tests\test_l01_grade_visibility.py::TestFieldVisibility::test_grade_cannot_be_opened_for_sales_pov
+ERROR backend\tests\test_l01_grade_visibility.py::TestFieldVisibility::test_pdf_redacts_for_sales
+ERROR backend\tests\test_l01_grade_visibility.py::TestGradeMaster::test_sales_cannot_manage
+ERROR backend\tests\test_l01_grade_visibility.py::TestSkuAndNameMasking::test_sales_sees_masked_sku_and_name
+1 failed, 6 passed, 2 warnings, 7 errors in 3.77s

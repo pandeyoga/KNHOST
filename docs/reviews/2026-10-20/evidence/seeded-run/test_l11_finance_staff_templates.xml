@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="7" time="3.694" timestamp="2026-10-19T13:45:39.998335+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l11_finance_staff_templates" name="test_ln111_t01_no_multiplication" time="0.068" /><testcase classname="tests.test_l11_finance_staff_templates" name="test_ln111_t02_attribution_from_transaction" time="0.034" /><testcase classname="tests.test_l11_finance_staff_templates" name="test_ln111_t03_date_basis" time="0.056" /><testcase classname="tests.test_l11_finance_staff_templates" name="test_ln112_t01_t02_designer_report" time="0.056" /><testcase classname="tests.test_l11_finance_staff_templates" name="test_ln112_t03_sales_split_and_report_file" time="1.193" /><testcase classname="tests.test_l11_finance_staff_templates" name="test_templates_save_run_owner_only" time="0.709"><failure message="AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend\tests\test_l11_finance_staff_templates.py:141: in test_templates_save_run_owner_only
+    s = _login("sales.kanda@kainnusantara.id")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l11_finance_staff_templates.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_l11_finance_staff_templates" name="test_coverage_no_unmapped" time="0.064"><failure message="AssertionError: ['bank_statement_formats', 'bank_statement_lines', 'budgets', 'customer_prices', 'fin_budget_rules', 'fin_depreciation_entries', ...]&#10;assert 15 == 0">backend\tests\test_l11_finance_staff_templates.py:150: in test_coverage_no_unmapped
+    assert c["summary"]["unmapped"] == 0, [r["collection"] for r in c["collections"] if r["status"] == "unmapped"]
+E   AssertionError: ['bank_statement_formats', 'bank_statement_lines', 'budgets', 'customer_prices', 'fin_budget_rules', 'fin_depreciation_entries', ...]
+E   assert 15 == 0</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,49 @@
+FFF.....F                                                                [100%]
+================================== FAILURES ===================================
+___________ TestKeepPendingScope.test_sales_can_read_and_is_scoped ____________
+backend\tests\test_l02_ln020_t02_t03_extra.py:30: in test_sales_can_read_and_is_scoped
+    uid = DB.users.find_one({"email": "sales.kanda@kainnusantara.id"}, {"_id": 0, "id": 1})["id"]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_________ TestKeepPendingScope.test_sales_admin_sees_entity_superset __________
+backend\tests\test_l02_ln020_t02_t03_extra.py:43: in test_sales_admin_sees_entity_superset
+    s = requests.get(f"{BASE}/sales/keep-pending", headers=_h("sales.kanda@kainnusantara.id", ent="ent_kanda")).json()
+                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln020_t02_t03_extra.py:21: in _h
+    h = {"Authorization": f"Bearer {_tok(email, pwd)}"}
+                                    ^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln020_t02_t03_extra.py:16: in _tok
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+________ TestKeepPendingScope.test_pending_no_supplier_or_owner_names _________
+backend\tests\test_l02_ln020_t02_t03_extra.py:51: in test_pending_no_supplier_or_owner_names
+    d = requests.get(f"{BASE}/sales/keep-pending", headers=_h("sales.kanda@kainnusantara.id", ent="ent_kanda")).json()
+                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln020_t02_t03_extra.py:21: in _h
+    h = {"Authorization": f"Bearer {_tok(email, pwd)}"}
+                                    ^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln020_t02_t03_extra.py:16: in _tok
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_____________ test_foreign_so_hidden_from_sales_visible_to_admin ______________
+backend\tests\test_l02_ln020_t02_t03_extra.py:124: in test_foreign_so_hidden_from_sales_visible_to_admin
+    headers=_h("sales.kanda@kainnusantara.id", ent="ent_kanda")).json()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln020_t02_t03_extra.py:21: in _h
+    h = {"Authorization": f"Bearer {_tok(email, pwd)}"}
+                                    ^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln020_t02_t03_extra.py:16: in _tok
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l02_ln020_t02_t03_extra.py::TestKeepPendingScope::test_sales_can_read_and_is_scoped
+FAILED backend\tests\test_l02_ln020_t02_t03_extra.py::TestKeepPendingScope::test_sales_admin_sees_entity_superset
+FAILED backend\tests\test_l02_ln020_t02_t03_extra.py::TestKeepPendingScope::test_pending_no_supplier_or_owner_names
+FAILED backend\tests\test_l02_ln020_t02_t03_extra.py::test_foreign_so_hidden_from_sales_visible_to_admin
+4 failed, 5 passed in 1.32s

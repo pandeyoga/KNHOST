@@ -1,0 +1,14 @@
+..F.                                                                     [100%]
+================================== FAILURES ===================================
+_______________________ TestMdqCut.test_sales_forbidden _______________________
+backend\tests\test_l04_mdq_cut.py:77: in test_sales_forbidden
+    s = _login("sales.kanda@kainnusantara.id", "demo1234")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l04_mdq_cut.py:15: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l04_mdq_cut.py::TestMdqCut::test_sales_forbidden - ...
+1 failed, 3 passed, 1 warning in 1.72s

@@ -1,0 +1,124 @@
+EEEEEEEEEEEE                                                             [100%]
+=================================== ERRORS ====================================
+_________ ERROR at setup of TestT01Surfaces.test_baseline_invariants __________
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+___ ERROR at setup of TestT01Surfaces.test_stage1_customer360_journey_aging ___
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+________ ERROR at setup of TestT01Surfaces.test_stage1_home_kpi_deltas ________
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+______ ERROR at setup of TestT01Surfaces.test_stage1_sales_owner_journey ______
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+____ ERROR at setup of TestT01Surfaces.test_stage2_partial_shipment_split _____
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+________ ERROR at setup of TestT01Surfaces.test_stage2_home_kpi_deltas ________
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+____ ERROR at setup of TestT01Surfaces.test_stage3_payment_reduces_ledger _____
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_ ERROR at setup of TestT01Surfaces.test_credit_limit_gating_uses_full_outstanding _
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_ ERROR at setup of TestT01Surfaces.test_cancelled_order_journey_split[cancelled] _
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_ ERROR at setup of TestT01Surfaces.test_cancelled_order_journey_split[expired] _
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+____ ERROR at setup of TestT01Surfaces.test_after_uncancel_split_restored _____
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+____ ERROR at setup of TestT01Surfaces.test_shipped_status_split_invariant ____
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_baseline_invariants
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_stage1_customer360_journey_aging
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_stage1_home_kpi_deltas
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_stage1_sales_owner_journey
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_stage2_partial_shipment_split
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_stage2_home_kpi_deltas
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_stage3_payment_reduces_ledger
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_credit_limit_gating_uses_full_outstanding
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_cancelled_order_journey_split[cancelled]
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_cancelled_order_journey_split[expired]
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_after_uncancel_split_restored
+ERROR backend\tests\test_l02_ln023_t01_ar_split_surfaces.py::TestT01Surfaces::test_shipped_status_split_invariant
+12 errors in 1.58s

@@ -1,0 +1,21 @@
+
+=================================== ERRORS ====================================
+________________ ERROR collecting tests/test_l00_edge_cases.py ________________
+backend\tests\test_l00_edge_cases.py:9: in <module>
+    from tests.test_p05_acceptance_acc31_33_34 import BASE, DB, REVAL, _create, _login, _tpl, _wip
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+..\integration_env\Lib\site-packages\_pytest\assertion\rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+backend\tests\test_p05_acceptance_acc31_33_34.py:46: in <module>
+    REVAL = {"revalidation_supplier_id": DB.suppliers.find_one({"entity_id": "all"}, {"_id": 0, "id": 1}, sort=[("name", 1)])["id"],
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l00_edge_cases.py - TypeError: 'NoneType' object is ...
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 2.12s

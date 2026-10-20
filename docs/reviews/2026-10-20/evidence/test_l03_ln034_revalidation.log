@@ -1,0 +1,11 @@
+
+=================================== ERRORS ====================================
+____________ ERROR collecting tests/test_l03_ln034_revalidation.py ____________
+backend\tests\test_l03_ln034_revalidation.py:13: in <module>
+    SUP_A, SUP_B = [s["id"] for s in DB.suppliers.find({"entity_id": "all"}, {"_id": 0, "id": 1}).sort("name", 1).limit(2)]
+    ^^^^^^^^^^^^
+E   ValueError: not enough values to unpack (expected 2, got 0)
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l03_ln034_revalidation.py - ValueError: not enough v...
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 1.05s

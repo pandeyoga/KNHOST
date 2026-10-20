@@ -1,0 +1,12 @@
+ssssssFs                                                                 [100%]
+================================== FAILURES ===================================
+_______________ TestPrivilegedSeesGrade.test_admin_rolls_grade ________________
+backend\tests\test_l01_sales_field_hidden_api.py:91: in test_admin_rolls_grade
+    assert "grade" in _keys(r.json())
+E   AssertionError: assert 'grade' in set()
+E    +  where set() = _keys([])
+E    +    where [] = json()
+E    +      where json = <Response [200]>.json
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l01_sales_field_hidden_api.py::TestPrivilegedSeesGrade::test_admin_rolls_grade
+1 failed, 7 skipped in 1.28s

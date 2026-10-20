@@ -1,0 +1,20 @@
+.....FF                                                                  [100%]
+================================== FAILURES ===================================
+_____________________ test_templates_save_run_owner_only ______________________
+backend\tests\test_l11_finance_staff_templates.py:141: in test_templates_save_run_owner_only
+    s = _login("sales.kanda@kainnusantara.id")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l11_finance_staff_templates.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+__________________________ test_coverage_no_unmapped __________________________
+backend\tests\test_l11_finance_staff_templates.py:150: in test_coverage_no_unmapped
+    assert c["summary"]["unmapped"] == 0, [r["collection"] for r in c["collections"] if r["status"] == "unmapped"]
+E   AssertionError: ['bank_statement_formats', 'bank_statement_lines', 'budgets', 'customer_prices', 'fin_budget_rules', 'fin_depreciation_entries', ...]
+E   assert 15 == 0
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l11_finance_staff_templates.py::test_templates_save_run_owner_only
+FAILED backend\tests\test_l11_finance_staff_templates.py::test_coverage_no_unmapped
+2 failed, 5 passed in 3.70s

@@ -1,0 +1,620 @@
+﻿scenario,role_or_module,nav_id,view,tab,label
+builtin_default_permissions,admin,home,home,,Beranda
+builtin_default_permissions,admin,approval-inbox,approval-inbox,,Pusat Persetujuan › Inbox Persetujuan
+builtin_default_permissions,admin,approval-inbox,my-approvals,,Pusat Persetujuan › Persetujuan Saya
+builtin_default_permissions,admin,approval-inbox,price-approvals,,Pusat Persetujuan › Pengajuan Harga Khusus
+builtin_default_permissions,admin,approval-inbox,purchase-approval,,Pusat Persetujuan › Riwayat Persetujuan PO
+builtin_default_permissions,admin,my-desk,my-desk,,Meja Saya
+builtin_default_permissions,admin,tanya-kn,tanya-kn,,Tanya KN
+builtin_default_permissions,admin,sales-admin-desk,sales-admin-desk,,Meja Admin Sales
+builtin_default_permissions,admin,finance-desk,finance-desk,,Meja Finance
+builtin_default_permissions,admin,md-desk,md-desk,,Meja MD
+builtin_default_permissions,admin,warehouse-admin-desk,warehouse-admin-desk,,Meja Gudang
+builtin_default_permissions,admin,sample-admin-desk,sample-admin-desk,,Meja Sampel
+builtin_default_permissions,admin,sales,sales,,Kasir & Portal
+builtin_default_permissions,admin,special-orders,special-orders,,Pesanan Khusus
+builtin_default_permissions,admin,sales-orders,orders,,Pesanan › Pesanan (SO)
+builtin_default_permissions,admin,sales-orders,amendments,,Pesanan › Koreksi & Amandemen
+builtin_default_permissions,admin,sales-orders,returns,,Pesanan › Retur & Barang Sisa
+builtin_default_permissions,admin,sales-orders,internal-requests,,Pesanan › Permintaan Internal (PIN)
+builtin_default_permissions,admin,sample-orders,sample-orders,,Pesanan Sampel
+builtin_default_permissions,admin,customers-crm,customers-crm,,Pelanggan › CRM & Pelanggan
+builtin_default_permissions,admin,customers-crm,hr-visits,,Pelanggan › Kunjungan Sales
+builtin_default_permissions,admin,customers-crm,customers-master,,Pelanggan › Impor/Ekspor & Status
+builtin_default_permissions,admin,products-pricing,md-products,,Produk & Harga › Produk & Varian
+builtin_default_permissions,admin,products-pricing,md-categories,,Produk & Harga › Kategori
+builtin_default_permissions,admin,products-pricing,color-library,,Produk & Harga › Pustaka Warna
+builtin_default_permissions,admin,products-pricing,md-uoms,,Produk & Harga › Satuan & Konversi
+builtin_default_permissions,admin,products-pricing,pricelist,,Produk & Harga › Harga per Badan Usaha
+builtin_default_permissions,admin,products-pricing,cs-price-list,,Produk & Harga › Harga per Pelanggan
+builtin_default_permissions,admin,products-pricing,internal-prices,,Produk & Harga › Harga Internal Antar-PT
+builtin_default_permissions,admin,sourcing,reorder,,Pengadaan › Saran Reorder
+builtin_default_permissions,admin,sourcing,purchase-requisitions,,Pengadaan › Permintaan Pembelian
+builtin_default_permissions,admin,sourcing,rfq,,Pengadaan › RFQ / Penawaran
+builtin_default_permissions,admin,purchase-orders,purchasing,,Pesanan Pembelian › Pesanan Pembelian (PO)
+builtin_default_permissions,admin,purchase-orders,po-board,,Pesanan Pembelian › Papan PO per Lini
+builtin_default_permissions,admin,purchase-orders,blanket-po,,Pesanan Pembelian › Blanket / Kontrak
+builtin_default_permissions,admin,purchase-orders,makloon-orders,,Pesanan Pembelian › Order Makloon
+builtin_default_permissions,admin,purchase-orders,makloon-claim-recap,,Pesanan Pembelian › Rekap Susut & Klaim Mitra
+builtin_default_permissions,admin,purchase-orders,makloon-claims,,Pesanan Pembelian › Klaim Selisih Makloon
+builtin_default_permissions,admin,accounts-payable,vendor-bills,,Hutang Pemasok › Tagihan Supplier
+builtin_default_permissions,admin,accounts-payable,contra-bons,,Hutang Pemasok › Kontrabon (Tukar Faktur)
+builtin_default_permissions,admin,accounts-payable,landed-cost,,Hutang Pemasok › Landed Cost (HPP)
+builtin_default_permissions,admin,accounts-payable,purchase-returns,,Hutang Pemasok › Retur Pembelian (Nota Debit)
+builtin_default_permissions,admin,master-pembelian,suppliers,,Master Pembelian › Pemasok (Supplier)
+builtin_default_permissions,admin,master-pembelian,makloons,,Master Pembelian › Mitra Makloon
+builtin_default_permissions,admin,master-pembelian,supplier-contracts,,Master Pembelian › Kontrak Mitra & Supplier
+builtin_default_permissions,admin,master-pembelian,supplier-items,,Master Pembelian › Barang Supplier
+builtin_default_permissions,admin,master-pembelian,process-recipes,,Master Pembelian › Resep Proses
+builtin_default_permissions,admin,rnd-hub,rnd-samples,,Riset & Sampel › Permintaan Sample
+builtin_default_permissions,admin,rnd-hub,rnd-labdip,,Riset & Sampel › Labdip
+builtin_default_permissions,admin,rnd-hub,rnd-handfeel,,Riset & Sampel › Handfeel
+builtin_default_permissions,admin,rnd-hub,rnd-proofing,,Riset & Sampel › Proofing
+builtin_default_permissions,admin,rnd-hub,rnd-reports,,Riset & Sampel › Laporan R&D
+builtin_default_permissions,admin,designer-hub,design-requests,,Desainer › Permintaan Desain
+builtin_default_permissions,admin,designer-hub,designer-kpi,,Desainer › KPI Desainer
+builtin_default_permissions,admin,designer-hub,rnd-designs,,Desainer › Desain & Pattern
+builtin_default_permissions,admin,designer-hub,cs-design-gallery,,Desainer › Galeri Desain (Showcase)
+builtin_default_permissions,admin,marketing-hub,mkt-calendar,,Marketing & Sosmed › Kalender Konten
+builtin_default_permissions,admin,marketing-hub,mkt-analytics,,Marketing & Sosmed › Dasbor & Performa
+builtin_default_permissions,admin,marketing-hub,mkt-campaigns,,Marketing & Sosmed › Kampanye
+builtin_default_permissions,admin,marketing-hub,mkt-accounts,,Marketing & Sosmed › Akun Sosmed
+builtin_default_permissions,admin,wms-operations,operations,,"Operasi Gudang › Stok, Transfer & Opname"
+builtin_default_permissions,admin,wms-operations,goods-receipts,,Operasi Gudang › Barang Masuk
+builtin_default_permissions,admin,wms-operations,wms-outbound,,Operasi Gudang › Barang Keluar
+builtin_default_permissions,admin,wms-operations,qc-inspection,,Operasi Gudang › QC & Inspeksi
+builtin_default_permissions,admin,stock-atp,inventory-board,,Stok & ATP › Status Stok & ATP
+builtin_default_permissions,admin,stock-atp,stock-buckets,,Stok & ATP › Stok Multi-Bucket
+builtin_default_permissions,admin,stock-atp,inventory-lots,,Stok & ATP › Lot & Silsilah
+builtin_default_permissions,admin,production,production,,Produksi
+builtin_default_permissions,admin,wms-locations,wms-locations,,Lokasi Rak
+builtin_default_permissions,admin,md-warehouses,md-warehouses,,Data Gudang
+builtin_default_permissions,admin,logistics,logistics,,Pengiriman
+builtin_default_permissions,admin,rfid-hub,cs-rfid-lokasi,,RFID › Lokasi RFID
+builtin_default_permissions,admin,rfid-hub,cs-rfid-tags,,RFID › Tag RFID
+builtin_default_permissions,admin,rfid-hub,cs-rfid-gate,,RFID › Monitor Gerbang
+builtin_default_permissions,admin,escalations,escalations,,Eskalasi Gudang
+builtin_default_permissions,admin,finance-tower,finance-tower,,Dasbor Keuangan › Posisi & Kontrol
+builtin_default_permissions,admin,finance-tower,bi-finance,,Dasbor Keuangan › BI Keuangan
+builtin_default_permissions,admin,cash-bank,bank-accounts,,Kas & Bank › Rekening & Saldo
+builtin_default_permissions,admin,cash-bank,cash-management,,Kas & Bank › Transaksi Kas
+builtin_default_permissions,admin,cash-bank,bank-reconciliation,,Kas & Bank › Rekonsiliasi Bank
+builtin_default_permissions,admin,ar-aging,ar-aging,,Piutang
+builtin_default_permissions,admin,advance-report,advance-report,,Uang Muka Pelanggan
+builtin_default_permissions,admin,payment-plans,payment-plans,,Rencana Bayar
+builtin_default_permissions,admin,finance-cases,finance-cases,,Kasus Keuangan
+builtin_default_permissions,admin,store-credit,store-credit,,Saldo Kredit
+builtin_default_permissions,admin,tax-hub,tax-invoices,,Pajak › Faktur Keluaran
+builtin_default_permissions,admin,tax-hub,input-tax,,Pajak › Faktur Masukan
+builtin_default_permissions,admin,tax-hub,cs-pajak,,Pajak › PPh & Rekap
+builtin_default_permissions,admin,ledger,general-ledger,,Buku Besar › Jurnal & Buku Besar
+builtin_default_permissions,admin,ledger,chart-of-accounts,,Buku Besar › Chart of Accounts
+builtin_default_permissions,admin,fin-reports,financial-statements,,"Laporan › Laba-Rugi, Neraca & Arus Kas"
+builtin_default_permissions,admin,fin-reports,profitability,,Laporan › Profitabilitas & Margin
+builtin_default_permissions,admin,fin-reports,cashflow-forecast,,Laporan › Proyeksi Arus Kas
+builtin_default_permissions,admin,fin-reports,budget,,Laporan › Anggaran vs Realisasi
+builtin_default_permissions,admin,fin-reports,consolidation,,Laporan › Konsolidasi Grup
+builtin_default_permissions,admin,closing,closing,,Tutup Buku
+builtin_default_permissions,admin,period-unlock,period-unlock,,Buka Periode
+builtin_default_permissions,admin,posting-failures,posting-failures,,Posting Gagal
+builtin_default_permissions,admin,interco-transactions,interco-transactions,,Antar Entitas (Grup)
+builtin_default_permissions,admin,petty-cash,cash-advances,,Kas Kecil › Pengajuan Dana (PD)
+builtin_default_permissions,admin,petty-cash,settlements,,Kas Kecil › Pertanggungjawaban
+builtin_default_permissions,admin,petty-cash,reimburse-payables,,Kas Kecil › Hutang Reimburse
+builtin_default_permissions,admin,vehicle-logs,vehicle-logs,,Kendaraan
+builtin_default_permissions,admin,fixed-assets,fixed-assets,,Aset Tetap
+builtin_default_permissions,admin,hr-people,hr-employees,,Karyawan › Karyawan
+builtin_default_permissions,admin,hr-people,hr-org-units,,Karyawan › Struktur Organisasi
+builtin_default_permissions,admin,hr-attendance-hub,hr-attendance,,Kehadiran › Presensi
+builtin_default_permissions,admin,hr-attendance-hub,hr-leave,,Kehadiran › Cuti & Izin
+builtin_default_permissions,admin,hr-attendance-hub,hr-overtime,,Kehadiran › Lembur
+builtin_default_permissions,admin,hr-attendance-hub,hr-live-tracking,,Kehadiran › Lacak Lapangan
+builtin_default_permissions,admin,hr-payroll-hub,hr-payroll-runs,,Penggajian › Payroll Run
+builtin_default_permissions,admin,hr-payroll-hub,hr-payslips,,Penggajian › Slip Gaji
+builtin_default_permissions,admin,hr-kpi-hub,cs-kpi,,KPI › KPI Karyawan (manual)
+builtin_default_permissions,admin,analytics,reports,,Analitik › Ringkasan
+builtin_default_permissions,admin,analytics,costing,,Analitik › Margin & HPP
+builtin_default_permissions,admin,analytics,cs-bi-hrd,,Analitik › BI SDM
+builtin_default_permissions,admin,analytics,cs-stock-analytics,,Analitik › Analitik Stok
+builtin_default_permissions,admin,export-center,export-center,,Pusat Export
+builtin_default_permissions,admin,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+builtin_default_permissions,admin,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+builtin_default_permissions,admin,document-center,documents,,Pusat Dokumen › Cetak PDF & Label
+builtin_default_permissions,admin,settings-hub,settings-config,,Pengaturan › Pusat Pengaturan
+builtin_default_permissions,admin,settings-hub,scheduler,,Pengaturan › Penjadwal & Notifikasi
+builtin_default_permissions,admin,settings-hub,admin,,Pengaturan › Integrasi & Audit
+builtin_default_permissions,admin,settings-hub,entities-access,,Pengaturan › Badan Usaha & Akses
+builtin_default_permissions,admin,settings-hub,permission-matrix,,Pengaturan › Matriks Izin
+builtin_default_permissions,admin,settings-hub,approval-rules,,Pengaturan › Aturan Persetujuan
+builtin_default_permissions,admin,settings-hub,entity-masters,,Pengaturan › Master per Badan Usaha
+builtin_default_permissions,admin,settings-hub,client-dataset-import,,Pengaturan › Impor Dataset Client
+builtin_default_permissions,admin,settings-hub,grade-master,,Pengaturan › Master Grade Mutu
+builtin_default_permissions,admin,settings-hub,domain-registry,,Pengaturan › Registri Domain
+builtin_default_permissions,admin,settings-hub,pdf-templates,,Pengaturan › Template PDF
+builtin_default_permissions,admin,settings-hub,doc-templates-basic,,Pengaturan › Template Dokumen Dasar
+builtin_default_permissions,admin,settings-hub,settings-receiving-ocr,,Pengaturan › Penerimaan & OCR
+builtin_default_permissions,admin,settings-hub,cs-rfid-devices,,Pengaturan › Perangkat RFID
+builtin_default_permissions,admin,settings-hub,return-policies,,Pengaturan › Kebijakan Retur
+builtin_default_permissions,admin,settings-hub,amendment-reasons,,Pengaturan › Label Alasan Amandemen
+builtin_default_permissions,admin,settings-hub,incentive-rates,,Pengaturan › Rate Insentif Sales
+builtin_default_permissions,admin,settings-hub,expense-categories,,Pengaturan › Kategori Beban
+builtin_default_permissions,admin,settings-hub,bank-recon-rules,,Pengaturan › Aturan & Template Bank
+builtin_default_permissions,admin,settings-hub,hr-attendance-setup,,Pengaturan › Shift & Geofence
+builtin_default_permissions,admin,settings-hub,rnd-divisions,,Pengaturan › Divisi & Persetujuan R&D
+builtin_default_permissions,admin,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,manager,home,home,,Beranda
+builtin_default_permissions,manager,approval-inbox,approval-inbox,,Pusat Persetujuan › Inbox Persetujuan
+builtin_default_permissions,manager,approval-inbox,my-approvals,,Pusat Persetujuan › Persetujuan Saya
+builtin_default_permissions,manager,approval-inbox,price-approvals,,Pusat Persetujuan › Pengajuan Harga Khusus
+builtin_default_permissions,manager,approval-inbox,purchase-approval,,Pusat Persetujuan › Riwayat Persetujuan PO
+builtin_default_permissions,manager,my-desk,my-desk,,Meja Saya
+builtin_default_permissions,manager,tanya-kn,tanya-kn,,Tanya KN
+builtin_default_permissions,manager,special-orders,special-orders,,Pesanan Khusus
+builtin_default_permissions,manager,sales-orders,orders,,Pesanan › Pesanan (SO)
+builtin_default_permissions,manager,sales-orders,amendments,,Pesanan › Koreksi & Amandemen
+builtin_default_permissions,manager,sales-orders,returns,,Pesanan › Retur & Barang Sisa
+builtin_default_permissions,manager,sales-orders,internal-requests,,Pesanan › Permintaan Internal (PIN)
+builtin_default_permissions,manager,sample-orders,sample-orders,,Pesanan Sampel
+builtin_default_permissions,manager,customers-crm,customers-crm,,Pelanggan › CRM & Pelanggan
+builtin_default_permissions,manager,customers-crm,hr-visits,,Pelanggan › Kunjungan Sales
+builtin_default_permissions,manager,products-pricing,md-products,,Produk & Harga › Produk & Varian
+builtin_default_permissions,manager,products-pricing,md-categories,,Produk & Harga › Kategori
+builtin_default_permissions,manager,products-pricing,color-library,,Produk & Harga › Pustaka Warna
+builtin_default_permissions,manager,products-pricing,md-uoms,,Produk & Harga › Satuan & Konversi
+builtin_default_permissions,manager,products-pricing,pricelist,,Produk & Harga › Harga per Badan Usaha
+builtin_default_permissions,manager,products-pricing,cs-price-list,,Produk & Harga › Harga per Pelanggan
+builtin_default_permissions,manager,sourcing,reorder,,Pengadaan › Saran Reorder
+builtin_default_permissions,manager,sourcing,purchase-requisitions,,Pengadaan › Permintaan Pembelian
+builtin_default_permissions,manager,sourcing,rfq,,Pengadaan › RFQ / Penawaran
+builtin_default_permissions,manager,purchase-orders,purchasing,,Pesanan Pembelian › Pesanan Pembelian (PO)
+builtin_default_permissions,manager,purchase-orders,po-board,,Pesanan Pembelian › Papan PO per Lini
+builtin_default_permissions,manager,purchase-orders,blanket-po,,Pesanan Pembelian › Blanket / Kontrak
+builtin_default_permissions,manager,purchase-orders,makloon-orders,,Pesanan Pembelian › Order Makloon
+builtin_default_permissions,manager,purchase-orders,makloon-claim-recap,,Pesanan Pembelian › Rekap Susut & Klaim Mitra
+builtin_default_permissions,manager,purchase-orders,makloon-claims,,Pesanan Pembelian › Klaim Selisih Makloon
+builtin_default_permissions,manager,accounts-payable,vendor-bills,,Hutang Pemasok › Tagihan Supplier
+builtin_default_permissions,manager,accounts-payable,contra-bons,,Hutang Pemasok › Kontrabon (Tukar Faktur)
+builtin_default_permissions,manager,accounts-payable,landed-cost,,Hutang Pemasok › Landed Cost (HPP)
+builtin_default_permissions,manager,accounts-payable,purchase-returns,,Hutang Pemasok › Retur Pembelian (Nota Debit)
+builtin_default_permissions,manager,master-pembelian,suppliers,,Master Pembelian › Pemasok (Supplier)
+builtin_default_permissions,manager,master-pembelian,makloons,,Master Pembelian › Mitra Makloon
+builtin_default_permissions,manager,master-pembelian,supplier-contracts,,Master Pembelian › Kontrak Mitra & Supplier
+builtin_default_permissions,manager,master-pembelian,supplier-items,,Master Pembelian › Barang Supplier
+builtin_default_permissions,manager,master-pembelian,process-recipes,,Master Pembelian › Resep Proses
+builtin_default_permissions,manager,rnd-hub,rnd-samples,,Riset & Sampel › Permintaan Sample
+builtin_default_permissions,manager,rnd-hub,rnd-labdip,,Riset & Sampel › Labdip
+builtin_default_permissions,manager,rnd-hub,rnd-handfeel,,Riset & Sampel › Handfeel
+builtin_default_permissions,manager,rnd-hub,rnd-proofing,,Riset & Sampel › Proofing
+builtin_default_permissions,manager,rnd-hub,rnd-reports,,Riset & Sampel › Laporan R&D
+builtin_default_permissions,manager,designer-hub,design-requests,,Desainer › Permintaan Desain
+builtin_default_permissions,manager,designer-hub,designer-kpi,,Desainer › KPI Desainer
+builtin_default_permissions,manager,designer-hub,rnd-designs,,Desainer › Desain & Pattern
+builtin_default_permissions,manager,designer-hub,cs-design-gallery,,Desainer › Galeri Desain (Showcase)
+builtin_default_permissions,manager,marketing-hub,mkt-calendar,,Marketing & Sosmed › Kalender Konten
+builtin_default_permissions,manager,marketing-hub,mkt-analytics,,Marketing & Sosmed › Dasbor & Performa
+builtin_default_permissions,manager,marketing-hub,mkt-campaigns,,Marketing & Sosmed › Kampanye
+builtin_default_permissions,manager,marketing-hub,mkt-accounts,,Marketing & Sosmed › Akun Sosmed
+builtin_default_permissions,manager,wms-operations,operations,,"Operasi Gudang › Stok, Transfer & Opname"
+builtin_default_permissions,manager,wms-operations,goods-receipts,,Operasi Gudang › Barang Masuk
+builtin_default_permissions,manager,wms-operations,wms-outbound,,Operasi Gudang › Barang Keluar
+builtin_default_permissions,manager,wms-operations,qc-inspection,,Operasi Gudang › QC & Inspeksi
+builtin_default_permissions,manager,stock-atp,inventory-board,,Stok & ATP › Status Stok & ATP
+builtin_default_permissions,manager,stock-atp,stock-buckets,,Stok & ATP › Stok Multi-Bucket
+builtin_default_permissions,manager,stock-atp,inventory-lots,,Stok & ATP › Lot & Silsilah
+builtin_default_permissions,manager,production,production,,Produksi
+builtin_default_permissions,manager,wms-locations,wms-locations,,Lokasi Rak
+builtin_default_permissions,manager,md-warehouses,md-warehouses,,Data Gudang
+builtin_default_permissions,manager,logistics,logistics,,Pengiriman
+builtin_default_permissions,manager,escalations,escalations,,Eskalasi Gudang
+builtin_default_permissions,manager,finance-tower,finance-tower,,Dasbor Keuangan › Posisi & Kontrol
+builtin_default_permissions,manager,finance-tower,bi-finance,,Dasbor Keuangan › BI Keuangan
+builtin_default_permissions,manager,cash-bank,bank-accounts,,Kas & Bank › Rekening & Saldo
+builtin_default_permissions,manager,cash-bank,cash-management,,Kas & Bank › Transaksi Kas
+builtin_default_permissions,manager,cash-bank,bank-reconciliation,,Kas & Bank › Rekonsiliasi Bank
+builtin_default_permissions,manager,ar-aging,ar-aging,,Piutang
+builtin_default_permissions,manager,advance-report,advance-report,,Uang Muka Pelanggan
+builtin_default_permissions,manager,payment-plans,payment-plans,,Rencana Bayar
+builtin_default_permissions,manager,finance-cases,finance-cases,,Kasus Keuangan
+builtin_default_permissions,manager,store-credit,store-credit,,Saldo Kredit
+builtin_default_permissions,manager,tax-hub,tax-invoices,,Pajak › Faktur Keluaran
+builtin_default_permissions,manager,tax-hub,input-tax,,Pajak › Faktur Masukan
+builtin_default_permissions,manager,tax-hub,cs-pajak,,Pajak › PPh & Rekap
+builtin_default_permissions,manager,ledger,general-ledger,,Buku Besar › Jurnal & Buku Besar
+builtin_default_permissions,manager,ledger,chart-of-accounts,,Buku Besar › Chart of Accounts
+builtin_default_permissions,manager,fin-reports,financial-statements,,"Laporan › Laba-Rugi, Neraca & Arus Kas"
+builtin_default_permissions,manager,fin-reports,profitability,,Laporan › Profitabilitas & Margin
+builtin_default_permissions,manager,fin-reports,cashflow-forecast,,Laporan › Proyeksi Arus Kas
+builtin_default_permissions,manager,fin-reports,budget,,Laporan › Anggaran vs Realisasi
+builtin_default_permissions,manager,fin-reports,consolidation,,Laporan › Konsolidasi Grup
+builtin_default_permissions,manager,closing,closing,,Tutup Buku
+builtin_default_permissions,manager,period-unlock,period-unlock,,Buka Periode
+builtin_default_permissions,manager,posting-failures,posting-failures,,Posting Gagal
+builtin_default_permissions,manager,interco-transactions,interco-transactions,,Antar Entitas (Grup)
+builtin_default_permissions,manager,petty-cash,cash-advances,,Kas Kecil › Pengajuan Dana (PD)
+builtin_default_permissions,manager,petty-cash,settlements,,Kas Kecil › Pertanggungjawaban
+builtin_default_permissions,manager,petty-cash,reimburse-payables,,Kas Kecil › Hutang Reimburse
+builtin_default_permissions,manager,vehicle-logs,vehicle-logs,,Kendaraan
+builtin_default_permissions,manager,fixed-assets,fixed-assets,,Aset Tetap
+builtin_default_permissions,manager,hr-people,hr-employees,,Karyawan › Karyawan
+builtin_default_permissions,manager,hr-people,hr-org-units,,Karyawan › Struktur Organisasi
+builtin_default_permissions,manager,hr-attendance-hub,hr-attendance,,Kehadiran › Presensi
+builtin_default_permissions,manager,hr-attendance-hub,hr-leave,,Kehadiran › Cuti & Izin
+builtin_default_permissions,manager,hr-attendance-hub,hr-overtime,,Kehadiran › Lembur
+builtin_default_permissions,manager,hr-attendance-hub,hr-live-tracking,,Kehadiran › Lacak Lapangan
+builtin_default_permissions,manager,hr-payroll-hub,hr-payroll-runs,,Penggajian › Payroll Run
+builtin_default_permissions,manager,hr-payroll-hub,hr-payslips,,Penggajian › Slip Gaji
+builtin_default_permissions,manager,hr-kpi-hub,cs-kpi,,KPI › KPI Karyawan (manual)
+builtin_default_permissions,manager,analytics,reports,,Analitik › Ringkasan
+builtin_default_permissions,manager,analytics,costing,,Analitik › Margin & HPP
+builtin_default_permissions,manager,analytics,cs-bi-hrd,,Analitik › BI SDM
+builtin_default_permissions,manager,analytics,cs-stock-analytics,,Analitik › Analitik Stok
+builtin_default_permissions,manager,export-center,export-center,,Pusat Export
+builtin_default_permissions,manager,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+builtin_default_permissions,manager,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+builtin_default_permissions,manager,document-center,documents,,Pusat Dokumen › Cetak PDF & Label
+builtin_default_permissions,manager,settings-hub,settings-config,,Pengaturan › Pusat Pengaturan
+builtin_default_permissions,manager,settings-hub,scheduler,,Pengaturan › Penjadwal & Notifikasi
+builtin_default_permissions,manager,settings-hub,entities-access,,Pengaturan › Badan Usaha & Akses
+builtin_default_permissions,manager,settings-hub,entity-masters,,Pengaturan › Master per Badan Usaha
+builtin_default_permissions,manager,settings-hub,grade-master,,Pengaturan › Master Grade Mutu
+builtin_default_permissions,manager,settings-hub,domain-registry,,Pengaturan › Registri Domain
+builtin_default_permissions,manager,settings-hub,settings-receiving-ocr,,Pengaturan › Penerimaan & OCR
+builtin_default_permissions,manager,settings-hub,return-policies,,Pengaturan › Kebijakan Retur
+builtin_default_permissions,manager,settings-hub,amendment-reasons,,Pengaturan › Label Alasan Amandemen
+builtin_default_permissions,manager,settings-hub,incentive-rates,,Pengaturan › Rate Insentif Sales
+builtin_default_permissions,manager,settings-hub,expense-categories,,Pengaturan › Kategori Beban
+builtin_default_permissions,manager,settings-hub,bank-recon-rules,,Pengaturan › Aturan & Template Bank
+builtin_default_permissions,manager,settings-hub,hr-attendance-setup,,Pengaturan › Shift & Geofence
+builtin_default_permissions,manager,settings-hub,rnd-divisions,,Pengaturan › Divisi & Persetujuan R&D
+builtin_default_permissions,manager,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,sales_admin,home,home,,Beranda
+builtin_default_permissions,sales_admin,approval-inbox,approval-inbox,,Pusat Persetujuan › Inbox Persetujuan
+builtin_default_permissions,sales_admin,approval-inbox,price-approvals,,Pusat Persetujuan › Pengajuan Harga Khusus
+builtin_default_permissions,sales_admin,my-desk,my-desk,,Meja Saya
+builtin_default_permissions,sales_admin,tanya-kn,tanya-kn,,Tanya KN
+builtin_default_permissions,sales_admin,sales-admin-desk,sales-admin-desk,,Meja Admin Sales
+builtin_default_permissions,sales_admin,sales,sales,,Kasir & Portal
+builtin_default_permissions,sales_admin,special-orders,special-orders,,Pesanan Khusus
+builtin_default_permissions,sales_admin,sales-orders,orders,,Pesanan › Pesanan (SO)
+builtin_default_permissions,sales_admin,sales-orders,amendments,,Pesanan › Koreksi & Amandemen
+builtin_default_permissions,sales_admin,sales-orders,returns,,Pesanan › Retur & Barang Sisa
+builtin_default_permissions,sales_admin,sales-orders,internal-requests,,Pesanan › Permintaan Internal (PIN)
+builtin_default_permissions,sales_admin,sample-orders,sample-orders,,Pesanan Sampel
+builtin_default_permissions,sales_admin,customers-crm,customers-crm,,Pelanggan › CRM & Pelanggan
+builtin_default_permissions,sales_admin,products-pricing,md-products,,Produk & Harga › Produk & Varian
+builtin_default_permissions,sales_admin,products-pricing,cs-price-list,,Produk & Harga › Harga per Pelanggan
+builtin_default_permissions,sales_admin,sourcing,purchase-requisitions,,Pengadaan › Permintaan Pembelian
+builtin_default_permissions,sales_admin,rnd-hub,rnd-samples,,Riset & Sampel › Permintaan Sample
+builtin_default_permissions,sales_admin,rnd-hub,rnd-labdip,,Riset & Sampel › Labdip
+builtin_default_permissions,sales_admin,rnd-hub,rnd-handfeel,,Riset & Sampel › Handfeel
+builtin_default_permissions,sales_admin,rnd-hub,rnd-proofing,,Riset & Sampel › Proofing
+builtin_default_permissions,sales_admin,marketing-hub,mkt-calendar,,Marketing & Sosmed › Kalender Konten
+builtin_default_permissions,sales_admin,marketing-hub,mkt-analytics,,Marketing & Sosmed › Dasbor & Performa
+builtin_default_permissions,sales_admin,marketing-hub,mkt-campaigns,,Marketing & Sosmed › Kampanye
+builtin_default_permissions,sales_admin,marketing-hub,mkt-accounts,,Marketing & Sosmed › Akun Sosmed
+builtin_default_permissions,sales_admin,wms-operations,operations,,"Operasi Gudang › Stok, Transfer & Opname"
+builtin_default_permissions,sales_admin,wms-operations,wms-outbound,,Operasi Gudang › Barang Keluar
+builtin_default_permissions,sales_admin,stock-atp,inventory-board,,Stok & ATP › Status Stok & ATP
+builtin_default_permissions,sales_admin,stock-atp,inventory-lots,,Stok & ATP › Lot & Silsilah
+builtin_default_permissions,sales_admin,logistics,logistics,,Pengiriman
+builtin_default_permissions,sales_admin,interco-transactions,interco-transactions,,Antar Entitas (Grup)
+builtin_default_permissions,sales_admin,petty-cash,cash-advances,,Kas Kecil › Pengajuan Dana (PD)
+builtin_default_permissions,sales_admin,petty-cash,settlements,,Kas Kecil › Pertanggungjawaban
+builtin_default_permissions,sales_admin,vehicle-logs,vehicle-logs,,Kendaraan
+builtin_default_permissions,sales_admin,export-center,export-center,,Pusat Export
+builtin_default_permissions,sales_admin,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+builtin_default_permissions,sales_admin,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+builtin_default_permissions,sales_admin,document-center,documents,,Pusat Dokumen › Cetak PDF & Label
+builtin_default_permissions,sales_admin,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,finance,home,home,,Beranda
+builtin_default_permissions,finance,tanya-kn,tanya-kn,,Tanya KN
+builtin_default_permissions,finance,finance-desk,finance-desk,,Meja Finance
+builtin_default_permissions,finance,sales-orders,orders,,Pesanan › Pesanan (SO)
+builtin_default_permissions,finance,sales-orders,returns,,Pesanan › Retur & Barang Sisa
+builtin_default_permissions,finance,sample-orders,sample-orders,,Pesanan Sampel
+builtin_default_permissions,finance,customers-crm,customers-crm,,Pelanggan › CRM & Pelanggan
+builtin_default_permissions,finance,products-pricing,internal-prices,,Produk & Harga › Harga Internal Antar-PT
+builtin_default_permissions,finance,purchase-orders,purchasing,,Pesanan Pembelian › Pesanan Pembelian (PO)
+builtin_default_permissions,finance,purchase-orders,makloon-claim-recap,,Pesanan Pembelian › Rekap Susut & Klaim Mitra
+builtin_default_permissions,finance,wms-operations,goods-receipts,,Operasi Gudang › Barang Masuk
+builtin_default_permissions,finance,finance-tower,finance-tower,,Dasbor Keuangan › Posisi & Kontrol
+builtin_default_permissions,finance,cash-bank,cash-management,,Kas & Bank › Transaksi Kas
+builtin_default_permissions,finance,ar-aging,ar-aging,,Piutang
+builtin_default_permissions,finance,advance-report,advance-report,,Uang Muka Pelanggan
+builtin_default_permissions,finance,payment-plans,payment-plans,,Rencana Bayar
+builtin_default_permissions,finance,finance-cases,finance-cases,,Kasus Keuangan
+builtin_default_permissions,finance,store-credit,store-credit,,Saldo Kredit
+builtin_default_permissions,finance,tax-hub,tax-invoices,,Pajak › Faktur Keluaran
+builtin_default_permissions,finance,interco-transactions,interco-transactions,,Antar Entitas (Grup)
+builtin_default_permissions,finance,export-center,export-center,,Pusat Export
+builtin_default_permissions,finance,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+builtin_default_permissions,finance,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+builtin_default_permissions,finance,document-center,documents,,Pusat Dokumen › Cetak PDF & Label
+builtin_default_permissions,finance,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,sales,home,home,,Beranda
+builtin_default_permissions,sales,approval-inbox,price-approvals,,Pusat Persetujuan › Pengajuan Harga Khusus
+builtin_default_permissions,sales,my-desk,my-desk,,Meja Saya
+builtin_default_permissions,sales,tanya-kn,tanya-kn,,Tanya KN
+builtin_default_permissions,sales,sales,sales,,Kasir & Portal
+builtin_default_permissions,sales,special-orders,special-orders,,Pesanan Khusus
+builtin_default_permissions,sales,sales-orders,orders,,Pesanan › Pesanan (SO)
+builtin_default_permissions,sales,sales-orders,amendments,,Pesanan › Koreksi & Amandemen
+builtin_default_permissions,sales,sales-orders,returns,,Pesanan › Retur & Barang Sisa
+builtin_default_permissions,sales,sales-orders,internal-requests,,Pesanan › Permintaan Internal (PIN)
+builtin_default_permissions,sales,sample-orders,sample-orders,,Pesanan Sampel
+builtin_default_permissions,sales,customers-crm,customers-crm,,Pelanggan › CRM & Pelanggan
+builtin_default_permissions,sales,customers-crm,hr-visits,,Pelanggan › Kunjungan Sales
+builtin_default_permissions,sales,products-pricing,md-products,,Produk & Harga › Produk & Varian
+builtin_default_permissions,sales,products-pricing,cs-price-list,,Produk & Harga › Harga per Pelanggan
+builtin_default_permissions,sales,rnd-hub,rnd-samples,,Riset & Sampel › Permintaan Sample
+builtin_default_permissions,sales,rnd-hub,rnd-labdip,,Riset & Sampel › Labdip
+builtin_default_permissions,sales,rnd-hub,rnd-handfeel,,Riset & Sampel › Handfeel
+builtin_default_permissions,sales,rnd-hub,rnd-proofing,,Riset & Sampel › Proofing
+builtin_default_permissions,sales,marketing-hub,mkt-calendar,,Marketing & Sosmed › Kalender Konten
+builtin_default_permissions,sales,marketing-hub,mkt-analytics,,Marketing & Sosmed › Dasbor & Performa
+builtin_default_permissions,sales,marketing-hub,mkt-campaigns,,Marketing & Sosmed › Kampanye
+builtin_default_permissions,sales,marketing-hub,mkt-accounts,,Marketing & Sosmed › Akun Sosmed
+builtin_default_permissions,sales,stock-atp,inventory-board,,Stok & ATP › Status Stok & ATP
+builtin_default_permissions,sales,stock-atp,inventory-lots,,Stok & ATP › Lot & Silsilah
+builtin_default_permissions,sales,logistics,logistics,,Pengiriman
+builtin_default_permissions,sales,petty-cash,cash-advances,,Kas Kecil › Pengajuan Dana (PD)
+builtin_default_permissions,sales,petty-cash,settlements,,Kas Kecil › Pertanggungjawaban
+builtin_default_permissions,sales,vehicle-logs,vehicle-logs,,Kendaraan
+builtin_default_permissions,sales,export-center,export-center,,Pusat Export
+builtin_default_permissions,sales,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+builtin_default_permissions,sales,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+builtin_default_permissions,sales,document-center,documents,,Pusat Dokumen › Cetak PDF & Label
+builtin_default_permissions,sales,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,warehouse,home,home,,Beranda
+builtin_default_permissions,warehouse,my-desk,my-desk,,Meja Saya
+builtin_default_permissions,warehouse,sourcing,purchase-requisitions,,Pengadaan › Permintaan Pembelian
+builtin_default_permissions,warehouse,sourcing,rfq,,Pengadaan › RFQ / Penawaran
+builtin_default_permissions,warehouse,accounts-payable,contra-bons,,Hutang Pemasok › Kontrabon (Tukar Faktur)
+builtin_default_permissions,warehouse,accounts-payable,purchase-returns,,Hutang Pemasok › Retur Pembelian (Nota Debit)
+builtin_default_permissions,warehouse,rnd-hub,rnd-samples,,Riset & Sampel › Permintaan Sample
+builtin_default_permissions,warehouse,rnd-hub,rnd-labdip,,Riset & Sampel › Labdip
+builtin_default_permissions,warehouse,rnd-hub,rnd-handfeel,,Riset & Sampel › Handfeel
+builtin_default_permissions,warehouse,rnd-hub,rnd-proofing,,Riset & Sampel › Proofing
+builtin_default_permissions,warehouse,wms-operations,operations,,"Operasi Gudang › Stok, Transfer & Opname"
+builtin_default_permissions,warehouse,wms-operations,goods-receipts,,Operasi Gudang › Barang Masuk
+builtin_default_permissions,warehouse,wms-operations,wms-outbound,,Operasi Gudang › Barang Keluar
+builtin_default_permissions,warehouse,wms-operations,qc-inspection,,Operasi Gudang › QC & Inspeksi
+builtin_default_permissions,warehouse,stock-atp,inventory-board,,Stok & ATP › Status Stok & ATP
+builtin_default_permissions,warehouse,stock-atp,stock-buckets,,Stok & ATP › Stok Multi-Bucket
+builtin_default_permissions,warehouse,stock-atp,inventory-lots,,Stok & ATP › Lot & Silsilah
+builtin_default_permissions,warehouse,production,production,,Produksi
+builtin_default_permissions,warehouse,wms-locations,wms-locations,,Lokasi Rak
+builtin_default_permissions,warehouse,md-warehouses,md-warehouses,,Data Gudang
+builtin_default_permissions,warehouse,logistics,logistics,,Pengiriman
+builtin_default_permissions,warehouse,rfid-hub,cs-rfid-lokasi,,RFID › Lokasi RFID
+builtin_default_permissions,warehouse,rfid-hub,cs-rfid-tags,,RFID › Tag RFID
+builtin_default_permissions,warehouse,rfid-hub,cs-rfid-gate,,RFID › Monitor Gerbang
+builtin_default_permissions,warehouse,escalations,escalations,,Eskalasi Gudang
+builtin_default_permissions,warehouse,interco-transactions,interco-transactions,,Antar Entitas (Grup)
+builtin_default_permissions,warehouse,vehicle-logs,vehicle-logs,,Kendaraan
+builtin_default_permissions,warehouse,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+builtin_default_permissions,warehouse,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+builtin_default_permissions,warehouse,document-center,documents,,Pusat Dokumen › Cetak PDF & Label
+builtin_default_permissions,warehouse,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,designer,my-desk,my-desk,,Meja Saya
+builtin_default_permissions,designer,designer-hub,design-requests,,Desainer › Permintaan Desain
+builtin_default_permissions,designer,designer-hub,rnd-designs,,Desainer › Desain & Pattern
+builtin_default_permissions,designer,designer-hub,cs-design-gallery,,Desainer › Galeri Desain (Showcase)
+builtin_default_permissions,designer,marketing-hub,mkt-calendar,,Marketing & Sosmed › Kalender Konten
+builtin_default_permissions,designer,marketing-hub,mkt-analytics,,Marketing & Sosmed › Dasbor & Performa
+builtin_default_permissions,designer,marketing-hub,mkt-campaigns,,Marketing & Sosmed › Kampanye
+builtin_default_permissions,designer,marketing-hub,mkt-accounts,,Marketing & Sosmed › Akun Sosmed
+builtin_default_permissions,designer,export-center,export-center,,Pusat Export
+builtin_default_permissions,designer,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,driver,my-desk,my-desk,,Meja Saya
+builtin_default_permissions,driver,logistics,logistics,,Pengiriman
+builtin_default_permissions,driver,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,md,home,home,,Beranda
+builtin_default_permissions,md,tanya-kn,tanya-kn,,Tanya KN
+builtin_default_permissions,md,md-desk,md-desk,,Meja MD
+builtin_default_permissions,md,sales-orders,orders,,Pesanan › Pesanan (SO)
+builtin_default_permissions,md,products-pricing,md-products,,Produk & Harga › Produk & Varian
+builtin_default_permissions,md,products-pricing,md-categories,,Produk & Harga › Kategori
+builtin_default_permissions,md,products-pricing,color-library,,Produk & Harga › Pustaka Warna
+builtin_default_permissions,md,products-pricing,md-uoms,,Produk & Harga › Satuan & Konversi
+builtin_default_permissions,md,products-pricing,cs-price-list,,Produk & Harga › Harga per Pelanggan
+builtin_default_permissions,md,products-pricing,internal-prices,,Produk & Harga › Harga Internal Antar-PT
+builtin_default_permissions,md,sourcing,purchase-requisitions,,Pengadaan › Permintaan Pembelian
+builtin_default_permissions,md,sourcing,rfq,,Pengadaan › RFQ / Penawaran
+builtin_default_permissions,md,purchase-orders,purchasing,,Pesanan Pembelian › Pesanan Pembelian (PO)
+builtin_default_permissions,md,purchase-orders,makloon-claim-recap,,Pesanan Pembelian › Rekap Susut & Klaim Mitra
+builtin_default_permissions,md,master-pembelian,suppliers,,Master Pembelian › Pemasok (Supplier)
+builtin_default_permissions,md,rnd-hub,rnd-samples,,Riset & Sampel › Permintaan Sample
+builtin_default_permissions,md,rnd-hub,rnd-labdip,,Riset & Sampel › Labdip
+builtin_default_permissions,md,rnd-hub,rnd-handfeel,,Riset & Sampel › Handfeel
+builtin_default_permissions,md,rnd-hub,rnd-proofing,,Riset & Sampel › Proofing
+builtin_default_permissions,md,rnd-hub,rnd-reports,,Riset & Sampel › Laporan R&D
+builtin_default_permissions,md,designer-hub,design-requests,,Desainer › Permintaan Desain
+builtin_default_permissions,md,designer-hub,rnd-designs,,Desainer › Desain & Pattern
+builtin_default_permissions,md,designer-hub,cs-design-gallery,,Desainer › Galeri Desain (Showcase)
+builtin_default_permissions,md,export-center,export-center,,Pusat Export
+builtin_default_permissions,md,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+builtin_default_permissions,md,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+builtin_default_permissions,md,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,warehouse_admin,home,home,,Beranda
+builtin_default_permissions,warehouse_admin,my-desk,my-desk,,Meja Saya
+builtin_default_permissions,warehouse_admin,tanya-kn,tanya-kn,,Tanya KN
+builtin_default_permissions,warehouse_admin,warehouse-admin-desk,warehouse-admin-desk,,Meja Gudang
+builtin_default_permissions,warehouse_admin,sourcing,purchase-requisitions,,Pengadaan › Permintaan Pembelian
+builtin_default_permissions,warehouse_admin,sourcing,rfq,,Pengadaan › RFQ / Penawaran
+builtin_default_permissions,warehouse_admin,accounts-payable,contra-bons,,Hutang Pemasok › Kontrabon (Tukar Faktur)
+builtin_default_permissions,warehouse_admin,accounts-payable,purchase-returns,,Hutang Pemasok › Retur Pembelian (Nota Debit)
+builtin_default_permissions,warehouse_admin,rnd-hub,rnd-samples,,Riset & Sampel › Permintaan Sample
+builtin_default_permissions,warehouse_admin,rnd-hub,rnd-labdip,,Riset & Sampel › Labdip
+builtin_default_permissions,warehouse_admin,rnd-hub,rnd-handfeel,,Riset & Sampel › Handfeel
+builtin_default_permissions,warehouse_admin,rnd-hub,rnd-proofing,,Riset & Sampel › Proofing
+builtin_default_permissions,warehouse_admin,wms-operations,operations,,"Operasi Gudang › Stok, Transfer & Opname"
+builtin_default_permissions,warehouse_admin,wms-operations,goods-receipts,,Operasi Gudang › Barang Masuk
+builtin_default_permissions,warehouse_admin,wms-operations,wms-outbound,,Operasi Gudang › Barang Keluar
+builtin_default_permissions,warehouse_admin,wms-operations,qc-inspection,,Operasi Gudang › QC & Inspeksi
+builtin_default_permissions,warehouse_admin,stock-atp,inventory-board,,Stok & ATP › Status Stok & ATP
+builtin_default_permissions,warehouse_admin,stock-atp,stock-buckets,,Stok & ATP › Stok Multi-Bucket
+builtin_default_permissions,warehouse_admin,stock-atp,inventory-lots,,Stok & ATP › Lot & Silsilah
+builtin_default_permissions,warehouse_admin,production,production,,Produksi
+builtin_default_permissions,warehouse_admin,wms-locations,wms-locations,,Lokasi Rak
+builtin_default_permissions,warehouse_admin,md-warehouses,md-warehouses,,Data Gudang
+builtin_default_permissions,warehouse_admin,logistics,logistics,,Pengiriman
+builtin_default_permissions,warehouse_admin,rfid-hub,cs-rfid-lokasi,,RFID › Lokasi RFID
+builtin_default_permissions,warehouse_admin,rfid-hub,cs-rfid-tags,,RFID › Tag RFID
+builtin_default_permissions,warehouse_admin,rfid-hub,cs-rfid-gate,,RFID › Monitor Gerbang
+builtin_default_permissions,warehouse_admin,escalations,escalations,,Eskalasi Gudang
+builtin_default_permissions,warehouse_admin,interco-transactions,interco-transactions,,Antar Entitas (Grup)
+builtin_default_permissions,warehouse_admin,vehicle-logs,vehicle-logs,,Kendaraan
+builtin_default_permissions,warehouse_admin,export-center,export-center,,Pusat Export
+builtin_default_permissions,warehouse_admin,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+builtin_default_permissions,warehouse_admin,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+builtin_default_permissions,warehouse_admin,document-center,documents,,Pusat Dokumen › Cetak PDF & Label
+builtin_default_permissions,warehouse_admin,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,sample_admin,home,home,,Beranda
+builtin_default_permissions,sample_admin,sample-admin-desk,sample-admin-desk,,Meja Sampel
+builtin_default_permissions,sample_admin,sample-orders,sample-orders,,Pesanan Sampel
+builtin_default_permissions,sample_admin,customers-crm,customers-crm,,Pelanggan › CRM & Pelanggan
+builtin_default_permissions,sample_admin,logistics,logistics,,Pengiriman
+builtin_default_permissions,sample_admin,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+builtin_default_permissions,sample_admin,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+builtin_default_permissions,sample_admin,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,md_quality,home,home,,Beranda
+builtin_default_permissions,md_quality,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+builtin_default_permissions,md_quality,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+builtin_default_permissions,md_quality,hr-my-profile,hr-my-profile,,Profil Saya
+builtin_default_permissions,qc,home,home,,Beranda
+builtin_default_permissions,qc,wms-operations,qc-inspection,,Operasi Gudang › QC & Inspeksi
+builtin_default_permissions,qc,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+builtin_default_permissions,qc,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+builtin_default_permissions,qc,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,penjualan,sales,sales,,Kasir & Portal
+custom_without_base_one_module_manage,penjualan,special-orders,special-orders,,Pesanan Khusus
+custom_without_base_one_module_manage,penjualan,sales-orders,orders,,Pesanan › Pesanan (SO)
+custom_without_base_one_module_manage,penjualan,sales-orders,amendments,,Pesanan › Koreksi & Amandemen
+custom_without_base_one_module_manage,penjualan,sales-orders,returns,,Pesanan › Retur & Barang Sisa
+custom_without_base_one_module_manage,penjualan,sales-orders,internal-requests,,Pesanan › Permintaan Internal (PIN)
+custom_without_base_one_module_manage,penjualan,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,sample_order,sample-orders,sample-orders,,Pesanan Sampel
+custom_without_base_one_module_manage,sample_order,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,customer,customers-crm,customers-crm,,Pelanggan › CRM & Pelanggan
+custom_without_base_one_module_manage,customer,customers-crm,hr-visits,,Pelanggan › Kunjungan Sales
+custom_without_base_one_module_manage,customer,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,product,products-pricing,md-products,,Produk & Harga › Produk & Varian
+custom_without_base_one_module_manage,product,products-pricing,md-categories,,Produk & Harga › Kategori
+custom_without_base_one_module_manage,product,products-pricing,color-library,,Produk & Harga › Pustaka Warna
+custom_without_base_one_module_manage,product,products-pricing,md-uoms,,Produk & Harga › Satuan & Konversi
+custom_without_base_one_module_manage,product,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,pricing,approval-inbox,approval-inbox,,Pusat Persetujuan › Inbox Persetujuan
+custom_without_base_one_module_manage,pricing,approval-inbox,price-approvals,,Pusat Persetujuan › Pengajuan Harga Khusus
+custom_without_base_one_module_manage,pricing,products-pricing,pricelist,,Produk & Harga › Harga per Badan Usaha
+custom_without_base_one_module_manage,pricing,products-pricing,cs-price-list,,Produk & Harga › Harga per Pelanggan
+custom_without_base_one_module_manage,pricing,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,purchasing,approval-inbox,approval-inbox,,Pusat Persetujuan › Inbox Persetujuan
+custom_without_base_one_module_manage,purchasing,approval-inbox,purchase-approval,,Pusat Persetujuan › Riwayat Persetujuan PO
+custom_without_base_one_module_manage,purchasing,sourcing,reorder,,Pengadaan › Saran Reorder
+custom_without_base_one_module_manage,purchasing,sourcing,purchase-requisitions,,Pengadaan › Permintaan Pembelian
+custom_without_base_one_module_manage,purchasing,sourcing,rfq,,Pengadaan › RFQ / Penawaran
+custom_without_base_one_module_manage,purchasing,purchase-orders,purchasing,,Pesanan Pembelian › Pesanan Pembelian (PO)
+custom_without_base_one_module_manage,purchasing,purchase-orders,po-board,,Pesanan Pembelian › Papan PO per Lini
+custom_without_base_one_module_manage,purchasing,purchase-orders,blanket-po,,Pesanan Pembelian › Blanket / Kontrak
+custom_without_base_one_module_manage,purchasing,accounts-payable,purchase-returns,,Hutang Pemasok › Retur Pembelian (Nota Debit)
+custom_without_base_one_module_manage,purchasing,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,supplier,purchase-orders,makloon-orders,,Pesanan Pembelian › Order Makloon
+custom_without_base_one_module_manage,supplier,purchase-orders,makloon-claim-recap,,Pesanan Pembelian › Rekap Susut & Klaim Mitra
+custom_without_base_one_module_manage,supplier,purchase-orders,makloon-claims,,Pesanan Pembelian › Klaim Selisih Makloon
+custom_without_base_one_module_manage,supplier,master-pembelian,suppliers,,Master Pembelian › Pemasok (Supplier)
+custom_without_base_one_module_manage,supplier,master-pembelian,makloons,,Master Pembelian › Mitra Makloon
+custom_without_base_one_module_manage,supplier,master-pembelian,supplier-contracts,,Master Pembelian › Kontrak Mitra & Supplier
+custom_without_base_one_module_manage,supplier,master-pembelian,supplier-items,,Master Pembelian › Barang Supplier
+custom_without_base_one_module_manage,supplier,master-pembelian,process-recipes,,Master Pembelian › Resep Proses
+custom_without_base_one_module_manage,supplier,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,payable,accounts-payable,vendor-bills,,Hutang Pemasok › Tagihan Supplier
+custom_without_base_one_module_manage,payable,accounts-payable,contra-bons,,Hutang Pemasok › Kontrabon (Tukar Faktur)
+custom_without_base_one_module_manage,payable,accounts-payable,landed-cost,,Hutang Pemasok › Landed Cost (HPP)
+custom_without_base_one_module_manage,payable,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,interco,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,rnd,rnd-hub,rnd-samples,,Riset & Sampel › Permintaan Sample
+custom_without_base_one_module_manage,rnd,rnd-hub,rnd-labdip,,Riset & Sampel › Labdip
+custom_without_base_one_module_manage,rnd,rnd-hub,rnd-handfeel,,Riset & Sampel › Handfeel
+custom_without_base_one_module_manage,rnd,rnd-hub,rnd-proofing,,Riset & Sampel › Proofing
+custom_without_base_one_module_manage,rnd,rnd-hub,rnd-reports,,Riset & Sampel › Laporan R&D
+custom_without_base_one_module_manage,rnd,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,design,designer-hub,design-requests,,Desainer › Permintaan Desain
+custom_without_base_one_module_manage,design,designer-hub,designer-kpi,,Desainer › KPI Desainer
+custom_without_base_one_module_manage,design,designer-hub,rnd-designs,,Desainer › Desain & Pattern
+custom_without_base_one_module_manage,design,designer-hub,cs-design-gallery,,Desainer › Galeri Desain (Showcase)
+custom_without_base_one_module_manage,design,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,marketing,marketing-hub,mkt-calendar,,Marketing & Sosmed › Kalender Konten
+custom_without_base_one_module_manage,marketing,marketing-hub,mkt-analytics,,Marketing & Sosmed › Dasbor & Performa
+custom_without_base_one_module_manage,marketing,marketing-hub,mkt-campaigns,,Marketing & Sosmed › Kampanye
+custom_without_base_one_module_manage,marketing,marketing-hub,mkt-accounts,,Marketing & Sosmed › Akun Sosmed
+custom_without_base_one_module_manage,marketing,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,warehouse_ops,wms-operations,operations,,"Operasi Gudang › Stok, Transfer & Opname"
+custom_without_base_one_module_manage,warehouse_ops,wms-operations,qc-inspection,,Operasi Gudang › QC & Inspeksi
+custom_without_base_one_module_manage,warehouse_ops,production,production,,Produksi
+custom_without_base_one_module_manage,warehouse_ops,wms-locations,wms-locations,,Lokasi Rak
+custom_without_base_one_module_manage,warehouse_ops,md-warehouses,md-warehouses,,Data Gudang
+custom_without_base_one_module_manage,warehouse_ops,escalations,escalations,,Eskalasi Gudang
+custom_without_base_one_module_manage,warehouse_ops,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,inventory,stock-atp,inventory-board,,Stok & ATP › Status Stok & ATP
+custom_without_base_one_module_manage,inventory,stock-atp,stock-buckets,,Stok & ATP › Stok Multi-Bucket
+custom_without_base_one_module_manage,inventory,stock-atp,inventory-lots,,Stok & ATP › Lot & Silsilah
+custom_without_base_one_module_manage,inventory,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,inspection,wms-operations,qc-inspection,,Operasi Gudang › QC & Inspeksi
+custom_without_base_one_module_manage,inspection,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,md_quality,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,qc,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,logistics,logistics,logistics,,Pengiriman
+custom_without_base_one_module_manage,logistics,vehicle-logs,vehicle-logs,,Kendaraan
+custom_without_base_one_module_manage,logistics,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,ar,ar-aging,ar-aging,,Piutang
+custom_without_base_one_module_manage,ar,advance-report,advance-report,,Uang Muka Pelanggan
+custom_without_base_one_module_manage,ar,payment-plans,payment-plans,,Rencana Bayar
+custom_without_base_one_module_manage,ar,store-credit,store-credit,,Saldo Kredit
+custom_without_base_one_module_manage,ar,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,finance_ops,finance-tower,finance-tower,,Dasbor Keuangan › Posisi & Kontrol
+custom_without_base_one_module_manage,finance_ops,cash-bank,bank-accounts,,Kas & Bank › Rekening & Saldo
+custom_without_base_one_module_manage,finance_ops,cash-bank,cash-management,,Kas & Bank › Transaksi Kas
+custom_without_base_one_module_manage,finance_ops,cash-bank,bank-reconciliation,,Kas & Bank › Rekonsiliasi Bank
+custom_without_base_one_module_manage,finance_ops,finance-cases,finance-cases,,Kasus Keuangan
+custom_without_base_one_module_manage,finance_ops,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,accounting,fixed-assets,fixed-assets,,Aset Tetap
+custom_without_base_one_module_manage,accounting,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,petty_cash,petty-cash,cash-advances,,Kas Kecil › Pengajuan Dana (PD)
+custom_without_base_one_module_manage,petty_cash,petty-cash,settlements,,Kas Kecil › Pertanggungjawaban
+custom_without_base_one_module_manage,petty_cash,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,hr,hr-people,hr-employees,,Karyawan › Karyawan
+custom_without_base_one_module_manage,hr,hr-people,hr-org-units,,Karyawan › Struktur Organisasi
+custom_without_base_one_module_manage,hr,hr-attendance-hub,hr-attendance,,Kehadiran › Presensi
+custom_without_base_one_module_manage,hr,hr-attendance-hub,hr-leave,,Kehadiran › Cuti & Izin
+custom_without_base_one_module_manage,hr,hr-attendance-hub,hr-overtime,,Kehadiran › Lembur
+custom_without_base_one_module_manage,hr,hr-attendance-hub,hr-live-tracking,,Kehadiran › Lacak Lapangan
+custom_without_base_one_module_manage,hr,hr-payroll-hub,hr-payroll-runs,,Penggajian › Payroll Run
+custom_without_base_one_module_manage,hr,hr-payroll-hub,hr-payslips,,Penggajian › Slip Gaji
+custom_without_base_one_module_manage,hr,hr-kpi-hub,cs-kpi,,KPI › KPI Karyawan (manual)
+custom_without_base_one_module_manage,hr,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,documents,document-center,document-center,,Pusat Dokumen › Daftar Dokumen
+custom_without_base_one_module_manage,documents,document-center,doc-trace,,Pusat Dokumen › Jejak Dokumen
+custom_without_base_one_module_manage,documents,document-center,documents,,Pusat Dokumen › Cetak PDF & Label
+custom_without_base_one_module_manage,documents,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,reports,analytics,reports,,Analitik › Ringkasan
+custom_without_base_one_module_manage,reports,analytics,costing,,Analitik › Margin & HPP
+custom_without_base_one_module_manage,reports,analytics,cs-bi-hrd,,Analitik › BI SDM
+custom_without_base_one_module_manage,reports,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,data_export,export-center,export-center,,Pusat Export
+custom_without_base_one_module_manage,data_export,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,approval,approval-inbox,approval-inbox,,Pusat Persetujuan › Inbox Persetujuan
+custom_without_base_one_module_manage,approval,approval-inbox,my-approvals,,Pusat Persetujuan › Persetujuan Saya
+custom_without_base_one_module_manage,approval,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,grade_master,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,field_visibility,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,sales_profile,hr-my-profile,hr-my-profile,,Profil Saya
+custom_without_base_one_module_manage,admin,settings-hub,settings-config,,Pengaturan › Pusat Pengaturan
+custom_without_base_one_module_manage,admin,settings-hub,scheduler,,Pengaturan › Penjadwal & Notifikasi
+custom_without_base_one_module_manage,admin,settings-hub,admin,,Pengaturan › Integrasi & Audit
+custom_without_base_one_module_manage,admin,settings-hub,entities-access,,Pengaturan › Badan Usaha & Akses
+custom_without_base_one_module_manage,admin,settings-hub,approval-rules,,Pengaturan › Aturan Persetujuan
+custom_without_base_one_module_manage,admin,settings-hub,entity-masters,,Pengaturan › Master per Badan Usaha
+custom_without_base_one_module_manage,admin,settings-hub,domain-registry,,Pengaturan › Registri Domain
+custom_without_base_one_module_manage,admin,settings-hub,pdf-templates,,Pengaturan › Template PDF
+custom_without_base_one_module_manage,admin,hr-my-profile,hr-my-profile,,Profil Saya

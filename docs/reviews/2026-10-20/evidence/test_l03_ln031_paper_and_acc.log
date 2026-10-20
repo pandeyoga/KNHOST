@@ -1,0 +1,24 @@
+..FF                                                                     [100%]
+================================== FAILURES ===================================
+____________________ test_paper_check_forbidden_for_sales _____________________
+backend\tests\test_l03_ln031_paper_and_acc.py:69: in test_paper_check_forbidden_for_sales
+    h = _login("sales@kainnusantara.id")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln031_paper_and_acc.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+______________________ test_concurrent_pic_acc_only_once ______________________
+backend\tests\test_l03_ln031_paper_and_acc.py:75: in test_concurrent_pic_acc_only_once
+    h2 = _login("manager@kainnusantara.id")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln031_paper_and_acc.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l03_ln031_paper_and_acc.py::test_paper_check_forbidden_for_sales
+FAILED backend\tests\test_l03_ln031_paper_and_acc.py::test_concurrent_pic_acc_only_once
+2 failed, 2 passed in 1.67s

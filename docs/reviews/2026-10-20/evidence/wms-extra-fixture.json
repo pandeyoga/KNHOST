@@ -1,0 +1,7 @@
+{
+  "database": "kn_plan_audit_20261019",
+  "site_id": "audit_site_jakarta",
+  "qc_zone_source": "seed_p02_kn._qc_zone",
+  "shared_warehouse": "wh_6b2c7ef462be",
+  "note": "Synthetic empty warehouse using the hard-coded ID required by repository tests; no stock movement"
+}

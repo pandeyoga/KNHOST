@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="5" failures="0" skipped="0" tests="5" time="1.364" timestamp="2026-10-19T13:43:30.138639+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l03_ln034_revalidation_edges" name="test_create_validation" time="0.604"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l03_ln034_revalidation_edges.py:28: in H
+    return {"admin": _login("admin@kainnusantara.id", "demo12345"), "md": _login("md@kainnusantara.id"),
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln034_revalidation_edges.py:22: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l03_ln034_revalidation_edges" name="test_partners_and_empty_eligibility" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l03_ln034_revalidation_edges.py:28: in H
+    return {"admin": _login("admin@kainnusantara.id", "demo12345"), "md": _login("md@kainnusantara.id"),
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln034_revalidation_edges.py:22: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l03_ln034_revalidation_edges" name="test_decide_guards_and_operational_note" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l03_ln034_revalidation_edges.py:28: in H
+    return {"admin": _login("admin@kainnusantara.id", "demo12345"), "md": _login("md@kainnusantara.id"),
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln034_revalidation_edges.py:22: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l03_ln034_revalidation_edges" name="test_sales_permissions" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l03_ln034_revalidation_edges.py:28: in H
+    return {"admin": _login("admin@kainnusantara.id", "demo12345"), "md": _login("md@kainnusantara.id"),
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln034_revalidation_edges.py:22: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l03_ln034_revalidation_edges" name="test_contract_reference_options" time="0.004"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l03_ln034_revalidation_edges.py:28: in H
+    return {"admin": _login("admin@kainnusantara.id", "demo12345"), "md": _login("md@kainnusantara.id"),
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln034_revalidation_edges.py:22: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase></testsuite></testsuites>

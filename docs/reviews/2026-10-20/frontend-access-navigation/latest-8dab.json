@@ -1,0 +1,395 @@
+{
+  "baseline_before": "63c38bd11b49ddfb59cbbfdb915c2e11e16d5c9c",
+  "latest_verified": "8dab383f764df80737bfe02f887422b3fd72aa70",
+  "review_date": "2026-10-20",
+  "results": [
+    {
+      "id": "FNA-01",
+      "status": "still",
+      "priority": "P1",
+      "old_statement_changed": true,
+      "reason": "Induk akuntansi dan rfid-hub serta goods-receipts/wms-outbound masih tidak terpetakan. Returns-hub baru memberi pintu Retur Antar-PT, tetapi tidak memulihkan menu transaksi utama interco.",
+      "actual_latest": {
+        "interco": [
+          "interco-returns",
+          "hr-my-profile"
+        ],
+        "accounting": [
+          "fixed-assets",
+          "hr-my-profile"
+        ],
+        "warehouse_ops": [
+          "operations",
+          "qc-inspection",
+          "production",
+          "wms-locations",
+          "md-warehouses",
+          "escalations",
+          "hr-my-profile"
+        ]
+      },
+      "do_not_repeat_old_statement": "Interco custom hanya Profil Saya sudah tidak akurat; latest menampilkan interco-returns dan hr-my-profile."
+    },
+    {
+      "id": "FNA-02",
+      "status": "still",
+      "priority": "P2",
+      "reason": "MASTER_SCOPE_ROLES dan pemanggil scope=all serta canManage tidak berubah. warehouse_admin tetap tidak diterima.",
+      "evidence_level": "exact_git_blob_static_callchain; no browser/HTTP role login in this subaudit"
+    },
+    {
+      "id": "FNA-03",
+      "status": "still",
+      "priority": "P2",
+      "reason": "15 render ulang pada lima komponen memberi hasil identik. Penambahan canCurrent belum dipakai oleh kondisi yang dilaporkan. Perubahan GRN hanya label sampel/sample; EntitiesAccess hanya initialTab.",
+      "render_cases": 15,
+      "custom_create_button_absent_components": [
+        "SpecialOrders",
+        "InspectionsView",
+        "WarehouseMasterView",
+        "GoodsReceiptsView",
+        "EntitiesAccessView"
+      ]
+    },
+    {
+      "id": "FNA-04",
+      "status": "still",
+      "priority": "P2",
+      "reason": "workDeskApi price_approval tetap view approvals dan tidak mempunyai renderer; renderer sah price-approvals kini di AppViewRouter baris 345.",
+      "actual_latest": {
+        "row_link": {
+          "view": "approvals",
+          "nav_id": "approvals",
+          "focus_type": "price_approval",
+          "focus_id": "audit_price",
+          "number": "PRA-AUDIT"
+        },
+        "has_router_render": false,
+        "doc_link": {
+          "view": "approvals",
+          "nav_id": "approvals",
+          "focus_type": "price_approval",
+          "focus_id": "audit_price",
+          "number": "PRA-AUDIT"
+        }
+      }
+    }
+  ],
+  "counts": {
+    "fixed": 0,
+    "partial": 0,
+    "still": 4
+  },
+  "coverage": {
+    "builtin_roles": 13,
+    "custom_single_module": 31,
+    "custom_all_modules": 1,
+    "renderer_view_ids": 151,
+    "jsx_ssr_cases": 15,
+    "jsx_components": 5
+  },
+  "sources": [
+    {
+      "path": "backend/access_modules.py",
+      "blob_before": "56a7b1b4d6f5db7d869f42a7cf200369c7e57894",
+      "blob_after": "27c458c68780545f636e40ab70b5d731f4341831",
+      "changed": true,
+      "references": [
+        {
+          "line": 56,
+          "source": "{\"id\": \"interco\", \"group\": \"Pembelian\", \"label\": \"Transaksi Antar Badan Usaha\","
+        },
+        {
+          "line": 74,
+          "source": "{\"id\": \"warehouse_ops\", \"group\": \"Gudang\", \"label\": \"Operasi Gudang (WMS)\","
+        },
+        {
+          "line": 111,
+          "source": "{\"id\": \"accounting\", \"group\": \"Keuangan\", \"label\": \"Akuntansi & Tutup Buku\","
+        },
+        {
+          "line": 210,
+          "source": "def nav_for_levels(levels: Dict[str, str]) -> Dict[str, List[str]]:"
+        }
+      ]
+    },
+    {
+      "path": "backend/routers/warehouses.py",
+      "blob_before": "6cb6ebc80fce50ac11094d5fa68cd098c9ffad86",
+      "blob_after": "6cb6ebc80fce50ac11094d5fa68cd098c9ffad86",
+      "changed": false,
+      "references": [
+        {
+          "line": 36,
+          "source": "MASTER_SCOPE_ROLES = {\"admin\", \"manager\", \"warehouse\"}"
+        },
+        {
+          "line": 165,
+          "source": "if want_all and actor.get(\"role\") not in MASTER_SCOPE_ROLES:"
+        },
+        {
+          "line": 176,
+          "source": "actor = await require_permission(request, \"warehouse\", \"create\")"
+        }
+      ]
+    },
+    {
+      "path": "backend/routers/inspections.py",
+      "blob_before": "ff9cab95e5af48f48d636d1ef1ccb1266fb00607",
+      "blob_after": "ff9cab95e5af48f48d636d1ef1ccb1266fb00607",
+      "changed": false,
+      "references": [
+        {
+          "line": 60,
+          "source": "\"role\": {\"$in\": [\"warehouse\", \"warehouse_admin\", \"manager\", \"admin\", \"md\", \"md_quality\", \"qc\"]}},"
+        },
+        {
+          "line": 178,
+          "source": "actor = await require_permission(request, \"inspection\", \"create\")"
+        },
+        {
+          "line": 193,
+          "source": "actor = await require_permission(request, \"inspection\", \"assign\")"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/config/navStructure.js",
+      "blob_before": "274aec43688df8da577929d489d271086e644b00",
+      "blob_after": "a76453d53f1242fe44c7e2ced82820aad650ca4e",
+      "changed": true,
+      "references": [
+        {
+          "line": 271,
+          "source": "{ id: \"rfid-hub\",           label: \"RFID\",       icon: Cpu,   roles: [\"admin\", \"warehouse\"], hub: \"rfid-hub\" },"
+        },
+        {
+          "line": 302,
+          "source": "groupId: \"akuntansi\","
+        },
+        {
+          "line": 314,
+          "source": "{ id: \"interco-transactions\", label: \"Antar Entitas (Grup)\", icon: Briefcase, roles: [\"admin\", \"manager\", \"warehouse\", \"finance\"], view: \"interco-transactions\" },"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/config/navigationConfig.js",
+      "blob_before": "354cf01efa805f91b6b52db5c957f0cd709e4227",
+      "blob_after": "1b6328eaa2ab4d2cd009638d517db7515c002f9b",
+      "changed": true,
+      "references": [
+        {
+          "line": 106,
+          "source": "if (!roleCanSee(entry.roles, role, entry.groupId || entry.id)) continue;"
+        },
+        {
+          "line": 155,
+          "source": "if (!roleCanSee(entry.roles, role, entry.groupId || entry.id)) continue;"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/config/roles.js",
+      "blob_before": "c0396dd79407857c16124bda5f9f2cd32d35e972",
+      "blob_after": "b04ac929a1b075ae27cdfce91a83c15dece7eb44",
+      "changed": true,
+      "references": [
+        {
+          "line": 104,
+          "source": "warehouse_admin: {"
+        },
+        {
+          "line": 294,
+          "source": "warehouse_admin: {"
+        },
+        {
+          "line": 423,
+          "source": "export function canCurrent(module, action) {"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/features/sales/SpecialOrders.jsx",
+      "blob_before": "01c476bcb02f245c08a222bc9b1cb41406e1f256",
+      "blob_after": "01c476bcb02f245c08a222bc9b1cb41406e1f256",
+      "changed": false,
+      "references": [
+        {
+          "line": 118,
+          "source": "const canCreate = [\"admin\", \"sales\", \"manager\"].includes(currentUser?.role);"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/features/inspections/InspectionsView.jsx",
+      "blob_before": "0b570f565859dfadbe1bb6e629951f5eb279cdcd",
+      "blob_after": "0b570f565859dfadbe1bb6e629951f5eb279cdcd",
+      "changed": false,
+      "references": [
+        {
+          "line": 73,
+          "source": "const canCreate = [\"admin\", \"manager\"].includes(role);"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/features/inspections/InspectionDetailPanel.jsx",
+      "blob_before": "72a6db9de0aaac0efd8a0f6e0d4e6a12835de72b",
+      "blob_after": "72a6db9de0aaac0efd8a0f6e0d4e6a12835de72b",
+      "changed": false,
+      "references": [
+        {
+          "line": 56,
+          "source": "const canAssign = [\"admin\", \"manager\"].includes(role);"
+        },
+        {
+          "line": 57,
+          "source": "const canDecide = [\"admin\", \"manager\"].includes(role) || (isRandom && Boolean(meta?.can_qc_release));"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/features/wms/grn/GoodsReceiptsView.jsx",
+      "blob_before": "ef000d193006503f43a2e54e0d904c509e3a4bd4",
+      "blob_after": "4a1742d68b39befd653c2191a508bc0aa82d3c47",
+      "changed": true,
+      "references": [
+        {
+          "line": 14,
+          "source": "const CREATE_ROLES = [\"admin\", \"warehouse\", \"warehouse_admin\"];"
+        },
+        {
+          "line": 65,
+          "source": "{CREATE_ROLES.includes(currentUser?.role) && tab === \"list\" && ("
+        },
+        {
+          "line": 113,
+          "source": "{CREATE_ROLES.includes(currentUser?.role) && <button className=\"primary-button\" style={{ marginTop: 8 }} onClick={() => setWizard({})}><Plus size={13} /> Kedatangan baru</button>}"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/features/wms/grn/GrnDetail.jsx",
+      "blob_before": "bc1e9627fb228692d5057dff8232d072d4336d2b",
+      "blob_after": "2aed72785d1593495a5623f3ca47e896aa308cf8",
+      "changed": true,
+      "references": [
+        {
+          "line": 12,
+          "source": "const REVIEW_ROLES = [\"admin\", \"manager\", \"warehouse_admin\"];"
+        },
+        {
+          "line": 13,
+          "source": "const COUNT_ROLES = [\"admin\", \"warehouse\", \"warehouse_admin\"];"
+        },
+        {
+          "line": 22,
+          "source": "const canReview = REVIEW_ROLES.includes(role);"
+        },
+        {
+          "line": 23,
+          "source": "const canCount = COUNT_ROLES.includes(role);"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/features/wms/warehouses/WarehouseMasterView.jsx",
+      "blob_before": "4ce5b564e6f20ea2977ceeb0b7826445abf2dcf0",
+      "blob_after": "4ce5b564e6f20ea2977ceeb0b7826445abf2dcf0",
+      "changed": false,
+      "references": [
+        {
+          "line": 58,
+          "source": "const canManage = [\"admin\", \"manager\", \"warehouse\"].includes(currentUser?.role);"
+        },
+        {
+          "line": 83,
+          "source": "listAllWarehouses(),"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/features/wms/warehouses/warehouseApi.js",
+      "blob_before": "e2e91aa3095a660b08ea4b2eead89cd3abe6810e",
+      "blob_after": "e2e91aa3095a660b08ea4b2eead89cd3abe6810e",
+      "changed": false,
+      "references": [
+        {
+          "line": 11,
+          "source": "export const listAllWarehouses = () =>"
+        },
+        {
+          "line": 12,
+          "source": "axios.get(`${API}/warehouses`, { params: { scope: \"all\" } }).then((r) => r.data || []);"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/features/settings/entities/EntitiesAccessView.jsx",
+      "blob_before": "1b95260e1bd625ce40a587fca4700062f51219c1",
+      "blob_after": "79bedc6c7cb30901dae20bbaf803f2e030c1b81e",
+      "changed": true,
+      "references": [
+        {
+          "line": 47,
+          "source": "const isAdmin = currentUser?.role === \"admin\";"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/features/sales_admin/workDeskApi.js",
+      "blob_before": "eff52bbe76796bd76b86f0f0c33d4d72ba315e8d",
+      "blob_after": "eff52bbe76796bd76b86f0f0c33d4d72ba315e8d",
+      "changed": false,
+      "references": [
+        {
+          "line": 217,
+          "source": "price_approval:     { view: \"approvals\",             nav_id: \"approvals\",      focus_type: \"price_approval\" },"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/features/desks/RoleDesk.jsx",
+      "blob_before": "1c88629068ac49bce37e483b1dff70d910669929",
+      "blob_after": "1c88629068ac49bce37e483b1dff70d910669929",
+      "changed": false,
+      "references": [
+        {
+          "line": 74,
+          "source": "onOpenDocument?.(rowLink(row, queue?.id, desk));"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/AppViewRouter.jsx",
+      "blob_before": "b4dda29a47a25998108d9cd79ad957aeb904482b",
+      "blob_after": "1a62995b8bfd6a1b593621f0efc0c061c11ccdd3",
+      "changed": true,
+      "references": [
+        {
+          "line": 345,
+          "source": "{activeView === \"price-approvals\" && <PriceApprovals currentUser={user} />}"
+        }
+      ]
+    },
+    {
+      "path": "frontend/src/App.js",
+      "blob_before": "f9d7cc39f566f448ecc6491fdd0b856da0cff28b",
+      "blob_after": "f811dfcac73f7518caeaea09b95d92635200b74f",
+      "changed": true,
+      "references": [
+        {
+          "line": 300,
+          "source": "const handleNavSelect = (navId, view, tab) => {"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "No browser testing in this subaudit",
+    "Exact new Git blob functions and JSX evaluated; API/child imports isolated as in original harness",
+    "This addendum revalidates the four existing FNA findings; it does not close the complete latest-main audit"
+  ],
+  "evidence_directory": "output\\audit-plan-2026-10-19\\frontend-access-navigation\\latest-8dab"
+}

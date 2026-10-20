@@ -1,0 +1,11 @@
+
+=================================== ERRORS ====================================
+__________ ERROR collecting tests/test_l10_ln100_ln102_stock_tree.py __________
+backend\tests\test_l10_ln100_ln102_stock_tree.py:15: in <module>
+    ZONE = next(z for z in WH_DOC["zones"] if z["id"] == "zone_sim_wh_jkt_w")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   StopIteration
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l10_ln100_ln102_stock_tree.py - StopIteration
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.78s

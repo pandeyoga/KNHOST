@@ -1,0 +1,14 @@
+........F.                                                               [100%]
+================================== FAILURES ===================================
+__________________________ test_sales_cannot_change ___________________________
+backend\tests\test_l06_cutting_wait_config_extra.py:88: in test_sales_cannot_change
+    hs = _login("sales@kainnusantara.id", "demo1234")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l06_cutting_wait_config_extra.py:14: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l06_cutting_wait_config_extra.py::test_sales_cannot_change
+1 failed, 9 passed in 2.04s

@@ -1,0 +1,208 @@
+{
+  "snapshot": "63c38bd11b49ddfb59cbbfdb915c2e11e16d5c9c",
+  "date": "2026-10-20",
+  "production_code_changed": false,
+  "browser_tested_by_this_agent": false,
+  "static_inventory": {
+    "files": 155,
+    "controls": 893,
+    "not_a_pass_count": true
+  },
+  "findings": [
+    {
+      "id": "FE-SR-04",
+      "severity": "P1",
+      "title": "Special Order multiitem collapses to last winner product and first item quantity in pricing/convert",
+      "status": "reproduced_unit_and_guard_reviewed",
+      "files": [
+        {
+          "path": "backend/services/special_order_phase2.py",
+          "line": 275
+        },
+        {
+          "path": "backend/routers/special_orders.py",
+          "line": 221
+        },
+        {
+          "path": "backend/routers/special_orders.py",
+          "line": 1034
+        },
+        {
+          "path": "frontend/src/features/sales/SpecialOrderPricingPanel.jsx",
+          "line": 73
+        }
+      ],
+      "evidence": "multi-item-evidence.json",
+      "acceptance": [
+        "LN-030-T01",
+        "L14 chain validation"
+      ],
+      "actual": "A100 cost10 + B200 cost30 at30% margin => header B100 total3900, conversion only B100",
+      "expected": "A100 + B200 correctly priced and converted; at same margin example total9100",
+      "limits": "Actual pricing function with read fixture and actual conversion expression; not HTTP/E2E. No multiitem guard found before conversion; downstream create_order does not reconcile source item set.",
+      "status_latest": "reproduced_http",
+      "evidence_latest": "multi-item-http-latest-evidence.json"
+    },
+    {
+      "id": "FE-SR-01",
+      "severity": "P2",
+      "title": "Return detail hides API action errors and closes settlement modal on rejection",
+      "status": "reproduced_actual_callbacks",
+      "files": [
+        {
+          "path": "frontend/src/features/sales/SalesReturns.jsx",
+          "line": 163
+        },
+        {
+          "path": "frontend/src/features/sales/SalesReturns.jsx",
+          "line": 207
+        },
+        {
+          "path": "frontend/src/features/sales/ReturnSettleModal.jsx",
+          "line": 63
+        }
+      ],
+      "evidence": "callback-evidence.json",
+      "actual": "Backend rejected; modal_closed=true; error is only in parent state not passed to detail",
+      "expected": "Dialog stays open with visible error and preserved inputs",
+      "limits": "Actual extracted JSX callback execution; no DOM screenshot in this agent."
+    },
+    {
+      "id": "FE-SR-03",
+      "severity": "P2",
+      "title": "Custom role permissions cannot expose several Special Order and return buttons",
+      "status": "static_gate_and_backend_permission_trace",
+      "files": [
+        {
+          "path": "frontend/src/features/sales/SpecialOrders.jsx",
+          "line": 118
+        },
+        {
+          "path": "frontend/src/features/sales/SpecialOrderDetail.jsx",
+          "line": 43
+        },
+        {
+          "path": "frontend/src/features/sales/SpecialOrderDetail.jsx",
+          "line": 435
+        },
+        {
+          "path": "frontend/src/features/sales/SalesReturns.jsx",
+          "line": 124
+        },
+        {
+          "path": "backend/routers/special_orders.py",
+          "line": 542
+        },
+        {
+          "path": "backend/routers/sales_returns.py",
+          "line": 278
+        }
+      ],
+      "evidence": "callback-evidence.json",
+      "acceptance": [
+        "LN-015-T01",
+        "LN-015-T03"
+      ],
+      "actual": "Custom role fails literal role conditions even when effective permission allows the API",
+      "expected": "Buttons reflect effective per-activity grants and state; backend enforces same capability",
+      "limits": "Full custom role account browser/API scenario still needed. Some backend actions also contain literal role checks."
+    },
+    {
+      "id": "FE-SR-05",
+      "severity": "P2",
+      "title": "QC queue labels raw per-roll base quantities as meters and sums without units",
+      "status": "static_data_contract_trace",
+      "files": [
+        {
+          "path": "frontend/src/features/wms/QCInspection.jsx",
+          "line": 75
+        },
+        {
+          "path": "frontend/src/features/wms/QCInspection.jsx",
+          "line": 142
+        },
+        {
+          "path": "frontend/src/features/wms/QCInspection.jsx",
+          "line": 229
+        },
+        {
+          "path": "backend/routers/inbound_receiving_extra.py",
+          "line": 93
+        },
+        {
+          "path": "backend/services/qc_service.py",
+          "line": 30
+        }
+      ],
+      "actual": "quarantine_qty from raw length_remaining is shown and entered as m regardless of product/roll unit",
+      "expected": "Explicit base unit per task and separate totals by compatible units",
+      "limits": "No yard/kg browser fixture screenshot from this agent; no inventory loss claimed."
+    },
+    {
+      "id": "FE-SR-02",
+      "severity": "P2",
+      "title": "Late returnable response overwrites products after another SO was selected",
+      "status": "reproduced_actual_callback_race",
+      "files": [
+        {
+          "path": "frontend/src/features/sales/CreateReturnForm.jsx",
+          "line": 59
+        }
+      ],
+      "evidence": "callback-evidence.json",
+      "acceptance": [
+        "LN-080-T01"
+      ],
+      "actual": "Selected SO-B; response SO-A finishes last; UI rows product-A",
+      "expected": "Rows/rolls/qty/unit always belong to active SO-B",
+      "limits": "Backend cross-SO submission outcome not asserted."
+    },
+    {
+      "id": "FE-SR-06",
+      "severity": "P2",
+      "title": "Return source SO picker silently limited to newest 200 orders",
+      "status": "static_consumer_endpoint_contract_trace",
+      "files": [
+        {
+          "path": "frontend/src/features/sales/SalesReturns.jsx",
+          "line": 110
+        },
+        {
+          "path": "frontend/src/features/sales/CreateReturnForm.jsx",
+          "line": 143
+        },
+        {
+          "path": "backend/routers/sales_orders_extra.py",
+          "line": 183
+        }
+      ],
+      "actual": "Nonpaged fetch capped200 then eligible statuses filtered locally; older eligible order absent",
+      "expected": "Search/pagination reaches every eligible order within scope",
+      "limits": "No201-row browser fixture run; source path cap verified."
+    }
+  ],
+  "related_existing_findings_not_recounted": [
+    "RND revalidation pass using ACC from another type/older round; frontend RevalDecideModal also uses any ACC"
+  ],
+  "remaining": [
+    "Browser DOM/visual/responsive tests managed by parent",
+    "Full custom-role grant/revoke matrix",
+    "Multiitem real HTTP stock/dispatch/invoice/AR integration",
+    "Failure after partial evidence upload",
+    "All sibling child components and mobile variants"
+  ],
+  "latest_validation": {
+    "snapshot": "8dab383f764df80737bfe02f887422b3fd72aa70",
+    "date": "2026-10-20",
+    "all_six_findings_still_present": true,
+    "multi_item_http_reproduced": true,
+    "evidence": "multi-item-http-latest-evidence.json",
+    "callback_evidence": "callback-evidence-latest.json",
+    "static_inventory": {
+      "files": 161,
+      "controls": 918,
+      "not_a_pass_count": true
+    },
+    "addendum": "ADDENDUM_MAIN_8dab_2026-10-20.md"
+  }
+}

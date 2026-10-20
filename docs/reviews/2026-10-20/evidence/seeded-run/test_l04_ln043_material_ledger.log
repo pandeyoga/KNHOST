@@ -1,0 +1,25 @@
+EEE                                                                      [100%]
+=================================== ERRORS ====================================
+__________ ERROR at setup of test_t01_commit_600_then_partial_issue ___________
+..\integration_env\Lib\site-packages\pytest_asyncio\plugin.py:924: in pytest_fixture_setup
+    return (yield)
+            ^^^^^
+backend\tests\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_______ ERROR at setup of test_t03_actual_output_differs_from_forecast ________
+backend\tests\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+____ ERROR at setup of test_t02_cancel_after_issue_partial_return_and_loss ____
+backend\tests\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l04_ln043_material_ledger.py::test_t01_commit_600_then_partial_issue
+ERROR backend\tests\test_l04_ln043_material_ledger.py::test_t03_actual_output_differs_from_forecast
+ERROR backend\tests\test_l04_ln043_material_ledger.py::test_t02_cancel_after_issue_partial_return_and_loss
+3 errors in 1.02s

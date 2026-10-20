@@ -1,0 +1,14 @@
+EE                                                                       [100%]
+=================================== ERRORS ====================================
+_ ERROR at setup of test_credit_note_posts_journal_and_reduces_ar_without_editing_order _
+backend\tests\test_l02_ln022_t03_amendment_note.py:23: in ctx
+    so = {**src, "id": SID, "number": "TEST/SO-L022T03", "status": "confirmed", "payments": [], "paid_total": 0,
+E   TypeError: 'NoneType' object is not a mapping
+______ ERROR at setup of test_debit_note_recorded_waits_for_billing_rule ______
+backend\tests\test_l02_ln022_t03_amendment_note.py:23: in ctx
+    so = {**src, "id": SID, "number": "TEST/SO-L022T03", "status": "confirmed", "payments": [], "paid_total": 0,
+E   TypeError: 'NoneType' object is not a mapping
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l02_ln022_t03_amendment_note.py::test_credit_note_posts_journal_and_reduces_ar_without_editing_order
+ERROR backend\tests\test_l02_ln022_t03_amendment_note.py::test_debit_note_recorded_waits_for_billing_rule
+2 errors in 0.80s

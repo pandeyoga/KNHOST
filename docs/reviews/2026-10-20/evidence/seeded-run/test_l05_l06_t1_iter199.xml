@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="5" failures="3" skipped="0" tests="16" time="2.297" timestamp="2026-10-19T13:44:00.295135+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l05_l06_t1_iter199" name="test_cutting_locations_include_sharing" time="0.360" /><testcase classname="tests.test_l05_l06_t1_iter199" name="test_cutting_desk_rows_have_roll_owner" time="0.292"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l05_l06_t1_iter199.py:44: in sampleadmin
+    return _login("sampleadmin@kainnusantara.id")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l05_l06_t1_iter199" name="test_logistics_dashboard_active_rows_have_qc_status" time="0.024" /><testcase classname="tests.test_l05_l06_t1_iter199" name="test_sampleadmin_catalogue_preview_allowed" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l05_l06_t1_iter199.py:44: in sampleadmin
+    return _login("sampleadmin@kainnusantara.id")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l05_l06_t1_iter199" name="test_sampleadmin_catalogue_templates_allowed" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l05_l06_t1_iter199.py:44: in sampleadmin
+    return _login("sampleadmin@kainnusantara.id")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l05_l06_t1_iter199" name="test_sampleadmin_cannot_create_regular_so" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l05_l06_t1_iter199.py:44: in sampleadmin
+    return _login("sampleadmin@kainnusantara.id")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l05_l06_t1_iter199" name="test_sampleadmin_can_create_sample_so" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l05_l06_t1_iter199.py:44: in sampleadmin
+    return _login("sampleadmin@kainnusantara.id")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l05_l06_t1_iter199" name="test_catalogue_requires_soft" time="0.012" /><testcase classname="tests.test_l05_l06_t1_iter199" name="test_sample_stats_paid_value_excludes_cancelled" time="0.027" /><testcase classname="tests.test_l05_l06_t1_iter199" name="test_qc_notification_to_qc_user" time="0.603"><failure message="AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend\tests\test_l05_l06_t1_iter199.py:179: in test_qc_notification_to_qc_user
+    qc = _login("qc@kainnusantara.id")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter199.py:33: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_l05_l06_t1_iter199" name="test_catalogue_templates_filters_by_entity" time="0.045" /><testcase classname="tests.test_l05_l06_t1_iter199" name="test_receive_rejects_other_owner_warehouse" time="0.032"><failure message="AssertionError: {&quot;detail&quot;:&quot;Lokasi tujuan Admin Cutting tidak ditemukan.&quot;}&#10;assert 404 == 400&#10; +  where 404 = &lt;Response [404]&gt;.status_code">backend\tests\test_l05_l06_t1_iter199.py:241: in test_receive_rejects_other_owner_warehouse
+    assert r.status_code == 400, r.text[:200]
+E   AssertionError: {"detail":"Lokasi tujuan Admin Cutting tidak ditemukan."}
+E   assert 404 == 400
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_l05_l06_t1_iter199" name="test_receive_same_warehouse_ok_and_idempotent" time="0.051" /><testcase classname="tests.test_l05_l06_t1_iter199" name="test_receive_missing_roll_409" time="0.030" /><testcase classname="tests.test_l05_l06_t1_iter199" name="test_receive_shared_warehouse_ok" time="0.017"><failure message="AssertionError: {&quot;detail&quot;:&quot;Lokasi tujuan Admin Cutting tidak ditemukan.&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">backend\tests\test_l05_l06_t1_iter199.py:294: in test_receive_shared_warehouse_ok
+    assert r.status_code == 200, r.text[:300]
+E   AssertionError: {"detail":"Lokasi tujuan Admin Cutting tidak ditemukan."}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_l05_l06_t1_iter199" name="test_receive_unknown_task_404" time="0.050" /></testsuite></testsuites>

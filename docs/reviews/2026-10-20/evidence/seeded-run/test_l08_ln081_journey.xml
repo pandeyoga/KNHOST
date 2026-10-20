@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.714" timestamp="2026-10-19T13:45:09.025377+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="tests.test_l08_ln081_journey" time="0.000"><error message="collection failure">backend\tests\test_l08_ln081_journey.py:13: in &lt;module&gt;
+    RCM_TRANSIT = DB.warehouses.find_one({"name": "Rancamalang · Gudang Transit"})["id"]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase></testsuite></testsuites>

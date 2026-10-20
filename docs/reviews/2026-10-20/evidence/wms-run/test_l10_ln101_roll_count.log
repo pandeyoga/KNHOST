@@ -1,0 +1,10 @@
+..F.                                                                     [100%]
+================================== FAILURES ===================================
+_________ test_ln101_relocation_into_qc_area_is_exception_not_applied _________
+backend\tests\test_l10_ln101_roll_count.py:109: in test_ln101_relocation_into_qc_area_is_exception_not_applied
+    assert r["status"] == "approved_with_exceptions"
+           ^^^^^^^^^^^
+E   KeyError: 'status'
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l10_ln101_roll_count.py::test_ln101_relocation_into_qc_area_is_exception_not_applied
+1 failed, 3 passed in 5.78s

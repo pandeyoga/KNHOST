@@ -1,0 +1,17 @@
+........F                                                                [100%]
+================================== FAILURES ===================================
+________________ TestT02POClose.test_variance_task_short_close ________________
+backend\tests\test_l02_ln023_ar_ap_consistency.py:225: in test_variance_task_short_close
+    out = subprocess.run(["python", "-c", code], cwd="/app/backend", capture_output=True, text=True)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\subprocess.py:548: in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\subprocess.py:1026: in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+C:\Users\abc\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\Lib\subprocess.py:1538: in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+E   NotADirectoryError: [WinError 267] The directory name is invalid
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l02_ln023_ar_ap_consistency.py::TestT02POClose::test_variance_task_short_close
+1 failed, 8 passed in 1.75s

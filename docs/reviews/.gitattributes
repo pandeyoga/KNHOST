@@ -1,0 +1,2 @@
+# Paket review = arsip bukti: simpan byte-per-byte (tanpa konversi line ending).
+/20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/** -text

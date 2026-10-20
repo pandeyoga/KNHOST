@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="1.948" timestamp="2026-10-19T19:04:00.912723+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l03_ln033_fulfillment" name="test_t01_release_guard_no_fallback" time="1.007" /><testcase classname="tests.test_l03_ln033_fulfillment" name="test_t10_migration_dry_run_reports" time="0.310"><failure message="AssertionError: Traceback (most recent call last):&#10;    File &quot;C:\Users\abc\Documents\Codex\2026-09-28\sya\work\KNHOST-plan-audit-2026-10-19\scripts\migrate_l03_ln033_fulfillment.py&quot;, line 16, in &lt;module&gt;&#10;      from dotenv import load_dotenv  # noqa: E402&#10;      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  ModuleNotFoundError: No module named 'dotenv'&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['python', '../scripts/migrate_l03_ln033_fulfillment.py'], returncode=1, stdout='', stderr='Trac...port load_dotenv  # noqa: E402\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nModuleNotFoundError: No module named \'dotenv\'\n').returncode">work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l03_ln033_fulfillment.py:240: in test_t10_migration_dry_run_reports
+    assert out.returncode == 0, out.stderr
+E   AssertionError: Traceback (most recent call last):
+E       File "C:\Users\abc\Documents\Codex\2026-09-28\sya\work\KNHOST-plan-audit-2026-10-19\scripts\migrate_l03_ln033_fulfillment.py", line 16, in &lt;module&gt;
+E         from dotenv import load_dotenv  # noqa: E402
+E         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     ModuleNotFoundError: No module named 'dotenv'
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['python', '../scripts/migrate_l03_ln033_fulfillment.py'], returncode=1, stdout='', stderr='Trac...port load_dotenv  # noqa: E402\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nModuleNotFoundError: No module named \'dotenv\'\n').returncode</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,43 @@
+{
+  "commit": "8dab383f764df80737bfe02f887422b3fd72aa70",
+  "method": "Actual browser UI with built frontend; same-origin harness forwards /api to backend8020 and adapts only API base URL in served JS; no business/UI source changes",
+  "data_scope": "kn_frontend_audit_20261020 synthetic fixtures only",
+  "checks": [
+    {
+      "id": "FE-02-buyer",
+      "role": "admin",
+      "action": "Select Kanda Fabric in new Interco PT Pembeli",
+      "actual": "Pilih...",
+      "expected": "Kanda Fabric",
+      "screenshot": "interco-buyer-browser.jpg"
+    },
+    {
+      "id": "FE-02-payee",
+      "role": "admin",
+      "action": "Select Kanda Fabric in main settlement PT Penerima",
+      "actual": "Pilih...",
+      "submit_button": "disabled",
+      "expected": "Kanda Fabric",
+      "screenshot": "interco-settlement-browser.jpg"
+    },
+    {
+      "id": "FE-05",
+      "role": "warehouse_admin",
+      "action": "Open Data Gudang from visible menu",
+      "actual": "Hanya admin/manajer/gudang yang boleh melihat seluruh gudang; list empty",
+      "http_evidence": "warehouse-role-http.json",
+      "screenshot": "warehouse-admin-browser.jpg"
+    },
+    {
+      "id": "FE-06",
+      "role": "manager",
+      "action": "Meja Saya -> Permintaan harga khusus -> Putuskan",
+      "actual_view": "approvals",
+      "actual_main_text": "",
+      "expected_view": "price-approvals with selected request focus",
+      "screenshot": "price-approval-deadlink-browser.jpg"
+    }
+  ],
+  "payments_submitted": false,
+  "real_interco_transactions_submitted": false
+}

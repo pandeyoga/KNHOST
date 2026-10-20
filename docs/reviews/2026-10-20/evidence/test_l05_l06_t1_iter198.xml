@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="2" tests="15" time="2.760" timestamp="2026-10-19T13:34:57.340441+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l05_l06_t1_iter198" name="test_qc_request_notifies_qc_user_via_api" time="0.412"><failure message="AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend\tests\test_l05_l06_t1_iter198.py:52: in test_qc_request_notifies_qc_user_via_api
+    qc = _login("qc@kainnusantara.id")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter198.py:19: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_l05_l06_t1_iter198" name="test_no_qc_request_no_notification" time="0.063" /><testcase classname="tests.test_l05_l06_t1_iter198" name="test_deliveries_have_qc_status_field" time="0.016"><skipped type="pytest.skip" message="no deliveries in seed data">C:\Users\abc\Documents\Codex\2026-09-28\sya\work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l05_l06_t1_iter198.py:76: no deliveries in seed data</skipped></testcase><testcase classname="tests.test_l05_l06_t1_iter198" name="test_cutting_locations_list" time="0.026" /><testcase classname="tests.test_l05_l06_t1_iter198" name="test_cutting_caps_invalid_and_unknown" time="0.092" /><testcase classname="tests.test_l05_l06_t1_iter198" name="test_cutting_caps_forbidden_for_sampleadmin_and_sales" time="0.307"><failure message="AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend\tests\test_l05_l06_t1_iter198.py:98: in test_cutting_caps_forbidden_for_sampleadmin_and_sales
+    h = _login(email)
+        ^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter198.py:19: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_l05_l06_t1_iter198" name="test_cutting_desk_queues_shape" time="0.285"><failure message="AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend\tests\test_l05_l06_t1_iter198.py:104: in test_cutting_desk_queues_shape
+    h = _login("sampleadmin@kainnusantara.id")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_l06_t1_iter198.py:19: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="tests.test_l05_l06_t1_iter198" name="test_receive_unknown_task_404" time="0.048" /><testcase classname="tests.test_l05_l06_t1_iter198" name="test_catalogue_preview_real_template" time="0.048"><failure message="AssertionError: {&quot;detail&quot;:&quot;Artikel (template) tidak ditemukan / belum punya warna.&quot;}&#10;assert 404 in (200, 409)&#10; +  where 404 = &lt;Response [404]&gt;.status_code">backend\tests\test_l05_l06_t1_iter198.py:118: in test_catalogue_preview_real_template
+    assert r.status_code in (200, 409), r.text[:300]
+E   AssertionError: {"detail":"Artikel (template) tidak ditemukan / belum punya warna."}
+E   assert 404 in (200, 409)
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_l05_l06_t1_iter198" name="test_catalogue_preview_unknown_template_404" time="0.036" /><testcase classname="tests.test_l05_l06_t1_iter198" name="test_catalogue_on_regular_order_rejected" time="0.014" /><testcase classname="tests.test_l05_l06_t1_iter198" name="test_catalogue_kind_without_catalogue_rejected" time="0.029" /><testcase classname="tests.test_l05_l06_t1_iter198" name="test_unknown_sample_kind_rejected" time="0.014" /><testcase classname="tests.test_l05_l06_t1_iter198" name="test_soft_change_on_non_catalogue_rejected" time="0.067" /><testcase classname="tests.test_l05_l06_t1_iter198" name="test_real_catalogue_soft_flow" time="0.116"><skipped type="pytest.skip" message="real template has &lt;2 available colors">C:\Users\abc\Documents\Codex\2026-09-28\sya\work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l05_l06_t1_iter198.py:158: real template has &lt;2 available colors</skipped></testcase></testsuite></testsuites>

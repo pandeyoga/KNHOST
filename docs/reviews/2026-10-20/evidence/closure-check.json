@@ -1,0 +1,33 @@
+{
+  "mode": "closure",
+  "pass": false,
+  "errors": [
+    "KLR-01: decision pending",
+    "KLR-02: decision pending",
+    "KLR-03: decision pending",
+    "KLR-04: decision pending",
+    "KLR-05: decision pending",
+    "KLR-06: decision pending",
+    "KLR-07: decision pending",
+    "KLR-08: decision pending",
+    "KLR-09: decision pending",
+    "KLR-10: decision pending",
+    "KLR-11: decision pending",
+    "KLX-01: decision pending",
+    "KLX-02: decision pending",
+    "KLX-03: decision pending",
+    "DATA-01: decision pending",
+    "DES-02: decision pending",
+    "DES-03: decision pending",
+    "DES-04: decision pending",
+    "OPS-01: decision pending",
+    "HW-01: decision pending",
+    "HW-02: decision pending",
+    "HR-01: decision pending",
+    "UAT-01: decision pending",
+    "LN-001: requirement not validated",
+    "LN-002: requirement not validated"
+  ],
+  "error_count": 317,
+  "note": "Metadata validation does not prove ERP implementation correctness."
+}

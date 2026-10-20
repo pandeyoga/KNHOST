@@ -1,0 +1,22 @@
+[
+  {
+    "module": "test_l10_ln100_ln102_stock_tree",
+    "exit_code": 0,
+    "seconds": 6.9
+  },
+  {
+    "module": "test_l10_ln101_roll_count",
+    "exit_code": 1,
+    "seconds": 8.5
+  },
+  {
+    "module": "test_l10_ops01_t1",
+    "exit_code": 0,
+    "seconds": 6.9
+  },
+  {
+    "module": "test_l10_t1_review",
+    "exit_code": 1,
+    "seconds": 8.4
+  }
+]

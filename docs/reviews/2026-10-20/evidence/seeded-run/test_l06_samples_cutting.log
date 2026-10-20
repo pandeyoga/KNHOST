@@ -1,0 +1,10 @@
+...F....                                                                 [100%]
+================================== FAILURES ===================================
+_____________________ test_ln060_t04_hanger_not_forced_up _____________________
+backend\tests\test_l06_samples_cutting.py:130: in test_ln060_t04_hanger_not_forced_up
+    ok = _so(h, [{"product_id": knit["id"], "quantity": 2.0, "unit": "kg", "base_quantity": 2.0, "is_sample": True, "sample_kind": "hanger"}])
+                                ^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l06_samples_cutting.py::test_ln060_t04_hanger_not_forced_up
+1 failed, 7 passed in 2.96s

@@ -1,0 +1,11 @@
+
+=================================== ERRORS ====================================
+___________ ERROR collecting tests/test_l03_ln030_fixes_iter219.py ____________
+backend\tests\test_l03_ln030_fixes_iter219.py:17: in <module>
+    TPL_A, TPL_B = [t["id"] for t in DB.product_templates.find({"status": "active"}, {"id": 1}).sort("name", 1).limit(2)]
+    ^^^^^^^^^^^^
+E   ValueError: not enough values to unpack (expected 2, got 1)
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l03_ln030_fixes_iter219.py - ValueError: not enough ...
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.98s

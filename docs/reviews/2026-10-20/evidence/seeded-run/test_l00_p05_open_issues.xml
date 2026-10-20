@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="5" failures="0" skipped="0" tests="5" time="1.381" timestamp="2026-10-19T13:41:14.416973+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l00_p05_open_issues.TestRevalidationRace" name="test_parallel_requests_only_one_created" time="0.003"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l00_p05_open_issues.TestRevalidationRace" name="test_cancel_frees_slot" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l00_p05_open_issues.TestPartialMaterialReturn" name="test_cancel_after_issue" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l00_p05_open_issues.TestPartialMaterialReturn" name="test_partner_rolls_and_partial_return" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l00_p05_open_issues.TestPartialMaterialReturn" name="test_return_rest_closes_step_and_wip_zero" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase></testsuite></testsuites>

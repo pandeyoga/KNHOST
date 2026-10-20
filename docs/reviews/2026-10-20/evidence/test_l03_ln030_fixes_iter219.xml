@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.915" timestamp="2026-10-19T13:33:55.579911+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="tests.test_l03_ln030_fixes_iter219" time="0.000"><error message="collection failure">backend\tests\test_l03_ln030_fixes_iter219.py:17: in &lt;module&gt;
+    TPL_A, TPL_B = [t["id"] for t in DB.product_templates.find({"status": "active"}, {"id": 1}).sort("name", 1).limit(2)]
+    ^^^^^^^^^^^^
+E   ValueError: not enough values to unpack (expected 2, got 0)</error></testcase></testsuite></testsuites>

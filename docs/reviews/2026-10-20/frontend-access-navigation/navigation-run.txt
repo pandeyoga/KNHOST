@@ -1,0 +1,362 @@
+{
+  "route_count": 150,
+  "desk_link_check": {
+    "row_link": {
+      "view": "approvals",
+      "nav_id": "approvals",
+      "focus_type": "price_approval",
+      "focus_id": "audit_price",
+      "number": "PRA-AUDIT"
+    },
+    "has_router_render": false,
+    "doc_link": {
+      "view": "approvals",
+      "nav_id": "approvals",
+      "focus_type": "price_approval",
+      "focus_id": "audit_price",
+      "number": "PRA-AUDIT"
+    }
+  },
+  "custom_views": {
+    "interco": [
+      {
+        "nav": "hr-my-profile",
+        "view": "hr-my-profile",
+        "label": "Profil Saya"
+      }
+    ],
+    "accounting": [
+      {
+        "nav": "fixed-assets",
+        "view": "fixed-assets",
+        "label": "Aset Tetap"
+      },
+      {
+        "nav": "hr-my-profile",
+        "view": "hr-my-profile",
+        "label": "Profil Saya"
+      }
+    ],
+    "warehouse_ops": [
+      {
+        "nav": "wms-operations",
+        "view": "operations",
+        "label": "Operasi Gudang › Stok, Transfer & Opname"
+      },
+      {
+        "nav": "wms-operations",
+        "view": "qc-inspection",
+        "label": "Operasi Gudang › QC & Inspeksi"
+      },
+      {
+        "nav": "production",
+        "view": "production",
+        "label": "Produksi"
+      },
+      {
+        "nav": "wms-locations",
+        "view": "wms-locations",
+        "label": "Lokasi Rak"
+      },
+      {
+        "nav": "md-warehouses",
+        "view": "md-warehouses",
+        "label": "Data Gudang"
+      },
+      {
+        "nav": "escalations",
+        "view": "escalations",
+        "label": "Eskalasi Gudang"
+      },
+      {
+        "nav": "hr-my-profile",
+        "view": "hr-my-profile",
+        "label": "Profil Saya"
+      }
+    ]
+  },
+  "custom_all_missing_from_admin": [
+    {
+      "nav": "my-desk",
+      "view": "my-desk",
+      "label": "Meja Saya"
+    },
+    {
+      "nav": "tanya-kn",
+      "view": "tanya-kn",
+      "label": "Tanya KN"
+    },
+    {
+      "nav": "sales-admin-desk",
+      "view": "sales-admin-desk",
+      "label": "Meja Admin Sales"
+    },
+    {
+      "nav": "finance-desk",
+      "view": "finance-desk",
+      "label": "Meja Finance"
+    },
+    {
+      "nav": "md-desk",
+      "view": "md-desk",
+      "label": "Meja MD"
+    },
+    {
+      "nav": "warehouse-admin-desk",
+      "view": "warehouse-admin-desk",
+      "label": "Meja Gudang"
+    },
+    {
+      "nav": "sample-admin-desk",
+      "view": "sample-admin-desk",
+      "label": "Meja Sampel"
+    },
+    {
+      "nav": "customers-crm",
+      "view": "customers-master",
+      "label": "Pelanggan › Impor/Ekspor & Status"
+    },
+    {
+      "nav": "products-pricing",
+      "view": "internal-prices",
+      "label": "Produk & Harga › Harga Internal Antar-PT"
+    },
+    {
+      "nav": "wms-operations",
+      "view": "goods-receipts",
+      "label": "Operasi Gudang › Barang Masuk"
+    },
+    {
+      "nav": "wms-operations",
+      "view": "wms-outbound",
+      "label": "Operasi Gudang › Barang Keluar"
+    },
+    {
+      "nav": "rfid-hub",
+      "view": "cs-rfid-lokasi",
+      "label": "RFID › Lokasi RFID"
+    },
+    {
+      "nav": "rfid-hub",
+      "view": "cs-rfid-tags",
+      "label": "RFID › Tag RFID"
+    },
+    {
+      "nav": "rfid-hub",
+      "view": "cs-rfid-gate",
+      "label": "RFID › Monitor Gerbang"
+    },
+    {
+      "nav": "tax-hub",
+      "view": "tax-invoices",
+      "label": "Pajak › Faktur Keluaran"
+    },
+    {
+      "nav": "tax-hub",
+      "view": "input-tax",
+      "label": "Pajak › Faktur Masukan"
+    },
+    {
+      "nav": "tax-hub",
+      "view": "cs-pajak",
+      "label": "Pajak › PPh & Rekap"
+    },
+    {
+      "nav": "ledger",
+      "view": "general-ledger",
+      "label": "Buku Besar › Jurnal & Buku Besar"
+    },
+    {
+      "nav": "ledger",
+      "view": "chart-of-accounts",
+      "label": "Buku Besar › Chart of Accounts"
+    },
+    {
+      "nav": "fin-reports",
+      "view": "financial-statements",
+      "label": "Laporan › Laba-Rugi, Neraca & Arus Kas"
+    },
+    {
+      "nav": "fin-reports",
+      "view": "profitability",
+      "label": "Laporan › Profitabilitas & Margin"
+    },
+    {
+      "nav": "fin-reports",
+      "view": "cashflow-forecast",
+      "label": "Laporan › Proyeksi Arus Kas"
+    },
+    {
+      "nav": "fin-reports",
+      "view": "budget",
+      "label": "Laporan › Anggaran vs Realisasi"
+    },
+    {
+      "nav": "fin-reports",
+      "view": "consolidation",
+      "label": "Laporan › Konsolidasi Grup"
+    },
+    {
+      "nav": "closing",
+      "view": "closing",
+      "label": "Tutup Buku"
+    },
+    {
+      "nav": "period-unlock",
+      "view": "period-unlock",
+      "label": "Buka Periode"
+    },
+    {
+      "nav": "posting-failures",
+      "view": "posting-failures",
+      "label": "Posting Gagal"
+    },
+    {
+      "nav": "interco-transactions",
+      "view": "interco-transactions",
+      "label": "Antar Entitas (Grup)"
+    },
+    {
+      "nav": "petty-cash",
+      "view": "reimburse-payables",
+      "label": "Kas Kecil › Hutang Reimburse"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "permission-matrix",
+      "label": "Pengaturan › Matriks Izin"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "doc-templates-basic",
+      "label": "Pengaturan › Template Dokumen Dasar"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "settings-receiving-ocr",
+      "label": "Pengaturan › Penerimaan & OCR"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "amendment-reasons",
+      "label": "Pengaturan › Label Alasan Amandemen"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "incentive-rates",
+      "label": "Pengaturan › Rate Insentif Sales"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "bank-recon-rules",
+      "label": "Pengaturan › Aturan & Template Bank"
+    }
+  ],
+  "missing_catalog_nav": [
+    {
+      "nav": "home",
+      "view": "home",
+      "label": "Beranda"
+    },
+    {
+      "nav": "my-desk",
+      "view": "my-desk",
+      "label": "Meja Saya"
+    },
+    {
+      "nav": "tanya-kn",
+      "view": "tanya-kn",
+      "label": "Tanya KN"
+    },
+    {
+      "nav": "sales-admin-desk",
+      "view": "sales-admin-desk",
+      "label": "Meja Admin Sales"
+    },
+    {
+      "nav": "finance-desk",
+      "view": "finance-desk",
+      "label": "Meja Finance"
+    },
+    {
+      "nav": "md-desk",
+      "view": "md-desk",
+      "label": "Meja MD"
+    },
+    {
+      "nav": "warehouse-admin-desk",
+      "view": "warehouse-admin-desk",
+      "label": "Meja Gudang"
+    },
+    {
+      "nav": "sample-admin-desk",
+      "view": "sample-admin-desk",
+      "label": "Meja Sampel"
+    },
+    {
+      "nav": "customers-crm",
+      "view": "customers-master",
+      "label": "Pelanggan › Impor/Ekspor & Status"
+    },
+    {
+      "nav": "products-pricing",
+      "view": "internal-prices",
+      "label": "Produk & Harga › Harga Internal Antar-PT"
+    },
+    {
+      "nav": "wms-operations",
+      "view": "goods-receipts",
+      "label": "Operasi Gudang › Barang Masuk"
+    },
+    {
+      "nav": "wms-operations",
+      "view": "wms-outbound",
+      "label": "Operasi Gudang › Barang Keluar"
+    },
+    {
+      "nav": "posting-failures",
+      "view": "posting-failures",
+      "label": "Posting Gagal"
+    },
+    {
+      "nav": "petty-cash",
+      "view": "reimburse-payables",
+      "label": "Kas Kecil › Hutang Reimburse"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "permission-matrix",
+      "label": "Pengaturan › Matriks Izin"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "doc-templates-basic",
+      "label": "Pengaturan › Template Dokumen Dasar"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "settings-receiving-ocr",
+      "label": "Pengaturan › Penerimaan & OCR"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "amendment-reasons",
+      "label": "Pengaturan › Label Alasan Amandemen"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "incentive-rates",
+      "label": "Pengaturan › Rate Insentif Sales"
+    },
+    {
+      "nav": "settings-hub",
+      "view": "bank-recon-rules",
+      "label": "Pengaturan › Aturan & Template Bank"
+    },
+    {
+      "nav": "hr-my-profile",
+      "view": "hr-my-profile",
+      "label": "Profil Saya"
+    }
+  ]
+}

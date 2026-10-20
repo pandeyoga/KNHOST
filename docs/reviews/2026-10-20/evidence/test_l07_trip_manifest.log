@@ -1,0 +1,21 @@
+FFFss                                                                    [100%]
+================================== FAILURES ===================================
+________________ test_ln070_picking_list_keeps_orders_separate ________________
+backend\tests\test_l07_trip_manifest.py:20: in test_ln070_picking_list_keeps_orders_separate
+    assert cands and all(c["order_number"].startswith("KSC/") for c in cands)
+E   assert ([])
+__________________ test_ln070_trip_check_uses_dispatch_guard __________________
+backend\tests\test_l07_trip_manifest.py:33: in test_ln070_trip_check_uses_dispatch_guard
+    assert chk["rows"]
+           ^^^^^^^^^^^
+E   KeyError: 'rows'
+____________________ test_trip_scope_rejects_other_entity _____________________
+backend\tests\test_l07_trip_manifest.py:40: in test_trip_scope_rejects_other_entity
+    r = requests.post(f"{BASE}/logistics/trip/picking-list", headers=h, json={"order_ids": [other["id"]]})
+                                                                                            ^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l07_trip_manifest.py::test_ln070_picking_list_keeps_orders_separate
+FAILED backend\tests\test_l07_trip_manifest.py::test_ln070_trip_check_uses_dispatch_guard
+FAILED backend\tests\test_l07_trip_manifest.py::test_trip_scope_rejects_other_entity
+3 failed, 2 skipped in 1.31s

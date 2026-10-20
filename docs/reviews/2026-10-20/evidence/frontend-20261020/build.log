@@ -1,0 +1,278 @@
+(node:42944) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Creating an optimized production build...
+Compiled with warnings.
+
+[eslint] 
+src\features\admin\AdminView.jsx
+  Line 195:9:  The 'records' logical expression could make the dependencies of useMemo Hook (at line 216) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'records' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+src\features\designer\DesignScoreTrendChart.jsx
+  Line 49:9:  The 'series' logical expression could make the dependencies of useMemo Hook (at line 58) change on every render. To fix this, wrap the initialization of 'series' in its own useMemo() Hook                                         react-hooks/exhaustive-deps
+  Line 50:9:  The 'labels' logical expression could make the dependencies of useMemo Hook (at line 58) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'labels' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+src\features\designer\DesignerKpiTrendChart.jsx
+  Line 52:9:  The 'series' logical expression could make the dependencies of useMemo Hook (at line 64) change on every render. To fix this, wrap the initialization of 'series' in its own useMemo() Hook                                         react-hooks/exhaustive-deps
+  Line 53:9:  The 'labels' logical expression could make the dependencies of useMemo Hook (at line 64) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'labels' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+src\features\finance\BudgetView.jsx
+  Line 63:9:  The 'allRows' logical expression could make the dependencies of useMemo Hook (at line 64) change on every render. To fix this, wrap the initialization of 'allRows' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+src\features\finance\cases\CasePlaybookWizard.jsx
+  Line 22:9:  The 'actions' logical expression could make the dependencies of useMemo Hook (at line 47) change on every render. To fix this, wrap the initialization of 'actions' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+src\features\hr\LiveTrackingView.jsx
+  Line 131:6:  React Hook useEffect has a missing dependency: 'loadTrail'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\features\internal_requests\InternalRequestsView.jsx
+  Line 273:9:  The 'candidates' logical expression could make the dependencies of useMemo Hook (at line 275) change on every render. To fix this, wrap the initialization of 'candidates' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+src\features\inventory\CycleCount.jsx
+  Line 75:40:  React Hook useEffect has a missing dependency: 'loadSessions'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\features\inventory\StockAnalyticsView.jsx
+  Line 106:9:  The 'rows' logical expression could make the dependencies of useMemo Hook (at line 112) change on every render. To fix this, wrap the initialization of 'rows' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  Line 106:9:  The 'rows' logical expression could make the dependencies of useMemo Hook (at line 122) change on every render. To fix this, wrap the initialization of 'rows' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+src\features\manager\EscalationManagement.jsx
+  Line 36:6:  React Hook useEffect has a missing dependency: 'fetchEscalatedTasks'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\features\orders\OrderDetailPanel.jsx
+  Line 114:6:  React Hook useEffect has missing dependencies: 'FULFILL_STATUSES', 'TAX_ELIGIBLE', 'canSeeShipments', and 'perms'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+src\features\orders\OrderIntercoSupplyPanel.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'fallback'. Either include it or remove the dependency array. If 'setRows' needs the current value of 'fallback', you can also switch to useReducer instead of useState and read 'fallback' in the reducer  react-hooks/exhaustive-deps
+
+src\features\purchasing\SupplierPriceList.jsx
+  Line 39:63:  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\features\purchasing\SupplierScorecard.jsx
+  Line 47:63:  React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\features\purchasing\contrabon\DecisionModal.jsx
+  Line 21:9:  The 'actions' logical expression could make the dependencies of useMemo Hook (at line 30) change on every render. To fix this, wrap the initialization of 'actions' in its own useMemo() Hook                                         react-hooks/exhaustive-deps
+  Line 22:9:  The 'reasons' logical expression could make the dependencies of useMemo Hook (at line 32) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'reasons' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+src\features\purchasing\contrabon\DeductionModal.jsx
+  Line 22:9:  The 'kinds' logical expression could make the dependencies of useMemo Hook (at line 35) change on every render. To fix this, wrap the initialization of 'kinds' in its own useMemo() Hook                                             react-hooks/exhaustive-deps
+  Line 23:9:  The 'reasons' logical expression could make the dependencies of useMemo Hook (at line 75) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'reasons' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+src\features\purchasing\makloon\MakloonStepEditor.jsx
+  Line 145:6:  React Hook useCallback has missing dependencies: 'entityId', 'onChange', and 'step'. Either include them or remove the dependency array. If 'onChange' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+src\features\rnd\SampleTypeGalleryView.jsx
+  Line 66:6:  React Hook useCallback has a missing dependency: 'label'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\features\rnd\SampleTypeTabs.jsx
+  Line 62:6:   React Hook useEffect has missing dependencies: 'active', 'focusType', 'onSample', and 'tabs'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  Line 62:7:   React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked          react-hooks/exhaustive-deps
+  Line 62:23:  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked          react-hooks/exhaustive-deps
+
+src\features\sales\SalesPortal.jsx
+  Line 29:9:  The 'allProducts' logical expression could make the dependencies of useMemo Hook (at line 44) change on every render. To fix this, wrap the initialization of 'allProducts' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  Line 29:9:  The 'allProducts' logical expression could make the dependencies of useMemo Hook (at line 71) change on every render. To fix this, wrap the initialization of 'allProducts' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+src\features\sales\SpecialOrders.jsx
+  Line 46:6:  React Hook useEffect has a missing dependency: 'loadOrders'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\features\wms\InboundScanInterface.jsx
+  Line 76:38:  React Hook useEffect has a missing dependency: 'fetchTasks'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\features\wms\InventoryStockView.jsx
+  Line 145:72:  React Hook useEffect has a missing dependency: 'fetchBalances'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\features\wms\OutboundScanInterface.jsx
+  Line 65:38:  React Hook useEffect has a missing dependency: 'fetchTasks'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\features\wms\TransferManagement.jsx
+  Line 54:6:  React Hook useEffect has a missing dependency: 'fetchTransfers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\hooks\useDomainEnums.js
+  Line 59:9:  The 'enums' logical expression could make the dependencies of useCallback Hook (at line 65) change on every render. To fix this, wrap the initialization of 'enums' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+src\hooks\usePagedRows.js
+  Line 6:9:  The 'list' conditional could make the dependencies of useMemo Hook (at line 10) change on every render. To fix this, wrap the initialization of 'list' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+File sizes after gzip:
+
+  585.44 kB  build\static\js\main.d5056066.js
+  115.06 kB  build\static\js\9534.98321584.chunk.js
+  51.23 kB   build\static\css\main.3d5901c4.css
+  47.2 kB    build\static\js\7407.c6fcb259.chunk.js
+  46.97 kB   build\static\js\9471.7d2deb5c.chunk.js
+  42.92 kB   build\static\js\8575.2c2f6e5b.chunk.js
+  39.71 kB   build\static\js\9293.9f88b9ec.chunk.js
+  38.84 kB   build\static\js\8445.d8ecc9a9.chunk.js
+  36.46 kB   build\static\js\3289.a5ccd93b.chunk.js
+  35.55 kB   build\static\js\9304.8c88e2e1.chunk.js
+  33.58 kB   build\static\js\2088.4b4b969c.chunk.js
+  33.19 kB   build\static\js\1001.e96d61b8.chunk.js
+  32.45 kB   build\static\js\5076.939b83e2.chunk.js
+  27.97 kB   build\static\js\5770.7c28bcf4.chunk.js
+  27.45 kB   build\static\js\6689.9a7cf431.chunk.js
+  25.03 kB   build\static\js\3794.2189524d.chunk.js
+  24.95 kB   build\static\js\8542.4890fb22.chunk.js
+  23.85 kB   build\static\js\7810.6b245792.chunk.js
+  23.69 kB   build\static\js\7272.524eeb0c.chunk.js
+  23.51 kB   build\static\js\1559.fb7d477f.chunk.js
+  23.47 kB   build\static\js\2683.47487ace.chunk.js
+  21.82 kB   build\static\js\8646.ab19276a.chunk.js
+  19.68 kB   build\static\js\2428.093108e2.chunk.js
+  19.28 kB   build\static\js\7911.34359902.chunk.js
+  18.76 kB   build\static\js\8692.964e15b6.chunk.js
+  16.6 kB    build\static\js\7530.ccee3cbe.chunk.js
+  16.52 kB   build\static\js\4730.2d4642ee.chunk.js
+  16.39 kB   build\static\js\7683.eadab707.chunk.js
+  16.11 kB   build\static\js\3381.7d227bcf.chunk.js
+  15.83 kB   build\static\js\1277.17463cba.chunk.js
+  15.1 kB    build\static\js\8270.f73c7ecf.chunk.js
+  14.39 kB   build\static\js\946.84e9053f.chunk.js
+  13.97 kB   build\static\js\8462.0504d5fb.chunk.js
+  13.91 kB   build\static\js\3601.c2c1f9eb.chunk.js
+  13.77 kB   build\static\js\5633.00e860d5.chunk.js
+  13.55 kB   build\static\js\2918.6edd41d8.chunk.js
+  13.2 kB    build\static\js\2199.847a24ec.chunk.js
+  13.19 kB   build\static\js\8286.04c4942d.chunk.js
+  12.75 kB   build\static\js\9401.544e160e.chunk.js
+  11.81 kB   build\static\js\4605.40032dca.chunk.js
+  11.76 kB   build\static\js\6225.a37010e1.chunk.js
+  11.53 kB   build\static\js\1656.3173365d.chunk.js
+  11.42 kB   build\static\js\2390.0e801d6d.chunk.js
+  11.25 kB   build\static\js\8150.49d8bc6f.chunk.js
+  11.18 kB   build\static\js\4419.740e1dd8.chunk.js
+  11.11 kB   build\static\js\2826.47f96a9a.chunk.js
+  10.96 kB   build\static\js\3390.a237cc8d.chunk.js
+  10.93 kB   build\static\js\9643.0704e909.chunk.js
+  10.58 kB   build\static\js\6449.b40220aa.chunk.js
+  10.45 kB   build\static\js\3804.8e06de60.chunk.js
+  10.21 kB   build\static\js\5257.1d6355fb.chunk.js
+  10.17 kB   build\static\js\7226.e5c2623c.chunk.js
+  10.15 kB   build\static\js\731.224591ca.chunk.js
+  10.12 kB   build\static\js\1156.047487f2.chunk.js
+  9.7 kB     build\static\js\2552.6ebc0ebf.chunk.js
+  9.69 kB    build\static\js\3020.2730772a.chunk.js
+  9.59 kB    build\static\js\2945.b75dcf37.chunk.js
+  9.52 kB    build\static\js\489.487645db.chunk.js
+  9.4 kB     build\static\js\5232.769c4ff2.chunk.js
+  9.38 kB    build\static\js\278.40737970.chunk.js
+  9.25 kB    build\static\js\4624.c9a732a2.chunk.js
+  9.25 kB    build\static\js\1232.e2e58c72.chunk.js
+  9.13 kB    build\static\js\9720.2f869d71.chunk.js
+  9.01 kB    build\static\js\6692.b6813963.chunk.js
+  8.96 kB    build\static\js\5861.a2270173.chunk.js
+  8.88 kB    build\static\js\2786.052cef48.chunk.js
+  8.81 kB    build\static\js\9912.c05eb555.chunk.js
+  8.65 kB    build\static\js\835.3e42eb78.chunk.js
+  8.42 kB    build\static\js\1324.72194a8a.chunk.js
+  8.41 kB    build\static\js\4105.b38ad460.chunk.js
+  8.21 kB    build\static\js\7884.6a2efb61.chunk.js
+  8.18 kB    build\static\js\2139.c106ac2f.chunk.js
+  8.15 kB    build\static\js\5176.0e0279b3.chunk.js
+  8.13 kB    build\static\js\9001.bbeca810.chunk.js
+  8.09 kB    build\static\js\3651.fa91933a.chunk.js
+  8.09 kB    build\static\js\2664.cd47b1d2.chunk.js
+  8 kB       build\static\js\9342.65d83b36.chunk.js
+  7.65 kB    build\static\js\5583.39936c70.chunk.js
+  7.35 kB    build\static\js\9757.22e77064.chunk.js
+  7.32 kB    build\static\js\5885.1b5f4d92.chunk.js
+  7.3 kB     build\static\js\6856.2ca1ab5d.chunk.js
+  7.06 kB    build\static\js\5974.ef7da028.chunk.js
+  6.93 kB    build\static\js\2166.8c2e9b0f.chunk.js
+  6.83 kB    build\static\js\9266.b52e64cc.chunk.js
+  6.79 kB    build\static\js\4078.2f6b427b.chunk.js
+  6.7 kB     build\static\js\6874.b3c658bc.chunk.js
+  6.61 kB    build\static\js\3139.02ae9049.chunk.js
+  6.55 kB    build\static\js\2471.0d511e76.chunk.js
+  6.53 kB    build\static\js\9646.bf63d92f.chunk.js
+  6.5 kB     build\static\js\5800.287cc803.chunk.js
+  6.49 kB    build\static\js\3731.71e3daa3.chunk.js
+  6.45 kB    build\static\js\6567.285f4fa5.chunk.js
+  6.34 kB    build\static\css\6689.d6bfd15f.chunk.css
+  6.26 kB    build\static\js\5863.13cf3af6.chunk.js
+  6.19 kB    build\static\js\735.83e56167.chunk.js
+  6.19 kB    build\static\js\8975.5263fe32.chunk.js
+  6.12 kB    build\static\js\3038.fb6dc2ae.chunk.js
+  5.93 kB    build\static\js\2669.16a8682e.chunk.js
+  5.84 kB    build\static\js\8143.db33a853.chunk.js
+  5.81 kB    build\static\js\1179.1eb3e636.chunk.js
+  5.79 kB    build\static\js\2933.56f65429.chunk.js
+  5.72 kB    build\static\js\4131.fc81b29f.chunk.js
+  5.61 kB    build\static\js\4471.3d3b92b9.chunk.js
+  5.48 kB    build\static\js\2531.2224926a.chunk.js
+  5.36 kB    build\static\js\2243.aeb74018.chunk.js
+  5.35 kB    build\static\js\4898.6d641494.chunk.js
+  5.35 kB    build\static\js\878.a9eacbd0.chunk.js
+  5.34 kB    build\static\js\5366.bc56691c.chunk.js
+  5.32 kB    build\static\js\2915.9f46b073.chunk.js
+  5.32 kB    build\static\js\8459.9e6367bf.chunk.js
+  5.3 kB     build\static\js\8077.bf260d14.chunk.js
+  5.27 kB    build\static\js\7984.b49f72ce.chunk.js
+  5.24 kB    build\static\js\5930.783ec723.chunk.js
+  5.22 kB    build\static\js\5945.0e4cac6f.chunk.js
+  5.18 kB    build\static\js\6190.a261ac47.chunk.js
+  5.15 kB    build\static\js\5526.bddef27c.chunk.js
+  5.08 kB    build\static\js\7476.f11d41d0.chunk.js
+  5.05 kB    build\static\js\2204.fec61e28.chunk.js
+  4.96 kB    build\static\js\7060.1fe6c2a2.chunk.js
+  4.91 kB    build\static\js\5158.ad136d94.chunk.js
+  4.88 kB    build\static\js\4930.3614b147.chunk.js
+  4.86 kB    build\static\js\5312.0d909671.chunk.js
+  4.77 kB    build\static\js\6003.543be631.chunk.js
+  4.74 kB    build\static\js\9871.76838bdd.chunk.js
+  4.63 kB    build\static\js\6055.603f008c.chunk.js
+  4.38 kB    build\static\js\9914.b050c83f.chunk.js
+  4.36 kB    build\static\js\356.8b774bed.chunk.js
+  4.34 kB    build\static\js\5355.dac22d8c.chunk.js
+  4.29 kB    build\static\js\2041.306bec59.chunk.js
+  4.28 kB    build\static\js\7424.df3a2bd1.chunk.js
+  4.25 kB    build\static\js\968.4940d2bf.chunk.js
+  4.25 kB    build\static\js\4757.c2343f2d.chunk.js
+  4.24 kB    build\static\js\939.19c6b36d.chunk.js
+  4.2 kB     build\static\js\2061.dc656e09.chunk.js
+  4.02 kB    build\static\js\4583.623af867.chunk.js
+  3.93 kB    build\static\js\4234.2bde4007.chunk.js
+  3.93 kB    build\static\js\5229.d898ad71.chunk.js
+  3.9 kB     build\static\js\1389.fea0735c.chunk.js
+  3.88 kB    build\static\js\3302.b5184f83.chunk.js
+  3.76 kB    build\static\js\2949.b5f73a2a.chunk.js
+  3.74 kB    build\static\js\3024.55970efd.chunk.js
+  3.7 kB     build\static\js\539.d5992e35.chunk.js
+  3.69 kB    build\static\js\2329.5bd29e0f.chunk.js
+  3.66 kB    build\static\js\3983.c2674368.chunk.js
+  3.65 kB    build\static\js\8733.aaab7f6a.chunk.js
+  3.46 kB    build\static\js\4854.7209e3ea.chunk.js
+  3.35 kB    build\static\js\9425.793b93ea.chunk.js
+  3.01 kB    build\static\js\6865.26a33ab5.chunk.js
+  2.92 kB    build\static\js\6685.a02f97e4.chunk.js
+  2.88 kB    build\static\js\517.6b1472ab.chunk.js
+  2.85 kB    build\static\js\8436.22fbcc2d.chunk.js
+  2.62 kB    build\static\css\8542.a26540f0.chunk.css
+  2.41 kB    build\static\js\6933.2e916a43.chunk.js
+  2.37 kB    build\static\js\5675.26f3c9be.chunk.js
+  2.16 kB    build\static\js\1808.d6011ea2.chunk.js
+  2.08 kB    build\static\js\1171.3e4d05eb.chunk.js
+  1.6 kB     build\static\js\9862.119afb3a.chunk.js
+  1.36 kB    build\static\js\5146.f1cfdbf3.chunk.js
+  1.09 kB    build\static\js\5196.45c27359.chunk.js
+  1.06 kB    build\static\js\3321.98d09240.chunk.js
+
+The bundle size is significantly larger than recommended.
+Consider reducing it with code splitting: https://goo.gl/9VhYWB
+You can also analyze the project dependencies: https://goo.gl/LeUzfb
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+

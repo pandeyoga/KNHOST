@@ -1,0 +1,273 @@
+{
+  "database": "kn_plan_audit_20261019",
+  "warehouse": "wh_jakarta",
+  "added_zone": {
+    "id": "zone_sim_wh_jkt_w",
+    "name": "Zona W \u00b7 Woven/Printing (yard)",
+    "sim_batch": "SIMULASI_BIN_KN",
+    "racks": [
+      {
+        "id": "rack_sim_wh_jkt_w01",
+        "name": "Rak W01",
+        "levels": [
+          {
+            "id": "rack_sim_wh_jkt_w01_l1",
+            "name": "Level 1",
+            "bins": [
+              {
+                "id": "bin_sim_wh_jkt_w01_l1_01",
+                "code": "W01-L1-01",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l1_02",
+                "code": "W01-L1-02",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l1_03",
+                "code": "W01-L1-03",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l1_04",
+                "code": "W01-L1-04",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l1_05",
+                "code": "W01-L1-05",
+                "capacity": 6000.0
+              }
+            ]
+          },
+          {
+            "id": "rack_sim_wh_jkt_w01_l2",
+            "name": "Level 2",
+            "bins": [
+              {
+                "id": "bin_sim_wh_jkt_w01_l2_01",
+                "code": "W01-L2-01",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l2_02",
+                "code": "W01-L2-02",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l2_03",
+                "code": "W01-L2-03",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l2_04",
+                "code": "W01-L2-04",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l2_05",
+                "code": "W01-L2-05",
+                "capacity": 6000.0
+              }
+            ]
+          },
+          {
+            "id": "rack_sim_wh_jkt_w01_l3",
+            "name": "Level 3",
+            "bins": [
+              {
+                "id": "bin_sim_wh_jkt_w01_l3_01",
+                "code": "W01-L3-01",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l3_02",
+                "code": "W01-L3-02",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l3_03",
+                "code": "W01-L3-03",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l3_04",
+                "code": "W01-L3-04",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l3_05",
+                "code": "W01-L3-05",
+                "capacity": 6000.0
+              }
+            ]
+          },
+          {
+            "id": "rack_sim_wh_jkt_w01_l4",
+            "name": "Level 4",
+            "bins": [
+              {
+                "id": "bin_sim_wh_jkt_w01_l4_01",
+                "code": "W01-L4-01",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l4_02",
+                "code": "W01-L4-02",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l4_03",
+                "code": "W01-L4-03",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l4_04",
+                "code": "W01-L4-04",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w01_l4_05",
+                "code": "W01-L4-05",
+                "capacity": 6000.0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "rack_sim_wh_jkt_w02",
+        "name": "Rak W02",
+        "levels": [
+          {
+            "id": "rack_sim_wh_jkt_w02_l1",
+            "name": "Level 1",
+            "bins": [
+              {
+                "id": "bin_sim_wh_jkt_w02_l1_01",
+                "code": "W02-L1-01",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l1_02",
+                "code": "W02-L1-02",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l1_03",
+                "code": "W02-L1-03",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l1_04",
+                "code": "W02-L1-04",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l1_05",
+                "code": "W02-L1-05",
+                "capacity": 6000.0
+              }
+            ]
+          },
+          {
+            "id": "rack_sim_wh_jkt_w02_l2",
+            "name": "Level 2",
+            "bins": [
+              {
+                "id": "bin_sim_wh_jkt_w02_l2_01",
+                "code": "W02-L2-01",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l2_02",
+                "code": "W02-L2-02",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l2_03",
+                "code": "W02-L2-03",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l2_04",
+                "code": "W02-L2-04",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l2_05",
+                "code": "W02-L2-05",
+                "capacity": 6000.0
+              }
+            ]
+          },
+          {
+            "id": "rack_sim_wh_jkt_w02_l3",
+            "name": "Level 3",
+            "bins": [
+              {
+                "id": "bin_sim_wh_jkt_w02_l3_01",
+                "code": "W02-L3-01",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l3_02",
+                "code": "W02-L3-02",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l3_03",
+                "code": "W02-L3-03",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l3_04",
+                "code": "W02-L3-04",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l3_05",
+                "code": "W02-L3-05",
+                "capacity": 6000.0
+              }
+            ]
+          },
+          {
+            "id": "rack_sim_wh_jkt_w02_l4",
+            "name": "Level 4",
+            "bins": [
+              {
+                "id": "bin_sim_wh_jkt_w02_l4_01",
+                "code": "W02-L4-01",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l4_02",
+                "code": "W02-L4-02",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l4_03",
+                "code": "W02-L4-03",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l4_04",
+                "code": "W02-L4-04",
+                "capacity": 6000.0
+              },
+              {
+                "id": "bin_sim_wh_jkt_w02_l4_05",
+                "code": "W02-L4-05",
+                "capacity": 6000.0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "source": "scripts.seed_simulasi_bin_kn._zone; 40 empty bins for test rolls only",
+  "env_file": "local .env created because two repository tests read this file directly"
+}

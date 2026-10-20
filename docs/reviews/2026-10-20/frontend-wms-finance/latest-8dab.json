@@ -1,0 +1,349 @@
+{
+  "previous_baseline": "63c38bd11b49ddfb59cbbfdb915c2e11e16d5c9c",
+  "baseline_sha": "8dab383f764df80737bfe02f887422b3fd72aa70",
+  "review_date": "2026-10-20",
+  "method": "git diff/blob identity and rerun of original JSX renderer reading git show at exact latest SHA",
+  "app_or_database_modified": false,
+  "evidence": "render-results-8dab.json",
+  "status_counts": {
+    "confirmed_open": 7,
+    "fixed": 0,
+    "not_applicable": 0
+  },
+  "findings": [
+    {
+      "id": "FE-WF-01",
+      "priority": "P1",
+      "title": "Sembilan pilihan interco memakai callback KNSelect yang tidak dikenali",
+      "trigger": "Buka transaksi antar-PT baru atau settlement dari tombol utama lalu pilih pihak/produk/mode.",
+      "actual": "KNSelect memanggil onValueChange yang undefined; state buyer/payee tetap kosong, produk tidak dipilih, mode dan filter tidak berubah.",
+      "expected": "Pilihan mengubah state dan dipakai pada kandidat serta payload submit.",
+      "evidence": "Dua handler pilihan asli dieksekusi, stateUpdates=[]; AST menemukan sembilan lokasi tanpa parse failure.",
+      "source": [
+        {
+          "file": "frontend/src/components/KNSelect.jsx",
+          "line": 149,
+          "old_blob": "31673981c7def3eaa074aadd31e3f0fc5f3ef651",
+          "latest_blob": "31673981c7def3eaa074aadd31e3f0fc5f3ef651",
+          "identical_to_prior": true
+        },
+        {
+          "file": "frontend/src/components/KNSelect.jsx",
+          "line": 189,
+          "old_blob": "31673981c7def3eaa074aadd31e3f0fc5f3ef651",
+          "latest_blob": "31673981c7def3eaa074aadd31e3f0fc5f3ef651",
+          "identical_to_prior": true
+        },
+        {
+          "file": "frontend/src/features/finance/interco/IntercoCreateModal.jsx",
+          "lines": [
+            109,
+            112,
+            115,
+            118,
+            137
+          ],
+          "old_blob": "ad95146973199f30ac2b972a36064ac877e59404",
+          "latest_blob": "ad95146973199f30ac2b972a36064ac877e59404",
+          "identical_to_prior": true
+        },
+        {
+          "file": "frontend/src/features/finance/interco/IntercoPanels.jsx",
+          "line": 32,
+          "old_blob": "6f0c70d09ead131ac7f60188f0bccfd4145e8cbc",
+          "latest_blob": "6f0c70d09ead131ac7f60188f0bccfd4145e8cbc",
+          "identical_to_prior": true
+        },
+        {
+          "file": "frontend/src/features/finance/interco/IntercoSettlementModal.jsx",
+          "lines": [
+            107,
+            111,
+            115
+          ],
+          "old_blob": "8effab44ab0cb847d672514e52735ecda6479d98",
+          "latest_blob": "8effab44ab0cb847d672514e52735ecda6479d98",
+          "identical_to_prior": true
+        },
+        {
+          "file": "frontend/src/features/finance/interco/IntercoView.jsx",
+          "lines": [
+            212,
+            315
+          ],
+          "old_blob": "28f53664f9af0108cca74b847f936e0d25206bd5",
+          "latest_blob": "f0d93b32c93c964988daed271bd8d8e24281fe10",
+          "identical_to_prior": false
+        }
+      ],
+      "acceptance_impact": [
+        "LN-024-T02",
+        "LN-010-T01"
+      ],
+      "verification_level": "original component callback execution plus static tracing",
+      "status_on_latest": "confirmed_open"
+    },
+    {
+      "id": "FE-WF-02",
+      "priority": "P2",
+      "title": "Tombol persetujuan detail transfer hanya muncul untuk literal manager",
+      "trigger": "Admin atau role berizin transfer.approve/reject membuka waiting_approval transfer.",
+      "actual": "Setujui/Tolak tidak tampil untuk admin dan role kustom; daftar role tidak mencerminkan izin API.",
+      "expected": "Masing-masing tombol mengikuti izin efektif aksi dan pagar backend tetap berlaku.",
+      "evidence": "Manager rendered=true; admin/custom_manager rendered=false meskipun permission sama.",
+      "source": [
+        {
+          "file": "frontend/src/features/wms/transfer/TransferDetailModal.jsx",
+          "line": 219,
+          "old_blob": "52ca30eadbeab696031a3719f1a48dc471183616",
+          "latest_blob": "52ca30eadbeab696031a3719f1a48dc471183616",
+          "identical_to_prior": true
+        },
+        {
+          "file": "backend/routers/transfers.py",
+          "lines": [
+            523,
+            633
+          ],
+          "old_blob": "cc66d9efab7786bffbc86edd176db453668ffc92",
+          "latest_blob": "cc66d9efab7786bffbc86edd176db453668ffc92",
+          "identical_to_prior": true
+        }
+      ],
+      "acceptance_impact": [
+        "LN-010-T01"
+      ],
+      "verification_level": "controlled original JSX render plus API contract tracing",
+      "status_on_latest": "confirmed_open"
+    },
+    {
+      "id": "FE-WF-03",
+      "priority": "P2",
+      "title": "Finance berizin tidak mendapat tombol Putuskan Selisih Pembayaran",
+      "trigger": "Finance membuka antrean selisih yang masih perlu keputusan.",
+      "actual": "Baris pending terlihat tetapi tombol Putuskan tidak dirender.",
+      "expected": "payment_variance.decide mengendalikan tombol; pembatasan jenis/batas nominal tetap dijaga kebijakan server.",
+      "evidence": "Admin rendered=true; finance/custom_finance rendered=false; default Finance memang memiliki decide.",
+      "source": [
+        {
+          "file": "frontend/src/features/finance/payments/PaymentVarianceQueue.jsx",
+          "lines": [
+            53,
+            54,
+            215,
+            217
+          ],
+          "old_blob": "16595df2c075db63e9b9a97ca2226050df897b57",
+          "latest_blob": "16595df2c075db63e9b9a97ca2226050df897b57",
+          "identical_to_prior": true
+        },
+        {
+          "file": "backend/permissions_config.py",
+          "line": 377,
+          "old_blob": "4a153b6f86d0ae5904d2d9457ed0a271e7091b88",
+          "latest_blob": "ff0f47bbf2f81122ef685df8053a9e4a49095c11",
+          "identical_to_prior": false
+        },
+        {
+          "file": "backend/routers/payment_variance.py",
+          "lines": [
+            144,
+            170
+          ],
+          "old_blob": "7114fee879a7ca90094f88b97ed7c18f12a2af53",
+          "latest_blob": "7114fee879a7ca90094f88b97ed7c18f12a2af53",
+          "identical_to_prior": true
+        }
+      ],
+      "acceptance_impact": [
+        "LN-010-T01"
+      ],
+      "verification_level": "controlled original JSX row render plus configured/API permission tracing",
+      "status_on_latest": "confirmed_open"
+    },
+    {
+      "id": "FE-WF-04",
+      "priority": "P2",
+      "title": "Kontrol WMS dan Store Credit mengabaikan role kustom yang sah",
+      "trigger": "Role kustom beracuan warehouse_admin/manager dengan izin ekuivalen membuka struktur, pengecualian penerimaan, atau ledger saldo.",
+      "actual": "Editor atau tombol tidak tersedia karena frontend membandingkan literal role; backend mengenali base_role atau izin efektif.",
+      "expected": "Izin dan authority ekuivalen memberi kemampuan layar ekuivalen, dengan scope lokasi/entitas tetap dijaga.",
+      "evidence": "warehouse_admin canEdit=true/custom_warehouse_admin false; manager canAdjust=true/custom_manager false. Cabang penerimaan diperiksa statis.",
+      "source": [
+        {
+          "file": "frontend/src/features/wms/LocationPutawayView.jsx",
+          "lines": [
+            18,
+            37,
+            141,
+            150
+          ],
+          "old_blob": "7c6379c96050cb7a731ade663b53d6fc0c24a1eb",
+          "latest_blob": "7c6379c96050cb7a731ade663b53d6fc0c24a1eb",
+          "identical_to_prior": true
+        },
+        {
+          "file": "frontend/src/features/wms/transfer/TransferReceiptPanel.jsx",
+          "lines": [
+            13,
+            25,
+            86,
+            103
+          ],
+          "old_blob": "e4c3504320e4f7f66b64be94f6a5ee92713c3e77",
+          "latest_blob": "e4c3504320e4f7f66b64be94f6a5ee92713c3e77",
+          "identical_to_prior": true
+        },
+        {
+          "file": "frontend/src/features/finance/StoreCreditView.jsx",
+          "lines": [
+            37,
+            202,
+            244
+          ],
+          "old_blob": "1fc94779adea8807c80f16d386aff2340d361e09",
+          "latest_blob": "1fc94779adea8807c80f16d386aff2340d361e09",
+          "identical_to_prior": true
+        },
+        {
+          "file": "backend/role_registry.py",
+          "lines": [
+            293,
+            298,
+            299
+          ],
+          "old_blob": "1c50fd8d01f372f4376bfacb7b7065351fe9ec04",
+          "latest_blob": "6641c309ca63d00224becd6d2d25363ef0fc850f",
+          "identical_to_prior": false
+        },
+        {
+          "file": "backend/services/placement_rules.py",
+          "lines": [
+            49,
+            51
+          ],
+          "old_blob": "0172e464ea6fb19abe0c8390d3e13830832f7d45",
+          "latest_blob": "0172e464ea6fb19abe0c8390d3e13830832f7d45",
+          "identical_to_prior": true
+        },
+        {
+          "file": "backend/services/transfer_receipt_service.py",
+          "lines": [
+            247,
+            344
+          ],
+          "old_blob": "559a547b2d9f9119bbc90ca2010985598798145c",
+          "latest_blob": "559a547b2d9f9119bbc90ca2010985598798145c",
+          "identical_to_prior": true
+        },
+        {
+          "file": "backend/routers/store_credit.py",
+          "lines": [
+            118,
+            131
+          ],
+          "old_blob": "147353bfa97a56289b49e4bd74ee809468c78639",
+          "latest_blob": "147353bfa97a56289b49e4bd74ee809468c78639",
+          "identical_to_prior": true
+        }
+      ],
+      "acceptance_impact": [
+        "LN-010-T01"
+      ],
+      "verification_level": "controlled original JSX render for structure/credit; static transfer exception authority tracing",
+      "status_on_latest": "confirmed_open"
+    },
+    {
+      "id": "FE-WF-05",
+      "priority": "P2",
+      "title": "Kegagalan awal penerimaan transfer tertutup indikator loading",
+      "trigger": "GET /transfers/{id}/receipt gagal sebelum data pertama tersedia.",
+      "actual": "Error disimpan, tetapi early return selalu merender Memuat penerimaan; pesan dan retry tidak tersedia.",
+      "expected": "Loading, error dan data kosong dibedakan; retry tersedia di panel.",
+      "evidence": "data=null plus err set produces loadingRendered=true/errorRendered=false.",
+      "source": [
+        {
+          "file": "frontend/src/features/wms/transfer/TransferReceiptPanel.jsx",
+          "lines": [
+            31,
+            55,
+            101
+          ],
+          "old_blob": "e4c3504320e4f7f66b64be94f6a5ee92713c3e77",
+          "latest_blob": "e4c3504320e4f7f66b64be94f6a5ee92713c3e77",
+          "identical_to_prior": true
+        }
+      ],
+      "acceptance_impact": [
+        "LN-010-T01"
+      ],
+      "verification_level": "controlled original JSX error-state render plus handler tracing",
+      "status_on_latest": "confirmed_open"
+    },
+    {
+      "id": "FE-WF-06",
+      "priority": "P2",
+      "title": "Status Neraca hijau saat hasil belum diketahui",
+      "trigger": "Neraca loading pertama atau request pertama gagal.",
+      "actual": "balanced undefined/null ditampilkan Seimbang.",
+      "expected": "Hanya hasil boolean true yang boleh menghasilkan Seimbang; belum diketahui harus netral.",
+      "evidence": "Original BalancedKpi: undefined/null -> Seimbang; false -> Tidak Seimbang; true -> Seimbang.",
+      "source": [
+        {
+          "file": "frontend/src/features/finance/FinancialStatementsParts.jsx",
+          "lines": [
+            113,
+            122
+          ],
+          "old_blob": "25e1af43f03fcbc64b8e3a3c90df5008f0b7b0fa",
+          "latest_blob": "25e1af43f03fcbc64b8e3a3c90df5008f0b7b0fa",
+          "identical_to_prior": true
+        },
+        {
+          "file": "frontend/src/features/finance/FinancialStatementsView.jsx",
+          "line": 294,
+          "old_blob": "6e4cafb7e3dc52a5642af9d64bc0c3452203fb8f",
+          "latest_blob": "6e4cafb7e3dc52a5642af9d64bc0c3452203fb8f",
+          "identical_to_prior": true
+        }
+      ],
+      "verification_level": "controlled original JSX render; not a backend calculation finding",
+      "status_on_latest": "confirmed_open"
+    },
+    {
+      "id": "FE-WF-07",
+      "priority": "P2",
+      "title": "Tooltip proyeksi kas menampilkan defisit sebagai nilai positif",
+      "trigger": "Hover garis Posisi Kas Kumulatif pada bucket bernilai negatif.",
+      "actual": "Math.abs menghapus tanda negatif saldo kumulatif; -100 tampil Rp100.",
+      "expected": "Saldo defisit tetap negatif; magnitude arus keluar dapat diformat terpisah.",
+      "evidence": "Original formatter(-100, Posisi Kas Kumulatif) returns Rp100; expected -Rp100.",
+      "source": [
+        {
+          "file": "frontend/src/features/finance/CashFlowForecastView.jsx",
+          "lines": [
+            38,
+            70,
+            75
+          ],
+          "old_blob": "d601423a23ec7444503ac14b064b291485baed09",
+          "latest_blob": "d601423a23ec7444503ac14b064b291485baed09",
+          "identical_to_prior": true
+        }
+      ],
+      "verification_level": "execution of original JSX tooltip formatter; not a backend forecast finding",
+      "status_on_latest": "confirmed_open"
+    }
+  ],
+  "context": [
+    "Primary frontend files for all seven findings have identical Git blob IDs.",
+    "IntercoView changed return-tab placement, but button/preset path remains; latest references are 212 and 315.",
+    "permissions_config.py changed return cutloss permissions/comments; Finance payment_variance.decide remains at line377.",
+    "role_registry.py changed Admin Sample labels, not role_in behavior.",
+    "Frontend roles.js adds canCurrent/canSeeGrade; the affected files do not call these helpers.",
+    "AppViewRouter routes consolidated interco returns; original interco-transactions route still opens the affected forms.",
+    "Export frontend files are unchanged; this addendum does not re-run backend export jobs.",
+    "RFID custom_admin remains an excluded candidate because Admin is not an allowed custom-role template.",
+    "No browser or device UAT is claimed by this addendum."
+  ]
+}

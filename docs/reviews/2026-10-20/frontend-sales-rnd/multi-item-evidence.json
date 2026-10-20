@@ -1,0 +1,82 @@
+{
+  "id": "FE-SR-04",
+  "result": "reproduced_unit",
+  "method": "Actual pricing service with deterministic DB read fixture + actual conversion AST expression; MongoDB and order creation not executed",
+  "request_items": [
+    {
+      "id": "iA",
+      "quantity": 100,
+      "unit": "yard",
+      "description": "Artikel A"
+    },
+    {
+      "id": "iB",
+      "quantity": 200,
+      "unit": "yard",
+      "description": "Artikel B"
+    }
+  ],
+  "supplier_costs": {
+    "prodA": 10,
+    "prodB": 30
+  },
+  "margin_pct": 30,
+  "pricing_actual": {
+    "cost_price": 30.0,
+    "margin_pct": 30.0,
+    "final_unit_price": 39.0,
+    "quantity": 100.0,
+    "unit": "yard",
+    "total": 3900.0,
+    "target_price": 0.0,
+    "supplier_id": "supplier_prodB",
+    "supplier_name": "",
+    "contract_number": "",
+    "sample_number": "sampleB",
+    "product_id": "prodB",
+    "product_sku": "prodB",
+    "default_margin_pct": 30.0,
+    "locked": false,
+    "locked_by": "",
+    "locked_at": "",
+    "unlocked_by": "",
+    "unlocked_at": "",
+    "customer_decision": "acc"
+  },
+  "pricing_expected_total_for_two_items": 9100,
+  "conversion_actual_items": [
+    {
+      "product_id": "prodB",
+      "quantity": 100.0,
+      "unit": "yard",
+      "base_quantity": 0,
+      "discount_percent": 0,
+      "price_approval_id": "",
+      "purchase_mode": "qty",
+      "roll_lines": [],
+      "target_quantity": null,
+      "rounding_choice": "",
+      "qty_rolls": null,
+      "unit_factor": null,
+      "unit_factor_to": "",
+      "is_sample": false,
+      "sample_price": null,
+      "sample_kind": "standard",
+      "cut_warehouse_id": ""
+    }
+  ],
+  "conversion_expected_items": [
+    {
+      "product_id": "prodA",
+      "quantity": 100,
+      "unit": "yard"
+    },
+    {
+      "product_id": "prodB",
+      "quantity": 200,
+      "unit": "yard"
+    }
+  ],
+  "conversion_expression_line": 1034,
+  "limit": "Unit-level reproduction of actual service mapping. Windows asyncio socketpair initialization blocked real Mongo run. This does not assert complete Sales Order inventory/AR execution."
+}

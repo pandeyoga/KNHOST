@@ -1,0 +1,58 @@
+EEEEEE                                                                   [100%]
+=================================== ERRORS ====================================
+__________ ERROR at setup of test_form_path_salesadmin_and_supersede __________
+backend\tests\test_l02_ln022_form_path_retest.py:28: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_form_path_retest.py:23: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+________ ERROR at setup of test_reject_via_price_approvals_mirrors_so _________
+backend\tests\test_l02_ln022_form_path_retest.py:28: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_form_path_retest.py:23: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+_________ ERROR at setup of test_sod_own_request_price_approvals_403 __________
+backend\tests\test_l02_ln022_form_path_retest.py:28: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_form_path_retest.py:23: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+_______________ ERROR at setup of test_sod_own_request_so_panel _______________
+backend\tests\test_l02_ln022_form_path_retest.py:28: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_form_path_retest.py:23: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+____________ ERROR at setup of test_stale_via_price_approvals_409 _____________
+backend\tests\test_l02_ln022_form_path_retest.py:28: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_form_path_retest.py:23: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+__________________ ERROR at setup of test_concurrent_submits __________________
+backend\tests\test_l02_ln022_form_path_retest.py:28: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_form_path_retest.py:23: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l02_ln022_form_path_retest.py::test_form_path_salesadmin_and_supersede
+ERROR backend\tests\test_l02_ln022_form_path_retest.py::test_reject_via_price_approvals_mirrors_so
+ERROR backend\tests\test_l02_ln022_form_path_retest.py::test_sod_own_request_price_approvals_403
+ERROR backend\tests\test_l02_ln022_form_path_retest.py::test_sod_own_request_so_panel
+ERROR backend\tests\test_l02_ln022_form_path_retest.py::test_stale_via_price_approvals_409
+ERROR backend\tests\test_l02_ln022_form_path_retest.py::test_concurrent_submits
+6 errors in 1.44s

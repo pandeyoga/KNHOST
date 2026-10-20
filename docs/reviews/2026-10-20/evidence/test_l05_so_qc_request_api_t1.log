@@ -1,0 +1,14 @@
+....F.                                                                   [100%]
+================================== FAILURES ===================================
+_____________________ test_sampling_stored_by_sales_admin _____________________
+backend\tests\test_l05_so_qc_request_api_t1.py:69: in test_sampling_stored_by_sales_admin
+    h = _login("salesadmin@kainnusantara.id", "demo1234")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l05_so_qc_request_api_t1.py:17: in _login
+    assert r.status_code == 200, r.text[:200]
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l05_so_qc_request_api_t1.py::test_sampling_stored_by_sales_admin
+1 failed, 5 passed in 1.75s

@@ -1,0 +1,113 @@
+{
+  "method": "Shallow render original JSX; controlled hook state; no API or DB mutation",
+  "source_revision": "8dab383f764df80737bfe02f887422b3fd72aa70",
+  "results": [
+    {
+      "case": "transfer_approval_button",
+      "role": "manager",
+      "permission": "transfer.approve",
+      "rendered": true
+    },
+    {
+      "case": "transfer_approval_button",
+      "role": "admin",
+      "permission": "transfer.approve",
+      "rendered": false
+    },
+    {
+      "case": "transfer_approval_button",
+      "role": "custom_manager",
+      "permission": "transfer.approve",
+      "rendered": false
+    },
+    {
+      "case": "receipt_first_load_error",
+      "errorState": "Gagal memuat penerimaan.",
+      "loadingRendered": true,
+      "errorRendered": false
+    },
+    {
+      "case": "balance_sheet_unknown_status",
+      "input": "undefined",
+      "text": "Seimbang"
+    },
+    {
+      "case": "balance_sheet_unknown_status",
+      "input": null,
+      "text": "Seimbang"
+    },
+    {
+      "case": "balance_sheet_unknown_status",
+      "input": false,
+      "text": "Tidak Seimbang"
+    },
+    {
+      "case": "balance_sheet_unknown_status",
+      "input": true,
+      "text": "Seimbang"
+    },
+    {
+      "case": "cash_deficit_tooltip",
+      "sourceValue": -100,
+      "series": "Posisi Kas Kumulatif",
+      "displayed": "Rp 100",
+      "expected": "-Rp 100"
+    },
+    {
+      "case": "interco_payee_select",
+      "parentCallbackProp": "function",
+      "acceptedCallbackProp": "undefined",
+      "stateUpdates": [],
+      "expected": "setPayee(b)"
+    },
+    {
+      "case": "interco_buyer_select",
+      "parentCallbackProp": "function",
+      "acceptedCallbackProp": "undefined",
+      "stateUpdates": [],
+      "expected": "setBuyer(b)"
+    },
+    {
+      "case": "structure_editor_authority",
+      "role": "warehouse_admin",
+      "permission": "warehouse.update",
+      "canEdit": true
+    },
+    {
+      "case": "structure_editor_authority",
+      "role": "custom_warehouse_admin",
+      "permission": "warehouse.update",
+      "canEdit": false
+    },
+    {
+      "case": "store_credit_adjust_authority",
+      "role": "manager",
+      "permission": "ar_receipt.void",
+      "canAdjust": true
+    },
+    {
+      "case": "store_credit_adjust_authority",
+      "role": "custom_manager",
+      "permission": "ar_receipt.void",
+      "canAdjust": false
+    },
+    {
+      "case": "payment_variance_decide_button",
+      "role": "admin",
+      "permission": "payment_variance.decide",
+      "rendered": true
+    },
+    {
+      "case": "payment_variance_decide_button",
+      "role": "finance",
+      "permission": "payment_variance.decide",
+      "rendered": false
+    },
+    {
+      "case": "payment_variance_decide_button",
+      "role": "custom_finance",
+      "permission": "payment_variance.decide",
+      "rendered": false
+    }
+  ]
+}

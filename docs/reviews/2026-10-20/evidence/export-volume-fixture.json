@@ -1,0 +1,6 @@
+{
+  "database": "kn_plan_audit_20261019",
+  "inserted": 5001,
+  "removed": 5001,
+  "note": "Synthetic movements only for export volume test; no actual stock or financial postings. Fixtures removed after test."
+}

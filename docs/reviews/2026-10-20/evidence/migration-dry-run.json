@@ -1,0 +1,13 @@
+{
+ "mode": "dry_run",
+ "matched": [],
+ "ambiguous": [],
+ "unresolved": [],
+ "skipped_has_fulfillment": 0,
+ "rolled_back": 0,
+ "counts": {
+  "matched": 0,
+  "ambiguous": 0,
+  "unresolved": 0
+ }
+}

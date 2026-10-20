@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="1.051" timestamp="2026-10-19T13:34:28.441876+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="tests.test_l03_ln034_revalidation" time="0.000"><error message="collection failure">backend\tests\test_l03_ln034_revalidation.py:13: in &lt;module&gt;
+    SUP_A, SUP_B = [s["id"] for s in DB.suppliers.find({"entity_id": "all"}, {"_id": 0, "id": 1}).sort("name", 1).limit(2)]
+    ^^^^^^^^^^^^
+E   ValueError: not enough values to unpack (expected 2, got 0)</error></testcase></testsuite></testsuites>

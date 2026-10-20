@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.762" timestamp="2026-10-19T13:36:31.357061+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="tests.test_l08_returnable_rolls_extra" time="0.000"><error message="collection failure">backend\tests\test_l08_returnable_rolls_extra.py:11: in &lt;module&gt;
+    SHIPPED_SO = DB.sales_orders.find_one({"number": "KSC/SO-00001"})["id"]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase></testsuite></testsuites>

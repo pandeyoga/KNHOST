@@ -1,0 +1,21 @@
+[
+  {
+    "id": "AUD-SO-01",
+    "scenario": "Worker A completes after its lease expires and B acquires lease; A releases old lease",
+    "new_owner_lock_survives": false,
+    "expected": true
+  },
+  {
+    "id": "AUD-WMS-01",
+    "scenario": "Transient GL failure after roll quantity/movement commit, retry same scan",
+    "first_error": "AUDIT injected transient journal outage",
+    "remaining_qty": 90.0,
+    "movement_count": 1,
+    "retry": {
+      "status": "recount",
+      "message": "Roll berubah sesudah discan \u2014 hitung ulang roll ini.",
+      "at": "2026-10-19T06:55:00.737422+00:00"
+    },
+    "expected": "Resume missing journal and balance before mark applied; do not treat own partial commit as external recount"
+  }
+]

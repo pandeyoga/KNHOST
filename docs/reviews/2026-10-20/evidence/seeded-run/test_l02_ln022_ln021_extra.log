@@ -1,0 +1,15 @@
+...F                                                                     [100%]
+================================== FAILURES ===================================
+________________ test_reallocate_updates_roll_lines_roll_mode _________________
+backend\tests\test_l02_ln022_ln021_extra.py:118: in test_reallocate_updates_roll_lines_roll_mode
+    assert r1, "no spare roll"
+E   AssertionError: no spare roll
+E   assert None
+-------------------------- Captured stdout teardown ---------------------------
+cancel so_3d6c472c808a 200
+cancel so_a2b50cecdb93 200
+cancel so_0613f842012b 200
+ORPHAN reserved rolls after cancel: 0
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l02_ln022_ln021_extra.py::test_reallocate_updates_roll_lines_roll_mode
+1 failed, 3 passed in 1.86s

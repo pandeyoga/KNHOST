@@ -1,0 +1,11 @@
+
+=================================== ERRORS ====================================
+_________ ERROR collecting tests/test_l03_ln033_fulfillment_edges.py __________
+backend\tests\test_l03_ln033_fulfillment_edges.py:13: in <module>
+    SUP = DB.suppliers.find_one({"entity_id": "all"}, {"_id": 0, "id": 1}, sort=[("name", 1)])["id"]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l03_ln033_fulfillment_edges.py - TypeError: 'NoneTyp...
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 1.42s

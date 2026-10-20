@@ -1,0 +1,929 @@
+{
+  "baseline_sha": "8dab383f764df80737bfe02f887422b3fd72aa70",
+  "openapi_sha256": "a22a82b2afcd93c1111125eff37d3764ca019cf6f7c51e4b6f83edb378f00d0b",
+  "method": "Finite dynamic choices traced from source and compared with OpenAPI; no API request or mutation",
+  "checks": [
+    {
+      "method": "GET",
+      "path_template": "/api/hr/shifts",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,62",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/shifts"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/hr/shifts",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,92",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/shifts"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "PATCH",
+      "path_template": "/api/hr/shifts/{id}",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,91",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/shifts/{shift_id}"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "DELETE",
+      "path_template": "/api/hr/shifts/{id}",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,98",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/shifts/{shift_id}"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "GET",
+      "path_template": "/api/hr/geofences",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,62",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/geofences"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/hr/geofences",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,92",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/geofences"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "PATCH",
+      "path_template": "/api/hr/geofences/{id}",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,91",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/geofences/{geo_id}"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "DELETE",
+      "path_template": "/api/hr/geofences/{id}",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,98",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/geofences/{geo_id}"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "GET",
+      "path_template": "/api/hr/devices",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,62",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/devices"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/hr/devices",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,92",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/devices"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "PATCH",
+      "path_template": "/api/hr/devices/{id}",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,91",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/devices/{dev_id}"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "DELETE",
+      "path_template": "/api/hr/devices/{id}",
+      "source": "src/features/hr/AttendanceSetupView.jsx:18-22,98",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/devices/{dev_id}"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/hr/attendance/clock-in",
+      "source": "src/features/hr/EmployeeSelfService.jsx:54,99-109",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/attendance/clock-in"
+      ],
+      "note": "Manual dismissal of wildcard collision: action is clock-in/clock-out, not attendance row ID"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/hr/attendance/clock-out",
+      "source": "src/features/hr/EmployeeSelfService.jsx:54,99-109",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/hr/attendance/clock-out"
+      ],
+      "note": "Manual dismissal of wildcard collision: action is clock-in/clock-out, not attendance row ID"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/landed-costs/{id}/submit",
+      "source": "src/features/purchasing/LandedCostDetailPanel.jsx:35-52",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/landed-costs/{voucher_id}/submit"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/landed-costs/{id}/approve",
+      "source": "src/features/purchasing/LandedCostDetailPanel.jsx:35-52",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/landed-costs/{voucher_id}/approve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/landed-costs/{id}/reject",
+      "source": "src/features/purchasing/LandedCostDetailPanel.jsx:35-52",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/landed-costs/{voucher_id}/reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/landed-costs/{id}/cancel",
+      "source": "src/features/purchasing/LandedCostDetailPanel.jsx:35-52",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/landed-costs/{voucher_id}/cancel"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/landed-costs/{id}/pay",
+      "source": "src/features/purchasing/LandedCostDetailPanel.jsx:35-52",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/landed-costs/{voucher_id}/pay"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/vendor-bills/{id}/submit",
+      "source": "src/features/purchasing/VendorBillDetailPanel.jsx:35-52",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/vendor-bills/{bill_id}/submit"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/vendor-bills/{id}/approve",
+      "source": "src/features/purchasing/VendorBillDetailPanel.jsx:35-52",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/vendor-bills/{bill_id}/approve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/vendor-bills/{id}/reject",
+      "source": "src/features/purchasing/VendorBillDetailPanel.jsx:35-52",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/vendor-bills/{bill_id}/reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/vendor-bills/{id}/cancel",
+      "source": "src/features/purchasing/VendorBillDetailPanel.jsx:35-52",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/vendor-bills/{bill_id}/cancel"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/vendor-bills/{id}/pay",
+      "source": "src/features/purchasing/VendorBillDetailPanel.jsx:35-52",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/vendor-bills/{bill_id}/pay"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-returns/{id}/submit",
+      "source": "src/features/purchasing/PurchaseReturns.jsx:214-255",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-returns/{return_id}/submit"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-returns/{id}/approve",
+      "source": "src/features/purchasing/PurchaseReturns.jsx:214-255",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-returns/{return_id}/approve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-returns/{id}/reject",
+      "source": "src/features/purchasing/PurchaseReturns.jsx:214-255",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-returns/{return_id}/reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-returns/{id}/ship-to-supplier",
+      "source": "src/features/purchasing/PurchaseReturns.jsx:214-255",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-returns/{return_id}/ship-to-supplier"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-returns/{id}/supplier-accept",
+      "source": "src/features/purchasing/PurchaseReturns.jsx:214-255",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-returns/{return_id}/supplier-accept"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-returns/{id}/supplier-reject",
+      "source": "src/features/purchasing/PurchaseReturns.jsx:214-255",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-returns/{return_id}/supplier-reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-returns/{id}/goods-back",
+      "source": "src/features/purchasing/PurchaseReturns.jsx:214-255",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-returns/{return_id}/goods-back"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-requisitions/{id}/submit",
+      "source": "src/features/purchasing/PurchaseRequisitionDetailPanel.jsx:36-39,158-170",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-requisitions/{pr_id}/submit"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-requisitions/{id}/approve",
+      "source": "src/features/purchasing/PurchaseRequisitionDetailPanel.jsx:36-39,158-170",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-requisitions/{pr_id}/approve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-requisitions/{id}/cancel",
+      "source": "src/features/purchasing/PurchaseRequisitionDetailPanel.jsx:36-39,158-170",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-requisitions/{pr_id}/cancel"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/finance-cases/{id}/assign",
+      "source": "src/features/finance/cases/CaseDetailPanel.jsx:47,251,270,312,342",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/finance-cases/{case_id}/assign"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/finance-cases/{id}/note",
+      "source": "src/features/finance/cases/CaseDetailPanel.jsx:47,251,270,312,342",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/finance-cases/{case_id}/note"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/finance-cases/{id}/reject",
+      "source": "src/features/finance/cases/CaseDetailPanel.jsx:47,251,270,312,342",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/finance-cases/{case_id}/reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/finance-cases/{id}/reopen",
+      "source": "src/features/finance/cases/CaseDetailPanel.jsx:47,251,270,312,342",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/finance-cases/{case_id}/reopen"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/interco/loans/{id}/disburse",
+      "source": "src/features/finance/interco/IntercoLoansPanel.jsx:64,144,149,198",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/interco/loans/{loan_id}/disburse"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/interco/loans/{id}/cancel",
+      "source": "src/features/finance/interco/IntercoLoansPanel.jsx:64,144,149,198",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/interco/loans/{loan_id}/cancel"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/interco/loans/{id}/repay",
+      "source": "src/features/finance/interco/IntercoLoansPanel.jsx:64,144,149,198",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/interco/loans/{loan_id}/repay"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/interco/returns/{id}/approve",
+      "source": "src/features/finance/interco/IntercoReturnInbox.jsx:14,34,36",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/interco/returns/{ret_id}/approve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/interco/returns/{id}/warehouse-task",
+      "source": "src/features/finance/interco/IntercoReturnInbox.jsx:14,34,36",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/interco/returns/{ret_id}/warehouse-task"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/cash-advances/{id}/submit",
+      "source": "src/features/pettycash/CashAdvanceDetail.jsx:41,69,71,150,168",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/cash-advances/{ca_id}/submit"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/cash-advances/{id}/approve",
+      "source": "src/features/pettycash/CashAdvanceDetail.jsx:41,69,71,150,168",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/cash-advances/{ca_id}/approve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/cash-advances/{id}/reject",
+      "source": "src/features/pettycash/CashAdvanceDetail.jsx:41,69,71,150,168",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/cash-advances/{ca_id}/reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/cash-advances/{id}/disburse",
+      "source": "src/features/pettycash/CashAdvanceDetail.jsx:41,69,71,150,168",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/cash-advances/{ca_id}/disburse"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/cash-advance-settlements/{id}/submit",
+      "source": "src/features/pettycash/SettlementsView.jsx:167,184-195,238",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/cash-advance-settlements/{stl_id}/submit"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/cash-advance-settlements/{id}/pay-reimburse",
+      "source": "src/features/pettycash/SettlementsView.jsx:167,184-195,238",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/cash-advance-settlements/{stl_id}/pay-reimburse"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/cash-advance-settlements/{id}/approve",
+      "source": "src/features/pettycash/SettlementsView.jsx:167,184-195,238",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/cash-advance-settlements/{stl_id}/approve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/cash-advance-settlements/{id}/reject",
+      "source": "src/features/pettycash/SettlementsView.jsx:167,184-195,238",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/cash-advance-settlements/{stl_id}/reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/design-requests/{id}/assign",
+      "source": "src/features/sales/mobile/MobileMdViews.jsx:154-189",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/design-requests/{req_id}/assign"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/design-requests/{id}/approve",
+      "source": "src/features/sales/mobile/MobileMdViews.jsx:154-189",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/design-requests/{req_id}/approve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/design-requests/{id}/submit",
+      "source": "src/features/sales/mobile/MobileMdViews.jsx:154-189",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/design-requests/{req_id}/submit"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/design-requests/{id}/reject",
+      "source": "src/features/sales/mobile/MobileMdViews.jsx:154-189",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/design-requests/{req_id}/reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/design-requests/{id}/cancel",
+      "source": "src/features/sales/mobile/MobileMdViews.jsx:154-189",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/design-requests/{req_id}/cancel"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/read",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/read"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/lines/{n}/scan-label",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/lines/{line_no}/scan-label"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/lines/{n}/rolls",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/lines/{line_no}/rolls"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/finish-count",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/finish-count"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/cancel",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/cancel"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/manual-entry",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/manual-entry"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/discrepancies/{key}/resolve",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/discrepancies/{key}/resolve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/reopen-count",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/reopen-count"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/mko-partial",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/mko-partial"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/return-to-reconcile",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/return-to-reconcile"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/close",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/close"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/lines",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/lines"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/reject",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/goods-receipts/{id}/start-count",
+      "source": "src/features/wms/grn/grnApi.js:66; callers GrnCreateWizard/CountPanel/Detail/OcrBits/ReconPanel/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/start-count"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "PATCH",
+      "path_template": "/api/goods-receipts/{id}/lines/{n}",
+      "source": "src/features/wms/grn/grnApi.js:67; callers GrnLineCard/LineRow/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/lines/{line_no}"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "PATCH",
+      "path_template": "/api/goods-receipts/{id}/dn",
+      "source": "src/features/wms/grn/grnApi.js:67; callers GrnLineCard/LineRow/ReviewPanel",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/dn"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "DELETE",
+      "path_template": "/api/goods-receipts/{id}/rolls/{roll_id}",
+      "source": "src/features/wms/grn/grnApi.js:68; GrnCountPanel.jsx:66; GrnLineCard.jsx:50; GrnLineRow.jsx:204",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/rolls/{roll_id}"
+      ],
+      "note": "Manual dismissal: helper path argument contains multiple segments, not one route parameter"
+    },
+    {
+      "method": "DELETE",
+      "path_template": "/api/goods-receipts/{id}/lines/{n}",
+      "source": "src/features/wms/grn/grnApi.js:68; GrnCountPanel.jsx:66; GrnLineCard.jsx:50; GrnLineRow.jsx:204",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/goods-receipts/{grn_id}/lines/{line_no}"
+      ],
+      "note": "Manual dismissal: helper path argument contains multiple segments, not one route parameter"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/price-approvals/{id}/approve",
+      "source": "src/features/approvals/ApprovalDecisionModal.jsx:66-68",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/price-approvals/{approval_id}/approve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/price-approvals/{id}/reject",
+      "source": "src/features/approvals/ApprovalDecisionModal.jsx:66-68",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/price-approvals/{approval_id}/reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/sales-returns/{id}/approve",
+      "source": "src/features/approvals/ApprovalDecisionModal.jsx:66-68",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/sales-returns/{return_id}/approve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/sales-returns/{id}/reject",
+      "source": "src/features/approvals/ApprovalDecisionModal.jsx:66-68",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/sales-returns/{return_id}/reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-returns/{id}/approve",
+      "source": "src/features/approvals/ApprovalDecisionModal.jsx:66-68",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-returns/{return_id}/approve"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/purchase-returns/{id}/reject",
+      "source": "src/features/approvals/ApprovalDecisionModal.jsx:66-68",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/purchase-returns/{return_id}/reject"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/inbound/tasks/{id}/resolve-escalation",
+      "source": "src/features/manager/EscalationManagement.jsx:76-80",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/inbound/tasks/{task_id}/resolve-escalation"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/outbound/tasks/{id}/resolve-escalation",
+      "source": "src/features/manager/EscalationManagement.jsx:76-80",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/outbound/tasks/{task_id}/resolve-escalation"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "GET",
+      "path_template": "/api/inbound/tasks",
+      "source": "Source inventory query suffix families: params/eq starts ? or empty; query does not change route path",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/inbound/tasks"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "GET",
+      "path_template": "/api/outbound/tasks",
+      "source": "Source inventory query suffix families: params/eq starts ? or empty; query does not change route path",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/outbound/tasks"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "GET",
+      "path_template": "/api/transfers",
+      "source": "Source inventory query suffix families: params/eq starts ? or empty; query does not change route path",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/transfers"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "GET",
+      "path_template": "/api/dashboard",
+      "source": "Source inventory query suffix families: params/eq starts ? or empty; query does not change route path",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/dashboard"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "GET",
+      "path_template": "/api/notifications/unread-count",
+      "source": "Source inventory query suffix families: params/eq starts ? or empty; query does not change route path",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/notifications/unread-count"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "GET",
+      "path_template": "/api/settings/effective",
+      "source": "Source inventory query suffix families: params/eq starts ? or empty; query does not change route path",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/settings/effective"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "GET",
+      "path_template": "/api/rnd/meta",
+      "source": "Source inventory query suffix families: params/eq starts ? or empty; query does not change route path",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/rnd/meta"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/notifications/read-all",
+      "source": "src/hooks/useAppActions.js:740",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/notifications/read-all"
+      ],
+      "note": "Bounded values inspected in source; no request executed"
+    },
+    {
+      "method": "POST",
+      "path_template": "/api/scheduler/jobs/all/run",
+      "source": "src/features/admin/scheduler/SchedulerView.jsx:117; backend/routers/scheduler.py:46",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/scheduler/jobs/{job_id}/run"
+      ],
+      "note": "Backend explicitly implements job_id=='all'; dynamic route accepts this literal"
+    },
+    {
+      "method": "GET",
+      "path_template": "/api/enums/entity_type",
+      "source": "src/features/settings/entities/entityApi.js:102; backend/routers/enums.py:111",
+      "status": "method_path_present",
+      "openapi_paths": [
+        "/api/enums/{name}"
+      ],
+      "note": "Generic enum route accepts registry enum name; fallback GET /enums also exists"
+    }
+  ],
+  "check_count": 92,
+  "candidates": []
+}

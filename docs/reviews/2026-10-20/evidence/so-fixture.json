@@ -1,0 +1,26 @@
+{
+  "database": "kn_plan_audit_20261019",
+  "fixtures": [
+    {
+      "product": "audit_product_supplier",
+      "template": "audit_template_supplier",
+      "source_mode": "supplier"
+    },
+    {
+      "product": "audit_product_makloon",
+      "template": "audit_template_makloon",
+      "source_mode": "makloon"
+    },
+    {
+      "product": "audit_product_both",
+      "template": "audit_template_both",
+      "source_mode": "both"
+    },
+    {
+      "product": "audit_product_supplier_second",
+      "template": "audit_template_supplier",
+      "purpose": "unreleased product guard fixture"
+    }
+  ],
+  "note": "Three synthetic products released before fulfillment; tests insert approved R&D/price snapshots, so results do not prove full R&D approval chain."
+}

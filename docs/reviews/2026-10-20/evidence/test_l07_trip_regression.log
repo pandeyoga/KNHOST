@@ -1,0 +1,39 @@
+FFFsFFFs                                                                 [100%]
+================================== FAILURES ===================================
+__________________________ test_candidates_only_ksc ___________________________
+backend\tests\test_l07_trip_regression.py:58: in test_candidates_only_ksc
+    assert c and all(x["order_number"].startswith("KSC/") for x in c)
+E   assert ([])
+_____________________ test_picking_list_shape_and_errors ______________________
+backend\tests\test_l07_trip_regression.py:67: in test_picking_list_shape_and_errors
+    assert r.status_code == 200
+E   assert 400 == 200
+E    +  where 400 = <Response [400]>.status_code
+____________________________ test_trip_check_rows _____________________________
+backend\tests\test_l07_trip_regression.py:84: in test_trip_check_rows
+    assert r.status_code == 200
+E   assert 400 == 200
+E    +  where 400 = <Response [400]>.status_code
+_______________________ test_multi_order_delivery_full ________________________
+backend\tests\test_l07_trip_regression.py:103: in test_multi_order_delivery_full
+    ids = [s["KSC/SJ-00001"], s["KSC/SJ-00002"], s["KSC/SJ-00003"], s["KSC/SJ-00004"]]
+           ^^^^^^^^^^^^^^^^^
+E   KeyError: 'KSC/SJ-00001'
+______________________ test_pickup_order_cannot_combine _______________________
+backend\tests\test_l07_trip_regression.py:137: in test_pickup_order_cannot_combine
+    json={"shipment_ids": [s["KSC/SJ-00001"], s["KSC/SJ-00003"]], "mode": "self_pickup"})
+                           ^^^^^^^^^^^^^^^^^
+E   KeyError: 'KSC/SJ-00001'
+__________________ test_single_order_delivery_and_transition __________________
+backend\tests\test_l07_trip_regression.py:156: in test_single_order_delivery_and_transition
+    json={"shipment_ids": [s["KSC/SJ-00002"]], "mode": "expedition", "courier_name": "TEST_JNE"})
+                           ^^^^^^^^^^^^^^^^^
+E   KeyError: 'KSC/SJ-00002'
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l07_trip_regression.py::test_candidates_only_ksc - ...
+FAILED backend\tests\test_l07_trip_regression.py::test_picking_list_shape_and_errors
+FAILED backend\tests\test_l07_trip_regression.py::test_trip_check_rows - asse...
+FAILED backend\tests\test_l07_trip_regression.py::test_multi_order_delivery_full
+FAILED backend\tests\test_l07_trip_regression.py::test_pickup_order_cannot_combine
+FAILED backend\tests\test_l07_trip_regression.py::test_single_order_delivery_and_transition
+6 failed, 2 skipped in 1.38s

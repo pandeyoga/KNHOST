@@ -1,0 +1,11 @@
+
+=================================== ERRORS ====================================
+_____________ ERROR collecting tests/test_ln091t02_ln093_chain.py _____________
+backend\tests\test_ln091t02_ln093_chain.py:17: in <module>
+    PRICE = float(DB.products.find_one({"id": TPL["product_id"]})["price"])
+                                              ^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+ERROR backend\tests\test_ln091t02_ln093_chain.py - TypeError: 'NoneType' obje...
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.79s

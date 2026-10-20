@@ -1,0 +1,254 @@
+EEEEEEEEEEEEEEEEEEEEEEEEE                                                [100%]
+=================================== ERRORS ====================================
+______________ ERROR at setup of TestMultiItem.test_create_multi ______________
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+________ ERROR at setup of TestMultiItem.test_approve_routes_per_item _________
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_________ ERROR at setup of TestMultiItem.test_reroute_no_duplicates __________
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+________________ ERROR at setup of TestMultiItem.test_redesign ________________
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+____________ ERROR at setup of TestMultiItem.test_redesign_dup_409 ____________
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_______ ERROR at setup of TestMultiItem.test_redesign_short_reason_422 ________
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+___ ERROR at setup of TestMultiItem.test_redesign_item_without_artwork_400 ____
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_____________ ERROR at setup of TestMultiItem.test_origin_filter ______________
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_ ERROR at setup of TestMultiItem.test_redesign_approve_routes_design_request_with_origin _
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+________ ERROR at setup of TestMultiItem.test_link_design_sets_origin _________
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+___ ERROR at setup of TestArtworkValidation.test_invalid_artwork_400[hold] ____
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+___ ERROR at setup of TestArtworkValidation.test_invalid_artwork_400[draft] ___
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+___ ERROR at setup of TestArtworkValidation.test_invalid_artwork_400[other] ___
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+__ ERROR at setup of TestArtworkValidation.test_invalid_artwork_400[missing] __
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+__ ERROR at setup of TestArtworkValidation.test_bad_source_type_and_no_types __
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_ ERROR at setup of TestArtworkValidation.test_redesign_source_type_cannot_bypass_hold _
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_________ ERROR at setup of TestArtworkValidation.test_legacy_payload _________
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_ ERROR at setup of TestArtworkValidation.test_customer_reference_labdip_handfeel _
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_____ ERROR at setup of TestHoldRelease.test_release_forbidden[designer] ______
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_______ ERROR at setup of TestHoldRelease.test_release_forbidden[sales] _______
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+___________ ERROR at setup of TestHoldRelease.test_meta_can_release ___________
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+___ ERROR at setup of TestHoldRelease.test_release_allowed_then_rehold[md] ____
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_ ERROR at setup of TestHoldRelease.test_release_allowed_then_rehold[manager] _
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+__ ERROR at setup of TestHoldRelease.test_release_allowed_then_rehold[admin] __
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_______ ERROR at setup of TestHoldRelease.test_released_artwork_usable ________
+backend\tests\test_l03_ln030_special_order_items.py:68: in H
+    "md": _login("md@kainnusantara.id", "demo1234"),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l03_ln030_special_order_items.py:28: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestMultiItem::test_create_multi
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestMultiItem::test_approve_routes_per_item
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestMultiItem::test_reroute_no_duplicates
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestMultiItem::test_redesign
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestMultiItem::test_redesign_dup_409
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestMultiItem::test_redesign_short_reason_422
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestMultiItem::test_redesign_item_without_artwork_400
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestMultiItem::test_origin_filter
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestMultiItem::test_redesign_approve_routes_design_request_with_origin
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestMultiItem::test_link_design_sets_origin
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_invalid_artwork_400[hold]
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_invalid_artwork_400[draft]
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_invalid_artwork_400[other]
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_invalid_artwork_400[missing]
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_bad_source_type_and_no_types
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_redesign_source_type_cannot_bypass_hold
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_legacy_payload
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestArtworkValidation::test_customer_reference_labdip_handfeel
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestHoldRelease::test_release_forbidden[designer]
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestHoldRelease::test_release_forbidden[sales]
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestHoldRelease::test_meta_can_release
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestHoldRelease::test_release_allowed_then_rehold[md]
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestHoldRelease::test_release_allowed_then_rehold[manager]
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestHoldRelease::test_release_allowed_then_rehold[admin]
+ERROR backend\tests\test_l03_ln030_special_order_items.py::TestHoldRelease::test_released_artwork_usable
+25 errors in 2.05s

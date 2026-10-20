@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.963" timestamp="2026-10-19T13:34:11.171821+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="tests.test_l03_ln032_extra_iter221" time="0.000"><error message="collection failure">backend\tests\test_l03_ln032_extra_iter221.py:16: in &lt;module&gt;
+    TPL = DB.product_templates.find_one({"status": "active"}, {"id": 1}, sort=[("name", 1)])["id"]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase></testsuite></testsuites>

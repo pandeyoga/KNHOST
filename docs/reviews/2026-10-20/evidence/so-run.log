@@ -1,0 +1,18 @@
+....F..F...........                                                      [100%]
+================================== FAILURES ===================================
+_____________________ test_t01_release_guard_no_fallback ______________________
+work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l03_ln033_fulfillment.py:209: in test_t01_release_guard_no_fallback
+    DB.products.update_one({"id": prod["id"]}, {"$set": {"lifecycle": "labdip", "spec_id": ""}})
+                                  ^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_____________________ test_t10_migration_dry_run_reports ______________________
+work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l03_ln033_fulfillment.py:240: in test_t10_migration_dry_run_reports
+    assert out.returncode == 0, out.stderr
+E   AssertionError: python: can't open file 'C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\scripts\\migrate_l03_ln033_fulfillment.py': [Errno 2] No such file or directory
+E     
+E   assert 2 == 0
+E    +  where 2 = CompletedProcess(args=['python', '../scripts/migrate_l03_ln033_fulfillment.py'], returncode=2, stdout='', stderr="pyth...\\KNHOST-plan-audit-2026-10-19\\\\scripts\\\\migrate_l03_ln033_fulfillment.py': [Errno 2] No such file or directory\n").returncode
+=========================== short test summary info ===========================
+FAILED work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l03_ln033_fulfillment.py::test_t01_release_guard_no_fallback
+FAILED work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l03_ln033_fulfillment.py::test_t10_migration_dry_run_reports
+2 failed, 17 passed in 23.44s

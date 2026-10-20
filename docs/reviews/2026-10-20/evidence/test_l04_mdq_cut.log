@@ -1,0 +1,22 @@
+FsF.                                                                     [100%]
+================================== FAILURES ===================================
+_____________________ TestMdqCut.test_yard_cut_idempotent _____________________
+backend\tests\test_l04_mdq_cut.py:58: in test_yard_cut_idempotent
+    assert DB.journal_entries.count_documents({"source_type": "inventory_writeoff", "source_id": f"mdq:{iid}:{lid}"}) == 1
+E   AssertionError: assert 0 == 1
+E    +  where 0 = count_documents({'source_type': 'inventory_writeoff', 'source_id': 'mdq:ins_test_59c6b7f6:ln_d9f60c'})
+E    +    where count_documents = Collection(Database(MongoClient(host=['127.0.0.1:27138'], document_class=dict, tz_aware=False, connect=True), 'kn_plan_audit_20261019'), 'journal_entries').count_documents
+E    +      where Collection(Database(MongoClient(host=['127.0.0.1:27138'], document_class=dict, tz_aware=False, connect=True), 'kn_plan_audit_20261019'), 'journal_entries') = Database(MongoClient(host=['127.0.0.1:27138'], document_class=dict, tz_aware=False, connect=True), 'kn_plan_audit_20261019').journal_entries
+_______________________ TestMdqCut.test_sales_forbidden _______________________
+backend\tests\test_l04_mdq_cut.py:77: in test_sales_forbidden
+    s = _login("sales.kanda@kainnusantara.id", "demo1234")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l04_mdq_cut.py:15: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l04_mdq_cut.py::TestMdqCut::test_yard_cut_idempotent
+FAILED backend\tests\test_l04_mdq_cut.py::TestMdqCut::test_sales_forbidden - ...
+2 failed, 1 passed, 1 skipped, 1 warning in 1.80s

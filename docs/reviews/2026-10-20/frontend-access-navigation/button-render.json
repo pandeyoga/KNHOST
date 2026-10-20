@@ -1,0 +1,165 @@
+{
+  "method": "Actual top-level JSX rendered with React SSR; child/API imports stubbed; browser effects not exercised",
+  "cases": [
+    {
+      "component": "SpecialOrders",
+      "role": "admin",
+      "permissions": {
+        "order": [
+          "view",
+          "create"
+        ]
+      },
+      "create_button_present": true
+    },
+    {
+      "component": "SpecialOrders",
+      "role": "audit_custom",
+      "permissions": {
+        "order": [
+          "view",
+          "create"
+        ]
+      },
+      "create_button_present": false
+    },
+    {
+      "component": "SpecialOrders",
+      "role": "manager",
+      "permissions": {
+        "order": [
+          "view"
+        ]
+      },
+      "create_button_present": true
+    },
+    {
+      "component": "InspectionsView",
+      "role": "admin",
+      "permissions": {
+        "inspection": [
+          "view",
+          "create"
+        ]
+      },
+      "create_button_present": true
+    },
+    {
+      "component": "InspectionsView",
+      "role": "audit_custom",
+      "permissions": {
+        "inspection": [
+          "view",
+          "create"
+        ]
+      },
+      "create_button_present": false
+    },
+    {
+      "component": "InspectionsView",
+      "role": "manager",
+      "permissions": {
+        "inspection": [
+          "view"
+        ]
+      },
+      "create_button_present": true
+    },
+    {
+      "component": "WarehouseMasterView",
+      "role": "admin",
+      "permissions": {
+        "warehouse": [
+          "view",
+          "create"
+        ]
+      },
+      "create_button_present": true
+    },
+    {
+      "component": "WarehouseMasterView",
+      "role": "audit_custom",
+      "permissions": {
+        "warehouse": [
+          "view",
+          "create"
+        ]
+      },
+      "create_button_present": false
+    },
+    {
+      "component": "WarehouseMasterView",
+      "role": "manager",
+      "permissions": {
+        "warehouse": [
+          "view"
+        ]
+      },
+      "create_button_present": true
+    },
+    {
+      "component": "GoodsReceiptsView",
+      "role": "admin",
+      "permissions": {
+        "goods_receipt": [
+          "view",
+          "create"
+        ]
+      },
+      "create_button_present": true
+    },
+    {
+      "component": "GoodsReceiptsView",
+      "role": "audit_custom",
+      "permissions": {
+        "goods_receipt": [
+          "view",
+          "create"
+        ]
+      },
+      "create_button_present": false
+    },
+    {
+      "component": "GoodsReceiptsView",
+      "role": "manager",
+      "permissions": {
+        "goods_receipt": [
+          "view"
+        ]
+      },
+      "create_button_present": false
+    },
+    {
+      "component": "EntitiesAccessView",
+      "role": "admin",
+      "permissions": {
+        "entity": [
+          "view",
+          "create"
+        ]
+      },
+      "create_button_present": true
+    },
+    {
+      "component": "EntitiesAccessView",
+      "role": "audit_custom",
+      "permissions": {
+        "entity": [
+          "view",
+          "create"
+        ]
+      },
+      "create_button_present": false
+    },
+    {
+      "component": "EntitiesAccessView",
+      "role": "manager",
+      "permissions": {
+        "entity": [
+          "view"
+        ]
+      },
+      "create_button_present": false
+    }
+  ]
+}

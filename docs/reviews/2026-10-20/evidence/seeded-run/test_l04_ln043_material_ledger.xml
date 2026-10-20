@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="3" failures="0" skipped="0" tests="3" time="1.018" timestamp="2026-10-19T13:43:39.330771+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l04_ln043_material_ledger" name="test_t01_commit_600_then_partial_issue" time="0.307"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">..\integration_env\Lib\site-packages\pytest_asyncio\plugin.py:924: in pytest_fixture_setup
+    return (yield)
+            ^^^^^
+backend\tests\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l04_ln043_material_ledger" name="test_t03_actual_output_differs_from_forecast" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l04_ln043_material_ledger" name="test_t02_cancel_after_issue_partial_return_and_loss" time="0.002"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase></testsuite></testsuites>

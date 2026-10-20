@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="3" time="1.234" timestamp="2026-10-19T13:33:51.138046+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l02_ln023_t01_cross_surface_demo" name="test_c360_vs_aging_detail_all_customers" time="0.337"><failure message="AssertionError: no demo customers with orders&#10;assert []">backend\tests\test_l02_ln023_t01_cross_surface_demo.py:35: in test_c360_vs_aging_detail_all_customers
+    assert custs, "no demo customers with orders"
+E   AssertionError: no demo customers with orders
+E   assert []</failure></testcase><testcase classname="tests.test_l02_ln023_t01_cross_surface_demo" name="test_journey_split_invariant_all_orders" time="0.003" /><testcase classname="tests.test_l02_ln023_t01_cross_surface_demo" name="test_sales_kpi_kanda_invariant" time="0.013"><failure message="AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend\tests\test_l02_ln023_t01_cross_surface_demo.py:70: in test_sales_kpi_kanda_invariant
+    h = _login("sales.kanda@kainnusantara.id", "demo1234", "ent_kanda")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_cross_surface_demo.py:16: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase></testsuite></testsuites>

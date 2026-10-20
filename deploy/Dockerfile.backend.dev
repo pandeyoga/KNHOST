@@ -1,0 +1,20 @@
+# Kain Nusantara backend — image DEVELOPMENT lokal (dipakai docker-compose.dev.yml).
+# Hanya berisi OS + dependency Python; kode di-mount dari host ke /app supaya
+# uvicorn --reload langsung memuat perubahan. Produksi tetap deploy/Dockerfile.backend.
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 TZ=Asia/Jakarta
+
+# pango/harfbuzz/fonts = pustaka sistem yang dibutuhkan WeasyPrint (services/pdf_engine.py).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl build-essential libffi-dev tzdata \
+        libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY backend/requirements.txt /tmp/requirements.txt
+# emergentintegrations & litellm = wheel privat Emergent (tidak diimpor kode aplikasi) — dilewati.
+RUN grep -viE '^(emergentintegrations|litellm)([=<>@ ]|$)' /tmp/requirements.txt > /tmp/req.txt \
+    && pip install --no-cache-dir --default-timeout=120 --retries 10 -r /tmp/req.txt
+
+WORKDIR /app/backend
+EXPOSE 8001

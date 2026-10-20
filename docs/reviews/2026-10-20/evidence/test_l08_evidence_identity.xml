@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="10" time="2.049" timestamp="2026-10-19T13:36:11.239431+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l08_evidence_identity" name="test_t03_evidence_optional_by_default" time="0.292"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l08_evidence_identity.py:71: in test_t03_evidence_optional_by_default
+    r = create(h, shipped_roll(h), qty=1, submit_now=True)
+                  ^^^^^^^^^^^^^^^
+backend\tests\test_l08_evidence_identity.py:56: in shipped_roll
+    data = requests.get(f"{BASE}/sales-returns/returnable", headers=h, params={"order_id": SO["id"]}).json()
+                                                                                           ^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname="tests.test_l08_evidence_identity" name="test_t03_evidence_required_at_submit" time="0.021"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l08_evidence_identity.py:80: in test_t03_evidence_required_at_submit
+    roll = shipped_roll(h)
+           ^^^^^^^^^^^^^^^
+backend\tests\test_l08_evidence_identity.py:56: in shipped_roll
+    data = requests.get(f"{BASE}/sales-returns/returnable", headers=h, params={"order_id": SO["id"]}).json()
+                                                                                           ^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname="tests.test_l08_evidence_identity" name="test_t04_counts_follow_list_filters[]" time="0.071" /><testcase classname="tests.test_l08_evidence_identity" name="test_t04_counts_follow_list_filters[retur]" time="0.062" /><testcase classname="tests.test_l08_evidence_identity" name="test_t04_counts_follow_list_filters[bs]" time="0.083" /><testcase classname="tests.test_l08_evidence_identity" name="test_t04_counts_follow_list_filters[garansi]" time="0.075" /><testcase classname="tests.test_l08_evidence_identity" name="test_t01_whole_roll_keeps_identity_and_reverse_restores" time="0.001"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l08_evidence_identity.py:126: in test_t01_whole_roll_keeps_identity_and_reverse_restores
+    roll = shipped_roll(h)
+           ^^^^^^^^^^^^^^^
+backend\tests\test_l08_evidence_identity.py:56: in shipped_roll
+    data = requests.get(f"{BASE}/sales-returns/returnable", headers=h, params={"order_id": SO["id"]}).json()
+                                                                                           ^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname="tests.test_l08_evidence_identity" name="test_t01_partial_claim_becomes_numbered_child" time="0.001"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l08_evidence_identity.py:152: in test_t01_partial_claim_becomes_numbered_child
+    roll = shipped_roll(h, 1)
+           ^^^^^^^^^^^^^^^^^^
+backend\tests\test_l08_evidence_identity.py:56: in shipped_roll
+    data = requests.get(f"{BASE}/sales-returns/returnable", headers=h, params={"order_id": SO["id"]}).json()
+                                                                                           ^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase><testcase classname="tests.test_l08_evidence_identity" name="test_t02_parallel_cuts_unique_sequential_and_conserved" time="0.577" /><testcase classname="tests.test_l08_evidence_identity" name="test_t03_block_resend_to_origin_customer" time="0.030"><failure message="TypeError: 'NoneType' object is not subscriptable">backend\tests\test_l08_evidence_identity.py:184: in test_t03_block_resend_to_origin_customer
+    returned = DB.inventory_rolls.find_one({"return_id": {"$exists": True}, "returned_from_customer_ids": SO["customer_id"]})
+                                                                                                          ^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</failure></testcase></testsuite></testsuites>

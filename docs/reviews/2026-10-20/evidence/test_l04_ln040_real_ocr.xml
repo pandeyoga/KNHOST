@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.996" timestamp="2026-10-19T13:34:35.271078+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="tests.test_l04_ln040_real_ocr" time="0.000"><error message="collection failure">backend\tests\test_l04_ln040_real_ocr.py:86: in &lt;module&gt;
+    @pytest.mark.skipif(not _has_key(), reason="kunci OpenAI tidak ada")
+                            ^^^^^^^^^^
+backend\tests\test_l04_ln040_real_ocr.py:36: in _has_key
+    env_txt = open("/app/backend/.env").read()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: '/app/backend/.env'</error></testcase></testsuite></testsuites>

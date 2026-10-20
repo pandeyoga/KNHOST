@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="12" failures="0" skipped="0" tests="12" time="1.583" timestamp="2026-10-19T13:33:46.700521+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_baseline_invariants" time="0.597"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_stage1_customer360_journey_aging" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_stage1_home_kpi_deltas" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_stage1_sales_owner_journey" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_stage2_partial_shipment_split" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_stage2_home_kpi_deltas" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_stage3_payment_reduces_ledger" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_credit_limit_gating_uses_full_outstanding" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_cancelled_order_journey_split[cancelled]" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_cancelled_order_journey_split[expired]" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_after_uncancel_split_restored" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase><testcase classname="tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces" name="test_shipped_status_split_invariant" time="0.001"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;Email atau password tidak sesuai&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code&quot;">backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:37: in H
+    "sales": _login("sales@kainnusantara.id", "demo1234"),
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_ar_split_surfaces.py:23: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = &lt;Response [401]&gt;.status_code</error></testcase></testsuite></testsuites>

@@ -1,0 +1,58 @@
+EEEEEEEEE                                                                [100%]
+=================================== ERRORS ====================================
+_____ ERROR at setup of TestT01ARSplit.test_aging_totals_and_definitions ______
+backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'
+______ ERROR at setup of TestT01ARSplit.test_stage1_confirmed_unshipped _______
+backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'
+________ ERROR at setup of TestT01ARSplit.test_stage2_partial_shipment ________
+backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'
+___ ERROR at setup of TestT01ARSplit.test_stage3_partial_payment_idempotent ___
+backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'
+_ ERROR at setup of TestT01ARSplit.test_idempotency_key_different_payload_409 _
+backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'
+_ ERROR at setup of TestT02POClose.test_close_settlement_over_billed_over_paid _
+backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'
+________ ERROR at setup of TestT02POClose.test_retry_close_400_no_dup _________
+backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'
+_________ ERROR at setup of TestT02POClose.test_get_close_settlement __________
+backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'
+_______ ERROR at setup of TestT02POClose.test_variance_task_short_close _______
+backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l02_ln023_ar_ap_consistency.py::TestT01ARSplit::test_aging_totals_and_definitions
+ERROR backend\tests\test_l02_ln023_ar_ap_consistency.py::TestT01ARSplit::test_stage1_confirmed_unshipped
+ERROR backend\tests\test_l02_ln023_ar_ap_consistency.py::TestT01ARSplit::test_stage2_partial_shipment
+ERROR backend\tests\test_l02_ln023_ar_ap_consistency.py::TestT01ARSplit::test_stage3_partial_payment_idempotent
+ERROR backend\tests\test_l02_ln023_ar_ap_consistency.py::TestT01ARSplit::test_idempotency_key_different_payload_409
+ERROR backend\tests\test_l02_ln023_ar_ap_consistency.py::TestT02POClose::test_close_settlement_over_billed_over_paid
+ERROR backend\tests\test_l02_ln023_ar_ap_consistency.py::TestT02POClose::test_retry_close_400_no_dup
+ERROR backend\tests\test_l02_ln023_ar_ap_consistency.py::TestT02POClose::test_get_close_settlement
+ERROR backend\tests\test_l02_ln023_ar_ap_consistency.py::TestT02POClose::test_variance_task_short_close
+9 errors in 0.95s

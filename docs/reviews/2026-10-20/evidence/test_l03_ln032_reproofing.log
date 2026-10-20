@@ -1,0 +1,11 @@
+
+=================================== ERRORS ====================================
+_____________ ERROR collecting tests/test_l03_ln032_reproofing.py _____________
+backend\tests\test_l03_ln032_reproofing.py:15: in <module>
+    TPL = DB.product_templates.find_one({"status": "active"}, {"id": 1}, sort=[("name", 1)])["id"]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l03_ln032_reproofing.py - TypeError: 'NoneType' obje...
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 1.02s

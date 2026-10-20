@@ -1,0 +1,19 @@
+..FF..                                                                   [100%]
+================================== FAILURES ===================================
+______________________ test_t03_partitions_not_truncated ______________________
+backend\tests\test_l11_export_center.py:85: in test_t03_partitions_not_truncated
+    assert total > 5000
+E   assert 117 > 5000
+______________ test_ln113_t01_sales_cannot_inject_hidden_fields _______________
+backend\tests\test_l11_export_center.py:95: in test_ln113_t01_sales_cannot_inject_hidden_fields
+    s = _login("sales.kanda@kainnusantara.id", ent="ent_kanda")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l11_export_center.py:21: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l11_export_center.py::test_t03_partitions_not_truncated
+FAILED backend\tests\test_l11_export_center.py::test_ln113_t01_sales_cannot_inject_hidden_fields
+2 failed, 4 passed in 3.37s

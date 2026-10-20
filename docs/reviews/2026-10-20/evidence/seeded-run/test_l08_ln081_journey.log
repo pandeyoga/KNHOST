@@ -1,0 +1,11 @@
+
+=================================== ERRORS ====================================
+______________ ERROR collecting tests/test_l08_ln081_journey.py _______________
+backend\tests\test_l08_ln081_journey.py:13: in <module>
+    RCM_TRANSIT = DB.warehouses.find_one({"name": "Rancamalang · Gudang Transit"})["id"]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l08_ln081_journey.py - TypeError: 'NoneType' object ...
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.71s

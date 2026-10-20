@@ -1,0 +1,34 @@
+[
+  {
+    "id": "AUD-EXP-02",
+    "scenario": "Concurrent delete and insert between two actual export batches, same total row count",
+    "initial_ids": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "final_ids": [
+      "0",
+      "1",
+      "2",
+      "3"
+    ],
+    "exported_ids": [
+      "1",
+      "2",
+      "2",
+      "3"
+    ],
+    "written": 4,
+    "count_after": 4
+  },
+  {
+    "id": "AUD-MKL-02",
+    "scenario": "1001 matching loss detail rows",
+    "reported_events": 1001,
+    "detail_rows": 1000,
+    "expense_total": 10010.0,
+    "detail_expense_sum": 10000.0
+  }
+]

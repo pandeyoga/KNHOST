@@ -1,0 +1,56 @@
+[
+  {
+    "account": "admin@kainnusantara.id",
+    "login_http": 200,
+    "role": "admin",
+    "warehouse_permissions": [
+      "view",
+      "create",
+      "update",
+      "delete",
+      "import",
+      "export"
+    ],
+    "payment_variance_permissions": [
+      "view",
+      "decide"
+    ],
+    "warehouse_all_http": 200,
+    "warehouse_response": {
+      "count": 5
+    }
+  },
+  {
+    "account": "wh.admin@kainnusantara.id",
+    "login_http": 401
+  },
+  {
+    "account": "whadmin@kainnusantara.id",
+    "login_http": 200,
+    "role": "warehouse_admin",
+    "warehouse_permissions": [
+      "view",
+      "create",
+      "update"
+    ],
+    "payment_variance_permissions": null,
+    "warehouse_all_http": 403,
+    "warehouse_response": {
+      "detail": "Hanya admin/manajer/gudang yang boleh melihat seluruh gudang."
+    }
+  },
+  {
+    "account": "finance@kainnusantara.id",
+    "login_http": 200,
+    "role": "finance",
+    "warehouse_permissions": null,
+    "payment_variance_permissions": [
+      "view",
+      "decide"
+    ],
+    "warehouse_all_http": 403,
+    "warehouse_response": {
+      "detail": "Permission ditolak: warehouse.view"
+    }
+  }
+]

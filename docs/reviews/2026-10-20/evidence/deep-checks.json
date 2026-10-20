@@ -1,0 +1,43 @@
+[
+  {
+    "id": "AUD-RND-01",
+    "result": "reproduced",
+    "actual_status": "decided",
+    "decision_result": "pass",
+    "decision_round": "r2",
+    "types": [
+      "labdip",
+      "handfeel"
+    ],
+    "labdip_result": "acc",
+    "handfeel_result": "tolak",
+    "expected": "Do not certify both requested tests using ACC for only one type while the other type is rejected."
+  },
+  {
+    "id": "AUD-RND-02",
+    "result": "reproduced",
+    "actual": {
+      "design_id": "audit-design",
+      "design_version": 999
+    },
+    "expected": "Reject nonexistent artwork version 999."
+  },
+  {
+    "id": "AUD-RND-03",
+    "result": "reproduced",
+    "actual": {
+      "contract_id": "audit-contract",
+      "contract_number": "",
+      "contract_type": "purchase"
+    },
+    "expected": "Apply the active-contract filter from contract-options to direct submissions too; confirm whether historical contracts may be selected."
+  },
+  {
+    "id": "AUD-EXP-01",
+    "create_http": 200,
+    "job": "exj_d68af4d2f7e4",
+    "job_status": "done",
+    "download_http": 403,
+    "detail": "{\"detail\":{\"code\":\"ACCESS_CHANGED\",\"message\":\"Hak akses Anda berubah sejak export dibuat; file tidak dapat diunduh.\",\"fields\":[\"_rows\"],\"entities\":[]}}"
+  }
+]

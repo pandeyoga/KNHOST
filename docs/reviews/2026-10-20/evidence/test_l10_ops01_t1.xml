@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.833" timestamp="2026-10-19T13:36:47.232291+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="tests.test_l10_ops01_t1" time="0.000"><error message="collection failure">backend\tests\test_l10_ops01_t1.py:12: in &lt;module&gt;
+    _env = open(os.path.join(os.path.dirname(__file__), "..", ".env")).read()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\..\\.env'</error></testcase></testsuite></testsuites>

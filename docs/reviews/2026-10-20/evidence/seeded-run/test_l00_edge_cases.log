@@ -1,0 +1,37 @@
+EEEEE                                                                    [100%]
+=================================== ERRORS ====================================
+_____________ ERROR at setup of TestRevalFive.test_five_parallel ______________
+..\integration_env\Lib\site-packages\pytest_asyncio\plugin.py:924: in pytest_fixture_setup
+    return (yield)
+            ^^^^^
+backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+______________ ERROR at setup of TestRevalFive.test_index_exists ______________
+backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+________________ ERROR at setup of TestReturnEdges.test_setup _________________
+backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+______________ ERROR at setup of TestReturnEdges.test_validation ______________
+backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_______ ERROR at setup of TestReturnEdges.test_parallel_partial_returns _______
+backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l00_edge_cases.py::TestRevalFive::test_five_parallel
+ERROR backend\tests\test_l00_edge_cases.py::TestRevalFive::test_index_exists
+ERROR backend\tests\test_l00_edge_cases.py::TestReturnEdges::test_setup - Typ...
+ERROR backend\tests\test_l00_edge_cases.py::TestReturnEdges::test_validation
+ERROR backend\tests\test_l00_edge_cases.py::TestReturnEdges::test_parallel_partial_returns
+5 errors in 1.31s

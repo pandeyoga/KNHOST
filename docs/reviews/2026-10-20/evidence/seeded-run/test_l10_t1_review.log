@@ -1,0 +1,11 @@
+
+=================================== ERRORS ====================================
+________________ ERROR collecting tests/test_l10_t1_review.py _________________
+backend\tests\test_l10_t1_review.py:11: in <module>
+    _env = open(os.path.join(os.path.dirname(__file__), "..", ".env")).read()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\..\\.env'
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l10_t1_review.py - FileNotFoundError: [Errno 2] No s...
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.74s

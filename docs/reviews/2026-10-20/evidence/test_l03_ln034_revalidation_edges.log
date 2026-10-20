@@ -1,0 +1,11 @@
+
+=================================== ERRORS ====================================
+_________ ERROR collecting tests/test_l03_ln034_revalidation_edges.py _________
+backend\tests\test_l03_ln034_revalidation_edges.py:16: in <module>
+    PROD = PRODS[0]
+           ^^^^^^^^
+E   IndexError: list index out of range
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l03_ln034_revalidation_edges.py - IndexError: list i...
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 1.27s

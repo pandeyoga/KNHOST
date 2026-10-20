@@ -1,0 +1,49 @@
+EEEEE                                                                    [100%]
+=================================== ERRORS ====================================
+_________ ERROR at setup of test_t01_second_request_supersedes_first __________
+backend\tests\test_l02_ln022_special_price.py:25: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_special_price.py:20: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+_____ ERROR at setup of test_t02_price_follows_product_after_line_removed _____
+backend\tests\test_l02_ln022_special_price.py:25: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_special_price.py:20: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+_____ ERROR at setup of test_t01_allocation_changed_blocks_stale_approval _____
+backend\tests\test_l02_ln022_special_price.py:25: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_special_price.py:20: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+_______ ERROR at setup of test_t01_roll_swap_invalidates_pending_price ________
+backend\tests\test_l02_ln022_special_price.py:25: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_special_price.py:20: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+_______ ERROR at setup of test_evidence_form_path_goes_through_so_gate ________
+backend\tests\test_l02_ln022_special_price.py:25: in H
+    hs = {k: {"Authorization": f"Bearer {_tok(v)}", "X-Entity-Id": ENT}
+                                         ^^^^^^^
+backend\tests\test_l02_ln022_special_price.py:20: in _tok
+    return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'token'
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l02_ln022_special_price.py::test_t01_second_request_supersedes_first
+ERROR backend\tests\test_l02_ln022_special_price.py::test_t02_price_follows_product_after_line_removed
+ERROR backend\tests\test_l02_ln022_special_price.py::test_t01_allocation_changed_blocks_stale_approval
+ERROR backend\tests\test_l02_ln022_special_price.py::test_t01_roll_swap_invalidates_pending_price
+ERROR backend\tests\test_l02_ln022_special_price.py::test_evidence_form_path_goes_through_so_gate
+5 errors in 1.51s

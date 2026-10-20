@@ -1,0 +1,22 @@
+FFF.                                                                     [100%]
+================================== FAILURES ===================================
+_______________ test_t02_split_by_roll_provenance_not_latest_po _______________
+backend\tests\test_l09_ln093_ln090.py:51: in test_t02_split_by_roll_provenance_not_latest_po
+    {"supplier_id": PO_A["supplier_id"], "po_id": PO_A["id"], "po_number": PO_A["po_number"]},
+                    ^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+________________ test_unknown_provenance_needs_manual_supplier ________________
+backend\tests\test_l09_ln093_ln090.py:78: in test_unknown_provenance_needs_manual_supplier
+    json={"supplier_id": PO_A["supplier_id"], "bypass_import_policy": True})
+                         ^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_____________________ test_parallel_create_makes_one_set ______________________
+backend\tests\test_l09_ln093_ln090.py:84: in test_parallel_create_makes_one_set
+    rid, _ = make_case([{"supplier_id": PO_A["supplier_id"], "po_id": PO_A["id"]},
+                                        ^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l09_ln093_ln090.py::test_t02_split_by_roll_provenance_not_latest_po
+FAILED backend\tests\test_l09_ln093_ln090.py::test_unknown_provenance_needs_manual_supplier
+FAILED backend\tests\test_l09_ln093_ln090.py::test_parallel_create_makes_one_set
+3 failed, 1 passed in 1.04s

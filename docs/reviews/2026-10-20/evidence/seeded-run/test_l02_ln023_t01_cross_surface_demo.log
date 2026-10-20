@@ -1,0 +1,14 @@
+..F                                                                      [100%]
+================================== FAILURES ===================================
+_______________________ test_sales_kpi_kanda_invariant ________________________
+backend\tests\test_l02_ln023_t01_cross_surface_demo.py:70: in test_sales_kpi_kanda_invariant
+    h = _login("sales.kanda@kainnusantara.id", "demo1234", "ent_kanda")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l02_ln023_t01_cross_surface_demo.py:16: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l02_ln023_t01_cross_surface_demo.py::test_sales_kpi_kanda_invariant
+1 failed, 2 passed in 1.42s

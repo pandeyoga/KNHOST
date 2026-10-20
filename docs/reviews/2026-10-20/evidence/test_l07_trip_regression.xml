@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="2" tests="8" time="1.382" timestamp="2026-10-19T13:36:07.869606+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l07_trip_regression" name="test_candidates_only_ksc" time="0.311"><failure message="assert ([])">backend\tests\test_l07_trip_regression.py:58: in test_candidates_only_ksc
+    assert c and all(x["order_number"].startswith("KSC/") for x in c)
+E   assert ([])</failure></testcase><testcase classname="tests.test_l07_trip_regression" name="test_picking_list_shape_and_errors" time="0.027"><failure message="assert 400 == 200&#10; +  where 400 = &lt;Response [400]&gt;.status_code">backend\tests\test_l07_trip_regression.py:67: in test_picking_list_shape_and_errors
+    assert r.status_code == 200
+E   assert 400 == 200
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase><testcase classname="tests.test_l07_trip_regression" name="test_trip_check_rows" time="0.028"><failure message="assert 400 == 200&#10; +  where 400 = &lt;Response [400]&gt;.status_code">backend\tests\test_l07_trip_regression.py:84: in test_trip_check_rows
+    assert r.status_code == 200
+E   assert 400 == 200
+E    +  where 400 = &lt;Response [400]&gt;.status_code</failure></testcase><testcase classname="tests.test_l07_trip_regression" name="test_trip_forbidden_for_sales" time="0.282"><skipped type="pytest.skip" message="login sales@kainnusantara.id failed">C:\Users\abc\Documents\Codex\2026-09-28\sya\work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l07_trip_regression.py:17: login sales@kainnusantara.id failed</skipped></testcase><testcase classname="tests.test_l07_trip_regression" name="test_multi_order_delivery_full" time="0.002"><failure message="KeyError: 'KSC/SJ-00001'">backend\tests\test_l07_trip_regression.py:103: in test_multi_order_delivery_full
+    ids = [s["KSC/SJ-00001"], s["KSC/SJ-00002"], s["KSC/SJ-00003"], s["KSC/SJ-00004"]]
+           ^^^^^^^^^^^^^^^^^
+E   KeyError: 'KSC/SJ-00001'</failure></testcase><testcase classname="tests.test_l07_trip_regression" name="test_pickup_order_cannot_combine" time="0.003"><failure message="KeyError: 'KSC/SJ-00001'">backend\tests\test_l07_trip_regression.py:137: in test_pickup_order_cannot_combine
+    json={"shipment_ids": [s["KSC/SJ-00001"], s["KSC/SJ-00003"]], "mode": "self_pickup"})
+                           ^^^^^^^^^^^^^^^^^
+E   KeyError: 'KSC/SJ-00001'</failure></testcase><testcase classname="tests.test_l07_trip_regression" name="test_single_order_delivery_and_transition" time="0.002"><failure message="KeyError: 'KSC/SJ-00002'">backend\tests\test_l07_trip_regression.py:156: in test_single_order_delivery_and_transition
+    json={"shipment_ids": [s["KSC/SJ-00002"]], "mode": "expedition", "courier_name": "TEST_JNE"})
+                           ^^^^^^^^^^^^^^^^^
+E   KeyError: 'KSC/SJ-00002'</failure></testcase><testcase classname="tests.test_l07_trip_regression" name="test_driver_list_still_works" time="0.007"><skipped type="pytest.skip" message="login driver@kainnusantara.id failed">C:\Users\abc\Documents\Codex\2026-09-28\sya\work\KNHOST-plan-audit-2026-10-19\backend\tests\test_l07_trip_regression.py:17: login driver@kainnusantara.id failed</skipped></testcase></testsuite></testsuites>

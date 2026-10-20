@@ -1,0 +1,11 @@
+
+=================================== ERRORS ====================================
+_____________ ERROR collecting tests/test_l10_ln101_roll_count.py _____________
+backend\tests\test_l10_ln101_roll_count.py:14: in <module>
+    ZONE = next(z for z in WH_DOC["zones"] if z["id"] == "zone_sim_wh_jkt_w")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   StopIteration
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l10_ln101_roll_count.py - StopIteration
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.73s

@@ -1,0 +1,2865 @@
+[
+  {
+    "module": "test_l00_edge_cases",
+    "test": "test_five_parallel",
+    "class": "tests.test_l00_edge_cases.TestRevalFive",
+    "status": "error",
+    "detail": "..\\integration_env\\Lib\\site-packages\\pytest_asyncio\\plugin.py:924: in pytest_fixture_setup\n    return (yield)\n            ^^^^^\nbackend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l00_edge_cases",
+    "test": "test_index_exists",
+    "class": "tests.test_l00_edge_cases.TestRevalFive",
+    "status": "error",
+    "detail": "backend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l00_edge_cases",
+    "test": "test_setup",
+    "class": "tests.test_l00_edge_cases.TestReturnEdges",
+    "status": "error",
+    "detail": "backend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l00_edge_cases",
+    "test": "test_validation",
+    "class": "tests.test_l00_edge_cases.TestReturnEdges",
+    "status": "error",
+    "detail": "backend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l00_edge_cases",
+    "test": "test_parallel_partial_returns",
+    "class": "tests.test_l00_edge_cases.TestReturnEdges",
+    "status": "error",
+    "detail": "backend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l00_p05_open_issues",
+    "test": "test_parallel_requests_only_one_created",
+    "class": "tests.test_l00_p05_open_issues.TestRevalidationRace",
+    "status": "error",
+    "detail": "backend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l00_p05_open_issues",
+    "test": "test_cancel_frees_slot",
+    "class": "tests.test_l00_p05_open_issues.TestRevalidationRace",
+    "status": "error",
+    "detail": "backend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l00_p05_open_issues",
+    "test": "test_cancel_after_issue",
+    "class": "tests.test_l00_p05_open_issues.TestPartialMaterialReturn",
+    "status": "error",
+    "detail": "backend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l00_p05_open_issues",
+    "test": "test_partner_rolls_and_partial_return",
+    "class": "tests.test_l00_p05_open_issues.TestPartialMaterialReturn",
+    "status": "error",
+    "detail": "backend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l00_p05_open_issues",
+    "test": "test_return_rest_closes_step_and_wip_zero",
+    "class": "tests.test_l00_p05_open_issues.TestPartialMaterialReturn",
+    "status": "error",
+    "detail": "backend\\tests\\test_l00_p05_open_issues.py:20: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_custom_role",
+    "test": "test_effective_permission_same_on_api",
+    "class": "tests.test_l01_custom_role",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_custom_role",
+    "test": "test_hidden_tabs_roundtrip_and_rename_keeps_perms",
+    "class": "tests.test_l01_custom_role",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_custom_role",
+    "test": "test_cannot_edit_own_role",
+    "class": "tests.test_l01_custom_role",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_dataset_edge",
+    "test": "test_template_download",
+    "class": "tests.test_l01_dataset_edge.TestDatasetEdge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_dataset_edge",
+    "test": "test_empty_file_400",
+    "class": "tests.test_l01_dataset_edge.TestDatasetEdge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_dataset_edge",
+    "test": "test_semicolon_csv",
+    "class": "tests.test_l01_dataset_edge.TestDatasetEdge",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_dataset_edge.py:51: no free product/supplier pair"
+  },
+  {
+    "module": "test_l01_dataset_edge",
+    "test": "test_reimport_after_rollback_reactivates_supplier_item",
+    "class": "tests.test_l01_dataset_edge.TestDatasetEdge",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_dataset_edge.py:58: no free product/supplier pair"
+  },
+  {
+    "module": "test_l01_dataset_edge",
+    "test": "test_rollback_twice_409",
+    "class": "tests.test_l01_dataset_edge.TestDatasetEdge",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_dataset_edge.py:74: no free product/supplier pair"
+  },
+  {
+    "module": "test_l01_dataset_edge",
+    "test": "test_manager_access",
+    "class": "tests.test_l01_dataset_edge.TestDatasetEdge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_dataset_edge",
+    "test": "test_future_range_empty",
+    "class": "tests.test_l01_dataset_edge.TestRecapFilters",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_dataset_edge",
+    "test": "test_partner_filter",
+    "class": "tests.test_l01_dataset_edge.TestRecapFilters",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_dataset_edge",
+    "test": "test_rollback_older_batch_while_newer_committed_409",
+    "class": "tests.test_l01_dataset_edge.TestDatasetLifo",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_dataset_edge.py:107: no free product/supplier pair"
+  },
+  {
+    "module": "test_l01_dataset_edge",
+    "test": "test_existing_inactive_supplier_item_reactivated_then_restored",
+    "class": "tests.test_l01_dataset_edge.TestDatasetLifo",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_dataset_edge.py:123: no inactive supplier_item"
+  },
+  {
+    "module": "test_l01_dataset_edge",
+    "test": "test_two_skus_same_supplier_article_code_no_500",
+    "class": "tests.test_l01_dataset_edge.TestDatasetLifo",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_dataset_edge.py:142: need 2 free SKUs"
+  },
+  {
+    "module": "test_l01_dataset_recap",
+    "test": "test_sales_forbidden",
+    "class": "tests.test_l01_dataset_recap.TestClientDataset",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_dataset_recap.py:25: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l01_dataset_recap.py:14: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l01_dataset_recap",
+    "test": "test_dry_run_reports_without_writing",
+    "class": "tests.test_l01_dataset_recap.TestClientDataset",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l01_dataset_recap.py:45: in test_dry_run_reports_without_writing\n    files={\"file\": (\"ds.csv\", _csv(p, sup), \"text/csv\")})\n                              ^^^^^^^^^^^^\nbackend\\tests\\test_l01_dataset_recap.py:31: in _csv\n    f\",,{p['sku']},finished,knitting,,,{sup['code']},TEST-L01-SUP,Test Item,Hitam Test,TST-01,TEST_L01 Hitam\\n\"\n         ^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_dataset_recap",
+    "test": "test_commit_then_rollback",
+    "class": "tests.test_l01_dataset_recap.TestClientDataset",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l01_dataset_recap.py:59: in test_commit_then_rollback\n    b, p, sup = self.S[\"batch\"], self.S[\"p\"], self.S[\"sup\"]\n                ^^^^^^^^^^^^^^^\nE   KeyError: 'batch'"
+  },
+  {
+    "module": "test_l01_dataset_recap",
+    "test": "test_recap_shape_and_permission",
+    "class": "tests.test_l01_dataset_recap.TestClaimRecap",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_dataset_recap.py:25: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l01_dataset_recap.py:14: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l01_dataset_recap",
+    "test": "test_recap_matches_posted_losses",
+    "class": "tests.test_l01_dataset_recap.TestClaimRecap",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_fabric_xlsx_color",
+    "test": "test_add_fabric_type_and_import_accepts_it",
+    "class": "tests.test_l01_fabric_xlsx_color",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l01_fabric_xlsx_color.py:33: in test_add_fabric_type_and_import_accepts_it\n    csv = f\"kode_artikel,nama_artikel,sku,tahap,jenis_kain\\n,,{p['sku']},finished,{code}\\n\"\n                                                               ^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_fabric_xlsx_color",
+    "test": "test_recap_xlsx",
+    "class": "tests.test_l01_fabric_xlsx_color",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l01_fabric_xlsx_color.py:47: in test_recap_xlsx\n    assert r.status_code == 200 and \"spreadsheetml\" in r.headers[\"content-type\"]\nE   assert (500 == 200)\nE    +  where 500 = <Response [500]>.status_code"
+  },
+  {
+    "module": "test_l01_fabric_xlsx_color",
+    "test": "test_products_carry_supplier_color_code",
+    "class": "tests.test_l01_fabric_xlsx_color",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_sales_never_receives_grade_lot_origin",
+    "class": "tests.test_l01_grade_visibility.TestFieldVisibility",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_grade_visibility.py:28: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l01_grade_visibility.py:17: in _login\n    r.raise_for_status()\n..\\integration_env\\Lib\\site-packages\\requests\\models.py:1167: in raise_for_status\n    raise HTTPError(http_error_msg, response=self)\nE   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login"
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_sales_admin_and_admin_still_see",
+    "class": "tests.test_l01_grade_visibility.TestFieldVisibility",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_grade_visibility.py:33: in sadm\n    return _login(\"salesadmin.kanda@kainnusantara.id\", \"demo1234\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l01_grade_visibility.py:17: in _login\n    r.raise_for_status()\n..\\integration_env\\Lib\\site-packages\\requests\\models.py:1167: in raise_for_status\n    raise HTTPError(http_error_msg, response=self)\nE   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login"
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_sales_grade_filter_is_ignored",
+    "class": "tests.test_l01_grade_visibility.TestFieldVisibility",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_grade_visibility.py:28: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l01_grade_visibility.py:17: in _login\n    r.raise_for_status()\n..\\integration_env\\Lib\\site-packages\\requests\\models.py:1167: in raise_for_status\n    raise HTTPError(http_error_msg, response=self)\nE   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login"
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_grade_cannot_be_opened_for_sales_pov",
+    "class": "tests.test_l01_grade_visibility.TestFieldVisibility",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_grade_visibility.py:28: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l01_grade_visibility.py:17: in _login\n    r.raise_for_status()\n..\\integration_env\\Lib\\site-packages\\requests\\models.py:1167: in raise_for_status\n    raise HTTPError(http_error_msg, response=self)\nE   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login"
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_pdf_redacts_for_sales",
+    "class": "tests.test_l01_grade_visibility.TestFieldVisibility",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_grade_visibility.py:28: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l01_grade_visibility.py:17: in _login\n    r.raise_for_status()\n..\\integration_env\\Lib\\site-packages\\requests\\models.py:1167: in raise_for_status\n    raise HTTPError(http_error_msg, response=self)\nE   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login"
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_owner_active_set",
+    "class": "tests.test_l01_grade_visibility.TestGradeMaster",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l01_grade_visibility.py:102: in test_owner_active_set\n    assert rows[\"B1\"][\"rolls_using\"] > 0                      # histori tetap ada\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   assert 0 > 0"
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_sales_cannot_manage",
+    "class": "tests.test_l01_grade_visibility.TestGradeMaster",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_grade_visibility.py:28: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l01_grade_visibility.py:17: in _login\n    r.raise_for_status()\n..\\integration_env\\Lib\\site-packages\\requests\\models.py:1167: in raise_for_status\n    raise HTTPError(http_error_msg, response=self)\nE   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login"
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_add_new_grade_used_without_code_change",
+    "class": "tests.test_l01_grade_visibility.TestGradeMaster",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_inactive_grade_rejected_on_new_input",
+    "class": "tests.test_l01_grade_visibility.TestGradeMaster",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_rank_conflict",
+    "class": "tests.test_l01_grade_visibility.TestGradeMaster",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_min_rank_semantics",
+    "class": "tests.test_l01_grade_visibility.TestCustomerMinimumGrade",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_api_save_and_read",
+    "class": "tests.test_l01_grade_visibility.TestCustomerMinimumGrade",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_revoked_default_stays_revoked_after_sync",
+    "class": "tests.test_l01_grade_visibility.TestPermissionDefaultsNotRevived",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l01_grade_visibility",
+    "test": "test_sales_sees_masked_sku_and_name",
+    "class": "tests.test_l01_grade_visibility.TestSkuAndNameMasking",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_grade_visibility.py:28: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l01_grade_visibility.py:17: in _login\n    r.raise_for_status()\n..\\integration_env\\Lib\\site-packages\\requests\\models.py:1167: in raise_for_status\n    raise HTTPError(http_error_msg, response=self)\nE   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login"
+  },
+  {
+    "module": "test_l01_material_loss",
+    "test": "test_setup_cancelled_mko",
+    "class": "tests.test_l01_material_loss.TestMaterialLoss",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_material_loss.py:21: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_material_loss",
+    "test": "test_sales_cannot_record",
+    "class": "tests.test_l01_material_loss.TestMaterialLoss",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_material_loss.py:21: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_material_loss",
+    "test": "test_over_tolerance_pending_and_sod",
+    "class": "tests.test_l01_material_loss.TestMaterialLoss",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_material_loss.py:21: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_material_loss",
+    "test": "test_within_tolerance_auto_and_closes",
+    "class": "tests.test_l01_material_loss.TestMaterialLoss",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_material_loss.py:21: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_material_loss",
+    "test": "test_setup",
+    "class": "tests.test_l01_material_loss.TestLossDeductBillAndTolerance",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_material_loss.py:21: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_material_loss",
+    "test": "test_step_tolerance_endpoint",
+    "class": "tests.test_l01_material_loss.TestLossDeductBillAndTolerance",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_material_loss.py:21: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_material_loss",
+    "test": "test_deduct_bill",
+    "class": "tests.test_l01_material_loss.TestLossDeductBillAndTolerance",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_material_loss.py:21: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_material_loss",
+    "test": "test_cleanup",
+    "class": "tests.test_l01_material_loss.TestLossDeductBillAndTolerance",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_material_loss.py:21: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_sales_field_hidden_api",
+    "test": "test_list_no_forbidden_keys[/api/products]",
+    "class": "tests.test_l01_sales_field_hidden_api.TestSalesHidden",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_sales_field_hidden_api.py:58: login sales.kanda@kainnusantara.id failed 401"
+  },
+  {
+    "module": "test_l01_sales_field_hidden_api",
+    "test": "test_list_no_forbidden_keys[/api/inventory/rolls]",
+    "class": "tests.test_l01_sales_field_hidden_api.TestSalesHidden",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_sales_field_hidden_api.py:58: login sales.kanda@kainnusantara.id failed 401"
+  },
+  {
+    "module": "test_l01_sales_field_hidden_api",
+    "test": "test_list_no_forbidden_keys[/api/sales-orders]",
+    "class": "tests.test_l01_sales_field_hidden_api.TestSalesHidden",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_sales_field_hidden_api.py:58: login sales.kanda@kainnusantara.id failed 401"
+  },
+  {
+    "module": "test_l01_sales_field_hidden_api",
+    "test": "test_list_no_forbidden_keys[/api/sales/stock-summary?product_id=prod_batik_mega]",
+    "class": "tests.test_l01_sales_field_hidden_api.TestSalesHidden",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_sales_field_hidden_api.py:58: login sales.kanda@kainnusantara.id failed 401"
+  },
+  {
+    "module": "test_l01_sales_field_hidden_api",
+    "test": "test_product_detail",
+    "class": "tests.test_l01_sales_field_hidden_api.TestSalesHidden",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_sales_field_hidden_api.py:68: login sales.kanda@kainnusantara.id failed 401"
+  },
+  {
+    "module": "test_l01_sales_field_hidden_api",
+    "test": "test_so_detail",
+    "class": "tests.test_l01_sales_field_hidden_api.TestSalesHidden",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_sales_field_hidden_api.py:78: login sales.kanda@kainnusantara.id failed 401"
+  },
+  {
+    "module": "test_l01_sales_field_hidden_api",
+    "test": "test_admin_rolls_grade",
+    "class": "tests.test_l01_sales_field_hidden_api.TestPrivilegedSeesGrade",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l01_sales_field_hidden_api.py:91: in test_admin_rolls_grade\n    assert \"grade\" in _keys(r.json())\nE   AssertionError: assert 'grade' in set()\nE    +  where set() = _keys([])\nE    +    where [] = json()\nE    +      where json = <Response [200]>.json"
+  },
+  {
+    "module": "test_l01_sales_field_hidden_api",
+    "test": "test_salesadmin_rolls_grade",
+    "class": "tests.test_l01_sales_field_hidden_api.TestPrivilegedSeesGrade",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l01_sales_field_hidden_api.py:93: login salesadmin.kanda@kainnusantara.id failed 401"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_products_masked_for_sales",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestSkuMask",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_sku_mask_settle_tol.py:20: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\", ent=\"ent_kanda\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_p05_acceptance_acc31_33_34.py:21: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_admin_sees_raw",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestSkuMask",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l01_sku_mask_settle_tol.py:47: in test_admin_sees_raw\n    assert \"KNKNT0005-I-10XX-XA-XX-XX\" in skus\nE   AssertionError: assert 'KNKNT0005-I-10XX-XA-XX-XX' in {'BNG-KTN-001', 'BNG-KTN-SISA', 'BTK-MEGA-001', 'BTK-MEGA-002', 'BTK-MEGA-003', 'DNM-BDG-001', ...}"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_sales_orders_and_rolls_masked",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestSkuMask",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_sku_mask_settle_tol.py:20: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\", ent=\"ent_kanda\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_p05_acceptance_acc31_33_34.py:21: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_so_detail_masked",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestSkuMask",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_sku_mask_settle_tol.py:20: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\", ent=\"ent_kanda\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_p05_acceptance_acc31_33_34.py:21: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_grade_suffix_stripped_where_no_sku_sibling",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestSkuMask",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_sku_mask_settle_tol.py:20: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\", ent=\"ent_kanda\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_p05_acceptance_acc31_33_34.py:21: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_names_with_grade_and_lot_inside_not_leaking",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestSkuMask",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_sku_mask_settle_tol.py:20: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\", ent=\"ent_kanda\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_p05_acceptance_acc31_33_34.py:21: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_setup",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestTagihGantiAndTolerance",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l01_sku_mask_settle_tol.py:90: in test_setup\n    mko = _create(adm, 30, \"TEST_L01 tagih ganti\")\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_p05_acceptance_acc31_33_34.py:79: in _create\n    st = t[\"steps\"][0]\n         ^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_tolerance_validation",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestTagihGantiAndTolerance",
+    "status": "error",
+    "detail": "backend\\tests\\test_l01_sku_mask_settle_tol.py:20: in sales\n    return _login(\"sales.kanda@kainnusantara.id\", \"demo1234\", ent=\"ent_kanda\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_p05_acceptance_acc31_33_34.py:21: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_potong_bon_without_bill_400",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestTagihGantiAndTolerance",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l01_sku_mask_settle_tol.py:109: in test_potong_bon_without_bill_400\n    url = f\"{BASE}/api/makloon-orders/{self.S['mko']['id']}/steps/1/material-loss\"\n                                       ^^^^^^^^^^^^^\nE   KeyError: 'mko'"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_tagih_ganti_path",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestTagihGantiAndTolerance",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l01_sku_mask_settle_tol.py:122: in test_tagih_ganti_path\n    url = f\"{BASE}/api/makloon-orders/{self.S['mko']['id']}/steps/1/material-loss/{self.S['loss']['id']}/decide\"\n                                       ^^^^^^^^^^^^^\nE   KeyError: 'mko'"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_tolerance_after_closed_409",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestTagihGantiAndTolerance",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l01_sku_mask_settle_tol.py:134: in test_tolerance_after_closed_409\n    url = f\"{BASE}/api/makloon-orders/{self.S['mko']['id']}/steps/1/tolerance\"\n                                       ^^^^^^^^^^^^^\nE   KeyError: 'mko'"
+  },
+  {
+    "module": "test_l01_sku_mask_settle_tol",
+    "test": "test_patch_contract_tolerance",
+    "class": "tests.test_l01_sku_mask_settle_tol.TestContractTolerance",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln020_ln021",
+    "test": "test_t01_round_up_and_down_consistent_to_so_detail",
+    "class": "tests.test_l02_ln020_ln021",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln020_ln021",
+    "test": "test_t02_concurrent_orders_same_rolls_single_reservation",
+    "class": "tests.test_l02_ln020_ln021",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln020_ln021",
+    "test": "test_ln020_t01_cut_reservation_not_counted_free",
+    "class": "tests.test_l02_ln020_ln021",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln020_t02_t03_extra",
+    "test": "test_sales_can_read_and_is_scoped",
+    "class": "tests.test_l02_ln020_t02_t03_extra.TestKeepPendingScope",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l02_ln020_t02_t03_extra.py:30: in test_sales_can_read_and_is_scoped\n    uid = DB.users.find_one({\"email\": \"sales.kanda@kainnusantara.id\"}, {\"_id\": 0, \"id\": 1})[\"id\"]\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l02_ln020_t02_t03_extra",
+    "test": "test_sales_admin_sees_entity_superset",
+    "class": "tests.test_l02_ln020_t02_t03_extra.TestKeepPendingScope",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l02_ln020_t02_t03_extra.py:43: in test_sales_admin_sees_entity_superset\n    s = requests.get(f\"{BASE}/sales/keep-pending\", headers=_h(\"sales.kanda@kainnusantara.id\", ent=\"ent_kanda\")).json()\n                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l02_ln020_t02_t03_extra.py:21: in _h\n    h = {\"Authorization\": f\"Bearer {_tok(email, pwd)}\"}\n                                    ^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l02_ln020_t02_t03_extra.py:16: in _tok\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l02_ln020_t02_t03_extra",
+    "test": "test_pending_no_supplier_or_owner_names",
+    "class": "tests.test_l02_ln020_t02_t03_extra.TestKeepPendingScope",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l02_ln020_t02_t03_extra.py:51: in test_pending_no_supplier_or_owner_names\n    d = requests.get(f\"{BASE}/sales/keep-pending\", headers=_h(\"sales.kanda@kainnusantara.id\", ent=\"ent_kanda\")).json()\n                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l02_ln020_t02_t03_extra.py:21: in _h\n    h = {\"Authorization\": f\"Bearer {_tok(email, pwd)}\"}\n                                    ^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l02_ln020_t02_t03_extra.py:16: in _tok\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l02_ln020_t02_t03_extra",
+    "test": "test_unauth_401",
+    "class": "tests.test_l02_ln020_t02_t03_extra.TestKeepPendingScope",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln020_t02_t03_extra",
+    "test": "test_round_down_long_roll_first",
+    "class": "tests.test_l02_ln020_t02_t03_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln020_t02_t03_extra",
+    "test": "test_exact_target_no_round",
+    "class": "tests.test_l02_ln020_t02_t03_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln020_t02_t03_extra",
+    "test": "test_infeasible_take_all",
+    "class": "tests.test_l02_ln020_t02_t03_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln020_t02_t03_extra",
+    "test": "test_stock_summary_shape",
+    "class": "tests.test_l02_ln020_t02_t03_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln020_t02_t03_extra",
+    "test": "test_foreign_so_hidden_from_sales_visible_to_admin",
+    "class": "tests.test_l02_ln020_t02_t03_extra",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l02_ln020_t02_t03_extra.py:124: in test_foreign_so_hidden_from_sales_visible_to_admin\n    headers=_h(\"sales.kanda@kainnusantara.id\", ent=\"ent_kanda\")).json()\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l02_ln020_t02_t03_extra.py:21: in _h\n    h = {\"Authorization\": f\"Bearer {_tok(email, pwd)}\"}\n                                    ^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l02_ln020_t02_t03_extra.py:16: in _tok\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l02_ln022_form_path_retest",
+    "test": "test_form_path_salesadmin_and_supersede",
+    "class": "tests.test_l02_ln022_form_path_retest",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_form_path_retest",
+    "test": "test_reject_via_price_approvals_mirrors_so",
+    "class": "tests.test_l02_ln022_form_path_retest",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_form_path_retest",
+    "test": "test_sod_own_request_price_approvals_403",
+    "class": "tests.test_l02_ln022_form_path_retest",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_form_path_retest",
+    "test": "test_sod_own_request_so_panel",
+    "class": "tests.test_l02_ln022_form_path_retest",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_form_path_retest",
+    "test": "test_stale_via_price_approvals_409",
+    "class": "tests.test_l02_ln022_form_path_retest",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_form_path_retest",
+    "test": "test_concurrent_submits",
+    "class": "tests.test_l02_ln022_form_path_retest",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_ln021_extra",
+    "test": "test_superseded_fields_and_reject_superseded",
+    "class": "tests.test_l02_ln022_ln021_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_ln021_extra",
+    "test": "test_stale_reject_works_and_not_locked",
+    "class": "tests.test_l02_ln022_ln021_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_ln021_extra",
+    "test": "test_parallel_approve_only_one_wins",
+    "class": "tests.test_l02_ln022_ln021_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_ln021_extra",
+    "test": "test_reallocate_updates_roll_lines_roll_mode",
+    "class": "tests.test_l02_ln022_ln021_extra",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l02_ln022_ln021_extra.py:118: in test_reallocate_updates_roll_lines_roll_mode\n    assert r1, \"no spare roll\"\nE   AssertionError: no spare roll\nE   assert None"
+  },
+  {
+    "module": "test_l02_ln022_special_price",
+    "test": "test_t01_second_request_supersedes_first",
+    "class": "tests.test_l02_ln022_special_price",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_special_price",
+    "test": "test_t02_price_follows_product_after_line_removed",
+    "class": "tests.test_l02_ln022_special_price",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_special_price",
+    "test": "test_t01_allocation_changed_blocks_stale_approval",
+    "class": "tests.test_l02_ln022_special_price",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_special_price",
+    "test": "test_t01_roll_swap_invalidates_pending_price",
+    "class": "tests.test_l02_ln022_special_price",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_special_price",
+    "test": "test_evidence_form_path_goes_through_so_gate",
+    "class": "tests.test_l02_ln022_special_price",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note",
+    "test": "test_credit_note_posts_journal_and_reduces_ar_without_editing_order",
+    "class": "tests.test_l02_ln022_t03_amendment_note",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note",
+    "test": "test_debit_note_recorded_waits_for_billing_rule",
+    "class": "tests.test_l02_ln022_t03_amendment_note",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_edge",
+    "test": "test_pending_note_blocks_same_key_but_not_other_field",
+    "class": "tests.test_l02_ln022_t03_amendment_note_edge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_edge",
+    "test": "test_reject_frees_key",
+    "class": "tests.test_l02_ln022_t03_amendment_note_edge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_edge",
+    "test": "test_stale_pending_note_cannot_be_approved",
+    "class": "tests.test_l02_ln022_t03_amendment_note_edge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_edge",
+    "test": "test_concurrent_proposals_same_key_single_pending",
+    "class": "tests.test_l02_ln022_t03_amendment_note_edge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_edge",
+    "test": "test_line_discount_credit_note_and_repeat_blocked",
+    "class": "tests.test_l02_ln022_t03_amendment_note_edge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_edge",
+    "test": "test_order_discount_credit_note_and_repeat_blocked",
+    "class": "tests.test_l02_ln022_t03_amendment_note_edge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_edge",
+    "test": "test_cross_field_pending_notes_do_not_over_credit",
+    "class": "tests.test_l02_ln022_t03_amendment_note_edge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_edge",
+    "test": "test_unbilled_debit_note_then_credit_note_ar",
+    "class": "tests.test_l02_ln022_t03_amendment_note_edge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_edge",
+    "test": "test_unissued_re_derive_still_recalculates",
+    "class": "tests.test_l02_ln022_t03_amendment_note_edge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_status_marks_issued[shipped]",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_status_marks_issued[partially_shipped]",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_status_marks_issued[done]",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_sales_order_je_marks_issued",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_void_je_not_issued",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_not_issued_re_derive_applies",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_credit_note_partial_paid_splits_ar_and_store_credit",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_credit_note_fully_paid_all_store_credit",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_credit_note_double_approve_and_self_approve",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_debit_note_no_journal_order_unchanged",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_qty_decrease_below_shipped_blocked",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l02_ln022_t03_amendment_note_extended.py:214: in test_qty_decrease_below_shipped_blocked\n    assert r.status_code == 400 and \"reservasi\" in r.text\nE   assert (200 == 400)\nE    +  where 200 = <Response [200]>.status_code"
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_repeat_same_price_correction_does_not_double_credit",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln022_t03_amendment_note_extended",
+    "test": "test_second_correction_credits_only_increment",
+    "class": "tests.test_l02_ln022_t03_amendment_note_extended",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_ar_ap_consistency",
+    "test": "test_aging_totals_and_definitions",
+    "class": "tests.test_l02_ln023_ar_ap_consistency.TestT01ARSplit",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_ar_ap_consistency",
+    "test": "test_stage1_confirmed_unshipped",
+    "class": "tests.test_l02_ln023_ar_ap_consistency.TestT01ARSplit",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_ar_ap_consistency",
+    "test": "test_stage2_partial_shipment",
+    "class": "tests.test_l02_ln023_ar_ap_consistency.TestT01ARSplit",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_ar_ap_consistency",
+    "test": "test_stage3_partial_payment_idempotent",
+    "class": "tests.test_l02_ln023_ar_ap_consistency.TestT01ARSplit",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_ar_ap_consistency",
+    "test": "test_idempotency_key_different_payload_409",
+    "class": "tests.test_l02_ln023_ar_ap_consistency.TestT01ARSplit",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_ar_ap_consistency",
+    "test": "test_close_settlement_over_billed_over_paid",
+    "class": "tests.test_l02_ln023_ar_ap_consistency.TestT02POClose",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_ar_ap_consistency",
+    "test": "test_retry_close_400_no_dup",
+    "class": "tests.test_l02_ln023_ar_ap_consistency.TestT02POClose",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_ar_ap_consistency",
+    "test": "test_get_close_settlement",
+    "class": "tests.test_l02_ln023_ar_ap_consistency.TestT02POClose",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_ar_ap_consistency",
+    "test": "test_variance_task_short_close",
+    "class": "tests.test_l02_ln023_ar_ap_consistency.TestT02POClose",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l02_ln023_ar_ap_consistency.py:225: in test_variance_task_short_close\n    out = subprocess.run([\"python\", \"-c\", code], cwd=\"/app/backend\", capture_output=True, text=True)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nC:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\subprocess.py:548: in run\n    with Popen(*popenargs, **kwargs) as process:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nC:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\subprocess.py:1026: in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\nC:\\Users\\abc\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\subprocess.py:1538: in _execute_child\n    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,\nE   NotADirectoryError: [WinError 267] The directory name is invalid"
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_baseline_invariants",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_stage1_customer360_journey_aging",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_stage1_home_kpi_deltas",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_stage1_sales_owner_journey",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_stage2_partial_shipment_split",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_stage2_home_kpi_deltas",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_stage3_payment_reduces_ledger",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_credit_limit_gating_uses_full_outstanding",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_cancelled_order_journey_split[cancelled]",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_cancelled_order_journey_split[expired]",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_after_uncancel_split_restored",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_ar_split_surfaces",
+    "test": "test_shipped_status_split_invariant",
+    "class": "tests.test_l02_ln023_t01_ar_split_surfaces.TestT01Surfaces",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_cross_surface_demo",
+    "test": "test_c360_vs_aging_detail_all_customers",
+    "class": "tests.test_l02_ln023_t01_cross_surface_demo",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_cross_surface_demo",
+    "test": "test_journey_split_invariant_all_orders",
+    "class": "tests.test_l02_ln023_t01_cross_surface_demo",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l02_ln023_t01_cross_surface_demo",
+    "test": "test_sales_kpi_kanda_invariant",
+    "class": "tests.test_l02_ln023_t01_cross_surface_demo",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l02_ln023_t01_cross_surface_demo.py:70: in test_sales_kpi_kanda_invariant\n    h = _login(\"sales.kanda@kainnusantara.id\", \"demo1234\", \"ent_kanda\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l02_ln023_t01_cross_surface_demo.py:16: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_fixes_iter219",
+    "test": "tests.test_l03_ln030_fixes_iter219",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_fixes_iter219.py:17: in <module>\n    TPL_A, TPL_B = [t[\"id\"] for t in DB.product_templates.find({\"status\": \"active\"}, {\"id\": 1}).sort(\"name\", 1).limit(2)]\n    ^^^^^^^^^^^^\nE   ValueError: not enough values to unpack (expected 2, got 1)"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_create_multi",
+    "class": "tests.test_l03_ln030_special_order_items.TestMultiItem",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_approve_routes_per_item",
+    "class": "tests.test_l03_ln030_special_order_items.TestMultiItem",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_reroute_no_duplicates",
+    "class": "tests.test_l03_ln030_special_order_items.TestMultiItem",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_redesign",
+    "class": "tests.test_l03_ln030_special_order_items.TestMultiItem",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_redesign_dup_409",
+    "class": "tests.test_l03_ln030_special_order_items.TestMultiItem",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_redesign_short_reason_422",
+    "class": "tests.test_l03_ln030_special_order_items.TestMultiItem",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_redesign_item_without_artwork_400",
+    "class": "tests.test_l03_ln030_special_order_items.TestMultiItem",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_origin_filter",
+    "class": "tests.test_l03_ln030_special_order_items.TestMultiItem",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_redesign_approve_routes_design_request_with_origin",
+    "class": "tests.test_l03_ln030_special_order_items.TestMultiItem",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_link_design_sets_origin",
+    "class": "tests.test_l03_ln030_special_order_items.TestMultiItem",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_invalid_artwork_400[hold]",
+    "class": "tests.test_l03_ln030_special_order_items.TestArtworkValidation",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_invalid_artwork_400[draft]",
+    "class": "tests.test_l03_ln030_special_order_items.TestArtworkValidation",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_invalid_artwork_400[other]",
+    "class": "tests.test_l03_ln030_special_order_items.TestArtworkValidation",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_invalid_artwork_400[missing]",
+    "class": "tests.test_l03_ln030_special_order_items.TestArtworkValidation",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_bad_source_type_and_no_types",
+    "class": "tests.test_l03_ln030_special_order_items.TestArtworkValidation",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_redesign_source_type_cannot_bypass_hold",
+    "class": "tests.test_l03_ln030_special_order_items.TestArtworkValidation",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_legacy_payload",
+    "class": "tests.test_l03_ln030_special_order_items.TestArtworkValidation",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_customer_reference_labdip_handfeel",
+    "class": "tests.test_l03_ln030_special_order_items.TestArtworkValidation",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_release_forbidden[designer]",
+    "class": "tests.test_l03_ln030_special_order_items.TestHoldRelease",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_release_forbidden[sales]",
+    "class": "tests.test_l03_ln030_special_order_items.TestHoldRelease",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_meta_can_release",
+    "class": "tests.test_l03_ln030_special_order_items.TestHoldRelease",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_release_allowed_then_rehold[md]",
+    "class": "tests.test_l03_ln030_special_order_items.TestHoldRelease",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_release_allowed_then_rehold[manager]",
+    "class": "tests.test_l03_ln030_special_order_items.TestHoldRelease",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_release_allowed_then_rehold[admin]",
+    "class": "tests.test_l03_ln030_special_order_items.TestHoldRelease",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln030_special_order_items",
+    "test": "test_released_artwork_usable",
+    "class": "tests.test_l03_ln030_special_order_items.TestHoldRelease",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln030_special_order_items.py:68: in H\n    \"md\": _login(\"md@kainnusantara.id\", \"demo1234\"),\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln030_special_order_items.py:28: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln031_extra_iter220",
+    "test": "test_meta_can_paper_check",
+    "class": "tests.test_l03_ln031_extra_iter220",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln031_extra_iter220.py:71: in H\n    \"md\": _login(\"md@kainnusantara.id\")}\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln031_extra_iter220.py:29: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln031_extra_iter220",
+    "test": "test_designer_ownership",
+    "class": "tests.test_l03_ln031_extra_iter220",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln031_extra_iter220.py:71: in H\n    \"md\": _login(\"md@kainnusantara.id\")}\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln031_extra_iter220.py:29: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln031_extra_iter220",
+    "test": "test_md_role_forbidden",
+    "class": "tests.test_l03_ln031_extra_iter220",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln031_extra_iter220.py:71: in H\n    \"md\": _login(\"md@kainnusantara.id\")}\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln031_extra_iter220.py:29: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln031_extra_iter220",
+    "test": "test_archived_and_missing",
+    "class": "tests.test_l03_ln031_extra_iter220",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln031_extra_iter220.py:71: in H\n    \"md\": _login(\"md@kainnusantara.id\")}\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln031_extra_iter220.py:29: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln031_extra_iter220",
+    "test": "test_concurrent_paper_clicks",
+    "class": "tests.test_l03_ln031_extra_iter220",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln031_extra_iter220.py:71: in H\n    \"md\": _login(\"md@kainnusantara.id\")}\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln031_extra_iter220.py:29: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln031_extra_iter220",
+    "test": "test_od_design_acc_race_and_decision_object",
+    "class": "tests.test_l03_ln031_extra_iter220",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln031_extra_iter220.py:71: in H\n    \"md\": _login(\"md@kainnusantara.id\")}\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln031_extra_iter220.py:29: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln031_paper_and_acc",
+    "test": "test_paper_check_records_round_actor_time_without_approval",
+    "class": "tests.test_l03_ln031_paper_and_acc",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln031_paper_and_acc",
+    "test": "test_paper_uncheck_and_unknown_round",
+    "class": "tests.test_l03_ln031_paper_and_acc",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln031_paper_and_acc",
+    "test": "test_paper_check_forbidden_for_sales",
+    "class": "tests.test_l03_ln031_paper_and_acc",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln031_paper_and_acc",
+    "test": "test_concurrent_pic_acc_only_once",
+    "class": "tests.test_l03_ln031_paper_and_acc",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln032_extra_iter221",
+    "test": "test_t01_waiting_for_and_rounds_payload",
+    "class": "tests.test_l03_ln032_extra_iter221.TestPrintingReproofing",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln032_extra_iter221",
+    "test": "test_revisi_requires_note_and_concurrent_revisi_one_round",
+    "class": "tests.test_l03_ln032_extra_iter221.TestPrintingReproofing",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln032_extra_iter221",
+    "test": "test_tolak_cancels_od",
+    "class": "tests.test_l03_ln032_extra_iter221.TestPrintingReproofing",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln032_extra_iter221",
+    "test": "test_plain_revisi_waiting_object_sample",
+    "class": "tests.test_l03_ln032_extra_iter221.TestPlainOrder",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln032_extra_iter221",
+    "test": "test_mixed_proofing_rejected",
+    "class": "tests.test_l03_ln032_extra_iter221.TestRevalidation",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln032_extra_iter221",
+    "test": "test_list_has_paper_counts_and_increment",
+    "class": "tests.test_l03_ln032_extra_iter221.TestDesignCardPaperCount",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln032_reproofing",
+    "test": "test_printing_reproofing_two_rejections_then_acc_same_artwork",
+    "class": "tests.test_l03_ln032_reproofing",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln032_reproofing",
+    "test": "test_concurrent_revisi_creates_one_round",
+    "class": "tests.test_l03_ln032_reproofing",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln032_reproofing",
+    "test": "test_plain_order_keeps_line_tests_no_proofing",
+    "class": "tests.test_l03_ln032_reproofing",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln032_reproofing",
+    "test": "test_concurrent_revalidation_existing_sku_no_duplicate",
+    "class": "tests.test_l03_ln032_reproofing",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l03_ln033_fulfillment",
+    "test": "tests.test_l03_ln033_fulfillment",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln033_fulfillment.py:15: in <module>\n    TPL = {m: DB.product_templates.find_one({\"restock_source.mode\": m}, {\"_id\": 0, \"id\": 1})[\"id\"] for m in (\"supplier\", \"makloon\", \"both\")}\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l03_ln033_fulfillment_edges",
+    "test": "tests.test_l03_ln033_fulfillment_edges",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln033_fulfillment_edges.py:14: in <module>\n    TPL = {m: DB.product_templates.find_one({\"restock_source.mode\": m}, {\"_id\": 0, \"id\": 1})[\"id\"] for m in (\"supplier\", \"makloon\", \"both\")}\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l03_ln034_revalidation",
+    "test": "tests.test_l03_ln034_revalidation",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln034_revalidation.py:13: in <module>\n    SUP_A, SUP_B = [s[\"id\"] for s in DB.suppliers.find({\"entity_id\": \"all\"}, {\"_id\": 0, \"id\": 1}).sort(\"name\", 1).limit(2)]\n    ^^^^^^^^^^^^\nE   ValueError: not enough values to unpack (expected 2, got 1)"
+  },
+  {
+    "module": "test_l03_ln034_revalidation_edges",
+    "test": "test_create_validation",
+    "class": "tests.test_l03_ln034_revalidation_edges",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln034_revalidation_edges.py:28: in H\n    return {\"admin\": _login(\"admin@kainnusantara.id\", \"demo12345\"), \"md\": _login(\"md@kainnusantara.id\"),\n                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln034_revalidation_edges.py:22: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln034_revalidation_edges",
+    "test": "test_partners_and_empty_eligibility",
+    "class": "tests.test_l03_ln034_revalidation_edges",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln034_revalidation_edges.py:28: in H\n    return {\"admin\": _login(\"admin@kainnusantara.id\", \"demo12345\"), \"md\": _login(\"md@kainnusantara.id\"),\n                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln034_revalidation_edges.py:22: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln034_revalidation_edges",
+    "test": "test_decide_guards_and_operational_note",
+    "class": "tests.test_l03_ln034_revalidation_edges",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln034_revalidation_edges.py:28: in H\n    return {\"admin\": _login(\"admin@kainnusantara.id\", \"demo12345\"), \"md\": _login(\"md@kainnusantara.id\"),\n                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln034_revalidation_edges.py:22: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln034_revalidation_edges",
+    "test": "test_sales_permissions",
+    "class": "tests.test_l03_ln034_revalidation_edges",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln034_revalidation_edges.py:28: in H\n    return {\"admin\": _login(\"admin@kainnusantara.id\", \"demo12345\"), \"md\": _login(\"md@kainnusantara.id\"),\n                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln034_revalidation_edges.py:22: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l03_ln034_revalidation_edges",
+    "test": "test_contract_reference_options",
+    "class": "tests.test_l03_ln034_revalidation_edges",
+    "status": "error",
+    "detail": "backend\\tests\\test_l03_ln034_revalidation_edges.py:28: in H\n    return {\"admin\": _login(\"admin@kainnusantara.id\", \"demo12345\"), \"md\": _login(\"md@kainnusantara.id\"),\n                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l03_ln034_revalidation_edges.py:22: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l04_ln040_real_ocr",
+    "test": "tests.test_l04_ln040_real_ocr",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l04_ln040_real_ocr.py:86: in <module>\n    @pytest.mark.skipif(not _has_key(), reason=\"kunci OpenAI tidak ada\")\n                            ^^^^^^^^^^\nbackend\\tests\\test_l04_ln040_real_ocr.py:36: in _has_key\n    env_txt = open(\"/app/backend/.env\").read()\n              ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   FileNotFoundError: [Errno 2] No such file or directory: '/app/backend/.env'"
+  },
+  {
+    "module": "test_l04_ln041_mdq_select",
+    "test": "test_t01_select_two_rolls_from_different_lots",
+    "class": "tests.test_l04_ln041_mdq_select",
+    "status": "error",
+    "detail": "backend\\tests\\test_l04_ln041_mdq_select.py:35: in fx\n    yield {\"iid\": iid, \"lines\": lines, \"rolls\": rolls, \"tok\": _login(\"mdquality@kainnusantara.id\", \"demo1234\"),\n                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l04_ln041_mdq_select.py:15: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l04_ln041_mdq_select",
+    "test": "test_t02_mismatch_then_human_accept_is_separate_and_audited",
+    "class": "tests.test_l04_ln041_mdq_select",
+    "status": "error",
+    "detail": "backend\\tests\\test_l04_ln041_mdq_select.py:35: in fx\n    yield {\"iid\": iid, \"lines\": lines, \"rolls\": rolls, \"tok\": _login(\"mdquality@kainnusantara.id\", \"demo1234\"),\n                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l04_ln041_mdq_select.py:15: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l04_ln043_material_ledger",
+    "test": "test_t01_commit_600_then_partial_issue",
+    "class": "tests.test_l04_ln043_material_ledger",
+    "status": "error",
+    "detail": "..\\integration_env\\Lib\\site-packages\\pytest_asyncio\\plugin.py:924: in pytest_fixture_setup\n    return (yield)\n            ^^^^^\nbackend\\tests\\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l04_ln043_material_ledger",
+    "test": "test_t03_actual_output_differs_from_forecast",
+    "class": "tests.test_l04_ln043_material_ledger",
+    "status": "error",
+    "detail": "backend\\tests\\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l04_ln043_material_ledger",
+    "test": "test_t02_cancel_after_issue_partial_return_and_loss",
+    "class": "tests.test_l04_ln043_material_ledger",
+    "status": "error",
+    "detail": "backend\\tests\\test_p05_acceptance_acc31_33_34.py:33: in output_is_makloon\n    out = DB.products.find_one({\"id\": _tpl()[\"steps\"][0][\"output_product_id\"]}, {\"_id\": 0, \"template_id\": 1})\n                                      ^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l04_mdq_cut",
+    "test": "test_yard_cut_idempotent",
+    "class": "tests.test_l04_mdq_cut.TestMdqCut",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l04_mdq_cut",
+    "test": "test_kg_requires_actual_data",
+    "class": "tests.test_l04_mdq_cut.TestMdqCut",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l04_mdq_cut",
+    "test": "test_sales_forbidden",
+    "class": "tests.test_l04_mdq_cut.TestMdqCut",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l04_mdq_cut.py:77: in test_sales_forbidden\n    s = _login(\"sales.kanda@kainnusantara.id\", \"demo1234\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l04_mdq_cut.py:15: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l04_mdq_cut",
+    "test": "test_cleanup",
+    "class": "tests.test_l04_mdq_cut.TestMdqCut",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l04_mdq_cut_edge",
+    "test": "test_cut_over_limit_400",
+    "class": "tests.test_l04_mdq_cut_edge.TestMdqCutEdge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l04_mdq_cut_edge",
+    "test": "test_unknown_line_404",
+    "class": "tests.test_l04_mdq_cut_edge.TestMdqCutEdge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l04_mdq_cut_edge",
+    "test": "test_md_roles_allowed[md@kainnusantara.id]",
+    "class": "tests.test_l04_mdq_cut_edge.TestMdqCutEdge",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l04_mdq_cut_edge.py:84: in test_md_roles_allowed\n    tok = _login(email, \"demo1234\")\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l04_mdq_cut_edge.py:15: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l04_mdq_cut_edge",
+    "test": "test_md_roles_allowed[mdquality@kainnusantara.id]",
+    "class": "tests.test_l04_mdq_cut_edge.TestMdqCutEdge",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l04_mdq_cut_edge.py:84: in test_md_roles_allowed\n    tok = _login(email, \"demo1234\")\n          ^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l04_mdq_cut_edge.py:15: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l04_mdq_cut_edge",
+    "test": "test_completed_inspection_should_block",
+    "class": "tests.test_l04_mdq_cut_edge.TestMdqCutEdge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l04_mdq_cut_edge",
+    "test": "test_wrong_entity_forbidden",
+    "class": "tests.test_l04_mdq_cut_edge.TestMdqCutEdge",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_interval_form",
+    "test": "test_t02_165_yard_multiple_defects_same_interval_kept",
+    "class": "tests.test_l05_interval_form",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_interval_form",
+    "test": "test_t01_kg_roll_inspected_in_yard_stays_kg",
+    "class": "tests.test_l05_interval_form",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_interval_form",
+    "test": "test_t02_history_kept_after_reinspection_rule_snapshot",
+    "class": "tests.test_l05_interval_form",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_interval_form",
+    "test": "test_ln050_t03_random_from_scan_and_scope",
+    "class": "tests.test_l05_interval_form",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_qc_request_notifies_qc_user_via_api",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter198.py:52: in test_qc_request_notifies_qc_user_via_api\n    qc = _login(\"qc@kainnusantara.id\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l05_l06_t1_iter198.py:19: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_no_qc_request_no_notification",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_deliveries_have_qc_status_field",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l05_l06_t1_iter198.py:76: no deliveries in seed data"
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_cutting_locations_list",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_cutting_caps_invalid_and_unknown",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_cutting_caps_forbidden_for_sampleadmin_and_sales",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter198.py:98: in test_cutting_caps_forbidden_for_sampleadmin_and_sales\n    h = _login(email)\n        ^^^^^^^^^^^^^\nbackend\\tests\\test_l05_l06_t1_iter198.py:19: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_cutting_desk_queues_shape",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter198.py:104: in test_cutting_desk_queues_shape\n    h = _login(\"sampleadmin@kainnusantara.id\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l05_l06_t1_iter198.py:19: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_receive_unknown_task_404",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_catalogue_preview_real_template",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_catalogue_preview_unknown_template_404",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_catalogue_on_regular_order_rejected",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_catalogue_kind_without_catalogue_rejected",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_unknown_sample_kind_rejected",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_soft_change_on_non_catalogue_rejected",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter198",
+    "test": "test_real_catalogue_soft_flow",
+    "class": "tests.test_l05_l06_t1_iter198",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter198.py:168: in test_real_catalogue_soft_flow\n    assert bad.status_code == 400\nE   assert 200 == 400\nE    +  where 200 = <Response [200]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_cutting_locations_include_sharing",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_cutting_desk_rows_have_roll_owner",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "error",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter199.py:44: in sampleadmin\n    return _login(\"sampleadmin@kainnusantara.id\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l05_l06_t1_iter199.py:33: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_logistics_dashboard_active_rows_have_qc_status",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_sampleadmin_catalogue_preview_allowed",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "error",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter199.py:44: in sampleadmin\n    return _login(\"sampleadmin@kainnusantara.id\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l05_l06_t1_iter199.py:33: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_sampleadmin_catalogue_templates_allowed",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "error",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter199.py:44: in sampleadmin\n    return _login(\"sampleadmin@kainnusantara.id\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l05_l06_t1_iter199.py:33: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_sampleadmin_cannot_create_regular_so",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "error",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter199.py:44: in sampleadmin\n    return _login(\"sampleadmin@kainnusantara.id\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l05_l06_t1_iter199.py:33: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_sampleadmin_can_create_sample_so",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "error",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter199.py:44: in sampleadmin\n    return _login(\"sampleadmin@kainnusantara.id\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l05_l06_t1_iter199.py:33: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_catalogue_requires_soft",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_sample_stats_paid_value_excludes_cancelled",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_qc_notification_to_qc_user",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter199.py:179: in test_qc_notification_to_qc_user\n    qc = _login(\"qc@kainnusantara.id\")\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l05_l06_t1_iter199.py:33: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_catalogue_templates_filters_by_entity",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_receive_rejects_other_owner_warehouse",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter199.py:241: in test_receive_rejects_other_owner_warehouse\n    assert r.status_code == 400, r.text[:200]\nE   AssertionError: {\"detail\":\"Lokasi tujuan Admin Cutting tidak ditemukan.\"}\nE   assert 404 == 400\nE    +  where 404 = <Response [404]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_receive_same_warehouse_ok_and_idempotent",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_receive_missing_roll_409",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_receive_shared_warehouse_ok",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l05_l06_t1_iter199.py:294: in test_receive_shared_warehouse_ok\n    assert r.status_code == 200, r.text[:300]\nE   AssertionError: {\"detail\":\"Lokasi tujuan Admin Cutting tidak ditemukan.\"}\nE   assert 404 == 200\nE    +  where 404 = <Response [404]>.status_code"
+  },
+  {
+    "module": "test_l05_l06_t1_iter199",
+    "test": "test_receive_unknown_task_404",
+    "class": "tests.test_l05_l06_t1_iter199",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_replacement_requires_roll_ids",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_replacement_rejects_returned_roll",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_replacement_unknown_roll",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_replacement_lines_are_replacement_rolls_and_return_untouched",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_interval_count[150-10]",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_interval_count[151-11]",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_interval_count[100-10]",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_interval_count[300-20]",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_defect_validation[bad0]",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_defect_validation[bad1]",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_defect_validation[bad2]",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_replacement_rejects_sold_consumed[sold]",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_replacement_rejects_sold_consumed[consumed]",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_replacement_extra_t1",
+    "test": "test_replacement_id_and_rollno_same_roll",
+    "class": "tests.test_l05_replacement_extra_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_reject_notify",
+    "test": "test_notification_sent_to_qc_users",
+    "class": "tests.test_l05_so_qc_reject_notify",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_reject_notify",
+    "test": "test_badge_and_reject_after_pass_blocks",
+    "class": "tests.test_l05_so_qc_reject_notify",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_request",
+    "test": "test_no_qc_request_no_need_and_no_block",
+    "class": "tests.test_l05_so_qc_request",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_request",
+    "test": "test_full_qc_blocks_until_passed_and_covers_new_allocation",
+    "class": "tests.test_l05_so_qc_request",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_request",
+    "test": "test_sampling_and_rejected_blocks",
+    "class": "tests.test_l05_so_qc_request",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_request",
+    "test": "test_cut_length_reservation_and_relisting_after_reallocation",
+    "class": "tests.test_l05_so_qc_request",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_request",
+    "test": "test_latest_reject_overrides_earlier_pass_and_no_duplicate_open_spk",
+    "class": "tests.test_l05_so_qc_request",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_request_api_t1",
+    "test": "test_invalid_mode_400",
+    "class": "tests.test_l05_so_qc_request_api_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_request_api_t1",
+    "test": "test_invalid_pct_422[0]",
+    "class": "tests.test_l05_so_qc_request_api_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_request_api_t1",
+    "test": "test_invalid_pct_422[101]",
+    "class": "tests.test_l05_so_qc_request_api_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_request_api_t1",
+    "test": "test_default_none_stored",
+    "class": "tests.test_l05_so_qc_request_api_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_request_api_t1",
+    "test": "test_sampling_stored_by_sales_admin",
+    "class": "tests.test_l05_so_qc_request_api_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_request_api_t1",
+    "test": "test_full_flow_ref_docs_spk_dispatch",
+    "class": "tests.test_l05_so_qc_request_api_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_retest_t1",
+    "test": "test_real_cut_length_full_flow",
+    "class": "tests.test_l05_so_qc_retest_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l05_so_qc_retest_t1",
+    "test": "test_reallocation_relists_and_resets",
+    "class": "tests.test_l05_so_qc_retest_t1",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_cutting_wait_config",
+    "test": "test_thresholds_per_entity_and_late_not_below_warn",
+    "class": "tests.test_l06_cutting_wait_config",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_cutting_wait_config_extra",
+    "test": "test_default_thresholds",
+    "class": "tests.test_l06_cutting_wait_config_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_cutting_wait_config_extra",
+    "test": "test_warn_only_entity",
+    "class": "tests.test_l06_cutting_wait_config_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_cutting_wait_config_extra",
+    "test": "test_global_scope",
+    "class": "tests.test_l06_cutting_wait_config_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_cutting_wait_config_extra",
+    "test": "test_validation[0]",
+    "class": "tests.test_l06_cutting_wait_config_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_cutting_wait_config_extra",
+    "test": "test_validation[-5]",
+    "class": "tests.test_l06_cutting_wait_config_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_cutting_wait_config_extra",
+    "test": "test_validation[20000]",
+    "class": "tests.test_l06_cutting_wait_config_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_cutting_wait_config_extra",
+    "test": "test_validation[abc]",
+    "class": "tests.test_l06_cutting_wait_config_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_cutting_wait_config_extra",
+    "test": "test_reason_optional_low_risk",
+    "class": "tests.test_l06_cutting_wait_config_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_cutting_wait_config_extra",
+    "test": "test_sales_cannot_change",
+    "class": "tests.test_l06_cutting_wait_config_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_cutting_wait_config_extra",
+    "test": "test_catalog_entries",
+    "class": "tests.test_l06_cutting_wait_config_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_samples_cutting",
+    "test": "test_ln060_t01_catalogue_counts_available_colors",
+    "class": "tests.test_l06_samples_cutting",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_samples_cutting",
+    "test": "test_ln060_t02_change_soft_keeps_base",
+    "class": "tests.test_l06_samples_cutting",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_samples_cutting",
+    "test": "test_ln060_t03_standard_limit_and_ecer",
+    "class": "tests.test_l06_samples_cutting",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_samples_cutting",
+    "test": "test_ln060_t04_hanger_not_forced_up",
+    "class": "tests.test_l06_samples_cutting",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l06_samples_cutting.py:130: in test_ln060_t04_hanger_not_forced_up\n    ok = _so(h, [{\"product_id\": knit[\"id\"], \"quantity\": 2.0, \"unit\": \"kg\", \"base_quantity\": 2.0, \"is_sample\": True, \"sample_kind\": \"hanger\"}])\n                                ^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l06_samples_cutting",
+    "test": "test_ln061_t03_location_caps_same_on_api",
+    "class": "tests.test_l06_samples_cutting",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_samples_cutting",
+    "test": "test_ln061_t01_other_owner_needs_internal_purchase",
+    "class": "tests.test_l06_samples_cutting",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_samples_cutting",
+    "test": "test_ln061_t02_catalogue_two_locations_handoff",
+    "class": "tests.test_l06_samples_cutting",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_samples_cutting",
+    "test": "test_ln062_t01_t02_ecer_cut_and_retry",
+    "class": "tests.test_l06_samples_cutting",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_t1_iter200",
+    "test": "test_sample_woven_standard_within_limit_ok",
+    "class": "tests.test_l06_t1_iter200",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_t1_iter200",
+    "test": "test_sample_woven_standard_over_limit_400",
+    "class": "tests.test_l06_t1_iter200",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_t1_iter200",
+    "test": "test_sample_woven_hanger_at_limit_ok",
+    "class": "tests.test_l06_t1_iter200",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_t1_iter200",
+    "test": "test_sample_woven_hanger_over_limit_400",
+    "class": "tests.test_l06_t1_iter200",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_t1_iter200",
+    "test": "test_sample_knit_standard_over_limit_400",
+    "class": "tests.test_l06_t1_iter200",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l06_t1_iter200.py:111: no knit product in DB"
+  },
+  {
+    "module": "test_l06_t1_iter200",
+    "test": "test_sample_knit_hanger_over_limit_400",
+    "class": "tests.test_l06_t1_iter200",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l06_t1_iter200.py:120: no knit product in DB"
+  },
+  {
+    "module": "test_l06_t1_iter200",
+    "test": "test_cutting_desk_shape_thresholds",
+    "class": "tests.test_l06_t1_iter200",
+    "status": "error",
+    "detail": "backend\\tests\\test_l06_t1_iter200.py:40: in sampleadmin\n    return _login(\"sampleadmin@kainnusantara.id\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l06_t1_iter200.py:29: in _login\n    assert r.status_code == 200, r.text[:200]\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l06_t1_iter200",
+    "test": "test_cutting_desk_wait_levels_sort_and_banner",
+    "class": "tests.test_l06_t1_iter200",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_t1_iter200",
+    "test": "test_cutting_desk_receive_moves_to_ready_with_delta",
+    "class": "tests.test_l06_t1_iter200",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l06_t1_iter200",
+    "test": "test_regular_retail_at_over_sample_qty_ok",
+    "class": "tests.test_l06_t1_iter200",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l07_trip_manifest",
+    "test": "test_ln070_picking_list_keeps_orders_separate",
+    "class": "tests.test_l07_trip_manifest",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l07_trip_manifest.py:20: in test_ln070_picking_list_keeps_orders_separate\n    assert cands and all(c[\"order_number\"].startswith(\"KSC/\") for c in cands)\nE   AssertionError: assert ([{'order_id': 'so_003', 'order_number': 'SO-0003', 'warehouses': ['Gudang Jakarta Utara'], 'fulfillment_method': 'kiri...': 'so_005', 'order_number': 'SO-0005', 'warehouses': ['Gudang Surabaya Rungkut'], 'fulfillment_method': 'kirim', ...}] and False)\nE    +  where False = all(<generator object test_ln070_picking_list_keeps_orders_separate.<locals>.<genexpr> at 0x0000018FB8C7ACF0>)"
+  },
+  {
+    "module": "test_l07_trip_manifest",
+    "test": "test_ln070_trip_check_uses_dispatch_guard",
+    "class": "tests.test_l07_trip_manifest",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l07_trip_manifest",
+    "test": "test_trip_scope_rejects_other_entity",
+    "class": "tests.test_l07_trip_manifest",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l07_trip_manifest",
+    "test": "test_ln071_multi_order_delivery_and_manifest",
+    "class": "tests.test_l07_trip_manifest",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l07_trip_manifest",
+    "test": "test_ln072_t01_internal_transit_no_customer_gl",
+    "class": "tests.test_l07_trip_manifest",
+    "status": "skipped",
+    "detail": "C:\\Users\\abc\\Documents\\Codex\\2026-09-28\\sya\\work\\KNHOST-plan-audit-2026-10-19\\backend\\tests\\test_l07_trip_manifest.py:78: tidak ada transfer SO dalam perjalanan"
+  },
+  {
+    "module": "test_l07_trip_regression",
+    "test": "test_candidates_only_ksc",
+    "class": "tests.test_l07_trip_regression",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l07_trip_regression.py:58: in test_candidates_only_ksc\n    assert c and all(x[\"order_number\"].startswith(\"KSC/\") for x in c)\nE   AssertionError: assert ([{'order_id': 'so_003', 'order_number': 'SO-0003', 'warehouses': ['Gudang Jakarta Utara'], 'fulfillment_method': 'kiri...': 'so_005', 'order_number': 'SO-0005', 'warehouses': ['Gudang Surabaya Rungkut'], 'fulfillment_method': 'kirim', ...}] and False)\nE    +  where False = all(<generator object test_candidates_only_ksc.<locals>.<genexpr> at 0x000001AC1409B6B0>)"
+  },
+  {
+    "module": "test_l07_trip_regression",
+    "test": "test_picking_list_shape_and_errors",
+    "class": "tests.test_l07_trip_regression",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l07_trip_regression",
+    "test": "test_trip_check_rows",
+    "class": "tests.test_l07_trip_regression",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l07_trip_regression",
+    "test": "test_trip_forbidden_for_sales",
+    "class": "tests.test_l07_trip_regression",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l07_trip_regression",
+    "test": "test_multi_order_delivery_full",
+    "class": "tests.test_l07_trip_regression",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l07_trip_regression.py:103: in test_multi_order_delivery_full\n    ids = [s[\"KSC/SJ-00001\"], s[\"KSC/SJ-00002\"], s[\"KSC/SJ-00003\"], s[\"KSC/SJ-00004\"]]\n           ^^^^^^^^^^^^^^^^^\nE   KeyError: 'KSC/SJ-00001'"
+  },
+  {
+    "module": "test_l07_trip_regression",
+    "test": "test_pickup_order_cannot_combine",
+    "class": "tests.test_l07_trip_regression",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l07_trip_regression.py:137: in test_pickup_order_cannot_combine\n    json={\"shipment_ids\": [s[\"KSC/SJ-00001\"], s[\"KSC/SJ-00003\"]], \"mode\": \"self_pickup\"})\n                           ^^^^^^^^^^^^^^^^^\nE   KeyError: 'KSC/SJ-00001'"
+  },
+  {
+    "module": "test_l07_trip_regression",
+    "test": "test_single_order_delivery_and_transition",
+    "class": "tests.test_l07_trip_regression",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l07_trip_regression.py:156: in test_single_order_delivery_and_transition\n    json={\"shipment_ids\": [s[\"KSC/SJ-00002\"]], \"mode\": \"expedition\", \"courier_name\": \"TEST_JNE\"})\n                           ^^^^^^^^^^^^^^^^^\nE   KeyError: 'KSC/SJ-00002'"
+  },
+  {
+    "module": "test_l07_trip_regression",
+    "test": "test_driver_list_still_works",
+    "class": "tests.test_l07_trip_regression",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l08_evidence_identity",
+    "test": "test_t03_evidence_optional_by_default",
+    "class": "tests.test_l08_evidence_identity",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l08_evidence_identity.py:71: in test_t03_evidence_optional_by_default\n    r = create(h, shipped_roll(h), qty=1, submit_now=True)\n                  ^^^^^^^^^^^^^^^\nbackend\\tests\\test_l08_evidence_identity.py:56: in shipped_roll\n    data = requests.get(f\"{BASE}/sales-returns/returnable\", headers=h, params={\"order_id\": SO[\"id\"]}).json()\n                                                                                           ^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l08_evidence_identity",
+    "test": "test_t03_evidence_required_at_submit",
+    "class": "tests.test_l08_evidence_identity",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l08_evidence_identity.py:80: in test_t03_evidence_required_at_submit\n    roll = shipped_roll(h)\n           ^^^^^^^^^^^^^^^\nbackend\\tests\\test_l08_evidence_identity.py:56: in shipped_roll\n    data = requests.get(f\"{BASE}/sales-returns/returnable\", headers=h, params={\"order_id\": SO[\"id\"]}).json()\n                                                                                           ^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l08_evidence_identity",
+    "test": "test_t04_counts_follow_list_filters[]",
+    "class": "tests.test_l08_evidence_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l08_evidence_identity",
+    "test": "test_t04_counts_follow_list_filters[retur]",
+    "class": "tests.test_l08_evidence_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l08_evidence_identity",
+    "test": "test_t04_counts_follow_list_filters[bs]",
+    "class": "tests.test_l08_evidence_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l08_evidence_identity",
+    "test": "test_t04_counts_follow_list_filters[garansi]",
+    "class": "tests.test_l08_evidence_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l08_evidence_identity",
+    "test": "test_t01_whole_roll_keeps_identity_and_reverse_restores",
+    "class": "tests.test_l08_evidence_identity",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l08_evidence_identity.py:126: in test_t01_whole_roll_keeps_identity_and_reverse_restores\n    roll = shipped_roll(h)\n           ^^^^^^^^^^^^^^^\nbackend\\tests\\test_l08_evidence_identity.py:56: in shipped_roll\n    data = requests.get(f\"{BASE}/sales-returns/returnable\", headers=h, params={\"order_id\": SO[\"id\"]}).json()\n                                                                                           ^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l08_evidence_identity",
+    "test": "test_t01_partial_claim_becomes_numbered_child",
+    "class": "tests.test_l08_evidence_identity",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l08_evidence_identity.py:152: in test_t01_partial_claim_becomes_numbered_child\n    roll = shipped_roll(h, 1)\n           ^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l08_evidence_identity.py:56: in shipped_roll\n    data = requests.get(f\"{BASE}/sales-returns/returnable\", headers=h, params={\"order_id\": SO[\"id\"]}).json()\n                                                                                           ^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l08_evidence_identity",
+    "test": "test_t02_parallel_cuts_unique_sequential_and_conserved",
+    "class": "tests.test_l08_evidence_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l08_evidence_identity",
+    "test": "test_t03_block_resend_to_origin_customer",
+    "class": "tests.test_l08_evidence_identity",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l08_evidence_identity.py:184: in test_t03_block_resend_to_origin_customer\n    returned = DB.inventory_rolls.find_one({\"return_id\": {\"$exists\": True}, \"returned_from_customer_ids\": SO[\"customer_id\"]})\n                                                                                                          ^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l08_ln081_journey",
+    "test": "tests.test_l08_ln081_journey",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l08_ln081_journey.py:13: in <module>\n    RCM_TRANSIT = DB.warehouses.find_one({\"name\": \"Rancamalang \u00b7 Gudang Transit\"})[\"id\"]\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l08_returnable_rolls",
+    "test": "tests.test_l08_returnable_rolls",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l08_returnable_rolls.py:11: in <module>\n    SHIPPED_SO = DB.sales_orders.find_one({\"number\": \"KSC/SO-00001\"})[\"id\"]      # done, SJ-00001/00002\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l08_returnable_rolls_extra",
+    "test": "tests.test_l08_returnable_rolls_extra",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l08_returnable_rolls_extra.py:11: in <module>\n    SHIPPED_SO = DB.sales_orders.find_one({\"number\": \"KSC/SO-00001\"})[\"id\"]\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_yard_roll_unit_preserved",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l09_ln093_extra.py:54: in test_yard_roll_unit_preserved\n    rid, rolls = make_case([{\"supplier_id\": PO_A[\"supplier_id\"], \"po_id\": PO_A[\"id\"]}], tpl=TPL_YARD)\n                                            ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_mixed_known_and_unknown_with_manual_supplier",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l09_ln093_extra.py:68: in test_mixed_known_and_unknown_with_manual_supplier\n    rid, rolls = make_case([{\"supplier_id\": PO_B[\"supplier_id\"], \"po_id\": PO_B[\"id\"]}, {}])\n                                            ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_get_detail_shows_links",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l09_ln093_extra.py:83: in test_get_detail_shows_links\n    rid, _ = make_case([{\"supplier_id\": PO_A[\"supplier_id\"], \"po_id\": PO_A[\"id\"]}])\n                                        ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_ln090_status_matrix[draft-400]",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_ln090_status_matrix[pending_approval-400]",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_ln090_status_matrix[approved-400]",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_ln090_status_matrix[inspecting-400]",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_ln090_status_matrix[inspected-200]",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_ln090_status_matrix[refund_settled-200]",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_ln090_status_matrix[credit_settled-200]",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_ln090_rejected_cancelled_info[rejected]",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l09_ln093_extra",
+    "test": "test_ln090_rejected_cancelled_info[cancelled]",
+    "class": "tests.test_l09_ln093_extra",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l09_ln093_ln090",
+    "test": "test_t02_split_by_roll_provenance_not_latest_po",
+    "class": "tests.test_l09_ln093_ln090",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l09_ln093_ln090.py:51: in test_t02_split_by_roll_provenance_not_latest_po\n    {\"supplier_id\": PO_A[\"supplier_id\"], \"po_id\": PO_A[\"id\"], \"po_number\": PO_A[\"po_number\"]},\n                    ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l09_ln093_ln090",
+    "test": "test_unknown_provenance_needs_manual_supplier",
+    "class": "tests.test_l09_ln093_ln090",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l09_ln093_ln090.py:78: in test_unknown_provenance_needs_manual_supplier\n    json={\"supplier_id\": PO_A[\"supplier_id\"], \"bypass_import_policy\": True})\n                         ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l09_ln093_ln090",
+    "test": "test_parallel_create_makes_one_set",
+    "class": "tests.test_l09_ln093_ln090",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l09_ln093_ln090.py:84: in test_parallel_create_makes_one_set\n    rid, _ = make_case([{\"supplier_id\": PO_A[\"supplier_id\"], \"po_id\": PO_A[\"id\"]},\n                                        ^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_l09_ln093_ln090",
+    "test": "test_ln090_t01_replacement_blocked_before_qc",
+    "class": "tests.test_l09_ln093_ln090",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l10_ln100_ln102_stock_tree",
+    "test": "tests.test_l10_ln100_ln102_stock_tree",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l10_ln100_ln102_stock_tree.py:15: in <module>\n    ZONE = next(z for z in WH_DOC[\"zones\"] if z[\"id\"] == \"zone_sim_wh_jkt_w\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   StopIteration"
+  },
+  {
+    "module": "test_l10_ln101_roll_count",
+    "test": "tests.test_l10_ln101_roll_count",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l10_ln101_roll_count.py:14: in <module>\n    ZONE = next(z for z in WH_DOC[\"zones\"] if z[\"id\"] == \"zone_sim_wh_jkt_w\")\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   StopIteration"
+  },
+  {
+    "module": "test_l10_ops01_t1",
+    "test": "tests.test_l10_ops01_t1",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l10_ops01_t1.py:12: in <module>\n    _env = open(os.path.join(os.path.dirname(__file__), \"..\", \".env\")).read()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\work\\\\KNHOST-plan-audit-2026-10-19\\\\backend\\\\tests\\\\..\\\\.env'"
+  },
+  {
+    "module": "test_l10_t1_review",
+    "test": "tests.test_l10_t1_review",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_l10_t1_review.py:11: in <module>\n    _env = open(os.path.join(os.path.dirname(__file__), \"..\", \".env\")).read()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\abc\\\\Documents\\\\Codex\\\\2026-09-28\\\\sya\\\\work\\\\KNHOST-plan-audit-2026-10-19\\\\backend\\\\tests\\\\..\\\\.env'"
+  },
+  {
+    "module": "test_l11_export_center",
+    "test": "test_t01_preview_equals_export_with_nested_filter",
+    "class": "tests.test_l11_export_center",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l11_export_center",
+    "test": "test_t02_coverage_lists_every_collection",
+    "class": "tests.test_l11_export_center",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l11_export_center",
+    "test": "test_t03_partitions_not_truncated",
+    "class": "tests.test_l11_export_center",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l11_export_center.py:85: in test_t03_partitions_not_truncated\n    assert total > 5000\nE   assert 117 > 5000"
+  },
+  {
+    "module": "test_l11_export_center",
+    "test": "test_ln113_t01_sales_cannot_inject_hidden_fields",
+    "class": "tests.test_l11_export_center",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l11_export_center.py:95: in test_ln113_t01_sales_cannot_inject_hidden_fields\n    s = _login(\"sales.kanda@kainnusantara.id\", ent=\"ent_kanda\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l11_export_center.py:21: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l11_export_center",
+    "test": "test_ln113_t02_download_rechecked_and_owner_only",
+    "class": "tests.test_l11_export_center",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l11_export_center",
+    "test": "test_ln113_t03_formula_cells_are_text",
+    "class": "tests.test_l11_export_center",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l11_finance_staff_templates",
+    "test": "test_ln111_t01_no_multiplication",
+    "class": "tests.test_l11_finance_staff_templates",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l11_finance_staff_templates",
+    "test": "test_ln111_t02_attribution_from_transaction",
+    "class": "tests.test_l11_finance_staff_templates",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l11_finance_staff_templates",
+    "test": "test_ln111_t03_date_basis",
+    "class": "tests.test_l11_finance_staff_templates",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l11_finance_staff_templates",
+    "test": "test_ln112_t01_t02_designer_report",
+    "class": "tests.test_l11_finance_staff_templates",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l11_finance_staff_templates",
+    "test": "test_ln112_t03_sales_split_and_report_file",
+    "class": "tests.test_l11_finance_staff_templates",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_l11_finance_staff_templates",
+    "test": "test_templates_save_run_owner_only",
+    "class": "tests.test_l11_finance_staff_templates",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l11_finance_staff_templates.py:141: in test_templates_save_run_owner_only\n    s = _login(\"sales.kanda@kainnusantara.id\")\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend\\tests\\test_l11_finance_staff_templates.py:21: in _login\n    assert r.status_code == 200, r.text\nE   AssertionError: {\"detail\":\"Email atau password tidak sesuai\"}\nE   assert 401 == 200\nE    +  where 401 = <Response [401]>.status_code"
+  },
+  {
+    "module": "test_l11_finance_staff_templates",
+    "test": "test_coverage_no_unmapped",
+    "class": "tests.test_l11_finance_staff_templates",
+    "status": "failed",
+    "detail": "backend\\tests\\test_l11_finance_staff_templates.py:150: in test_coverage_no_unmapped\n    assert c[\"summary\"][\"unmapped\"] == 0, [r[\"collection\"] for r in c[\"collections\"] if r[\"status\"] == \"unmapped\"]\nE   AssertionError: ['bank_statement_formats', 'bank_statement_lines', 'budgets', 'customer_prices', 'fin_budget_rules', 'fin_depreciation_entries', ...]\nE   assert 15 == 0"
+  },
+  {
+    "module": "test_lanjutan_sched_returns_interco",
+    "test": "test_schedule_period_and_next_run",
+    "class": "tests.test_lanjutan_sched_returns_interco",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_lanjutan_sched_returns_interco",
+    "test": "test_schedule_template_runs_with_owner_rights",
+    "class": "tests.test_lanjutan_sched_returns_interco",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_lanjutan_sched_returns_interco",
+    "test": "test_schedule_revoked_owner_fails_safely",
+    "class": "tests.test_lanjutan_sched_returns_interco",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_lanjutan_sched_returns_interco",
+    "test": "test_ln083_t01_customer_independent_of_supplier",
+    "class": "tests.test_lanjutan_sched_returns_interco",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_lanjutan_sched_returns_interco",
+    "test": "test_ln083_t02_supplier_deadline_per_receiving",
+    "class": "tests.test_lanjutan_sched_returns_interco",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_lanjutan_sched_returns_interco",
+    "test": "test_ln083_t03_pending_rules_not_assumed",
+    "class": "tests.test_lanjutan_sched_returns_interco",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_lanjutan_sched_returns_interco",
+    "test": "test_ln024_t01_t02_per_transaction_no_netting",
+    "class": "tests.test_lanjutan_sched_returns_interco",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_lanjutan_sched_returns_interco",
+    "test": "test_ln024_t03_cutoff_pending_then_configured",
+    "class": "tests.test_lanjutan_sched_returns_interco",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_lanjutan_sched_returns_interco",
+    "test": "test_ln100_t02_shared_woven_node",
+    "class": "tests.test_lanjutan_sched_returns_interco",
+    "status": "failed",
+    "detail": "backend\\tests\\test_lanjutan_sched_returns_interco.py:208: in test_ln100_t02_shared_woven_node\n    assert wh[\"sharing_mode\"] == \"shared\"\n           ^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_ln014_lot_identity",
+    "test": "test_identity_change_requires_reason_and_keeps_history",
+    "class": "tests.test_ln014_lot_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln014_lot_identity",
+    "test": "test_alias_off_by_default_then_manual_unique",
+    "class": "tests.test_ln014_lot_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln014_lot_identity",
+    "test": "test_trace_by_supplier_lot_shows_both_identities_and_return_rolls",
+    "class": "tests.test_ln014_lot_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln015_typed_rnd_and_role_version",
+    "test": "test_t03_pic_proofing_can_assess_proofing_only",
+    "class": "tests.test_ln015_typed_rnd_and_role_version",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln015_typed_rnd_and_role_version",
+    "test": "test_t03_typed_decide_never_opens_contract",
+    "class": "tests.test_ln015_typed_rnd_and_role_version",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln015_typed_rnd_and_role_version",
+    "test": "test_t03_typed_decide_allowed_on_revalidation_technical_result",
+    "class": "tests.test_ln015_typed_rnd_and_role_version",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln015_typed_rnd_and_role_version",
+    "test": "test_t03_pic_queue_and_contract_options_still_denied",
+    "class": "tests.test_ln015_typed_rnd_and_role_version",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln015_typed_rnd_and_role_version",
+    "test": "test_generic_assess_still_covers_all_types",
+    "class": "tests.test_ln015_typed_rnd_and_role_version",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln015_typed_rnd_and_role_version",
+    "test": "test_typed_actions_listed_with_work_labels",
+    "class": "tests.test_ln015_typed_rnd_and_role_version",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln015_typed_rnd_and_role_version",
+    "test": "test_t06_role_version_conflict_409",
+    "class": "tests.test_ln015_typed_rnd_and_role_version",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln015_typed_rnd_and_role_version",
+    "test": "test_t06_permission_change_applies_next_request",
+    "class": "tests.test_ln015_typed_rnd_and_role_version",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln015_typed_rnd_and_role_version",
+    "test": "test_t06_cannot_edit_own_role",
+    "class": "tests.test_ln015_typed_rnd_and_role_version",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln091_092_returns_exceptions",
+    "test": "test_ln091_t01_bill_first_then_saldo_or_refund",
+    "class": "tests.test_ln091_092_returns_exceptions",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln091_092_returns_exceptions",
+    "test": "test_ln091_split_helper",
+    "class": "tests.test_ln091_092_returns_exceptions",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln091_092_returns_exceptions",
+    "test": "test_ln092_cutloss_simulation_locked_and_reconciles",
+    "class": "tests.test_ln091_092_returns_exceptions",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln091_092_returns_exceptions",
+    "test": "test_ln092_t02_nego_requires_approved_exception_and_ln083_condition_gate",
+    "class": "tests.test_ln091_092_returns_exceptions",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln091_092_returns_exceptions",
+    "test": "test_ln024_payment_reminder_job",
+    "class": "tests.test_ln091_092_returns_exceptions",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln091t02_ln093_chain",
+    "test": "tests.test_ln091t02_ln093_chain",
+    "class": "",
+    "status": "error",
+    "detail": "backend\\tests\\test_ln091t02_ln093_chain.py:17: in <module>\n    PRICE = float(DB.products.find_one({\"id\": TPL[\"product_id\"]})[\"price\"])\n                                              ^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not subscriptable"
+  },
+  {
+    "module": "test_ln120_device_identity",
+    "test": "test_missing_and_unknown_key_401",
+    "class": "tests.test_ln120_device_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln120_device_identity",
+    "test": "test_user_token_not_accepted_as_device",
+    "class": "tests.test_ln120_device_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln120_device_identity",
+    "test": "test_disabled_device_403",
+    "class": "tests.test_ln120_device_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln120_device_identity",
+    "test": "test_each_device_heartbeat_own_identity",
+    "class": "tests.test_ln120_device_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln120_device_identity",
+    "test": "test_reader_cannot_pull_or_ack_print_jobs",
+    "class": "tests.test_ln120_device_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln120_device_identity",
+    "test": "test_printer_cannot_ingest_epc",
+    "class": "tests.test_ln120_device_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln120_device_identity",
+    "test": "test_printer_other_warehouse_cannot_ack",
+    "class": "tests.test_ln120_device_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln120_device_identity",
+    "test": "test_printer_wrong_attempt_409_then_owner_ok",
+    "class": "tests.test_ln120_device_identity",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln140_chain_fixes",
+    "test": "test_group_suppliers_visible_in_each_entity",
+    "class": "tests.test_ln140_chain_fixes",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln140_chain_fixes",
+    "test": "test_return_warehouse_uses_outbound_task_then_entity_default",
+    "class": "tests.test_ln140_chain_fixes",
+    "status": "passed",
+    "detail": ""
+  },
+  {
+    "module": "test_ln140_chain_fixes",
+    "test": "test_backfill_supplier_dn_to_lot_and_roll",
+    "class": "tests.test_ln140_chain_fixes",
+    "status": "passed",
+    "detail": ""
+  }
+]

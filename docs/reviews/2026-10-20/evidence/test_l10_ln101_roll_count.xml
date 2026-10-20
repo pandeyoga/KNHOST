@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.746" timestamp="2026-10-19T13:36:44.468204+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="tests.test_l10_ln101_roll_count" time="0.000"><error message="collection failure">backend\tests\test_l10_ln101_roll_count.py:14: in &lt;module&gt;
+    ZONE = next(z for z in WH_DOC["zones"] if z["id"] == "zone_sim_wh_jkt_w")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   StopIteration</error></testcase></testsuite></testsuites>

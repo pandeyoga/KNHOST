@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="7" failures="1" skipped="0" tests="14" time="3.768" timestamp="2026-10-19T13:32:49.266758+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l01_grade_visibility.TestFieldVisibility" name="test_sales_never_receives_grade_lot_origin" time="0.020"><error message="failed on setup with &quot;requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login&quot;">backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login</error></testcase><testcase classname="tests.test_l01_grade_visibility.TestFieldVisibility" name="test_sales_admin_and_admin_still_see" time="0.329"><error message="failed on setup with &quot;requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login&quot;">backend\tests\test_l01_grade_visibility.py:33: in sadm
+    return _login("salesadmin.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login</error></testcase><testcase classname="tests.test_l01_grade_visibility.TestFieldVisibility" name="test_sales_grade_filter_is_ignored" time="0.001"><error message="failed on setup with &quot;requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login&quot;">backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login</error></testcase><testcase classname="tests.test_l01_grade_visibility.TestFieldVisibility" name="test_grade_cannot_be_opened_for_sales_pov" time="0.001"><error message="failed on setup with &quot;requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login&quot;">backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login</error></testcase><testcase classname="tests.test_l01_grade_visibility.TestFieldVisibility" name="test_pdf_redacts_for_sales" time="0.001"><error message="failed on setup with &quot;requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login&quot;">backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login</error></testcase><testcase classname="tests.test_l01_grade_visibility.TestGradeMaster" name="test_owner_active_set" time="0.030"><failure message="assert 0 &gt; 0">backend\tests\test_l01_grade_visibility.py:102: in test_owner_active_set
+    assert rows["B1"]["rolls_using"] &gt; 0                      # histori tetap ada
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   assert 0 &gt; 0</failure></testcase><testcase classname="tests.test_l01_grade_visibility.TestGradeMaster" name="test_sales_cannot_manage" time="0.001"><error message="failed on setup with &quot;requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login&quot;">backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login</error></testcase><testcase classname="tests.test_l01_grade_visibility.TestGradeMaster" name="test_add_new_grade_used_without_code_change" time="0.146" /><testcase classname="tests.test_l01_grade_visibility.TestGradeMaster" name="test_inactive_grade_rejected_on_new_input" time="0.023" /><testcase classname="tests.test_l01_grade_visibility.TestGradeMaster" name="test_rank_conflict" time="0.012" /><testcase classname="tests.test_l01_grade_visibility.TestCustomerMinimumGrade" name="test_min_rank_semantics" time="0.739" /><testcase classname="tests.test_l01_grade_visibility.TestCustomerMinimumGrade" name="test_api_save_and_read" time="0.550" /><testcase classname="tests.test_l01_grade_visibility.TestPermissionDefaultsNotRevived" name="test_revoked_default_stays_revoked_after_sync" time="0.529" /><testcase classname="tests.test_l01_grade_visibility.TestSkuAndNameMasking" name="test_sales_sees_masked_sku_and_name" time="0.001"><error message="failed on setup with &quot;requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login&quot;">backend\tests\test_l01_grade_visibility.py:28: in sales
+    return _login("sales.kanda@kainnusantara.id", "demo1234")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l01_grade_visibility.py:17: in _login
+    r.raise_for_status()
+..\integration_env\Lib\site-packages\requests\models.py:1167: in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+E   requests.exceptions.HTTPError: 401 Client Error: Unauthorized for url: http://127.0.0.1:8019/api/auth/login</error></testcase></testsuite></testsuites>

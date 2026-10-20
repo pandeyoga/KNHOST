@@ -1,0 +1,34 @@
+EEEEE                                                                    [100%]
+=================================== ERRORS ====================================
+_ ERROR at setup of TestRevalidationRace.test_parallel_requests_only_one_created _
+backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+________ ERROR at setup of TestRevalidationRace.test_cancel_frees_slot ________
+backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_____ ERROR at setup of TestPartialMaterialReturn.test_cancel_after_issue _____
+backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_ ERROR at setup of TestPartialMaterialReturn.test_partner_rolls_and_partial_return _
+backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_ ERROR at setup of TestPartialMaterialReturn.test_return_rest_closes_step_and_wip_zero _
+backend\tests\test_l00_p05_open_issues.py:20: in output_is_makloon
+    out = DB.products.find_one({"id": _tpl()["steps"][0]["output_product_id"]}, {"_id": 0, "template_id": 1})
+                                      ^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l00_p05_open_issues.py::TestRevalidationRace::test_parallel_requests_only_one_created
+ERROR backend\tests\test_l00_p05_open_issues.py::TestRevalidationRace::test_cancel_frees_slot
+ERROR backend\tests\test_l00_p05_open_issues.py::TestPartialMaterialReturn::test_cancel_after_issue
+ERROR backend\tests\test_l00_p05_open_issues.py::TestPartialMaterialReturn::test_partner_rolls_and_partial_return
+ERROR backend\tests\test_l00_p05_open_issues.py::TestPartialMaterialReturn::test_return_rest_closes_step_and_wip_zero
+5 errors in 1.38s

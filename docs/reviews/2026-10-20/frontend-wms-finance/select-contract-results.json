@@ -1,0 +1,98 @@
+{
+  "rule": "KNSelect receives onChange but not its implemented callback onValueChange",
+  "matches": [
+    {
+      "file": "src/features/finance/interco/IntercoCreateModal.jsx",
+      "line": 109,
+      "props": [
+        "value",
+        "onChange",
+        "options",
+        "data-testid"
+      ]
+    },
+    {
+      "file": "src/features/finance/interco/IntercoCreateModal.jsx",
+      "line": 112,
+      "props": [
+        "value",
+        "onChange",
+        "options",
+        "data-testid"
+      ]
+    },
+    {
+      "file": "src/features/finance/interco/IntercoCreateModal.jsx",
+      "line": 115,
+      "props": [
+        "value",
+        "onChange",
+        "options",
+        "data-testid"
+      ]
+    },
+    {
+      "file": "src/features/finance/interco/IntercoCreateModal.jsx",
+      "line": 118,
+      "props": [
+        "value",
+        "onChange",
+        "options",
+        "data-testid"
+      ]
+    },
+    {
+      "file": "src/features/finance/interco/IntercoCreateModal.jsx",
+      "line": 137,
+      "props": [
+        "value",
+        "onChange",
+        "options",
+        "placeholder"
+      ]
+    },
+    {
+      "file": "src/features/finance/interco/IntercoPanels.jsx",
+      "line": 32,
+      "props": [
+        "data-testid",
+        "value",
+        "onChange",
+        "options",
+        "className",
+        "placeholder"
+      ]
+    },
+    {
+      "file": "src/features/finance/interco/IntercoSettlementModal.jsx",
+      "line": 107,
+      "props": [
+        "value",
+        "onChange",
+        "options",
+        "data-testid"
+      ]
+    },
+    {
+      "file": "src/features/finance/interco/IntercoSettlementModal.jsx",
+      "line": 111,
+      "props": [
+        "value",
+        "onChange",
+        "options",
+        "data-testid"
+      ]
+    },
+    {
+      "file": "src/features/finance/interco/IntercoSettlementModal.jsx",
+      "line": 115,
+      "props": [
+        "value",
+        "onChange",
+        "options",
+        "data-testid"
+      ]
+    }
+  ],
+  "parse_failures": []
+}

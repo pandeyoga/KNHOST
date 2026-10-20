@@ -1,0 +1,24 @@
+EE                                                                       [100%]
+=================================== ERRORS ====================================
+_______ ERROR at setup of test_t01_select_two_rolls_from_different_lots _______
+backend\tests\test_l04_ln041_mdq_select.py:35: in fx
+    yield {"iid": iid, "lines": lines, "rolls": rolls, "tok": _login("mdquality@kainnusantara.id", "demo1234"),
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l04_ln041_mdq_select.py:15: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+_ ERROR at setup of test_t02_mismatch_then_human_accept_is_separate_and_audited _
+backend\tests\test_l04_ln041_mdq_select.py:35: in fx
+    yield {"iid": iid, "lines": lines, "rolls": rolls, "tok": _login("mdquality@kainnusantara.id", "demo1234"),
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend\tests\test_l04_ln041_mdq_select.py:15: in _login
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Email atau password tidak sesuai"}
+E   assert 401 == 200
+E    +  where 401 = <Response [401]>.status_code
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l04_ln041_mdq_select.py::test_t01_select_two_rolls_from_different_lots
+ERROR backend\tests\test_l04_ln041_mdq_select.py::test_t02_mismatch_then_human_accept_is_separate_and_audited
+2 errors in 0.74s

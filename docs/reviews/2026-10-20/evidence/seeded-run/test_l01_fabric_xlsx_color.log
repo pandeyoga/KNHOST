@@ -1,0 +1,16 @@
+FF.                                                                      [100%]
+================================== FAILURES ===================================
+_________________ test_add_fabric_type_and_import_accepts_it __________________
+backend\tests\test_l01_fabric_xlsx_color.py:33: in test_add_fabric_type_and_import_accepts_it
+    csv = f"kode_artikel,nama_artikel,sku,tahap,jenis_kain\n,,{p['sku']},finished,{code}\n"
+                                                               ^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_______________________________ test_recap_xlsx _______________________________
+backend\tests\test_l01_fabric_xlsx_color.py:47: in test_recap_xlsx
+    assert r.status_code == 200 and "spreadsheetml" in r.headers["content-type"]
+E   assert (500 == 200)
+E    +  where 500 = <Response [500]>.status_code
+=========================== short test summary info ===========================
+FAILED backend\tests\test_l01_fabric_xlsx_color.py::test_add_fabric_type_and_import_accepts_it
+FAILED backend\tests\test_l01_fabric_xlsx_color.py::test_recap_xlsx - assert ...
+2 failed, 1 passed in 3.17s

@@ -1,0 +1,11 @@
+
+=================================== ERRORS ====================================
+_____________ ERROR collecting tests/test_l08_returnable_rolls.py _____________
+backend\tests\test_l08_returnable_rolls.py:11: in <module>
+    SHIPPED_SO = DB.sales_orders.find_one({"number": "KSC/SO-00001"})["id"]      # done, SJ-00001/00002
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+=========================== short test summary info ===========================
+ERROR backend\tests\test_l08_returnable_rolls.py - TypeError: 'NoneType' obje...
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 1.11s

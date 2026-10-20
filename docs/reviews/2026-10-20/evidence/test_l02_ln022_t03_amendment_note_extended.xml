@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="13" failures="0" skipped="0" tests="13" time="0.921" timestamp="2026-10-19T13:33:40.390070+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_status_marks_issued[shipped]" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_status_marks_issued[partially_shipped]" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_status_marks_issued[done]" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_sales_order_je_marks_issued" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_void_je_not_issued" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_not_issued_re_derive_applies" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_credit_note_partial_paid_splits_ar_and_store_credit" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_credit_note_fully_paid_all_store_credit" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_credit_note_double_approve_and_self_approve" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_debit_note_no_journal_order_unchanged" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_qty_decrease_below_shipped_blocked" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_repeat_same_price_correction_does_not_double_credit" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase><testcase classname="tests.test_l02_ln022_t03_amendment_note_extended" name="test_second_correction_credits_only_increment" time="0.001"><error message="failed on setup with &quot;TypeError: 'NoneType' object is not subscriptable&quot;">backend\tests\test_l02_ln022_t03_amendment_note_extended.py:41: in H
+    yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
+                                                              ^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase></testsuite></testsuites>

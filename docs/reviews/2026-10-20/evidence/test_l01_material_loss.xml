@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="1.107" timestamp="2026-10-19T13:33:02.449926+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="" name="tests.test_l01_material_loss" time="0.000"><error message="collection failure">backend\tests\test_l01_material_loss.py:6: in &lt;module&gt;
+    from tests.test_p05_acceptance_acc31_33_34 import BASE, DB, _create, _login, _tpl, _wip
+&lt;frozen importlib._bootstrap&gt;:1360: in _find_and_load
+    ???
+&lt;frozen importlib._bootstrap&gt;:1331: in _find_and_load_unlocked
+    ???
+&lt;frozen importlib._bootstrap&gt;:935: in _load_unlocked
+    ???
+..\integration_env\Lib\site-packages\_pytest\assertion\rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+backend\tests\test_p05_acceptance_acc31_33_34.py:46: in &lt;module&gt;
+    REVAL = {"revalidation_supplier_id": DB.suppliers.find_one({"entity_id": "all"}, {"_id": 0, "id": 1}, sort=[("name", 1)])["id"],
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable</error></testcase></testsuite></testsuites>

@@ -1,0 +1,31 @@
+{
+  "id": "AUD-RET-01",
+  "injected_failure": "inventory movement insert fails after journal and roll update",
+  "initial_stage": "supplier_pending",
+  "first_error": "RuntimeError: AUDIT transient movement insert failure",
+  "roll": {
+    "id": "roll-audit",
+    "roll_no": "RTN-AUDIT",
+    "return_id": "ret-audit",
+    "origin_type": "return",
+    "product_id": "p-audit",
+    "warehouse_id": "shared-qc",
+    "owner_entity_id": "ent_cst",
+    "length_remaining": 0,
+    "unit": "yard",
+    "unit_cost": 10,
+    "grade": "BS",
+    "status": "damaged",
+    "origin_interco_pair_id": "pair-audit",
+    "disposition": {},
+    "disposed_at": "2026-10-19T12:06:46.150097+00:00",
+    "disposed_qty": 100.0,
+    "updated_at": "2026-10-19T12:06:46.150097+00:00",
+    "writeoff_amount": 1000.0,
+    "writeoff_je_id": "je_eb3f2854c8ba"
+  },
+  "journals": 1,
+  "movements": 0,
+  "retry": "DispositionError: Roll RTN-AUDIT tidak sedang menunggu keputusan tahap ini.",
+  "note": "Both attempts use actual decide_supplier with valid BS stock, internal origin and image attachment metadata; transient DB failure injected only at movement insert. No actual image file validation asserted."
+}

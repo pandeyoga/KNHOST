@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="9" failures="0" skipped="0" tests="9" time="0.953" timestamp="2026-10-19T13:33:43.570591+07:00" hostname="LAPTOP-PUHSDUH8"><testcase classname="tests.test_l02_ln023_ar_ap_consistency.TestT01ARSplit" name="test_aging_totals_and_definitions" time="0.094"><error message="failed on setup with &quot;AttributeError: 'NoneType' object has no attribute 'update'&quot;">backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'</error></testcase><testcase classname="tests.test_l02_ln023_ar_ap_consistency.TestT01ARSplit" name="test_stage1_confirmed_unshipped" time="0.001"><error message="failed on setup with &quot;AttributeError: 'NoneType' object has no attribute 'update'&quot;">backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'</error></testcase><testcase classname="tests.test_l02_ln023_ar_ap_consistency.TestT01ARSplit" name="test_stage2_partial_shipment" time="0.001"><error message="failed on setup with &quot;AttributeError: 'NoneType' object has no attribute 'update'&quot;">backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'</error></testcase><testcase classname="tests.test_l02_ln023_ar_ap_consistency.TestT01ARSplit" name="test_stage3_partial_payment_idempotent" time="0.001"><error message="failed on setup with &quot;AttributeError: 'NoneType' object has no attribute 'update'&quot;">backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'</error></testcase><testcase classname="tests.test_l02_ln023_ar_ap_consistency.TestT01ARSplit" name="test_idempotency_key_different_payload_409" time="0.001"><error message="failed on setup with &quot;AttributeError: 'NoneType' object has no attribute 'update'&quot;">backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'</error></testcase><testcase classname="tests.test_l02_ln023_ar_ap_consistency.TestT02POClose" name="test_close_settlement_over_billed_over_paid" time="0.001"><error message="failed on setup with &quot;AttributeError: 'NoneType' object has no attribute 'update'&quot;">backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'</error></testcase><testcase classname="tests.test_l02_ln023_ar_ap_consistency.TestT02POClose" name="test_retry_close_400_no_dup" time="0.001"><error message="failed on setup with &quot;AttributeError: 'NoneType' object has no attribute 'update'&quot;">backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'</error></testcase><testcase classname="tests.test_l02_ln023_ar_ap_consistency.TestT02POClose" name="test_get_close_settlement" time="0.001"><error message="failed on setup with &quot;AttributeError: 'NoneType' object has no attribute 'update'&quot;">backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'</error></testcase><testcase classname="tests.test_l02_ln023_ar_ap_consistency.TestT02POClose" name="test_variance_task_short_close" time="0.001"><error message="failed on setup with &quot;AttributeError: 'NoneType' object has no attribute 'update'&quot;">backend\tests\test_l02_ln023_ar_ap_consistency.py:52: in fixtures
+    so.update({"id": SO, "number": "KSC/TEST_SO-LN023-A", "customer_id": CUST, "customer_name": cust["name"],
+    ^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'update'</error></testcase></testsuite></testsuites>
