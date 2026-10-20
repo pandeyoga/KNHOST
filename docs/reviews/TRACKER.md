@@ -59,17 +59,29 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 | ENV-03 | `seed_realistic.py` melewati data Interco & SPK printing | open | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | ROLE-01 | 83 gerbang nama peran frontend di luar daftar FE-04 (kelas yang sama) — tombol tidak mengikuti izin efektif server | implemented_pending_review (`ac62dc3`; default matriks `af24f9c`) | [ROLE-GATE-SWEEP](2026-10-20/hasil/ROLE-GATE-SWEEP.md) · [KEPUTUSAN](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md) |
 
+## Uji pra-UAT — paket 2026-10-21 (`docs/uat/2026-10-21/`)
+
+Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (ID F-xx dari dokumen itu). Laporan per temuan di
+`docs/uat/2026-10-21/hasil/`.
+
+| ID | Judul | Prio | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
+|---|---|---|---|---|---|---|
+| F-09 | Entri persetujuan yang ditolak mengunci SO selamanya (harga khusus & kredit) | P1 | implemented_pending_review | ya — direproduksi runtime (SO-00039, SO-00083) | `627a4c1` | [F-09](../uat/2026-10-21/hasil/F-09.md) |
+
 ## Keputusan yang ditunggu
 
 | ID | Pertanyaan untuk owner | Dicatat |
 |---|---|---|
 | ROLE-01 lintas PT | Peran kustom turunan Manager perlu ikut akses lintas badan usaha seperti Manager bawaan? Sekarang hanya PT yang ditugaskan. | 2026-10-21 |
 | FE-01 SO terbit | Batal item OD pada SO yang sudah dibayar/berfaktur: jalur nota kredit otomatis, atau tetap ditolak (koreksi manual Finance)? | 2026-10-21 |
+| F-09 baris dihapus | Harga khusus yang ditolak untuk produk yang kemudian dihapus dari pesanan tetap memblokir (tidak bisa diajukan ulang). Saat baris dihapus, entrinya ikut digantikan/dibatalkan? | 2026-10-21 |
+| F-09 data lama | Jalankan `backend/scripts/repair_f09_superseded_rejections.py --apply` di produksi untuk SO yang terlanjur terkunci? (dry-run lokal: SO-00039, SO-00083) | 2026-10-21 |
 
 ## Riwayat perubahan tracker
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | Uji pra-UAT F-09 implemented_pending_review (`627a4c1`, [F-09](../uat/2026-10-21/hasil/F-09.md)): pengajuan ulang harga khusus/kredit menggantikan penolakan lama, submit ulang diarahkan ke Pusat Persetujuan, skrip perbaikan data lama; 2 pertanyaan baru |
 | 2026-10-21 | Claude Code | Jawaban owner putaran 2 ([laporan](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md#bagian-2--jawaban-owner-putaran-kedua-2026-10-21)): kontrak kedaluwarsa/batal (`1ad79cb`), batal item sesudah SO + notifikasi MD (`a3f7936`), backend role_in (`b69fe0d`), sisir lanjutan FE (`fc477ce`); 3 pertanyaan lama terjawab, 2 baru |
 | 2026-10-21 | Claude Code | FE-10..13 implemented_pending_review (`85ddd1c`, [UI-05](2026-10-20/hasil/UI-05.md)): satuan sumber antrean QC, status muat penerimaan transfer, neraca belum diketahui netral, tanda saldo kumulatif |
 | 2026-10-21 | Claude Code | FE-06..09 implemented_pending_review (`c5fd627`, [UI-04](2026-10-20/hasil/UI-04.md)): target antrean harga khusus + fokus dokumen + guardrail desk_targets, error aksi retur di layar aktif, form retur aman balapan, pemilih SO retur server-side |
