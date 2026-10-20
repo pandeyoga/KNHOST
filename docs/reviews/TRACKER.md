@@ -63,14 +63,14 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 
 | ID | Pertanyaan untuk owner | Dicatat |
 |---|---|---|
-| AUD-RND-03 (lanjutan) | Kontrak *terminated* sudah diputuskan boleh. Bagaimana dengan kontrak **kedaluwarsa** dan **batal** — boleh jadi referensi uji ulang? Sekarang validator menerima, daftar menyaring. | 2026-10-21 |
-| FE-01 batal item | Aturan bawaan: batal item hanya **sebelum SO**; PO/MKO/sample/desain item ikut batal; harga item lain tetap; tanpa notifikasi. Setuju, atau perlu batal sesudah SO / notifikasi ke MD & pengadaan / persetujuan atasan? | 2026-10-21 |
-| ROLE-01 default | MD kini ikut bisa memutus karantina QC kedatangan karena sudah memegang `qc.release` (dipakai juga untuk putusan dokumen inspeksi). Biarkan, atau cabut `qc.release` dari MD? | 2026-10-21 |
+| ROLE-01 lintas PT | Peran kustom turunan Manager perlu ikut akses lintas badan usaha seperti Manager bawaan? Sekarang hanya PT yang ditugaskan. | 2026-10-21 |
+| FE-01 SO terbit | Batal item OD pada SO yang sudah dibayar/berfaktur: jalur nota kredit otomatis, atau tetap ditolak (koreksi manual Finance)? | 2026-10-21 |
 
 ## Riwayat perubahan tracker
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | Jawaban owner putaran 2 ([laporan](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md#bagian-2--jawaban-owner-putaran-kedua-2026-10-21)): kontrak kedaluwarsa/batal (`1ad79cb`), batal item sesudah SO + notifikasi MD (`a3f7936`), backend role_in (`b69fe0d`), sisir lanjutan FE (`fc477ce`); 3 pertanyaan lama terjawab, 2 baru |
 | 2026-10-21 | Claude Code | FE-10..13 implemented_pending_review (`85ddd1c`, [UI-05](2026-10-20/hasil/UI-05.md)): satuan sumber antrean QC, status muat penerimaan transfer, neraca belum diketahui netral, tanda saldo kumulatif |
 | 2026-10-21 | Claude Code | FE-06..09 implemented_pending_review (`c5fd627`, [UI-04](2026-10-20/hasil/UI-04.md)): target antrean harga khusus + fokus dokumen + guardrail desk_targets, error aksi retur di layar aktif, form retur aman balapan, pemilih SO retur server-side |
 | 2026-10-21 | Claude Code | Jawaban owner dicatat & dikerjakan ([laporan](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md)): AUD-RND-03 implemented_pending_review (`af24f9c`); FE-01 + batal per item (`13c64d8`); ROLE-01 default matriks izin QC/retur/master entitas (`af24f9c`); 3 pertanyaan lanjutan dicatat |

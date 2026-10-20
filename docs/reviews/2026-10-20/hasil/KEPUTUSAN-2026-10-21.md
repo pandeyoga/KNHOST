@@ -98,3 +98,60 @@ persetujuan tetap Admin, menjaga pemisahan tugas). Semua tetap dapat diubah di m
 ## Yang perlu direview
 - Default izin di tabel ROLE-01 lanjutan (terutama MD ikut memutus karantina karena sudah memegang `qc.release`).
 - Aturan batal per item (lihat pertanyaan untuk owner).
+
+---
+
+# Bagian 2 — Jawaban owner putaran kedua (2026-10-21)
+
+- Commit: `1ad79cb` (kontrak), `a3f7936` (batal item sesudah SO + notifikasi MD), `b69fe0d` (backend role_in),
+  `fc477ce` (sisir lanjutan frontend)
+- Jawaban owner (apa adanya): (1) kontrak kedaluwarsa/batal boleh jadi referensi · (2) batal item boleh sesudah SO
+  dan notifikasi ke MD · (3) MD tetap boleh memutus karantina · (4) Syarat Bayar/Template/Lini Produk dibiarkan ·
+  (5) sisir lanjutan: ya · (6) selaraskan peran kustom di backend: ya · (7) pemilih SO retur hanya SO ber-Surat
+  Jalan: setuju · (8) temuan backend sesuai paket · (9) `docs/uat/` dari sesi Claude Code lain — cek alurnya
+  sesudah selesai · (10) push: ya (`59be2da..c8e3be8`).
+
+## AUD-RND-03 lanjutan — kontrak kedaluwarsa & batal
+- Daftar referensi uji ulang = semua status yang diterima validator; label "dihentikan/kedaluwarsa/batal
+  (referensi historis)". Tes `test_contract_reference_options` diperluas (kedua status muncul). 9/9.
+
+## FE-01 lanjutan — batal item sesudah SO + notifikasi MD
+- `services/so_line_cancel_service.py`: baris SO dari item OD dibatalkan bila SO **belum terbit**
+  (`amendment_service.is_issued`: Faktur Pajak, pembayaran, terkirim, pendapatan dijurnal), roll baris belum
+  dipick/dikirim, tugas ambil belum mencatat qty, dan produk tidak ganda di SO. Roll `reserved` dilepas
+  (pergerakan + saldo), tugas ambil dibatalkan, baris keluar, total dihitung ulang dengan mesin harga yang sama,
+  jejak `line_cancellations`. Semua syarat dicek sebelum mutasi; baris SO dibatalkan paling awal.
+- PO/MKO yang **sudah ada penerimaan/bahan terkirim tidak lagi memblokir**: dibiarkan, dilaporkan di respons &
+  notifikasi MD sebagai "perlu tindak lanjut" (sesudah SO barang sering sudah datang).
+- MD diberi tahu **per orang** setiap item batal. Bug tertangkap tes: `ref` notifikasi per OD membuat
+  pembatalan kedua tertelan dedupe → kini unik per item.
+- Tes: `test_fe01_od_cancel_item.py` **5/5** (sesudah SO: baris keluar, total turun, reservasi lepas, tugas ambil
+  batal, MD dapat 2 notifikasi; SO terbit → 409 tanpa perubahan); FE-01 multi-item 7/7; LN-033 22/22; jest 49/49.
+
+## Sisir lanjutan gerbang peran (frontend, 32 berkas)
+- Pola baru: gerbang lewat variabel lokal (`const role = ...`), `.role` tanpa `?.`, `includes(role)`. 102 baris
+  ditemukan; ±35 bukan peran pengguna (field `role` data), 10 sudah diputuskan di sisir pertama, sisanya diubah
+  ke izin efektif (atau `roleIs` bila server memakai `role_in`). Contoh perubahan tampilan: Admin Sales kini bisa
+  membuat log kendaraan (`vehicle_log.create`), Admin Gudang bisa menyetujui opname & override grade roll
+  (`inventory.approve_count`, `wms.approve`), Finance melihat lencana posting gagal (`accounting.view`);
+  tombol Tolak kasbon/LPJ kini butuh izin `reject`.
+- Tes: jest `roleGateSweep2` 5 (bukti-merah 4/5), semua jest **54/54**, uji asap 60 render sebelum = sesudah.
+
+## Penyelarasan backend `role_in` (46 berkas, ±70 pemeriksaan)
+- Diubah: pagar data milik Sales, pemilik pelanggan otomatis, pilih roll, Tanya KN, hapus master, putusan
+  amandemen, hapus templat & penyetuju tagihan kampanye, tahap kasbon, penyetuju bayar sample, lepas tahan
+  inspeksi, cakupan lokasi gudang, pagar sopir, visibilitas biaya, penyetuju denda/selisih/kasus, dll. Peran
+  bawaan: hasil identik.
+- Meja Saya: peran kustom memakai meja peran acuannya (dulu 404).
+- **Celah keamanan tertutup:** peran kustom turunan Sales sebelumnya lolos pagar "data milik sendiri" dan melihat
+  semua pesanan/pelanggan (dibuktikan tes: gagal di kode lama).
+- Tidak diubah (sengaja): pemeriksaan khusus Admin; field `role` milik data; **akses lintas badan usaha**
+  (`CROSS_ENTITY_ROLES`) — memperluas akses data ke semua PT, perlu keputusan owner.
+- Tes: `test_role_in_alignment.py` **3/3** (bukti-merah 3/3), swa-uji `role_registry` HIJAU, regresi 10 berkas
+  sebelum = sesudah.
+
+## Pertanyaan baru
+- Peran kustom turunan **Manager** — perlu ikut akses **lintas badan usaha** seperti Manager bawaan? (Sekarang
+  hanya PT yang ditugaskan.)
+- Batal item OD pada SO yang **sudah dibayar/berfaktur** — perlu jalur nota kredit otomatis, atau tetap ditolak
+  (koreksi manual Finance)?
