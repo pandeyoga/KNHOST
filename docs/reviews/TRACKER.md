@@ -57,6 +57,7 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 | ENV-01 | Data acuan `restore_local_demo.sh` gagal di 3/12 skrip pada HEAD (403 izin/penugasan) | implemented_pending_review (`6e64b2c`) | [ENV](2026-10-20/hasil/ENV.md) |
 | ENV-02 | Skrip restore terikat lingkungan Emergent (`supervisorctl`, `localhost`) — perlu varian Docker | implemented_pending_review (`6e64b2c`) | [ENV](2026-10-20/hasil/ENV.md) |
 | ENV-03 | `seed_realistic.py` melewati data Interco & SPK printing | open | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| ROLE-01 | 83 gerbang nama peran frontend di luar daftar FE-04 (kelas yang sama) — tombol tidak mengikuti izin efektif server | implemented_pending_review (`ac62dc3`) | [ROLE-GATE-SWEEP](2026-10-20/hasil/ROLE-GATE-SWEEP.md) |
 
 ## Keputusan yang ditunggu
 
@@ -70,6 +71,7 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
 | 2026-10-20 | Claude Code | Tracker dibuat dari paket 2026-10-20 (13 FE + 12 AUD); semua `open` kecuali AUD-RND-03 `pending_decision` |
+| 2026-10-21 | Claude Code | ROLE-01 (usulan) implemented_pending_review (`ac62dc3`): 83 gerbang peran disisir — 70 ke izin endpoint, 4 peringkat penyetuju, 3 peran acuan, 2 kode mati dihapus, 8 tetap (aturan peran server/teks); perubahan tampilan peran bawaan & yang perlu direview di laporan |
 | 2026-10-20 | Claude Code | FE-03/04/05 implemented_pending_review (`9289e26`, `859a087`): menu peran kustom, tombol per izin, petugas inspeksi per kemampuan+scope, Data Gudang scope sah; 81 gerbang peran lain dicatat sebagai keterbatasan |
 | 2026-10-20 | Claude Code | FE-02 implemented_pending_review (`0d8e202`, `6350391`, `621f50b`): 9 kontrol Interco + bentuk prop selectedEntity + guardrail |
 | 2026-10-20 | Claude Code | FE-01 implemented_pending_review (`cc4d13a`): harga & konversi per item, 7 tes baru; usul `pending_decision` batal per item OD |
