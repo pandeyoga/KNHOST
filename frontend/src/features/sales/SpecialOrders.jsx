@@ -9,6 +9,7 @@
  * - Approve/Reject (manager/admin)
  */
 import { useState, useEffect } from "react";
+import { can } from "../../config/roles";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import { AlertCircle, CheckCircle2, Clock, Loader2, Package, Plus, Sparkles, X } from "lucide-react";
@@ -115,7 +116,8 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
     { key: "done", label: "Selesai" },
   ];
 
-  const canCreate = ["admin", "sales", "manager"].includes(currentUser?.role);
+  // FE-04 — tombol mengikuti izin efektif server (POST /special-orders → order.create).
+  const canCreate = can(currentUser?.permissions, "order", "create");
   const soTotal = Object.values(stats).reduce((s, v) => s + (v.count || 0), 0);
   const soCnt = (k) => stats[k]?.count || 0;
 

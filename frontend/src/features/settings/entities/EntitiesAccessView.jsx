@@ -10,6 +10,7 @@
  *   Badan Usaha · Akun & Akses · Kesiapan
  */
 import { useCallback, useEffect, useState } from "react";
+import { can } from "../../../config/roles";
 import { Building2, Users, ClipboardCheck, Plus, RefreshCw, UserCheck, ShieldCheck } from "lucide-react";
 
 import ErrorNotice from "../../../components/ErrorNotice";
@@ -44,7 +45,11 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
   const [flash, setFlash] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
 
-  const isAdmin = currentUser?.role === "admin";
+  // FE-04 — izin efektif per aksi (badan usaha / matriks peran), bukan nama peran Admin.
+  const perms = currentUser?.permissions;
+  const canCreateEntity = can(perms, "entity", "create");
+  const canEditEntity = can(perms, "entity", "update");
+  const canEditRoles = can(perms, "permission", "update");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -105,7 +110,7 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
           );
         })}
         <div className="ml-auto flex items-center gap-2">
-          {tab === "entities" && isAdmin && (
+          {tab === "entities" && canCreateEntity && (
             <button
               type="button"
               className="primary-button"
@@ -143,7 +148,7 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
         <EntityList
           entities={entities}
           loading={loading}
-          canManage={isAdmin}
+          canManage={canEditEntity}
           onOpen={(id) => setDetailId(id)}
           onChanged={(msg) => { setFlash(msg); refreshAll(); }}
           onError={setError}
@@ -162,7 +167,7 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
 
       {tab === "roles" && (
         <RoleAccessPanel
-          canManage={isAdmin}
+          canManage={canEditRoles}
           onChanged={(msg) => { setFlash(msg); window.dispatchEvent(new CustomEvent("kn:roles-changed")); }}
           onError={setError}
         />
@@ -170,7 +175,7 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
 
       {tab === "role-reality" && (
         <RoleRealityPanel
-          canManage={isAdmin}
+          canManage={canEditRoles}
           onChanged={(msg) => { setFlash(msg); refreshAll(); }}
           onError={setError}
         />
@@ -203,7 +208,7 @@ export default function EntitiesAccessView({ currentUser, selectedEntity, onNavi
       {detailId && (
         <EntityDetailDrawer
           entityId={detailId}
-          canManage={isAdmin}
+          canManage={canEditEntity}
           onClose={() => setDetailId("")}
           onChanged={(msg) => { setFlash(msg); refreshAll(); }}
           onNavigate={onNavigate}

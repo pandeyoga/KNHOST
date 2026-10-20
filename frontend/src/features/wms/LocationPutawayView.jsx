@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { roleIs } from "../../config/roles";
 import { MapPin, Package, Layers, Boxes, RefreshCw, PackageCheck, AlertOctagon, ChevronRight } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
@@ -34,7 +35,7 @@ export default function LocationPutawayView({ currentUser, selectedEntity }) {
     axios.get(`${API}/entities`).then((r) => setOwners((Array.isArray(r.data) ? r.data : r.data?.items || [])
       .map((e) => ({ value: e.id, label: e.short_name || e.name || e.id })))).catch(() => setOwners([]));
   }, []);
-  const isSup = SUPERVISORS.includes(currentUser?.role);
+  const isSup = roleIs(currentUser?.role, SUPERVISORS);   // FE-04 — sama dengan placement_rules.is_supervisor (kenal peran acuan)
 
   useEffect(() => {
     if (locScope === null) return;

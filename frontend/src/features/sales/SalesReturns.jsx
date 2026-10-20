@@ -9,6 +9,7 @@
  * - Upload bukti foto
  */
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { can } from "../../config/roles";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import LineFilter from "../../components/LineFilter";   // FASE L
@@ -121,7 +122,8 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
   // Penyaringan status & pencarian sudah dilakukan SERVER; daftar dipakai apa adanya.
   const filtered = returns;
 
-  const canApprove = ["admin", "manager"].includes(currentUser?.role);
+  // FE-04 — ACC/settle/pembalikan retur → sales_return.approve (izin efektif server).
+  const canApprove = can(currentUser?.permissions, "sales_return", "approve");
   const cnt = (s) => Number(counts[s] || 0);
   const rTotal = Number(counts.all || 0);
   const scopeParts = [returnType !== "all" && `Tipe: ${TYPE_OPTIONS.find(([v]) => v === returnType)?.[1]}`,

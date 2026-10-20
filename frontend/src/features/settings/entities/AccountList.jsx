@@ -7,6 +7,7 @@
  * akun tanpa tautan HR adalah sumber utama badan usaha akun ≠ badan usaha payroll.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { can } from "../../../config/roles";
 import { Search, UserPlus, KeyRound, Power, RotateCcw, LogOut, AlertTriangle,
   Loader2, Pencil } from "lucide-react";
 
@@ -48,7 +49,10 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
   const [busy, setBusy] = useState("");
   const [editing, setEditing] = useState(null);   // {} = akun baru
 
-  const isAdmin = currentUser?.role === "admin";
+  // FE-04 — POST /users → user.create · ubah/reset/cabut sesi/aktifkan → user.update · nonaktifkan → user.delete.
+  const canAddUser = can(currentUser?.permissions, "user", "create");
+  const canEditUser = can(currentUser?.permissions, "user", "update");
+  const canDeactivateUser = can(currentUser?.permissions, "user", "delete");
   const activeEntities = useMemo(
     () => entities.filter((e) => e.status === "active"), [entities]);
 
@@ -213,7 +217,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                    placeholder="Cari nama / email…" value={q}
                    onChange={(e) => { setQ(e.target.value); setPage(1); }} />
           </div>
-          {isAdmin && (
+          {canAddUser && (
             <button type="button" className="primary-button" data-testid="account-add-button"
                     onClick={() => setEditing({})}>
               <UserPlus size={14} /> Buat Akun
@@ -338,21 +342,21 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap items-center justify-end gap-1">
-                        {isAdmin && (
+                        {canEditUser && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-edit-${u.id}`}
                                   onClick={() => setEditing(u)}>
                             <Pencil size={11} /> Ubah
                           </button>
                         )}
-                        {isAdmin && (
+                        {canEditUser && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-reset-${u.id}`}
                                   disabled={busy === u.id} onClick={() => doReset(u)}>
                             <KeyRound size={11} /> Reset
                           </button>
                         )}
-                        {isAdmin && u.has_active_session && (
+                        {canEditUser && u.has_active_session && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-revoke-${u.id}`}
                                   disabled={busy === u.id}
@@ -361,7 +365,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                             <LogOut size={11} /> Cabut sesi
                           </button>
                         )}
-                        {isAdmin && u.status === "active" && (
+                        {canDeactivateUser && u.status === "active" && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-deactivate-${u.id}`}
                                   disabled={busy === u.id}
@@ -371,7 +375,7 @@ export default function AccountList({ entities = [], currentUser, selectedEntity
                                            : <Power size={11} />} Nonaktifkan
                           </button>
                         )}
-                        {isAdmin && u.status !== "active" && (
+                        {canEditUser && u.status !== "active" && (
                           <button type="button" className="secondary-button !py-1 !px-2 !text-[10.5px]"
                                   data-testid={`account-reactivate-${u.id}`}
                                   disabled={busy === u.id}

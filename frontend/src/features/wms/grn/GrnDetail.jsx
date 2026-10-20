@@ -1,5 +1,6 @@
 import { AskKnButton } from "../../../components/AskKnButton";
 import { useEffect, useState } from "react";
+import { can } from "../../../config/roles";
 import { ArrowLeft, FlaskConical, XCircle } from "lucide-react";
 import { askReason, askText } from "../../../services/confirmService";
 import { ErrorBox, GrnStatusBadge, GrnStepper } from "./GrnBits";
@@ -9,8 +10,6 @@ import GrnReviewPanel from "./GrnReviewPanel";
 import GrnOcrDraft from "./GrnOcrDraft";
 import { errText, grnApi, sampleApi } from "./grnApi";
 
-const REVIEW_ROLES = ["admin", "manager", "warehouse_admin"];
-const COUNT_ROLES = ["admin", "warehouse", "warehouse_admin"];
 const TAB_FOR = { draft: "review", reading: "review", review: "review", counting: "count", reconcile: "recon", closing: "recon", closed: "recon", rejected: "review", cancelled: "review" };
 
 export default function GrnDetail({ grnId, user, onBack }) {
@@ -19,8 +18,10 @@ export default function GrnDetail({ grnId, user, onBack }) {
   const [err, setErr] = useState("");
   const [sampled, setSampled] = useState(false);
   const role = user?.role;
-  const canReview = REVIEW_ROLES.includes(role);
-  const canCount = COUNT_ROLES.includes(role);
+  // FE-04 — izin efektif per aksi (review / count / close dipisah seperti di server).
+  const canReview = can(user?.permissions, "goods_receipt", "review");
+  const canCount = can(user?.permissions, "goods_receipt", "count");
+  const canClose = can(user?.permissions, "goods_receipt", "close");
   useEffect(() => { grnApi.get(grnId).then((g) => { setGrn(g); setTab(TAB_FOR[g.status]); }).catch((e) => setErr(errText(e, "Kedatangan tidak ditemukan."))); }, [grnId]);
   useEffect(() => {
     if (grn?.status !== "reading") return undefined;
@@ -57,7 +58,7 @@ export default function GrnDetail({ grnId, user, onBack }) {
         {canSample && (sampled
           ? <span data-testid="grn-sample-saved" className="text-[11px] font-semibold text-[#0F766E]">Tersimpan sebagai sample uji</span>
           : <button data-testid="grn-make-sample" className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0058CC]" onClick={makeSample}><FlaskConical size={13} /> Jadikan sample uji</button>)}
-        {["draft", "reading", "review", "counting"].includes(grn.status) && COUNT_ROLES.includes(role) && (
+        {["draft", "reading", "review", "counting"].includes(grn.status) && canCount && (
           <button data-testid="grn-cancel" className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#B4231F]" onClick={cancel}><XCircle size={13} /> Batalkan</button>
         )}
       </div>
@@ -71,7 +72,7 @@ export default function GrnDetail({ grnId, user, onBack }) {
       {(!canReview || tab !== "review") && <GrnOcrDraft grn={grn} />}
       {tab === "review" && canReview && <GrnReviewPanel grn={grn} onChange={onChange} canReview={canReview} />}
       {tab === "count" && <GrnCountPanel grn={grn} onChange={onChange} canCount={canCount} />}
-      {tab === "recon" && <GrnReconPanel grn={grn} onChange={onChange} canReview={canReview} canClose={canReview} />}
+      {tab === "recon" && <GrnReconPanel grn={grn} onChange={onChange} canReview={canReview} canClose={canClose} />}
     </div>
   );
 }

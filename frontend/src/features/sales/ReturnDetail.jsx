@@ -1,5 +1,5 @@
 /** Sub-fase 1.11 — Return detail panel with approve/reject/upload. */
-import { canSeeGrade } from "../../config/roles";
+import { can, canSeeGrade } from "../../config/roles";
 import { useState, useRef, useEffect } from "react";
 import { AskKnButton } from "../../components/AskKnButton";
 import axios, { API } from "../../services/apiClient";
@@ -48,7 +48,9 @@ export default function ReturnDetail({
   const [enriched, setEnriched]               = useState(null);
   const fileRef = useRef(null);
   const isTerminal = TERMINAL.includes(ret.status);
-  const canReject = ["pending_approval", "approved", "inspecting", "inspected"].includes(ret.status);
+  // FE-04 — dulu hanya status (semua pengguna melihat Tolak); POST /reject → sales_return.reject.
+  const canReject = ["pending_approval", "approved", "inspecting", "inspected"].includes(ret.status)
+    && can(currentUser?.permissions, "sales_return", "reject");
   const isSettled = ["refund_settled", "credit_settled", "nego_settled"].includes(ret.status);
 
   // F3 — ambil detail Nota Kredit bila retur sudah menghasilkan credit note.

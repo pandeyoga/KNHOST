@@ -1,5 +1,6 @@
 /** TransferDetailModal — detail view + lifecycle actions for a single transfer. */
 import { useEffect, useState } from "react";
+import { can } from "../../../config/roles";
 import { CheckCircle, XCircle, BookOpen, ArrowRightLeft, AlertTriangle } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { formatQty } from "../../../utils/formatters";
@@ -16,6 +17,9 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
   actionError = "", onDismissActionError, onReceiptChanged }) {
   const je = transfer?.je_intercompany || null;
   const isIC = transfer?.transfer_kind === "inter_entity";
+  // FE-04 — dulu hanya `role === "manager"`; server memakai izin transfer.approve / transfer.reject.
+  const canApproveTransfer = can(user?.permissions, "transfer", "approve");
+  const canRejectTransfer = can(user?.permissions, "transfer", "reject");
   const [ruleCheck, setRuleCheck] = useState([]);
   const [ruleReason, setRuleReason] = useState("");
   const showReceipt = !isIC && ["dispatched", "partially_received", "completed"].includes(transfer.status);
@@ -216,22 +220,22 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                 (mis. "status sudah berubah") hilang tanpa jejak. */}
             <ErrorNotice message={actionError} onDismiss={onDismissActionError} testId="transfer-action-error" />
             <div className="flex flex-wrap gap-2">
-              {transfer.status === "waiting_approval" && user?.role === "manager" && (
+              {transfer.status === "waiting_approval" && (canApproveTransfer || canRejectTransfer) && (   /* FE-04 — transfer.approve / transfer.reject */
                 <>
-                  <button
+                  {canApproveTransfer && <button
                     data-testid="approve-transfer-button"
                     onClick={() => onApprove(transfer.id, ruleReason)}
                     className="flex items-center gap-2 bg-[#34C759] hover:bg-[#28A745] text-white rounded-full px-4 py-2 text-sm font-medium"
                   >
                     <CheckCircle size={14} /> Setujui
-                  </button>
-                  <button
+                  </button>}
+                  {canRejectTransfer && <button
                     data-testid="reject-transfer-button"
                     onClick={() => onReject(transfer.id)}
                     className="flex items-center gap-2 bg-[#FF3B30] hover:bg-[#DC3545] text-white rounded-full px-4 py-2 text-sm font-medium"
                   >
                     <XCircle size={14} /> Reject
-                  </button>
+                  </button>}
                 </>
               )}
               {transfer.status === "approved" && (

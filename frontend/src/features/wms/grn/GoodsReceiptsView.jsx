@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { can } from "../../../config/roles";
 import { Plus, Settings } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { ErrorBox, GrnStatusBadge } from "./GrnBits";
@@ -11,7 +12,6 @@ import { SearchBox } from "../../../components/ListControls";
 import { STATUS, errText, grnApi } from "./grnApi";
 
 const FILTERS = [["", "Semua"], ["draft,review", "Tinjau SJ"], ["counting", "Hitung"], ["reconcile,closing", "Rekonsiliasi"], ["closed", "Ditutup"], ["rejected,cancelled", "Batal/Tolak"]];
-const CREATE_ROLES = ["admin", "warehouse", "warehouse_admin"];
 const LEGACY_ROLES = ["admin", "warehouse", "warehouse_admin", "manager"];   // LN-140 — admin gudang setara staf gudang
 const SETTINGS_ROLES = ["admin", "manager", "warehouse_admin"];
 const mkoPreset = () => {
@@ -32,6 +32,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
   const { isGrn, entityOf } = useReceivingMode();
   const grnOnly = selectedEntity && selectedEntity !== "all" && isGrn(selectedEntity) && !(entityOf(selectedEntity)?.legacy_in_flight || []).length;
   const showLegacy = LEGACY_ROLES.includes(currentUser?.role) && !grnOnly;
+  const canCreateGrn = can(currentUser?.permissions, "goods_receipt", "create");   // FE-04 — POST /goods-receipts
   const load = useCallback(() => grnApi.list({ status, q }).then(setRows).catch((e) => setErr(errText(e))), [status, q]);
   useEffect(() => { if (!openId) load(); }, [load, openId, selectedEntity]);
   useEffect(() => {
@@ -62,7 +63,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
             <a data-testid="grn-open-ocr-settings" href="?view=settings-receiving-ocr" title="Profil SJ, Sample Uji OCR, Biaya OCR & Mode Penerimaan ada di Pengaturan › Gudang"
               className="secondary-button !py-1 text-[11px]"><Settings size={12} /> Pengaturan OCR</a>
           )}
-          {CREATE_ROLES.includes(currentUser?.role) && tab === "list" && (
+          {canCreateGrn && tab === "list" && (
             <button data-testid="grn-new-button" className="primary-button" onClick={() => setWizard({})}><Plus size={13} /> Kedatangan baru</button>
           )}
         </div>
@@ -110,7 +111,7 @@ export default function GoodsReceiptsView({ currentUser, selectedEntity, focusDo
             <div className="empty-state col-span-full w-full" data-testid="grn-list-empty">
               <p className="font-semibold">Belum ada kedatangan{status ? ` berstatus ${STATUS[status.split(",")[0]]?.label || status}` : ""}.</p>
               <p className="text-sm text-muted" style={{ maxWidth: 480 }}>Catat barang yang tiba: foto Surat Jalan dibaca otomatis (OCR), lalu hitung fisik & rekonsiliasi dengan PO.</p>
-              {CREATE_ROLES.includes(currentUser?.role) && <button className="primary-button" style={{ marginTop: 8 }} onClick={() => setWizard({})}><Plus size={13} /> Kedatangan baru</button>}
+              {canCreateGrn && <button className="primary-button" style={{ marginTop: 8 }} onClick={() => setWizard({})}><Plus size={13} /> Kedatangan baru</button>}
             </div>
           )}
         </div>

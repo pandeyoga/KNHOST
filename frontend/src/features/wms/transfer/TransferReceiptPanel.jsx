@@ -1,5 +1,6 @@
 /** P03 IMP-27 — penerimaan AKTUAL per roll: pilih/scan roll yang tiba, rusak, staging/bin, exception. */
 import { useCallback, useEffect, useState } from "react";
+import { roleIs } from "../../../config/roles";
 import { PackageCheck, ScanLine, AlertTriangle } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
 import { apiErrorText } from "../../../utils/apiError";
@@ -22,7 +23,7 @@ export default function TransferReceiptPanel({ transfer, user, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const open = ["dispatched", "partially_received"].includes(transfer.status);
-  const isSup = SUPERVISOR.includes(user?.role);
+  const isSup = roleIs(user?.role, SUPERVISOR);   // FE-04 — sama dengan supervisor di server (kenal peran acuan)
 
   const load = useCallback(async () => {
     try {

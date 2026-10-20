@@ -162,7 +162,10 @@ async def list_warehouses(request: Request, scope: str = Query("usable"),
     actor = await require_permission(request, "warehouse", "view")
     ctx = await entity_ctx(request)
     want_all = str(scope or "").strip().lower() == "all"
-    if want_all and actor.get("role") not in MASTER_SCOPE_ROLES:
+    from role_registry import role_in
+    # FE-05 — peran master (peran acuan dikenali). Peran lain memakai daftar bawaan (gudang yang boleh
+    # dipakai PT aktif) — layar Data Gudang memintanya tanpa `scope=all`; seluruh gudang tidak dibuka.
+    if want_all and not role_in(actor.get("role"), MASTER_SCOPE_ROLES):
         raise HTTPException(status_code=403,
                             detail="Hanya admin/manajer/gudang yang boleh melihat seluruh gudang.")
     return await whscope.list_for_entity(

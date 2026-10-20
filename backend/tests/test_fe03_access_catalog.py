@@ -25,7 +25,7 @@ def test_fixture_frontend_sama_dengan_katalog():
 
 
 def test_pintu_kerja_per_modul():
-    add = lambda mod: set(nav_for_levels({mod: "full"})["add"])  # noqa: E731
+    add = lambda mod: set(nav_for_levels({mod: "manage"})["add"])  # noqa: E731
     assert {"interco-transactions", "interco-returns"} <= add("interco")
     assert {"goods-receipts", "wms-outbound", "rfid-hub"} <= add("warehouse_ops")
     assert {"ledger", "general-ledger", "fin-reports", "closing", "posting-failures"} <= add("accounting")

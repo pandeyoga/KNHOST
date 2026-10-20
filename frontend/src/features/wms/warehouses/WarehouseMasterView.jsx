@@ -32,11 +32,11 @@ import FormModal from "../../../components/FormModal";
 import WarehouseModeBadge from "../../../components/WarehouseModeBadge";
 import WarehouseStructure from "../inventory/WarehouseStructure";
 import { useEntityScope } from "../../../context/EntityScopeContext";
+import { can, roleIs } from "../../../config/roles";
 import { entityFullById, entityShort } from "../../../utils/entityLabel";
 import { formatQty } from "../../../utils/formatters";
 import {
-  createWarehouse, deactivateWarehouse, errText, listAllWarehouses, patchWarehouse,
-  warehouseOccupancy, listSites, createSite, deleteSite, seedBlueprint, listCategories, WH_ROLES,
+  WH_ROLES, createSite, createWarehouse, deactivateWarehouse, deleteSite, errText, listAllWarehouses, listCategories, listSites, listUsableWarehouses, patchWarehouse, seedBlueprint, warehouseOccupancy,
 } from "./warehouseApi";
 import WarehouseModeDrawer from "./WarehouseModeDrawer";
 import WarehouseProfileDrawer from "./WarehouseProfileDrawer";
@@ -48,6 +48,8 @@ const EMPTY_FORM = {
   lat: "", lng: "", sharing_mode: "dedicated",
 };
 
+const MASTER_SCOPE_ROLES = ["admin", "manager", "warehouse"];   // = backend routers/warehouses.py
+
 const SCOPE_FILTERS = [
   { key: "usable", label: "Boleh dipakai" },
   { key: "all", label: "Semua gudang" },
@@ -55,7 +57,15 @@ const SCOPE_FILTERS = [
 
 export default function WarehouseMasterView({ entities = [], selectedEntity, currentUser }) {
   const { canWrite, writeBlockHint } = useEntityScope();
-  const canManage = ["admin", "manager", "warehouse"].includes(currentUser?.role);
+  // FE-05 — `scope=all` (semua gudang + lencana mode) hanya untuk peran master di server
+  // (MASTER_SCOPE_ROLES, peran acuan dikenali). Peran lain (mis. Admin Gudang) memuat gudang yang
+  // boleh dipakai PT aktif — scope sah dari server, BUKAN dibuka seluruhnya.
+  const masterScope = roleIs(currentUser?.role, MASTER_SCOPE_ROLES);
+  // FE-04 — izin efektif per aksi (POST → create · PATCH → update · DELETE/nonaktif → delete).
+  const perms = currentUser?.permissions;
+  const canCreate = can(perms, "warehouse", "create");
+  const canEdit = can(perms, "warehouse", "update");
+  const canDelete = can(perms, "warehouse", "delete");
   const [rows, setRows] = useState([]);
   const [occupancy, setOccupancy] = useState({});     // { [warehouseId]: owners[] }
   const [loading, setLoading] = useState(true);
@@ -80,7 +90,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
     setLoading(true); setError("");
     try {
       const [list, siteList, catList] = await Promise.all([
-        listAllWarehouses(),
+        masterScope ? listAllWarehouses() : listUsableWarehouses(),
         listSites().catch(() => []),
         listCategories().catch(() => []),
       ]);
@@ -97,7 +107,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [masterScope]);
 
   useEffect(() => { load(); }, [load, selectedEntity]);
 
@@ -211,13 +221,13 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
               className="inline-flex items-center gap-1.5 rounded-full border border-[#E5E5EA] bg-[#FAFBFC] px-2.5 py-1 text-[11.5px] font-semibold">
               {s.name}{s.city ? <span className="font-normal text-[#8E8E93]">· {s.city}</span> : null}
               <span className="rounded bg-[#EAF2FF] px-1 text-[10px] font-bold text-[#0058CC]">{s.warehouse_count} gedung</span>
-              {canManage && s.warehouse_count === 0 && (
+              {canDelete && s.warehouse_count === 0 && (
                 <button data-testid={`wh-site-del-${s.id}`} onClick={() => removeSite(s)} aria-label="Hapus lokasi"
                   className="text-[#C0341D] hover:opacity-70"><X size={11} /></button>
               )}
             </span>
           ))}
-          {canManage && (
+          {canCreate && (
             <span className="ml-auto flex items-center gap-1.5">
               <button data-testid="wh-site-add" className="secondary-button text-[11px]" onClick={() => setShowSiteForm(true)}>
                 <Plus size={12} /> Lokasi
@@ -240,7 +250,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1" data-testid="wh-scope-filter">
-              {SCOPE_FILTERS.map((s) => (
+              {SCOPE_FILTERS.filter((s) => masterScope || s.key !== "all").map((s) => (
                 <button key={s.key} type="button" data-testid={`wh-scope-${s.key}`}
                   onClick={() => setScope(s.key)}
                   className={`rounded-md px-2 py-1 text-[11px] font-semibold transition-colors ${
@@ -255,7 +265,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
               <input data-testid="wh-search" className="field w-[220px] py-1.5 pl-8 text-[12px]"
                 placeholder="Cari kode / nama / kota" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            {canManage && (
+            {canCreate && (
               <button data-testid="wh-toggle-create" className="secondary-button"
                 onClick={() => setShowCreate((v) => !v)}>
                 {showCreate ? <X size={14} /> : <Plus size={14} />} {showCreate ? "Tutup form" : "Gudang baru"}
@@ -277,7 +287,7 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
             </div>
           )}
 
-          {showCreate && canManage && (
+          {showCreate && canCreate && (
             <div className="mb-3 rounded-md border border-[#EFF0F2] bg-[#FAFBFC] p-3" data-testid="wh-create-form">
               <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#6B6B73]">Gudang baru</p>
               <div className="grid gap-2 md:grid-cols-2">
@@ -431,21 +441,21 @@ export default function WarehouseMasterView({ entities = [], selectedEntity, cur
                           </span>
                         </td>
                         <td className="px-3 py-2 text-right whitespace-nowrap">
-                          {canManage && (
+                          {(canEdit || canDelete) && (
                             <>
-                              <button data-testid={`wh-edit-profile-${w.id}`} className="secondary-button text-[11px]"
+                              {canEdit && <button data-testid={`wh-edit-profile-${w.id}`} className="secondary-button text-[11px]"
                                 onClick={() => setProfileFor(w)}>
                                 <Building2 size={12} /> Profil
-                              </button>
-                              <button data-testid={`wh-edit-mode-${w.id}`} className="secondary-button ml-1.5 text-[11px]"
+                              </button>}
+                              {canEdit && <button data-testid={`wh-edit-mode-${w.id}`} className="secondary-button ml-1.5 text-[11px]"
                                 onClick={() => setModeFor(w)}>
                                 <Settings2 size={12} /> Atur mode
-                              </button>
-                              <button data-testid={`wh-toggle-active-${w.id}`}
+                              </button>}
+                              {(w.active === false ? canEdit : canDelete) && <button data-testid={`wh-toggle-active-${w.id}`}
                                 className={`${w.active === false ? "secondary-button" : "danger-button"} ml-1.5 text-[11px]`}
                                 onClick={() => toggleActive(w)}>
                                 {w.active === false ? <><RotateCcw size={12} /> Aktifkan</> : <><Ban size={12} /> Nonaktifkan</>}
-                              </button>
+                              </button>}
                             </>
                           )}
                         </td>

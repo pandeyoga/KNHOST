@@ -8,6 +8,7 @@
  *      tombol anulir (jurnal pembalik) bila keputusannya salah.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { can } from "../../../config/roles";
 import {
   BadgeCheck, Clock3, Loader2, RefreshCw, Route, Scale, Undo2,
 } from "lucide-react";
@@ -50,8 +51,9 @@ export default function PaymentVarianceQueue({ currentUser, selectedEntity, onOp
   const [dialogErr, setDialogErr] = useState("");
   const [reversing, setReversing] = useState("");
 
-  const canDecide = ["admin", "manager", "sales"].includes(currentUser?.role);
-  const canReverse = ["admin", "manager"].includes(currentUser?.role);
+  // FE-04 — keputusan & anulir sama-sama payment_variance.decide di server (batas nominal tetap dijaga kebijakan).
+  const canDecide = can(currentUser?.permissions, "payment_variance", "decide");
+  const canReverse = canDecide;
 
   const load = useCallback(async () => {
     setLoading(true);

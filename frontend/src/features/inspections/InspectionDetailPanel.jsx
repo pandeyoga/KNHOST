@@ -14,6 +14,7 @@
  * menipu di repo ini.
  */
 import { useState } from "react";
+import { can } from "../../config/roles";
 import {
   CalendarClock, CheckCircle2, FlaskConical, Lock, LockOpen, Play, RotateCcw, User, XCircle,
 } from "lucide-react";
@@ -53,8 +54,8 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
   const role = meta?.role || currentUser?.role || "";
   const isRandom = doc.kind === "random_check";
   const isMdKind = (meta?.md_quality_kinds || MD_QUALITY_KINDS).includes(doc.kind);
-  const canAssign = ["admin", "manager"].includes(role);
-  const canDecide = ["admin", "manager"].includes(role) || (isRandom && Boolean(meta?.can_qc_release));
+  const canAssign = can(currentUser?.permissions, "inspection", "assign");   // FE-04
+  const canDecide = can(currentUser?.permissions, "inspection", "decide") || (isRandom && Boolean(meta?.can_qc_release));
   const canInspectAll = meta ? Boolean(meta.can_inspect_all) : ["admin", "manager", "warehouse"].includes(role);
   const canMdq = isMdKind && Boolean(meta?.can_md_quality);
   const canQc = Boolean(meta?.can_qc) || canInspectAll;

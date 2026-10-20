@@ -3,6 +3,7 @@
  * Shows status timeline, custom item details, approval actions
  */
 import { useEffect, useState } from "react";
+import { can } from "../../config/roles";
 import axios, { API } from "../../services/apiClient";
 import SpecialOrderChainPanel from "./SpecialOrderChainPanel";
 import SpecialOrderCustomerApprovalPanel from "./SpecialOrderCustomerApprovalPanel";
@@ -40,8 +41,10 @@ export default function SpecialOrderDetail({
   };
   useEffect(() => { if (order?.id && !order.chain) refreshFull(); }, [order?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const canApprove = order.status === "pending_approval" && ["manager", "admin"].includes(currentUser?.role);
-  const canTransition = ["admin", "manager"].includes(currentUser?.role);
+  // FE-04 — izin efektif per aksi (server tetap memeriksa tingkat persetujuan & scope).
+  const perms = currentUser?.permissions;
+  const canApprove = order.status === "pending_approval" && can(perms, "order", "approve");
+  const canTransition = can(perms, "order", "update");          // POST /status
 
   // F3 MTO — gating tombol SKU & konversi
   const skuStages = ["confirmed", "in_production", "ready"];
@@ -263,7 +266,7 @@ export default function SpecialOrderDetail({
 
         {/* Actions */}
         <div className="detail-actions">
-          {order.status === "draft" && ["admin", "manager", "sales", "sales_admin"].includes(currentUser?.role) && (
+          {order.status === "draft" && can(perms, "order", "create") && (
             <button data-testid="submit-special-order-btn" className="primary-button" disabled={loading}
               onClick={async () => { setLoading(true); try { const r = await axios.post(`${API}/special-orders/${order.id}/submit`); onUpdate(r.data); } catch (e) { setError("Gagal mengajukan: " + (e.response?.data?.detail || e.message)); } finally { setLoading(false); } }}>
               <Check size={13} /> Ajukan persetujuan
@@ -417,7 +420,7 @@ export default function SpecialOrderDetail({
         className="mb-3 rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2" />
 
       {/* Main content */}
-      <SpecialOrderItemsPanel order={order} canEdit={["admin", "manager", "sales", "sales_admin"].includes(currentUser?.role)}
+      <SpecialOrderItemsPanel order={order} canEdit={can(perms, "order", "create")}
         onCreated={(o) => { setOkMsg(`Pesanan redesign ${o.number} dibuat (draf) dengan tautan ke ${order.number}.`); onUpdate && onUpdate(o); }} />
       {(order.redesigns || []).length > 0 && (
         <div className="mb-3 flex flex-wrap gap-1.5 text-[11px]" data-testid="special-order-redesign-links">
@@ -429,10 +432,10 @@ export default function SpecialOrderDetail({
           ))}
         </div>
       )}
-      <SpecialOrderChainPanel order={order} canEdit={["admin", "manager", "sales", "sales_admin"].includes(currentUser?.role)} onChanged={refreshFull} />
+      <SpecialOrderChainPanel order={order} canEdit={can(perms, "order", "create")} canRoute={can(perms, "order", "approve")} onChanged={refreshFull} />
       {!["draft", "pending_approval"].includes(order.status) && (
         <div className="mt-3 grid gap-3">
-          <SpecialOrderCustomerApprovalPanel order={order} canEdit={["admin", "manager", "sales", "sales_admin"].includes(currentUser?.role)} onUpdated={(o) => onUpdate && onUpdate(o)} />
+          <SpecialOrderCustomerApprovalPanel order={order} canEdit={can(perms, "order", "update")} onUpdated={(o) => onUpdate && onUpdate(o)} />
           <SpecialOrderPricingPanel order={order} currentUser={currentUser} onUpdated={(o) => onUpdate && onUpdate(o)} />
           <SpecialOrderFulfillmentPanel order={order} onUpdated={(o) => onUpdate && onUpdate(o)} />
           <SpecialOrderShippingPanel order={order} currentUser={currentUser} onUpdated={(o) => onUpdate && onUpdate(o)} />

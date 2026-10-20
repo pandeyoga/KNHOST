@@ -14,6 +14,7 @@
  * yang dihitung dari isi halaman diam-diam menyusut begitu daftarnya berhalaman.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { can } from "../../config/roles";
 import { ClipboardCheck, Lock, Plus, RefreshCw, ShieldAlert, Shuffle } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import DetailModal from "../../components/DetailModal";
@@ -70,7 +71,7 @@ export default function InspectionsView({ currentUser, selectedEntity = "all", f
   const [error, setError] = useState("");
 
   const role = meta.role || currentUser?.role || "";
-  const canCreate = ["admin", "manager"].includes(role);
+  const canCreate = can(currentUser?.permissions, "inspection", "create");   // FE-04 — izin efektif
 
   const params = useMemo(() => {
     const p = {};

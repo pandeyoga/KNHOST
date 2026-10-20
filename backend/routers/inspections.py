@@ -55,10 +55,8 @@ async def meta(request: Request, entity_id: str = Query("")) -> Dict[str, Any]:
     actor = await require_permission(request, "inspection", "view")
     ctx = await entity_ctx(request)
     out = await svc.meta(entity_id or ctx.active_entity_id)
-    officers = await db.users.find(
-        {"active": {"$ne": False},
-         "role": {"$in": ["warehouse", "warehouse_admin", "manager", "admin", "md", "md_quality", "qc"]}},
-        {"_id": 0, "id": 1, "name": 1, "role": 1, "division": 1}).to_list(200)
+    # FE-04 — petugas = akun aktif berkemampuan inspect (termasuk peran kustom) di badan usaha ini.
+    officers = await svc.eligible_officers(entity_id or ctx.active_entity_id or "")
     out["officers"] = [{"value": u["id"],
                         "label": f"{u.get('name', '')} · {u.get('division') or u.get('role', '')}"}
                        for u in officers]

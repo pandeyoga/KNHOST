@@ -600,7 +600,9 @@ async def pricing_preview(order_id: str, request: Request, margin_pct: Optional[
 async def lock_price(order_id: str, payload: LockPriceBody, request: Request) -> Dict[str, Any]:
     """Fase 2 — harga final = kontrak supplier pemenang + margin → dikunci, OD Confirmed."""
     user = await require_permission(request, "order", "update")
-    if user.get("role") not in ("sales", "sales_admin", "manager", "admin"):
+    from role_registry import role_in
+    # FE-04 — aturan peran pengunci tetap; peran kustom turunan Sales/Admin Sales/Manager dikenali (sama dengan UI).
+    if not role_in(user.get("role"), ("sales", "sales_admin", "manager", "admin")):
         raise HTTPException(status_code=403, detail="Hanya Sales / manager / admin yang boleh mengunci harga final.")
     od = await _od_or_404(order_id, request)
     try:

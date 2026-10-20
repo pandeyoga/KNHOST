@@ -10,7 +10,7 @@ import { docStatus } from "./SpecialOrderShared";
 
 const TYPE_LABEL = { printing: "Kain printing", labdip: "Warna khusus (labdip)", handfeel: "Handfeel", proofing: "Proofing" };
 
-export default function SpecialOrderChainPanel({ order, canEdit, onChanged }) {
+export default function SpecialOrderChainPanel({ order, canEdit, canRoute = canEdit, onChanged }) {
   const ch = order.chain || {};
   const phases = ch.phases || [];
   const idx = Math.max(0, phases.findIndex(([k]) => k === ch.phase));
@@ -62,7 +62,7 @@ export default function SpecialOrderChainPanel({ order, canEdit, onChanged }) {
       <section className="section-card !p-3" data-testid="od-chain">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p className="text-[10.5px] font-bold uppercase tracking-wide text-[#8E8E93]">Rantai dokumen</p>
-          {approved && !routed && canEdit && (
+          {approved && !routed && canRoute && (   /* POST /route → order.approve */
             <button className="primary-button !py-1 text-[11px]" disabled={busy} data-testid="od-route-button" onClick={route}><Send size={12} /> Teruskan ke Desainer / R&amp;D</button>
           )}
         </div>

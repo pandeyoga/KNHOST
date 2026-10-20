@@ -23,6 +23,16 @@ if (config.enableHealthCheck) {
 }
 
 let webpackConfig = {
+  // Tes jest (craco test) memakai alias yang sama dengan webpack (`@/` → src/), dan date-fns
+  // (paket ESM) ikut ditransformasi. Fungsi (bukan objek) supaya pola bawaan CRA DIGANTI, bukan digabung.
+  jest: {
+    configure: (jestConfig) => ({
+      ...jestConfig,
+      moduleNameMapper: { ...(jestConfig.moduleNameMapper || {}), "^@/(.*)$": "<rootDir>/src/$1" },
+      transformIgnorePatterns: ["[/\\\\]node_modules[/\\\\](?!date-fns[/\\\\]).+\\.(js|jsx|mjs|cjs|ts|tsx)$",
+        "^.+\\.module\\.(css|sass|scss)$"],
+    }),
+  },
   eslint: {
     configure: {
       extends: ["plugin:react-hooks/recommended"],

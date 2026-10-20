@@ -7,6 +7,7 @@
  */
 import MoneyInput from "../../components/MoneyInput";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { can } from "../../config/roles";
 import {
   RefreshCw, Search, Wallet, Users, X, Gift, ArrowDownCircle, Loader2, Plus, Minus,
   History, TicketPercent, CheckCircle2, AlertTriangle, RotateCcw, Ban,
@@ -34,7 +35,7 @@ const TYPE_META = {
 import PagedRows from "@/components/PagedRows";
 
 export default function StoreCreditView({ selectedEntity, currentUser }) {
-  const canAdjust = ["admin", "manager"].includes(currentUser?.role);
+  const canAdjust = can(currentUser?.permissions, "ar_receipt", "void");   // FE-04 — POST /store-credit/adjust
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

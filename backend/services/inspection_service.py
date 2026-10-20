@@ -497,13 +497,47 @@ async def _new_doc(*, kind: str, entity_id: str, actor: Dict[str, Any],
     return safe_doc(doc)
 
 
-async def _resolve_assignee(user_id: str) -> Tuple[str, str, str]:
+# FE-04 (review 2026-10-20) — petugas inspeksi = akun AKTIF yang perannya (termasuk peran kustom)
+# punya kemampuan inspect, dan ditugaskan di badan usaha dokumen. Dulu daftar nama peran tetap.
+INSPECT_CAPABILITIES = (("inspection", "inspect"), ("qc", "inspect"), ("md_quality", "inspect"))
+_OFFICER_PROJ = {"_id": 0, "id": 1, "name": 1, "division": 1, "role": 1, "status": 1,
+                 "home_entity_id": 1, "allowed_entity_ids": 1}
+
+
+async def officer_roles() -> set:
+    from dependencies import permission_matrix
+    matrix = await permission_matrix()
+
+    def capable(perms: Dict[str, Any]) -> bool:
+        return any(a in (perms.get(r) or []) or "*" in (perms.get(r) or []) for r, a in INSPECT_CAPABILITIES)
+    return {role for role, perms in matrix.items() if capable(perms or {})}
+
+
+async def _officer_ok(u: Dict[str, Any], roles: set, entity_id: str) -> bool:
+    from entity_scope import allowed_entities_for
+    if (u.get("status") or "active") != "active" or u.get("role") not in roles:
+        return False
+    return not entity_id or entity_id in await allowed_entities_for(u)
+
+
+async def eligible_officers(entity_id: str) -> List[Dict[str, Any]]:
+    roles = await officer_roles()
+    out = []
+    async for u in db.users.find({"role": {"$in": sorted(roles)}, "status": "active"}, _OFFICER_PROJ).sort("name", 1):
+        if await _officer_ok(u, roles, entity_id):
+            out.append(u)
+    return out
+
+
+async def _resolve_assignee(user_id: str, entity_id: str = "") -> Tuple[str, str, str]:
     if not (user_id or "").strip():
         return "", "", ""
-    u = await db.users.find_one({"id": user_id},
-                                {"_id": 0, "id": 1, "name": 1, "division": 1, "role": 1})
+    u = await db.users.find_one({"id": user_id}, _OFFICER_PROJ)
     if not u:
         raise InspectionError("Petugas yang dipilih tidak ditemukan.")
+    if not await _officer_ok(u, await officer_roles(), entity_id):
+        raise InspectionError(f"{u.get('name') or 'Akun ini'} tidak berwenang/tidak ditugaskan sebagai petugas inspeksi "
+                              "di badan usaha ini.")
     return u.get("id", ""), u.get("name", ""), u.get("division", "") or ""
 
 
@@ -645,7 +679,7 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any],
             "atau buka kembali (reopen) bila sudah diputuskan — supaya tidak ada dua "
             "SPK memeriksa barang yang sama.")
 
-    assigned = await _resolve_assignee(str(payload.get("assigned_to") or ""))
+    assigned = await _resolve_assignee(str(payload.get("assigned_to") or ""), entity_id)
     doc = await _new_doc(kind=kind, entity_id=entity_id, actor=actor,
                          ref_doc_type=ref_type, ref_doc_id=ref_id,
                          ref_doc_number=ref_number, supplier=supplier,
@@ -713,7 +747,7 @@ async def assign(ins_id: str, payload: Dict[str, Any],
                  actor: Dict[str, Any]) -> Dict[str, Any]:
     doc = await _load(ins_id)
     _assert_status(doc, OPEN_STATUSES, "ditugaskan ulang")
-    aid, aname, _div = await _resolve_assignee(str(payload.get("assigned_to") or ""))
+    aid, aname, _div = await _resolve_assignee(str(payload.get("assigned_to") or ""), doc.get("entity_id") or "")
     if not aid:
         raise InspectionError("Pilih petugas inspect-nya dulu.")
     bagian = str(payload.get("bagian") or "").strip() or doc.get("bagian") or "Bagian Inspect"
@@ -1000,7 +1034,7 @@ async def create_random_check(payload: Dict[str, Any], actor: Dict[str, Any],
     if not held:
         raise InspectionError("Roll terpilih berubah status bersamaan — coba lagi.")
     wh = await db.warehouses.find_one({"id": wh_id}, {"_id": 0, "name": 1, "code": 1}) or {}
-    assigned = await _resolve_assignee(str(payload.get("assigned_to") or actor.get("id") or ""))
+    assigned = await _resolve_assignee(str(payload.get("assigned_to") or actor.get("id") or ""), entity_id)
     doc = await _new_doc(kind=KIND_RANDOM_CHECK, entity_id=entity_id, actor=actor,
                          ref_doc_type="warehouse", ref_doc_id=wh_id,
                          ref_doc_number=wh.get("code") or wh.get("name", ""),

@@ -5,13 +5,18 @@ import axios, { API } from "../../services/apiClient";
 import { askReason } from "@/services/confirmService";
 import { fmtNum, fmtDate, docStatus } from "./SpecialOrderShared";
 import KNSelect from "../../components/KNSelect";
+import { can, roleIs } from "../../config/roles";
+
+const LOCK_ROLES = ["sales", "sales_admin", "manager", "admin"];   // = special_orders.lock_price
 
 export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated }) {
   const saved = (order.chain || {}).pricing || {};
   const locked = !!saved.locked;
   const accd = order.customer_decision === "acc";
   const role = currentUser?.role;
-  const canLock = ["sales", "sales_admin", "manager", "admin"].includes(role) && accd && !locked && order.status !== "cancelled";
+  // FE-04 — sama dengan server: order.update + peran pengunci harga (peran acuan dikenali).
+  const canLock = can(currentUser?.permissions, "order", "update") && roleIs(role, LOCK_ROLES) && accd && !locked && order.status !== "cancelled";
+  const canProcure = can(currentUser?.permissions, "purchase_requisition", "create") && can(currentUser?.permissions, "od_fulfillment", "realize");
   const [margin, setMargin] = useState(saved.margin_pct ?? 30);
   // FE-01 — OD multi-item: margin boleh berbeda per item (kosong = ikut margin bawaan OD).
   const [itemMargins, setItemMargins] = useState({});
@@ -120,7 +125,7 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
           {po && <span className="rounded-full bg-[#E9F7EF] px-2 py-0.5 font-bold text-[#1B7F4B]" data-testid="od-po-chip">PO <span className="font-mono">{po.po_number}</span> · {po.supplier_name} · {docStatus(po.status)}{po.expected_delivery_date ? ` · tiba ${po.expected_delivery_date}` : ""}</span>}
           {order.linked_mko_id && <span className="rounded-full bg-[#E9F7EF] px-2 py-0.5 font-bold text-[#1B7F4B]" data-testid="od-mko-chip">MKO <span className="font-mono">{order.linked_mko_number}</span> · makloon</span>}
           {!po && !order.linked_mko_id && <span className="text-[#B45309]" data-testid="od-po-missing">Harga terkunci, pengadaan belum terealisasi{order.procurement_error ? ` — ${order.procurement_error}` : ""}</span>}
-          {!po && !order.linked_mko_id && ["admin", "manager", "sales_admin", "purchasing"].includes(role) && (
+          {!po && !order.linked_mko_id && canProcure && (
             <button type="button" className="secondary-button !py-1 text-[11px]" disabled={busy} onClick={procure} data-testid="od-procure-button">{busy ? <Loader2 size={12} className="spin" /> : null} Realisasi pengadaan sekarang</button>
           )}
         </div>
