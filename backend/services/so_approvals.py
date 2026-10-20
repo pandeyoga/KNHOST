@@ -59,6 +59,48 @@ def make_approval(
     return entry
 
 
+# F-09 (uji pra-UAT 2026-10-21) — tipe yang boleh diajukan ulang sesudah DITOLAK. Pengajuan baru
+# untuk kunci yang sama menggantikan penolakan lama; tanpa ini `has_rejected` mengunci SO selamanya.
+RESUBMITTABLE_TYPES = {"special_price", "kredit"}
+
+
+def _resubmit_key(p: Dict[str, Any]) -> tuple:
+    """Kunci "pengajuan yang sama": harga khusus per produk, kredit per tipe."""
+    return (p.get("type"), p.get("product_id") if p.get("type") == "special_price" else None)
+
+
+def _mark_superseded(p: Dict[str, Any], by_id: str) -> None:
+    # Keputusan lama (decided_by/at, decision_notes) TIDAK ditimpa — riwayat tetap utuh.
+    p.update({"status": "superseded", "previous_status": "rejected",
+              "superseded_by": by_id, "superseded_at": now_iso()})
+
+
+def supersede_rejected(pa: List[Dict[str, Any]], new_entry: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Tandai entri `rejected` berkunci sama dengan `new_entry` sebagai `superseded` (in-place)."""
+    if new_entry.get("type") not in RESUBMITTABLE_TYPES:
+        return []
+    key = _resubmit_key(new_entry)
+    out = [p for p in pa if p is not new_entry and p.get("status") == "rejected" and _resubmit_key(p) == key]
+    for p in out:
+        _mark_superseded(p, new_entry["id"])
+    return out
+
+
+def repair_resubmitted_rejections(pa: List[Dict[str, Any]]) -> int:
+    """Data sebelum F-09: penolakan yang SUDAH diikuti pengajuan berkunci sama ditandai
+    `superseded` oleh entri sesudahnya (in-place, idempoten). Penolakan tanpa pengajuan
+    ulang dibiarkan — tetap memblokir (KN-D02)."""
+    n = 0
+    for i, p in enumerate(pa):
+        if p.get("status") != "rejected" or p.get("type") not in RESUBMITTABLE_TYPES:
+            continue
+        nxt = next((q for q in pa[i + 1:] if _resubmit_key(q) == _resubmit_key(p)), None)
+        if nxt:
+            _mark_superseded(p, nxt.get("id"))
+            n += 1
+    return n
+
+
 def summarize(order: Dict[str, Any]) -> Dict[str, Any]:
     """Ringkas state gate approval dari `pending_approvals`."""
     pa: List[Dict[str, Any]] = order.get("pending_approvals") or []
@@ -158,3 +200,23 @@ async def backfill_pending_approvals(database) -> Dict[str, int]:
             await database.sales_orders.update_one({"id": o["id"]}, {"$set": sets})
             updated += 1
     return {"updated": updated, "total": total}
+
+
+async def backfill_resubmitted_rejections(database, apply: bool = False) -> Dict[str, Any]:
+    """F-09 — perbaiki SO terbuka yang terkunci penolakan yang sudah diajukan ulang
+    (pola KSC/SO-00039). `apply=False` hanya melaporkan. SO TIDAK dinaikkan otomatis:
+    Manajer tetap menekan Setujui (kini tidak lagi 409 APPROVAL_REJECTED)."""
+    OPEN = ("reserved", "waiting_approval", "waiting_stock", "draft")
+    found: List[Dict[str, Any]] = []
+    query = {"status": {"$in": list(OPEN)}, "pending_approvals.status": "rejected"}
+    async for o in database.sales_orders.find(query, {"_id": 0, "id": 1, "number": 1, "pending_approvals": 1}):
+        pa = list(o.get("pending_approvals") or [])
+        n = repair_resubmitted_rejections(pa)
+        if not n:
+            continue
+        found.append({"id": o["id"], "number": o.get("number"), "superseded": n,
+                      "still_rejected": summarize({"pending_approvals": pa})["rejected_count"]})
+        if apply:
+            await database.sales_orders.update_one(
+                {"id": o["id"]}, {"$set": {"pending_approvals": pa, "updated_at": now_iso()}})
+    return {"applied": apply, "orders": found}
