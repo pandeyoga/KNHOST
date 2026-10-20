@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from fastapi import HTTPException
 
 import role_registry as reg
-from core_utils import COST_SAFE_ROLES
+from core_utils import COST_SAFE_ROLES, now_iso
 from db import db
 from dependencies import permission_matrix
 from entity_scope import field_for, resolve_list_scope
@@ -326,40 +326,55 @@ def _norm(col: Dict[str, Any], v: Any) -> Any:
     return str(v)
 
 
-async def _fetch_grouped(plan, skip, limit):
+def _shape_grouped(plan, docs):
     keys = plan["group"]["keys"]
-    pipe = _grouped(plan) + [{"$sort": {**{f"_id.{k}": 1 for k in keys}}}, {"$skip": skip}, {"$limit": limit}]
-    docs = await db[plan["ds"]["collection"]].aggregate(pipe, allowDiskUse=True).to_list(limit)
     rows = [{c["key"]: _norm(c, d["_id"].get(c["key"]) if c["key"] in keys else d.get(c["key"])) for c in plan["columns"]}
             for d in docs]
     return redact(rows, plan["hidden"]) if plan["hidden"] else rows
 
 
-async def fetch(plan: Dict[str, Any], skip: int, limit: int) -> List[Dict[str, Any]]:
-    if plan.get("group"):
-        return await _fetch_grouped(plan, skip, limit)
-    ds, cols = plan["ds"], plan["columns"]
-    joins = {j["id"]: j for j in ds.get("joins", [])}
-    used_joins = {c["source"] for c in cols if c["source"] != "base"}
+async def _fetch_grouped(plan, skip, limit):
+    keys = plan["group"]["keys"]
+    pipe = _grouped(plan) + [{"$sort": {**{f"_id.{k}": 1 for k in keys}}}, {"$skip": skip}, {"$limit": limit}]
+    docs = await db[plan["ds"]["collection"]].aggregate(pipe, allowDiskUse=True).to_list(limit)
+    return _shape_grouped(plan, docs)
+
+
+def _used_joins(plan) -> Dict[str, Dict[str, Any]]:
+    joins = {j["id"]: j for j in plan["ds"].get("joins", [])}
+    return {jid: joins[jid] for jid in {c["source"] for c in plan["columns"] if c["source"] != "base"}}
+
+
+def _base_proj(plan) -> Dict[str, Any]:
+    ds = plan["ds"]
     proj = {"_id": 0, ds["key"]: 1}
-    for c in cols:
+    for c in plan["columns"]:
         if c["source"] == "base":
             proj[c["path"]] = 1
-    for jid in used_joins:
-        proj[joins[jid]["local"]] = 1
-    pipe = plan["pipeline"] + [{"$sort": plan["sort"]}, {"$skip": skip}, {"$limit": limit}, {"$project": proj}]
-    docs = await db[ds["collection"]].aggregate(pipe, allowDiskUse=True).to_list(limit)
+    for j in _used_joins(plan).values():
+        proj[j["local"]] = 1
+    return proj
+
+
+async def _lookup_maps(plan, ids_by_join: Dict[str, List[Any]]) -> Dict[str, Dict[str, Dict[str, Any]]]:
     lookups: Dict[str, Dict[str, Dict[str, Any]]] = {}
-    for jid in used_joins:
-        j = joins[jid]
-        ids = list({_get(d, j["local"]) for d in docs if _get(d, j["local"])})
+    for jid, j in _used_joins(plan).items():
+        ids = ids_by_join.get(jid) or []
         fp = {"_id": 0, j["foreign"]: 1, **{f["path"]: 1 for f in j["fields"]}}
-        found = await db[j["collection"]].find({j["foreign"]: {"$in": ids}}, fp).to_list(len(ids) + 1) if ids else []
+        found: List[Dict[str, Any]] = []
+        for i in range(0, len(ids), 5000):
+            chunk = ids[i:i + 5000]
+            found += await db[j["collection"]].find({j["foreign"]: {"$in": chunk}}, fp).to_list(len(chunk) + 1)
         lookups[jid] = {str(f.get(j["foreign"])): f for f in found}
+    return lookups
+
+
+async def _shape(plan, docs, lookups) -> List[Dict[str, Any]]:
+    joins = _used_joins(plan)
     rows = []
     for d in docs:
         row = {}
-        for c in cols:
+        for c in plan["columns"]:
             if c["source"] == "base":
                 row[c["key"]] = _norm(c, _get(d, c["path"]))
             else:
@@ -371,6 +386,106 @@ async def fetch(plan: Dict[str, Any], skip: int, limit: int) -> List[Dict[str, A
         await ensure_product_grades()
         rows = redact(rows, plan["hidden"])
     return rows
+
+
+async def fetch(plan: Dict[str, Any], skip: int, limit: int) -> List[Dict[str, Any]]:
+    """Baca LIVE per halaman — untuk preview. File export memakai snapshot (`materialize`), bukan ini."""
+    if plan.get("group"):
+        return await _fetch_grouped(plan, skip, limit)
+    ds = plan["ds"]
+    pipe = plan["pipeline"] + [{"$sort": plan["sort"]}, {"$skip": skip}, {"$limit": limit}, {"$project": _base_proj(plan)}]
+    docs = await db[ds["collection"]].aggregate(pipe, allowDiskUse=True).to_list(limit)
+    ids = {jid: list({v for d in docs for v in [_get(d, j["local"])] if v and not isinstance(v, (dict, list))})
+           for jid, j in _used_joins(plan).items()}
+    return await _shape(plan, docs, await _lookup_maps(plan, ids))
+
+
+# ─── AUD-EXP-02 — konsistensi export: SATU pembacaan sumber (snapshot) ──────────────────────────────────────
+# Tanpa replica set (keputusan T-01) tidak ada snapshot read Mongo. Definisi konsistensi export: himpunan baris =
+# hasil SATU agregasi atas sumber yang dimaterialisasi ke koleksi sementara `export_snap_<job>` (unik per dokumen
+# sumber + baris unwind). File dibaca dari snapshot statis itu lewat SATU cursor terurut; jumlah baris, ringkasan &
+# nilai join juga dari snapshot itu — perubahan sumber selama penulisan file (insert/hapus/ubah filter/urutan/
+# nilai) tidak menggeser, menggandakan, atau mencampur versi baris. Waktu snapshot dicatat di sheet Ringkasan.
+SNAP_PREFIX = "export_snap_"
+
+
+def _clean_proj(paths: List[str]) -> Dict[str, int]:
+    """Proyeksi tanpa tabrakan jalur (`a` dan `a.b` → cukup `a`)."""
+    keep: List[str] = []
+    for path in sorted(set(paths), key=lambda x: (x.count("."), x)):
+        if not any(path == k or path.startswith(k + ".") for k in keep):
+            keep.append(path)
+    return {k: 1 for k in keep}
+
+
+def _snap_paths(plan) -> List[str]:
+    ds = plan["ds"]
+    paths = [ds["key"], *plan["sort"].keys()]
+    paths += [k for k in _base_proj(plan) if k != "_id"]
+    sp = plan.get("summary_plan")
+    if sp:   # ringkasan dihitung dari snapshot yang sama → jalur kunci & ukurannya ikut disimpan
+        paths += [c["path"] for c in sp["columns"] if c.get("source") == "base" and c["key"] != ROWS_COL["key"]]
+    return paths
+
+
+async def materialize(plan: Dict[str, Any], name: str) -> int:
+    await db[name].drop()
+    src = db[plan["ds"]["collection"]]
+    if plan.get("group"):
+        pipe = _grouped(plan)
+    else:
+        ds = plan["ds"]
+        uniq: Dict[str, Any] = {"o": "$_id"}
+        if ds.get("unwind"):
+            uniq["l"] = "$_line"
+        pipe = plan["pipeline"] + [
+            {"$project": {**_clean_proj(_snap_paths(plan)), "_id": 1}},
+            {"$group": {"_id": uniq, "d": {"$first": "$$ROOT"}}},   # satu versi per dokumen sumber (+ baris)
+            {"$replaceRoot": {"newRoot": "$d"}}, {"$unset": "_id"}]
+    await src.aggregate(pipe + [{"$out": name}], allowDiskUse=True).to_list(None)
+    return await db[name].count_documents({})
+
+
+def _snap_sort(plan) -> Dict[str, int]:
+    return {f"_id.{k}": 1 for k in plan["group"]["keys"]} if plan.get("group") else plan["sort"]
+
+
+async def _snap_batches(name: str, batch: int, plan: Dict[str, Any]):
+    """Satu cursor terurut atas snapshot statis (tanpa skip/limit berulang) → tidak ada pergeseran halaman."""
+    pipe: List[Dict[str, Any]] = [{"$sort": _snap_sort(plan)}]
+    if not plan.get("group"):
+        pipe.append({"$project": {"_id": 0}})
+    chunk: List[Dict[str, Any]] = []
+    async for d in db[name].aggregate(pipe, allowDiskUse=True, batchSize=batch):
+        chunk.append(d)
+        if len(chunk) >= batch:
+            yield chunk
+            chunk = []
+    if chunk:
+        yield chunk
+
+
+async def _snap_lookups(plan, name: str):
+    """Nilai join dibaca SEKALI untuk seluruh snapshot — baris dengan kunci relasi sama memakai versi yang sama."""
+    ids: Dict[str, List[Any]] = {}
+    for jid, j in _used_joins(plan).items():
+        vals = await db[name].aggregate([{"$group": {"_id": f"${j['local']}"}}], allowDiskUse=True).to_list(None)
+        ids[jid] = [v["_id"] for v in vals if v["_id"] and not isinstance(v["_id"], (dict, list))]
+    return await _lookup_maps(plan, ids)
+
+
+async def _snap_summary(sp, name: str) -> List[Dict[str, Any]]:
+    keys = sp["group"]["keys"]
+    pipe = [{"$group": sp["group"]["stage"]}, {"$sort": {f"_id.{k}": 1 for k in keys}}]
+    return _shape_grouped(sp, await db[name].aggregate(pipe, allowDiskUse=True).to_list(None))
+
+
+async def sweep_snapshots() -> None:
+    """Snapshot yatim (proses mati di tengah) dibuang bila job-nya tidak sedang berjalan."""
+    for n in await db.list_collection_names(filter={"name": {"$regex": f"^{SNAP_PREFIX}"}}):
+        job = await db.export_jobs.find_one({"id": n[len(SNAP_PREFIX):]}, {"_id": 0, "status": 1})
+        if not job or job.get("status") not in ("queued", "running"):
+            await db[n].drop()
 
 
 def safe_text(v: Any) -> Any:
@@ -387,6 +502,8 @@ def summary_lines(job: Dict[str, Any], plan: Dict[str, Any]) -> List[List[Any]]:
              ["Badan usaha", ", ".join(plan["entity_ids"])], ["Periode", plan["date_text"]],
              ["Filter", plan["filter_text"]], ["Urutan", plan["sort_text"]],
              ["Total baris", job.get("written_rows", 0)], ["Format", job["format"].upper()]]
+    if job.get("snapshot_at"):
+        lines.append(["Data per", f"{job['snapshot_at']} (snapshot sekali baca; baris unik per dokumen sumber)"])
     for p in job.get("partitions") or []:
         lines.append([f"Partisi {p['sheet']}", f"baris {p['from']}–{p['to']}"])
     if plan["denied"]:
@@ -400,6 +517,29 @@ def summary_lines(job: Dict[str, Any], plan: Dict[str, Any]) -> List[List[Any]]:
 
 async def write_file(job: Dict[str, Any], plan: Dict[str, Any], path: str, rows_per_sheet: int,
                      batch: int = 2000) -> Dict[str, Any]:
+    """AUD-EXP-02 — sumber dibaca SEKALI ke snapshot; file, ringkasan & join dari snapshot itu."""
+    name = f"{SNAP_PREFIX}{job['id']}"
+    try:
+        await sweep_snapshots()
+    except Exception:  # noqa: BLE001 — pembersihan oportunistik, tidak menggagalkan export
+        pass
+    snapshot_at = now_iso()
+    try:
+        await materialize(plan, name)
+        grouped = bool(plan.get("group"))
+        lookups = {} if grouped else await _snap_lookups(plan, name)
+
+        async def rows_iter():
+            async for docs in _snap_batches(name, batch, plan):
+                yield _shape_grouped(plan, docs) if grouped else await _shape(plan, docs, lookups)
+
+        res = await _write(job, plan, path, rows_per_sheet, rows_iter(), name, snapshot_at)
+    finally:
+        await db[name].drop()
+    return {**res, "snapshot_at": snapshot_at}
+
+
+async def _write(job, plan, path, rows_per_sheet, rows_iter, name, snapshot_at) -> Dict[str, Any]:
     cols = plan["columns"]
     header = [c["label"] for c in cols]
     written, partitions = 0, []
@@ -407,13 +547,10 @@ async def write_file(job: Dict[str, Any], plan: Dict[str, Any], path: str, rows_
         with open(path, "w", newline="", encoding="utf-8-sig") as fh:
             w = csv.writer(fh)
             w.writerow(header)
-            while True:
-                rows = await fetch(plan, written, batch)
+            async for rows in rows_iter:
                 for r in rows:
                     w.writerow([safe_text(r.get(c["key"])) if r.get(c["key"]) is not None else "" for c in cols])
                 written += len(rows)
-                if len(rows) < batch:
-                    break
         return {"written_rows": written, "partitions": []}
     from openpyxl import Workbook
     from openpyxl.cell import WriteOnlyCell
@@ -429,8 +566,7 @@ async def write_file(job: Dict[str, Any], plan: Dict[str, Any], path: str, rows_
         partitions.append({"sheet": f"Data {sheet_no}", "from": written + 1, "to": written})
 
     new_sheet()
-    while True:
-        rows = await fetch(plan, written, batch)
+    async for rows in rows_iter:
         for r in rows:
             if in_sheet >= rows_per_sheet:
                 new_sheet()
@@ -445,15 +581,13 @@ async def write_file(job: Dict[str, Any], plan: Dict[str, Any], path: str, rows_
             in_sheet += 1
             written += 1
             partitions[-1]["to"] = written
-        if len(rows) < batch:
-            break
-    job = {**job, "written_rows": written, "partitions": partitions}
+    job = {**job, "written_rows": written, "partitions": partitions, "snapshot_at": snapshot_at}
     sp = plan.get("summary_plan")
     if sp:
         label = "+".join(c["label"] for c in sp["columns"] if c["key"] in sp["group"]["keys"])
         ws2 = wb.create_sheet(f"Ringkasan per {label}"[:31])
         ws2.append([c["label"] for c in sp["columns"]])
-        for r in await fetch(sp, 0, 100000):
+        for r in await _snap_summary(sp, name):
             ws2.append([WriteOnlyCell(ws2, value=r.get(c["key"])) for c in sp["columns"]])
     summary = wb.create_sheet("Ringkasan")
     for line in summary_lines(job, plan):
