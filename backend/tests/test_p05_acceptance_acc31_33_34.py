@@ -16,7 +16,7 @@ WIP = "1-1350"
 S = {}
 
 
-def _login(email, password="demo1234", ent=ENT):
+def _login(email, password="demo12345", ent=ENT):
     r = requests.post(f"{BASE}/api/auth/login", json={"email": email, "password": password}, timeout=30)
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": ent}

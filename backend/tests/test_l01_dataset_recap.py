@@ -22,7 +22,7 @@ def adm():
 
 @pytest.fixture(scope="module")
 def sales():
-    return _login("sales.kanda@kainnusantara.id", "demo1234")
+    return _login("sales.kanda@kainnusantara.id", "demo12345")
 
 
 def _csv(p, sup):

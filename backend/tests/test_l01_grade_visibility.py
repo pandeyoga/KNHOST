@@ -25,12 +25,12 @@ def adm():
 
 @pytest.fixture(scope="module")
 def sales():
-    return _login("sales.kanda@kainnusantara.id", "demo1234")
+    return _login("sales.kanda@kainnusantara.id", "demo12345")
 
 
 @pytest.fixture(scope="module")
 def sadm():
-    return _login("salesadmin.kanda@kainnusantara.id", "demo1234")
+    return _login("salesadmin.kanda@kainnusantara.id", "demo12345")
 
 
 def _walk_keys(o, out):
@@ -109,7 +109,7 @@ class TestFieldVisibility:
         try:
             from_req = lambda: requests.get(f"{BASE}/api/products?limit=50", headers=sales, timeout=60)
             # cache middleware 15 dtk — pakai sesi baru supaya tidak menunggu
-            s2 = _login("sales.kanda@kainnusantara.id", "demo1234")
+            s2 = _login("sales.kanda@kainnusantara.id", "demo12345")
             keys = _walk_keys(requests.get(f"{BASE}/api/inventory/rolls?limit=50", headers=s2, timeout=60).json(), set())
             assert "grade" in keys              # diberi hak lihat grade → terlihat
             assert "lot" in keys or "dye_lot" in keys or True  # LOT boleh dibuka lewat konfigurasi

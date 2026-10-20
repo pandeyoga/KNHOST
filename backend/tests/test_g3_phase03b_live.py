@@ -30,12 +30,12 @@ def admin():
 
 @pytest.fixture(scope="module")
 def manager():
-    return _login("manager@kainnusantara.id", "demo1234")
+    return _login("manager@kainnusantara.id", "demo12345")
 
 
 @pytest.fixture(scope="module")
 def md():
-    return _login("md@kainnusantara.id", "demo1234")
+    return _login("md@kainnusantara.id", "demo12345")
 
 
 def _get_po(sess: requests.Session) -> dict:

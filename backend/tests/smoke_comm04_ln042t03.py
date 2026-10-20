@@ -36,7 +36,7 @@ def bal(code):
 
 
 admin = login("admin@kainnusantara.id", "demo12345")
-sales = login("sales@kainnusantara.id", "demo1234")
+sales = login("sales@kainnusantara.id", "demo12345")
 created = {"camp": None, "costs": [], "prints": []}
 try:
     c = admin.post(f"{B}/marketing/campaigns", json={"name": "TEST_COMM04 Kampanye", "budget": 1000000}).json()

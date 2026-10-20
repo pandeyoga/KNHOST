@@ -6,7 +6,7 @@ import pytest
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:8001").rstrip("/")
 
 
-def _login(email: str, password: str = "demo1234") -> requests.Session:
+def _login(email: str, password: str = "demo12345") -> requests.Session:
     s = requests.Session()
     r = s.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": password}, timeout=20)
     assert r.status_code == 200, f"login {email} failed: {r.status_code} {r.text}"

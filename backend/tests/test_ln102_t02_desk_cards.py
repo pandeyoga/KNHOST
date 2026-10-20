@@ -5,7 +5,7 @@ import pytest
 import requests
 
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
-ROLES = {"admin": "demo12345", "manager": "demo1234", "sales": "demo1234", "warehouse": "demo1234"}
+ROLES = {"admin": "demo12345", "manager": "demo12345", "sales": "demo12345", "warehouse": "demo12345"}
 OWN_DESKS = {"salesadmin": "/sales-admin/desk", "md": "/md/desk", "whadmin": "/warehouse-admin/desk"}
 OPENABLE = {"sales_order", "purchase_order", "sales_return", "internal_request", "customer", "special_order",
             "design_request", "sample_request", "price_approval", "purchase_return", "md_sample",
@@ -14,7 +14,7 @@ OPENABLE = {"sales_order", "purchase_order", "sales_return", "internal_request",
 
 
 def _login(role, pw):
-    for p in (pw, "demo12345", "demo1234"):
+    for p in (pw, "demo12345", "demo12345"):
         r = requests.post(f"{BASE}/auth/login", json={"email": f"{role}@kainnusantara.id", "password": p})
         if r.status_code == 200:
             return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": "ent_ksc"}
@@ -39,7 +39,7 @@ def test_card_count_equals_rows_and_rows_openable(role):
 
 @pytest.mark.parametrize("role", list(OWN_DESKS))
 def test_own_desk_cards_match_rows(role):
-    h = _login(role, "demo1234")
+    h = _login(role, "demo12345")
     d = requests.get(f"{BASE}{OWN_DESKS[role]}", headers=h).json()
     for q in d["queues"]:
         rows = q.get("rows") or []

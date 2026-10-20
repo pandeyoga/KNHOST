@@ -18,14 +18,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 BASE = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:8001").rstrip("/") + "/api"
 DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.environ.get("DB_NAME", "test_database")]
-PW = {"admin@kainnusantara.id": "demo12345", "wh.admin@kainnusantara.id": "demo12345"}
+PW = "demo12345"   # F-01 — satu sandi untuk semua akun seed
 CUST = "cust_toko_kain"
 SECRET_KEYS = ("grade", "lot", "origin")
 NONE_LABELS = {"", "Tidak ada"}
 
 
 def _login(email):
-    r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": PW.get(email, "demo1234")}, timeout=30)
+    r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": PW}, timeout=30)
     r.raise_for_status()
     return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": "ent_ksc"}
 

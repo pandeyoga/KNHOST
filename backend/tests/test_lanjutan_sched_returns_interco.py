@@ -17,7 +17,7 @@ T = uuid.uuid4().hex[:6]
 CST = DB.business_entities.find_one({"doc_prefix": "CST"})["id"]
 
 
-def _login(email, pw="demo1234", ent="ent_ksc"):
+def _login(email, pw="demo12345", ent="ent_ksc"):
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pw})
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": ent}

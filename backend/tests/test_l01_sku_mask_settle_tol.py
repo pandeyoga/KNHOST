@@ -17,7 +17,7 @@ def _items(r):
 
 @pytest.fixture(scope="module")
 def sales():
-    return _login("sales.kanda@kainnusantara.id", "demo1234", ent="ent_kanda")
+    return _login("sales.kanda@kainnusantara.id", "demo12345", ent="ent_kanda")
 
 
 @pytest.fixture(scope="module")
@@ -27,7 +27,7 @@ def adm():
 
 @pytest.fixture(scope="module")
 def mgr():
-    return _login("manager@kainnusantara.id", "demo1234")
+    return _login("manager@kainnusantara.id", "demo12345")
 
 
 # --- (1) SKU / name masking for Sales

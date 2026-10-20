@@ -25,7 +25,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://knhost.preview.emergentagent.com").rstrip("/")
 
 ADMIN = ("admin@kainnusantara.id", "demo12345")
-WHADMIN = ("whadmin@kainnusantara.id", "demo1234")
+WHADMIN = ("whadmin@kainnusantara.id", "demo12345")
 
 WH_JKT = "wh_jakarta"
 WH_TGR_DEDICATED_KANDA = "wh_tangerang"  # dedicated to ent_kanda

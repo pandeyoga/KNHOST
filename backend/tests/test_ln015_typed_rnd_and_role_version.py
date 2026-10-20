@@ -29,7 +29,7 @@ def pic(adm):
     admin = DB.users.find_one({"email": "admin@kainnusantara.id"}, {"_id": 0})
     DB.users.insert_one({"id": f"user_TEST_{TAG}", "email": email, "name": "TEST_LN015 PIC", "role": rid, "status": "active",
                          "home_entity_id": ENT, "entity_ids": admin.get("entity_ids") or [ENT],
-                         "password_hash": bcrypt.hashpw(b"demo1234", bcrypt.gensalt()).decode(),
+                         "password_hash": bcrypt.hashpw(b"demo12345", bcrypt.gensalt()).decode(),
                          "created_at": datetime.now(timezone.utc).isoformat()})
     base = {"entity_id": ENT, "status": "in_progress", "rounds": [], "timeline": [], "created_at": datetime.now(timezone.utc).isoformat(),
             "updated_at": datetime.now(timezone.utc).isoformat()}
@@ -38,7 +38,7 @@ def pic(adm):
         {**base, "id": S_LAB, "number": f"TEST-LAB-{TAG}", "sample_types": ["labdip"]},
         {**base, "id": S_REVAL, "number": f"TEST-RV-{TAG}", "sample_types": ["proofing"], "purpose": "revalidation",
          "revalidation": {"supplier_id": "sup_TEST", "cycle_no": 1}}])
-    yield {"rid": rid, "h": _login(email, "demo1234")}
+    yield {"rid": rid, "h": _login(email, "demo12345")}
     DB.md_samples.delete_many({"id": {"$in": [S_PROOF, S_LAB, S_REVAL]}})
     DB.users.delete_many({"email": email})
     requests.delete(f"{BASE}/api/access/roles/{rid}", headers=adm, timeout=30)

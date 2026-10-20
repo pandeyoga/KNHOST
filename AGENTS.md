@@ -33,7 +33,8 @@ docker compose -f docker-compose.dev.yml exec backend bash  # di dalamnya repo =
 * Script Python/Bash dijalankan **di dalam container backend**:
   `docker compose -f docker-compose.dev.yml exec backend python /app/scripts/<script>.py`.
 * Data acuan (sama dengan yang dipakai reviewer): `bash scripts/dev_restore_demo.sh` dari host.
-* Login demo: `admin@kainnusantara.id` / `demo12345`.
+* Login demo: `admin@kainnusantara.id` / `demo12345` — **semua** akun seed (akun peran data acuan,
+  `wh.admin@`, tombol login cepat) memakai sandi yang sama `demo12345`.
 * `backend/.env` & `frontend/.env` tidak di-commit. Jangan pernah commit kunci/rahasia.
 
 ## Aturan kerja

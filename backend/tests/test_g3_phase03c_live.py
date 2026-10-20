@@ -17,9 +17,9 @@ import requests
 BASE = (os.environ.get("REACT_APP_BACKEND_URL") or "https://internal-pricing.preview.emergentagent.com").rstrip("/")
 
 ADMIN = ("admin@kainnusantara.id", "demo12345")
-FINANCE = ("finance@kainnusantara.id", "demo1234")
-SALES = ("sales@kainnusantara.id", "demo1234")
-MANAGER = ("manager@kainnusantara.id", "demo1234")
+FINANCE = ("finance@kainnusantara.id", "demo12345")
+SALES = ("sales@kainnusantara.id", "demo12345")
+MANAGER = ("manager@kainnusantara.id", "demo12345")
 
 PO_ID = "po_TEST_variance01"
 

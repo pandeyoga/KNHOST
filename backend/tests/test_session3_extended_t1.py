@@ -8,7 +8,7 @@ from test_p05_acceptance_acc31_33_34 import BASE, DB, _create, _free, adm, outpu
 B = f"{BASE}/api"
 
 
-def _h(email, pw="demo1234"):
+def _h(email, pw="demo12345"):
     tok = requests.post(f"{B}/auth/login", json={"email": email, "password": pw}, timeout=30).json()["token"]
     return {"Authorization": f"Bearer {tok}", "X-Entity-Id": "ent_ksc"}
 

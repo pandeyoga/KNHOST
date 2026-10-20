@@ -21,7 +21,7 @@ TRF_01 = "trn_4eee1c252639"
 CUST = "cust_f380f404da40"
 
 
-def _login(email, password="demo1234"):
+def _login(email, password="demo12345"):
     r = requests.post(f"{BASE}/api/auth/login", json={"email": email, "password": password}, timeout=30)
     assert r.status_code == 200, f"login {email}: {r.status_code} {r.text}"
     return r.json()["token"]

@@ -10,7 +10,7 @@ B = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/") + "/api"
 DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.environ.get("DB_NAME", "test_database")]
 
 
-def _h(email, pw="demo1234"):
+def _h(email, pw="demo12345"):
     t = requests.post(f"{B}/auth/login", json={"email": email, "password": pw}, timeout=30).json()["token"]
     return {"Authorization": f"Bearer {t}", "X-Entity-Id": "ent_ksc"}
 

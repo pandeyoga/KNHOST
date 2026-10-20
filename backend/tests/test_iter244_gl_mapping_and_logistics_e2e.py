@@ -10,11 +10,11 @@ BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://knhost-textile.previ
 
 CREDS = {
     "admin": ("admin@kainnusantara.id", "demo12345"),
-    "finance": ("finance@kainnusantara.id", "demo1234"),
-    "manager": ("manager@kainnusantara.id", "demo1234"),
-    "md": ("md@kainnusantara.id", "demo1234"),
-    "salesadmin": ("salesadmin@kainnusantara.id", "demo1234"),
-    "sales": ("sales@kainnusantara.id", "demo1234"),
+    "finance": ("finance@kainnusantara.id", "demo12345"),
+    "manager": ("manager@kainnusantara.id", "demo12345"),
+    "md": ("md@kainnusantara.id", "demo12345"),
+    "salesadmin": ("salesadmin@kainnusantara.id", "demo12345"),
+    "sales": ("sales@kainnusantara.id", "demo12345"),
 }
 
 SRET_ID = "sret_dddff044ea9e"

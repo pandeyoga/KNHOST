@@ -4,7 +4,7 @@ from pymongo import MongoClient
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 DB = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
 _e = os.environ.get("SEED_EMAIL", "admin@kainnusantara.id")
-tok = requests.post(f"{BASE}/auth/login", json={"email": _e, "password": "demo12345" if _e.startswith("admin@") else "demo1234"}).json()["token"]
+tok = requests.post(f"{BASE}/auth/login", json={"email": _e, "password": "demo12345" if _e.startswith("admin@") else "demo12345"}).json()["token"]
 H = {"Authorization": f"Bearer {tok}", "X-Entity-Id": "ent_ksc"}
 if len(sys.argv) > 2 and sys.argv[1] == "--clean":
     for sid in sys.argv[2:]:

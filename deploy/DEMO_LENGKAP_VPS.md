@@ -61,7 +61,7 @@ Gudang yang sudah dipakai transaksi tidak disentuh.
 - Kas kecil masuk/keluar di 3 entitas.
 - Roll demo belum bertag RFID, jadi pengiriman memakai "pengecualian berizin" Final Loading Check (tercatat di audit).
 
-## Akun demo (sandi semua: `demo1234`)
+## Akun demo (sandi semua: `demo12345`)
 
 | Peran | Email (`@kainnusantara.id`) |
 |---|---|
@@ -77,7 +77,7 @@ Gudang yang sudah dipakai transaksi tidak disentuh.
 | Sopir | `driver@` |
 
 `admin@kainnusantara.id` TIDAK diubah — tetap memakai `ADMIN_PASSWORD` di `deploy/.env`.
-Sandi `demo1234` mudah ditebak: setelah demo selesai, ganti sandi atau nonaktifkan akun di Admin → Pengguna.
+Sandi `demo12345` mudah ditebak: setelah demo selesai, ganti sandi atau nonaktifkan akun di Admin → Pengguna.
 
 ## Membatalkan / mengulang
 ```bash

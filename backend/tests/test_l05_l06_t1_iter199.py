@@ -27,7 +27,7 @@ CUST, ADDR, PROD = "cust_butik_bali", "addr_002", "prod_batik_mega"
 TAG = "T1I199"
 
 
-def _login(email, pw="demo1234"):
+def _login(email, pw="demo12345"):
     DB.login_attempts.delete_many({})
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pw}, timeout=30)
     assert r.status_code == 200, r.text[:200]

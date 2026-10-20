@@ -25,7 +25,7 @@ KNIT = DB.products.find_one({"fabric_type": "knit", "status": "active"}, {"_id":
 ROLLS, SESSIONS, NOTES = [], [], []
 
 
-def _login(email, pw="demo1234"):
+def _login(email, pw="demo12345"):
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pw})
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": "ent_ksc"}
@@ -134,7 +134,7 @@ def test_putaway_no_journal(adm):
 
 # LN-102-T02 — Meja Saya: duplicate turn notifications deduped; count == rows
 @pytest.mark.parametrize("email,pw,uid", [("admin@kainnusantara.id", "demo12345", "user_admin_01"),
-                                          ("warehouse@kainnusantara.id", "demo1234", "user_wh_01")])
+                                          ("warehouse@kainnusantara.id", "demo12345", "user_wh_01")])
 def test_my_desk_turn_dedupe(email, pw, uid):
     h = _login(email, pw)
     def turn():

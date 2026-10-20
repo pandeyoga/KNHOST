@@ -23,7 +23,7 @@ def admin():
 
 @pytest.fixture(scope="module")
 def sales():
-    return _login("sales@kainnusantara.id", "demo1234")
+    return _login("sales@kainnusantara.id", "demo12345")
 
 
 # --- Push ---

@@ -25,12 +25,12 @@ DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.en
 ENT = "ent_ksc"
 CUST = "cust_toko_kain"
 SKU = "KNWVN0015-L-TAUX-XA-XX-XX"          # DENIM TENCEL TAUPE A — produk reproduksi SO-00085
-PW = {"admin@kainnusantara.id": "demo12345", "wh.admin@kainnusantara.id": "demo12345"}
+PW = "demo12345"   # F-01 — satu sandi untuk semua akun seed
 
 
 class Api:
     def __init__(self, email):
-        r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": PW.get(email, "demo1234")}, timeout=30)
+        r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": PW}, timeout=30)
         r.raise_for_status()
         self.h = {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": ENT}
 

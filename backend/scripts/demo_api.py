@@ -9,7 +9,7 @@ sys.path.insert(0, str(ROOT))
 
 import httpx  # noqa: E402
 
-DEMO_PASSWORD = "demo1234"
+DEMO_PASSWORD = "demo12345"
 BATCH = "DEMO_LENGKAP_KN"
 
 

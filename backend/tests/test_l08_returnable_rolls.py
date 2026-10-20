@@ -58,7 +58,7 @@ def test_fix_iter206_distribution_dup_and_entity(h):
     assert _post(h, SHIPPED_SO, [dup, dup]).status_code == 400
     kanda = DB.sales_orders.find_one({"entity_id": "ent_kanda", "status": "done"}, {"_id": 0, "id": 1})
     if kanda:
-        s = requests.post(f"{BASE}/auth/login", json={"email": "sales@kainnusantara.id", "password": "demo1234"}).json()
+        s = requests.post(f"{BASE}/auth/login", json={"email": "sales@kainnusantara.id", "password": "demo12345"}).json()
         r = requests.post(f"{BASE}/sales-returns", headers={"Authorization": f"Bearer {s['token']}"}, json={
             "order_id": kanda["id"], "return_type": "retur", "notes": TAG,
             "items": [{"product_id": "x", "quantity_returned": 1}]})

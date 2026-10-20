@@ -19,7 +19,7 @@ ENT = "ent_ksc"
 TAG = uuid.uuid4().hex[:6]
 
 
-def _login(email, pw="demo1234"):
+def _login(email, pw="demo12345"):
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pw})
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": ENT}

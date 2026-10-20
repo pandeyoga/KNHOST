@@ -11,7 +11,7 @@ DB = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
 T = uuid.uuid4().hex[:6]
 
 
-def _login(email, pw="demo1234"):
+def _login(email, pw="demo12345"):
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pw}, timeout=30)
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": "ent_ksc"}

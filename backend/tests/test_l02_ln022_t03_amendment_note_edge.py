@@ -40,7 +40,7 @@ def _cleanup():
 def H():
     _cleanup()  # sisa run yang crash
     yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
-           "manager": _h("manager@kainnusantara.id", "demo1234", SRC["entity_id"])}
+           "manager": _h("manager@kainnusantara.id", "demo12345", SRC["entity_id"])}
     _cleanup()
 
 

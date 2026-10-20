@@ -19,7 +19,7 @@ PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 64
 
 
 def _tok(email):
-    pwd = "demo12345" if email.startswith("admin@") else "demo1234"
+    pwd = "demo12345" if email.startswith("admin@") else "demo12345"
     return requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}).json()["token"]
 
 

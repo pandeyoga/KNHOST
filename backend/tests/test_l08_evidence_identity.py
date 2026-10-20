@@ -191,7 +191,7 @@ def test_t03_block_resend_to_origin_customer(h):
     assert returned["id"] not in ids(SO["customer_id"])
     assert returned["id"] in ids("cust_TEST_L08B_other")
     # pengguna tanpa hak sales_return.policy tidak bisa mematikan toggle
-    sales = login("sales@kainnusantara.id", "demo1234")
+    sales = login("sales@kainnusantara.id", "demo12345")
     assert set_cfg(sales, "returns.block_resend_to_origin_customer", False).status_code == 403
     assert set_cfg(h, "returns.block_resend_to_origin_customer", False).status_code == 200
     assert returned["id"] in ids(SO["customer_id"])

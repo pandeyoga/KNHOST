@@ -10,9 +10,9 @@ from pymongo import MongoClient
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or "http://localhost:8001"
 
 ADMIN = ("admin@kainnusantara.id", "demo12345")
-MDQ = ("mdquality@kainnusantara.id", "demo1234")
-QC = ("qc@kainnusantara.id", "demo1234")
-WH = ("warehouse@kainnusantara.id", "demo1234")
+MDQ = ("mdquality@kainnusantara.id", "demo12345")
+QC = ("qc@kainnusantara.id", "demo12345")
+WH = ("warehouse@kainnusantara.id", "demo12345")
 
 ENT_KSC = "ent_ksc"
 WH_JKT = "wh_jakarta"

@@ -22,7 +22,7 @@ import requests  # noqa: E402
 @pytest.fixture(scope="module")
 def wh():
     s = requests.Session()
-    r = s.post(f"{BASE}/auth/login", json={"email": "warehouse@kainnusantara.id", "password": "demo1234"}, timeout=30)
+    r = s.post(f"{BASE}/auth/login", json={"email": "warehouse@kainnusantara.id", "password": "demo12345"}, timeout=30)
     assert r.status_code == 200, r.text
     s.headers["Authorization"] = f"Bearer {r.json()['token']}"
     return s

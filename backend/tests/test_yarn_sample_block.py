@@ -81,7 +81,7 @@ def test_regular_yarn_order_by_admin_ok(ctx):
 
 @pytest.mark.parametrize("otype", ["regular", "sample"])
 def test_sales_role_yarn_403(otype):
-    h = {**_login("sales.kanda@kainnusantara.id", "demo1234"), "X-Entity-Id": "ent_kanda"}
+    h = {**_login("sales.kanda@kainnusantara.id", "demo12345"), "X-Entity-Id": "ent_kanda"}
     c = db.customers.find_one({"entity_id": "ent_kanda"}, {"_id": 0})
     r = requests.post(f"{BASE}/sales-orders", headers=h, timeout=30, json={
         "customer_id": c["id"], "shipping_address_id": c["addresses"][0]["id"], "entity_id": "ent_kanda",

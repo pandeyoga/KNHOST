@@ -81,7 +81,7 @@ class TestMdqCutEdge:
     def test_md_roles_allowed(self, ctx, email):
         roll, make = ctx
         iid, lid = make()
-        tok = _login(email, "demo1234")
+        tok = _login(email, "demo12345")
         r = requests.post(f"{BASE}/api/inspections/{iid}/lines/{lid}/mdq-cut", json={},
                           headers=_hdr(tok, roll), timeout=30)
         assert r.status_code == 200, r.text

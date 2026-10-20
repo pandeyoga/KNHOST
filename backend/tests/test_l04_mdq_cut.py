@@ -74,7 +74,7 @@ class TestMdqCut:
     def test_sales_forbidden(self, tok):
         roll = _roll("yard")
         iid, lid = _ins_for(roll)
-        s = _login("sales.kanda@kainnusantara.id", "demo1234")
+        s = _login("sales.kanda@kainnusantara.id", "demo12345")
         r = requests.post(f"{BASE}/api/inspections/{iid}/lines/{lid}/mdq-cut", json={},
                           headers={"Authorization": f"Bearer {s}"}, timeout=30)
         assert r.status_code == 403

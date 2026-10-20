@@ -13,7 +13,7 @@ CUST, ADDR, PROD = "cust_butik_bali", "addr_002", "prod_batik_mega"
 REAL_TPL = (DB.products.find_one({"template_id": {"$nin": ["", None]}, "base_unit": "yard"}, {"template_id": 1}) or {}).get("template_id", "ptpl_a2cbc00d355e")
 
 
-def _login(email, pw="demo1234"):
+def _login(email, pw="demo12345"):
     DB.login_attempts.delete_many({})
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pw}, timeout=30)
     assert r.status_code == 200, r.text[:200]

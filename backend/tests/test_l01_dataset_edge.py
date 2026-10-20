@@ -79,11 +79,11 @@ class TestDatasetEdge:
         assert requests.post(f"{BASE}/api/client-dataset/batches/{b}/rollback", headers=adm, timeout=60).status_code == 409
 
     def test_manager_access(self):
-        m = _login("manager@kainnusantara.id", "demo1234")
+        m = _login("manager@kainnusantara.id", "demo12345")
         # impor dataset = izin product.import (Admin; peran lain lewat custom role) — tab hanya untuk Admin
         assert requests.get(f"{BASE}/api/client-dataset/batches", headers=m, timeout=30).status_code == 403
         assert requests.get(f"{BASE}/api/makloon-claims/recap", headers=m, timeout=30).status_code == 200
-        f = _login("finance@kainnusantara.id", "demo1234")
+        f = _login("finance@kainnusantara.id", "demo12345")
         assert requests.get(f"{BASE}/api/makloon-claims/recap", headers=f, timeout=30).status_code == 200
 
 

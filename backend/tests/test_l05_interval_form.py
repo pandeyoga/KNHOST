@@ -10,7 +10,7 @@ BASE = os.environ.get("REACT_APP_BACKEND_URL", "http://localhost:8001").rstrip("
 DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.environ.get("DB_NAME", "test_database")]
 
 
-def _h(email="qc@kainnusantara.id", pw="demo1234"):
+def _h(email="qc@kainnusantara.id", pw="demo12345"):
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pw}, timeout=30)
     if r.status_code != 200:
         r = requests.post(f"{BASE}/auth/login", json={"email": "admin@kainnusantara.id", "password": "demo12345"}, timeout=30)

@@ -85,7 +85,7 @@ def test_reason_optional_low_risk(h):
 
 # Non-admin can't change
 def test_sales_cannot_change():
-    hs = _login("sales@kainnusantara.id", "demo1234")
+    hs = _login("sales@kainnusantara.id", "demo12345")
     r = _put(hs, KEYS[0], 10)
     assert r.status_code == 403, r.text[:200]
 

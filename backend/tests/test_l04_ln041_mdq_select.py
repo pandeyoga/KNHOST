@@ -32,7 +32,7 @@ def fx():
     DB.inspections.insert_one({"id": iid, "number": "TEST-LN041", "kind": "po_receipt", "status": "in_progress",
                                "entity_id": "ent_ksc", "remark": "TEST_LN041", "lines": lines, "history": []})
     snap = {r["id"]: r for r in rolls}
-    yield {"iid": iid, "lines": lines, "rolls": rolls, "tok": _login("mdquality@kainnusantara.id", "demo1234"),
+    yield {"iid": iid, "lines": lines, "rolls": rolls, "tok": _login("mdquality@kainnusantara.id", "demo12345"),
            "admin": _login("admin@kainnusantara.id", "demo12345")}
     for rid, r in snap.items():
         DB.inventory_rolls.replace_one({"id": rid}, r)
@@ -82,7 +82,7 @@ def test_t02_mismatch_then_human_accept_is_separate_and_audited(fx):
         assert la["md_quality_decision"]["action"] == "release" and la["md_quality_decision"]["by"]
         assert DB.audit_logs.count_documents({"action": "inspection_hold_released", "entity_id": fx["iid"]}) >= 1 \
             or DB.audit_logs.count_documents({"action": "inspection_hold_released"}) >= 1
-    s = _login("sales.kanda@kainnusantara.id", "demo1234")
+    s = _login("sales.kanda@kainnusantara.id", "demo12345")
     r = requests.post(f"{BASE}/api/inspections/{fx['iid']}/lines/{a['id']}/release-hold",
                       json={"reason": "coba lepas tanpa hak akses"}, headers=_h(s), timeout=30)
     assert r.status_code in (403, 404)

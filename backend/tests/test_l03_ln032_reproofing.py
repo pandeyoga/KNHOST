@@ -18,7 +18,7 @@ D_OD = f"dsgn_TEST_x32_{TAG}"
 CREATED_OD, CREATED_SMP = [], []
 
 
-def _login(email, pw="demo1234"):
+def _login(email, pw="demo12345"):
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pw})
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": ENT}

@@ -128,7 +128,7 @@ def sess(email="admin@kainnusantara.id", entity=""):
     """
     if email not in _TOKENS:
         r = requests.post(f"{API}/auth/login",
-                          json={"email": email, "password": "demo12345" if email.startswith("admin@") else "demo1234"},
+                          json={"email": email, "password": "demo12345"},
                           timeout=30)
         if r.status_code == 429:
             raise SystemExit(

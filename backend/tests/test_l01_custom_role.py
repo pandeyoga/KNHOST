@@ -27,7 +27,7 @@ def role_and_user(adm):
     DB.users.insert_one({"id": f"user_{uuid.uuid4().hex[:12]}", "email": email, "name": "TEST_L01 PIC",
                          "role": rid, "status": "active", "home_entity_id": admin.get("home_entity_id"),
                          "entity_ids": admin.get("entity_ids") or [admin.get("home_entity_id")],
-                         "password_hash": bcrypt.hashpw(b"demo1234", bcrypt.gensalt()).decode(),
+                         "password_hash": bcrypt.hashpw(b"demo12345", bcrypt.gensalt()).decode(),
                          "created_at": datetime.now(timezone.utc).isoformat()})
     yield rid, email
     DB.users.delete_many({"email": email})
@@ -36,7 +36,7 @@ def role_and_user(adm):
 
 def test_effective_permission_same_on_api(role_and_user):
     rid, email = role_and_user
-    h = _login(email, "demo1234")
+    h = _login(email, "demo12345")
     assert requests.get(f"{BASE}/api/products?limit=1", headers=h, timeout=30).status_code == 200
     assert requests.get(f"{BASE}/api/sales-orders?limit=1", headers=h, timeout=30).status_code == 403
     assert requests.get(f"{BASE}/api/master-data/export-products", headers=h, timeout=30).status_code == 403
@@ -57,7 +57,7 @@ def test_hidden_tabs_roundtrip_and_rename_keeps_perms(adm, role_and_user):
     assert r.json()["hidden_views"] == ["rnd-handfeel", "rnd-labdip"]
     assert requests.patch(f"{BASE}/api/access/roles/{rid}", json={"hidden_views": ["tidak-ada"]},
                           headers=adm, timeout=30).status_code == 400
-    me = requests.get(f"{BASE}/api/auth/me", headers=_login(email, "demo1234"), timeout=30).json()
+    me = requests.get(f"{BASE}/api/auth/me", headers=_login(email, "demo12345"), timeout=30).json()
     assert set(me["hidden_views"]) == {"rnd-labdip", "rnd-handfeel"}
     r = requests.patch(f"{BASE}/api/access/roles/{rid}", json={"label": f"TEST_L01 Ganti {uuid.uuid4().hex[:4]}"},
                        headers=adm, timeout=30)
@@ -65,7 +65,7 @@ def test_hidden_tabs_roundtrip_and_rename_keeps_perms(adm, role_and_user):
 
 
 def test_cannot_edit_own_role(adm):
-    mgr = _login("manager@kainnusantara.id", "demo1234")
+    mgr = _login("manager@kainnusantara.id", "demo12345")
     m = DB.permission_settings.find_one({"id": "default"})["matrix"]
     had = "permission" in m["manager"]
     before = list(m["manager"].get("permission", []))
