@@ -31,7 +31,7 @@ export const ACTION_LABEL = {
   generate: "Hasilkan", issue: "Terbitkan", inspect: "Inspeksi", assess: "Nilai", award: "Tetapkan Pemenang", decide: "Putuskan",
   propose: "Usulkan", resolve: "Selesaikan Kasus", return: "Retur", replace: "Ganti", convert: "Konversi", dispose: "Hapus Buku",
   manage_bom: "Kelola BOM", manage_org: "Kelola Organisasi", manage_attendance: "Kelola Absensi", manage_payroll: "Kelola Gaji",
-  manage_settings: "Kelola Pengaturan", view_pii: "Lihat Data Pribadi", approve_count: "Setujui Opname",
+  manage_settings: "Kelola Pengaturan", policy: "Atur Kebijakan", view_pii: "Lihat Data Pribadi", approve_count: "Setujui Opname",
 };
 
 // Aksi audit (audit_logs.action). Awalan modul dipakai untuk kunci yang belum terdaftar.

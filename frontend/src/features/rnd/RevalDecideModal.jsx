@@ -16,8 +16,8 @@ function ContractField({ sampleId, value, onChange }) {
   return (
     <Field label="Referensi kontrak existing (opsional — hanya dicatat, isi kontrak tidak diubah)">
       <KNSelect data-testid="reval-contract-select" className="field" value={value} searchable
-        options={[{ value: "", label: rows.length ? "— tanpa referensi kontrak —" : "— tidak ada kontrak aktif supplier ini —" },
-          ...rows.map((c) => ({ value: c.id, label: `${c.contract_number} · ${TYPE[c.contract_type] || c.contract_type}${c.product_id ? "" : " · umum"}${c.valid_to ? ` · s.d. ${c.valid_to}` : ""}` }))]}
+        options={[{ value: "", label: rows.length ? "— tanpa referensi kontrak —" : "— tidak ada kontrak supplier ini —" },
+          ...rows.map((c) => ({ value: c.id, label: `${c.contract_number} · ${TYPE[c.contract_type] || c.contract_type}${c.product_id ? "" : " · umum"}${c.valid_to ? ` · s.d. ${c.valid_to}` : ""}${c.status === "terminated" ? " · dihentikan (referensi historis)" : ""}` }))]}
         onValueChange={onChange} />
     </Field>
   );

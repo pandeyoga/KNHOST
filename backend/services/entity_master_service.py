@@ -215,6 +215,27 @@ MASTERS: Dict[str, MasterSpec] = {
 LAYERED_COLLECTIONS: Tuple[str, ...] = tuple(s.collection for s in MASTERS.values())
 
 
+# Keputusan owner 2026-10-21 (ROLE-01 lanjutan) — izin TULIS per jenis master = izin domain
+# layar khususnya ("satu data → satu izin"), sehingga dapat diatur per peran di matriks izin.
+# Aksi kosong = mengikuti operasi (create/update/delete). Jenis tanpa entri tetap settings.manage.
+WRITE_PERMISSION: Dict[str, Tuple[str, str]] = {
+    "payment-terms": ("entity", ""),                   # = /payment-terms (entity.create/update/delete)
+    "expense-categories": ("cash_settlement", "manage"),  # = PATCH /expense-categories/{code}
+    "document-templates": ("template", ""),            # = /document-templates
+    "product-lines": ("product", ""),                  # master produk (MD)
+    "process-stages": ("process_recipe", ""),          # tahapan dipakai resep proses
+    "sample-types": ("rnd", "manage"),                 # jenis sampling R&D
+    "complaint-reasons": ("sales_return", "policy"),   # kebijakan retur
+}
+OP_ACTION = {"create": "create", "update": "update", "override": "create", "revert": "delete"}
+
+
+def write_permission(kind: str, op: str) -> Tuple[str, str]:
+    """(modul, aksi) yang dituntut untuk menulis master `kind` dengan operasi `op`."""
+    module, action = WRITE_PERMISSION.get(kind, ("settings", "manage"))
+    return module, (action or OP_ACTION[op])
+
+
 def spec(kind: str) -> MasterSpec:
     s = MASTERS.get(kind)
     if not s:

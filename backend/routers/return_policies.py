@@ -113,7 +113,7 @@ async def supplier_claim_deadlines(request: Request, po_id: str = Query(...)) ->
 async def create_sales_return_policy(payload: SalesReturnPolicyCreate,
                                      request: Request) -> Dict[str, Any]:
     """Buat kebijakan retur jual baru."""
-    actor = await require_permission(request, "settings", "manage")
+    actor = await require_permission(request, "sales_return", "policy")   # keputusan owner 2026-10-21
     ctx = await entity_ctx(request)
     if not payload.name.strip():
         raise HTTPException(status_code=400, detail="Nama kebijakan wajib diisi")
@@ -176,7 +176,7 @@ async def get_sales_return_policy(policy_id: str, request: Request) -> Dict[str,
 @router.patch("/sales-return-policies/{policy_id}")
 async def update_sales_return_policy(policy_id: str, payload: GenericPatch,
                                      request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "settings", "manage")
+    actor = await require_permission(request, "sales_return", "policy")   # keputusan owner 2026-10-21
     existing = await db.sales_return_policies.find_one({"id": policy_id}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Kebijakan tidak ditemukan")
@@ -229,7 +229,7 @@ async def update_sales_return_policy(policy_id: str, payload: GenericPatch,
 
 @router.delete("/sales-return-policies/{policy_id}")
 async def deactivate_sales_return_policy(policy_id: str, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "settings", "manage")
+    actor = await require_permission(request, "sales_return", "policy")   # keputusan owner 2026-10-21
     existing = await db.sales_return_policies.find_one({"id": policy_id}, {"_id": 0})
     if not existing:
         raise HTTPException(status_code=404, detail="Kebijakan tidak ditemukan")

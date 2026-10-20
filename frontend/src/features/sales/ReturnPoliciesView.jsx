@@ -51,7 +51,7 @@ export default function ReturnPoliciesView({ currentUser }) {
   const [form, setForm] = useState(EMPTY);
   const [delTarget, setDelTarget] = useState(null);
 
-  const canManage = can(currentUser?.permissions, "settings", "manage");   // Sisir gerbang peran (2026-10-20) — /sales-return-policies
+  const canManage = can(currentUser?.permissions, "sales_return", "policy");   // keputusan owner 2026-10-21 — /sales-return-policies
 
   useEffect(() => { load(); loadMeta(); }, []); // eslint-disable-line
 
@@ -149,7 +149,7 @@ export default function ReturnPoliciesView({ currentUser }) {
         </div>
       )}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="policy-error" />
-      <ReturnAssumptionsPanel canManage={can(currentUser?.permissions, "entity", "update")} />
+      <ReturnAssumptionsPanel canManage={canManage} />
       <CutlossSimulator />
 
       {/* FASE P4 — form kebijakan retur menjadi POP-UP (dulu form panjang ini menyelip

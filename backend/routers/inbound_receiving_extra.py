@@ -6,7 +6,7 @@ Semua endpoint memakai prefix /api yang sama; tidak ada konflik path dengan rout
 from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
 from db import db
-from dependencies import require_permission, audit
+from dependencies import require_any_permission, require_permission, audit
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from core_utils import safe_doc
 from schemas import QCDecision, ReceiveUomPreviewIn, ReceivingUomSettingsIn
@@ -94,7 +94,8 @@ async def update_receiving_uom_settings(payload: ReceivingUomSettingsIn,
 async def qc_inspection_queue(request: Request) -> List[Dict[str, Any]]:
     """Depth #3a — antrian inspeksi QC: task inbound berstatus `qc_pending`
     (barang di karantina menunggu keputusan terima/tolak)."""
-    await require_permission(request, "wms", "view")
+    # Keputusan owner 2026-10-21 — peran QC melihat antreannya lewat izin domain qc.view.
+    await require_any_permission(request, [("wms", "view"), ("qc", "view")])
     from services.qc_service import quarantine_qty_for_task
     ctx = await entity_ctx(request)
     tasks = await db.wms_tasks.find(
@@ -125,7 +126,8 @@ async def qc_inspection_queue(request: Request) -> List[Dict[str, Any]]:
 async def qc_decision(task_id: str, payload: QCDecision, request: Request) -> Dict[str, Any]:
     """Depth #3a — keputusan inspeksi QC: terima (→available) &/atau tolak
     (→damaged / retur ke supplier dengan Nota Debit otomatis)."""
-    actor = await require_permission(request, "wms", "update")
+    # Keputusan owner 2026-10-21 — memutus karantina = qc.release (sama dengan putusan dokumen inspeksi).
+    actor = await require_any_permission(request, [("wms", "update"), ("qc", "release")])
     task = safe_doc(await db.wms_tasks.find_one({"id": task_id}, {"_id": 0}))
     if not task:
         raise HTTPException(status_code=404, detail="Inbound task tidak ditemukan")

@@ -42,9 +42,18 @@ async def read_effective_settings(request: Request, entity_id: Optional[str] = N
     return await get_effective_settings(resolved)
 
 
+#: Bagian pengaturan dengan izin domain sendiri (selain entity.update).
+SECTION_PERMISSION = {"returns": ("sales_return", "policy")}   # Asumsi Retur = kebijakan retur
+
+
 @router.put("/settings")
 async def update_settings(payload: SettingsUpdate, request: Request) -> Dict[str, Any]:
-    actor = await require_permission(request, "entity", "update")
+    # Keputusan owner 2026-10-21 — bagian yang punya izin domain dapat diubah pemegang izin itu
+    # (diatur di matriks izin); bagian lain tetap entity.update. Payload campuran menuntut semuanya.
+    sections = [s for s in SETTINGS_SECTIONS if getattr(payload, s, None) is not None]
+    needs = {SECTION_PERMISSION.get(s, ("entity", "update")) for s in sections} or {("entity", "update")}
+    for module, action in sorted(needs):
+        actor = await require_permission(request, module, action)
     scope = payload.scope or GLOBAL_SCOPE
     # KN-E45 — scope hanya "global" atau id entitas nyata; scope lain (mis. "integrations",
     # "hr") dikelola endpoint khususnya dan TIDAK boleh ditimpa/dibaca lewat sini.

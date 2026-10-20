@@ -97,11 +97,15 @@ async def _validate_contract_ref(contract_id: str, cur: Dict[str, Any], supplier
 
 
 async def contract_options(cur: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Kontrak aktif supplier siklus ini yang lolos validasi referensi (produk/entitas/jenis)."""
+    """Kontrak supplier siklus ini yang lolos validasi referensi (produk/entitas/jenis).
+
+    AUD-RND-03 — keputusan owner 2026-10-21: kontrak yang sudah DIHENTIKAN (terminated) tetap boleh
+    dipakai sebagai referensi historis, jadi ikut ditampilkan (berlabel statusnya) — selaras dengan
+    `_validate_contract_ref` yang menerimanya. Batal/kedaluwarsa belum diputuskan → tetap disaring."""
     sid = (cur.get("revalidation") or {}).get("supplier_id")
     if not sid:
         return []
-    q = {"partner_id": sid, "contract_type": {"$in": list(CONTRACT_TYPES)}, "status": {"$nin": ["cancelled", "expired", "terminated"]},
+    q = {"partner_id": sid, "contract_type": {"$in": list(CONTRACT_TYPES)}, "status": {"$nin": ["cancelled", "expired"]},
          "product_id": {"$in": ["", None, cur.get("product_id")]},
          "entity_id": {"$in": ["", None, "all", cur.get("entity_id")]}}
     rows = await db.supplier_contracts.find(q, {"_id": 0, "id": 1, "contract_number": 1, "contract_type": 1, "status": 1,

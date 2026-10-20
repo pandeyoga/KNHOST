@@ -35,7 +35,6 @@ import { entityShort, entityShortById } from "../../../utils/entityLabel";
 import { formatCurrency } from "../../../utils/formatters";
 import { COLUMNS, CREATE_FIELDS, cellText, defaultsFor, fieldOf, parseFieldValue, toInputValue }
   from "./masterFieldsConfig";
-import { can } from "../../../config/roles";
 
 /**
  * FASE L — definisi kolom & field per jenis master dipindah ke berkas data
@@ -56,7 +55,7 @@ const FULL_EDITOR = {
   "process-stages": { view: "domain-registry", label: "Pengaturan › Registri Domain" },
 };
 
-export default function EntityMastersView({ entities = [], selectedEntity = "all", currentUser, onNavigate }) {
+export default function EntityMastersView({ entities = [], selectedEntity = "all", onNavigate }) {
   const activeList = useMemo(
     () => (entities || []).filter((e) => e.status !== "inactive" && e.status !== "archived"),
     [entities]);
@@ -77,7 +76,9 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
   const [createValues, setCreateValues] = useState({});
   const [createGlobal, setCreateGlobal] = useState(false);
 
-  const canManage = can(currentUser?.permissions, "settings", "manage");   // Sisir gerbang peran (2026-10-20) — tulis /entity-masters
+  // Keputusan owner 2026-10-21 — hak tulis per jenis master dihitung SERVER (izin domain per jenis,
+  // dapat diatur di matriks izin) dan dikirim bersama daftar: data.can.{create,update,override,revert}.
+  const canOp = (op) => !!data?.can?.[op];
   const spec = groups.find((g) => g.kind === kind) || {};
 
   const loadGroups = useCallback(async () => {
@@ -284,7 +285,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
                   placeholder="Cari baris…"
                   className="h-8 w-[180px] rounded-md border border-[#E5E5EA] bg-white pl-7 pr-2 text-[12px] text-[#1C1C1E] placeholder:text-[#B0B0B8] focus:border-[#0058CC] focus:outline-none" />
               </div>
-              {canManage && (data?.manage ?? spec.manage) !== false && (
+              {canOp("create") && (data?.manage ?? spec.manage) !== false && (
                 <button data-testid="em-toggle-create" className="secondary-button text-[11.5px]"
                   onClick={() => {
                     // Bawaan diisi saat form DIBUKA (bukan disimpan di state awal),
@@ -476,7 +477,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
                               </>
                             ) : (
                               <>
-                                {canManage && isGlobal && !groupMode && !r.is_overridden
+                                {canOp("override") && isGlobal && !groupMode && !r.is_overridden
                                   && (data?.manage ?? spec.manage) !== false && (
                                   <button data-testid={`em-override-${r.id}`}
                                     className="secondary-button text-[11px]" disabled={busyId === r.id}
@@ -485,7 +486,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
                                     <Copy size={12} /> Buat khusus {entityLabel}
                                   </button>
                                 )}
-                                {canManage && !isGlobal && (data?.manage ?? spec.manage) !== false && (
+                                {canOp("revert") && !isGlobal && (data?.manage ?? spec.manage) !== false && (
                                   <button data-testid={`em-revert-${r.id}`}
                                     className="secondary-button ml-1 text-[11px]" disabled={busyId === r.id}
                                     title="Lepas override — kembali mengikuti nilai Global"
@@ -493,7 +494,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
                                     <RotateCcw size={12} /> Kembalikan ke global
                                   </button>
                                 )}
-                                {canManage && r.can_edit_here && (data?.manage ?? spec.manage) !== false && (
+                                {canOp("update") && r.can_edit_here && (data?.manage ?? spec.manage) !== false && (
                                   <button data-testid={`em-edit-${r.id}`}
                                     className="primary-button ml-1 text-[11px]"
                                     onClick={() => setEditRow({ id: r.id, values: { ...r } })}>

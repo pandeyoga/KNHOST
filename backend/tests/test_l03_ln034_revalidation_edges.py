@@ -122,7 +122,9 @@ def test_contract_reference_options(H):
     ct = {"id": cid, "contract_number": f"TEST/SCT-{TAG}", "partner_id": SUPS[1], "product_id": PRODS[1]["id"], "entity_id": ENT,
           "contract_type": "purchase", "status": "active", "unit_price": 12345, "created_at": "2099-01-01T00:00:00"}
     other = {**ct, "id": cid + "_x", "contract_number": f"TEST/SCT-{TAG}-X", "product_id": PRODS[0]["id"]}
-    DB.supplier_contracts.insert_many([dict(ct), dict(other)])
+    # AUD-RND-03 — keputusan owner 2026-10-21: kontrak DIHENTIKAN boleh jadi referensi historis
+    term = {**ct, "id": cid + "_t", "contract_number": f"TEST/SCT-{TAG}-T", "status": "terminated"}
+    DB.supplier_contracts.insert_many([dict(ct), dict(other), dict(term)])
     try:
         r = _create(H, SUPS[1], pid=PRODS[1]["id"])
         assert r.status_code in (200, 201), r.text
@@ -131,6 +133,8 @@ def test_contract_reference_options(H):
         assert opts.status_code == 200, opts.text
         ids = [c["id"] for c in opts.json()["items"]]
         assert cid in ids and other["id"] not in ids
+        assert term["id"] in ids, "kontrak dihentikan harus tampil sebagai pilihan referensi"
+        assert {c["id"]: c["status"] for c in opts.json()["items"]}[term["id"]] == "terminated"
         assert requests.get(f"{BASE}/rnd/samples/{sid}/contract-options", headers=H["sales"]).status_code == 403
         _assessed(sid, SUPS[1], "acc")
         assert _post(H, f"/rnd/samples/{sid}/decide", {"result": "pass", "contract_id": other["id"]}, who="md").status_code == 400
@@ -141,4 +145,4 @@ def test_contract_reference_options(H):
         after = DB.supplier_contracts.find_one({"id": cid}, {"_id": 0})
         assert after == ct
     finally:
-        DB.supplier_contracts.delete_many({"id": {"$in": [cid, other["id"]]}})
+        DB.supplier_contracts.delete_many({"id": {"$in": [cid, other["id"], term["id"]]}})

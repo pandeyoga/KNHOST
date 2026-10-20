@@ -12,8 +12,9 @@ const TABS = [
 
 /** QC & Inspeksi dalam SATU menu: antrean karantina kedatangan → dokumen inspeksi (SPK) & keputusan. */
 export default function QcHubView({ initial = "queue", currentUser, selectedEntity, focusDoc, onClearFocus }) {
-  // Sisir gerbang peran (2026-10-20): antrean QC kedatangan = GET /inbound/qc/queue (wms.view); tanpa izin itu hanya tab dokumen.
-  const docsOnly = !can(currentUser?.permissions, "wms", "view");
+  // Antrean QC kedatangan = GET /inbound/qc/queue (wms.view ATAU qc.view — keputusan owner 2026-10-21);
+  // tanpa keduanya hanya tab dokumen.
+  const docsOnly = !(can(currentUser?.permissions, "wms", "view") || can(currentUser?.permissions, "qc", "view"));
   const [tab, setTab] = useState(docsOnly ? "docs" : initial);
   return (
     <div data-testid="qc-hub-view">

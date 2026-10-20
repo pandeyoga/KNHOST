@@ -56,12 +56,15 @@ describe("OD — siapkan pengiriman = order.update", () => {
   });
 });
 
-describe("QC hub — antrean kedatangan butuh wms.view", () => {
+describe("QC hub — antrean kedatangan butuh wms.view atau qc.view (keputusan owner 2026-10-21)", () => {
   const render = (user) => html(<QcHubView currentUser={user} />);
-  test("QC tanpa wms.view hanya tab dokumen", () => {
-    const out = render({ role: "qc", permissions: { qc: ["view", "inspect"] } });
+  test("MD Quality tanpa wms.view & qc.view hanya tab dokumen", () => {
+    const out = render({ role: "md_quality", permissions: { md_quality: ["view", "inspect", "decide"] } });
     expect(out).not.toContain("qc-hub-tab-queue");
     expect(out).toContain("qc-hub-tab-docs");
+  });
+  test("QC dengan qc.view (tanpa wms.view) melihat antrean", () => {
+    expect(render({ role: "qc", permissions: { qc: ["view", "inspect", "release"] } })).toContain("qc-hub-tab-queue");
   });
   test("peran berizin wms.view melihat antrean", () => {
     expect(render({ role: "warehouse", permissions: { wms: ["view"] } })).toContain("qc-hub-tab-queue");
