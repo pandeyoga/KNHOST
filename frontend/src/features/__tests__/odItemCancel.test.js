@@ -24,9 +24,9 @@ describe("Pesanan Khusus — batal per item", () => {
     expect(html).not.toContain("special-order-item-cancel-1");
     expect(html).not.toContain("special-order-item-cancel-2");
   });
-  test("sesudah SO lahir, OD selesai, atau tanpa order.update: tidak ada tombol batal", () => {
+  test("sesudah SO lahir tombol batal TETAP ada (keputusan owner); OD selesai atau tanpa order.update: tidak ada", () => {
     expect(render({ id: "od1", status: "confirmed", linked_sales_order_id: "so1", items: [item(1), item(2)] }))
-      .not.toContain("special-order-item-cancel-");
+      .toContain("special-order-item-cancel-1");
     expect(render({ id: "od1", status: "done", items: [item(1), item(2)] })).not.toContain("special-order-item-cancel-");
     expect(render({ id: "od1", status: "confirmed", items: [item(1), item(2)] }, false)).not.toContain("special-order-item-cancel-");
   });

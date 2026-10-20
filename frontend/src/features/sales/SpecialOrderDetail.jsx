@@ -20,6 +20,7 @@ import { SpecialOrderInfoPanels } from "./SpecialOrderInfoPanels";
 import FormModal from "../../components/FormModal";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { askConfirm } from "@/services/confirmService";
+import { formatCurrency } from "../../utils/formatters";
 
 
 export default function SpecialOrderDetail({
@@ -425,7 +426,11 @@ export default function SpecialOrderDetail({
         canCancelItem={can(perms, "order", "update")}
         onItemCancelled={(res) => {
           const extra = [...(res.cancelled_docs || []), ...(res.cancelled_samples || [])];
-          setOkMsg(`Item dibatalkan.${extra.length ? ` Ikut dibatalkan: ${extra.join(", ")}.` : ""}`);
+          const so = res.sales_order_line;
+          setOkMsg(`Item dibatalkan.${extra.length ? ` Ikut dibatalkan: ${extra.join(", ")}.` : ""}`
+            + (so ? ` Baris SO dibatalkan, total SO kini ${formatCurrency(so.grand_total_after || 0)}.` : "")
+            + ((res.left_docs || []).length ? ` Perlu tindak lanjut (sudah berjalan): ${res.left_docs.join(", ")}.` : "")
+            + " MD sudah diberi tahu.");
           onUpdate && onUpdate(res.special_order);
         }} />
       {(order.redesigns || []).length > 0 && (

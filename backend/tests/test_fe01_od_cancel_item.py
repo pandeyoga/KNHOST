@@ -47,6 +47,7 @@ def cleanup_od():
     spec_ids = [i.get("spec_id") for od in DB.special_orders.find({"id": {"$in": OD_IDS}}, {"_id": 0, "items.spec_id": 1})
                 for i in od.get("items") or [] if i.get("spec_id")]
     DB.md_specs.delete_many({"$or": [{"special_order_id": {"$in": OD_IDS}}, {"id": {"$in": spec_ids}}]})
+    DB.notifications.delete_many({"type": "special_order_item_cancelled", "ref": {"$regex": "|".join(f"^{x}:" for x in OD_IDS) or "^$"}})
     DB.special_orders.delete_many({"id": {"$in": OD_IDS}})
     for pid, snap in SNAP.items():
         unset = {f: "" for f in PRODUCT_FIELDS if f not in snap}
@@ -109,8 +110,24 @@ def test_batal_item_sebelum_acc_sampai_so(H):
     so = cv.json()["sales_order"]
     assert sorted(i["product_id"] for i in so["items"]) == sorted([PA["id"], PB["id"]])
     assert PC["id"] not in [i["product_id"] for i in so["items"]]
-    # sesudah SO lahir: batal item ditolak (pakai koreksi SO)
-    assert _cancel(H, od["id"], i2["id"]).status_code == 409
+    # keputusan owner (lanjutan): batal item SESUDAH SO boleh → baris SO keluar, reservasi lepas, total turun, MD diberi tahu
+    before = DB.sales_orders.find_one({"id": so["id"]}, {"_id": 0})
+    r2 = _cancel(H, od["id"], i2["id"], reason="Pelanggan batal sesudah SO")
+    assert r2.status_code == 200, r2.text
+    entry = r2.json()["sales_order_line"]
+    after = DB.sales_orders.find_one({"id": so["id"]}, {"_id": 0})
+    assert [i["product_id"] for i in after["items"]] == [PA["id"]]
+    assert after["grand_total"] < before["grand_total"] and entry["grand_total_after"] == after["grand_total"]
+    assert after["line_cancellations"][-1]["special_order_item_id"] == i2["id"]
+    assert DB.inventory_rolls.count_documents({"reserved_ref.id": so["id"], "product_id": PB["id"]}) == 0
+    assert DB.wms_tasks.count_documents({"order_id": so["id"], "product_id": PB["id"], "flow_type": "outbound",
+                                         "status": {"$nin": ["cancelled", "dispatched", "completed"]}}) == 0
+    md_ids = [u["id"] for u in DB.users.find({"role": "md", "status": "active"}, {"_id": 0, "id": 1})]
+    notes = list(DB.notifications.find({"type": "special_order_item_cancelled", "ref": {"$regex": f"^{od['id']}:"}}, {"_id": 0}))
+    assert len(notes) >= 2 and {n["recipient_user"] for n in notes} <= set(md_ids)     # dua pembatalan → dua pemberitahuan
+    assert any("SO " in n["body"] and n["title"].startswith("Item 2") for n in notes)
+    # item aktif terakhir tetap tidak bisa dibatalkan per item
+    assert _cancel(H, od["id"], i1["id"]).status_code == 400
 
 
 # ─── Sesudah kunci harga: baris item batal dibuang, harga item lain tetap ─────────────
@@ -134,6 +151,25 @@ def test_batal_item_sesudah_kunci_harga(H):
     cv = requests.post(f"{BASE}/special-orders/{od['id']}/convert-to-so", json={}, headers=H["admin"])
     assert cv.status_code == 200, cv.text
     assert sorted(i["product_id"] for i in cv.json()["sales_order"]["items"]) == sorted([PA["id"], PC["id"]])
+
+
+# ─── Sesudah SO terbit (ada pembayaran): ditolak, tidak ada yang berubah ─────────────────
+def test_batal_item_sesudah_so_terbit_ditolak(H):
+    od = _approved(H, [PA, PB], qtys=(100, 200))
+    i1, i2 = od["items"]
+    _decide(i1, PA, 10)
+    _decide(i2, PB, 30)
+    assert requests.post(f"{BASE}/special-orders/{od['id']}/customer-decision", json={"decision": "acc"}, headers=H["admin"]).status_code == 200
+    assert requests.post(f"{BASE}/special-orders/{od['id']}/lock-price", json={"margin_pct": 30, "auto_po": False}, headers=H["admin"]).status_code == 200
+    cv = requests.post(f"{BASE}/special-orders/{od['id']}/convert-to-so", json={}, headers=H["admin"])
+    assert cv.status_code == 200, cv.text
+    so_id = cv.json()["sales_order"]["id"]
+    DB.sales_orders.update_one({"id": so_id}, {"$set": {"paid_total": 1000.0}})     # fixture: sudah ada pembayaran
+    r = _cancel(H, od["id"], i2["id"])
+    assert r.status_code == 409 and "terbit" in r.text, r.text
+    assert len(DB.sales_orders.find_one({"id": so_id})["items"]) == 2
+    assert all(i.get("status") != "cancelled" for i in DB.special_orders.find_one({"id": od["id"]})["items"])
+    DB.sales_orders.update_one({"id": so_id}, {"$set": {"paid_total": 0.0}})
 
 
 # ─── Aturan penolakan ──────────────────────────────────────────────────────────────

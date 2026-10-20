@@ -423,13 +423,11 @@ CANCEL_ITEM_BLOCKED = ("cancelled", "shipped", "done")
 
 def check_item_cancellable(od: Dict[str, Any], item_id: str) -> Dict[str, Any]:
     """Aturan batal per item (keputusan owner 2026-10-21; default dipilih implementer):
-    * OD belum batal/terkirim/selesai dan BELUM dikonversi ke SO (sesudah SO → koreksi SO);
+    * OD belum batal/terkirim/selesai; boleh sesudah SO (keputusan owner lanjutan) — syarat baris SO
+      diperiksa terpisah oleh `so_line_cancel_service.check`;
     * item ada & masih aktif; harus tersisa ≥1 item aktif lain (semua batal = batalkan OD)."""
     if od.get("status") in CANCEL_ITEM_BLOCKED:
         raise ODError(f"Pesanan khusus berstatus {od.get('status')} — item tidak bisa dibatalkan.")
-    if od.get("linked_sales_order_id"):
-        raise ODConflict(f"Sudah dikonversi ke SO {od.get('linked_sales_order_number') or ''} — "
-                         "ubah item lewat koreksi/amandemen SO.")
     items = od.get("items") or []
     item = next((i for i in items if i.get("id") == item_id), None)
     if not item:

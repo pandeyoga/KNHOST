@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from db import db
 from dependencies import require_permission, audit, current_user
-from core_utils import new_id, now_iso, safe_doc
+from core_utils import new_id, now_iso, rupiah, safe_doc
 from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from services.special_order_service import (
     generate_special_order_number,
@@ -766,17 +766,20 @@ class ItemCancelBody(BaseModel):
 
 @router.post("/special-orders/{order_id}/items/{item_id}/cancel")
 async def cancel_special_order_item(order_id: str, item_id: str, payload: ItemCancelBody, request: Request) -> Dict[str, Any]:
-    """FE-01 lanjutan — keputusan owner 2026-10-21: batalkan SATU item OD (bukan seluruh OD).
+    """FE-01 lanjutan — keputusan owner 2026-10-21: batalkan SATU item OD (bukan seluruh OD), juga
+    sesudah SO dikonversi, dan MD diberi tahu.
 
-    Urutan: periksa semua syarat dulu (tanpa mengubah apa pun) → batalkan PO/MKO aktif item (butuh
-    od_fulfillment.cancel; ditolak bila barang sudah diterima/bahan sudah dikirim) → batalkan sample
-    R&D & permintaan desain item yang masih berjalan → tandai item batal + hitung ulang header/harga.
-    Item tidak dihapus: jejak, alasan, dan dokumen turunannya tetap terbaca."""
+    Urutan: periksa semua syarat dulu (tanpa mengubah apa pun, termasuk syarat baris SO) → batalkan
+    baris SO (lepas reservasi, batalkan tugas ambil, hitung ulang total) → batalkan PO/MKO aktif item yang
+    belum ada penerimaan/bahan terkirim (butuh od_fulfillment.cancel; dokumen yang sudah berjalan
+    dibiarkan & dilaporkan) → batalkan sample R&D & permintaan desain yang masih berjalan → tandai item
+    batal + hitung ulang header/harga → notifikasi MD. Item tidak dihapus: jejaknya tetap terbaca."""
     user = await require_permission(request, "order", "update")
     od = await _od_or_404(order_id, request)
     from services import special_order_fulfillment as ful
     from services import rnd_sample_service as smp
     from services import design_request_service as dreq
+    from services import so_line_cancel_service as so_line
     try:
         item = p2.check_item_cancellable(od, item_id)
     except p2.ODConflict as exc:
@@ -784,16 +787,25 @@ async def cancel_special_order_item(order_id: str, item_id: str, payload: ItemCa
     except p2.ODError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     reason = payload.reason.strip()
+    so = None
+    if od.get("linked_sales_order_id"):
+        so = await db.sales_orders.find_one({"id": od["linked_sales_order_id"]}, {"_id": 0})
+        if so and so.get("status") in ("cancelled", "expired"):
+            so = None
+        if so:
+            try:
+                await so_line.check(so, item_id)
+            except so_line.SoLineError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
     need = next((r for r in (await ful.progress(od))["items"] if r["key"] == item_id), None)
     live = (need or {}).get("active_docs") or []
-    if live:
-        if not await ful._can(user, "cancel"):  # noqa: SLF001
-            raise HTTPException(status_code=403, detail="Item punya PO/MKO aktif — membatalkannya butuh izin "
-                                                        "od_fulfillment.cancel.")
-        sent = [d.get("number") or d["id"] for d in live if d.get("issued")]
-        if sent:
-            raise HTTPException(status_code=409, detail=f"{', '.join(sent)} sudah ada penerimaan/bahan terkirim — "
-                                                        "selesaikan lewat amandemen/retur PO atau modul makloon dulu.")
+    # Dokumen yang sudah ada penerimaan/bahan terkirim TIDAK dibatalkan (barang sudah datang/berjalan):
+    # dibiarkan, dilaporkan, dan disebut di notifikasi MD untuk ditindaklanjuti di modul asalnya.
+    cancellable = [d for d in live if not d.get("issued")]
+    left_docs = [d.get("number") or d["id"] for d in live if d.get("issued")]
+    if cancellable and not await ful._can(user, "cancel"):  # noqa: SLF001
+        raise HTTPException(status_code=403, detail="Item punya PO/MKO aktif — membatalkannya butuh izin "
+                                                    "od_fulfillment.cancel.")
     own_ids = [x for x in [item.get("rnd_sample_id")] + list(item.get("sample_ids") or []) if x]
     samples = await db.md_samples.find({"$or": [{"special_order_id": order_id, "special_order_item_id": item_id},
                                                 {"id": {"$in": own_ids}}],
@@ -803,8 +815,15 @@ async def cancel_special_order_item(order_id: str, item_id: str, payload: ItemCa
     if held:
         raise HTTPException(status_code=409, detail=f"Sample {', '.join(held)} menunggu keputusan PIC uji ulang — "
                                                     "catat keputusan PIC dulu.")
+    so_entry = None
+    if so:
+        try:
+            so_entry = await so_line.cancel_line(so, item_id, reason, user)
+        except so_line.SoLineError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
     # PO/MKO aktif dibatalkan; PR yang belum jadi PO ikut dipensiunkan (tanpa ini PR yatim tetap hidup).
-    docs = await _cancel_item_docs(od, need, reason, user, request) if (live or ((need or {}).get("state") or {}).get("pr_id")) else []
+    docs = await _cancel_item_docs(od, {**need, "active_docs": cancellable}, reason, user, request) \
+        if (cancellable or ((need or {}).get("state") or {}).get("pr_id")) else []
     why = f"Item OD {od.get('number')} dibatalkan: {reason}"
     cancelled_samples = []
     for s in samples:
@@ -823,8 +842,7 @@ async def cancel_special_order_item(order_id: str, item_id: str, payload: ItemCa
     stamp = now_iso()
     note = f"Item {item.get('line_no')} ({item.get('description', '')}) dibatalkan — {reason}"
     res = await db.special_orders.update_one(
-        {"id": order_id, "linked_sales_order_id": {"$in": [None, ""]},
-         "items": {"$elemMatch": {"id": item_id, "status": {"$ne": "cancelled"}}}},
+        {"id": order_id, "items": {"$elemMatch": {"id": item_id, "status": {"$ne": "cancelled"}}}},
         {"$set": {**sets, "items.$[it].status": "cancelled", "items.$[it].cancelled_at": stamp,
                   "items.$[it].cancelled_by": user.get("name", ""), "items.$[it].cancel_reason": reason,
                   "updated_at": stamp},
@@ -832,12 +850,30 @@ async def cancel_special_order_item(order_id: str, item_id: str, payload: ItemCa
                                       "user": user.get("email", ""), "note": note}}},
         array_filters=[{"it.id": item_id}])
     if res.matched_count == 0:
-        raise HTTPException(status_code=409, detail="Pesanan khusus baru saja berubah (item sudah batal atau SO sudah lahir). Muat ulang.")
+        raise HTTPException(status_code=409, detail="Item ini baru saja dibatalkan pengguna lain. Muat ulang.")
     await audit(user.get("name", ""), "special_order_item_cancelled", "special_order", order_id,
-                {"item": item_id, "line_no": item.get("line_no"), "docs": docs, "samples": cancelled_samples,
-                 "design_request": cancelled_request}, reason=reason)
-    return {"special_order": safe_doc(await _fresh(order_id)), "cancelled_docs": docs,
-            "cancelled_samples": cancelled_samples, "cancelled_design_request": cancelled_request}
+                {"item": item_id, "line_no": item.get("line_no"), "docs": docs, "left_docs": left_docs,
+                 "samples": cancelled_samples, "design_request": cancelled_request,
+                 "sales_order": (so or {}).get("number", ""), "so_line": so_entry}, reason=reason)
+    # Keputusan owner 2026-10-21 — MD diberi tahu setiap item OD dibatalkan (alamat per orang, bukan siaran).
+    try:
+        from services import notification_service as notif
+        extra = [f"SO {so.get('number')}: baris dibatalkan, total {rupiah(so_entry['grand_total_before'] or 0)} → "
+                 f"{rupiah(so_entry['grand_total_after'] or 0)}" if so_entry else "",
+                 f"dibatalkan: {', '.join(docs + cancelled_samples)}" if (docs or cancelled_samples) else "",
+                 f"PERLU TINDAK LANJUT (sudah berjalan, tidak dibatalkan): {', '.join(left_docs)}" if left_docs else ""]
+        await notif.create_addressed(
+            roles=("md",), entity_id=od.get("entity_id", ""), notif_type="special_order_item_cancelled",
+            title=f"Item {item.get('line_no')} {od.get('number')} dibatalkan",
+            body=f"{item.get('description', '')} · {od.get('customer_name', '')}. Alasan: {reason}. "
+                 + " · ".join(x for x in extra if x),
+            severity="warning" if left_docs else "info", link="special-orders",
+            ref=f"{order_id}:{item_id}")   # unik per item — ref sama per OD membuat pembatalan kedua tertelan dedupe
+    except Exception as exc:  # noqa: BLE001
+        logging.getLogger(__name__).warning("[cancel_item] notifikasi MD gagal diabaikan: %s", exc)
+    return {"special_order": safe_doc(await _fresh(order_id)), "cancelled_docs": docs, "left_docs": left_docs,
+            "cancelled_samples": cancelled_samples, "cancelled_design_request": cancelled_request,
+            "sales_order_line": so_entry}
 
 
 @router.post("/special-orders/{order_id}/prepare-shipment")

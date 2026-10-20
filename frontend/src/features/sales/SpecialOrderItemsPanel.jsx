@@ -16,8 +16,9 @@ export default function SpecialOrderItemsPanel({ order, canEdit, onCreated, canC
   const legacyRedesign = !items.length && !!order.chain?.design;
   const ref = order.redesign_of || {};
   const activeCount = items.filter((it) => it.status !== "cancelled").length;
-  // Sama dengan aturan server: belum SO, OD belum batal/terkirim/selesai, dan masih ada item aktif lain.
-  const cancelOpen = canCancelItem && !order.linked_sales_order_id && !ITEM_CANCEL_BLOCKED.includes(order.status) && activeCount > 1;
+  // Sama dengan aturan server: OD belum batal/terkirim/selesai dan masih ada item aktif lain. Sesudah SO pun boleh
+  // (keputusan owner) — syarat baris SO (belum terbit/dipick) diperiksa server dan alasannya tampil di modal.
+  const cancelOpen = canCancelItem && !ITEM_CANCEL_BLOCKED.includes(order.status) && activeCount > 1;
   const [cancelDlg, setCancelDlg] = useState(null);
   const [cancelReason, setCancelReason] = useState("");
 
@@ -75,8 +76,10 @@ export default function SpecialOrderItemsPanel({ order, canEdit, onCreated, canC
       )}
       {cancelDlg && (
         <FormModal open size="sm" icon={Ban} title={`Batalkan item ${cancelDlg.line_no}`} error={err}
-          subtitle={`${cancelDlg.description || "—"} · ${cancelDlg.quantity} ${cancelDlg.unit}. Item lain tidak berubah. PO/MKO aktif, `
-            + "sample R&D, dan permintaan desain item ini ikut dibatalkan; harga terkunci item lain tetap."}
+          subtitle={`${cancelDlg.description || "—"} · ${cancelDlg.quantity} ${cancelDlg.unit}. Item lain tidak berubah. PO/MKO yang belum `
+            + "berjalan, sample R&D, dan permintaan desain item ini ikut dibatalkan; harga terkunci item lain tetap."
+            + (order.linked_sales_order_id ? ` Baris di SO ${order.linked_sales_order_number || ""} ikut dibatalkan (reservasi dilepas, total dihitung ulang).` : "")
+            + " MD diberi tahu."}
           onClose={() => setCancelDlg(null)} onSubmit={submitCancel} busy={busy} submitDisabled={cancelReason.trim().length < 5}
           submitLabel="Batalkan item" testId="od-item-cancel-modal" submitTestId="od-item-cancel-submit">
           <textarea className="textarea w-full" rows={3} data-testid="od-item-cancel-reason" value={cancelReason}
