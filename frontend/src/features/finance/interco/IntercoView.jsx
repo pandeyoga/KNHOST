@@ -93,7 +93,11 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
   const canMoney = can(perms, "interco_finance", "view");
   const tabs = TABS.filter((t) => (canMoney || !MONEY_TABS.includes(t.id))
     && (only ? only.includes(t.id) : !RETURN_TABS.includes(t.id)));
-  const entityId = selectedEntity?.id || "";
+  // `selectedEntity` dari App adalah ID string ("all" = semua PT); objek {id} tetap didukung.
+  // Dulu hanya membaca `.id` → selalu "" → penjual bawaan = PT pertama & daftar tidak ikut PT aktif.
+  const entityId = typeof selectedEntity === "string"
+    ? (selectedEntity === "all" ? "" : selectedEntity)
+    : (selectedEntity?.id || "");
 
   useEffect(() => {
     // Kalau tab aktif ternyata tidak boleh dilihat peran ini, pindahkan ke tab pertama
