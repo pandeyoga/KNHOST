@@ -44,6 +44,19 @@ def _walk_keys(o, out):
     return out
 
 
+def _walk_rows(o, out):
+    """Semua objek ber-`variant_label` di respons (produk, item reorder, roll ber-produk)."""
+    if isinstance(o, dict):
+        if isinstance(o.get("variant_label"), str) and (o.get("product_id") or str(o.get("id", "")).startswith("prod")):
+            out.append(o)
+        for v in o.values():
+            _walk_rows(v, out)
+    elif isinstance(o, list):
+        for v in o:
+            _walk_rows(v, out)
+    return out
+
+
 class TestFieldVisibility:
     URLS = ["/api/products?limit=50", "/api/inventory/rolls?limit=50", "/api/sales-orders?limit=20",
             "/api/products/stock-summary"]
@@ -55,6 +68,26 @@ class TestFieldVisibility:
                 continue
             keys = _walk_keys(r.json(), set())
             assert not keys & {"grade", "lot", "dye_lot", "supplier_lot", "batch_lot_rolls", "origin"}, (u, keys)
+
+    def test_sales_variant_label_without_grade_lot_origin(self, sales):
+        """F-03 (uji pra-UAT 2026-10-21) — label varian ikut disaring (dulu "Impor · 1 · A · LOT A" bocor)."""
+        urls = self.URLS + ["/api/products?q=DENIM TENCEL&limit=200",
+                            "/api/sales-orders/frequent-products?customer_id=cust_toko_kain&limit=24"]
+        seen = 0
+        for u in urls:
+            r = requests.get(f"{BASE}{u}", headers=sales, timeout=60)
+            if r.status_code != 200:
+                continue
+            rows = []
+            _walk_rows(r.json(), rows)
+            for x in rows:
+                pid = x.get("product_id") or x.get("id")
+                va = (DB.products.find_one({"id": pid}, {"_id": 0, "variant_attrs": 1}) or {}).get("variant_attrs") or {}
+                secret = {str(va[k]) for k in ("grade", "lot", "origin") if va.get(k)} - {"Tidak ada"}
+                segs = x["variant_label"].split(" · ")
+                seen += 1
+                assert not [s for s in segs if s in secret or s.startswith("LOT ")], (u, pid, x["variant_label"])
+        assert seen, "tidak ada variant_label pada respons sales — sweep tidak menguji apa pun"
 
     def test_sales_admin_and_admin_still_see(self, adm, sadm):
         for h in (adm, sadm):

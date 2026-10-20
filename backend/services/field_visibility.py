@@ -106,17 +106,25 @@ def _grade_of(o: Dict[str, Any]) -> str:
 
 
 _LOT_TAIL = re.compile(r"\s+LOT\s+\S+\s*$")
+_LOT_SEG = re.compile(r"^LOT\s+\S+$")
+_LABEL_SEP = " · "
 _PG: Dict[str, str] = {}
+_PA: Dict[str, Dict[str, str]] = {}   # F-03 — product_id → label sumbu rahasia (grade/lot/origin)
 _PG_AT = [0.0]
 
 
 async def ensure_product_grades() -> None:
-    """Peta product_id → grade (cache 60 dtk) untuk membersihkan nama di baris ringan {product_id, product_name}."""
+    """Peta product_id → grade & label sumbu varian rahasia (cache 60 dtk) untuk membersihkan nama dan
+    label varian di baris ringan {product_id, product_name, variant_label}."""
     if time.time() - _PG_AT[0] < 60:
         return
-    rows = await db.products.find({"grade": {"$nin": [None, ""]}}, {"_id": 0, "id": 1, "grade": 1}).to_list(50000)
+    rows = await db.products.find({}, {"_id": 0, "id": 1, "grade": 1, **{f"variant_attrs.{f}": 1 for f in FIELDS}}
+                                  ).to_list(50000)
     _PG.clear()
-    _PG.update({r["id"]: str(r["grade"]) for r in rows})
+    _PG.update({r["id"]: str(r["grade"]) for r in rows if r.get("grade")})
+    _PA.clear()
+    _PA.update({r["id"]: {f: str(v) for f, v in r["variant_attrs"].items() if v}
+                for r in rows if isinstance(r.get("variant_attrs"), dict)})
     _PG_AT[0] = time.time()
 
 
@@ -136,9 +144,36 @@ def _strip_name(name: str, grades: Set[str], hidden: Set[str]) -> str:
     return name if "lot" in hidden else name + lot
 
 
+def _strip_variant_label(label: str, secrets: Dict[str, Set[str]], hidden: Set[str]) -> str:
+    """F-03 — label varian "<asal> · <warna> · <grade>[ · <pelanggan>][ · LOT x]" (urutan sumbu induk):
+    segmen asal/grade/LOT yang disembunyikan dibuang. Asal dicari dari depan, grade & LOT dari belakang,
+    masing-masing satu segmen — warna yang kebetulan sama dengan kode grade tetap tampil."""
+    parts = label.split(_LABEL_SEP)
+    for f in ("lot", "grade", "origin"):
+        if f not in hidden:
+            continue
+        vals = {str(v).strip().casefold() for v in secrets.get(f, ()) if v}
+        order = range(len(parts)) if f == "origin" else range(len(parts) - 1, -1, -1)
+        for i in order:
+            seg = parts[i].strip()
+            if seg.casefold() in vals or (f == "lot" and _LOT_SEG.match(seg)):
+                del parts[i]
+                break
+    return _LABEL_SEP.join(parts)
+
+
+def _variant_secrets(o: Dict[str, Any], grades: Set[str]) -> Dict[str, Set[str]]:
+    va = o.get("variant_attrs")
+    if not isinstance(va, dict):
+        va = _PA.get(str(o.get("product_id") or o.get("id") or ""), {})
+    return {"grade": set(grades) | {va.get("grade")}, "lot": {va.get("lot")},
+            "origin": {va.get("origin"), o.get("origin") if isinstance(o.get("origin"), str) else None}}
+
+
 def redact(obj: Any, hidden: Set[str], placeholder: Optional[str] = None) -> Any:
-    """L01 LN-012 — buang kunci atribut tersembunyi, samarkan segmen SKU (asal/grade/LOT) dan
-    akhiran grade pada nama varian (keputusan owner 2026-10-16: kode & nama ikut disamarkan)."""
+    """L01 LN-012 — buang kunci atribut tersembunyi, samarkan segmen SKU (asal/grade/LOT), akhiran
+    grade pada nama varian (keputusan owner 2026-10-16: kode & nama ikut disamarkan) dan segmen
+    asal/grade/LOT pada `variant_label` (F-03)."""
     keys = frozenset().union(*(KEYS[h] for h in hidden)) if hidden else frozenset()
     if not keys:
         return obj
@@ -162,6 +197,8 @@ def redact(obj: Any, hidden: Set[str], placeholder: Optional[str] = None) -> Any
                         out[k] = placeholder
                     continue
                 if isinstance(v, str):
+                    if product_ctx and k == "variant_label":
+                        v = _strip_variant_label(v, _variant_secrets(o, grade), hidden)
                     if product_ctx and k in _NAME_KEYS and (grade or "lot" in hidden):
                         v = _strip_name(v, grade, hidden)
                     out[k] = _mask_sku(v, hidden) if "-" in v else v
