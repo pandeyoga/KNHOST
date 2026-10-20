@@ -216,7 +216,21 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         if _od_src:
             _od = await db.special_orders.find_one({"id": _od_src}, {"_id": 0, "pricing": 1, "number": 1})
             _pr = (_od or {}).get("pricing") or {}
-            if _pr.get("locked") and (_pr.get("product_id") or "") == product["id"]:
+            _sid = (getattr(item_in, "special_order_item_id", "") or "").strip()
+            if _pr.get("locked") and _pr.get("mode") == "items":
+                # FE-01 — OD multi-item: harga dari rincian item terkunci yang SAMA (item + produk), bukan header.
+                _ln = next((ln for ln in _pr.get("items") or []
+                            if ln.get("item_id") == _sid and ln.get("product_id") == product["id"]), None)
+                if not _ln:
+                    raise HTTPException(status_code=400, detail=(
+                        f"Baris {product.get('sku') or product['id']} tidak cocok dengan rincian harga terkunci "
+                        f"Pesanan Khusus {(_od or {}).get('number', '')}."))
+                unit_price = round(float(_ln["final_unit_price"]) * sell_factor, 2)
+                special_meta = {"special_order_price": True, "special_order_number": _od.get("number", ""),
+                                "special_order_item_id": _sid, "special_order_line_no": _ln.get("line_no"),
+                                "cost_price": _ln.get("cost_price"), "margin_pct": _ln.get("margin_pct"),
+                                "normal_price": round(base_sell_price * sell_factor, 2), "price_source": "special_order"}
+            elif _pr.get("locked") and (_pr.get("product_id") or "") == product["id"]:
                 unit_price = round(float(_pr["final_unit_price"]) * sell_factor, 2)
                 special_meta = {"special_order_price": True, "special_order_number": _od.get("number", ""),
                                 "cost_price": _pr.get("cost_price"), "margin_pct": _pr.get("margin_pct"),

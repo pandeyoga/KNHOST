@@ -269,8 +269,155 @@ async def evidence_bytes(od: Dict[str, Any], file_id: str):
     raise ODError("Bukti tidak ditemukan.")
 
 
+# ─── FE-01 — harga per item untuk OD multi-produk ─────────────────────────────
+MULTI_ITEM_MIN = 2
+PRICE_LINE_KEYS = ("key", "item_id", "line_no", "description", "product_id", "product_sku", "product_name",
+                   "quantity", "unit", "base_unit", "unit_factor", "cost_price", "margin_pct", "final_unit_price",
+                   "price_per_unit", "total", "supplier_id", "supplier_name", "contract_number", "sample_number")
+
+
+def is_multi_item(od: Dict[str, Any]) -> bool:
+    """OD ≥2 item memakai harga per item. OD lama / satu item tetap jalur header (custom_item = item itu)."""
+    return len(od.get("items") or []) >= MULTI_ITEM_MIN
+
+
+def _clean_margins(item_margins: Optional[Dict[str, Any]]) -> Dict[str, float]:
+    out: Dict[str, float] = {}
+    for k, v in (item_margins or {}).items():
+        if v in (None, ""):
+            continue
+        try:
+            m = float(parse_decimal(v, 2))
+        except (TypeError, ValueError) as exc:
+            raise ODError(f"Margin item tidak valid: {v}") from exc
+        if m < 0 or m > 500:
+            raise ODError("Margin harus 0–500%.")
+        out[str(k)] = m
+    return out
+
+
+async def item_price_lines(od: Dict[str, Any], margin: float, item_margins: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Rincian harga dari SATU sumber per item — keputusan sample item itu (`ful.needs`: produk hasil, harga kontrak
+    per satuan dasar produk) × qty/satuan item. Harga per satuan item = harga final × faktor satuan, persis cara
+    `create_order`; total OD = jumlah rincian. Item yang belum siap tidak dibuang — ditandai dengan alasannya."""
+    from services import special_order_fulfillment as ful
+    from services.uom_service import load_fixed_factors, to_base
+    margins = _clean_margins(item_margins)
+    factors = await load_fixed_factors()
+    lines: List[Dict[str, Any]] = []
+    blockers: List[str] = []
+    for n in await ful.needs(od):
+        m = margins.get(n["item_id"], float(margin))
+        cost = float(n.get("cost_price") or 0)
+        why: List[str] = []
+        prod = await db.products.find_one({"id": n["product_id"]}, {"_id": 0}) if n.get("product_id") else None
+        if not prod:
+            why.append("produk hasil sample item ini belum ada")
+        if cost <= 0:
+            why.append("harga kontrak supplier item ini belum ada")
+        factor = 0.0
+        if prod:
+            try:
+                factor = to_base(prod, 1.0, n["unit"], factors, precision=6)
+            except HTTPException as exc:
+                why.append(f"satuan {n['unit']} tidak bisa dikonversi ke {prod.get('base_unit')}: {exc.detail}")
+        final_base = round(cost * (1 + m / 100.0), 2) if cost else 0.0
+        per_unit = round(final_base * factor, 2) if factor else 0.0
+        qty = float(n.get("quantity") or 0)
+        line = {"key": n["key"], "item_id": n["item_id"], "line_no": n.get("line_no"), "description": n.get("description", ""),
+                "product_id": n.get("product_id", ""), "product_sku": n.get("product_sku", ""),
+                "product_name": n.get("product_name", ""), "quantity": qty, "unit": n.get("unit") or "meter",
+                "base_unit": (prod or {}).get("base_unit", ""), "unit_factor": factor, "cost_price": cost, "margin_pct": m,
+                "final_unit_price": final_base, "price_per_unit": per_unit, "total": round(per_unit * qty, 2),
+                "supplier_id": n.get("supplier_id", ""), "supplier_name": n.get("supplier_name", ""),
+                "contract_number": n.get("contract_number", ""), "sample_number": n.get("sample_number", ""),
+                "ready": not why, "blockers": why}
+        if why:
+            blockers.append(f"Item {line['line_no']} ({line['description']}): " + "; ".join(why))
+        lines.append(line)
+    if not lines:
+        blockers.append("Pesanan khusus belum punya item.")
+    units = {ln["unit"] for ln in lines}
+    one_unit = len(units) == 1
+    return {"mode": "items", "items": lines, "item_count": len(lines), "total": round(sum(ln["total"] for ln in lines), 2),
+            "ready": not blockers, "blockers": blockers,
+            # header hanya AGREGAT rincian (bukan sumber harga kedua); qty dijumlah hanya bila satuannya sama
+            "quantity": round(sum(ln["quantity"] for ln in lines), 3) if one_unit else 0.0,
+            "unit": next(iter(units)) if one_unit else "",
+            "target_total": round(sum(float(i.get("subtotal") or 0) for i in od.get("items") or []), 2)}
+
+
+async def _items_preview(od: Dict[str, Any], margin_pct: Optional[float], item_margins: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    saved = od.get("pricing") or {}
+    meta = {"default_margin_pct": await default_margin_pct(), "customer_decision": od.get("customer_decision", "")}
+    if saved.get("locked") and saved.get("mode") == "items":
+        return {**saved, **meta, "ready": True, "blockers": []}
+    margin = float(margin_pct) if margin_pct is not None else \
+        float(saved.get("margin_pct") if saved.get("margin_pct") is not None else meta["default_margin_pct"])
+    res = await item_price_lines(od, margin, item_margins)
+    if saved.get("locked"):   # dikunci sebelum FE-01 dengan format satu produk — tidak boleh dipakai untuk SO
+        res["blockers"] = ["Harga dikunci dengan format lama (satu produk) — admin perlu membuka kunci lalu kunci ulang."] + res["blockers"]
+        res["ready"] = False
+    return {**res, **meta, "margin_pct": margin, "cost_price": 0.0, "final_unit_price": 0.0, "product_id": "",
+            "product_sku": "", "supplier_id": "", "supplier_name": "", "contract_number": "", "sample_number": "",
+            "locked": bool(saved.get("locked")), "legacy_locked": bool(saved.get("locked")),
+            "locked_by": saved.get("locked_by", ""), "locked_at": saved.get("locked_at", ""),
+            "unlocked_by": saved.get("unlocked_by", ""), "unlocked_at": saved.get("unlocked_at", ""),
+            "unlock_reason": saved.get("unlock_reason", "")}
+
+
+async def _sync_item_skus(od: Dict[str, Any], pricing: Dict[str, Any]) -> None:
+    """Setiap SKU hasil item → katalog eksklusif pelanggan. Harga jual/pokok master hanya ditulis bila SKU itu
+    punya SATU harga di OD ini (dua item SKU sama dengan harga berbeda: harga tetap per baris SO)."""
+    by_pid: Dict[str, List[Dict[str, Any]]] = {}
+    for ln in pricing.get("items") or []:
+        if ln.get("product_id"):
+            by_pid.setdefault(ln["product_id"], []).append(ln)
+    for pid, rows in by_pid.items():
+        upd: Dict[str, Any] = {"exclusive_customer_id": od.get("customer_id", ""), "exclusive_customer_name": od.get("customer_name", ""),
+                               "special_order_id": od["id"], "special_order_number": od.get("number", ""), "updated_at": now_iso()}
+        prices = {r["final_unit_price"] for r in rows}
+        costs = {r["cost_price"] for r in rows}
+        if len(prices) == 1:
+            upd["price"] = next(iter(prices))
+        if len(costs) == 1:
+            upd["harga_pokok"] = next(iter(costs))
+        await db.products.update_one({"id": pid}, {"$set": upd})
+    await db.special_orders.update_one({"id": od["id"]}, {"$set": {"pricing.sku_synced": True}})
+
+
+async def _lock_items(od: Dict[str, Any], margin: Optional[float], payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
+    base_margin = margin if margin is not None else await default_margin_pct()
+    res = await item_price_lines(od, base_margin, payload.get("item_margins"))
+    if not res["ready"]:
+        raise ODError("Harga belum bisa dikunci — semua item harus siap; tidak ada item yang dihilangkan dari SO. "
+                      + " | ".join(res["blockers"]))
+    items = [{k: ln[k] for k in PRICE_LINE_KEYS} for ln in res["items"]]
+    pricing = {"mode": "items", "items": items, "item_count": len(items), "total": res["total"], "margin_pct": base_margin,
+               "quantity": res["quantity"], "unit": res["unit"], "cost_price": 0.0, "final_unit_price": 0.0,
+               "product_id": "", "product_sku": "", "supplier_id": "", "supplier_name": "", "contract_number": "",
+               "sample_number": "", "locked": True, "locked_by": actor.get("name", ""), "locked_at": now_iso(),
+               "note": (payload.get("note") or "").strip(), "sku_synced": False}
+    from services import atomic_claim as _saga
+    await _saga.claim("special_orders", od["id"], "lock_price",
+                      precondition={"price_locked": {"$ne": True}}, actor=actor.get("name", ""))
+    _res = await db.special_orders.update_one({"id": od["id"], "price_locked": {"$ne": True}}, {
+        **_saga.finish_set({"pricing": pricing, "final_price": None, "total_amount": pricing["total"],
+                            "price_locked": True, "updated_at": now_iso()}),
+        "$push": {"status_history": {"status": od.get("status"), "timestamp": now_iso(), "user": actor.get("email", ""),
+                                     "note": f"Harga final per item dikunci: {len(items)} item · total {rupiah(pricing['total'])} "
+                                             f"(margin bawaan {base_margin:g}%)"}}})
+    if _res.matched_count == 0:
+        raise ODError("Harga OD ini baru saja dikunci oleh pihak lain. Muat ulang.")
+    await _sync_item_skus(od, pricing)
+    return pricing
+
+
 # ─── Harga final ──────────────────────────────────────────────────────────────
-async def pricing_preview(od: Dict[str, Any], margin_pct: Optional[float] = None) -> Dict[str, Any]:
+async def pricing_preview(od: Dict[str, Any], margin_pct: Optional[float] = None,
+                          item_margins: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    if is_multi_item(od):
+        return await _items_preview(od, margin_pct, item_margins)
     decided = await _decided_samples(od)
     winner = decided[-1] if decided else None
     dec = (winner or {}).get("decision") or {}
@@ -307,7 +454,10 @@ async def lock_price(od: Dict[str, Any], payload: Dict[str, Any], actor: Dict[st
     if (od.get("pricing") or {}).get("locked"):
         # G3 D4-OD-LOCK-01 — kunci tercatat tapi SKU belum tersinkron (gagal di tengah) → retry MELANJUTKAN.
         if (od.get("pricing") or {}).get("sku_synced") is False:
-            await _sync_od_sku(od, od["pricing"], od["pricing"].get("product_id") or od.get("linked_product_id") or "")
+            if od["pricing"].get("mode") == "items":
+                await _sync_item_skus(od, od["pricing"])
+            else:
+                await _sync_od_sku(od, od["pricing"], od["pricing"].get("product_id") or od.get("linked_product_id") or "")
             fresh = await db.special_orders.find_one({"id": od["id"]}, {"_id": 0})
             # Keputusan user 2026-10-06 — retry juga melanjutkan PO otomatis (auto_procure idempoten: PO ada → dilewati)
             if payload.get("auto_po", True):
@@ -323,6 +473,16 @@ async def lock_price(od: Dict[str, Any], payload: Dict[str, Any], actor: Dict[st
     margin = float(parse_decimal(margin, 2)) if margin not in (None, "") else None
     if margin is not None and (margin < 0 or margin > 500):
         raise ODError("Margin harus 0–500%.")
+    if is_multi_item(od):
+        pricing = await _lock_items(od, margin, payload, actor)
+        if payload.get("auto_po", True):
+            fresh = await db.special_orders.find_one({"id": od["id"]}, {"_id": 0})
+            try:
+                pricing["procurement"] = await auto_procure(fresh, actor, payload.get("warehouse_id") or "")
+            except Exception as exc:  # noqa: BLE001 — harga tetap terkunci; pengadaan bisa diulang manual
+                pricing["procurement_error"] = str(exc)
+                await db.special_orders.update_one({"id": od["id"]}, {"$set": {"procurement_error": str(exc)}})
+        return pricing
     pv = await pricing_preview(od, margin)
     if pv["cost_price"] <= 0:
         raise ODError("Harga kontrak supplier pemenang belum ada — putuskan pemenang sample dengan harga dulu.")
@@ -382,6 +542,9 @@ async def unlock_price(od: Dict[str, Any], actor: Dict[str, Any], reason: str) -
         raise ODError("Alasan buka kunci wajib diisi.")
     if od.get("linked_pr_id") or od.get("linked_sales_order_id") or od.get("linked_po_id") or od.get("linked_mko_id"):
         raise ODError("PR/PO/MKO/SO sudah lahir dari harga ini — tidak bisa dibuka lagi.")
+    # FE-01 — OD multi-item: dokumen pengadaan tercatat per item di `fulfillment.<item>`.
+    if any((st or {}).get("pr_id") or (st or {}).get("docs") for st in (od.get("fulfillment") or {}).values()):
+        raise ODError("PR/PO/MKO item sudah lahir dari harga ini — tidak bisa dibuka lagi.")
     await db.special_orders.update_one({"id": od["id"]}, {
         "$set": {"pricing.locked": False, "pricing.unlocked_by": actor.get("name", ""), "pricing.unlocked_at": now_iso(),
                  "pricing.unlock_reason": reason.strip(), "price_locked": False, "updated_at": now_iso()},
@@ -407,9 +570,14 @@ async def on_goods_received(od_id: str) -> Dict[str, Any]:
         return {"skipped": (so or {}).get("status")}
     from services.backorder_service import auto_fulfill_backorders
     from services.fulfillment_status import create_outbound_tasks_for_order, recompute_so_status
-    pid = (od.get("pricing") or {}).get("product_id") or od.get("linked_product_id") or ""
-    if pid and so.get("has_backorder"):
-        await auto_fulfill_backorders(pid, so.get("entity_id") or od.get("entity_id", ""))
+    # FE-01 — baris SO adalah sumber setelah konversi: OD multi-item memenuhi backorder SEMUA produknya.
+    pids = list(dict.fromkeys(i.get("product_id") for i in so.get("items") or [] if i.get("product_id")))
+    if not pids:
+        pid = (od.get("pricing") or {}).get("product_id") or od.get("linked_product_id") or ""
+        pids = [pid] if pid else []
+    if so.get("has_backorder"):
+        for pid in pids:
+            await auto_fulfill_backorders(pid, so.get("entity_id") or od.get("entity_id", ""))
     so = await db.sales_orders.find_one({"id": so_id}, {"_id": 0})
     if not (so.get("allocations") or []):
         raise ODError("Stok hasil PO belum bisa direservasi ke SO (mungkin masih karantina QC). Ulangi 'Siapkan pengiriman' setelah QC.")

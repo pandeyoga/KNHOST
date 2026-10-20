@@ -415,7 +415,8 @@ async def _apply_qc_decision(task, po, owner, qrolls, _grade_before, accept_qty,
             if (po or {}).get("special_order_id"):
                 od = await db.special_orders.find_one({"id": po["special_order_id"], **_od_q}, {"_id": 0, "id": 1})
             elif not (po or {}).get("id"):
-                _cands = await db.special_orders.find({"$or": [{"pricing.product_id": product_id}, {"linked_product_id": product_id}],
+                _cands = await db.special_orders.find({"$or": [{"pricing.product_id": product_id}, {"linked_product_id": product_id},
+                                                               {"pricing.items.product_id": product_id}],   # FE-01 multi-item
                                                        **_od_q}, {"_id": 0, "id": 1}).to_list(2)
                 if len(_cands) == 1:
                     od = _cands[0]

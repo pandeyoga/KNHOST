@@ -3,6 +3,7 @@
 Handles custom product orders (products not yet in catalog).
 Status flow aligned with sales_orders for consistency.
 """
+import json
 import logging
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, HTTPException, Request
@@ -423,6 +424,7 @@ class CustomerDecisionBody(BaseModel):
 
 class LockPriceBody(BaseModel):
     margin_pct: Optional[float] = None
+    item_margins: Dict[str, float] = Field(default_factory=dict)   # FE-01 — margin per item OD multi-item
     note: str = ""
     warehouse_id: str = ""
     auto_po: bool = True
@@ -577,10 +579,21 @@ async def customer_decision_evidence_file(order_id: str, file_id: str, request: 
 
 
 @router.get("/special-orders/{order_id}/pricing")
-async def pricing_preview(order_id: str, request: Request, margin_pct: Optional[float] = None) -> Dict[str, Any]:
+async def pricing_preview(order_id: str, request: Request, margin_pct: Optional[float] = None,
+                          item_margins: str = "") -> Dict[str, Any]:
+    """`item_margins` (FE-01, OD multi-item) = JSON {item_id: margin%}; item tanpa entri ikut `margin_pct`."""
     await require_permission(request, "order", "view")
     od = await _od_or_404(order_id, request)
-    return await p2.pricing_preview(od, margin_pct)
+    try:
+        margins = json.loads(item_margins) if item_margins else {}
+        if not isinstance(margins, dict):
+            raise ValueError
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="item_margins harus objek JSON {item_id: margin}.") from exc
+    try:
+        return await p2.pricing_preview(od, margin_pct, margins)
+    except p2.ODError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @router.post("/special-orders/{order_id}/lock-price")
@@ -595,7 +608,8 @@ async def lock_price(order_id: str, payload: LockPriceBody, request: Request) ->
     except p2.ODError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     await audit(user.get("name", ""), "special_order_price_locked", "special_order", order_id,
-                {"number": od.get("number"), "final_unit_price": pricing["final_unit_price"], "margin_pct": pricing["margin_pct"]})
+                {"number": od.get("number"), "final_unit_price": pricing["final_unit_price"], "margin_pct": pricing["margin_pct"],
+                 "total": pricing.get("total"), "items": pricing.get("item_count")})
     # Fase 4 — SO hasil OD lahir otomatis (harga final) agar barang PO nanti langsung direservasi & Surat Jalan lahir.
     if payload.auto_po and pricing.get("procurement") and not pricing.get("procurement_error"):
         try:
@@ -1065,36 +1079,59 @@ async def convert_special_order_to_so(order_id: str, request: Request) -> Dict[s
         raise HTTPException(
             status_code=400,
             detail="Konversi hanya untuk special order yang sudah disetujui (confirmed/in_production/ready).")
-    if so.get("request_types") and not (so.get("pricing") or {}).get("locked"):
+    if (so.get("request_types") or p2.is_multi_item(so)) and not (so.get("pricing") or {}).get("locked"):
         raise HTTPException(status_code=400, detail="Kunci harga final (ACC pelanggan + margin) dulu sebelum konversi ke SO.")
 
-    # Pastikan SKU sudah ada (auto-create bila belum — mis. order lama sebelum fitur 2.a).
-    # OD terstruktur: SKU eksklusif hasil R&D (pricing.product_id) MENANG atas SKU ad hoc lama.
-    _pp = (so.get("pricing") or {}).get("product_id")
-    if _pp and so.get("linked_product_id") != _pp:
-        await db.special_orders.update_one({"id": order_id}, {"$set": {"linked_product_id": _pp, "linked_product_sku": so["pricing"].get("product_sku", "")}})
-        so = await db.special_orders.find_one({"id": order_id}, {"_id": 0})
-    if not so.get("linked_product_id"):
-        try:
-            await create_sku_from_special_order(
-                order_id, created_by=user.get("email", "system"))
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        so = await db.special_orders.find_one({"id": order_id}, {"_id": 0})
+    # FE-01 — retry sesudah SO sempat lahir (mis. gagal sebelum tautan tersimpan): pakai SO yang sama, jangan buat lagi.
+    prior = await db.sales_orders.find_one({"source_special_order_id": order_id, "status": {"$ne": "cancelled"}},
+                                           {"_id": 0, "id": 1, "number": 1})
+    if prior:
+        await db.special_orders.update_one({"id": order_id, "linked_sales_order_id": {"$in": [None, ""]}}, {"$set": {
+            "linked_sales_order_id": prior["id"], "linked_sales_order_number": prior["number"], "updated_at": now_iso()}})
+        return {"special_order": safe_doc(await db.special_orders.find_one({"id": order_id}, {"_id": 0})),
+                "sales_order": safe_doc(await db.sales_orders.find_one({"id": prior["id"]}, {"_id": 0})), "reused": True}
 
-    ci = so.get("custom_item", {}) or {}
+    if p2.is_multi_item(so):
+        # FE-01 — setiap item membawa produk hasil, qty/satuan & harga terkunci-nya sendiri; tidak dilebur ke header.
+        pr = so.get("pricing") or {}
+        if pr.get("mode") != "items":
+            raise HTTPException(status_code=409, detail="Harga Pesanan Khusus multi-item ini dikunci dengan format lama "
+                                                        "(satu produk) — minta admin membuka kunci lalu kunci ulang agar semua item ikut ke SO.")
+        lines = sorted(pr.get("items") or [], key=lambda ln: ln.get("line_no") or 0)
+        if {ln.get("item_id") for ln in lines} != {i["id"] for i in so.get("items") or []} or any(not ln.get("product_id") for ln in lines):
+            raise HTTPException(status_code=409, detail="Rincian harga terkunci tidak sama dengan item Pesanan Khusus — "
+                                                        "buka kunci lalu kunci ulang harga.")
+        so_items = [SalesOrderItemIn(product_id=ln["product_id"], quantity=float(ln["quantity"]), unit=ln["unit"],
+                                     special_order_item_id=ln["item_id"]) for ln in lines]
+    else:
+        # Pastikan SKU sudah ada (auto-create bila belum — mis. order lama sebelum fitur 2.a).
+        # OD terstruktur: SKU eksklusif hasil R&D (pricing.product_id) MENANG atas SKU ad hoc lama.
+        _pp = (so.get("pricing") or {}).get("product_id")
+        if _pp and so.get("linked_product_id") != _pp:
+            await db.special_orders.update_one({"id": order_id}, {"$set": {"linked_product_id": _pp, "linked_product_sku": so["pricing"].get("product_sku", "")}})
+            so = await db.special_orders.find_one({"id": order_id}, {"_id": 0})
+        if not so.get("linked_product_id"):
+            try:
+                await create_sku_from_special_order(
+                    order_id, created_by=user.get("email", "system"))
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
+            so = await db.special_orders.find_one({"id": order_id}, {"_id": 0})
+        ci = so.get("custom_item", {}) or {}
+        so_items = [SalesOrderItemIn(
+            product_id=so["linked_product_id"],
+            quantity=float(ci.get("quantity", 1) or 1),
+            unit=ci.get("unit", "meter"),
+        )]
+
     addr = so.get("shipping_address", {}) or {}
     so_payload = SalesOrderCreate(
         customer_id=so["customer_id"],
         shipping_address_id=addr.get("id", ""),
-        items=[SalesOrderItemIn(
-            product_id=so["linked_product_id"],
-            quantity=float(ci.get("quantity", 1) or 1),
-            unit=ci.get("unit", "meter"),
-        )],
+        items=so_items,
         entity_id=so.get("entity_id", ""),
         allow_backorder=True,         # MTO: stok mungkin belum tersedia → backorder
-        confirm_mixed_lot=True,       # item custom tunggal — lewati gate mixed-lot
+        confirm_mixed_lot=True,       # item custom (per baris) — lewati gate mixed-lot
         source_special_order_id=order_id,
         sales_name=so.get("created_by", "Sales"),
     )

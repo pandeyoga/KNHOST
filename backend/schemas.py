@@ -487,6 +487,7 @@ class SalesOrderItemIn(BaseModel):
     base_quantity: float = Field(0, ge=0)             # Sub-fase 1.8/1.13 — qty dlm base unit (forward-compat)
     discount_percent: float = Field(0, ge=0, le=100)          # Fase 1B — diskon per item (0–100%)
     price_approval_id: str = ""          # Sub-fase 1.7 — harga khusus disetujui (override harga)
+    special_order_item_id: str = ""      # FE-01 — baris SO dari item Pesanan Khusus multi-item (harga terkunci per item)
     # SALES REVAMP V2 — Beli per Roll / rekonsiliasi roll
     purchase_mode: str = "qty"           # "qty" (per yard, FEFO auto) | "roll" (pilih roll eksplisit)
     roll_lines: List[RollLineIn] = []    # bila purchase_mode=="roll": daftar roll dipilih (whole/cut)
