@@ -54,8 +54,8 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 
 | ID usulan | Judul | Status | Laporan |
 |---|---|---|---|
-| ENV-01 | Data acuan `restore_local_demo.sh` gagal di 3/12 skrip pada HEAD (403 izin/penugasan) | open | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| ENV-02 | Skrip restore terikat lingkungan Emergent (`supervisorctl`, `localhost`) — perlu varian Docker | open | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| ENV-01 | Data acuan `restore_local_demo.sh` gagal di 3/12 skrip pada HEAD (403 izin/penugasan) | implemented_pending_review (`6e64b2c`) | [ENV](2026-10-20/hasil/ENV.md) |
+| ENV-02 | Skrip restore terikat lingkungan Emergent (`supervisorctl`, `localhost`) — perlu varian Docker | implemented_pending_review (`6e64b2c`) | [ENV](2026-10-20/hasil/ENV.md) |
 | ENV-03 | `seed_realistic.py` melewati data Interco & SPK printing | open | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 
 ## Keputusan yang ditunggu
@@ -69,5 +69,6 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
 | 2026-10-20 | Claude Code | Tracker dibuat dari paket 2026-10-20 (13 FE + 12 AUD); semua `open` kecuali AUD-RND-03 `pending_decision` |
+| 2026-10-20 | Claude Code | ENV-01/02 implemented_pending_review (`6e64b2c`): akar ENV-01 = cookie jar klien seed menimpa Bearer, bukan regresi izin |
 | 2026-10-20 | Claude Code | Validasi benar/false positive: 24 benar (4 direproduksi runtime), AUD-MKL-01 bagian 2 false positive, AUD-RND-03 menunggu keputusan; usulan ENV-01..03 ([laporan](2026-10-20/hasil/VALIDASI_TEMUAN.md)) |
 | 2026-10-20 | Claude Code | Cek ulang tingkat kode di `f4e8f0b`: 25/25 masih berlaku, 0 sudah diperbaiki ([laporan](2026-10-20/hasil/CEK_ULANG_HEAD.md)); reproduksi runtime per fase |
