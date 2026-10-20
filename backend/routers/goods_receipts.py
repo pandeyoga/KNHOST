@@ -15,6 +15,7 @@ from services import goods_receipt_ocr_service as go
 from services import goods_receipt_service as gs
 from services import receiving_mode_service as rms
 from services import supplier_dn_profile_service as sdp
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 M = "goods_receipt"
@@ -96,7 +97,7 @@ async def grn_mode_status(request: Request) -> Dict[str, Any]:
 @router.put("/goods-receipts/mode")
 async def grn_mode_switch(body: GRNModeIn, request: Request) -> Dict[str, Any]:
     actor, ctx = await _act(request, "approve")
-    if actor.get("role") not in ("admin", "manager"):
+    if not role_in(actor.get("role"), ("admin", "manager")):
         raise HTTPException(status_code=403, detail="Hanya admin/manajer yang boleh mengganti mode penerimaan.")
     return await rms.switch(body.entity_id, body.mode, body.reason, actor, ctx)
 

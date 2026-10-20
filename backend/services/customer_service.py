@@ -8,6 +8,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException
 from db import db
 from core_utils import safe_doc, DEFAULT_ENTITY_ID, rupiah
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 # Ambang kontrol kredit (KN_17 §5.2)
 WARNING_RATIO = 0.8          # ar >= 80% limit -> warning
@@ -321,7 +322,7 @@ async def customer_360(customer_id: str) -> Optional[Dict[str, Any]]:
 def scope_query(user: Dict[str, Any], base: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Row-level scoping (KN_17 §4): role=sales hanya customer miliknya."""
     q = dict(base or {})
-    if user and user.get("role") == "sales":
+    if user and role_in(user.get("role"), ("sales",)):
         q["assigned_sales_id"] = user.get("id")
     return q
 
@@ -331,14 +332,14 @@ async def can_access_customer(user: Dict[str, Any], customer: Dict[str, Any]) ->
         return False
     role = user.get("role")
     # admin/manager = CROSS_ENTITY_ROLES → oversight semua entitas.
-    if role in ("admin", "manager"):
+    if role_in(role, ("admin", "manager")):
         return True
     # INV-ENTITY-01 (KN-076-IDOR-READ-SUBRES P0): isolasi lintas-entitas untuk role ter-scope.
     # Dokumen customer di luar entitas yang diizinkan aktor → TOLAK, walau assigned_sales_id cocok
     # (seed bisa meng-assign sales ke customer entitas lain — tetap tak boleh diakses lintas-PT).
     if not _entity_allowed(user, customer):
         return False
-    if role == "sales":
+    if role_in(role, ("sales",)):
         return customer.get("assigned_sales_id") == user.get("id")
     return True
 
@@ -355,14 +356,14 @@ async def can_collect_customer(user: Dict[str, Any], customer: Dict[str, Any]) -
     """Penagihan: pelanggan milik sales ATAU pelanggan yang pernah ia pesankan (pesanan buatannya)."""
     if await can_access_customer(user, customer):
         return True
-    if user.get("role") != "sales" or not _entity_allowed(user, customer):
+    if not role_in(user.get("role"), ("sales",)) or not _entity_allowed(user, customer):
         return False
     return bool(await db.sales_orders.find_one({"customer_id": customer.get("id"), "sales_id": user.get("id")}, {"_id": 1}))
 
 
 def can_view_credit(user: Dict[str, Any], customer: Dict[str, Any]) -> bool:
     """Status kredit saat checkout: sales boleh melihat pelanggan mana pun yang bisa ia pesankan (entitas sama)."""
-    if user.get("role") in ("admin", "manager"):
+    if role_in(user.get("role"), ("admin", "manager")):
         return True
     return _entity_allowed(user, customer)
 
@@ -372,7 +373,7 @@ async def collection_worklist(
 ) -> List[Dict[str, Any]]:
     """Daftar tagihan (order outstanding) untuk follow-up penagihan (KN_17 paragraf 7)."""
     cust_filter: Dict[str, Any] = {}
-    own_sales = user.get("id") if user.get("role") == "sales" else None
+    own_sales = user.get("id") if role_in(user.get("role"), ("sales",)) else None
     if own_sales:
         # Pelanggan miliknya DITAMBAH pelanggan dari pesanan yang ia buat sendiri.
         own_cids = await db.sales_orders.distinct("customer_id", {"sales_id": own_sales})

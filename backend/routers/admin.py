@@ -14,6 +14,7 @@ import domain_registry as _dr        # Fase A · R7 — SSOT domain (stamp defau
 from schemas import PermissionUpdate
 from permissions_config import DEFAULT_PERMISSIONS
 from services.demo_seed_service import run_demo_seed
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 try:
     import openpyxl
@@ -265,7 +266,7 @@ async def import_customers(
         s_email = (row.get("sales_email") or "").strip().lower()
         s_name = (row.get("sales_name") or row.get("assigned_sales") or "").strip().lower()
         sales = None
-        if actor.get("role") == "sales":
+        if role_in(actor.get("role"), ("sales",)):
             sales = {"id": actor["id"], "name": actor.get("name", "")}
         elif s_email:
             sales = by_email.get(s_email)

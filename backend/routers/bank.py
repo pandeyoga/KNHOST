@@ -10,6 +10,7 @@ from dependencies import require_permission, audit
 from entity_scope import entity_ctx, resolve_scope_ids
 from schemas import BankAccountCreate, BankAccountUpdate, ReconcilePayload
 from services import bank_service
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 
@@ -27,7 +28,7 @@ async def list_bank_accounts(request: Request, entity_id: str = Query(None)) -> 
     ctx = await entity_ctx(request)
     entities = resolve_scope_ids(ctx, entity_id)
     or_clauses: List[Dict[str, Any]] = [{"entity_id": {"$in": entities}}]
-    if (actor or {}).get("role") in ("admin", "manager"):
+    if role_in((actor or {}).get("role"), ("admin", "manager")):
         or_clauses.append({"entity_id": {"$in": ["all", "", None]}})
     scope = {"$or": or_clauses}
     return await bank_service.list_accounts(scope=scope)
@@ -99,7 +100,7 @@ async def _guard_cash_doc(request: Request, actor: Dict[str, Any], collection: s
     if not doc:
         raise HTTPException(status_code=404, detail=not_found)
     if doc.get("entity_id") in ("all", "", None):
-        if (actor or {}).get("role") not in ("admin", "manager"):
+        if not role_in((actor or {}).get("role"), ("admin", "manager")):
             raise HTTPException(status_code=404, detail=not_found)
         return
     from entity_scope import guard_doc

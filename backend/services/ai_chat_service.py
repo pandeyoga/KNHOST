@@ -22,6 +22,7 @@ from services.ai_number_check import verify
 from services.analytics_config import ai_policy
 from services.analytics_time import now_wib
 from services.config_resolver import value_of
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 logger = logging.getLogger(__name__)
 _DATA = Path(__file__).resolve().parents[1] / "data" / "ai"
@@ -81,7 +82,7 @@ async def status(user: Dict[str, Any]) -> Dict[str, Any]:
             "config_enabled": bool(cfg["enabled"]), "has_key": has_key, "narrative_ai": live, "budget": budget,
             "mock": mock, "model": cfg["model_main"], "sales_definition": pol["sales_definition"],
             "sales_attribution": pol["sales_attribution"], "margin_roles": pol["margin_roles"],
-            "stock_value_roles": pol["stock_value_roles"], "can_edit_rules": user.get("role") in ("admin", "manager")}
+            "stock_value_roles": pol["stock_value_roles"], "can_edit_rules": role_in(user.get("role"), ("admin", "manager"))}
 
 
 async def _session_context(user, ctx) -> str:

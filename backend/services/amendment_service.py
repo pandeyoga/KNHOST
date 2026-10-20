@@ -36,6 +36,7 @@ from core_utils import new_id, next_doc_number, now_iso, safe_doc, timeline_entr
 from db import db
 from services import config_service
 from services.config_resolver import resolve
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 AMD_COLL = "doc_amendments"
 REASON_COLL = "amendment_reasons"
@@ -725,7 +726,7 @@ async def decide(amd_id: str, action: str, actor: Dict[str, Any],
     policy = amd.get("policy_snapshot") or await policy_snapshot(amd.get("entity_id", ""))
     role = actor.get("role") or ""
     need = amd.get("required_role") or policy["approver_role"]
-    if not amd.get("approval_permission") and role != "admin" and role != need:
+    if not amd.get("approval_permission") and role != "admin" and not role_in(role, (need,)):
         raise AmendmentError(
             f"Amandemen ini harus diputus oleh {need}. Peran Anda: {role or 'tidak dikenal'}.")
     from services import approval_matrix_service as _amx

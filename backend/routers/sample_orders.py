@@ -20,6 +20,7 @@ from services.fulfillment_status import create_outbound_tasks_for_order, recompu
 from services.sales_order_helpers import norm_backorder, so_transition
 from services.sample_sale_service import SAMPLE_LIMITS, SAMPLE_PAYMENT_APPROVERS
 from services.work_desk_service import _age_days, _queue, _row
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 
@@ -150,7 +151,7 @@ async def sample_desk(request: Request, entity_id: str = None) -> Dict[str, Any]
     gudang = await find({"status": {"$in": ["confirmed", "partially_picked", "picked"]}})
     kirim = await find({"status": {"$in": ["partially_shipped", "shipped", "delivered"]}})
     selesai = await find({"status": "done", "updated_at": {"$gte": _days_ago(7)}})
-    can_pay = actor.get("role") in SAMPLE_PAYMENT_APPROVERS
+    can_pay = role_in(actor.get("role"), SAMPLE_PAYMENT_APPROVERS)
     return {
         "title": "Meja Admin Sample", "role": actor.get("role"),
         "queues": [
@@ -174,7 +175,7 @@ async def sample_desk(request: Request, entity_id: str = None) -> Dict[str, Any]
 @router.post("/sample-orders/{order_id}/approve-payment")
 async def approve_payment(order_id: str, payload: NoteIn, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "sample_order", "approve_payment")
-    if actor.get("role") not in SAMPLE_PAYMENT_APPROVERS:
+    if not role_in(actor.get("role"), SAMPLE_PAYMENT_APPROVERS):
         raise HTTPException(status_code=403, detail="Persetujuan pembayaran sample hanya oleh Finance atau Admin Sample.")
     order = await _load(order_id, request)
     if order.get("sample_billing") != "paid":
@@ -223,7 +224,7 @@ async def confirm_sample(order_id: str, request: Request) -> Dict[str, Any]:
 async def cancel_sample(order_id: str, payload: NoteIn, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "sample_order", "cancel")
     order = await _load(order_id, request)
-    if actor.get("role") == "sales":
+    if role_in(actor.get("role"), ("sales",)):
         sales_ownership.assert_may_open(order, actor)
     if order.get("status") not in ("waiting_approval", "approved"):
         raise HTTPException(status_code=409, detail=f"{order['number']} sudah diteruskan ke gudang ({order.get('status')}) — tidak bisa dibatalkan dari sini.")

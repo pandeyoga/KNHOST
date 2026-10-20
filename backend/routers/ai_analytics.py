@@ -9,6 +9,7 @@ from entity_scope import entity_ctx
 from services import analytics_catalog as cat
 from services import analytics_engine as engine
 from services import analytics_facts as facts
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api/ai")
 
@@ -19,7 +20,7 @@ async def _ai_user(request: Request) -> Dict[str, Any]:
     from services.config_resolver import value_of
     user = await current_user(request)
     roles = await value_of("ai.enabled_roles") or list(AI_ROLES)
-    if user.get("role") != "admin" and user.get("role") not in roles:
+    if user.get("role") != "admin" and not role_in(user.get("role"), roles):
         raise HTTPException(status_code=403, detail="Asisten analitik belum dibuka untuk peran Anda")
     return user
 
@@ -263,7 +264,7 @@ async def post_narrative(payload: Dict[str, Any], request: Request) -> Dict[str,
     from services.ai_narrative import narrate
     user = await _ai_user(request)
     tpl = ai_templates.BY_ID.get(payload.get("template_id") or "")
-    if not tpl or (user.get("role") != "admin" and user.get("role") not in tpl["roles"]):
+    if not tpl or (user.get("role") != "admin" and not role_in(user.get("role"), tpl["roles"])):
         raise HTTPException(status_code=404, detail="Template tidak ditemukan")
     results = await _owned_results([str(x) for x in payload.get("result_ids") or []], user)
     if not results:
@@ -425,5 +426,5 @@ async def usage_daily(request: Request, days: int = 30, scope: str = "bi") -> Di
     from services import ai_usage_report
     user = await _ai_user(request)
     # KN-E44 — selain admin/manager hanya melihat pemakaiannya sendiri.
-    only = None if user.get("role") in ("admin", "manager") else user["id"]
+    only = None if role_in(user.get("role"), ("admin", "manager")) else user["id"]
     return await ai_usage_report.daily_report(days, scope, only_user_id=only)

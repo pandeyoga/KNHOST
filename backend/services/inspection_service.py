@@ -39,6 +39,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from core_utils import new_id, next_doc_number, now_iso, safe_doc, timeline_entry
 from db import db
 from services import line_scope
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 logger = logging.getLogger(__name__)
 
 
@@ -1109,7 +1110,7 @@ async def release_hold(ins_id: str, line_id: str, reason: str,
     doc = await _load(ins_id)
     line = _line_of(doc, line_id)
     md_ok = can_md_quality and doc.get("kind") in MD_QUALITY_KINDS
-    if (actor or {}).get("role") not in HOLD_RELEASE_ROLES and not md_ok:
+    if not role_in((actor or {}).get("role"), HOLD_RELEASE_ROLES) and not md_ok:
         raise PermissionError(
             "Hanya MD Quality (penerimaan PO/hasil makloon) atau MANAJER yang boleh melepas "
             "tahanan barang yang warnanya beda dari sample.")
@@ -1147,7 +1148,7 @@ async def reject_hold(ins_id: str, line_id: str, reason: str, actor: Dict[str, A
     doc = await _load(ins_id)
     line = _line_of(doc, line_id)
     md_ok = can_md_quality and doc.get("kind") in MD_QUALITY_KINDS
-    if (actor or {}).get("role") not in HOLD_RELEASE_ROLES and not md_ok:
+    if not role_in((actor or {}).get("role"), HOLD_RELEASE_ROLES) and not md_ok:
         raise PermissionError("Hanya MD Quality (penerimaan PO/hasil makloon) atau MANAJER yang boleh "
                               "menolak barang yang ditahan.")
     if not line.get("hold"):

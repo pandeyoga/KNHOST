@@ -250,8 +250,10 @@ async def my_desk(request: Request, entity_id: str = Query("")) -> Dict[str, Any
     """Meja kerja sesuai peran pengguna yang login: antrean 'Giliran saya' + antrean khas peran."""
     from dependencies import current_user
     from services import role_desk_service as rdesk
+    import role_registry as reg
     actor = await current_user(request)
-    role = actor.get("role", "")
+    # Keputusan owner 2026-10-21 — peran kustom memakai meja peran ACUANNYA (dulu 404 "meja khusus").
+    role = reg.base_or_self(actor.get("role", ""))
     if role not in rdesk.ROLES:
         raise HTTPException(status_code=404, detail=f"Peran '{role}' memakai meja khususnya sendiri.")
     _, scope, ids = await _scope(request, entity_id or None)

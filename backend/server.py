@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import os
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -338,7 +339,7 @@ async def ws_track(websocket: WebSocket):
         await websocket.close()
         return
 
-    is_manager = user.get("role") in ("admin", "manager")
+    is_manager = role_in(user.get("role"), ("admin", "manager"))
     subscribe = (mode == "subscribe") or (mode != "publish" and is_manager)
 
     if subscribe:

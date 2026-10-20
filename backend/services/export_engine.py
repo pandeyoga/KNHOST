@@ -16,6 +16,7 @@ from services import sales_ownership
 from services.customer_service import scope_query as customer_scope
 from services.export_registry import DATASET_BY_ID
 from services.field_visibility import ensure_product_grades, hidden_for_user, redact
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 CMP = {"eq", "ne", "contains", "not_contains", "starts", "gt", "gte", "lt", "lte", "in", "empty", "not_empty"}
 CMP_LABEL = {"eq": "=", "ne": "≠", "contains": "berisi", "not_contains": "tidak berisi", "starts": "diawali",
@@ -181,7 +182,7 @@ async def _owner_clause(ds: Dict[str, Any], user: Dict[str, Any]) -> Optional[Di
     if mode == "created_by" and locked:
         return {"created_by": uid}
     if mode == "customer" and locked:
-        return {"assigned_sales_id": uid} if user.get("role") != "sales" else customer_scope(user, {})
+        return {"assigned_sales_id": uid} if not role_in(user.get("role"), ("sales",)) else customer_scope(user, {})
     if mode == "via_order" and locked:
         ids = await db.sales_orders.distinct("id", sales_ownership.owner_clause(user))
         return {"order_id": {"$in": ids}}

@@ -38,6 +38,7 @@ memang harus melihat keseluruhan pesanan, tetapi tetap bisa MEMINTA penyaringan
 "punya saya" lewat parameter `mine=true`.
 """
 from typing import Any, Dict, List, Optional
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 #: Peran yang WAJIB dibatasi ke pesanan miliknya sendiri (keputusan pemilik E8.10).
 OWNER_LOCKED_ROLES = ("sales",)
@@ -45,7 +46,7 @@ OWNER_LOCKED_ROLES = ("sales",)
 
 def is_owner_locked(actor: Optional[Dict[str, Any]]) -> bool:
     """Benar bila peran aktor hanya boleh melihat pesanan miliknya."""
-    return str((actor or {}).get("role") or "") in OWNER_LOCKED_ROLES
+    return role_in(str((actor or {}).get("role") or ""), OWNER_LOCKED_ROLES)
 
 
 def owner_clause(actor: Optional[Dict[str, Any]]) -> Dict[str, Any]:

@@ -22,6 +22,7 @@ from core_utils import new_id, now_iso, next_doc_number, safe_doc
 from dependencies import audit
 from entity_scope import EntityContext, resolve_list_scope, assert_entity_access, assert_active_entity_access
 from services import gl_service
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 CA_COLL = "cash_advances"
 STL_COLL = "cash_advance_settlements"
@@ -243,7 +244,7 @@ async def approve_cash_advance(ca_id: str, note: str, ctx: EntityContext, actor:
     if not stage:
         raise HTTPException(status_code=409, detail="PD tidak dalam status menunggu persetujuan")
     role = actor.get("role", "")
-    if role != "admin" and role not in stage["roles"]:
+    if role != "admin" and not role_in(role, stage["roles"]):
         raise HTTPException(status_code=403,
                             detail=f"Tahap '{stage['label']}' hanya untuk: {', '.join(stage['roles'])}")
     approval = {"stage": stage["stage"], "label": stage["label"], "decision": "approved",
@@ -265,7 +266,7 @@ async def reject_cash_advance(ca_id: str, reason: str, ctx: EntityContext, actor
     if not stage:
         raise HTTPException(status_code=409, detail="PD tidak dalam status menunggu persetujuan")
     role = actor.get("role", "")
-    if role != "admin" and role not in stage["roles"]:
+    if role != "admin" and not role_in(role, stage["roles"]):
         raise HTTPException(status_code=403, detail="Anda tidak berwenang menolak pada tahap ini")
     approval = {"stage": stage["stage"], "label": stage["label"], "decision": "rejected",
                 "by": actor.get("name", ""), "role": role, "note": (reason or "").strip(),

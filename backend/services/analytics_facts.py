@@ -22,6 +22,7 @@ from core_utils import now_iso
 from services.analytics_config import ai_policy
 from services.analytics_time import now_wib, to_wib_date, wib_midnight_utc
 from services.customer_service import DEAD_STATUSES
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ def attribute_sales(so: Dict[str, Any], customer: Dict[str, Any], users: Dict[st
     if so.get("sales_id"):
         return [(so["sales_id"], 1.0)]
     creator = so.get("created_by") or ""
-    if creator and (users.get(creator) or {}).get("role") == "sales":
+    if creator and role_in((users.get(creator) or {}).get("role"), ("sales",)):
         return [(creator, 1.0)]
     return [(owner, 1.0)]
 

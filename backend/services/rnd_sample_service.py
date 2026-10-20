@@ -44,6 +44,7 @@ from services import supplier_item_service
 from services.rnd_spec_service import RndError
 from services import line_scope as _lines      # FASE L — satu pintu normalisasi lini
 from services import rnd_required_tests as rtests  # W2-REQ-03
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 
 class PerformerRequired(RndError):
@@ -848,7 +849,7 @@ async def open_round(sample_id: str, supplier_id: str, *, type_code: str = "",
     next_no = int(last.get("round_no") or 0) + 1
     if next_no > max_rounds:
         role = (actor or {}).get("role", "")
-        if role not in ("admin", "manager") or not (reason or "").strip():
+        if not role_in(role, ("admin", "manager")) or not (reason or "").strip():
             raise RndError(
                 f"Batas iterasi {max_rounds} round sudah tercapai untuk supplier ini "
                 f"pada jenis '{tcode}'. Round tambahan hanya boleh dibuka "

@@ -19,6 +19,7 @@ from services import scheduler_service as sched
 from services import wa_alert_service as wa
 from services import digest_service as digest
 from services import escalation_service as escalation
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 
@@ -80,7 +81,7 @@ async def get_settings(request: Request) -> Dict[str, Any]:
 async def digest_preview(request: Request, role: str = "admin") -> Dict[str, Any]:
     """Pratinjau isi Ringkasan Harian untuk 1 peran (sebelum mode digest diaktifkan)."""
     await require_permission(request, "scheduler", "view")
-    if role not in ("admin", "manager", "sales", "warehouse"):
+    if not role_in(role, ("admin", "manager", "sales", "warehouse")):
         raise HTTPException(status_code=400, detail="Peran pratinjau tidak dikenal.")
     return await digest.preview_digest(role=role)
 

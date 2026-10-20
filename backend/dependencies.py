@@ -5,6 +5,7 @@ from fastapi import HTTPException, Request
 from db import db
 from core_utils import safe_doc, now_iso, new_id, SESSION_TTL_HOURS
 from permissions_config import DEFAULT_PERMISSIONS
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 SESSION_COOKIE = "session_token"
 
@@ -57,7 +58,7 @@ async def current_user(request: Request) -> Dict[str, Any]:
     # mengubah 62 pemanggilnya satu-satu.
     from request_context import resolve_from_user, set_active_entity, set_actor
     set_actor(user)
-    if user.get("role") == "sales":
+    if role_in(user.get("role"), ("sales",)):
         from services.product_exclusivity import refresh_hidden_stages
         await refresh_hidden_stages()
     # FASE E-1 (E1.5) — konteks entitas yang diminta WAJIB sah untuk SEMUA metode.

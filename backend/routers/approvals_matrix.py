@@ -15,6 +15,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from dependencies import require_permission
 from entity_scope import entity_ctx
 from services import approval_matrix_service as amx
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 
@@ -35,7 +36,7 @@ def _assert_approver(actor: Dict[str, Any]) -> None:
     `approval.view`; MEMUTUSKAN tetap dijaga peringkat peran di
     `services/approvals_matrix_service.py` (tidak diubah).
     """
-    if (actor or {}).get("role") not in APPROVER_ROLES:
+    if not role_in((actor or {}).get("role"), APPROVER_ROLES):
         raise HTTPException(status_code=403,
                             detail="Hanya admin/manager (approver) yang dapat membuka "
                                    "antrean & matriks persetujuan.")

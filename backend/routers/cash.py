@@ -14,6 +14,7 @@ from core_utils import new_id, now_iso, safe_doc
 from entity_scope import entity_ctx, resolve_scope_ids, guard_doc
 from schemas import CashTransactionCreate
 from services import cash_entity_service
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 
@@ -44,7 +45,7 @@ async def list_cash_transactions(
     ctx = await entity_ctx(request)
     entities = resolve_scope_ids(ctx, entity_id)
     or_clauses: List[Dict[str, Any]] = [{"entity_id": {"$in": entities}}]
-    if (actor or {}).get("role") in ("admin", "manager"):
+    if role_in((actor or {}).get("role"), ("admin", "manager")):
         or_clauses.append({"entity_id": {"$in": ["all", "", None]}})
     query: Dict[str, Any] = {"status": {"$ne": "void"}, "$or": or_clauses}
     if cash_type:

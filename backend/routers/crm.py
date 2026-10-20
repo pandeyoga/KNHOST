@@ -21,6 +21,7 @@ from services.customer_service import (
 from services.sales_force_service import sales_kpi, compute_commission, leaderboard, commission_history
 from services import gl_service
 from entity_scope import entity_ctx, resolve_list_scope
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 
@@ -122,7 +123,7 @@ async def list_credit_overrides(request: Request, status: str = None) -> List[Di
     query: Dict[str, Any] = {}
     if status:
         query["status"] = status
-    if actor.get("role") == "sales":
+    if role_in(actor.get("role"), ("sales",)):
         query["requested_by_id"] = actor["id"]
     return await db.credit_overrides.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
 
@@ -131,7 +132,7 @@ async def list_credit_overrides(request: Request, status: str = None) -> List[Di
 async def get_credit_override(override_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "customer", "view")
     doc = await db.credit_overrides.find_one({"id": override_id}, {"_id": 0})
-    if not doc or (actor.get("role") == "sales" and doc.get("requested_by_id") != actor["id"]):
+    if not doc or (role_in(actor.get("role"), ("sales",)) and doc.get("requested_by_id") != actor["id"]):
         raise HTTPException(status_code=404, detail="Permohonan override kredit tidak ditemukan")
     return doc
 
@@ -250,8 +251,8 @@ async def _kpi_scope(request: Request, sales_id: str, entity_id: str) -> tuple:
             raise HTTPException(status_code=403, detail="Tidak berwenang atas entitas ini")
     else:
         entity_id = ctx.active_entity_id
-    if actor.get("role") == "sales" or not sales_id or \
-            actor.get("role") not in ("admin", "manager", "sales_admin", "finance"):
+    if role_in(actor.get("role"), ("sales",)) or not sales_id or \
+            not role_in(actor.get("role"), ("admin", "manager", "sales_admin", "finance")):
         sales_id = actor["id"]  # KN-E38 — hanya peran pengawas yang boleh melihat KPI/komisi sales lain
     return sales_id, entity_id
 
@@ -354,7 +355,7 @@ async def list_targets(request: Request, sales_id: str = None, period: str = Non
     actor = await current_user(request)
     ctx = await entity_ctx(request)
     query: Dict[str, Any] = {}
-    if actor.get("role") == "sales":
+    if role_in(actor.get("role"), ("sales",)):
         query["sales_id"] = actor["id"]
     elif sales_id:
         query["sales_id"] = sales_id
@@ -409,7 +410,7 @@ async def list_incentives(request: Request, sales_id: str = None, period: str = 
     actor = await current_user(request)
     ctx = await entity_ctx(request)
     query: Dict[str, Any] = {}
-    if actor.get("role") == "sales":
+    if role_in(actor.get("role"), ("sales",)):
         query["sales_id"] = actor["id"]
     elif sales_id:
         query["sales_id"] = sales_id

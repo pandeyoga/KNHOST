@@ -13,6 +13,7 @@ from dependencies import require_permission, audit
 from entity_scope import entity_ctx
 from core_utils import DEFAULT_ENTITY_ID
 from services import crm_omnichannel_service as oc
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 
@@ -72,7 +73,7 @@ async def _read_scope(request: Request, entity_id: Optional[str], actor: Dict[st
         q["entity_id"] = entity_id
     else:
         q["entity_id"] = {"$in": list(ctx.allowed_entity_ids)}
-    if actor.get("role") == "sales" and owner_field:
+    if role_in(actor.get("role"), ("sales",)) and owner_field:
         q[owner_field] = actor["id"]
     return q
 
@@ -128,7 +129,7 @@ async def _guard_lead_owner(request: Request, lead_id: str, actor: Dict[str, Any
     # GN-09 — entitas lead wajib = entitas aktif pemanggil (bukan hanya owner untuk role sales)
     from entity_scope import guard_doc
     await guard_doc(request, "crm_leads", lead, not_found="Lead tidak ditemukan.")
-    if actor.get("role") == "sales" and lead.get("owner_id") != actor["id"]:
+    if role_in(actor.get("role"), ("sales",)) and lead.get("owner_id") != actor["id"]:
         raise HTTPException(status_code=403, detail="Lead ini bukan milik Anda.")
     return lead
 
@@ -198,7 +199,7 @@ async def delete_interaction(intx_id: str, request: Request) -> Dict[str, Any]:
     intx = await oc.get_interaction(intx_id)
     from entity_scope import guard_doc
     await guard_doc(request, "crm_interactions", intx, not_found="Interaksi tidak ditemukan.")  # GN-09
-    if actor.get("role") == "sales" and intx.get("created_by_id") != actor["id"]:
+    if role_in(actor.get("role"), ("sales",)) and intx.get("created_by_id") != actor["id"]:
         raise HTTPException(status_code=403, detail="Interaksi ini bukan milik Anda.")
     ok = await oc.delete_interaction(intx_id)
     await audit(actor["name"], "interaction_deleted", "crm_interaction", intx_id, {})

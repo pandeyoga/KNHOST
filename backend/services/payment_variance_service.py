@@ -65,6 +65,7 @@ from db import db
 from services import gl_service
 from services import payment_plan_service as plans
 from services.config_resolver import resolve
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 logger = logging.getLogger(__name__)
 
 
@@ -585,7 +586,7 @@ def _assert_authority(kind: str, amount: float, policy: Dict[str, Any],
         return ""
     role = (actor.get("role") or "").lower()
     need = (policy["writeoff_approver_role"] or "manager").lower()
-    if role not in (need, "admin"):
+    if not role_in(role, (need, "admin")):
         raise VarianceError(
             f"Keputusan '{KIND_LABEL.get(kind, kind)}' wajib diputus {need} atau admin — "
             "ajukan ke penyetuju.")

@@ -18,6 +18,7 @@ from services import analytics_engine as engine
 from services.analytics_time import now_wib, period_from_args
 from services.ar_aging_service import _eligible_outstanding, term_days, parse_dt
 from services.sales_ownership import apply_scope, assert_may_open
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 Q_DEFAULT = {"group_by": [], "time_grain": None, "compare": "none", "filters": [],
              "sort": {"by": None, "direction": "desc"}, "limit": None, "include_samples": False,
@@ -323,7 +324,7 @@ async def run_report(args, user, ctx, session_id=None) -> Dict[str, Any]:
             rows += [{"section": "Ringkasan", "account": lbl, "amount": st[k]} for k, lbl in (
                 ("revenue_total", "Total pendapatan"), ("gross_profit", "Laba kotor"), ("opex_total", "Total beban operasional"),
                 ("net_income", "Laba bersih"))]
-            if sc.role not in ("admin", "manager", "finance"):
+            if not role_in(sc.role, ("admin", "manager", "finance")):
                 raise engine.AnalyticsError("Laba rugi tidak tersedia untuk peran Anda.")
             sections["statement"] = await _save("Laba rugi", [_txt("section", "Bagian"), _txt("account", "Akun"), _col("amount", "Jumlah", "idr")],
                                                 rows, user, session_id, "run_report", args, period=p.to_dict(),

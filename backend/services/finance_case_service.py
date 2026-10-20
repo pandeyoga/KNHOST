@@ -35,6 +35,7 @@ from services.config_resolver import value_of
 from services.finance_case_playbooks import (
     BY_CODE, CASE_TYPES, PLAYBOOKS, action_or_fail, playbook_or_fail,
 )
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 logger = logging.getLogger(__name__)
 
 
@@ -405,7 +406,7 @@ def _assert_authority(action: Dict[str, Any], amount: float, pol: Dict[str, Any]
     amt = _round(amount)
     if limit <= 0 or amt < limit:
         return ""
-    if role not in (need, "admin"):
+    if not role_in(role, (need, "admin")):
         raise CaseError(
             f"Penyelesaian {_rp(amt)} melebihi ambang persetujuan {_rp(limit)} — "
             f"wajib diputus {need} atau admin. Tugaskan kasus ini ke penyetuju.")

@@ -15,6 +15,7 @@ from pagination import is_paged, get_page_params, build_search, merge_query, fet
 from request_context import active_entity_or
 from services.text_normalize import nama_orang, nama_usaha, phone_id
 from services.wilayah_service import normalize_location, LOCATION_KEYS
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 
@@ -31,7 +32,7 @@ async def list_customers(request: Request, entity_id: str = None,
     if assigned_sales_id:
         base["assigned_sales_id"] = assigned_sales_id
     base = resolve_list_scope("customers", base, ctx, entity_id)  # entity isolation
-    if for_order and actor.get("role") == "sales":
+    if for_order and role_in(actor.get("role"), ("sales",)):
         # Pemilih pelanggan untuk membuat pesanan (POS / Pesanan Khusus): sama dengan daftar POS —
         # semua pelanggan entitas, field ringkas saja, tanpa data kredit/AR pelanggan sales lain.
         rows = await db.customers.find(base, {"_id": 0, "id": 1, "name": 1, "code": 1, "city": 1, "phone": 1, "entity_id": 1,
@@ -95,7 +96,7 @@ async def create_customer(payload: CustomerCreate, request: Request) -> Dict[str
     # assigned_sales: sales pembuat SELALU jadi pemilik (login = identitas, tak perlu memilih);
     # peran lain (admin/manager/sales_admin) WAJIB memilih sales penanggung jawab.
     assigned_id = payload.assigned_sales_id
-    if actor.get("role") == "sales":
+    if role_in(actor.get("role"), ("sales",)):
         assigned_id = actor["id"]
     team_pic = pic_of(payload.sales_team and [m.model_dump() for m in payload.sales_team] or [])
     if not assigned_id and not (team_pic or {}).get("sales_id"):

@@ -21,6 +21,7 @@ from entity_scope import entity_ctx, resolve_list_scope, assert_entity_access
 from schemas import PriceApprovalCreate, PriceApprovalDecision, GenericPatch
 from services import storage_service as storage
 from services.notification_service import create_notification
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 # F1b — bagian BERSAMA alur harga khusus (bentuk dokumen, keberlakuan, efek keputusan)
 # dipakai juga oleh Daftar Harga per Pelanggan supaya tidak ada dua definisi.
 from services import approval_matrix_service as matrix
@@ -149,7 +150,7 @@ async def _get_or_404(approval_id: str, request: Optional[Request] = None) -> Di
 
 def _ensure_owner_or_privileged(doc: Dict[str, Any], user: Dict[str, Any]) -> None:
     role = user.get("role")
-    if role in ("admin", "manager"):
+    if role_in(role, ("admin", "manager")):
         return
     if doc.get("requested_by") != user.get("id"):
         raise HTTPException(status_code=403, detail="Anda hanya dapat mengelola pengajuan Anda sendiri")
@@ -173,7 +174,7 @@ async def list_price_approvals(
         query["product_id"] = product_id
     query = resolve_list_scope("price_approvals", query, ctx, entity_id)
     # Row-level: sales hanya melihat pengajuannya sendiri
-    if user.get("role") == "sales":
+    if role_in(user.get("role"), ("sales",)):
         query["requested_by"] = user.get("id")
     rows = await db.price_approvals.find(query, {"_id": 0}).sort("created_at", -1).to_list(300)
     return [_decorate(safe_doc(r)) for r in rows]
@@ -209,7 +210,7 @@ async def price_approval_stats(request: Request) -> Dict[str, Any]:
     user = await require_permission(request, "price_approval", "view")
     # G3 D4-PRICE-SCOPE-01 — statistik ikut lingkup entitas yang sama dengan daftar
     base: Dict[str, Any] = resolve_list_scope("price_approvals", {}, await entity_ctx(request), None)
-    if user.get("role") == "sales":
+    if role_in(user.get("role"), ("sales",)):
         base["requested_by"] = user.get("id")
     pipeline = [{"$match": base}] if base else []
     pipeline.append({"$group": {"_id": "$status", "count": {"$sum": 1}}})

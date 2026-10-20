@@ -10,6 +10,7 @@ from core_utils import new_id, now_iso
 from db import db
 from services import gl_service
 from services.roll_service import PHYSICAL_ROLL_STATUSES, insert_child_roll, rebuild_balance, to_base_qty
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 ROLES_KEY = "returns.cutloss_treatment_roles"
 TREATMENTS = {"bs": "Masuk stok BS", "dispose": "Dibuang"}
@@ -20,7 +21,7 @@ EPS = 0.001
 async def assert_can_choose(actor: Dict[str, Any], entity_id: str) -> None:
     from services import config_resolver
     roles = await config_resolver.value_of(ROLES_KEY, {"entity_id": entity_id} if entity_id else None) or []
-    if actor.get("role") in ("admin", "manager") or actor.get("role") in roles:
+    if role_in(actor.get("role"), ("admin", "manager")) or role_in(actor.get("role"), roles):
         return
     raise PermissionError("Peran Anda tidak diatur untuk memilih potongan cacat masuk BS atau dibuang")
 

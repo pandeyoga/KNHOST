@@ -19,6 +19,7 @@ from services import analytics_facts as facts
 from services.analytics_config import ai_policy, role_may
 from services.analytics_time import Period, compare_period, now_wib, period_from_args
 from services.line_scope import visibility_query
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 MAX_TIME_MS = 10000
 TZ = "Asia/Jakarta"
@@ -67,7 +68,7 @@ async def build_scope(user: Dict[str, Any], ctx: Any, entity_scope: str = "activ
         ids = allowed
     else:
         ids = [ctx.active_entity_id]
-    return Scope(user=user, entity_ids=ids, sales_only=user["id"] if user.get("role") == "sales" else None,
+    return Scope(user=user, entity_ids=ids, sales_only=user["id"] if role_in(user.get("role"), ("sales",)) else None,
                  line_q=visibility_query(user, "line_code"), policy=await ai_policy())
 
 

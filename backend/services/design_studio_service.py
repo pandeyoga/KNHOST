@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 from db import db
 from core_utils import new_id, now_iso, safe_doc
 from services.config_resolver import value_of
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 
 class DesignError(ValueError):
@@ -647,7 +648,7 @@ async def add_feedback(gallery_id: str, actor: Dict[str, Any], text: str,
     fb = {"id": new_id("fb"), "text": text.strip(), "by": actor.get("name", ""),
           "user_id": actor.get("id", ""), "role": actor.get("role", ""), "at": now_iso(),
           "version": int(version or cur.get("version") or 1),
-          "side": "designer" if actor.get("role") == "designer" else "assessor"}
+          "side": "designer" if role_in(actor.get("role"), ("designer",)) else "assessor"}
     ev = event(actor, "feedback", text.strip()[:200], version=fb["version"])
     await db.design_gallery.update_one({"id": gallery_id}, {
         "$push": {"feedback": fb, "timeline": ev}, "$set": {"updated_at": now_iso()}})
@@ -737,10 +738,10 @@ async def _owner_id(doc: Dict[str, Any]) -> str:
 async def _notify(doc: Dict[str, Any], actor: Dict[str, Any], title: str, body: str) -> None:
     try:
         from services import notification_service as notif
-        owner = await _owner_id(doc) if actor.get("role") != "designer" else ""
+        owner = await _owner_id(doc) if not role_in(actor.get("role"), ("designer",)) else ""
         # DESIGN-06 — penilai → HANYA pemilik desain (dulu semua desainer); desainer → penilai.
         audience = {"also_users": (owner,)} if owner else \
-            {"roles": ("designer",) if actor.get("role") != "designer" else ("manager", "admin")}
+            {"roles": ("designer",) if not role_in(actor.get("role"), ("designer",)) else ("manager", "admin")}
         # Tiap transisi = peristiwa sendiri: ref per status (dulu "Dalam Review" yang belum dibaca
         # menelan "Perlu Revisi" karena dedupe per (tipe, ref)).
         await notif.create_addressed(**audience, entity_id=doc.get("entity_id"),

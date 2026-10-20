@@ -17,6 +17,7 @@ from schemas import ColorCreate, ColorPatch
 from services import color_service as svc
 from services import color_lock_service as lock
 from services.color_card_pdf import render_customer_color_card
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api")
 
@@ -163,7 +164,7 @@ async def create_color(payload: ColorCreate, request: Request) -> Dict[str, Any]
 async def patch_color(color_id: str, payload: ColorPatch, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "color", "update")
     patch = payload.model_dump(exclude_none=True)
-    if "exclusive_customer_id" in patch and actor.get("role") not in ("admin", "manager"):
+    if "exclusive_customer_id" in patch and not role_in(actor.get("role"), ("admin", "manager")):
         # KN-E47 — kepemilikan warna eksklusif hanya diubah admin/manajer (md dulu bisa mengosongkannya).
         from db import db as _db
         cur = await _db.color_library.find_one({"id": color_id}, {"_id": 0, "exclusive_customer_id": 1}) or {}

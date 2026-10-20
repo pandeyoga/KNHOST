@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 from fastapi import HTTPException
 
 from db import db
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 LIFECYCLE_ROLES = {"admin", "md"}
 
@@ -65,7 +66,7 @@ async def usage(kind: str, mid: str) -> Dict[str, Any]:
 
 
 def assert_lifecycle_role(actor: Dict[str, Any], action: str = "menonaktifkan master") -> None:
-    if (actor or {}).get("role") not in LIFECYCLE_ROLES:
+    if not role_in((actor or {}).get("role"), LIFECYCLE_ROLES):
         raise HTTPException(status_code=403, detail=f"Hanya Admin atau MD yang boleh {action}.")
 
 

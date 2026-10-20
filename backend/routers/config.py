@@ -22,6 +22,7 @@ from schemas_config import (
 )
 from services import config_health, config_simulator
 from services import config_resolver as resolver
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 router = APIRouter(prefix="/api/config", tags=["config"])
 
@@ -55,7 +56,7 @@ def _may_edit(entry: Dict[str, Any], user: Dict[str, Any], perms: Dict[str, List
     role = user.get("role") or ""
     if role == "admin":
         return True
-    if role in (entry.get("roles") or []):
+    if role_in(role, (entry.get("roles") or [])):
         return True
     module, action = (entry.get("permission") or ["settings", "manage"])[:2]
     if not _may(perms, module, action):

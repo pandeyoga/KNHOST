@@ -36,6 +36,7 @@ from db import db
 from services import gl_service
 from services import payment_plan_service as plans
 from services.config_resolver import resolve
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 COLL = "penalties"
 EPS = 0.01
@@ -406,7 +407,7 @@ async def waive(penalty_id: str, reason_code: str, note: str,
         raise PenaltyError(f"Nota denda sudah '{STATUS_LABEL.get(p['status'], p['status'])}'.")
     reason = await _reason_or_fail(reason_code)
     appr = await _needs_approval(p)
-    if appr["required"] and (actor.get("role") or "") not in (appr["role"], "admin"):
+    if appr["required"] and not role_in((actor.get("role") or ""), (appr["role"], "admin")):
         raise PenaltyError(
             f"Pembebasan denda wajib disetujui {appr['role']} — ajukan lewat penyetuju.")
     je = None
@@ -443,7 +444,7 @@ async def adjust(penalty_id: str, new_amount: float, reason_code: str, note: str
                            "terbitkan nota denda baru bila memang bertambah.")
     reason = await _reason_or_fail(reason_code)
     appr = await _needs_approval(p)
-    if appr["required"] and (actor.get("role") or "") not in (appr["role"], "admin"):
+    if appr["required"] and not role_in((actor.get("role") or ""), (appr["role"], "admin")):
         raise PenaltyError(
             f"Perubahan nominal denda wajib disetujui {appr['role']}.")
     delta = round(float(p["amount"]) - amt, 2)

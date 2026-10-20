@@ -17,6 +17,7 @@ Aturan visibilitas:
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 EXCLUSIVE = "sales_tertentu"
 GENERAL = "umum"
@@ -56,7 +57,7 @@ def stage_hidden(actor: Optional[Dict[str, Any]], product: Optional[Dict[str, An
 
 def is_restricted_role(actor: Optional[Dict[str, Any]]) -> bool:
     """Hanya role `sales` yang dibatasi. Selain itu (admin/manager/warehouse) lihat semua."""
-    return (actor or {}).get("role") == "sales"
+    return role_in((actor or {}).get("role"), ("sales",))
 
 
 def visibility_query(actor: Optional[Dict[str, Any]]) -> Dict[str, Any]:

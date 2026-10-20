@@ -6,6 +6,7 @@ import bcrypt
 import hashlib
 import re
 import uuid
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 # SEC-2 — umur session (jam). Sliding renewal saat sisa < setengah TTL.
 SESSION_TTL_HOURS = 24
@@ -369,7 +370,7 @@ COST_SAFE_ROLES = {"admin", "manager"}
 
 def strip_cost_fields(data: Any, role: Optional[str]) -> Any:
     """S-10 — hapus field biaya (HPP/margin) dari respons bila role bukan admin/manager."""
-    if role in COST_SAFE_ROLES:
+    if role_in(role, COST_SAFE_ROLES):
         return data
     if isinstance(data, dict):
         return {k: strip_cost_fields(v, role) for k, v in data.items() if k not in COST_FIELDS}

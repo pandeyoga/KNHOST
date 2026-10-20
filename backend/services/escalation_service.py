@@ -28,6 +28,7 @@ from db import db
 from core_utils import now_iso
 from services.notification_service import create_notification
 from services.wa_alert_service import SEVERITY_RANK, raw_settings
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 logger = logging.getLogger("alerts.escalation")
 
@@ -94,7 +95,7 @@ async def job_escalation_scan() -> Dict[str, Any]:
         if SEVERITY_RANK.get(n.get("severity", "info"), 1) < min_rank:
             continue
         role = (n.get("recipient_role") or "all")
-        if role in TOP_ROLES:
+        if role_in(role, TOP_ROLES):
             skipped_top += 1
             continue
         next_role = ESCALATION_CHAIN.get(role)

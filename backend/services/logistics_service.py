@@ -17,6 +17,7 @@ from db import db
 from core_utils import new_id, now_iso, safe_doc, next_doc_number
 from services import storage_service as storage
 from services import fleet_service as fleet
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 logger = logging.getLogger(__name__)
 
 
@@ -273,7 +274,7 @@ def _enrich(doc: Dict[str, Any]) -> Dict[str, Any]:
 def redact_for(doc: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
     """Kode pickup disembunyikan dari peran pemverifikasi (gudang/sopir) — mereka
     mencocokkan kode yang DISEBUT pengambil, bukan membacanya dari layar."""
-    if doc and doc.get("pickup_code") and (actor or {}).get("role") in PICKUP_CODE_HIDDEN_ROLES:
+    if doc and doc.get("pickup_code") and role_in((actor or {}).get("role"), PICKUP_CODE_HIDDEN_ROLES):
         doc = {**doc, "pickup_code": "", "pickup_code_hidden": True}
     return doc
 

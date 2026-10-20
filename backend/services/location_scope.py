@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import HTTPException
 
 from db import db
+from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
 SETTING_KEY = "wms.location_scope_enforced"
 SCOPED_ROLES = {"warehouse"}
@@ -38,12 +39,12 @@ async def enforced() -> bool:
 
 
 def is_supervisor(user: Dict[str, Any]) -> bool:
-    return (user or {}).get("role") in SUPERVISOR_ROLES
+    return role_in((user or {}).get("role"), SUPERVISOR_ROLES)
 
 
 async def warehouse_ids_for(user: Dict[str, Any]) -> Optional[List[str]]:
     """None = tanpa batas lokasi; [] = tidak ada lokasi; selain itu daftar gudang."""
-    if (user or {}).get("role") not in SCOPED_ROLES or not await enforced():
+    if not role_in((user or {}).get("role"), SCOPED_ROLES) or not await enforced():
         return None
     sites = user.get("location_site_ids") or []
     whs = user.get("location_warehouse_ids") or []

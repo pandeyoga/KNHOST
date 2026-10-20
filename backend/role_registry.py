@@ -290,6 +290,12 @@ def is_role(role: str) -> bool:
     return role in ROLES
 
 
+def base_or_self(role: Optional[str]) -> str:
+    """Peran ACUAN untuk peran kustom (bila ada), selain itu peran itu sendiri — mis. meja kerja per peran."""
+    r = role or ""
+    return (ROLES.get(r) or {}).get("base_role") or r
+
+
 def role_in(actor_role: Optional[str], roles) -> bool:
     """Peran (atau peran ACUAN untuk peran kustom) termasuk dalam `roles`?"""
     r = actor_role or ""
