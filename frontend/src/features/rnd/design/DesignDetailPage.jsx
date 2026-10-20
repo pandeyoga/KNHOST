@@ -38,7 +38,7 @@ export default function DesignDetailPage({ designId, currentUser, onBack, onChan
 
   const role = currentUser?.role;
   const canAssess = roleIs(role, ["admin", "manager"]);
-  const canEdit = canAssess || role === "designer";
+  const canEdit = canAssess || can(currentUser?.permissions, "design_request", "deliver") || can(currentUser?.permissions, "rnd", "manage");   // Sisir lanjutan gerbang peran (2026-10-21) — = _perm_manage server
   const canHold = can(currentUser?.permissions, "rnd", "hold") || meta?.hold?.can_hold === true;
   const canRelease = can(currentUser?.permissions, "design_request", "release_hold") || meta?.hold?.can_release === true;
   const canPaper = canEdit && (can(currentUser?.permissions, "design_request", "paper_check") || meta?.can_paper_check === true);

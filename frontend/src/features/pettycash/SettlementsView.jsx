@@ -155,11 +155,13 @@ function SettlementDetail({ stl, currentUser, entities, catLabels, onBack, onCha
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [reject, setReject] = useState(false);
-  const role = currentUser?.role;
   const entityName = entities.find((e) => e.id === stl.entity_id)?.short_name || entities.find((e) => e.id === stl.entity_id)?.legal_name || stl.entity_id;
 
-  const canSubmit = stl.status === "draft" && ["admin", "manager", "sales"].includes(role);
-  const canApprove = ["submitted", "draft"].includes(stl.status) && ["admin", "manager"].includes(role);
+  // Sisir lanjutan gerbang peran (2026-10-21): ajukan/setujui/tolak LPJ = cash_settlement.submit/approve/reject; bayar talangan = accounting.create.
+  const canSubmit = stl.status === "draft" && can(currentUser?.permissions, "cash_settlement", "submit");
+  const canApprove = ["submitted", "draft"].includes(stl.status) && can(currentUser?.permissions, "cash_settlement", "approve");
+  const canReject = ["submitted", "draft"].includes(stl.status) && can(currentUser?.permissions, "cash_settlement", "reject");
+  const canPayReimburse = can(currentUser?.permissions, "accounting", "create");
   const sisa = Number(stl.sisa_kurang_dana) || 0;
 
   async function act(path, body, okMsg) {
@@ -183,7 +185,7 @@ function SettlementDetail({ stl, currentUser, entities, catLabels, onBack, onCha
           <div className="flex flex-wrap items-center gap-2">
             <button data-testid="stl-print" className="btn-secondary btn-xs" onClick={() => printSettlement(stl, entityName, catLabels)}><Printer size={13} /> Cetak LPJ</button>
             {canSubmit && <button data-testid="stl-submit-btn" className="btn-primary btn-xs" onClick={() => act("submit", {}, `${stl.number} diajukan.`)} disabled={busy}><Send size={13} /> Ajukan</button>}
-            {stl.hutang_reimburse?.status === "open" && ["admin", "manager"].includes(role) && (
+            {stl.hutang_reimburse?.status === "open" && canPayReimburse && (
               <button data-testid="stl-pay-reimburse-btn" className="btn-primary btn-xs" disabled={busy}
                 onClick={() => act("pay-reimburse", { cash_type: "kas_besar" },
                   `Kelebihan LPJ ${stl.number} dibayar ke karyawan (Dr 2-1650 / Cr Kas).`)}>
@@ -192,9 +194,9 @@ function SettlementDetail({ stl, currentUser, entities, catLabels, onBack, onCha
             {stl.hutang_reimburse?.status === "paid" && (
               <span data-testid="stl-reimburse-paid" className="text-[11px] font-semibold text-[#15803D]">
                 Reimburse dibayar · {stl.hutang_reimburse.cash_txn_number}</span>)}
-            {canApprove && <>
-              <button data-testid="stl-approve-btn" className="btn-primary btn-xs" onClick={() => act("approve", {}, `${stl.number} disetujui & diposting ke GL.`)} disabled={busy}><CheckCircle2 size={13} /> Setujui & Posting GL</button>
-              <button data-testid="stl-reject-btn" className="btn-danger btn-xs" onClick={() => setReject(true)} disabled={busy}><XCircle size={13} /> Tolak</button>
+            {(canApprove || canReject) && <>
+              {canApprove && <button data-testid="stl-approve-btn" className="btn-primary btn-xs" onClick={() => act("approve", {}, `${stl.number} disetujui & diposting ke GL.`)} disabled={busy}><CheckCircle2 size={13} /> Setujui & Posting GL</button>}
+              {canReject && <button data-testid="stl-reject-btn" className="btn-danger btn-xs" onClick={() => setReject(true)} disabled={busy}><XCircle size={13} /> Tolak</button>}
             </>}
           </div>
         </div>

@@ -50,13 +50,11 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
   const [decision, setDecision] = useState("");
   const [lineOpen, setLineOpen] = useState(null);
   const [linePart, setLinePart] = useState("");
-
-  const role = meta?.role || currentUser?.role || "";
   const isRandom = doc.kind === "random_check";
   const isMdKind = (meta?.md_quality_kinds || MD_QUALITY_KINDS).includes(doc.kind);
   const canAssign = can(currentUser?.permissions, "inspection", "assign");   // FE-04
   const canDecide = can(currentUser?.permissions, "inspection", "decide") || (isRandom && Boolean(meta?.can_qc_release));
-  const canInspectAll = meta ? Boolean(meta.can_inspect_all) : ["admin", "manager", "warehouse"].includes(role);
+  const canInspectAll = Boolean(meta?.can_inspect_all);   // Sisir lanjutan gerbang peran (2026-10-21) — hanya dari server (tanpa tebakan nama peran saat meta belum ada)
   const canMdq = isMdKind && Boolean(meta?.can_md_quality);
   const canQc = Boolean(meta?.can_qc) || canInspectAll;
   const canInspect = canInspectAll || canQc;

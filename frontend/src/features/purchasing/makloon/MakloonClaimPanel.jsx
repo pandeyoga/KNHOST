@@ -9,6 +9,7 @@ import { CheckCircle2, Scale, ShieldCheck, TriangleAlert, XCircle } from "lucide
 import KNSelect from "../../../components/KNSelect";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { approveClaim, CLAIM_ACTION_LABELS, CLAIM_STATUS_META, proposeClaim, rejectClaim } from "./makloonApi";
+import { can } from "../../../config/roles";
 
 const ACTION_OPTS = Object.entries(CLAIM_ACTION_LABELS).map(([value, label]) => ({ value, label }));
 
@@ -20,10 +21,8 @@ export default function MakloonClaimPanel({ mkoId, step, currentUser, onDone, on
   const [reason, setReason] = useState(claim.reason || "");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-
-  const role = currentUser?.role;
-  const canPropose = ["admin", "manager", "warehouse"].includes(role);
-  const canDecide = ["admin", "manager"].includes(role);
+  const canPropose = can(currentUser?.permissions, "makloon_order", "claim");   // Sisir lanjutan gerbang peran (2026-10-21)
+  const canDecide = can(currentUser?.permissions, "makloon_order", "claim_approve");
   const meta = CLAIM_STATUS_META[claim.status || "none"] || CLAIM_STATUS_META.none;
 
   if (!claim.status || claim.status === "none") {

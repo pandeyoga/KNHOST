@@ -7,6 +7,7 @@ import axios, { API } from "../../services/apiClient";
 import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import SpecialPriceRequestForm from "../pricing/SpecialPriceRequestForm";
+import { can, roleIs } from "../../config/roles";
 
 const TYPE_META = {
   nilai: { label: "Persetujuan Nilai Pesanan", icon: ShieldCheck, color: "#5856D6" },
@@ -23,8 +24,8 @@ const OPEN_STATES = ["reserved", "waiting_approval", "waiting_stock", "draft"];
 
 export default function SoApprovalsPanel({ order, user, onRefresh }) {
   const role = user?.role;
-  const isApprover = role === "admin" || role === "manager";
-  const isSales = role === "sales" || role === "sales_admin";
+  const isApprover = can(user?.permissions, "order", "approve");   // Sisir lanjutan gerbang peran (2026-10-21) — POST .../approvals/{id}/decide
+  const isSales = roleIs(role, ["sales", "sales_admin"]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");

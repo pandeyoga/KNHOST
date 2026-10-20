@@ -25,6 +25,7 @@ import CasePlaybookWizard from "./CasePlaybookWizard";
 import CaseCreateModal from "./CaseCreateModal";
 import { STATUS_FILTERS, humanAge } from "./caseApi";
 import { caseNumberFromText } from "./caseDeepLink";
+import { can } from "../../../config/roles";
 
 export default function FinanceCasesView({ currentUser, selectedEntity, entities = [],
   focusCase = null, onFocusCaseConsumed }) {
@@ -47,9 +48,7 @@ export default function FinanceCasesView({ currentUser, selectedEntity, entities
   const [fStatus, setFStatus] = useState("");
   const [fType, setFType] = useState("");
   const [fOverdue, setFOverdue] = useState(false);
-
-  const role = (currentUser?.role || "").toLowerCase();
-  const canResolve = role === "admin" || role === "manager";
+  const canResolve = can(currentUser?.permissions, "finance_case", "resolve");   // Sisir lanjutan gerbang peran (2026-10-21) — POST /finance-cases/{id}/resolve
 
   const notify = (m, kind = "success") => {
     setMsg(m); setMsgKind(kind);

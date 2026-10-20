@@ -7,6 +7,7 @@ import { useProofBlob } from "../rnd/ProofImage";
 import PostFormModal from "./PostFormModal";
 import DuplicatePostModal from "./DuplicatePostModal";
 import { mktApi, NEXT_ACTIONS, PlatformChip, StatusPill, METRIC_LABEL, fmtN, fmtWhen } from "./marketingShared";
+import { can, roleIs } from "../../config/roles";
 
 export default function PostDetailModal({ postId, meta, campaigns, currentUser, onClose, onChanged, onOpenPost }) {
   const [post, setPost] = useState(null);
@@ -18,8 +19,11 @@ export default function PostDetailModal({ postId, meta, campaigns, currentUser, 
   const [url, setUrl] = useState("");
   const [metrics, setMetrics] = useState({});
   const role = currentUser?.role;
-  const canEdit = ["admin", "manager", "designer", "sales", "sales_admin"].includes(role);
-  const isApprover = ["admin", "manager"].includes(role);
+  // Sisir lanjutan gerbang peran (2026-10-21): ubah/transisi/lampiran/metrik = marketing.update; hapus = marketing.delete;
+  // menyetujui = marketing.update + peran penyetuju server (APPROVE_ROLES, peran acuan dikenali).
+  const canEdit = can(currentUser?.permissions, "marketing", "update");
+  const canDelete = can(currentUser?.permissions, "marketing", "delete");
+  const isApprover = canEdit && roleIs(role, ["admin", "manager"]);
 
   const refresh = async () => { const p = await mktApi.post(postId); setPost(p); setUrl(p.published_url || ""); setMetrics(p.metrics || {}); };
   useEffect(() => { refresh().catch(() => setErr("Konten tidak ditemukan.")); }, [postId]); // eslint-disable-line
@@ -66,7 +70,7 @@ export default function PostDetailModal({ postId, meta, campaigns, currentUser, 
       <FormModal open title={post.title} subtitle={`${post.content_type} · ${post.pic_name ? `PIC ${post.pic_name}` : "tanpa PIC"} · dibuat ${post.created_by}`} icon={Megaphone} size="lg" onClose={onClose} testId="mkt-post-detail"
         footer={<div className="flex w-full flex-wrap items-center gap-2">
           {canEdit && post.status !== "published" && <button type="button" className="secondary-button !py-1 text-[11px]" onClick={() => setEdit(true)} data-testid="mkt-edit-post"><Pencil size={12} /> Ubah</button>}
-          {isApprover && post.status !== "published" && <button type="button" className="secondary-button !py-1 text-[11px] !text-[#C0392B]" onClick={remove} data-testid="mkt-delete-post"><Trash2 size={12} /> Hapus</button>}
+          {canDelete && post.status !== "published" && <button type="button" className="secondary-button !py-1 text-[11px] !text-[#C0392B]" onClick={remove} data-testid="mkt-delete-post"><Trash2 size={12} /> Hapus</button>}
           {canEdit && <button type="button" className="secondary-button !py-1 text-[11px]" onClick={() => setDup(true)} data-testid="mkt-duplicate-post"><Copy size={12} /> Duplikat</button>}
           {canEdit && <button type="button" className="secondary-button !py-1 text-[11px]" onClick={saveTemplate} data-testid="mkt-save-template"><LayoutTemplate size={12} /> Simpan sebagai template</button>}
           <span className="flex-1" />

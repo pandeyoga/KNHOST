@@ -9,12 +9,11 @@ import DeliveryTable from "./DeliveryTable";
 import DispatchDashboard from "./DispatchDashboard";
 import HistoryPanel from "./HistoryPanel";
 import FleetPanel from "./FleetPanel";
-import { can } from "../../config/roles";
+import { can, roleIs } from "../../config/roles";
 import TripPlannerPanel from "./TripPlannerPanel";
 
 // FB-02 — Modul Logistik: Dasbor (aksi cepat + visual) · Daftar · Riwayat · Armada.
 const FILTERS = ["", "prepared", "loaded", "in_transit", "delivered", "completed", "failed"];
-const ORDER_ROLES = ["admin", "manager", "sales", "sales_admin"];
 const TABS = [
   { id: "dashboard", label: "Dasbor", icon: LayoutDashboard },
   { id: "list", label: "Daftar pengiriman", icon: ListOrdered },
@@ -25,10 +24,10 @@ const TABS = [
 
 export default function LogisticsView({ currentUser, selectedEntity, focusDelivery, onFocusConsumed }) {
   const role = currentUser?.role;
-  const canManage = role === "admin" || can(currentUser?.permissions || {}, "logistics", "manage");
-  const isDriver = role === "driver";
+  const canManage = can(currentUser?.permissions || {}, "logistics", "manage");   // Sisir lanjutan gerbang peran (2026-10-21)
+  const isDriver = roleIs(role, ["driver"]);   // = pagar sopir server (role_in)
   const readOnly = !canManage && !isDriver;   // sales / admin sales: hanya-lihat
-  const canOpenOrder = ORDER_ROLES.includes(role);
+  const canOpenOrder = can(currentUser?.permissions || {}, "order", "view");
   const [tab, setTab] = useState(isDriver ? "list" : "dashboard");
   const [rows, setRows] = useState([]);
   const [sum, setSum] = useState(null);

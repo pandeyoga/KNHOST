@@ -29,6 +29,7 @@ import PayModal from "./PayModal";
 import PaymentScheduleModal from "./PaymentScheduleModal";
 import ReasonNoteModal from "./ReasonNoteModal";
 import { STATUS_CLASS, fmtDate, nextStep, pendingExceptions, slaText } from "./contraBonApi";
+import { can } from "../../../config/roles";
 
 const EDITABLE = ["draft", "submitted", "disputed"];
 
@@ -40,9 +41,10 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
   const [decideOn, setDecideOn] = useState(null);
   const [receipt, setReceipt] = useState(null);
   const [loadingReceipt, setLoadingReceipt] = useState(false);
-
-  const role = (currentUser?.role || "").toLowerCase();
-  const canWrite = ["admin", "manager"].includes(role);
+  // Sisir lanjutan gerbang peran (2026-10-21): tiap langkah = izin endpointnya (ajukan/jadwal/sengketa/batal/potongan = contra_bon.update,
+  // verifikasi = .verify, setujui = .approve, bayar = .pay).
+  const canWrite = can(currentUser?.permissions, "contra_bon", "update");
+  const STEP_PERM = { submit: "update", verify: "verify", approve: "approve", schedule: "update", pay: "pay" };
   const canEdit = canWrite && EDITABLE.includes(cb.status);
   const step = nextStep(cb);
   const pending = pendingExceptions(cb);
@@ -141,7 +143,7 @@ export default function ContraBonDetailPanel({ cb, meta, currentUser, entityLabe
 
         {/* ── Tombol siklus: langkah berikutnya menonjol, sisanya tindakan lain ── */}
         <div className="flex flex-wrap items-center gap-2" data-testid="cb-detail-actions">
-          {step && canWrite && (
+          {step && can(currentUser?.permissions, "contra_bon", STEP_PERM[step.action] || "update") && (
             <button className="primary-button" data-testid="cb-action-primary"
               disabled={!!busy} onClick={primaryAction}>
               {busy ? <RefreshCw size={14} className="spin" /> : <CheckCircle2 size={14} />}

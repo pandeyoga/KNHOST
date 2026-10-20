@@ -7,6 +7,7 @@ import CreditOverridesPanel from "./CreditOverridesPanel";
 import IncentiveSchemeEditor from "./IncentiveSchemeEditor";
 import LeadsPipeline from "./LeadsPipeline";
 import OmnichannelInteractions from "./OmnichannelInteractions";
+import { roleIs } from "../../config/roles";
 
 /**
  * CrmView — modul Pelanggan / CRM + Sales Force (KN_17).
@@ -15,7 +16,7 @@ import OmnichannelInteractions from "./OmnichannelInteractions";
  */
 export default function CrmView({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
   const role = currentUser?.role;
-  const isManager = role === "admin" || role === "manager";
+  const isManager = roleIs(role, ["admin", "manager"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = require_role(["manager"]) server
   const TABS = [
     { key: "customers", label: "Pelanggan", icon: Users },
     { key: "leads", label: "Leads", icon: KanbanSquare },

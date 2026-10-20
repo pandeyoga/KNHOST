@@ -8,11 +8,12 @@ import { useEscapeClose } from "../../utils/escapeLayers";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import { KpiTile, currentPeriod, pct } from "./crmUtils";
+import { roleIs } from "../../config/roles";
 
 /** Sales Force dashboard (KN_17 §6) — KPI + komisi + leaderboard + target. */
 export default function SalesForceDashboard({ currentUser, selectedEntity }) {
   const role = currentUser?.role;
-  const isManager = role === "admin" || role === "manager";
+  const isManager = roleIs(role, ["admin", "manager"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = require_role(["manager"]) server
   const [period, setPeriod] = useState(currentPeriod());
   const [salesUsers, setSalesUsers] = useState([]);
   const [salesId, setSalesId] = useState(isManager ? "" : currentUser?.id);

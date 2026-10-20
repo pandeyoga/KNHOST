@@ -10,6 +10,7 @@ import ConfirmModal from "../../components/ConfirmModal";
 import {
   CA_STATUS, StatusPill, fmtDate, printCashAdvance, printTandaTerima,
 } from "./pettyCashShared";
+import { can, roleIs } from "../../config/roles";
 
 /**
  * CashAdvanceDetail — Detail Form PD: ringkasan, rincian, timeline approval,
@@ -30,10 +31,13 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onBack, o
   const stageRoles = {
     pending_atasan: ["manager", "admin"], pending_pimpinan: ["admin"], pending_finance: ["admin"],
   };
-  const canApproveStage = isPending && (role === "admin" || (stageRoles[ca.status] || []).includes(role));
-  const canEdit = ["draft", "rejected"].includes(ca.status) && ["admin", "manager", "sales"].includes(role);
-  const canSubmit = ["draft", "rejected"].includes(ca.status) && ["admin", "manager", "sales"].includes(role);
-  const canDisburse = ca.status === "approved" && role === "admin";
+  // Sisir lanjutan gerbang peran (2026-10-21): tahap = cash_advance.approve/reject + peran tahap server (peran acuan dikenali).
+  const stageOk = isPending && (role === "admin" || roleIs(role, stageRoles[ca.status] || []));
+  const canApproveStage = stageOk && can(currentUser?.permissions, "cash_advance", "approve");
+  const canRejectStage = stageOk && can(currentUser?.permissions, "cash_advance", "reject");
+  const canEdit = ["draft", "rejected"].includes(ca.status) && can(currentUser?.permissions, "cash_advance", "update");
+  const canSubmit = ["draft", "rejected"].includes(ca.status) && can(currentUser?.permissions, "cash_advance", "submit");
+  const canDisburse = ca.status === "approved" && can(currentUser?.permissions, "cash_advance", "disburse");
 
   async function act(path, body, okMsg) {
     setBusy(true); setErr("");
@@ -67,9 +71,9 @@ export default function CashAdvanceDetail({ ca, currentUser, entities, onBack, o
             ) : null}
             {canEdit && <button data-testid="ca-edit" className="btn-secondary btn-xs" onClick={() => onEdit(ca)}><Pencil size={13} /> Ubah</button>}
             {canSubmit && <button data-testid="ca-submit-btn" className="btn-primary btn-xs" onClick={() => act("submit", {}, `${ca.number} diajukan untuk persetujuan.`)} disabled={busy}><Send size={13} /> Ajukan</button>}
-            {canApproveStage && <>
-              <button data-testid="ca-approve-btn" className="btn-primary btn-xs" onClick={() => act("approve", { note: "" }, `${ca.number} disetujui tahap ini.`)} disabled={busy}><CheckCircle2 size={13} /> Setujui</button>
-              <button data-testid="ca-reject-btn" className="btn-danger btn-xs" onClick={() => setReject(true)} disabled={busy}><XCircle size={13} /> Tolak</button>
+            {(canApproveStage || canRejectStage) && <>
+              {canApproveStage && <button data-testid="ca-approve-btn" className="btn-primary btn-xs" onClick={() => act("approve", { note: "" }, `${ca.number} disetujui tahap ini.`)} disabled={busy}><CheckCircle2 size={13} /> Setujui</button>}
+              {canRejectStage && <button data-testid="ca-reject-btn" className="btn-danger btn-xs" onClick={() => setReject(true)} disabled={busy}><XCircle size={13} /> Tolak</button>}
             </>}
             {canDisburse && <button data-testid="ca-disburse-btn" className="btn-primary btn-xs" onClick={() => setDisburse(true)} disabled={busy}><Banknote size={13} /> Cairkan</button>}
           </div>

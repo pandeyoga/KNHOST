@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Search, PackageX, ChevronDown, FileEdit, ClipboardCheck, CheckCircle2, PackageSearch, Wallet, RotateCcw } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import { StagePill, SubStatusChips } from "../../../components/SoStatusBadges";
+import { roleIs } from "../../../config/roles";
 
 const FILTERS = [
   { id: "all", label: "Semua" },
@@ -33,7 +34,7 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
   const [pay, setPay] = useState(null);
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState(null);
-  const isAdmin = role === "sales_admin";
+  const isAdmin = roleIs(role, ["sales_admin"]);   // Sisir lanjutan gerbang peran (2026-10-21) — meja Admin Sales (peran acuan dikenali)
   useEffect(() => {
     if (!focusId) return;
     setOpen(focusId); setFilter("all");

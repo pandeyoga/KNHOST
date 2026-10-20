@@ -30,6 +30,7 @@ import UnbilledReceiptsTab from "./UnbilledReceiptsTab";
 import ExchangeSchedulesTab from "./ExchangeSchedulesTab";
 import ExchangeScheduleModal from "./ExchangeScheduleModal";
 import { STATUS_FILTERS } from "./contraBonApi";
+import { can } from "../../../config/roles";
 
 const TABS = [
   { id: "list", label: "Daftar Kontrabon" },
@@ -56,9 +57,8 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
   const [msgKind, setMsgKind] = useState("success");
-
-  const role = (currentUser?.role || "").toLowerCase();
-  const canWrite = ["admin", "manager"].includes(role);
+  const canWrite = can(currentUser?.permissions, "contra_bon", "create");   // Sisir lanjutan gerbang peran (2026-10-21) — buat kontrabon (POST /contra-bons)
+  const canUpdate = can(currentUser?.permissions, "contra_bon", "update");   // jadwal tukar faktur & pengingat
 
   /**
    * Bilah konfirmasi. Pengatur waktu DISIMPAN lalu dibatalkan sebelum pesan baru:
@@ -317,7 +317,7 @@ export default function ContraBonsView({ currentUser, selectedEntity, entities =
       )}
 
       {tab === "schedules" && (
-        <ExchangeSchedulesTab data={schedules} loading={loading} busy={busy} canWrite={canWrite}
+        <ExchangeSchedulesTab data={schedules} loading={loading} busy={busy} canWrite={canUpdate}
           onEdit={(row) => setExchangeRow(row)} onCreateFor={(sid) => openCreate(sid)}
           onRunReminder={runReminder} />
       )}

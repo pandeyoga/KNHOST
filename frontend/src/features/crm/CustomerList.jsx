@@ -25,6 +25,7 @@ const CSV_COLUMNS = [
 import { CreditStatusPill, SegmentBadge } from "./crmUtils";
 import CustomerFormModal from "./CustomerFormModal";
 import Customer360Panel from "./Customer360Panel";
+import { can, roleIs } from "../../config/roles";
 
 /** Daftar pelanggan + filter (segment / status kredit / sales) + Customer 360. */
 export default function CustomerList({ currentUser, selectedEntity, focusDoc, onClearFocus }) {
@@ -48,8 +49,8 @@ export default function CustomerList({ currentUser, selectedEntity, focusDoc, on
   const [opError, setOpError] = useState("");
 
   const role = currentUser?.role;
-  const isManager = role === "admin" || role === "manager";
-  const canCreate = ["admin", "manager", "sales"].includes(role);
+  const isManager = roleIs(role, ["admin", "manager"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = cakupan "semua pelanggan" server (role_in)
+  const canCreate = can(currentUser?.permissions, "customer", "create");   // POST /customers
 
   // P2 — paginasi server-side (kontrak {items,total,...}) + pencarian q server-side.
   const params = useMemo(() => {

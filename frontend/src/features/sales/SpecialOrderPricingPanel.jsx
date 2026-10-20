@@ -135,7 +135,7 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
           <input className="input !w-64 !py-1 text-[11px]" placeholder="catatan (opsional)" value={note} onChange={(e) => setNote(e.target.value)} data-testid="od-price-note" />
           <button type="button" className="primary-button !py-1 text-[11px]" disabled={busy || (multi ? !pv.ready : !pv.cost_price)} onClick={lock} data-testid="od-price-lock-button">{busy ? <Loader2 size={12} className="spin" /> : <Lock size={12} />} Kunci harga &amp; Confirm OD</button>
         </>)}
-        {locked && role === "admin" && !order.linked_pr_id && !order.linked_sales_order_id && !order.linked_po_id && !order.linked_mko_id && (
+        {locked && role === "admin" && can(currentUser?.permissions, "order", "update") && !order.linked_pr_id && !order.linked_sales_order_id && !order.linked_po_id && !order.linked_mko_id && (
           <button type="button" className="secondary-button !py-1 text-[11px]" disabled={busy} onClick={unlock} data-testid="od-price-unlock-button"><Unlock size={12} /> Buka kunci (admin)</button>
         )}
         {saved.unlocked_at && !locked && <span className="text-[10.5px] text-[#B45309]">dibuka {saved.unlocked_by} · {saved.unlock_reason}</span>}

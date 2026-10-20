@@ -19,7 +19,7 @@ import { HoldBadge, OriginBadge, ProofingBadge } from "./design/DesignBadges";
 import DateQuickNav, { inDateRange } from "./design/DateQuickNav";
 import { designFileUrl, listDesigns, studioCategories } from "./rndApi";
 import { DESIGN_STATUS_META, PROOFING_STATE_META, errMsg } from "./rndMeta";
-import { roleIs } from "../../config/roles";
+import { roleIs, can } from "../../config/roles";
 
 const STATUS_OPTS = [
   { value: "", label: "Semua status" },
@@ -61,7 +61,7 @@ export default function RndDesignsView({ currentUser, selectedEntity, focus, onF
 
   const role = currentUser?.role;
   const canAssess = roleIs(role, ["admin", "manager"]);
-  const canCreate = canAssess || role === "designer";
+  const canCreate = canAssess || can(currentUser?.permissions, "design_request", "deliver") || can(currentUser?.permissions, "rnd", "manage");   // Sisir lanjutan gerbang peran (2026-10-21)
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
 
   const load = useCallback(async () => {

@@ -6,6 +6,7 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import { currentPeriod } from "./crmUtils";
 import MoneyInput from "@/components/MoneyInput";
+import { roleIs } from "../../config/roles";
 
 /**
  * IncentiveSchemeEditor (KN_17 §6.1/§6.2) — editor Target sales per periode +
@@ -14,7 +15,7 @@ import MoneyInput from "@/components/MoneyInput";
  */
 export default function IncentiveSchemeEditor({ currentUser, selectedEntity }) {
   const role = currentUser?.role;
-  const isManager = role === "admin" || role === "manager";
+  const isManager = roleIs(role, ["admin", "manager"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = require_role(["manager"]) server
 
   const [salesUsers, setSalesUsers] = useState([]);
   const [salesId, setSalesId] = useState("");

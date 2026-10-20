@@ -18,6 +18,7 @@ import { GroupEntityNotice, isGroupEntityPartner, supplierOptionLabel }
   from "../../components/GroupEntityBadge";
 import { FULFILLMENT_OPTIONS } from "./supplier-items/supplierItemsApi";
 import DetailPanel from "./PurchaseRequisitionDetailPanel";
+import { can } from "../../config/roles";
 
 /**
  * Purchase Requisitions (Depth #2a) — Hulu procurement.
@@ -40,9 +41,7 @@ export default function PurchaseRequisitions({ currentUser, selectedEntity = "al
   const [products, setProducts] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-
-  const role = currentUser?.role;
-  const canApprove = role === "admin" || role === "manager";
+  const canApprove = can(currentUser?.permissions, "purchase_requisition", "approve");   // Sisir lanjutan gerbang peran (2026-10-21)
 
   useEffect(() => { loadMasters(); }, []);             // eslint-disable-line
   const [lineFilter, setLineFilter] = useState("");   // FASE L

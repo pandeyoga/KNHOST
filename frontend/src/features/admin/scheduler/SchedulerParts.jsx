@@ -6,17 +6,15 @@ import { useEffect, useState } from "react";
 import { X, Play, Clock, CheckCircle2, AlertTriangle, Loader2, Save, ExternalLink } from "lucide-react";
 import { Badge } from "../../finance/financeShared";
 import useListSearch from "@/hooks/useListSearch";
+import { can } from "../../../config/roles";
 
 export const inputCls = "w-full rounded-lg border border-[#E2E2E7] bg-white px-2.5 py-1.5 text-[12px] text-[#1C1C1E] focus:border-[#6B219A] focus:outline-none";
 export const labelCls = "block text-[11px] font-bold text-[#3A3A3C] mb-1";
 
 // ── RBAC UI (selaras permissions_config: resource "scheduler") ───────────────
-export function schedPerms(role) {
-  return {
-    view: ["admin", "manager"].includes(role),
-    run: ["admin", "manager"].includes(role),
-    configure: role === "admin",
-  };
+export function schedPerms(perms) {
+  // Sisir lanjutan gerbang peran (2026-10-21) — izin efektif scheduler.view/run/configure (= endpoint), bukan nama peran.
+  return { view: can(perms, "scheduler", "view"), run: can(perms, "scheduler", "run"), configure: can(perms, "scheduler", "configure") };
 }
 
 /**

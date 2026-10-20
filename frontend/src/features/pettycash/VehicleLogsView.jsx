@@ -10,6 +10,7 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import ConfirmModal from "../../components/ConfirmModal";
 import { fmtDate } from "./pettyCashShared";
+import { can } from "../../config/roles";
 
 /**
  * VehicleLogsView — Aset & GA: Laporan Penggunaan & Biaya Kendaraan.
@@ -37,11 +38,9 @@ export default function VehicleLogsView({ currentUser, selectedEntity = "all", e
   const [logForm, setLogForm] = useState(null);   // null | {} (create/edit)
   const [vehForm, setVehForm] = useState(null);
   const [delTarget, setDelTarget] = useState(null); // {kind, item}
-
-  const role = currentUser?.role;
-  const canCreate = ["admin", "manager", "warehouse", "sales"].includes(role);
-  const canManageVeh = ["admin", "manager", "warehouse"].includes(role);
-  const canDelete = ["admin", "manager"].includes(role);
+  const canCreate = can(currentUser?.permissions, "vehicle_log", "create");   // Sisir lanjutan gerbang peran (2026-10-21) — /vehicle-usage-logs, /vehicles
+  const canManageVeh = can(currentUser?.permissions, "vehicle_log", "update");
+  const canDelete = can(currentUser?.permissions, "vehicle_log", "delete");
 
   useEffect(() => { loadAll(); }, [selectedEntity]); // eslint-disable-line
 

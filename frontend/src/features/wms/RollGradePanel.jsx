@@ -14,11 +14,11 @@ import { AlertTriangle, Coins, History, ShieldCheck, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import useDomainEnums from "../../hooks/useDomainEnums";
+import { can } from "../../config/roles";
 
 export default function RollGradePanel({ rollId, rollNo = "", currentUser, onClose, onChanged }) {
   const { options, labelOf } = useDomainEnums();
-  const role = currentUser?.role;
-  const canOverride = role === "admin" || role === "manager";
+  const canOverride = can(currentUser?.permissions, "wms", "approve");   // Sisir lanjutan gerbang peran (2026-10-21) — POST /inventory/rolls/{id}/grade-override
   const fmtCur = (v) => `Rp ${new Intl.NumberFormat("id-ID").format(Math.round(v || 0))}`;
 
   const [data, setData] = useState(null);

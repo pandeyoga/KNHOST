@@ -374,13 +374,13 @@ function App() {
   const backToMobile = () => { setMobileVisit(false); handleNavSelect("home"); };
   const wantsTanya = activeView === "tanya-kn";
   // Admin Sales mewarisi wilayah kerja sales (ROLE_NAV) → aplikasi HP sales + Meja Admin Sales.
-  const salesMobileRole = ["sales", "sales_admin"].includes(user.role);
+  const salesMobileRole = roleIs(user.role, ["sales", "sales_admin"]);   // Sisir lanjutan gerbang peran (2026-10-21) — tata letak, peran acuan dikenali
   const notifProps = {
     total: notifMeta.total, hasMore: notifMeta.has_more, currentUserRole: user?.role,
     onLoadMore: () => loadMoreNotifications(notifMeta.page + 1), onApprove: approveFromNotification,
   };
   // MD / Merchandiser → aplikasi HP khusus (Meja MD, desain, sample, produk, PR).
-  if (wantMobile && !responsiveWorkspace && user.role === "md") {
+  if (wantMobile && !responsiveWorkspace && roleIs(user.role, ["md"])) {
     return (
       <MobileMdApp user={user} entities={entities} selectedEntity={selectedEntity}
         notifications={notifications} unreadCount={unreadCount} onMarkAllRead={markAllNotificationsRead}
@@ -389,7 +389,7 @@ function App() {
     );
   }
   if (wantMobile && !responsiveWorkspace && !salesMobileRole) {
-    const MobileApp = ["warehouse", "warehouse_admin", "driver"].includes(user.role) ? MobileWarehouseApp : MobileOpsApp;
+    const MobileApp = roleIs(user.role, ["warehouse", "warehouse_admin", "driver"]) ? MobileWarehouseApp : MobileOpsApp;
     return <MobileApp user={user} onLogout={logout} entities={entities} selectedEntity={selectedEntity}
       unreadCount={unreadCount} onForceDesktop={goDesktop} onNavigate={handleNavSelect}
       initialTab={wantsTanya && MobileApp === MobileOpsApp ? "tanya" : undefined} />;

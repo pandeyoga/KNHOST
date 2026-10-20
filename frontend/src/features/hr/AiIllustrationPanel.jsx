@@ -4,6 +4,7 @@ import { Wand2, X, FlaskConical, MessageSquare, Send, Maximize2, PowerOff, Trash
 import { askConfirm } from "../../services/confirmService";
 import KNSelect from "../../components/KNSelect";
 import GalleryImage from "./GalleryImage";
+import { can } from "../../config/roles";
 
 // FB-01 — Ilustrasi AI (Gemini Nano Banana Pro). Hasil = ARAHAN atasan (bukan artwork /
 // versi baru): desainer me-rework/revisi berdasarkan ilustrasi ini.
@@ -138,7 +139,11 @@ function IllustrationComments({ g, file, canComment, currentUser, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const comments = file.comments || [];
-  const canDelete = (c) => currentUser && (c.user_id === currentUser.id || currentUser.role === "admin");
+  // Sisir lanjutan gerbang peran (2026-10-21): hapus komentar = izin tulis desain (rnd.manage | hr.manage_attendance | design_request.deliver)
+  // + (penulis atau Admin — aturan server).
+  const canWriteDesign = can(currentUser?.permissions, "rnd", "manage") || can(currentUser?.permissions, "hr", "manage_attendance")
+    || can(currentUser?.permissions, "design_request", "deliver");
+  const canDelete = (c) => currentUser && canWriteDesign && (c.user_id === currentUser.id || currentUser.role === "admin");
   async function removeComment(c) {   // G-6 — hapus komentar sendiri
     if (!(await askConfirm({ title: "Hapus komentar ini?", description: c.text.slice(0, 120), confirmLabel: "Hapus", danger: true }))) return;
     setErr("");

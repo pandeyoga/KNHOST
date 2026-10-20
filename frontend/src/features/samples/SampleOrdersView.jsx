@@ -15,6 +15,7 @@ import CatalogueCreateModal from "./CatalogueCreateModal";
 import CatalogueComponents from "./CatalogueComponents";
 import CuttingDesk from "./CuttingDesk";
 import CuttingLocations from "./CuttingLocations";
+import { can, roleIs } from "../../config/roles";
 
 const FILTERS = [
   { id: "all", label: "Semua" },
@@ -43,9 +44,14 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
   const [tab, setTab] = useState("orders");
   const [showCat, setShowCat] = useState(false);
   const role = user?.role || "";
-  const canPay = ["finance", "sample_admin", "manager", "admin"].includes(role);
-  const canConfirm = ["sample_admin", "manager", "admin"].includes(role);
-  const canCancel = ["sales", "sample_admin", "manager", "admin"].includes(role);
+  // Sisir lanjutan gerbang peran (2026-10-21): bayar = sample_order.approve_payment + peran penyetuju server (SAMPLE_PAYMENT_APPROVERS, role_in);
+  // konfirmasi/terima potong/batal/buat/konfig lokasi = sample_order.confirm/cutting_receive/cancel/create/cutting_config.
+  const perms = user?.permissions;
+  const canPay = can(perms, "sample_order", "approve_payment") && roleIs(role, ["finance", "sample_admin", "manager", "admin"]);
+  const canConfirm = can(perms, "sample_order", "confirm");
+  const canReceiveCut = can(perms, "sample_order", "cutting_receive");
+  const canCancel = can(perms, "sample_order", "cancel");
+  const canCreateCat = can(perms, "sample_order", "create");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,7 +89,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
         <button key={k} role="tab" aria-selected={tab === k} data-testid={`sample-tab-${k}`} onClick={() => setTab(k)}
           className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${tab === k ? "bg-[#9A5B00] text-white" : "bg-[#F5F5F7] text-[#3C3C43] hover:bg-[#FFF3D6]"}`}>{l}</button>
       ))}
-      {canCancel && <button data-testid="sample-catalogue-create" className="secondary-button ml-auto" onClick={() => setShowCat(true)}>+ Sample Catalogue</button>}
+      {canCreateCat && <button data-testid="sample-catalogue-create" className="secondary-button ml-auto" onClick={() => setShowCat(true)}>+ Sample Catalogue</button>}
       <CatalogueCreateModal open={showCat} onClose={() => setShowCat(false)} entityId={selectedEntity !== "all" ? selectedEntity : ""}
         onCreated={(so) => { flash(`${so.number} (catalogue) dibuat.`); setTab("orders"); load(); }} />
     </div>
@@ -93,8 +99,8 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
       <div data-testid="sample-orders-view" className="grid gap-4">
         {tabBar}
         {toast && <div data-testid="sample-orders-toast" className="rounded-md border border-[#A7D8B0] bg-[#EAF7EE] px-3 py-2 text-[12px] text-[#126E2C]">{toast}</div>}
-        {tab === "desk" ? <CuttingDesk selectedEntity={selectedEntity} canReceive={canConfirm} />
-          : <CuttingLocations canEdit={["manager", "admin"].includes(role)} />}
+        {tab === "desk" ? <CuttingDesk selectedEntity={selectedEntity} canReceive={canReceiveCut} />
+          : <CuttingLocations canEdit={can(perms, "sample_order", "cutting_config")} />}
       </div>
     );
   }
@@ -173,7 +179,7 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
                   </li>
                 ))}
               </ul>
-              <CatalogueComponents order={sel} canEdit={canCancel} onChanged={() => { flash("Warna soft diganti — komponen dasar tetap."); load(); }} />
+              <CatalogueComponents order={sel} canEdit={canCreateCat} onChanged={() => { flash("Warna soft diganti — komponen dasar tetap."); load(); }} />
               {sel.sample_billing === "paid" && <p className="text-right text-[13px] font-bold tabular-nums">Total {formatCurrency(sel.grand_total)}</p>}
               {sel.sample_billing === "paid" && (
                 <p data-testid="sample-detail-payment" className={`rounded-md px-2.5 py-1.5 text-[11px] ${sel.sample_payment_status === "approved" ? "bg-[#EAF7EE] text-[#126E2C]" : "bg-[#FFF3D6] text-[#9A5B00]"}`}>

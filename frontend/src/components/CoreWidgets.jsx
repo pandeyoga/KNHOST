@@ -1,14 +1,14 @@
 import { withZones } from "../config/navigationConfig";
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronRight, Clock, Layers3, LogOut, Menu, RefreshCw, Search, Sparkles, Star, X } from "lucide-react";
-import { roleLabel } from "../config/roles";
+import { roleLabel, canCurrent } from "../config/roles";
 import axios, { API } from "../services/apiClient";
 
-// Lencana jumlah posting gagal (menu Keuangan) — hanya admin/manager, polling 60 dtk.
+// Lencana jumlah posting gagal (menu Keuangan) — pemegang accounting.view (= GET /finance/posting-failures/count), polling 60 dtk.
 function usePostingFailureCount(role) {
   const [n, setN] = useState(0);
   useEffect(() => {
-    if (!["admin", "manager"].includes(role)) return undefined;
+    if (!canCurrent("accounting", "view")) return undefined;   // Sisir lanjutan gerbang peran (2026-10-21)
     let alive = true;
     const load = () => axios.get(`${API}/finance/posting-failures/count`)
       .then((r) => { if (alive) setN(Number(r.data?.total) || 0); }).catch(() => {});

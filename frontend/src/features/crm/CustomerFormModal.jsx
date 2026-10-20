@@ -8,6 +8,7 @@ import axios, { API } from "../../services/apiClient";
 import { X, UserPlus, Edit3 } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import { CustomerSalesTeam, customerTeamError } from "./CustomerSalesTeam";
+import { roleIs } from "../../config/roles";
 
 const METHODS = [
   { key: "tunai", label: "Tunai" },
@@ -22,7 +23,7 @@ const SEGMENTS = ["Retail", "Wholesale", "Distributor", "VIP"];
 export default function CustomerFormModal({ open, editTarget, currentUser, salesUsers, selectedEntity, onClose, onSaved, onError }) {
   const isEdit = !!editTarget;
   const role = currentUser?.role;
-  const isSales = role === "sales";
+  const isSales = roleIs(role, ["sales"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = pemilik otomatis di server (role_in)
   const isManager = !isSales;   // admin/manager/sales_admin/… — wajib memilih sales penanggung jawab
 
   const [f, setF] = useState(blank());

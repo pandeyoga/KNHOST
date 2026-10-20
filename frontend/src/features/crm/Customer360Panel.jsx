@@ -11,7 +11,7 @@ import CustomerFormModal from "./CustomerFormModal";
 import CustomerColorsSection from "./CustomerColorsSection";
 import CustomerMergeSection from "./CustomerMergeSection";
 import AuditHistoryPanel from "../../components/AuditHistoryPanel";
-import { can } from "../../config/roles";
+import { can, roleIs } from "../../config/roles";
 
 const HIST_TABS = [
   { key: "orders", label: "Pesanan" },
@@ -31,7 +31,7 @@ export default function Customer360Panel({ customerId, currentUser, salesUsers, 
   const [modal, setModal] = useState(null); // 'reassign' | 'override' | 'followup'
 
   const role = currentUser?.role;
-  const isManager = role === "admin" || role === "manager";
+  const isManager = roleIs(role, ["admin", "manager"]);   // Sisir lanjutan gerbang peran (2026-10-21) — = require_role(["manager"]) server
   const canAudit = can(currentUser?.permissions, "audit", "view");
 
   useEffect(() => { load(); }, [customerId]); // eslint-disable-line

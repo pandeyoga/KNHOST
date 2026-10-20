@@ -161,8 +161,8 @@ export default function CycleCount({ token, warehouses, products, userRole, focu
   const uncountedItems = (selectedSession?.items || []).filter(i => i.status !== "counted");
   const canSubmit = selectedSession?.status === "open" &&
     (selectedSession?.items || []).length > 0 && uncountedItems.length === 0;
-  const canApprove = ["admin", "manager"].includes(userRole) && selectedSession?.status === "submitted";
-  const canReopen = ["admin", "manager"].includes(userRole) && ["submitted", "rejected"].includes(selectedSession?.status);
+  const canApprove = can(storedPerms(), "inventory", "approve_count") && selectedSession?.status === "submitted";   // Sisir lanjutan gerbang peran (2026-10-21)
+  const canReopen = can(storedPerms(), "inventory", "approve_count") && ["submitted", "rejected"].includes(selectedSession?.status);
 
   // P18 INV-03 — stok bergerak sejak dihitung → buka ulang; item yang berubah wajib dihitung lagi.
   const reopenSession = async () => {

@@ -25,7 +25,7 @@ const TABS = [
 ];
 
 export default function SchedulerView({ currentUser, onNavigate }) {
-  const perms = useMemo(() => schedPerms(currentUser?.role), [currentUser]);
+  const perms = useMemo(() => schedPerms(currentUser?.permissions), [currentUser]);
   const [tab, setTab] = useState("jobs");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

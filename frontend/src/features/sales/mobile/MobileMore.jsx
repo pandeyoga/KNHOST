@@ -1,6 +1,6 @@
 import { Users, RotateCcw, FileStack, Tags, Monitor, LogOut, ChevronRight, ArrowLeft, UserCircle, Target, Sparkles , BarChart3 } from "lucide-react";
 import { Scissors, FlaskConical, Truck, Briefcase, Wallet, Car, Megaphone, FileText, UserCheck, ExternalLink, FileEdit } from "lucide-react";
-import { roleLabel } from "../../../config/roles";
+import { roleLabel, roleIs } from "../../../config/roles";
 import TanyaKnView from "../../tanya/TanyaKnView";
 import MobileAmendments from "./MobileAmendments";
 import { useEffect, useLayoutEffect } from "react";
@@ -235,7 +235,7 @@ export default function MobileMore({ onOpenOrder, user, token, selectedEntity, e
         </button>
       </div>
 
-      <p className="pt-1 text-center text-[10.5px] m-muted">Kain Nusantara — Mobile {role === "sales_admin" ? "Admin Sales" : "Sales"}</p>
+      <p className="pt-1 text-center text-[10.5px] m-muted">Kain Nusantara — Mobile {roleIs(role, ["sales_admin"]) ? "Admin Sales" : "Sales"}</p>
     </div>
   );
 }
