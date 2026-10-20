@@ -8,10 +8,12 @@
  * - Approve / Reject (manager/admin)
  * - Upload bukti foto
  */
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { can } from "../../config/roles";
 import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
+import { apiErrorText } from "../../utils/apiError";
+import { askConfirm } from "../../services/confirmService";
 import LineFilter from "../../components/LineFilter";   // FASE L
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
@@ -60,7 +62,6 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
   const [search, setSearch]         = useState("");
   const [selected, setSelected]     = useState(null);  // detail panel
   const [showCreate, setShowCreate] = useState(false);
-  const [orders, setOrders]         = useState([]);
   const [notice, setNotice]         = useState(null);
   const [error, setError]           = useState(null);
   // P2 — lencana & kartu ringkasan dari AGREGAT server, bukan dari isi halaman.
@@ -105,20 +106,6 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     onClearFocus?.();
   }, [focusDoc?.focus_id]); // eslint-disable-line
 
-  // Load eligible orders for create form
-  async function loadOrders() {
-    try {
-      const res = await axios.get(`${API}/sales-orders`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const all = res.data?.items || res.data || [];
-      const eligible = all.filter(o =>
-        ["confirmed","partially_picked","picked","partially_shipped","shipped","done"].includes(o.status)
-      );
-      setOrders(eligible);
-    } catch (_) {}
-  }
-
   // Penyaringan status & pencarian sudah dilakukan SERVER; daftar dipakai apa adanya.
   const filtered = returns;
 
@@ -131,39 +118,53 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
   const scopeLabel = scopeParts.length ? `Cakupan: ${scopeParts.join(" · ")}` : "Cakupan: semua retur yang boleh Anda lihat";
 
   // ─── lifecycle actions (R1 state machine) ─────────────────────────────────
-  async function handleApprove(ret) {
+  // FE-07 — satu pintu aksi: error tampil di layar AKTIF (detail/modal, bukan state induk yang tak terlihat),
+  // pemanggil menerima pesan errornya sehingga modal hanya ditutup bila berhasil, dan klik ulang selama
+  // proses berjalan diabaikan (tidak menggandakan transaksi). Hasil: null = berhasil, string = pesan gagal.
+  const busyRef = useRef("");
+  const [busyAction, setBusyAction] = useState("");
+  async function runAction(key, label, fn) {
+    if (busyRef.current) return "Aksi lain masih diproses — tunggu sampai selesai.";
+    busyRef.current = key; setBusyAction(key); setError(null);
     try {
+      await fn();
+      return null;
+    } catch (e) {
+      const msg = `${label}: ${apiErrorText(e)}`;
+      setError(msg);
+      return msg;
+    } finally {
+      busyRef.current = ""; setBusyAction("");
+    }
+  }
+
+  function handleApprove(ret) {
+    return runAction("approve", "Gagal approve", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/approve`, { notes: "" });
       setNotice(`${ret.number} disetujui. Lanjut ke inspeksi.`);
       setSelected(res.data); load();
-    } catch (e) {
-      setError("Gagal approve: " + (e.response?.data?.detail || e.message));
-    }
+    });
   }
 
-  async function handleStartInspect(ret) {
-    try {
+  function handleStartInspect(ret) {
+    return runAction("inspect_start", "Gagal mulai inspeksi", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/inspect/start`, {});
       setNotice(`Inspeksi ${ret.number} dimulai.`);
       setSelected(res.data); load();
-    } catch (e) {
-      setError("Gagal mulai inspeksi: " + (e.response?.data?.detail || e.message));
-    }
+    });
   }
 
-  async function handleCompleteInspect(ret, inspections, notes) {
-    try {
+  function handleCompleteInspect(ret, inspections, notes) {
+    return runAction("inspect_complete", "Gagal simpan inspeksi", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/inspect/complete`,
         { inspections, notes: notes || "" });
       setNotice(`Inspeksi ${ret.number} selesai. Pilih outcome untuk menyelesaikan.`);
       setSelected(res.data); load();
-    } catch (e) {
-      setError("Gagal simpan inspeksi: " + (e.response?.data?.detail || e.message));
-    }
+    });
   }
 
-  async function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode, decisionNote, payout) {
-    try {
+  function handleSettle(ret, outcome, itemDecisions, notes, returnWarehouseId, refundAccountCode, decisionNote, payout) {
+    return runAction("settle", "Gagal settle", async () => {
       const body = { outcome, item_decisions: itemDecisions || [], notes: notes || "", decision_note: decisionNote || "", payout: payout || "" };
       if (returnWarehouseId) body.return_warehouse_id = returnWarehouseId;
       if (refundAccountCode) body.refund_account_code = refundAccountCode;
@@ -172,19 +173,15 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
       const cashMsg = st.cash_txn_number ? ` · refund tunai ${st.cash_txn_number}` : "";
       setNotice(`${ret.number} diselesaikan (${outcome})${cashMsg}.`);
       setSelected(res.data); load();
-    } catch (e) {
-      setError("Gagal settle: " + (e.response?.data?.detail || e.message));
-    }
+    });
   }
 
-  async function handleReject(ret, reason) {
-    try {
+  function handleReject(ret, reason) {
+    return runAction("reject", "Gagal reject", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/reject`, { notes: reason });
       setNotice(`${ret.number} ditolak.`);
       setSelected(res.data); load();
-    } catch (e) {
-      setError("Gagal reject: " + (e.response?.data?.detail || e.message));
-    }
+    });
   }
 
   async function handleReverse(ret, reason) {
@@ -196,25 +193,23 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     return res.data;
   }
 
-  async function handleSubmit(ret) {
-    try {
+  function handleSubmit(ret) {
+    return runAction("submit", "Gagal submit", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/submit`, {});
       setNotice(`${ret.number} dikirim untuk approval.`);
       setSelected(res.data); load();
-    } catch (e) {
-      setError("Gagal submit: " + (e.response?.data?.detail || e.message));
-    }
+    });
   }
 
   async function handleCancelDraft(ret) {
-    if (!window.confirm(`Buang draf ${ret.number}? Draf tidak bisa dipulihkan.`)) return;
-    try {
+    const ok = await askConfirm({ title: `Buang draf ${ret.number}?`, message: "Draf tidak bisa dipulihkan.",
+                                  confirmLabel: "Buang draf", danger: true, testId: "return-cancel-draft-confirm" });
+    if (!ok) return null;
+    return runAction("cancel_draft", "Gagal membuang draf", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/cancel-draft`, {});
       setNotice(`${ret.number} dibuang.`);
       setSelected(res.data); load();
-    } catch (e) {
-      setError("Gagal membuang draf: " + (e.response?.data?.detail || e.message));
-    }
+    });
   }
 
   if (selected) {
@@ -233,11 +228,14 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
         onCompleteInspect={handleCompleteInspect}
         onSettle={handleSettle}
         onReverse={handleReverse}
-        onBack={() => { setSelected(null); load(); }}
+        onBack={() => { setSelected(null); setError(null); load(); }}
         onAttachmentUploaded={(updated) => setSelected(updated)}
         onReturnChanged={(updated) => { if (updated) setSelected(updated); load(); }}
         notice={notice}
         onClearNotice={() => setNotice(null)}
+        error={error}
+        onClearError={() => setError(null)}
+        busyAction={busyAction}
       />
     );
   }
@@ -258,7 +256,6 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
       >
         <CreateReturnForm
           variant="modal"
-          orders={orders}
           token={token}
           onCreated={(doc) => {
             setShowCreate(false);
@@ -267,7 +264,6 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
             setSelected(doc);
           }}
           onCancel={() => setShowCreate(false)}
-          onLoadOrders={loadOrders}
         />
       </FormModal>
       {/* Header */}
@@ -279,7 +275,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
         <button
           data-testid="create-return-btn"
           className="primary-button"
-          onClick={() => { loadOrders(); setShowCreate(true); }}
+          onClick={() => setShowCreate(true)}
         >
           <Plus size={14} /> Buat Retur
         </button>
@@ -371,7 +367,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
           <p className="text-sm text-muted" style={{ maxWidth: 460, margin: "4px auto 0" }}>
             Kelola retur barang, barang sisa (BS), penggantian, komplain & garansi dari pesanan yang sudah dikirim. Setiap retur melewati alur <b>persetujuan → inspeksi → penyelesaian</b> (refund / store credit / nego / tolak).
           </p>
-          <button className="primary-button" style={{ marginTop: 12 }} onClick={() => { loadOrders(); setShowCreate(true); }}>
+          <button className="primary-button" style={{ marginTop: 12 }} onClick={() => setShowCreate(true)}>
             <Plus size={13} /> Buat Retur Pertama
           </button>
         </div>

@@ -185,6 +185,8 @@ STATIK=(
   "guard:knselect_contract (FE-02, pilihan wajib onValueChange)|python scripts/guardrails/verify_knselect_contract.py"
   # FE-03 — katalog modul akses (menu peran kustom) wajib selaras dengan menu/hub/tab frontend.
   "guard:access_catalog_nav (FE-03, katalog modul ↔ menu)|python scripts/guardrails/verify_access_catalog_nav.py"
+  # FE-06 — target lompatan antrean (Meja Saya/baris/dokumen) wajib menunjuk layar yang dirender.
+  "guard:desk_targets (FE-06, target antrean ke layar nyata)|python scripts/guardrails/verify_desk_targets.py"
   # FASE P4 — konsistensi tombol "Buat": WAJIB pop-up, bukan form yang menyelip di tengah
   # halaman (form inline mendorong daftar data ke bawah lipatan sehingga pengguna sering
   # tak sadar formnya terbuka lalu menyimpulkan "tombolnya tidak berfungsi"). Penjaga ini

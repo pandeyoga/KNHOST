@@ -6,6 +6,7 @@ import SpecialPriceRequestForm from "../pricing/SpecialPriceRequestForm";
 import { PriceApprovalCard } from "./priceApprovals/PriceApprovalCard";
 import ErrorNotice from "../../components/ErrorNotice";
 import FormModal from "../../components/FormModal";
+import { can } from "../../config/roles";
 
 const FILTERS = [
   { id: "all", label: "Semua" },
@@ -36,9 +37,10 @@ const EMPTY_FORM = {
  * Koleksi: price_approvals (pra_). Respons BE = bare object/array.
  * Sub-komponen di ./priceApprovals/ (Form + Card) agar file < 500 baris (compliance).
  */
-export default function PriceApprovals({ currentUser = {} }) {
-  const role = (currentUser.role || "").toLowerCase();
-  const canApprove = ["manager", "admin"].includes(role);
+export default function PriceApprovals({ currentUser = {}, focusDoc = null, onClearFocus }) {
+  // Izin efektif = endpoint: setujui & akhiri aturan = price_approval.approve, tolak = price_approval.reject.
+  const canApprove = can(currentUser?.permissions, "price_approval", "approve");
+  const canReject = can(currentUser?.permissions, "price_approval", "reject");
 
   const [rows, setRows] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -60,6 +62,29 @@ export default function PriceApprovals({ currentUser = {} }) {
   const [decisionNotes, setDecisionNotes] = useState("");
 
   const fileInputs = useRef({});
+
+  // FE-06 — dibuka dari Meja Saya / Inbox: tampilkan PENGAJUAN ASAL (bukan daftar umum). Server memeriksa
+  // akses & scope lewat GET satu dokumen; dokumen hilang/di luar akses diberi pesan yang jelas.
+  const [focusId, setFocusId] = useState("");
+  const [focusRow, setFocusRow] = useState(null);
+  const [focusMsg, setFocusMsg] = useState("");
+  const loadFocus = async (id) => {
+    try {
+      const r = await axios.get(`${API}/price-approvals/${id}`);
+      setFocusRow(r.data || null); setFocusId(id); setFocusMsg("");
+    } catch (e) {
+      setFocusId(""); setFocusRow(null);
+      setFocusMsg(e.response?.status === 404 || e.response?.status === 403
+        ? "Pengajuan yang dituju tidak ditemukan atau di luar akses Anda — mungkin sudah dihapus atau milik badan usaha lain."
+        : (e.response?.data?.detail || "Gagal membuka pengajuan yang dituju."));
+    }
+  };
+  useEffect(() => {
+    const id = focusDoc?.focus_id;
+    if (!id) return;
+    setFilter("all"); setSearch("");
+    loadFocus(id).finally(() => onClearFocus && onClearFocus());
+  }, [focusDoc?.focus_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const load = async () => {
     setLoading(true);
@@ -144,6 +169,7 @@ export default function PriceApprovals({ currentUser = {} }) {
       await fn();
       setDecideFor(""); setDecisionNotes("");
       await load();
+      if (focusId) await loadFocus(focusId);
     } catch (e) {
       setError(e.response?.data?.detail || "Aksi gagal diproses.");
     } finally {
@@ -211,11 +237,11 @@ export default function PriceApprovals({ currentUser = {} }) {
     }
   };
 
-  const filtered = useMemo(() => rows.filter((r) => {
+  const filtered = useMemo(() => (focusId ? [rows.find((r) => r.id === focusId) || focusRow].filter(Boolean) : rows.filter((r) => {
     if (filter !== "all" && r.status !== filter) return false;
     const hay = `${r.customer_name} ${r.product_name} ${r.sku}`.toLowerCase();
     return hay.includes(search.toLowerCase());
-  }), [rows, filter, search]);
+  })), [rows, filter, search, focusId, focusRow]);
 
   const counts = useMemo(() => ({
     pending: rows.filter((r) => r.status === "pending").length,
@@ -314,6 +340,17 @@ export default function PriceApprovals({ currentUser = {} }) {
         <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="price-approvals-error" />
       )}
 
+      {focusMsg && (
+        <ErrorNotice message={focusMsg} onDismiss={() => setFocusMsg("")} testId="price-approvals-focus-missing" />
+      )}
+      {focusId && (
+        <div data-testid="price-approvals-focus" className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#D9E7FF] bg-[#F4F8FF] px-3 py-2 text-[12px] text-[#0058CC]">
+          <span>Menampilkan pengajuan yang dibuka dari antrean{focusRow?.customer_name ? ` — ${focusRow.customer_name} · ${focusRow.product_name || ""}` : ""}.</span>
+          <button type="button" className="secondary-button !py-1 text-[11px]" data-testid="price-approvals-focus-clear"
+            onClick={() => { setFocusId(""); setFocusRow(null); }}>Tampilkan semua pengajuan</button>
+        </div>
+      )}
+
       <section className="grid gap-3">
         {loading && (
           <div data-testid="price-approvals-loading" className="section-card animate-pulse p-8 text-center text-[13px] text-[#6B6B73]">
@@ -330,6 +367,7 @@ export default function PriceApprovals({ currentUser = {} }) {
             key={r.id}
             r={r}
             canApprove={canApprove}
+            canReject={canReject}
             busyId={busyId}
             decideFor={decideFor}
             setDecideFor={setDecideFor}

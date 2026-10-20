@@ -24,6 +24,7 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
   const physLocs = Object.values(ret.roll_locations || {});
   const physNames = [...new Set(physLocs.map((l) => l.warehouse_name || l.to_warehouse_name).filter(Boolean))];
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");   // FE-07 — pesan gagal tampil DI modal; input tetap
   const [warehouses, setWarehouses] = useState([]);
   const [returnWarehouseId, setReturnWarehouseId] = useState("");
   const [cashAccounts, setCashAccounts] = useState([]);
@@ -54,16 +55,17 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
   const movesStock = outcome === "refund" || outcome === "store_credit";
 
   async function confirm() {
-    setBusy(true);
+    setBusy(true); setErr("");
     try {
       const item_decisions = decisions.map((d, i) => ({
         index: i,
         outcome: d.include ? "" : "reject",
         settle_qty: d.include ? (parseFloat(d.settle_qty) || 0) : -1,
       }));
-      await onSettle(ret, outcome, item_decisions, notes, movesStock && !physLocs.length ? returnWarehouseId : "",
+      const failed = await onSettle(ret, outcome, item_decisions, notes, movesStock && !physLocs.length ? returnWarehouseId : "",
                      outcome === "refund" || (outcome === "nego" && payout === "refund") ? refundAccount : "", decisionNote,
                      outcome === "nego" ? payout : "");
+      if (failed) { setErr(failed); return; }
       onClose();
     } finally { setBusy(false); }
   }
@@ -198,6 +200,7 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
           <b> termasuk landed cost</b> (freight/duty/handling) untuk barang impor — bukan harga PO mentah.
         </p>
 
+        {err && <p className="mt-2 rounded-md bg-[#FDECEC] px-2.5 py-1.5 text-[12px] text-[#A8221A]" data-testid="settle-error">{err}</p>}
         <div className="modal-actions">
           <button className="secondary-button" onClick={onClose}>Batal</button>
           <button data-testid="confirm-settle-btn" className="primary-button" disabled={busy || !anyIncluded}

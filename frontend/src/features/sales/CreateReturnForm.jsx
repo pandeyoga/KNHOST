@@ -1,12 +1,12 @@
 /** Sub-fase 1.11 — Create return form. */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios, { API } from "../../services/apiClient";
 import { AlertCircle, ArrowLeft, Camera, CalendarClock, Loader2, Paperclip, RotateCcw, ShieldCheck, Trash2, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 
 
-export default function CreateReturnForm({ orders, token, onCreated, onCancel,
-                                           onLoadOrders, variant = "page", initialOrderId = "" }) {
+export default function CreateReturnForm({ orders = [], token, onCreated, onCancel,
+                                           variant = "page", initialOrderId = "" }) {
   // FASE P4 — `variant="modal"`: lepas chrome halaman (tombol kembali + judul besar)
   // karena FormModal sudah menyediakannya; tanpa ini pengguna melihat DUA judul.
   const isModal = variant === "modal";
@@ -30,7 +30,40 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
   const [files, setFiles]           = useState([]);
   const [evPolicy, setEvPolicy]     = useState(null);
 
-  useEffect(() => { onLoadOrders(); if (initialOrderId) handleOrderChange(initialOrderId); }, []); // eslint-disable-line
+  // FE-09 — pemilih SO dicari & dipaginasi SERVER (`/sales-returns/eligible-orders`): hanya SO dalam scope yang
+  // masih punya barang terkirim belum diklaim. Tidak lagi bergantung pada 200 SO terbaru yang diunduh peramban.
+  // `orders` (opsional) hanya benih label, mis. SO yang dibawa dari layar lain.
+  const [orderQ, setOrderQ]         = useState("");
+  const [orderOpts, setOrderOpts]   = useState([]);
+  const [orderMeta, setOrderMeta]   = useState({ total: 0, page: 1, has_more: false, loading: false, error: "" });
+  const knownRef = useRef(Object.fromEntries((orders || []).map((o) => [o.id, o])));
+  const searchSeq = useRef(0);
+  async function searchOrders(q, page = 1) {
+    const seq = ++searchSeq.current;
+    setOrderMeta((m) => ({ ...m, loading: true, error: "" }));
+    try {
+      const r = await axios.get(`${API}/sales-returns/eligible-orders`, { params: { q, page, page_size: 20 } });
+      if (seq !== searchSeq.current) return;   // hasil pencarian lama — abaikan
+      const rows = r.data?.items || [];
+      rows.forEach((o) => { knownRef.current[o.id] = o; });
+      setOrderOpts((prev) => (page === 1 ? rows : [...prev, ...rows]));
+      setOrderMeta({ total: r.data?.total || 0, page, has_more: !!r.data?.has_more, loading: false, error: "" });
+    } catch (e) {
+      if (seq !== searchSeq.current) return;
+      setOrderMeta((m) => ({ ...m, loading: false, error: e.response?.data?.detail || "Gagal mencari pesanan." }));
+    }
+  }
+  useEffect(() => {
+    const t = setTimeout(() => searchOrders(orderQ.trim(), 1), 300);
+    return () => clearTimeout(t);
+  }, [orderQ]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // FE-08 — hanya respons untuk SO yang MASIH dipilih boleh mengisi form (A lambat lalu B cepat tetap B).
+  const activeOrderRef = useRef("");
+  useEffect(() => {
+    if (initialOrderId) handleOrderChange(initialOrderId);
+    return () => { activeOrderRef.current = "__closed__"; };   // form ditutup saat memuat → respons diabaikan
+  }, []); // eslint-disable-line
   useEffect(() => {
     axios.get(`${API}/sales-returns/meta/evidence-policy`).then((r) => setEvPolicy(r.data?.required || {})).catch(() => {});
   }, []);
@@ -57,15 +90,18 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
   }, [orderId, returnType, cond]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleOrderChange(id) {
-    setOrderId(id); setShipped(null); setItems([]);
+    activeOrderRef.current = id;
+    // Pilihan roll/qty/bukti milik SO sebelumnya tidak boleh terbawa ke SO baru.
+    setOrderId(id); setShipped(null); setItems([]); setFiles([]); setError(null);
     if (!id) return;
     axios.get(`${API}/sales-returns/returnable`, { params: { order_id: id } }).then((r) => {
+      if (activeOrderRef.current !== id) return;   // respons SO lama datang terlambat — abaikan
       setShipped(r.data);
       setItems(r.data.products.filter((p) => p.remaining > 0).map((p) => ({
         product_id: p.product_id, product_name: p.product_name, sku: p.sku, color: p.color,
         quantity_returned: "", unit: p.unit, reason: "", condition: "ok", roll_ids: [], max: p.remaining,
       })));
-    }).catch((e) => setError(e.response?.data?.detail || "Gagal memuat barang terkirim."));
+    }).catch((e) => { if (activeOrderRef.current === id) setError(e.response?.data?.detail || "Gagal memuat barang terkirim."); });
   }
 
   const rollsOf = (pid) => (shipped?.rolls || []).filter((r) => r.product_id === pid && r.remaining > 0);
@@ -136,6 +172,8 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
         <div className="form-row-2col">
           <div className="form-group">
             <label className="form-label" htmlFor="ret-order">Pesanan (SO) <span className="req">*</span></label>
+            <input data-testid="return-order-search" className="form-input mb-1.5" value={orderQ}
+              onChange={(e) => setOrderQ(e.target.value)} placeholder="Cari nomor SO / nama pelanggan…" />
             <KNSelect
               data-testid="return-order-select"
               className="form-select"
@@ -144,9 +182,19 @@ export default function CreateReturnForm({ orders, token, onCreated, onCancel,
               placeholder="-- Pilih pesanan --"
               options={[
                 { value: "", label: "-- Pilih pesanan --" },
-                ...orders.map(o => ({ value: o.id, label: `${o.number} — ${o.customer_name} (${o.status})` })),
+                ...(orderId && !orderOpts.some((o) => o.id === orderId) && knownRef.current[orderId]
+                  ? [knownRef.current[orderId]] : []).concat(orderOpts)
+                  .map(o => ({ value: o.id, label: `${o.number} — ${o.customer_name} (${o.status})` })),
               ]}
             />
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#6B6B73]" data-testid="return-order-meta">
+              {orderMeta.loading ? "Mencari…" : orderMeta.error ? <span className="text-[#A8221A]">{orderMeta.error}</span>
+                : `${orderOpts.length} dari ${orderMeta.total} pesanan yang masih punya barang terkirim untuk diretur`}
+              {orderMeta.has_more && !orderMeta.loading && (
+                <button type="button" className="font-semibold text-[#0058CC] underline" data-testid="return-order-more"
+                  onClick={() => searchOrders(orderQ.trim(), orderMeta.page + 1)}>Muat lagi</button>
+              )}
+            </p>
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="ret-type">Tipe Return <span className="req">*</span></label>

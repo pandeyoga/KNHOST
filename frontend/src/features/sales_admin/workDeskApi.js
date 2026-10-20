@@ -214,7 +214,8 @@ export const FINANCE_QUEUE_TARGET = {
 export const ROLE_DESK_TARGET = {
   design_request:     { view: "design-requests",       nav_id: "designer-hub",   focus_type: "design_request" },
   sample_request:     { view: "orders",                nav_id: "sales-orders",   focus_type: "sales_order" },
-  price_approval:     { view: "approvals",             nav_id: "approvals",      focus_type: "price_approval" },
+  // FE-06 — layar yang dirender = `price-approvals` (tab hub Persetujuan); `approvals` tidak punya renderer.
+  price_approval:     { view: "price-approvals",       nav_id: "approval-inbox", focus_type: "price_approval" },
   purchase_return:    { view: "purchase-returns",      nav_id: "purchase-returns", focus_type: "purchase_return" },
   md_sample:          { view: "rnd-samples",           nav_id: "rnd-hub",        focus_type: "md_sample" },
   purchase_requisition: { view: "purchase-requisitions", nav_id: "sourcing",     focus_type: "purchase_requisition" },

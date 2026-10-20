@@ -33,6 +33,7 @@ export default function ReturnDetail({
   ret, token, canApprove, currentUser,
   onApprove, onReject, onSubmit, onCancelDraft, onStartInspect, onCompleteInspect, onSettle, onReverse, onBack,
   onAttachmentUploaded, notice, onClearNotice, onNavigate, onReturnChanged,
+  error = null, onClearError, busyAction = "",
 }) {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showSettleModal, setShowSettleModal] = useState(false);
@@ -42,6 +43,7 @@ export default function ReturnDetail({
   const [rejectReason, setRejectReason]       = useState("");
   const [uploading, setUploading]             = useState(false);
   const [localError, setLocalError]           = useState(null);
+  const [rejectErr, setRejectErr]             = useState("");
   const [creditNote, setCreditNote]           = useState(null);
   // UI/UX 2026-06 — versi detail dari server membawa NILAI per item
   // (`unit_price_est`/`line_total_est` dari harga SO) + `estimated_value`.
@@ -140,6 +142,12 @@ export default function ReturnDetail({
           <button onClick={onClearNotice}><X size={12} /></button>
         </div>
       )}
+      {error && (
+        <div className="notice-bar danger" data-testid="return-action-error">
+          <AlertCircle size={14} /> {error}
+          {onClearError && <button onClick={onClearError}><X size={12} /></button>}
+        </div>
+      )}
       {localError && (
         <div className="notice-bar danger">
           <AlertCircle size={14} /> {localError}
@@ -158,27 +166,27 @@ export default function ReturnDetail({
         actions={<>
           <AskKnButton type="sales_return" id={ret.id} label={ret.number} />
           {ret.status === "draft" && (
-            <button data-testid="submit-return-btn" className="secondary-button" onClick={() => onSubmit(ret)}>
+            <button data-testid="submit-return-btn" className="secondary-button" disabled={!!busyAction} onClick={() => onSubmit(ret)}>
               <FileText size={13} /> Kirim untuk Persetujuan
             </button>
           )}
           {ret.status === "draft" && onCancelDraft && (
-            <button data-testid="cancel-draft-return-btn" className="secondary-button" onClick={() => onCancelDraft(ret)}>
+            <button data-testid="cancel-draft-return-btn" className="secondary-button" disabled={!!busyAction} onClick={() => onCancelDraft(ret)}>
               <XCircle size={13} /> Buang Draf
             </button>
           )}
           {ret.status === "pending_approval" && canApprove && (
-            <button data-testid="approve-return-btn" className="primary-button" onClick={() => onApprove(ret)}>
+            <button data-testid="approve-return-btn" className="primary-button" disabled={!!busyAction} onClick={() => onApprove(ret)}>
               <Check size={13} /> Setujui (Manager)
             </button>
           )}
           {ret.status === "inspected" && canApprove && (
-            <button data-testid="open-settle-btn" className="primary-button" onClick={() => setShowSettleModal(true)}>
+            <button data-testid="open-settle-btn" className="primary-button" disabled={!!busyAction} onClick={() => setShowSettleModal(true)}>
               <Receipt size={13} /> Selesaikan (Pilih Outcome)
             </button>
           )}
           {canReject && (
-            <button data-testid="reject-return-btn" className="danger-button" onClick={() => setShowRejectModal(true)}>
+            <button data-testid="reject-return-btn" className="danger-button" disabled={!!busyAction} onClick={() => { setRejectErr(""); setShowRejectModal(true); }}>
               <X size={13} /> Tolak
             </button>
           )}
@@ -374,11 +382,16 @@ export default function ReturnDetail({
             <p className="modal-subtitle">Berikan alasan penolakan</p>
             <textarea data-testid="reject-reason-input" className="textarea" rows={3}
               placeholder="Alasan penolakan..." value={rejectReason} onChange={e => setRejectReason(e.target.value)} />
+            {rejectErr && <p className="mt-2 text-[12px] text-[#A8221A]" data-testid="reject-error">{rejectErr}</p>}
             <div className="modal-actions">
               <button className="secondary-button" onClick={() => setShowRejectModal(false)}>Batal</button>
               <button data-testid="confirm-reject-btn" className="danger-button"
-                disabled={!rejectReason.trim()}
-                onClick={() => { onReject(ret, rejectReason); setShowRejectModal(false); setRejectReason(""); }}>
+                disabled={!rejectReason.trim() || !!busyAction}
+                onClick={async () => {
+                  const err = await onReject(ret, rejectReason);
+                  if (err) { setRejectErr(err); return; }   // FE-07 — gagal: modal & alasan tetap
+                  setShowRejectModal(false); setRejectReason("");
+                }}>
                 <X size={13} /> Tolak Retur
               </button>
             </div>

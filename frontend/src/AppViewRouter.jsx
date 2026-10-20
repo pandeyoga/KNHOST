@@ -344,7 +344,7 @@ export default function AppViewRouter(props) {
         <LotsView user={user} products={data.products || []}
           warehouses={data.warehouses || []} entityId={selectedEntity} />
       )}
-      {activeView === "price-approvals" && <PriceApprovals currentUser={user} />}
+      {activeView === "price-approvals" && <PriceApprovals currentUser={user} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
       {activeView === "interco-transfers" && <InterCompanyTransfers currentUser={user} />}
       {activeView === "orders" && <OrdersView orders={data.orders || []} loading={loading} user={user} onRefresh={actions.loadAll} onShowDetail={setActiveDetail} onIssueTaxInvoice={issueTaxInvoice} onSubmitForApproval={(id) => mutateOrder(`/sales-orders/${id}/submit-for-approval`, (order) => order.status === "approved" ? `${order.number} auto-approved (di bawah threshold).` : `${order.number} dikirim untuk approval (butuh ${order.required_approval_role || "approver"}).`)} onApprove={(id) => mutateOrder(`/sales-orders/${id}/approve`, (order) => `${order.number} approved.`)} onConfirm={(id) => mutateOrder(`/sales-orders/${id}/confirm`, (order) => `${order.number} confirmed.`)} onCancel={(id) => mutateOrder(`/sales-orders/${id}/cancel`, (order) => `${order.number} dibatalkan, stok unlock.`)} onPay={payInvoice} onGenerateDocument={generateDocument} onReleaseReservation={releaseReservation} onMarkDelivered={markDelivered} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} onOpenDocument={openDocument} />}
       {activeView === "tax-invoices" && <TaxInvoices currentUser={user} />}

@@ -52,19 +52,12 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
   );
 }
 
-const RETURNABLE = ["confirmed", "partially_picked", "picked", "partially_shipped", "shipped", "done"];
-
 /** Buat retur di HP = form desktop (cek kebijakan, barang dari Surat Jalan, pilih per roll, foto kamera wajib bila kebijakan meminta). */
 function MobileReturnCreate({ onBack, onDone, initialOrder = null }) {
-  const [orders, setOrders] = useState(initialOrder ? [initialOrder] : []);
-  const loadOrders = () => axios.get(`${API}/sales-orders`).then((r) => {
-    const all = Array.isArray(r.data) ? r.data : r.data.items || [];
-    setOrders(all.filter((o) => RETURNABLE.includes(o.status)));
-  }).catch(() => {});
   return (
     <div className="space-y-2 p-3" data-testid="m-return-create">
       <div className="m-card m-return-form p-3">
-        <CreateReturnForm variant="modal" orders={orders} onLoadOrders={loadOrders} initialOrderId={initialOrder?.id || ""}
+        <CreateReturnForm variant="modal" orders={initialOrder ? [initialOrder] : []} initialOrderId={initialOrder?.id || ""}
           onCreated={() => onDone()} onCancel={onBack} />
       </div>
     </div>

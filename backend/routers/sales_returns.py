@@ -196,6 +196,39 @@ async def returnable_items(request: Request, order_id: str = Query(...)) -> Dict
     return await returnable(order_id)
 
 
+@router.get("/sales-returns/eligible-orders")
+async def eligible_orders(request: Request, entity_id: Optional[str] = None) -> Dict[str, Any]:
+    """FE-09 (review 2026-10-20) — sumber pemilih SO di form retur, dicari & dipaginasi SERVER.
+
+    Dulu layar mengunduh `/sales-orders` (dibatasi 200 terbaru) lalu menyaring di peramban, sehingga SO yang
+    baru dikirim bisa hilang di balik >200 pesanan lain. Kini: SO dalam scope pengguna (sama dengan daftar
+    SO: badan usaha, kepemilikan sales, pagar lini) yang MASIH punya barang terkirim (Surat Jalan) belum
+    habis diklaim retur aktif — dasar yang sama dengan `/sales-returns/returnable`. `?q=` nomor/pelanggan,
+    `?page=&page_size=`. Validasi kumulatif klaim/roll tetap di pembuatan retur."""
+    actor = await require_permission(request, "sales_return", "create")
+    from services import sales_ownership
+    from services.return_rolls_service import ACTIVE, EPS
+    page, page_size, qs, _sort = get_page_params(request, default_size=20)
+    shipped = {r["_id"]: float(r["q"] or 0) async for r in db.shipments.aggregate([
+        {"$match": {"status": {"$ne": "cancelled"}}}, {"$unwind": "$rolls"},
+        {"$group": {"_id": "$order_id", "q": {"$sum": "$rolls.length"}}}])}
+    claimed = {r["_id"]: float(r["q"] or 0) async for r in db.sales_returns.aggregate([
+        {"$match": {"status": {"$in": ACTIVE}}}, {"$unwind": "$items"},
+        {"$group": {"_id": "$order_id", "q": {"$sum": "$items.quantity_returned"}}}])}
+    open_ids = [oid for oid, qty in shipped.items() if oid and qty - claimed.get(oid, 0.0) > EPS]
+    ctx = await entity_ctx(request)
+    query = resolve_list_scope("sales_orders", {"order_type": {"$ne": "sample"}, "id": {"$in": open_ids}}, ctx, entity_id)
+    query = sales_ownership.apply_scope(query, actor, None)
+    query = line_scope.narrow(query, actor, "", field=line_scope.LINES_FIELD)
+    query = merge_query(query, build_search(qs, ["number", "customer_name"]))
+    rows, total = await fetch_page(db.sales_orders, query, page, page_size, sort_field="created_at", sort_dir=-1,
+                                   projection={"_id": 0, "id": 1, "number": 1, "customer_name": 1, "status": 1,
+                                               "created_at": 1, "entity_id": 1})
+    for r in rows:
+        r["returnable_qty"] = round(shipped.get(r["id"], 0.0) - claimed.get(r["id"], 0.0), 2)
+    return envelope(rows, total, page, page_size)
+
+
 # ─── DETAIL ──────────────────────────────────────────────────────────────────
 
 @router.get("/sales-returns/{return_id}")

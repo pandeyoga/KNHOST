@@ -23,6 +23,7 @@ const STATUS_META = {
 export function PriceApprovalCard({
   r,
   canApprove,
+  canReject = canApprove,
   busyId,
   decideFor,
   setDecideFor,
@@ -175,7 +176,7 @@ export function PriceApprovalCard({
             </button>
           )}
 
-          {r.status === "pending" && canApprove && decideFor !== `${r.id}:approve` && (
+          {r.status === "pending" && canReject && decideFor !== `${r.id}:approve` && (
             <button
               data-testid={`price-approvals-reject-${r.id}`}
               disabled={busyId === r.id}
