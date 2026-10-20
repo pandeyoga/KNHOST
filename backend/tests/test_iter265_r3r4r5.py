@@ -525,6 +525,10 @@ class TestR5ReturnPipeline:
         assert api.post(f"{BASE}/api/sales-returns/{rid}/submit", timeout=60).status_code == 200
         a = api.post(f"{BASE}/api/sales-returns/{rid}/approve", json={"notes": "TEST_R5 setuju"}, timeout=60)
         assert a.status_code == 200, a.text[:300]
+        # F-12 — baris tanpa roll: penerimaan dibuktikan tonggak SJ Kirim Toko → Barang sampai.
+        for m in ("shipped_to_store", "goods_arrived"):
+            g = api.post(f"{BASE}/api/sales-returns/{rid}/milestone", json={"milestone": m}, timeout=60)
+            assert g.status_code == 200, g.text[:300]
         assert api.post(f"{BASE}/api/sales-returns/{rid}/inspect/start", timeout=60).status_code == 200
         ins = api.post(f"{BASE}/api/sales-returns/{rid}/inspect/complete", json={
             "inspections": [{"product_id": item["product_id"], "grade": "B",
