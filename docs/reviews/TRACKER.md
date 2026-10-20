@@ -32,23 +32,23 @@ lalu `AUDIT_FRONTEND_2026-10-20.md` dan `PROMPT_PERBAIKAN_FRONTEND_2026-10-20.md
 ## Backend — paket 2026-10-19 (baseline `63c38bd`, ikut dalam folder 2026-10-20)
 
 Detail & arahan perbaikan: `2026-10-20/TEMUAN_TERVERIFIKASI.md`,
-`2026-10-20/LANJUTAN_WMS_SPECIAL_ORDER_MIGRASI.md`. Belum ada prompt per fase untuk
-kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
+`2026-10-20/LANJUTAN_WMS_SPECIAL_ORDER_MIGRASI.md`. Arahan owner 2026-10-21: dikerjakan sesuai
+urutan paket — hasil di [BE-AUD](2026-10-20/hasil/BE-AUD.md).
 
 | ID | Judul | Fase | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
 |---|---|---|---|---|---|---|
-| AUD-RND-01 | ACC labdip dapat meluluskan siklus yang handfeel-nya ditolak | BE | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| AUD-RND-02 | Versi artwork yang tidak ada diterima sebagai referensi proofing ulang | BE | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-RND-01 | ACC labdip dapat meluluskan siklus yang handfeel-nya ditolak | BE | implemented_pending_review | ya — jalur kode deterministik | `c56a988` | [BE-AUD](2026-10-20/hasil/BE-AUD.md) · [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-RND-02 | Versi artwork yang tidak ada diterima sebagai referensi proofing ulang | BE | implemented_pending_review | ya — jalur kode deterministik | `c56a988` | [BE-AUD](2026-10-20/hasil/BE-AUD.md) · [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | AUD-RND-03 | Referensi kontrak terminated diterima `_validate_contract_ref` tetapi tidak muncul di daftar pilihan | BE | implemented_pending_review | ya — jalur kode deterministik (owner: boleh) | `af24f9c` | [KEPUTUSAN](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md) |
-| AUD-EXP-01 | Ekspor berkelompok selesai tetapi unduhan ditolak 403 | BE | open | ya — direproduksi runtime | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| AUD-EXP-02 | Ekspor dapat menggandakan baris saat sumber berubah, jumlah baris tetap cocok | BE | open | ya — kode (kelas ketahanan) | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| AUD-SO-01 | Proses lama dapat melepas kunci realisasi milik proses baru | BE | open | ya — kode (kelas ketahanan) | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| AUD-WMS-01 | Stok opname berubah sebelum jurnal berhasil; retry tidak memulihkan | BE | open | ya — kode (kelas ketahanan) | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| AUD-MKL-01 | Excel rekap klaim makloon gagal saat memiliki baris mitra | BE | open | sebagian — bagian 2 false positive | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| AUD-MKL-02 | Rincian rekap klaim dipotong 1.000 baris, berbeda dari total | BE | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| AUD-MIG-01 | Apply migrasi menyatakan matched tetapi melewatkan fulfillment kosong | BE | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| AUD-MIG-02 | Rollback menghapus perubahan operasional setelah migrasi | BE | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| AUD-RET-01 | Pembuangan BS gagal di tengah proses dan retry tidak memulihkan | BE | open | ya — kode (kelas ketahanan) | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-EXP-01 | Ekspor berkelompok selesai tetapi unduhan ditolak 403 | BE | implemented_pending_review | ya — direproduksi runtime | `db25c74` | [BE-AUD](2026-10-20/hasil/BE-AUD.md) · [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-EXP-02 | Ekspor dapat menggandakan baris saat sumber berubah, jumlah baris tetap cocok | BE | implemented_pending_review | ya — kode (kelas ketahanan) | `1e275ca` | [BE-AUD](2026-10-20/hasil/BE-AUD.md) · [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-SO-01 | Proses lama dapat melepas kunci realisasi milik proses baru | BE | implemented_pending_review | ya — kode (kelas ketahanan) | `193c048` | [BE-AUD](2026-10-20/hasil/BE-AUD.md) · [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-WMS-01 | Stok opname berubah sebelum jurnal berhasil; retry tidak memulihkan | BE | implemented_pending_review | ya — kode (kelas ketahanan) | `6974dd9` | [BE-AUD](2026-10-20/hasil/BE-AUD.md) · [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-MKL-01 | Excel rekap klaim makloon gagal saat memiliki baris mitra | BE | implemented_pending_review | sebagian — bagian 2 false positive | `ae4e1b3` | [BE-AUD](2026-10-20/hasil/BE-AUD.md) · [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-MKL-02 | Rincian rekap klaim dipotong 1.000 baris, berbeda dari total | BE | implemented_pending_review | ya — jalur kode deterministik | `ae4e1b3` | [BE-AUD](2026-10-20/hasil/BE-AUD.md) · [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-MIG-01 | Apply migrasi menyatakan matched tetapi melewatkan fulfillment kosong | BE | implemented_pending_review | ya — jalur kode deterministik | `8d6df8f` | [BE-AUD](2026-10-20/hasil/BE-AUD.md) · [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-MIG-02 | Rollback menghapus perubahan operasional setelah migrasi | BE | implemented_pending_review | ya — jalur kode deterministik | `8d6df8f` | [BE-AUD](2026-10-20/hasil/BE-AUD.md) · [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-RET-01 | Pembuangan BS gagal di tengah proses dan retry tidak memulihkan | BE | implemented_pending_review | ya — kode (kelas ketahanan) | `28d53c7` | [BE-AUD](2026-10-20/hasil/BE-AUD.md) · [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 
 ## Temuan tambahan dari implementer (menunggu konfirmasi reviewer)
 
@@ -70,6 +70,7 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | 11 temuan AUD backend implemented_pending_review sesuai urutan paket ([BE-AUD](2026-10-20/hasil/BE-AUD.md)): RND-01/02 `c56a988`, EXP-01 `db25c74`, SO-01 `193c048`, WMS-01 `6974dd9`, MKL-01/02 `ae4e1b3`, EXP-02 `1e275ca`, MIG-01/02 `8d6df8f`, RET-01 `28d53c7`; guardrail INV-ATOMIC-01 kembali ke baseline `8dab383` (`1dcd37e`) |
 | 2026-10-21 | Claude Code | Jawaban owner putaran 2 ([laporan](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md#bagian-2--jawaban-owner-putaran-kedua-2026-10-21)): kontrak kedaluwarsa/batal (`1ad79cb`), batal item sesudah SO + notifikasi MD (`a3f7936`), backend role_in (`b69fe0d`), sisir lanjutan FE (`fc477ce`); 3 pertanyaan lama terjawab, 2 baru |
 | 2026-10-21 | Claude Code | FE-10..13 implemented_pending_review (`85ddd1c`, [UI-05](2026-10-20/hasil/UI-05.md)): satuan sumber antrean QC, status muat penerimaan transfer, neraca belum diketahui netral, tanda saldo kumulatif |
 | 2026-10-21 | Claude Code | FE-06..09 implemented_pending_review (`c5fd627`, [UI-04](2026-10-20/hasil/UI-04.md)): target antrean harga khusus + fokus dokumen + guardrail desk_targets, error aksi retur di layar aktif, form retur aman balapan, pemilih SO retur server-side |
