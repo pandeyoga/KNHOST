@@ -663,7 +663,7 @@ async def reallocate_line_rolls(order_id: str, product_id: str, payload: SoReall
         segments.add((lst[0]["warehouse_id"], lst[0]["owner_entity_id"]))
     kept_pending = [{"id": p_["roll_id"], "roll_no": p_["roll_no"], "warehouse_id": p_["warehouse_id"],
                      "owner_entity_id": p_["owner_entity_id"], "length_remaining": p_["qty"], "lot": p_["lot"],
-                     "pending_cut": True}
+                     "pending_cut": True, "reservation_id": p_["reservation_id"]}   # F-05 — tautan potong
                     for rid_ in keep_pend for p_ in pend_by_roll[rid_]]
     final_rolls = [cur_by_id[i] for i in keep_ids] + kept_pending + newly
     for r in final_rolls:

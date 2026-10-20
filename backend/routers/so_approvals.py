@@ -91,8 +91,12 @@ async def _alloc_sig(order_id: str, item: Dict[str, Any]) -> str:
     pid = item.get("product_id")
     held = await db.inventory_rolls.find(
         {"product_id": pid, "$or": [{"reserved_ref.id": order_id}, {"length_reservations.ref.id": order_id}]},
-        {"_id": 0, "id": 1}).to_list(2000)
-    rolls = sorted({r["id"] for r in held} | {str(r.get("roll_id")) for r in (item.get("roll_lines") or []) if r.get("roll_id")})
+        {"_id": 0, "id": 1, "parent_roll_id": 1, "cut": 1}).to_list(2000)
+    # F-05 — roll anak hasil potong reservasi pesanan ini = alokasi yang sama dengan induknya
+    # (potong fisik bukan perubahan alokasi bisnis) → dihitung sebagai id induk.
+    held_ids = {r["parent_roll_id"] if isinstance(r.get("cut"), dict) and r["cut"].get("reservation_id")
+                and r.get("parent_roll_id") else r["id"] for r in held}
+    rolls = sorted(held_ids | {str(r.get("roll_id")) for r in (item.get("roll_lines") or []) if r.get("roll_id")})
     return f"{pid}|{round(float(item.get('quantity') or 0), 4)}|{item.get('unit') or ''}|{','.join(rolls)}"
 
 

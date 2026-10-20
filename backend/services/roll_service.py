@@ -673,11 +673,57 @@ async def _finish_cut(parent: Dict[str, Any], op: Dict[str, Any],
                       "roll_id": roll_id, "qty_rolls": None})
     for mv in moves:
         await db.inventory_movements.update_one({"id": mv["id"]}, {"$setOnInsert": mv}, upsert=True)
+    if (rsv.get("ref") or {}).get("type") == "sales_order":
+        # F-05 — sebelum penanda operasi dicabut: gagal di sini → potong dilanjutkan & alokasi tetap ditautkan.
+        await relink_cut_allocation(rsv["ref"]["id"], op["op"], parent, child)
     await db.inventory_rolls.update_one({"id": roll_id}, {"$pull": {"pending_cut_ops": {"op": op["op"]}}})
     # Selisih reservasi − aktual kembali bebas di induk (reservasi sudah ditarik utuh).
     await rebuild_balance(parent["product_id"], parent["warehouse_id"], parent["owner_entity_id"])
     upd = upd or await db.inventory_rolls.find_one({"id": roll_id}, {"_id": 0})
     return {"parent": upd, "child": child, "cut": cut}
+
+
+def _cut_entry_pos(allocs: List[Dict[str, Any]], reservation_id: str, parent_id: str) -> Optional[Tuple[int, int]]:
+    """Posisi entri alokasi milik reservasi potong: cocok `reservation_id`; entri lama tanpa
+    `reservation_id` (hasil Ganti Roll sebelum F-05) dicocokkan lewat roll induk yang masih pending."""
+    legacy = None
+    for ai, a in enumerate(allocs):
+        for ri, r in enumerate(a.get("rolls") or []):
+            if not r.get("pending_cut"):
+                continue
+            if r.get("reservation_id") == reservation_id:
+                return ai, ri
+            if legacy is None and not r.get("reservation_id") and r.get("roll_id") == parent_id:
+                legacy = (ai, ri)
+    return legacy
+
+
+async def relink_cut_allocation(order_id: str, reservation_id: str, parent: Dict[str, Any],
+                                child: Dict[str, Any]) -> bool:
+    """F-05 — entri `allocations[].rolls` yang menunjuk reservasi potong pindah ke roll anak (nomor &
+    panjang aktual, tanpa `pending_cut`) supaya daftar picking/Ganti Roll menunjuk roll fisik yang
+    memang bisa di-pick. Idempoten (entri yang sudah ditautkan tidak cocok lagi) dan CAS per entri:
+    alokasi yang ditulis ulang proses lain di antara baca & tulis → baca ulang."""
+    for _ in range(5):
+        so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "allocations": 1})
+        allocs = (so or {}).get("allocations") or []
+        pos = _cut_entry_pos(allocs, reservation_id, parent["id"])
+        if pos is None:
+            return False
+        ai, ri = pos
+        entry = allocs[ai]["rolls"][ri]
+        linked = {k: v for k, v in entry.items() if k != "pending_cut"}
+        linked.update({"roll_id": child["id"], "roll_no": child.get("roll_no"),
+                       "length": round(float(child.get("length_initial") or 0), 2),
+                       "reservation_id": reservation_id, "cut_from_roll_id": parent["id"],
+                       "cut_from_roll_no": parent.get("roll_no")})
+        path = f"allocations.{ai}.rolls.{ri}"
+        res = await db.sales_orders.update_one({"id": order_id, path: entry},
+                                               {"$set": {path: linked, "updated_at": now_iso()}})
+        if res.modified_count:
+            return True
+    logger.warning("[F-05] alokasi SO %s tidak bisa ditautkan ke roll anak %s (berubah terus)", order_id, child["id"])
+    return False
 
 
 async def unverified_cut_children(order_id: str, product_id: str = "", warehouse_id: str = "") -> List[Dict[str, Any]]:
