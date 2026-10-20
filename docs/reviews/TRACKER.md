@@ -15,7 +15,7 @@ lalu `AUDIT_FRONTEND_2026-10-20.md` dan `PROMPT_PERBAIKAN_FRONTEND_2026-10-20.md
 
 | ID | Judul | Prio | Fase | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
 |---|---|---|---|---|---|---|---|
-| FE-01 | Special Order multi-produk kehilangan item/qty saat pricing dan konversi | P1 | UI-01 | implemented_pending_review | ya — jalur kode deterministik | `cc4d13a` | [UI-01](2026-10-20/hasil/UI-01.md) |
+| FE-01 | Special Order multi-produk kehilangan item/qty saat pricing dan konversi | P1 | UI-01 | implemented_pending_review | ya — jalur kode deterministik | `cc4d13a` · batal per item `13c64d8` | [UI-01](2026-10-20/hasil/UI-01.md) · [KEPUTUSAN](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md) |
 | FE-02 | Kontrol pilihan Interco tidak memperbarui nilai | P1 | UI-02 | implemented_pending_review | ya — direproduksi runtime | `0d8e202` `6350391` `621f50b` | [UI-02](2026-10-20/hasil/UI-02.md) |
 | FE-03 | Peta modul akses tidak mengikuti menu/hub terbaru | P1 | UI-03 | implemented_pending_review | ya — jalur kode deterministik | `9289e26` | [UI-03](2026-10-20/hasil/UI-03.md) |
 | FE-04 | Tombol/petugas dibatasi nama role meski izin efektif berbeda | P2 | UI-03 | implemented_pending_review | ya — jalur kode deterministik | `859a087` | [UI-03](2026-10-20/hasil/UI-03.md) |
@@ -39,7 +39,7 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 |---|---|---|---|---|---|---|
 | AUD-RND-01 | ACC labdip dapat meluluskan siklus yang handfeel-nya ditolak | BE | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | AUD-RND-02 | Versi artwork yang tidak ada diterima sebagai referensi proofing ulang | BE | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| AUD-RND-03 | Referensi kontrak terminated diterima `_validate_contract_ref` tetapi tidak muncul di daftar pilihan | BE | pending_decision | menunggu keputusan | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| AUD-RND-03 | Referensi kontrak terminated diterima `_validate_contract_ref` tetapi tidak muncul di daftar pilihan | BE | implemented_pending_review | ya — jalur kode deterministik (owner: boleh) | `af24f9c` | [KEPUTUSAN](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md) |
 | AUD-EXP-01 | Ekspor berkelompok selesai tetapi unduhan ditolak 403 | BE | open | ya — direproduksi runtime | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | AUD-EXP-02 | Ekspor dapat menggandakan baris saat sumber berubah, jumlah baris tetap cocok | BE | open | ya — kode (kelas ketahanan) | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | AUD-SO-01 | Proses lama dapat melepas kunci realisasi milik proses baru | BE | open | ya — kode (kelas ketahanan) | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
@@ -57,19 +57,21 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 | ENV-01 | Data acuan `restore_local_demo.sh` gagal di 3/12 skrip pada HEAD (403 izin/penugasan) | implemented_pending_review (`6e64b2c`) | [ENV](2026-10-20/hasil/ENV.md) |
 | ENV-02 | Skrip restore terikat lingkungan Emergent (`supervisorctl`, `localhost`) — perlu varian Docker | implemented_pending_review (`6e64b2c`) | [ENV](2026-10-20/hasil/ENV.md) |
 | ENV-03 | `seed_realistic.py` melewati data Interco & SPK printing | open | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| ROLE-01 | 83 gerbang nama peran frontend di luar daftar FE-04 (kelas yang sama) — tombol tidak mengikuti izin efektif server | implemented_pending_review (`ac62dc3`) | [ROLE-GATE-SWEEP](2026-10-20/hasil/ROLE-GATE-SWEEP.md) |
+| ROLE-01 | 83 gerbang nama peran frontend di luar daftar FE-04 (kelas yang sama) — tombol tidak mengikuti izin efektif server | implemented_pending_review (`ac62dc3`; default matriks `af24f9c`) | [ROLE-GATE-SWEEP](2026-10-20/hasil/ROLE-GATE-SWEEP.md) · [KEPUTUSAN](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md) |
 
 ## Keputusan yang ditunggu
 
 | ID | Pertanyaan untuk owner | Dicatat |
 |---|---|---|
-| FE-01 (usulan) | Perlukah fitur batal per item Pesanan Khusus? Sekarang yang ada hanya batal dokumen pengadaan per item; uji "item dibatalkan" di UI-01 tidak bisa dijalankan tanpa aturan ini. | 2026-10-20 |
-| AUD-RND-03 | Apakah kontrak berstatus *terminated* boleh dipakai sebagai referensi historis? Bila ya, daftar pilihan perlu menampilkannya; bila tidak, validasi backend harus menolaknya. | 2026-10-20 |
+| AUD-RND-03 (lanjutan) | Kontrak *terminated* sudah diputuskan boleh. Bagaimana dengan kontrak **kedaluwarsa** dan **batal** — boleh jadi referensi uji ulang? Sekarang validator menerima, daftar menyaring. | 2026-10-21 |
+| FE-01 batal item | Aturan bawaan: batal item hanya **sebelum SO**; PO/MKO/sample/desain item ikut batal; harga item lain tetap; tanpa notifikasi. Setuju, atau perlu batal sesudah SO / notifikasi ke MD & pengadaan / persetujuan atasan? | 2026-10-21 |
+| ROLE-01 default | MD kini ikut bisa memutus karantina QC kedatangan karena sudah memegang `qc.release` (dipakai juga untuk putusan dokumen inspeksi). Biarkan, atau cabut `qc.release` dari MD? | 2026-10-21 |
 
 ## Riwayat perubahan tracker
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | Jawaban owner dicatat & dikerjakan ([laporan](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md)): AUD-RND-03 implemented_pending_review (`af24f9c`); FE-01 + batal per item (`13c64d8`); ROLE-01 default matriks izin QC/retur/master entitas (`af24f9c`); 3 pertanyaan lanjutan dicatat |
 | 2026-10-20 | Claude Code | Tracker dibuat dari paket 2026-10-20 (13 FE + 12 AUD); semua `open` kecuali AUD-RND-03 `pending_decision` |
 | 2026-10-21 | Claude Code | ROLE-01 (usulan) implemented_pending_review (`ac62dc3`): 83 gerbang peran disisir — 70 ke izin endpoint, 4 peringkat penyetuju, 3 peran acuan, 2 kode mati dihapus, 8 tetap (aturan peran server/teks); perubahan tampilan peran bawaan & yang perlu direview di laporan |
 | 2026-10-20 | Claude Code | FE-03/04/05 implemented_pending_review (`9289e26`, `859a087`): menu peran kustom, tombol per izin, petugas inspeksi per kemampuan+scope, Data Gudang scope sah; 81 gerbang peran lain dicatat sebagai keterbatasan |
