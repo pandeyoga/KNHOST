@@ -20,10 +20,10 @@ lalu `AUDIT_FRONTEND_2026-10-20.md` dan `PROMPT_PERBAIKAN_FRONTEND_2026-10-20.md
 | FE-03 | Peta modul akses tidak mengikuti menu/hub terbaru | P1 | UI-03 | implemented_pending_review | ya — jalur kode deterministik | `9289e26` | [UI-03](2026-10-20/hasil/UI-03.md) |
 | FE-04 | Tombol/petugas dibatasi nama role meski izin efektif berbeda | P2 | UI-03 | implemented_pending_review | ya — jalur kode deterministik | `859a087` | [UI-03](2026-10-20/hasil/UI-03.md) |
 | FE-05 | Data Gudang menolak Admin Gudang yang berizin | P2 | UI-03 | implemented_pending_review | ya — direproduksi runtime | `859a087` | [UI-03](2026-10-20/hasil/UI-03.md) |
-| FE-06 | Target Harga Khusus dari Meja Saya tidak dirender | P2 | UI-04 | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| FE-07 | Error retur tidak terlihat dan modal menutup saat gagal | P2 | UI-04 | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| FE-08 | Respons SO lama menimpa pilihan SO baru di form retur | P2 | UI-04 | open | ya — kode (kelas ketahanan) | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| FE-09 | Pemilih SO retur diam-diam terbatas 200 pesanan | P2 | UI-04 | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| FE-06 | Target Harga Khusus dari Meja Saya tidak dirender | P2 | UI-04 | implemented_pending_review | ya — jalur kode deterministik | `c5fd627` | [UI-04](2026-10-20/hasil/UI-04.md) |
+| FE-07 | Error retur tidak terlihat dan modal menutup saat gagal | P2 | UI-04 | implemented_pending_review | ya — jalur kode deterministik | `c5fd627` | [UI-04](2026-10-20/hasil/UI-04.md) |
+| FE-08 | Respons SO lama menimpa pilihan SO baru di form retur | P2 | UI-04 | implemented_pending_review | ya — kode (kelas ketahanan) | `c5fd627` | [UI-04](2026-10-20/hasil/UI-04.md) |
+| FE-09 | Pemilih SO retur diam-diam terbatas 200 pesanan | P2 | UI-04 | implemented_pending_review | ya — jalur kode deterministik | `c5fd627` | [UI-04](2026-10-20/hasil/UI-04.md) |
 | FE-10 | Antrean QC salah label satuan dan agregasi campuran | P2 | UI-05 | open | ya — direproduksi runtime | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | FE-11 | Error awal penerimaan transfer tertutup loading | P2 | UI-05 | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | FE-12 | Neraca unknown ditampilkan Seimbang | P2 | UI-05 | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
@@ -71,6 +71,7 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | FE-06..09 implemented_pending_review (`c5fd627`, [UI-04](2026-10-20/hasil/UI-04.md)): target antrean harga khusus + fokus dokumen + guardrail desk_targets, error aksi retur di layar aktif, form retur aman balapan, pemilih SO retur server-side |
 | 2026-10-21 | Claude Code | Jawaban owner dicatat & dikerjakan ([laporan](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md)): AUD-RND-03 implemented_pending_review (`af24f9c`); FE-01 + batal per item (`13c64d8`); ROLE-01 default matriks izin QC/retur/master entitas (`af24f9c`); 3 pertanyaan lanjutan dicatat |
 | 2026-10-20 | Claude Code | Tracker dibuat dari paket 2026-10-20 (13 FE + 12 AUD); semua `open` kecuali AUD-RND-03 `pending_decision` |
 | 2026-10-21 | Claude Code | ROLE-01 (usulan) implemented_pending_review (`ac62dc3`): 83 gerbang peran disisir — 70 ke izin endpoint, 4 peringkat penyetuju, 3 peran acuan, 2 kode mati dihapus, 8 tetap (aturan peran server/teks); perubahan tampilan peran bawaan & yang perlu direview di laporan |
