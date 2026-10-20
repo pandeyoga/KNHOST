@@ -17,9 +17,9 @@ lalu `AUDIT_FRONTEND_2026-10-20.md` dan `PROMPT_PERBAIKAN_FRONTEND_2026-10-20.md
 |---|---|---|---|---|---|---|---|
 | FE-01 | Special Order multi-produk kehilangan item/qty saat pricing dan konversi | P1 | UI-01 | implemented_pending_review | ya — jalur kode deterministik | `cc4d13a` | [UI-01](2026-10-20/hasil/UI-01.md) |
 | FE-02 | Kontrol pilihan Interco tidak memperbarui nilai | P1 | UI-02 | implemented_pending_review | ya — direproduksi runtime | `0d8e202` `6350391` `621f50b` | [UI-02](2026-10-20/hasil/UI-02.md) |
-| FE-03 | Peta modul akses tidak mengikuti menu/hub terbaru | P1 | UI-03 | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| FE-04 | Tombol/petugas dibatasi nama role meski izin efektif berbeda | P2 | UI-03 | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
-| FE-05 | Data Gudang menolak Admin Gudang yang berizin | P2 | UI-03 | open | ya — direproduksi runtime | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| FE-03 | Peta modul akses tidak mengikuti menu/hub terbaru | P1 | UI-03 | implemented_pending_review | ya — jalur kode deterministik | `9289e26` | [UI-03](2026-10-20/hasil/UI-03.md) |
+| FE-04 | Tombol/petugas dibatasi nama role meski izin efektif berbeda | P2 | UI-03 | implemented_pending_review | ya — jalur kode deterministik | `859a087` | [UI-03](2026-10-20/hasil/UI-03.md) |
+| FE-05 | Data Gudang menolak Admin Gudang yang berizin | P2 | UI-03 | implemented_pending_review | ya — direproduksi runtime | `859a087` | [UI-03](2026-10-20/hasil/UI-03.md) |
 | FE-06 | Target Harga Khusus dari Meja Saya tidak dirender | P2 | UI-04 | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | FE-07 | Error retur tidak terlihat dan modal menutup saat gagal | P2 | UI-04 | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | FE-08 | Respons SO lama menimpa pilihan SO baru di form retur | P2 | UI-04 | open | ya — kode (kelas ketahanan) | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
@@ -70,6 +70,7 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
 | 2026-10-20 | Claude Code | Tracker dibuat dari paket 2026-10-20 (13 FE + 12 AUD); semua `open` kecuali AUD-RND-03 `pending_decision` |
+| 2026-10-20 | Claude Code | FE-03/04/05 implemented_pending_review (`9289e26`, `859a087`): menu peran kustom, tombol per izin, petugas inspeksi per kemampuan+scope, Data Gudang scope sah; 81 gerbang peran lain dicatat sebagai keterbatasan |
 | 2026-10-20 | Claude Code | FE-02 implemented_pending_review (`0d8e202`, `6350391`, `621f50b`): 9 kontrol Interco + bentuk prop selectedEntity + guardrail |
 | 2026-10-20 | Claude Code | FE-01 implemented_pending_review (`cc4d13a`): harga & konversi per item, 7 tes baru; usul `pending_decision` batal per item OD |
 | 2026-10-20 | Claude Code | ENV-01/02 implemented_pending_review (`6e64b2c`): akar ENV-01 = cookie jar klien seed menimpa Bearer, bukan regresi izin |
