@@ -32,6 +32,18 @@ async def quarantine_qty_for_task(task_id: str) -> float:
     return round(sum(float(r.get("length_remaining", 0) or 0) for r in rolls), 2)
 
 
+async def quarantine_breakdown(task_id: str, task_unit: str = "") -> Dict[str, Any]:
+    """FE-10 — qty karantina per SATUAN SUMBER roll (yard/kg). Tidak ada konversi: kg dan yard tidak
+    pernah dijumlahkan. `unit` = satuan tunggal tugas; kosong bila roll karantina bersatuan campuran."""
+    by_unit: Dict[str, float] = {}
+    for r in await get_quarantine_rolls(task_id):
+        u = (r.get("unit") or task_unit or "").strip()
+        by_unit[u] = round(by_unit.get(u, 0.0) + float(r.get("length_remaining", 0) or 0), 2)
+    units = [u for u in by_unit if u]
+    single = units[0] if len(by_unit) == 1 and units else ""
+    return {"by_unit": by_unit, "unit": single or ("" if by_unit else task_unit), "mixed": len(by_unit) > 1}
+
+
 async def _consume_quarantine(
     qrolls: List[Dict[str, Any]], qty: float, target_status: str,
     owner: str, ref: Dict[str, Any], mov_type: str, extra_set: Optional[Dict[str, Any]] = None,

@@ -16,6 +16,13 @@ import {
   KpiCard, Panel, EmptyState, formatCurrency,
 } from "./financeShared";
 
+/** FE-13 — tooltip mengikuti MAKNA seri: "Keluar (AP)" digambar negatif tetapi dibaca sebagai besaran
+ *  (konvensi arus keluar); saldo kumulatif & arus masuk mempertahankan TANDA — defisit tetap negatif. */
+export function forecastTooltip(value, name, item) {
+  const v = Number(value) || 0;
+  return [formatCurrency(item?.dataKey === "outflow" ? Math.abs(v) : v), name];
+}
+
 export default function CashFlowForecastView({ selectedEntity }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +74,7 @@ export default function CashFlowForecastView({ selectedEntity }) {
                   <CartesianGrid strokeDasharray="3 3" stroke={FC.grid} />
                   <XAxis dataKey="label" tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 10 }} tickFormatter={compactIDR} width={56} />
-                  <Tooltip formatter={(v, n) => [formatCurrency(Math.abs(v)), n]} {...chartTooltip} />
+                  <Tooltip formatter={forecastTooltip} {...chartTooltip} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <ReferenceLine y={0} stroke="#C7C7CC" />
                   <Bar dataKey="inflow" name="Masuk (AR)" fill={FC.revenue} radius={[4, 4, 0, 0]} maxBarSize={30} />

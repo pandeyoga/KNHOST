@@ -96,7 +96,7 @@ async def qc_inspection_queue(request: Request) -> List[Dict[str, Any]]:
     (barang di karantina menunggu keputusan terima/tolak)."""
     # Keputusan owner 2026-10-21 — peran QC melihat antreannya lewat izin domain qc.view.
     await require_any_permission(request, [("wms", "view"), ("qc", "view")])
-    from services.qc_service import quarantine_qty_for_task
+    from services.qc_service import quarantine_qty_for_task, quarantine_breakdown
     ctx = await entity_ctx(request)
     tasks = await db.wms_tasks.find(
         resolve_list_scope("wms_tasks", {"flow_type": "inbound", "status": "qc_pending"}, ctx), {"_id": 0},
@@ -118,6 +118,9 @@ async def qc_inspection_queue(request: Request) -> List[Dict[str, Any]]:
         t["sku"] = prod.get("sku", "")
         t["warehouse_name"] = whs.get(t.get("warehouse_id"), {}).get("name", "")
         t["quarantine_qty"] = await quarantine_qty_for_task(t["id"])
+        # FE-10 — satuan sumber eksplisit (yard/kg) + rincian per satuan; layar tidak lagi menebak "m".
+        qb = await quarantine_breakdown(t["id"], t.get("unit") or "")
+        t["quarantine_unit"], t["quarantine_by_unit"], t["quarantine_unit_mixed"] = qb["unit"], qb["by_unit"], qb["mixed"]
         out.append(safe_doc(t))
     return out
 

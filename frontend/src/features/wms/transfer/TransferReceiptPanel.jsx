@@ -22,14 +22,20 @@ export default function TransferReceiptPanel({ transfer, user, onChanged }) {
   const [results, setResults] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // FE-11 — status MUAT dipisah dari error AKSI: gagal GET pertama tampil sebagai error + Coba lagi,
+  // bukan "Memuat…" selamanya dan bukan pula "tidak ada roll".
+  const [loadErr, setLoadErr] = useState("");
+  const [loadingReceipt, setLoadingReceipt] = useState(true);
   const open = ["dispatched", "partially_received"].includes(transfer.status);
   const isSup = roleIs(user?.role, SUPERVISOR);   // FE-04 — sama dengan supervisor di server (kenal peran acuan)
 
   const load = useCallback(async () => {
+    setLoadingReceipt(true); setLoadErr("");
     try {
       const r = await axios.get(`${API}/transfers/${transfer.id}/receipt`);
       setData(r.data);
-    } catch (e) { setErr(apiErrorText(e, "Gagal memuat penerimaan.")); }
+    } catch (e) { setLoadErr(apiErrorText(e, "Gagal memuat penerimaan.")); }
+    finally { setLoadingReceipt(false); }
   }, [transfer.id]);
   useEffect(() => { load(); }, [load]);
 
@@ -53,6 +59,14 @@ export default function TransferReceiptPanel({ transfer, user, onChanged }) {
   const fromPicked = () => Object.entries(picked).filter(([, v]) => v.on)
     .map(([roll_id, v]) => ({ roll_id, outcome: v.outcome || "received", note: v.note || "" }));
 
+  if (!data && loadErr && !loadingReceipt) {
+    return (
+      <div data-testid="transfer-receipt-load-failed" className="rounded-xl border border-[#F3D6D3] bg-[#FFF8F7] p-3">
+        <p className="mb-1 text-[11px] text-[#3C3C43]">Penerimaan transfer <b>{transfer.code || transfer.number || transfer.id}</b> belum bisa dimuat.</p>
+        <ErrorNotice message={loadErr} onRetry={load} testId="transfer-receipt-load-error" />
+      </div>
+    );
+  }
   if (!data) return <div data-testid="transfer-receipt-loading" className="text-xs text-[#8E8E93]">Memuat penerimaan…</div>;
   const blocked = results.some((x) => x.result === "blocked_rules");
   return (
@@ -100,6 +114,7 @@ export default function TransferReceiptPanel({ transfer, user, onChanged }) {
         </p>
       )}
       <ErrorNotice message={err} onDismiss={() => setErr("")} testId="transfer-receipt-error" />
+      <ErrorNotice message={loadErr} onRetry={load} onDismiss={() => setLoadErr("")} testId="transfer-receipt-load-error" />
       <ReceiptResults results={results} />
       <ReceiptExceptions transfer={transfer} data={data} open={open} isSup={isSup}
         rolls={data.rolls} onDone={(s) => { setData(s); onChanged?.(); }} />

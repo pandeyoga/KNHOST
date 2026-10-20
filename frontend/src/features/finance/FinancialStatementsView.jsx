@@ -264,6 +264,7 @@ function BalanceSheetTab({ selectedEntity }) {
       setData(res.data || null);
     } catch (e) {
       setError(e.response?.data?.detail || "Gagal memuat Neraca.");
+      setData(null);   // FE-12 — jangan biarkan hasil periode lama tampil (dan "Seimbang") untuk periode yang gagal dimuat
     } finally {
       setLoading(false);
     }
@@ -291,7 +292,7 @@ function BalanceSheetTab({ selectedEntity }) {
         <Kpi testId="fs-bs-kpi-assets" label="Total Aset" value={formatCurrency(data?.assets_total)} icon={Building2} tone="text-[#0058CC]" />
         <Kpi testId="fs-bs-kpi-liab" label="Total Kewajiban" value={formatCurrency(data?.liabilities_total)} icon={Wallet} tone="text-[#C0392B]" />
         <Kpi testId="fs-bs-kpi-equity" label="Total Ekuitas" value={formatCurrency(data?.equity_total)} icon={PiggyBank} tone="text-[#1B7F4B]" />
-        <BalancedKpi balanced={data?.balanced} />
+        <BalancedKpi balanced={data?.balanced} loading={loading} />
       </div>
 
       {/* Filter */}

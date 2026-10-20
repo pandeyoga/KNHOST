@@ -25,6 +25,27 @@ const DISPOSITION_OPTIONS = [
 // Fase A · PS-09/R7 — opsi grade DIAMBIL dari registry (`/api/enums`).
 // Nilai lama "A+" & "C" TIDAK sah lagi; enum resmi: A | A1 | A2 | B | BS (D-01).
 
+/** FE-10 — satuan sumber tugas karantina (server); tidak pernah ditebak "m". */
+export function unitOf(task) {
+  return (task?.quarantine_unit || task?.unit || "").trim();
+}
+
+/** Total karantina per satuan: { yard: 120, kg: 35 }. Satuan campuran dirinci, tidak dijumlahkan lintas satuan. */
+export function quarantineTotals(rows) {
+  const out = {};
+  for (const t of rows || []) {
+    const parts = t?.quarantine_unit_mixed && t?.quarantine_by_unit ? t.quarantine_by_unit : { [unitOf(t)]: Number(t?.quarantine_qty) || 0 };
+    for (const [u, q] of Object.entries(parts)) out[u] = Math.round(((out[u] || 0) + (Number(q) || 0)) * 100) / 100;
+  }
+  return out;
+}
+
+export function formatTotals(byUnit) {
+  const parts = Object.entries(byUnit || {}).filter(([, q]) => Number(q) > 0)
+    .map(([u, q]) => `${formatQty(q)}${u ? ` ${u}` : " (satuan tidak tercatat)"}`);
+  return parts.length ? parts.join(" · ") : "0";
+}
+
 export default function QCInspection({ currentUser, selectedEntity }) {
   const { options: enumOptions, labelOf } = useDomainEnums();
   const gradeOptions = enumOptions("grade");
@@ -72,18 +93,21 @@ export default function QCInspection({ currentUser, selectedEntity }) {
     setCoverage(null);
   }
 
-  const totalQuarantine = useMemo(
-    () => rows.reduce((s, t) => s + (Number(t.quarantine_qty) || 0), 0), [rows]);
+  // FE-10 — total dipisah per SATUAN SUMBER (yard/kg); kg dan yard tidak pernah dijumlahkan.
+  const totalByUnit = useMemo(() => quarantineTotals(rows), [rows]);
 
   const acceptNum = Number(accept) || 0;
   const rejectNum = Number(reject) || 0;
   const maxQty = active ? Number(active.quarantine_qty || 0) : 0;
+  const activeUnit = active ? unitOf(active) : "";
+  const activeMixed = !!active?.quarantine_unit_mixed;
   const allocated = Math.round((acceptNum + rejectNum) * 100) / 100;
   const overAllocated = allocated > maxQty + 0.05;
   const underAllocated = active && allocated < maxQty - 0.05;  // IX-15 — seluruh qty wajib diputuskan
 
   async function submitDecision() {
     if (!active) return;
+    if (activeMixed) { setFormErr("Roll karantina tugas ini bersatuan campuran — putuskan per roll lewat 4-Point, jangan satu angka gabungan."); return; }
     if (acceptNum + rejectNum <= 0.01) { setFormErr("Tentukan qty diterima dan/atau ditolak."); return; }
     if (overAllocated) { setFormErr(`Total (${allocated}) melebihi qty karantina (${maxQty}).`); return; }
     if (underAllocated) { setFormErr(`Seluruh qty karantina (${maxQty}) wajib diputuskan — sisa ${Math.round((maxQty - allocated) * 100) / 100}.`); return; }
@@ -139,7 +163,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
             </div>
             <div className="metric-tile" data-testid="qc-metric-quarantine">
               <p className="metric-label">Total di Karantina</p>
-              <p className="metric-value tabular-nums">{formatQty(totalQuarantine)} m</p>
+              <p className="metric-value tabular-nums" data-testid="qc-metric-quarantine-value">{formatTotals(totalByUnit)}</p>
             </div>
           </div>
         </div>
@@ -190,7 +214,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
                     <p className="text-[10.5px] text-[#9A9BA3] truncate">{t.supplier_name || "Tanpa supplier"}</p>
                   </div>
                   <span className="text-[12.5px] tabular-nums text-right font-semibold text-[#8C4A00]">
-                    {formatQty(t.quarantine_qty)} m
+                    {t.quarantine_unit_mixed ? formatTotals(t.quarantine_by_unit || {}) : `${formatQty(t.quarantine_qty)} ${unitOf(t)}`.trim()}
                   </span>
                   <div className="text-right flex flex-col items-end gap-1">
                     <button data-testid={`qc-inspect-btn-${i}`} className="btn-primary btn-sm"
@@ -216,8 +240,16 @@ export default function QCInspection({ currentUser, selectedEntity }) {
             <p className="modal-title">Inspeksi QC — {active.product_name}</p>
             <p className="modal-subtitle">
               {active.po_number} · {active.supplier_name || "Tanpa supplier"} ·
-              Karantina <b>{formatQty(active.quarantine_qty)} m</b>
+              Karantina <b data-testid="qc-active-qty">{activeMixed ? formatTotals(active.quarantine_by_unit || {}) : `${formatQty(active.quarantine_qty)} ${activeUnit}`.trim()}</b>
             </p>
+            {activeMixed && (
+              <div className="notice-bar warning" data-testid="qc-unit-mixed"><span>Roll karantina bersatuan campuran — keputusan satu angka tidak bisa dipakai. Putuskan per roll lewat 4-Point.</span></div>
+            )}
+            {!activeMixed && activeUnit && activeUnit !== "yard" && (
+              <p className="text-[11px] text-[#6B6B73]" data-testid="qc-unit-note">
+                Qty keputusan dalam satuan stok tugas ini (<b>{activeUnit}</b>). Interval inspeksi 4-Point di mesin tetap dalam yard dan tidak dikonversi.
+              </p>
+            )}
             {formErr && <div className="notice-bar danger"><span>{formErr}</span><button onClick={() => setFormErr("")}>×</button></div>}
 
             <div className="grid gap-3 mt-2">
@@ -226,7 +258,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
                   <label className="text-[11px] font-bold uppercase text-[#1E7B34] flex items-center gap-1">
-                    <CheckCircle2 size={13} /> Diterima (m)
+                    <CheckCircle2 size={13} /> Diterima ({activeUnit || "satuan"})
                   </label>
                   <input data-testid="qc-accept-input" type="number" min="0" step="0.01"
                          className="form-input" value={accept}
@@ -234,7 +266,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
                 </div>
                 <div className="grid gap-1.5">
                   <label className="text-[11px] font-bold uppercase text-[#B3261E] flex items-center gap-1">
-                    <XCircle size={13} /> Ditolak (m)
+                    <XCircle size={13} /> Ditolak ({activeUnit || "satuan"})
                   </label>
                   <input data-testid="qc-reject-input" type="number" min="0" step="0.01"
                          className="form-input" value={reject}
@@ -245,7 +277,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
               <div className="flex items-center justify-between text-[11.5px] px-1">
                 <span className="text-[#6B6B73]">Total dialokasikan</span>
                 <span className={`tabular-nums font-semibold ${overAllocated ? "text-[#B3261E]" : "text-[#1C1C1E]"}`}>
-                  {formatQty(allocated)} / {formatQty(maxQty)} m
+                  {formatQty(allocated)} / {formatQty(maxQty)} {activeUnit}
                 </span>
               </div>
 
@@ -308,7 +340,7 @@ export default function QCInspection({ currentUser, selectedEntity }) {
             <div className="modal-actions">
               <button className="btn-secondary" onClick={() => setActive(null)} disabled={busy}>Batal</button>
               <button data-testid="qc-submit-decision" className="btn-primary"
-                      onClick={submitDecision} disabled={busy || overAllocated || underAllocated || !coverage?.met}>
+                      onClick={submitDecision} disabled={busy || activeMixed || overAllocated || underAllocated || !coverage?.met}>
                 {busy ? "Memproses…" : "Simpan Keputusan QC"}
               </button>
             </div>

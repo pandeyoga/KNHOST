@@ -1,6 +1,6 @@
 // Presentational sub-components untuk FinancialStatementsView (dipisah agar file
 // utama di bawah batas guardrail). Semua pure — hanya render dari props.
-import { CheckCircle2, AlertTriangle } from "lucide-react";
+import { CheckCircle2, AlertTriangle, HelpCircle } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 
 function fmtDelta(v) {
@@ -109,17 +109,26 @@ export function Kpi({ label, value, icon: Icon, tone = "", testId }) {
   );
 }
 
-export function BalancedKpi({ balanced }) {
-  const ok = balanced !== false;
+/** FE-12 — hanya `true` dari hasil yang sudah dimuat boleh tampil "Seimbang"; `false` = Tidak Seimbang;
+ *  memuat / gagal / tidak diketahui punya tampilan netral sendiri (bukan kesimpulan akuntansi). */
+export function BalancedKpi({ balanced, loading = false }) {
+  const state = loading ? "loading" : balanced === true ? "ok" : balanced === false ? "bad" : "unknown";
+  const look = {
+    ok: { bg: "bg-[#E6F6EC]", fg: "text-[#1B7F4B]", text: "Seimbang", Icon: CheckCircle2 },
+    bad: { bg: "bg-[#FDEDE7]", fg: "text-[#C0392B]", text: "Tidak Seimbang", Icon: AlertTriangle },
+    loading: { bg: "bg-[#F2F3F5]", fg: "text-[#8E8E93]", text: "Memuat…", Icon: HelpCircle },
+    unknown: { bg: "bg-[#F2F3F5]", fg: "text-[#8E8E93]", text: "Belum diketahui", Icon: HelpCircle },
+  }[state];
+  const { Icon } = look;
   return (
-    <div className="section-card" data-testid="fs-bs-kpi-balanced">
+    <div className="section-card" data-testid="fs-bs-kpi-balanced" data-state={state}>
       <div className="section-body flex items-center gap-3 py-3">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${ok ? "bg-[#E6F6EC]" : "bg-[#FDEDE7]"}`}>
-          {ok ? <CheckCircle2 size={17} className="text-[#1B7F4B]" /> : <AlertTriangle size={17} className="text-[#C0392B]" />}
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${look.bg}`}>
+          <Icon size={17} className={look.fg} />
         </div>
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Status Neraca</p>
-          <p className={`text-[17px] font-bold truncate ${ok ? "text-[#1B7F4B]" : "text-[#C0392B]"}`} data-testid="fs-bs-kpi-balanced-value">{ok ? "Seimbang" : "Tidak Seimbang"}</p>
+          <p className={`text-[17px] font-bold truncate ${look.fg}`} data-testid="fs-bs-kpi-balanced-value">{look.text}</p>
         </div>
       </div>
     </div>
