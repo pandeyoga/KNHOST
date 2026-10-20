@@ -63,6 +63,8 @@ export default function SettingsHub({
   focusNonce = 0,
   onFocusConsumed,
 }) {
+  // Sisir gerbang peran (2026-10-20): tab Kunci Saga & aksi Data Hygiene tetap khusus Admin (server require_role admin);
+  // pemberitahuan hak terbatas mengikuti caps.settings_manage dari server.
   const isAdmin = currentUser?.role === "admin";
 
   const [tab, setTab] = useState("settings");
@@ -295,7 +297,7 @@ export default function SettingsHub({
         </div>
       ) : null}
 
-      {!isAdmin && !caps.settings_manage ? (
+      {!caps.settings_manage ? (
         <div className="cfg-notice info" data-testid="cfg-limited-rights">
           <ShieldCheck size={15} />
           <span>

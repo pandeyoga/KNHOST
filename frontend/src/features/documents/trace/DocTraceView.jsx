@@ -24,6 +24,7 @@ import TraceBackfill from "./TraceBackfill";
 import TraceGraph from "./TraceGraph";
 import TraceSearch from "./TraceSearch";
 import { errText, fetchTrace, shortDate, traceUrl } from "./traceApi";
+import { can } from "../../../config/roles";
 
 const DEPTHS = [1, 2, 3, 4, 6, 8];
 
@@ -47,7 +48,9 @@ export default function DocTraceView({
   const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState([]);
 
-  const isAdmin = currentUser?.role === "admin";
+  // Sisir gerbang peran (2026-10-20): pintasan Pusat Pengaturan = settings.view; isi ulang relasi = pdf_template.manage.
+  const canOpenConfig = can(currentUser?.permissions, "settings", "view");
+  const canBackfill = can(currentUser?.permissions, "pdf_template", "manage");
 
   const load = useCallback(async (target, d) => {
     if (!target?.docType || !target?.docId) return;
@@ -140,7 +143,7 @@ export default function DocTraceView({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isAdmin && (
+            {canOpenConfig && (
               <button className="secondary-button" data-testid="trace-open-config"
                 onClick={() => openConfig({ group: "dokumen" })}>
                 <Settings2 size={13} /> Aturan Relasi & Cetak
@@ -157,7 +160,7 @@ export default function DocTraceView({
       <div className="grid gap-3 lg:grid-cols-[380px_1fr] lg:items-start">
         <div className="grid gap-3">
           <TraceSearch entityId={selectedEntity} onPick={pick} onError={setError} />
-          {isAdmin && <TraceBackfill onDone={() => cur && load(cur, depth)} />}
+          {canBackfill && <TraceBackfill onDone={() => cur && load(cur, depth)} />}
         </div>
 
         <div className="grid gap-3">

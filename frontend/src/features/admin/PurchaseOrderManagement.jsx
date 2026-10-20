@@ -20,6 +20,7 @@ import LineFilter from "../../components/LineFilter";   // FASE L
 import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../components/ListPageParts";
 import PaginationBar from "../../components/PaginationBar";
 import { usePagedList } from "../../hooks/usePagedList";
+import { can } from "../../config/roles";
 
 // FASE P6 — kolom Unduh CSV (mengikuti kolom tabel + nominal yang di layar tampil kecil
 // di bawah nama supplier).
@@ -130,7 +131,7 @@ export default function PurchaseOrderManagement({ user, selectedEntity, onApprov
 
   // Master data (produk/gudang/supplier) hanya untuk form Buat PO/makloon — peran finance
   // tidak punya menu Buat, jadi tidak perlu memanggil endpoint yang memang 403 baginya.
-  const canCreate = user?.role !== "finance";
+  const canCreate = can(user?.permissions, "purchase_order", "create");   // Sisir gerbang peran (2026-10-20) — POST /purchase-orders
   useEffect(() => { if (canCreate) fetchMasterData(); }, [canCreate]); // eslint-disable-line
 
   const fetchMasterData = async () => {

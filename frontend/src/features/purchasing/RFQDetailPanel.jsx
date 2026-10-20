@@ -7,6 +7,7 @@ import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
 import { overlayDismiss } from "@/utils/overlayDismiss";
+import { can } from "../../config/roles";
 
 /**
  * RFQDetailPanel (Fase 6.1) — detail RFQ: input penawaran per supplier,
@@ -24,8 +25,10 @@ export default function RFQDetailPanel({ rfqId, currentUser, onClose, onChanged 
   const [fullSupplier, setFullSupplier] = useState("");
   const [lineAwards, setLineAwards] = useState({}); // line_id -> supplier_id
 
-  const canAct = ["admin", "manager"].includes(currentUser?.role);
-  const canQuote = ["admin", "manager", "warehouse"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): kirim/batal/isi penawaran = rfq.update, award = rfq.award.
+  const canAct = can(currentUser?.permissions, "rfq", "update");
+  const canAward = can(currentUser?.permissions, "rfq", "award");
+  const canQuote = canAct;
 
   const load = useCallback(async () => {
     try {
@@ -214,7 +217,7 @@ export default function RFQDetailPanel({ rfqId, currentUser, onClose, onChanged 
           )}
 
           {/* Award */}
-          {rfq.status === "open" && canAct && quotedSuppliers.length > 0 && (
+          {rfq.status === "open" && canAward && quotedSuppliers.length > 0 && (
             <div className="section-card !p-3 border border-emerald-300 bg-[#F6FEF9]" data-testid="rfq-award-section">
               <h3 className="text-[12px] font-bold mb-2 flex items-center gap-1.5"><Award size={14} className="text-emerald-600" /> Award → Buat PO</h3>
               <div className="flex gap-2 mb-2">

@@ -7,6 +7,7 @@ import { SearchBox } from "../../components/ListControls";
 import RFQCreateModal from "./RFQCreateModal";
 import RFQDetailPanel from "./RFQDetailPanel";
 import DetailModal from "../../components/DetailModal";
+import { can } from "../../config/roles";
 
 /**
  * RFQView (Fase 6.1 — P1 Sourcing) — RFQ / Quotation.
@@ -40,7 +41,7 @@ export default function RFQView({ currentUser, selectedEntity }) {
   const [detailId, setDetailId] = useState(null);
   const [q, setQ] = useState("");
 
-  const canCreate = ["admin", "manager", "warehouse"].includes(currentUser?.role);
+  const canCreate = can(currentUser?.permissions, "rfq", "create");   // Sisir gerbang peran (2026-10-20) — POST /rfqs
 
   useEffect(() => { load(); }, [selectedEntity]); // eslint-disable-line
 

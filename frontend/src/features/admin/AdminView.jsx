@@ -507,7 +507,7 @@ export default function AdminView({
                   {tab === "products" && (
                     <div data-testid={`admin-product-domain-${row.id}`} className="mt-1 flex flex-wrap items-center gap-1">
                       <ProductLifecycleCell product={row}
-                        canManage={["admin", "manager"].includes(currentUser?.role)}
+                        canManage={row.spec_id ? can(currentUser?.permissions, "rnd", "decide") : can(currentUser?.permissions, "product", "update")}
                         onPatch={(id, patch) => onAdminPatch("products", id, patch)}
                         onDone={onReload} />
                       <span className="status-pill pill-muted">{row.stage || "finished"}</span>

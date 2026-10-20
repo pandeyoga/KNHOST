@@ -14,6 +14,7 @@ import { openTrace } from "../../documents/trace/traceDeepLink";
 import {
   adjustPenalty, errText, fetchMeta, issuePenalty, money, payPenalty, penaltyMeta, waivePenalty,
 } from "./paymentApi";
+import { can } from "../../../config/roles";
 
 export default function PenaltyPanel({ rows = [], currentUser, entityId = "", onChanged }) {
   const [reasons, setReasons] = useState([]);
@@ -24,7 +25,11 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
 
-  const canDecide = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): satu izin per aksi = endpoint /penalties/{id}/issue|adjust|waive|pay.
+  const canIssue = can(currentUser?.permissions, "penalty", "issue");
+  const canAdjust = can(currentUser?.permissions, "penalty", "adjust");
+  const canWaive = can(currentUser?.permissions, "penalty", "waive");
+  const canPay = can(currentUser?.permissions, "penalty", "pay");
 
   useEffect(() => {
     (async () => {
@@ -94,25 +99,25 @@ export default function PenaltyPanel({ rows = [], currentUser, entityId = "", on
                 <span className="text-[12.5px] font-bold tabular-nums" data-testid={`penalty-amount-${p.id}`}>
                   {money(p.amount)}
                 </span>
-                {canDecide && p.status === "draft" && (
+                {canIssue && p.status === "draft" && (
                   <button type="button" className="secondary-button !py-1" data-testid={`penalty-issue-${p.id}`}
                     disabled={busy === p.id} onClick={() => act("issue", p)}>
                     {busy === p.id ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Terbitkan
                   </button>
                 )}
-                {canDecide && ["draft", "issued", "adjusted"].includes(p.status) && (
+                {(canAdjust || canWaive) && ["draft", "issued", "adjusted"].includes(p.status) && (
                   <>
-                    <button type="button" className="secondary-button !py-1" data-testid={`penalty-adjust-${p.id}`}
+                    {canAdjust && <button type="button" className="secondary-button !py-1" data-testid={`penalty-adjust-${p.id}`}
                       onClick={() => { setDialog({ kind: "adjust", row: p }); setAmount(String(p.amount)); }}>
                       <PencilLine size={12} /> Ubah Nominal
-                    </button>
-                    <button type="button" className="secondary-button !py-1" data-testid={`penalty-waive-${p.id}`}
+                    </button>}
+                    {canWaive && <button type="button" className="secondary-button !py-1" data-testid={`penalty-waive-${p.id}`}
                       onClick={() => setDialog({ kind: "waive", row: p })}>
                       <Ban size={12} /> Bebaskan
-                    </button>
+                    </button>}
                   </>
                 )}
-                {canDecide && ["issued", "adjusted"].includes(p.status) && (
+                {canPay && ["issued", "adjusted"].includes(p.status) && (
                   <button type="button" className="secondary-button !py-1" data-testid={`penalty-pay-${p.id}`}
                     onClick={() => { setDialog({ kind: "pay", row: p }); setAmount(String(p.amount)); }}>
                     <Receipt size={12} /> Catat Bayar

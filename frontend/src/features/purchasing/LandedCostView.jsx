@@ -7,6 +7,7 @@ import { SearchBox } from "../../components/ListControls";
 import LandedCostCreateModal from "./LandedCostCreateModal";
 import LandedCostDetailPanel from "./LandedCostDetailPanel";
 import DetailModal from "../../components/DetailModal";
+import { can, roleSatisfies } from "../../config/roles";
 
 /**
  * LandedCostView (Fase 5.4 — P0-5) — Landed Cost Voucher → alokasi HPP roll.
@@ -42,8 +43,9 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
   const [showCreate, setShowCreate] = useState(false);
   const [detail, setDetail] = useState(null);
 
-  const canApprove = ["admin", "manager"].includes(currentUser?.role);
-  const canCreate = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): ACC/tolak = peringkat peran yang dituntut voucher (= role_satisfies server).
+  const canApproveDoc = (v) => roleSatisfies(currentUser?.role, v?.required_approval_role || "manager");
+  const canCreate = can(currentUser?.permissions, "landed_cost", "create");   // POST /landed-costs
 
   useEffect(() => { loadAll(); }, [selectedEntity]); // eslint-disable-line
 
@@ -177,7 +179,7 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
                     {v.status === "draft" && (
                       <button data-testid={`lc-quick-submit-${v.id}`} onClick={() => quickAct(v, "submit")} className="secondary-button !px-2 !py-1 text-[11px]"><Send size={11} /> Kirim</button>
                     )}
-                    {v.status === "pending_approval" && canApprove && (
+                    {v.status === "pending_approval" && canApproveDoc(v) && (
                       <button data-testid={`lc-quick-approve-${v.id}`} onClick={() => quickAct(v, "approve")} className="primary-button !px-2 !py-1 text-[11px]">Setujui</button>
                     )}
                     {v.status === "applied" && (
@@ -205,7 +207,7 @@ export default function LandedCostView({ currentUser, selectedEntity }) {
           label="Rincian biaya masuk (landed cost)" testId="lc-detail-modal">
           <LandedCostDetailPanel
             voucher={detail}
-            canApprove={canApprove}
+            canApprove={canApproveDoc(detail)}
             currentUser={currentUser}
             onClose={() => setDetail(null)}
             onAction={onAction}

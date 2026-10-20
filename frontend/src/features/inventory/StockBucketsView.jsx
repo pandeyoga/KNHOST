@@ -17,6 +17,7 @@ import { formatQty } from "../../utils/formatters";
 import PendingSoTab from "./PendingSoTab";
 import AtpDetailPanel from "./AtpDetailPanel";
 import { SearchBox, ListToolbar } from "../../components/ListControls";
+import { can } from "../../config/roles";
 
 const HOLD_TYPES = [
   { value: "general", label: "Umum" },
@@ -38,7 +39,7 @@ const CHIPS = [
 ];
 
 export default function StockBucketsView({ entities = [], currentUser }) {
-  const canManage = ["admin", "manager", "warehouse"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "inventory", "update");   // Sisir gerbang peran (2026-10-20) — /stock/hold & /stock/wip
   const [tab, setTab] = useState("board");
   const [q, setQ] = useState("");
   const [whFilter, setWhFilter] = useState("");

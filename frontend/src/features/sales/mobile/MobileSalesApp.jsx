@@ -10,6 +10,7 @@ import OfflineBanner from "../../mobile/OfflineBanner";
 import MobileOrders from "./MobileOrders";
 import MobileMore from "./MobileMore";
 import { entityShortById } from "../../../utils/entityLabel";
+import { roleIs } from "../../../config/roles";
 
 // Admin Sales mewarisi menu sales (ROLE_NAV) — beda satu: beranda = Meja Admin Sales.
 // link notifikasi (id view desktop) → layar HP.
@@ -34,7 +35,7 @@ export default function MobileSalesApp(props) {
     onMarkAllRead, onForceDesktop, allowRollPick = true, initialSub = null, onOpenFull, onRefresh, onSelectEntity,
     onPollNotifications, onMarkRead, settings, onCreateCustomer, notice = "", notifProps = {},
   } = props;
-  const isAdmin = user?.role === "sales_admin";
+  const isAdmin = roleIs(user?.role, ["sales_admin"]);   // Sisir gerbang peran (2026-10-20) — tata letak meja Admin Sales (peran acuan dikenali)
   const tabs = isAdmin ? [DESK_TAB, ...TABS.slice(1)] : TABS;
   const [orderFocus, setOrderFocus] = useState(null);
   const [subParam, setSubParam] = useState(null);

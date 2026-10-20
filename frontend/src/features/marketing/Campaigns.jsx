@@ -8,6 +8,7 @@ import { Field } from "../rnd/RndField";
 import KNSelect from "../../components/KNSelect";
 import { SearchBox } from "../../components/ListControls";
 import { mktApi, PLATFORM_STYLE, fmtN, STATUS_STYLE } from "./marketingShared";
+import { can } from "../../config/roles";
 
 const COLORS = ["#0058CC", "#C13584", "#1B7F4B", "#B45309", "#6D28D9", "#C0392B", "#0F766E"];
 
@@ -17,15 +18,23 @@ export default function Campaigns({ currentUser }) {
   const [costing, setCosting] = useState(null);
   const [q, setQ] = useState("");
   const shown = rows.filter((c) => !q.trim() || `${c.name || ""} ${c.title || ""} ${c.description || ""}`.toLowerCase().includes(q.trim().toLowerCase()));
-  const canEdit = ["admin", "manager", "designer", "sales", "sales_admin"].includes(currentUser?.role);
-  const canPostCost = ["admin", "manager", "finance"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): buat = marketing.create; ubah & ajukan tagihan = marketing.update;
+  // catat biaya = accounting.create; anulir biaya = accounting.void; ACC tagihan = peran Finance/Manager/Admin
+  // (aturan server BILL_APPROVER_ROLES) + accounting.view atau vendor_bill.approve.
+  const perms = currentUser?.permissions;
+  const canCreate = can(perms, "marketing", "create");
+  const canEdit = can(perms, "marketing", "update");
+  const canPostCost = can(perms, "accounting", "create");
+  const canVoidCost = can(perms, "accounting", "void");
+  const canApproveBill = ["admin", "manager", "finance"].includes(currentUser?.role)
+    && (can(perms, "accounting", "view") || can(perms, "vendor_bill", "approve"));
   const load = () => mktApi.campaigns().then(setRows).catch(() => {});
   useEffect(() => { load(); }, []);
   return (
     <div className="grid gap-3" data-testid="mkt-campaigns">
       <div className="flex items-center justify-between">
         <p className="text-[12px] text-[#6B6B73]">Kampanye mengelompokkan konten dalam satu tema & periode (mis. "Lebaran 2027", "Launching Koleksi Navy").</p>
-        {canEdit && <button type="button" className="primary-button !py-1.5 text-[11px]" onClick={() => setEditing({})} data-testid="mkt-new-campaign"><Plus size={13} /> Kampanye baru</button>}
+        {canCreate && <button type="button" className="primary-button !py-1.5 text-[11px]" onClick={() => setEditing({})} data-testid="mkt-new-campaign"><Plus size={13} /> Kampanye baru</button>}
       </div>
       <SearchBox value={q} onChange={setQ} placeholder="Cari kampanye…" testId="mkt-campaigns-search" />
       {shown.length === 0 && <p className="rounded-xl border border-dashed border-[#D9D9DE] p-6 text-center text-[12px] text-[#9A9BA3]" data-testid="mkt-campaigns-empty">{q ? "Tidak ada kampanye yang cocok." : "Belum ada kampanye."}</p>}
@@ -54,7 +63,7 @@ export default function Campaigns({ currentUser }) {
           </div>
         ))}
       </div>
-      {costing && <CampaignCostsModal campaign={costing} canPost={canPostCost} canCreateBill={canEdit} canApproveBill={canPostCost} currentUserId={currentUser?.id} onClose={() => setCosting(null)} onChanged={load} />}
+      {costing && <CampaignCostsModal campaign={costing} canPost={canPostCost} canVoid={canVoidCost} canCreateBill={canEdit} canApproveBill={canApproveBill} currentUserId={currentUser?.id} onClose={() => setCosting(null)} onChanged={load} />}
       {editing && <CampaignForm campaign={editing.id ? editing : null} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
     </div>
   );

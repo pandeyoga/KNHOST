@@ -13,6 +13,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import FormModal from "../../components/FormModal";
 import ConfirmModal from "../../components/ConfirmModal";
+import { can } from "../../config/roles";
 
 const RETURN_TYPES = [
   { value: "retur", label: "Retur" }, { value: "bs", label: "Barang Sisa" },
@@ -50,7 +51,7 @@ export default function ReturnPoliciesView({ currentUser }) {
   const [form, setForm] = useState(EMPTY);
   const [delTarget, setDelTarget] = useState(null);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "settings", "manage");   // Sisir gerbang peran (2026-10-20) — /sales-return-policies
 
   useEffect(() => { load(); loadMeta(); }, []); // eslint-disable-line
 
@@ -148,7 +149,7 @@ export default function ReturnPoliciesView({ currentUser }) {
         </div>
       )}
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="policy-error" />
-      <ReturnAssumptionsPanel canManage={["admin", "manager"].includes(currentUser?.role)} />
+      <ReturnAssumptionsPanel canManage={can(currentUser?.permissions, "entity", "update")} />
       <CutlossSimulator />
 
       {/* FASE P4 — form kebijakan retur menjadi POP-UP (dulu form panjang ini menyelip

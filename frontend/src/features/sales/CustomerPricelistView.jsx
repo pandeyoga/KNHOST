@@ -28,11 +28,12 @@ import CustomerPriceHistoryModal from "./customerPricelist/CustomerPriceHistoryM
 import ImportCustomerPriceModal from "./customerPricelist/ImportCustomerPriceModal";
 
 import PagedRows from "@/components/PagedRows";
+import { can } from "../../config/roles";
 
 export default function CustomerPricelistView({
   entities = [], selectedEntity, currentUser, onNavigate,
 }) {
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "pricelist", "manage");   // Sisir gerbang peran (2026-10-20) — tulis daftar harga
   const activeEntities = entities.filter((e) => e.status !== "inactive");
   const [entityId, setEntityId] = useState(
     selectedEntity && selectedEntity !== "all" ? selectedEntity : (activeEntities[0]?.id || ""));

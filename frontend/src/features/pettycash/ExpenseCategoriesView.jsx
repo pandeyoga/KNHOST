@@ -4,6 +4,7 @@ import { FolderTree, RefreshCw, Save, Info } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
+import { can } from "../../config/roles";
 
 /**
  * ExpenseCategoriesView — Konfigurasi pemetaan kategori pengeluaran petty cash → akun COA.
@@ -19,7 +20,7 @@ export default function ExpenseCategoriesView({ currentUser }) {
   const [toast, setToast] = useState("");
   const [savingCode, setSavingCode] = useState("");
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "cash_settlement", "manage");   // Sisir gerbang peran (2026-10-20) — PATCH /expense-categories/{code}
 
   useEffect(() => { loadAll(); }, []); // eslint-disable-line
 

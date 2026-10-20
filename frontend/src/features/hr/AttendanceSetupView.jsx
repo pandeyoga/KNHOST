@@ -7,6 +7,7 @@ import EntityBadge from "../../components/EntityBadge";
 import ErrorNotice from "../../components/ErrorNotice";
 import ConfirmModal from "../../components/ConfirmModal";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { can } from "../../config/roles";
 
 const DAYS = [[1, "Sen"], [2, "Sel"], [3, "Rab"], [4, "Kam"], [5, "Jum"], [6, "Sab"], [7, "Min"]];
 const KIND = {
@@ -39,7 +40,7 @@ function Field({ label, children }) {
 }
 
 export default function AttendanceSetupView({ currentUser, selectedEntity }) {
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "hr", "manage_attendance");   // Sisir gerbang peran (2026-10-20) — endpoint absensi/cuti/lembur/KPI
   const [tab, setTab] = useState("shift");
   const params = useMemo(() => (selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {}), [selectedEntity]);
   const [items, setItems] = useState([]);

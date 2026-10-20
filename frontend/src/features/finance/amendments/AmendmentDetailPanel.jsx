@@ -23,7 +23,6 @@ import AmendmentChangeList from "./AmendmentChangeList";
 import AmendmentImpactCard from "./AmendmentImpactCard";
 import { amendmentDetail, decideAmendment, errText, statusMeta } from "./amendmentApi";
 
-const APPROVER_ROLES = ["admin", "manager"];
 
 function when(iso) {
   if (!iso) return "—";
@@ -97,12 +96,14 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
   const policy = amd.policy_snapshot || {};
   const pending = amd.status === "pending_approval";
   const isProposer = !!currentUser?.id && currentUser.id === amd.proposed_by_id;
-  const permDecide = amd.approval_permission
-    ? can(currentUser?.permissions, ...amd.approval_permission.split(".")) : null;
-  const roleOk = permDecide ?? (currentUser?.role === "admin"
-    || currentUser?.role === (amd.required_role || policy.approver_role || "manager"));
+  // Sisir gerbang peran (2026-10-20): izin putus = approval_permission dokumen atau finance_amendment.approve
+  // (= endpoint). Tanpa approval_permission, server juga menuntut peran persis (Admin atau peran
+  // penyetuju kebijakan) — aturan bisnis amandemen, tetap berbasis peran.
+  const permDecide = can(currentUser?.permissions, ...(amd.approval_permission || "finance_amendment.approve").split("."));
+  const roleOk = !!amd.approval_permission || currentUser?.role === "admin"
+    || currentUser?.role === (amd.required_role || policy.approver_role || "manager");
   const dualBlocked = !!policy.dual_control && isProposer;
-  const canDecide = pending && (permDecide ?? APPROVER_ROLES.includes(currentUser?.role)) && roleOk && !dualBlocked;
+  const canDecide = pending && permDecide && roleOk && !dualBlocked;
 
   return (
     <aside className="section-card self-start" data-testid="amd-detail-panel">
@@ -208,7 +209,7 @@ export default function AmendmentDetailPanel({ amdId, currentUser, onDecided, on
                 Peran Anda: {(currentUser?.role || "—").toUpperCase()}.
               </p>
             )}
-            {!(permDecide ?? APPROVER_ROLES.includes(currentUser?.role)) && (
+            {!permDecide && (
               <p data-testid="amd-noperm-warning" className="rounded bg-white px-2 py-1.5 text-[10.5px] text-[#6B6B73]">
                 Anda dapat memantau statusnya di sini, tetapi keputusan dilakukan oleh manager/admin.
               </p>

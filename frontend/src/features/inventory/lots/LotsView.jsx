@@ -24,13 +24,13 @@ import { CreateLotModal, LotLabelModal, LotStatusModal, MergeLotModal, ReworkLot
 import { LotFilters, LotStatCards, LotTable, UnassignedRollsCard } from "./LotParts";
 import ConfigRedirectCard from "../../settings/config/ConfigRedirectCard";
 import { errText, lotApi } from "./lotApi";
+import { can } from "../../../config/roles";
 
 const EMPTY_FILTER = { q: "", source: "", lot_status: "", stage: "", warehouse_id: "" };
 
 export default function LotsView({ user, products = [], warehouses = [], entityId }) {
   const { options, labelOf } = useDomainEnums();
-  const canEdit = user?.role === "admin" || user?.role === "manager" || user?.role === "warehouse";
-  const canConfig = user?.role === "admin" || user?.role === "manager";
+  const canEdit = can(user?.permissions, "inventory", "update");   // Sisir gerbang peran (2026-10-20) — semua tulis /lots*
 
   const [lots, setLots] = useState([]);
   const [total, setTotal] = useState(0);

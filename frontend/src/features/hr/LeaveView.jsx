@@ -8,6 +8,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox, OptionTabs } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
 import { LEAVE_TYPES, LEAVE_TYPE_LABEL, REQ_STATUS, recentMonths, curMonth, wibToday, countWorkdays, monthCells } from "./leaveUtils";
+import { can } from "../../config/roles";
 
 const WEEKDAYS = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
@@ -95,7 +96,7 @@ export default function LeaveView({ currentUser, selectedEntity }) {
   const [rejectTarget, setRejectTarget] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "hr", "manage_attendance");   // Sisir gerbang peran (2026-10-20) — endpoint absensi/cuti/lembur/KPI
   const params = useMemo(() => (selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {}), [selectedEntity]);
   const empName = useMemo(() => Object.fromEntries(employees.map((e) => [e.id, e.name])), [employees]);
 

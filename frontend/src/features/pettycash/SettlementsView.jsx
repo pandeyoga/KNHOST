@@ -9,6 +9,7 @@ import { SearchBox } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
 import { STL_STATUS, StatusPill, fmtDate, printSettlement } from "./pettyCashShared";
 import SettlementForm from "./SettlementForm";
+import { can } from "../../config/roles";
 
 /**
  * SettlementsView — Laporan Pertanggungjawaban (LPJ) atas PD dicairkan.
@@ -30,7 +31,7 @@ export default function SettlementsView({ currentUser, selectedEntity = "all", e
   const [statusFilter, setStatusFilter] = useState("");
   const [selected, setSelected] = useState(null);
 
-  const canCreate = ["admin", "manager", "sales"].includes(currentUser?.role);
+  const canCreate = can(currentUser?.permissions, "cash_settlement", "create");   // Sisir gerbang peran (2026-10-20) — POST /cash-advance-settlements
 
   useEffect(() => { load(); loadCats(); }, [selectedEntity]); // eslint-disable-line
 

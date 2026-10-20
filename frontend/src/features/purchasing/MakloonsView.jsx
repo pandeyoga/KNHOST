@@ -7,6 +7,7 @@ import ConfirmModal from "../../components/ConfirmModal";
 import MakloonFormModal from "./MakloonFormModal";
 import Makloon360Panel from "./Makloon360Panel";
 import useProcessTypes from "../../hooks/useProcessTypes";
+import { can } from "../../config/roles";
 
 /** MakloonsView (M1) — master mitra makloon: list, search, CRUD, Makloon 360. */
 export default function MakloonsView({ currentUser, selectedEntity }) {
@@ -22,7 +23,10 @@ export default function MakloonsView({ currentUser, selectedEntity }) {
   const [detailId, setDetailId] = useState(null);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): buat/ubah/nonaktif = makloon.create/update/delete.
+  const canManage = can(currentUser?.permissions, "makloon", "create");
+  const canUpdate = can(currentUser?.permissions, "makloon", "update");
+  const canDeactivate = can(currentUser?.permissions, "makloon", "delete");
   useEffect(() => { loadAll(); }, [selectedEntity]); // eslint-disable-line
 
   async function loadAll() {
@@ -99,9 +103,9 @@ export default function MakloonsView({ currentUser, selectedEntity }) {
                 <span className={`status-pill ${m.status === "active" ? "pill-success" : "pill-muted"}`}>{m.status === "active" ? "Aktif" : "Nonaktif"}</span>
                 <div className="flex items-center justify-end gap-1">
                   <button data-testid={`detail-makloon-${m.id}`} onClick={() => setDetailId(m.id)} className="icon-button text-[#0058CC]" title="Makloon 360"><BarChart3 size={13} /></button>
-                  {canManage && <>
-                    <button data-testid={`edit-makloon-${m.id}`} onClick={() => { setEditTarget(m); setShowForm(true); }} className="icon-button" title="Ubah"><Pencil size={13} /></button>
-                    {m.status === "active" && <button data-testid={`deactivate-makloon-${m.id}`} onClick={() => setDeactivateTarget(m)} className="icon-button text-red-400 hover:text-red-600" title="Nonaktifkan"><Power size={13} /></button>}
+                  {(canUpdate || canDeactivate) && <>
+                    {canUpdate && <button data-testid={`edit-makloon-${m.id}`} onClick={() => { setEditTarget(m); setShowForm(true); }} className="icon-button" title="Ubah"><Pencil size={13} /></button>}
+                    {canDeactivate && m.status === "active" && <button data-testid={`deactivate-makloon-${m.id}`} onClick={() => setDeactivateTarget(m)} className="icon-button text-red-400 hover:text-red-600" title="Nonaktifkan"><Power size={13} /></button>}
                   </>}
                 </div>
               </div>

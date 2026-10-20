@@ -4,13 +4,16 @@ import { LayoutTemplate, Trash2 } from "lucide-react";
 import { KNSelect } from "../../components/KNSelect";
 import { askConfirm } from "@/services/confirmService";
 import { mktApi } from "./marketingShared";
+import { can } from "../../config/roles";
 
 export default function TemplatePicker({ value, onApply, currentUser }) {
   const [rows, setRows] = useState([]);
   const load = () => mktApi.templates().then(setRows).catch(() => setRows([]));
   useEffect(() => { load(); }, []);
   const cur = rows.find((t) => t.id === value);
-  const canDelete = cur && (["admin", "manager"].includes(currentUser?.role) || cur.created_by_id === currentUser?.id);
+  // Sisir gerbang peran (2026-10-20): hapus = marketing.update + (pembuat atau Manager/Admin — aturan server APPROVE_ROLES).
+  const canDelete = cur && can(currentUser?.permissions, "marketing", "update")
+    && (["admin", "manager"].includes(currentUser?.role) || cur.created_by_id === currentUser?.id);
 
   const remove = async () => {
     const ok = await askConfirm({ title: `Hapus template "${cur.name}"?`, danger: true, testId: "mkt-template-delete-confirm" });

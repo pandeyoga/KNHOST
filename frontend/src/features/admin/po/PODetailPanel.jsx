@@ -3,7 +3,7 @@ import { DualName } from "../../../components/DualName";
 import { useState } from "react";
 import { FileText, CheckCircle, XCircle, AlertCircle, Receipt, Ban, FileEdit, PackageCheck, Printer, ListOrdered } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
-import { can } from "../../../config/roles";
+import { can, roleSatisfies } from "../../../config/roles";
 import { getStatusBadge, lateState } from "./poUtils";
 import POTimeline from "./POTimeline";
 import { POVarianceTasksPanel } from "./POVarianceTasksPanel";
@@ -83,7 +83,10 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
     );
   }
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): ACC mengikuti peringkat peran yang dituntut PO (= role_satisfies server);
+  // revisi/tutup/batal = purchase_order.update (POST /purchase-orders/{id}/amend|close|cancel).
+  const canApprove = roleSatisfies(currentUser?.role, po?.required_approval_role);
+  const canManage = can(currentUser?.permissions, "purchase_order", "update");
   // Jembatan PO → Gudang: siapa pun yang boleh melihat WMS bisa lompat ke penerimaan PO ini.
   const canReceive = can(currentUser?.permissions, "wms", "view") && ["pending", "receiving", "partial"].includes(po.status);
   // Testid unik saat panel dirender DI DALAM pop-up (kompak + pop-up bisa tampil bersamaan).
@@ -361,7 +364,7 @@ export default function PODetailPanel({ po, currentUser, onClose, onApprove, onC
               <FileEdit size={13} /> Revisi / Amandemen PO
             </button>
           )}
-          {po.status === "waiting_approval" && canManage && (
+          {po.status === "waiting_approval" && canApprove && (
             <button data-testid={`${tp}approve-po-button`} onClick={() => onApprove(po.id)} className="primary-button justify-center">
               <CheckCircle size={13} /> Setujui PO
             </button>

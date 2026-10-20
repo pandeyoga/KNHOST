@@ -35,6 +35,7 @@ import KNSelect from "../../components/KNSelect";
 import EntityBadge from "../../components/EntityBadge";
 import { entityShort, entityShortById } from "../../utils/entityLabel";
 import { formatCurrency } from "../../utils/formatters";
+import { can } from "../../config/roles";
 
 const STATUS_META = {
   current: { label: "Berlaku", tone: "bg-[#E6F6EC] text-[#1B7F4B]" },
@@ -70,7 +71,7 @@ function fmtDate(iso) {
 }
 
 export default function PricelistView({ entities = [], selectedEntity, currentUser }) {
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "pricelist", "manage");   // Sisir gerbang peran (2026-10-20) — tulis daftar harga
   const activeList = entities.filter((e) => e.status !== "inactive" && e.status !== "archived");
   const [entityId, setEntityId] = useState(
     selectedEntity && selectedEntity !== "all" ? selectedEntity : (activeList[0]?.id || ""));

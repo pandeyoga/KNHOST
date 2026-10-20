@@ -6,6 +6,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import BlanketPOCreateModal from "./BlanketPOCreateModal";
 import BlanketPODetailPanel from "./BlanketPODetailPanel";
 import { ContractStatusPill as ContractStatusPillShared } from "./ContractStatusPill";
+import { can } from "../../config/roles";
 
 /**
  * BlanketPOView (P2 — Blanket / Contract PO + call-off).
@@ -39,7 +40,7 @@ export default function BlanketPOView({ currentUser, selectedEntity }) {
   const [showCreate, setShowCreate] = useState(false);
   const [detailId, setDetailId] = useState(null);
 
-  const canCreate = ["admin", "manager"].includes(currentUser?.role);
+  const canCreate = can(currentUser?.permissions, "purchase_order", "create");   // Sisir gerbang peran (2026-10-20) — POST /purchase-orders/blanket
 
   useEffect(() => { load(); }, [selectedEntity]); // eslint-disable-line
 

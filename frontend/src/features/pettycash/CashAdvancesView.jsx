@@ -7,6 +7,7 @@ import { SearchBox } from "../../components/ListControls";
 import { CA_STATUS, StatusPill, fmtDate } from "./pettyCashShared";
 import CashAdvanceForm from "./CashAdvanceForm";
 import CashAdvanceDetail from "./CashAdvanceDetail";
+import { can } from "../../config/roles";
 
 /**
  * CashAdvancesView — Form Pengajuan Dana (PD).
@@ -33,7 +34,7 @@ export default function CashAdvancesView({ currentUser, selectedEntity = "all", 
   const [statusFilter, setStatusFilter] = useState("");
   const [selected, setSelected] = useState(null);
 
-  const canCreate = ["admin", "manager", "sales"].includes(currentUser?.role);
+  const canCreate = can(currentUser?.permissions, "cash_advance", "create");   // Sisir gerbang peran (2026-10-20) — POST /cash-advances
 
   useEffect(() => { load(); }, [selectedEntity]); // eslint-disable-line
 

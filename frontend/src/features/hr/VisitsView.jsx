@@ -15,6 +15,7 @@ import { MyVisitsPanel } from "./MyVisitsPanel";
 // dilihat manajer, sehingga sales tak punya bukti apa pun atas usahanya sendiri.
 import MyVisitsHistory from "./MyVisitsHistory";
 import { OUTCOME_PILL, VISIT_STATUS_PILL, fmtTime, fmtMin, todayStr, monthStr } from "./trackingUtils";
+import { can, roleIs } from "../../config/roles";
 
 function Stat({ label, value, color }) {
   return (
@@ -175,7 +176,9 @@ function VisitsLog({ currentUser, selectedEntity }) {
 }
 
 export default function VisitsView({ currentUser, selectedEntity }) {
-  if (currentUser?.role === "sales") {
+  // Sisir gerbang peran (2026-10-20): dasbor penyelia butuh hr.view (GET /hr/visits); Sales (peran acuan dikenali)
+  // dan akun tanpa hr.view memakai tampilan "Kunjungan Saya" (/hr/visits/me).
+  if (roleIs(currentUser?.role, ["sales"]) || !can(currentUser?.permissions, "hr", "view")) {
     return (
       <div data-testid="my-visits-view">
         <MyVisitsPanel currentUser={currentUser} />

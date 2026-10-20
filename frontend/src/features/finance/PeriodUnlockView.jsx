@@ -18,6 +18,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import KNSelect from "../../components/KNSelect";
 import { askReason } from "@/services/confirmService";
+import { can } from "../../config/roles";
 
 function fmtDateTime(iso) {
   if (!iso) return "—";
@@ -46,7 +47,7 @@ const STATUS_BADGE = {
 };
 
 export default function PeriodUnlockView({ selectedEntity, entities = [], currentUser }) {
-  const canManage = currentUser?.role === "admin" || currentUser?.role === "manager";
+  const canManage = can(currentUser?.permissions, "period", "unlock");   // Sisir gerbang peran (2026-10-20) — semua aksi buka periode = period.unlock
   const entityOptions = useMemo(
     () => entities.filter((e) => !e.is_group).map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.id })),
     [entities]);
@@ -244,7 +245,7 @@ export default function PeriodUnlockView({ selectedEntity, entities = [], curren
                     </button>
                   </div>
                 )}
-                {!canManage && <p className="mt-2 text-[11px] text-[#C0392B]">Hanya admin/manajer yang dapat mengusulkan & menyetujui buka periode.</p>}
+                {!canManage && <p className="mt-2 text-[11px] text-[#C0392B]">Mengusulkan & menyetujui buka periode butuh izin buka periode (period.unlock).</p>}
               </div>
 
               {/* Riwayat usul */}

@@ -16,6 +16,7 @@ import { ReturnPolicyEditor } from "../../components/ReturnPolicyEditor";
 import { SupplierBankFields, bankSummary } from "./SupplierBankFields";
 import SupplierLabelPatternEditor, { DEFAULT_LABEL_PATTERN } from "./SupplierLabelPatternEditor";
 import { usePagedList } from "../../hooks/usePagedList";
+import { can } from "../../config/roles";
 
 // FASE P6 — kolom Unduh CSV (mengikuti kolom tabel supplier).
 const CSV_COLUMNS = [
@@ -70,7 +71,10 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
   const [detailId, setDetailId] = useState(null);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): buat = supplier.create, ubah = supplier.update, nonaktif = supplier.delete.
+  const canCreate = can(currentUser?.permissions, "supplier", "create");
+  const canUpdate = can(currentUser?.permissions, "supplier", "update");
+  const canDeactivate = can(currentUser?.permissions, "supplier", "delete");
 
   // P2 — paginasi server-side + pencarian q server-side.
   const params = useMemo(() => (
@@ -178,7 +182,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
             <Truck size={16} className="text-[#0058CC]" />
             <h2 data-testid="suppliers-title">Master Pemasok (Supplier)</h2>
           </div>
-          {canManage && (
+          {canCreate && (
             <button data-testid="create-supplier-button" onClick={openCreate} className="primary-button">
               <Plus size={13} /> Buat Supplier
             </button>
@@ -198,7 +202,7 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
           terdorong ke bawah lipatan sehingga pengguna sering tak sadar formnya sudah terbuka
           (lalu menyimpulkan tombolnya tidak berfungsi). Logika form tidak diubah. */}
       <FormModal
-        open={showForm && canManage}
+        open={showForm && (editId ? canUpdate : canCreate)}
         onClose={() => { setShowForm(false); setEditId(null); }}
         title={editId ? "Ubah Supplier" : "Supplier Baru"}
         subtitle="Data pemasok, termin pembayaran & kebijakan retur"
@@ -337,15 +341,15 @@ export default function SuppliersView({ currentUser, selectedEntity }) {
                   <StatusPill status={s.status} />
                   <div className="flex items-center justify-end gap-1">
                     <button data-testid={`detail-supplier-${s.id}`} onClick={() => setDetailId(s.id)} className="icon-button text-[#0058CC]" title="Supplier 360°"><BarChart3 size={13} /></button>
-                    {canManage && !isGroupEntityPartner(s) && (
+                    {(canUpdate || canDeactivate) && !isGroupEntityPartner(s) && (
                       <>
-                        <button data-testid={`edit-supplier-${s.id}`} onClick={() => openEdit(s)} className="icon-button" title="Ubah"><Pencil size={13} /></button>
-                        {s.status === "active" && (
+                        {canUpdate && <button data-testid={`edit-supplier-${s.id}`} onClick={() => openEdit(s)} className="icon-button" title="Ubah"><Pencil size={13} /></button>}
+                        {canDeactivate && s.status === "active" && (
                           <button data-testid={`deactivate-supplier-${s.id}`} onClick={() => handleDeactivate(s)} className="icon-button text-red-400 hover:text-red-600" title="Nonaktifkan"><Power size={13} /></button>
                         )}
                       </>
                     )}
-                    {canManage && isGroupEntityPartner(s) && (
+                    {(canUpdate || canDeactivate) && isGroupEntityPartner(s) && (
                       // Baris ini CERMIN `business_entities`: identitas & statusnya diubah
                       // dari layar Badan Usaha & Akses, bukan dari sini — kalau tidak,
                       // cermin dan aslinya bisa berbeda dan pagar PO ikut salah menilai.

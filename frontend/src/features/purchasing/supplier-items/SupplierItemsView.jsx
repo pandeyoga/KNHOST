@@ -16,6 +16,7 @@ import usePagedRows from "../../../hooks/usePagedRows";
 import {
   deleteSupplierItem, listSupplierItems, lookupSupplierSku, supplierItemStats,
 } from "./supplierItemsApi";
+import { can } from "../../../config/roles";
 
 export default function SupplierItemsView({ currentUser, selectedEntity }) {
   const [rows, setRows] = useState([]);
@@ -33,7 +34,11 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
   const [lookupSku, setLookupSku] = useState("");
   const [lookupResult, setLookupResult] = useState(null);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): impor = supplier_item.import, buat = .create, ubah/tinjau = .update, hapus = .delete.
+  const canImport = can(currentUser?.permissions, "supplier_item", "import");
+  const canCreate = can(currentUser?.permissions, "supplier_item", "create");
+  const canUpdate = can(currentUser?.permissions, "supplier_item", "update");
+  const canDelete = can(currentUser?.permissions, "supplier_item", "delete");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -127,16 +132,16 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
             <button data-testid="supplier-items-refresh" className="btn-secondary btn-xs" onClick={load}>
               <RefreshCw size={13} /> Muat ulang
             </button>
-            {canManage && (
+            {(canImport || canCreate) && (
               <>
-                <button data-testid="supplier-items-import" className="btn-secondary btn-xs"
+                {canImport && <button data-testid="supplier-items-import" className="btn-secondary btn-xs"
                   onClick={() => setShowImport(true)}>
                   <Upload size={13} /> Impor Massal
-                </button>
-                <button data-testid="supplier-items-create" className="btn-primary"
+                </button>}
+                {canCreate && <button data-testid="supplier-items-create" className="btn-primary"
                   onClick={() => { setEditing(null); setShowForm(true); }}>
                   <Plus size={14} /> Barang Baru
-                </button>
+                </button>}
               </>
             )}
           </div>
@@ -246,7 +251,7 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
                   {r.review_status === "needs_review" && (
                     <div data-testid={`supplier-item-review-${r.id}`} className="mt-0.5 rounded border border-[#F0C88A] bg-[#FEF7EC] px-1.5 py-0.5 text-[10px] text-[#8C4A00]">
                       Perlu ditinjau: {(r.review_reasons || []).join(" ")}
-                      {canManage && <button data-testid={`supplier-item-resolve-${r.id}`} className="ml-1 font-semibold underline" onClick={() => resolveReview(r)}>Tandai benar</button>}
+                      {canUpdate && <button data-testid={`supplier-item-resolve-${r.id}`} className="ml-1 font-semibold underline" onClick={() => resolveReview(r)}>Tandai benar</button>}
                     </div>
                   )}
                 </div>
@@ -266,16 +271,16 @@ export default function SupplierItemsView({ currentUser, selectedEntity }) {
                   </span>
                 </span>
                 <div className="flex justify-end gap-1">
-                  {canManage && (
+                  {(canUpdate || canDelete) && (
                     <>
-                      <button data-testid={`supplier-item-edit-${r.id}`} className="icon-button"
+                      {canUpdate && <button data-testid={`supplier-item-edit-${r.id}`} className="icon-button"
                         onClick={() => { setEditing(r); setShowForm(true); }}>
                         <Pencil size={13} />
-                      </button>
-                      <button data-testid={`supplier-item-delete-${r.id}`} className="icon-button text-red-500"
+                      </button>}
+                      {canDelete && <button data-testid={`supplier-item-delete-${r.id}`} className="icon-button text-red-500"
                         onClick={() => remove(r)}>
                         <Trash2 size={13} />
-                      </button>
+                      </button>}
                     </>
                   )}
                 </div>

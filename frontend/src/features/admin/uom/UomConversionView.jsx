@@ -25,13 +25,14 @@ import useUomConversions, { invalidateUomCache } from "../../../hooks/useUomConv
 import { RuleTable, StatCards, UsageTable } from "./UomConversionParts";
 import ConfigRedirectCard from "../../settings/config/ConfigRedirectCard";
 import useListSearch from "@/hooks/useListSearch";
+import { can } from "../../../config/roles";
 
 const EMPTY_RULE = { from_unit: "", to_unit: "", kind: "fixed", factor: "", formula: "",
                      note: "", status: "active" };
 
 export default function UomConversionView({ user, products = [] }) {
   const { units, dimensions, kinds, settings, unitOptions } = useUomConversions();
-  const canEdit = user?.role === "admin" || (user?.permissions?.uom || []).includes("update");
+  const canEdit = can(user?.permissions, "uom", "update");   // Sisir gerbang peran (2026-10-20) — tulis /uom-conversions/rules
 
   const [rules, setRules] = useState([]);
   const [usage, setUsage] = useState([]);

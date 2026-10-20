@@ -62,8 +62,11 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
   const [showCancel, setShowCancel] = useState(false);
   const { labelOf: processLabel } = useProcessTypes();
 
-  const canAct = ["admin", "manager", "warehouse"].includes(currentUser?.role);
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): kirim bahan = makloon_order.issue, terima/catat jasa = makloon_order.receive,
+  // batal = makloon_order.cancel (sama dengan endpoint).
+  const canIssue = can(currentUser?.permissions, "makloon_order", "issue");
+  const canReceive = can(currentUser?.permissions, "makloon_order", "receive");
+  const canManage = can(currentUser?.permissions, "makloon_order", "cancel");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -314,13 +317,13 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
                     <MakloonClaimPanel mkoId={mkoId} step={s} currentUser={currentUser}
                       onDone={load} onError={onError} />
                   )}
-                  {canAct && s.status === "pending" && prevReceived && !serviceOnly && (
+                  {canIssue && s.status === "pending" && prevReceived && !serviceOnly && (
                     <button data-testid={`issue-step-${s.seq}`} onClick={() => setIssueStep(s)} className="primary-button mt-2 !py-1.5 text-[11.5px]"><Send size={12} /> Issue ke Makloon</button>
                   )}
                   {/* FASE T — langkah jasa murni: kain TIDAK boleh bergerak, jadi tombolnya
                       "Catat Jasa". Dulu petugas hanya melihat "Issue ke Makloon", menekannya,
                       lalu ditolak 409 tanpa jalan keluar. */}
-                  {canAct && s.status === "pending" && prevReceived && serviceOnly && (
+                  {canReceive && s.status === "pending" && prevReceived && serviceOnly && (
                     <div className="mt-2">
                       <button data-testid={`record-service-step-${s.seq}`} onClick={() => setServiceStep(s)}
                         className="primary-button !py-1.5 text-[11.5px]">
@@ -332,7 +335,7 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
                       </p>
                     </div>
                   )}
-                  {canAct && s.status === "pending" && !prevReceived && (
+                  {(canIssue || canReceive) && s.status === "pending" && !prevReceived && (
                     <p className="mt-2 text-[10.5px] text-[#9A9BA3]">Menunggu langkah sebelumnya diterima.</p>
                   )}
                   {s.status === "issued" && s.awaiting_return && (
@@ -349,7 +352,7 @@ export default function MakloonOrderDetailPanel({ mkoId, currentUser, onBack, on
                   {s.status === "returned" && (
                     <MakloonReturnHistory step={s} />
                   )}
-                  {canAct && s.status === "issued" && !s.awaiting_return && (
+                  {canReceive && s.status === "issued" && !s.awaiting_return && (
                     <div className="mt-2 flex flex-wrap items-center gap-2">
                       {!isGrn(data.entity_id) && <button data-testid={`receive-step-${s.seq}`} onClick={() => setReceiveStep(s)} className="primary-button !py-1.5 text-[11.5px]"><PackageCheck size={12} /> Terima Hasil</button>}
                       <a data-testid={`receive-step-grn-${s.seq}`} className="secondary-button !py-1.5 text-[11.5px]"

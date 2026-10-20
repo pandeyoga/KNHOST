@@ -9,6 +9,7 @@ import ConfirmModal from "../../components/ConfirmModal";
 import { formatCurrency } from "../../utils/formatters";
 import { EmployeeFormDrawer } from "./EmployeeFormDrawer";
 import Employee360Panel from "./Employee360Panel";
+import { can } from "../../config/roles";
 
 const STATUS_PILL = {
   active: { cls: "pill-success", label: "Aktif" },
@@ -50,7 +51,10 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
   const [deactivateTarget, setDeactivateTarget] = useState(null);
   const [detailId, setDetailId] = useState(null);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): buat = hr.create, ubah = hr.update, resign/nonaktif = hr.delete.
+  const canManage = can(currentUser?.permissions, "hr", "create");
+  const canUpdate = can(currentUser?.permissions, "hr", "update");
+  const canDeactivate = can(currentUser?.permissions, "hr", "delete");
 
   useEffect(() => { loadAll(); }, [selectedEntity]); // eslint-disable-line
 
@@ -190,10 +194,10 @@ export default function EmployeesView({ currentUser, selectedEntity }) {
                   <span><span data-testid={`employee-status-${e.id}`} className={`status-pill ${pill.cls}`}>{pill.label}</span></span>
                   <div className="flex items-center justify-end gap-1">
                     <button data-testid={`detail-employee-${e.id}`} onClick={() => setDetailId(e.id)} className="icon-button text-[#0058CC]" title="Karyawan 360°"><BarChart3 size={13} /></button>
-                    {canManage && (
+                    {(canUpdate || canDeactivate) && (
                       <>
-                        <button data-testid={`edit-employee-${e.id}`} onClick={() => openEdit(e)} className="icon-button" title="Ubah"><Pencil size={13} /></button>
-                        {e.status !== "resigned" && (
+                        {canUpdate && <button data-testid={`edit-employee-${e.id}`} onClick={() => openEdit(e)} className="icon-button" title="Ubah"><Pencil size={13} /></button>}
+                        {canDeactivate && e.status !== "resigned" && (
                           <button data-testid={`deactivate-employee-${e.id}`} onClick={() => setDeactivateTarget(e)} className="icon-button text-red-400 hover:text-red-600" title="Resign / Nonaktifkan"><Power size={13} /></button>
                         )}
                       </>

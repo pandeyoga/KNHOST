@@ -35,6 +35,7 @@ import { entityShort, entityShortById } from "../../../utils/entityLabel";
 import { formatCurrency } from "../../../utils/formatters";
 import { COLUMNS, CREATE_FIELDS, cellText, defaultsFor, fieldOf, parseFieldValue, toInputValue }
   from "./masterFieldsConfig";
+import { can } from "../../../config/roles";
 
 /**
  * FASE L — definisi kolom & field per jenis master dipindah ke berkas data
@@ -76,7 +77,7 @@ export default function EntityMastersView({ entities = [], selectedEntity = "all
   const [createValues, setCreateValues] = useState({});
   const [createGlobal, setCreateGlobal] = useState(false);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "settings", "manage");   // Sisir gerbang peran (2026-10-20) — tulis /entity-masters
   const spec = groups.find((g) => g.kind === kind) || {};
 
   const loadGroups = useCallback(async () => {

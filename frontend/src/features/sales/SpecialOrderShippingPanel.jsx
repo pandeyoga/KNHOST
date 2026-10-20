@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Loader2, Truck } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
+import { can } from "../../config/roles";
 
 const TASK_LABEL = { created: "Menunggu picking", scheduled: "Terjadwal", picking: "Picking", packing: "Packing", staging: "Staging", partially_shipped: "Terkirim sebagian", dispatched: "Surat Jalan terbit", escalated: "Eskalasi", cancelled: "Batal" };
 
@@ -13,7 +14,7 @@ export default function SpecialOrderShippingPanel({ order, currentUser, onUpdate
   const [err, setErr] = useState("");
   const show = ["in_production", "ready", "shipped", "done"].includes(order.status) && !!(order.linked_po_id || order.linked_mko_id);
   if (!show) return null;
-  const canPrepare = ["admin", "manager", "sales_admin", "warehouse_admin"].includes(currentUser?.role) && order.status === "ready" && tasks.length === 0;
+  const canPrepare = can(currentUser?.permissions, "order", "update") && order.status === "ready" && tasks.length === 0;
   const prepare = async () => {
     setBusy(true); setErr("");
     try { const r = await axios.post(`${API}/special-orders/${order.id}/prepare-shipment`); onUpdated?.(r.data.special_order); }

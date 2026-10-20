@@ -5,10 +5,11 @@ import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import ConfirmModal from "../../components/ConfirmModal";
 import { lastMonths, curMonth, scoreCls, scoreBadge, weightedAvg, isCalendarMonth } from "./kpiUtils";
+import { can } from "../../config/roles";
 
 // FASE H5 — KPI Design (input KPI manual per karyawan/periode + rekap). Keputusan 2a.
 export default function KpiView({ currentUser, selectedEntity }) {
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "hr", "manage_attendance");   // Sisir gerbang peran (2026-10-20) — endpoint absensi/cuti/lembur/KPI
   const [rows, setRows] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);

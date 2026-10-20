@@ -5,6 +5,7 @@ import { formatCurrency } from "../../utils/formatters";
 import SupplierPriceList from "./SupplierPriceList";
 import SupplierScorecard from "./SupplierScorecard";
 import { overlayDismiss } from "@/utils/overlayDismiss";
+import { can } from "../../config/roles";
 
 /**
  * SupplierDetailPanel — di-upgrade ke "Supplier 360" (M1):
@@ -26,7 +27,7 @@ export default function SupplierDetailPanel({ supplier, currentUser, onClose }) 
   const [tab, setTab] = useState("info");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "supplier", "update");   // Sisir gerbang peran (2026-10-20) — ubah supplier & daftar harga (supplier.update)
 
   useEffect(() => {
     if (!supplier) return;

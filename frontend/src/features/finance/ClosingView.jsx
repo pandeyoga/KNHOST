@@ -12,6 +12,7 @@ import axios, { API } from "../../services/apiClient";
 import ErrorNotice from "../../components/ErrorNotice";
 import KNSelect from "../../components/KNSelect";
 import { formatCurrency } from "../../utils/formatters";
+import { can } from "../../config/roles";
 
 const NOW = new Date();
 const MONTHS = [
@@ -34,7 +35,10 @@ function fmtDateTime(iso) {
 }
 
 export default function ClosingView({ selectedEntity, entities = [], currentUser }) {
-  const isAdmin = currentUser?.role === "admin";
+  // Sisir gerbang peran (2026-10-20): tutup ulang = accounting.manage; buka kembali = accounting.manage
+  // DAN khusus Admin (aturan server, closing.py) — peran tetap dicek.
+  const canManageClosing = can(currentUser?.permissions, "accounting", "manage");
+  const isAdmin = canManageClosing && currentUser?.role === "admin";
   const entityOptions = useMemo(
     () => entities.filter((e) => !e.is_group).map((e) => ({ value: e.id, label: e.short_name || e.legal_name || e.id })),
     [entities]);
@@ -132,7 +136,7 @@ export default function ClosingView({ selectedEntity, entities = [], currentUser
     }
   };
 
-  const canReclose = isAdmin || currentUser?.role === "manager";
+  const canReclose = canManageClosing;
 
   const closedCount = closings.filter((c) => c.status === "closed").length;
 

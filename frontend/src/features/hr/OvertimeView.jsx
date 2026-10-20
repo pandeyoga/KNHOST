@@ -8,6 +8,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { SearchBox, OptionTabs } from "../../components/ListControls";
 import ConfirmModal from "../../components/ConfirmModal";
 import { REQ_STATUS, recentMonths, wibToday } from "./leaveUtils";
+import { can } from "../../config/roles";
 
 function StatusPill({ status }) {
   const s = REQ_STATUS[status] || REQ_STATUS.pending;
@@ -76,7 +77,7 @@ export default function OvertimeView({ currentUser, selectedEntity }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [rejectTarget, setRejectTarget] = useState(null);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "hr", "manage_attendance");   // Sisir gerbang peran (2026-10-20) — endpoint absensi/cuti/lembur/KPI
   const params = useMemo(() => (selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {}), [selectedEntity]);
 
   useEffect(() => { loadEmployees(); }, [selectedEntity]); // eslint-disable-line

@@ -7,6 +7,7 @@ import PostFormModal from "./PostFormModal";
 import PostDetailModal from "./PostDetailModal";
 import { mktApi, monthKey, monthLabel, PlatformChip, StatusPill, STATUS_STYLE, PLATFORM_STYLE, fmtWhen, weekStart, weekDays, weekLabel, shiftDays } from "./marketingShared";
 import WeekGrid from "./WeekGrid";
+import { can } from "../../config/roles";
 
 const DOW = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
@@ -52,7 +53,7 @@ export default function ContentCalendar({ currentUser, selectedEntity = "all" })
   }, [month]);
   const today = new Date().toISOString().slice(0, 10);
   const unscheduled = byDay.__unscheduled || [];
-  const canCreate = ["admin", "manager", "designer", "sales", "sales_admin"].includes(currentUser?.role);
+  const canCreate = can(currentUser?.permissions, "marketing", "create");   // Sisir gerbang peran (2026-10-20) — POST /marketing/posts
   const movePost = async (post, day) => {
     const to = `${day}T${post.publish_at.slice(11, 16) || "10:00"}`;
     setPosts((l) => l.map((p) => (p.id === post.id ? { ...p, publish_at: to } : p)));

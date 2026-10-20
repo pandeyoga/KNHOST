@@ -21,6 +21,7 @@ import {
 import {
   DIM_TABS, BudgetFormRow, BudgetTable, BudgetRulesPanel, AlertsStrip, UnbudgetedPanel,
 } from "./BudgetParts";
+import { can } from "../../config/roles";
 
 export default function BudgetView({ selectedEntity, currentUser }) {
   const [year, setYear] = useState(String(NOW.getFullYear()));
@@ -34,7 +35,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [editAmount, setEditAmount] = useState("");
-  const isAdmin = currentUser?.role === "admin";
+  const canConfigRules = can(currentUser?.permissions, "budget", "configure");   // Sisir gerbang peran (2026-10-20) — PUT /finance/budget-rules
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -177,7 +178,7 @@ export default function BudgetView({ selectedEntity, currentUser }) {
         </div>
       )}
 
-      <BudgetRulesPanel rules={rules} isAdmin={isAdmin} onSave={saveRules}
+      <BudgetRulesPanel rules={rules} isAdmin={canConfigRules} onSave={saveRules}
         defaultAccount={keys.default_po_account} />
 
       <AlertsStrip alerts={data?.alerts || []} />

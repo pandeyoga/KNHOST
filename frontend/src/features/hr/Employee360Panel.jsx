@@ -4,6 +4,7 @@ import { ArrowLeft, Edit3, UserCircle, Building2, Briefcase, MapPin, PhoneCall,
   CalendarCheck, CalendarDays, Wallet, ReceiptText, Target, Download, Loader2 } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import RecordDetailModal from "../documents/RecordDetailModal";
+import { can } from "../../config/roles";
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 const money = (v) => formatCurrency(Number(v || 0));
@@ -27,7 +28,7 @@ export default function Employee360Panel({ employeeId, currentUser, onBack, onEd
   const [tab, setTab] = useState("attendance");
   const [record, setRecord] = useState(null);
   const [dl, setDl] = useState("");
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "hr", "update");   // Sisir gerbang peran (2026-10-20) — ubah karyawan
 
   useEffect(() => { load(); }, [employeeId]); // eslint-disable-line
   async function load() {

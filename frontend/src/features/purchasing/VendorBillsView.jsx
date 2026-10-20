@@ -24,6 +24,7 @@ const CSV_COLUMNS = [
 import VendorBillCreateModal from "./VendorBillCreateModal";
 import VendorBillDetailPanel from "./VendorBillDetailPanel";
 import DetailModal from "../../components/DetailModal";
+import { can, roleSatisfies } from "../../config/roles";
 
 /**
  * VendorBillsView (Fase 5.2 — P0-2) — Tagihan Supplier (Vendor Bill) + 3-Way Matching.
@@ -63,8 +64,9 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
   const [showCreate, setShowCreate] = useState(false);
   const [detail, setDetail] = useState(null);
 
-  const canApprove = ["admin", "manager"].includes(currentUser?.role);
-  const canCreate = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): ACC/tolak = peringkat peran yang dituntut tagihan (= role_satisfies server).
+  const canApproveDoc = (b) => roleSatisfies(currentUser?.role, b?.required_approval_role || "manager");
+  const canCreate = can(currentUser?.permissions, "vendor_bill", "create");   // POST /vendor-bills
 
   // P2 — paginasi server-side; tab status jadi filter server, search q server-side.
   const params = useMemo(() => {
@@ -195,7 +197,7 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
                       {b.status === "draft" && (
                         <button data-testid={`vb-quick-submit-${b.id}`} onClick={() => quickAct(b, "submit")} className="secondary-button !px-2 !py-1 text-[11px]"><Send size={11} /> Kirim</button>
                       )}
-                      {b.status === "pending_approval" && canApprove && (
+                      {b.status === "pending_approval" && canApproveDoc(b) && (
                         <button data-testid={`vb-quick-approve-${b.id}`} onClick={() => quickAct(b, "approve")} className="primary-button !px-2 !py-1 text-[11px]">Setujui</button>
                       )}
                       {b.status === "posted" && (
@@ -233,7 +235,7 @@ export default function VendorBillsView({ currentUser, selectedEntity }) {
           label="Rincian tagihan supplier" testId="vb-detail-modal">
           <VendorBillDetailPanel
             bill={detail}
-            canApprove={canApprove}
+            canApprove={canApproveDoc(detail)}
             currentUser={currentUser}
             onClose={() => setDetail(null)}
             onAction={onAction}

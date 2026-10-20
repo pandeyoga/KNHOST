@@ -6,6 +6,7 @@ import { getStatusBadge } from "../admin/po/poUtils";
 import { ContractStatusPill } from "./ContractStatusPill";
 import CallOffModal from "./CallOffModal";
 import ConfirmModal from "../../components/ConfirmModal";
+import { can } from "../../config/roles";
 
 /**
  * BlanketPODetailPanel (P2) — detail kontrak + drawdown (called/remaining) +
@@ -19,7 +20,9 @@ export default function BlanketPODetailPanel({ blanketId, currentUser, onClose, 
   const [showCallOff, setShowCallOff] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): call-off = purchase_order.create, tutup kontrak = purchase_order.update.
+  const canCallOff = can(currentUser?.permissions, "purchase_order", "create");
+  const canClose = can(currentUser?.permissions, "purchase_order", "update");
 
   useEffect(() => {
     if (!blanketId) { setPo(null); return; }
@@ -200,14 +203,16 @@ export default function BlanketPODetailPanel({ blanketId, currentUser, onClose, 
         )}
 
         {/* Aksi */}
-        {canManage && (
+        {(canCallOff || canClose) && (
           <div className="flex flex-col gap-1.5">
+            {canCallOff && (
             <button data-testid="blanket-calloff-button" disabled={!isActive}
               onClick={() => setShowCallOff(true)}
               className="primary-button justify-center disabled:opacity-40 disabled:cursor-not-allowed">
               <PackagePlus size={13} /> Buat Call-off
             </button>
-            {isActive && (
+            )}
+            {isActive && canClose && (
               <button data-testid="blanket-close-button" onClick={() => setConfirmClose(true)} className="danger-button justify-center">
                 <Ban size={13} /> Tutup Kontrak
               </button>

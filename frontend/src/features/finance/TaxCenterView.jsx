@@ -21,6 +21,7 @@ import { formatCurrency } from "../../utils/formatters";
 import ConfigRedirectCard from "../settings/config/ConfigRedirectCard";
 import { overlayDismiss } from "@/utils/overlayDismiss";
 import { useEscapeClose } from "@/utils/escapeLayers";
+import { can } from "../../config/roles";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 function fmtPeriod(p) {
@@ -43,7 +44,7 @@ export default function TaxCenterView({ currentUser, selectedEntity }) {
   const [period, setPeriod] = useState("");
   const [recordFor, setRecordFor] = useState(null); // pph item cfg → open modal
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "accounting", "manage");   // Sisir gerbang peran (2026-10-20) — POST/DELETE /tax/pph-records
   const entSpecific = selectedEntity && selectedEntity !== "all";
 
   const load = useCallback(async (p) => {

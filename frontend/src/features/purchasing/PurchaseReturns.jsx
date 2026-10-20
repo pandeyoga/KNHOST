@@ -35,6 +35,7 @@ import FormModal from "../../components/FormModal";
 import ConfirmModal from "../../components/ConfirmModal";
 import ReturnDetailPanel from "./ReturnDetailPanel";
 import RollPickerModal from "./RollPickerModal";
+import { can } from "../../config/roles";
 
 /**
  * PurchaseReturns (Depth #1B) — Retur Beli / Nota Debit.
@@ -95,8 +96,10 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
   const blankItem = { product_id: "", quantity: "", price: "", reason: "cacat", condition: "damaged", roll_ids: [], rolls: [] };
   const [form, setForm] = useState({ supplier_id: "", po_id: "", warehouse_id: "", reason: "", notes: "", items: [blankItem], submit_now: true });
 
-  const canApprove = ["admin", "manager"].includes(currentUser?.role);
-  const canDelete = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): ACC = purchase_return.approve, tolak = purchase_return.reject, hapus draf = purchase_return.update.
+  const canApprove = can(currentUser?.permissions, "purchase_return", "approve");
+  const canReject = can(currentUser?.permissions, "purchase_return", "reject");
+  const canDelete = can(currentUser?.permissions, "purchase_return", "update");
 
   // P2 — daftar retur beli dipaginasi di server (?page/?page_size/?q/?status).
   const [lineFilter, setLineFilter] = useState("");   // FASE L
@@ -457,10 +460,10 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
                         )}
                       </>
                     )}
-                    {r.status === "pending_approval" && canApprove && (
+                    {r.status === "pending_approval" && (canApprove || canReject) && (
                       <>
-                        <button data-testid={`return-approve-${r.id}`} onClick={() => act(r.id, "approve", { notes: "" })} className="primary-button !px-2 !py-1 text-[11px]"><CheckCircle size={11} /> Setujui</button>
-                        <button data-testid={`return-reject-${r.id}`} onClick={() => setRejectTarget(r)} className="danger-button !px-2 !py-1 text-[11px]"><XCircle size={11} /></button>
+                        {canApprove && <button data-testid={`return-approve-${r.id}`} onClick={() => act(r.id, "approve", { notes: "" })} className="primary-button !px-2 !py-1 text-[11px]"><CheckCircle size={11} /> Setujui</button>}
+                        {canReject && <button data-testid={`return-reject-${r.id}`} onClick={() => setRejectTarget(r)} className="danger-button !px-2 !py-1 text-[11px]"><XCircle size={11} /></button>}
                       </>
                     )}
                     {(r.status === "approved" || r.status === "rejected") && (

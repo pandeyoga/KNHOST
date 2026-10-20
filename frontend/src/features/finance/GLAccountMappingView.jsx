@@ -7,6 +7,7 @@ import { useEntityScope } from "../../context/EntityScopeContext";
 import { MappingRow } from "./glmapping/MappingRow";
 import { MappingEditDialog } from "./glmapping/MappingEditDialog";
 import { MappingHistory } from "./glmapping/MappingHistory";
+import { can } from "../../config/roles";
 
 // GL-01 — Pemetaan Akun terpusat: setiap fitur → akun pembukuan, Global atau per PT.
 export default function GLAccountMappingView({ currentUser }) {
@@ -20,7 +21,7 @@ export default function GLAccountMappingView({ currentUser }) {
   const [onlyUnset, setOnlyUnset] = useState(false);
   const [editing, setEditing] = useState(null);
   const [histKey, setHistKey] = useState(null);
-  const canEdit = ["admin", "finance"].includes(currentUser?.role);
+  const canEdit = can(currentUser?.permissions, "gl_mapping", "update");   // Sisir gerbang peran (2026-10-20) — PUT /gl/account-mappings/{key}
 
   const load = async () => {
     setLoading(true);

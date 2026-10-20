@@ -35,7 +35,7 @@ export default function Supplier360Panel({ supplierId, currentUser, onBack, onEd
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("po");
   const [record, setRecord] = useState(null); // konfigurasi RecordDetailModal
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "supplier", "update");   // Sisir gerbang peran (2026-10-20) — ubah supplier & daftar harga (supplier.update)
   const canAudit = can(currentUser?.permissions, "audit", "view");
 
   useEffect(() => { load(); }, [supplierId]); // eslint-disable-line

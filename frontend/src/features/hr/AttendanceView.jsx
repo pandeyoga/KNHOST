@@ -11,6 +11,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { OptionTabs } from "../../components/ListControls";
 import useListSearch from "@/hooks/useListSearch";
 import ConfirmModal from "../../components/ConfirmModal";
+import { can } from "../../config/roles";
 
 export const STATUS_PILL = {
   hadir: { cls: "pill-success", label: "Hadir" },
@@ -53,7 +54,7 @@ function Stat({ label, value, color }) {
 
 export default function AttendanceView({ currentUser, selectedEntity }) {
   const [tab, setTab] = useState("harian");
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "hr", "manage_attendance");   // Sisir gerbang peran (2026-10-20) — endpoint absensi/cuti/lembur/KPI
   const params = useMemo(() => (selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : {}), [selectedEntity]);
 
   const [error, setError] = useState("");

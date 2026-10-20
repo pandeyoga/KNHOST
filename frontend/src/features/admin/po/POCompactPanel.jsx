@@ -7,7 +7,7 @@
  */
 import { FileText, CheckCircle, XCircle, AlertCircle, Ban, FileEdit, Maximize2, PackageCheck } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
-import { can } from "../../../config/roles";
+import { can, roleSatisfies } from "../../../config/roles";
 import { getStatusBadge, lateState, billingState } from "./poUtils";
 import useReceivingMode from "../../../hooks/useReceivingMode";
 import POReceiptVariancePanel from "./POReceiptVariancePanel";
@@ -26,7 +26,10 @@ export default function POCompactPanel({ po, currentUser, onClose, onOpenFull,
     );
   }
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): ACC mengikuti peringkat peran yang dituntut PO (= role_satisfies server);
+  // revisi/tutup/batal = purchase_order.update (POST /purchase-orders/{id}/amend|close|cancel).
+  const canApprove = roleSatisfies(currentUser?.role, po?.required_approval_role);
+  const canManage = can(currentUser?.permissions, "purchase_order", "update");
   const canReceive = can(currentUser?.permissions, "wms", "view") && ["pending", "receiving", "partial"].includes(po.status);
   const goodsReceived = ["receiving", "partial", "completed", "closed_short"].includes(po.status);
   const amendable = ["waiting_approval", "pending", "receiving", "partial"].includes(po.status);
@@ -138,7 +141,7 @@ export default function POCompactPanel({ po, currentUser, onClose, onOpenFull,
             )}
             </>
           )}
-          {po.status === "waiting_approval" && canManage && (
+          {po.status === "waiting_approval" && canApprove && (
             <button data-testid="approve-po-button" onClick={() => onApprove(po.id)} className="primary-button justify-center">
               <CheckCircle size={13} /> Setujui PO
             </button>

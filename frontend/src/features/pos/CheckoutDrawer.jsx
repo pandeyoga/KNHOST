@@ -55,7 +55,6 @@ export default function CheckoutDrawer({
   const [spModalItem, setSpModalItem] = useState(null);  // item yg sedang diajukan harga khusus
   const [spNotice, setSpNotice] = useState({});          // {productId: {message, applied}}
   const [spRefresh, setSpRefresh] = useState(0);         // trigger re-load harga khusus efektif
-  const canApprovePrice = ["admin", "manager"].includes(user?.role);
   // REVISI SAMPEL — keranjang satu jenis; mode sample punya pilihan Gratis/Berbayar (wajib) & tanpa lot/backorder.
   const sampleMode = isSampleCart(cart);
   const mixedCart = cart.some((it) => it.is_sample) && cart.some((it) => !it.is_sample);
@@ -507,7 +506,6 @@ export default function CheckoutDrawer({
         customer={selectedCustomer}
         entityId={entityFor}
         defaultQty={spModalItem?.quantity || 0}
-        canApprove={canApprovePrice}
         onSubmitted={({ productId, applied, message }) => {
           setSpNotice((prev) => ({ ...prev, [productId]: { applied, message } }));
           if (applied) setSpRefresh((x) => x + 1);  // muat ulang harga khusus efektif → badge terpasang

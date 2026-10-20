@@ -10,6 +10,7 @@ import { CalendarClock, Loader2, PencilLine, RefreshCw, Timer } from "lucide-rea
 import PaymentPlanBuilder from "./PaymentPlanBuilder";
 import PenaltyPanel from "./PenaltyPanel";
 import { accrueNow, errText, fetchMeta, lineMeta, money, planByDoc } from "./paymentApi";
+import { can } from "../../../config/roles";
 
 export default function SoPaymentPanel({ order, currentUser, onChanged }) {
   const [data, setData] = useState(null);
@@ -21,7 +22,6 @@ export default function SoPaymentPanel({ order, currentUser, onChanged }) {
 
   const docId = order?.id;
   const total = Number(order?.grand_total || order?.total_amount || 0);
-  const canEdit = ["admin", "manager", "sales"].includes(currentUser?.role);
 
   const load = useCallback(async () => {
     if (!docId) return;
@@ -41,6 +41,9 @@ export default function SoPaymentPanel({ order, currentUser, onChanged }) {
   useEffect(() => { load(); }, [load]);
 
   const plan = data?.plan;
+  // Sisir gerbang peran (2026-10-20): susun/ubah rencana = payment_plan.create/update, hitung denda = penalty.issue.
+  const canEdit = can(currentUser?.permissions, "payment_plan", plan?.id ? "update" : "create");
+  const canAccrue = can(currentUser?.permissions, "penalty", "issue");
   const penalties = data?.penalties || [];
 
   const runAccrual = async () => {
@@ -63,7 +66,7 @@ export default function SoPaymentPanel({ order, currentUser, onChanged }) {
             className="rounded-md border border-[#EDEEF1] bg-white p-1 text-[#4A4B52] hover:bg-[#F2F3F5]">
             {loading ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
           </button>
-          {plan?.id && ["admin", "manager"].includes(currentUser?.role) && (
+          {plan?.id && canAccrue && (
             <button type="button" className="secondary-button !py-1" onClick={runAccrual}
               disabled={busy} data-testid="sop-accrue">
               {busy ? <Loader2 size={12} className="animate-spin" /> : <Timer size={12} />} Hitung Denda

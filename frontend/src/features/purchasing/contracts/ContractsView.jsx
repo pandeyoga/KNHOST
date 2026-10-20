@@ -46,7 +46,12 @@ export default function ContractsView({ currentUser, selectedEntity }) {
   const [icAccess, setIcAccess] = useState({});
   const [bulkPair, setBulkPair] = useState(null);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): buat/ubah status/hapus = supplier_contract.create/update/delete;
+  // pintasan kebijakan membuka Pusat Pengaturan (settings.view; hak ubah per setelan dari server).
+  const canCreate = can(currentUser?.permissions, "supplier_contract", "create");
+  const canUpdate = can(currentUser?.permissions, "supplier_contract", "update");
+  const canDelete = can(currentUser?.permissions, "supplier_contract", "delete");
+  const canOpenConfig = can(currentUser?.permissions, "settings", "view");
 
   const loadIc = useCallback(async () => {
     try {
@@ -115,7 +120,7 @@ export default function ContractsView({ currentUser, selectedEntity }) {
           </div>
           <div className="flex items-center gap-2">
             <button className="secondary-button" onClick={load} data-testid="contracts-refresh"><RefreshCw size={13} /> Muat ulang</button>
-            {canManage && (
+            {canOpenConfig && (
               <button
                 className="secondary-button"
                 onClick={() => openConfig({ group: "makloon", key: "makloon.contract_mode" })}
@@ -131,7 +136,7 @@ export default function ContractsView({ currentUser, selectedEntity }) {
                 {icSummary?.missing_total > 0 && <span data-testid="contracts-internal-missing" className="ml-1 rounded-full bg-[#FFF4E0] px-1.5 text-[10px] font-bold text-[#8A5300]">{icSummary.missing_total}</span>}
               </button>
             )}
-            {canManage && (
+            {canCreate && (
               <button className="primary-button" onClick={() => { setEditing(null); setShowForm(true); }} data-testid="contracts-create-button">
                 <Plus size={13} /> Kontrak Baru
               </button>
@@ -218,15 +223,15 @@ export default function ContractsView({ currentUser, selectedEntity }) {
                         e.stopPropagation();
                         openTrace({ docType: "supplier_contract", docId: c.id, number: c.contract_number });
                       }}><Route size={13} /></button>
-                    {canManage && c.status === "active" && (
+                    {canUpdate && c.status === "active" && (
                       <button className="secondary-button !py-1 !px-2 text-[10.5px]"
                         data-testid={`contract-terminate-${c.id}`} onClick={() => changeStatus(c, "terminated")}>Hentikan</button>
                     )}
-                    {canManage && c.status !== "active" && (
+                    {canUpdate && c.status !== "active" && (
                       <button className="secondary-button !py-1 !px-2 text-[10.5px]"
                         data-testid={`contract-activate-${c.id}`} onClick={() => changeStatus(c, "active")}>Aktifkan</button>
                     )}
-                    {canManage && (
+                    {canDelete && (
                       <button className="icon-button text-red-400 hover:text-red-600" title="Hapus kontrak"
                         data-testid={`contract-delete-${c.id}`} onClick={() => remove(c)}><Trash2 size={13} /></button>
                     )}

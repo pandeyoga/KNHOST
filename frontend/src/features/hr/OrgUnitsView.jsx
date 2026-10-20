@@ -6,6 +6,7 @@ import EntityBadge from "../../components/EntityBadge";
 import FormModal from "../../components/FormModal";
 import ErrorNotice from "../../components/ErrorNotice";
 import ConfirmModal from "../../components/ConfirmModal";
+import { can } from "../../config/roles";
 
 const EMPTY = { name: "", code: "", description: "", entity_id: "", parent_id: "", unit_type: "department" };
 
@@ -29,7 +30,7 @@ export default function OrgUnitsView({ currentUser, selectedEntity }) {
   const [form, setForm] = useState(EMPTY);
   const [delTarget, setDelTarget] = useState(null);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "hr", "manage_org");   // Sisir gerbang peran (2026-10-20) — /hr/org-units
 
   useEffect(() => { loadAll(); }, [selectedEntity]); // eslint-disable-line
 

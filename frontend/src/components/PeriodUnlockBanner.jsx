@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ShieldAlert, Clock, ArrowRight } from "lucide-react";
 import axios, { API } from "../services/apiClient";
+import { can } from "../config/roles";
 
 function fmtTime(iso) {
   if (!iso) return "";
@@ -18,7 +19,7 @@ function fmtTime(iso) {
 }
 
 export default function PeriodUnlockBanner({ currentUser, onNavigate }) {
-  const canSee = currentUser?.role === "admin" || currentUser?.role === "manager";
+  const canSee = can(currentUser?.permissions, "period", "unlock");   // Sisir gerbang peran (2026-10-20) — pemegang izin buka periode
   const [active, setActive] = useState([]);
 
   const load = useCallback(async () => {

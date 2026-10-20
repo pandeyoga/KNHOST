@@ -5,6 +5,7 @@ import axios, { API } from "../../services/apiClient";
 import FormModal from "../../components/FormModal";
 import { Field } from "../rnd/RndField";
 import { PLATFORM_STYLE, PlatformChip, fmtN } from "./marketingShared";
+import { can } from "../../config/roles";
 
 const api = {
   list: (params) => axios.get(`${API}/marketing/accounts`, { params }).then((r) => r.data),
@@ -16,7 +17,9 @@ export default function SocialAccounts({ currentUser, selectedEntity = "all" }) 
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState(null);
   const [editing, setEditing] = useState(null);
-  const canEdit = ["admin", "manager", "designer", "sales", "sales_admin"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): tambah = marketing.create, ubah = marketing.update.
+  const canCreate = can(currentUser?.permissions, "marketing", "create");
+  const canEdit = can(currentUser?.permissions, "marketing", "update");
   const load = () => api.list(selectedEntity && selectedEntity !== "all" ? { entity_id: selectedEntity } : { entity_id: "all" }).then(setRows).catch(() => {});
   useEffect(() => { load(); }, [selectedEntity]); // eslint-disable-line
   useEffect(() => { axios.get(`${API}/marketing/meta`).then((r) => setMeta(r.data)).catch(() => {}); }, []);
@@ -25,7 +28,7 @@ export default function SocialAccounts({ currentUser, selectedEntity = "all" }) 
     <div className="grid gap-3" data-testid="mkt-accounts">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[12px] text-[#6B6B73]">Akun sosial media resmi tiap badan usaha. Akun baru dibuat untuk <b>{meta?.active_entity_name || "badan usaha aktif"}</b>.</p>
-        {canEdit && <button type="button" className="primary-button !py-1.5 text-[11px]" onClick={() => setEditing({})} data-testid="mkt-new-account"><Plus size={13} /> Akun baru</button>}
+        {canCreate && <button type="button" className="primary-button !py-1.5 text-[11px]" onClick={() => setEditing({})} data-testid="mkt-new-account"><Plus size={13} /> Akun baru</button>}
       </div>
       {rows.length === 0 && <p className="rounded-xl border border-dashed border-[#D9D9DE] p-6 text-center text-[12px] text-[#9A9BA3]" data-testid="mkt-accounts-empty">Belum ada akun sosmed terdaftar.</p>}
       {Object.entries(byEntity).map(([ent, list]) => (

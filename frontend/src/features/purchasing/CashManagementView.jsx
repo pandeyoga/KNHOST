@@ -8,6 +8,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import FormModal from "../../components/FormModal";
 import ConfirmModal from "../../components/ConfirmModal";
+import { can } from "../../config/roles";
 
 /**
  * CashManagementView (Fase 3 — Pengelolaan Kas).
@@ -39,7 +40,9 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): catat = cash.create, anulir = cash.delete.
+  const canCreate = can(currentUser?.permissions, "cash", "create");
+  const canVoid = can(currentUser?.permissions, "cash", "delete");
 
   useEffect(() => { loadAll(); }, [selectedEntity]); // eslint-disable-line
 
@@ -159,7 +162,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
             <Wallet size={16} className="text-[#0058CC]" />
             <h2 data-testid="cash-title">Pengelolaan Kas</h2>
           </div>
-          {canManage && (
+          {canCreate && (
             <button data-testid="create-cash-button" onClick={() => { setShowForm(!showForm); setForm({ ...EMPTY_FORM, entity_id: (selectedEntity && selectedEntity !== "all") ? selectedEntity : "" }); }} className="primary-button">
               <Plus size={13} /> Catat Transaksi
             </button>
@@ -179,7 +182,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
       {/* FASE P4 — pencatatan kas menjadi POP-UP (dulu menyelip di antara ringkasan
           saldo dan daftar transaksi). Logika form tidak diubah. */}
       <FormModal
-        open={showForm && canManage}
+        open={showForm && canCreate}
         onClose={() => setShowForm(false)}
         title="Catat Transaksi Kas"
         subtitle="Kas kecil (tunai) atau kas besar/bank — masuk & keluar"
@@ -258,7 +261,7 @@ export default function CashManagementView({ currentUser, selectedEntity }) {
                     </span>
                   </div>
                   <div className="flex justify-end">
-                    {canManage && (
+                    {canVoid && (
                       <button data-testid={`void-cash-${t.id}`} onClick={() => handleVoid(t)} className="icon-button text-red-400 hover:text-red-600" title="Anulir"><Ban size={13} /></button>
                     )}
                   </div>

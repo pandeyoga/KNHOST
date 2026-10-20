@@ -9,6 +9,7 @@ import DocumentActionsBar from "../documents/DocumentActionsBar";
 import DocRefsPanel from "../documents/trace/DocRefsPanel";
 import GrnDocVariance from "./GrnDocVariance";
 import VendorBillPayments from "./VendorBillPayments";
+import { can } from "../../config/roles";
 
 /**
  * VendorBillDetailPanel (Fase 5.2) — detail bill: 3-way match, keuangan, aksi.
@@ -144,7 +145,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
             </div>
           </div>
 
-          <VendorBillPayments bill={bill} canVoid={canApprove} onAction={onAction} onError={onError} />
+          <VendorBillPayments bill={bill} canVoid={can(currentUser?.permissions, "vendor_bill", "pay")} onAction={onAction} onError={onError} />
 
           {/* Timeline */}
           {(bill.timeline || []).length > 0 && (

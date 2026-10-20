@@ -13,6 +13,7 @@ import FormModal from "../../components/FormModal";
 import { docTypeLabel, fmtRange, roleLabel } from "./approvalRulesConstants";
 import { askConfirm } from "@/services/confirmService";
 import { useEntityScope } from "../../context/EntityScopeContext";
+import { can } from "../../config/roles";
 
 const EMPTY_FORM = {
   doc_type: "sales_order",
@@ -35,7 +36,7 @@ export default function ApprovalRulesSettings({ currentUser }) {
   const [formData, setFormData] = useState(EMPTY_FORM);
 
   const token = localStorage.getItem("kn_token");
-  const isAdmin = currentUser?.role === "admin";
+  const isAdmin = can(currentUser?.permissions, "settings", "manage");   // Sisir gerbang peran (2026-10-20) — tulis /approval-rules = settings.manage
   const auth = { headers: { Authorization: `Bearer ${token}` } };
   const { entities } = useEntityScope();
   const entityName = (id) => {
@@ -149,7 +150,7 @@ export default function ApprovalRulesSettings({ currentUser }) {
     return (
       <div className="view-container">
         <div className="notice-bar danger">
-          <AlertCircle size={14} /> Hanya admin yang dapat mengelola aturan persetujuan.
+          <AlertCircle size={14} /> Mengelola aturan persetujuan butuh izin kelola pengaturan (settings.manage).
         </div>
       </div>
     );

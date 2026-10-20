@@ -12,7 +12,7 @@ import CampaignBillsSection, { BillForm, RejectModal } from "./CampaignBillsSect
 const errText = (e, fb) => { const d = e.response?.data?.detail; return (typeof d === "string" ? d : d?.message) || fb; };
 const today = () => new Date().toISOString().slice(0, 10);
 
-export default function CampaignCostsModal({ campaign, canPost, canCreateBill, canApproveBill, currentUserId, onClose, onChanged }) {
+export default function CampaignCostsModal({ campaign, canPost, canVoid = canPost, canCreateBill, canApproveBill, currentUserId, onClose, onChanged }) {
   const [data, setData] = useState(null);
   const [f, setF] = useState({ date: today(), description: "", amount: "", cash_type: "kas_besar", vendor_name: "" });
   const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
@@ -36,7 +36,7 @@ export default function CampaignCostsModal({ campaign, canPost, canCreateBill, c
       <div className="grid gap-3">
         <BudgetSummary data={data} />
         {canPost && <CostForm f={f} set={set} />}
-        <CostList rows={data?.costs || []} canPost={canPost} onVoid={setVoiding} />
+        <CostList rows={data?.costs || []} canVoid={canVoid} onVoid={setVoiding} />
         <CampaignBillsSection campaign={campaign} bills={data?.bills || []} canCreate={canCreateBill} canApprove={canApproveBill} currentUserId={currentUserId} onChanged={refresh} onAdd={() => setAddingBill(true)} onReject={setRejecting} />
       </div>
     </FormModal>
@@ -77,7 +77,7 @@ function CostForm({ f, set }) {
   );
 }
 
-function CostList({ rows, canPost, onVoid }) {
+function CostList({ rows, canVoid, onVoid }) {
   if (!rows.length) return <p className="rounded-xl border border-dashed border-[#D9D9DE] p-4 text-center text-[12px] text-[#9A9BA3]" data-testid="mkt-costs-empty">Belum ada realisasi biaya.</p>;
   return (
     <div className="grid gap-1.5" data-testid="mkt-costs-list">
@@ -89,7 +89,7 @@ function CostList({ rows, canPost, onVoid }) {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <span className={`font-bold ${c.status === "void" ? "line-through" : ""}`} data-testid={`mkt-cost-amount-${c.id}`}>Rp {fmtN(c.amount)}</span>
-            {canPost && c.status === "posted" && <button type="button" className="secondary-button !py-0.5 text-[10.5px]" onClick={() => onVoid(c)} data-testid={`mkt-cost-void-${c.id}`}><Ban size={11} /> Batalkan</button>}
+            {canVoid && c.status === "posted" && <button type="button" className="secondary-button !py-0.5 text-[10.5px]" onClick={() => onVoid(c)} data-testid={`mkt-cost-void-${c.id}`}><Ban size={11} /> Batalkan</button>}
           </div>
         </div>
       ))}

@@ -6,6 +6,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import ConfirmModal from "../../components/ConfirmModal";
 import RecipeFormModal from "./RecipeFormModal";
 import useProcessTypes from "../../hooks/useProcessTypes";
+import { can } from "../../config/roles";
 
 /** ProcessRecipesView (M1) — master resep konversi (input→output) + tarif + forecast. */
 export default function ProcessRecipesView({ currentUser, selectedEntity }) {
@@ -22,7 +23,10 @@ export default function ProcessRecipesView({ currentUser, selectedEntity }) {
   const [editTarget, setEditTarget] = useState(null);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  // Sisir gerbang peran (2026-10-20): buat/ubah/nonaktif = process_recipe.create/update/delete.
+  const canManage = can(currentUser?.permissions, "process_recipe", "create");
+  const canUpdate = can(currentUser?.permissions, "process_recipe", "update");
+  const canDeactivate = can(currentUser?.permissions, "process_recipe", "delete");
   useEffect(() => { loadAll(); }, [selectedEntity]); // eslint-disable-line
 
   async function loadAll() {
@@ -92,9 +96,9 @@ export default function ProcessRecipesView({ currentUser, selectedEntity }) {
                 <p className="text-[11px] truncate">{r.default_makloon_name || "—"}</p>
                 <p className="text-[10.5px] tabular-nums text-[#3C3C43]">y {r.yield_factor} · s {r.waste_pct}% · sisa {r.byproduct_pct}%</p>
                 <div className="flex items-center justify-end gap-1">
-                  {canManage && <>
-                    <button data-testid={`edit-recipe-${r.id}`} onClick={() => { setEditTarget(r); setShowForm(true); }} className="icon-button" title="Ubah"><Pencil size={13} /></button>
-                    {r.status === "active" && <button data-testid={`deactivate-recipe-${r.id}`} onClick={() => setDeactivateTarget(r)} className="icon-button text-red-400 hover:text-red-600" title="Nonaktifkan"><Power size={13} /></button>}
+                  {(canUpdate || canDeactivate) && <>
+                    {canUpdate && <button data-testid={`edit-recipe-${r.id}`} onClick={() => { setEditTarget(r); setShowForm(true); }} className="icon-button" title="Ubah"><Pencil size={13} /></button>}
+                    {canDeactivate && r.status === "active" && <button data-testid={`deactivate-recipe-${r.id}`} onClick={() => setDeactivateTarget(r)} className="icon-button text-red-400 hover:text-red-600" title="Nonaktifkan"><Power size={13} /></button>}
                   </>}
                 </div>
               </div>

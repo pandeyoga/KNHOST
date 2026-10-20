@@ -13,6 +13,7 @@ import ErrorNotice from "../../../components/ErrorNotice";
 import useListSearch from "@/hooks/useListSearch";
 import { errText, listReasons, upsertReason } from "./amendmentApi";
 import KNSelect from "../../../components/KNSelect";
+import { can } from "../../../config/roles";
 
 const BLANK = { code: "", label: "", help: "", affects_master: false, status: "active" };
 
@@ -25,7 +26,7 @@ export default function AmendmentReasonsPanel({ currentUser }) {
   const [draft, setDraft] = useState(BLANK);
   const [ok, setOk] = useState("");
 
-  const isAdmin = currentUser?.role === "admin";
+  const isAdmin = can(currentUser?.permissions, "finance_amendment", "admin");   // Sisir gerbang peran (2026-10-20) — PUT /amendment-reasons
 
   const load = useCallback(async () => {
     setLoading(true);

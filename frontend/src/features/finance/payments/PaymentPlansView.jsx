@@ -34,6 +34,7 @@ function Kpi({ label, value, tone = "#1C1C1E", testId }) {
 }
 
 import PagedRows from "@/components/PagedRows";
+import { can } from "../../../config/roles";
 
 export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDocument, focusDoc, onClearFocus }) {
   const [tab, setTab] = useState("denda");
@@ -54,7 +55,7 @@ export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDo
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const isAdmin = ["admin", "manager"].includes(currentUser?.role);
+  const canOpenConfig = can(currentUser?.permissions, "settings", "view");   // Sisir gerbang peran (2026-10-20) — pintasan Pusat Pengaturan (hak ubah per setelan dari server)
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -96,7 +97,7 @@ export default function PaymentPlansView({ currentUser, selectedEntity, onOpenDo
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isAdmin && (
+            {canOpenConfig && (
               <button className="secondary-button" data-testid="pp-open-config"
                 onClick={() => openConfig({ group: "uang-masuk" })}>
                 <Settings2 size={13} /> Aturan Bayar & Denda

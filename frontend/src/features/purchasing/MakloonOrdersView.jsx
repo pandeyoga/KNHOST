@@ -23,6 +23,7 @@ const FILTERS = [
 ];
 
 import PagedRows from "@/components/PagedRows";
+import { can } from "../../config/roles";
 
 export default function MakloonOrdersView({ currentUser, selectedEntity }) {
   const [rows, setRows] = useState([]);
@@ -34,7 +35,7 @@ export default function MakloonOrdersView({ currentUser, selectedEntity }) {
   const [showCreate, setShowCreate] = useState(false);
   const [detailId, setDetailId] = useState(null);
 
-  const canManage = ["admin", "manager"].includes(currentUser?.role);
+  const canManage = can(currentUser?.permissions, "makloon_order", "create");   // Sisir gerbang peran (2026-10-20) — POST /makloon-orders
 
   const loadAll = useCallback(async () => {
     setLoading(true);

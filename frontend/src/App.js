@@ -29,7 +29,7 @@ import { EntityScopeProvider } from "./context/EntityScopeContext";
 import { entityShortById } from "./utils/entityLabel";
 import { isGroupScope } from "./utils/writeScope";
 import PublicVerify from "./features/documents/PublicVerify";
-import { registerDynamicRoles, ROLE_REGISTRY, setAccessContext } from "./config/roles";
+import { registerDynamicRoles, ROLE_REGISTRY, setAccessContext, roleIs } from "./config/roles";
 import {
   Archive,
   Boxes,
@@ -481,7 +481,7 @@ function App() {
               total={notifMeta.total}
               hasMore={notifMeta.has_more}
               onLoadMore={() => loadMoreNotifications(notifMeta.page + 1)}
-              canGenerate={["admin", "manager"].includes(user?.role)}
+              canGenerate={roleIs(user?.role, ["admin", "manager"])}
               currentUserRole={user?.role}
               onMarkRead={markNotificationRead}
               onMarkAll={markAllNotificationsRead}

@@ -19,6 +19,7 @@ import { formatCurrency } from "../../../utils/formatters";
 import { openConfig } from "../../settings/config/configDeepLink";
 import AmendmentDetailPanel from "./AmendmentDetailPanel";
 import { amendmentStats, errText, listAmendments, methodMeta, statusMeta } from "./amendmentApi";
+import { can } from "../../../config/roles";
 
 const STATUS_TABS = [
   { key: "", label: "Semua" },
@@ -53,7 +54,7 @@ export default function AmendmentCenterView({ currentUser, selectedEntity }) {
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
 
-  const canSeeReasons = ["admin", "manager"].includes(currentUser?.role);
+  const canSeeReasons = can(currentUser?.permissions, "finance_amendment", "propose");   // Sisir gerbang peran (2026-10-20) — GET /amendment-reasons
 
   const load = useCallback(async () => {
     setLoading(true);
