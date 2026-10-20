@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from db import db
-from core_utils import now_iso, rupiah
+from core_utils import new_id, now_iso, rupiah
 
 logger = logging.getLogger(__name__)
 
@@ -278,18 +278,34 @@ async def set_route(od: Dict[str, Any], key: str, route: str, reason: str, actor
 
 
 # ─── Kunci operasi per item ──────────────────────────────────────────────────
-async def _claim(od_id: str, key: str, actor: str) -> None:
+async def _claim(od_id: str, key: str, actor: str) -> str:
+    """Kunci realisasi per item ber-LEASE (LOCK_TTL_S). AUD-SO-01 — kunci membawa TOKEN pemegang: proses
+    yang lease-nya sudah kedaluwarsa tidak bisa lagi melepas/memperpanjang kunci milik proses baru."""
     stale = (datetime.now(timezone.utc) - timedelta(seconds=LOCK_TTL_S)).isoformat()
     path = f"fulfillment_locks.{key}"
+    token = new_id("flk")
     res = await db.special_orders.update_one(
         {"id": od_id, "$or": [{path: {"$exists": False}}, {f"{path}.at": {"$lt": stale}}]},
-        {"$set": {path: {"at": now_iso(), "by": actor}}})
+        {"$set": {path: {"at": now_iso(), "by": actor, "token": token}}})
     if res.matched_count == 0:
         raise FulfillmentConflict("Realisasi item ini sedang diproses pengguna lain — tunggu sebentar lalu muat ulang.")
+    return token
 
 
-async def _release(od_id: str, key: str) -> None:
-    await db.special_orders.update_one({"id": od_id}, {"$unset": {f"fulfillment_locks.{key}": ""}})
+async def _renew(od_id: str, key: str, token: str) -> None:
+    """Perpanjang lease HANYA bila kunci masih milik token ini; kalau sudah diambil proses lain, hentikan
+    sebelum dokumen pengadaan dibuat (mencegah PR/PO/MKO ganda)."""
+    path = f"fulfillment_locks.{key}"
+    res = await db.special_orders.update_one({"id": od_id, f"{path}.token": token}, {"$set": {f"{path}.at": now_iso()}})
+    if res.matched_count == 0:
+        raise FulfillmentConflict("Kunci realisasi item ini sudah diambil proses lain (proses ini terlalu lama) — "
+                                  "muat ulang dan periksa dokumen yang terbentuk.")
+
+
+async def _release(od_id: str, key: str, token: str) -> None:
+    """Lepas kunci HANYA bila masih milik token ini (bukan kunci proses lain yang mengambil alih)."""
+    path = f"fulfillment_locks.{key}"
+    await db.special_orders.update_one({"id": od_id, f"{path}.token": token}, {"$unset": {path: ""}})
 
 
 async def _save(od_id: str, key: str, fields: Dict[str, Any]) -> None:
@@ -362,20 +378,28 @@ async def realize(od: Dict[str, Any], key: str, actor: Dict[str, Any], warehouse
     if blockers:
         raise FulfillmentError(" ".join(blockers))
     route = n["effective_route"]
-    await _claim(od["id"], key, actor.get("name", ""))
+    token = await _claim(od["id"], key, actor.get("name", ""))
     try:
+        # AUD-SO-01 — validasi ulang SESUDAH kunci diperoleh: proses lain bisa saja sudah merealisasi item ini
+        # selagi kita menunggu/menyiapkan.
+        fresh = await db.special_orders.find_one({"id": od["id"]}, {"_id": 0})
+        for d in ((fresh or {}).get("fulfillment") or {}).get(key, {}).get("docs") or []:
+            if (await _doc_status(d)).get("active"):
+                return {"key": key, "skipped": "sudah terealisasi", "docs": fresh["fulfillment"][key]["docs"]}
         if not n["route"]:   # default master dipakai — dicatat eksplisit
             await _save(od["id"], key, {"route": route, "default_route": n["default_route"], "source_mode": n["source_mode"],
                                         "reason": "", "deviation": False, "version": 1, "decided_by": actor.get("name", ""),
                                         "decided_at": now_iso(), "status": "planned"})
             n["state"] = {**n["state"], "route": route, "version": 1}
         await ensure_released(n, actor, od)
+        await _renew(od["id"], key, token)
         from services import special_order_phase2 as p2
         wh = warehouse_id or od.get("procurement_warehouse_id") or await p2.default_warehouse_id(od.get("entity_id", ""))
         if not wh:
             raise FulfillmentError("Tidak ada gudang aktif untuk badan usaha ini — pilih gudang tujuan.")
         from services import warehouse_scope_service as whs
         await whs.assert_usable(wh, od.get("entity_id", ""), action="menerima barang di sini", field_label="Gudang tujuan")
+        await _renew(od["id"], key, token)
         pr = await ensure_pr(od, n, route, actor, wh)
         from services import purchase_requisition_service as pr_svc
         if pr.get("status") in ("draft", "pending_approval"):
@@ -383,6 +407,7 @@ async def realize(od: Dict[str, Any], key: str, actor: Dict[str, Any], warehouse
                 await pr_svc.approve_requisition(pr["id"], actor, notes=f"Otomatis — pemenuhan {_label(od)}")
             except ValueError as exc:
                 raise FulfillmentError(f"PR {pr.get('number')} belum bisa disetujui otomatis: {exc}") from exc
+        await _renew(od["id"], key, token)
         doc = await (_realize_po(od, n, pr["id"], wh, actor) if route == "purchase" else _realize_mko(od, n, pr["id"], actor))
         if doc is None:
             return {"key": key, "status": "needs_data", "pr_number": pr.get("number")}
@@ -407,7 +432,7 @@ async def realize(od: Dict[str, Any], key: str, actor: Dict[str, Any], warehouse
         await _save(od["id"], key, {"error": getattr(exc, "detail", None) or str(exc), "error_at": now_iso()})
         raise
     finally:
-        await _release(od["id"], key)
+        await _release(od["id"], key, token)
 
 
 async def _realize_po(od, n, pr_id, wh, actor) -> Dict[str, Any]:
