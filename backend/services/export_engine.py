@@ -260,7 +260,12 @@ async def build_plan(spec: Dict[str, Any], user: Dict[str, Any], ctx) -> Dict[st
             "denied": [{"key": d["key"], "label": d["label"], "reason": d["reason"]} for d in denied]}
 
 
-ROWS_COL = {"key": "_rows", "label": "Jumlah baris", "type": "number", "path": "_rows", "source": "base"}
+ROWS_COL = {"key": "_rows", "label": "Jumlah baris", "type": "number", "path": "_rows", "source": "base",
+            "derived": "group_count"}
+#: AUD-EXP-01 — kolom TURUNAN yang ditambahkan engine (bukan kolom dataset): asal & aturan izinnya. `_rows`
+#: = hitungan baris per kelompok; tidak membawa nilai kolom apa pun, jadi cukup hak atas dataset + kolom
+#: pengelompokan (yang tetap diperiksa ulang saat unduh). Jangan dihapus dari pemeriksaan unduh.
+DERIVED_COLUMNS = {ROWS_COL["key"]: {"origin": "group_count", "requires": "dataset"}}
 
 
 def _group_plan(ds, group_by, cols, base_cols):

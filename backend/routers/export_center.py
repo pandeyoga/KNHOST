@@ -210,7 +210,9 @@ async def download_job(job_id: str, request: Request) -> Any:
     ds = DATASET_BY_ID.get(job["dataset"])
     why = await eng.dataset_access(user, ds) if ds else "dataset dihapus"
     allowed = {c["key"] for c in (await eng.resolve_columns(user, ds))[0]} if ds and not why else set()
-    lost_cols = [k for k in job["columns"] if k not in allowed]
+    # AUD-EXP-01 — kolom turunan engine (mis. `_rows` hitungan grouping) bukan kolom dataset: hak atasnya
+    # mengikuti hak dataset (`why`) — kolom dataset & badan usaha tetap divalidasi ulang di bawah.
+    lost_cols = [k for k in job["columns"] if k not in allowed and k not in eng.DERIVED_COLUMNS]
     lost_ent = [e for e in job.get("entity_ids") or [] if e not in ctx.allowed_entity_ids]
     if why or lost_cols or lost_ent:
         await audit(user.get("name", ""), "export.download_denied", "export_jobs", job_id,
