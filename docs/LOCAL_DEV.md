@@ -65,11 +65,15 @@ docker compose -f docker-compose.dev.yml ps
 Build pertama ±5–15 menit (pip + yarn). Kompilasi pertama frontend ±1–3 menit — pantau:
 `docker compose -f docker-compose.dev.yml logs -f frontend` sampai muncul `Compiled`.
 
-**Isi data demo** (sekali, atau kapan pun ingin reset ke data realistis):
+**Isi data demo** (sekali, atau kapan pun ingin reset ke data realistis; ±10 menit):
 ```bash
 docker compose -f docker-compose.dev.yml exec backend python /app/seed_realistic.py
 ```
 Lalu buka http://localhost:3000.
+
+> **Git Bash:** path `/app/...` diubah otomatis menjadi path Windows
+> (`can't open file '/app/backend/C:/Program Files/Git/app/...'`). Jalankan
+> `export MSYS_NO_PATHCONV=1` sekali per terminal, atau pakai PowerShell.
 
 ## Perintah harian
 
