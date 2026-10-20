@@ -16,7 +16,7 @@ lalu `AUDIT_FRONTEND_2026-10-20.md` dan `PROMPT_PERBAIKAN_FRONTEND_2026-10-20.md
 | ID | Judul | Prio | Fase | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
 |---|---|---|---|---|---|---|---|
 | FE-01 | Special Order multi-produk kehilangan item/qty saat pricing dan konversi | P1 | UI-01 | implemented_pending_review | ya — jalur kode deterministik | `cc4d13a` | [UI-01](2026-10-20/hasil/UI-01.md) |
-| FE-02 | Kontrol pilihan Interco tidak memperbarui nilai | P1 | UI-02 | open | ya — direproduksi runtime | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
+| FE-02 | Kontrol pilihan Interco tidak memperbarui nilai | P1 | UI-02 | implemented_pending_review | ya — direproduksi runtime | `0d8e202` `6350391` `621f50b` | [UI-02](2026-10-20/hasil/UI-02.md) |
 | FE-03 | Peta modul akses tidak mengikuti menu/hub terbaru | P1 | UI-03 | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | FE-04 | Tombol/petugas dibatasi nama role meski izin efektif berbeda | P2 | UI-03 | open | ya — jalur kode deterministik | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
 | FE-05 | Data Gudang menolak Admin Gudang yang berizin | P2 | UI-03 | open | ya — direproduksi runtime | | [validasi](2026-10-20/hasil/VALIDASI_TEMUAN.md) |
@@ -62,6 +62,7 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 
 | ID | Pertanyaan untuk owner | Dicatat |
 |---|---|---|
+| FE-01 (usulan) | Perlukah fitur batal per item Pesanan Khusus? Sekarang yang ada hanya batal dokumen pengadaan per item; uji "item dibatalkan" di UI-01 tidak bisa dijalankan tanpa aturan ini. | 2026-10-20 |
 | AUD-RND-03 | Apakah kontrak berstatus *terminated* boleh dipakai sebagai referensi historis? Bila ya, daftar pilihan perlu menampilkannya; bila tidak, validasi backend harus menolaknya. | 2026-10-20 |
 
 ## Riwayat perubahan tracker
@@ -69,6 +70,7 @@ kelompok ini — urutan pengerjaan menunggu arahan reviewer/owner.
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
 | 2026-10-20 | Claude Code | Tracker dibuat dari paket 2026-10-20 (13 FE + 12 AUD); semua `open` kecuali AUD-RND-03 `pending_decision` |
+| 2026-10-20 | Claude Code | FE-02 implemented_pending_review (`0d8e202`, `6350391`, `621f50b`): 9 kontrol Interco + bentuk prop selectedEntity + guardrail |
 | 2026-10-20 | Claude Code | FE-01 implemented_pending_review (`cc4d13a`): harga & konversi per item, 7 tes baru; usul `pending_decision` batal per item OD |
 | 2026-10-20 | Claude Code | ENV-01/02 implemented_pending_review (`6e64b2c`): akar ENV-01 = cookie jar klien seed menimpa Bearer, bukan regresi izin |
 | 2026-10-20 | Claude Code | Validasi benar/false positive: 24 benar (4 direproduksi runtime), AUD-MKL-01 bagian 2 false positive, AUD-RND-03 menunggu keputusan; usulan ENV-01..03 ([laporan](2026-10-20/hasil/VALIDASI_TEMUAN.md)) |
