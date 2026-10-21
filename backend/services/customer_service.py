@@ -137,16 +137,72 @@ def order_payment_method(o: Dict[str, Any]) -> str:
     return str((o.get("payment_profile_method") or o.get("payment_term_code") or "")).lower()
 
 
-def _term_days(customer: Dict[str, Any], order: Dict[str, Any]) -> int:
-    """Termin snapshot SO menang; G3 D4-FIN-02 — termin 0 (tunai/COD) tetap 0, bukan jadi 30."""
+def _term_days(customer: Dict[str, Any], order: Dict[str, Any],
+               terms: Optional[Dict[Any, Optional[int]]] = None) -> int:
+    """Termin snapshot SO menang; G3 D4-FIN-02 — termin 0 (tunai/COD) tetap 0, bukan jadi 30.
+
+    F-16 — bila `terms` (peta `(kode, entitas) → net_days` dari `due_context`) diberikan, kode termin SO
+    (CBD = 0, NET30 = 30, DP50 = 14, …) dipakai SEBELUM profil pelanggan: SO CBD tidak lagi tampil
+    "30 hari lagi" hanya karena profil pelanggannya NET30."""
     pp = customer.get("payment_profile") or {}
-    for src, key in ((order, "payment_term_days"), (pp, "term_days")):
-        if src.get(key) not in (None, ""):
-            try:
-                return max(0, int(src[key]))
-            except (TypeError, ValueError):
-                continue
+    if order.get("payment_term_days") not in (None, ""):
+        try:
+            return max(0, int(order["payment_term_days"]))
+        except (TypeError, ValueError):
+            pass
+    code = order.get("payment_term_code") or ""
+    if terms is not None and code:
+        nd = terms.get((code, order.get("entity_id") or ""))
+        if nd is not None:
+            return max(0, int(nd))
+    if pp.get("term_days") not in (None, ""):
+        try:
+            return max(0, int(pp["term_days"]))
+        except (TypeError, ValueError):
+            pass
     return 30
+
+
+SJ_INACTIVE = ("cancelled", "void", "voided")
+
+
+async def due_context(orders: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """F-16 (uji pra-UAT 2026-10-21, keputusan owner Q-05a) — bahan hitung jatuh tempo piutang, SATU kali per daftar.
+
+    * Dasar jatuh tempo = tanggal **Surat Jalan pertama** SO (bukan tanggal SO): pesanan backorder / menunggu ACC /
+      belum dikirim BELUM punya jatuh tempo → tidak masuk daftar jatuh tempo, tidak telat, tanpa denda.
+    * Lama termin = kode termin SO (lapisan PT menang atas global) — lihat `_term_days`.
+    Dipakai SEMUA penghitung (status kredit, daftar tagih/Meja Finance, umur piutang, pengingat H-x, Tanya KN,
+    proyeksi kas) supaya angka tidak drift."""
+    ids = [o["id"] for o in orders if o.get("id")]
+    first: Dict[str, datetime] = {}
+    if ids:
+        async for r in db.shipments.aggregate([
+                {"$match": {"order_id": {"$in": ids}, "status": {"$nin": list(SJ_INACTIVE)}}},
+                {"$group": {"_id": "$order_id", "first": {"$min": "$created_at"}}}]):
+            dt = _parse_dt(r.get("first"))
+            if dt:
+                first[r["_id"]] = dt
+    terms: Dict[Any, Optional[int]] = {}
+    from services import entity_master_service as ems
+    for o in orders:
+        code = o.get("payment_term_code") or ""
+        key = (code, o.get("entity_id") or "")
+        if code and key not in terms:
+            row = await ems.resolve_row("payment-terms", code, o.get("entity_id") or "", include_inactive=True)
+            try:
+                terms[key] = int(row["net_days"]) if row and row.get("net_days") not in (None, "") else None
+            except (TypeError, ValueError):
+                terms[key] = None
+    return {"first_sj": first, "terms": terms}
+
+
+def order_due(customer: Dict[str, Any], order: Dict[str, Any], ctx: Dict[str, Any]) -> Optional[datetime]:
+    """Jatuh tempo SO = SJ pertama + termin; None = belum dikirim (belum jatuh tempo)."""
+    base = (ctx or {}).get("first_sj", {}).get(order.get("id"))
+    if base is None:
+        return None
+    return base + timedelta(days=_term_days(customer, order, (ctx or {}).get("terms")))
 
 
 async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[str] = None) -> Dict[str, Any]:
@@ -164,6 +220,7 @@ async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[
     max_overdue_days = 0
     open_orders = 0
     ar_rows: List[Any] = []
+    dctx = await due_context(orders)   # F-16 — jatuh tempo dari SJ pertama
     for o in orders:
         if o.get("status") in DEAD_STATUSES:
             continue
@@ -179,9 +236,8 @@ async def compute_customer_credit(customer: Dict[str, Any], entity_id: Optional[
         ar += outstanding
         ar_rows.append((o, outstanding))
         open_orders += 1
-        created = _parse_dt(o.get("created_at")) or now
-        due = created + timedelta(days=_term_days(customer, o))
-        if due < now:
+        due = order_due(customer, o, dctx)
+        if due is not None and due < now:
             overdue += outstanding
             days_late = (now - due).days
             max_overdue_days = max(max_overdue_days, days_late)
@@ -399,9 +455,10 @@ async def collection_worklist(
         {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
          "status": 1, "payment_status": 1, "grand_total": 1, "total_amount": 1,
          "payments": 1, "created_at": 1, "sales_name": 1, "payment_term_code": 1,
-         "payment_profile_method": 1},
+         "payment_term_days": 1, "payment_profile_method": 1, "entity_id": 1},
     ).to_list(8000)
     now = datetime.now(timezone.utc)
+    dctx = await due_context(orders)   # F-16 — jatuh tempo dari SJ pertama
     for o in orders:
         if o.get("status") in DEAD_STATUSES or o.get("payment_status") == "paid":
             continue
@@ -412,8 +469,9 @@ async def collection_worklist(
         if method in NON_AR_METHODS:
             continue
         c = cmap.get(o["customer_id"], {})
-        created = _parse_dt(o.get("created_at")) or now
-        due = created + timedelta(days=_term_days(c, o))
+        due = order_due(c, o, dctx)
+        if due is None:
+            continue   # F-16 — belum dikirim: belum punya jatuh tempo (bukan "30 hari lagi")
         days_late = (now - due).days
         rows.append({
             "order_id": o.get("id"), "order_number": o.get("number"),

@@ -16,7 +16,7 @@ from dependencies import audit
 from services import analytics_catalog as cat
 from services import analytics_engine as engine
 from services.analytics_time import now_wib, period_from_args
-from services.ar_aging_service import _eligible_outstanding, term_days, parse_dt
+from services.ar_aging_service import _eligible_outstanding, due_context, order_due
 from services.sales_ownership import apply_scope, assert_may_open
 from role_registry import role_in  # peran acuan dikenali (keputusan owner 2026-10-21)
 
@@ -66,15 +66,19 @@ async def _ar_orders(sc: engine.Scope, overdue_only: bool, limit: int,
     custs = {c["id"]: c async for c in db.customers.find(cq, {"_id": 0})}
     now = datetime.now(timezone.utc)
     out = []
-    async for o in db.sales_orders.find({"customer_id": {"$in": list(custs)}}, {"_id": 0, "items": 0, "status_history": 0}):
+    orders = await db.sales_orders.find({"customer_id": {"$in": list(custs)}},
+                                        {"_id": 0, "items": 0, "status_history": 0}).to_list(20000)
+    dctx = await due_context(orders)   # F-16 — jatuh tempo dari Surat Jalan pertama; belum dikirim = belum jatuh tempo
+    for o in orders:
         amt = _eligible_outstanding(o)
         if amt is None:
             continue
-        due = (parse_dt(o.get("created_at")) or now) + timedelta(days=term_days(custs[o["customer_id"]], o))
-        late = (now - due).days
+        due = order_due(custs[o["customer_id"]], o, dctx)
+        late = (now - due).days if due else 0
         if overdue_only and late <= 0:
             continue
-        out.append({"number": o.get("number"), "customer": o.get("customer_name"), "due_date": due.date().isoformat(),
+        out.append({"number": o.get("number"), "customer": o.get("customer_name"),
+                    "due_date": due.date().isoformat() if due else "belum dikirim",
                     "days_overdue": max(late, 0), "outstanding": round(amt, 2), "payment_status": o.get("payment_status")})
     return out
 

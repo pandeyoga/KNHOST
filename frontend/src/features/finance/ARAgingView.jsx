@@ -425,7 +425,10 @@ function CustomerDetail({ detail, customerId, loading, currentUser, accruing, on
                             title={`Rencana pembayaran ${it.plan_number}`}>RPB</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-[#3C3C43]">{fmtDate(it.due_date)}</td>
+                      {/* F-16 — jatuh tempo = Surat Jalan pertama + termin; belum dikirim = belum jatuh tempo */}
+                      <td className="px-3 py-2 text-[#3C3C43]" data-testid={`ar-detail-due-${it.order_id}`}>
+                        {it.due_date ? fmtDate(it.due_date) : <span className="text-[#8E8E93]">belum dikirim</span>}
+                      </td>
                       <td className="px-3 py-2 text-center">
                         {it.overdue
                           ? <span className="rounded bg-[#FCEBEA] px-1.5 py-0.5 text-[10px] font-bold text-[#C0392B]">telat {it.days_late} hr</span>

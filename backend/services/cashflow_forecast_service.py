@@ -63,7 +63,7 @@ async def cashflow_forecast(scope: Optional[Dict[str, Any]] = None,
 
     # G3 D4-FIN-02 — basis AR & termin = AR kanonis (ar_aging_service): metode tunai dikecualikan,
     # termin dari snapshot SO (payment_term_days) dulu, termin 0 tetap 0.
-    from services.ar_aging_service import _eligible_outstanding, term_days
+    from services.ar_aging_service import _eligible_outstanding, term_days, due_context, order_due
     cust_rows = await db.customers.find({}, {"_id": 0, "id": 1, "payment_profile": 1}).to_list(20000)
     cmap = {c["id"]: c for c in cust_rows}
 
@@ -77,18 +77,22 @@ async def cashflow_forecast(scope: Optional[Dict[str, Any]] = None,
     # ── INFLOW (AR) ──
     soq: Dict[str, Any] = {**(scope or {})}
     orders = await db.sales_orders.find(soq, {"_id": 0}).to_list(50000)
+    dctx = await due_context(orders)   # F-16 — jatuh tempo dari Surat Jalan pertama
     for o in orders:
         outstanding = _eligible_outstanding(o)
         if outstanding is None:
             continue
-        created = _parse(o.get("created_at")) or now
-        due = created + timedelta(days=term_days(cmap.get(o.get("customer_id"), {}), o))
+        cust = cmap.get(o.get("customer_id"), {})
+        due = order_due(cust, o, dctx)
+        basis = "first_sj"
+        if due is None:   # belum dikirim: perkiraan paling cepat = dikirim hari ini + termin (bukan "lewat")
+            due, basis = now + timedelta(days=term_days(cust, o, dctx["terms"])), "estimate_not_shipped"
         days = (due - now).days
         bk = _bucket_key(days)
         buckets[bk]["inflow"] = round(buckets[bk]["inflow"] + outstanding, 2)
         ar_items.append({"number": o.get("number"), "party": o.get("customer_name", ""),
                          "amount": outstanding, "due_date": due.date().isoformat(),
-                         "days_to_due": days, "bucket": bk})
+                         "days_to_due": days, "bucket": bk, "due_basis": basis})
 
     # ── OUTFLOW (AP) ──
     vbq: Dict[str, Any] = {"status": {"$in": PAYABLE_BILL_STATUSES}, **(scope or {})}

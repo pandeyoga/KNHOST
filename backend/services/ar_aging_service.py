@@ -23,6 +23,8 @@ from services.customer_service import (
     order_payment_method,
     _term_days as term_days,
     _parse_dt as parse_dt,
+    due_context,
+    order_due,
     DEAD_STATUSES,
     NON_AR_METHODS,
 )
@@ -208,8 +210,9 @@ async def aging_report(entity_id: Optional[str] = None, sales_id: Optional[str] 
             {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1,
              "status": 1, "payment_status": 1, "grand_total": 1, "total_amount": 1,
              "payments": 1, "created_at": 1, "payment_term_code": 1,
-             "payment_term_days": 1, "payment_profile_method": 1},
+             "payment_term_days": 1, "payment_profile_method": 1, "entity_id": 1},
         ).to_list(20000)
+        dctx = await due_context(orders)   # F-16 — jatuh tempo dari Surat Jalan pertama
 
         # Nota denda nyata untuk seluruh pesanan pelanggan dalam SATU query.
         from services import penalty_service as penalties
@@ -223,9 +226,8 @@ async def aging_report(entity_id: Optional[str] = None, sales_id: Optional[str] 
             sp = split_outstanding(o, outstanding, rec.get(o["id"], 0.0))
             cid = o.get("customer_id")
             cust = cmap.get(cid, {})
-            created = parse_dt(o.get("created_at")) or now
-            due = created + timedelta(days=term_days(cust, o))
-            days_late = (now - due).days
+            due = order_due(cust, o, dctx)
+            days_late = (now - due).days if due else 0   # belum dikirim → belum jatuh tempo (kolom "current")
             # FASE G-0 — kelompok umur & denda kini bisa berbeda PER PELANGGAN
             # (global → entitas → pelanggan) lewat config_resolver.
             ccfg = cust_cfg.get(cid)
@@ -355,6 +357,7 @@ async def orders_due_soon(offsets: List[int], entity_id: Optional[str] = None,
          "payments": 1, "created_at": 1, "payment_term_code": 1,
          "payment_term_days": 1, "payment_profile_method": 1, "entity_id": 1},
     ).to_list(20000)
+    dctx = await due_context(orders)   # F-16 — jatuh tempo dari Surat Jalan pertama
 
     rows: List[Dict[str, Any]] = []
     for o in orders:
@@ -362,8 +365,9 @@ async def orders_due_soon(offsets: List[int], entity_id: Optional[str] = None,
         if outstanding is None:
             continue
         cust = cmap.get(o.get("customer_id"), {})
-        created = parse_dt(o.get("created_at")) or now
-        due = created + timedelta(days=term_days(cust, o))
+        due = order_due(cust, o, dctx)
+        if due is None:
+            continue   # belum dikirim → belum ada jatuh tempo, tidak diingatkan
         offset = (now.date() - due.date()).days
         if offset not in wanted:
             continue
@@ -413,6 +417,7 @@ async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
     from services import payment_plan_service as plans
     pen_by_doc = await penalties.for_docs([o.get("id") for o in orders])
     rec = await recognized_by_order([o["id"] for o in orders if _eligible_outstanding(o) is not None])
+    dctx = await due_context(orders)   # F-16 — jatuh tempo dari Surat Jalan pertama
 
     items: List[Dict[str, Any]] = []
     totals = {**_empty_buckets(), "total": 0.0, "overdue": 0.0, "denda": 0.0,
@@ -425,9 +430,8 @@ async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
         outstanding = _eligible_outstanding(o)
         if outstanding is None:
             continue
-        created = parse_dt(o.get("created_at")) or now
-        due = created + timedelta(days=term_days(customer, o))
-        days_late = (now - due).days
+        due = order_due(customer, o, dctx)
+        days_late = (now - due).days if due else 0   # belum dikirim → belum jatuh tempo
         bucket = _bucket(days_late, cfg.get("aging_buckets"))
         denda = _denda_estimate(outstanding, days_late, cfg)
         pen_rows = pen_by_doc.get(o.get("id")) or []
@@ -455,7 +459,8 @@ async def customer_aging_detail(customer_id: str, as_of: Optional[str] = None,
             "outstanding": outstanding,
             **sp,
             "status": o.get("status"),
-            "due_date": due.date().isoformat(),
+            "due_date": due.date().isoformat() if due else "",
+            "due_basis": "first_sj" if due else "not_shipped",
             "days_late": days_late,
             "bucket": bucket,
             "overdue": days_late > 0,

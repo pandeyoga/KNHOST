@@ -121,6 +121,7 @@ function DueList({ title, icon: Icon, items, tone, testId }) {
                   <td className="px-3 py-1.5 text-right text-[11px]">
                     <span className={it.days_to_due < 0 ? "text-[#C0392B] font-semibold" : "text-[#6B6B73]"}>{it.due_date}</span>
                     {it.days_to_due < 0 && <span className="block text-[9px] text-[#C0392B]">telat {Math.abs(it.days_to_due)}h</span>}
+                    {it.due_basis === "estimate_not_shipped" && <span className="block text-[9px] text-[#8E8E93]">perkiraan · belum dikirim</span>}
                   </td>
                 </tr>
               ))}

@@ -20,9 +20,13 @@ def ayu():
     return _h("sales@kainnusantara.id")
 
 
-def _own_unassigned_order():
+def _own_unassigned_order(shipped=False):
+    """`shipped=True` — F-16 (keputusan owner Q-05a): hanya pesanan yang sudah ber-Surat Jalan punya jatuh tempo
+    dan masuk daftar tagih; pesanan belum dikirim sengaja tidak muncul."""
     u = DB.users.find_one({"email": "sales@kainnusantara.id"})
     for o in DB.sales_orders.find({"sales_id": u["id"], "status": {"$nin": ["cancelled", "draft", "rejected"]}}):
+        if shipped and (o.get("payment_status") == "paid" or not DB.shipments.find_one({"order_id": o["id"]}, {"_id": 1})):
+            continue
         c = DB.customers.find_one({"id": o["customer_id"]}) or {}
         if c.get("assigned_sales_id") != u["id"]:
             return u, o, c
@@ -30,7 +34,7 @@ def _own_unassigned_order():
 
 
 def test_worklist_includes_own_orders_for_other_customers(ayu):
-    u, o, c = _own_unassigned_order()
+    u, o, c = _own_unassigned_order(shipped=True)
     rows = requests.get(f"{BASE}/collection-reminders", params={"days_ahead": 60}, headers=ayu, timeout=30).json()
     if o.get("payment_status") == "paid":
         pytest.skip("pesanan sudah lunas")
