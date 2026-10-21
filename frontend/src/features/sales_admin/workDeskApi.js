@@ -225,6 +225,8 @@ export const FINANCE_QUEUE_TARGET = {
   nota_batal_item: { view: "orders", nav_id: "sales-orders", focus_type: "sales_order", number_key: "order_number" },
   // Cek UI UAT v3 (S14) — retur selesai QC: buka detail retur (panel Kompensasi) di menu Retur.
   retur_putus_nilai: { view: "returns", nav_id: "returns-hub", focus_type: "sales_return" },
+  // Cek UI UAT v3 (S12) — sample berbayar menunggu ACC bayar → detail di Pesanan Sample ([Setujui Pembayaran]).
+  sample_acc_bayar: { view: "sample-orders", nav_id: "sample-orders", focus_type: "sample_order" },
 };
 
 /** Sesi #087 — tujuan baris Meja MD & Meja Admin Gudang (per ref_type). */

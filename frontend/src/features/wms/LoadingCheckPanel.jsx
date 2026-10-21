@@ -130,7 +130,7 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
         <div className="space-y-1.5">
           <p className="text-[11px] text-[#6B6B73]" data-testid="lc-progress">
             Cocok {session.matched_count ?? 0}/{session.expected_count ?? session.expected?.length} EPC
-            {session.simulated && <span className="font-semibold text-[#B23B14]" data-testid="lc-simulated-warn"> · berisi scan SIMULASI (hasil tidak sah)</span>}
+            {session.simulated && <span className="font-semibold text-[#B23B14]" data-testid="lc-simulated-warn"> · berisi scan SIMULASI ({simMode ? "sah di mode simulasi UAT" : "hasil tidak sah"})</span>}
             {untagged.length > 0 && <span className="text-[#B23B14]" data-testid="lc-untagged-count"> · roll tanpa tag {resolved.size}/{untagged.length} terverifikasi label</span>}
             {session.not_committed_count > 0 && <span className="block font-semibold text-[#B23B14]" data-testid="lc-not-committed-warn">⚠ {session.not_committed_count} roll masih reserved (belum commit) — check bisa bersih tapi dispatch akan tertahan sampai roll di-commit</span>}
           </p>

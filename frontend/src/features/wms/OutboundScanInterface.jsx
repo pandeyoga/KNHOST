@@ -419,7 +419,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                   </>)}
                   {selectedTask.task_subtype === "sample_cut" && (
                     <p data-testid={`outbound-sample-cut-info-${selectedTask.id}`} className="rounded-lg border border-[#BFE6CC] bg-[#F1FBF4] p-2 text-[11px] text-[#126E2C]">
-                      Sample sudah dipotong dari <b>{selectedTask.parent_roll_no}</b> → <b>{selectedTask.child_roll_no}</b> ({formatQty(selectedTask.picked_qty)} {selectedTask.unit}). Lanjutkan pengiriman di bawah.
+                      Sample sudah dipotong dari <b>{selectedTask.parent_roll_no}</b> → <b>{selectedTask.child_roll_no}</b> ({formatQty(selectedTask.picked_qty)} {selectedTask.unit}). Serahkan potongan ke Admin Sample untuk diterima (Pesanan Sample › Meja Cutting), lalu kirim di bawah.
                     </p>
                   )}
 

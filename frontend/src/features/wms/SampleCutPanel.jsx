@@ -21,7 +21,7 @@ export default function SampleCutPanel({ task, onCut }) {
         : { epc: code.trim(), actual_length: Number(length) || undefined, reason };
       const { data } = await axios.post(`${API}/outbound/tasks/${task.id}/cut-sample`, body);
       setDone(data.cut);
-      notifySuccess("Sample dipotong", `${data.cut.cut_roll_no} → ${data.cut.child_roll_no} · ${formatQty(data.cut.length)} ${data.cut.unit}. Lanjut kirim.`);
+      notifySuccess("Sample dipotong", `${data.cut.cut_roll_no} → ${data.cut.child_roll_no} · ${formatQty(data.cut.length)} ${data.cut.unit}. Serahkan potongan ke Admin Sample (Pesanan Sample › Meja Cutting → Terima hasil potong) sebelum kirim.`);
       onCut?.(data.task);
     } catch (e) { setErr(apiErrorText(e, "Potong gagal.")); }
     finally { setBusy(false); }

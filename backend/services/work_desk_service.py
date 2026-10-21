@@ -577,6 +577,22 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                      "credit_note_id": n["id"]}) for n in pend],
         action_label="Tinjau", owner="finance"))
 
+    # Cek UI UAT v3 (S12) — sample berbayar menunggu ACC bayar: dulu hanya terlihat di Pesanan Sample (filter), bukan di meja.
+    sos = await db.sales_orders.find({**_ent_q(scope), "order_type": "sample", "sample_billing": "paid",
+                                      "sample_payment_status": {"$in": ["awaiting_approval", "reapproval_required"]},
+                                      "status": {"$nin": ["cancelled", "expired"]}},
+                                     {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "grand_total": 1,
+                                      "created_at": 1, "sample_payment_status": 1}).sort("created_at", 1).to_list(200)
+    queues.append(_queue(
+        "sample_acc_bayar", "Sample berbayar — menunggu ACC bayar",
+        "Pastikan pembayaran / kesepakatan bayar ada, lalu setujui. Persetujuan ulang muncul bila nilai aktual potong berubah > ±5%.",
+        [_row(ref_type="sample_order", ref_id=o["id"], number=o.get("number", ""), title=o.get("customer_name", "—"),
+              subtitle="persetujuan ulang (nilai aktual berubah)" if o.get("sample_payment_status") == "reapproval_required" else "sample berbayar baru",
+              value=float(o.get("grand_total") or 0), age_days=_age_days(o.get("created_at")),
+              badge="ACC ulang" if o.get("sample_payment_status") == "reapproval_required" else "ACC bayar",
+              action="Tinjau", action_kind="open") for o in sos],
+        action_label="Tinjau", owner="finance"))
+
     # Cek UI UAT v3 (S14) — retur selesai QC menunggu keputusan nilai/penyelesaian Finance; dulu hanya lewat lonceng.
     sr = await db.sales_returns.find({**_ent_q(scope), "status": "inspected", "compensation.status": {"$ne": "decided"},
                                       "return_type": {"$ne": "penggantian"}},   # tukar barang = keputusan Manajer

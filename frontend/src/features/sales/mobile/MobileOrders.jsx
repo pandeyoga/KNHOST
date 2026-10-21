@@ -25,6 +25,9 @@ const ACTIVE = ["reserved", "waiting_approval", "approved", "confirmed", "partia
 const PRE_CONFIRM = ["reserved", "waiting_approval", "approved", "waiting_stock"];
 const SHIPPED = ["shipped", "partially_shipped", "dispatched", "delivered", "done"];
 
+// Cek UI UAT v3 (S11) — sample gratis dulu tampil "Belum bayar · Rp 0" + tombol Catat bayar.
+const isFreeSample = (o) => o.sample_billing === "free" || (o.order_type === "sample" && !Number(o.grand_total || 0));
+
 export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh, role, user, focusId, onReturn, onDashboard }) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
@@ -107,7 +110,7 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                     </div>
                     <p className="mt-0.5 truncate text-[11.5px] text-[#3C3C43]">{o.customer_name}</p>
                     <SubStatusChips order={o} testIdPrefix={`mobile-order-sub-${o.id}`} className="mt-0.5" />
-                    <p className="mt-0.5 text-[10.5px] m-muted">{(o.items || []).length} item • {o.payment_status === "paid" ? <span className="text-[#1A7A3A]">Lunas</span> : "Belum bayar"}</p>
+                    <p className="mt-0.5 text-[10.5px] m-muted">{(o.items || []).length} item • {isFreeSample(o) ? "Gratis" : o.payment_status === "paid" ? <span className="text-[#1A7A3A]">Lunas</span> : "Belum bayar"}</p>
                   </div>
                   <div className="flex flex-col items-end">
                     <span className="text-[13px] font-bold tabular-nums">{formatCurrency(total)}</span>
@@ -145,7 +148,7 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                           <FileEdit size={14} /> Ajukan koreksi
                         </button>
                       )}
-                      {o.payment_status !== "paid" && !["cancelled", "expired"].includes(o.status) && (
+                      {o.payment_status !== "paid" && !isFreeSample(o) && !["cancelled", "expired"].includes(o.status) && (
                         <button className="secondary-button flex items-center justify-center gap-1.5 py-2.5 text-[12px]" onClick={() => setPay({ id: o.customer_id, name: o.customer_name })} data-testid={`mobile-order-pay-${o.id}`}>
                           <Wallet size={14} /> Catat bayar
                         </button>

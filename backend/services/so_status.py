@@ -39,6 +39,9 @@ def _approval_subs(order: Dict[str, Any]) -> List[str]:
                 "nilai": "menunggu_approval_nilai",
                 "kredit": "menunggu_approval_kredit",
                 "special_price": "menunggu_approval_harga",
+                "makloon": "menunggu_approval_makloon",
+                # Cek UI UAT v3 (S12) — sample berbayar dulu tampil "Menunggu approval nilai".
+                "pembayaran_sampel": "menunggu_persetujuan_bayar_sample",
             }.get(t, "menunggu_approval_nilai"))
     if not subs and order.get("required_approval_role"):
         subs.append("menunggu_approval_nilai")
@@ -112,6 +115,8 @@ SUBSTATUS_LABELS: Dict[str, str] = {
     "menunggu_approval_nilai": "Menunggu approval nilai",
     "menunggu_approval_kredit": "Menunggu approval kredit",
     "menunggu_approval_harga": "Menunggu approval harga khusus",
+    "menunggu_approval_makloon": "Menunggu approval stok cadangan makloon",
+    "menunggu_persetujuan_bayar_sample": "Menunggu persetujuan bayar sample (Finance/Admin Sample)",
     "siap_disahkan": "Siap disahkan",
     "menunggu_stok": "Menunggu stok (backorder)",
     "siap_confirm": "Stok siap — bisa di-confirm",
