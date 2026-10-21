@@ -57,6 +57,7 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 
 | ID | Judul | Prio | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
 |---|---|---|---|---|---|---|
+| F-14 | SPK kedatangan ditutup *terima*, roll tetap karantina sampai keputusan kedua — keputusan owner Q-03 (a): satu keputusan SPK | P2 | implemented_pending_review | ya — direproduksi runtime di `6879aba` (INS-00029 done, roll quarantine) | `22b0d1b` | [F-14](../uat/2026-10-21/hasil/F-14.md) |
 | F-16 | Jatuh tempo dihitung dari tanggal SO; SO belum dikirim & CBD tampil "30 hari lagi" — keputusan owner Q-05 (a): dari SJ pertama | P2 | implemented_pending_review | ya — direproduksi runtime di `c9fca2a` | `4cc39f7` | [F-16](../uat/2026-10-21/hasil/F-16.md) |
 | F-06 | POD *Terkirim* tidak menutup SO — keputusan owner Q-01 (a): SO otomatis Terkirim saat semua SJ ber-POD | P2 | implemented_pending_review | ya — direproduksi runtime di `f856193` (SO-00208 tetap shipped sesudah LG-00008 Terkirim) | `1312fa1` | [F-06](../uat/2026-10-21/hasil/F-06.md) |
 | F-10 | Termin CBD/DP tidak menahan pengiriman — keputusan owner Q-02 (blok keras + pengecualian berizin, dapat dikonfigurasi) | P1 | implemented_pending_review | ya — direproduksi runtime di `e20b149` (SJ terbit tanpa bayar) | `a039932` | [F-10](../uat/2026-10-21/hasil/F-10.md) |
@@ -86,6 +87,7 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | F-14 implemented_pending_review (`22b0d1b`, [F-14](../uat/2026-10-21/hasil/F-14.md)): keputusan Q-03a — menutup SPK penerimaan PO sekaligus memutus karantina (roll per baris, grade 4-point, retur/rusak), antrean karantina menunjuk SPK (keputusan kedua 409), seed data acuan lewat SPK (restore 9/9 OK) — dicek di UI |
 | 2026-10-21 | Claude Code | F-16 implemented_pending_review (`4cc39f7`, [F-16](../uat/2026-10-21/hasil/F-16.md)): keputusan Q-05a — jatuh tempo = SJ pertama + kode termin SO (SSOT `due_context`) di status kredit, daftar tagih/Meja Finance, umur piutang, pengingat, Tanya KN, proyeksi kas; SO belum dikirim tidak masuk daftar — dicek di UI |
 | 2026-10-21 | Claude Code | F-06 implemented_pending_review (`1312fa1`, [F-06](../uat/2026-10-21/hasil/F-06.md)): keputusan Q-01a — POD semua Surat Jalan (kurir/sopir/serah terima ambil sendiri) menutup SO otomatis; progres POD di detail SO; tombol pelacak "Catat POD" membuka Logistik tersaring — dicek di UI |
 | 2026-10-21 | Claude Code | F-10 implemented_pending_review (`a039932`, [F-10](../uat/2026-10-21/hasil/F-10.md)): keputusan Q-02 — termin CBD/DP menahan kirim di semua jalur (409), pengecualian berizin `order.release_unpaid` beralasan & teraudit (dapat dicabut), setting Pusat Pengaturan `finance.dispatch_payment_gate`; status tahan di Barang Keluar, meja Gudang, pelacak SO, detail SO — dicek di UI. Cek UI putaran 3–4 (`e20b149`): tombol Tinjau nota kredit Meja Finance diperbaiki |
