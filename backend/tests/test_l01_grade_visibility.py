@@ -211,15 +211,16 @@ class TestCustomerMinimumGrade:
 
 class TestPermissionDefaultsNotRevived:
     def test_revoked_default_stays_revoked_after_sync(self):
-        import asyncio
         import sys
         sys.path.insert(0, "/app/backend")
+        sys.path.insert(0, "/app/backend/tests")
+        from _shared_loop import run   # loop BERSAMA (klien Motor global terikat loop pertama) — urutan tes bebas
         m = DB.permission_settings.find_one({"id": "default"})
         before = list(m["matrix"]["finance"].get("field_visibility", []))
         DB.permission_settings.update_one({"id": "default"}, {"$set": {"matrix.finance.field_visibility": ["lot"]}})
         try:
             import bootstrap
-            asyncio.get_event_loop().run_until_complete(bootstrap.sync_permission_modules())
+            run(bootstrap.sync_permission_modules())
             after = DB.permission_settings.find_one({"id": "default"})["matrix"]["finance"]["field_visibility"]
             assert after == ["lot"], after
         finally:

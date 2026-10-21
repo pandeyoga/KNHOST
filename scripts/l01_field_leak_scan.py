@@ -2,7 +2,7 @@
 
 Memanggil SEMUA endpoint GET tanpa path-param dari OpenAPI (plus endpoint detail umum)
 lalu melaporkan kunci JSON sensitif yang masih terkirim. Read-only.
-Pakai: python scripts/l01_field_leak_scan.py --email sales.kanda@kainnusantara.id --password demo1234
+Pakai: python scripts/l01_field_leak_scan.py --email sales.kanda@kainnusantara.id --password demo12345
 """
 import argparse
 import json

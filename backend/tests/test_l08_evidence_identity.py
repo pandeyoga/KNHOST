@@ -2,6 +2,7 @@
 identitas roll retur, nomor potongan atomik, larangan kirim ulang ke pelanggan asal."""
 import asyncio
 import os
+import sys
 
 import pytest
 import requests
@@ -13,11 +14,8 @@ TAG = "TEST_L08B"
 SO = DB.sales_orders.find_one({"number": "KSC/SO-00001"})
 PNG = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
        b"\x00\x00\x00\rIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82")
-LOOP = asyncio.new_event_loop()
-
-
-def run(coro):
-    return LOOP.run_until_complete(coro)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _shared_loop import run  # noqa: E402 — loop BERSAMA: klien Motor global terikat loop pertama (urutan tes bebas)
 
 
 def login(email, pw):

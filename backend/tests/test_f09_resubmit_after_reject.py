@@ -36,8 +36,8 @@ def _products(n):
 
 
 def _login(email):
-    pwd = "demo12345" if email.startswith("admin@") else "demo1234"
-    r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pwd}, timeout=30)
+    # F-01 (digabung bersama) — satu sandi untuk semua akun seed
+    r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": "demo12345"}, timeout=30)
     if r.status_code != 200:
         pytest.skip(f"login gagal {email}: {r.status_code}")
     return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": ENT}

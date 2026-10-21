@@ -9,7 +9,6 @@ Uji API memakai data acuan (akun peran) di backend `REACT_APP_BACKEND_URL`; uji 
 dokumen uji sendiri (prefiks TEST_F05) dan membersihkannya.
 Jalankan: cd /app/backend && python -m pytest tests/test_f05_cut_child_allocation.py -p no:randomly -n 0 -q
 """
-import asyncio
 import os
 import sys
 import uuid
@@ -159,18 +158,15 @@ def test_harga_khusus_diajukan_sebelum_potong_tetap_bisa_diputus(u):
 # ─── Tingkat layanan: entri lama tanpa reservation_id, idempoten, sidik stabil ─────────────────────
 
 def _run(coro_fn):
-    async def main():
-        from motor.motor_asyncio import AsyncIOMotorClient
-        from services import roll_service as rs
-        from routers import so_approvals as sa
-        db = AsyncIOMotorClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.environ.get("DB_NAME", "test_database")]
-        old = rs.db, sa.db
-        rs.db = sa.db = db
-        try:
-            return await coro_fn(rs, sa, db)
-        finally:
-            rs.db, sa.db = old
-    return asyncio.run(main())
+    # Event loop BERSAMA tests/_shared_loop.py: klien Motor global terikat loop pertama yang memakainya, dan
+    # layanan yang dipanggil menyentuh modul lain (bukan hanya roll_service/so_approvals) — asyncio.run akan
+    # mengikat klien global ke loop yang langsung ditutup ("Event loop is closed" di modul tes sesudahnya).
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from _shared_loop import run
+    from db import db
+    from services import roll_service as rs
+    from routers import so_approvals as sa
+    return run(coro_fn(rs, sa, db))
 
 
 def test_layanan_entri_tanpa_reservation_id_idempoten_dan_sidik_stabil():
