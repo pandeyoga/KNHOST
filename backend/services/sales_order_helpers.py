@@ -187,6 +187,11 @@ async def reserve_roll_mode_item(
     return result
 
 
+TRANSITION_STAMPS = {"approved": (("approved_at", "approved_by"),),
+                     "confirmed": (("confirmed_at", "confirmed_by"),),
+                     "done": (("delivered_at", "delivered_by"),)}
+
+
 async def so_transition(
     order_id: str, expected_from: List[str], new_status: str,
     actor_name: str, action: str, extra_data: Dict[str, Any] = {}
@@ -215,6 +220,11 @@ async def so_transition(
             "allowed_from": expected_from,
         })
     update_data = {"status": new_status, "updated_at": now_iso(), **extra_data}
+    # F-07 (uji pra-UAT 2026-10-21) — tahap kunci SELALU berstempel waktu & pelaku (Perjalanan SO menampilkannya);
+    # dulu "Disetujui/Dikonfirmasi" tanpa waktu & pelaku. Nilai dari pemanggil tetap menang.
+    for _at, _by in TRANSITION_STAMPS.get(new_status, ()):
+        update_data.setdefault(_at, now_iso())
+        update_data.setdefault(_by, actor_name)
     # F4 — sinkronkan stage + sub_status (turunan dari status final + konteks).
     update_data.update(stage_fields({**order, **update_data}))
     # INV-ATOMIC-01 — CAS: tulisan akhir berprasyarat status yang tadi dibaca, dan sekaligus

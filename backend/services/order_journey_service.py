@@ -57,7 +57,7 @@ async def _outbound_tasks(order_id: str) -> List[Dict[str, Any]]:
     rows = await db.wms_tasks.find(
         {"order_id": order_id},
         {"_id": 0, "id": 1, "status": 1, "product_name": 1, "quantity": 1, "picked_qty": 1,
-         "unit": 1, "warehouse_name": 1, "completed_at": 1, "created_at": 1,
+         "unit": 1, "warehouse_name": 1, "completed_at": 1, "created_at": 1, "updated_at": 1,
          "flow_type": 1, "task_subtype": 1}
     ).sort("created_at", 1).to_list(100)
     return [safe_doc(r) for r in rows if (r.get("flow_type") or "") != "inbound"]
@@ -148,6 +148,19 @@ async def _ledger_split(order: Dict[str, Any], sisa: float) -> Dict[str, float]:
     return split_outstanding(order, max(sisa, 0.0), rec.get(order["id"], 0.0))
 
 
+# F-07 — tugas outbound yang barangnya SUDAH disiapkan (ter-pick) — termasuk yang sudah dikirim. Dulu hanya
+# completed/done/picked dihitung, sehingga SO yang sudah dikirim tampil "Disiapkan gudang 0/1".
+TASK_PREPARED = ("picked", "packing", "staging", "dispatched", "partially_shipped", "completed", "done")
+TASK_IGNORED = ("cancelled",)
+
+
+async def _audit_stamp(order_id: str, actions: tuple) -> tuple:
+    """Pesanan lama tanpa `approved_at`/`confirmed_at`: waktu & pelaku diambil dari jejak audit transisinya."""
+    row = await db.audit_logs.find_one({"entity_id": order_id, "action": {"$in": list(actions)}},
+                                       {"_id": 0, "timestamp": 1, "actor": 1}, sort=[("timestamp", 1)])
+    return ((row or {}).get("timestamp", ""), (row or {}).get("actor", ""))
+
+
 async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
     """Susun perjalanan satu pesanan. Read-only — tidak menyentuh dokumen apa pun."""
     oid = order.get("id", "")
@@ -170,7 +183,17 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
     uang_muka_tertahan = await _gl.order_advance_unrecognized(order)
     diakui_rp = (await _gl.order_revenue_recognized(oid))["ar"] if pendapatan_diakui else 0.0
 
-    selesai_task = [t for t in tasks if t.get("status") in ("completed", "done", "picked")]
+    tasks = [t for t in tasks if t.get("status") not in TASK_IGNORED]
+    selesai_task = [t for t in tasks if t.get("status") in TASK_PREPARED]
+    appr_at, appr_by = order.get("approved_at", ""), order.get("approved_by", "")
+    if not appr_at and status not in ("draft", "pending", "reserved", "waiting_approval", "waiting_stock", ""):
+        _at, _by = await _audit_stamp(oid, ("order_approved", "order_auto_approved", "so_approved",
+                                             "sample_payment_approved"))
+        appr_at, appr_by = _at, appr_by or _by
+    conf_at, conf_by = order.get("confirmed_at", ""), order.get("confirmed_by", "")
+    if not conf_at and tasks:
+        _at, _by = await _audit_stamp(oid, ("order_confirmed", "sample_forwarded_to_warehouse"))
+        conf_at, conf_by = _at, conf_by or _by
     terkirim = [s for s in kirim if s.get("status") in ("dispatched", "delivered", "shipped")]
     faktur_aktif = [f for f in faktur if f.get("status") != "batal"]
 
@@ -187,18 +210,18 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
               bool(order.get("approved_at")) or status in (
                   "approved", "confirmed", "partially_picked", "picked",
                   "partially_shipped", "shipped", "done"),
-              order.get("approved_at", ""), order.get("approved_by", ""),
+              appr_at, appr_by,
               ("Menunggu keputusan " + str(order.get("required_approval_role") or "manajer")
                if status == "waiting_approval" else "")),
         _step("dikonfirmasi", "Dikonfirmasi (tugas gudang lahir)",
               bool(order.get("confirmed_at")) or status in (
                   "confirmed", "partially_picked", "picked",
                   "partially_shipped", "shipped", "done"),
-              order.get("confirmed_at", ""), order.get("confirmed_by", ""),
+              conf_at, conf_by,
               f"{len(tasks)} tugas gudang" if tasks else ""),
         _step("disiapkan", "Disiapkan gudang",
               bool(tasks) and len(selesai_task) == len(tasks),
-              (selesai_task[-1].get("completed_at", "") if selesai_task else ""), "",
+              (max((t.get("completed_at") or t.get("updated_at") or "") for t in selesai_task) if selesai_task else ""), "",
               (f"{len(selesai_task)}/{len(tasks)} tugas gudang selesai" if tasks
                else "Belum ada tugas gudang")),
         _step("dikirim", "Dikirim",
@@ -206,7 +229,7 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
               (" · ".join(s.get("shipment_no", "") for s in terkirim[:3])
                if terkirim else "Belum ada surat jalan")),
         _step("diterima", "Diterima pelanggan", status == "done",
-              order.get("delivered_at") or order.get("dispatched_at", ""), "",
+              order.get("delivered_at") or order.get("dispatched_at", ""), order.get("delivered_by", ""),
               "Pesanan selesai" if status == "done" else ""),
         _step("ditagih", "Ditagih (Faktur Pajak)", bool(faktur_aktif),
               (faktur_aktif[0].get("faktur_date", "") if faktur_aktif else ""), "",
