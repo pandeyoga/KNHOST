@@ -57,6 +57,11 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 
 | ID | Judul | Prio | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
 |---|---|---|---|---|---|---|
+| F-07 | Perjalanan SO: "Disiapkan gudang 0/1", Disetujui/Dikonfirmasi tanpa waktu & pelaku | P3 | implemented_pending_review | ya — direproduksi di `bcca39a` | `262ec12` | [gelombang 3](../uat/2026-10-21/hasil/F-07-F-04-F-17-F-02-F-08.md) |
+| F-04 | KPI POS "Jml Tersedia" menjumlahkan yard + kg | P3 | implemented_pending_review | ya — direproduksi di `bcca39a` | `5735cfb`, `8a23e16` | [gelombang 3](../uat/2026-10-21/hasil/F-07-F-04-F-17-F-02-F-08.md) |
+| F-17 | Antrean retur bernilai Rp0 (Admin Sales & Manajer) | P3 | implemented_pending_review | ya — direproduksi di `bcca39a` | `9020042` | [gelombang 3](../uat/2026-10-21/hasil/F-07-F-04-F-17-F-02-F-08.md) |
+| F-02 | Strip "Sering dibeli" menulis "0 roll tersedia" | P3 | implemented_pending_review | ya — direproduksi di `bcca39a` | `f322a71` | [gelombang 3](../uat/2026-10-21/hasil/F-07-F-04-F-17-F-02-F-08.md) |
+| F-08 | Dokumen tagihan resmi; "Ditagih" = Faktur Pajak — default implementer: Faktur Komersial | P2 | implemented_pending_review | ya — direproduksi di `bcca39a` | `ac9e59c` | [gelombang 3](../uat/2026-10-21/hasil/F-07-F-04-F-17-F-02-F-08.md) |
 | F-13 | MD Quality bisa mengisi saat SPK *Draf* — keputusan owner Q-06 (b): hanya sesudah SPK ditugaskan | P3 | implemented_pending_review | ya — direproduksi runtime di `20f356c` (INS-00063 draft, MDQ 200) | `debc38a` | [F-13](../uat/2026-10-21/hasil/F-13.md) |
 | F-15 | Sample berbayar: tagihan berubah sesudah potong tanpa persetujuan ulang — keputusan owner Q-04 (±5% otomatis, di atasnya persetujuan ulang) | P2 | implemented_pending_review | ya — direproduksi runtime di `393af78` (SOS-00029 +16,7% tetap approved, terkirim) | `049c8ab` | [F-15](../uat/2026-10-21/hasil/F-15.md) |
 | F-14 | SPK kedatangan ditutup *terima*, roll tetap karantina sampai keputusan kedua — keputusan owner Q-03 (a): satu keputusan SPK | P2 | implemented_pending_review | ya — direproduksi runtime di `6879aba` (INS-00029 done, roll quarantine) | `22b0d1b` | [F-14](../uat/2026-10-21/hasil/F-14.md) |
@@ -89,6 +94,7 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | F-07/F-04/F-17/F-02/F-08 implemented_pending_review ([laporan](../uat/2026-10-21/hasil/F-07-F-04-F-17-F-02-F-08.md)): stempel waktu & pelaku transisi SO + "Disiapkan" menghitung tugas terkirim; KPI POS per satuan; nilai antrean retur; stok strip Sering dibeli = katalog; Faktur Komersial sebagai dokumen tagihan di Perjalanan (default implementer, mohon review Finance) — semua dicek di UI. Seluruh 17 temuan UAT kini berstatus implemented_pending_review |
 | 2026-10-21 | Claude Code | F-13 implemented_pending_review (`debc38a`, [F-13](../uat/2026-10-21/hasil/F-13.md)): keputusan Q-06b — hasil SPK (MD Quality/QC/umum) hanya sesudah SPK ditugaskan; tombol di SPK draft disembunyikan + petunjuk — dicek di UI |
 | 2026-10-21 | Claude Code | F-15 implemented_pending_review (`049c8ab`, [F-15](../uat/2026-10-21/hasil/F-15.md)): keputusan Q-04 — toleransi selisih tagihan sample (`sales.sample_payment_tolerance_pct`, 5%) otomatis, di atasnya persetujuan ulang + kiriman ditahan; cek UI: tautan ?doc=SOS- kini membuka Pesanan Sample |
 | 2026-10-21 | Claude Code | F-14 implemented_pending_review (`22b0d1b`, [F-14](../uat/2026-10-21/hasil/F-14.md)): keputusan Q-03a — menutup SPK penerimaan PO sekaligus memutus karantina (roll per baris, grade 4-point, retur/rusak), antrean karantina menunjuk SPK (keputusan kedua 409), seed data acuan lewat SPK (restore 9/9 OK) — dicek di UI |
