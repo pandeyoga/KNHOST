@@ -92,3 +92,19 @@ test("SPK sudah memutus karantina: ringkasan tampil, tombol buka kembali tidak a
   expect(q(host, "ins-reopen-button")).toBeNull();
   await act(async () => { root.unmount(); });
 });
+
+// F-13 (keputusan owner Q-06b) — MD Quality baru boleh mengisi SESUDAH SPK ditugaskan: di SPK draft tombolnya tidak ada.
+test("F-13: SPK draft → tombol MD Quality/Periksa tidak tampil + petunjuk; sesudah ditugaskan tombol MD Quality ada", async () => {
+  const line = { id: "l1", roll_id: "r1", roll_no: "RL-1", quantity: 50, unit: "yard" };
+  const mdq = { role: "md_quality", permissions: { inspection: ["view"] } };
+  const meta = { can_md_quality: true, md_quality_kinds: ["po_receipt"] };
+  let m = await mount(<InspectionDetailPanel doc={{ id: "i1", number: "KSC/INS-1", kind: "po_receipt", task_id: "t", status: "draft", lines: [line] }}
+    meta={meta} currentUser={mdq} onChanged={jest.fn()} onClose={jest.fn()} />);
+  expect(q(m.host, "ins-line-mdq-l1")).toBeNull();
+  expect(q(m.host, "ins-draft-hint").textContent).toMatch(/belum ditugaskan/);
+  await act(async () => { m.root.unmount(); });
+  m = await mount(<InspectionDetailPanel doc={{ id: "i1", number: "KSC/INS-1", kind: "po_receipt", task_id: "t", status: "assigned", lines: [line] }}
+    meta={meta} currentUser={mdq} onChanged={jest.fn()} onClose={jest.fn()} />);
+  expect(q(m.host, "ins-line-mdq-l1")).not.toBeNull();
+  await act(async () => { m.root.unmount(); });
+});

@@ -801,7 +801,13 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
         raise InspectionError("Bagian pemeriksaan harus md_quality atau qc.")
     if part == "md_quality" and doc.get("kind") == KIND_RANDOM_CHECK:
         raise InspectionError("Random check hanya berisi pemeriksaan QC (4-point).")
-    allowed = (STATUS_ASSIGNED, STATUS_IN_PROGRESS) + ((STATUS_DRAFT,) if part == "md_quality" else ())
+    # F-13 (uji pra-UAT 2026-10-21, keputusan owner Q-06b) — MD Quality (seperti QC) baru boleh mengisi SESUDAH SPK
+    # ditugaskan; dulu bagian md_quality boleh diisi saat SPK masih draft (hasil tanpa penanggung jawab).
+    allowed = (STATUS_ASSIGNED, STATUS_IN_PROGRESS)
+    if doc.get("status") == STATUS_DRAFT:
+        raise InspectionError(
+            f"SPK {doc.get('number', '')} belum ditugaskan — tugaskan petugas inspect dulu; MD Quality & QC baru bisa "
+            "mengisi hasil sesudah SPK ditugaskan.")
     _assert_status(doc, allowed, "diisi hasilnya")
     line = _line_of(doc, line_id)
     color = str(payload.get("color_result") or "").strip().lower()

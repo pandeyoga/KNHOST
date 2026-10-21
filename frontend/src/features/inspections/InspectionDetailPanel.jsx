@@ -327,7 +327,8 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
                   </td>
                   <td className="px-2 py-1.5 text-right">
                     <div className="flex flex-wrap justify-end gap-1">
-                      {canMdq && (open || doc.status === "draft") && (
+                      {/* F-13 (keputusan owner Q-06b) — MD Quality hanya sesudah SPK ditugaskan (bukan draft) */}
+                      {canMdq && open && doc.status !== "draft" && (
                         <button data-testid={`ins-line-mdq-${ln.id}`} className="link-button"
                           onClick={() => bukaBaris(ln, "md_quality")}>
                           {ln.md_quality_at ? "Ubah MD Quality" : "MD Quality"}
@@ -339,7 +340,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
                           {ln.qc_at ? "Ubah QC 4-point" : "QC 4-point"}
                         </button>
                       )}
-                      {canInspectAll && !isMdKind && !isRandom && open && (
+                      {canInspectAll && !isMdKind && !isRandom && open && doc.status !== "draft" && (
                         <button data-testid={`ins-line-inspect-${ln.id}`} className="link-button"
                           onClick={() => bukaBaris(ln, "")}>
                           {ln.inspected_at ? "Ubah hasil" : "Isi hasil"}
@@ -410,6 +411,11 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
           </div>
         )}
 
+        {doc.status === "draft" && (canMdq || canInspect) && (
+          <p className="rounded-md bg-[#FFF7EC] px-2 py-1 text-[11px] text-[#8C4A00]" data-testid="ins-draft-hint">
+            SPK belum ditugaskan — tugaskan petugas inspect dulu; hasil MD Quality / QC baru bisa diisi sesudahnya.
+          </p>
+        )}
         <div className="flex flex-wrap items-end gap-2">
           {canInspect && ["draft", "assigned"].includes(doc.status) && (
             <button data-testid="ins-start-button" className="secondary-button" disabled={busy}

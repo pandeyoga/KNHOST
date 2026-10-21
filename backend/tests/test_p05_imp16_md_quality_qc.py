@@ -16,13 +16,7 @@ WH = ("warehouse@kainnusantara.id", "demo12345")
 
 ENT_KSC = "ent_ksc"
 WH_JKT = "wh_jakarta"
-# ID berubah tiap restore data acuan — dibaca dari DB (SPK po_receipt pertama yang masih terbuka).
 _DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.environ.get("DB_NAME", "test_database")]
-_PO = _DB.inspections.find_one({"kind": "po_receipt", "status": {"$in": ["draft", "assigned", "in_progress"]},
-                                "lines.0": {"$exists": True}}, {"_id": 0, "id": 1, "entity_id": 1, "lines.id": 1}) or {}
-ENT_CST = _PO.get("entity_id", "")
-PO_RECEIPT_SPK_ID = _PO.get("id", "")
-PO_RECEIPT_LINE_ID = ((_PO.get("lines") or [{}])[0]).get("id", "")
 
 
 def _login(email: str, password: str) -> str:
@@ -54,6 +48,19 @@ def qc_tok():
 @pytest.fixture(scope="module")
 def wh_tok():
     return _login(*WH)
+
+
+@pytest.fixture(scope="module")
+def po_spk():
+    """SPK penerimaan PO BARU berstatus draft (dulu: SPK draft sisa seed CST/INS-00001 — sejak F-14 seed menutup SPK
+    lewat keputusan, jadi tes membuat SPK-nya sendiri lewat alur PO → terima → karantina)."""
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import test_f14_spk_one_decision as f14
+    u = {k: f14.base.Api(e) for k, e in (("mgr", "manager@kainnusantara.id"), ("wh", "warehouse@kainnusantara.id"))}
+    _po, _task, spk = f14._po_in_quarantine(u, rolls=1)
+    assert spk["status"] == "draft"
+    return {"id": spk["id"], "line": spk["lines"][0]["id"], "ent": spk.get("entity_id") or ENT_KSC}
 
 
 # ---------- meta/permission tests ----------
@@ -108,18 +115,18 @@ class TestRoutePermissions:
         )
         assert r.status_code == 403, f"expected 403, got {r.status_code}: {r.text}"
 
-    def test_warehouse_cannot_release_hold(self, wh_tok):
+    def test_warehouse_cannot_release_hold(self, wh_tok, po_spk):
         r = requests.post(
-            f"{BASE_URL}/api/inspections/{PO_RECEIPT_SPK_ID}/lines/{PO_RECEIPT_LINE_ID}/release-hold",
-            headers=_hdr(wh_tok, ENT_CST),
+            f"{BASE_URL}/api/inspections/{po_spk['id']}/lines/{po_spk['line']}/release-hold",
+            headers=_hdr(wh_tok, po_spk["ent"]),
             json={"reason": "coba warehouse buka tahanan"},
         )
         assert r.status_code == 403
 
-    def test_qc_cannot_inspect_md_quality_part(self, qc_tok):
+    def test_qc_cannot_inspect_md_quality_part(self, qc_tok, po_spk):
         r = requests.post(
-            f"{BASE_URL}/api/inspections/{PO_RECEIPT_SPK_ID}/lines/{PO_RECEIPT_LINE_ID}/inspect",
-            headers=_hdr(qc_tok, ENT_CST),
+            f"{BASE_URL}/api/inspections/{po_spk['id']}/lines/{po_spk['line']}/inspect",
+            headers=_hdr(qc_tok, po_spk["ent"]),
             json={"part": "md_quality", "color_result": "beda_shade"},
         )
         assert r.status_code == 403, f"expected 403, got {r.status_code}: {r.text}"
@@ -236,26 +243,30 @@ class TestRandomCheckLifecycle:
 
 # ---------- MD Quality on po_receipt SPK ----------
 class TestMdQualityOnPoReceipt:
-    """CST/INS-00001 (po_receipt, status draft) — MD Quality part=md_quality allowed walau draft."""
+    """SPK penerimaan PO — F-13 (keputusan owner Q-06b): MD Quality baru boleh mengisi SESUDAH SPK ditugaskan."""
 
-    def test_md_quality_part_allowed_on_draft(self, admin_tok):
-        """part=md_quality pada draft -> 200; set color_result=beda_shade -> hold true."""
-        # get baseline grade
-        r = requests.get(f"{BASE_URL}/api/inspections/{PO_RECEIPT_SPK_ID}", headers=_hdr(admin_tok, ENT_CST))
+    def test_md_quality_ditolak_saat_draft_lalu_boleh_sesudah_ditugaskan(self, admin_tok, po_spk):
+        """part=md_quality pada draft -> 400 (dulu 200); sesudah ditugaskan -> 200; beda_shade -> hold true."""
+        sid, lid, ent = po_spk["id"], po_spk["line"], po_spk["ent"]
+        url = f"{BASE_URL}/api/inspections/{sid}/lines/{lid}/inspect"
+        body = {"part": "md_quality", "color_result": "beda_shade", "handfeel_result": "sesuai"}
+        r = requests.post(url, headers=_hdr(admin_tok, ent), json=body)
+        assert r.status_code == 400 and "ditugaskan" in r.text, f"MD inspect draft: {r.status_code} {r.text}"
+        qc_user = _DB.users.find_one({"email": QC[0]}, {"_id": 0, "id": 1})
+        r = requests.post(f"{BASE_URL}/api/inspections/{sid}/assign", headers=_hdr(admin_tok, ent),
+                          json={"assigned_to": qc_user["id"], "bagian": "QC"})
+        assert r.status_code == 200, r.text
+        r = requests.get(f"{BASE_URL}/api/inspections/{sid}", headers=_hdr(admin_tok, ent))
         assert r.status_code == 200
         before = r.json()
-        line_before = next(ln for ln in before["lines"] if ln["id"] == PO_RECEIPT_LINE_ID)
+        line_before = next(ln for ln in before["lines"] if ln["id"] == lid)
         grade_before = line_before.get("grade_after")
 
-        # inspect MD Quality: beda_shade
-        r = requests.post(
-            f"{BASE_URL}/api/inspections/{PO_RECEIPT_SPK_ID}/lines/{PO_RECEIPT_LINE_ID}/inspect",
-            headers=_hdr(admin_tok, ENT_CST),
-            json={"part": "md_quality", "color_result": "beda_shade", "handfeel_result": "sesuai"},
-        )
+        # inspect MD Quality: beda_shade (SPK sudah ditugaskan)
+        r = requests.post(url, headers=_hdr(admin_tok, ent), json=body)
         assert r.status_code == 200, f"MD inspect: {r.status_code} {r.text}"
         doc = r.json()
-        line = next(ln for ln in doc["lines"] if ln["id"] == PO_RECEIPT_LINE_ID)
+        line = next(ln for ln in doc["lines"] if ln["id"] == lid)
         assert line["hold"] is True, "beda_shade pada kebijakan 'tahan' harus menahan"
         # grade should NOT be changed by MD quality
         assert line.get("grade_after") == grade_before, "grade tidak boleh berubah oleh MD Quality"
@@ -263,42 +274,42 @@ class TestMdQualityOnPoReceipt:
         # roll must also be marked hold.held
         roll_id = line.get("roll_id")
         if roll_id:
-            r = requests.get(f"{BASE_URL}/api/inventory/rolls/{roll_id}", headers=_hdr(admin_tok, ENT_CST))
+            r = requests.get(f"{BASE_URL}/api/inventory/rolls/{roll_id}", headers=_hdr(admin_tok, po_spk["ent"]))
             if r.status_code == 200:
                 roll = r.json()
                 assert ((roll.get("inspection") or {}).get("hold") or {}).get("held") is True
 
-    def test_reject_hold_requires_long_reason(self, admin_tok):
+    def test_reject_hold_requires_long_reason(self, admin_tok, po_spk):
         """Alasan < 15 huruf -> 400."""
         r = requests.post(
-            f"{BASE_URL}/api/inspections/{PO_RECEIPT_SPK_ID}/lines/{PO_RECEIPT_LINE_ID}/reject-hold",
-            headers=_hdr(admin_tok, ENT_CST),
+            f"{BASE_URL}/api/inspections/{po_spk['id']}/lines/{po_spk['line']}/reject-hold",
+            headers=_hdr(admin_tok, po_spk["ent"]),
             json={"reason": "tolak"},
         )
         assert r.status_code == 400
 
-    def test_reject_hold_success(self, admin_tok):
+    def test_reject_hold_success(self, admin_tok, po_spk):
         r = requests.post(
-            f"{BASE_URL}/api/inspections/{PO_RECEIPT_SPK_ID}/lines/{PO_RECEIPT_LINE_ID}/reject-hold",
-            headers=_hdr(admin_tok, ENT_CST),
+            f"{BASE_URL}/api/inspections/{po_spk['id']}/lines/{po_spk['line']}/reject-hold",
+            headers=_hdr(admin_tok, po_spk["ent"]),
             json={"reason": "shade terlalu beda, mitra tidak mau terima barang ini"},
         )
         assert r.status_code == 200, f"reject-hold: {r.status_code} {r.text}"
         doc = r.json()
-        line = next(ln for ln in doc["lines"] if ln["id"] == PO_RECEIPT_LINE_ID)
+        line = next(ln for ln in doc["lines"] if ln["id"] == po_spk["line"])
         assert line["decision"] == "tolak"
         mdd = line.get("md_quality_decision") or {}
         assert mdd.get("action") == "reject"
 
-    def test_release_hold_success(self, admin_tok):
+    def test_release_hold_success(self, admin_tok, po_spk):
         r = requests.post(
-            f"{BASE_URL}/api/inspections/{PO_RECEIPT_SPK_ID}/lines/{PO_RECEIPT_LINE_ID}/release-hold",
-            headers=_hdr(admin_tok, ENT_CST),
+            f"{BASE_URL}/api/inspections/{po_spk['id']}/lines/{po_spk['line']}/release-hold",
+            headers=_hdr(admin_tok, po_spk["ent"]),
             json={"reason": "pelanggan setuju shade sedikit beda untuk batch ini"},
         )
         assert r.status_code == 200, f"release-hold: {r.status_code} {r.text}"
         doc = r.json()
-        line = next(ln for ln in doc["lines"] if ln["id"] == PO_RECEIPT_LINE_ID)
+        line = next(ln for ln in doc["lines"] if ln["id"] == po_spk["line"])
         assert line["hold"] is False
         mdd = line.get("md_quality_decision") or {}
         assert mdd.get("action") == "release"
