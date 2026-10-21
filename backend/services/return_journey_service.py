@@ -120,14 +120,27 @@ async def scan(return_id: str, stage: str, codes: List[str], warehouse_id: str, 
 
 
 def assert_ready_for_qc(ret: Dict[str, Any]) -> None:
-    """QC tidak boleh mendahului barang: bila perjalanan sudah discan, semua roll harus di gudang."""
+    """QC tidak boleh mendahului barang: setiap roll klaim wajib sudah discan terima/tiba di gudang.
+
+    F-12 (uji pra-UAT 2026-10-21) — retur tanpa scan apa pun dulu lolos ("belum discan = tidak
+    diperiksa"). Keputusan pemilik: tidak adanya scan bukan alasan melewati penerimaan, jadi
+    roll tanpa lokasi = belum diterima. Baris tanpa roll (qty saja / data lama) tidak bisa discan;
+    penerimaannya dibuktikan tonggak "Barang sampai" (`goods_arrived_at`, juga terisi oleh scan).
+    Diskon dari foto/video (KLR-06) tidak lewat QC fisik, jadi tidak melewati gerbang ini."""
     locs = ret.get("roll_locations") or {}
-    if not locs:
-        return
-    bad = [rid for rid in _claimed_rolls(ret) if (locs.get(rid) or {}).get("stage") in (None, "in_transit")]
-    if bad:
-        raise ValueError(f"{len(bad)} roll belum berada di gudang (belum diterima atau masih dalam perjalanan). "
-                         "Scan terima/tiba dulu sebelum QC.")
+    claimed = list(dict.fromkeys(_claimed_rolls(ret)))
+    unreceived = [rid for rid in claimed if (locs.get(rid) or {}).get("stage") is None]
+    in_transit = [rid for rid in claimed if (locs.get(rid) or {}).get("stage") == "in_transit"]
+    if unreceived:
+        raise ValueError(f"Scan terima barang retur dulu — {len(unreceived)} dari {len(claimed)} roll belum "
+                         "diterima di gudang. QC baru bisa dimulai/diselesaikan sesudah barangnya ada.")
+    if in_transit:
+        raise ValueError(f"{len(in_transit)} roll masih dalam perjalanan ke gudang lain. "
+                         "Scan tiba di gudang tujuan dulu sebelum QC.")
+    rollless = any(not (it.get("roll_ids") or []) for it in ret.get("items") or [])
+    if rollless and not ret.get("goods_arrived_at"):
+        raise ValueError("Scan terima barang retur dulu — baris retur tanpa roll belum tercatat sampai di gudang. "
+                         "Tandai SJ Kirim Toko lalu Barang sampai sebelum QC.")
 
 
 def physical_warehouse(ret: Dict[str, Any], roll_id: str) -> str:

@@ -333,9 +333,14 @@ async def approve_return(
 
 # ─── INSPECT (WAJIB) : approved → inspecting → inspected ─────────────────────
 
+# F-11 (uji pra-UAT 2026-10-21) — QC retur dikerjakan petugas QC (`qc.inspect`), bukan hanya
+# pemegang `sales_return.update`; keputusan uang tetap `sales_return.approve` di /settle.
+QC_RETURN_PERMS = [("sales_return", "update"), ("qc", "inspect")]
+
+
 @router.post("/sales-returns/{return_id}/inspect/start")
 async def start_inspection(return_id: str, request: Request) -> Dict[str, Any]:
-    user = await require_permission(request, "sales_return", "update")
+    user = await require_any_permission(request, QC_RETURN_PERMS)
     ctx = await entity_ctx(request)
     existing = await db.sales_returns.find_one({"id": return_id})
     if not existing:
@@ -354,7 +359,7 @@ async def start_inspection(return_id: str, request: Request) -> Dict[str, Any]:
 async def complete_inspection(
     return_id: str, request: Request, payload: ReturnInspectComplete = ReturnInspectComplete(),
 ) -> Dict[str, Any]:
-    user = await require_permission(request, "sales_return", "update")
+    user = await require_any_permission(request, QC_RETURN_PERMS)
     ctx = await entity_ctx(request)
     existing = await db.sales_returns.find_one({"id": return_id})
     if not existing:
@@ -362,11 +367,7 @@ async def complete_inspection(
     existing.pop("_id", None)
     assert_entity_access(existing, "sales_returns", ctx)
     await _need_evidence(existing, "inspect")
-    try:
-        journey.assert_ready_for_qc(existing)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    try:
+    try:   # F-12 — gerbang penerimaan barang dijaga di service (mulai & selesai QC)
         doc = await return_service.complete_inspection(
             return_id, user.get("name", user.get("email", "")),
             inspections=[i.dict() for i in payload.inspections], notes=payload.notes)
@@ -879,8 +880,11 @@ class JourneyScanPayload(BaseModel):
 
 @router.post("/sales-returns/{return_id}/journey/scan")
 async def scan_return_journey(return_id: str, payload: JourneyScanPayload, request: Request) -> Dict[str, Any]:
-    """L08 LN-081-T01 — lokasi fisik roll retur berubah hanya lewat scan berdokumen."""
-    user = await require_permission(request, "sales_return", "update")
+    """L08 LN-081-T01 — lokasi fisik roll retur berubah hanya lewat scan berdokumen.
+
+    F-11 — yang menscan terima/kirim/tiba adalah petugas gudang (`wms.scan`); pagar gudang per
+    badan usaha di bawah tetap berlaku untuk siapa pun yang menscan."""
+    user = await require_any_permission(request, [("sales_return", "update"), ("wms", "scan")])
     ctx = await entity_ctx(request)
     ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
     if not ret:
