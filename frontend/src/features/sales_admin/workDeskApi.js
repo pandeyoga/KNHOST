@@ -268,6 +268,8 @@ export function docLinkTarget(doc) {
 }
 
 export function rowLink(row, queueId = "", desk = "sales_admin") {
+  // Cek UI UAT v3 (S6) — "Pesanan minta QC — SPK belum dibuat": buka QC & Inspeksi (tempat [Buat SPK Inspeksi]).
+  if (row?.link_view === "inspections") return { view: "inspections", nav_id: "wms-operations", focus_type: "", focus_id: "", number: "", tab: undefined };
   if (desk === "md" || desk === "warehouse_admin" || desk === "me") {
     if (row?.ref_type === "wms_task" && row?.flow_type === "inbound") {   // LN-102-T02 — tugas terima → Barang Masuk
       const w = WH_DESK_TARGET.purchase_order;

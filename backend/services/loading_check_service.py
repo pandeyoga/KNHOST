@@ -232,9 +232,11 @@ async def untagged_rolls(order_id: str, warehouse_id: Optional[str] = None) -> L
 
 async def so_alloc_rolls(order_id: str) -> List[Dict[str, Any]]:
     """Roll alokasi TERBARU sebuah SO: roll utuh (`reserved_ref`) + roll potong (`length_reservations`)."""
+    # Cek UI UAT v3 (S6) — termasuk roll yang SUDAH diambil/dikemas (belum terkirim): dulu hanya 'reserved', sehingga
+    # SPK QC pesanan tidak bisa dibuat setelah gudang mengambil barang, padahal kirim menunggu QC (buntu).
     return await db.inventory_rolls.find(
-        {"$or": [{"reserved_ref.id": order_id, "status": "reserved"},
-                 {"length_reservations": {"$elemMatch": {"ref.id": order_id, "status": "reserved"}}}]},
+        {"$or": [{"reserved_ref.id": order_id, "status": {"$in": EXPECTED_STATUSES}},
+                 {"length_reservations": {"$elemMatch": {"ref.id": order_id, "status": {"$in": ["reserved", "committed"]}}}}]},
         {"_id": 0}).to_list(2000)
 
 

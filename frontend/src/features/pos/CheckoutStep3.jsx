@@ -5,6 +5,7 @@ import KNDatePicker from "@/components/KNDatePicker";
 import { Truck, PackageCheck, Receipt, ShieldAlert, ShieldCheck, CreditCard } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 import { Row } from "./CheckoutItemCard";
+import CreditOverrideRequest from "./CreditOverrideRequest";
 
 export default function CheckoutStep3({
   fulfillmentMethod, setFulfillmentMethod, pickupDate, setPickupDate,
@@ -152,6 +153,7 @@ export default function CheckoutStep3({
               </p>
               {(credit.reasons || []).map((r, i) => <p key={i} className="text-[10.5px] text-[#6B6B73]">• {r}</p>)}
               <p className="mt-0.5 text-[10px] text-[#9A9BA3] tabular-nums">AR {formatCurrency(credit.credit?.ar_outstanding)} / limit {credit.credit?.credit_limit > 0 ? formatCurrency(credit.credit.credit_limit) : "∞"} · proyeksi {formatCurrency(credit.projected_ar)}</p>
+              {creditBlocked && !credit.has_approved_override && <CreditOverrideRequest customer={selectedCustomer} amount={p.grand} />}
             </div>
           </div>
         </div>

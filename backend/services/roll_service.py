@@ -827,6 +827,11 @@ async def pending_cuts(order_id: Optional[str] = None, scope_ids: Optional[List[
                         "owner_entity_id": r.get("owner_entity_id"),
                         "parent_length": r.get("length_remaining"), "unit": r.get("unit", "meter"),
                         "lot": r.get("lot", "")})
+    # Cek UI UAT v3 (S6) — kartu Antrean Potong menyebut nomor pesanan (dulu hanya no. roll, gudang menebak SO-nya).
+    nums = {o["id"]: o.get("number", "") for o in await db.sales_orders.find(
+        {"id": {"$in": list({x["order_id"] for x in out})}}, {"_id": 0, "id": 1, "number": 1}).to_list(len(out) or 1)}
+    for x in out:
+        x["order_number"] = nums.get(x["order_id"], "")
     return out
 
 

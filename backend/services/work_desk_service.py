@@ -788,6 +788,26 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               extra={"expected_delivery_date": p.get("expected_delivery_date", "")}) for p in pos],
         action_label="Terima barang", owner="warehouse_admin"))
 
+    # 3b — Cek UI UAT v3 (S6): pesanan yang minta QC sebelum kirim tetapi belum punya SPK QC pesanan. Dulu Admin Gudang
+    # baru tahu saat Kirim ditolak "menunggu SPK QC pesanan" — tidak ada pengingat untuk membuat SPK-nya.
+    qso = await db.sales_orders.find(
+        {**_ent_q(scope), "qc_request.mode": {"$in": ["full", "sampling"]}, "qc_request.status": {"$ne": "passed"},
+         "status": {"$in": ["confirmed", "partially_picked", "picked", "packing", "packed", "partially_shipped"]}},
+        {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "qc_request": 1, "created_at": 1, "grand_total": 1}).to_list(200)
+    open_spk = set(await db.inspections.distinct(
+        "ref_doc_id", {"kind": "sales_order", "ref_doc_id": {"$in": [o["id"] for o in qso]},
+                       "status": {"$nin": ["done", "closed", "cancelled"]}})) if qso else set()
+    queues.append(_queue(
+        "qc_pesanan", "Pesanan minta QC — SPK belum dibuat",
+        "Kirim tertahan sampai SPK QC pesanan selesai & diterima. QC & Inspeksi → [Buat SPK Inspeksi] → jenis "
+        "'QC Permintaan Pesanan (SO)' → pilih pesanan → tugaskan petugas QC.",
+        [_row(ref_type="sales_order", ref_id=o["id"], number=o.get("number", ""), title=o.get("customer_name", "—"),
+              subtitle=("QC seluruh roll" if (o.get("qc_request") or {}).get("mode") == "full"
+                        else f"QC sampling {float((o.get('qc_request') or {}).get('sample_pct') or 10):g}%"),
+              value=0, age_days=_age_days(o.get("created_at")), badge="perlu SPK QC", action="Buat SPK QC", action_kind="open",
+              extra={"link_view": "inspections"}) for o in qso if o["id"] not in open_spk],
+        action_label="Buat SPK QC", owner="warehouse_admin", value_kind="count", value_label="Pesanan"))
+
     # 4 — SPK inspeksi belum ditugaskan
     ins = await db.inspections.find(
         {**eq, "status": "draft"}, {"_id": 0}).to_list(100)

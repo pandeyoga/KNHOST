@@ -59,6 +59,9 @@ async def manager_queues(scope, ids) -> List[Dict[str, Any]]:
     pa = await _find("price_approvals", {**sq, "status": "pending"})
     from services.work_desk_service import return_claim_values
     sr_value = await return_claim_values(sr)   # F-17 — nilai klaim retur (dulu `total_amount` kosong → Rp0)
+    from core_utils import rupiah
+    so_no = {o["id"]: o.get("number", "") for o in await db.sales_orders.find(
+        {"id": {"$in": [p["so_id"] for p in pa if p.get("so_id")]}}, {"_id": 0, "id": 1, "number": 1}).to_list(200)}
     return [
         _queue("so_acc", "Pesanan penjualan menunggu ACC", "Setujui atau tolak — sales & pelanggan menunggu.", _so_rows(so, "Putuskan"), action_label="Putuskan", owner="manager"),
         _queue("po_acc", "Pesanan pembelian menunggu ACC", "PO di atas ambang persetujuan.",
@@ -72,8 +75,15 @@ async def manager_queues(scope, ids) -> List[Dict[str, Any]]:
                        age_days=_age_days(o.get("created_at")), badge="retur pembelian", action="Putuskan") for o in pr],
                action_label="Putuskan", owner="manager"),
         _queue("harga_khusus", "Permintaan harga khusus", "Harga di bawah pricelist yang diajukan sales.",
-               [_row(ref_type="price_approval", ref_id=o["id"], number=o.get("number") or o["id"], title=o.get("customer_name", "—"),
-                     value=o.get("requested_price") or 0, age_days=_age_days(o.get("created_at")), badge=o.get("status", ""), action="Putuskan") for o in pa],
+               # Cek UI UAT v3 (S4) — dulu nomor = id mentah (pra_…) tanpa produk/SO/harga normal: manajer tak tahu apa yang diputus.
+               [_row(ref_type="price_approval", ref_id=o["id"],
+                     number=so_no.get(o.get("so_id") or "") or o.get("number") or "Harga langganan",
+                     title=f"{o.get('customer_name', '—')} · {o.get('product_name') or o.get('sku') or ''}",
+                     subtitle=(f"{rupiah(o.get('normal_price') or 0)} → {rupiah(o.get('requested_price') or 0)}/{o.get('unit') or 'unit'}"
+                               + (f" (−{(o.get('guard') or {}).get('gap_pct'):g}%)" if (o.get('guard') or {}).get('gap_pct') else "")
+                               + f" · {o.get('requested_by_name') or '—'}" + (f" · “{o['reason']}”" if o.get("reason") else "")),
+                     value=o.get("requested_price") or 0, age_days=_age_days(o.get("created_at")),
+                     badge="per pesanan" if o.get("so_id") else "langganan", action="Putuskan") for o in pa],
                action_label="Putuskan", owner="manager"),
     ]
 

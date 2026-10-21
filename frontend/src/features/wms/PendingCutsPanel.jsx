@@ -74,7 +74,7 @@ export default function PendingCutsPanel({ whId }) {
         {items.map((it) => (
           <div key={it.reservation_id} data-testid={`pending-cut-${it.reservation_id}`}
             className="flex flex-wrap items-center gap-2 rounded-lg border border-[#DCE6F5] p-2 text-[12px]">
-            <span className="flex-1 font-semibold">{it.roll_no} · pesan {nf.format(it.qty)} {it.unit} dari {nf.format(it.parent_length)} {it.unit}</span>
+            <span className="flex-1 font-semibold">{it.roll_no} · pesan {nf.format(it.qty)} {it.unit} dari {nf.format(it.parent_length)} {it.unit}{it.order_number ? <span className="font-normal text-[#6B6B73]" data-testid={`pending-cut-so-${it.reservation_id}`}> · untuk {it.order_number}</span> : null}</span>
             <input data-testid={`pending-cut-actual-${it.reservation_id}`} className="field w-24" type="number" step="0.01"
               placeholder={`aktual ${it.qty}`} value={(form[it.reservation_id] || {}).actual ?? ""}
               onChange={(e) => set(it.reservation_id, "actual", e.target.value)} />

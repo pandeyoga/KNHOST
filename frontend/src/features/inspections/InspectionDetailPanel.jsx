@@ -334,7 +334,9 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
                           {ln.md_quality_at ? "Ubah MD Quality" : "MD Quality"}
                         </button>
                       )}
-                      {canQc && ln.roll_id && (isMdKind || isRandom) && ["assigned", "in_progress"].includes(doc.status) && (
+                      {/* Cek UI UAT v3 (S6) — SPK QC Pesanan / retur: peran QC (qc.inspect) dulu tidak punya tombol sama
+                          sekali (hanya "Isi hasil" untuk inspection.inspect). Kini QC 4-point tampil bila "Isi hasil" tidak. */}
+                      {canQc && ln.roll_id && (isMdKind || isRandom || !canInspectAll) && ["assigned", "in_progress"].includes(doc.status) && (
                         <button data-testid={`ins-line-qc-${ln.id}`} className="link-button"
                           onClick={() => bukaBaris(ln, "qc")}>
                           {ln.qc_at ? "Ubah QC 4-point" : "QC 4-point"}
