@@ -89,7 +89,7 @@ async def _sales_order_stages(order: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "key": "source", "label": "Pesanan Khusus (sumber)",
                 "docs": [_node(
                     type="special_order", id=sso["id"], number=sso.get("number"),
-                    title=sso.get("customer_name") or sso.get("type") or "Special Order",
+                    title=sso.get("customer_name") or sso.get("type") or "Pesanan Khusus",
                     status=sso.get("status"), date=sso.get("created_at"),
                     amount=sso.get("total_amount"),
                     link=_link(view="special-orders", focus_type="special_order", focus_id=sso["id"]),

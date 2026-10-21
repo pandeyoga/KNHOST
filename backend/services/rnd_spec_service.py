@@ -365,6 +365,8 @@ async def approve_spec(spec_id: str, payload: Dict[str, Any], actor: Dict[str, A
         raise
     from services import special_order_link as _odl
     await _odl.link_for_spec(spec_id, prod["id"])   # SKU dari Pesanan Khusus → katalog eksklusif pelanggan
+    from services import rnd_sample_service as _samples
+    await _samples.bind_decided_samples(spec_id, prod["id"], sku, actor_name)   # pemenang sudah dipilih lebih dulu
     if cur.get("design_id"):
         from services import design_studio_service as _studio
         await _studio.log_external(cur["design_id"], actor, "master_product_created",

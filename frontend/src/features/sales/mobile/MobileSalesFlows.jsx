@@ -209,7 +209,11 @@ function OdCustomerDecision({ od, onChanged }) {
   const [mode, setMode] = useState("");
   const [note, setNote] = useState("");
   const [contact, setContact] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  // Tanggal lokal (WIB) — toISOString() memberi tanggal UTC, kemarin sebelum pukul 07.00.
+  const [date, setDate] = useState(() => {
+    const d = new Date(); const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  });
   const [files, setFiles] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -316,7 +320,10 @@ export function MobileSpecialOrderDetail({ id, onBack }) {
             {Object.entries(item.specifications).map(([k, v]) => <p key={k}><span className="m-muted capitalize">{k}: </span>{String(v)}</p>)}
           </div>
         )}
-        {pricing.locked && <p className="mt-2 text-[12px]" data-testid="m-od-final-price">Harga final <b>{formatCurrency(pricing.final_unit_price)}</b>/{pricing.unit} · total {formatCurrency(pricing.total)}</p>}
+        {/* Cek UI UAT v3 (S13) — OD multi-item dulu tampil "Harga final Rp 0/meter": harga ada per item. */}
+        {pricing.locked && (pricing.mode === "items" && (pricing.items || []).length
+          ? <p className="mt-2 text-[12px]" data-testid="m-od-final-price">Harga final {pricing.items.map((i) => <span key={i.line_no}>{i.line_no}. <b>{formatCurrency(i.final_unit_price)}</b>/{i.unit} · </span>)}total {formatCurrency(pricing.total)}</p>
+          : <p className="mt-2 text-[12px]" data-testid="m-od-final-price">Harga final <b>{formatCurrency(pricing.final_unit_price)}</b>/{pricing.unit} · total {formatCurrency(pricing.total)}</p>)}
         {od.chain?.so && <p className="mt-1 text-[11.5px] text-[#1B7F4B]">Sudah menjadi pesanan {od.chain.so.number}</p>}
         {od.status === "draft" && <button className="primary-button mt-3 flex w-full items-center justify-center gap-1.5 py-2.5" disabled={busy} onClick={submit} data-testid="m-od-submit"><Send size={14} /> Ajukan untuk persetujuan</button>}
       </div>

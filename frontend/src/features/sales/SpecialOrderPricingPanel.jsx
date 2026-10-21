@@ -28,7 +28,13 @@ export default function SpecialOrderPricingPanel({ order, currentUser, onUpdated
   const [autoPo, setAutoPo] = useState(true);
   useEffect(() => {
     if (locked || !accd) return;
-    axios.get(`${API}/warehouses`).then((r) => { const rows = Array.isArray(r.data) ? r.data : r.data?.items || []; setWarehouses(rows); if (!warehouseId && rows[0]) setWarehouseId(rows[0].id); }).catch(() => {});
+    // Cek UI UAT v3 (S13) — dulu gudang nonaktif (GU-KSC) jadi bawaan; kini hanya gudang aktif, gudang khusus PT ini dulu.
+    axios.get(`${API}/warehouses`).then((r) => {
+      const all = Array.isArray(r.data) ? r.data : r.data?.items || [];
+      const own = (w) => (w.entity_ids || []).includes(order.entity_id);
+      const rows = all.filter((w) => w.active !== false).sort((a, b) => Number(own(b)) - Number(own(a)));
+      setWarehouses(rows); if (!warehouseId && rows[0]) setWarehouseId(order.procurement_warehouse_id || rows[0].id);
+    }).catch(() => {});
   }, [locked, accd]); // eslint-disable-line
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");

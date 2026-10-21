@@ -73,15 +73,15 @@ HOME_LABEL = {"sales-admin-desk": "Meja Admin Sales", "manager-home": "Beranda M
               "md-desk": "Meja MD", "design-requests": "Permintaan Desain", "sample-admin-desk": "Meja Sample"}
 
 SALES_TASKS = [
-    ("Membuat pesanan", "tab **Katalog** → cari → [[Pilih]] → warna, *Order biasa*, qty → [[Tambah …]] → Genapkan → tab **Keranjang** → "
+    ("Membuat pesanan", "tab **Katalog** → cari → kartu produk [[Tambah]] → warna, *Order biasa*, qty → [[Tambah …]] → Genapkan → tab **Keranjang** → "
                         "[[Lanjut ke Checkout]] → 3 langkah → [[Buat Sales Order]]"),
     ("Melihat status & perjalanan pesanan", "tab **Pesanan** → cari nomor / pelanggan → ketuk kartu SO → bagian *Perjalanan Pesanan*"),
     ("Minta harga khusus untuk SO ini", "tab **Pesanan** → ketuk SO → kotak *Persetujuan* → [[Ajukan Harga Khusus]] (harga + bukti wajib) → [[Ajukan]]"),
     ("Minta persetujuan kredit", "tab **Pesanan** → ketuk SO → kotak *Persetujuan* → [[Minta Persetujuan Kredit]] + alasan"),
     ("Koreksi qty / harga", "tab **Pesanan** → ketuk SO → [[Ajukan koreksi]] (atau **Lainnya** › *Koreksi & Amandemen*)"),
     ("Catat pembayaran di lapangan", "tab **Pesanan** → ketuk SO → [[Catat bayar]]"),
-    ("Pesanan sample", "tab **Katalog** → [[Pilih]] → *Order sample* → Keranjang → Checkout (Gratis / Berbayar); status di **Lainnya** › *Pesanan Sample*"),
-    ("Pesanan Khusus (OD)", "tab **Lainnya** › *Pesanan Khusus (OD)* → [[Ajukan pesanan khusus]] → formulir 6 bagian → [[Simpan pesanan khusus]]"),
+    ("Pesanan sample", "tab **Katalog** → kartu produk [[Tambah]] → *Order sample* → Keranjang → Checkout (Gratis / Berbayar); status di **Lainnya** › *Pesanan Sample*"),
+    ("Pesanan Khusus (OD)", "tab **Lainnya** › *Pesanan Khusus (OD)* → [[Ajukan pesanan khusus]] → formulir 6 bagian → [[Simpan pesanan khusus]]; sample jadi → ketuk OD → *Persetujuan pelanggan atas sample* → [[ACC]] + bukti → [[Simpan keputusan]]"),
     ("Retur pelanggan", "tab **Pesanan** → ketuk SO yang sudah dikirim → [[Ajukan retur]] (atau **Lainnya** › *Retur Penjualan* → [[Buat retur jual]])"),
     ("Ganti PT / keluar", "tab **Lainnya** → *Badan usaha aktif* (bila punya lebih dari 1 PT) · [[Keluar]] di bagian bawah"),
 ]

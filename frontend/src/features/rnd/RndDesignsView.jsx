@@ -37,7 +37,7 @@ const ARTWORK_OPTS = [{ value: "", label: "Berkas: semua" }, { value: "yes", lab
 const HOLD_OPTS = [{ value: "", label: "Ditahan: semua" }, { value: "yes", label: "Sedang ditahan" }, { value: "no", label: "Tidak ditahan" }];
 const PROOFING_OPTS = [{ value: "", label: "Proofing: semua" },
   ...Object.entries(PROOFING_STATE_META).map(([k, m]) => ({ value: k, label: m.label }))];
-const ORIGIN_OPTS = [{ value: "", label: "Asal: semua" }, { value: "internal", label: "Desain internal" }, { value: "special_order", label: "Special Order" }, { value: "redesign", label: "Redesign" }];
+const ORIGIN_OPTS = [{ value: "", label: "Asal: semua" }, { value: "internal", label: "Desain internal" }, { value: "special_order", label: "Pesanan Khusus" }, { value: "redesign", label: "Redesign" }];
 const EMPTY = { q: "", status: "", cat: "", dcat: "", designer: "", tag: "", product: "", revision: "", score: "", artwork: "", line: "", hold: "", proofing: "", origin: "" };
 const EMPTY_DATE = { field: "approved_at", from: "", to: "", preset: "" };
 

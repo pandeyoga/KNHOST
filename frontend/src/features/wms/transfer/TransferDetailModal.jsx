@@ -234,7 +234,7 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                     onClick={() => onReject(transfer.id)}
                     className="flex items-center gap-2 bg-[#FF3B30] hover:bg-[#DC3545] text-white rounded-full px-4 py-2 text-sm font-medium"
                   >
-                    <XCircle size={14} /> Reject
+                    <XCircle size={14} /> Tolak
                   </button>}
                 </>
               )}
@@ -253,7 +253,7 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                   onClick={() => onUpdateStatus(transfer.id, "staging")}
                   className="bg-[#007AFF] hover:bg-[#0056B3] text-white rounded-full px-4 py-2 text-sm font-medium"
                 >
-                  Move to Staging
+                  Siap Muat (Staging)
                 </button>
               )}
               {transfer.status === "staging" && (
@@ -262,7 +262,7 @@ export default function TransferDetailModal({ transfer, user, onClose, onApprove
                   onClick={() => onUpdateStatus(transfer.id, "dispatched")}
                   className="bg-[#007AFF] hover:bg-[#0056B3] text-white rounded-full px-4 py-2 text-sm font-medium"
                 >
-                  Pengiriman
+                  Berangkatkan (Dalam Perjalanan)
                 </button>
               )}
               {!isIC && ["dispatched", "partially_received"].includes(transfer.status) && (

@@ -121,7 +121,7 @@ def _T(doc_type: str, collection: str, number: str, label: str,
 
 
 DOC_TYPES: Dict[str, Dict[str, Any]] = {d["doc_type"]: d for d in [
-    _T("special_order", "special_orders", "number", "Special Order", "special-orders", order=5),
+    _T("special_order", "special_orders", "number", "Pesanan Khusus", "special-orders", order=5),
     _T("purchase_requisition", "purchase_requisitions", "number", "Purchase Requisition",
        "purchase-requisitions", order=10),
     _T("rfq", "rfqs", "number", "Permintaan Penawaran (RFQ)", "rfq", order=12,
@@ -678,7 +678,7 @@ async def backfill(dry_run: bool = True) -> Dict[str, Any]:
 
     # Rantai penjualan
     await rule("sales_order", "special_order", "parent", "sales_orders",
-               "source_special_order_id", note="berasal dari Special Order")
+               "source_special_order_id", note="berasal dari Pesanan Khusus")
     await rule("picking_task", "sales_order", "parent", "wms_tasks", "order_id",
                flt={"flow_type": "outbound"}, note="pengambilan untuk SO")
     await rule("shipment", "sales_order", "parent", "shipments", "order_id",

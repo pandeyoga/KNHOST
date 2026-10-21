@@ -127,7 +127,10 @@ class InspectionError(ValueError):
 #  Util
 # ═════════════════════════════════════════════════════════════════════════════
 def _today() -> str:
-    return now_iso()[:10]
+    # Cek UI UAT v3 (S8) — Tanggal SPK = hari kerja WIB (dulu potongan ISO UTC: SPK 22 Okt dini hari tertulis 21 Okt).
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    return datetime.now(ZoneInfo("Asia/Jakarta")).date().isoformat()
 
 
 async def _policy(entity_id: str) -> Dict[str, str]:

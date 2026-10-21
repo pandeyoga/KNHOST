@@ -10,7 +10,7 @@ SOURCE_TYPES: Dict[str, str] = {
     "customer_reference": "Referensi / desain pelanggan",
     "redesign": "Redesign dari artwork lama",
 }
-ORIGINS: Dict[str, str] = {"special_order": "Special Order", "redesign": "Redesign"}
+ORIGINS: Dict[str, str] = {"special_order": "Pesanan Khusus", "redesign": "Redesign"}
 ARTWORK_USABLE = {"approved", "final_submitted", "active"}
 ITEM_TYPES = ("printing", "labdip", "handfeel")
 

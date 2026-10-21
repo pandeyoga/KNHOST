@@ -25,6 +25,8 @@ const DOC_STATUS = {
   closed: "Ditutup", cancelled: "Dibatalkan", sent: "Terkirim", confirmed: "Terkonfirmasi",
   assigned: "Ditugaskan", in_progress: "Dikerjakan", revision: "Minta revisi", done: "Selesai",
   shipped: "Dikirim", delivered: "Diterima pelanggan", ready: "Siap", in_production: "Produksi",
+  pending: "Belum diterima", partial: "Diterima sebagian", completed: "Diterima lengkap",   // status PO
+  waiting_stock: "Menunggu stok", reserved: "Dicadangkan", waiting_approval: "Menunggu persetujuan",
 };
 export const docStatus = (s) => DOC_STATUS[s] || (s ? String(s).replace(/_/g, " ") : "—");
 

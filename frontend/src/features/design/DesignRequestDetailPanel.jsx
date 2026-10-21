@@ -25,6 +25,7 @@ import {
   submitDesignRequest, updateDesignRequest, uploadReference,
 } from "./designRequestsApi";
 import { roleIs } from "../../config/roles";
+import { formatStamp } from "../../utils/formatters";
 
 function Row({ label, children, testId }) {
   return (
@@ -66,7 +67,9 @@ export default function DesignRequestDetailPanel({ doc, meta, onChanged, onClose
   const [dcat, setDcat] = useState(doc.design_category_code || "");
 
   const role = meta?.role || "";
-  const canDecide = roleIs(role, ["admin", "manager"]);
+  // Cek UI UAT v3 (S13) — MD memegang izin design_request.assign/decide (permissions_config) tetapi tombol dulu
+  // hanya untuk admin/manajer: MD tidak bisa menugaskan desainer maupun memutus ACC desain.
+  const canDecide = roleIs(role, ["admin", "manager", "md"]);
   const canAssign = canDecide;
   const canWork = roleIs(role, ["admin", "manager", "designer"]);
   const canRefs = roleIs(role, ["admin", "manager", "sales_admin", "md"]) && !["approved", "cancelled"].includes(doc.status);
@@ -172,7 +175,7 @@ export default function DesignRequestDetailPanel({ doc, meta, onChanged, onClose
                 <div key={`${h.at}-${i}`} className="flex items-start gap-2 text-[11px]">
                   <CalendarClock size={12} className="mt-0.5 shrink-0 text-[#9A9BA3]" />
                   <span className="text-[#3C3C43]">
-                    <strong>{h.label}</strong> · {h.actor} · {(h.at || "").slice(0, 16).replace("T", " ")}
+                    <strong>{h.label}</strong> · {h.actor} · {formatStamp(h.at)}
                     {h.note ? <span className="text-[#6B6B73]"> — {h.note}</span> : null}
                   </span>
                 </div>

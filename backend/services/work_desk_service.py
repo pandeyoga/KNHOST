@@ -330,9 +330,12 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         action_label="Catat ACC"))
     queues.append(_queue(
         "od_kunci_harga", "Pesanan khusus — perlu kunci harga",
-        "Pelanggan sudah ACC. Tetapkan margin & kunci harga final → PR/PO ke supplier pemenang lahir otomatis.",
+        "Pelanggan sudah ACC. Tetapkan margin & kunci harga final → PR/PO lahir otomatis untuk item yang jalurnya "
+        "sudah jelas; sisanya MD memilih jalur di Meja MD.",
         [_row(ref_type="special_order", ref_id=o["id"], number=o.get("number", "—"), title=o.get("customer_name", "—"),
-              subtitle=f"kontrak Rp {float((o.get('pricing_preview') or {}).get('cost_price') or 0):,.0f} → final Rp {float((o.get('pricing_preview') or {}).get('final_unit_price') or 0):,.0f}/{(o.get('pricing_preview') or {}).get('unit', 'meter')}",
+              subtitle=(f"kontrak Rp {float((o.get('pricing_preview') or {}).get('cost_price') or 0):,.0f} → final Rp {float((o.get('pricing_preview') or {}).get('final_unit_price') or 0):,.0f}/{(o.get('pricing_preview') or {}).get('unit', 'meter')}"
+                        if float((o.get("pricing_preview") or {}).get("cost_price") or 0) > 0
+                        else f"{len([i for i in o.get('items') or [] if i.get('status') != 'cancelled']) or 1} item · harga per item di rincian OD"),
               value=(o.get("pricing_preview") or {}).get("total") or 0, age_days=_age_days(o.get("customer_decision_at") or o.get("updated_at")),
               badge="Kunci harga", action="Kunci harga", action_kind="open") for o in od_rows["kunci_harga"]],
         action_label="Kunci harga"))
@@ -636,10 +639,11 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
 
     # 1 — permintaan desain menunggu keputusan / penugasan MD
     reqs = await db.design_requests.find(
-        {**eq, "status": {"$in": ["submitted", "approved", "in_progress", "delivered"]}},
+        {**eq, "status": {"$in": ["submitted", "assigned", "in_progress", "delivered", "revision"]}},
         {"_id": 0}).sort("requested_at", 1).to_list(200)
-    label_st = {"submitted": "perlu disetujui", "approved": "belum ditugaskan",
-                "in_progress": "dikerjakan desainer", "delivered": "perlu diputuskan"}
+    # Cek UI UAT v3 (S13) — "approved" = desain sudah di-ACC (terminal), dulu tampil "belum ditugaskan".
+    label_st = {"submitted": "belum ditugaskan", "assigned": "ditugaskan · belum mulai",
+                "in_progress": "dikerjakan desainer", "delivered": "perlu diputuskan", "revision": "revisi desainer"}
     queues.append(_queue(
         "desain", "Permintaan desain",
         "Setujui, tugaskan ke desainer, lalu putuskan karya yang diserahkan.",
@@ -657,9 +661,21 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     samples = await db.md_samples.find(
         {**eq, "status": {"$in": ["in_progress", "sent", "assessed"]}}, {"_id": 0}).to_list(200)
     lbl = {"in_progress": "putaran berjalan", "sent": "dikirim ke pelanggan", "assessed": "perlu diputuskan"}
+    # Cek UI UAT v3 (S13) — pemenang sudah dipilih tetapi SKU gagal lahir (spesifikasi belum lengkap): tanpa antrean
+    # ini pesanan khusus macet di "kunci harga" tanpa ada meja yang melihatnya.
+    stuck = await db.md_samples.find(
+        {**eq, "status": "decided", "decision.master_error": {"$nin": [None, ""]}}, {"_id": 0}).to_list(200)
+    open_specs = {d["id"] for d in await db.md_specs.find(
+        {"id": {"$in": [s.get("spec_id") for s in stuck if s.get("spec_id")]}, "status": {"$in": ["draft", "review"]}},
+        {"_id": 0, "id": 1}).to_list(200)}
+    for s in stuck:
+        if s.get("spec_id") in open_specs:
+            s["status"] = "sku_pending"
+            samples.append(s)
+    lbl["sku_pending"] = "SKU belum lahir · lengkapi spesifikasi"
     queues.append(_queue(
         "sample", "Sample & labdip",
-        "Putaran sample yang menunggu penilaian pelanggan atau keputusan ACC/tolak.",
+        "Putaran sample yang menunggu penilaian pelanggan atau keputusan ACC/tolak, serta sample diputus yang SKU-nya belum lahir.",
         [_row(ref_type="md_sample", ref_id=s["id"], number=s.get("number", ""),
               title=s.get("title") or s.get("design_title") or s.get("spec_number") or "—",
               subtitle=f"{len(s.get('rounds') or [])} putaran · target {s.get('target_date') or '-'}",
@@ -668,6 +684,31 @@ async def md_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               action="Buka", action_kind="open",
               extra={"revision_count": _sample_revision_count(s)}) for s in samples],
         action_label="Buka", owner="md"))
+
+    # 2b — Cek UI UAT v3 (S13): OD yang harganya sudah dikunci tetapi pengadaan per item belum terealisasi
+    # (jalur supplier/makloon belum dipilih atau realisasi gagal). Dulu tidak tampil di meja mana pun.
+    from services import special_order_fulfillment as _ful
+    od_rows = []
+    async for od in db.special_orders.find({**eq, "pricing.locked": True,
+                                            "status": {"$nin": ["cancelled", "done", "shipped", "completed"]}}, {"_id": 0}):
+        try:
+            prog = await _ful.progress(od)
+        except Exception:  # noqa: BLE001 — satu OD rusak tidak boleh mematikan meja
+            continue
+        todo = [n for n in prog["items"] if n["status"] not in ("realized", "waiting_material")]
+        if todo:
+            od_rows.append(_row(ref_type="special_order", ref_id=od["id"], number=od.get("number", ""),
+                                title=od.get("customer_name", "—"),
+                                subtitle=" · ".join(f"{n.get('description') or n['key']}: "
+                                                    + ("pilih jalur" if not n.get("effective_route") else "realisasi")
+                                                    for n in todo)[:110],
+                                value=0, age_days=_age_days((od.get("pricing") or {}).get("locked_at") or od.get("updated_at")),
+                                badge=f"{len(todo)} item belum diadakan", action="Buka", action_kind="open"))
+    queues.append(_queue(
+        "od_pemenuhan", "Pesanan khusus — pilih jalur & realisasi pengadaan",
+        "Harga final sudah dikunci. Pilih jalur tiap item (Supplier PR → PO / Makloon PR → MKO), lalu Realisasi pengadaan "
+        "— SKU baru yang belum dirilis hanya bisa direalisasi Manajer (rilis produk = wewenang Manajer).",
+        od_rows, action_label="Buka", owner="md", value_kind="count", value_label="Pesanan"))
 
     # 3 — pengajuan pembelian bahan (PR) yang belum diajukan / masih menunggu
     prs = await db.purchase_requisitions.find(

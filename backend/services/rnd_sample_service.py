@@ -1101,6 +1101,62 @@ async def deliver_sample(sample_id: str, payload: Dict[str, Any],
 
 
 # ─── Keputusan pemenang → kontrak + barang supplier ─────────────────────────
+
+async def _bind_product(cur: Dict[str, Any], decision: Dict[str, Any], pid: str, name: str) -> None:
+    """Produk hasil ↔ keputusan pemenang: warna, kontrak, barang supplier, eksklusif pelanggan. Dipakai saat ACC
+    pemenang dan saat SKU baru lahir belakangan lewat ACC spesifikasi (`bind_decided_samples`)."""
+    from services import color_service as _colors
+    sample_id = cur["id"]
+    await _colors.sync_product_colors(pid)
+    # Kontrak pemenang lahir sebelum produk → ikat ke produk agar sourcing PO memilih kontrak yang benar.
+    if decision.get("contract_id"):
+        await db.supplier_contracts.update_one({"id": decision["contract_id"], "product_id": {"$in": ["", None]}},
+                                               {"$set": {"product_id": pid, "updated_at": now_iso()}})
+    # Produk lahir SESUDAH keputusan → daftarkan nama/warna versi supplier pemenang sekarang.
+    if not decision.get("supplier_item_id"):
+        try:
+            it = await supplier_item_service.create_item({
+                "supplier_id": decision["supplier_id"], "product_id": pid,
+                "supplier_sku": decision.get("supplier_sku") or f"{pid[-6:].upper()}-{decision['supplier_id'][-4:].upper()}",
+                "supplier_item_name": decision.get("supplier_item_name", ""),
+                "supplier_color": decision.get("supplier_color_name") or decision.get("supplier_color_code") or "",
+                "supplier_uom": decision.get("supplier_uom", ""), "last_price": decision.get("price") or 0,
+                "notes": f"Dari keputusan sample {cur.get('number')}"}, entity_id=cur.get("entity_id", ""), actor=name)
+            decision["supplier_item_id"] = it.get("id", "")
+            await db[COLL].update_one({"id": sample_id}, {"$set": {"decision": decision}})
+        except Exception:  # noqa: BLE001 — kode supplier duplikat bukan alasan gagal
+            pass
+    if cur.get("exclusive_customer_id"):
+        await db.products.update_one({"id": pid}, {"$set": {
+            "exclusive_customer_id": cur["exclusive_customer_id"], "exclusive_customer_name": cur.get("customer_name", ""),
+            "special_order_id": cur.get("special_order_id", ""), "special_order_number": cur.get("special_order_number", "")}})
+    # Cek UI UAT v3 (S13) — artikel baru dari pemenang sample belum punya sumber restock → PR pemenuhan OD diblok
+    # (DEC-07). Pemenangnya supplier, jadi default artikel = Supplier; pengaturan yang sudah ada tidak ditimpa.
+    prod = await db.products.find_one({"id": pid}, {"_id": 0, "template_id": 1}) or {}
+    if prod.get("template_id") and decision.get("supplier_id"):
+        tpl = await db.product_templates.find_one({"id": prod["template_id"]}, {"_id": 0, "restock_source": 1})
+        if tpl is not None and not (tpl.get("restock_source") or {}).get("mode"):
+            from services import restock_source_service as _restock
+            await _restock.save(prod["template_id"], {
+                "mode": "supplier", "note": f"Otomatis: pemenang sample {cur.get('number', '')} — {decision.get('supplier_name', '')}"},
+                {"name": name})
+
+
+async def bind_decided_samples(spec_id: str, product_id: str, product_sku: str, actor_name: str) -> int:
+    """Cek UI UAT v3 (S13) — SKU lahir SESUDAH pemenang dipilih (spesifikasi dilengkapi belakangan): keputusan
+    sample dulu tetap tanpa produk, sehingga harga Pesanan Khusus tidak bisa dikunci. Kaitkan sekarang (idempoten)."""
+    n = 0
+    async for cur in db[COLL].find({"spec_id": spec_id, "status": "decided"}, {"_id": 0}):
+        dec = dict(cur.get("decision") or {})
+        if not dec.get("supplier_id") or dec.get("product_id"):
+            continue
+        dec.update({"product_id": product_id, "product_sku": product_sku})
+        dec.pop("master_error", None)
+        await db[COLL].update_one({"id": cur["id"]}, {"$set": {"decision": dec, "updated_at": now_iso()}})
+        await _bind_product(cur, dec, product_id, actor_name)
+        n += 1
+    return n
+
 async def decide_sample(sample_id: str, payload: Dict[str, Any],
                         actor: Dict[str, Any]) -> Dict[str, Any]:
     cur = await _get(sample_id)
@@ -1244,7 +1300,6 @@ async def decide_sample(sample_id: str, payload: Dict[str, Any],
             decision["product_sku"] = spec_doc.get("product_sku", "")
     # Dua warna + supplier pemenang → tersalin ke master produk (dibaca MD, Pembelian, pemilih produk, katalog).
     if cur.get("spec_id") or revalidation:
-        from services import color_service as _colors
         spec_now = await db.md_specs.find_one({"id": cur.get("spec_id") or ""}, {"_id": 0, "product_id": 1})
         pid = decision.get("product_id") or (spec_now or {}).get("product_id") or ""
         if pid and revalidation:
@@ -1254,29 +1309,7 @@ async def decide_sample(sample_id: str, payload: Dict[str, Any],
                 "decided_at": decision["decided_at"]}], "$slice": -50}}})
         if pid:
             await db[COLL].update_one({"id": sample_id}, {"$set": {"decision": decision}})
-            await _colors.sync_product_colors(pid)
-            # Kontrak pemenang lahir sebelum produk → ikat ke produk agar sourcing PO memilih kontrak yang benar.
-            if decision.get("contract_id"):
-                await db.supplier_contracts.update_one({"id": decision["contract_id"], "product_id": {"$in": ["", None]}},
-                                                       {"$set": {"product_id": pid, "updated_at": now_iso()}})
-            # Produk lahir SESUDAH keputusan → daftarkan nama/warna versi supplier pemenang sekarang.
-            if not decision.get("supplier_item_id"):
-                try:
-                    it = await supplier_item_service.create_item({
-                        "supplier_id": decision["supplier_id"], "product_id": pid,
-                        "supplier_sku": decision.get("supplier_sku") or f"{pid[-6:].upper()}-{decision['supplier_id'][-4:].upper()}",
-                        "supplier_item_name": decision.get("supplier_item_name", ""),
-                        "supplier_color": decision.get("supplier_color_name") or decision.get("supplier_color_code") or "",
-                        "supplier_uom": decision.get("supplier_uom", ""), "last_price": decision.get("price") or 0,
-                        "notes": f"Dari keputusan sample {cur.get('number')}"}, entity_id=cur.get("entity_id", ""), actor=name)
-                    decision["supplier_item_id"] = it.get("id", "")
-                    await db[COLL].update_one({"id": sample_id}, {"$set": {"decision": decision}})
-                except Exception:  # noqa: BLE001 — kode supplier duplikat bukan alasan gagal
-                    pass
-            if cur.get("exclusive_customer_id"):
-                await db.products.update_one({"id": pid}, {"$set": {
-                    "exclusive_customer_id": cur["exclusive_customer_id"], "exclusive_customer_name": cur.get("customer_name", ""),
-                    "special_order_id": cur.get("special_order_id", ""), "special_order_number": cur.get("special_order_number", "")}})
+            await _bind_product(cur, decision, pid, name)
     # Penanda Warna Otomatis — warna baru dari pesanan khusus jadi milik pelanggan pemesan saat labdip disetujui.
     if cur.get("exclusive_customer_id") and color_id:
         from services import color_lock_service as _lock

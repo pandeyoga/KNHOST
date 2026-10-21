@@ -6,7 +6,7 @@
 
 Semua qty dalam BASE UNIT (konsisten Roll-as-SSOT & UOM-safe untuk Sub-fase 1.13).
 """
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Set
 from db import db
 from core_utils import new_id, now_iso, safe_doc
 
@@ -64,13 +64,17 @@ async def recompute_so_status(order_id: str) -> str:
     return new_status
 
 
-async def create_outbound_tasks_for_order(order_id: str, actor_name: str) -> List[Dict[str, Any]]:
-    """Buat task outbound dari allocations order (idempotent: skip bila sudah ada)."""
+async def create_outbound_tasks_for_order(order_id: str, actor_name: str,
+                                          only_products: Optional[Set[str]] = None) -> List[Dict[str, Any]]:
+    """Buat task outbound dari allocations order (idempotent: skip bila sudah ada).
+
+    `only_products` — hanya alokasi produk ini, walau order sudah punya tugas lain (OD multi-item: PO item
+    berikutnya tiba setelah tugas item pertama lahir). Pemanggil wajib memastikan produk itu belum bertugas."""
     order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     if not order:
         return []
     existing = await db.wms_tasks.count_documents({"order_id": order_id, "flow_type": "outbound"})
-    if existing > 0:
+    if existing > 0 and not only_products:
         return []
     products = {p["id"]: p for p in await db.products.find({}, {"_id": 0}).to_list(2000)}
     warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(100)}
@@ -88,6 +92,8 @@ async def create_outbound_tasks_for_order(order_id: str, actor_name: str) -> Lis
     init_status = "scheduled" if hold else "created"
     created: List[Dict[str, Any]] = []
     for alloc in order.get("allocations", []):
+        if only_products and alloc["product_id"] not in only_products:
+            continue
         product = products.get(alloc["product_id"], {})
         warehouse = warehouses.get(alloc["warehouse_id"], {})
         item = next((i for i in order.get("items", []) if i["product_id"] == alloc["product_id"]), {})

@@ -35,7 +35,7 @@ export default function ReceiptExceptions({ transfer, data, open, isSup, rolls =
 
   return (
     <div data-testid="transfer-exceptions" className="space-y-2">
-      <h5 className="text-[11px] font-bold uppercase tracking-wide text-[#3C3C43]">Exception ({data.open_exceptions} terbuka)</h5>
+      <h5 className="text-[11px] font-bold uppercase tracking-wide text-[#3C3C43]">Pengecualian ({data.open_exceptions} terbuka)</h5>
       {(data.exceptions || []).map((e) => (
         <div key={e.id} data-testid={`transfer-exc-${e.id}`} className={`rounded-md border px-2 py-1 text-[11px] ${e.status === "open" ? "border-[#F1C4C1] bg-[#FDF1F0]" : "border-[#E5E5EA] bg-white"}`}>
           <b>{KIND[e.kind] || e.kind}</b> {e.roll_no || e.code} — {e.reason}

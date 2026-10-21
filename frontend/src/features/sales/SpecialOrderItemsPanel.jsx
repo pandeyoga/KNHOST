@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Ban, GitBranch, Layers } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import FormModal from "../../components/FormModal";
+import { docStatus } from "./SpecialOrderShared";
 
 const ITEM_CANCEL_BLOCKED = ["cancelled", "shipped", "done"];
 
@@ -107,7 +108,7 @@ function ItemLine({ it, canEdit, onRedesign, canCancel, onCancel }) {
           {it.source_type_label}{it.source_label ? ` — ${it.source_label}` : ""} · {(it.request_types || []).join(", ")}
         </p>
         <p className="text-[10.5px] text-[#6B6B73]" data-testid={`special-order-item-links-${it.line_no}`}>
-          {dr ? `Desain ${dr.number} (${dr.status})` : ""}{dr && (it.samples || []).length ? " · " : ""}
+          {dr ? `Desain ${dr.number} (${docStatus(dr.status)})` : ""}{dr && (it.samples || []).length ? " · " : ""}
           {(it.samples || []).map((s) => `${s.number} ${(s.sample_types || []).join("/")}`).join(" · ")}
           {!dr && !(it.samples || []).length && "Dokumen turunan dibuat saat pesanan disetujui"}
         </p>

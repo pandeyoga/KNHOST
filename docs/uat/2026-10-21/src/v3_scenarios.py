@@ -212,8 +212,14 @@ def _s10():
               "tujuan *Rancamalang · Gudang Transit* → **Untuk memenuhi SO** = SO ini → centang roll → [[Tambahkan roll SO terpilih]] → [[Buat Transfer]]",
               "Lakukan **sebelum** barang diambil. Ulangi untuk *Gudang Knitting → Transit*. SO yang sudah mulai diambil tidak ditawarkan.",
               "**CST/TRF-xxxxx** *Menunggu Persetujuan*; roll tetap terkunci untuk SO.", "S10"),
-             (("Admin Gudang CST", "whadmin@kainnusantara.id"), "Transfer → [[Setujui]] → Pengambilan → Staging → Dalam Perjalanan → terima di Transit (scan roll)",
-              "Perjalanan internal antargudang (bukan pengiriman pelanggan).",
+             (("Admin Gudang CST", "whadmin@kainnusantara.id"), "`Operasi Gudang › Stok, Transfer & Opname › Transfer` → baris transfer → [[Setujui]] "
+              "(menolak: [[Tolak]] + alasan)",
+              "Cek asal, tujuan & roll SO di detail transfer.", "Transfer *Disetujui*.", "S10"),
+             (WH_RCM, "detail transfer → [[Mulai Pengambilan]] → [[Siap Muat (Staging)]] → [[Berangkatkan (Dalam Perjalanan)]]",
+              "Perjalanan internal antargudang (bukan pengiriman pelanggan); Surat Jalan Transfer bisa dicetak dari detail.",
+              "Transfer *Dalam Perjalanan*.", "S10"),
+             (WH_RCM, "detail transfer → panel **Penerimaan** (Gudang Transit) → scan/ketik nomor roll satu per satu → [[Terima roll terpilih (n)]]",
+              "Roll tidak datang/rusak → **Pengecualian (n terbuka)**: [[Kembalikan ke gudang asal]] / [[Laporkan hilang]] / [[Tutup dengan catatan]].",
               "Transfer *Selesai*; roll di Transit tetap *berkomitmen* ke SO; **tugas pengambilan pindah ke Gudang Transit**.", "S10")] +
             s.pick("S10", account=WH_RCM[1], wh="Rancamalang · Gudang Transit") +
             [(WH_RCM, "`Barang Keluar` → tugas lain SO yang sama", "Scan roll milik tugas lain / gudang lain.",
@@ -263,38 +269,53 @@ def _sample(paid):
 def _s13():
     return [
         ("Sales", "HP: tab **Lainnya** › **Pesanan Khusus (OD)** → [[Ajukan pesanan khusus]]",
-         "Bagian 1: pelanggan, judul permintaan. Bagian 2: **Item 1** = A 100 yd (jenis uji *Printing*), "
-         "[[Tambah item]] **Item 2** = B 200 yd (jenis uji *Labdip*); sumber desain; satuan.",
+         "Bagian 1: pelanggan, judul permintaan. Bagian 2: **Item 1** = A 100 m (jenis uji *Printing*), "
+         "[[Tambah item]] **Item 2** = B 200 m (jenis uji *Labdip*); sumber desain; satuan.",
          "Formulir 6 bagian; pesan *Belum lengkap: …* menyebut isian yang kurang.", "S13"),
         ("Sales", "formulir OD → bagian 3–6 → **Tenggat kirim** → centang *Langsung ajukan untuk persetujuan Manajer* → [[Simpan pesanan khusus]]",
          "Referensi pelanggan, warna target, foto swatch (opsional), **tenggat kirim**, catatan.",
-         "**SORD-yymmdd-xxxx** *Menunggu persetujuan*.", "S13"),
+         "**SORD-yymmdd-xxxx** (tanggal WIB) *Menunggu persetujuan*.", "S13"),
         ("Manajer", "`Penjualan › Pesanan Khusus` → baris OD → [[Detail →]] → [[Setujui]] (Inbox Persetujuan: [[Buka layarnya]])",
          "Rantai persetujuan berjenjang.",
-         "OD disetujui → otomatis **Permintaan Desain (DSR)** untuk printing & **Sample R&D (SMP)** untuk labdip/handfeel; "
-         "tampil di **Rantai dokumen** detail OD.", "S13"),
-        ("MD", "`Desainer › Permintaan Desain` → [[Tugaskan]]", "Pilih desainer & tenggat.", "DSR *Ditugaskan*.", ""),
-        ("Desainer", "`Meja Saya › Desain yang saya kerjakan` → [[Kerjakan]] → unggah artwork → centang **Print paper** → [[Ajukan untuk review]]",
-         "Kerjakan artwork ronde ini.", "*Menunggu keputusan*; versi & checklist per ronde.", ""),
-        ("PIC", "DSR → [[Mulai review]] → [[Setujui (ACC) + nilai akhir]]",
-         "ACC dengan nilai desain (revisi: [[Minta revisi]] + alasan → kembali ke desainer).",
-         "Sample proofing lahir otomatis; MD diberi tahu.", ""),
-        ("R&D", "`R&D › Permintaan Sample` → detail → [[Kirim Permintaan ke Supplier]]",
-         "Periksa spesifikasi (diwarisi OD), pilih supplier peserta & jenis uji wajib lini.", "Permintaan *Terkirim*.", ""),
-        ("R&D", "Permintaan Sample → [[Catat Pengiriman Sample]] → [[Nilai]] → [[Pilih supplier pemenang]] → [[Tandai Sample Jadi]]",
-         "Catat sample datang, nilai per jenis, pilih pemenang.", "OD fase *Sample siap*.", ""),
-        ("Sales", "HP: tab **Lainnya** › **Pesanan Khusus (OD)** → ketuk OD → [[Kirim ke Pelanggan]]", "Kirim sample fisik ke pelanggan.", "OD *Menunggu ACC pelanggan*.", ""),
-        ("Admin Sales", "`Meja Admin Sales` → **Pesanan khusus — menunggu ACC pelanggan** → [[Catat ACC]]",
-         "Catat keputusan pelanggan **ACC** + tanggal, catatan, bukti (foto/WA).", "OD lanjut ke kunci harga.", ""),
-        ("Admin Sales", "`Meja Admin Sales` → **Pesanan khusus — perlu kunci harga** → [[Kunci harga]]",
-         "Harga = harga supplier pemenang + margin (bawaan 30%).", "Harga terkunci per item; **PR/PO** ke supplier pemenang lahir.", ""),
-        ("MD", "detail OD → [[Buat SKU]]", "SKU baru tertaut induk & item; eksklusif pelanggan pemilik OD.", "SKU aktif.", ""),
-        ("Pembelian · Admin Gudang · QC", "PR → [[Realisasi]] PO → `Barang Masuk` kedatangan → hitung → tutup → SPK → keputusan",
-         "Sama dengan S8 bagian pengadaan & kedatangan.", "Stok item OD tersedia.", ""),
-        ("Admin Sales", "detail OD → [[Ubah ke Pesanan Penjualan]]",
-         "Konversi item A & B (SKU, unit, harga terkunci).", "**SO** tertaut OD; ulang tidak membuat SO kedua.", ""),
-    ] + s.verify("") + s.submit("") + s.confirm("") + s.pick("") + s.dispatch("") + s.logistics("ekspedisi", "") + s.pay("") + \
-        s.journey("", "OD ikut *Dikirim* lalu *Selesai*.")
+         "OD disetujui → otomatis **Permintaan Desain (DSR)** untuk printing & **Sample R&D (SMP)** per item, tercatat atas nama "
+         "Sales pembuat OD; tampil di **Rantai dokumen** detail OD.", "S13"),
+        ("MD", "`Meja MD` → **Permintaan desain** (*belum ditugaskan*) → [[Buka]] → [[Tugaskan]]",
+         "Pilih desainer (*Intan*) & tenggat.", "DSR *Ditugaskan*; hilang dari antrean MD sampai desain diserahkan.", "S13"),
+        ("Desainer", "`Meja Saya` → DSR → [[Buat Desain Baru]] → unggah artwork → centang **Print paper** → [[Ajukan untuk review]]",
+         "Kerjakan artwork ronde ini.", "DSR *Menunggu keputusan*; versi & checklist per ronde.", "S13"),
+        ("Manajer", "DSR → [[Mulai review]] → [[Setujui (ACC) + nilai akhir]]",
+         "Manajer = PIC/penilai desain (revisi: [[Minta revisi]] + alasan → kembali ke desainer).",
+         "DSR *Disetujui (ACC)*; sample proofing item A siap dikirim ke supplier.", "S13"),
+        ("MD", "`R&D › Permintaan Sample` → [[Daftar]] → SMP item → [[Detail]] → **Spesifikasi produk target** → [[Ubah]] → isi **Gramasi** & **Lebar (cm)** → [[Simpan perubahan]]",
+         "OD dari HP belum membawa gramasi/lebar — **wajib dilengkapi sebelum pemenang dipilih** agar SKU langsung lahir. "
+         "Bila terlewat: Meja MD menampilkan *SKU belum lahir · lengkapi spesifikasi*.",
+         "Spesifikasi *Draf* dengan gramasi & lebar terisi.", "S13"),
+        ("R&D (MD)", "SMP → [[Kirim ke supplier]] (pilih supplier peserta) → per supplier unggah bukti → [[Setor hasil]] → [[Nilai hasil]] (ACC/revisi/tolak)",
+         "Hasil ukur per jenis uji (ΔE, tahan cuci/gosok; proofing), skor.", "Supplier yang lolos tertanda *ACC*.", "S13"),
+        ("Manajer", "SMP → [[Pilih pemenang]] → supplier, **alasan keputusan**, **harga kesepakatan**, kode/nama/warna versi supplier → [[ACC & bentuk master data]] → [[Sample jadi]]",
+         "Tombol nonaktif menyebut isian yang kurang (*Lengkapi: …*). Keputusan pemenang = Manajer (matriks persetujuan).",
+         "Kontrak harga **KSC/SCT-…** + **SKU eksklusif pelanggan** lahir; artikel baru bersumber restock *Supplier*. "
+         "Spesifikasi belum lengkap → peringatan merah; MD lengkapi lalu Manajer [[ACC spesifikasi → lahirkan SKU produk]].", "S13"),
+        ("Sales", "HP: **Lainnya** › **Pesanan Khusus (OD)** → ketuk OD → **Persetujuan pelanggan atas sample** → [[ACC]] → kontak, catatan, foto bukti → [[Simpan keputusan]]",
+         "Tanggal keputusan bawaan = hari ini (WIB). Alternatif desktop: `Meja Admin Sales` → *Pesanan khusus — menunggu ACC pelanggan* → [[Catat ACC]].",
+         "*Keputusan pelanggan tersimpan*; riwayat ACC + bukti; OD masuk antrean kunci harga.", "S13"),
+        ("Admin Sales", "`Meja Admin Sales` → **Pesanan khusus — perlu kunci harga** → [[Kunci harga]] → panel **Harga final & confirmed** → gudang tujuan *WH-JKT · Jakarta · Gudang Sukacita* → [[Kunci harga & Confirm OD]]",
+         "Per item: SKU hasil · harga kontrak supplier pemenang · margin (bawaan 30%) · harga final. Item belum siap menyebut sebabnya (mis. *produk hasil sample … belum lahir*). "
+         "Daftar gudang hanya yang aktif, gudang milik PT di atas; pilihan disimpan untuk realisasi.",
+         "*Dikunci …*; total OD = jumlah per item (contoh Rp 19.500.000 + PPN).", "S13"),
+        ("MD", "`Meja MD` → **Pesanan khusus — pilih jalur & realisasi pengadaan** → [[Buka]] → panel **Pemenuhan produksi per item** → jalur *Supplier (PR → PO)* → [[Simpan jalur]] (tiap item)",
+         "Jalur bawaan mengikuti sumber restock artikel; menyimpang dari bawaan wajib alasan.", "Item *Siap direalisasi*.", "S13"),
+        ("Manajer", "detail OD → panel **Pemenuhan produksi per item** → [[Realisasi pengadaan]] (tiap item)",
+         "SKU baru dirilis ke produksi saat realisasi — wewenang Manajer (MD mendapat pesan penolakan yang jelas).",
+         "Per item **PR-xxxxx → PO KSC/PO-xxxxx** ke supplier pemenang (*Belum diterima*); OD *Dalam Produksi*.", "S13"),
+        ("Admin Sales", "detail OD → [[Ubah ke Pesanan Penjualan]] → [[Konversi ke SO]]",
+         "Konversi item A & B (SKU, unit, harga terkunci); boleh sebelum barang datang.",
+         "**KSC/SO-xxxxx** *Menunggu stok* (backorder per item) tertaut OD; ulang tidak membuat SO kedua.", "S13"),
+        ("Admin Gudang · Gudang · MD Quality · QC", "tiap PO → `Barang Masuk` kedatangan (Jakarta) → hitung → tutup → SPK → MDQ → QC → [[Tutup SPK]] *Diterima seluruhnya*",
+         "Sama dengan S8 bagian kedatangan & SPK; PO item A dan B boleh tiba di hari berbeda.",
+         "Roll item OD **berkomitmen** ke SO OD; SO **Terkonfirmasi otomatis** (*barang pesanan khusus diterima gudang*); OD *Siap*; "
+         "tugas ambil lahir **per item** di `Barang Keluar` (*Siap diambil*) — tanpa langkah verifikasi/konfirmasi Admin Sales.", "S13"),
+    ] + s.pick("=S1") + s.dispatch("=S3") + s.logistics("ekspedisi", "=S1") +         s.pay("=S1") + s.journey("=S1", "OD ikut *Dikirim* lalu *Selesai* (sinkron dari SO).")
 
 
 def _retur_front(ui="S14"):
@@ -420,7 +441,7 @@ SCENARIOS = [
     ("S10", "Multi-gudang Rancamalang → transit → pelanggan Jakarta",
      "Satu pesanan PT Cipta Sandang dari beberapa gudang Rancamalang dikumpulkan di Gudang Transit lewat transfer pemenuhan SO, lalu dikirim ke pelanggan di Jakarta.",
      2, "11.30", 40, "Sales CST · Admin Sales CST · Gudang Rancamalang · Admin Gudang CST · Finance", "SHAKILA LAK (Woven) + ALICE KNIT 8 A (Knitting) · CST",
-     "F-05", "partial", _s10),
+     "F-05", "full", _s10),
     ("S11", "Sample gratis",
      "Pelanggan minta potongan contoh tanpa biaya.",
      2, "13.20", 25, "Sales · Admin Sample · Gudang · Admin Gudang", "Toko Kain Sejahtera", "F-03", "full", lambda: _sample(False)),
@@ -429,8 +450,8 @@ SCENARIOS = [
      2, "13.45", 35, "Sales · Finance · Admin Sample · Gudang · Admin Gudang", "Toko Kain Sejahtera", "F-15", "full", lambda: _sample(True)),
     ("S13", "Pesanan Khusus (desain/warna baru) → SO → lunas",
      "Produk belum ada: desain, sample R&D, ACC pelanggan, kunci harga, pengadaan, lalu menjadi SO biasa sampai lunas.",
-     2, "14.20", 75, "Sales · Manajer · MD · Desainer · PIC · R&D · Admin Sales · Pembelian · Gudang · Finance", "OD 2 item (A 100 yd, B 200 yd)",
-     "—", "partial", _s13),
+     2, "14.20", 75, "Sales · Manajer · MD · Desainer · Admin Sales · Gudang · QC · Finance", "OD 2 item (A 100 m, B 200 m)",
+     "—", "full", _s13),
     ("S16", "Pembelian stok (restock) → hutang supplier lunas",
      "Restock rutin dari saran reorder sampai tagihan supplier dibayar; selisih SJ vs fisik diputuskan.",
      2, "15.35", 45, "Pembelian (Manajer) · Admin · Admin Gudang · Gudang · MD Quality · QC", "Saran Reorder · SJ 1.000 yd vs fisik 960 yd",

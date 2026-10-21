@@ -47,7 +47,7 @@ DEFAULT_FINAL_COLOR_COUNT = 4
 # HOLD — hanya desain yang sudah ACC; saat hold desain tidak bisa dipakai proofing R&D.
 HOLDABLE = {"approved", "final_submitted", "active"}
 # L03 LN-030 — asal desain (label & filter) + izin lepas HOLD khusus PIC Designer berwenang.
-ORIGIN_LABEL = {"internal": "Desain internal", "special_order": "Special Order", "redesign": "Redesign"}
+ORIGIN_LABEL = {"internal": "Desain internal", "special_order": "Pesanan Khusus", "redesign": "Redesign"}
 SAMPLE_STATUS_LABEL = {"draft": "Draf", "sent": "Terkirim ke supplier", "in_progress": "Dikerjakan",
                        "assessed": "Ada yang ACC", "decided": "Pemenang dipilih", "cancelled": "Dibatalkan"}
 PROOFING_STATE_LABEL = {"none": "Belum proofing", "in_progress": "Proofing berjalan",

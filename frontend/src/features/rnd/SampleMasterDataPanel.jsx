@@ -55,7 +55,7 @@ export default function SampleMasterDataPanel({ sample, canDecide, busy, onAct }
       body: prod ? <><b className="font-mono">{prod.sku}</b> {prod.name}
         <ProductColorChip product={prod} className="mt-0.5" />
         <span className="block text-[10.5px] text-[#6B6B73]">{md.template ? `Varian dari induk ${md.template.name}` : "Produk mandiri"}{Object.keys(prod.variant_attrs || {}).length ? ` · ${Object.entries(prod.variant_attrs).map(([k, v]) => `${k}: ${v}`).join(", ")}` : ""} · lifecycle <b style={{ color: lifecycleMeta(prod.lifecycle).tone }}>{lifecycleMeta(prod.lifecycle).label}</b></span></>
-        : spec ? (dec.master_error ? <span className="text-[#C62828]">Belum lahir: {dec.master_error}</span> : <span className="text-[#9A9BA3]">lahir saat spesifikasi di-ACC</span>)
+        : spec ? (dec.master_error ? <span className="text-[#C62828]">Belum lahir — gagal saat ACC pemenang: {dec.master_error} <b>Lengkapi spesifikasi (Ubah), lalu Manajer klik “ACC spesifikasi → lahirkan SKU”.</b></span> : <span className="text-[#9A9BA3]">lahir saat spesifikasi di-ACC</span>)
           : <span className="text-[#9A9BA3]">butuh spesifikasi</span> },
     { key: "release", icon: Rocket, title: "Rilis ke produksi (boleh dijual)", done: prod?.lifecycle === "produksi",
       body: prod?.lifecycle === "produksi" ? "Produk aktif di katalog & boleh dipesan" : <span className="text-[#9A9BA3]">setelah SKU lahir</span> },

@@ -58,7 +58,18 @@ ROLE_LABELS: Dict[str, str] = {
 
 
 def role_label(role: str) -> str:
-    return ROLE_LABELS.get((role or "").strip().lower(), (role or "").title())
+    key = (role or "").strip().lower()
+    if key in ROLE_LABELS:
+        return ROLE_LABELS[key]
+    # Cek UI UAT v3 (S13) — peran di luar daftar dulu jadi "Md"/"Md_quality": pakai label registri peran.
+    try:
+        from role_registry import role_label as _reg_label
+        lab = _reg_label(key)
+        if lab and lab != key:
+            return lab
+    except Exception:  # noqa: BLE001
+        pass
+    return (role or "").replace("_", " ").title()
 
 
 def roles_label(roles: List[str]) -> str:

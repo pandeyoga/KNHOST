@@ -212,7 +212,7 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
         <SearchBox value={searchQuery} onChange={setSearchQuery} testId="special-order-search"
           placeholder="Cari nomor / pelanggan / keterangan…" />
         <KNSelect data-testid="special-order-origin-filter" className="field !w-auto" value={originFilter}
-          options={[{ value: "", label: "Label: semua" }, { value: "special_order", label: "Special Order" }, { value: "redesign", label: "Redesign" }]}
+          options={[{ value: "", label: "Label: semua" }, { value: "special_order", label: "Pesanan Khusus" }, { value: "redesign", label: "Redesign" }]}
           onValueChange={setOriginFilter} />
       </ListToolbar>
 
@@ -278,12 +278,22 @@ export default function SpecialOrders({ currentUser, focusDoc = null, onClearFoc
                       )}
                     </div>
                   </td>
-                  <td className="text-right tabular-nums">
-                    <strong>{fmtNum(order.custom_item?.quantity, 2)}</strong> {order.custom_item?.unit}
-                  </td>
-                  <td className="text-right tabular-nums">
-                    Rp {fmtNum(order.custom_item?.target_price, 0)}
-                  </td>
+                  {/* Cek UI UAT v3 (S13) — OD multi-item dulu hanya menampilkan qty & harga target item pertama. */}
+                  {(() => {
+                    const items = (order.items || []).filter((i) => i.status !== "cancelled");
+                    const units = [...new Set(items.map((i) => i.unit || "meter"))];
+                    const multi = items.length > 1;
+                    return (<>
+                      <td className="text-right tabular-nums" data-testid={`special-order-qty-${order.id}`}>
+                        {multi && units.length === 1
+                          ? <><strong>{fmtNum(items.reduce((a, i) => a + Number(i.quantity || 0), 0), 2)}</strong> {units[0]}</>
+                          : <><strong>{fmtNum(order.custom_item?.quantity, 2)}</strong> {order.custom_item?.unit}</>}
+                      </td>
+                      <td className="text-right tabular-nums">
+                        {multi ? <span className="text-muted">per item</span> : <>Rp {fmtNum(order.custom_item?.target_price, 0)}</>}
+                      </td>
+                    </>);
+                  })()}
                   <td className="text-right font-semibold tabular-nums">
                     Rp {fmtNum(order.total_amount, 0)}
                   </td>

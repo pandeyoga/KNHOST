@@ -11,7 +11,7 @@ import { Ban, CalendarClock, CheckCircle2, GitBranch, History, PackageMinus, Sen
 import ErrorNotice from "../../components/ErrorNotice";
 import { RevisionBadge, sampleRevisionCount } from "../../components/RevisionProgress";
 import { formatDateId } from "../../components/KNDatePicker";
-import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatCurrency, formatQty, formatStamp } from "../../utils/formatters";
 import { askReason } from "../../services/confirmService";
 import { notifySuccess } from "../../utils/feedback";
 import { openTrace } from "../documents/trace/traceDeepLink";
@@ -264,7 +264,7 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
                 <div key={`${t.at}-${i}`} className="flex items-start gap-2 text-[11px]">
                   <CalendarClock size={12} className="mt-0.5 shrink-0 text-[#9A9BA3]" />
                   <span className="text-[#3C3C43]">
-                    <strong>{t.label}</strong>{t.actor ? ` · ${t.actor}` : ""} · {String(t.at || "").slice(0, 16).replace("T", " ")}
+                    <strong>{t.label}</strong>{t.actor ? ` · ${t.actor}` : ""} · {formatStamp(t.at)}
                     {t.note ? <span className="text-[#6B6B73]"> — {t.note}</span> : null}
                   </span>
                 </div>
@@ -361,7 +361,12 @@ export default function SampleDetailPanel({ sampleId, currentUser, types: typesP
       )}
       {modal?.kind === "decide" && (
         <DecideModal sample={sample} reasons={reasons} busy={busy} onClose={() => setModal(null)}
-          onConfirm={(body) => act(() => decideSample(sample.id, body), "Pemenang diputuskan — kontrak harga & barang supplier terbentuk.")} />
+          onConfirm={(body) => act(async () => {
+            const r = await decideSample(sample.id, body);
+            // Cek UI UAT v3 (S13) — SKU gagal lahir (spesifikasi belum lengkap) dulu hanya teks kecil di panel master data.
+            const me = r?.decision?.master_error;
+            if (me) setErr(`Pemenang tersimpan, tetapi SKU produk belum lahir. ${me} Lengkapi lewat Spesifikasi › Ubah, lalu ACC spesifikasi → lahirkan SKU.`);
+          }, "Pemenang diputuskan — kontrak harga & barang supplier terbentuk.")} />
       )}
       {modal?.kind === "reval" && (
         <RevalDecideModal sample={sample} busy={busy} onClose={() => setModal(null)}

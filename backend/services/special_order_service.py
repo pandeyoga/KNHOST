@@ -54,6 +54,10 @@ async def generate_special_order_number(on_date: Any = None) -> str:
             stamp = datetime.fromisoformat(str(on_date).replace("Z", "+00:00"))
         except ValueError:
             stamp = datetime.now(timezone.utc)
+    # Cek UI UAT v3 (S13) — tanggal nomor mengikuti hari kerja WIB (dulu UTC: OD 22 Okt 03.31 WIB → SORD-261021).
+    if stamp.tzinfo is not None:
+        from zoneinfo import ZoneInfo
+        stamp = stamp.astimezone(ZoneInfo("Asia/Jakarta"))
     today = stamp.strftime("%y%m%d")
     prefix = f"SORD-{today}"
     
@@ -396,6 +400,13 @@ async def transition_special_order_status(
         raise ValueError(
             f"Invalid status transition: {current_status} → {new_status}"
         )
+    # Cek UI UAT v3 (S13) — OD terstruktur (jenis uji / multi-item): status "Terkonfirmasi" sudah ada sejak disetujui,
+    # jadi [Mulai Produksi] dulu bisa ditekan sebelum ACC pelanggan & kunci harga. Produksi mulai otomatis saat realisasi.
+    structured = bool(special_order.get("request_types")) or len(special_order.get("items") or []) > 1
+    if (new_status == STATUS_IN_PRODUCTION and structured
+            and not (special_order.get("pricing") or {}).get("locked")):
+        raise ValueError("Kunci harga final dulu (ACC pelanggan + margin). Status Produksi berjalan otomatis "
+                         "saat pengadaan item direalisasi.")
     
     # KN-B10 — CAS berprasyarat status saat ini: dua transisi bersamaan → tepat satu lolos.
     result = await db.special_orders.find_one_and_update(

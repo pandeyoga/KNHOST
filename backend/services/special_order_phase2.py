@@ -315,7 +315,8 @@ async def item_price_lines(od: Dict[str, Any], margin: float, item_margins: Opti
         why: List[str] = []
         prod = await db.products.find_one({"id": n["product_id"]}, {"_id": 0}) if n.get("product_id") else None
         if not prod:
-            why.append("produk hasil sample item ini belum ada")
+            why.append(f"produk hasil sample {n.get('sample_number') or 'item ini'} belum lahir — MD/R&D lengkapi "
+                       "spesifikasi (gramasi, lebar) di sample itu lalu ACC spesifikasi")
         if cost <= 0:
             why.append("harga kontrak supplier item ini belum ada")
         factor = 0.0
@@ -523,6 +524,13 @@ async def lock_price(od: Dict[str, Any], payload: Dict[str, Any], actor: Dict[st
         raise ODError("Margin harus 0–500%.")
     if is_multi_item(od):
         pricing = await _lock_items(od, margin, payload, actor)
+        if payload.get("warehouse_id"):
+            # Cek UI UAT v3 (S13) — gudang pilihan Admin Sales dulu hilang bila realisasi otomatis belum bisa jalan
+            # (jalur item belum dipilih); realisasi berikutnya jatuh ke gudang bawaan.
+            from services import warehouse_scope_service as _whs
+            await _whs.assert_usable(payload["warehouse_id"], od.get("entity_id", ""), action="menerima barang di sini",
+                                     field_label="Gudang tujuan")
+            await db.special_orders.update_one({"id": od["id"]}, {"$set": {"procurement_warehouse_id": payload["warehouse_id"]}})
         if payload.get("auto_po", True):
             fresh = await db.special_orders.find_one({"id": od["id"]}, {"_id": 0})
             try:
@@ -564,8 +572,11 @@ async def lock_price(od: Dict[str, Any], payload: Dict[str, Any], actor: Dict[st
 
 
 async def default_warehouse_id(entity_id: str) -> str:
+    """Gudang bawaan penerimaan OD: gudang khusus PT itu dulu, baru gudang bersama. Cek UI UAT v3 (S13) — dulu urut
+    kode saja sehingga gudang bersama PT lain (RCM-KNITTING) terpilih sebelum gudang Jakarta milik Sukacita."""
     from services import warehouse_scope_service as whs
     rows = await whs.list_for_entity(entity_id, only_active=True)
+    rows = sorted(rows, key=lambda w: entity_id not in (w.get("entity_ids") or []))   # sort stabil: urutan kode tetap
     return (rows[0] or {}).get("id", "") if rows else ""
 
 
@@ -630,13 +641,21 @@ async def on_goods_received(od_id: str) -> Dict[str, Any]:
     if not (so.get("allocations") or []):
         raise ODError("Stok hasil PO belum bisa direservasi ke SO (mungkin masih karantina QC). Ulangi 'Siapkan pengiriman' setelah QC.")
     tasks = await create_outbound_tasks_for_order(so_id, "Sistem (OD)")
+    if not tasks:
+        # Cek UI UAT v3 (S13) — OD multi-item: PO item kedua tiba SETELAH tugas item pertama lahir → dulu stoknya
+        # berkomitmen ke SO tetapi tidak pernah punya tugas ambil. Buat tugas hanya untuk produk yang belum bertugas.
+        have = set(await db.wms_tasks.distinct("product_id", {"order_id": so_id, "flow_type": "outbound"}))
+        missing = {a["product_id"] for a in so.get("allocations") or [] if a.get("product_id")} - have
+        if have and missing:
+            tasks = await create_outbound_tasks_for_order(so_id, "Sistem (OD)", only_products=missing)
     if tasks:
         await db.sales_orders.update_one({"id": so_id}, {"$set": {"status": "confirmed", "confirmed_at": now_iso(), "confirmed_by": "Sistem (OD)",
                                                                   "admin_verified": True, "updated_at": now_iso()},
                                                          "$push": {"timeline": {"id": new_id("tl"), "event": "confirmed", "label": "Dikonfirmasi otomatis — barang pesanan khusus diterima gudang",
                                                                                 "by": "Sistem (OD)", "at": now_iso()}}})
     await recompute_so_status(so_id)
-    await db.special_orders.update_one({"id": od_id}, {"$set": {"shipping_error": "", "outbound_task_ids": [t["id"] for t in tasks], "updated_at": now_iso()},
+    await db.special_orders.update_one({"id": od_id}, {"$set": {"shipping_error": "", "updated_at": now_iso()},
+                                                       "$addToSet": {"outbound_task_ids": {"$each": [t["id"] for t in tasks]}},
                                                        "$push": {"status_history": {"status": od.get("status"), "timestamp": now_iso(), "user": "Sistem (OD)",
                                                                                     "note": f"Barang diterima → {len(tasks)} tugas Surat Jalan lahir otomatis untuk SO {so.get('number')}"}}})
     return {"tasks": len(tasks), "so_number": so.get("number")}

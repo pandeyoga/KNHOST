@@ -295,19 +295,21 @@ Status: `L` Lulus · `G` Gagal · `T` Terblokir. Isi nomor dokumen sistem & ID t
 | S10-04 | Admin Sales | KSC/SO-xxxxx dikonfirmasi — tugas gudang lahir. Pelacak SO menunjukkan tahap berikutnya & peran pemiliknya. | ✓ =S1 |  |  |  |
 | S10-05 | Gudang | Roll anak terverifikasi & berkomitmen ke SO. | ✓ =S6 |  |  |  |
 | S10-06 | Gudang | CST/TRF-xxxxx Menunggu Persetujuan; roll tetap terkunci untuk SO. | ✓ S10 |  |  |  |
-| S10-07 | Admin Gudang CST | Transfer Selesai; roll di Transit tetap berkomitmen ke SO; tugas pengambilan pindah ke Gudang Transit. | ✓ S10 |  |  |  |
-| S10-08 | Gudang | Pindah ke Operasi Gudang › Barang Keluar dengan tugas terpilih (Rancamalang · Gudang Transit); panel AMBIL & KIRIM memuat ROLL YANG HARUS DIAMBIL (rol… | ✓ S10 |  |  |  |
-| S10-09 | Gudang | Toast Pengambilan tercatat — Terkumpul x dari x yard; roll bertanda sudah diambil; muncul Pemeriksaan Muat Akhir dan panel Siap dikirim. Nama pelangga… | ✓ S10 |  |  |  |
-| S10-10 | Gudang | Ditolak: Roll … tidak ditemukan untuk produk tugas ini. | ✓ S10 |  |  |  |
-| S10-11 | Admin Gudang | Barang Keluar dengan tugas terpilih. | ✓ =S3 |  |  |  |
-| S10-12 | Admin Gudang | SIMULASI (mode UAT) — n/n cocok; dianggap sah, dispatch dibuka. Riwayat scan bertanda SIMULASI (sah di mode simulasi UAT). Roll di luar SO / kurang → … | ✓ S3 |  |  |  |
-| S10-13 | Admin Gudang | Terkirim Penuh! … · KSC/SJ-xxxxx + tombol [Surat Jalan] [Buat Pengiriman]. Catat nomor SJ. | ✓ =S3 |  |  |  |
-| S10-14 | Admin Gudang | Nomor KSC/LG-xxxxx status Disiapkan; detail pengiriman langsung terbuka. | ✓ =S2 |  |  |  |
-| S10-15 | Admin Gudang | Status Dimuat; muncul [Berangkat] · [Bongkar (kembali ke Disiapkan)] · [Gagal kirim]. | ✓ =S2 |  |  |  |
-| S10-16 | Admin Gudang | Status Dalam perjalanan. | ✓ =S2 |  |  |  |
-| S10-17 | Admin Gudang | LG Terkirim (POD tidak bisa diubah lagi); SO otomatis Selesai saat semua SJ ber-POD. | ✓ =S2 |  |  |  |
-| S10-18 | Finance | Pembayaran KSC/AR-xxxxx (Rp …) dicatat untuk … Baris hilang dari antrean. | ✓ =S1 |  |  |  |
-| S10-19 | Sales | Perjalanan 100%: Dipesan · Diverifikasi Admin Sales · Disetujui · Dikonfirmasi · Disiapkan gudang · Dikirim (SJ) · Diterima pelanggan · Ditagih (Faktu… | ✓ HP |  |  |  |
+| S10-07 | Admin Gudang CST | Transfer Disetujui. | ✓ S10 |  |  |  |
+| S10-08 | Gudang | Transfer Dalam Perjalanan. | ✓ S10 |  |  |  |
+| S10-09 | Gudang | Transfer Selesai; roll di Transit tetap berkomitmen ke SO; tugas pengambilan pindah ke Gudang Transit. | ✓ S10 |  |  |  |
+| S10-10 | Gudang | Pindah ke Operasi Gudang › Barang Keluar dengan tugas terpilih (Rancamalang · Gudang Transit); panel AMBIL & KIRIM memuat ROLL YANG HARUS DIAMBIL (rol… | ✓ S10 |  |  |  |
+| S10-11 | Gudang | Toast Pengambilan tercatat — Terkumpul x dari x yard; roll bertanda sudah diambil; muncul Pemeriksaan Muat Akhir dan panel Siap dikirim. Nama pelangga… | ✓ S10 |  |  |  |
+| S10-12 | Gudang | Ditolak: Roll … tidak ditemukan untuk produk tugas ini. | ✓ S10 |  |  |  |
+| S10-13 | Admin Gudang | Barang Keluar dengan tugas terpilih. | ✓ =S3 |  |  |  |
+| S10-14 | Admin Gudang | SIMULASI (mode UAT) — n/n cocok; dianggap sah, dispatch dibuka. Riwayat scan bertanda SIMULASI (sah di mode simulasi UAT). Roll di luar SO / kurang → … | ✓ S3 |  |  |  |
+| S10-15 | Admin Gudang | Terkirim Penuh! … · KSC/SJ-xxxxx + tombol [Surat Jalan] [Buat Pengiriman]. Catat nomor SJ. | ✓ =S3 |  |  |  |
+| S10-16 | Admin Gudang | Nomor KSC/LG-xxxxx status Disiapkan; detail pengiriman langsung terbuka. | ✓ =S2 |  |  |  |
+| S10-17 | Admin Gudang | Status Dimuat; muncul [Berangkat] · [Bongkar (kembali ke Disiapkan)] · [Gagal kirim]. | ✓ =S2 |  |  |  |
+| S10-18 | Admin Gudang | Status Dalam perjalanan. | ✓ =S2 |  |  |  |
+| S10-19 | Admin Gudang | LG Terkirim (POD tidak bisa diubah lagi); SO otomatis Selesai saat semua SJ ber-POD. | ✓ =S2 |  |  |  |
+| S10-20 | Finance | Pembayaran KSC/AR-xxxxx (Rp …) dicatat untuk … Baris hilang dari antrean. | ✓ =S1 |  |  |  |
+| S10-21 | Sales | Perjalanan 100%: Dipesan · Diverifikasi Admin Sales · Disetujui · Dikonfirmasi · Disiapkan gudang · Dikirim (SJ) · Diterima pelanggan · Ditagih (Faktu… | ✓ HP |  |  |  |
 
 ## S11 — Sample gratis (Kelompok 2 · Hulu, Pengadaan & Sample, 13.20–13.45)
 
@@ -349,33 +351,31 @@ Status: `L` Lulus · `G` Gagal · `T` Terblokir. Isi nomor dokumen sistem & ID t
 | Langkah | Peran | Hasil yang harus terlihat | Cek UI | Status | No. dokumen | Catatan / ID temuan |
 |---|---|---|---|---|---|---|
 | S13-01 | Sales | Formulir 6 bagian; pesan Belum lengkap: … menyebut isian yang kurang. | ✓ S13 |  |  |  |
-| S13-02 | Sales | SORD-yymmdd-xxxx Menunggu persetujuan. | ✓ S13 |  |  |  |
-| S13-03 | Manajer | OD disetujui → otomatis Permintaan Desain (DSR) untuk printing & Sample R&D (SMP) untuk labdip/handfeel; tampil di Rantai dokumen detail OD. | ✓ S13 |  |  |  |
-| S13-04 | MD | DSR Ditugaskan. | ○ |  |  |  |
-| S13-05 | Desainer | Menunggu keputusan; versi & checklist per ronde. | ○ |  |  |  |
-| S13-06 | PIC | Sample proofing lahir otomatis; MD diberi tahu. | ○ |  |  |  |
-| S13-07 | R&D | Permintaan Terkirim. | ○ |  |  |  |
-| S13-08 | R&D | OD fase Sample siap. | ○ |  |  |  |
-| S13-09 | Sales | OD Menunggu ACC pelanggan. | ○ |  |  |  |
-| S13-10 | Admin Sales | OD lanjut ke kunci harga. | ○ |  |  |  |
-| S13-11 | Admin Sales | Harga terkunci per item; PR/PO ke supplier pemenang lahir. | ○ |  |  |  |
-| S13-12 | MD | SKU aktif. | ○ |  |  |  |
-| S13-13 | Pembelian · Admin Gudang · QC | Stok item OD tersedia. | ○ |  |  |  |
-| S13-14 | Admin Sales | SO tertaut OD; ulang tidak membuat SO kedua. | ○ |  |  |  |
-| S13-15 | Admin Sales | Banner KSC/SO-xxxxx terverifikasi … — lanjut [Ajukan persetujuan] di antrean Terverifikasi. | ○ |  |  |  |
-| S13-16 | Admin Sales | Tanpa gerbang: disetujui otomatis (tanpa gerbang) — lanjut di antrean Siap dikonfirmasi. | ○ |  |  |  |
-| S13-17 | Admin Sales | KSC/SO-xxxxx dikonfirmasi — tugas gudang lahir. Pelacak SO menunjukkan tahap berikutnya & peran pemiliknya. | ○ |  |  |  |
-| S13-18 | Gudang | Pindah ke Operasi Gudang › Barang Keluar dengan tugas terpilih (Jakarta · Gudang Sukacita); panel AMBIL & KIRIM memuat ROLL YANG HARUS DIAMBIL (roll, … | ○ |  |  |  |
-| S13-19 | Gudang | Toast Pengambilan tercatat — Terkumpul x dari x yard; roll bertanda sudah diambil; muncul Pemeriksaan Muat Akhir dan panel Siap dikirim. Nama pelangga… | ○ |  |  |  |
-| S13-20 | Admin Gudang | Barang Keluar dengan tugas terpilih. | ○ |  |  |  |
-| S13-21 | Admin Gudang | SIMULASI (mode UAT) — n/n cocok; dianggap sah, dispatch dibuka. Riwayat scan bertanda SIMULASI (sah di mode simulasi UAT). Roll di luar SO / kurang → … | ○ |  |  |  |
-| S13-22 | Admin Gudang | Terkirim Penuh! … · KSC/SJ-xxxxx + tombol [Surat Jalan] [Buat Pengiriman]. Catat nomor SJ. | ○ |  |  |  |
-| S13-23 | Admin Gudang | Nomor KSC/LG-xxxxx status Disiapkan; detail pengiriman langsung terbuka. | ○ |  |  |  |
-| S13-24 | Admin Gudang | Status Dimuat; muncul [Berangkat] · [Bongkar (kembali ke Disiapkan)] · [Gagal kirim]. | ○ |  |  |  |
-| S13-25 | Admin Gudang | Status Dalam perjalanan. | ○ |  |  |  |
-| S13-26 | Admin Gudang | LG Terkirim (POD tidak bisa diubah lagi); SO otomatis Selesai saat semua SJ ber-POD. | ○ |  |  |  |
-| S13-27 | Finance | Pembayaran KSC/AR-xxxxx (Rp …) dicatat untuk … Baris hilang dari antrean. | ○ |  |  |  |
-| S13-28 | Sales | Perjalanan 100%: Dipesan · Diverifikasi Admin Sales · Disetujui · Dikonfirmasi · Disiapkan gudang · Dikirim (SJ) · Diterima pelanggan · Ditagih (Faktu… | ○ |  |  |  |
+| S13-02 | Sales | SORD-yymmdd-xxxx (tanggal WIB) Menunggu persetujuan. | ✓ S13 |  |  |  |
+| S13-03 | Manajer | OD disetujui → otomatis Permintaan Desain (DSR) untuk printing & Sample R&D (SMP) per item, tercatat atas nama Sales pembuat OD; tampil di Rantai doku… | ✓ S13 |  |  |  |
+| S13-04 | MD | DSR Ditugaskan; hilang dari antrean MD sampai desain diserahkan. | ✓ S13 |  |  |  |
+| S13-05 | Desainer | DSR Menunggu keputusan; versi & checklist per ronde. | ✓ S13 |  |  |  |
+| S13-06 | Manajer | DSR Disetujui (ACC); sample proofing item A siap dikirim ke supplier. | ✓ S13 |  |  |  |
+| S13-07 | MD | Spesifikasi Draf dengan gramasi & lebar terisi. | ✓ S13 |  |  |  |
+| S13-08 | R&D (MD) | Supplier yang lolos tertanda ACC. | ✓ S13 |  |  |  |
+| S13-09 | Manajer | Kontrak harga KSC/SCT-… + SKU eksklusif pelanggan lahir; artikel baru bersumber restock Supplier. Spesifikasi belum lengkap → peringatan merah; MD len… | ✓ S13 |  |  |  |
+| S13-10 | Sales | Keputusan pelanggan tersimpan; riwayat ACC + bukti; OD masuk antrean kunci harga. | ✓ S13 |  |  |  |
+| S13-11 | Admin Sales | Dikunci …; total OD = jumlah per item (contoh Rp 19.500.000 + PPN). | ✓ S13 |  |  |  |
+| S13-12 | MD | Item Siap direalisasi. | ✓ S13 |  |  |  |
+| S13-13 | Manajer | Per item PR-xxxxx → PO KSC/PO-xxxxx ke supplier pemenang (Belum diterima); OD Dalam Produksi. | ✓ S13 |  |  |  |
+| S13-14 | Admin Sales | KSC/SO-xxxxx Menunggu stok (backorder per item) tertaut OD; ulang tidak membuat SO kedua. | ✓ S13 |  |  |  |
+| S13-15 | Admin Gudang · Gudang · MD Quality · QC | Roll item OD berkomitmen ke SO OD; SO Terkonfirmasi otomatis (barang pesanan khusus diterima gudang); OD Siap; tugas ambil lahir per item di Barang Ke… | ✓ S13 |  |  |  |
+| S13-16 | Gudang | Pindah ke Operasi Gudang › Barang Keluar dengan tugas terpilih (Jakarta · Gudang Sukacita); panel AMBIL & KIRIM memuat ROLL YANG HARUS DIAMBIL (roll, … | ✓ =S1 |  |  |  |
+| S13-17 | Gudang | Toast Pengambilan tercatat — Terkumpul x dari x yard; roll bertanda sudah diambil; muncul Pemeriksaan Muat Akhir dan panel Siap dikirim. Nama pelangga… | ✓ =S1 |  |  |  |
+| S13-18 | Admin Gudang | Barang Keluar dengan tugas terpilih. | ✓ =S3 |  |  |  |
+| S13-19 | Admin Gudang | SIMULASI (mode UAT) — n/n cocok; dianggap sah, dispatch dibuka. Riwayat scan bertanda SIMULASI (sah di mode simulasi UAT). Roll di luar SO / kurang → … | ✓ S3 |  |  |  |
+| S13-20 | Admin Gudang | Terkirim Penuh! … · KSC/SJ-xxxxx + tombol [Surat Jalan] [Buat Pengiriman]. Catat nomor SJ. | ✓ =S3 |  |  |  |
+| S13-21 | Admin Gudang | Nomor KSC/LG-xxxxx status Disiapkan; detail pengiriman langsung terbuka. | ✓ =S1 |  |  |  |
+| S13-22 | Admin Gudang | Status Dimuat; muncul [Berangkat] · [Bongkar (kembali ke Disiapkan)] · [Gagal kirim]. | ✓ =S1 |  |  |  |
+| S13-23 | Admin Gudang | Status Dalam perjalanan. | ✓ =S1 |  |  |  |
+| S13-24 | Admin Gudang | LG Terkirim (POD tidak bisa diubah lagi); SO otomatis Selesai saat semua SJ ber-POD. | ✓ =S1 |  |  |  |
+| S13-25 | Finance | Pembayaran KSC/AR-xxxxx (Rp …) dicatat untuk … Baris hilang dari antrean. | ✓ =S1 |  |  |  |
+| S13-26 | Sales | Perjalanan 100%: Dipesan · Diverifikasi Admin Sales · Disetujui · Dikonfirmasi · Disiapkan gudang · Dikirim (SJ) · Diterima pelanggan · Ditagih (Faktu… | ✓ HP |  |  |  |
 
 ## S16 — Pembelian stok (restock) → hutang supplier lunas (Kelompok 2 · Hulu, Pengadaan & Sample, 15.35–16.20)
 

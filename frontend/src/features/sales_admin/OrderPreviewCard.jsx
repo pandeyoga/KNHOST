@@ -15,7 +15,13 @@ export default function OrderPreviewCard({ preview, testPrefix = "order-preview"
   const t = preview.totals || {};
   const addr = preview.shipping_address || {};
   const isPickup = (preview.fulfillment_method || "kirim") === "ambil";
-  const tanggal = (preview.created_at || "").slice(0, 10);
+  // Cek UI UAT v3 (S15) — tanggal lokal (dulu potongan ISO UTC: pesanan 22 Okt dini hari tertulis 21 Okt).
+  const tanggal = (() => {
+    const d = new Date(preview.created_at || "");
+    if (Number.isNaN(d.getTime())) return (preview.created_at || "").slice(0, 10);
+    const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  })();
 
   return (
     <div className="rounded-lg border border-[#EFF0F2]" data-testid={testPrefix}>

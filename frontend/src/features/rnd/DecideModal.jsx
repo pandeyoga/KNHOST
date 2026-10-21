@@ -51,6 +51,8 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy 
   const supplier = candidates.find((p) => p.supplier_id === supplierId);
   const colorOk = !hasColor || !isLabdip || colorName.trim() || colorCode.trim();
 
+  const missing = [!supplierId && "supplier pemenang", !reasonCode && "alasan keputusan", !price && "harga kesepakatan",
+    !colorOk && "nama/kode warna versi supplier (labdip)", !overrideOk && "alasan karena uji wajib belum ACC"].filter(Boolean);
   const body = {
     supplier_id: supplierId, reason_code: reasonCode, note,
     price: price || 0, supplier_sku: supplierSku, supplier_uom: supplierUom, supplier_item_name: supplierItemName,
@@ -62,9 +64,12 @@ export default function DecideModal({ sample, reasons, onClose, onConfirm, busy 
   return (
     <FormModal open onClose={onClose} size="lg" testId="decide-modal" icon={Trophy}
       title="ACC Sampling · Pilih Supplier Pemenang" subtitle={`${sample.number} · ${sample.title}`}
-      footer={<Footer onClose={onClose} onConfirm={() => onConfirm(body)} busy={busy} icon={Trophy} testId="decide-confirm"
-        confirmLabel="ACC & bentuk master data" disabled={!supplierId || !reasonCode || !price || !colorOk || !overrideOk}
-        title={!colorOk ? "Nama/kode warna versi supplier wajib untuk labdip" : !overrideOk ? "Isi alasan karena uji wajib belum ACC" : ""} />}>
+      footer={<div className="flex flex-wrap items-center justify-end gap-2">
+        {/* Cek UI UAT v3 (S13) — tombol nonaktif dulu tanpa keterangan apa yang kurang (mis. alasan keputusan). */}
+        {missing.length > 0 && <p className="text-[11px] text-[#B42318]" data-testid="decide-missing">Lengkapi: {missing.join(", ")}</p>}
+        <Footer onClose={onClose} onConfirm={() => onConfirm(body)} busy={busy} icon={Trophy} testId="decide-confirm"
+          confirmLabel="ACC & bentuk master data" disabled={missing.length > 0}
+          title={missing.length ? `Lengkapi: ${missing.join(", ")}` : ""} /></div>}>
       <div className="grid gap-3">
           {candidates.length === 0 ? (
             <Hint tone="warn" testId="decide-no-candidate">Belum ada supplier yang hasilnya <b>ACC</b>. Nilai dulu hasil sample-nya — pemenang hanya boleh dipilih dari supplier yang sudah ACC.</Hint>

@@ -15,7 +15,7 @@ import {
   AlertCircle, ArrowLeft, Check, CheckCircle2, ClipboardList, Clock, Loader2,
   ShoppingCart, Sparkles, Tag, X, XCircle
 } from "lucide-react";
-import { StatusPill, STATUS_STYLE, fmtDate } from "./SpecialOrderShared";
+import { StatusPill, STATUS_STYLE, fmtDate, docStatus } from "./SpecialOrderShared";
 import { SpecialOrderInfoPanels } from "./SpecialOrderInfoPanels";
 import FormModal from "../../components/FormModal";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
@@ -101,7 +101,7 @@ export default function SpecialOrderDetail({
         { headers: { Authorization: `Bearer ${token}` } }
       );
       onUpdate(res.data.special_order); refreshFull();
-      setOkMsg(`Berhasil dikonversi ke Pesanan Penjualan ${res.data.sales_order?.number} (status: ${res.data.sales_order?.status}).`);
+      setOkMsg(`Berhasil dikonversi ke Pesanan Penjualan ${res.data.sales_order?.number} (status: ${docStatus(res.data.sales_order?.status)}).`);
       setError(null);
     } catch (e) {
       setError("Gagal konversi ke SO: " + (e.response?.data?.detail || e.message));
@@ -211,7 +211,8 @@ export default function SpecialOrderDetail({
     shipped: { next: "done", label: "Tandai Selesai" },
   };
 
-  const action = statusActions[order.status];
+  // Cek UI UAT v3 (S13) — OD terstruktur: [Mulai Produksi] baru masuk akal setelah harga dikunci (server juga menolak).
+  const action = order.status === "confirmed" && (structured || (order.items || []).length > 1) && !priceLocked ? null : statusActions[order.status];
 
   return (
     <div data-testid="special-order-detail-view" className="view-container">

@@ -178,8 +178,22 @@ async def _route_item(od: Dict[str, Any], item: Dict[str, Any], actor: Dict[str,
             links.setdefault("routing_errors", []).append(f"Permintaan sample {tag}: {exc}")
 
 
+async def _requester(od: Dict[str, Any], fallback: Dict[str, Any]) -> Dict[str, Any]:
+    """Peminta dokumen turunan = pembuat OD (Sales), bukan penyetuju.
+
+    Cek UI UAT v3 (S13) — DSR & sample R&D dulu tercatat "diminta oleh" Manajer yang menyetujui OD, sehingga
+    aturan pemisahan tugas melarang Manajer itu memutus ACC sample-nya sendiri (hanya tersisa Admin).
+    """
+    key = (od.get("created_by_id") or "").strip()
+    email = (od.get("created_by") or "").strip()
+    q = {"id": key} if key else ({"email": email} if "@" in email else None)
+    u = await db.users.find_one(q, {"_id": 0, "id": 1, "name": 1, "email": 1, "role": 1}) if q else None
+    return u or fallback
+
+
 async def route_on_approve(od: Dict[str, Any], actor: Dict[str, Any], entity_id: str) -> Dict[str, Any]:
     """Dipanggil sekali saat OD disetujui penuh. Idempoten (tidak menggandakan dokumen turunan)."""
+    actor = await _requester(od, actor)
     if od.get("items"):
         links: Dict[str, Any] = {}
         for item in od["items"]:

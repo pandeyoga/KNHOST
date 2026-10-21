@@ -12,7 +12,11 @@ import { DELIVER_LABEL } from "./sampleTypeMeta";
 
 export default function SampleFinishModal({ mode = "finish", sample, targets, busy, onClose, onConfirm }) {
   const isFinish = mode === "finish";
-  const [date, setDate] = useState("");
+  // Cek UI UAT v3 (S13) — tanggal kosong dulu jadi "hari ini" versi server (UTC): sample jadi 22 Okt WIB tercatat 21 Okt.
+  const [date, setDate] = useState(() => {
+    const d = new Date(); const p = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  });
   const [note, setNote] = useState("");
   const [to, setTo] = useState("");
   const [toName, setToName] = useState("");
