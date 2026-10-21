@@ -77,14 +77,13 @@ def cover():
     return f"""<section class="cover"><div class="band"></div>
 <div class="kicker" style="color:#93C5FD">{DOC_ID} · versi 3.0 · {DATE}</div>
 <h1>Panduan UAT End-to-End<br>ERP Kain Nusantara</h1>
-<p class="sub">Satu cabang proses = satu alur lurus dari pesanan sampai barang diterima pelanggan dan lunas. Baca dari atas ke bawah —
-tidak perlu bolak-balik ke diagram lain.</p>
-<div class="lanes">{"".join(f'<div style="background:{c};color:#fff">{escape(t)}</div>' for c, t in (("#1D4ED8", "16 alur end-to-end lurus"), ("#0E7490", "1 hari · mulai 09.00 WIB"), ("#B45309", "2 kelompok paralel"), ("#15803D", "Kolom Lulus / Gagal di setiap langkah")))}</div>
+<p class="sub">16 alur uji · 1 hari · 09.00–17.00 WIB</p>
+<div class="lanes">{"".join(f'<div style="background:{c};color:#fff">{escape(t)}</div>' for c, t in (("#1D4ED8", "16 alur uji"), ("#0E7490", "1 hari · mulai 09.00 WIB"), ("#B45309", "2 kelompok paralel")))}</div>
 <div class="meta">
 <div><span class="lbl">Pelaksanaan</span>1 hari · <b>09.00–17.00 WIB</b><br>Kelompok 1: Penjualan & Retur<br>Kelompok 2: Hulu, Pengadaan & Sample</div>
 <div><span class="lbl">Kandidat uji</span>VPS UAT setelah <b>update.sh</b><br>kode <b>main</b> terbaru (≥ c8f7f30)</div>
-<div><span class="lbl">Menggantikan</span>Panduan UAT v2.0 (peta besar + cabang) — dinilai sulit diikuti</div>
-<div><span class="lbl">Disusun</span>Tim IT · perbaikan F-01…F-17 sudah terpasang · status cek layar per langkah tercantum</div>
+<div><span class="lbl">Dokumen</span>{DOC_ID} · versi 3.0<br>{DATE}</div>
+<div><span class="lbl">Disusun</span>Production IT</div>
 </div></section>"""
 
 
@@ -92,7 +91,7 @@ def how_to():
     return f"""<section class="sec">{head("Cara memakai", "Cara membaca & menjalankan dokumen ini", ["Baca 5 menit sebelum mulai"])}
 <div class="strip c2">
 <div class="box"><b class="t">Langkah kerja penguji</b><ol class="big" style="margin:0;padding-left:4mm">
-<li>Buka halaman alur kelompok Anda (lihat <b>Jadwal</b>). Kerjakan baris <b>dari atas ke bawah</b>; setiap alur berdiri sendiri dari awal sampai lunas.</li>
+<li>Buka halaman alur kelompok Anda (lihat <b>Jadwal</b>). Kerjakan baris <b>dari atas ke bawah</b>.</li>
 <li>Kolom <b>Peran · akun</b> menunjukkan siapa yang mengerjakan baris itu. Ganti pengguna = <b>Keluar</b> lalu masuk dengan akun peran tersebut.</li>
 <li>Kolom <b>Buka</b> menulis jalurnya: <span class="nav">menu › antrean</span> lalu tombol <span class="btn">Tombol</span> yang diklik.</li>
 <li>Bandingkan layar dengan kolom <b>Hasil yang harus terlihat</b>. Sama → centang <b>Lulus</b>; berbeda / tombol tidak ada → <b>Gagal</b> + catat di lembar temuan.</li>
@@ -100,7 +99,7 @@ def how_to():
 </ol></div>
 <div class="box a"><b class="t">Tips layar yang sering ditanyakan</b><ul class="big">
 <li>Akun Finance / Admin Gudang / Admin masuk sebagai <b>Semua Entitas</b> (hanya melihat). Sebelum membuat dokumen klik <b>Kerja di: Sukacita</b> (atau PT yang dipakai alur) di banner atas.</li>
-<li>Antrean meja bisa panjang dan diurutkan dari yang tertua: ketik nomor SO/SJ di <b>kolom cari</b> di atas antrean, tidak perlu menekan <span class="btn">Berikutnya</span> berulang-ulang.</li>
+<li>Mencari dokumen di antrean meja: ketik nomor SO/SJ di <b>kolom cari</b> di atas antrean.</li>
 <li>Gudang tanpa handheld RFID: kirim ditolak <i>roll belum bertag RFID aktif</i> → Admin Gudang memberi <span class="btn">Override</span> dengan alasan (lihat S1).</li>
 <li>Sandi akun demo dibagikan fasilitator; semua akun peran memakai sandi yang sama.</li>
 </ul></div></div>
@@ -124,12 +123,11 @@ def overview(pages):
         rows.append(f'<tr class="grp{grp}"><td class="no">{code}</td><td><b>{escape(title)}</b> — <span class="small">{escape(when)}</span></td>'
                     f"<td>K{grp} · <b>{start}–{_end(start, mins)}</b></td><td class='small'>{escape(roles)}</td>"
                     f"<td>{n}</td><td>{mark}</td><td class='small'>{escape(fixes)}</td><td>{pg}</td></tr>")
-    return f"""<section class="sec">{head("Daftar alur", "16 alur end-to-end — pilih sesuai cabang yang ingin diuji", ["Biru = Kelompok 1 (K1)", "Oranye = Kelompok 2 (K2)"])}
+    return f"""<section class="sec">{head("Daftar alur", "Daftar 16 alur uji", ["Biru = Kelompok 1 (K1)", "Oranye = Kelompok 2 (K2)"])}
 <table class="grid compact"><colgroup><col style="width:4%"><col style="width:42%"><col style="width:10%"><col style="width:20%"><col style="width:5%"><col style="width:10%"><col style="width:6%"><col style="width:3%"></colgroup>
 <thead><tr><th>Kode</th><th>Alur & kapan cabang ini terjadi</th><th>Kelompok · jam</th><th>Peran yang terlibat</th><th>Langkah</th><th>Cek UI</th><th>Perbaikan terkait</th><th>Hal.</th></tr></thead>
 <tbody>{"".join(rows)}</tbody></table>
-<p class="small" style="margin-top:2mm">Langkah bersama (verifikasi, konfirmasi, ambil, kirim, pengiriman, bayar) ditulis ulang utuh di setiap alur supaya penguji tidak perlu membuka alur lain.
-Kode perbaikan merujuk temuan pra-UAT yang sudah diperbaiki — perhatikan langkah terkait.</p></section>"""
+<p class="small" style="margin-top:2mm">Perbaikan terkait = kode temuan pra-UAT yang sudah diperbaiki; perhatikan langkah terkait.</p></section>"""
 
 
 def schedule():
@@ -150,7 +148,7 @@ def schedule():
     return f"""<section class="sec">{head("Jadwal", "Jadwal 1 hari — mulai 09.00 WIB, dua kelompok berjalan bersamaan", ["09.00–17.00 WIB", "Persiapan tim IT selesai sebelum 09.00"])}
 <div class="strip c2" style="align-items:start"><div>{table(1)}</div><div>{table(2)}</div></div>
 <div class="strip c3">
-<div class="box"><b class="t">Mengapa dua kelompok</b><ul><li>16 alur tidak muat dalam satu hari bila dikerjakan berurutan.</li><li>Kelompok 1 = alur penjualan & retur; Kelompok 2 = pembelian, makloon, gudang, sample & Pesanan Khusus.</li></ul></div>
+<div class="box"><b class="t">Pembagian kelompok</b><ul><li>Kelompok 1: penjualan & retur.</li><li>Kelompok 2: pembelian, makloon, multi-gudang, sample & Pesanan Khusus.</li></ul></div>
 <div class="box a"><b class="t">Peran yang dipakai dua kelompok</b><ul><li>Admin Gudang, Gudang, Finance, Manajer, QC dipakai keduanya: siapkan satu orang per kelompok, atau satu orang bergantian dengan dua perangkat.</li><li>Bila peserta tidak cukup: kerjakan Kelompok 1 lebih dulu, alur Kelompok 2 yang belum selesai dijadwalkan ulang.</li></ul></div>
 <div class="box g"><b class="t">Ketergantungan</b><ul><li>S14 & S15 (retur) memakai SO dari S1 yang sudah <i>Selesai</i>.</li><li>S8, S9, S16 menunggu barang supplier/mitra “di luar sistem” — fasilitator memerankan supplier (SJ contoh).</li></ul></div>
 </div></section>"""
