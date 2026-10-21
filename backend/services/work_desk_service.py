@@ -61,6 +61,31 @@ def _q(scope: Dict[str, Any], extra: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+async def return_claim_values(returns: List[Dict[str, Any]]) -> Dict[str, float]:
+    """F-17 (uji pra-UAT 2026-10-21) — nilai retur pelanggan = Σ qty klaim × harga transaksi baris SO-nya.
+    Dokumen retur tidak menyimpan nilai (dulu antrean memakai `total_refund`/`total_amount` yang tidak pernah
+    diisi → Rp0). Harga = harga satuan baris SO untuk produk itu (sebelum PPN); `total_refund` tetap menang bila ada."""
+    oids = list({r.get("order_id") for r in returns if r.get("order_id")})
+    prices: Dict[Any, float] = {}
+    for o in await db.sales_orders.find({"id": {"$in": oids}}, {"_id": 0, "id": 1, "items": 1}).to_list(len(oids) or 1):
+        for it in o.get("items") or []:
+            key = (o["id"], it.get("product_id"))
+            if key not in prices and float(it.get("price") or 0) > 0:
+                prices[key] = float(it.get("price") or 0)
+    out: Dict[str, float] = {}
+    for r in returns:
+        if float(r.get("total_refund") or 0) > 0:
+            out[r["id"]] = float(r["total_refund"])
+            continue
+        total = 0.0
+        for it in r.get("items") or []:
+            qty = float(it.get("quantity_returned") or it.get("quantity") or it.get("qty") or 0)
+            price = float(it.get("price") or it.get("unit_price") or prices.get((r.get("order_id"), it.get("product_id")), 0))
+            total += qty * price
+        out[r["id"]] = round(total, 2)
+    return out
+
+
 def _row(*, ref_type: str, ref_id: str, number: str, title: str, subtitle: str = "",
          value: float = 0.0, age_days: int = 0, badge: str = "",
          action: str = "", action_kind: str = "open", extra: Optional[Dict[str, Any]] = None
@@ -222,15 +247,16 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     ret = await db.sales_returns.find(
         _q(scope, {"status": {"$in": list(RETUR_ANTREAN)}}),
         {"_id": 0, "id": 1, "number": 1, "customer_name": 1, "order_number": 1,
-         "status": 1, "created_at": 1, "total_refund": 1, "items": 1, "return_type": 1}
+         "status": 1, "created_at": 1, "total_refund": 1, "items": 1, "return_type": 1, "order_id": 1}
     ).sort("created_at", 1).to_list(200)
+    ret_value = await return_claim_values(ret)   # F-17 — dulu Rp0
     queues.append(_queue(
         "retur", "Retur menunggu proses dokumen",
         "Sales mengajukan, Anda memproses dokumennya. Persetujuan akhir tetap manajer.",
         [_row(ref_type="sales_return", ref_id=r["id"], number=r.get("number", "—"),
               title=r.get("customer_name", "—"),
               subtitle=f"atas {r.get('order_number') or '—'} · {len(r.get('items') or [])} baris",
-              value=r.get("total_refund") or 0, age_days=_age_days(r.get("created_at")),
+              value=ret_value.get(r["id"], 0.0), age_days=_age_days(r.get("created_at")),
               badge=r.get("status", ""), action="Proses", action_kind="open")
          for r in map(safe_doc, ret)],
         action_label="Proses"))

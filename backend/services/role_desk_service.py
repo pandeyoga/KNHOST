@@ -57,6 +57,8 @@ async def manager_queues(scope, ids) -> List[Dict[str, Any]]:
     sr = await _find("sales_returns", {**sq, "status": "pending_approval"})
     pr = await _find("purchase_returns", {**sq, "status": "pending_approval"})
     pa = await _find("price_approvals", {**sq, "status": "pending"})
+    from services.work_desk_service import return_claim_values
+    sr_value = await return_claim_values(sr)   # F-17 — nilai klaim retur (dulu `total_amount` kosong → Rp0)
     return [
         _queue("so_acc", "Pesanan penjualan menunggu ACC", "Setujui atau tolak — sales & pelanggan menunggu.", _so_rows(so, "Putuskan"), action_label="Putuskan", owner="manager"),
         _queue("po_acc", "Pesanan pembelian menunggu ACC", "PO di atas ambang persetujuan.",
@@ -64,7 +66,7 @@ async def manager_queues(scope, ids) -> List[Dict[str, Any]]:
                      value=o.get("grand_total") or o.get("total_amount") or 0, age_days=_age_days(o.get("created_at")), badge=o.get("status", ""), action="Putuskan") for o in po],
                action_label="Putuskan", owner="manager"),
         _queue("retur_acc", "Retur menunggu ACC", "Retur penjualan & pembelian yang perlu keputusan.",
-               [_row(ref_type="sales_return", ref_id=o["id"], number=o.get("number", ""), title=o.get("customer_name", "—"), value=o.get("total_amount") or 0,
+               [_row(ref_type="sales_return", ref_id=o["id"], number=o.get("number", ""), title=o.get("customer_name", "—"), value=sr_value.get(o["id"], 0.0),
                      age_days=_age_days(o.get("created_at")), badge="retur penjualan", action="Putuskan") for o in sr]
                + [_row(ref_type="purchase_return", ref_id=o["id"], number=o.get("number", ""), title=o.get("supplier_name", "—"), value=o.get("total_amount") or 0,
                        age_days=_age_days(o.get("created_at")), badge="retur pembelian", action="Putuskan") for o in pr],
