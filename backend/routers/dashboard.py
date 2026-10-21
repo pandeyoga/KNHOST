@@ -102,6 +102,19 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     await _mres.apply_to_products(products, ctx.active_entity_id)
     total_available = round(max(total_available - sum(float(p.get("makloon_reserved_qty") or 0) for p in products), 0.0), 2)
     total_reserved = round(total_reserved, 2)
+    # F-04 (uji pra-UAT 2026-10-21) — KPI "Jml Tersedia/Dipesan" per SATUAN: yard dan kg tidak boleh dijumlahkan
+    # menjadi satu angka. Satuan = base_unit produk (saldo tidak menyimpan satuan); + jumlah roll tersedia.
+    unit_of = {p["id"]: (p.get("base_unit") or p.get("unit") or "") for p in await db.products.find(
+        {"id": {"$in": list(per_prod)}}, {"_id": 0, "id": 1, "base_unit": 1, "unit": 1}).to_list(None)}
+    mk = {p["id"]: float(p.get("makloon_reserved_qty") or 0) for p in products if p.get("id")}
+    available_by_unit: Dict[str, float] = {}
+    reserved_by_unit: Dict[str, float] = {}
+    for pid, d in per_prod.items():
+        unit = unit_of.get(pid) or "lainnya"
+        free = max(d["available_qty"] - mk.get(pid, 0.0), 0.0)
+        available_by_unit[unit] = round(available_by_unit.get(unit, 0.0) + free, 2)
+        reserved_by_unit[unit] = round(reserved_by_unit.get(unit, 0.0) + d["reserved_qty"], 2)
+    available_rolls = sum(int(d.get("roll_count") or 0) for d in per_prod.values())
     # 2026-10 — kartu produk (Kasir/katalog) memakai stok GLOBAL; KPI di atas tetap per entitas aktif.
     from services import sales_stock_service
     await sales_stock_service.apply_global(products)
@@ -116,6 +129,9 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
             "customers": total_customers,
             "available_qty": total_available,
             "reserved_qty": total_reserved,
+            "available_by_unit": {u: q for u, q in available_by_unit.items() if q > 0.004},
+            "reserved_by_unit": {u: q for u, q in reserved_by_unit.items() if q > 0.004},
+            "available_rolls": available_rolls,
             "active_orders": active_orders,
         },
         "products": products,

@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { openLogistics } from "./features/logistics/logisticsDeepLink";
+import { formatUnitTotals } from "./utils/qtyByUnit";
 import "./App.css";
 import { LoginScreen, MetricCard, Sidebar, TopBar } from "./components/CoreWidgets";
 import { formatQty } from "./utils/formatters";
@@ -501,8 +502,9 @@ function App() {
           <section data-testid="metrics-row" className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 no-print">
             {showHomeWidgets && <>
             <MetricCard testId="metric-products" icon={Archive} label="Produk Aktif" value={data.metrics?.products || 0} tone="rgba(0,122,255,.12)" hint="Buka katalog" onClick={() => showMetricDetail("products")} />
-            <MetricCard testId="metric-available" icon={Boxes} label="Jml Tersedia" value={formatQty(data.metrics?.available_qty)} tone="rgba(52,199,89,.14)" hint="Lihat stok" onClick={() => showMetricDetail("available")} />
-            <MetricCard testId="metric-reserved" icon={Clock3} label="Jml Dipesan" value={formatQty(data.metrics?.reserved_qty)} tone="rgba(175,82,222,.14)" hint="Buka orders" onClick={() => showMetricDetail("reserved")} />
+            {/* F-04 — stok per SATUAN (yard dan kg tidak dijumlahkan) + jumlah roll tersedia */}
+            <MetricCard testId="metric-available" icon={Boxes} label="Jml Tersedia" value={formatUnitTotals(data.metrics?.available_by_unit, data.metrics?.available_qty)} tone="rgba(52,199,89,.14)" hint={data.metrics?.available_rolls != null ? `${formatQty(data.metrics.available_rolls)} roll · Lihat stok` : "Lihat stok"} onClick={() => showMetricDetail("available")} />
+            <MetricCard testId="metric-reserved" icon={Clock3} label="Jml Dipesan" value={formatUnitTotals(data.metrics?.reserved_by_unit, data.metrics?.reserved_qty)} tone="rgba(175,82,222,.14)" hint="Buka orders" onClick={() => showMetricDetail("reserved")} />
             <MetricCard testId="metric-orders" icon={PackageCheck} label="Pesanan Aktif" value={data.metrics?.active_orders || 0} tone="rgba(255,149,0,.14)" hint="Control room" onClick={() => showMetricDetail("orders")} />
             <MetricCard testId="metric-warehouses" icon={Building2} label="Gudang" value={data.metrics?.warehouses || 0} tone="rgba(60,60,67,.10)" hint="Buka WMS" onClick={() => showMetricDetail("warehouses")} />
             </>}

@@ -18,3 +18,16 @@ export function formatQtyByUnit(items = []) {
     .map((r) => `${formatQty(r.qty)} ${r.unit}${r.rolls ? ` (${r.rolls} roll)` : ""}`.trim())
     .join(" · ");
 }
+
+/**
+ * F-04 (uji pra-UAT 2026-10-21) — total PER SATUAN dari server ({ yard: 1250, kg: 340 }) → "340 kg · 1.250 yard"
+ * (KPI POS dulu menjumlahkan yard + kg menjadi satu angka). Tanpa rincian → angka lama (`fallback`).
+ */
+export function formatUnitTotals(byUnit, fallback) {
+  const parts = Object.entries(byUnit || {})
+    .filter(([, q]) => Number(q) > 0)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([u, q]) => `${formatQty(q)} ${u}`.trim());
+  if (parts.length) return parts.join(" · ");
+  return byUnit ? "0" : formatQty(fallback);
+}
