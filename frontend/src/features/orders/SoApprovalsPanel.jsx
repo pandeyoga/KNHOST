@@ -19,6 +19,8 @@ const STATUS_META = {
   approved: { label: "Disetujui", cls: "border-[#BFE6CD] bg-[#E5F6EC] text-[#1B7A43]" },
   rejected: { label: "Ditolak", cls: "border-[#F5C2C2] bg-[#FDE2E2] text-[#9B1C1C]" },
   superseded: { label: "Digantikan pengajuan baru", cls: "border-[#E2E2E2] bg-[#F4F4F4] text-[#666]" },
+  // Keputusan owner 2026-10-21 — baris produknya dihapus dari pesanan; entri tidak lagi memblokir.
+  cancelled: { label: "Dibatalkan — baris dihapus", cls: "border-[#E2E2E2] bg-[#F4F4F4] text-[#666]" },
 };
 const OPEN_STATES = ["reserved", "waiting_approval", "waiting_stock", "draft"];
 
@@ -128,6 +130,11 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
                 Diminta oleh {entry.requested_by || "-"} · butuh peran <b className="uppercase">{entry.required_role}</b>
                 {entry.decided_by && ` · diputuskan ${entry.decided_by}`}
               </p>
+              {entry.status === "cancelled" && entry.cancel_reason && (
+                <p className="mt-0.5 text-[9.5px] text-[#8E8E93]" data-testid={`so-appr-cancel-reason-${entry.id}`}>
+                  {entry.cancel_reason}{entry.cancelled_by ? ` · ${entry.cancelled_by}` : ""}
+                </p>
+              )}
               {ev.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {ev.map((a) => (

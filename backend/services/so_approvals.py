@@ -101,6 +101,33 @@ def repair_resubmitted_rejections(pa: List[Dict[str, Any]]) -> int:
     return n
 
 
+def cancel_for_removed_products(pa: List[Dict[str, Any]], product_ids, reason: str,
+                                actor_name: str = "") -> List[Dict[str, Any]]:
+    """Keputusan owner 2026-10-21 (lanjutan F-09) — baris dihapus dari pesanan (Override SO / batal item OD)
+    → entri harga khusus produk itu yang masih MENUNGGU atau DITOLAK dibatalkan (in-place). Tanpa ini entri
+    menunggu tak bisa disetujui ("produk sudah tidak ada") dan entri ditolak mengunci SO selamanya karena
+    produknya tak bisa diajukan ulang. Riwayat keputusan lama tidak ditimpa; yang sudah disetujui dibiarkan."""
+    ids = {str(p) for p in product_ids if p}
+    out: List[Dict[str, Any]] = []
+    for p in pa:
+        if p.get("type") == "special_price" and str(p.get("product_id")) in ids and p.get("status") in ("pending", "rejected"):
+            p.update({"status": "cancelled", "previous_status": p.get("status"), "cancel_reason": reason,
+                      "cancelled_by": actor_name, "cancelled_at": now_iso()})
+            out.append(p)
+    return out
+
+
+async def cancel_price_docs(database, entries: List[Dict[str, Any]], reason: str, actor_name: str = "") -> None:
+    """Dokumen `price_approvals` milik entri yang dibatalkan: yang masih menunggu ikut `cancelled`;
+    yang sudah ditolak tetap `rejected` (riwayat keputusan, sama dengan F-09)."""
+    ids = [e.get("ref_id") for e in entries if e.get("ref_id")]
+    if ids:
+        await database.price_approvals.update_many(
+            {"id": {"$in": ids}, "status": "pending"},
+            {"$set": {"status": "cancelled", "cancel_reason": reason, "cancelled_by": actor_name,
+                      "cancelled_at": now_iso(), "updated_at": now_iso()}})
+
+
 def summarize(order: Dict[str, Any]) -> Dict[str, Any]:
     """Ringkas state gate approval dari `pending_approvals`."""
     pa: List[Dict[str, Any]] = order.get("pending_approvals") or []

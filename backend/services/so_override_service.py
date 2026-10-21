@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Tuple
 from db import db
 from core_utils import now_iso, new_id, safe_doc
 from services import amendment_service as amd_svc
+from services import so_approvals
 from services.config_service import compute_order_pricing, get_allocation_policy
 from services.roll_service import (allocate_and_reserve_rolls, allocations_from_reserved_rolls,
                                    pending_cuts, release_order_rolls_partial)
@@ -288,6 +289,7 @@ async def apply(order_id: str, body: Dict[str, Any], actor: Dict[str, Any]) -> D
         order["customer_city"] = hdr_patch["shipping_address"].get("city") or order.get("customer_city", "")
         hdr_patch["customer_city"] = order["customer_city"]
     line_touch = bool(qty_plan or adds)
+    dropped_sp: List[Dict[str, Any]] = []
     if hdr_patch or line_touch:
         await saga.claim("sales_orders", order_id, "so_override",
                          precondition={"status": order["status"]}, actor=actor.get("name", ""))
@@ -297,6 +299,18 @@ async def apply(order_id: str, body: Dict[str, Any], actor: Dict[str, Any]) -> D
                 items = [dict(i) for i in order.get("items") or []]
                 by_pid = {i["product_id"]: i for i in items}
                 patch.update(await _apply_lines(order, items, by_pid, qty_plan, adds, actor, diff))
+                removed = [p for p, q in qty_plan.items() if q is None]
+                if removed:   # keputusan owner 2026-10-21 — entri harga khusus produk yang dihapus ikut batal
+                    pa = [dict(p) for p in order.get("pending_approvals") or []]
+                    dropped_sp = so_approvals.cancel_for_removed_products(
+                        pa, removed, f"Baris dihapus lewat override SO: {note}", actor.get("name", ""))
+                    if dropped_sp:
+                        patch["pending_approvals"] = pa
+                        patch.update(so_approvals.approval_fields({**order, **patch}, require_validation=False))
+                        for e in dropped_sp:
+                            diff.append(_chg(e.get("product_name") or e.get("product_id"), "special_price_cancelled",
+                                             "Pengajuan harga khusus dibatalkan (baris dihapus)",
+                                             e.get("previous_status"), "cancelled", e.get("product_id", "")))
             now = now_iso()
             patch.update({"updated_at": now, "last_override_at": now, "last_override_by": actor.get("name", "")})
             patch.update(stage_fields({**order, **patch}))
@@ -304,6 +318,9 @@ async def apply(order_id: str, body: Dict[str, Any], actor: Dict[str, Any]) -> D
         except Exception:
             await saga.release("sales_orders", order_id)
             raise
+        if dropped_sp:
+            await so_approvals.cancel_price_docs(db, dropped_sp, f"Baris dihapus lewat override SO: {note}",
+                                                 actor.get("name", ""))
         if line_touch and order["status"] == "confirmed":
             await _regen_tasks(order_id, actor.get("name", ""))
 

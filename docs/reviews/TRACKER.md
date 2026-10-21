@@ -80,12 +80,12 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 |---|---|---|
 | ROLE-01 lintas PT | Dijawab owner 2026-10-21: perlu — akses lintas badan usaha dapat DIKONFIGURASI per peran (bawaan & kustom), bukan hanya Manager. Sedang dikerjakan. | 2026-10-21 |
 | FE-01 SO terbit | Dijawab owner 2026-10-21: batal item OD pada SO terbit → nota kredit otomatis, tetap bisa dikoreksi Finance. Sedang dikerjakan. | 2026-10-21 |
-| F-09 baris dihapus | Dijawab owner 2026-10-21: setuju — baris dihapus → entri harga khusus produk itu otomatis dibatalkan (riwayat tetap). Sedang dikerjakan. | 2026-10-21 |
 
 ## Riwayat perubahan tracker
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | Keputusan owner putaran 4 #1 ([laporan](../uat/2026-10-21/hasil/KEPUTUSAN-OWNER-P4.md)): baris dihapus (Override SO / batal item OD) → entri harga khusus produk itu otomatis dibatalkan, riwayat tetap; pertanyaan "F-09 baris dihapus" selesai |
 | 2026-10-21 | Claude Code | Keputusan owner putaran 3 ([laporan](../uat/2026-10-21/hasil/KEPUTUSAN-OWNER-P3.md)): antrean "Retur menunggu terima / QC" di Meja Operator & Admin Gudang, Gudang/QC mengunduh foto/video bukti, perbaikan data F-09 sebagai migrasi startup sekali jalan (produksi ikut saat deploy); 3 pertanyaan terjawab, 3 jawaban putaran 4 dicatat (sedang dikerjakan) |
 | 2026-10-21 | Claude Code | Cabang uji pra-UAT digabung ke `main` (F-11/F-12 + F-11-layar, F-09, F-05/F-03/F-01) + dokumen UAT v2.0 di-commit; penyelarasan pasca-gabung: tes F-09 memakai sandi tunggal F-01, tes layanan memakai loop bersama `tests/_shared_loop.py`. Uji gabungan di backend & DB terpisah (data acuan seed baru): 201 lulus; gagal tersisa = sama di kode pra-gabung. Status temuan tidak diubah |
 | 2026-10-21 | Claude Code | F-11-layar implemented_pending_review (`a7c08c3`, [F-11-layar](../uat/2026-10-21/hasil/F-11-layar.md)): keputusan owner opsi (b) — Gudang/QC (`wms.scan`/`qc.inspect` tanpa `sales_return.view`) membuka daftar approved/inspecting, detail/timeline tanpa field uang, tab & menu Retur; matriks izin tidak diubah; 2 pertanyaan owner baru |

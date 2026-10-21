@@ -99,6 +99,14 @@ async def cancel_line(order: Dict[str, Any], od_item_id: str, reason: str, actor
     patch["has_backorder"] = any(float(b.get("backorder_qty", 0) or 0) > 0.01 for b in patch["backorders"])
     patch["is_split_warehouse"] = len({a.get("warehouse_id") for a in patch["allocations"]}) > 1
     patch["updated_at"] = stamp
+    # Keputusan owner 2026-10-21 — entri harga khusus produk baris ini (menunggu/ditolak) ikut dibatalkan.
+    from services import so_approvals
+    pa = [dict(p) for p in order.get("pending_approvals") or []]
+    dropped_sp = so_approvals.cancel_for_removed_products(
+        pa, [pid], f"Item Pesanan Khusus dibatalkan: {reason}", who)
+    if dropped_sp:
+        patch["pending_approvals"] = pa
+        patch.update(so_approvals.approval_fields({**order, **patch}, require_validation=False))
     patch.update(stage_fields({**order, **patch}))
     entry = {"id": new_id("slc"), "special_order_item_id": od_item_id, "product_id": pid,
              "sku": line.get("sku", ""), "product_name": line.get("product_name", ""),
@@ -107,4 +115,6 @@ async def cancel_line(order: Dict[str, Any], od_item_id: str, reason: str, actor
              "grand_total_before": order.get("grand_total"), "grand_total_after": patch.get("grand_total"),
              "by": who, "at": stamp, "reason": reason}
     await db.sales_orders.update_one({"id": order["id"]}, {**_saga.finish_set(patch), "$push": {"line_cancellations": entry}})
+    if dropped_sp:
+        await so_approvals.cancel_price_docs(db, dropped_sp, f"Item Pesanan Khusus dibatalkan: {reason}", who)
     return entry
