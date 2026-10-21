@@ -1,0 +1,2557 @@
+{
+ "dokumen": "KN-UAT-E2E-002",
+ "versi": "2.0",
+ "disusun": "2026-10-21",
+ "kandidat_uji": {
+  "pertama": "main@af24f9c + lokal",
+  "uji_ulang": "main@a3f7936 + lokal (03.05)"
+ },
+ "jadwal": {
+  "hari_1": [
+   {
+    "waktu": "08.00–08.30",
+    "menit": 30,
+    "sesi": "Persiapan tim (sebelum peserta)",
+    "tujuan": "Kandidat beku & semua akun siap.",
+    "aktivitas": [
+     "Catat URL, commit, perubahan lokal & konfigurasi; **bekukan** kandidat selama hari uji.",
+     "Uji login 12 akun peran (sandi dibagikan terpisah; lihat F-01).",
+     "Cek data acuan: stok DENIM TENCEL di Jakarta, ALICE KNIT hanya di CST, limit kredit CV Garmen Soreang Jaya Rp25 jt.",
+     "Siapkan printer PDF/label, handheld RFID (bila tidak ada: Admin Gudang siap memberi pengecualian), folder bukti per alur."
+    ],
+    "peran": "Fasilitator, IT",
+    "data": "Daftar akun, data D-01…D-07",
+    "output": "Daftar periksa kesiapan ✓"
+   },
+   {
+    "waktu": "08.30–09.00",
+    "menit": 30,
+    "sesi": "Pembukaan & akses (J)",
+    "tujuan": "Peserta paham peta besar & bisa masuk mejanya.",
+    "aktivitas": [
+     "Fasilitator membacakan tujuan, peta besar & 40 titik keputusan (hal. peta & percabangan).",
+     "Aturan status Lulus/Gagal/Terblokir/Tidak diuji; cara mengisi lembar hasil.",
+     "Setiap peserta login dengan akun perannya, buka **Meja Saya** / meja perannya (J01–J04).",
+     "Uji cepat: Sales tidak melihat menu Operasi Gudang; Desainer hanya melihat menu desain."
+    ],
+    "peran": "Semua",
+    "data": "Akun per peran",
+    "output": "Semua peserta login; tangkapan menu per peran"
+   },
+   {
+    "waktu": "09.00–09.50",
+    "menit": 50,
+    "sesi": "A1 · Sales membuat pesanan",
+    "tujuan": "SO terbentuk benar untuk 4 varian pesanan.",
+    "aktivitas": [
+     "**SO-1**: Toko Kain Sejahtera, DENIM TENCEL TAUPE 150 yd (mode qty), NET30 → periksa harga, PPN, total (A02–A06).",
+     "**SO-2**: 300 yd → **Genapkan ke roll utuh**, pelanggan pilih atas/bawah (A04).",
+     "**SO-3**: Ambil di Gudang besok (tanggal wajib) (A06).",
+     "**SO-4**: Request **QC seluruh roll** (A05).",
+     "Negatif: campur sample, qty 0, ambil tanpa tanggal, stok kurang tanpa backorder (A07)."
+    ],
+    "peran": "Sales, (pelanggan diperankan pemilik proses)",
+    "data": "D-01, D-04",
+    "output": "Nomor SO-1…SO-4 + tangkapan Review"
+   },
+   {
+    "waktu": "09.50–10.30",
+    "menit": 40,
+    "sesi": "A2 · Verifikasi, ACC & konfirmasi",
+    "tujuan": "Urutan verifikasi → ACC → konfirmasi ditegakkan.",
+    "aktivitas": [
+     "Admin Sales: konfirmasi SO-1 **sebelum** verifikasi → harus ditolak (A11 negatif).",
+     "Verifikasi SO-1…SO-4 (A08); satu SO dibuat cacat alamat → verifikasi ditolak → lengkapi (A08b).",
+     "Ajukan persetujuan → auto-approve (A09); Sales & Admin Sales mencoba menyetujui → 403 (A10).",
+     "Konfirmasi (A11) → cek tugas gudang lahir per gudang; konfirmasi ulang tidak menggandakan."
+    ],
+    "peran": "Admin Sales, Manajer, Sales",
+    "data": "SO-1…SO-4",
+    "output": "SO Dikonfirmasi + nomor tugas gudang"
+   },
+   {
+    "waktu": "10.30–10.45",
+    "menit": 15,
+    "sesi": "Istirahat",
+    "tujuan": "",
+    "aktivitas": [],
+    "peran": "",
+    "data": "",
+    "output": ""
+   },
+   {
+    "waktu": "10.45–11.35",
+    "menit": 50,
+    "sesi": "A3 · Gudang: potong, pick, QC, muat, SJ",
+    "tujuan": "Roll yang dikirim = roll yang dipindai.",
+    "aktivitas": [
+     "SO-1: konfirmasi **potong** roll yang dicadangkan sebagian, cetak & verifikasi label anak (A13); pick mengikuti daftar alokasi (uji **F-05**).",
+     "Scan pick roll asing → ditolak (A14).",
+     "SO-4: Admin Gudang tugaskan SPK QC, QC isi 4-point, coba kirim sebelum lulus → ditolak (A15).",
+     "SO-3: tugas *ditahan* → [[Rilis ke Antrean]] → pick.",
+     "Final Loading Check; tanpa tag → pengecualian Admin Gudang (A16); [[Kirim]] → SJ (A17)."
+    ],
+    "peran": "Gudang, Admin Gudang, QC",
+    "data": "SO-1, SO-3, SO-4",
+    "output": "Nomor SJ per SO + panjang induk sebelum/sesudah"
+   },
+   {
+    "waktu": "11.35–12.15",
+    "menit": 40,
+    "sesi": "A4 · Pengiriman sampai diterima",
+    "tujuan": "Bukti tiap tahap kirim & penerimaan.",
+    "aktivitas": [
+     "LG-1 ekspedisi untuk SO-1: tanpa resi tidak bisa berangkat → isi resi (A18–A20).",
+     "LG-2 armada sendiri berisi SO-2 + SO-4 (2 SO satu kendaraan); foto muat, berangkat, POD (A19–A21).",
+     "Simulasi **gagal kirim** → alasan → jadwal ulang (A20b).",
+     "SO-3 diambil pelanggan: kode salah ditolak, kode benar diserahkan (A22).",
+     "Admin Sales **Tandai diterima** semua SO (A23); cek status Selesai (uji **F-06**)."
+    ],
+    "peran": "Admin Gudang, Sopir, Admin Sales",
+    "data": "SJ dari A3",
+    "output": "Nomor LG, foto muat/POD, SO Selesai"
+   },
+   {
+    "waktu": "12.15–13.15",
+    "menit": 60,
+    "sesi": "Istirahat",
+    "tujuan": "",
+    "aktivitas": [],
+    "peran": "",
+    "data": "",
+    "output": ""
+   },
+   {
+    "waktu": "13.15–14.15",
+    "menit": 60,
+    "sesi": "B · Gerbang harga khusus & kredit",
+    "tujuan": "Harga & kredit hanya berubah lewat keputusan sah.",
+    "aktivitas": [
+     "**SO-5**: Minta Harga Khusus (alasan kosong → ditolak) → verifikasi → manajer **setujui** → total dihitung ulang (B01–B05).",
+     "**SO-6**: harga khusus **ditolak** → Sales ajukan ulang → manajer setujui → SO harus lanjut (uji **F-09**).",
+     "**SO-7**: Admin Sales **Ganti Roll** setelah harga diajukan → keputusan lama ditolak sistem (B07).",
+     "Pemisahan tugas: manajer yang mengajukan tidak bisa memutus sendiri.",
+     "**SO-8 kredit**: Sales Kanda, CV Garmen Soreang Jaya 700 kg LYFLEX (> Rp25 jt) → credit hold → manajer putuskan (B11–B16)."
+    ],
+    "peran": "Sales, Admin Sales, Manajer",
+    "data": "D-01, D-02, D-06",
+    "output": "Entri persetujuan + pemutus + total sebelum/sesudah"
+   },
+   {
+    "waktu": "14.15–15.00",
+    "menit": 45,
+    "sesi": "I · Penagihan & pembayaran sampai lunas",
+    "tujuan": "SO-1 lunas dengan dokumen pajak & kwitansi benar.",
+    "aktivitas": [
+     "Finance: **Siap terbitkan Faktur Pajak** SO-1 → terbitkan; ulang → ditolak (I03).",
+     "Admin Sales cetak Faktur Komersial & SJ (I04).",
+     "Finance catat kwitansi 50% → *Sebagian*; alokasi melebihi sisa → ditolak; pelunasan → *Lunas* (I06).",
+     "Lebih bayar di SO-2 → keputusan selisih (deposit/refund) (I07).",
+     "**SO-9 CBD**: coba kirim sebelum bayar (uji **F-10**); cek daftar jatuh tempo (uji **F-16**)."
+    ],
+    "peran": "Finance, Admin Sales, Gudang",
+    "data": "SO-1, SO-2, SO-9",
+    "output": "FKT, AR (kwitansi), status Lunas"
+   },
+   {
+    "waktu": "15.00–15.15",
+    "menit": 15,
+    "sesi": "Istirahat",
+    "tujuan": "",
+    "aktivitas": [],
+    "peran": "",
+    "data": "",
+    "output": ""
+   },
+   {
+    "waktu": "15.15–15.55",
+    "menit": 40,
+    "sesi": "C · Stok kurang & rencana pemenuhan",
+    "tujuan": "Kekurangan dipenuhi lewat dokumen yang tertaut.",
+    "aktivitas": [
+     "**SO-10**: ALICE KNIT 14 100 kg tanpa backorder → ditolak; dengan izin → *Menunggu stok* (C01–C02).",
+     "Admin Sales **Atur pemenuhan**: 70 PT lain + 40 supplier → ditolak (lebih); 60 CST + 40 PO → jalan (C03–C04).",
+     "Cek PIN & transaksi antar-PT (C05) dan PR dari SO (C06); jalankan ulang → tidak ganda.",
+     "PR ini **dibawa ke Hari 2 (D1–D2)** untuk penerimaan."
+    ],
+    "peran": "Sales, Admin Sales, CST",
+    "data": "D-05",
+    "output": "Nomor PIN/IC/PR tertaut SO-10"
+   },
+   {
+    "waktu": "15.55–16.35",
+    "menit": 40,
+    "sesi": "E · Sample",
+    "tujuan": "Jenis & batas sample, potong aktual, serah terima.",
+    "aktivitas": [
+     "Sample **standar gratis** woven 5 yd; 6 yd → ditolak (E01).",
+     "Sample **berbayar** 3 yd: teruskan sebelum disetujui → ditolak; Finance **Setujui Bayar** (E03).",
+     "**Catalogue** dari template + 1 warna soft; **hanger** 0,5 yd.",
+     "Gudang potong (panjang aktual), Admin Cutting terima, kirim (E05–E07); Finance catat bayar (uji **F-15**)."
+    ],
+    "peran": "Sales, Finance, Admin Sample, Gudang",
+    "data": "D-04",
+    "output": "Nomor SOS, panjang aktual, SJ"
+   },
+   {
+    "waktu": "16.35–17.00",
+    "menit": 25,
+    "sesi": "Rekap Hari 1",
+    "tujuan": "Hasil & temuan tercatat; data Hari 2 siap.",
+    "aktivitas": [
+     "Isi lembar hasil per langkah; satukan temuan (ID, langkah, bukti).",
+     "Pisahkan bug vs keputusan bisnis; tetapkan PIC & target.",
+     "Catat dokumen yang dibawa ke Hari 2: PR dari SO-10, SO-1 (untuk retur), SO-3/SO-4."
+    ],
+    "peran": "Fasilitator, pencatat, pemilik proses",
+    "data": "Lembar hasil",
+    "output": "Rekap Hari 1 ditandatangani"
+   }
+  ],
+  "hari_2": [
+   {
+    "waktu": "08.00–08.30",
+    "menit": 30,
+    "sesi": "Persiapan tim",
+    "tujuan": "Data tahap siap tersedia.",
+    "aktivitas": [
+     "Pastikan kandidat sama dengan Hari 1 (atau catat versi baru & skenario yang diulang).",
+     "Siapkan **OD tahap siap** (sudah di fase *Menunggu ACC pelanggan*) dan **MKO siap terima** sebagai cadangan bila proses fisik tidak selesai dalam sehari.",
+     "Siapkan foto SJ supplier contoh, file artwork v1/v2, foto sample."
+    ],
+    "peran": "Fasilitator, IT",
+    "data": "D-08, D-09",
+    "output": "Data tahap siap bertanda"
+   },
+   {
+    "waktu": "08.30–10.00",
+    "menit": 90,
+    "sesi": "F · Pesanan Khusus end-to-end",
+    "tujuan": "Dua item OD bertahan utuh sampai SO.",
+    "aktivitas": [
+     "F1 (20'): buat OD item **A 100 yd** + **B 200 yd** (sumber berbeda), unggah referensi, ajukan, manajer setujui; cek routing (F02–F06).",
+     "F2 (25'): MD tugaskan desainer; artwork v1 + Print paper → PIC **minta revisi** → v2 → **ACC + nilai** (satu PIC cukup); uji **HOLD** & lepas (F07–F12).",
+     "F3 (25'): R&D kirim ke supplier, setor hasil, nilai, pilih pemenang; Admin Sales catat **revisi** pelanggan → reproofing → **ACC** (F13–F18).",
+     "F4 (20'): kunci harga (margin), buat SKU, pilih jalur per item, realisasi; **Ubah ke Pesanan Penjualan** memakai OD tahap siap (F19–F24)."
+    ],
+    "peran": "Sales, Manajer/PIC, Desainer, MD/R&D, Admin Sales, Pembelian",
+    "data": "D-09",
+    "output": "Nomor OD, DSR, sample, SKU, PR/PO, SO hasil OD"
+   },
+   {
+    "waktu": "10.00–10.15",
+    "menit": 15,
+    "sesi": "Istirahat",
+    "tujuan": "",
+    "aktivitas": [],
+    "peran": "",
+    "data": "",
+    "output": ""
+   },
+   {
+    "waktu": "10.15–11.30",
+    "menit": 75,
+    "sesi": "D · Pengadaan & penerimaan barang",
+    "tujuan": "Stok masuk = fisik; mutu diputus manusia.",
+    "aktivitas": [
+     "D1 (15'): realisasi PR dari SO-10 (Hari 1) → PO; MD mencoba realisasi → ditolak; MKO tahap siap (D04–D08b).",
+     "D2 (30'): Admin Gudang buat kedatangan, entri SJ & baris; gudang hitung fisik per roll (contoh 10 roll: SJ 1.000 yd, fisik 960 yd); rekonsiliasi selisih; tutup (D10–D14).",
+     "D2 (30'): tugaskan SPK; MD Quality warna/handfeel; QC 4-point; keputusan SPK; **keputusan karantina** (uji **F-14**); cek SO-10 otomatis dicadangkan (D15–D20)."
+    ],
+    "peran": "Pembelian, Admin Gudang, Gudang, MD Quality, QC, Manajer",
+    "data": "PR dari SO-10, D-08",
+    "output": "PO, GRN, INS, stok tersedia, SO-10 dicadangkan"
+   },
+   {
+    "waktu": "11.30–12.15",
+    "menit": 45,
+    "sesi": "G · Logistik multi-gudang & transit",
+    "tujuan": "Perjalanan fisik terbaca per roll & per leg.",
+    "aktivitas": [
+     "SO-11 berisi woven + knitting + printing → pick di 3 gudang Rancamalang (G01).",
+     "Transfer ke Gudang Transit, cek muat seluruh muatan, satu LG berisi beberapa SO (G02–G04).",
+     "Transit Jakarta: terima di Jakarta, cek muat ulang, SJ baru ke pelanggan (G05–G08) — bila kandidat belum mendukung: **GAP / Terblokir DES-02**, jangan diganti tombol status."
+    ],
+    "peran": "Gudang, Admin Gudang, Sopir",
+    "data": "D-07",
+    "output": "Bukti tiap leg & manifest"
+   },
+   {
+    "waktu": "12.15–13.15",
+    "menit": 60,
+    "sesi": "Istirahat",
+    "tujuan": "",
+    "aktivitas": [],
+    "peran": "",
+    "data": "",
+    "output": ""
+   },
+   {
+    "waktu": "13.15–14.45",
+    "menit": 90,
+    "sesi": "H · Retur sampai uang / pengganti",
+    "tujuan": "Retur tertelusur dari roll terkirim sampai penyelesaian.",
+    "aktivitas": [
+     "H1 (20'): Sales retur sebagian dari **SO-1** (Hari 1) + negatif: qty lebih, roll asing, ganti SO cepat, > 21 hari (H02–H03); manajer izinkan (H04).",
+     "H1 (20'): **akun Gudang** scan terima Jakarta → kirim → tiba Rancamalang (uji **F-11**); coba QC sebelum terima (uji **F-12**) (H05–H07).",
+     "H1 (15'): QC retur per roll: qty aktual, cacat, grade (H08).",
+     "H2 (20'): MD Quality cutloss; Finance putus nilai; manajer selesaikan (saldo / refund / nego / tukar); cek pengurangan tagihan (H09–H12).",
+     "H2 (15'): tujuan barang: simpan / kembalikan ke CST → CST terima → retur supplier; pesanan pengganti (H13–H17)."
+    ],
+    "peran": "Sales, Manajer, Gudang JKT/RCM, QC, MD Quality, Finance, CST",
+    "data": "SO-1 & SJ-nya",
+    "output": "SRET, dokumen perjalanan, hasil QC, keputusan & bukti"
+   },
+   {
+    "waktu": "14.45–15.00",
+    "menit": 15,
+    "sesi": "Istirahat",
+    "tujuan": "",
+    "aktivitas": [],
+    "peran": "",
+    "data": "",
+    "output": ""
+   },
+   {
+    "waktu": "15.00–15.45",
+    "menit": 45,
+    "sesi": "J & K · Akses & konsistensi data",
+    "tujuan": "Izin efektif & angka cocok lintas layar.",
+    "aktivitas": [
+     "Role kustom setara & akun view-only: menu/tombol mengikuti izin; aksi ditolak tanpa mengubah data (J).",
+     "Cocokkan Meja vs daftar vs detail (filter sama); Perjalanan Pesanan (uji **F-07**); satuan yard vs kg (uji **F-04**) (K).",
+     "Pusat Export: preview vs unduhan vs sumber; data di luar izin tidak bocor (uji **F-03** grade)."
+    ],
+    "peran": "Semua peran",
+    "data": "Dokumen Hari 1–2",
+    "output": "Tangkapan perbandingan angka"
+   },
+   {
+    "waktu": "15.45–16.15",
+    "menit": 30,
+    "sesi": "Uji ulang temuan",
+    "tujuan": "Perbaikan yang masuk saat UAT dibuktikan.",
+    "aktivitas": [
+     "Bila ada build baru: catat versi, ulangi langkah terdampak saja.",
+     "Uji refresh, klik ganda, kirim ulang pada langkah yang diperbaiki."
+    ],
+    "peran": "IT, peserta terkait",
+    "data": "Lembar temuan",
+    "output": "Status retest per temuan"
+   },
+   {
+    "waktu": "16.15–17.00",
+    "menit": 45,
+    "sesi": "Penutupan",
+    "tujuan": "Keputusan lingkup & rencana tindak lanjut.",
+    "aktivitas": [
+     "Rekap status per alur (Lulus/Gagal/Terblokir/Tidak diuji).",
+     "Keputusan bisnis yang muncul → pemilik & tenggat.",
+     "Rencana perbaikan & jadwal retest; tanda tangan berita acara."
+    ],
+    "peran": "Pemilik proses, IT, fasilitator",
+    "data": "Lembar hasil & temuan",
+    "output": "Berita acara UAT"
+   }
+  ]
+ },
+ "keputusan": [
+  {
+   "id": "K01",
+   "langkah": "A03",
+   "pertanyaan": "Jenis pesanan?",
+   "pemutus": "Sales",
+   "pilihan": "Biasa → A2 · Sample → E · Khusus → F",
+   "aturan": "Sample tidak boleh dicampur baris biasa"
+  },
+  {
+   "id": "K02",
+   "langkah": "A04",
+   "pertanyaan": "Qty pas roll utuh?",
+   "pemutus": "Sales + pelanggan",
+   "pilihan": "Pas → lanjut · atas → qty naik · bawah → qty turun · potong → reservasi potong",
+   "aturan": "Tidak ada pembulatan diam-diam"
+  },
+  {
+   "id": "K03",
+   "langkah": "A05",
+   "pertanyaan": "Harga nego / di bawah pricelist?",
+   "pemutus": "Sales",
+   "pilihan": "Tidak → harga sistem · ya → Minta Harga Khusus (B1)",
+   "aturan": "Diskon manual tidak tersedia"
+  },
+  {
+   "id": "K04",
+   "langkah": "A05",
+   "pertanyaan": "Termin bayar?",
+   "pemutus": "Sales",
+   "pilihan": "Tunai · CBD · DP 50% · NET 7–90 · Bertahap 3x → I",
+   "aturan": "CBD/DP seharusnya menahan kirim (F-10)"
+  },
+  {
+   "id": "K05",
+   "langkah": "A05",
+   "pertanyaan": "Minta QC sebelum kirim?",
+   "pemutus": "Sales",
+   "pilihan": "Tanpa QC · seluruh roll · sampling → A15",
+   "aturan": "Kirim tertahan sampai SPK QC lulus"
+  },
+  {
+   "id": "K06",
+   "langkah": "A06",
+   "pertanyaan": "Kirim atau ambil?",
+   "pemutus": "Sales + pelanggan",
+   "pilihan": "Kirim (tgl opsional) · Ambil di Gudang (tgl wajib)",
+   "aturan": "Tugas gudang ditahan sampai tanggal ambil"
+  },
+  {
+   "id": "K07",
+   "langkah": "A07",
+   "pertanyaan": "Stok entitas cukup?",
+   "pemutus": "Sistem",
+   "pilihan": "Ya → A2 · tidak + izin backorder → C · tidak tanpa izin → ditolak",
+   "aturan": "Stok global terlihat Sales; pemenuhan diatur Admin Sales"
+  },
+  {
+   "id": "K08",
+   "langkah": "B11",
+   "pertanyaan": "Kredit over-limit / tunggakan?",
+   "pemutus": "Sistem → Manajer",
+   "pilihan": "Tidak → lanjut · ya → B14 setuju / tolak",
+   "aturan": "Override kredit sekali pakai"
+  },
+  {
+   "id": "K09",
+   "langkah": "A08",
+   "pertanyaan": "Kelengkapan SO lengkap?",
+   "pemutus": "Admin Sales",
+   "pilihan": "Ya → ajukan · tidak → lengkapi (A08b)",
+   "aturan": "Konfirmasi sebelum verifikasi ditolak"
+  },
+  {
+   "id": "K10",
+   "langkah": "A10/B04",
+   "pertanyaan": "Gerbang ACC: setuju?",
+   "pemutus": "Manajer",
+   "pilihan": "Setuju → SO Disetujui · tolak → B06 / B15",
+   "aturan": "Pengaju ≠ pemutus; Sales 403"
+  },
+  {
+   "id": "K11",
+   "langkah": "B07",
+   "pertanyaan": "Alokasi berubah sesudah harga diajukan?",
+   "pemutus": "Admin Sales",
+   "pilihan": "Ya → ajukan ulang untuk versi alokasi baru",
+   "aturan": "Keputusan lama ditolak sistem"
+  },
+  {
+   "id": "K12",
+   "langkah": "C04",
+   "pertanyaan": "Sumber pemenuhan kekurangan?",
+   "pemutus": "Admin Sales",
+   "pilihan": "Stok sendiri · PT lain (PIN → IC) · supplier (PR → PO) · tunggu",
+   "aturan": "Total rencana ≤ kekurangan; ulang tidak ganda"
+  },
+  {
+   "id": "K13",
+   "langkah": "D02/D07",
+   "pertanyaan": "PR ≥ Rp50 jt / PO ≥ Rp100 jt?",
+   "pemutus": "Sistem → Manajer",
+   "pilihan": "Ya → ACC manajer · tidak → langsung",
+   "aturan": "Ambang di Aturan Persetujuan"
+  },
+  {
+   "id": "K14",
+   "langkah": "D04",
+   "pertanyaan": "Jalur pengadaan?",
+   "pemutus": "Pembelian",
+   "pilihan": "Supplier → PO · makloon → Order Makloon",
+   "aturan": "Default dari master restock artikel"
+  },
+  {
+   "id": "K15",
+   "langkah": "D13",
+   "pertanyaan": "Selisih kedatangan vs SJ/PO?",
+   "pemutus": "Admin Gudang",
+   "pilihan": "Terima dengan catatan · klaim supplier/mitra · tolak barang",
+   "aturan": "Stok = fisik, bukan qty pesanan"
+  },
+  {
+   "id": "K16",
+   "langkah": "D18",
+   "pertanyaan": "Keputusan SPK inspeksi?",
+   "pemutus": "Admin Gudang / Manajer",
+   "pilihan": "Terima · sebagian · turun grade · tolak · tahan → lepas",
+   "aturan": "MD Quality ≠ QC 4-point"
+  },
+  {
+   "id": "K17",
+   "langkah": "D19",
+   "pertanyaan": "Karantina kedatangan?",
+   "pemutus": "QC",
+   "pilihan": "Terima → tersedia · tolak → rusak / retur supplier (Nota Debit)",
+   "aturan": "Barang ditahan tidak bisa di-pick"
+  },
+  {
+   "id": "K18",
+   "langkah": "A13",
+   "pertanyaan": "Ada reservasi potong?",
+   "pemutus": "Gudang",
+   "pilihan": "Ya → potong + label anak + verifikasi · tidak → pick",
+   "aturan": "Induk belum dipotong tidak bisa di-pick"
+  },
+  {
+   "id": "K19",
+   "langkah": "A16",
+   "pertanyaan": "Muatan cocok manifest?",
+   "pemutus": "Gudang / Admin Gudang",
+   "pilihan": "Ya → kirim · tidak → perbaiki / pengecualian berizin",
+   "aturan": "Tanpa tag RFID butuh izin + alasan"
+  },
+  {
+   "id": "K20",
+   "langkah": "A18",
+   "pertanyaan": "Cara kirim?",
+   "pemutus": "Admin Gudang",
+   "pilihan": "Ekspedisi (resi) · armada (plat + sopir) · diambil pelanggan (kode)",
+   "aturan": "Foto muat & POD wajib"
+  },
+  {
+   "id": "K21",
+   "langkah": "A20",
+   "pertanyaan": "Sampai di pelanggan?",
+   "pemutus": "Sopir",
+   "pilihan": "Ya → POD → Terkirim · gagal → alasan → jadwal ulang",
+   "aturan": "Gagal kirim wajib alasan"
+  },
+  {
+   "id": "K22",
+   "langkah": "G04",
+   "pertanyaan": "Tujuan pertama?",
+   "pemutus": "Admin Gudang",
+   "pilihan": "Langsung pelanggan → A4 · transit Jakarta → SJ baru Jakarta",
+   "aturan": "Penerimaan transit ≠ POD pelanggan"
+  },
+  {
+   "id": "K23",
+   "langkah": "E01",
+   "pertanyaan": "Masih dalam batas sample?",
+   "pemutus": "Sistem",
+   "pilihan": "Ya → SOS · tidak → jual ecer (A)",
+   "aturan": "Woven ≤ 5 yd · knit ≤ 2 kg · hanger ≤ 0,5 yd"
+  },
+  {
+   "id": "K24",
+   "langkah": "E02/E03",
+   "pertanyaan": "Sample berbayar?",
+   "pemutus": "Finance / Admin Sample",
+   "pilihan": "Gratis → teruskan · berbayar → Setujui Bayar dulu",
+   "aturan": "Teruskan sebelum disetujui ditolak"
+  },
+  {
+   "id": "K25",
+   "langkah": "F05",
+   "pertanyaan": "OD disetujui?",
+   "pemutus": "Manajer → Direksi",
+   "pilihan": "Setuju → routing · tolak → selesai / revisi",
+   "aturan": "Rantai berjenjang dari matriks"
+  },
+  {
+   "id": "K26",
+   "langkah": "F06",
+   "pertanyaan": "Jenis permintaan OD?",
+   "pemutus": "Sistem",
+   "pilihan": "Printing → desain (F2) · labdip/handfeel → R&D (F3)",
+   "aturan": "Spesifikasi diwarisi"
+  },
+  {
+   "id": "K27",
+   "langkah": "F11",
+   "pertanyaan": "Keputusan PIC atas desain?",
+   "pemutus": "PIC (satu cukup)",
+   "pilihan": "ACC + nilai · minta revisi (alasan) · tahan → lepas",
+   "aturan": "Print paper bukan persetujuan"
+  },
+  {
+   "id": "K28",
+   "langkah": "F12",
+   "pertanyaan": "Motif utama berubah?",
+   "pemutus": "Sales",
+   "pilihan": "Ya → pesanan redesign (OD baru) · tidak → revisi artwork sama",
+   "aturan": "OD lama tetap utuh"
+  },
+  {
+   "id": "K29",
+   "langkah": "F16",
+   "pertanyaan": "Pemenang sample?",
+   "pemutus": "R&D",
+   "pilihan": "Pilih pemenang · ulang ronde",
+   "aturan": "Satu ACC tidak meluluskan jenis wajib lain"
+  },
+  {
+   "id": "K30",
+   "langkah": "F18",
+   "pertanyaan": "Keputusan pelanggan atas sample?",
+   "pemutus": "Admin Sales (dari pelanggan)",
+   "pilihan": "ACC → F4 · revisi → reproofing · tolak → tutup",
+   "aturan": "Bukti WA/foto disimpan"
+  },
+  {
+   "id": "K31",
+   "langkah": "F19",
+   "pertanyaan": "Harga final ≥ acuan?",
+   "pemutus": "Admin Sales",
+   "pilihan": "Ya → kunci harga · tidak → Special Price (B)",
+   "aturan": "Margin bawaan 30%"
+  },
+  {
+   "id": "K32",
+   "langkah": "F21",
+   "pertanyaan": "Jalur pengadaan item OD?",
+   "pemutus": "Pembelian",
+   "pilihan": "Supplier (PR → PO) · makloon (PR → MKO)",
+   "aturan": "Ganti jalur saat aktif ditahan"
+  },
+  {
+   "id": "K33",
+   "langkah": "H03",
+   "pertanyaan": "Klaim retur valid?",
+   "pemutus": "Sistem",
+   "pilihan": "Ya → izin manajer · tidak → tolak / pengecualian",
+   "aturan": "21 hari dari SJ s/d tanggal pengajuan"
+  },
+  {
+   "id": "K34",
+   "langkah": "H04",
+   "pertanyaan": "Izinkan barang kembali?",
+   "pemutus": "Manajer",
+   "pilihan": "Setuju → perjalanan masuk · tolak → selesai",
+   "aturan": "Bukan keputusan kompensasi"
+  },
+  {
+   "id": "K35",
+   "langkah": "H10/H11",
+   "pertanyaan": "Outcome retur?",
+   "pemutus": "Finance (nilai) + Manajer",
+   "pilihan": "Refund · saldo · nego/cutloss · tukar · tolak",
+   "aturan": "Hanya setelah QC (kecuali diskon foto)"
+  },
+  {
+   "id": "K36",
+   "langkah": "H12",
+   "pertanyaan": "SO asal sudah lunas?",
+   "pemutus": "Finance + pelanggan",
+   "pilihan": "Belum → potong tagihan dulu · sudah → pilih refund / saldo",
+   "aturan": "KLR-10"
+  },
+  {
+   "id": "K37",
+   "langkah": "H14",
+   "pertanyaan": "Tujuan barang retur?",
+   "pemutus": "Sukacita",
+   "pilihan": "Simpan · kembalikan ke CST",
+   "aturan": "CST wajib menerima"
+  },
+  {
+   "id": "K38",
+   "langkah": "H16",
+   "pertanyaan": "Tindak lanjut CST?",
+   "pemutus": "CST",
+   "pilihan": "Simpan · retur supplier (≤ 21 hr) · buang BS",
+   "aturan": "Lewat masa supplier → simpan"
+  },
+  {
+   "id": "K39",
+   "langkah": "I02",
+   "pertanyaan": "Bayar sebelum kirim?",
+   "pemutus": "Finance",
+   "pilihan": "CBD/DP → catat dulu, baru kirim · tidak → kirim lalu tagih",
+   "aturan": "Gerbang belum ada (F-10)"
+  },
+  {
+   "id": "K40",
+   "langkah": "I07",
+   "pertanyaan": "Pembayaran vs tagihan?",
+   "pemutus": "Finance",
+   "pilihan": "Pas → lunas · kurang → sisa ditagih · lebih → deposit/refund/alokasi",
+   "aturan": "Di luar batas → manajer"
+  }
+ ],
+ "alur": [
+  {
+   "kode": "A1",
+   "judul": "A1 — Sales membuat pesanan di POS",
+   "sesi": "Hari 1 · 09.00–09.50",
+   "ringkasan": "Titik awal semua penjualan. Sales memutuskan jenis pesanan (biasa / sample / khusus), qty final bersama pelanggan, termin bayar, kebutuhan QC dan cara pemenuhan. Hasilnya satu SO berstatus Dicadangkan yang mengunci roll selama 3 hari.",
+   "langkah": [
+    {
+     "id": "A01",
+     "peran": "Pelanggan",
+     "navigasi": "—",
+     "aktivitas": "Pelanggan menyampaikan kebutuhan: artikel, warna, qty + satuan (yard/kg), kirim atau ambil sendiri, perlu QC, perlu Faktur Pajak.",
+     "keputusan": "Kebutuhan custom (motif/warna baru) → Alur F. Minta potongan contoh → Alur E.",
+     "hasil_diharapkan": "Sales mencatat kebutuhan sebagai acuan uji (qty diminta, unit).",
+     "uji_pra_uat": "INFO data acuan",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A02",
+     "peran": "Sales",
+     "navigasi": "Penjualan › POS → panel Pelanggan",
+     "aktivitas": "Pilih pelanggan Toko Kain Sejahtera · CUST-0001 dan alamat kirim. Pelanggan baru: [Pelanggan Baru].",
+     "keputusan": "Pelanggan nonaktif / sudah digabung → ditolak. Badan usaha grup tidak boleh jadi pelanggan SO.",
+     "hasil_diharapkan": "Banner sumber harga muncul (harga langganan → harga PT → harga global). Alamat & penerima terisi.",
+     "uji_pra_uat": "OK KSC/SO-00038",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A03",
+     "peran": "Sales",
+     "navigasi": "POS → katalog → [Tambah] / [Pilih Varian & Detail]",
+     "aktivitas": "Cari artikel (mis. DENIM TENCEL TAUPE), pilih warna, isi qty & satuan, atau mode Beli per roll (pilih roll eksplisit). Keranjang menunjukkan jenis: ORDER BIASA (PO) — nomor SO.",
+     "keputusan": "Ingin sample → [Kosongkan untuk ganti jenis] → Order Sample (E). Sample tidak boleh dicampur baris biasa.",
+     "hasil_diharapkan": "Harga per satuan benar; Sales tidak melihat grade, LOT, pemilik entitas. Stok yang ditampilkan = stok global (pemenuhan diatur Admin Sales).",
+     "uji_pra_uat": "BUG F-03 grade/LOT bocor di API; F-02 '0 roll tersedia' dari strip Sering dibeli",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A04",
+     "peran": "Sales",
+     "navigasi": "Checkout › Termin & Lot → Genapkan ke Roll Utuh",
+     "aktivitas": "Bila qty tidak pas roll: buka opsi genapkan, sampaikan ke pelanggan pilihan ke atas / ke bawah / potong; klik [Pakai Opsi Ini].",
+     "keputusan": "Pelanggan memilih: atas (qty naik), bawah (qty turun), potong (roll terakhir dipotong → reservasi potong di gudang).",
+     "hasil_diharapkan": "Qty final = pilihan pelanggan; daftar roll & total dapat dijelaskan. Tidak ada pembulatan diam-diam.",
+     "uji_pra_uat": "NA uji di UI saat UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A05",
+     "peran": "Sales",
+     "navigasi": "Checkout › Termin & Lot",
+     "aktivitas": "Isi qty final; pilih Termin Pembayaran (Tunai · CBD · DP 50% · NET 7/14/30/60/90 · Bertahap 3x); Tim Sales & bagi insentif; Request QC sebelum kirim: Tanpa QC / QC seluruh roll / QC sampling.",
+     "keputusan": "Harga di bawah pricelist / hasil nego → [Minta Harga Khusus] di kartu item (Alur B). Diskon manual tidak tersedia.",
+     "hasil_diharapkan": "Termin tersimpan; bila pilih QC, gudang tidak bisa kirim sebelum QC lulus.",
+     "uji_pra_uat": "OK termin, QC (KSC/SO-00043)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A06",
+     "peran": "Sales",
+     "navigasi": "Checkout › Review → [Buat Sales Order]",
+     "aktivitas": "Pilih Metode Pemenuhan: Kirim (tanggal kirim opsional, tidak boleh lewat) atau Ambil di Gudang (wajib tanggal ambil). Centang Minta Faktur Pajak bila perlu. Periksa Subtotal, PPN 12% (DPP 11/12 = efektif 11%), Grand Total.",
+     "keputusan": "Ambil tanpa tanggal → ditolak. Qty nol / min. potong tidak terpenuhi → ditolak.",
+     "hasil_diharapkan": "Nomor KSC/SO-xxxxx terbit, status Dicadangkan; roll dicadangkan 3 hari; pesan Kredit OK / peringatan kredit tampil.",
+     "uji_pra_uat": "OK SO-00038 150 yd = Rp4.162.500 (PPN 412.500)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A07",
+     "peran": "Sistem",
+     "navigasi": "otomatis saat SO dibuat",
+     "aktivitas": "Sistem memeriksa: stok milik entitas penjual, lot campur (minta konfirmasi), limit & tunggakan kredit, ambang nilai (Aturan Persetujuan), pemakaian stok cadangan makloon.",
+     "keputusan": "Stok kurang tanpa izin backorder → ditolak; dengan izin → Alur C. Kredit/harga/nilai/makloon → entri persetujuan (Alur B).",
+     "hasil_diharapkan": "Sub-status menjelaskan alasan berhenti: Menunggu validasi admin / approval harga / approval kredit / Menunggu stok.",
+     "uji_pra_uat": "OK stok kurang 409; kredit KANDA/SO-00007",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "A2",
+   "judul": "A2 — Verifikasi Admin Sales, persetujuan & konfirmasi",
+   "sesi": "Hari 1 · 09.50–10.30",
+   "ringkasan": "Pemisahan tugas: Admin Sales memeriksa kelengkapan, Manajer memutus nilai/kredit/harga, lalu Admin Sales mengonfirmasi sehingga tugas gudang lahir. Urutan ini ditegakkan server — konfirmasi sebelum verifikasi atau sebelum disetujui selalu ditolak.",
+   "langkah": [
+    {
+     "id": "A08",
+     "peran": "Admin Sales",
+     "navigasi": "Meja Admin Sales → antrean Perlu diverifikasi → [Verifikasi]",
+     "aktivitas": "Buka dialog Verifikasi Kelengkapan: alamat & nama penerima & telepon, syarat bayar, isi pesanan (qty > 0), perlakuan PPN sesuai PKP, NPWP bila minta faktur, status kredit. Isi catatan → [Verifikasi sekarang].",
+     "keputusan": "Ada cacat blokir → verifikasi ditolak dengan daftar yang harus dilengkapi. Peringatan (NPWP/kredit) tidak memblokir.",
+     "hasil_diharapkan": "SO bertanda Terverifikasi Admin Sales (nama & waktu). Riwayat status mencatat verified_by_sales_admin.",
+     "uji_pra_uat": "OK verifikasi ditolak bila belum, lalu lolos",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A08b",
+     "peran": "Sales",
+     "navigasi": "Penjualan › Pesanan › Pesanan (SO) → detail → Edit; atau Admin Sales [Edit / Override SO]",
+     "aktivitas": "Lengkapi data yang kurang (alamat penerima, telepon, termin) lalu kembali ke A08.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Perubahan tercatat di riwayat dengan alasan.",
+     "uji_pra_uat": "OK override qty (KSC/SO-00039)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A09",
+     "peran": "Admin Sales",
+     "navigasi": "detail SO → [Ajukan persetujuan]",
+     "aktivitas": "Mengajukan SO ke gerbang persetujuan. Bila tidak ada gerbang aktif, sistem menyetujui otomatis.",
+     "keputusan": "Konfigurasi saat ini: tanpa ambang nilai (sales.require_so_validation = mati). Gerbang hanya muncul untuk harga khusus, kredit, stok makloon, atau ambang yang dipasang owner.",
+     "hasil_diharapkan": "Status Disetujui (otomatis) atau Menunggu persetujuan + peran yang dibutuhkan.",
+     "uji_pra_uat": "OK auto-approve SO-00038",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A10",
+     "peran": "Manajer",
+     "navigasi": "Pusat Persetujuan › Inbox Persetujuan atau Meja Saya → Pesanan penjualan menunggu ACC → [Putuskan]",
+     "aktivitas": "Baca alasan gerbang (nilai/kredit/harga/makloon), bukti lampiran, ringkasan SO. Putuskan per entri: [Setujui] / [Tolak] + catatan.",
+     "keputusan": "Tolak → kembali ke Sales/Admin Sales (Alur B). Sales/Admin Sales tidak bisa menyetujui (403). Pengaju harga tidak boleh memutus pengajuannya sendiri.",
+     "hasil_diharapkan": "Bila semua entri disetujui → SO otomatis Disetujui, roll berubah committed.",
+     "uji_pra_uat": "OK 403 untuk Sales & Admin Sales",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A11",
+     "peran": "Admin Sales",
+     "navigasi": "Meja Admin Sales → Siap dikonfirmasi → [Konfirmasi]",
+     "aktivitas": "Konfirmasi SO yang sudah disetujui. Ini wewenang Admin Sales (tidak perlu manajer).",
+     "keputusan": "Konfirmasi sebelum verifikasi → ditolak (409). Sebelum disetujui → ditolak. Konfirmasi ulang → ditolak, tidak membuat tugas ganda.",
+     "hasil_diharapkan": "Status Dikonfirmasi (Siap pick). Tugas gudang lahir per gudang & produk; antrean gudang menerima notifikasi.",
+     "uji_pra_uat": "OK 409 urutan & ulang",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "A3",
+   "judul": "A3 — Gudang: potong, pick, QC, cek muat & Surat Jalan",
+   "sesi": "Hari 1 · 10.45–11.35",
+   "ringkasan": "Roll yang dikirim harus roll yang dipindai. Sistem memblokir roll asing, roll belum dipotong, muatan yang tidak cocok manifest, dan SO yang meminta QC tetapi belum lulus. Surat Jalan terbit per keberangkatan, bukan per SO.",
+   "langkah": [
+    {
+     "id": "A12",
+     "peran": "Gudang",
+     "navigasi": "Meja Saya → Tugas gudang (terima, picking & kirim) → [Kerjakan] → Gudang & Logistik › Operasi Gudang › Barang Keluar",
+     "aktivitas": "Buka tugas per gudang; cetak Surat Pengambilan Barang (picking list: alamat simpan, nomor roll, qty, SO).",
+     "keputusan": "Tugas Ambil di Gudang bertanggal di masa depan masih ditahan → [Rilis ke Antrean] bila diambil lebih awal.",
+     "hasil_diharapkan": "Satu SO multi-gudang = beberapa tugas. Picking list belum mengurangi stok terjual.",
+     "uji_pra_uat": "OK tugas lahir per gudang; hold pickup",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A13",
+     "peran": "Gudang",
+     "navigasi": "Barang Keluar → panel Potong tertunda → konfirmasi potong",
+     "aktivitas": "Untuk roll yang dicadangkan sebagian: ukur & potong fisik, isi panjang aktual & sisa/waste, cetak label roll anak, lalu verifikasi label (scan label roll anak).",
+     "keputusan": "Label salah → ditolak. Roll induk sebelum dipotong tidak bisa di-pick.",
+     "hasil_diharapkan": "Roll anak lahir (mis. RL-36312-1) ter-reservasi untuk SO; sisa induk berkurang sesuai aktual.",
+     "uji_pra_uat": "BUG F-05 alokasi SO tetap menunjuk roll induk",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A14",
+     "peran": "Gudang",
+     "navigasi": "Barang Keluar → [Scan QR/RFID atau ketik nomor roll]",
+     "aktivitas": "Scan tiap roll yang diambil; qty pick = panjang roll. Ulangi sampai semua roll baris terambil.",
+     "keputusan": "Roll produk/gudang/pemilik berbeda atau bukan alokasi SO ini → ditolak dengan alasan.",
+     "hasil_diharapkan": "Status tugas picking → packing; SO Sebagian dipick / Siap kirim.",
+     "uji_pra_uat": "OK roll asing ditolak; F-05 pick induk ditolak",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A15",
+     "peran": "QC",
+     "navigasi": "Operasi Gudang › QC & Inspeksi → SPK QC pesanan",
+     "aktivitas": "Jika SO meminta QC: Admin Gudang menugaskan SPK; QC [Mulai diperiksa], isi panjang inspect (yard) & cacat per interval 15 yd, [Simpan hasil]; keputusan lulus/tahan.",
+     "keputusan": "QC sampling = sebagian roll (persen dari SO). Roll tidak lulus → ganti roll (Admin Sales Ganti Roll).",
+     "hasil_diharapkan": "Kirim tertahan dengan pesan meminta QC… kirim menunggu SPK QC selesai sampai lulus.",
+     "uji_pra_uat": "OK kirim ditolak sebelum QC (SO-00043)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A16",
+     "peran": "Gudang",
+     "navigasi": "Barang Keluar → [Mulai Loading Check]",
+     "aktivitas": "Scan seluruh roll yang naik kendaraan (handheld RFID). Sistem membandingkan dengan manifest SO.",
+     "keputusan": "Roll kurang/lebih/salah SO → blokir. Roll tanpa tag → Admin Gudang memberi pengecualian berizin + alasan (A16b).",
+     "hasil_diharapkan": "Hasil check tersimpan; perubahan alokasi sesudah check membuat hasil basi → ulangi check.",
+     "uji_pra_uat": "OK blokir tanpa RFID → override wh.admin",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A17",
+     "peran": "Gudang",
+     "navigasi": "Barang Keluar → [Kirim] (dispatch)",
+     "aktivitas": "Kirim qty yang sudah di-pick. Boleh sebagian bila kebijakan kirim sebagian aktif.",
+     "keputusan": "Belum di-pick → ditolak. SO berbayar CBD/DP seharusnya menunggu pembayaran (lihat Alur I).",
+     "hasil_diharapkan": "Surat Jalan KSC/SJ-xxxxx terbit per keberangkatan; SO Dikirim / Sebagian dikirim; pendapatan & HPP dijurnal (gl_status posted).",
+     "uji_pra_uat": "OK SJ-00005/00006; BUG F-10 CBD tetap terkirim",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "A4",
+   "judul": "A4 — Pengiriman sampai diterima pelanggan",
+   "sesi": "Hari 1 · 11.35–12.15",
+   "ringkasan": "Satu pengiriman boleh membawa beberapa SJ dan beberapa SO. Bukti wajib di setiap tahap: foto muat sebelum Dimuat, resi atau plat+sopir sebelum Berangkat, foto POD + nama penerima sebelum Terkirim. Pengambilan sendiri diserahkan hanya dengan kode pickup.",
+   "langkah": [
+    {
+     "id": "A18",
+     "peran": "Admin Gudang",
+     "navigasi": "Meja Gudang → Surat Jalan belum diangkut logistik → [Buat pengiriman] (Gudang & Logistik › Pengiriman)",
+     "aktivitas": "Pilih satu atau beberapa SJ (boleh beberapa SO dalam satu armada), mode Ekspedisi (kurir, layanan, ongkir) / Armada sendiri (kendaraan dari master, sopir) / Diambil pelanggan; ETA, tujuan, telepon penerima.",
+     "keputusan": "Tanpa SJ → ditolak Pilih minimal 1 Surat Jalan.",
+     "hasil_diharapkan": "Nomor KSC/LG-xxxxx, status Disiapkan; manifest memuat semua SJ.",
+     "uji_pra_uat": "OK LG-00001…00004 (2 SO satu armada)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A19",
+     "peran": "Sopir",
+     "navigasi": "Pengiriman → detail → unggah Foto muat → [Tandai Dimuat]",
+     "aktivitas": "Sopir/petugas memotret barang naik kendaraan lalu menandai dimuat.",
+     "keputusan": "Tanpa foto muat → ditolak Wajib unggah FOTO MUAT.",
+     "hasil_diharapkan": "Status Dimuat, waktu muat tercatat.",
+     "uji_pra_uat": "OK penolakan & sukses",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A20",
+     "peran": "Sopir",
+     "navigasi": "Pengiriman → [Berangkat]",
+     "aktivitas": "Ekspedisi: isi nomor resi. Armada: plat & nama sopir wajib; kendaraan otomatis dalam perjalanan. Opsional: posisi/GPS di perjalanan.",
+     "keputusan": "Ekspedisi tanpa resi → ditolak. Sopir sedang mengantar kiriman lain → ditolak.",
+     "hasil_diharapkan": "Status Dalam perjalanan.",
+     "uji_pra_uat": "OK resi wajib",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A20b",
+     "peran": "Admin Gudang",
+     "navigasi": "Pengiriman → [Tandai gagal kirim?] → jadwalkan ulang",
+     "aktivitas": "Bila tidak sampai: isi alasan (≥3 huruf). Admin Gudang menjadwalkan ulang (kembali ke Disiapkan).",
+     "keputusan": "Bongkar muatan dari Dimuat butuh alasan & izin manage.",
+     "hasil_diharapkan": "Status Gagal kirim dengan alasan; Sales menerima notifikasi.",
+     "uji_pra_uat": "NA",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A21",
+     "peran": "Sopir",
+     "navigasi": "Pengiriman → unggah Foto POD → isi nama penerima → [Tandai TERKIRIM?]",
+     "aktivitas": "Di lokasi pelanggan: foto bukti terima, nama penerima, waktu terima.",
+     "keputusan": "Tanpa POD / nama penerima → ditolak (pesan menyebut semua yang kurang).",
+     "hasil_diharapkan": "Status Terkirim; Sales diberi notifikasi. Admin Gudang menutup dengan [Selesai].",
+     "uji_pra_uat": "OK POD wajib",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A22",
+     "peran": "Admin Gudang",
+     "navigasi": "Pengiriman (mode Diambil pelanggan) → [Verifikasi & serahkan]",
+     "aktivitas": "Pelanggan menunjukkan kode pickup (diberikan Sales) + nama & no. identitas pengambil.",
+     "keputusan": "Kode salah → KODE PICKUP SALAH — barang tidak boleh diserahkan.",
+     "hasil_diharapkan": "Status Diserahkan; jejak pengambil tersimpan.",
+     "uji_pra_uat": "OK kode salah ditolak (LG-00003)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "A23",
+     "peran": "Admin Sales",
+     "navigasi": "detail SO → [Tandai diterima] (izin order.deliver)",
+     "aktivitas": "Setelah pelanggan konfirmasi terima, tandai SO diterima. Gudang juga berwenang; Sales tidak.",
+     "keputusan": "SO masih Sebagian dikirim → belum bisa (hanya status Dikirim).",
+     "hasil_diharapkan": "SO Selesai (Delivered); roll keluar dari stok milik. Lanjut penagihan (Alur I).",
+     "uji_pra_uat": "GAP F-06 POD logistik tidak otomatis menutup SO",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "B1",
+   "judul": "B1 — Harga khusus: ajukan, putuskan, ajukan ulang",
+   "sesi": "Hari 1 · 13.15–13.50",
+   "ringkasan": "Harga di bawah pricelist hanya lewat Harga Khusus yang disetujui manajer — bukan diskon. Pengajuan menempel pada versi alokasi (roll & qty); bila Admin Sales mengubah alokasi, harga harus diajukan ulang. Harga tetap per pelanggan dikelola terpisah di Harga per Pelanggan.",
+   "langkah": [
+    {
+     "id": "B01",
+     "peran": "Sales",
+     "navigasi": "Sebelum SO: Checkout › Termin & Lot → kartu item → [Minta Harga Khusus] Sesudah SO (tahap Dipesan): Pesanan (SO) › detail › Persetujuan → ajukan harga khusus",
+     "aktivitas": "Isi harga per satuan yang diminta, qty minimum (opsional), alasan (wajib), lampirkan bukti persetujuan atasan / percakapan pelanggan.",
+     "keputusan": "Harga tetap untuk pelanggan (bukan per pesanan) → Produk & Harga › Harga per Pelanggan (admin/manajer), bukan jalur ini.",
+     "hasil_diharapkan": "Entri Approval Harga Khusus berstatus pending; SO sub-status Menunggu approval harga khusus; muncul di Pusat Persetujuan › Pengajuan Harga Khusus.",
+     "uji_pra_uat": "OK alasan kosong ditolak; pengajuan tercatat (SO-00039)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B02",
+     "peran": "Sistem",
+     "navigasi": "otomatis",
+     "aktivitas": "Menyimpan harga normal vs diminta + versi alokasi (roll & qty saat diajukan). Pengajuan baru untuk produk yang sama menggantikan yang masih pending (superseded).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Riwayat semua pengajuan tetap terlihat.",
+     "uji_pra_uat": "OK",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B03",
+     "peran": "Admin Sales",
+     "navigasi": "Meja Admin Sales → Perlu diverifikasi → [Verifikasi] → [Ajukan persetujuan]",
+     "aktivitas": "Verifikasi kelengkapan (A08) lalu ajukan. Admin Sales hanya memantau antrean Menunggu keputusan manajer.",
+     "keputusan": "—",
+     "hasil_diharapkan": "SO Menunggu persetujuan (Menunggu approval harga). Approve SO & konfirmasi ditolak selama harga pending.",
+     "uji_pra_uat": "OK 409 APPROVAL_PENDING & konfirmasi ditolak",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B04",
+     "peran": "Manajer",
+     "navigasi": "Meja Saya → Permintaan harga khusus → [Putuskan]  /  Pusat Persetujuan › Inbox Persetujuan",
+     "aktivitas": "Bandingkan harga normal vs diminta, margin, alasan & bukti. Putuskan per entri [Setujui] / [Tolak] + catatan keputusan.",
+     "keputusan": "Pengaju tidak boleh memutus pengajuannya sendiri. Sales tidak punya izin memutus (403).",
+     "hasil_diharapkan": "Pemutus, waktu & catatan tercatat pada entri dan dokumen harga khusus.",
+     "uji_pra_uat": "OK 403 untuk Sales",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B05",
+     "peran": "Sistem",
+     "navigasi": "otomatis setelah Setujui",
+     "aktivitas": "Harga baris diganti harga khusus; subtotal, DPP, PPN, grand total dihitung ulang; sumber harga = special_approval.",
+     "keputusan": "Bila semua entri persetujuan SO disetujui → SO otomatis Disetujui (roll dikunci).",
+     "hasil_diharapkan": "Contoh uji: 110 yd × Rp19.000 → Grand Total Rp2.319.900.",
+     "uji_pra_uat": "OK harga & total",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B06",
+     "peran": "Sales",
+     "navigasi": "detail SO → ajukan harga khusus lagi, atau [Batalkan] SO",
+     "aktivitas": "Setelah ditolak: nego ulang dengan pelanggan → ajukan harga baru; atau batalkan pesanan.",
+     "keputusan": "Pengajuan baru disetujui → SO seharusnya lanjut ke Disetujui.",
+     "hasil_diharapkan": "Entri lama tetap ditolak sebagai riwayat; entri baru pending → approved.",
+     "uji_pra_uat": "BUG F-09 SO terkunci permanen (APPROVAL_REJECTED) walau pengajuan ulang disetujui; Edit/Override tidak membuka",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B07",
+     "peran": "Admin Sales",
+     "navigasi": "detail SO → [Ganti Roll] (Ganti Roll — Alokasi Manual) / [Edit / Override SO]",
+     "aktivitas": "Admin Sales menentukan alokasi roll, qty & harga final. Bila alokasi berubah setelah harga diajukan, ajukan ulang untuk versi alokasi terbaru.",
+     "keputusan": "Manajer memutus pengajuan lama → sistem menolak: Alokasi roll/qty baris ini berubah sejak harga diajukan…",
+     "hasil_diharapkan": "Tidak ada harga khusus yang menempel pada alokasi yang sudah tidak berlaku.",
+     "uji_pra_uat": "OK (SO-00040)",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "B2",
+   "judul": "B2 — Kredit over-limit, ambang nilai & stok makloon",
+   "sesi": "Hari 1 · 13.50–14.15",
+   "ringkasan": "Limit kredit dihitung dari eksposur (piutang + SO terbuka) dan tunggakan. Pelanggaran tidak memblokir pembuatan SO, tetapi SO tidak bisa disetujui sampai manajer memutus entri kredit. Ambang nilai dan pemakaian stok cadangan makloon memakai mekanisme yang sama.",
+   "langkah": [
+    {
+     "id": "B11",
+     "peran": "Sistem",
+     "navigasi": "otomatis saat [Buat Sales Order]",
+     "aktivitas": "Menghitung eksposur pelanggan (piutang + SO terbuka) vs limit kredit, tunggakan lewat jatuh tempo, dan override kredit yang masih berlaku (sekali pakai).",
+     "keputusan": "Tidak melanggar → lanjut A2. Melanggar → entri Approval Kredit (Over-limit) + credit hold.",
+     "hasil_diharapkan": "SO sub-status Menunggu approval kredit; dokumen credit override pending dibuat.",
+     "uji_pra_uat": "OK KANDA/SO-00007 Rp28,7 jt > limit Rp25 jt",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B12",
+     "peran": "Sales",
+     "navigasi": "Checkout › Review (status kredit) · detail SO → minta persetujuan kredit",
+     "aktivitas": "Checkout menampilkan Kredit OK / Peringatan kredit (mendekati limit / ada tunggakan) / Terblokir Kredit / Kredit terblokir, tapi ada Override disetujui. Bila perlu, ajukan persetujuan kredit + alasan.",
+     "keputusan": "Permintaan kedua saat masih ada yang pending → ditolak.",
+     "hasil_diharapkan": "Satu entri kredit pending per SO.",
+     "uji_pra_uat": "",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B13",
+     "peran": "Admin Sales",
+     "navigasi": "Meja Admin Sales → [Verifikasi] → [Ajukan persetujuan]",
+     "aktivitas": "Checklist menampilkan Tidak tertahan batas kredit sebagai peringatan (keputusan kredit milik manajer).",
+     "keputusan": "—",
+     "hasil_diharapkan": "SO Menunggu persetujuan; approve SO langsung ditolak selama kredit pending.",
+     "uji_pra_uat": "OK 409 APPROVAL_PENDING",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B14",
+     "peran": "Manajer",
+     "navigasi": "Pusat Persetujuan › Inbox Persetujuan / Meja Saya → [Putuskan]",
+     "aktivitas": "Tinjau limit, eksposur, umur piutang; lampirkan bukti (mis. persetujuan direksi). [Setujui] / [Tolak] + catatan.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Setuju → credit hold dilepas, override tercatat terpakai, SO Disetujui otomatis.",
+     "uji_pra_uat": "OK SO otomatis Approved",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B15",
+     "peran": "Sales",
+     "navigasi": "detail SO / pelanggan",
+     "aktivitas": "Bila ditolak: tawarkan DP/CBD, kurangi qty, atau tunggu pelunasan tunggakan; ajukan ulang.",
+     "keputusan": "Pengajuan ulang setelah ditolak → lihat F-09 (SO bisa terkunci).",
+     "hasil_diharapkan": "—",
+     "uji_pra_uat": "BUG F-09 berlaku juga untuk entri kredit",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B16",
+     "peran": "Finance",
+     "navigasi": "Meja Finance → Uang masuk → [Catat kwitansi]",
+     "aktivitas": "Pelunasan tunggakan dicatat (Alur I) → limit tersedia kembali untuk SO berikutnya.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Eksposur pelanggan turun.",
+     "uji_pra_uat": "",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B17",
+     "peran": "Admin",
+     "navigasi": "Pengaturan › Aturan Persetujuan (khusus admin)",
+     "aktivitas": "Ambang nilai SO (min/max → peran). Bawaan sekarang: tanpa ambang. Uji ambang sementara hanya bila disepakati (pengaturan global — jangan saat skenario lain berjalan).",
+     "keputusan": "SO di atas ambang → entri Approval Nilai Order.",
+     "hasil_diharapkan": "Gerbang nilai muncul & diputus manajer.",
+     "uji_pra_uat": "NA perlu jendela konfigurasi",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "B18",
+     "peran": "Sales",
+     "navigasi": "Checkout (konfirmasi pakai stok cadangan makloon)",
+     "aktivitas": "Bila stok yang dipilih sedang dicadangkan untuk makloon, sistem meminta konfirmasi lalu membuat entri persetujuan makloon.",
+     "keputusan": "Manajer memutus.",
+     "hasil_diharapkan": "SO tertahan sampai diputus.",
+     "uji_pra_uat": "",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "C1",
+   "judul": "C1 — Backorder & rencana pemenuhan multi-sumber",
+   "sesi": "Hari 1 · 15.15–15.55",
+   "ringkasan": "Sales melihat stok global, tetapi SO hanya boleh mencadangkan stok milik badan usaha penjual. Kekurangan dipenuhi lewat dokumen resmi yang tertaut ke SO: stok sendiri di gudang lain, transaksi antar-PT, PR → PO supplier, atau menunggu PO berjalan. Barang yang lulus QC otomatis dicadangkan ke SO.",
+   "langkah": [
+    {
+     "id": "C01",
+     "peran": "Sales",
+     "navigasi": "Penjualan › POS → checkout (izin backorder)",
+     "aktivitas": "Pesan artikel yang stok PT sendiri kurang (contoh uji: ALICE KNIT 14 A, stok hanya di CST, 100 kg).",
+     "keputusan": "Tanpa izin backorder → ditolak Stok milik entitas tidak mencukupi… Aktifkan backorder.",
+     "hasil_diharapkan": "SO Menunggu stok (Reserved · menunggu_stok); pratinjau pemenuhan menunjukkan Sebagian via backorder.",
+     "uji_pra_uat": "OK KSC/SO-00045",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "C02",
+     "peran": "Sistem",
+     "navigasi": "otomatis",
+     "aktivitas": "Mencatat baris backorder per produk (qty kurang). SO muncul di Keep & Pending dan antrean Perlu dipenuhi (kurang stok); Sales melihat Pesanan saya menunggu di Meja Saya.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Kekurangan tampil per produk & dokumen sumber; Sales tidak melihat pemilik stok.",
+     "uji_pra_uat": "OK",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "C03",
+     "peran": "Admin Sales",
+     "navigasi": "Meja Admin Sales → Perlu dipenuhi (kurang stok) → [Putuskan pemenuhan] · atau Pelacak SO → [Atur pemenuhan]",
+     "aktivitas": "Panel menampilkan stok sendiri per gudang, stok di PT lain + kesiapan harga internal, PO yang sedang berjalan, dan sisa kebutuhan.",
+     "keputusan": "Verifikasi (A08) boleh dilakukan sebelum/selama menunggu stok.",
+     "hasil_diharapkan": "Opsi tidak layak diberi alasan (bukan tombol mati).",
+     "uji_pra_uat": "OK",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "C04",
+     "peran": "Admin Sales",
+     "navigasi": "panel Rencana pemenuhan → isi qty per sumber → simpan",
+     "aktivitas": "Bagi kekurangan per baris: stok sendiri (gudang lain) · transfer dari PT lain (boleh >1 PT) · PO ke supplier (lewat PR) · tunggu barang masuk; penuh atau sebagian; isi catatan.",
+     "keputusan": "Total rencana > kekurangan → ditolak. Jalankan ulang → tidak menggandakan PR (qty tidak ditambah).",
+     "hasil_diharapkan": "Keputusan tercatat di SO (Keputusan pemenuhan), dokumen tertaut dua arah.",
+     "uji_pra_uat": "OK 70+40>100 ditolak; 60 CST + 40 PO; retry aman",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "C05",
+     "peran": "Admin Sales",
+     "navigasi": "otomatis dari rencana · Pesanan › Permintaan Internal (PIN)",
+     "aktivitas": "Jalur PT lain membuat PIN lalu Transaksi Antar-PT (dokumen kembar penjual-pembeli, contoh KSC/IC-00009). Harga internal wajib ada (Produk & Harga › Harga Internal Antar-PT).",
+     "keputusan": "Harga internal belum ada → ditolak dan PIN dibatalkan otomatis.",
+     "hasil_diharapkan": "SO ⇄ transaksi antar-PT saling tertaut.",
+     "uji_pra_uat": "OK IC-00009 terbentuk",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "C06",
+     "peran": "Pembelian",
+     "navigasi": "otomatis → Pembelian › Pengadaan › Permintaan Pembelian",
+     "aktivitas": "Jalur supplier membuat PR dari SO (contoh PR-00042, 40 kg). Dilanjutkan di Alur D (PR → PO → kedatangan → QC).",
+     "keputusan": "PR ≥ Rp50 jt → ACC manajer.",
+     "hasil_diharapkan": "PR merujuk SO asal.",
+     "uji_pra_uat": "OK PR-00042",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "C07",
+     "peran": "CST",
+     "navigasi": "Akuntansi & Pajak › Antar Entitas (Grup) / Retur & transfer antar-PT (PT pemasok)",
+     "aktivitas": "PT pemasok menyetujui & menyerahkan barang; pergantian pemilik lewat dokumen resmi. Bila beda lokasi: transfer fisik + penerimaan di gudang tujuan.",
+     "keputusan": "Pemilik berubah tidak berarti barang sudah tiba.",
+     "hasil_diharapkan": "Owner & lokasi fisik dapat dibedakan; gudang tujuan menerima roll yang benar.",
+     "uji_pra_uat": "NA serah terima CST belum diuji",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "C08",
+     "peran": "Sistem",
+     "navigasi": "otomatis saat barang lulus QC (D19)",
+     "aktivitas": "Roll yang tersedia dicadangkan otomatis ke SO backorder (urutan FIFO).",
+     "keputusan": "—",
+     "hasil_diharapkan": "SO kembali Dicadangkan untuk qty yang sudah ada; sisa tetap backorder (contoh: 38,5 kg dicadangkan, 61,5 kg menunggu transfer CST).",
+     "uji_pra_uat": "OK SO-00045",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "C09",
+     "peran": "Admin Sales",
+     "navigasi": "Meja Admin Sales → [Ajukan persetujuan] → [Konfirmasi]",
+     "aktivitas": "Lanjutkan A09–A11 untuk qty yang sudah tersedia; kirim sebagian bila kebijakan kirim sebagian aktif, sisa tetap ditunggu.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Tugas gudang lahir hanya untuk qty yang sudah dicadangkan.",
+     "uji_pra_uat": "",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "D1",
+   "judul": "D1 — PR → PO supplier atau Order Makloon",
+   "sesi": "Hari 2 · 10.15–10.30",
+   "ringkasan": "Pengadaan selalu berawal dari PR yang merujuk kebutuhan (SO, OD, restock). Jalur per baris: beli barang jadi ke supplier (PO) atau makloon (bahan dikeluarkan ke mitra, hasil aktual diterima kembali). Reservasi bahan bukan pengeluaran, dan pengeluaran bukan hasil.",
+   "langkah": [
+    {
+     "id": "D01",
+     "peran": "Admin Sales",
+     "navigasi": "otomatis dari C04 / F20 · manual Pembelian › Pengadaan › Saran Reorder / Permintaan Pembelian",
+     "aktivitas": "Kebutuhan pembelian lahir dari: kekurangan SO (rencana pemenuhan), Pesanan Khusus (jalur supplier/makloon per item), atau restock (Saran Reorder).",
+     "keputusan": "—",
+     "hasil_diharapkan": "PR merujuk dokumen sumber (SO/OD) dua arah.",
+     "uji_pra_uat": "OK PR-00042 dari SO-00045",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D02",
+     "peran": "Sistem",
+     "navigasi": "otomatis",
+     "aktivitas": "PR bernomor; baris membawa produk, qty, unit, gudang terima.",
+     "keputusan": "Ambang PR (bawaan): ≥ Rp50 jt → manajer; di bawah → langsung disetujui.",
+     "hasil_diharapkan": "Status PR Disetujui / Menunggu persetujuan.",
+     "uji_pra_uat": "OK disetujui otomatis",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D03",
+     "peran": "Manajer",
+     "navigasi": "Pusat Persetujuan › Inbox Persetujuan / Meja Saya",
+     "aktivitas": "ACC atau tolak PR di atas ambang.",
+     "keputusan": "Tolak → kembali ke pengaju.",
+     "hasil_diharapkan": "Pemutus tercatat.",
+     "uji_pra_uat": "",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D04",
+     "peran": "Pembelian",
+     "navigasi": "Pembelian › Pengadaan › Permintaan Pembelian → detail → Sourcing",
+     "aktivitas": "Per baris pilih jalur: beli ke supplier atau makloon. Default mengikuti master restock artikel (Master Pembelian › Barang Supplier / Kontrak Mitra & Supplier); penyimpangan beri alasan.",
+     "keputusan": "MD hanya melihat (tidak bisa membuat PO).",
+     "hasil_diharapkan": "Ringkasan realisasi per baris (realized_qty, sisa).",
+     "uji_pra_uat": "OK MD realisasi → 403",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D05",
+     "peran": "Pembelian",
+     "navigasi": "detail PR → [Realisasi] (→ PO)",
+     "aktivitas": "Pilih supplier, gudang penerimaan, tanggal kirim; boleh sebagian baris. Hasil: PO KSC/PO-xxxxx dan tugas inbound menunggu barang.",
+     "keputusan": "Realisasi ulang tanpa sisa baris → ditolak. Supplier/kontrak/harga belum lengkap → tertahan dengan alasan.",
+     "hasil_diharapkan": "PO tertaut PR & SO/OD; qty belum diterima = incoming (bukan stok).",
+     "uji_pra_uat": "OK PO-00028; ulang ditolak",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D06",
+     "peran": "Pembelian",
+     "navigasi": "detail PR → Wizard Makloon → Pesanan Pembelian › Order Makloon",
+     "aktivitas": "Jalur makloon: mitra, resep proses, output & unit, kebutuhan bahan/greige; reservasi bahan ≠ pengeluaran. Cetak SPK Makloon.",
+     "keputusan": "Stok bahan kurang / salah jenis atau tahap / mitra tidak sah → ditahan.",
+     "hasil_diharapkan": "MKO tertaut PR; komitmen bahan terlihat.",
+     "uji_pra_uat": "NA belum diuji",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D07",
+     "peran": "Manajer",
+     "navigasi": "Pusat Persetujuan → Pesanan pembelian menunggu ACC",
+     "aktivitas": "PO ≥ Rp100 jt (bawaan) wajib ACC.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Riwayat di Pusat Persetujuan › Riwayat Persetujuan PO.",
+     "uji_pra_uat": "",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D08",
+     "peran": "Supplier",
+     "navigasi": "di luar sistem → SJ supplier",
+     "aktivitas": "Supplier mengirim barang + Surat Jalan supplier (nomor PO tercantum).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Gudang menerima di Alur D2.",
+     "uji_pra_uat": "",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D08b",
+     "peran": "Gudang",
+     "navigasi": "Order Makloon → pengeluaran bahan",
+     "aktivitas": "Makloon: gudang mengeluarkan bahan sesuai dokumen (stock movement keluar tepat sekali), mitra memproses; hasil kembali lewat Kedatangan (mitra makloon).",
+     "keputusan": "Hasil aktual boleh ≠ estimasi (mis. 192 dari rencana 200 yd) — tidak dipaksa sama.",
+     "hasil_diharapkan": "Sisa bahan, susut & klaim mitra tetap terlihat (Rekap Susut & Klaim Mitra).",
+     "uji_pra_uat": "NA belum diuji",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "D2",
+   "judul": "D2 — Kedatangan barang, hitung fisik, MD Quality, QC & stok",
+   "sesi": "Hari 2 · 10.30–11.30",
+   "ringkasan": "Stok yang masuk adalah hasil hitung fisik per roll, bukan qty pesanan. Selisih dengan SJ wajib diputus sebelum ditutup. Barang masuk karantina; MD Quality menilai warna/handfeel terhadap sample ACC dan QC menilai cacat 4-point — dua penilaian berbeda — lalu keputusan manusia melepas barang menjadi stok tersedia.",
+   "langkah": [
+    {
+     "id": "D10",
+     "peran": "Admin Gudang",
+     "navigasi": "Gudang & Logistik › Operasi Gudang › Barang Masuk → [Buat kedatangan]",
+     "aktivitas": "Pilih mitra (supplier / makloon), gudang penerimaan, PO/MKO yang datang. Satu kedatangan = satu SJ satu mitra.",
+     "keputusan": "Gudang biasa boleh membuat & entri manual, tetapi isi kepala SJ & baris butuh izin review (Admin Gudang).",
+     "hasil_diharapkan": "Nomor KSC/GRN-xxxxx status Draf.",
+     "uji_pra_uat": "OK GRN-00001",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D11",
+     "peran": "Admin Gudang",
+     "navigasi": "kedatangan → unggah foto SJ (baca otomatis) atau entri manual",
+     "aktivitas": "Koreksi hasil baca: nomor & tanggal SJ, nama pemasok tercetak, referensi PO; baris barang (qty & unit menurut SJ, jumlah roll) → pilih target PO.",
+     "keputusan": "Mulai hitung ditolak bila nomor SJ / baris kosong.",
+     "hasil_diharapkan": "Status Review → Hitung.",
+     "uji_pra_uat": "OK NOT_READY ditolak",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D12",
+     "peran": "Gudang",
+     "navigasi": "kedatangan → [Hitung fisik] → scan label supplier / [Cetak label KN roll ini]",
+     "aktivitas": "Per roll catat fisik: panjang (yard/meter) atau berat (kg), LOT supplier, grade; tempel label. Penerimaan bruto dari fisik sebelum dipotong.",
+     "keputusan": "Roll tanpa label → catat manual (override) dengan alasan.",
+     "hasil_diharapkan": "Roll lahir status receiving (belum stok jual).",
+     "uji_pra_uat": "OK 2 roll 19,6 + 18,9 kg",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D13",
+     "peran": "Admin Gudang",
+     "navigasi": "kedatangan → [Rekonsiliasi]",
+     "aktivitas": "Sistem menampilkan selisih: kurang vs SJ (toleransi), jumlah roll beda, barang tidak di SJ, melebihi sisa PO. Putuskan per selisih: [Terima dengan catatan] / klaim supplier/mitra / [Tolak barang] + alasan.",
+     "keputusan": "Selisih blokir wajib diputus sebelum tutup.",
+     "hasil_diharapkan": "Contoh uji: dihitung 38,5 kg vs SJ 40 kg (toleransi ±0,8) → wajib diputus.",
+     "uji_pra_uat": "OK",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D14",
+     "peran": "Admin Gudang",
+     "navigasi": "kedatangan → [Tutup Penerimaan]",
+     "aktivitas": "Posting penerimaan: stok bertambah sebesar fisik; PO menjadi Sebagian diterima bila kurang; sisa PO tetap incoming.",
+     "keputusan": "Klik ganda tidak memposting dua kali.",
+     "hasil_diharapkan": "Roll status karantina; SPK inspeksi (INS) otomatis untuk penerimaan PO.",
+     "uji_pra_uat": "OK stok 38,5 kg (bukan 40)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D15",
+     "peran": "Admin Gudang",
+     "navigasi": "Meja Gudang → SPK inspeksi belum ditugaskan → [Tugaskan]",
+     "aktivitas": "Pilih petugas (QC), bagian, tanggal SPK.",
+     "keputusan": "SPK tanpa petugas tidak bisa dimulai.",
+     "hasil_diharapkan": "SPK Ditugaskan.",
+     "uji_pra_uat": "OK",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D16",
+     "peran": "MD Quality",
+     "navigasi": "Operasi Gudang › QC & Inspeksi → Dokumen Inspeksi (INS) → baris roll → MD Quality",
+     "aktivitas": "Pilih roll yang diuji (sebagian/semua). Bandingkan dengan sample ACC: hasil warna (sesuai / beda shade / tolak), handfeel (sesuai / beda / tolak, skor 1–5); potongan uji (0,25 yd) dicatat sebagai pemakaian.",
+     "keputusan": "Tanpa sample acuan → hanya pengamatan (Meja MD: SPK tanpa acuan sample).",
+     "hasil_diharapkan": "Dua indikator terpisah; sisa roll berkurang sesuai potongan.",
+     "uji_pra_uat": "INFO MDQ bisa isi saat SPK masih draf (F-13)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D17",
+     "peran": "QC",
+     "navigasi": "SPK → [Mulai diperiksa] → QC 4-point → [Simpan hasil]",
+     "aktivitas": "Isi panjang diinspeksi (selalu yard, walau stok kg) & cacat per interval 15 yd; grade saran dari total poin.",
+     "keputusan": "Interval di luar panjang tidak boleh diisi.",
+     "hasil_diharapkan": "Hasil per roll tersimpan.",
+     "uji_pra_uat": "OK",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D18",
+     "peran": "Admin Gudang",
+     "navigasi": "SPK → [Keputusan] (izin inspection.decide)",
+     "aktivitas": "Putuskan: terima / terima sebagian / turun grade / tolak → tutup SPK. Barang ditahan → [Lepas tahanan barang] oleh MD Quality/manajer + alasan, atau [Tolak barang yang ditahan].",
+     "keputusan": "QC & MD Quality tidak punya izin memutus SPK (bawaan).",
+     "hasil_diharapkan": "SPK Selesai.",
+     "uji_pra_uat": "OK INS-00019",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D19",
+     "peran": "QC",
+     "navigasi": "QC & Inspeksi → antrean karantina kedatangan → keputusan",
+     "aktivitas": "Terima qty (grade) dan/atau tolak qty (disposisi: rusak / retur ke supplier → Nota Debit otomatis).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Roll tersedia; tugas inbound selesai.",
+     "uji_pra_uat": "GAP F-14 roll tetap karantina sesudah SPK 'terima' — perlu keputusan kedua",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D20",
+     "peran": "Sistem",
+     "navigasi": "otomatis + Stok, Transfer & Opname / Lokasi Rak (putaway)",
+     "aktivitas": "Stok tersedia dialokasikan FIFO ke SO backorder (C08); putaway ke rak/bin.",
+     "keputusan": "—",
+     "hasil_diharapkan": "SO backorder berkurang; saldo per gudang/bin benar.",
+     "uji_pra_uat": "OK 38,5 kg dicadangkan ke SO-00045",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "D21",
+     "peran": "Finance",
+     "navigasi": "Pembelian › Hutang Pemasok → Tagihan Supplier → Kontrabon → Meja Finance › Hutang supplier jatuh tempo → [Bayar]",
+     "aktivitas": "Tagihan supplier dicocokkan dengan penerimaan (GR belum ditagih), tukar faktur (kontrabon), bayar sesuai termin.",
+     "keputusan": "Pembayaran sebelum persetujuan kontrabon diblokir (bila diaktifkan).",
+     "hasil_diharapkan": "Hutang PO lunas.",
+     "uji_pra_uat": "NA di luar uji pra-UAT",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "E1",
+   "judul": "E1 — Pesanan sample: standar, hanger, catalogue; gratis/berbayar",
+   "sesi": "Hari 1 · 15.55–16.35",
+   "ringkasan": "Sample adalah pesanan terpisah (nomor SOS) dengan batas panjang per jenis. Sample berbayar harus disetujui pembayarannya sebelum diteruskan ke gudang. Gudang memotong dari roll yang dipindai dan mencatat panjang aktual; potongan diserahkan ke Admin Cutting sebelum dikirim. Potongan ecer berbayar di atas batas = pesanan biasa.",
+   "langkah": [
+    {
+     "id": "E01",
+     "peran": "Sales",
+     "navigasi": "Penjualan › POS → [Kosongkan untuk ganti jenis] → Order Sample → item [Jual sebagai sample (permintaan potong ke gudang)]",
+     "aktivitas": "Pilih jenis: Standar (woven ≤ 5 yd, knit ≤ 2 kg) · Hanger (woven ≤ 0,5 yd) · Catalogue (1 yd tiap warna yang tersedia + 2 yd satu warna soft, disusun server dari template). Pilih Gratis atau Berbayar (wajib) dan lokasi potong.",
+     "keputusan": "Melebihi batas → ditolak (lebih dari itu jual sebagai ECER berbayar → Alur A). Benang tidak bisa jadi sample. Sample dicampur roll biasa → ditolak.",
+     "hasil_diharapkan": "Batas berlaku di server, bukan hanya layar.",
+     "uji_pra_uat": "OK 6 yd ditolak; tanpa gratis/berbayar ditolak; campur ditolak",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "E02",
+     "peran": "Sistem",
+     "navigasi": "otomatis",
+     "aktivitas": "Nomor KSC/SOS-xxxxx terpisah dari SO; muncul di Penjualan › Pesanan Sample & Meja Sample.",
+     "keputusan": "Gratis → Siap diteruskan ke gudang. Berbayar → menunggu persetujuan pembayaran. Barang milik PT lain → permintaan internal, bukan memotong stok PT lain.",
+     "hasil_diharapkan": "Harga berbayar dari master harga sample per induk.",
+     "uji_pra_uat": "OK SOS-00002 Rp83.250",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "E03",
+     "peran": "Finance",
+     "navigasi": "Penjualan › Pesanan Sample / Meja Sample → Sample berbayar — menunggu persetujuan pembayaran → [Setujui Bayar]",
+     "aktivitas": "Pastikan pembayaran/kesepakatan bayar sudah ada, isi catatan, setujui. Admin Sample juga berwenang.",
+     "keputusan": "Sales → 403. Teruskan sebelum disetujui → 409.",
+     "hasil_diharapkan": "SOS Disetujui.",
+     "uji_pra_uat": "OK",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "E04",
+     "peran": "Admin Sample",
+     "navigasi": "Meja Sample → Siap diteruskan ke gudang → [Teruskan ke Gudang]",
+     "aktivitas": "Teruskan ke gudang; untuk catalogue boleh mengganti warna soft (hanya komponen tambahan, berjejak).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Tugas potong sample (sample_cut) lahir di gudang.",
+     "uji_pra_uat": "OK 1 tugas",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "E05",
+     "peran": "Gudang",
+     "navigasi": "Meja Saya → Sample untuk dipotong → [Potong]",
+     "aktivitas": "Scan roll induk (RFID/QR/nomor), potong, catat panjang aktual.",
+     "keputusan": "Roll produk lain → ditolak ROLL_WRONG_PRODUCT. Lokasi tanpa kemampuan cutting → ditolak.",
+     "hasil_diharapkan": "Roll anak (mis. RL-36312-2) tertaut induk; induk berkurang sesuai aktual; nilai SOS mengikuti panjang aktual.",
+     "uji_pra_uat": "OK 3,1 yd; induk 88,99 → 85,89",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "E06",
+     "peran": "Admin Sample",
+     "navigasi": "Meja Sample / meja cutting → terima hasil potong",
+     "aktivitas": "Admin Cutting menerima potongan dari gudang (serah terima).",
+     "keputusan": "Kirim sebelum diterima → ditolak belum diterima Admin Cutting.",
+     "hasil_diharapkan": "Jejak serah terima tersimpan.",
+     "uji_pra_uat": "OK",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "E07",
+     "peran": "Gudang",
+     "navigasi": "Barang Keluar → [Kirim] → pengiriman seperti A18–A23",
+     "aktivitas": "SJ sample terbit; kirim (ekspedisi/armada) atau ambil.",
+     "keputusan": "Selesai potong belum berarti terkirim ke pelanggan.",
+     "hasil_diharapkan": "SOS Dikirim → Selesai.",
+     "uji_pra_uat": "OK SJ-00009",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "E08",
+     "peran": "Finance",
+     "navigasi": "Meja Finance → [Catat kwitansi] (Alur I)",
+     "aktivitas": "Untuk sample berbayar catat uang masuk atas nilai aktual.",
+     "keputusan": "—",
+     "hasil_diharapkan": "SOS lunas.",
+     "uji_pra_uat": "GAP F-15 nilai naik 83.250 → 86.025 setelah potong aktual, sesudah Setujui Bayar; status bayar tetap pending",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "F1",
+   "judul": "F1 — Permintaan custom multi-item, persetujuan & routing",
+   "sesi": "Hari 2 · 08.30–08.50",
+   "ringkasan": "Pesanan Khusus (OD) dipakai untuk produk yang belum ada. Satu OD boleh berisi beberapa item dengan sumber & jenis uji berbeda. Setelah disetujui, sistem membagi pekerjaan otomatis: printing ke Desainer, labdip/handfeel ke R&D. OD berakhir saat dikonversi menjadi SO dan SO itu selesai.",
+   "langkah": [
+    {
+     "id": "F01",
+     "peran": "Pelanggan",
+     "navigasi": "—",
+     "aktivitas": "Kebutuhan produk yang belum ada: motif/artwork, warna (Pantone/labdip), handfeel, qty per produk (bisa >1 produk), target tanggal.",
+     "keputusan": "Produk sudah ada di katalog → pesanan biasa (A).",
+     "hasil_diharapkan": "—",
+     "uji_pra_uat": "INFO data acuan D-05: item A 100 yd + item B 200 yd",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F02",
+     "peran": "Sales",
+     "navigasi": "Penjualan › Pesanan Khusus → [Buat Pesanan Khusus]",
+     "aktivitas": "Isi pelanggan (pemilik permintaan), judul, kebutuhan umum, tanggal target, catatan pesanan.",
+     "keputusan": "Pelanggan kosong → ditahan.",
+     "hasil_diharapkan": "Draf OD SORD-yymmdd-xxxx; berbeda dari HOLD pada SO normal.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F03",
+     "peran": "Sales",
+     "navigasi": "form OD → bagian Item → tambah item A, B…; unggah referensi",
+     "aktivitas": "Per item: sumber (induk produk existing untuk custom warna · desain existing yang belum jadi produk · desain dari pelanggan · desain baru), jenis permintaan (printing / labdip / handfeel / proofing), spesifikasi, qty + unit. Unggah file referensi pelanggan.",
+     "keputusan": "Qty nol / sumber tidak sah → ditahan. Desain HOLD tidak boleh dipakai sebelum PIC melepas.",
+     "hasil_diharapkan": "Dua rincian A100 & B200 tersimpan terpisah; referensi terkait item.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F04",
+     "peran": "Sales",
+     "navigasi": "detail OD → [Simpan pesanan khusus] → Ajukan",
+     "aktivitas": "Ajukan OD draf ke persetujuan.",
+     "keputusan": "Hanya OD draf yang bisa diajukan.",
+     "hasil_diharapkan": "Status Menunggu persetujuan; notifikasi ke penyetuju.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F05",
+     "peran": "Manajer",
+     "navigasi": "Pusat Persetujuan / detail OD → [Setujui] / [Tolak pesanan]",
+     "aktivitas": "Rantai persetujuan berjenjang dari matriks persetujuan (Manajer, lalu Direksi bila nilai besar).",
+     "keputusan": "Akun tanpa wewenang → 403.",
+     "hasil_diharapkan": "Semua tingkat terpenuhi → OD Disetujui.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F06",
+     "peran": "Sistem",
+     "navigasi": "otomatis setelah disetujui",
+     "aktivitas": "Routing: printing → Permintaan Desain (DSR) ke Desainer (F2); labdip/handfeel → Permintaan Sample R&D dengan spesifikasi diwarisi (F3).",
+     "keputusan": "Label Special Order / redesign dapat difilter di papan Desainer & R&D.",
+     "hasil_diharapkan": "Rantai dokumen OD ⇄ DSR ⇄ Sample ⇄ SKU ⇄ PR/PO ⇄ SO terbaca di panel rantai.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "F2",
+   "judul": "F2 — Ronde desain, Print paper & ACC PIC",
+   "sesi": "Hari 2 · 08.50–09.15",
+   "ringkasan": "Desainer bekerja per ronde; Print paper adalah checklist aktivitas cetak per ronde, bukan persetujuan. Cukup satu PIC berwenang yang memberi ACC beserta nilai desain. Revisi wajib beralasan dan menjaga riwayat ronde lama; perubahan motif utama menjadi OD redesign baru.",
+   "langkah": [
+    {
+     "id": "F07",
+     "peran": "MD",
+     "navigasi": "Desainer › Permintaan Desain / Meja MD › Permintaan desain → [Tugaskan] · Desainer: Meja Saya › Belum ditugaskan → [Ambil]",
+     "aktivitas": "Pilih desainer & tenggat; sumber permintaan (Special Order / pelanggan / internal) terlihat.",
+     "keputusan": "—",
+     "hasil_diharapkan": "DSR Ditugaskan; desainer menerima tugas.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F08",
+     "peran": "Desainer",
+     "navigasi": "Meja Saya › Desain yang saya kerjakan → [Kerjakan] · Desain & Pattern",
+     "aktivitas": "Kerjakan artwork; unggah versi ronde ini (versi lama tetap bisa dibuka).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Versi berkas & pelaku tercatat per ronde.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F09",
+     "peran": "Desainer",
+     "navigasi": "DSR → centang Print paper → [Ajukan untuk review] / [Serahkan berkas final]",
+     "aktivitas": "Print paper = checklist aktivitas cetak kertas per ronde (bukan persetujuan). Serah hasil harus menunjuk artwork nyata di galeri.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Status Menunggu keputusan; checklist punya ronde, waktu, pelaku.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F10",
+     "peran": "PIC",
+     "navigasi": "DSR / desain → [Mulai review]",
+     "aktivitas": "Salah satu PIC berwenang meninjau (tidak perlu semua PIC).",
+     "keputusan": "Akun tanpa wewenang tidak bisa ACC / melepas HOLD.",
+     "hasil_diharapkan": "—",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F11",
+     "peran": "PIC",
+     "navigasi": "[Setujui (ACC) + nilai akhir] · [Minta revisi] · [Tahan desain] → [Lepas penahanan]",
+     "aktivitas": "ACC dengan nilai desain (skor, bukan nilai penjualan). Revisi: alasan wajib → kembali ke desainer, ronde +1, checklist ronde lama tidak dianggap ronde baru. HOLD: desain tidak boleh dipakai proofing sampai dilepas.",
+     "keputusan": "Revisi → F08. Tahan → tunggu PIC melepas. ACC → sample proofing lahir otomatis + notifikasi MD (F3).",
+     "hasil_diharapkan": "Siapa ACC & kapan tercatat; rapor desainer dihitung dari dokumen.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F12",
+     "peran": "Sales",
+     "navigasi": "detail OD → item → [Buat pesanan redesign] (Ubah motif = pesanan khusus baru)",
+     "aktivitas": "Perubahan motif utama bukan revisi artwork yang sama → OD baru berlabel redesign dengan tautan asal.",
+     "keputusan": "—",
+     "hasil_diharapkan": "OD lama tetap utuh; OD baru terhubung.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "F3",
+   "judul": "F3 — Sampling R&D, keputusan pelanggan & reproofing",
+   "sesi": "Hari 2 · 09.15–09.40",
+   "ringkasan": "R&D mengirim permintaan sample ke beberapa supplier, menilai hasil dan memilih pemenang. ACC pelanggan adalah keputusan terpisah dari ACC internal: revisi pelanggan memicu reproofing dengan artwork yang sama sampai ACC.",
+   "langkah": [
+    {
+     "id": "F13",
+     "peran": "R&D",
+     "navigasi": "R&D › Permintaan Sample → detail → [Kirim Permintaan ke Supplier]",
+     "aktivitas": "Periksa spesifikasi (diwarisi dari OD), pilih supplier/mitra peserta & pelaksana fisik sample, jenis uji yang wajib untuk lini (tidak semua bahan wajib tiga uji). Bahan sample diambil gudang ([Ambil bahan]).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Permintaan Terkirim; tenggat per supplier.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F14",
+     "peran": "Supplier",
+     "navigasi": "di luar sistem",
+     "aktivitas": "Supplier membuat sample labdip/handfeel/proofing dan mengirim.",
+     "keputusan": "—",
+     "hasil_diharapkan": "—",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F15",
+     "peran": "R&D",
+     "navigasi": "Permintaan Sample → [Catat Pengiriman Sample] / [Setor hasil]",
+     "aktivitas": "Catat kedatangan sample per supplier, siklus/ronde, jenis.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Status Dikerjakan.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F16",
+     "peran": "R&D",
+     "navigasi": "Permintaan Sample → [Nilai] → [Pilih pemenang] / [Pilih supplier pemenang] → [Tandai Sample Jadi]",
+     "aktivitas": "Nilai per jenis (skor, catatan penilai) → pilih pemenang & keputusan sampling. Satu ACC tidak meluluskan jenis wajib lain yang ditolak.",
+     "keputusan": "Gagal / tidak ada pemenang → ulang ronde.",
+     "hasil_diharapkan": "Sample Diputus; OD fase Sample siap.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F17",
+     "peran": "Sales",
+     "navigasi": "detail OD → [Kirim ke Pelanggan]",
+     "aktivitas": "Kirim sample fisik ke pelanggan untuk diputus.",
+     "keputusan": "—",
+     "hasil_diharapkan": "OD Menunggu ACC pelanggan; muncul di Meja Admin Sales.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F18",
+     "peran": "Admin Sales",
+     "navigasi": "Meja Admin Sales → Pesanan khusus — menunggu ACC pelanggan → [Catat ACC] (panel Persetujuan Pelanggan)",
+     "aktivitas": "Catat keputusan pelanggan: ACC / [Minta revisi] / [Tolak] + tanggal, catatan & bukti (foto/WA).",
+     "keputusan": "Revisi → reproofing otomatis: sample R&D baru, spesifikasi diwarisi, artwork sama, OD kembali ke Sampling (F13). Tolak → OD ditutup.",
+     "hasil_diharapkan": "Ronde lama tetap tercatat; produksi belum dianggap ACC sebelum ACC pelanggan.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "F4",
+   "judul": "F4 — Kunci harga, SKU, pengadaan per item & konversi ke SO",
+   "sesi": "Hari 2 · 09.40–10.00",
+   "ringkasan": "Setelah pelanggan ACC: harga final dikunci per item (kontrak supplier pemenang + margin, acuan Grade A induk), SKU varian dibuat eksklusif untuk pelanggan, tiap item dipenuhi lewat supplier atau makloon, lalu OD diubah menjadi SO yang mempertahankan item A & B beserta harganya.",
+   "langkah": [
+    {
+     "id": "F19",
+     "peran": "Admin Sales",
+     "navigasi": "Meja Admin Sales → Pesanan khusus — perlu kunci harga → [Kunci harga]",
+     "aktivitas": "Harga final per item = harga kontrak supplier pemenang + margin (bawaan 30%, bisa diubah). Acuan awal: harga Grade A induk; tanpa induk → PIC Special Order.",
+     "keputusan": "Di bawah acuan / nego → jalur Special Price (B). Cost + margin saja tidak otomatis memenuhi keputusan harga Grade A.",
+     "hasil_diharapkan": "Harga terkunci per item (A & B), margin & cost tercatat; PR/PO ke supplier pemenang lahir otomatis.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F20",
+     "peran": "MD",
+     "navigasi": "detail OD → [Buat SKU]",
+     "aktivitas": "Custom warna dari induk → varian/SKU baru tertaut induk & item yang benar; warna lama tidak ditimpa. SKU eksklusif pelanggan pemilik OD.",
+     "keputusan": "SKU OD dijual ke pelanggan lain → ditolak di POS.",
+     "hasil_diharapkan": "SKU aktif dengan tahap produksi.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F21",
+     "peran": "Pembelian",
+     "navigasi": "detail OD → panel Pemenuhan → [Pilih jalur] → [Realisasi pengadaan] / [Buat & Ajukan PR]",
+     "aktivitas": "Per item pilih Supplier (PR → PO) atau Makloon (PR → MKO) sesuai kemampuan produk/master; lanjut di Alur D.",
+     "keputusan": "Ganti jalur saat dokumen aktif → ditahan / lewat pembatalan resmi. Realisasi ulang tidak menggandakan PO.",
+     "hasil_diharapkan": "PR/PO/MKO terkait item A/B; satu pengadaan aktif per realisasi.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F22",
+     "peran": "Gudang",
+     "navigasi": "Alur D2 (Kedatangan → hitung → MDQ/QC → tersedia)",
+     "aktivitas": "Penerimaan aktual menjadi acuan qty (bukan estimasi).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Stok item OD tersedia untuk SO.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F23",
+     "peran": "Admin Sales",
+     "navigasi": "detail OD → [Ubah ke Pesanan Penjualan]",
+     "aktivitas": "Konversi ke SO: item A & B, SKU, unit, harga terkunci per item; lanjut Alur A mulai verifikasi (A08).",
+     "keputusan": "Item belum siap / harga belum terkunci → konversi ditahan. Ulang → tidak membuat SO kedua.",
+     "hasil_diharapkan": "SO tertaut OD (dua arah); total = Σ item.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "F24",
+     "peran": "Sistem",
+     "navigasi": "otomatis",
+     "aktivitas": "SJ terbit untuk SO hasil OD → OD Dikirim; SO diterima → OD Selesai.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Status OD konsisten dengan SO.",
+     "uji_pra_uat": "NA modul OD berubah selama penyusunan (FE-01 lanjutan, a3f7936) — belum diuji pra-UAT",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "G1",
+   "judul": "G1 — Multi-gudang, konsolidasi transit & leg Jakarta",
+   "sesi": "Hari 2 · 11.30–12.15",
+   "ringkasan": "Satu lokasi (Rancamalang) punya banyak gudang. Barang di-pick per gudang, dikumpulkan di Gudang Transit, divalidasi sebagai satu muatan, lalu berangkat. Tujuan pertama bisa transit Jakarta: penerimaan Jakarta bukan POD pelanggan, dan pengiriman lanjutan memakai SJ baru. Tiga dimensi selalu dibedakan: lokasi fisik, pemilik, SO yang dipenuhi.",
+   "langkah": [
+    {
+     "id": "G01",
+     "peran": "Gudang",
+     "navigasi": "Barang Keluar (A12–A14) per gudang sumber",
+     "aktivitas": "Satu SO berisi woven + knitting + printing → tugas pick terpisah per gudang Rancamalang (Woven / Knitting / Printing).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Picking list per gudang; roll dari gudang lain tidak bisa dipindai ke tugas ini.",
+     "uji_pra_uat": "OK tugas per gudang",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "G02",
+     "peran": "Gudang",
+     "navigasi": "Operasi Gudang › Stok, Transfer & Opname › Transfer",
+     "aktivitas": "Transfer internal gudang sumber → Rancamalang · Gudang Transit (owner & reservasi tetap); gudang transit memindai serah terima per roll.",
+     "keputusan": "Transfer terkait SO dengan owner berbeda → ditolak; harus transaksi antar-PT (C05).",
+     "hasil_diharapkan": "Lokasi fisik berpindah tercatat; belum serah terima pelanggan.",
+     "uji_pra_uat": "NA belum diuji — pastikan kandidat mendukung; bila belum, catat GAP (jangan diganti tombol status manual)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "G03",
+     "peran": "Admin Gudang",
+     "navigasi": "Barang Keluar → [Mulai Loading Check] (per SO / muatan)",
+     "aktivitas": "Scan semua roll yang naik kendaraan (handheld C72).",
+     "keputusan": "Missing / extra / salah SO → blokir; tanpa tag → pengecualian berizin.",
+     "hasil_diharapkan": "Muatan tervalidasi.",
+     "uji_pra_uat": "OK per SO",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "G04",
+     "peran": "Admin Gudang",
+     "navigasi": "Gudang & Logistik › Pengiriman → [Buat Pengiriman] → pilih beberapa SJ",
+     "aktivitas": "Satu armada membawa beberapa SO; SJ tetap per SO per keberangkatan; manifest memuat semua SJ.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Nomor LG berisi beberapa SO.",
+     "uji_pra_uat": "OK KSC/LG-00004 (2 SO)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "G05",
+     "peran": "Sopir",
+     "navigasi": "Pengiriman → Dimuat → Berangkat",
+     "aktivitas": "Perjalanan Rancamalang → Jakarta (bukan pengiriman pelanggan).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Barang dalam perjalanan internal; tidak dianggap diterima pelanggan.",
+     "uji_pra_uat": "NA belum diuji — pastikan kandidat mendukung; bila belum, catat GAP (jangan diganti tombol status manual)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "G06",
+     "peran": "Gudang · Jakarta",
+     "navigasi": "Barang Masuk / transfer → terima di Jakarta",
+     "aktivitas": "Scan roll yang turun; bandingkan dengan yang benar-benar diberangkatkan; selisih per roll dicatat.",
+     "keputusan": "Roll kurang/rusak → dicatat, tidak dipaksa penuh.",
+     "hasil_diharapkan": "Roll di transit Jakarta; reservasi SO tetap.",
+     "uji_pra_uat": "NA belum diuji — pastikan kandidat mendukung; bila belum, catat GAP (jangan diganti tombol status manual)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "G07",
+     "peran": "Gudang · Jakarta",
+     "navigasi": "Barang Keluar → cek muat ulang → [Kirim]",
+     "aktivitas": "Validasi muatan lagi di Jakarta, terbitkan SJ baru Jakarta → pelanggan dengan referensi SO & SJ transit; manifest baru.",
+     "keputusan": "Bukti scan Rancamalang tidak otomatis membuktikan muatan Jakarta.",
+     "hasil_diharapkan": "Rantai: SO → pick → transit → SJ transit → terima Jakarta → SJ pelanggan → POD.",
+     "uji_pra_uat": "NA belum diuji — pastikan kandidat mendukung; bila belum, catat GAP (jangan diganti tombol status manual)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "G08",
+     "peran": "Sopir",
+     "navigasi": "Pengiriman → POD (A21) → Admin Sales tandai diterima (A23)",
+     "aktivitas": "Penerimaan internal Jakarta bukan POD pelanggan.",
+     "keputusan": "—",
+     "hasil_diharapkan": "SO Selesai.",
+     "uji_pra_uat": "",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "H1",
+   "judul": "H1 — Pengajuan retur, perjalanan Jakarta → Rancamalang & QC",
+   "sesi": "Hari 2 · 13.15–14.10",
+   "ringkasan": "Retur hanya untuk roll yang benar-benar terkirim. Persetujuan manajer di awal hanya izin barang kembali untuk diperiksa. Barang dapat diterima di Jakarta, dikirim ke area transit QC Rancamalang, dan baru diperiksa QC setelah tiba. Lokasi berubah hanya lewat scan berdokumen; pemilik tidak berubah karena pindah lokasi.",
+   "langkah": [
+    {
+     "id": "H01",
+     "peran": "Pelanggan",
+     "navigasi": "—",
+     "aktivitas": "Pelanggan mengeluh (warna beda, kotor/noda, sobek/lubang, salah kirim, kurang yard, handfeel). Masa klaim 21 hari dari SJ.",
+     "keputusan": "Barang Sisa bukan layanan retur; garansi = masa klaim 21 hari.",
+     "hasil_diharapkan": "—",
+     "uji_pra_uat": "INFO",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H02",
+     "peran": "Sales",
+     "navigasi": "Retur › Retur Pelanggan → [Buat Retur] → pilih SO",
+     "aktivitas": "Daftar roll yang benar-benar terkirim (SJ, ID roll, qty, unit) tampil otomatis — tidak bisa tambah produk bebas. Pilih roll & qty klaim (boleh sebagian), kondisi, sebab keluhan (master), catatan; hangtag hilang / dipotong pelanggan; unggah foto (boleh menyusul sesuai kebijakan) → ajukan.",
+     "keputusan": "Ganti SO A → B dengan cepat: daftar akhir harus SO B.",
+     "hasil_diharapkan": "Nomor SRET-xxxxx Menunggu persetujuan.",
+     "uji_pra_uat": "OK SRET-00006",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H03",
+     "peran": "Sistem",
+     "navigasi": "otomatis",
+     "aktivitas": "Cek: roll milik SO ini, qty ≤ sisa terkirim dikurangi klaim aktif, tenggat 21 hari dari SJ sampai tanggal pengajuan (diajukan hari ke-20, barang tiba hari ke-24 tetap sah — KLR-09), bukti wajib per tahap (bawaan: tidak wajib).",
+     "keputusan": "Tidak valid → ditolak dengan alasan; di luar tenggat → [Ajukan pengecualian] (kebijakan/kewenangan).",
+     "hasil_diharapkan": "Tipe awal (retur/tukar/komplain) belum keputusan final kompensasi.",
+     "uji_pra_uat": "OK qty > sisa ditolak; roll SO lain ditolak",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H04",
+     "peran": "Manajer",
+     "navigasi": "Meja Saya → Retur menunggu ACC → [Putuskan] (atau detail retur → [Setujui] / [Tolak])",
+     "aktivitas": "Setujui izin barang kembali untuk diperiksa.",
+     "keputusan": "Sales → 403. Persetujuan ini bukan keputusan refund/tukar.",
+     "hasil_diharapkan": "Retur Disetujui.",
+     "uji_pra_uat": "OK 403 Sales",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H05",
+     "peran": "Gudang · Jakarta",
+     "navigasi": "detail retur → Perjalanan Retur – satu timeline → [Terima di gudang] → pilih gudang → scan → [Catat scan]",
+     "aktivitas": "Terima roll retur di Jakarta; dokumen terima (TRM) per scan.",
+     "keputusan": "Roll bukan bagian retur ini → ditolak. Terima dua kali → ditolak.",
+     "hasil_diharapkan": "Posisi fisik per roll tercatat; belum jadi stok jual.",
+     "uji_pra_uat": "BUG F-11 peran Gudang ditolak 403 (tidak punya izin retur) — diuji pakai Admin Sales",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H06",
+     "peran": "Gudang · Jakarta",
+     "navigasi": "Perjalanan Retur → [Kirim ke gudang lain (dalam perjalanan)]",
+     "aktivitas": "Asal Jakarta, tujuan Rancamalang · Gudang Transit (area QC), kurir/armada.",
+     "keputusan": "Tujuan wajib dipilih.",
+     "hasil_diharapkan": "Status dalam perjalanan; owner tidak berubah karena pindah lokasi.",
+     "uji_pra_uat": "OK SRET-00006/SJ-1 (via Admin Sales)",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H07",
+     "peran": "Gudang · Rancamalang",
+     "navigasi": "Perjalanan Retur → [Tiba di gudang tujuan] → scan",
+     "aktivitas": "Cocokkan roll dengan pengiriman sebelumnya.",
+     "keputusan": "Roll kurang / salah tujuan → hambatan.",
+     "hasil_diharapkan": "Roll di area transit menunggu QC.",
+     "uji_pra_uat": "OK TBA-1; BUG F-11",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H08",
+     "peran": "QC",
+     "navigasi": "detail retur → panel Inspeksi → mulai → isi hasil → [Selesai Inspeksi]",
+     "aktivitas": "Per roll: qty aktual hasil ukur, kondisi, cacat 4-point, grade, catatan. Potongan baik dari roll retur menjadi roll anak (ID merujuk induk).",
+     "keputusan": "QC saat roll masih di perjalanan → ditolak.",
+     "hasil_diharapkan": "Retur Selesai inspeksi; hasil & bukti tampil di retur.",
+     "uji_pra_uat": "BUG F-12 QC bisa mulai & selesai tanpa scan terima (SRET-00007); BUG F-11 QC 403",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "H2",
+   "judul": "H2 — Cutloss, kompensasi, keputusan akhir, disposisi & pengganti",
+   "sesi": "Hari 2 · 14.10–14.45",
+   "ringkasan": "Keputusan akhir setelah QC. Nilai kompensasi diputus Finance (harga transaksi awal × qty), outcome diselesaikan Manajer dengan bukti. Barang yang kembali diputus pemiliknya: Sukacita simpan atau kembalikan ke CST; CST wajib menerima lalu simpan, retur ke supplier, atau buang BS. Tukar barang berlanjut sebagai SO pengganti sampai POD.",
+   "langkah": [
+    {
+     "id": "H09",
+     "peran": "MD Quality",
+     "navigasi": "detail retur → panel Inspeksi / Cutloss (izin record_cutloss, split_cutloss)",
+     "aktivitas": "Saat QC: catat qty cacat dalam yard (bukan kelipatan 15; produk kg dikonversi otomatis) + posisi cacat (dari–sampai) per roll.",
+     "keputusan": "Cutloss (KLR-01): pelanggan menerima potongan baik, kompensasi senilai qty cacat. Diskon tanpa barang kembali boleh dari foto/video (KLR-06).",
+     "hasil_diharapkan": "Pratinjau pecah roll; qty cacat tidak bisa diubah setelah Finance memutus.",
+     "uji_pra_uat": "NA",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H09b",
+     "peran": "MD Quality",
+     "navigasi": "panel Pecah roll cutloss",
+     "aktivitas": "Roll dipecah fisik: potongan baik → dikirim kembali dengan SJ baru merujuk SJ & SO asal; potongan cacat → BS atau dibuang (dipilih per kasus oleh peran berwenang).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Roll anak berurutan dari induk; potongan BS tercatat sebagai stok BS (yard/kg), bukan roll.",
+     "uji_pra_uat": "NA",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H10",
+     "peran": "Finance",
+     "navigasi": "detail retur → panel Kompensasi → isi nilai → Catatan keputusan Finance (wajib) → [Selesaikan]",
+     "aktivitas": "Nilai = harga transaksi awal (neto setelah diskon/harga khusus) × qty disetujui (KLR-02); diskon = nominal rupiah per item hanya untuk qty cacat (KLR-07). Checklist hangtag hilang / kain dipotong = peringatan, Finance memutus (KLR-08).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Kompensasi diputus; dasar hitung terlihat.",
+     "uji_pra_uat": "NA",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H11",
+     "peran": "Manajer",
+     "navigasi": "detail retur → [Selesaikan] (izin sales_return.approve)",
+     "aktivitas": "Pilih outcome Refund · Store credit (potong bon) · Nego (diskon/cutloss) · Tukar · Tolak; boleh per item/qty; isi bukti keputusan (mis. ACC Pak Budi via WA 21/10) + lampiran; pilih gudang retur.",
+     "keputusan": "Sebelum QC selesai → ditolak (kecuali diskon foto/video yang sudah diputus Finance). Admin Sales → 403.",
+     "hasil_diharapkan": "Retur credit_settled / refund_settled / nego_settled / rejected; keputusan, peran & bukti tersimpan.",
+     "uji_pra_uat": "OK SRET-00006 saldo kredit; ditolak sebelum QC; 403 Admin Sales",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H12",
+     "peran": "Finance",
+     "navigasi": "Keuangan › Saldo Kredit · Kas & Bank · Meja Finance",
+     "aktivitas": "SO asal belum lunas → nilai mengurangi tagihan dulu, sisa → refund atau saldo. SO asal sudah lunas → pelanggan memilih refund atau saldo, tidak wajib memotong tagihan SO lain (KLR-10). Ongkir retur: penanggung dipilih per kasus (KN / pelanggan), langsung dijurnal (KLR-11, GL-01).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Satu posting idempoten; saldo pelanggan & piutang benar.",
+     "uji_pra_uat": "NA",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H13",
+     "peran": "Admin Sales",
+     "navigasi": "detail retur → Pesanan pengganti → [Buat pesanan pengganti]",
+     "aktivitas": "SO pengganti tertaut retur: artikel/warna/grade sama; qty dalam yard aktual hasil QC (KLR-03); menunggu retur diterima & QC selesai; QC pengganti mengikuti request SO asal. Lanjut Alur A.",
+     "keputusan": "Pengganti lebih (205 vs 195) → selisih dibayar pelanggan; kurang → refund/saldo; dinilai harga transaksi asal (KLR-04/05). Roll yang diretur & turunannya tidak boleh dikirim kembali ke pelanggan asal.",
+     "hasil_diharapkan": "Satu SO pengganti; ulang tidak membuat SO/delivery ganda.",
+     "uji_pra_uat": "NA belum diuji",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H14",
+     "peran": "Admin Sales · pemilik Sukacita",
+     "navigasi": "detail retur → Tujuan barang retur → per roll [Simpan sebagai stok] / Kembalikan ke PT pemasok internal",
+     "aktivitas": "Sukacita memilih simpan (owner tetap, grade/hold mengikuti QC — bukan otomatis tersedia) atau kembalikan ke CST.",
+     "keputusan": "Keputusan simpan tidak membalik pembelian internal.",
+     "hasil_diharapkan": "Opsi tampil; roll hasil QC (mis. RL-36311-1 48 yd grade B, karantina).",
+     "uji_pra_uat": "OK opsi tampil; eksekusi belum diuji",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H15",
+     "peran": "CST",
+     "navigasi": "Retur › Retur Antar-PT → inbox CST → [Terima]",
+     "aktivitas": "CST wajib menerima retur internal; owner berpindah lewat dokumen; fisik tetap di gudang shared (tanpa gerakan fiktif).",
+     "keputusan": "Tidak ada opsi menolak secara bisnis; selisih identitas/qty tetap dicatat.",
+     "hasil_diharapkan": "Dokumen pengembali ⇄ penerima tertaut.",
+     "uji_pra_uat": "NA",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H16",
+     "peran": "CST",
+     "navigasi": "Retur Antar-PT → tindak lanjut",
+     "aktivitas": "CST memilih simpan sebagai stok atau buang (BS) dengan bukti, atau retur ke supplier (H17).",
+     "keputusan": "Masa supplier lewat → simpan sesuai kondisi; tidak menggugurkan klaim pelanggan.",
+     "hasil_diharapkan": "Stok CST membawa grade/hold hasil QC.",
+     "uji_pra_uat": "NA",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "H17",
+     "peran": "Admin Gudang · CST",
+     "navigasi": "Retur › Retur ke Supplier (Nota Debit)",
+     "aktivitas": "Retur beli merujuk PO, penerimaan (GRN), roll & asal SO/SJ/retur pelanggan. Tenggat supplier 21 hari sampai klaim dikirim, dihitung dari penerimaan aktual masing-masing (KLR-09).",
+     "keputusan": "Dua penerimaan berbeda tanggal → tenggat masing-masing.",
+     "hasil_diharapkan": "Nota Debit; jejak SO → SJ → retur → QC → antar-PT → supplier utuh.",
+     "uji_pra_uat": "NA",
+     "status": "NOT_RUN"
+    }
+   ]
+  },
+  {
+   "kode": "I1",
+   "judul": "I1 — Termin, faktur pajak, kwitansi, selisih sampai LUNAS",
+   "sesi": "Hari 1 · 14.15–15.00",
+   "ringkasan": "Proses penjualan baru tuntas saat pembayaran lunas. Termin menentukan apakah uang masuk sebelum atau sesudah kirim. Finance menerbitkan Faktur Pajak (PT PKP), mencatat kwitansi dan mengalokasikannya ke SO; kurang bayar tetap ditagih, lebih bayar diputus (deposit/refund/alokasi). Admin Sales mengejar jatuh tempo, Sales hanya melapor.",
+   "langkah": [
+    {
+     "id": "I01",
+     "peran": "Sales",
+     "navigasi": "Checkout › Termin & Lot (A05) · Keuangan › Rencana Bayar",
+     "aktivitas": "Termin dipilih saat SO: Tunai · CBD — Bayar Sebelum Kirim · DP 50% + Pelunasan · NET 7/14/30/60/90 · Bertahap 3x. Termin berlapis per badan usaha. Rencana Bayar untuk DP + cicilan / milestone.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Termin & jatuh tempo tercatat di SO.",
+     "uji_pra_uat": "OK",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "I02",
+     "peran": "Finance",
+     "navigasi": "Meja Finance → Uang masuk → [Catat kwitansi] · Uang muka pesanan belum dikirim",
+     "aktivitas": "CBD/DP: catat pembayaran sebelum barang keluar (uang muka; kewajiban sampai dikirim).",
+     "keputusan": "Harus: gudang tidak bisa kirim sebelum syarat bayar terpenuhi.",
+     "hasil_diharapkan": "Uang muka tercatat; pendapatan diakui saat kirim.",
+     "uji_pra_uat": "BUG F-10 tidak ada gerbang — SO CBD KSC/SO-00041 terkirim (SJ-00007) tanpa pembayaran",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "I03",
+     "peran": "Finance",
+     "navigasi": "Meja Finance → Siap terbitkan Faktur Pajak → [Terbitkan] · Akuntansi & Pajak › Pajak › Faktur Keluaran",
+     "aktivitas": "PT PKP: isi kode transaksi (04), tanggal faktur; NSFP 16 digit menyusul dari Coretax ([Cetak Faktur Pajak]).",
+     "keputusan": "Terbitkan ulang → ditolak (gunakan Pengganti). Non-PKP → tidak ada faktur pajak.",
+     "hasil_diharapkan": "KSC/FKT-xxxxx: DPP = 11/12 × dasar, PPN sesuai SO.",
+     "uji_pra_uat": "OK FKT-00001 DPP 3.437.500 · PPN 412.500; ulang ditolak",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "I04",
+     "peran": "Admin Sales",
+     "navigasi": "Meja Admin Sales → Siap cetak Surat Jalan / Invoice → [Cetak]",
+     "aktivitas": "Cetak Faktur Komersial (invoice) & SJ dari Pusat Dokumen › Cetak PDF & Label; kirim ke pelanggan.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Dokumen bernomor & bisa ditelusuri dari SO.",
+     "uji_pra_uat": "INFO F-08 daftar invoice SO kosong; tagihan = Faktur Komersial PDF",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "I05",
+     "peran": "Admin Sales",
+     "navigasi": "Meja Admin Sales → Jatuh tempo & pengingat → [Follow-up] · Sales: Keuangan › Kasus Keuangan (lapor)",
+     "aktivitas": "Ingatkan pelanggan sebelum/sesudah jatuh tempo. Sales yang menerima kabar sudah transfer melapor lewat Kasus Keuangan (tidak menutup kasus uang).",
+     "keputusan": "—",
+     "hasil_diharapkan": "Daftar jatuh tempo sesuai termin.",
+     "uji_pra_uat": "GAP F-16 jatuh tempo dihitung dari tanggal SO, SO belum dikirim ikut terdaftar",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "I06",
+     "peran": "Finance",
+     "navigasi": "Meja Finance → Uang masuk perlu dicatat & dialokasikan → [Catat kwitansi]",
+     "aktivitas": "Isi Jumlah Diterima, Metode (Tunai → Kas Kecil; Transfer Bank/Giro/QRIS → Bank), tanggal, no. referensi; alokasi Otomatis (FIFO) atau Manual per Pesanan → [Simpan Pembayaran].",
+     "keputusan": "Alokasi melebihi sisa SO → ditolak.",
+     "hasil_diharapkan": "Kwitansi KSC/AR-xxxxx (jurnal posted); SO Sebagian atau Lunas.",
+     "uji_pra_uat": "OK AR-00003 (50%) → Sebagian; AR-00005 → Lunas",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "I07",
+     "peran": "Finance",
+     "navigasi": "dialog selisih → [Lanjutkan & simpan pembayaran] · Meja Finance › Selisih bayar perlu diputuskan → [Putuskan]",
+     "aktivitas": "Lebih bayar: simpan deposit / refund / alokasi ke SO lain / write-off kecil (pembulatan). Kurang bayar: sisa tetap ditagih atau jadwal ulang.",
+     "keputusan": "Di luar batas kewenangan → manajer.",
+     "hasil_diharapkan": "Keputusan & alasan tersimpan.",
+     "uji_pra_uat": "",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "I08",
+     "peran": "Finance",
+     "navigasi": "Meja Finance → Denda perlu diterbitkan → [Terbitkan] · Keuangan › Piutang",
+     "aktivitas": "Nota denda keterlambatan hasil hitungan sistem diterbitkan Finance; pembebasan denda → manajer. Pantau umur piutang.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Denda & piutang konsisten.",
+     "uji_pra_uat": "",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "I09",
+     "peran": "Manajer",
+     "navigasi": "kwitansi → void (alasan wajib) · keputusan di luar wewenang Finance",
+     "aktivitas": "Void membalik pembayaran di SO, kas & deposit; tercatat di audit.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Status bayar SO kembali sesuai.",
+     "uji_pra_uat": "",
+     "status": "NOT_RUN"
+    },
+    {
+     "id": "I10",
+     "peran": "Sistem",
+     "navigasi": "Pesanan (SO) › detail › Perjalanan Pesanan",
+     "aktivitas": "SO Lunas: piutang 0; Perjalanan Pesanan menampilkan Dikirim · Diterima · Ditagih · Dibayar.",
+     "keputusan": "—",
+     "hasil_diharapkan": "Angka di SO, Meja Finance, Piutang & laporan sama.",
+     "uji_pra_uat": "OK paid 4.162.500; F-07 langkah gudang salah",
+     "status": "NOT_RUN"
+    }
+   ]
+  }
+ ],
+ "akses": [
+  {
+   "id": "J01",
+   "peran": "Sales",
+   "menu": "POS, Pesanan, Pesanan Khusus, Pesanan Sample, Retur, Pelanggan, Meja Saya",
+   "boleh": "Buat SO/SOS/OD, minta harga khusus & kredit, ajukan retur, lapor Kasus Keuangan",
+   "tidak_boleh": "Menyetujui SO/harga (403) · tandai diterima (403) · setujui retur (403) · setujui bayar sample (403) · melihat grade/LOT/pemilik · menu Operasi Gudang",
+   "uji_pra_uat": "OK 403; BUG F-03"
+  },
+  {
+   "id": "J02",
+   "peran": "Admin Sales",
+   "menu": "Meja Admin Sales, Pesanan, Retur, Permintaan Internal",
+   "boleh": "Verifikasi, ajukan, konfirmasi, rencana pemenuhan, Ganti Roll, Edit/Override, tandai diterima, cetak SJ/invoice, catat ACC pelanggan OD, kunci harga OD",
+   "tidak_boleh": "Menyetujui SO/harga/kredit (403) · keputusan akhir retur (403) · mencatat kwitansi",
+   "uji_pra_uat": "OK"
+  },
+  {
+   "id": "J03",
+   "peran": "Manajer / PIC",
+   "menu": "Pusat Persetujuan, Meja Saya, Pembelian",
+   "boleh": "Putuskan nilai/kredit/harga/makloon, PR/PO, retur (izin & akhir), OD, ACC desain",
+   "tidak_boleh": "Memutus pengajuan harga miliknya sendiri",
+   "uji_pra_uat": "OK"
+  },
+  {
+   "id": "J04",
+   "peran": "Finance",
+   "menu": "Meja Finance, Keuangan, Pajak, Pesanan (lihat)",
+   "boleh": "Kwitansi & alokasi, faktur pajak, selisih bayar, denda, setujui bayar sample, nilai kompensasi retur",
+   "tidak_boleh": "Membuat/konfirmasi SO · keputusan pemenuhan",
+   "uji_pra_uat": "OK"
+  },
+  {
+   "id": "J05",
+   "peran": "Gudang",
+   "menu": "Meja Saya, Operasi Gudang (Barang Masuk/Keluar/Stok)",
+   "boleh": "Pick, potong, verifikasi label, loading check, kirim, hitung fisik penerimaan, potong sample",
+   "tidak_boleh": "Review GRN (403) · keputusan SPK · **scan retur (403 — F-11)**",
+   "uji_pra_uat": "BUG F-11"
+  },
+  {
+   "id": "J06",
+   "peran": "Admin Gudang",
+   "menu": "Meja Gudang, Barang Masuk, Pengiriman, QC & Inspeksi",
+   "boleh": "Buat pengiriman, review & tutup GRN, tugaskan & putus SPK, pengecualian loading check, setujui opname/transfer",
+   "tidak_boleh": "Konfirmasi SO · harga",
+   "uji_pra_uat": "OK"
+  },
+  {
+   "id": "J07",
+   "peran": "Sopir",
+   "menu": "Pengiriman (kiriman hari ini)",
+   "boleh": "Foto muat, berangkat, posisi, POD",
+   "tidak_boleh": "Melihat kode pickup · mengubah kiriman orang lain",
+   "uji_pra_uat": ""
+  },
+  {
+   "id": "J08",
+   "peran": "QC",
+   "menu": "QC & Inspeksi",
+   "boleh": "SPK QC pesanan/random, 4-point, keputusan karantina kedatangan",
+   "tidak_boleh": "Menutup SPK (inspection.decide) · **QC retur (403 — F-11)**",
+   "uji_pra_uat": "BUG F-11"
+  },
+  {
+   "id": "J09",
+   "peran": "MD Quality",
+   "menu": "QC & Inspeksi (Dokumen Inspeksi)",
+   "boleh": "Warna/labdip & handfeel, lepas/tolak tahanan, catat cutloss",
+   "tidak_boleh": "Menutup SPK",
+   "uji_pra_uat": "INFO F-13"
+  },
+  {
+   "id": "J10",
+   "peran": "MD / R&D",
+   "menu": "Meja MD, R&D, Desainer, Produk & Harga, PR (lihat)",
+   "boleh": "Tugaskan desain, permintaan sample & penilaian, buat SKU, harga internal",
+   "tidak_boleh": "Membuat PO (403)",
+   "uji_pra_uat": "OK 403"
+  },
+  {
+   "id": "J11",
+   "peran": "Desainer",
+   "menu": "Desainer › Permintaan Desain, Desain & Pattern",
+   "boleh": "Ambil tugas, unggah artwork, print paper, serahkan",
+   "tidak_boleh": "Menu pesanan, stok, uang · KPI desainer lain",
+   "uji_pra_uat": ""
+  },
+  {
+   "id": "J12",
+   "peran": "Admin Sample",
+   "menu": "Meja Sample, Pesanan Sample",
+   "boleh": "Setujui bayar, teruskan ke gudang, terima hasil potong",
+   "tidak_boleh": "Pesanan roll biasa",
+   "uji_pra_uat": "OK"
+  },
+  {
+   "id": "J13",
+   "peran": "Role kustom & view-only",
+   "menu": "Sesuai izin efektif",
+   "boleh": "Fungsi sama dengan peran acuan bila izin sama",
+   "tidak_boleh": "Aksi mutasi pada view-only; tautan langsung ke data di luar izin",
+   "uji_pra_uat": ""
+  }
+ ],
+ "konsistensi": [
+  {
+   "id": "K01",
+   "pemeriksaan": "Meja vs daftar vs detail",
+   "harus_benar": "Jumlah per antrean (mis. *Perlu diverifikasi*, *Siap cetak*) = jumlah di daftar dengan filter sama; klik baris membuka dokumen yang benar.",
+   "uji_pra_uat": ""
+  },
+  {
+   "id": "K02",
+   "pemeriksaan": "Perjalanan Pesanan",
+   "harus_benar": "Langkah Dipesan → Diverifikasi → Disetujui → Dikonfirmasi → Disiapkan → Dikirim → Diterima → Ditagih → Dibayar sesuai status nyata, dengan waktu & pelaku.",
+   "uji_pra_uat": "BUG F-07"
+  },
+  {
+   "id": "K03",
+   "pemeriksaan": "Qty & nilai berantai",
+   "harus_benar": "SO (qty, harga, PPN) = Σ roll dialokasikan = Σ SJ = DPP/PPN faktur pajak = Σ kwitansi.",
+   "uji_pra_uat": "OK SO-00038"
+  },
+  {
+   "id": "K04",
+   "pemeriksaan": "Satuan",
+   "harus_benar": "Yard dan kg tidak pernah dijumlah sebagai satu angka; QC selalu yard, stok knit tetap kg.",
+   "uji_pra_uat": "BUG F-04"
+  },
+  {
+   "id": "K05",
+   "pemeriksaan": "Pesanan Khusus → SO",
+   "harus_benar": "Item A & B (SKU, unit, harga terkunci) sama di OD dan SO hasil konversi.",
+   "uji_pra_uat": ""
+  },
+  {
+   "id": "K06",
+   "pemeriksaan": "Sample",
+   "harus_benar": "Nilai SOS = panjang potong aktual × harga sample; induk berkurang sama.",
+   "uji_pra_uat": "GAP F-15"
+  },
+  {
+   "id": "K07",
+   "pemeriksaan": "Retur",
+   "harus_benar": "Qty klaim ≤ terkirim; hasil QC per roll = dasar kompensasi; saldo/refund/pengurangan tagihan sesuai keputusan.",
+   "uji_pra_uat": ""
+  },
+  {
+   "id": "K08",
+   "pemeriksaan": "Laporan & Pusat Export",
+   "harus_benar": "Laporan penjualan & rapor desainer periode yang sama dapat ditelusuri ke dokumen; preview = unduhan = sumber; kolom di luar izin (grade, harga pokok) tidak ikut.",
+   "uji_pra_uat": "BUG F-03 (grade)"
+  },
+  {
+   "id": "K09",
+   "pemeriksaan": "Ketahanan layar",
+   "harus_benar": "Refresh, klik ganda, kirim ulang, ganti SO cepat: tidak ada dokumen/stock movement ganda; galat terlihat; input tidak hilang.",
+   "uji_pra_uat": "OK idempoten dispatch, faktur, kwitansi"
+  }
+ ],
+ "temuan": [
+  {
+   "id": "F-09",
+   "prioritas": "P1",
+   "langkah": "B06, B15",
+   "temuan": "Entri persetujuan yang ditolak mengunci SO selamanya: setelah Sales mengajukan ulang dan manajer menyetujui, Approve tetap 409 APPROVAL_REJECTED; Edit/Override & ajukan ulang tidak membuka. (SO-00039)",
+   "dampak": "Nego ulang harga/kredit — kejadian harian — buntu; SO harus dibatalkan & dibuat ulang.",
+   "akar_masalah": "so_approvals.summarize() menghitung semua entri rejected; attach_order_price hanya men-supersede entri pending.",
+   "rencana": "Saat pengajuan baru untuk tipe (+produk) yang sama dibuat, tandai entri rejected sebelumnya superseded; ringkasan hanya menilai entri terbaru per tipe/produk. Perbaiki juga pesan 409 submit-for-approval yang membingungkan.",
+   "uji_regresi": "Tolak → ajukan ulang → setujui → SO Disetujui; tolak tanpa ajukan ulang tetap memblokir (regresi KN-D02).",
+   "keputusan_owner": "—"
+  },
+  {
+   "id": "F-10",
+   "prioritas": "P1",
+   "langkah": "A17, I02",
+   "temuan": "Termin CBD — Bayar Sebelum Kirim (dan DP) tidak menahan pengiriman: SO-00041 dikirim (SJ-00007) dengan status bayar pending.",
+   "dampak": "Barang keluar tanpa uang; termin hanya label.",
+   "akar_masalah": "shipment_service.dispatch_task & loading_check_service.dispatch_guard tidak memeriksa termin; dp_percent termin tidak dibaca saat kirim.",
+   "rencana": "Gerbang kirim: CBD → lunas; DP → terbayar ≥ dp_percent; pengecualian hanya peran berizin + alasan (teraudit). Tampilkan alasan di Barang Keluar & Meja Gudang.",
+   "uji_regresi": "CBD belum bayar → 409; setelah kwitansi → kirim OK; DP 49% → 409; 50% → OK.",
+   "keputusan_owner": "Ya: blok keras atau peringatan? DP minimal?"
+  },
+  {
+   "id": "F-11",
+   "prioritas": "P1",
+   "langkah": "H05–H08",
+   "temuan": "Peran Gudang dan QC tidak punya izin sales_return; scan terima/kirim/tiba retur & QC retur ditolak 403. Hanya Sales/Admin Sales/Manajer yang bisa.",
+   "dampak": "Alur fisik retur tidak bisa dijalankan oleh pelaku sebenarnya.",
+   "akar_masalah": "permissions_config.py (warehouse/qc tanpa sales_return); sales_returns.py journey/scan & inspect/ memakai sales_return.update saja.",
+   "rencana": "Izinkan wms.scan untuk scan perjalanan retur dan qc.inspect untuk QC retur (pola require_any_permission, seperti keputusan 2026-10-21).",
+   "uji_regresi": "Gudang scan TRM/SJ/TBA OK; QC mulai & selesai inspeksi OK; peran lain tetap ditolak.",
+   "keputusan_owner": "—"
+  },
+  {
+   "id": "F-12",
+   "prioritas": "P1",
+   "langkah": "H08",
+   "temuan": "QC retur bisa dimulai dan diselesaikan tanpa barang pernah di-scan terima (SRET-00007). Pagar hanya aktif bila sebagian roll sudah di-scan.",
+   "dampak": "Keputusan kompensasi bisa didasarkan QC atas barang yang belum ada.",
+   "akar_masalah": "return_journey_service.assert_ready_for_qc keluar dini bila roll_locations kosong; start_inspection tidak memeriksa penerimaan.",
+   "rencana": "Wajibkan semua roll klaim berstatus diterima/tiba sebelum mulai & selesai QC (kecuali jalur diskon foto KLR-06 yang tidak memakai QC fisik).",
+   "uji_regresi": "Tanpa scan → 400; sebagian di perjalanan → 400; semua tiba → OK; jalur diskon foto tetap bisa.",
+   "keputusan_owner": "—"
+  },
+  {
+   "id": "F-05",
+   "prioritas": "P1",
+   "langkah": "A13–A14",
+   "temuan": "Setelah reservasi potong dikonfirmasi (RL-36312 → anak RL-36312-1), alokasi SO tetap menunjuk roll induk. Pick mengikuti daftar → ditolak; harus memindai roll anak secara manual; SO terkirim dua SJ.",
+   "dampak": "Petugas gudang tersesat; risiko salah ambil & kirim parsial tak perlu.",
+   "akar_masalah": "roll_service.confirm_cut membuat roll anak & memindah reservasi, tetapi tidak memperbarui sales_orders.allocations[].rolls.",
+   "rencana": "Saat potong dikonfirmasi, ganti entri roll induk di alokasi SO dengan roll anak (id, nomor, panjang aktual); picking list & Ganti Roll membaca data baru.",
+   "uji_regresi": "Potong → alokasi menampilkan roll anak; pick dari daftar OK; satu SJ untuk qty penuh.",
+   "keputusan_owner": "—"
+  },
+  {
+   "id": "F-03",
+   "prioritas": "P1",
+   "langkah": "A03, K08",
+   "temuan": "Grade & LOT bocor ke Sales lewat API: GET /api/products & /sales-orders/frequent-products mengirim variant_label Lokal · TAUPE · A / Impor · 1 · A · LOT A. Dipakai langsung di form harga khusus versi HP.",
+   "dampak": "Melanggar aturan owner grade tidak boleh terlihat Sales, termasuk trial/API/export.",
+   "akar_masalah": "field_visibility.py menyamarkan SKU & nama, tetapi tidak variant_label.",
+   "rencana": "Saring segmen grade/LOT/asal pada variant_label (dan kunci serupa) sesuai field_visibility; tambah uji kebocoran ke sweep izin.",
+   "uji_regresi": "Akun Sales: tidak ada grade/LOT di respons katalog, frequent-products, export; Admin tetap melihat.",
+   "keputusan_owner": "—"
+  },
+  {
+   "id": "F-01",
+   "prioritas": "P1",
+   "langkah": "Persiapan, J",
+   "temuan": "Tombol login cepat Manajer/Admin Sales/Finance/Sales/Gudang mengirim sandi demo12345, sedangkan akun peran di data acuan memakai demo1234 → semua gagal kecuali Admin. Dokumentasi juga menyebut demo12345.",
+   "dampak": "Kesiapan UAT: peserta tidak bisa masuk dengan akun perannya.",
+   "akar_masalah": "LoginScreen.jsx:34 vs backend/scripts/demo_api.py:12 (DEMO_PASSWORD).",
+   "rencana": "Samakan satu sandi demo (seed & tombol) atau sandi UAT dibagikan terpisah; perbarui AGENTS.md/LOCAL_DEV.md.",
+   "uji_regresi": "Semua tombol peran berhasil masuk pada data acuan baru.",
+   "keputusan_owner": "—"
+  },
+  {
+   "id": "F-06",
+   "prioritas": "P2",
+   "langkah": "A21–A23",
+   "temuan": "POD Terkirim + Selesai di Pengiriman tidak mengubah SO; SO tetap Dikirim sampai Admin Sales Tandai diterima.",
+   "dampak": "Dua pencatatan untuk satu kejadian; status bisa berbeda.",
+   "akar_masalah": "logistics_service.transition('delivered') tidak memanggil penandaan SO diterima.",
+   "rencana": "Bila semua SJ SO sudah POD → tandai SO diterima otomatis (atau tampilkan tugas konfirmasi diterima di Meja Admin Sales).",
+   "uji_regresi": "Semua SJ POD → SO Selesai / tugas muncul.",
+   "keputusan_owner": "Ya: otomatis atau manual?"
+  },
+  {
+   "id": "F-14",
+   "prioritas": "P2",
+   "langkah": "D18–D19",
+   "temuan": "Barang datang: SPK inspeksi ditutup terima, roll tetap karantina sampai QC membuat keputusan karantina kedua di antrean.",
+   "dampak": "Dua keputusan untuk barang yang sama; barang bisa tertahan tanpa disadari.",
+   "akar_masalah": "inspection_service.finish tidak melepas karantina; qc-decision terpisah.",
+   "rencana": "Satukan: keputusan SPK terima melepas karantina (atau antrean karantina menampilkan SPK terkait & keputusan cukup sekali).",
+   "uji_regresi": "Tutup SPK terima → roll tersedia; tolak → tetap ditahan.",
+   "keputusan_owner": "Ya: satu atau dua keputusan?"
+  },
+  {
+   "id": "F-15",
+   "prioritas": "P2",
+   "langkah": "E03–E08",
+   "temuan": "Sample berbayar: Setujui Bayar diberikan pada Rp83.250 (3 yd); setelah potong aktual 3,1 yd nilai menjadi Rp86.025 tanpa persetujuan ulang; status bayar tetap pending.",
+   "dampak": "Nilai disetujui ≠ nilai ditagih.",
+   "akar_masalah": "sample_orders.approve_payment hanya flag; potong aktual menghitung ulang harga sesudahnya.",
+   "rencana": "Tetapkan aturan: toleransi selisih, persetujuan ulang bila melebihi, dan hubungkan dengan kwitansi.",
+   "uji_regresi": "Selisih > toleransi → minta persetujuan ulang.",
+   "keputusan_owner": "Ya: toleransi & siapa memutus"
+  },
+  {
+   "id": "F-16",
+   "prioritas": "P2",
+   "langkah": "I05",
+   "temuan": "Jatuh tempo dihitung dari tanggal SO (+ termin); SO yang belum dikirim/masih backorder/masih menunggu ACC (SO-00039, SO-00045) muncul jatuh tempo 30 hari lagi; SO termin CBD (SO-00084) juga tampil 30 hari lagi.",
+   "dampak": "Penagihan dini & angka umur piutang salah.",
+   "akar_masalah": "customer_service.collection_reminders: due = created_at + term_days.",
+   "rencana": "Hitung dari tanggal pengiriman pertama/tagihan (sejalan GL-03 pengakuan saat awal pengiriman); kecualikan SO belum dikirim.",
+   "uji_regresi": "SO belum kirim tidak muncul; SO kirim tgl X → jatuh tempo X + termin.",
+   "keputusan_owner": "Konfirmasi dasar tanggal"
+  },
+  {
+   "id": "F-07",
+   "prioritas": "P3",
+   "langkah": "K02",
+   "temuan": "Perjalanan Pesanan SO selesai menampilkan Disiapkan gudang 0/1 (77,8%); langkah Disetujui/Dikonfirmasi tanpa waktu & pelaku.",
+   "dampak": "Pemantauan menyesatkan.",
+   "akar_masalah": "order_journey_service.py:173 tidak menghitung status dispatched; transisi tidak menulis approved_at/confirmed_at.",
+   "rencana": "Hitung dispatched/partially_shipped sebagai selesai disiapkan; stempel waktu & pelaku di transisi.",
+   "uji_regresi": "SO selesai → 100%.",
+   "keputusan_owner": "—"
+  },
+  {
+   "id": "F-02",
+   "prioritas": "P3",
+   "langkah": "A03",
+   "temuan": "Produk yang ditambah dari strip Sering dibeli / Produk Terlaris tampil 0 roll tersedia di checkout walau ada 660 roll.",
+   "dampak": "Sales mengira stok kosong.",
+   "akar_masalah": "frequent-products tidak mengirim roll_count; CheckoutItemCard.jsx:25 membaca field itu.",
+   "rencana": "Lengkapi roll_count/ketersediaan dengan helper katalog.",
+   "uji_regresi": "Angka roll sama dengan katalog.",
+   "keputusan_owner": "—"
+  },
+  {
+   "id": "F-04",
+   "prioritas": "P3",
+   "langkah": "A03, K04",
+   "temuan": "Kartu POS Jml Tersedia 1.375.897,08 / Jml Dipesan menjumlah yard + kg + meter tanpa satuan.",
+   "dampak": "Angka tidak bermakna.",
+   "akar_masalah": "App.js:502–503 memakai metrics.available_qty gabungan.",
+   "rencana": "Pecah per satuan atau ganti dengan jumlah roll/varian.",
+   "uji_regresi": "Tidak ada penjumlahan lintas satuan.",
+   "keputusan_owner": "—"
+  },
+  {
+   "id": "F-08",
+   "prioritas": "P3",
+   "langkah": "I04, K02",
+   "temuan": "Daftar invoice SO kosong setelah lunas lewat kwitansi (invoice hanya dari jalur simulasi lama); langkah Ditagih di Perjalanan = Faktur Pajak.",
+   "dampak": "Tidak jelas dokumen tagihan resmi untuk pelanggan non-PKP.",
+   "akar_masalah": "invoices.py (simulate-payment) vs kwitansi AR; order_journey_service.",
+   "rencana": "Tetapkan Faktur Komersial (PDF) sebagai dokumen tagihan & tampilkan di SO/Perjalanan.",
+   "uji_regresi": "Dokumen tagihan muncul per SO.",
+   "keputusan_owner": "Ya: dokumen tagihan resmi"
+  },
+  {
+   "id": "F-17",
+   "prioritas": "P3",
+   "langkah": "Meja Admin Sales",
+   "temuan": "Antrean Retur menunggu proses dokumen menampilkan nilai Rp0.",
+   "dampak": "Prioritas kerja tidak terlihat.",
+   "akar_masalah": "work_desk_service antrean retur tanpa nilai.",
+   "rencana": "Isi nilai = qty klaim × harga transaksi.",
+   "uji_regresi": "Nilai sesuai klaim.",
+   "keputusan_owner": "—"
+  },
+  {
+   "id": "F-13",
+   "prioritas": "Info",
+   "langkah": "D16",
+   "temuan": "MD Quality dapat mengisi hasil warna/handfeel saat SPK masih Draf (belum ditugaskan); bagian QC ditolak pada status yang sama.",
+   "dampak": "Konsistensi gerbang SPK.",
+   "akar_masalah": "inspection_service.py:803 sengaja mengizinkan draf untuk bagian md_quality.",
+   "rencana": "Konfirmasi maksud desain; bila tidak dimaksud, wajibkan SPK ditugaskan.",
+   "uji_regresi": "—",
+   "keputusan_owner": "Ya: konfirmasi"
+  }
+ ]
+}
