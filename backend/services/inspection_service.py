@@ -941,9 +941,70 @@ async def inspect_line(ins_id: str, line_id: str, payload: Dict[str, Any],
     return out
 
 
+async def _release_quarantine(doc: Dict[str, Any], dec: str, note: str, actor: Dict[str, Any],
+                              reject_disposition: str, rejected_roll_ids: Optional[List[str]]) -> Optional[Dict[str, Any]]:
+    """F-14 (uji pra-UAT 2026-10-21, keputusan owner Q-03a) — SATU keputusan: menutup SPK penerimaan PO
+    sekaligus memutus karantina tugas penerimaannya (roll diterima → tersedia, ditolak → retur supplier/rusak)
+    lewat mesin yang sama dengan antrean karantina (`qc_service.process_qc_decision`).
+    None bila tidak ada karantina yang menunggu (tugas sudah diputus lewat jalur lama / tanpa tugas)."""
+    task = await db.wms_tasks.find_one({"id": doc.get("task_id")}, {"_id": 0})
+    if not task or task.get("status") != "qc_pending":
+        return None
+    from services import qc_service
+    qrolls = await qc_service.get_quarantine_rolls(task["id"])
+    if not qrolls:
+        return None
+    lines = {ln.get("roll_id"): ln for ln in (doc.get("lines") or []) if ln.get("roll_id")}
+    ids = [r["id"] for r in qrolls]
+    marked = {rid for rid, ln in lines.items() if ln.get("decision") == "tolak"}
+    if dec == "tolak":
+        rejected = set(ids)
+    elif dec == "terima_sebagian":
+        rejected = set(rejected_roll_ids or []) | marked
+        unknown = rejected - set(ids)
+        if unknown:
+            raise InspectionError("Roll yang ditandai tolak tidak ada di karantina tugas ini — muat ulang SPK.")
+        if not rejected or rejected == set(ids):
+            raise InspectionError("Diterima sebagian: tandai roll yang DITOLAK (minimal satu, tidak semuanya).")
+    else:
+        if marked:
+            nos = ", ".join(str(lines[r].get("roll_no") or r) for r in sorted(marked))
+            raise InspectionError(f"Baris {nos} ditandai tolak — pilih keputusan 'Diterima sebagian' atau 'Ditolak'.")
+        rejected = set()
+    accepted = [rid for rid in ids if rid not in rejected]
+    length = {r["id"]: float(r.get("length_remaining") or 0) for r in qrolls}
+    acc_qty = round(sum(length[r] for r in accepted), 2)
+    rej_qty = round(sum(length[r] for r in rejected), 2)
+    disp = (reject_disposition or "").strip().lower()
+    if rej_qty > 0.01 and disp not in ("damaged", "return"):
+        raise InspectionError("Pilih tindakan untuk roll yang ditolak: retur ke supplier (Nota Debit) atau barang rusak.")
+    from services import grade_service
+    grades: Dict[str, str] = {}
+    by_id = {r["id"]: r for r in qrolls}
+    for rid in accepted:
+        g = (lines.get(rid) or {}).get("grade_after") or by_id[rid].get("grade") or "A"
+        try:
+            grades[rid] = grade_service.normalize_or_raise(g, "Grade")
+        except Exception:  # noqa: BLE001 — grade lama tak sah → bawaan A
+            grades[rid] = "A"
+    reason = note or f"SPK {doc.get('number', '')}: {DECISIONS.get(dec, dec)}"
+    try:
+        res = await qc_service.process_qc_decision(
+            task, acc_qty, rej_qty, disp, reason, actor, accept_grade="A",
+            roll_order=accepted + [r for r in ids if r in rejected], roll_grades=grades)
+    except ValueError as exc:
+        raise InspectionError(str(exc)) from exc
+    return {"task_id": task["id"], "accepted_qty": res.get("accepted_qty", 0.0), "rejected_qty": res.get("rejected_qty", 0.0),
+            "reject_disposition": res.get("reject_disposition"), "purchase_return": res.get("purchase_return"),
+            "task_status": res.get("task_status"), "rejected_roll_ids": sorted(rejected), "at": now_iso(),
+            "by": actor.get("name", "")}
+
+
 async def finish(ins_id: str, decision: str, remark: str,
-                 actor: Dict[str, Any]) -> Dict[str, Any]:
-    """Tutup inspeksi dengan KEPUTUSAN. `tolak` wajib ber-alasan (tersimpan di dokumen)."""
+                 actor: Dict[str, Any], reject_disposition: str = "",
+                 rejected_roll_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Tutup inspeksi dengan KEPUTUSAN. `tolak` wajib ber-alasan (tersimpan di dokumen).
+    F-14 — SPK penerimaan PO: keputusan ini sekaligus memutus karantina (`_release_quarantine`)."""
     doc = await _load(ins_id)
     _assert_status(doc, (STATUS_ASSIGNED, STATUS_IN_PROGRESS), "ditutup")
     dec = str(decision or "").strip().lower()
@@ -962,11 +1023,17 @@ async def finish(ins_id: str, decision: str, remark: str,
             "membuat tanggalnya jadi bukti palsu.")
     if doc.get("kind") == KIND_RANDOM_CHECK and any(not ln.get("qc_at") for ln in lines):
         raise InspectionError("Random check: periksa SEMUA roll dulu — roll yang belum dicek tetap ditahan.")
+    qres = None
+    if doc.get("kind") == KIND_PO_RECEIPT and doc.get("task_id"):
+        # Karantina diputus DULU: bila gagal (roll ditahan, cakupan belum terpenuhi, …) SPK tetap terbuka —
+        # tidak ada lagi "SPK ditutup terima tetapi roll masih karantina" (F-14).
+        qres = await _release_quarantine(doc, dec, note, actor, reject_disposition, rejected_roll_ids)
+    extra = {"quarantine_result": qres} if qres else {}
     out = await _save(doc, "finished", f"Keputusan: {DECISIONS[dec]}", actor, note,
                       status=STATUS_DONE, decision=dec, decision_label=DECISIONS[dec],
                       remark=note, reject_reason=(note if dec == "tolak" else ""),
                       finished_at=now_iso(),
-                      decided_by=actor.get("name", ""), decided_at=now_iso())
+                      decided_by=actor.get("name", ""), decided_at=now_iso(), **extra)
     if doc.get("kind") == KIND_RANDOM_CHECK:
         await _close_random_check(out, dec, actor)
         out = safe_doc(await db[COLL].find_one({"id": doc["id"]}, {"_id": 0}))
@@ -1080,6 +1147,10 @@ async def reopen(ins_id: str, reason: str, actor: Dict[str, Any]) -> Dict[str, A
     _assert_status(doc, (STATUS_DONE,), "dibuka kembali")
     if doc.get("kind") == KIND_RANDOM_CHECK:
         raise InspectionError("Random check yang sudah ditutup tidak bisa dibuka — buat random check baru.")
+    if doc.get("quarantine_result"):   # F-14 — stok sudah dilepas/diretur oleh keputusan SPK ini
+        raise InspectionError(
+            "Keputusan SPK ini sudah memutus karantina (stok diterima/ditolak) — tidak bisa dibuka kembali. "
+            "Koreksi lewat retur pembelian atau penyesuaian stok.")
     why = (reason or "").strip()
     if len(why) < MIN_REASON:
         raise InspectionError(

@@ -72,6 +72,9 @@ class RandomCheckCreate(BaseModel):
 class InspectionFinish(BaseModel):
     decision: str = Field(..., description="terima | terima_sebagian | turun_grade | tolak")
     remark: str = ""
+    # F-14 — SPK penerimaan PO memutus karantina: tindakan untuk roll ditolak + roll mana yang ditolak (sebagian)
+    reject_disposition: str = Field("", description="return (retur supplier + Nota Debit) | damaged (rusak)")
+    rejected_roll_ids: List[str] = Field(default_factory=list)
 
 
 class InspectionReason(BaseModel):

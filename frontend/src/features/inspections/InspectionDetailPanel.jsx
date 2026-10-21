@@ -51,9 +51,13 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
   const [lineOpen, setLineOpen] = useState(null);
   const [linePart, setLinePart] = useState("");
   const isRandom = doc.kind === "random_check";
+  // F-14 (keputusan owner Q-03a) — SPK penerimaan PO: keputusan ini SEKALIGUS memutus karantina.
+  const isPoReceipt = doc.kind === "po_receipt" && Boolean(doc.task_id);
+  const [disposition, setDisposition] = useState("");
+  const [rejectedRolls, setRejectedRolls] = useState([]);
   const isMdKind = (meta?.md_quality_kinds || MD_QUALITY_KINDS).includes(doc.kind);
   const canAssign = can(currentUser?.permissions, "inspection", "assign");   // FE-04
-  const canDecide = can(currentUser?.permissions, "inspection", "decide") || (isRandom && Boolean(meta?.can_qc_release));
+  const canDecide = can(currentUser?.permissions, "inspection", "decide") || ((isRandom || isPoReceipt) && Boolean(meta?.can_qc_release));
   const canInspectAll = Boolean(meta?.can_inspect_all);   // Sisir lanjutan gerbang peran (2026-10-21) — hanya dari server (tanpa tebakan nama peran saat meta belum ada)
   const canMdq = isMdKind && Boolean(meta?.can_md_quality);
   const canQc = Boolean(meta?.can_qc) || canInspectAll;
@@ -86,8 +90,18 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
     } finally { setBusy(false); }
   }
 
+  const needsDisposition = isPoReceipt && ["tolak", "terima_sebagian"].includes(decision);
+  const partialMissing = isPoReceipt && decision === "terima_sebagian"
+    && (rejectedRolls.length === 0 || rejectedRolls.length >= (doc.lines || []).length);
+  const quarantineExtra = () => (isPoReceipt
+    ? { reject_disposition: needsDisposition ? disposition : "", rejected_roll_ids: decision === "terima_sebagian" ? rejectedRolls : [] }
+    : {});
+  const toggleRejected = (rid) => setRejectedRolls((cur) => (cur.includes(rid) ? cur.filter((x) => x !== rid) : [...cur, rid]));
+
   async function tutupDenganKeputusan() {
     if (!decision) return;
+    if (needsDisposition && !disposition) { setErr("Pilih tindakan untuk roll yang ditolak: retur ke supplier atau barang rusak."); return; }
+    if (partialMissing) { setErr("Diterima sebagian: centang roll yang DITOLAK (minimal satu, tidak semuanya)."); return; }
     // “Tolak” WAJIB ber-alasan dan alasannya tersimpan DI DOKUMEN (bukan hanya di
     // jejak audit yang tak pernah dibaca orang yang sedang bertanya).
     if (decision === "tolak") {
@@ -98,10 +112,10 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
         reasonMinLength: minAlasan,
       });
       if (!alasan) return;
-      await run(() => finishInspection(doc.id, decision, alasan), "SPK ditutup: ditolak.");
+      await run(() => finishInspection(doc.id, decision, alasan, quarantineExtra()), "SPK ditutup: ditolak.");
       return;
     }
-    await run(() => finishInspection(doc.id, decision, ""),
+    await run(() => finishInspection(doc.id, decision, "", quarantineExtra()),
       `SPK ditutup: ${INS_DECISION_LABEL[decision] || decision}.`);
   }
 
@@ -412,14 +426,51 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
                   onValueChange={setDecision} options={decisionOptions}
                   className="field" placeholder="Pilih keputusan" />
               </label>
+              {needsDisposition && (
+                <label className="block w-64">
+                  <span className="field-label">Roll ditolak dijadikan</span>
+                  <KNSelect data-testid="ins-reject-disposition" value={disposition} onValueChange={setDisposition}
+                    options={[{ value: "return", label: "Retur ke supplier (Nota Debit)" },
+                              { value: "damaged", label: "Barang rusak (simpan di gudang)" }]}
+                    className="field" placeholder="Pilih tindakan" />
+                </label>
+              )}
               <button data-testid="ins-finish-button" className="primary-button"
-                disabled={busy || !decision} onClick={tutupDenganKeputusan}>
+                disabled={busy || !decision || (needsDisposition && !disposition) || partialMissing} onClick={tutupDenganKeputusan}>
                 <CheckCircle2 size={13} /> Tutup SPK
               </button>
+              {isPoReceipt && (
+                <p className="w-full text-[10.5px] text-[#4A4A52]" data-testid="ins-quarantine-note">
+                  Keputusan ini langsung memutus karantina: roll diterima → stok tersedia (grade hasil 4-point),
+                  roll ditolak → retur ke supplier atau barang rusak. Tidak ada keputusan kedua di antrean karantina.
+                </p>
+              )}
+              {isPoReceipt && decision === "terima_sebagian" && (
+                <div className="w-full rounded-md border border-[#EFF0F2] p-2" data-testid="ins-reject-rolls">
+                  <p className="mb-1 text-[10.5px] font-semibold text-[#6B6B73]">Centang roll yang DITOLAK:</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    {lines.filter((ln) => ln.roll_id).map((ln) => (
+                      <label key={ln.id} className="inline-flex items-center gap-1 text-[11px]">
+                        <input type="checkbox" data-testid={`ins-reject-roll-${ln.id}`}
+                          checked={rejectedRolls.includes(ln.roll_id)} onChange={() => toggleRejected(ln.roll_id)} />
+                        {ln.roll_no} · {ln.quantity} {ln.unit}{ln.grade_after ? ` · grade ${ln.grade_after}` : ""}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
 
-          {canDecide && doc.status === "done" && !isRandom && (
+          {doc.quarantine_result && (
+            <p className="w-full rounded-md bg-[#F1FBF4] px-2 py-1 text-[11px] text-[#126E2C]" data-testid="ins-quarantine-result">
+              Karantina diputus: diterima {doc.quarantine_result.accepted_qty}
+              {doc.quarantine_result.rejected_qty > 0 && <> · ditolak {doc.quarantine_result.rejected_qty}
+                {doc.quarantine_result.purchase_return?.number ? ` → retur ${doc.quarantine_result.purchase_return.number}` : " (barang rusak)"}</>}
+            </p>
+          )}
+
+          {canDecide && doc.status === "done" && !isRandom && !doc.quarantine_result && (
             <button data-testid="ins-reopen-button" className="secondary-button" disabled={busy}
               onClick={bukaKembali}>
               <RotateCcw size={13} /> Buka kembali

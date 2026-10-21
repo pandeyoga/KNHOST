@@ -108,6 +108,10 @@ async def qc_inspection_queue(request: Request) -> List[Dict[str, Any]]:
     prods = {p["id"]: p for p in await db.products.find(
         {"id": {"$in": prod_ids}}, {"_id": 0}).to_list(500)}
     whs = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(100)}
+    from services import inspection_service as _ins
+    spk = {d["task_id"]: d for d in await db[_ins.COLL].find(
+        {"task_id": {"$in": [t["id"] for t in tasks]}, "status": {"$in": list(_ins.OPEN_STATUSES)}},
+        {"_id": 0, "id": 1, "number": 1, "status": 1, "task_id": 1}).to_list(500)}
     out = []
     for t in tasks:
         po = pos.get(t.get("po_id"), {})
@@ -121,6 +125,7 @@ async def qc_inspection_queue(request: Request) -> List[Dict[str, Any]]:
         # FE-10 — satuan sumber eksplisit (yard/kg) + rincian per satuan; layar tidak lagi menebak "m".
         qb = await quarantine_breakdown(t["id"], t.get("unit") or "")
         t["quarantine_unit"], t["quarantine_by_unit"], t["quarantine_unit_mixed"] = qb["unit"], qb["by_unit"], qb["mixed"]
+        t["inspection"] = spk.get(t["id"])   # F-14 — SPK terbuka = tempat keputusan
         out.append(safe_doc(t))
     return out
 
@@ -140,6 +145,14 @@ async def qc_decision(task_id: str, payload: QCDecision, request: Request) -> Di
         raise HTTPException(
             status_code=400,
             detail=f"Task harus berstatus qc_pending untuk inspeksi (current: {task.get('status')})")
+    # F-14 (keputusan owner Q-03a) — SATU keputusan: selama SPK penerimaannya terbuka, karantina diputus lewat SPK.
+    from services import inspection_service as _ins
+    open_spk = await db[_ins.COLL].find_one({"task_id": task_id, "status": {"$in": list(_ins.OPEN_STATUSES)}},
+                                            {"_id": 0, "number": 1})
+    if open_spk:
+        raise HTTPException(status_code=409, detail=(
+            f"Keputusan karantina mengikuti SPK {open_spk.get('number', '')} — tutup SPK itu dengan keputusan "
+            "(Gudang → SPK Inspeksi); roll diterima/ditolak otomatis."))
     from services.qc_service import process_qc_decision
     try:
         result = await process_qc_decision(

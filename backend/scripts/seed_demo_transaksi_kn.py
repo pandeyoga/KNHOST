@@ -110,13 +110,26 @@ async def receive_po(c: Ctx, po_id: str, entity: str, wh_user: str, fraction: fl
             await wu.post(f"/inbound/tasks/{t['id']}/complete", {"dye_lot": f"DM-DL-{tag}", "grade": "A"}, entity=entity)
             cur = await db.wms_tasks.find_one({"id": t["id"]}, {"_id": 0, "status": 1})
             if cur.get("status") == "qc_pending":
-                for r in await wu.get(f"/inbound/qc/tasks/{t['id']}/rolls", entity=entity):
-                    try:
-                        await wu.post(f"/inbound/rolls/{r['id']}/inspect", {"defects": [], "note": "Inspeksi 4-point bersih (demo)"}, entity=entity)
-                    except ApiError:
-                        await wu.post(f"/inventory/rolls/{r['id']}/grade-override", {"grade": "A", "reason": "Cek visual lolos (demo)"}, entity=entity)
-                await wu.post(f"/inbound/tasks/{t['id']}/qc-decision", {"accept_qty": got, "reject_qty": 0, "accept_grade": "A",
-                                                                         "reason": "Lolos inspeksi 4-point (demo)"}, entity=entity)
+                await decide_via_spk(c, t["id"], entity)
+
+
+async def decide_via_spk(c: Ctx, task_id: str, entity: str) -> None:
+    """F-14 (keputusan owner Q-03a) — SATU keputusan: SPK penerimaan (lahir otomatis saat barang masuk karantina)
+    ditugaskan Admin Gudang ke QC, diperiksa 4-point per roll, lalu ditutup "Diterima" → karantina lepas otomatis."""
+    spk = await db.inspections.find_one({"task_id": task_id}, {"_id": 0, "id": 1, "status": 1, "lines": 1})
+    if not spk:
+        raise RuntimeError(f"SPK penerimaan untuk tugas {task_id} tidak terbentuk")
+    adm, qc = await c.u("whadmin"), await c.u("qc")
+    qc_user = await db.users.find_one({"email": "qc" + MAIL}, {"_id": 0, "id": 1})
+    if spk.get("status") == "draft":
+        await adm.post(f"/inspections/{spk['id']}/assign", {"assigned_to": qc_user["id"], "bagian": "QC"}, entity=entity)
+    if spk.get("status") in ("draft", "assigned"):
+        await qc.post(f"/inspections/{spk['id']}/start", {}, entity=entity)
+    for ln in spk.get("lines") or []:
+        await qc.post(f"/inspections/{spk['id']}/lines/{ln['id']}/inspect",
+                      {"part": "qc", "defects": [], "remark": "Inspeksi 4-point bersih (demo)"}, entity=entity)
+    await qc.post(f"/inspections/{spk['id']}/finish", {"decision": "terima", "remark": "Lolos inspeksi 4-point (demo)"},
+                  entity=entity)
 
 
 async def sc_purchase_full(c: Ctx) -> str:

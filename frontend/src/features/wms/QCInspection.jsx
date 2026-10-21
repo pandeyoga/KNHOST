@@ -46,7 +46,7 @@ export function formatTotals(byUnit) {
   return parts.length ? parts.join(" · ") : "0";
 }
 
-export default function QCInspection({ currentUser, selectedEntity }) {
+export default function QCInspection({ currentUser, selectedEntity, onOpenSpk }) {
   const { options: enumOptions, labelOf } = useDomainEnums();
   const gradeOptions = enumOptions("grade");
   const [rows, setRows] = useState([]);
@@ -217,14 +217,27 @@ export default function QCInspection({ currentUser, selectedEntity }) {
                     {t.quarantine_unit_mixed ? formatTotals(t.quarantine_by_unit || {}) : `${formatQty(t.quarantine_qty)} ${unitOf(t)}`.trim()}
                   </span>
                   <div className="text-right flex flex-col items-end gap-1">
-                    <button data-testid={`qc-inspect-btn-${i}`} className="btn-primary btn-sm"
-                            onClick={() => openInspect(t)}>
-                      <ShieldCheck size={13} /> Inspeksi
-                    </button>
-                    <button data-testid={`qc-4point-btn-${i}`} className="btn-secondary btn-sm"
-                            onClick={() => setRoll4pTask(t)}>
-                      <ShieldCheck size={12} /> 4-Point Roll
-                    </button>
+                    {t.inspection ? (
+                      /* F-14 (keputusan owner Q-03a) — satu keputusan: SPK terbuka = tempat memutus karantina */
+                      <>
+                        <button data-testid={`qc-open-spk-btn-${i}`} className="btn-primary btn-sm"
+                                onClick={() => onOpenSpk?.(t.inspection)}>
+                          <ShieldCheck size={13} /> Putuskan di SPK
+                        </button>
+                        <span className="text-[10px] text-[#6B6B73]" data-testid={`qc-spk-number-${i}`}>{t.inspection.number}</span>
+                      </>
+                    ) : (
+                      <>
+                        <button data-testid={`qc-inspect-btn-${i}`} className="btn-primary btn-sm"
+                                onClick={() => openInspect(t)}>
+                          <ShieldCheck size={13} /> Inspeksi
+                        </button>
+                        <button data-testid={`qc-4point-btn-${i}`} className="btn-secondary btn-sm"
+                                onClick={() => setRoll4pTask(t)}>
+                          <ShieldCheck size={12} /> 4-Point Roll
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

@@ -135,8 +135,9 @@ export async function createRandomCheck(payload) {
   return r.data || null;
 }
 
-export async function finishInspection(id, decision, remark = "") {
-  const r = await axios.post(`${API}/inspections/${id}/finish`, { decision, remark });
+/** F-14 — `extra` = { reject_disposition, rejected_roll_ids } untuk SPK penerimaan PO (memutus karantina). */
+export async function finishInspection(id, decision, remark = "", extra = {}) {
+  const r = await axios.post(`${API}/inspections/${id}/finish`, { decision, remark, ...extra });
   return r.data || null;
 }
 

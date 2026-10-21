@@ -271,13 +271,17 @@ async def finish_inspection(ins_id: str, payload: InspectionFinish,
                             request: Request) -> Dict[str, Any]:
     """Tutup inspeksi dengan KEPUTUSAN (antrean `inspection_hold` untuk yang ditahan)."""
     user_doc = await svc.get_one(ins_id)
-    if user_doc and user_doc.get("kind") == svc.KIND_RANDOM_CHECK:
+    # F-14 (keputusan owner Q-03a) — SPK penerimaan PO kini SEKALIGUS memutus karantina, jadi pemutus karantina
+    # (`qc.release`, bawaan QC/MD/Admin Gudang) boleh menutupnya — sama seperti random check.
+    if user_doc and user_doc.get("kind") in (svc.KIND_RANDOM_CHECK, svc.KIND_PO_RECEIPT):
         actor = await require_any_permission(request, [("inspection", "decide"), ("qc", "release")])
     else:
         actor = await require_permission(request, "inspection", "decide")
     doc = await _guarded(ins_id, request, actor)
     try:
-        out = await svc.finish(doc["id"], payload.decision, payload.remark, actor)
+        out = await svc.finish(doc["id"], payload.decision, payload.remark, actor,
+                               reject_disposition=payload.reject_disposition,
+                               rejected_roll_ids=payload.rejected_roll_ids)
     except svc.InspectionError as exc:
         raise _fail(exc) from exc
     await audit(actor["name"], "inspection_finished", "inspection", doc["id"],

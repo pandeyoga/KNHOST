@@ -260,11 +260,15 @@ async def process_qc_decision(
     task: Dict[str, Any], accept_qty: float, reject_qty: float,
     reject_disposition: str, reason: str, actor: Dict[str, Any],
     accept_grade: str = "A", defects: Optional[List[str]] = None,
+    roll_order: Optional[List[str]] = None, roll_grades: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """Proses keputusan QC untuk 1 inbound task. Lihat docstring modul.
 
     P0-4 — `accept_grade` & `defects` ditanam ke roll yang lolos (available)
-    sebagai grade aktual hasil inspeksi tekstil."""
+    sebagai grade aktual hasil inspeksi tekstil.
+    F-14 (keputusan SPK) — `roll_order`: roll yang diterima didahulukan sehingga terima/tolak mengenai roll
+    yang tepat (konsumsi karantina berurutan); `roll_grades`: grade per roll hasil 4-point menggantikan
+    `accept_grade` untuk roll itu."""
     task_id = task["id"]
     product_id = task["product_id"]
     warehouse_id = task["warehouse_id"]
@@ -287,6 +291,9 @@ async def process_qc_decision(
                          + " sedang DITAHAN — lepas tahanan dulu sebelum keputusan QC.")
 
     qrolls = await get_quarantine_rolls(task_id)
+    if roll_order:
+        rank = {rid: i for i, rid in enumerate(roll_order)}
+        qrolls.sort(key=lambda r: rank.get(r.get("id"), len(rank)))
     total_q = round(sum(float(r.get("length_remaining", 0) or 0) for r in qrolls), 2)
     if total_q <= 0.01:
         raise ValueError("Tidak ada stok karantina untuk task ini.")
@@ -331,7 +338,8 @@ async def process_qc_decision(
                       precondition={"status": "qc_pending"})
     try:
         result, set_fields = await _apply_qc_decision(task, po, owner, qrolls, _grade_before, accept_qty, reject_qty,
-                                                      reject_disposition, reason, actor, accept_grade, defects, result, doc_ref)
+                                                      reject_disposition, reason, actor, accept_grade, defects, result, doc_ref,
+                                                      roll_grades=roll_grades)
     except Exception as e:
         await _saga.mark_failed("wms_tasks", task_id, str(e))
         raise
@@ -351,7 +359,8 @@ async def process_qc_decision(
 
 
 async def _apply_qc_decision(task, po, owner, qrolls, _grade_before, accept_qty, reject_qty,
-                             reject_disposition, reason, actor, accept_grade, defects, result, doc_ref):
+                             reject_disposition, reason, actor, accept_grade, defects, result, doc_ref,
+                             roll_grades=None):
     from services import grade_service
     task_id = task["id"]
     product_id = task["product_id"]
@@ -374,13 +383,17 @@ async def _apply_qc_decision(task, po, owner, qrolls, _grade_before, accept_qty,
         # PS-09 — jejak perubahan grade per roll yang lolos QC (before → after).
         for _r in acc.get("rolls", []) or []:
             _rid = _r.get("roll_id") or ""
+            # F-14 — grade per roll dari SPK (4-point) bila ada; roll anak hasil belah mewarisi grade induknya.
+            _g = (roll_grades or {}).get(_rid) or (roll_grades or {}).get(_r.get("parent_roll_id") or "") or accept_grade
+            if _rid and _g != accept_grade:
+                await db.inventory_rolls.update_one({"id": _rid}, {"$set": {"grade": _g, "qc_grade": _g}})
             _before = _grade_before.get(_rid, "")
-            if not _rid or _before == accept_grade:
+            if not _rid or _before == _g:
                 continue
             await db.inventory_rolls.update_one(
                 {"id": _rid},
                 {"$push": {"grade_history": grade_service.history_entry(
-                    _before, accept_grade, "qc_inspection",
+                    _before, _g, "qc_inspection",
                     f"Keputusan QC {doc_ref}: diterima {acc['moved_qty']}",
                     actor, {"lot": _r.get("lot", "")})}})
 
