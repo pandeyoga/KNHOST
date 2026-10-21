@@ -105,7 +105,7 @@ export default function ReorderSuggestions({ currentUser, selectedEntity = "all"
         submit_now: true,
       };
       const res = await axios.post(`${API}/purchase-requisitions`, payload);
-      flash(`${res.data.number} dibuat (${selectedRows.length} item). Lihat di menu Purchase Requisition.`);
+      flash(`${res.data.number} dibuat (${selectedRows.length} item). Lihat di tab Permintaan Pembelian.`);
       load();
     } catch (e) {
       flash(e.response?.data?.detail || "Gagal membuat PR.");

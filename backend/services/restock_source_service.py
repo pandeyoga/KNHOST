@@ -55,7 +55,13 @@ async def check_lines(lines: List[Tuple[Dict[str, Any], str]], *, reason: str, e
         mode = (tpl.get("restock_source") or {}).get("mode") or ""
         row = {"product_id": p.get("id"), "template_id": tpl.get("id", ""), "article": art,
                "mode": mode or "unmapped", "route": route, "reason": ""}
-        if not mode:
+        if not mode and not p.get("template_id"):
+            # Cek UI UAT v3 (S16) — produk lama tanpa template artikel tidak bisa dipetakan di layar mana pun
+            # (Sumber Restock diatur per template) → dulu PR diblok selamanya. Cukup diberi peringatan.
+            row["mode"] = "no_template"
+            warnings.append(f"{where}: produk {art} belum tertaut artikel (template) — sumber restock tidak bisa "
+                            "diatur; jalur dicatat apa adanya.")
+        elif not mode:
             msg = (f"{where}: sumber restock artikel {art} belum diatur — minta MD mengisi di "
                    "Master Produk › Sumber Restock.")
             if policy == "block":
