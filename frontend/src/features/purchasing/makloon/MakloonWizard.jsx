@@ -71,7 +71,9 @@ export default function MakloonWizard({ selectedEntity, onClose, onSaved, onErro
         setStageOptions(stages);
         setBasisOptions((be?.values || Object.keys(FALLBACK_BASIS_LABELS).map((k) => ({ value: k, label: FALLBACK_BASIS_LABELS[k] })))
           .map((v) => ({ value: v.value, label: v.label })));
-        if (whs[0]) setHead((p) => ({ ...p, from_warehouse_id: whs[0].id, target_warehouse_id: whs[0].id }));
+        // Cek UI UAT v3 (S9) — dulu menimpa gudang dari prefill PR (Jakarta) dengan gudang pertama di daftar.
+        if (whs[0]) setHead((p) => ({ ...p, from_warehouse_id: p.from_warehouse_id || whs[0].id,
+                                       target_warehouse_id: p.target_warehouse_id || whs[0].id }));
       } catch (e) { onError?.("Gagal memuat data pendukung wizard."); }
     })();
   }, []); // eslint-disable-line

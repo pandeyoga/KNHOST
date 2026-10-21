@@ -1276,6 +1276,14 @@ async def receive_step(mko_id: str, seq: int, data: Dict[str, Any], *,
             await _p2.on_goods_received(order["special_order_id"])
         except Exception as exc:  # noqa: BLE001 — stok tetap diterima; error terlihat di OD
             await db.special_orders.update_one({"id": order["special_order_id"]}, {"$set": {"shipping_error": str(exc)}})
+    # Cek UI UAT v3 (S9) — hasil makloon langsung tersedia, tetapi SO backorder yang menunggunya dulu tidak
+    # dicadangkan (jalur PO/QC/antar-PT sudah memanggil ini). Gagal mencadangkan tidak membatalkan penerimaan.
+    if created_lots:
+        try:
+            from services.backorder_service import auto_fulfill_backorders
+            await auto_fulfill_backorders(out_pid, entity_id)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("auto_fulfill_backorders setelah terima makloon %s gagal: %s", mko_id, exc)
     return safe_doc(order)
 
 
