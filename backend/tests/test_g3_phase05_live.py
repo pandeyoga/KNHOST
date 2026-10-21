@@ -11,7 +11,7 @@ import requests
 
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 ADMIN = ("admin@kainnusantara.id", "demo12345")
-SALES = ("sales@kainnusantara.id", "demo1234")
+SALES = ("sales@kainnusantara.id", "demo12345")
 
 
 def _login(creds):

@@ -167,7 +167,7 @@ async def _rehome_opening_stock(whs: Dict[str, str], cst: str) -> None:
         log(f"   ~ {wh['name']}: {len(rolls)} roll dipindah ke struktur baru · gudang lama dinonaktifkan")
 
 
-# ─── 3. Akun semua peran (sandi demo1234) ────────────────────────────────────────────────────────────────
+# ─── 3. Akun semua peran (sandi demo12345) ────────────────────────────────────────────────────────────────
 def accounts(cst: str) -> List[Dict[str, Any]]:
     allx = [KSC, KANDA, cst]
     return [

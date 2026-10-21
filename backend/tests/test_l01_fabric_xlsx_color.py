@@ -34,7 +34,7 @@ def test_add_fabric_type_and_import_accepts_it():
         r = requests.post(f"{BASE}/api/client-dataset/upload", files={"file": ("x.csv", csv.encode(), "text/csv")},
                           headers=adm, timeout=60)
         assert r.status_code == 200 and code not in r.json()["report"]["unknown_values"]["jenis_kain"]
-        s = _h("sales.kanda@kainnusantara.id", "demo1234")
+        s = _h("sales.kanda@kainnusantara.id", "demo12345")
         assert requests.post(f"{BASE}/api/master/fabric-types", json={"code": code + "s", "name": "x", "control_uom": "kg"},
                              headers=s, timeout=30).status_code == 403
     finally:
@@ -47,7 +47,7 @@ def test_recap_xlsx():
     assert r.status_code == 200 and "spreadsheetml" in r.headers["content-type"]
     wb = load_workbook(io.BytesIO(r.content))
     assert wb.sheetnames == ["Ringkasan per Mitra", "Rincian"]
-    s = _h("sales.kanda@kainnusantara.id", "demo1234")
+    s = _h("sales.kanda@kainnusantara.id", "demo12345")
     assert requests.get(f"{BASE}/api/makloon-claims/recap.xlsx", headers=s, timeout=30).status_code == 403
 
 

@@ -10,7 +10,7 @@ db = MongoClient(os.environ.get("MONGO_URL"))[os.environ.get("DB_NAME")]
 CREATED = []
 
 
-def _login(email, pw="demo1234"):
+def _login(email, pw="demo12345"):
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pw}, timeout=20)
     r.raise_for_status()
     tok = r.json().get("token") or r.json().get("access_token")

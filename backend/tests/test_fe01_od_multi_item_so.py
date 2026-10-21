@@ -37,7 +37,7 @@ SNAP = {p["id"]: DB.products.find_one({"id": p["id"]}, {"_id": 0, **{f: 1 for f 
 OD_IDS: list = []
 
 
-def _login(email, pw="demo1234"):
+def _login(email, pw="demo12345"):
     r = requests.post(f"{BASE}/auth/login", json={"email": email, "password": pw})
     assert r.status_code == 200, r.text
     return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": ENT}

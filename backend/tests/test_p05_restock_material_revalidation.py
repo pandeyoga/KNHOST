@@ -15,7 +15,7 @@ ENT = "ent_kanda"
 DB = MongoClient(os.environ.get("MONGO_URL", "mongodb://localhost:27017"))[os.environ.get("DB_NAME", "test_database")]
 
 
-def _login(email, password="demo1234"):
+def _login(email, password="demo12345"):
     r = requests.post(f"{BASE}/api/auth/login", json={"email": email, "password": password}, timeout=30)
     assert r.status_code == 200, f"login {email}: {r.status_code} {r.text}"
     return {"Authorization": f"Bearer {r.json()['token']}", "X-Entity-Id": ENT}

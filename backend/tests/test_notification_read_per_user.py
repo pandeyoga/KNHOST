@@ -14,7 +14,7 @@ db = mc[os.environ.get("DB_NAME")]
 PFX = "ntf_TEST_" + uuid.uuid4().hex[:6]
 
 
-def _login(email, pw="demo1234"):
+def _login(email, pw="demo12345"):
     r = requests.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": pw})
     if r.status_code != 200:
         pytest.skip(f"login {email} failed {r.status_code}")

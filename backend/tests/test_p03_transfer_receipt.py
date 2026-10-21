@@ -18,9 +18,9 @@ sys.path.insert(0, str(BACKEND_DIR))
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 
 ADMIN = ("admin@kainnusantara.id", "demo12345")
-WHADMIN = ("whadmin@kainnusantara.id", "demo1234")
-MANAGER = ("manager@kainnusantara.id", "demo1234")
-WH_SRG = ("warehouse.soreang@kainnusantara.id", "demo1234")
+WHADMIN = ("whadmin@kainnusantara.id", "demo12345")
+MANAGER = ("manager@kainnusantara.id", "demo12345")
+WH_SRG = ("warehouse.soreang@kainnusantara.id", "demo12345")
 
 ENT_KANDA = "ent_kanda"
 TRF_CODE = "KANDA/TRF-00002"

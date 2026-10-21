@@ -28,11 +28,11 @@ def _login(email, pw):
 @pytest.fixture(scope="module")
 def sessions():
     return {
-        "sales": _login("sales@kainnusantara.id", "demo1234"),
-        "sales2": _login("sales2@kainnusantara.id", "demo1234"),
-        "sadm": _login("salesadmin@kainnusantara.id", "demo1234"),
-        "fin": _login("finance@kainnusantara.id", "demo1234"),
-        "mgr": _login("manager@kainnusantara.id", "demo1234"),
+        "sales": _login("sales@kainnusantara.id", "demo12345"),
+        "sales2": _login("sales2@kainnusantara.id", "demo12345"),
+        "sadm": _login("salesadmin@kainnusantara.id", "demo12345"),
+        "fin": _login("finance@kainnusantara.id", "demo12345"),
+        "mgr": _login("manager@kainnusantara.id", "demo12345"),
         "adm": _login("admin@kainnusantara.id", "demo12345"),
     }
 

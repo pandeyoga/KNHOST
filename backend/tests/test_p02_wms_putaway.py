@@ -19,9 +19,9 @@ import requests
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://knhost.preview.emergentagent.com").rstrip("/")
 
 ADMIN = ("admin@kainnusantara.id", "demo12345")
-WHADMIN = ("whadmin@kainnusantara.id", "demo1234")
-WAREHOUSE_JKT = ("warehouse@kainnusantara.id", "demo1234")
-WAREHOUSE_SRG = ("warehouse.soreang@kainnusantara.id", "demo1234")
+WHADMIN = ("whadmin@kainnusantara.id", "demo12345")
+WAREHOUSE_JKT = ("warehouse@kainnusantara.id", "demo12345")
+WAREHOUSE_SRG = ("warehouse.soreang@kainnusantara.id", "demo12345")
 
 WH_JKT = "wh_jakarta"
 

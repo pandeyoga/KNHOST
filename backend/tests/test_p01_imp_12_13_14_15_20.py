@@ -10,7 +10,7 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://internal-pricing.preview.emergentagent.com").rstrip("/")
 
-DEMO_PWD = "demo1234"
+DEMO_PWD = "demo12345"
 ADMIN = ("admin@kainnusantara.id", "demo12345")
 
 

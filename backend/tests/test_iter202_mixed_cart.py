@@ -24,7 +24,7 @@ def _login(email: str, pwd: str) -> str:
 
 @pytest.fixture(scope="module")
 def sales_headers():
-    tok = _login("sales@kainnusantara.id", "demo1234")
+    tok = _login("sales@kainnusantara.id", "demo12345")
     return {"Authorization": f"Bearer {tok}", "X-Entity-Id": ENTITY, "Content-Type": "application/json"}
 
 

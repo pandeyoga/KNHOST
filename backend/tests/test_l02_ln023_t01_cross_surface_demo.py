@@ -67,7 +67,7 @@ def test_journey_split_invariant_all_orders(tok):
 
 # sales-force KPI (sales.kanda on ent_kanda) invariant
 def test_sales_kpi_kanda_invariant():
-    h = _login("sales.kanda@kainnusantara.id", "demo1234", "ent_kanda")
+    h = _login("sales.kanda@kainnusantara.id", "demo12345", "ent_kanda")
     for path in ("/sales/kpi", "/home/sales"):
         r = requests.get(f"{BASE}{path}", headers=h)
         assert r.status_code == 200, r.text

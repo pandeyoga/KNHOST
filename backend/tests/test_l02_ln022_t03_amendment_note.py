@@ -27,7 +27,7 @@ def ctx():
                                    "ref": {"order_id": SID}, "status": "posted", "entity_id": so["entity_id"],
                                    "lines": [], "description": "TEST_L022T03 fixture"})
     yield {"so": so, "admin": _h("admin@kainnusantara.id", "demo12345", so["entity_id"]),
-           "manager": _h("manager@kainnusantara.id", "demo1234", so["entity_id"])}
+           "manager": _h("manager@kainnusantara.id", "demo12345", so["entity_id"])}
     notes = [n["id"] for n in DB.credit_notes.find({"order_id": SID}, {"id": 1})]
     amds = [a["id"] for a in DB.doc_amendments.find({"doc_id": SID}, {"id": 1})]
     DB.notifications.delete_many({"$or": [{"ref": {"$in": amds}}, {"action_id": {"$in": amds}}]})

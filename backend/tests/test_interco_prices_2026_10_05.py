@@ -19,7 +19,7 @@ ENT_KANDA = "ent_kanda"
 
 def _login(email: str) -> requests.Session:
     s = requests.Session()
-    for pw in ("demo12345", "demo1234"):
+    for pw in ("demo12345", "demo12345"):
         r = s.post(f"{BASE_URL}/api/auth/login", json={"email": email, "password": pw}, timeout=30)
         if r.status_code == 200:
             return s

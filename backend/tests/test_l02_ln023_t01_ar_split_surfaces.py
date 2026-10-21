@@ -34,8 +34,8 @@ def _cleanup():
 @pytest.fixture(scope="module")
 def H():
     return {"admin": _login("admin@kainnusantara.id", "demo12345"),
-            "sales": _login("sales@kainnusantara.id", "demo1234"),
-            "manager": _login("manager@kainnusantara.id", "demo1234")}
+            "sales": _login("sales@kainnusantara.id", "demo12345"),
+            "manager": _login("manager@kainnusantara.id", "demo12345")}
 
 
 def _snap(H):

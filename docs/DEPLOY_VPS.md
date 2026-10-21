@@ -63,7 +63,7 @@ hanya terbuka di `127.0.0.1:<port bebas ≥18080>`. Untuk port 80/443, `deploy/e
 3. Data demo (`seed_realistic.py`) **tidak** dijalankan di produksi (`SEED_DEMO_ENABLED=false`); hanya
    fondasi bootstrap (COA, satuan, konfigurasi, entitas).
 4. Butuh demo/simulasi lengkap di atas master produk asli (gudang Rancamalang/Soreang/Jakarta, akun semua
-   peran `demo1234`, stok semua tahap bahan, transaksi berjalan)? Lihat `deploy/DEMO_LENGKAP_VPS.md`:
+   peran `demo12345`, stok semua tahap bahan, transaksi berjalan)? Lihat `deploy/DEMO_LENGKAP_VPS.md`:
    `bash deploy/setup_demo_lengkap.sh`.
 
 ## 4. Operasional

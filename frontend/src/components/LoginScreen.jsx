@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { Layers3, ShieldCheck } from "lucide-react";
 
+// F-01 (uji pra-UAT 2026-10-21) — SATU sandi untuk semua akun seed (bootstrap + data acuan
+// `backend/scripts/demo_api.py` DEMO_PASSWORD); tombol login cepat & petunjuk memakai nilai ini.
+const DEMO_PASSWORD = "demo12345";
+
 /**
  * LoginScreen — role-based auth entry. Extracted from CoreWidgets.jsx so the
  * shared layout primitives stay free of form/grid markup (KN_02 modularity).
  */
 export function LoginScreen({ onLogin, notice }) {
   const [email, setEmail] = useState("admin@kainnusantara.id");
-  const [password, setPassword] = useState("demo12345");
+  const [password, setPassword] = useState(DEMO_PASSWORD);
   // `key` dipakai untuk data-testid (STABIL, jangan diterjemahkan) sedangkan
   // `label` adalah yang DILIHAT pengguna. Sebelumnya keduanya satu nilai, jadi
   // menerjemahkan tombol otomatis mengubah data-testid dan mematikan skrip uji.
@@ -31,7 +35,7 @@ export function LoginScreen({ onLogin, notice }) {
           <div className="mt-5 grid grid-cols-2 gap-2">
             {demoUsers.map(({ key, label, mail }) => (
               <button key={mail} data-testid={`demo-login-${key}-button`} className="secondary-button justify-start"
-                onClick={() => { setEmail(mail); setPassword("demo12345"); onLogin(mail, "demo12345"); }}>
+                onClick={() => { setEmail(mail); setPassword(DEMO_PASSWORD); onLogin(mail, DEMO_PASSWORD); }}>
                 <ShieldCheck size={14} /> {label}
               </button>
             ))}
@@ -39,7 +43,7 @@ export function LoginScreen({ onLogin, notice }) {
         </div>
         <div className="login-right">
           <h2 className="login-form-title">Masuk</h2>
-          <p data-testid="login-notice" className="login-form-sub">{notice || "Password demo: demo12345"}</p>
+          <p data-testid="login-notice" className="login-form-sub">{notice || `Password demo (semua akun): ${DEMO_PASSWORD}`}</p>
           <div className="grid gap-3">
             <label className="grid gap-1">
               <span className="text-[11px] font-semibold text-[#3C3C43]">Email</span>

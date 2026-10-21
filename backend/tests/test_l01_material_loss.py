@@ -13,7 +13,7 @@ def adm():
 
 @pytest.fixture(scope="module")
 def mgr():
-    return _login("manager@kainnusantara.id", "demo1234")
+    return _login("manager@kainnusantara.id", "demo12345")
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -53,7 +53,7 @@ class TestMaterialLoss:
         self.S["tol"] = d["tolerance_pct"]
 
     def test_sales_cannot_record(self):
-        s = _login("sales.kanda@kainnusantara.id", "demo1234")
+        s = _login("sales.kanda@kainnusantara.id", "demo12345")
         mko = self.S["mko"]
         r = requests.post(f"{BASE}/api/makloon-orders/{mko['id']}/steps/1/material-loss",
                           json={"reason": "TEST_L01 x"}, headers=s, timeout=30)

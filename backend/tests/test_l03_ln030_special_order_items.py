@@ -64,10 +64,10 @@ def fixtures():
 @pytest.fixture(scope="module")
 def H():
     return {"admin": _login("admin@kainnusantara.id", "demo12345"),
-            "manager": _login("manager@kainnusantara.id", "demo1234"),
-            "md": _login("md@kainnusantara.id", "demo1234"),
-            "sales": _login("sales@kainnusantara.id", "demo1234"),
-            "designer": _login("designer@kainnusantara.id", "demo1234")}
+            "manager": _login("manager@kainnusantara.id", "demo12345"),
+            "md": _login("md@kainnusantara.id", "demo12345"),
+            "sales": _login("sales@kainnusantara.id", "demo12345"),
+            "designer": _login("designer@kainnusantara.id", "demo12345")}
 
 
 def _create(H, items, submit=True, title=None, who="admin"):

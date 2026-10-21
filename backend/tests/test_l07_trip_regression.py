@@ -93,7 +93,7 @@ def test_trip_check_rows(h):
 
 
 def test_trip_forbidden_for_sales():
-    hs = _login("sales@kainnusantara.id", "demo1234")
+    hs = _login("sales@kainnusantara.id", "demo12345")
     assert requests.get(f"{BASE}/logistics/trip/candidates", headers=hs).status_code == 403
     assert requests.post(f"{BASE}/logistics/trip/check", headers=hs, json={"order_ids": [SO1]}).status_code == 403
 
@@ -176,6 +176,6 @@ def test_single_order_delivery_and_transition(h, created):
 
 
 def test_driver_list_still_works():
-    hd = _login("driver@kainnusantara.id", "demo1234")
+    hd = _login("driver@kainnusantara.id", "demo12345")
     r = requests.get(f"{BASE}/logistics/deliveries", headers=hd)
     assert r.status_code == 200 and isinstance(r.json(), list)

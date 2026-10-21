@@ -33,7 +33,7 @@ def _keys(obj, out=None):
 
 @pytest.fixture(scope="module")
 def sales():
-    return _login("sales.kanda@kainnusantara.id", "demo1234")
+    return _login("sales.kanda@kainnusantara.id", "demo12345")
 
 
 @pytest.fixture(scope="module")
@@ -43,7 +43,7 @@ def admin():
 
 @pytest.fixture(scope="module")
 def salesadmin():
-    return _login("salesadmin.kanda@kainnusantara.id", "demo1234")
+    return _login("salesadmin.kanda@kainnusantara.id", "demo12345")
 
 
 def _ids(s, path):

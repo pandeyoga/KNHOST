@@ -83,7 +83,7 @@ DOMAIN="$(grep '^DOMAIN=' "$ENV_FILE" | cut -d= -f2-)"
 cat <<TXT
 
 $(printf '\033[1;32mSELESAI — data demo lengkap siap.\033[0m') Buka https://${DOMAIN}
-Semua akun demo bersandi: demo1234   (admin@kainnusantara.id TETAP memakai ADMIN_PASSWORD di deploy/.env)
+Semua akun demo bersandi: demo12345   (admin@kainnusantara.id TETAP memakai ADMIN_PASSWORD di deploy/.env)
   md@ · manager@ · finance@ · salesadmin@ · salesadmin.kanda@ · salesadmin.cst@
   sales@ · sales2@ · sales.kanda@ · sales.cst@ · warehouse@ (Jakarta) · warehouse.soreang@
   warehouse.rancamalang@ · whadmin@ · designer@ · sampleadmin@ · driver@        (domain @kainnusantara.id)

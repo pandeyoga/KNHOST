@@ -66,7 +66,7 @@ def test_default_none_stored(admin, created):
 
 
 def test_sampling_stored_by_sales_admin(created):
-    h = _login("salesadmin@kainnusantara.id", "demo1234")
+    h = _login("salesadmin@kainnusantara.id", "demo12345")
     r = _create(h, qc_request="SAMPLING", qc_sample_pct=25)
     assert r.status_code == 200, r.text[:300]
     created.append(r.json()["id"])

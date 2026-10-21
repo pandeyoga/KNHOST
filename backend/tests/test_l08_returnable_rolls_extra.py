@@ -60,7 +60,7 @@ def test_returnable_unshipped_empty(h):
 def test_returnable_other_entity_forbidden(h):
     r = requests.get(f"{BASE}/sales-returns/returnable", headers=h, params={"order_id": KANDA_SO})
     print("admin(ksc ctx) on kanda SO:", r.status_code)
-    sh = _login("sales@kainnusantara.id", "demo1234")
+    sh = _login("sales@kainnusantara.id", "demo12345")
     r2 = requests.get(f"{BASE}/sales-returns/returnable", headers=sh, params={"order_id": KANDA_SO})
     print("sales on kanda SO:", r2.status_code, r2.text[:150])
     assert r2.status_code in (403, 404)
@@ -72,7 +72,7 @@ def test_returnable_unknown_so_404(h):
 
 
 def test_create_other_entity_so_blocked():
-    sh = _login("sales@kainnusantara.id", "demo1234")
+    sh = _login("sales@kainnusantara.id", "demo12345")
     r = _post(sh, KANDA_SO, [{"product_id": "x", "quantity_returned": 1, "unit": "yard"}])
     print("sales create on kanda SO:", r.status_code, r.text[:200])
     DB.sales_returns.delete_many({"notes": TAG, "order_id": KANDA_SO})

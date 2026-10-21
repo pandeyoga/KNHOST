@@ -10,8 +10,9 @@ Produksi/VPS tetap memakai `deploy/docker-compose.yml` (lihat `docs/DEPLOY_VPS.m
 | Backend API | http://localhost:8001/api/ | `uvicorn --reload` |
 | MongoDB | mongodb://localhost:27017 | DB `test_database` |
 
-Login demo (sesudah seed): `admin@kainnusantara.id` / `demo12345`
-(juga `manager@`, `sales@`, `sales3@`, `warehouse@` … `@kainnusantara.id`).
+Login demo (sesudah seed): `admin@kainnusantara.id` / `demo12345` — **satu sandi untuk semua akun seed**
+(`manager@`, `salesadmin@`, `finance@`, `sales@`, `warehouse@`, `wh.admin@`, `qc@` … `@kainnusantara.id`),
+sama dengan tombol login cepat di layar masuk. Sumber: `backend/scripts/demo_api.py` `DEMO_PASSWORD`.
 
 ---
 

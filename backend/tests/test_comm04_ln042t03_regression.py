@@ -41,17 +41,17 @@ def admin():
 
 @pytest.fixture(scope="module")
 def manager():
-    return login("manager@kainnusantara.id", "demo1234")
+    return login("manager@kainnusantara.id", "demo12345")
 
 
 @pytest.fixture(scope="module")
 def sales():
-    return login("sales@kainnusantara.id", "demo1234")
+    return login("sales@kainnusantara.id", "demo12345")
 
 
 @pytest.fixture(scope="module")
 def kanda():
-    return login("sales.kanda@kainnusantara.id", "demo1234", ent="ent_kanda")
+    return login("sales.kanda@kainnusantara.id", "demo12345", ent="ent_kanda")
 
 
 # ---------------- COMM-04 ----------------

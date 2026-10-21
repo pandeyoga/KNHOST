@@ -83,7 +83,7 @@ def test_penugasan_petugas_tak_berwenang_ditolak_server(admin):
 
 # ─── FE-05: Data Gudang memakai scope sah, scope=all tetap dijaga ───────────────
 def test_admin_gudang_dapat_daftar_sesuai_scope_tanpa_scope_all():
-    h = _login("whadmin@kainnusantara.id", "demo1234")
+    h = _login("whadmin@kainnusantara.id", "demo12345")
     r = requests.get(f"{BASE}/warehouses", headers=h)
     assert r.status_code == 200 and len(r.json()) > 0
     assert requests.get(f"{BASE}/warehouses", params={"scope": "all"}, headers=h).status_code == 403   # manipulasi tetap ditolak
@@ -103,7 +103,7 @@ def test_kunci_harga_peran_acuan_dikenali_dan_finance_ditolak(admin):
     h = _login(email, PW)
     r = requests.post(f"{BASE}/special-orders/sord_tidak_ada/lock-price", json={"auto_po": False}, headers=h)
     assert r.status_code == 404, r.text          # lolos gerbang peran → baru 404 dokumen tidak ada
-    hf = _login("finance@kainnusantara.id", "demo1234")
+    hf = _login("finance@kainnusantara.id", "demo12345")
     r = requests.post(f"{BASE}/special-orders/sord_tidak_ada/lock-price", json={"auto_po": False}, headers=hf)
     assert r.status_code == 403, r.text
 

@@ -39,7 +39,7 @@ def _mk(suffix, status="confirmed", paid=0.0, je=None):
 @pytest.fixture(scope="module")
 def H():
     yield {"admin": _h("admin@kainnusantara.id", "demo12345", SRC["entity_id"]),
-           "manager": _h("manager@kainnusantara.id", "demo1234", SRC["entity_id"])}
+           "manager": _h("manager@kainnusantara.id", "demo12345", SRC["entity_id"])}
     sids = [s["id"] for s in DB.sales_orders.find({"id": {"$regex": "^" + PFX}}, {"id": 1})]
     notes = [n["id"] for n in DB.credit_notes.find({"order_id": {"$in": sids}}, {"id": 1})]
     amds = [a["id"] for a in DB.doc_amendments.find({"doc_id": {"$in": sids}}, {"id": 1})]
