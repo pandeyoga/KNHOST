@@ -57,6 +57,7 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 
 | ID | Judul | Prio | Status | Berlaku di HEAD | Commit perbaikan | Laporan |
 |---|---|---|---|---|---|---|
+| F-13 | MD Quality bisa mengisi saat SPK *Draf* — keputusan owner Q-06 (b): hanya sesudah SPK ditugaskan | P3 | implemented_pending_review | ya — direproduksi runtime di `20f356c` (INS-00063 draft, MDQ 200) | `debc38a` | [F-13](../uat/2026-10-21/hasil/F-13.md) |
 | F-15 | Sample berbayar: tagihan berubah sesudah potong tanpa persetujuan ulang — keputusan owner Q-04 (±5% otomatis, di atasnya persetujuan ulang) | P2 | implemented_pending_review | ya — direproduksi runtime di `393af78` (SOS-00029 +16,7% tetap approved, terkirim) | `049c8ab` | [F-15](../uat/2026-10-21/hasil/F-15.md) |
 | F-14 | SPK kedatangan ditutup *terima*, roll tetap karantina sampai keputusan kedua — keputusan owner Q-03 (a): satu keputusan SPK | P2 | implemented_pending_review | ya — direproduksi runtime di `6879aba` (INS-00029 done, roll quarantine) | `22b0d1b` | [F-14](../uat/2026-10-21/hasil/F-14.md) |
 | F-16 | Jatuh tempo dihitung dari tanggal SO; SO belum dikirim & CBD tampil "30 hari lagi" — keputusan owner Q-05 (a): dari SJ pertama | P2 | implemented_pending_review | ya — direproduksi runtime di `c9fca2a` | `4cc39f7` | [F-16](../uat/2026-10-21/hasil/F-16.md) |
@@ -88,6 +89,7 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | F-13 implemented_pending_review (`debc38a`, [F-13](../uat/2026-10-21/hasil/F-13.md)): keputusan Q-06b — hasil SPK (MD Quality/QC/umum) hanya sesudah SPK ditugaskan; tombol di SPK draft disembunyikan + petunjuk — dicek di UI |
 | 2026-10-21 | Claude Code | F-15 implemented_pending_review (`049c8ab`, [F-15](../uat/2026-10-21/hasil/F-15.md)): keputusan Q-04 — toleransi selisih tagihan sample (`sales.sample_payment_tolerance_pct`, 5%) otomatis, di atasnya persetujuan ulang + kiriman ditahan; cek UI: tautan ?doc=SOS- kini membuka Pesanan Sample |
 | 2026-10-21 | Claude Code | F-14 implemented_pending_review (`22b0d1b`, [F-14](../uat/2026-10-21/hasil/F-14.md)): keputusan Q-03a — menutup SPK penerimaan PO sekaligus memutus karantina (roll per baris, grade 4-point, retur/rusak), antrean karantina menunjuk SPK (keputusan kedua 409), seed data acuan lewat SPK (restore 9/9 OK) — dicek di UI |
 | 2026-10-21 | Claude Code | F-16 implemented_pending_review (`4cc39f7`, [F-16](../uat/2026-10-21/hasil/F-16.md)): keputusan Q-05a — jatuh tempo = SJ pertama + kode termin SO (SSOT `due_context`) di status kredit, daftar tagih/Meja Finance, umur piutang, pengingat, Tanya KN, proyeksi kas; SO belum dikirim tidak masuk daftar — dicek di UI |
