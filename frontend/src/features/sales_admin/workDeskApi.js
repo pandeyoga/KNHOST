@@ -223,6 +223,8 @@ export const FINANCE_QUEUE_TARGET = {
   // keputusan owner 2026-10-21 — nota kredit batal item OD: tinjau di jejak amandemen detail SO.
   // Saringan tabel memakai nomor SO (row.order_number), bukan nomor nota — nomor CN tidak ada di daftar pesanan.
   nota_batal_item: { view: "orders", nav_id: "sales-orders", focus_type: "sales_order", number_key: "order_number" },
+  // Cek UI UAT v3 (S14) — retur selesai QC: buka detail retur (panel Kompensasi) di menu Retur.
+  retur_putus_nilai: { view: "returns", nav_id: "returns-hub", focus_type: "sales_return" },
 };
 
 /** Sesi #087 — tujuan baris Meja MD & Meja Admin Gudang (per ref_type). */

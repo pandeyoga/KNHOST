@@ -46,6 +46,13 @@ function DecideForm({ ret, pv, onDone }) {
   const [note, setNote] = useState("");
   const [err, setErr] = useState("");
   const cutPids = [...new Set(pv.cutloss.map((c) => c.product_id))];
+  // Nominal disarankan = harga transaksi × qty cacat; berhenti mengikuti qty begitu Finance mengetik nominal sendiri.
+  const setQty = (it, qty) => setDisc((d) => {
+    const cur = d[it.product_id] || {};
+    const price = Number(it.unit_price_est) || 0;
+    const amount = cur.manual || !price ? cur.amount : (Number(qty) > 0 ? String(Math.round(Number(qty) * price)) : "");
+    return { ...d, [it.product_id]: { ...cur, qty, amount } };
+  });
   const submit = async () => {
     setErr("");
     const lines = [...cutPids.map((pid) => ({ kind: "cutloss", product_id: pid })),
@@ -58,13 +65,15 @@ function DecideForm({ ret, pv, onDone }) {
     <div className="space-y-2 text-xs" data-testid="compensation-decide-form">
       {(ret.items || []).map((it) => (
         <div key={it.product_id} className="flex flex-wrap items-end gap-2">
-          <span className="w-48 font-semibold">{it.product_name || it.product_id}</span>
+          <span className="w-48 font-semibold">{it.product_name || it.product_id}
+            {/* Cek UI UAT v3 (S14) — dulu harga transaksi tak terlihat: Finance menghitung nominal diskon manual. */}
+            {Number(it.unit_price_est) > 0 && <span className="block text-[11px] font-normal text-[#6B6B73]" data-testid={`discount-price-${it.product_id}`}>harga transaksi {rp(it.unit_price_est)}/{it.unit}</span>}</span>
           <label className="flex flex-col gap-1">Qty cacat diskon ({it.unit})
             <input data-testid={`discount-qty-${it.product_id}`} type="number" className="field w-24" value={disc[it.product_id]?.qty || ""}
-                   onChange={(e) => setDisc({ ...disc, [it.product_id]: { ...disc[it.product_id], qty: e.target.value } })} /></label>
+                   onChange={(e) => setQty(it, e.target.value)} /></label>
           <label className="flex flex-col gap-1">Nominal diskon (Rp)
             <input data-testid={`discount-amount-${it.product_id}`} type="number" className="field w-32" value={disc[it.product_id]?.amount || ""}
-                   onChange={(e) => setDisc({ ...disc, [it.product_id]: { ...disc[it.product_id], amount: e.target.value } })} /></label>
+                   onChange={(e) => setDisc({ ...disc, [it.product_id]: { ...disc[it.product_id], amount: e.target.value, manual: true } })} /></label>
         </div>
       ))}
       {photos.length > 0 && (

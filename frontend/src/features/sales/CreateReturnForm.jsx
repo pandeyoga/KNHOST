@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import axios, { API } from "../../services/apiClient";
 import { AlertCircle, ArrowLeft, Camera, CalendarClock, Loader2, Paperclip, RotateCcw, ShieldCheck, Trash2, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
+import { getStage, stageMeta } from "../../utils/soStatus";
 
 
 export default function CreateReturnForm({ orders = [], token, onCreated, onCancel,
@@ -29,6 +30,8 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
   // L08 LN-080-T03 — bukti foto saat membuat retur; kewajiban per tahap dari kebijakan.
   const [files, setFiles]           = useState([]);
   const [evPolicy, setEvPolicy]     = useState(null);
+  const [reasons, setReasons]       = useState([]);
+  const [complaintCode, setComplaintCode] = useState("");
 
   // FE-09 — pemilih SO dicari & dipaginasi SERVER (`/sales-returns/eligible-orders`): hanya SO dalam scope yang
   // masih punya barang terkirim belum diklaim. Tidak lagi bergantung pada 200 SO terbaru yang diunduh peramban.
@@ -66,6 +69,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
   }, []); // eslint-disable-line
   useEffect(() => {
     axios.get(`${API}/sales-returns/meta/evidence-policy`).then((r) => setEvPolicy(r.data?.required || {})).catch(() => {});
+    axios.get(`${API}/sales-returns/meta/complaint-reasons`).then((r) => setReasons(r.data?.items || [])).catch(() => {});
   }, []);
   const needsPhotoToSubmit = !!evPolicy?.submit && submitNow && files.length === 0;
 
@@ -130,6 +134,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
         order_id: orderId, return_type: returnType,
         items: validItems.map(({ max, sku, color, ...it }) => ({ ...it, quantity_returned: parseFloat(it.quantity_returned) })),
         notes, submit_now: submitNow && files.length === 0, ...cond,
+        ...(complaintCode ? { complaint_code: complaintCode } : {}),
       }, { headers: { Authorization: `Bearer ${token}` } });
       let doc = res.data;
       if (files.length) {
@@ -184,7 +189,7 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
                 { value: "", label: "-- Pilih pesanan --" },
                 ...(orderId && !orderOpts.some((o) => o.id === orderId) && knownRef.current[orderId]
                   ? [knownRef.current[orderId]] : []).concat(orderOpts)
-                  .map(o => ({ value: o.id, label: `${o.number} — ${o.customer_name} (${o.status})` })),
+                  .map(o => ({ value: o.id, label: `${o.number} — ${o.customer_name} (${stageMeta(getStage(o)).label})` })),
               ]}
             />
             <p className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#6B6B73]" data-testid="return-order-meta">
@@ -300,6 +305,16 @@ export default function CreateReturnForm({ orders = [], token, onCreated, onCanc
             ))}
           </div>
         </div>
+
+        {/* Cek UI UAT v3 (S14) — sebab keluhan dari master; dulu hanya bisa diisi belakangan di detail retur. */}
+        {reasons.length > 0 && (
+          <div className="form-group">
+            <label className="form-label">Sebab keluhan</label>
+            <KNSelect data-testid="return-complaint-code" className="form-select" value={complaintCode}
+              onValueChange={setComplaintCode} placeholder="-- Pilih sebab keluhan --"
+              options={reasons.map((r) => ({ value: r.value, label: r.label }))} />
+          </div>
+        )}
 
         <div className="form-group">
           <label className="form-label" htmlFor="ret-notes">Catatan</label>

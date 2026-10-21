@@ -93,7 +93,7 @@ export default function ReturnTimeline({ ret, variant = "sales" }) {
     tone: submitted ? "done" : (status === "draft" ? "active" : "upcoming"),
     title: "Diajukan ke Persetujuan",
     actor: submitted ? (ret.submitted_by || ret.created_by || null) : null,
-    time: submitted ? (fmtDateTime(ret.submitted_at) || fmtDateTime(ret.updated_at)) : null,
+    time: submitted ? (fmtDateTime(ret.submitted_at) || fmtDateTime(ret.created_at)) : null,   // updated_at berubah tiap aksi
     note: status === "draft" ? "Menunggu diajukan dari status draft" : null,
   };
 

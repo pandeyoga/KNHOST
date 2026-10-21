@@ -155,11 +155,19 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     }
   }
 
+  // Cek UI UAT v3 (S14) — respons aksi = dokumen mentah (tanpa nomor roll, nilai, bukti): dulu kolom qty aktual
+  // menampilkan id roll mentah setelah [Mulai Inspeksi]. Tampilkan respons dulu, lalu muat ulang detail lengkap.
+  async function showFresh(doc) {
+    setSelected(doc);
+    if (!doc?.id) return;
+    try { const r = await axios.get(`${API}/sales-returns/${doc.id}`); setSelected(r.data); } catch { /* respons aksi tetap tampil */ }
+  }
+
   function handleApprove(ret) {
     return runAction("approve", "Gagal approve", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/approve`, { notes: "" });
       setNotice(`${ret.number} disetujui. Lanjut ke inspeksi.`);
-      setSelected(res.data); load();
+      showFresh(res.data); load();
     });
   }
 
@@ -167,7 +175,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     return runAction("inspect_start", "Gagal mulai inspeksi", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/inspect/start`, {});
       setNotice(`Inspeksi ${ret.number} dimulai.`);
-      setSelected(res.data); load();
+      showFresh(res.data); load();
     });
   }
 
@@ -176,7 +184,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
       const res = await axios.post(`${API}/sales-returns/${ret.id}/inspect/complete`,
         { inspections, notes: notes || "" });
       setNotice(`Inspeksi ${ret.number} selesai. Pilih outcome untuk menyelesaikan.`);
-      setSelected(res.data); load();
+      showFresh(res.data); load();
     });
   }
 
@@ -188,8 +196,9 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
       const res = await axios.post(`${API}/sales-returns/${ret.id}/settle`, body);
       const st = res.data?.settlement || {};
       const cashMsg = st.cash_txn_number ? ` · refund tunai ${st.cash_txn_number}` : "";
-      setNotice(`${ret.number} diselesaikan (${outcome})${cashMsg}.`);
-      setSelected(res.data); load();
+      const outLabel = { refund: "pengembalian dana", store_credit: "store credit", nego: "nego/diskon" }[outcome] || outcome;
+      setNotice(`${ret.number} diselesaikan (${outLabel})${cashMsg}.`);
+      showFresh(res.data); load();
     });
   }
 
@@ -197,7 +206,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     return runAction("reject", "Gagal reject", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/reject`, { notes: reason });
       setNotice(`${ret.number} ditolak.`);
-      setSelected(res.data); load();
+      showFresh(res.data); load();
     });
   }
 
@@ -206,7 +215,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     const res = await axios.post(`${API}/sales-returns/${ret.id}/reverse`, { notes: reason });
     const summ = res.data?._reversal_summary || {};
     setNotice(`${ret.number} dibatalkan (reversal) · ${summ.reversal_jes || 0} jurnal balik, ${summ.rolls_removed || 0} roll dihapus.`);
-    setSelected(res.data); load();
+    showFresh(res.data); load();
     return res.data;
   }
 
@@ -214,7 +223,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     return runAction("submit", "Gagal submit", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/submit`, {});
       setNotice(`${ret.number} dikirim untuk approval.`);
-      setSelected(res.data); load();
+      showFresh(res.data); load();
     });
   }
 
@@ -225,7 +234,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
     return runAction("cancel_draft", "Gagal membuang draf", async () => {
       const res = await axios.post(`${API}/sales-returns/${ret.id}/cancel-draft`, {});
       setNotice(`${ret.number} dibuang.`);
-      setSelected(res.data); load();
+      showFresh(res.data); load();
     });
   }
 
@@ -246,8 +255,8 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
         onSettle={handleSettle}
         onReverse={handleReverse}
         onBack={() => { setSelected(null); setError(null); load(); }}
-        onAttachmentUploaded={(updated) => setSelected(updated)}
-        onReturnChanged={(updated) => { if (updated) setSelected(updated); load(); }}
+        onAttachmentUploaded={(updated) => showFresh(updated)}
+        onReturnChanged={(updated) => { if (updated) showFresh(updated); load(); }}
         notice={notice}
         onClearNotice={() => setNotice(null)}
         error={error}
@@ -278,7 +287,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
             setShowCreate(false);
             setNotice(`${doc.number} berhasil dibuat.`);
             load();
-            setSelected(doc);
+            showFresh(doc);
           }}
           onCancel={() => setShowCreate(false)}
         />
@@ -410,7 +419,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
             <tbody>
               {filtered.map(r => (
                 <tr key={r.id} data-testid={`return-row-${r.id}`}
-                  className="cursor-pointer" onClick={() => setSelected(r)}>
+                  className="cursor-pointer" onClick={() => showFresh(r)}>
                   <td><span className="font-mono font-semibold">{r.number}</span></td>
                   <td className="font-mono text-xs text-muted">{r.order_number}</td>
                   <td>{r.customer_name || "-"}</td>
@@ -439,7 +448,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
                     <button
                       data-testid={`view-return-${r.id}`}
                       className="link-button"
-                      onClick={(e) => { e.stopPropagation(); setSelected(r); }}
+                      onClick={(e) => { e.stopPropagation(); showFresh(r); }}
                     >Detail →</button>
                   </td>
                 </tr>

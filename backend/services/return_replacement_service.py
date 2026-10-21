@@ -94,11 +94,18 @@ async def create(ret: Dict[str, Any], items: List[Dict[str, Any]], request, acto
     if not lines:
         raise ValueError("Minimal satu baris pengganti")
     qc_mode = (order.get("qc_request") or {}).get("mode") or "none"
+    method = (order.get("fulfillment_method") or "kirim").strip().lower()
+    # Cek UI UAT v3 (S15) — SO asal tunai: saldo retur tak bisa dipakai di order tanpa piutang → pelanggan ditagih ulang
+    # penuh untuk barang tukar. Pengganti memakai CBD: saldo retur melunasi di muka, selisih dibayar sebelum kirim.
+    from services.customer_service import NON_AR_METHODS, order_payment_method
+    term = "CBD" if order_payment_method(order) in NON_AR_METHODS else order.get("payment_term_code", "")
     payload = SalesOrderCreate(customer_id=ret["customer_id"], shipping_address_id=order.get("shipping_address_id", ""),
                                items=lines, entity_id=ret.get("entity_id", ""), qc_request=qc_mode,
                                qc_sample_pct=float((order.get("qc_request") or {}).get("sample_pct") or 10),
-                               fulfillment_method=order.get("fulfillment_method") or "kirim",
-                               payment_term_code=order.get("payment_term_code", ""))
+                               fulfillment_method=method,
+                               # Cek UI UAT v3 (S15) — SO asal "ambil sendiri": pengganti dulu gagal (tanggal ambil kosong).
+                               pickup_date=(datetime.now(timezone.utc) + timedelta(days=1)).date().isoformat() if method == "ambil" else "",
+                               payment_term_code=term)
     try:
         so = await create_order(payload, request)
     finally:   # harga khusus sekali pakai: tak bisa dipakai SO lain

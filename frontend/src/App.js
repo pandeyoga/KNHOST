@@ -14,6 +14,7 @@ import TourMenu from "./components/TourMenu";
 import OnboardingPanel from "./components/OnboardingPanel";
 import EntitySwitcher from "./components/EntitySwitcher";
 import NotificationCenter from "./components/NotificationCenter";
+import { resolveView } from "./utils/viewAlias";
 import { PAGE_META, GUIDANCE_MAP, buildNavGroups, defaultNavIdForRole, defaultViewForRole, isComingSoonView, isHomeView, resolveActiveNavId, resolveDeepLinkTarget, hubForView } from "./config/navigationConfig";
 import CommandPalette from "./components/CommandPalette";
 import useDeepLinks from "./hooks/useDeepLinks";
@@ -313,8 +314,12 @@ function App() {
 
   // ─── EPIC6 — deep-link dokumen terkait (Process Timeline / Document Hub) ───
   // Navigasi in-app ke view tujuan + set focusDoc agar view target auto-open dokumen.
+  // Cek UI UAT v3 (S15) — akun multi-PT di mode "Semua entitas": [Putuskan]/[Buka] dari meja lalu memilih PT di banner
+  // me-remount layar dan dokumen tujuan hilang. Dokumen terakhir diingat lalu dibuka ulang setelah PT dipilih.
+  const lastFocusRef = useRef(null);
   const openDocument = (link) => {
     if (!link || !link.view) return;
+    lastFocusRef.current = link.focus_id ? { link, at: Date.now() } : null;
     handleNavSelect(link.nav_id || link.view, link.view, link.tab);
     if (link.logistics) openLogistics(link.logistics);   // F-06 — saring daftar Logistik (mis. nomor SO untuk POD)
     if (link.focus_id) setFocusDoc({ focus_type: link.focus_type, focus_id: link.focus_id, number: link.number || "", tab: link.tab || "", from_trace: link.from_trace || null });
@@ -493,7 +498,7 @@ function App() {
               onNavigate={(target, n) => {
                 if (target === "purchasing" && n?.action_id && !n?.action_type) {
                   openDocument({ view: "purchasing", nav_id: "purchase-orders", focus_type: "purchase_order", focus_id: n.action_id });
-                } else setActiveView(target);
+                } else setActiveView(resolveView(target));
               }}
             />
           }
@@ -539,7 +544,11 @@ function App() {
             <ScopeReadOnlyBanner
               entities={switcherEntities}
               flash={scopeFlash}
-              onPick={onSelectEntity}
+              onPick={(id) => {
+                const last = lastFocusRef.current;
+                onSelectEntity(id);
+                if (last && last.link.view === activeView && Date.now() - last.at < 10 * 60 * 1000) setTimeout(() => openDocument(last.link), 0);
+              }}
             />
           )}
 

@@ -521,6 +521,8 @@ async def create_return(
         "entity_id":    entity_id,
         "return_type":  return_type,    # retur | bs | penggantian | komplain | garansi
         "status":       status,
+        # Cek UI UAT v3 (S14) — "langsung ajukan" dulu tanpa jejak pengajuan: riwayat memakai updated_at yang berubah tiap aksi.
+        **({"submitted_at": now_iso(), "submitted_by": created_by} if submit_now else {}),
         "items":        norm_items,
         "line_codes":   line_codes,     # FASE L — turunan baris (chip penyaring lini)
         "notes":        notes,

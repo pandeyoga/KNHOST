@@ -39,6 +39,9 @@ function ScanForm({ ret, warehouses, onDone }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const opts = warehouses.filter((w) => w.usable_by_active !== false).map((w) => ({ value: w.id, label: w.name }));
+  // Cek UI UAT v3 (S14) — roll sedang dalam perjalanan: gudang tujuan tinggal scan "Tiba"; tahap & gudang terisi otomatis.
+  const transitTo = Object.values(ret?.roll_locations || {}).find((l) => l?.stage === "in_transit")?.to_warehouse_id || "";
+  useEffect(() => { if (transitTo) { setStage("arrived"); setWh(transitTo); } }, [transitTo]);
   async function submit(e) {
     e.preventDefault(); setBusy(true); setErr("");
     try {
@@ -60,7 +63,7 @@ function ScanForm({ ret, warehouses, onDone }) {
           <KNSelect data-testid="journey-scan-warehouse" className="field" value={wh} onValueChange={setWh} options={opts} placeholder="Pilih gudang" /></label>
         {stage === "dispatched" && (
           <label><span className="field-label">Gudang tujuan</span>
-            <KNSelect data-testid="journey-scan-to-warehouse" className="field" value={toWh} onValueChange={setToWh} options={opts} placeholder="Pilih tujuan" /></label>
+            <KNSelect data-testid="journey-scan-to-warehouse" className="field" value={toWh} onValueChange={setToWh} options={opts.filter((o) => o.value !== wh)} placeholder="Pilih tujuan" /></label>
         )}
       </div>
       <div className="grid gap-2 sm:grid-cols-[1fr_200px_auto] sm:items-end">

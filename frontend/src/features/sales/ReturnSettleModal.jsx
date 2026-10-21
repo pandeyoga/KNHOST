@@ -17,7 +17,10 @@ const OUTCOMES = [
 ];
 
 export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
-  const [outcome, setOutcome] = useState("refund");
+  // Cek UI UAT v3 (S15) — retur Penggantian (tukar barang) = Store Credit: nilainya jadi saldo yang dipakai pesanan
+  // pengganti (panel "Pesanan pengganti"). Dulu default Pengembalian Dana tanpa petunjuk → pengguna mencari outcome "Tukar".
+  const isSwap = ret.return_type === "penggantian";
+  const [outcome, setOutcome] = useState(isSwap ? "store_credit" : "refund");
   const [notes, setNotes] = useState("");
   const [decisionNote, setDecisionNote] = useState("");   // L08 LN-081 — bukti keputusan di luar sistem
   const [payout, setPayout] = useState("store_credit");   // KLR-10 — nego: customer pilih refund / saldo
@@ -99,6 +102,14 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
             );
           })}
         </div>
+
+        {isSwap && (
+          <p className="notice-bar mb-3 text-[11.5px]" data-testid="settle-swap-hint">
+            Retur <b>Penggantian</b> (tukar barang): pilih <b>Store Credit</b> — nilainya menjadi saldo untuk
+            <b> pesanan pengganti</b> yang dibuat Admin Sales di panel "Pesanan pengganti" setelah retur ini selesai.
+            {outcome !== "store_credit" && <span className="text-[#A8221A]"> Outcome lain tidak bisa dibuatkan pesanan pengganti.</span>}
+          </p>
+        )}
 
         {/* R3 — Lokasi gudang penerimaan (owner tetap = entitas SO) */}
         {movesStock && physLocs.length > 0 && (
@@ -205,7 +216,7 @@ export default function ReturnSettleModal({ ret, open, onClose, onSettle }) {
           <button className="secondary-button" onClick={onClose}>Batal</button>
           <button data-testid="confirm-settle-btn" className="primary-button" disabled={busy || !anyIncluded}
             onClick={confirm}>
-            {busy ? <Loader2 size={13} className="spin" /> : <CheckCircle2 size={13} />} Selesaikan ({outcome})
+            {busy ? <Loader2 size={13} className="spin" /> : <CheckCircle2 size={13} />} Selesaikan ({OUTCOMES.find((o) => o.value === outcome)?.label || outcome})
           </button>
         </div>
       </div>

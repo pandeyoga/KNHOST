@@ -11,6 +11,7 @@ import { apiErrorText } from "../../utils/apiError";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
 import SoTrackerCard from "../sales_admin/SoTrackerCard";
 import { mdDesk, warehouseAdminDesk, myDesk, rowLink, queueMeta, soTrackerLink } from "../sales_admin/workDeskApi";
+import { resolveView } from "../../utils/viewAlias";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 
 const DESKS = {
@@ -66,7 +67,7 @@ export default function RoleDesk({ desk = "md", selectedEntity = "all", onOpenDo
       onOpenDocument?.({ view: "logistics", nav_id: "logistics" });
       return;
     }
-    const turnLink = row.link || row.extra?.link;
+    const turnLink = resolveView(row.link || row.extra?.link);
     if (queue?.id === "giliran_saya" && turnLink) {
       onOpenDocument?.({ view: turnLink, nav_id: turnLink, focus_id: row.ref_id, focus_type: row.ref_type, number: row.number || "" });
       return;

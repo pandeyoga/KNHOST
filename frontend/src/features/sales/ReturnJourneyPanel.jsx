@@ -60,6 +60,7 @@ export default function ReturnJourneyPanel({ ret, canEdit = false, onChanged }) 
   const [note, setNote] = useState(ret?.complaint_note || "");
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
+  const inspDone = ret?.inspect_done_at || ret?.inspected_at || "";
 
   useEffect(() => {
     setCode(ret?.complaint_code || "");
@@ -188,23 +189,25 @@ export default function ReturnJourneyPanel({ ret, canEdit = false, onChanged }) 
             {STEPS.map((s) => stepRow(s))}
 
             {/* Tonggak QC: DITURUNKAN dari dokumen inspeksi — sengaja tanpa tombol. */}
+            {/* Cek UI UAT v3 (S14) — inspeksi 4-point di panel retur mengisi `inspected_at` (bukan SPK): dulu tetap
+                "belum ada SPK Inspeksi" walau QC sudah selesai. */}
             <div data-testid="return-milestone-inspect" className="flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 text-[11.5px]">
                 <ClipboardCheck size={14}
-                  className={ret.inspect_done_at ? "text-[#15803D]" : "text-[#C7C7CC]"} />
-                <span className={ret.inspect_done_at ? "font-semibold text-[#1C1C1E]" : "text-[#6B6B73]"}>
+                  className={inspDone ? "text-[#15803D]" : "text-[#C7C7CC]"} />
+                <span className={inspDone ? "font-semibold text-[#1C1C1E]" : "text-[#6B6B73]"}>
                   Inspeksi selesai
                 </span>
                 <span className="text-[10.5px] text-[#8E8E93]">
-                  {ret.inspect_done_at
-                    ? `${fmtStamp(ret.inspect_done_at)}${ret.inspection_number ? ` · ${ret.inspection_number}` : ""}`
+                  {inspDone
+                    ? `${fmtStamp(inspDone)}${ret.inspection_number ? ` · ${ret.inspection_number}` : " · inspeksi 4-point di retur"}`
                     : (ret.inspection_number
                       ? `SPK ${ret.inspection_number} belum ditutup`
                       : "belum ada SPK Inspeksi untuk retur ini")}
                 </span>
               </span>
               <span className="text-[10.5px] text-[#8E8E93]">
-                dari dokumen SPK Inspeksi
+                {ret.inspection_number || !inspDone ? "dari dokumen SPK Inspeksi" : "dari panel Inspeksi retur"}
               </span>
             </div>
           </div>

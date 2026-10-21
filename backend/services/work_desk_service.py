@@ -281,6 +281,21 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
          for r in map(safe_doc, ret)],
         action_label="Proses"))
 
+    # Cek UI UAT v3 (S15) — retur tukar barang sudah Store Credit tapi pesanan pengganti belum dibuat (dulu tak ada antrean).
+    tukar = await db.sales_returns.find(
+        _q(scope, {"return_type": "penggantian", "status": "credit_settled",
+                   "replacement_order_id": {"$in": [None, ""]}}),
+        {"_id": 0}).sort("updated_at", 1).to_list(200)
+    tukar_val = await return_claim_values(tukar) if tukar else {}
+    queues.append(_queue(
+        "retur_tukar", "Retur tukar — buat pesanan pengganti",
+        "Retur penggantian sudah diselesaikan sebagai saldo: buat pesanan pengganti di panel \"Pesanan pengganti\".",
+        [_row(ref_type="sales_return", ref_id=r["id"], number=r.get("number", "—"), title=r.get("customer_name", "—"),
+              subtitle=f"atas {r.get('order_number') or '—'}", value=tukar_val.get(r["id"], 0.0),
+              age_days=_age_days(r.get("updated_at") or r.get("created_at")), badge="tukar barang",
+              action="Buat pengganti", action_kind="open") for r in tukar],
+        action_label="Buat pengganti"))
+
     # 8 — permintaan internal dari sales (E8.8) → jadikan transaksi antar-PT
     pin = await db.internal_requests.find(
         _q(scope, {"status": {"$in": list(PIN_ANTREAN)}}),
@@ -561,6 +576,20 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               extra={"order_id": n["order_id"], "order_number": n.get("order_number", ""),
                      "credit_note_id": n["id"]}) for n in pend],
         action_label="Tinjau", owner="finance"))
+
+    # Cek UI UAT v3 (S14) — retur selesai QC menunggu keputusan nilai/penyelesaian Finance; dulu hanya lewat lonceng.
+    sr = await db.sales_returns.find({**_ent_q(scope), "status": "inspected", "compensation.status": {"$ne": "decided"},
+                                      "return_type": {"$ne": "penggantian"}},   # tukar barang = keputusan Manajer
+                                     {"_id": 0}).sort("updated_at", 1).to_list(200)
+    sr_val = await return_claim_values(sr) if sr else {}
+    queues.append(_queue(
+        "retur_putus_nilai", "Retur selesai QC — putuskan nilai",
+        "Barang retur sudah diperiksa QC: putuskan kompensasi (cutloss/diskon) atau lanjutkan penyelesaian.",
+        [_row(ref_type="sales_return", ref_id=r["id"], number=r.get("number", ""), title=r.get("customer_name", "—"),
+              subtitle=" · ".join(x for x in [r.get("order_number", ""), ((r.get("items") or [{}])[0].get("product_name") or "")] if x),
+              value=sr_val.get(r["id"], 0.0), age_days=_age_days(r.get("updated_at") or r.get("created_at")),
+              badge="selesai QC", action="Putuskan", action_kind="open") for r in sr],
+        action_label="Putuskan", owner="finance"))
 
     return {"desk": "finance", "desk_label": "Meja Finance",
             "generated_at": now_iso(), "entity_ids": entity_ids,

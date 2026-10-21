@@ -192,6 +192,9 @@ export function KNSelect({
   // controlled (tanpa peringatan uncontrolled→controlled dari React).
   const safeValue = toSafe(value);
   const handleValueChange = (val) => {
+    // Item Radix tak pernah bernilai "" (kosong = sentinel). "" mentah datang dari <select> bayangan Radix di dalam
+    // <form> saat nilai diisi program sebelum item terdaftar — mis. SO bawaan "Ajukan retur" di HP ter-reset kosong.
+    if (val === "") return;
     if (typeof onValueChange === "function") {
       onValueChange(val === EMPTY_SENTINEL ? "" : val);
     }
