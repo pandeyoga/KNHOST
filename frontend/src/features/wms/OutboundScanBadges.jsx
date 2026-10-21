@@ -3,13 +3,13 @@
 
 const STATUS_MAP = {
   scheduled:  { label: "Terjadwal", cls: "bg-purple-100 text-purple-700" },
-  created:    { label: "Created", cls: "bg-gray-100 text-gray-600" },
+  created:    { label: "Siap diambil", cls: "bg-gray-100 text-gray-600" },
   picking:    { label: "Pengambilan", cls: "bg-blue-100 text-blue-700" },
   packing:    { label: "Pengemasan", cls: "bg-purple-100 text-purple-700" },
-  staging:    { label: "Staging", cls: "bg-indigo-100 text-indigo-700" },
+  staging:    { label: "Siap muat", cls: "bg-indigo-100 text-indigo-700" },
   partially_shipped: { label: "Terkirim Sebagian", cls: "bg-orange-100 text-orange-700" },
   dispatched: { label: "Terkirim", cls: "bg-green-100 text-green-700" },
-  escalated:  { label: "Escalated", cls: "bg-red-100 text-red-700" },
+  escalated:  { label: "Dieskalasi", cls: "bg-red-100 text-red-700" },
 };
 
 export function Badge({ status }) {

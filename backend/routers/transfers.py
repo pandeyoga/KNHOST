@@ -213,7 +213,7 @@ async def create_transfer(payload: TransferCreate, request: Request) -> Dict[str
             committed: List[Dict[str, Any]] = []
             if so_doc and item.roll_ids:
                 committed = await db.inventory_rolls.find(
-                    {"id": {"$in": list(item.roll_ids)}, "reserved_ref.id": so_id, "status": "reserved"},
+                    {"id": {"$in": list(item.roll_ids)}, "reserved_ref.id": so_id, "status": {"$in": ["reserved", "committed"]}},  # Cek UI UAT v3 (S10) — roll SO terkonfirmasi berstatus "committed"; dulu hanya "reserved" → transfer pemenuhan SO tak pernah bisa dipakai.
                     {"_id": 0, "id": 1, "owner_entity_id": 1}).to_list(len(item.roll_ids))
             committed_ids = [r["id"] for r in committed]
             rest = [rid for rid in (item.roll_ids or []) if rid not in committed_ids]

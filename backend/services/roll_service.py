@@ -1936,13 +1936,15 @@ async def so_still_open(so_id: str) -> bool:
 
 async def dispatch_wh_transfer_rolls(transfer_id: str, source_document: str = "") -> Dict[str, Any]:
     """Kirim: roll reserved milik transfer → in_transit_transfer (komitmen SO tetap). Movement transfer_out."""
-    held = await transfer_held_rolls(transfer_id, ["reserved"])
+    # Cek UI UAT v3 (S10) — roll SO terkonfirmasi ("committed") ikut; status asal disimpan untuk dipulihkan saat tiba.
+    held = await transfer_held_rolls(transfer_id, ["reserved", "committed"])
     segments = set()
     moved = 0.0
     for r in held:
         qty = float(r.get("length_remaining", 0) or 0)
         res = await db.inventory_rolls.update_one(
-            held_cas(r), {"$set": {"status": "in_transit_transfer", "updated_at": now_iso()}})
+            held_cas(r), {"$set": {"status": "in_transit_transfer", "transfer_prior_status": r["status"],
+                                   "updated_at": now_iso()}})
         if not res.matched_count:
             continue
         await db.inventory_movements.insert_one({

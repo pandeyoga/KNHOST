@@ -227,7 +227,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
   };
 
   const FILTERS = ["all", "scheduled", "created", "picking", "packing", "staging", "partially_shipped", "escalated"];
-  const FILTER_LABELS = { all: "Semua", scheduled: "Terjadwal (Ambil)", created: "Created", picking: "Picking", packing: "Packing", staging: "Staging", partially_shipped: "Parsial", escalated: "Escalated" };
+  const FILTER_LABELS = { all: "Semua", scheduled: "Terjadwal (Ambil)", created: "Siap diambil", picking: "Pengambilan", packing: "Pengemasan", staging: "Siap muat", partially_shipped: "Parsial", escalated: "Dieskalasi" };
 
   return (
     <div data-testid="outbound-scan-panel" className="flex flex-col gap-3">

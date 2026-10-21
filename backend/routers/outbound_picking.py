@@ -180,11 +180,13 @@ async def scan_pick_item(
     roll_id, bin_id, lot = await _resolve_pick_roll(task, roll_id, bin_id, lot, actual_qty)
 
     # Update picked qty
-    new_picked_qty = task.get("picked_qty", 0.0) + actual_qty
-    expected_qty = task.get("quantity", 0.0)
+    # Cek UI UAT v3 (S10) — 19,42 + 20,37 + 0,21 = 40.00000000000001 dulu ditolak "melebihi 40.0":
+    # jumlahkan dalam presisi qty (4 desimal) sebelum dibandingkan.
+    new_picked_qty = round(float(task.get("picked_qty") or 0.0) + actual_qty, 4)
+    expected_qty = float(task.get("quantity") or 0.0)
     
     # Check if qty exceeds expected
-    if new_picked_qty > expected_qty:
+    if new_picked_qty > round(expected_qty, 4) + 1e-6:
         raise HTTPException(
             status_code=400,
             detail=f"Qty picked ({new_picked_qty}) melebihi expected ({expected_qty})"
@@ -217,7 +219,7 @@ async def scan_pick_item(
         update_data["status"] = "picking"
     
     # If fully picked, advance to packing
-    if new_picked_qty >= expected_qty:
+    if new_picked_qty >= round(expected_qty, 4) - 1e-6:
         update_data["status"] = "packing"
 
     # Sesi 12 — CAS: prasyarat status hidup + picked_qty tak berubah sejak dibaca → klik ganda/balapan kalah = 409.

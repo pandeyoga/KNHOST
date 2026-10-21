@@ -127,7 +127,9 @@ async def warehouse_queues(scope, ids) -> List[Dict[str, Any]]:
         _queue("tugas_wms", "Tugas gudang (terima, picking & kirim)", "Kerjakan urut umur tugas.",
                [_row(ref_type="wms_task", ref_id=t["id"], number=t.get("number") or t.get("order_number") or t.get("po_number") or t.get("ref_number") or t["id"],
                      title=t.get("customer_name") or t.get("product_name") or t.get("type", "tugas"),
+                     # Cek UI UAT v3 (S10) — SO multi-gudang: baris menyebut gudangnya (Woven/Knitting/…).
                      subtitle=" · ".join(x for x in (t.get("flow_type") or t.get("type", ""), _task_qty(t),
+                                                     t.get("warehouse_name") or "",
                                                      _gate.desk_note(holds.get(t.get("order_id")))) if x),
                      age_days=_age_days(t.get("created_at")),
                      badge="tertahan bayar" if _gate.desk_note(holds.get(t.get("order_id"))) else t.get("status", ""),

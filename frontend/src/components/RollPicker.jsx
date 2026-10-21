@@ -17,6 +17,8 @@ const PAGE_SIZE = 8;
 /** Dua satuan (aturan sales & gudang): panjang selalu ditampilkan meter ↔ yard. */
 export const dualLen = (qty, unit = "meter") => {
   const n = Number(qty) || 0;
+  // Cek UI UAT v3 (S10) — roll kg (rajut) dulu tampil "20,37 m ≈ 22,28 yd": berat bukan panjang.
+  if (/^kg|kilo/i.test(unit || "")) return `${formatQty(n)} kg`;
   const isYd = /^y(ar)?d/i.test(unit || "");
   const m = isYd ? n * 0.9144 : n;
   const yd = isYd ? n : n / 0.9144;

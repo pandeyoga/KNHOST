@@ -23,6 +23,10 @@ def _roll_ids(transfer: Dict[str, Any]) -> List[str]:
     return [x["roll_id"] for it in transfer.get("items") or [] for x in it.get("rolls") or [] if x.get("roll_id")]
 
 
+SO_HELD = ("reserved", "committed")   # roll berkomitmen ke SO (sebelum / sesudah dikonfirmasi)
+# Hanya SO yang tugas gudangnya BELUM mulai diambil: alokasi & tugas "created" ikut pindah ke gudang tujuan.
+SO_TRANSFERABLE = {"reserved", "waiting_approval", "approved", "confirmed", "waiting_stock"}
+
 def _reason(text: str, label: str = "Alasan") -> str:
     t = (text or "").strip()
     if len(t) < 5:
@@ -33,7 +37,9 @@ def _reason(text: str, label: str = "Alasan") -> str:
 # ─── Transfer terkait SO (IMP-26) ──────────────────────────────────────────────
 async def so_options(source_warehouse_id: str, allowed: List[str]) -> List[Dict[str, Any]]:
     """SO yang punya roll berkomitmen (reserved) di gudang asal."""
-    q: Dict[str, Any] = {"warehouse_id": source_warehouse_id, "status": "reserved", "reserved_ref.type": "sales_order"}
+    # Cek UI UAT v3 (S10) — roll SO terkonfirmasi berstatus "committed"; dulu hanya "reserved" → transfer pemenuhan SO tak pernah bisa dipakai.
+    q: Dict[str, Any] = {"warehouse_id": source_warehouse_id, "status": {"$in": list(SO_HELD)},
+                         "reserved_ref.type": "sales_order"}
     if allowed:
         q["owner_entity_id"] = {"$in": allowed}
     rows = await db.inventory_rolls.aggregate([
@@ -42,14 +48,15 @@ async def so_options(source_warehouse_id: str, allowed: List[str]) -> List[Dict[
     for r in rows:
         so = await db.sales_orders.find_one({"id": r["_id"]}, {"_id": 0, "id": 1, "number": 1, "customer_name": 1,
                                                                "status": 1, "entity_id": 1})
-        if so and so.get("status") not in {"cancelled", "rejected", "closed", "completed", "delivered"}:
+        if so and so.get("status") in SO_TRANSFERABLE:
             out.append({**so, "rolls_here": r["rolls"]})
     return sorted(out, key=lambda s: s.get("number") or "")
 
 
 async def so_rolls(so_id: str, source_warehouse_id: str) -> List[Dict[str, Any]]:
     rows = await db.inventory_rolls.find(
-        {"reserved_ref.id": so_id, "warehouse_id": source_warehouse_id, "status": "reserved"}, {"_id": 0}).to_list(2000)
+        {"reserved_ref.id": so_id, "warehouse_id": source_warehouse_id, "status": {"$in": list(SO_HELD)}},
+        {"_id": 0}).to_list(2000)
     prods = {p["id"]: p for p in await db.products.find({"id": {"$in": list({r["product_id"] for r in rows})}},
                                                         {"_id": 0, "id": 1, "sku": 1, "name": 1, "base_unit": 1}).to_list(500)}
     out = []
@@ -88,6 +95,10 @@ async def attach_committed_rolls(transfer_id: str, so_id: str, roll_ids: List[st
                                  product_id: str) -> List[Dict[str, Any]]:
     """Roll reserved untuk SO → ditandai milik transfer TANPA melepas/mengulang reservasi (CAS)."""
     out: List[Dict[str, Any]] = []
+    so = await db.sales_orders.find_one({"id": so_id}, {"_id": 0, "number": 1, "status": 1}) or {}
+    if so.get("status") not in SO_TRANSFERABLE:
+        raise HTTPException(status_code=409, detail=(
+            f"SO {so.get('number', '')} sudah mulai diambil gudang — kirim dari gudang asal atau batalkan pengambilan dulu."))
     rows = await db.inventory_rolls.find({"id": {"$in": roll_ids}}, {"_id": 0}).to_list(len(roll_ids))
     by_id = {r["id"]: r for r in rows}
     try:
@@ -95,7 +106,7 @@ async def attach_committed_rolls(transfer_id: str, so_id: str, roll_ids: List[st
             r = by_id.get(rid)
             if not r or r.get("product_id") != product_id:
                 raise HTTPException(status_code=409, detail="Sebagian roll tidak ditemukan untuk produk ini — muat ulang.")
-            if r.get("status") != "reserved" or (r.get("reserved_ref") or {}).get("id") != so_id:
+            if r.get("status") not in SO_HELD or (r.get("reserved_ref") or {}).get("id") != so_id:
                 raise HTTPException(status_code=409, detail=f"Roll {r.get('roll_no')} tidak (lagi) berkomitmen ke SO ini.")
             if r.get("warehouse_id") != source_wh:
                 raise HTTPException(status_code=400, detail=f"Roll {r.get('roll_no')} tidak berada di gudang asal.")
@@ -193,11 +204,13 @@ async def _land(roll: Dict[str, Any], transfer: Dict[str, Any], dest: Dict[str, 
     """in_transit_transfer → fisik di tujuan (CAS). None bila sudah diproses (retry)."""
     so_id = (roll.get("transfer_ref") or {}).get("so_id")
     keep = bool(so_id) and await so_still_open(so_id)
-    status = {"damaged": "damaged", "hold": "hold"}.get(status_kind) or ("reserved" if keep else "available")
+    # komitmen SO kembali ke status asalnya (reserved / committed) saat tiba
+    status = {"damaged": "damaged", "hold": "hold"}.get(status_kind) or (
+        (roll.get("transfer_prior_status") if roll.get("transfer_prior_status") in SO_HELD else "reserved") if keep else "available")
     src_wh = roll["warehouse_id"]
     res = await db.inventory_rolls.update_one(held_cas(roll), {"$set": {
         "warehouse_id": dest["id"], "status": status, "reserved_ref": roll.get("reserved_ref") if keep else None,
-        "transfer_ref": None, "bin_id": None, "bin_code": "",
+        "transfer_ref": None, "transfer_prior_status": None, "bin_id": None, "bin_code": "",
         "last_transfer": {"ref_id": transfer["id"], "code": transfer.get("code"), "from_warehouse_id": src_wh,
                           "date": now_iso(), "received_by": actor.get("name"), "outcome": status_kind},
         "updated_at": now_iso()}})
@@ -214,7 +227,7 @@ async def _land(roll: Dict[str, Any], transfer: Dict[str, Any], dest: Dict[str, 
         "source_document": f"transfer_{transfer.get('code')}", "timestamp": now_iso()})
     for w in {src_wh, dest["id"]}:
         await rebuild_balance(roll["product_id"], w, roll["owner_entity_id"])
-    if keep and status == "reserved":
+    if keep and status in SO_HELD:
         await _rehome_allocation(so_id, roll, dest, transfer)
     return {**roll, "warehouse_id": dest["id"], "status": status, "bin_id": None}
 
