@@ -17,7 +17,7 @@ import { can } from "../../config/roles";
 function StatusPill({ status }) {
   const map = {
     draft: ["pill-muted", "Draft"], pending_approval: ["pill-warning", "Menunggu Approval"],
-    posted: ["pill-info", "Posted"], paid: ["pill-success", "Lunas"], cancelled: ["pill-danger", "Dibatalkan"],
+    posted: ["pill-info", "Terposting"], paid: ["pill-success", "Lunas"], cancelled: ["pill-danger", "Dibatalkan"],
   };
   const [cls, label] = map[status] || ["pill-muted", status];
   return <span className={`status-pill ${cls}`} data-testid="vb-detail-status">{label}</span>;
@@ -208,7 +208,7 @@ export default function VendorBillDetailPanel({ bill, canApprove, currentUser, o
               {bill.bill_type !== "makloon_service" && (
                 <button data-testid="vb-action-cancel-posted" onClick={() => act("cancel", { notes: "" })} disabled={busy} className="secondary-button"><Ban size={13} /> Batalkan</button>
               )}
-              <button data-testid="vb-action-pay" onClick={() => setShowPay((s) => !s)} disabled={busy} className="primary-button"><Wallet size={13} /> Bayar</button>
+              <button data-testid="vb-action-pay" onClick={() => { setShowPay((s) => !s); if (!payAmount && Number(fin.outstanding) > 0) setPayAmount(String(fin.outstanding)); }} disabled={busy} className="primary-button"><Wallet size={13} /> Bayar</button>
             </>
           )}
           {bill.status === "paid" && <span className="text-[11.5px] font-semibold text-green-700 flex items-center gap-1"><CheckCircle2 size={14} /> Tagihan lunas.</span>}

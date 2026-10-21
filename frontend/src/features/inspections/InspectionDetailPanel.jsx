@@ -31,6 +31,15 @@ import {
   rejectHold, releaseHold, reopenInspection, resultPill, startInspection,
 } from "./inspectionsApi";
 
+// Cek UI UAT v3 (S8) — waktu dulu dipotong dari ISO UTC ("2026-10-21 19:57" padahal WIB 22 Okt 02.57).
+const localTs = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso).slice(0, 16).replace("T", " ");
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
 function Row({ label, children, testId }) {
   return (
     <div className="flex items-start justify-between gap-3 py-1">
@@ -212,10 +221,10 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
           </Row>
           <Row label="Bagian" testId="ins-detail-bagian">{doc.bagian || "—"}</Row>
           <Row label="Mulai diperiksa" testId="ins-detail-started">
-            {(doc.started_at || "").slice(0, 16).replace("T", " ") || "—"}
+            {localTs(doc.started_at) || "—"}
           </Row>
           <Row label="Selesai" testId="ins-detail-finished">
-            {(doc.finished_at || "").slice(0, 16).replace("T", " ") || "—"}
+            {localTs(doc.finished_at) || "—"}
           </Row>
         </div>
         <div className="section-card">
@@ -505,7 +514,7 @@ export default function InspectionDetailPanel({ doc, meta, currentUser, onChange
             <div key={`${h.at}-${i}`} className="flex items-start gap-2 text-[11px]">
               <CalendarClock size={12} className="mt-0.5 shrink-0 text-[#9A9BA3]" />
               <span className="text-[#3C3C43]">
-                <strong>{h.label}</strong> · {h.actor} · {(h.at || "").slice(0, 16).replace("T", " ")}
+                <strong>{h.label}</strong> · {h.actor} · {localTs(h.at)}
                 {h.note ? <span className="text-[#6B6B73]"> — {h.note}</span> : null}
               </span>
             </div>

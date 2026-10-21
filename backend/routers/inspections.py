@@ -57,8 +57,12 @@ async def meta(request: Request, entity_id: str = Query("")) -> Dict[str, Any]:
     out = await svc.meta(entity_id or ctx.active_entity_id)
     # FE-04 — petugas = akun aktif berkemampuan inspect (termasuk peran kustom) di badan usaha ini.
     officers = await svc.eligible_officers(entity_id or ctx.active_entity_id or "")
+    # Cek UI UAT v3 (S8) — dulu id peran mentah ("warehouse_admin", "md_quality") di pilihan petugas.
+    from role_registry import role_label
+    from config_divisions import division_name
     out["officers"] = [{"value": u["id"],
-                        "label": f"{u.get('name', '')} · {u.get('division') or u.get('role', '')}"}
+                        "label": f"{u.get('name', '')} · "
+                                 f"{(division_name(u['division']) if u.get('division') else '') or role_label(u.get('role', ''))}"}
                        for u in officers]
     out["role"] = (actor or {}).get("role", "")
     out["can_release_hold"] = (actor or {}).get("role") in svc.HOLD_RELEASE_ROLES
