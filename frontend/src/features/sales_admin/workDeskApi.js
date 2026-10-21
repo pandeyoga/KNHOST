@@ -208,6 +208,8 @@ export const FINANCE_QUEUE_TARGET = {
   jatuh_tempo:       { view: "ar-aging", nav_id: "ar-aging", focus_type: "customer", focus_key: "customer_id", number_key: "title" },
   hutang_jatuh_tempo: { view: "purchasing", nav_id: "purchase-orders", focus_type: "purchase_order" },
   uang_muka_belum_kirim: { view: "orders", nav_id: "sales-orders", focus_type: "sales_order" },
+  // keputusan owner 2026-10-21 — nota kredit batal item OD: tinjau di jejak amandemen detail SO
+  nota_batal_item: { view: "orders", nav_id: "sales-orders", focus_type: "sales_order" },
 };
 
 /** Sesi #087 — tujuan baris Meja MD & Meja Admin Gudang (per ref_type). */

@@ -1,8 +1,9 @@
 """FE-01 lanjutan (keputusan owner 2026-10-21) — batalkan SATU baris SO yang lahir dari item Pesanan Khusus.
 
 Dipanggil oleh batal item OD sesudah SO dikonversi. Aturan (default implementer):
-  * SO belum "terbit" (`amendment_service.is_issued`: Faktur Pajak aktif, pembayaran masuk, sudah dikirim,
-    pendapatan dijurnal) — dokumen terbit dikoreksi lewat nota oleh Finance, bukan dengan menghapus baris;
+  * keputusan owner 2026-10-21: SO yang sudah "terbit" (`amendment_service.is_issued`: Faktur Pajak aktif,
+    pembayaran masuk, sudah dikirim, pendapatan dijurnal) TETAP boleh — baris keluar dan lahir NOTA KREDIT otomatis
+    berstatus menunggu Finance (`services/od_cancel_credit_note`), yang boleh dikoreksi/diterbitkan/dibatalkan Finance;
   * roll baris itu belum dipick/dikemas/dikirim (hanya status `reserved` yang boleh dilepas) dan tugas ambil
     gudang untuk baris itu belum mencatat qty terambil;
   * produk baris itu tidak muncul di baris SO lain (reservasi per produk tidak bisa dipisah otomatis).
@@ -36,10 +37,6 @@ async def check(order: Dict[str, Any], od_item_id: str) -> Dict[str, Any]:
     line = line_of(order, od_item_id)
     if not line:
         raise SoLineError(f"Baris SO {number} untuk item ini tidak ditemukan.")
-    issued, why = await is_issued(order)
-    if issued:
-        raise SoLineError(f"SO {number} sudah terbit ({why}) — baris tidak bisa dibatalkan langsung. "
-                          "Koreksi lewat Finance (amandemen/nota) atau retur.")
     pid = line.get("product_id")
     if sum(1 for i in order.get("items") or [] if i.get("product_id") == pid) > 1:
         raise SoLineError("Produk yang sama ada di lebih dari satu baris SO — reservasinya tidak bisa dipisah "
@@ -62,6 +59,7 @@ async def cancel_line(order: Dict[str, Any], od_item_id: str, reason: str, actor
     line = await check(order, od_item_id)
     pid = line.get("product_id")
     who = actor.get("name", "")
+    issued, issued_why = await is_issued(order)   # dibaca SEBELUM baris keluar (dasar nota kredit)
     from services import atomic_claim as _saga
     await _saga.claim("sales_orders", order["id"], "so_line_cancel",
                       precondition={"status": order["status"]}, actor=who)
@@ -117,4 +115,12 @@ async def cancel_line(order: Dict[str, Any], od_item_id: str, reason: str, actor
     await db.sales_orders.update_one({"id": order["id"]}, {**_saga.finish_set(patch), "$push": {"line_cancellations": entry}})
     if dropped_sp:
         await so_approvals.cancel_price_docs(db, dropped_sp, f"Item Pesanan Khusus dibatalkan: {reason}", who)
+    if issued:   # keputusan owner 2026-10-21 — SO terbit → nota kredit menunggu Finance
+        from services import od_cancel_credit_note as occn
+        cn = await occn.create(order, patch, line, reason, who, issued_why, od_item_id)
+        entry["credit_note"] = {"id": cn["id"], "number": cn["number"], "status": cn["status"],
+                                "gross_amount": cn["gross_amount"], "excess_payment": cn["excess_payment"]}
+        await db.sales_orders.update_one({"id": order["id"], "line_cancellations.id": entry["id"]},
+                                         {"$set": {"line_cancellations.$.credit_note_id": cn["id"],
+                                                   "line_cancellations.$.credit_note_number": cn["number"]}})
     return entry

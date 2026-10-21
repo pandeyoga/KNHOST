@@ -148,6 +148,21 @@ async def detail(amd_id: str, request: Request) -> Dict[str, Any]:
 
 
 # ── Putusan ──────────────────────────────────────────────────────────────────
+@router.post("/credit-notes/{cn_id}/finance-review")
+async def review_od_cancel_credit_note(cn_id: str, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+    """Keputusan owner 2026-10-21 — nota kredit batal item OD (SO terbit): Finance mengoreksi nilai (`adjust`),
+    menerbitkan (`issue`), atau membatalkan (`void`). Izin: `finance_amendment.review_credit_note` (bawaan Finance,
+    Manager, Admin — dapat diatur di matriks izin)."""
+    from services import od_cancel_credit_note as occn
+    actor = await require_permission(request, "finance_amendment", "review_credit_note")
+    action = str((payload or {}).get("action") or "")
+    row = await occn.review(cn_id, action, payload or {}, actor, await entity_ctx(request))
+    await audit(actor.get("name", ""), f"od_cancel_credit_note_{action}", "credit_notes", cn_id,
+                {"number": row.get("number"), "status": row.get("status"), "gross_amount": row.get("gross_amount")},
+                reason=(payload or {}).get("note") or "")
+    return row
+
+
 @router.post("/amendments/{amd_id}/decision")
 async def decide(amd_id: str, payload: AmendmentDecisionIn,
                  request: Request) -> Dict[str, Any]:

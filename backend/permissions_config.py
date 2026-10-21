@@ -644,4 +644,8 @@ for _role in ("admin", "manager", "md", "md_quality"):
     _cur = DEFAULT_PERMISSIONS[_role].setdefault("sales_return", ["view"])
     DEFAULT_PERMISSIONS[_role]["sales_return"] = list(_cur) + [x for x in ["split_cutloss"] if x not in _cur]
 EXTRA_ACTIONS = {"sales_pov": ["commercial"]}
-
+# Keputusan owner 2026-10-21 — nota kredit otomatis dari batal item Pesanan Khusus pada SO terbit: ditinjau
+# (dikoreksi / diterbitkan / dibatalkan) pemegang izin ini; bawaan Finance, Manager, Admin — dapat diatur di matriks.
+for _role in ("admin", "manager", "finance"):
+    _cur = DEFAULT_PERMISSIONS[_role].setdefault("finance_amendment", [])
+    DEFAULT_PERMISSIONS[_role]["finance_amendment"] = list(_cur) + [x for x in ("review_credit_note",) if x not in _cur]

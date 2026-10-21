@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FileEdit, Loader2, ReceiptText, ScrollText } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import AmendmentProposeModal from "./AmendmentProposeModal";
+import OdCancelNoteActions, { OdCancelNoteInfo } from "./OdCancelNoteActions";
 import { amendmentsForDoc, errText, methodMeta, statusMeta } from "./amendmentApi";
 
 const PROPOSER_ROLES = ["admin", "manager", "sales"];
@@ -116,11 +117,19 @@ export default function AmendmentTrailPanel({ order, currentUser, onRefresh }) {
         {notes.length > 0 && (
           <div data-testid="amd-trail-notes" className="rounded-md border border-[#E5EEFB] bg-[#F5F9FF] p-2">
             <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-[#0058CC] mb-1">
-              <ReceiptText size={11} /> Nota koreksi terbit ({notes.length})
+              <ReceiptText size={11} /> Nota koreksi ({notes.length})
             </p>
-            <p className="mb-1.5 text-[9.5px] leading-snug text-[#4A4A52]">
-              Nilai dokumen asal sengaja TIDAK diubah. Koreksinya berdiri sendiri sebagai nota di bawah ini.
-            </p>
+            {notes.some((x) => x.source !== "od_item_cancel") && (
+              <p className="mb-1.5 text-[9.5px] leading-snug text-[#4A4A52]">
+                Nilai dokumen asal sengaja TIDAK diubah. Koreksinya berdiri sendiri sebagai nota di bawah ini.
+              </p>
+            )}
+            {notes.some((x) => x.source === "od_item_cancel") && (
+              <p className="mb-1.5 text-[9.5px] leading-snug text-[#4A4A52]" data-testid="amd-trail-od-note-hint">
+                Batal item Pesanan Khusus: barisnya keluar dari pesanan; nota kredit mencatat nilai yang dibatalkan dan
+                menunggu tinjauan Finance.
+              </p>
+            )}
             {notes.map((n) => (
               <div key={n.id} data-testid={`amd-note-${n.id}`}
                 className="flex items-center justify-between gap-2 rounded bg-white px-2 py-1 border border-[#E5EEFB] mb-1 last:mb-0">
@@ -129,6 +138,12 @@ export default function AmendmentTrailPanel({ order, currentUser, onRefresh }) {
                   <p className="text-[9.5px] text-[#6B6B73] truncate">
                     {n.kind === "credit_note" ? "Nota Kredit" : "Nota Debit"} · {n.reason_label}
                   </p>
+                  {n.source === "od_item_cancel" && (
+                    <>
+                      <OdCancelNoteInfo note={n} />
+                      <OdCancelNoteActions note={n} currentUser={currentUser} onDone={handleDone} />
+                    </>
+                  )}
                 </div>
                 <span className={`text-[11px] font-bold tabular-nums shrink-0 ${n.direction === "decrease" ? "text-[#A8221A]" : "text-[#1B7A43]"}`}>
                   {n.direction === "decrease" ? "−" : "+"} {formatCurrency(n.gross_amount)}

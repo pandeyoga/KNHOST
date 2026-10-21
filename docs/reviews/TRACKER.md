@@ -78,12 +78,12 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 
 | ID | Pertanyaan untuk owner | Dicatat |
 |---|---|---|
-| FE-01 SO terbit | Dijawab owner 2026-10-21: batal item OD pada SO terbit → nota kredit otomatis, tetap bisa dikoreksi Finance. Sedang dikerjakan. | 2026-10-21 |
 
 ## Riwayat perubahan tracker
 
 | Tanggal | Oleh | Perubahan |
 |---|---|---|
+| 2026-10-21 | Claude Code | Keputusan owner putaran 4 #3 ([laporan](../uat/2026-10-21/hasil/KEPUTUSAN-OWNER-P4.md)): batal item OD pada SO terbit → nota kredit otomatis menunggu Finance (koreksi/terbit/batal, izin `finance_amendment.review_credit_note`, antrean Meja Finance); pertanyaan "FE-01 SO terbit" selesai |
 | 2026-10-21 | Claude Code | Keputusan owner putaran 4 #2 ([laporan](../uat/2026-10-21/hasil/KEPUTUSAN-OWNER-P4.md)): akses lintas badan usaha dapat diatur per peran (bawaan & kustom; kustom ikut peran acuan; Admin dikunci); pertanyaan "ROLE-01 lintas PT" selesai; jawaban Q-01..Q-06 (UAT) dicatat |
 | 2026-10-21 | Claude Code | Keputusan owner putaran 4 #1 ([laporan](../uat/2026-10-21/hasil/KEPUTUSAN-OWNER-P4.md)): baris dihapus (Override SO / batal item OD) → entri harga khusus produk itu otomatis dibatalkan, riwayat tetap; pertanyaan "F-09 baris dihapus" selesai |
 | 2026-10-21 | Claude Code | Keputusan owner putaran 3 ([laporan](../uat/2026-10-21/hasil/KEPUTUSAN-OWNER-P3.md)): antrean "Retur menunggu terima / QC" di Meja Operator & Admin Gudang, Gudang/QC mengunduh foto/video bukti, perbaikan data F-09 sebagai migrasi startup sekali jalan (produksi ikut saat deploy); 3 pertanyaan terjawab, 3 jawaban putaran 4 dicatat (sedang dikerjakan) |

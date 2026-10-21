@@ -114,6 +114,12 @@ export async function decideAmendment(id, action, note = "") {
   return r.data;
 }
 
+/** Keputusan owner 2026-10-21 — nota kredit batal item OD (SO terbit): Finance koreksi nilai / terbitkan / batalkan. */
+export async function reviewCreditNote(id, body) {
+  const r = await axios.post(`${API}/credit-notes/${id}/finance-review`, body);
+  return r.data;
+}
+
 /** Amandemen + nota koreksi milik SATU dokumen (untuk panel jejak di detail SO). */
 export async function amendmentsForDoc(docType, docId) {
   const r = await axios.get(`${API}/amendments/doc/${docType}/${docId}`);

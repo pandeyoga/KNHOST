@@ -154,7 +154,9 @@ def test_batal_item_sesudah_kunci_harga(H):
 
 
 # ─── Sesudah SO terbit (ada pembayaran): ditolak, tidak ada yang berubah ─────────────────
-def test_batal_item_sesudah_so_terbit_ditolak(H):
+def test_batal_item_sesudah_so_terbit_jadi_nota_kredit(H):
+    """Keputusan owner 2026-10-21 (menggantikan aturan lama "SO terbit → ditolak"): baris keluar dan lahir nota kredit
+    menunggu Finance; penjaga fisik tetap — roll baris itu sudah dipick → ditolak (jalur retur)."""
     od = _approved(H, [PA, PB], qtys=(100, 200))
     i1, i2 = od["items"]
     _decide(i1, PA, 10)
@@ -165,10 +167,17 @@ def test_batal_item_sesudah_so_terbit_ditolak(H):
     assert cv.status_code == 200, cv.text
     so_id = cv.json()["sales_order"]["id"]
     DB.sales_orders.update_one({"id": so_id}, {"$set": {"paid_total": 1000.0}})     # fixture: sudah ada pembayaran
+    roll = DB.inventory_rolls.find_one({"reserved_ref.id": so_id, "product_id": PB["id"], "status": "reserved"}, {"_id": 0, "id": 1})
+    if roll:   # penjaga fisik: roll terpick → tetap ditolak walau SO terbit
+        DB.inventory_rolls.update_one({"id": roll["id"]}, {"$set": {"status": "picked"}})
+        blocked = _cancel(H, od["id"], i2["id"])
+        DB.inventory_rolls.update_one({"id": roll["id"]}, {"$set": {"status": "reserved"}})
+        assert blocked.status_code == 409 and "dipick" in blocked.text, blocked.text
     r = _cancel(H, od["id"], i2["id"])
-    assert r.status_code == 409 and "terbit" in r.text, r.text
-    assert len(DB.sales_orders.find_one({"id": so_id})["items"]) == 2
-    assert all(i.get("status") != "cancelled" for i in DB.special_orders.find_one({"id": od["id"]})["items"])
+    assert r.status_code == 200, r.text
+    cn = r.json()["credit_note"]
+    assert cn and cn["status"] == "pending_finance" and cn["gross_amount"] > 0
+    assert len(DB.sales_orders.find_one({"id": so_id})["items"]) == 1
     DB.sales_orders.update_one({"id": so_id}, {"$set": {"paid_total": 0.0}})
 
 

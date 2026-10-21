@@ -460,6 +460,21 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         "pendapatan historis yang diakui sebelum kebijakan baru.",
         um_rows, action_label="Buka", owner="finance"))
 
+    # Keputusan owner 2026-10-21 — nota kredit batal item OD pada SO terbit menunggu tinjauan Finance.
+    from core_utils import rupiah
+    pend = await db.credit_notes.find({**_ent_q(scope), "source": "od_item_cancel", "status": "pending_finance"},
+                                      {"_id": 0}).sort("created_at", 1).to_list(200)
+    queues.append(_queue(
+        "nota_batal_item", "Nota kredit batal item menunggu Finance",
+        "Item Pesanan Khusus dibatalkan pada SO yang sudah terbit: koreksi nilai bila perlu, lalu terbitkan atau batalkan.",
+        [_row(ref_type="sales_order", ref_id=n["order_id"], number=n.get("number", ""), title=n.get("customer_name", "—"),
+              subtitle=" · ".join(x for x in [n.get("order_number", ""), ((n.get("lines") or [{}])[0].get("product_name") or ""),
+                                              (f"kelebihan bayar {rupiah(n['excess_payment'])}" if n.get("excess_payment") else "")] if x),
+              value=float(n.get("gross_amount") or 0), age_days=_age_days(n.get("created_at")),
+              badge="menunggu Finance", action="Tinjau", action_kind="open",
+              extra={"order_id": n["order_id"], "credit_note_id": n["id"]}) for n in pend],
+        action_label="Tinjau", owner="finance"))
+
     return {"desk": "finance", "desk_label": "Meja Finance",
             "generated_at": now_iso(), "entity_ids": entity_ids,
             "queues": queues,

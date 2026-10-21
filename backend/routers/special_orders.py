@@ -861,7 +861,9 @@ async def cancel_special_order_item(order_id: str, item_id: str, payload: ItemCa
         extra = [f"SO {so.get('number')}: baris dibatalkan, total {rupiah(so_entry['grand_total_before'] or 0)} → "
                  f"{rupiah(so_entry['grand_total_after'] or 0)}" if so_entry else "",
                  f"dibatalkan: {', '.join(docs + cancelled_samples)}" if (docs or cancelled_samples) else "",
-                 f"PERLU TINDAK LANJUT (sudah berjalan, tidak dibatalkan): {', '.join(left_docs)}" if left_docs else ""]
+                 f"PERLU TINDAK LANJUT (sudah berjalan, tidak dibatalkan): {', '.join(left_docs)}" if left_docs else "",
+                 f"SO sudah terbit → nota kredit {so_entry['credit_note']['number']} menunggu Finance"
+                 if so_entry and so_entry.get("credit_note") else ""]
         await notif.create_addressed(
             roles=("md",), entity_id=od.get("entity_id", ""), notif_type="special_order_item_cancelled",
             title=f"Item {item.get('line_no')} {od.get('number')} dibatalkan",
@@ -873,7 +875,7 @@ async def cancel_special_order_item(order_id: str, item_id: str, payload: ItemCa
         logging.getLogger(__name__).warning("[cancel_item] notifikasi MD gagal diabaikan: %s", exc)
     return {"special_order": safe_doc(await _fresh(order_id)), "cancelled_docs": docs, "left_docs": left_docs,
             "cancelled_samples": cancelled_samples, "cancelled_design_request": cancelled_request,
-            "sales_order_line": so_entry}
+            "sales_order_line": so_entry, "credit_note": (so_entry or {}).get("credit_note")}
 
 
 @router.post("/special-orders/{order_id}/prepare-shipment")

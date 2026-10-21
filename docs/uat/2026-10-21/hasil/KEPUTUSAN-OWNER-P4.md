@@ -50,6 +50,38 @@
   kecuali `test_iter291::test_create_two_orders_rejected` (bergantung data: butuh SJ belum ditugaskan dari 2 pesanan —
   dijalankan sendiri dilewati; aturan logistik "satu pesanan", tidak terkait peran).
 
+## 3. Batal item OD pada SO terbit → nota kredit otomatis, dikoreksi Finance (FE-01 SO terbit)
+- Akar masalah: `so_line_cancel_service.check` menolak SO yang sudah terbit (Faktur Pajak aktif / ada pembayaran /
+  sudah dikirim / pendapatan dijurnal) — pembatalan harus dikerjakan manual di luar alur.
+- Perubahan perilaku: SO terbit TETAP boleh selama barang baris itu belum keluar gudang (penjaga fisik tidak berubah:
+  roll terpick/terkirim → 409, jalur retur). Baris keluar dari SO (pengiriman berhenti, reservasi lepas, total
+  dihitung ulang) dan lahir **Nota Kredit bernomor** (`credit_notes`, `source=od_item_cancel`) berstatus
+  **Menunggu Finance** berisi nilai baris yang dibatalkan, PPN-nya, alasan "terbit", dan **kelebihan bayar**.
+  Finance diberi notifikasi + antrean baru **Nota kredit batal item menunggu Finance** di Meja Finance; nota tampil di
+  jejak amandemen detail SO dengan tombol **Terbitkan / Koreksi nilai / Batalkan nota**. Izin baru
+  `finance_amendment.review_credit_note` (bawaan Finance, Manager, Admin — dapat diatur di matriks izin).
+  Koreksi: nilai > 0 dan tidak melebihi nilai baris yang dibatalkan, alasan wajib, jejak koreksi tersimpan; batalkan
+  nota: alasan wajib. Respons batal item & notifikasi MD menyebut nomor nota.
+- Akuntansi saat **Terbitkan** (default implementer — mohon direview Finance):
+  * normal (pendapatan diakui per Surat Jalan; uang sebelum kirim = Uang Muka Pelanggan 2-1400): baris yang batal
+    belum dikirim → **tanpa jurnal**; kelebihan bayar tetap uang muka pelanggan (dikembalikan/dipakai lewat Uang Masuk);
+  * pendapatan pesanan sudah diakui di tingkat pesanan (jurnal historis `sales_order`): jurnal koreksi seperti nota
+    amandemen (Dr Pendapatan + PPN / Cr Piutang sebesar sisa tagihan sebelum batal + Cr Saldo Kredit untuk sisanya),
+    saldo kredit pelanggan tercatat.
+- Berkas: `backend/services/od_cancel_credit_note.py` (baru), `backend/services/so_line_cancel_service.py`,
+  `backend/routers/special_orders.py`, `backend/routers/amendments.py` (`POST /credit-notes/{id}/finance-review`),
+  `backend/services/amendment_service.py` (nota tampil di jejak SO), `backend/services/work_desk_service.py`
+  (antrean Meja Finance), `backend/permissions_config.py`, `backend/access_modules.py`,
+  `frontend/src/features/finance/amendments/{OdCancelNoteActions.jsx,AmendmentTrailPanel.jsx,amendmentApi.js}`,
+  `frontend/src/features/sales_admin/workDeskApi.js`.
+- Pengujian: `test_fe01_cancel_issued_credit_note.py` (3 — nota menunggu Finance + antrean Meja Finance + jejak SO,
+  Sales 403, koreksi tanpa alasan 400, koreksi melebihi nilai 400, terbit tanpa jurnal, batalkan nota; pendapatan
+  historis → jurnal koreksi + saldo kredit; SO belum terbit → tanpa nota). **Merah dulu** (7 berkas versi `3257230`):
+  **2 gagal**, 1 lulus. **Sesudah: 3/3.** Tes lama `test_batal_item_sesudah_so_terbit_ditolak` diganti
+  `..._jadi_nota_kredit` (aturan lama dicabut owner; penjaga roll terpick tetap diuji). Jest `odCancelCreditNote.test.js`
+  (3). Regresi 13 berkas (FE-01, matriks izin, amandemen, Meja Finance, KEB-PDPT, RBAC persetujuan, override SO):
+  himpunan gagal **sama dengan HEAD** kecuali tes aturan lama tadi.
+
 ## Keputusan owner Q-01..Q-06 (rencana perbaikan UAT) — dicatat 2026-10-21
 | Kode | Temuan | Jawaban owner |
 |---|---|---|

@@ -1053,6 +1053,6 @@ async def stats(flt: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def notes_for_order(order_id: str) -> List[Dict[str, Any]]:
-    rows = await db.credit_notes.find(
-        {"order_id": order_id, "source": "amendment"}, {"_id": 0}).to_list(500)
+    rows = await db.credit_notes.find(   # + nota kredit batal item OD (keputusan owner 2026-10-21)
+        {"order_id": order_id, "source": {"$in": ["amendment", "od_item_cancel"]}}, {"_id": 0}).to_list(500)
     return [safe_doc(r) for r in rows]
