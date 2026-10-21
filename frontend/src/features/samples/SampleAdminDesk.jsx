@@ -36,7 +36,13 @@ export default function SampleAdminDesk({ currentUser, selectedEntity = "all", o
     if (row.action_kind === "approve_payment" || row.action_kind === "confirm") {
       setBusyRef(row.ref_id); setError("");
       try {
-        if (row.action_kind === "approve_payment") { await approveSamplePayment(row.ref_id); flash(`${row.number}: pembayaran sample disetujui — kini siap diteruskan ke gudang.`); }
+        if (row.action_kind === "approve_payment") {
+          await approveSamplePayment(row.ref_id);
+          // F-15 — persetujuan ULANG (tagihan berubah > toleransi sesudah potong): kiriman sample dilepas
+          flash(row.badge === "persetujuan ulang"
+            ? `${row.number}: tagihan baru disetujui — kiriman sample dilepas.`
+            : `${row.number}: pembayaran sample disetujui — kini siap diteruskan ke gudang.`);
+        }
         else { const r = await confirmSampleOrder(row.ref_id); flash(`${row.number} diteruskan ke gudang — ${r?.tasks_created ?? ""} tugas potong lahir.`); }
         await load();
       } catch (e) { setError(apiErrorText(e, "Aksi gagal.")); }

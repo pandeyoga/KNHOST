@@ -249,6 +249,8 @@ const WH_DESK_TARGET = {
 const DOC_TARGET = {
   ar_receipt:  { view: "payment-plans", nav_id: "payment-plans", focus_type: "ar_receipt", tab: "selisih" },
   tax_invoice: { view: "tax-invoices",  nav_id: "tax-hub",       focus_type: "tax_invoice" },
+  // Cek UI F-15 — pesanan sample (SOS-) dibuka di Pesanan Sample (daftar Pesanan Penjualan tidak memuat sample)
+  sample_order: { view: "sample-orders", nav_id: "sample-orders", focus_type: "sample_order" },
 };
 export function docLinkTarget(doc) {
   const t = DOC_TARGET[doc?.ref_type] || ROLE_DESK_TARGET[doc?.ref_type] || ROW_TARGET[doc?.ref_type];

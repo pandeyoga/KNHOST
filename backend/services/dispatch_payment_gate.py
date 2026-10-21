@@ -23,7 +23,7 @@ EPS = 1.0   # toleransi pembulatan Rupiah
 CLOSED = ("done", "cancelled", "rejected", "void", "expired")
 PROJ = {"_id": 0, "id": 1, "entity_id": 1, "status": 1, "is_sample": 1, "payment_term_code": 1, "payment_term": 1,
         "payment_term_name": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1, "dispatch_payment_release": 1,
-        "order_number": 1, "number": 1}
+        "order_number": 1, "number": 1, "sample_billing": 1, "sample_payment_status": 1}
 
 
 async def _term(code: str, entity_id: str, cache: Dict) -> Optional[Dict[str, Any]]:
@@ -96,6 +96,11 @@ async def guard(order_id: Optional[str]) -> None:
     order = await db.sales_orders.find_one({"id": order_id}, PROJ)
     if not order:
         return
+    if order.get("sample_billing") == "paid" and order.get("sample_payment_status") == "reapproval_required":
+        # F-15 — sample berbayar: tagihan berubah melewati toleransi sesudah potong → tunggu persetujuan ulang.
+        raise HTTPException(status_code=409, detail=(
+            "Sample tertahan: tagihan berubah melewati toleransi sesudah dipotong — menunggu persetujuan ulang "
+            "pembayaran oleh Finance/Admin Sample (Meja Admin Sample)."))
     st = await evaluate(order)
     if st["blocked"]:
         raise HTTPException(status_code=409, detail=st["message"])

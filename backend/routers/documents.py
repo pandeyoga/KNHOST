@@ -397,7 +397,7 @@ async def resolve_document_number(request: Request, number: str = Query(..., min
                  "logistics_delivery": "logistics", "sales_return": "sales_return", "design_request": "design_request",
                  "purchase_requisition": "purchase_requisition", "ar_receipt": "ar_receipt", "inspection": "inspection",
                  "internal_request": "internal_request", "tax_invoice": "tax_invoice", "wms_task": "wms",
-                 "md_sample": "md_sample", "customer": "customer"}
+                 "md_sample": "md_sample", "customer": "customer", "sample_order": "sample_order"}
     def _may_view(ref_type: str) -> bool:
         mod = MODULE_OF.get(ref_type, "")
         if not mod or user.get("role") == "admin":
@@ -410,10 +410,17 @@ async def resolve_document_number(request: Request, number: str = Query(..., min
     for ref_type, coll, field in DOC_LOOKUP:
         if not _may_view(ref_type):
             continue
-        rows = await db[coll].find({field: rx}, {"_id": 0, "id": 1, field: 1, "entity_id": 1}).to_list(5)
+        rows = await db[coll].find({field: rx}, {"_id": 0, "id": 1, field: 1, "entity_id": 1, "sample_billing": 1}).to_list(5)
         rows = [r for r in rows if not allowed or not r.get("entity_id") or r.get("entity_id") in allowed | {"all"}]
         if rows:
             r = rows[0]
-            return {"ref_type": ref_type, "ref_id": r["id"], "number": r.get(field, num),
+            rt = ref_type
+            if ref_type == "sales_order" and r.get("sample_billing") in ("free", "paid"):
+                # Cek UI F-15 — pesanan SAMPLE (SOS-) hidup di layar Pesanan Sample, bukan daftar Pesanan Penjualan
+                # (yang tidak memuat sample → "Tidak ada pesanan yang cocok").
+                rt = "sample_order"
+                if not _may_view(rt):
+                    continue
+            return {"ref_type": rt, "ref_id": r["id"], "number": r.get(field, num),
                     "entity_id": r.get("entity_id", "")}
     raise HTTPException(status_code=404, detail=f"Dokumen '{num}' tidak ditemukan atau di luar cakupan Anda.")

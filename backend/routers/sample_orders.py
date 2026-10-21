@@ -132,7 +132,8 @@ def _rows(docs: List[Dict[str, Any]], action: str, kind: str) -> List[Dict[str, 
         out.append(_row(ref_type="sample_order", ref_id=o["id"], number=o.get("number", ""), title=o.get("customer_name", "—"),
                         subtitle=f"{'GRATIS' if o.get('sample_billing') == 'free' else 'BERBAYAR'} · {sub}" + (f" · dipotong {cut}/{len(items)}" if cut else ""),
                         value=float(o.get("grand_total") or 0), age_days=_age_days(o.get("updated_at") or o.get("created_at")),
-                        badge=o.get("status", ""), action=action, action_kind=kind,
+                        badge=("persetujuan ulang" if o.get("sample_payment_status") == "reapproval_required" else o.get("status", "")),
+                        action=action, action_kind=kind,
                         extra={"sales_name": o.get("sales_name"), "fulfillment_method": o.get("fulfillment_method"), "items": len(items)}))
     return out
 
@@ -146,7 +147,9 @@ async def sample_desk(request: Request, entity_id: str = None) -> Dict[str, Any]
     async def find(extra: Dict[str, Any]):
         return await db.sales_orders.find({**q, **extra}, {"_id": 0}).sort("created_at", 1).to_list(200)
 
-    bayar = await find({"status": "waiting_approval", "sample_billing": "paid"})
+    # F-15 — termasuk persetujuan ULANG (tagihan berubah > toleransi sesudah potong; kiriman ditahan)
+    bayar = await find({"sample_billing": "paid", "$or": [{"status": "waiting_approval"},
+                                                          {"sample_payment_status": "reapproval_required"}]})
     siap = await find({"status": "approved"})
     gudang = await find({"status": {"$in": ["confirmed", "partially_picked", "picked"]}})
     kirim = await find({"status": {"$in": ["partially_shipped", "shipped", "delivered"]}})
@@ -180,6 +183,21 @@ async def approve_payment(order_id: str, payload: NoteIn, request: Request) -> D
     order = await _load(order_id, request)
     if order.get("sample_billing") != "paid":
         raise HTTPException(status_code=400, detail=f"{order['number']} sample gratis — tidak ada pembayaran yang perlu disetujui.")
+    if order.get("sample_payment_status") == "reapproval_required":
+        # F-15 — persetujuan ULANG sesudah panjang aktual mengubah tagihan melewati toleransi (status SO tidak mundur).
+        pa = list(order.get("pending_approvals") or [])
+        for p in pa:
+            if p.get("type") == "pembayaran_sampel" and p.get("status") == "pending":
+                p.update({"status": "approved", "decided_by": actor["name"], "decided_by_id": actor["id"],
+                          "decided_at": now_iso(), "note": payload.note})
+        await db.sales_orders.update_one({"id": order_id, "sample_payment_status": "reapproval_required"}, {"$set": {
+            "pending_approvals": pa, "approval_required": False, "required_approval_role": "",
+            "sample_payment_status": "approved", "sample_payment_approved_by": actor["name"],
+            "sample_payment_approved_at": now_iso(), "sample_payment_approved_amount": float(order.get("grand_total") or 0),
+            "updated_at": now_iso()}})
+        await audit(actor["name"], "sample_payment_reapproved", "sales_order", order_id,
+                    {"number": order["number"], "amount": order.get("grand_total"), "note": payload.note})
+        return safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     if order.get("status") == "approved":
         return order
     if order.get("status") != "waiting_approval":
@@ -192,7 +210,9 @@ async def approve_payment(order_id: str, payload: NoteIn, request: Request) -> D
     await db.sales_orders.update_one({"id": order_id}, {"$set": {
         "pending_approvals": pa, "approval_required": False, "required_approval_role": "",
         "sample_payment_status": "approved", "sample_payment_approved_by": actor["name"],
-        "sample_payment_approved_at": now_iso(), "updated_at": now_iso()}})
+        "sample_payment_approved_at": now_iso(), "updated_at": now_iso(),
+        # F-15 — nominal yang disetujui (dasar toleransi saat panjang aktual potong berbeda)
+        "sample_payment_approved_amount": float(order.get("grand_total") or 0)}})
     result = await so_transition(order_id, ["waiting_approval"], "approved", actor["name"], "sample_payment_approved",
                                  {"approved_by": actor["name"], "note": payload.note})
     await audit(actor["name"], "sample_payment_approved", "sales_order", order_id, {"number": order["number"], "note": payload.note})

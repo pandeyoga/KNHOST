@@ -180,6 +180,14 @@ E("sales.keep_max_age_days", group="harga-diskon", type="int", default=0,
   impact="Daftar Keep di Meja Admin Sales menandai SO yang lewat batas dan menghitungnya terpisah.",
   example="3 → SO yang dibuat 4 hari lalu dan belum diverifikasi tampil merah 'lewat batas'",
   consumers=("services/sales_p04_service.py:keep_limit_days",), risk="low")
+E("sales.sample_payment_tolerance_pct", group="harga-diskon", type="pct", default=5.0, min=0, max=100, step=0.5,
+  unit="%", scopes=("global", "entity"),
+  label="Toleransi selisih tagihan sample berbayar (panjang aktual potong)",
+  help="Sample berbayar yang sudah disetujui lalu dipotong dengan panjang berbeda: selisih tagihan sampai batas ini "
+       "disesuaikan otomatis; di atasnya wajib persetujuan ulang Finance/Admin Sample dan kiriman sample ditahan.",
+  impact="Menentukan kapan potong sample memicu persetujuan ulang pembayaran (Meja Admin Sample).",
+  example="Disetujui Rp 83.250, dipotong 3,1 yd → Rp 86.025 (+3,3%) ≤ 5% → disesuaikan otomatis",
+  consumers=("services/sample_sale_service.py:payment_after_reprice",), risk="medium")
 E("sales.allow_partial_shipment", group="harga-diskon", type="bool", default=True,
   scopes=("global", "entity"),
   label="Izinkan kirim sebagian",

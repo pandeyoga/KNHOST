@@ -183,12 +183,23 @@ export default function SampleOrdersView({ user, selectedEntity = "all", focusDo
               {sel.sample_billing === "paid" && <p className="text-right text-[13px] font-bold tabular-nums">Total {formatCurrency(sel.grand_total)}</p>}
               {sel.sample_billing === "paid" && (
                 <p data-testid="sample-detail-payment" className={`rounded-md px-2.5 py-1.5 text-[11px] ${sel.sample_payment_status === "approved" ? "bg-[#EAF7EE] text-[#126E2C]" : "bg-[#FFF3D6] text-[#9A5B00]"}`}>
-                  {sel.sample_payment_status === "approved" ? <><CheckCircle2 size={11} className="inline" /> Pembayaran disetujui {sel.sample_payment_approved_by}</> : "Pembayaran belum disetujui Finance/Admin Sample."}
+                  {sel.sample_payment_status === "approved" ? <><CheckCircle2 size={11} className="inline" /> Pembayaran disetujui {sel.sample_payment_approved_by}</>
+                    : sel.sample_payment_status === "reapproval_required" ? "Tagihan berubah melewati toleransi sesudah dipotong — perlu persetujuan ULANG Finance/Admin Sample. Kiriman sample ditahan."
+                    : "Pembayaran belum disetujui Finance/Admin Sample."}
                 </p>
               )}
+              {/* F-15 — riwayat penyesuaian tagihan karena panjang aktual potong (≤ toleransi otomatis, di atasnya disetujui ulang) */}
+              {(sel.sample_payment_adjustments || []).map((a, i) => (
+                <p key={i} data-testid={`sample-detail-adjustment-${i}`} className="text-[10.5px] text-[#4A4A52]">
+                  {a.auto ? "Disesuaikan otomatis" : "Melewati toleransi → persetujuan ulang"}: {formatCurrency(a.from)} → {formatCurrency(a.to)} ({a.pct}% · toleransi {a.tolerance_pct}%)
+                </p>
+              ))}
               <div className="flex flex-wrap gap-2">
                 {canPay && sel.status === "waiting_approval" && sel.sample_billing === "paid" && (
                   <button data-testid="sample-detail-approve-payment" className="primary-button" disabled={busy === sel.id} onClick={() => run(() => approveSamplePayment(sel.id), `${sel.number}: pembayaran disetujui.`)}><Banknote size={13} /> Setujui Pembayaran</button>
+                )}
+                {canPay && sel.sample_payment_status === "reapproval_required" && (
+                  <button data-testid="sample-detail-reapprove-payment" className="primary-button" disabled={busy === sel.id} onClick={() => run(() => approveSamplePayment(sel.id), `${sel.number}: tagihan baru ${formatCurrency(sel.grand_total)} disetujui — kiriman dilepas.`)}><Banknote size={13} /> Setujui Ulang Pembayaran ({formatCurrency(sel.grand_total)})</button>
                 )}
                 {canConfirm && sel.status === "approved" && (
                   <button data-testid="sample-detail-confirm" className="primary-button" disabled={busy === sel.id} onClick={() => run(() => confirmSampleOrder(sel.id), `${sel.number} diteruskan ke gudang — tugas potong lahir.`)}><Scissors size={13} /> Teruskan ke Gudang</button>

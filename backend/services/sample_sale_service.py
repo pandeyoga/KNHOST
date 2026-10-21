@@ -14,10 +14,14 @@ from typing import Any, Dict, List, Optional
 from fastapi import HTTPException
 from pymongo import ReturnDocument
 
-from core_utils import new_id, now_iso, safe_doc
+import logging
+
+from core_utils import new_id, now_iso, rupiah, safe_doc
 from db import db
 from services import atomic_claim as _saga
 from services.roll_service import insert_child_roll, rebuild_balance
+
+logger = logging.getLogger(__name__)
 
 REMNANT_THRESHOLD = 2.0   # sisa induk < 2 satuan → ditandai is_remnant
 
@@ -323,6 +327,64 @@ async def _reprice_order_line(order: Dict[str, Any], product_id: str, take: floa
                                "actor": actor_name, "at": now_iso(), "note": note}}})
 
 
+async def payment_after_reprice(order_id: str, actor_name: str) -> Optional[Dict[str, Any]]:
+    """F-15 (uji pra-UAT 2026-10-21, keputusan owner Q-04) — sample berbayar yang SUDAH disetujui lalu panjang
+    aktualnya mengubah tagihan: selisih ≤ toleransi (`sales.sample_payment_tolerance_pct`, bawaan 5 %) → tagihan
+    disetujui ikut disesuaikan otomatis (tercatat); di atasnya → persetujuan ulang Finance/Admin Sample dan kiriman
+    sample ditahan (`dispatch_payment_gate.guard`) sampai disetujui."""
+    o = await db.sales_orders.find_one({"id": order_id}, {"_id": 0})
+    if not o or o.get("sample_billing") != "paid" or o.get("sample_payment_status") != "approved":
+        return None
+    base = float(o.get("sample_payment_approved_amount") or 0)
+    if base <= 0:   # pesanan lama: nilai yang disetujui = nominal entri persetujuan pembayaran
+        base = max((float(p.get("amount") or 0) for p in o.get("pending_approvals") or []
+                    if p.get("type") == "pembayaran_sampel" and p.get("status") == "approved"), default=0.0)
+    new = round(float(o.get("grand_total") or 0), 2)
+    if base <= 0 or abs(new - base) < 0.5:
+        return None
+    from services.config_resolver import value_of
+    try:
+        tol = float(await value_of("sales.sample_payment_tolerance_pct", {"entity_id": o.get("entity_id") or ""}) or 0)
+    except Exception:  # noqa: BLE001
+        tol = 5.0
+    pct = round(abs(new - base) / base * 100, 2)
+    adj = {"from": base, "to": new, "pct": pct, "tolerance_pct": tol, "auto": pct <= tol + 1e-9,
+           "by": actor_name, "at": now_iso()}
+    sign = "+" if new > base else "−"
+    if adj["auto"]:
+        await db.sales_orders.update_one({"id": order_id}, {
+            "$set": {"sample_payment_approved_amount": new, "updated_at": now_iso()},
+            "$push": {"sample_payment_adjustments": adj,
+                      "timeline": {"event": "sample_payment_auto_adjusted", "actor": actor_name, "at": now_iso(),
+                                   "label": "Tagihan sample disesuaikan otomatis",
+                                   "note": f"{rupiah(base)} → {rupiah(new)} ({sign}{pct:g}% ≤ toleransi {tol:g}%)"}}})
+        return adj
+    from services import so_approvals
+    entry = so_approvals.make_approval(
+        "pembayaran_sampel", required_role="finance",
+        reason=(f"Panjang aktual mengubah tagihan sample {rupiah(base)} → {rupiah(new)} ({sign}{pct:g}% > toleransi "
+                f"{tol:g}%) — perlu persetujuan ulang Finance/Admin Sample."),
+        requested_by=actor_name, requested_by_id="", amount=new)
+    await db.sales_orders.update_one({"id": order_id}, {
+        "$set": {"sample_payment_status": "reapproval_required", "approval_required": True,
+                 "required_approval_role": "finance", "updated_at": now_iso()},
+        "$push": {"sample_payment_adjustments": adj, "pending_approvals": entry,
+                  "timeline": {"event": "sample_payment_reapproval_required", "actor": actor_name, "at": now_iso(),
+                               "label": "Tagihan sample berubah melewati toleransi — perlu persetujuan ulang",
+                               "note": f"{rupiah(base)} → {rupiah(new)} ({sign}{pct:g}% > {tol:g}%)"}}})
+    try:
+        from services import notification_service as notif
+        for role in ("finance", "sample_admin"):
+            await notif.create_notification(
+                notif_type="sample_payment_reapproval", ref=f"sample_reapprove:{order_id}:{role}:{new}",
+                title=f"Persetujuan ulang bayar sample {o.get('number', '')}",
+                body=f"{o.get('customer_name', '')} · {rupiah(base)} → {rupiah(new)} ({sign}{pct:g}%). Kiriman ditahan sampai disetujui.",
+                severity="warning", link="sample-orders", entity_id=o.get("entity_id"), recipient_role=role)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[payment_after_reprice] notifikasi gagal diabaikan: %s", exc)
+    return adj
+
+
 async def cut_sample_task(task_id: str, payload: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
     task = await db.wms_tasks.find_one({"id": task_id}, {"_id": 0})
     if not task:
@@ -377,9 +439,11 @@ async def cut_sample_task(task_id: str, payload: Dict[str, Any], actor: Dict[str
         "source_document": order["number"], "reference_id": order["id"], "timestamp": now, "created_by": actor.get("name", "")})
     await rebuild_balance(roll["product_id"], roll["warehouse_id"], roll.get("owner_entity_id") or order.get("entity_id"))
 
+    payment_adj = None
     if abs(take - requested) > 0.005:
         await _reprice_order_line(order, task["product_id"], take, actor.get("name", ""),
                                   f"{task.get('product_name')}: {requested:g} → {take:g} {unit} (roll {roll.get('roll_no')})")
+        payment_adj = await payment_after_reprice(order["id"], actor.get("name", ""))   # F-15
     alloc = {"id": new_id("alloc"), "product_id": roll["product_id"], "warehouse_id": roll["warehouse_id"],
              "quantity": take, "roll_ids": [child["id"]], "lots": [roll.get("lot")] if roll.get("lot") else [],
              "lot": roll.get("lot"), "source": "sample_cut"}
@@ -406,4 +470,4 @@ async def cut_sample_task(task_id: str, payload: Dict[str, Any], actor: Dict[str
         "cut_roll_no": roll.get("roll_no"), "child_roll_no": child.get("roll_no"), "child_roll_id": child["id"],
         "length": take, "unit": unit, "requested_length": requested, "customer_name": order.get("customer_name"),
         "product_name": task.get("product_name"), "sku": task.get("sku"), "sales_order_number": order.get("number"),
-        "parent_remaining": rem}}
+        "parent_remaining": rem}, "payment_adjustment": payment_adj}
