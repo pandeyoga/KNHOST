@@ -126,7 +126,9 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                       <span>Total</span>
                       <span className="tabular-nums text-[#0058CC]">{formatCurrency(total)}</span>
                     </div>
-                    {o.shipping_address && <p className="mt-1.5 text-[11px] m-muted">Kirim ke: {o.shipping_address.recipient_name || ""} · {o.shipping_address.address || ""}{o.shipping_address.city ? `, ${o.shipping_address.city}` : ""}</p>}
+                    {o.fulfillment_method === "ambil"
+                      ? <p className="mt-1.5 text-[11px] m-muted" data-testid={`mobile-order-pickup-${o.id}`}>Diambil di gudang{o.pickup_date ? ` · ${o.pickup_date}` : ""}</p>
+                      : o.shipping_address && <p className="mt-1.5 text-[11px] m-muted">Kirim ke: {o.shipping_address.recipient_name || ""} · {o.shipping_address.address || ""}{o.shipping_address.city ? `, ${o.shipping_address.city}` : ""}</p>}
                     {o.payment_term_name && <p className="text-[11px] m-muted">Termin: {o.payment_term_name}</p>}
                     {isAdmin && PRE_CONFIRM.includes(o.status) && (
                       <div className="mt-2 grid grid-cols-2 gap-2" data-testid={`mobile-order-admin-actions-${o.id}`}>

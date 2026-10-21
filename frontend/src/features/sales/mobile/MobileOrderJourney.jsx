@@ -8,7 +8,9 @@ import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters";
 import { orderJourney } from "../../sales_admin/workDeskApi";
 
-const fmt = (s) => (s ? new Date(s).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "");
+const fmt = (s) => (!s ? "" : String(s).length <= 10   // tanggal bisnis (mis. tanggal bayar) tanpa jam
+  ? new Date(`${s}T00:00:00`).toLocaleDateString("id-ID", { day: "2-digit", month: "short" })
+  : new Date(s).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }));
 
 export default function MobileOrderJourney({ orderId }) {
   const [j, setJ] = useState(null);
@@ -42,6 +44,12 @@ export default function MobileOrderJourney({ orderId }) {
           </div>
         );
       })}
+      {/* Cek UI UAT v3 — pesanan ambil sendiri: kode pickup dibagikan sales ke pelanggan (dulu hanya terlihat Admin Gudang). */}
+      {(j.logistics || []).filter((l) => l.mode === "self_pickup" && l.pickup_code).map((l) => (
+        <p key={l.id} className="mb-1 rounded-lg bg-[#F5EEFB] px-2 py-1.5 text-[11.5px] text-[#6B219A]" data-testid={`m-journey-pickup-code-${l.id}`}>
+          Kode pickup <b className="font-mono tracking-widest">{l.pickup_code}</b>{l.pickup_date ? ` · ambil ${l.pickup_date}` : ""} · {l.status_label}
+        </p>
+      ))}
       <div className="mt-1 grid grid-cols-2 gap-2 border-t border-[#EFF0F2] pt-2 text-[11px]">
         <div><p className="m-muted">Sudah dibayar</p><p className="font-bold tabular-nums text-[#1B7F4B]">{formatCurrency(j.paid_total)}</p></div>
         <div className="text-right"><p className="m-muted">Sisa tagihan</p><p className="font-bold tabular-nums text-[#C0392B]" data-testid={`m-journey-outstanding-${orderId}`}>{formatCurrency(j.outstanding)}</p></div>

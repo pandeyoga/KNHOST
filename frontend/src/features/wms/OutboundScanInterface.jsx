@@ -73,6 +73,13 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
     if (t) {
       setSelectedTask(t);
       setTimeout(() => document.querySelector(`[data-testid="outbound-task-${t.id}"]`)?.scrollIntoView({ block: "center" }), 50);
+    } else if (filterStatus !== "scheduled") {
+      // Cek UI UAT v3 — tugas "Ambil di Gudang" yang masih ditahan tidak ada di daftar "Semua": dulu [Kerjakan]
+      // dari Meja Saya membuka layar tanpa tugas terpilih. Kini pindah ke filter Terjadwal lalu memilihnya.
+      axios.get(`${API}/outbound/tasks`, { params: { status: "scheduled" } })
+        .then((r) => { if ((r.data || []).some((x) => x.id === focusTaskId)) setFilterStatus("scheduled"); else onFocusConsumed?.(); })
+        .catch(() => onFocusConsumed?.());
+      return;
     }
     onFocusConsumed?.();
   }, [focusTaskId, tasks, loading, fetched]); // eslint-disable-line

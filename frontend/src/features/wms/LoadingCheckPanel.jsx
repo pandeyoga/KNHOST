@@ -18,6 +18,10 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
   const [overrideReason, setOverrideReason] = useState("");
   const [lastLog, setLastLog] = useState([]);
   const [byWarehouse, setByWarehouse] = useState([]);
+  // UAT v3 — mode simulasi RFID (Pusat Pengaturan `wms.rfid_simulation`): tag & scan simulasi sah tanpa perangkat.
+  const [simMode, setSimMode] = useState(false);
+  const [untaggedNow, setUntaggedNow] = useState([]);
+  const [simMsg, setSimMsg] = useState("");
   const whParams = warehouseId ? { params: { warehouse_id: warehouseId } } : {};
 
   const loadStatus = async () => {
@@ -27,8 +31,15 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
       setLastResult(r.data.last_result);
       setLastLog(r.data.last_scan_log || []);
       setByWarehouse(r.data.by_warehouse || []);
+      setSimMode(!!r.data.rfid_simulation);
+      setUntaggedNow(r.data.untagged_rolls || []);
     } catch { /* noop */ }
   };
+  const simulateTags = () => run(async () => {
+    const r = await axios.post(`${API}/outbound/so/${orderId}/loading-check/simulate-tags`, { warehouse_id: warehouseId || null });
+    setSimMsg(`${r.data.count} tag simulasi dibuat (${(r.data.created || []).map((c) => c.roll_no).join(", ")}) — roll siap dikirim.`);
+    await loadStatus();
+  });
   useEffect(() => { if (orderId) loadStatus(); }, [orderId, warehouseId]); // eslint-disable-line
 
   const run = async (fn) => {
@@ -71,6 +82,19 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
         </p>
       )}
       {error && <p data-testid="lc-error" className="rounded bg-[#FBE9E7] px-2 py-1 text-[11px] font-semibold text-[#C0341D]">{error}</p>}
+      {simMode && (
+        <div data-testid="lc-sim-mode" className="rounded border border-dashed border-[#E0A800] bg-[#FFF9E6] px-2 py-1.5 text-[10.5px] text-[#7A5600]">
+          <b>Mode simulasi RFID aktif</b> (UAT / pelatihan) — tag &amp; scan simulasi dianggap sah.
+          {untaggedNow.length > 0 ? (
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <span data-testid="lc-sim-untagged">{untaggedNow.length} roll belum bertag: {untaggedNow.slice(0, 6).join(", ")}{untaggedNow.length > 6 ? "…" : ""}</span>
+              <button data-testid="lc-sim-tags" disabled={busy} onClick={simulateTags}
+                className="rounded bg-[#B07A00] px-2.5 py-1 font-semibold text-white disabled:opacity-40">Buat tag simulasi</button>
+            </div>
+          ) : <span data-testid="lc-sim-all-tagged"> Semua roll pesanan ini sudah bertag.</span>}
+          {simMsg && <p data-testid="lc-sim-msg" className="mt-1 font-semibold text-[#1B7F4B]">{simMsg}</p>}
+        </div>
+      )}
 
       {lastResult && !session && (
         <div data-testid="lc-last-result" className={`flex items-center gap-1.5 rounded px-2 py-1.5 text-[11px] font-semibold ${
@@ -82,7 +106,9 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
             : lastResult.result === "override"
               ? `OVERRIDE oleh ${lastResult.by}: ${lastResult.reason} — berlaku untuk ${lastResult.manifest?.length || 0} roll saat ini.`
               : lastResult.result === "simulated"
-                ? "SIMULASI — bukan bukti fisik, dispatch DIBLOKIR. Ulangi dengan scan nyata atau override berizin."
+                ? (simMode && !(lastResult.missing?.length || lastResult.extra?.length || lastResult.untagged_unresolved?.length)
+                  ? `SIMULASI (mode UAT) — ${lastResult.matched}/${lastResult.expected} cocok; dianggap sah, dispatch dibuka.`
+                  : "SIMULASI — bukan bukti fisik, dispatch DIBLOKIR. Ulangi dengan scan nyata atau override berizin.")
                 : `ADA SELISIH (missing ${lastResult.missing?.length || 0}, extra ${lastResult.extra?.length || 0}, tanpa tag ${lastResult.untagged_unresolved?.length || 0}) — dispatch DIBLOKIR, ulangi check.`}
         </div>
       )}
@@ -135,9 +161,9 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
               className="rounded bg-[#4B3B9E] px-2.5 py-1 text-[10.5px] font-semibold text-white disabled:opacity-40">Kirim Scan</button>
             <button data-testid="lc-simulate" disabled={busy}
               onClick={() => scan((session.expected || []).map((e) => e.epc), "simulated")}
-              title="Simulasi tidak membuka dispatch"
+              title={simMode ? "Mode simulasi RFID aktif — scan simulasi lengkap dianggap sah" : "Simulasi tidak membuka dispatch"}
               className="flex items-center gap-1 rounded border border-[#4B3B9E] px-2.5 py-1 text-[10.5px] font-semibold text-[#4B3B9E] disabled:opacity-40">
-              <Zap size={11} /> Simulasi (tidak sah)</button>
+              <Zap size={11} /> {simMode ? "Simulasi scan semua (mode UAT)" : "Simulasi (tidak sah)"}</button>
             <button data-testid="lc-complete" disabled={busy} onClick={complete}
               className="ml-auto rounded bg-[#1B7F4B] px-2.5 py-1 text-[10.5px] font-semibold text-white disabled:opacity-40">Selesaikan</button>
           </div>

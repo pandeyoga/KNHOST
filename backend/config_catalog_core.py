@@ -120,6 +120,18 @@ E("finance.dispatch_payment_gate", group="uang-masuk", type="enum", default="blo
   consumers=("services/dispatch_payment_gate.py:evaluate", "services/loading_check_service.py:dispatch_guard"),
   risk="high")
 
+# UAT v3 (2026-10-22) — gudang tanpa perangkat RFID (UAT / pelatihan) tetap bisa menjalankan alur kirim penuh.
+E("wms.rfid_simulation", group="stok-satuan", type="bool", default=False,
+  scopes=("global", "entity"),
+  label="Mode simulasi RFID (UAT / pelatihan)",
+  help="Untuk uji coba tanpa printer tag & handheld. Bila aktif: di Barang Keluar muncul tombol 'Buat tag simulasi' "
+       "untuk roll pesanan yang belum bertag (EPC dibuat sistem, ditandai simulasi), dan scan simulasi pada Pemeriksaan "
+       "Muat Akhir dianggap sah. Semua tetap tercatat di jejak audit.",
+  impact="Bila aktif, kirim tidak lagi tertahan 'roll belum bertag RFID aktif' — Staf Gudang bisa membuat tag simulasi "
+         "sendiri. MATIKAN di operasional nyata.",
+  example="UAT: roll RL-18027 belum bertag → [Buat tag simulasi] → tag aktif (simulasi) → Kirim Semua berhasil",
+  consumers=("services/loading_check_service.py:simulation_on",), risk="high")
+
 # ═══════════════════════════════════════════════════════════════════════════
 # UANG MASUK & PIUTANG (AR)
 # ═══════════════════════════════════════════════════════════════════════════

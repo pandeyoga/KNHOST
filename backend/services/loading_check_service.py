@@ -179,6 +179,44 @@ async def override(order_id: str, reason: str, actor: str, warehouse_id: Optiona
     return lc
 
 
+async def simulation_on(order_id: str) -> bool:
+    """UAT v3 — `wms.rfid_simulation` (per PT pesanan): tag & scan simulasi sah tanpa perangkat RFID."""
+    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "entity_id": 1})
+    from services.config_resolver import value_of
+    try:
+        return bool(await value_of("wms.rfid_simulation", {"entity_id": (so or {}).get("entity_id") or ""}))
+    except Exception:   # noqa: BLE001 — registry belum termuat: anggap mati (aman)
+        return False
+
+
+async def simulate_tags(order_id: str, warehouse_id: Optional[str], scope_ids: List[str], actor: str) -> Dict[str, Any]:
+    """UAT v3 — buat tag RFID aktif (EPC dari sistem, `simulated=True`) untuk roll SO di gudang ini yang belum bertag."""
+    if not await simulation_on(order_id):
+        raise HTTPException(status_code=409, detail=(
+            "Mode simulasi RFID tidak aktif untuk badan usaha pesanan ini — nyalakan di Pusat Pengaturan "
+            "(Stok & Satuan → Mode simulasi RFID) atau cetak tag nyata."))
+    from services import rfid_service
+    q: Dict[str, Any] = {"reserved_ref.type": "sales_order", "reserved_ref.id": order_id,
+                         "status": {"$in": EXPECTED_STATUSES}, "length_remaining": {"$gt": 0}}
+    if warehouse_id:
+        q["warehouse_id"] = warehouse_id
+    rolls = await db.inventory_rolls.find(q, {"_id": 0, "id": 1, "roll_no": 1, "rfid_tag_id": 1}).to_list(2000)
+    live = {t["id"] for t in await db.rfid_tags.find(
+        {"id": {"$in": [r["rfid_tag_id"] for r in rolls if r.get("rfid_tag_id")]},
+         "status": {"$in": list(rfid_service.LIVE_TAG_STATUSES)}}, {"_id": 0, "id": 1}).to_list(2000)}
+    made = []
+    for r in rolls:
+        if r.get("rfid_tag_id") in live:
+            continue
+        if r.get("rfid_tag_id"):   # tag lama sudah pensiun → lepas dulu supaya bisa di-encode ulang
+            await db.inventory_rolls.update_one({"id": r["id"], "rfid_tag_id": r["rfid_tag_id"]},
+                                                {"$set": {"rfid_tag_id": None, "updated_at": now_iso()}})
+        tag = await rfid_service.encode_tag(r["id"], scope_ids, actor_name=actor)
+        await db.rfid_tags.update_one({"id": tag["id"]}, {"$set": {"simulated": True}})
+        made.append({"roll_id": r["id"], "roll_no": r.get("roll_no", ""), "epc": tag["epc"]})
+    return {"order_id": order_id, "warehouse_id": warehouse_id, "created": made, "count": len(made)}
+
+
 async def untagged_rolls(order_id: str, warehouse_id: Optional[str] = None) -> List[str]:
     """W2-REQ-08 — no. roll SO (gudang ini) yang belum punya tag RFID aktif."""
     q: Dict[str, Any] = {"reserved_ref.type": "sales_order", "reserved_ref.id": order_id,
@@ -266,11 +304,12 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
                 f"{len(untagged)} roll belum bertag RFID aktif ({', '.join(untagged[:5])}) — cetak/verifikasi tag, "
                 "atau jalankan Final Loading Check dengan pengecualian berizin."))
         return
-    if lc.get("result") == "simulated":
+    sim_complete = not (lc.get("missing") or lc.get("extra") or lc.get("untagged_unresolved"))
+    if lc.get("result") == "simulated" and not (sim_complete and await simulation_on(order_id)):
         raise HTTPException(status_code=400, detail=(
             "Final Loading Check hanya berisi scan SIMULASI — bukan bukti fisik. Ulangi dengan handheld/scan "
             "nyata atau minta override berizin dengan alasan."))
-    if lc.get("result") not in ("clean", "override"):
+    if lc.get("result") not in ("clean", "override", "simulated"):
         raise HTTPException(status_code=400, detail=(
             f"Final Loading Check TIDAK BERSIH (missing {len(lc.get('missing') or [])}, "
             f"extra {len(lc.get('extra') or [])}, roll tanpa tag belum diverifikasi {len(lc.get('untagged_unresolved') or [])})"
@@ -297,4 +336,7 @@ async def status_for_order(order_id: str, warehouse_id: Optional[str] = None) ->
         done = await db.rfid_verify_sessions.find_one({"id": last["session_id"]}, {"_id": 0, "scan_log": 1})
         log = (done or {}).get("scan_log") or []
     return {"open_session": safe_doc(open_sess) if open_sess else None, "last_result": last,
-            "last_scan_log": log, "by_warehouse": by_wh}
+            "last_scan_log": log, "by_warehouse": by_wh,
+            # UAT v3 — layar Barang Keluar menawarkan [Buat tag simulasi] bila mode aktif & ada roll tanpa tag
+            "rfid_simulation": await simulation_on(order_id),
+            "untagged_rolls": await untagged_rolls(order_id, warehouse_id)}

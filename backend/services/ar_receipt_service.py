@@ -294,11 +294,17 @@ async def list_open_orders(customer_id: str, entity_id: Any = None) -> List[Dict
     elif entity_id and entity_id != "all":
         q["entity_id"] = entity_id
     orders = await db.sales_orders.find(q, {"_id": 0}).to_list(2000)
+    # Cek UI UAT v3 (S3) — pesanan TUNAI yang keluar lewat Surat Jalan dijurnal Dr Piutang per SJ (gl_service.
+    # post_shipment_revenue), jadi pembayarannya dicatat lewat kwitansi seperti biasa. Hanya tunai TANPA SJ
+    # (jurnal lama Dr Kas saat jual) yang tetap bukan piutang.
+    cash_ids = [o["id"] for o in orders if order_payment_method(o) in NON_AR_METHODS]
+    cash_with_sj = set(await db.shipments.distinct(
+        "order_id", {"order_id": {"$in": cash_ids}, "status": {"$nin": ["cancelled", "void", "voided"]}})) if cash_ids else set()
     rows = []
     for o in orders:
         if o.get("status") in DEAD_STATUSES:
             continue
-        if order_payment_method(o) in NON_AR_METHODS:
+        if order_payment_method(o) in NON_AR_METHODS and o["id"] not in cash_with_sj:
             continue
         gt = order_grand_total(o)
         paid = order_paid(o)

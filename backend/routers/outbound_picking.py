@@ -566,6 +566,23 @@ async def override_loading_check(order_id: str, payload: Dict[str, Any], request
     return lc
 
 
+@router.post("/outbound/so/{order_id}/loading-check/simulate-tags")
+async def simulate_tags_for_order(order_id: str, payload: Dict[str, Any], request: Request) -> Dict[str, Any]:
+    """UAT v3 — mode simulasi RFID (`wms.rfid_simulation`): tag aktif untuk roll SO yang belum bertag (tanpa printer)."""
+    actor = await require_permission(request, "wms", "update")
+    so = await db.sales_orders.find_one({"id": order_id}, {"_id": 0})
+    if not so:
+        raise HTTPException(status_code=404, detail="SO tidak ditemukan")
+    ctx = await entity_ctx(request)
+    assert_entity_access(so, "sales_orders", ctx)
+    out = await _lc.simulate_tags(order_id, (payload or {}).get("warehouse_id") or None, _resolve_scope_ids(ctx), actor["name"])
+    if out["count"]:
+        await audit(actor["name"], "rfid_simulated_tags", "sales_order", order_id,
+                    {"rolls": [m["roll_no"] for m in out["created"]], "warehouse_id": out["warehouse_id"]},
+                    reason="Mode simulasi RFID (UAT)")
+    return out
+
+
 @router.post("/outbound/loading-check/{session_id}/complete")
 async def complete_loading_check(session_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "wms", "update")

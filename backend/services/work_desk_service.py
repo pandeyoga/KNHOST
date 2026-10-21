@@ -372,12 +372,29 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     from services.customer_service import collection_reminders
     tagih = await collection_reminders(actor, days_ahead=30,
                                        entity_id=entity_ids[0] if len(entity_ids) == 1 else None)
+    # Cek UI UAT v3 (S3) — pesanan TUNAI dianggap lunas di kasir sehingga tidak masuk daftar tagih; pesanan tunai
+    # yang sudah dikirim/diambil tetapi belum dibayar dulu tidak terlihat Finance sama sekali.
+    from services.customer_service import NON_AR_METHODS, order_payment_method, _order_grand_total, _order_paid
+    _seen = {r["order_id"] for r in tagih}
+    async for o in db.sales_orders.find(
+            {**_ent_q(scope), "status": {"$in": ["shipped", "partially_shipped", "dispatched", "delivered", "done"]},
+             "payment_status": {"$ne": "paid"}, "order_type": {"$ne": "sample"}},
+            {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1, "grand_total": 1, "total_amount": 1,
+             "payments": 1, "paid_total": 1, "payment_term_code": 1, "payment_profile_method": 1, "created_at": 1}):
+        if o["id"] in _seen or order_payment_method(o) not in NON_AR_METHODS:
+            continue
+        sisa = round(max(_order_grand_total(o) - _order_paid(o), 0.0), 2)
+        if sisa > 0.01:
+            tagih.append({"order_id": o["id"], "order_number": o.get("number", ""), "customer_id": o.get("customer_id", ""),
+                          "customer_name": o.get("customer_name", ""), "outstanding": sisa, "days_late": 0,
+                          "overdue": False, "cash_unrecorded": True})
     queues.append(_queue(
         "uang_masuk", "Uang masuk perlu dicatat & dialokasikan",
         "Catat kwitansi AR lalu alokasikan ke invoice — inilah wewenang inti Anda.",
         [_row(ref_type="customer", ref_id=r["customer_id"], number=r["order_number"],
               title=r.get("customer_name", "—"),
-              subtitle=("lewat " + str(r["days_late"]) + " hari" if r.get("overdue")
+              subtitle=("tunai — barang sudah keluar, pembayaran belum dicatat" if r.get("cash_unrecorded")
+                        else "lewat " + str(r["days_late"]) + " hari" if r.get("overdue")
                         else "belum jatuh tempo"),
               value=r.get("outstanding") or 0,
               age_days=max(0, int(r.get("days_late") or 0)),

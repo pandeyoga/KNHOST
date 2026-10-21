@@ -23,7 +23,8 @@ const METHODS = [
   { value: "qris", label: "QRIS" },
 ];
 
-function today() { return new Date().toISOString().slice(0, 10); }
+// Cek UI UAT v3 — tanggal LOKAL (dulu toISOString = UTC: 00.00–07.00 WIB jadi tanggal kemarin).
+function today() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 
 export default function ARReceiptModal({ customerId, customerName, preselectOrderId, onClose, onDone, onError }) {
   const [openOrders, setOpenOrders] = useState([]);

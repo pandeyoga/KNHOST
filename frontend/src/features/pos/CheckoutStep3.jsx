@@ -14,7 +14,7 @@ export default function CheckoutStep3({
   hasBackorderLine, allowBackorder, requiresLotConfirmation, mixedLotLines, sampleCount = 0,
   sampleMode = false, sampleBilling = "", termInfo = null,
 }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = (() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); })();   // tanggal lokal (WIB)
   const [pickDate, setPickDate] = useState(!!deliveryDate);
   const freeSample = sampleMode && sampleBilling === "free";
   // Sample gratis: tampilkan "Free", bukan "Rp 0".
@@ -41,7 +41,8 @@ export default function CheckoutStep3({
         {fulfillmentMethod === "ambil" && (
           <div className="mt-2">
             <label className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Tanggal Pengambilan</label>
-            <KNDatePicker data-testid="pickup-date-input" value={pickupDate} onChange={setPickupDate} />
+            {/* Cek UI UAT v3 — tanggal ambil di masa lalu dulu bisa dipilih (beda dengan tanggal kirim). */}
+            <KNDatePicker data-testid="pickup-date-input" min={today} value={pickupDate} onChange={setPickupDate} />
             <p className="mt-1 text-[10px] text-[#9A5B00]">Daftar pengambilan ditahan sampai tanggal ini — gudang baru menyiapkan barang pada/ setelah tanggal pengambilan.</p>
           </div>
         )}
@@ -111,7 +112,7 @@ export default function CheckoutStep3({
           {p.discountTotal > 0 && <Row label="Diskon" value={`- ${formatCurrency(p.discountTotal)}`} />}
           {p.ppn > 0 && <Row label={`PPN ${p.ppnRate}%${p.dppNilaiLain ? " (DPP 11/12)" : ""}`} value={formatCurrency(p.ppn)} />}
           {p.isPkp === false && <Row label="PPN" value="Non-PKP (0)" muted />}
-          <Row label="Termin" value={paymentTerm || "Default"} />
+          <Row label="Termin" value={termInfo?.name || paymentTerm || "Default"} />
         </div>
         <div className="mt-2 flex items-end justify-between border-t border-white/15 pt-2">
           <p className="text-[10.5px] font-bold uppercase tracking-wide text-white/70">Grand Total</p>

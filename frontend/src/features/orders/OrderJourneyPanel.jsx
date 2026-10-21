@@ -220,7 +220,12 @@ export default function OrderJourneyPanel({ orderId, orderNumber }) {
                              data-testid={`journey-logistics-status-${l.id}`}>{l.status_label}</span>
                      </span>
                      <span className="text-[10.5px] text-[#8E8E93]">
-                       {l.mode === "expedition" ? `${l.courier_name || "Ekspedisi"} · resi ${l.tracking_no || "—"}` : `Armada sendiri · ${l.vehicle_plate || "—"} · ${l.driver_name || "—"}`}
+                       {l.mode === "expedition" ? `${l.courier_name || "Ekspedisi"} · resi ${l.tracking_no || "—"}`
+                         : l.mode === "self_pickup" ? `Diambil pelanggan${l.pickup_date ? ` · tgl ${l.pickup_date}` : ""}`
+                         : `Armada sendiri · ${l.vehicle_plate || "—"} · ${l.driver_name || "—"}`}
+                       {l.mode === "self_pickup" && l.pickup_code && (
+                         <b className="ml-1 font-mono tracking-widest text-[#6B219A]" data-testid={`journey-pickup-code-${l.id}`}>kode pickup {l.pickup_code}</b>
+                       )}
                        {l.eta ? ` · ETA ${l.eta}` : ""}
                      </span>
                      {l.last_position && (
