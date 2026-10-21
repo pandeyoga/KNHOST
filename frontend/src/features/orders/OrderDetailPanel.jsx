@@ -15,6 +15,7 @@ import DocRefsPanel from "../documents/trace/DocRefsPanel";
 import { openLogistics } from "../logistics/logisticsDeepLink";
 import { STATUS_LABEL as LG_LABEL, STATUS_PILL as LG_PILL } from "../logistics/logisticsApi";
 import SoPaymentPanel from "../finance/payments/SoPaymentPanel";
+import DispatchPaymentGatePanel from "./DispatchPaymentGatePanel";
 import SoApprovalsPanel from "./SoApprovalsPanel";
 import OrderFulfillmentBadges from "./OrderFulfillmentBadges";
 // FASE E-9 (E9.2 · US23/US24) — pita "diambil dari PT lain lewat KSC/IC-000xx".
@@ -265,6 +266,9 @@ export function OrderDetailPanel({
 
         {/* EPIC6 — Document Hub: rantai dokumen terkait + deep-link */}
         <ProcessTimeline docType="sales_order" docId={sel.id} onNavigate={onOpenDocument} />
+
+        {/* F-10 — termin CBD/DP: wajib bayar sebelum kirim + pengecualian berizin (alasan wajib) */}
+        <DispatchPaymentGatePanel key={`${sel.id}:${sel.paid_total || 0}`} orderId={sel.id} currentUser={user} onChanged={onRefresh} />
 
         {/* FASE G-2 — Jadwal pembayaran (DP/cicilan/milestone) + antrean denda */}
         <SoPaymentPanel order={sel} currentUser={user} onChanged={onRefresh} />

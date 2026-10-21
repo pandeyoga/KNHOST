@@ -108,13 +108,20 @@ async def warehouse_queues(scope, ids) -> List[Dict[str, Any]]:
                                       "task_subtype": {"$ne": "sample_cut"}})
     po = await _find("purchase_orders", {**sq, "status": {"$in": ["pending", "receiving"]}})
     samples = await _find("wms_tasks", {**sq, "task_subtype": "sample_cut", "status": {"$in": ["created", "picking"]}, "picked_qty": {"$in": [0, 0.0, None]}})
+    # F-10 — SO bertermin CBD/DP yang belum dibayar: baris diberi lencana "tertahan bayar" + kekurangannya.
+    from services import dispatch_payment_gate as _gate
+    holds = await _gate.holds_for_orders(t.get("order_id") for t in tasks if t.get("flow_type") == "outbound")
     return [
         _queue("tugas_wms", "Tugas gudang (terima, picking & kirim)", "Kerjakan urut umur tugas.",
                [_row(ref_type="wms_task", ref_id=t["id"], number=t.get("number") or t.get("order_number") or t.get("po_number") or t.get("ref_number") or t["id"],
                      title=t.get("customer_name") or t.get("product_name") or t.get("type", "tugas"),
-                     subtitle=" · ".join(x for x in (t.get("flow_type") or t.get("type", ""), _task_qty(t)) if x),
-                     age_days=_age_days(t.get("created_at")), badge=t.get("status", ""), action="Kerjakan",
-                     extra={"flow_type": t.get("flow_type") or "", "po_id": t.get("po_id") or ""}) for t in tasks],
+                     subtitle=" · ".join(x for x in (t.get("flow_type") or t.get("type", ""), _task_qty(t),
+                                                     _gate.desk_note(holds.get(t.get("order_id")))) if x),
+                     age_days=_age_days(t.get("created_at")),
+                     badge="tertahan bayar" if _gate.desk_note(holds.get(t.get("order_id"))) else t.get("status", ""),
+                     action="Kerjakan",
+                     extra={"flow_type": t.get("flow_type") or "", "po_id": t.get("po_id") or "",
+                            "payment_blocked": bool(_gate.desk_note(holds.get(t.get("order_id"))))}) for t in tasks],
                action_label="Kerjakan", owner="warehouse", value_kind="count", value_label="Tugas"),
         _queue("po_terima", "PO menunggu penerimaan", "Barang pemasok yang akan/sedang diterima.",
                [_row(ref_type="purchase_order", ref_id=o["id"], number=o.get("po_number") or o.get("number", ""), title=o.get("supplier_name", "—"),

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import DispatchPaymentGatePanel from "../orders/DispatchPaymentGatePanel";
 import { dualLen } from "../../components/RollPicker";
 import {
   Scan, Truck, CheckCircle, AlertTriangle,
@@ -262,6 +263,11 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                         <ChevronRight size={12} className="text-gray-400" />
                       </div>
                     </div>
+                    {task.payment_hold?.blocked && (
+                      <span data-testid={`outbound-task-payment-hold-${task.id}`} className="mb-0.5 inline-block rounded-full bg-[#FFE9E7] px-1.5 py-0.5 text-[9px] font-bold text-[#A8221A]">
+                        TERTAHAN BAYAR · {task.payment_hold.term_code}
+                      </span>
+                    )}
                     <p className="text-[11px] text-[#3C3C43] truncate">{task.sku}</p>
                     <p className="text-[10px] text-[#8E8E93] truncate">{task.warehouse_name}</p>
                     <div className="mt-1.5">
@@ -407,8 +413,15 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                     const shipped = Number(selectedTask.shipped_qty || 0);
                     const maxShip = Math.round((Math.min(picked, selectedTask.quantity) - shipped) * 100) / 100;
                     if (maxShip <= 0) return null;
+                    const hold = selectedTask.payment_hold;          // F-10 — termin CBD/DP
+                    const held = !!hold?.blocked;
                     return (
                       <>
+                      {hold && (
+                        <DispatchPaymentGatePanel key={`${selectedTask.order_id}:${hold.paid || 0}:${hold.released?.at || ""}`}
+                          orderId={selectedTask.order_id} currentUser={user} initial={hold} testPrefix="outbound-gate"
+                          onChanged={(g) => { setTasks((prev) => prev.map((x) => x.order_id === selectedTask.order_id ? { ...x, payment_hold: g } : x)); setSelectedTask((t) => ({ ...t, payment_hold: g })); }} />
+                      )}
                       <LoadingCheckPanel orderId={selectedTask.order_id} warehouseId={selectedTask.warehouse_id} soNumber={selectedTask.so_number || selectedTask.order_number} />
                       <div data-testid="dispatch-panel" className="rounded-lg border border-[#BFE6CC] bg-[#F1FBF4] p-2.5 space-y-2">
                         <div className="flex items-center justify-between text-[10.5px]">
@@ -421,12 +434,14 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                             value={shipQty} onChange={(e) => setShipQty(e.target.value)}
                             placeholder={`Maks ${maxShip}`}
                             className="w-24 border border-[#BFE6CC] rounded-lg px-2 py-1.5 text-[12px] tabular-nums" />
-                          <button onClick={() => handleDispatch(true)} disabled={submitting}
+                          <button onClick={() => handleDispatch(true)} disabled={submitting || held}
+                            title={held ? hold.message : undefined}
                             data-testid={`dispatch-partial-${selectedTask.id}`}
                             className="bg-[#FF9500] hover:bg-[#CC7700] text-white rounded-lg px-3 py-1.5 text-[11.5px] font-semibold flex items-center gap-1.5 disabled:opacity-50">
                             <Send size={12} /> Kirim Sebagian
                           </button>
-                          <button onClick={() => handleDispatch(false)} disabled={submitting}
+                          <button onClick={() => handleDispatch(false)} disabled={submitting || held}
+                            title={held ? hold.message : undefined}
                             data-testid={`dispatch-all-${selectedTask.id}`}
                             className="flex-1 bg-[#34C759] hover:bg-[#28A745] text-white rounded-lg px-3 py-1.5 text-[11.5px] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50">
                             <Send size={12} /> Kirim Semua ({formatQty(maxShip)})

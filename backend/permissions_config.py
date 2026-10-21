@@ -649,3 +649,8 @@ EXTRA_ACTIONS = {"sales_pov": ["commercial"]}
 for _role in ("admin", "manager", "finance"):
     _cur = DEFAULT_PERMISSIONS[_role].setdefault("finance_amendment", [])
     DEFAULT_PERMISSIONS[_role]["finance_amendment"] = list(_cur) + [x for x in ("review_credit_note",) if x not in _cur]
+# F-10 (keputusan owner Q-02, 2026-10-21) — pengecualian kirim untuk SO bertermin CBD/DP yang belum dibayar sesuai
+# termin: alasan wajib & teraudit. Bawaan Finance, Manager, Admin — dapat diatur per peran di Peran & Hak Akses.
+for _role in ("admin", "manager", "finance"):
+    _cur = DEFAULT_PERMISSIONS[_role].setdefault("order", ["view"])
+    DEFAULT_PERMISSIONS[_role]["order"] = list(_cur) + [x for x in ("release_unpaid",) if x not in _cur]

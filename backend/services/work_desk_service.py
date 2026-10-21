@@ -657,17 +657,23 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     tasks = await db.wms_tasks.find(
         {**eq, "flow_type": "outbound", "status": {"$in": ["pending", "created", "picking", "packing", "qc_pending"]}},
         {"_id": 0}).to_list(300)
+    # F-10 — SO bertermin CBD/DP yang belum dibayar: lencana "tertahan bayar" + kekurangannya.
+    from services import dispatch_payment_gate as _gate
+    holds = await _gate.holds_for_orders(t.get("order_id") for t in tasks)
     queues.append(_queue(
         "outbound", "Tugas outbound berjalan",
         "Picking/packing yang belum dispatch — pesanan pelanggan menunggu.",
         [_row(ref_type="wms_task", ref_id=t["id"], number=t.get("order_number") or t.get("id", ""),
               title=t.get("product_name") or t.get("customer_name") or "—",
               subtitle=" · ".join(x for x in [t.get("warehouse_name", ""), t.get("customer_name", ""),
-                                              f"diambil {float(t.get('picked_qty') or 0):g}/{float(t.get('quantity') or 0):g} {t.get('unit') or ''}".strip()] if x),
+                                              f"diambil {float(t.get('picked_qty') or 0):g}/{float(t.get('quantity') or 0):g} {t.get('unit') or ''}".strip(),
+                                              _gate.desk_note(holds.get(t.get("order_id")))] if x),
               value=float(t.get("quantity") or 0),
-              age_days=_age_days(t.get("created_at")), badge=t.get("status", ""),
+              age_days=_age_days(t.get("created_at")),
+              badge="tertahan bayar" if _gate.desk_note(holds.get(t.get("order_id"))) else t.get("status", ""),
               action="Buka WMS", action_kind="open",
-              extra={"order_id": t.get("order_id"), "unit": t.get("unit") or "yard"}) for t in tasks],
+              extra={"order_id": t.get("order_id"), "unit": t.get("unit") or "yard",
+                     "payment_blocked": bool(_gate.desk_note(holds.get(t.get("order_id"))))}) for t in tasks],
         action_label="Buka WMS", owner="warehouse_admin", value_kind="qty", value_label="Qty"))
 
     # 2b — keputusan owner 2026-10-21: retur pelanggan menunggu terima / QC (tanpa nilai uang)

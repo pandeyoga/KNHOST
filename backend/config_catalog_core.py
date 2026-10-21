@@ -106,6 +106,20 @@ E("finance.default_payment_term_code", group="uang-masuk", type="text", default=
   example="NET30 → invoice tanggal 1 Juli jatuh tempo 31 Juli",
   consumers=("routers/sales_orders.py", "services/ar_aging_service.py"), risk="medium")
 
+E("finance.dispatch_payment_gate", group="uang-masuk", type="enum", default="block",
+  options=({"value": "block", "label": "Tahan kirim sampai termin terbayar (blok keras)"},
+           {"value": "off", "label": "Tidak menahan (hanya informasi)"}),
+  scopes=("global", "entity"),
+  label="Tahan pengiriman pesanan CBD / DP sampai dibayar",
+  help="Termin yang punya 'DP % sebelum kirim' (CBD = 100%, DP 50% = 50%) menahan Barang Keluar sampai "
+       "pembayaran pesanan mencapai persen itu. Pengecualian per pesanan hanya oleh pemegang izin "
+       "'Pesanan → Kirim tanpa lunas (pengecualian)' dengan alasan wajib & tercatat di jejak audit.",
+  impact="Bila 'blok keras', tombol Kirim di Barang Keluar, maju tahap WMS, dan cek keberangkatan trip "
+         "menolak pesanan yang belum dibayar sesuai termin. Persen per termin diatur di Syarat Bayar.",
+  example="Pesanan CBD Rp 10.000.000 baru dibayar Rp 4.000.000 → tertahan (kurang Rp 6.000.000)",
+  consumers=("services/dispatch_payment_gate.py:evaluate", "services/loading_check_service.py:dispatch_guard"),
+  risk="high")
+
 # ═══════════════════════════════════════════════════════════════════════════
 # UANG MASUK & PIUTANG (AR)
 # ═══════════════════════════════════════════════════════════════════════════

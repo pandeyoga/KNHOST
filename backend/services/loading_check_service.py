@@ -239,6 +239,10 @@ async def dispatch_guard(order_id: Optional[str], warehouse_id: Optional[str] = 
     """Blokir dispatch bila loading check terbuka / tidak bersih / basi (RF-06) / wajib tapi tidak ada (RF-04)."""
     if not order_id:
         return
+    # F-10 (keputusan owner Q-02) — termin CBD/DP: belum dibayar sesuai termin & tanpa pengecualian berizin → 409
+    # (dapat dimatikan per PT lewat `finance.dispatch_payment_gate`).
+    from services import dispatch_payment_gate
+    await dispatch_payment_gate.guard(order_id)
     await qc_request_guard(order_id)
     from services.cutting_service import pending_handoffs   # L06 LN-061 — potong → Admin Cutting → kirim
     waiting = await pending_handoffs(order_id)

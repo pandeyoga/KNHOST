@@ -9,6 +9,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
 from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
@@ -943,3 +944,41 @@ async def cancel_order(order_id: str, request: Request, payload: Optional[SoCanc
         from services import return_replacement_service as rpl
         await rpl.on_replacement_cancelled(order, actor)
     return strip_cost_fields(result, actor.get("role"))
+
+
+# ─── F-10 (keputusan owner Q-02, 2026-10-21) — gerbang bayar-sebelum-kirim termin CBD/DP ─────────────────────────
+class _GateReason(BaseModel):
+    reason: str = ""
+
+
+async def _gate_order(order_id: str, request: Request) -> Dict[str, Any]:
+    order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan")
+    assert_entity_access(order, "sales_orders", await entity_ctx(request))
+    return order
+
+
+@router.get("/sales-orders/{order_id}/dispatch-payment-gate")
+async def dispatch_payment_gate_status(order_id: str, request: Request) -> Dict[str, Any]:
+    """Status gerbang termin (CBD/DP) untuk detail SO & Barang Keluar: wajib dibayar, sudah dibayar, pengecualian."""
+    from dependencies import require_any_permission
+    await require_any_permission(request, [("order", "view"), ("wms", "view")])
+    from services import dispatch_payment_gate as gate
+    return await gate.evaluate(await _gate_order(order_id, request))
+
+
+@router.post("/sales-orders/{order_id}/dispatch-payment-release")
+async def dispatch_payment_release(order_id: str, body: _GateReason, request: Request) -> Dict[str, Any]:
+    """Pengecualian berizin: kirim walau termin belum terbayar (alasan wajib, teraudit)."""
+    actor = await require_permission(request, "order", "release_unpaid")
+    from services import dispatch_payment_gate as gate
+    return await gate.release(await _gate_order(order_id, request), body.reason, actor)
+
+
+@router.post("/sales-orders/{order_id}/dispatch-payment-release/revoke")
+async def dispatch_payment_release_revoke(order_id: str, body: _GateReason, request: Request) -> Dict[str, Any]:
+    """Cabut pengecualian kirim (alasan wajib, teraudit)."""
+    actor = await require_permission(request, "order", "release_unpaid")
+    from services import dispatch_payment_gate as gate
+    return await gate.revoke(await _gate_order(order_id, request), body.reason, actor)

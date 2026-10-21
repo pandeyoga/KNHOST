@@ -22,8 +22,11 @@ ROLE_LABEL = {"sales": "Sales", "sales_admin": "Admin Sales", "manager": "Manage
               "admin": "Admin", "director": "Direktur", "owner": "Pemilik"}
 
 
-def next_step(o: Dict[str, Any]) -> Dict[str, Any]:
-    """Tahap berikutnya + peran pemiliknya, diturunkan dari status SO."""
+SHIP_STAGES = ("confirmed", "partially_picked", "picked", "packing", "packed", "partially_shipped")
+
+
+def next_step(o: Dict[str, Any], hold: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Tahap berikutnya + peran pemiliknya, diturunkan dari status SO (+ gerbang termin CBD/DP, F-10)."""
     st = o.get("status") or ""
     verified = (o.get("verification") or {}).get("status") == "verified"
     outstanding = float(o.get("grand_total") or o.get("total_amount") or 0) - float(o.get("paid_total") or 0)
@@ -37,6 +40,10 @@ def next_step(o: Dict[str, Any]) -> Dict[str, Any]:
     if st in ("approved", "reserved"):
         return {"step": "Dikonfirmasi" if verified else "Diverifikasi & dikonfirmasi",
                 "roles": ["sales_admin"], "action": "Verifikasi" if not verified else "Konfirmasi"}
+    if st in SHIP_STAGES and hold and hold.get("blocked"):
+        # F-10 — termin CBD/DP belum terbayar: gudang tidak bisa kirim; bolanya di Finance (catat bayar / pengecualian).
+        return {"step": f"Dibayar sesuai termin {hold.get('term_code') or ''} sebelum kirim".replace("  ", " "),
+                "roles": ["finance"], "action": "Catat pembayaran"}
     if st in ("confirmed", "partially_picked", "picked", "packing", "packed"):
         return {"step": "Diambil, dicek muat & diberangkatkan", "roles": ["warehouse_admin", "warehouse"],
                 "action": "Buka tugas gudang"}
@@ -65,8 +72,11 @@ async def so_tracker(desk: str, actor: Dict[str, Any], scope: Dict[str, Any]) ->
             "status": 1, "verification": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1,
             "required_approval_role": 1, "has_backorder": 1, "created_at": 1, "updated_at": 1, "entity_id": 1}
     rows: List[Dict[str, Any]] = []
-    async for o in db.sales_orders.find(q, proj):
-        ns = next_step(o)
+    orders = await db.sales_orders.find(q, proj).to_list(5000)
+    from services import dispatch_payment_gate as _gate
+    holds = await _gate.holds_for_orders(o["id"] for o in orders if o.get("status") in SHIP_STAGES)
+    for o in orders:
+        ns = next_step(o, holds.get(o["id"]))
         upd = o.get("updated_at") or o.get("created_at") or ""
         rows.append({
             "id": o["id"], "number": o.get("order_number") or o.get("number") or o["id"],

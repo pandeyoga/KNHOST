@@ -49,11 +49,16 @@ async def list_outbound_tasks(request: Request, status: str = None, warehouse_id
     so_ids = list(set(t.get("order_id") for t in tasks if t.get("order_id")))
     orders = {o["id"]: o for o in await db.sales_orders.find({"id": {"$in": so_ids}}, {"_id": 0}).to_list(100)}
     
+    # F-10 — status termin CBD/DP per SO: alasan tahan tampil di daftar & panel kirim (bukan baru ketahuan saat klik).
+    from services import dispatch_payment_gate as _gate
+    holds = await _gate.holds_for_orders(so_ids)
     for task in tasks:
         if task.get("order_id"):
             order = orders.get(task["order_id"], {})
             task["customer_name"] = order.get("customer_name", "")
             task["order_total"] = order.get("total_amount", 0)
+            hold = holds.get(task["order_id"])
+            task["payment_hold"] = hold if hold and hold["applies"] else None
     
     return tasks
 
