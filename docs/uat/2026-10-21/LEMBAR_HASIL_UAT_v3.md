@@ -256,7 +256,8 @@ Status: `L` Lulus · `G` Gagal · `T` Terblokir. Isi nomor dokumen sistem & ID t
 | S8-23 | Admin Gudang | LG Terkirim (POD tidak bisa diubah lagi); SO otomatis Selesai saat semua SJ ber-POD. | ○ |  |  |  |
 | S8-24 | Finance | Pembayaran KSC/AR-xxxxx (Rp …) dicatat untuk … Baris hilang dari antrean. | ○ |  |  |  |
 | S8-25 | Sales | Perjalanan 100%: Dipesan · Diverifikasi Admin Sales · Disetujui · Dikonfirmasi · Disiapkan gudang · Dikirim (SJ) · Diterima pelanggan · Ditagih (Faktu… | ○ |  |  |  |
-| S8-26 | Finance | Hutang PO lunas. | ○ |  |  |  |
+| S8-26 | Pembelian | Tagihan & kontrabon disetujui; hutang siap dibayar. | ○ |  |  |  |
+| S8-27 | Finance | Hutang PO lunas; jurnal terposting. | ○ |  |  |  |
 
 ## S9 — Stok kurang → makloon (proses di mitra) (Kelompok 2 · Hulu, Pengadaan & Sample, 10.30–11.30)
 
@@ -387,7 +388,8 @@ Status: `L` Lulus · `G` Gagal · `T` Terblokir. Isi nomor dokumen sistem & ID t
 | S16-07 | Admin Gudang | Stok +960 yd; PO Sebagian diterima (sisa incoming); roll karantina + SPK. | ○ |  |  |  |
 | S16-08 | Admin Gudang · MD Quality · QC | Roll tersedia sekali keputusan. | ○ |  |  |  |
 | S16-09 | Gudang | Saldo per gudang/bin benar; roll muncul di katalog POS. | ○ |  |  |  |
-| S16-10 | Finance | Hutang PO lunas; jurnal terposting. | ○ |  |  |  |
+| S16-10 | Pembelian | Tagihan & kontrabon disetujui; hutang siap dibayar. | ○ |  |  |  |
+| S16-11 | Finance | Hutang PO lunas; jurnal terposting. | ○ |  |  |  |
 
 ## Penutupan
 

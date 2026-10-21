@@ -201,7 +201,9 @@ export const NAV_STRUCTURE = [
     roles:   ["admin", "manager", "warehouse", "finance"],
     items: [
       { id: "sourcing",         label: "Pengadaan",    icon: Target,        roles: ["admin", "manager", "warehouse"], hub: "sourcing" },
-      { id: "purchase-orders",  label: "Pesanan Pembelian",  icon: ClipboardList, roles: ["admin", "manager", "finance"],   hub: "purchase-orders" },
+      // Cek UI UAT v3 (2026-10-22) — Gudang punya izin makloon_order.issue/receive & tab "Order Makloon"/"Klaim Selisih
+      // Makloon" untuk peran gudang, tetapi induknya tertutup → tab tidak pernah tampil (pengeluaran bahan makloon buntu).
+      { id: "purchase-orders",  label: "Pesanan Pembelian",  icon: ClipboardList, roles: ["admin", "manager", "finance", "warehouse"],   hub: "purchase-orders" },
       { id: "accounts-payable", label: "Hutang Pemasok",    icon: Receipt,       roles: ["admin", "manager", "warehouse"], hub: "accounts-payable" },
       { id: "master-pembelian", label: "Master Pembelian",        icon: Factory,       roles: ["admin", "manager"],              hub: "master-pembelian" },
       { id: "cs-bom",           label: "Bahan Cetak",            icon: Printer,       roles: ["admin"], comingSoon: true },

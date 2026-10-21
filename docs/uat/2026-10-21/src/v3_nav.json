@@ -1,0 +1,1607 @@
+{
+ "sales_admin": {
+  "home": {
+   "view": "sales-admin-desk",
+   "navId": "sales-admin-desk"
+  },
+  "groups": [
+   {
+    "label": "Beranda",
+    "id": "home",
+    "tabs": []
+   },
+   {
+    "label": "Pusat Persetujuan",
+    "id": "approval-inbox",
+    "tabs": [
+     "Inbox Persetujuan",
+     "Pengajuan Harga Khusus"
+    ]
+   },
+   {
+    "label": "Meja Saya",
+    "id": "my-desk",
+    "tabs": []
+   },
+   {
+    "label": "Tanya KN",
+    "id": "tanya-kn",
+    "tabs": []
+   },
+   {
+    "label": "Meja Admin Sales",
+    "id": "sales-admin-desk",
+    "tabs": []
+   },
+   {
+    "group": "Penjualan",
+    "items": [
+     {
+      "label": "POS",
+      "id": "sales",
+      "tabs": []
+     },
+     {
+      "label": "Pesanan Khusus",
+      "id": "special-orders",
+      "tabs": []
+     },
+     {
+      "label": "Pesanan",
+      "id": "sales-orders",
+      "tabs": [
+       "Pesanan (SO)",
+       "Koreksi & Amandemen",
+       "Permintaan Internal (PIN)"
+      ]
+     },
+     {
+      "label": "Pesanan Sample",
+      "id": "sample-orders",
+      "tabs": []
+     },
+     {
+      "label": "Pelanggan",
+      "id": "customers-crm",
+      "tabs": [
+       "CRM & Pelanggan"
+      ]
+     },
+     {
+      "label": "Produk & Harga",
+      "id": "products-pricing",
+      "tabs": [
+       "Produk & Varian",
+       "Harga per Pelanggan"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "Retur",
+    "id": "returns-hub",
+    "tabs": [
+     "Retur Pelanggan",
+     "Retur Antar-PT",
+     "Kebijakan Retur"
+    ]
+   },
+   {
+    "group": "Pembelian",
+    "items": [
+     {
+      "label": "Pengadaan",
+      "id": "sourcing",
+      "tabs": [
+       "Permintaan Pembelian"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "R&D",
+    "id": "rnd-hub",
+    "tabs": [
+     "Permintaan Sample",
+     "Labdip",
+     "Handfeel",
+     "Proofing"
+    ]
+   },
+   {
+    "label": "Marketing & Sosmed",
+    "id": "marketing-hub",
+    "tabs": [
+     "Kalender Konten",
+     "Dasbor & Performa",
+     "Kampanye",
+     "Akun Sosmed"
+    ]
+   },
+   {
+    "group": "Gudang & Logistik",
+    "items": [
+     {
+      "label": "Operasi Gudang",
+      "id": "wms-operations",
+      "tabs": [
+       "Stok, Transfer & Opname",
+       "Barang Keluar"
+      ]
+     },
+     {
+      "label": "Stok & ATP",
+      "id": "stock-atp",
+      "tabs": [
+       "Status Stok & ATP",
+       "Lot & Silsilah"
+      ]
+     },
+     {
+      "label": "Pengiriman",
+      "id": "logistics",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "Akuntansi & Pajak",
+    "items": [
+     {
+      "label": "Antar Entitas (Grup)",
+      "id": "interco-transactions",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "Kas & Aset",
+    "items": [
+     {
+      "label": "Kas Kecil",
+      "id": "petty-cash",
+      "tabs": [
+       "Pengajuan Dana (PD)",
+       "Pertanggungjawaban"
+      ]
+     },
+     {
+      "label": "Kendaraan",
+      "id": "vehicle-logs",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "label": "Pusat Export",
+    "id": "export-center",
+    "tabs": []
+   },
+   {
+    "label": "Pusat Dokumen",
+    "id": "document-center",
+    "tabs": [
+     "Daftar Dokumen",
+     "Jejak Dokumen",
+     "Cetak PDF & Label"
+    ]
+   },
+   {
+    "label": "Pengaturan",
+    "id": "settings-hub",
+    "tabs": [
+     "Master Grade Mutu"
+    ]
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ },
+ "manager": {
+  "home": {
+   "view": "manager-home",
+   "navId": "home"
+  },
+  "groups": [
+   {
+    "label": "Beranda",
+    "id": "home",
+    "tabs": []
+   },
+   {
+    "label": "Pusat Persetujuan",
+    "id": "approval-inbox",
+    "tabs": [
+     "Inbox Persetujuan",
+     "Persetujuan Saya",
+     "Pengajuan Harga Khusus",
+     "Riwayat Persetujuan PO"
+    ]
+   },
+   {
+    "label": "Meja Saya",
+    "id": "my-desk",
+    "tabs": []
+   },
+   {
+    "label": "Tanya KN",
+    "id": "tanya-kn",
+    "tabs": []
+   },
+   {
+    "group": "Penjualan",
+    "items": [
+     {
+      "label": "Pesanan Khusus",
+      "id": "special-orders",
+      "tabs": []
+     },
+     {
+      "label": "Pesanan",
+      "id": "sales-orders",
+      "tabs": [
+       "Pesanan (SO)",
+       "Koreksi & Amandemen",
+       "Permintaan Internal (PIN)"
+      ]
+     },
+     {
+      "label": "Pesanan Sample",
+      "id": "sample-orders",
+      "tabs": []
+     },
+     {
+      "label": "Pelanggan",
+      "id": "customers-crm",
+      "tabs": [
+       "CRM & Pelanggan",
+       "Kunjungan Sales"
+      ]
+     },
+     {
+      "label": "Produk & Harga",
+      "id": "products-pricing",
+      "tabs": [
+       "Produk & Varian",
+       "Kategori",
+       "Pustaka Warna",
+       "Satuan & Konversi",
+       "Harga per Badan Usaha",
+       "Harga per Pelanggan"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "Retur",
+    "id": "returns-hub",
+    "tabs": [
+     "Retur Pelanggan",
+     "Retur Antar-PT",
+     "Retur ke Supplier (Nota Debit)",
+     "Kebijakan Retur"
+    ]
+   },
+   {
+    "group": "Pembelian",
+    "items": [
+     {
+      "label": "Pengadaan",
+      "id": "sourcing",
+      "tabs": [
+       "Saran Reorder",
+       "Permintaan Pembelian",
+       "RFQ / Penawaran"
+      ]
+     },
+     {
+      "label": "Pesanan Pembelian",
+      "id": "purchase-orders",
+      "tabs": [
+       "Pesanan Pembelian (PO)",
+       "Papan PO per Lini",
+       "Blanket / Kontrak",
+       "Order Makloon",
+       "Rekap Susut & Klaim Mitra",
+       "Klaim Selisih Makloon"
+      ]
+     },
+     {
+      "label": "Hutang Pemasok",
+      "id": "accounts-payable",
+      "tabs": [
+       "Tagihan Supplier",
+       "Kontrabon (Tukar Faktur)",
+       "Landed Cost (HPP)"
+      ]
+     },
+     {
+      "label": "Master Pembelian",
+      "id": "master-pembelian",
+      "tabs": [
+       "Pemasok (Supplier)",
+       "Mitra Makloon",
+       "Kontrak Mitra & Supplier",
+       "Barang Supplier",
+       "Resep Proses"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "R&D",
+    "id": "rnd-hub",
+    "tabs": [
+     "Permintaan Sample",
+     "Labdip",
+     "Handfeel",
+     "Proofing",
+     "Laporan R&D"
+    ]
+   },
+   {
+    "label": "Desainer",
+    "id": "designer-hub",
+    "tabs": [
+     "Permintaan Desain",
+     "KPI Desainer",
+     "Desain & Pattern",
+     "Galeri Desain (Showcase)"
+    ]
+   },
+   {
+    "label": "Marketing & Sosmed",
+    "id": "marketing-hub",
+    "tabs": [
+     "Kalender Konten",
+     "Dasbor & Performa",
+     "Kampanye",
+     "Akun Sosmed"
+    ]
+   },
+   {
+    "group": "Gudang & Logistik",
+    "items": [
+     {
+      "label": "Operasi Gudang",
+      "id": "wms-operations",
+      "tabs": [
+       "Stok, Transfer & Opname",
+       "Barang Masuk",
+       "Barang Keluar",
+       "QC & Inspeksi"
+      ]
+     },
+     {
+      "label": "Stok & ATP",
+      "id": "stock-atp",
+      "tabs": [
+       "Status Stok & ATP",
+       "Stok Multi-Bucket",
+       "Lot & Silsilah"
+      ]
+     },
+     {
+      "label": "Produksi",
+      "id": "production",
+      "tabs": []
+     },
+     {
+      "label": "Lokasi Rak",
+      "id": "wms-locations",
+      "tabs": []
+     },
+     {
+      "label": "Data Gudang",
+      "id": "md-warehouses",
+      "tabs": []
+     },
+     {
+      "label": "Pengiriman",
+      "id": "logistics",
+      "tabs": []
+     },
+     {
+      "label": "Eskalasi Gudang",
+      "id": "escalations",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "Keuangan",
+    "items": [
+     {
+      "label": "Dasbor Keuangan",
+      "id": "finance-tower",
+      "tabs": [
+       "Posisi & Kontrol",
+       "BI Keuangan"
+      ]
+     },
+     {
+      "label": "Kas & Bank",
+      "id": "cash-bank",
+      "tabs": [
+       "Rekening & Saldo",
+       "Transaksi Kas",
+       "Rekonsiliasi Bank"
+      ]
+     },
+     {
+      "label": "Piutang",
+      "id": "ar-aging",
+      "tabs": []
+     },
+     {
+      "label": "Uang Muka Pelanggan",
+      "id": "advance-report",
+      "tabs": []
+     },
+     {
+      "label": "Rencana Bayar",
+      "id": "payment-plans",
+      "tabs": []
+     },
+     {
+      "label": "Kasus Keuangan",
+      "id": "finance-cases",
+      "tabs": []
+     },
+     {
+      "label": "Saldo Kredit",
+      "id": "store-credit",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "Akuntansi & Pajak",
+    "items": [
+     {
+      "label": "Pajak",
+      "id": "tax-hub",
+      "tabs": [
+       "Faktur Keluaran",
+       "Faktur Masukan",
+       "PPh & Rekap"
+      ]
+     },
+     {
+      "label": "Buku Besar",
+      "id": "ledger",
+      "tabs": [
+       "Jurnal & Buku Besar",
+       "Chart of Accounts"
+      ]
+     },
+     {
+      "label": "Laporan",
+      "id": "fin-reports",
+      "tabs": [
+       "Laba-Rugi, Neraca & Arus Kas",
+       "Profitabilitas & Margin",
+       "Proyeksi Arus Kas",
+       "Anggaran vs Realisasi",
+       "Konsolidasi Grup"
+      ]
+     },
+     {
+      "label": "Tutup Buku",
+      "id": "closing",
+      "tabs": []
+     },
+     {
+      "label": "Buka Periode",
+      "id": "period-unlock",
+      "tabs": []
+     },
+     {
+      "label": "Posting Gagal",
+      "id": "posting-failures",
+      "tabs": []
+     },
+     {
+      "label": "Antar Entitas (Grup)",
+      "id": "interco-transactions",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "Kas & Aset",
+    "items": [
+     {
+      "label": "Kas Kecil",
+      "id": "petty-cash",
+      "tabs": [
+       "Pengajuan Dana (PD)",
+       "Pertanggungjawaban",
+       "Hutang Reimburse"
+      ]
+     },
+     {
+      "label": "Kendaraan",
+      "id": "vehicle-logs",
+      "tabs": []
+     },
+     {
+      "label": "Aset Tetap",
+      "id": "fixed-assets",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "SDM",
+    "items": [
+     {
+      "label": "Karyawan",
+      "id": "hr-people",
+      "tabs": [
+       "Karyawan",
+       "Struktur Organisasi"
+      ]
+     },
+     {
+      "label": "Kehadiran",
+      "id": "hr-attendance-hub",
+      "tabs": [
+       "Presensi",
+       "Cuti & Izin",
+       "Lembur",
+       "Lacak Lapangan"
+      ]
+     },
+     {
+      "label": "Penggajian",
+      "id": "hr-payroll-hub",
+      "tabs": [
+       "Payroll Run",
+       "Slip Gaji"
+      ]
+     },
+     {
+      "label": "KPI",
+      "id": "hr-kpi-hub",
+      "tabs": [
+       "KPI Karyawan (manual)"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "Analitik",
+    "id": "analytics",
+    "tabs": [
+     "Ringkasan",
+     "Margin & HPP",
+     "BI SDM",
+     "Analitik Stok"
+    ]
+   },
+   {
+    "label": "Pusat Export",
+    "id": "export-center",
+    "tabs": []
+   },
+   {
+    "label": "Pusat Dokumen",
+    "id": "document-center",
+    "tabs": [
+     "Daftar Dokumen",
+     "Jejak Dokumen",
+     "Cetak PDF & Label"
+    ]
+   },
+   {
+    "label": "Pengaturan",
+    "id": "settings-hub",
+    "tabs": [
+     "Pusat Pengaturan",
+     "Penjadwal & Notifikasi",
+     "Badan Usaha & Akses",
+     "Master per Badan Usaha",
+     "Master Grade Mutu",
+     "Registri Domain",
+     "Penerimaan & OCR",
+     "Label Alasan Amandemen",
+     "Rate Insentif Sales",
+     "Pemetaan Akun",
+     "Kategori Beban",
+     "Aturan & Template Bank",
+     "Shift & Geofence",
+     "Divisi & Persetujuan R&D"
+    ]
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ },
+ "finance": {
+  "home": {
+   "view": "finance-desk",
+   "navId": "finance-desk"
+  },
+  "groups": [
+   {
+    "label": "Beranda",
+    "id": "home",
+    "tabs": []
+   },
+   {
+    "label": "Tanya KN",
+    "id": "tanya-kn",
+    "tabs": []
+   },
+   {
+    "label": "Meja Finance",
+    "id": "finance-desk",
+    "tabs": []
+   },
+   {
+    "group": "Penjualan",
+    "items": [
+     {
+      "label": "Pesanan",
+      "id": "sales-orders",
+      "tabs": [
+       "Pesanan (SO)"
+      ]
+     },
+     {
+      "label": "Pesanan Sample",
+      "id": "sample-orders",
+      "tabs": []
+     },
+     {
+      "label": "Pelanggan",
+      "id": "customers-crm",
+      "tabs": [
+       "CRM & Pelanggan"
+      ]
+     },
+     {
+      "label": "Produk & Harga",
+      "id": "products-pricing",
+      "tabs": [
+       "Harga Internal Antar-PT"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "Retur",
+    "id": "returns-hub",
+    "tabs": [
+     "Retur Pelanggan",
+     "Retur Antar-PT"
+    ]
+   },
+   {
+    "group": "Pembelian",
+    "items": [
+     {
+      "label": "Pesanan Pembelian",
+      "id": "purchase-orders",
+      "tabs": [
+       "Pesanan Pembelian (PO)",
+       "Rekap Susut & Klaim Mitra"
+      ]
+     }
+    ]
+   },
+   {
+    "group": "Gudang & Logistik",
+    "items": [
+     {
+      "label": "Operasi Gudang",
+      "id": "wms-operations",
+      "tabs": [
+       "Barang Masuk"
+      ]
+     }
+    ]
+   },
+   {
+    "group": "Keuangan",
+    "items": [
+     {
+      "label": "Dasbor Keuangan",
+      "id": "finance-tower",
+      "tabs": [
+       "Posisi & Kontrol"
+      ]
+     },
+     {
+      "label": "Kas & Bank",
+      "id": "cash-bank",
+      "tabs": [
+       "Transaksi Kas"
+      ]
+     },
+     {
+      "label": "Piutang",
+      "id": "ar-aging",
+      "tabs": []
+     },
+     {
+      "label": "Uang Muka Pelanggan",
+      "id": "advance-report",
+      "tabs": []
+     },
+     {
+      "label": "Rencana Bayar",
+      "id": "payment-plans",
+      "tabs": []
+     },
+     {
+      "label": "Kasus Keuangan",
+      "id": "finance-cases",
+      "tabs": []
+     },
+     {
+      "label": "Saldo Kredit",
+      "id": "store-credit",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "Akuntansi & Pajak",
+    "items": [
+     {
+      "label": "Pajak",
+      "id": "tax-hub",
+      "tabs": [
+       "Faktur Keluaran"
+      ]
+     },
+     {
+      "label": "Antar Entitas (Grup)",
+      "id": "interco-transactions",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "label": "Pusat Export",
+    "id": "export-center",
+    "tabs": []
+   },
+   {
+    "label": "Pusat Dokumen",
+    "id": "document-center",
+    "tabs": [
+     "Daftar Dokumen",
+     "Jejak Dokumen",
+     "Cetak PDF & Label"
+    ]
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ },
+ "warehouse": {
+  "home": {
+   "view": "operations",
+   "navId": "wms-operations"
+  },
+  "groups": [
+   {
+    "label": "Beranda",
+    "id": "home",
+    "tabs": []
+   },
+   {
+    "label": "Meja Saya",
+    "id": "my-desk",
+    "tabs": []
+   },
+   {
+    "label": "Retur",
+    "id": "returns-hub",
+    "tabs": [
+     "Retur Pelanggan",
+     "Retur Antar-PT",
+     "Retur ke Supplier (Nota Debit)"
+    ]
+   },
+   {
+    "group": "Pembelian",
+    "items": [
+     {
+      "label": "Pengadaan",
+      "id": "sourcing",
+      "tabs": [
+       "Permintaan Pembelian",
+       "RFQ / Penawaran"
+      ]
+     },
+     {
+      "label": "Pesanan Pembelian",
+      "id": "purchase-orders",
+      "tabs": [
+       "Order Makloon",
+       "Klaim Selisih Makloon"
+      ]
+     },
+     {
+      "label": "Hutang Pemasok",
+      "id": "accounts-payable",
+      "tabs": [
+       "Kontrabon (Tukar Faktur)"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "R&D",
+    "id": "rnd-hub",
+    "tabs": [
+     "Permintaan Sample",
+     "Labdip",
+     "Handfeel",
+     "Proofing"
+    ]
+   },
+   {
+    "group": "Gudang & Logistik",
+    "items": [
+     {
+      "label": "Operasi Gudang",
+      "id": "wms-operations",
+      "tabs": [
+       "Stok, Transfer & Opname",
+       "Barang Masuk",
+       "Barang Keluar",
+       "QC & Inspeksi"
+      ]
+     },
+     {
+      "label": "Stok & ATP",
+      "id": "stock-atp",
+      "tabs": [
+       "Status Stok & ATP",
+       "Stok Multi-Bucket",
+       "Lot & Silsilah"
+      ]
+     },
+     {
+      "label": "Produksi",
+      "id": "production",
+      "tabs": []
+     },
+     {
+      "label": "Lokasi Rak",
+      "id": "wms-locations",
+      "tabs": []
+     },
+     {
+      "label": "Data Gudang",
+      "id": "md-warehouses",
+      "tabs": []
+     },
+     {
+      "label": "Pengiriman",
+      "id": "logistics",
+      "tabs": []
+     },
+     {
+      "label": "RFID",
+      "id": "rfid-hub",
+      "tabs": [
+       "Lokasi RFID",
+       "Tag RFID",
+       "Monitor Gerbang"
+      ]
+     },
+     {
+      "label": "Eskalasi Gudang",
+      "id": "escalations",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "Akuntansi & Pajak",
+    "items": [
+     {
+      "label": "Antar Entitas (Grup)",
+      "id": "interco-transactions",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "Kas & Aset",
+    "items": [
+     {
+      "label": "Kendaraan",
+      "id": "vehicle-logs",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "label": "Pusat Dokumen",
+    "id": "document-center",
+    "tabs": [
+     "Daftar Dokumen",
+     "Jejak Dokumen",
+     "Cetak PDF & Label"
+    ]
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ },
+ "warehouse_admin": {
+  "home": {
+   "view": "warehouse-admin-desk",
+   "navId": "warehouse-admin-desk"
+  },
+  "groups": [
+   {
+    "label": "Beranda",
+    "id": "home",
+    "tabs": []
+   },
+   {
+    "label": "Meja Saya",
+    "id": "my-desk",
+    "tabs": []
+   },
+   {
+    "label": "Tanya KN",
+    "id": "tanya-kn",
+    "tabs": []
+   },
+   {
+    "label": "Meja Gudang",
+    "id": "warehouse-admin-desk",
+    "tabs": []
+   },
+   {
+    "label": "Retur",
+    "id": "returns-hub",
+    "tabs": [
+     "Retur Pelanggan",
+     "Retur Antar-PT",
+     "Retur ke Supplier (Nota Debit)"
+    ]
+   },
+   {
+    "group": "Pembelian",
+    "items": [
+     {
+      "label": "Pengadaan",
+      "id": "sourcing",
+      "tabs": [
+       "Permintaan Pembelian",
+       "RFQ / Penawaran"
+      ]
+     },
+     {
+      "label": "Pesanan Pembelian",
+      "id": "purchase-orders",
+      "tabs": [
+       "Order Makloon",
+       "Klaim Selisih Makloon"
+      ]
+     },
+     {
+      "label": "Hutang Pemasok",
+      "id": "accounts-payable",
+      "tabs": [
+       "Kontrabon (Tukar Faktur)"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "R&D",
+    "id": "rnd-hub",
+    "tabs": [
+     "Permintaan Sample",
+     "Labdip",
+     "Handfeel",
+     "Proofing"
+    ]
+   },
+   {
+    "group": "Gudang & Logistik",
+    "items": [
+     {
+      "label": "Operasi Gudang",
+      "id": "wms-operations",
+      "tabs": [
+       "Stok, Transfer & Opname",
+       "Barang Masuk",
+       "Barang Keluar",
+       "QC & Inspeksi"
+      ]
+     },
+     {
+      "label": "Stok & ATP",
+      "id": "stock-atp",
+      "tabs": [
+       "Status Stok & ATP",
+       "Stok Multi-Bucket",
+       "Lot & Silsilah"
+      ]
+     },
+     {
+      "label": "Produksi",
+      "id": "production",
+      "tabs": []
+     },
+     {
+      "label": "Lokasi Rak",
+      "id": "wms-locations",
+      "tabs": []
+     },
+     {
+      "label": "Data Gudang",
+      "id": "md-warehouses",
+      "tabs": []
+     },
+     {
+      "label": "Pengiriman",
+      "id": "logistics",
+      "tabs": []
+     },
+     {
+      "label": "RFID",
+      "id": "rfid-hub",
+      "tabs": [
+       "Lokasi RFID",
+       "Tag RFID",
+       "Monitor Gerbang"
+      ]
+     },
+     {
+      "label": "Eskalasi Gudang",
+      "id": "escalations",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "Akuntansi & Pajak",
+    "items": [
+     {
+      "label": "Antar Entitas (Grup)",
+      "id": "interco-transactions",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "Kas & Aset",
+    "items": [
+     {
+      "label": "Kendaraan",
+      "id": "vehicle-logs",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "label": "Analitik",
+    "id": "analytics",
+    "tabs": [
+     "Analitik Stok"
+    ]
+   },
+   {
+    "label": "Pusat Export",
+    "id": "export-center",
+    "tabs": []
+   },
+   {
+    "label": "Pusat Dokumen",
+    "id": "document-center",
+    "tabs": [
+     "Daftar Dokumen",
+     "Jejak Dokumen",
+     "Cetak PDF & Label"
+    ]
+   },
+   {
+    "label": "Pengaturan",
+    "id": "settings-hub",
+    "tabs": [
+     "Master Grade Mutu",
+     "Penerimaan & OCR"
+    ]
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ },
+ "qc": {
+  "home": {
+   "view": "inspections",
+   "navId": "wms-operations"
+  },
+  "groups": [
+   {
+    "label": "Beranda",
+    "id": "home",
+    "tabs": []
+   },
+   {
+    "label": "Retur",
+    "id": "returns-hub",
+    "tabs": [
+     "Retur Pelanggan"
+    ]
+   },
+   {
+    "group": "Gudang & Logistik",
+    "items": [
+     {
+      "label": "Operasi Gudang",
+      "id": "wms-operations",
+      "tabs": [
+       "QC & Inspeksi"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "Pusat Dokumen",
+    "id": "document-center",
+    "tabs": [
+     "Daftar Dokumen",
+     "Jejak Dokumen"
+    ]
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ },
+ "md_quality": {
+  "home": {
+   "view": "inspections",
+   "navId": "wms-operations"
+  },
+  "groups": [
+   {
+    "label": "Beranda",
+    "id": "home",
+    "tabs": []
+   },
+   {
+    "label": "Pusat Dokumen",
+    "id": "document-center",
+    "tabs": [
+     "Daftar Dokumen",
+     "Jejak Dokumen"
+    ]
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ },
+ "md": {
+  "home": {
+   "view": "md-desk",
+   "navId": "md-desk"
+  },
+  "groups": [
+   {
+    "label": "Beranda",
+    "id": "home",
+    "tabs": []
+   },
+   {
+    "label": "Tanya KN",
+    "id": "tanya-kn",
+    "tabs": []
+   },
+   {
+    "label": "Meja MD",
+    "id": "md-desk",
+    "tabs": []
+   },
+   {
+    "group": "Penjualan",
+    "items": [
+     {
+      "label": "Pesanan",
+      "id": "sales-orders",
+      "tabs": [
+       "Pesanan (SO)"
+      ]
+     },
+     {
+      "label": "Produk & Harga",
+      "id": "products-pricing",
+      "tabs": [
+       "Produk & Varian",
+       "Kategori",
+       "Pustaka Warna",
+       "Satuan & Konversi",
+       "Harga per Pelanggan",
+       "Harga Internal Antar-PT"
+      ]
+     }
+    ]
+   },
+   {
+    "group": "Pembelian",
+    "items": [
+     {
+      "label": "Pengadaan",
+      "id": "sourcing",
+      "tabs": [
+       "Permintaan Pembelian",
+       "RFQ / Penawaran"
+      ]
+     },
+     {
+      "label": "Pesanan Pembelian",
+      "id": "purchase-orders",
+      "tabs": [
+       "Pesanan Pembelian (PO)",
+       "Rekap Susut & Klaim Mitra"
+      ]
+     },
+     {
+      "label": "Master Pembelian",
+      "id": "master-pembelian",
+      "tabs": [
+       "Pemasok (Supplier)"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "R&D",
+    "id": "rnd-hub",
+    "tabs": [
+     "Permintaan Sample",
+     "Labdip",
+     "Handfeel",
+     "Proofing",
+     "Laporan R&D"
+    ]
+   },
+   {
+    "label": "Desainer",
+    "id": "designer-hub",
+    "tabs": [
+     "Permintaan Desain",
+     "Desain & Pattern",
+     "Galeri Desain (Showcase)"
+    ]
+   },
+   {
+    "label": "Pusat Export",
+    "id": "export-center",
+    "tabs": []
+   },
+   {
+    "label": "Pusat Dokumen",
+    "id": "document-center",
+    "tabs": [
+     "Daftar Dokumen",
+     "Jejak Dokumen"
+    ]
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ },
+ "designer": {
+  "home": {
+   "view": "design-requests",
+   "navId": "designer-hub"
+  },
+  "groups": [
+   {
+    "label": "Meja Saya",
+    "id": "my-desk",
+    "tabs": []
+   },
+   {
+    "label": "Desainer",
+    "id": "designer-hub",
+    "tabs": [
+     "Permintaan Desain",
+     "Desain & Pattern",
+     "Galeri Desain (Showcase)"
+    ]
+   },
+   {
+    "label": "Marketing & Sosmed",
+    "id": "marketing-hub",
+    "tabs": [
+     "Kalender Konten",
+     "Dasbor & Performa",
+     "Kampanye",
+     "Akun Sosmed"
+    ]
+   },
+   {
+    "label": "Pusat Export",
+    "id": "export-center",
+    "tabs": []
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ },
+ "sample_admin": {
+  "home": {
+   "view": "sample-admin-desk",
+   "navId": "sample-admin-desk"
+  },
+  "groups": [
+   {
+    "label": "Beranda",
+    "id": "home",
+    "tabs": []
+   },
+   {
+    "label": "Meja Sample",
+    "id": "sample-admin-desk",
+    "tabs": []
+   },
+   {
+    "group": "Penjualan",
+    "items": [
+     {
+      "label": "Pesanan Sample",
+      "id": "sample-orders",
+      "tabs": []
+     },
+     {
+      "label": "Pelanggan",
+      "id": "customers-crm",
+      "tabs": [
+       "CRM & Pelanggan"
+      ]
+     }
+    ]
+   },
+   {
+    "group": "Gudang & Logistik",
+    "items": [
+     {
+      "label": "Pengiriman",
+      "id": "logistics",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "label": "Pusat Dokumen",
+    "id": "document-center",
+    "tabs": [
+     "Daftar Dokumen",
+     "Jejak Dokumen"
+    ]
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ },
+ "driver": {
+  "home": {
+   "view": "logistics",
+   "navId": "logistics"
+  },
+  "groups": [
+   {
+    "label": "Meja Saya",
+    "id": "my-desk",
+    "tabs": []
+   },
+   {
+    "group": "Gudang & Logistik",
+    "items": [
+     {
+      "label": "Pengiriman",
+      "id": "logistics",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ },
+ "sales": {
+  "home": {
+   "view": "sales-home",
+   "navId": "home"
+  },
+  "groups": [
+   {
+    "label": "Beranda",
+    "id": "home",
+    "tabs": []
+   },
+   {
+    "label": "Pusat Persetujuan",
+    "id": "approval-inbox",
+    "tabs": [
+     "Pengajuan Harga Khusus"
+    ]
+   },
+   {
+    "label": "Meja Saya",
+    "id": "my-desk",
+    "tabs": []
+   },
+   {
+    "label": "Tanya KN",
+    "id": "tanya-kn",
+    "tabs": []
+   },
+   {
+    "group": "Penjualan",
+    "items": [
+     {
+      "label": "POS",
+      "id": "sales",
+      "tabs": []
+     },
+     {
+      "label": "Pesanan Khusus",
+      "id": "special-orders",
+      "tabs": []
+     },
+     {
+      "label": "Pesanan",
+      "id": "sales-orders",
+      "tabs": [
+       "Pesanan (SO)",
+       "Koreksi & Amandemen",
+       "Permintaan Internal (PIN)"
+      ]
+     },
+     {
+      "label": "Pesanan Sample",
+      "id": "sample-orders",
+      "tabs": []
+     },
+     {
+      "label": "Pelanggan",
+      "id": "customers-crm",
+      "tabs": [
+       "CRM & Pelanggan",
+       "Kunjungan Sales"
+      ]
+     },
+     {
+      "label": "Produk & Harga",
+      "id": "products-pricing",
+      "tabs": [
+       "Produk & Varian",
+       "Harga per Pelanggan"
+      ]
+     }
+    ]
+   },
+   {
+    "label": "Retur",
+    "id": "returns-hub",
+    "tabs": [
+     "Retur Pelanggan"
+    ]
+   },
+   {
+    "label": "R&D",
+    "id": "rnd-hub",
+    "tabs": [
+     "Permintaan Sample",
+     "Labdip",
+     "Handfeel",
+     "Proofing"
+    ]
+   },
+   {
+    "label": "Marketing & Sosmed",
+    "id": "marketing-hub",
+    "tabs": [
+     "Kalender Konten",
+     "Dasbor & Performa",
+     "Kampanye",
+     "Akun Sosmed"
+    ]
+   },
+   {
+    "group": "Gudang & Logistik",
+    "items": [
+     {
+      "label": "Stok & ATP",
+      "id": "stock-atp",
+      "tabs": [
+       "Status Stok & ATP",
+       "Lot & Silsilah"
+      ]
+     },
+     {
+      "label": "Pengiriman",
+      "id": "logistics",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "group": "Kas & Aset",
+    "items": [
+     {
+      "label": "Kas Kecil",
+      "id": "petty-cash",
+      "tabs": [
+       "Pengajuan Dana (PD)",
+       "Pertanggungjawaban"
+      ]
+     },
+     {
+      "label": "Kendaraan",
+      "id": "vehicle-logs",
+      "tabs": []
+     }
+    ]
+   },
+   {
+    "label": "Pusat Export",
+    "id": "export-center",
+    "tabs": []
+   },
+   {
+    "label": "Pusat Dokumen",
+    "id": "document-center",
+    "tabs": [
+     "Daftar Dokumen",
+     "Jejak Dokumen",
+     "Cetak PDF & Label"
+    ]
+   },
+   {
+    "label": "Profil Saya",
+    "id": "hr-my-profile",
+    "tabs": []
+   }
+  ]
+ }
+}

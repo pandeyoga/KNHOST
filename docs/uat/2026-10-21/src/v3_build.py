@@ -19,6 +19,7 @@ from page import head, fmt, role_cell  # noqa: E402
 import sched  # noqa: E402
 import v3_scenarios as V  # noqa: E402
 import v3_visual as VIS  # noqa: E402
+import v3_flow as FLOW  # noqa: E402
 
 OUT_DIR = os.path.abspath(os.path.join(HERE, ".."))
 NAME = "Panduan_UAT_E2E_ERP_Kain_Nusantara_v3.0"
@@ -169,7 +170,9 @@ def scenario_page(sc):
         chips.append(("a", "Perbaikan: " + fixes))
     lead = (f"<p class='lead'><b>Kapan:</b> {fmt(when)}<br><b>Peran:</b> {escape(roles)} · <b>Data:</b> {escape(data)}</p>")
     return "\n".join(['<section class="sec">', head(f"Alur {code} · {len(rows)} langkah", f"{code} — {title}", chips), lead,
-                      VIS.flow_strip(code, rows), steps_table(code, rows), "</section>"])
+                      '<h3 style="margin:1mm 0 1mm 0">Diagram alur</h3>', FLOW.swimlane(code, rows),
+                      '<h3 style="margin:2mm 0 0 0">Navigasi menu per tahap</h3>', VIS.flow_strip(code, rows),
+                      steps_table(code, rows), "</section>"])
 
 
 def data_page():
@@ -207,7 +210,9 @@ def closing():
 
 
 def all_sections(pages):
-    menus = VIS.menu_page(V.SCENARIOS, head("Peta menu", "Menu yang dipakai tiap peran", ["Sales: HP", "Peran lain: desktop"]))
+    menus = FLOW.nav_pages(V.SCENARIOS,
+                           head("Navigasi · Sales", "Navigasi menu Sales — aplikasi HP", ["Sales memakai HP"]),
+                           head("Navigasi · Desktop", "Navigasi menu peran lain — desktop", ["Admin Sales, Manajer, Finance, Gudang, QC, MD, Desainer, Admin Sample"]))
     return [cover(), how_to(), overview(pages), schedule(), menus] + [scenario_page(sc) for sc in V.SCENARIOS] + [data_page(), closing()]
 
 

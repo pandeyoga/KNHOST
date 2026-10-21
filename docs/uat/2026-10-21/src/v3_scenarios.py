@@ -11,6 +11,16 @@ WH_RCM = ("Gudang", "warehouse.rancamalang@kainnusantara.id")
 CST_ADM = ("CST", "salesadmin.cst@kainnusantara.id")
 
 
+def AP_STEPS(note):
+    """Hutang supplier: tagihan & kontrabon = Manajer/Pembelian (menu Hutang Pemasok); pembayaran = Finance (Meja Finance)."""
+    return [("Pembelian", "`Pembelian › Hutang Pemasok › Tagihan Supplier` → catat tagihan dari penerimaan (GR) → "
+             "`Pembelian › Hutang Pemasok › Kontrabon (Tukar Faktur)` → setujui",
+             f"Cocokkan tagihan supplier dengan penerimaan. {note}", "Tagihan & kontrabon *disetujui*; hutang siap dibayar.", ""),
+            ("Finance", "`Meja Finance` → antrean **Hutang supplier jatuh tempo** → [[Bayar]]",
+             "Bayar sesuai termin (Finance tidak punya menu Hutang Pemasok — pembayaran lewat Meja Finance).",
+             "Hutang PO lunas; jurnal terposting.", "")]
+
+
 def _s1():
     return (s.pos_order(tax=True) + s.admin_sales() + s.pick() + s.dispatch() + s.logistics("ekspedisi") +
             s.tax_invoice() + s.pay() + s.journey())
@@ -163,8 +173,7 @@ def _s8():
               "**Satu keputusan** (F-14): roll diterima langsung lepas karantina; roll ditolak → disposisi (rusak / retur ke supplier → Nota Debit).",
               "SPK *Selesai*; roll **tersedia**; sistem mencadangkan ke SO backorder → SO **Dicadangkan**.", "")] +
             s.submit("") + s.confirm("") + s.pick("") + s.dispatch("") + s.logistics("ekspedisi", "") + s.pay("") + s.journey("") +
-            [("Finance", "`Pembelian › Hutang Pemasok` → Tagihan Supplier → Kontrabon → `Meja Finance` → **Hutang supplier jatuh tempo** → [[Bayar]]",
-              "Cocokkan tagihan supplier dengan penerimaan; tukar faktur; bayar sesuai termin.", "Hutang PO lunas.", "")])
+            AP_STEPS("Tagihan = qty diterima, bukan qty SJ."))
 
 
 def _s9():
@@ -176,8 +185,8 @@ def _s9():
              ("Pembelian", "`Permintaan Pembelian` → PR → **Sourcing** → *makloon* → Wizard Makloon",
               "Pilih mitra makloon, resep proses, output & unit, bahan/greige yang dipakai. Cetak **SPK Makloon**.",
               "**Order Makloon MKO-xxxxx** (`Pesanan Pembelian › Order Makloon`); bahan *dipesan* (reservasi ≠ pengeluaran).", ""),
-             ("Gudang", "`Order Makloon` → pengeluaran bahan",
-              "Keluarkan bahan/greige ke mitra sesuai dokumen (sekali).", "Stok bahan keluar tepat sekali; MKO *Diproses mitra*.", ""),
+             ("Gudang", "`Pembelian › Pesanan Pembelian › Order Makloon` → buka MKO → keluarkan bahan",
+              "Pilih gudang asal, keluarkan bahan/greige ke mitra sesuai dokumen (sekali).", "Stok bahan keluar tepat sekali; MKO *Diproses mitra*.", ""),
              ("Mitra", "di luar sistem", "Mitra memproses & mengirim hasil + SJ.", "Hasil aktual boleh ≠ rencana (mis. 192 dari 200 yd).", ""),
              ("Admin Gudang", "`Barang Masuk` → [[Buat kedatangan]] (mitra makloon) → SJ → [[Hitung fisik]] → [[Rekonsiliasi]] → [[Tutup Penerimaan]]",
               "Sama dengan S8 langkah kedatangan; target = MKO.",
@@ -337,8 +346,7 @@ def _s16():
          "Sama dengan S8.", "Roll **tersedia** sekali keputusan.", ""),
         ("Gudang", "`Operasi Gudang › Stok, Transfer & Opname` / `Lokasi Rak` → putaway", "Simpan roll ke rak/bin.",
          "Saldo per gudang/bin benar; roll muncul di katalog POS.", ""),
-        ("Finance", "`Pembelian › Hutang Pemasok` → Tagihan Supplier (dari GR) → Kontrabon → `Meja Finance` → **Hutang supplier jatuh tempo** → [[Bayar]]",
-         "Tagihan = qty diterima (960 yd), bukan qty SJ.", "Hutang PO lunas; jurnal terposting.", ""),
+    ] + AP_STEPS("Tagihan = qty diterima (960 yd), bukan qty SJ.") + [
     ]
 
 
