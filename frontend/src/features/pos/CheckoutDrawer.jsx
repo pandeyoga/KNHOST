@@ -469,6 +469,7 @@ export default function CheckoutDrawer({
               hasBackorderLine={hasBackorderLine} allowBackorder={allowBackorder}
               requiresLotConfirmation={requiresLotConfirmation} mixedLotLines={mixedLotLines}
               sampleCount={sampleCount} sampleMode={sampleMode} sampleBilling={sampleBilling}
+              termInfo={paymentTerms.find((t) => t.code === paymentTerm) || null}
             />
           )}
         </div>

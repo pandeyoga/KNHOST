@@ -57,9 +57,10 @@ export default function ARReceiptModal({ customerId, customerName, preselectOrde
         axios.get(`${API}/ar-receipts/deposit`, { params: { customer_id: customerId } }).catch(() => ({ data: {} })),
       ]);
       const list = Array.isArray(ro.data) ? ro.data : [];
-      setOpenOrders(list);
-      setDeposit(Number(rd.data?.deposit_balance || 0));
       const pre = preselectOrderId && list.find((o) => o.order_id === preselectOrderId);
+      // Cek UI UAT v3 (S2) — pesanan asal tampil paling atas (dulu terselip di antara ratusan pesanan terbuka).
+      setOpenOrders(pre ? [pre, ...list.filter((o) => o !== pre)] : list);
+      setDeposit(Number(rd.data?.deposit_balance || 0));
       if (pre) {
         setMode("manual");
         setAlloc({ [pre.order_id]: pre.outstanding });

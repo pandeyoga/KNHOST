@@ -386,6 +386,29 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               extra={"order_id": r["order_id"], "row_key": r["order_id"]}) for r in tagih],
         action_label="Catat kwitansi", owner="finance"))
 
+    # 2b — cek UI UAT v3 (S2): SO bertermin CBD/DP yang TERTAHAN menunggu bayar (F-10). Sejak F-16 SO yang belum
+    # dikirim tidak punya jatuh tempo → tidak masuk "Uang masuk"; tanpa antrean ini Finance tak punya pintu mencatat
+    # pembayaran sebelum kirim.
+    from services import dispatch_payment_gate as _gate
+    from core_utils import rupiah   # (impor lokal: nama ini juga diimpor lokal di bawah — hindari UnboundLocalError)
+    cand = await db.sales_orders.find(
+        {**_ent_q(scope), "status": {"$in": ["reserved", "waiting_approval", "approved", "confirmed", "partially_picked",
+                                             "picked", "packing", "packed", "partially_shipped"]},
+         "order_type": {"$ne": "sample"}},
+        {"_id": 0, "id": 1, "number": 1, "customer_id": 1, "customer_name": 1, "created_at": 1}).to_list(1000)
+    holds = await _gate.holds_for_orders(o["id"] for o in cand)
+    tahan = [(o, holds[o["id"]]) for o in cand if (holds.get(o["id"]) or {}).get("blocked")]
+    queues.append(_queue(
+        "bayar_sebelum_kirim", "Menunggu pembayaran sebelum kirim (CBD/DP)",
+        "Barang tertahan di gudang sampai pembayaran mencapai termin. Catat kwitansi — kiriman otomatis terbuka.",
+        [_row(ref_type="customer", ref_id=o.get("customer_id", ""), number=o.get("number", ""),
+              title=o.get("customer_name", "—"),
+              subtitle=f"{h['term_code']} · wajib {rupiah(h['required'])} sebelum kirim · kurang {rupiah(h['shortfall'])}",
+              value=h["shortfall"], age_days=_age_days(o.get("created_at")), badge="tertahan bayar",
+              action="Catat kwitansi", action_kind="receipt",
+              extra={"order_id": o["id"], "row_key": o["id"]}) for o, h in tahan],
+        action_label="Catat kwitansi", owner="finance"))
+
     # 3 — selisih bayar (lebih/kurang bayar) dalam batas kewenangan Finance
     from services import payment_variance_service as pvs
     ent_scope: Any = scope.get("entity_id") if isinstance(scope, dict) else ""

@@ -5,6 +5,10 @@
 2. Barang Keluar tidak menunjukkan roll yang harus diambil → `GET /outbound/tasks/{id}/pick-list`.
 3. Antrean "Surat Jalan belum diangkut logistik" bernilai 0 & berjudul nomor SO → qty SJ + nama pelanggan + satuan.
 4. Antrean meja dipotong 60 baris & `count` ikut terpotong → `count` = total sebenarnya, `shown` = baris terkirim.
+S2 (CBD):
+5. SO CBD tertahan bayar tidak muncul di antrean Meja Finance mana pun (SO belum dikirim → bukan piutang
+   jatuh tempo) → antrean `bayar_sebelum_kirim` (aksi "Catat kwitansi" dengan pesanan asal), hilang setelah lunas.
+6. Langkah "Dibayar" di Perjalanan Pesanan tampil "… 00:00" → tanggal kwitansi tanpa jam.
 Jalankan: cd /app/backend && python -m pytest tests/test_uat_v3_ui_gaps.py -p no:randomly -n 0 -q
 """
 import os
@@ -23,7 +27,7 @@ DB = base.DB
 def u():
     return {k: base.Api(e) for k, e in (("sales", "sales@kainnusantara.id"), ("sadm", "salesadmin@kainnusantara.id"),
                                        ("mgr", "manager@kainnusantara.id"), ("wh", "warehouse@kainnusantara.id"),
-                                       ("whadm", "wh.admin@kainnusantara.id"))}
+                                       ("whadm", "wh.admin@kainnusantara.id"), ("fin", "finance@kainnusantara.id"))}
 
 
 def _queue(desk, qid):
@@ -87,3 +91,23 @@ def test_antrean_menghitung_total_sebenarnya_walau_baris_dibatasi():
     q = wds._queue("uji", "Uji", "", rows)
     assert q["count"] == wds.ROW_LIMIT + 25 and q["shown"] == wds.ROW_LIMIT == len(q["rows"]), q["count"]
     assert q["total_value"] == wds.ROW_LIMIT + 25 and q["oldest_age_days"] == wds.ROW_LIMIT + 24
+
+
+def test_cbd_tertahan_muncul_di_antrean_finance_lalu_hilang_setelah_lunas(u):
+    so, tasks = base._ready_to_ship(u, "CBD")
+    c, desk = u["fin"].call("GET", "/finance/desk", params={"entity_id": base.ENT})
+    assert c == 200, desk
+    q = _queue(desk, "bayar_sebelum_kirim")                                  # dulu: tak ada antrean
+    row = next(r for r in q["rows"] if r.get("row_key") == so["id"])
+    assert row["action_kind"] == "receipt" and row["order_id"] == so["id"], row
+    assert row["ref_type"] == "customer" and row["ref_id"] == base.CUST, row   # kwitansi dicatat per pelanggan
+    assert abs(row["value"] - so["grand_total"]) < 0.01 and "CBD" in row["subtitle"], row
+    base._pay(u, so, so["grand_total"])
+    c, desk = u["fin"].call("GET", "/finance/desk", params={"entity_id": base.ENT})
+    assert not any(r.get("row_key") == so["id"] for r in _queue(desk, "bayar_sebelum_kirim")["rows"])
+    for c, b in base._dispatch(u, tasks):                                    # terbuka otomatis setelah lunas
+        assert c == 200, b
+    c, j = u["sales"].call("GET", f"/sales-orders/{so['id']}/journey")
+    assert c == 200, j
+    paid = next(s for s in j["steps"] if s["key"] == "dibayar")
+    assert paid["done"] and len(paid["at"]) == 10, paid                     # dulu "2026-10-21T00:00:00…"

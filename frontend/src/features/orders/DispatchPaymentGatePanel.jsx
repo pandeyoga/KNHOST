@@ -10,6 +10,7 @@ import { Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
 import { can } from "../../config/roles";
 import { formatCurrency } from "../../utils/formatters";
+import ARReceiptModal from "../crm/ARReceiptModal";
 
 export const fetchGate = (orderId) => axios.get(`${API}/sales-orders/${orderId}/dispatch-payment-gate`).then((r) => r.data);
 export const releaseGate = (orderId, reason) =>
@@ -47,8 +48,10 @@ export function GateSummary({ gate, testPrefix = "gate" }) {
   );
 }
 
-export default function DispatchPaymentGatePanel({ orderId, currentUser, onChanged, testPrefix = "so-gate", initial }) {
+export default function DispatchPaymentGatePanel({ orderId, currentUser, onChanged, testPrefix = "so-gate", initial,
+                                                  customerId = "", customerName = "" }) {
   const [gate, setGate] = useState(initial || null);
+  const [paying, setPaying] = useState(false);   // cek UI UAT v3 (S2) — catat pembayaran CBD/DP langsung dari sini
   const [mode, setMode] = useState("");          // "" | "release" | "revoke"
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -62,6 +65,7 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
 
   if (!gate?.applies) return null;
   const allowed = can(currentUser?.permissions, "order", "release_unpaid");
+  const canReceipt = gate.blocked && !!customerId && can(currentUser?.permissions, "ar_receipt", "create");
   const send = async () => {
     setBusy(true); setErr("");
     try {
@@ -73,6 +77,16 @@ export default function DispatchPaymentGatePanel({ orderId, currentUser, onChang
   return (
     <div className="space-y-1.5" data-testid={testPrefix}>
       <GateSummary gate={gate} testPrefix={testPrefix} />
+      {canReceipt && (
+        <button type="button" className="primary-button !py-1 !text-[11px]" data-testid={`${testPrefix}-receipt-open`}
+                onClick={() => setPaying(true)}>Catat pembayaran ({formatCurrency(gate.shortfall)})</button>
+      )}
+      {paying && (
+        <ARReceiptModal customerId={customerId} customerName={customerName} preselectOrderId={orderId}
+                        onClose={() => setPaying(false)}
+                        onDone={() => { setPaying(false); load(); onChanged?.(); }}
+                        onError={(msg) => setErr(msg)} />
+      )}
       {allowed && (gate.blocked || gate.released) && (
         <div className="space-y-1">
           {!mode && (

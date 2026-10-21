@@ -77,12 +77,18 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
     onFocusConsumed?.();
   }, [focusTaskId, tasks, loading, fetched]); // eslint-disable-line
 
+  // Cek UI UAT v3 (S2) — respons aksi (scan-pick/rilis/kirim/potong) = tugas mentah tanpa pengayaan daftar
+  // (nama pelanggan, status bayar CBD/DP). Dulu menggantikan tugas terpilih → "Customer:" kosong & panel
+  // "Tertahan bayar" hilang tepat saat barang siap dikirim. Kini digabung ke data yang sudah diperkaya.
+  const withEnrichment = (prev, next) => (next && prev && prev.id === next.id ? { ...prev, ...next } : next);
+
   const fetchTasks = async () => {
     setLoading(true);
     try {
       const params = filterStatus !== "all" ? `?status=${filterStatus}` : "";
       const res = await axios.get(`${API}/outbound/tasks${params}`);
       setTasks(res.data);
+      setSelectedTask((cur) => (cur ? res.data.find((t) => t.id === cur.id) || cur : cur));
       setError("");
     } catch (e) { setError(e.response?.data?.detail || "Gagal memuat outbound task."); }
     finally { setLoading(false); setFetched(true); }
@@ -115,8 +121,8 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
     setSubmitting(true);
     try {
       const res = await axios.post(`${API}/outbound/tasks/${selectedTask.id}/scan-pick`, null, { params: scanData });
-      setTasks(prev => prev.map(t => t.id === selectedTask.id ? res.data : t));
-      setSelectedTask(res.data);
+      setTasks(prev => prev.map(t => t.id === selectedTask.id ? withEnrichment(t, res.data) : t));
+      setSelectedTask((cur) => withEnrichment(cur, res.data));
       setScanData({ actual_qty: 0, batch: "", lot: "", roll_id: "", bin_id: "" });
       setScanValue(""); setRollCode(""); setRollInfo(null);
       setError("");
@@ -159,7 +165,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
       setShipQty("");
       setLastShipment(res.data?.shipment || null);
       await fetchTasks();
-      setSelectedTask(res.data?.task || null);
+      setSelectedTask((cur) => withEnrichment(cur, res.data?.task || null));
       setError("");
       notifySuccess("Barang terkirim", sj ? `No. Surat Jalan: ${sj}` : "Surat jalan sudah diterbitkan.");
     } catch (e) { setError(apiErrorText(e, "Gagal mengirim barang.")); }
@@ -179,7 +185,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
     try {
       const res = await axios.post(`${API}/outbound/tasks/${selectedTask.id}/release`);
       await fetchTasks();
-      setSelectedTask(res.data);
+      setSelectedTask((cur) => withEnrichment(cur, res.data));
       setError("");
       notifySuccess("Tugas dirilis", "Sudah masuk antrean pengambilan.");
     } catch (e) { setError(apiErrorText(e, "Gagal merilis tugas.")); }
@@ -345,7 +351,7 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
 
               {/* §3-C — permintaan potong sample: pindai roll induk + panjang aktual menggantikan scan-pick */}
               {selectedTask.task_subtype === "sample_cut" && Number(selectedTask.picked_qty || 0) <= 0 && !['dispatched', 'escalated', 'scheduled'].includes(selectedTask.status) && (
-                <SampleCutPanel task={selectedTask} onCut={(t) => { setTasks(prev => prev.map(x => x.id === t.id ? t : x)); setSelectedTask(t); }} />
+                <SampleCutPanel task={selectedTask} onCut={(t) => { setTasks(prev => prev.map(x => x.id === t.id ? withEnrichment(x, t) : x)); setSelectedTask((cur) => withEnrichment(cur, t)); }} />
               )}
 
               {/* Camera + Form */}

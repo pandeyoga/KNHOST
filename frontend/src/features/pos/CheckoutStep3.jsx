@@ -12,13 +12,15 @@ export default function CheckoutStep3({
   selectedCustomer, addresses, selectedAddress, p, cart, pricedCart, paymentTerm,
   needsTaxInvoice, setNeedsTaxInvoice, credit, creditBlocked,
   hasBackorderLine, allowBackorder, requiresLotConfirmation, mixedLotLines, sampleCount = 0,
-  sampleMode = false, sampleBilling = "",
+  sampleMode = false, sampleBilling = "", termInfo = null,
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const [pickDate, setPickDate] = useState(!!deliveryDate);
   const freeSample = sampleMode && sampleBilling === "free";
   // Sample gratis: tampilkan "Free", bukan "Rp 0".
   const money = (v, isFreeLine = freeSample) => (isFreeLine && !(Number(v) > 0) ? "Free" : formatCurrency(v));
+  // Cek UI UAT v3 (S2) — termin bayar-sebelum-kirim (F-10): Sales tahu sejak awal barang ditahan sampai dibayar.
+  const payFirstPct = !sampleMode ? Number(termInfo?.dp_percent || 0) : 0;
   return (
     <div data-testid="checkout-step-3" className="space-y-3">
       {/* Order Pengambilan — metode pemenuhan (Kirim / Ambil di Gudang) */}
@@ -159,6 +161,12 @@ export default function CheckoutStep3({
 
       <div className="rounded-md border border-[#EFF0F2] bg-white p-3 text-[11.5px] text-[#6B6B73]">
         <div className="flex items-center gap-1.5 text-[#1C1C1E]"><CreditCard size={13} /><span className="font-semibold">Pemenuhan</span></div>
+        {payFirstPct > 0 && (
+          <p className="mt-1 rounded bg-[#FFF4F3] px-2 py-1 text-[#8E1F17]" data-testid="checkout-pay-before-dispatch">
+            Termin <b>{termInfo.name || termInfo.code}</b> wajib dibayar {payFirstPct}% ({formatCurrency(Math.round(Number(p.grand || 0) * payFirstPct) / 100)}) sebelum kirim —
+            gudang boleh menyiapkan barang, tetapi pengiriman tertahan sampai Finance mencatat pembayaran (atau memberi pengecualian berizin).
+          </p>
+        )}
         <p className="mt-1">{hasBackorderLine ? (allowBackorder ? "Sebagian via backorder (disetujui)." : "Ada baris kurang stok — aktifkan backorder di langkah 2.") : "Semua baris dapat dipenuhi dari stok entitas."}</p>
         {sampleCount > 0 && <p data-testid="checkout-sample-fulfillment-note" className="mt-0.5 text-[#9A5B00]">{sampleCount} baris sample → permintaan potong ke admin gudang saat pesanan dikonfirmasi (pindai roll RFID, potong, catat panjang aktual), lalu ikut dikirim bersama pesanan.</p>}
         {requiresLotConfirmation && <p className="mt-0.5 text-[#6B219A]">{mixedLotLines.length} item beda lot — konfirmasi saat kirim.</p>}

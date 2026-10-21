@@ -241,7 +241,8 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
                + (" · Faktur Pajak " + " · ".join(f.get("number", "") for f in faktur_aktif[:3]) if faktur_aktif
                   else (" · Faktur Pajak: belum (wewenang Finance)" if order.get("tax_mode") == "ppn" else "")))),
         _step("dibayar", "Dibayar", not dibatalkan and sisa <= 0.009 and grand > 0,
-              (kwitansi[-1].get("receipt_date", "") if kwitansi else ""), "",
+              # tanggal bayar = tanggal bisnis kwitansi (tanpa jam — dulu tampil "00:00")
+              (str(kwitansi[-1].get("receipt_date") or "")[:10] if kwitansi else ""), "",
               ("Pesanan dibatalkan — tidak ada tagihan" if dibatalkan
                else "Lunas" if (sisa <= 0.009 and grand > 0)
                else f"Sisa tagihan {sisa:,.0f}".replace(",", "."))),

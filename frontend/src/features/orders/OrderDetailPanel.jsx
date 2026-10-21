@@ -269,7 +269,8 @@ export function OrderDetailPanel({
         <ProcessTimeline docType="sales_order" docId={sel.id} onNavigate={onOpenDocument} />
 
         {/* F-10 — termin CBD/DP: wajib bayar sebelum kirim + pengecualian berizin (alasan wajib) */}
-        <DispatchPaymentGatePanel key={`${sel.id}:${sel.paid_total || 0}`} orderId={sel.id} currentUser={user} onChanged={onRefresh} />
+        <DispatchPaymentGatePanel key={`${sel.id}:${sel.paid_total || 0}`} orderId={sel.id} currentUser={user} onChanged={onRefresh}
+                                  customerId={sel.customer_id} customerName={sel.customer_name} />
 
         {/* FASE G-2 — Jadwal pembayaran (DP/cicilan/milestone) + antrean denda */}
         <SoPaymentPanel order={sel} currentUser={user} onChanged={onRefresh} />

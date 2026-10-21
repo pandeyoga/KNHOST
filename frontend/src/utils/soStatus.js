@@ -34,19 +34,20 @@ export const STAGE_META = {
   Approved: { label: "Disetujui", cls: "stage-approved" },
   Confirmed: { label: "Terkonfirmasi", cls: "stage-confirmed" },
   Picked: { label: "Sudah Diambil", cls: "stage-picked" },
-  Shipped: { label: "Shipped", cls: "stage-shipped" },
-  Delivered: { label: "Delivered", cls: "stage-delivered" },
+  // Cek UI UAT v3 (S2) — dulu tampil "Shipped"/"Delivered" (Inggris) di kolom TAHAP & lencana detail.
+  Shipped: { label: "Dikirim", cls: "stage-shipped" },
+  Delivered: { label: "Selesai", cls: "stage-delivered" },
   Cancelled: { label: "Dibatalkan", cls: "stage-cancelled" },
 };
 
 // Label panjang untuk timeline (lebih deskriptif).
 export const STAGE_LABEL_LONG = {
-  Reserved: "Reserved",
-  Approved: "Approved",
-  Confirmed: "Confirmed (Keep)",
-  Picked: "Picked (Ready)",
-  Shipped: "Shipped",
-  Delivered: "Delivered (Done)",
+  Reserved: "Dipesan",
+  Approved: "Disetujui",
+  Confirmed: "Terkonfirmasi (stok dikunci)",
+  Picked: "Sudah diambil (siap kirim)",
+  Shipped: "Dikirim",
+  Delivered: "Selesai (diterima)",
 };
 
 export function stageMeta(stage) {

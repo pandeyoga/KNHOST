@@ -37,7 +37,14 @@ export default function DeskQueueCard({
   const Icon = meta.icon;
   const isQty = queue?.value_kind === "qty";
   const rows = Array.isArray(queue?.rows) ? queue.rows : [];
-  const pg = usePagedRows(rows, { pageSize: PAGE_ROWS, testId: `${testPrefix}-pager-${queue?.id}` });
+  // Cek UI UAT v3 (S2) — antrean panjang urut tertua dulu: dokumen baru ada di halaman terakhir (mis. hlm 14).
+  // Kolom cari (nomor / pelanggan / keterangan) muncul bila baris > 1 halaman.
+  const [term, setTerm] = useState("");
+  const needle = term.trim().toLowerCase();
+  const shownRows = needle
+    ? rows.filter((r) => `${r.number || ""} ${r.title || ""} ${r.subtitle || ""}`.toLowerCase().includes(needle))
+    : rows;
+  const pg = usePagedRows(shownRows, { pageSize: PAGE_ROWS, testId: `${testPrefix}-pager-${queue?.id}` });
   const visible = pg.pageRows;
   const oldest = ageTone(queue?.oldest_age_days);
 
@@ -124,7 +131,17 @@ export default function DeskQueueCard({
               <Inbox size={22} className="mx-auto mb-1.5 text-[#D6D6DB]" />
               Antrean ini bersih — tidak ada yang perlu ditindak.
             </div>
-          ) : (
+          ) : (<>
+            {rows.length > PAGE_ROWS && (
+              <div className="border-t border-[#EFF0F2] px-3 py-1.5">
+                <input className="field w-full !py-1 text-[11px]" value={term} data-testid={`${testPrefix}-search-${queue?.id}`}
+                       onChange={(e) => { setTerm(e.target.value); pg.setPage(1); }}
+                       placeholder="Cari nomor dokumen / pelanggan di antrean ini…" />
+                {needle && shownRows.length === 0 && (
+                  <p className="mt-1 text-[10.5px] text-[#8E8E93]" data-testid={`${testPrefix}-search-empty-${queue?.id}`}>Tidak ada baris yang cocok.</p>
+                )}
+              </div>
+            )}
             <div className="divide-y divide-[#F4F5F7] border-t border-[#EFF0F2] min-h-[290px]">
               {visible.map((row, i) => (
                 <QueueRow key={`${row.ref_type}-${row.ref_id}-${row.number || i}`}
@@ -134,9 +151,9 @@ export default function DeskQueueCard({
                           onAction={() => onAction?.(row, queue)} />
               ))}
             </div>
-          )}
+          </>)}
 
-          {rows.length > PAGE_ROWS && <div className="border-t border-[#EFF0F2] px-3 py-1.5">{pg.pager}</div>}
+          {shownRows.length > PAGE_ROWS && <div className="border-t border-[#EFF0F2] px-3 py-1.5">{pg.pager}</div>}
           {/* Cek UI UAT v3 — antrean sangat panjang: server mengirim baris tertua dulu (maks. 200) */}
           {(queue?.count || 0) > rows.length && (
             <p className="border-t border-[#EFF0F2] px-3 py-1.5 text-[10.5px] text-[#8C4A00]" data-testid={`${testPrefix}-truncated-${queue?.id}`}>
@@ -158,21 +175,22 @@ function QueueRow({ row, queue, isQty, busy, onAction, testPrefix }) {
       ? ""
       : formatCurrency(Number(row.value) || 0);
 
+  const rk = row.row_key || row.ref_id;   // satu pelanggan bisa punya beberapa baris (per SO) — testid tetap unik
   return (
-    <div data-testid={`${testPrefix}-row-${row.row_key || row.ref_id}`}
+    <div data-testid={`${testPrefix}-row-${rk}`}
          className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2.5 hover:bg-[#FAFBFC]">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span data-testid={`${testPrefix}-number-${row.ref_id}`}
+          <span data-testid={`${testPrefix}-number-${rk}`}
                 className="text-[11.5px] font-bold text-[#0058CC]">{row.number}</span>
           {row.badge && (
-            <span data-testid={`${testPrefix}-badge-${row.ref_id}`}
+            <span data-testid={`${testPrefix}-badge-${rk}`}
                   className={`rounded-full border px-1.5 py-0.5 text-[9.5px] font-bold ${badgeClass(row.badge)}`}>
               {badgeLabel(row.badge)}
             </span>
           )}
           {row.revision_count !== undefined && row.revision_count !== null && (
-            <RevisionBadge count={row.revision_count} size="xs" testId={`${testPrefix}-revision-${row.ref_id}`} />
+            <RevisionBadge count={row.revision_count} size="xs" testId={`${testPrefix}-revision-${rk}`} />
           )}
           <span className={`rounded-full border px-1.5 py-0.5 text-[9.5px] font-bold ${age.cls}`}
                 title="Umur baris ini">{age.label}</span>
@@ -181,19 +199,19 @@ function QueueRow({ row, queue, isQty, busy, onAction, testPrefix }) {
         {row.subtitle && (
           <p className="truncate text-[10.5px] text-[#8E8E93]">{row.subtitle}</p>
         )}
-        <p className="text-[10px] text-[#6B6B73]" data-testid={`${testPrefix}-time-${row.ref_id}`}>
+        <p className="text-[10px] text-[#6B6B73]" data-testid={`${testPrefix}-time-${rk}`}>
           {row.at || row.created_at || row.updated_at
             ? `Masuk ${fmtWhen(row.at || row.created_at || row.updated_at)}`
             : `Masuk ± ${sinceFromAge(row.age_days)}`} · menunggu {age.label}
         </p>
       </div>
 
-      <span data-testid={`${testPrefix}-value-${row.ref_id}`}
+      <span data-testid={`${testPrefix}-value-${rk}`}
             className="w-[130px] shrink-0 text-right text-[12px] font-semibold tabular-nums">
         {value}
       </span>
 
-      <button type="button" data-testid={`${testPrefix}-action-${row.row_key || row.ref_id}`}
+      <button type="button" data-testid={`${testPrefix}-action-${rk}`}
               className="btn-secondary btn-xs shrink-0" disabled={busy} onClick={onAction}
               title={queue?.hint || ""}>
         {busy ? "Memproses…" : (row.action || queue?.action_label || "Buka")}
