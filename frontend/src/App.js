@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { openLogistics } from "./features/logistics/logisticsDeepLink";
 import "./App.css";
 import { LoginScreen, MetricCard, Sidebar, TopBar } from "./components/CoreWidgets";
 import { formatQty } from "./utils/formatters";
@@ -314,6 +315,7 @@ function App() {
   const openDocument = (link) => {
     if (!link || !link.view) return;
     handleNavSelect(link.nav_id || link.view, link.view, link.tab);
+    if (link.logistics) openLogistics(link.logistics);   // F-06 — saring daftar Logistik (mis. nomor SO untuk POD)
     if (link.focus_id) setFocusDoc({ focus_type: link.focus_type, focus_id: link.focus_id, number: link.number || "", tab: link.tab || "", from_trace: link.from_trace || null });
     else setFocusDoc(null);
   };

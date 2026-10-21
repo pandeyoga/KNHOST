@@ -982,3 +982,13 @@ async def dispatch_payment_release_revoke(order_id: str, body: _GateReason, requ
     actor = await require_permission(request, "order", "release_unpaid")
     from services import dispatch_payment_gate as gate
     return await gate.revoke(await _gate_order(order_id, request), body.reason, actor)
+
+
+@router.get("/sales-orders/{order_id}/pod-progress")
+async def pod_progress(order_id: str, request: Request) -> Dict[str, Any]:
+    """F-06 — berapa Surat Jalan SO ini yang sudah ber-POD (SO tertutup otomatis saat semuanya ber-POD)."""
+    from dependencies import require_any_permission
+    await require_any_permission(request, [("order", "view"), ("logistics", "view")])
+    await _gate_order(order_id, request)
+    from services import so_delivery_service as sod
+    return await sod.pod_progress(order_id)

@@ -179,6 +179,11 @@ export function sinceFromAge(days) {
 
 /** Tujuan tombol aksi Pelacak SO: tahap gudang → Barang Keluar, selain itu → detail SO. */
 export function soTrackerLink(r) {
+  // F-06 — tahap "Bukti terima (POD)" dikerjakan di Logistik: buka daftar pengiriman tersaring nomor SO.
+  if ((r.owner_roles || []).includes("logistics")) {
+    return { view: "logistics", nav_id: "logistics", focus_type: "sales_order", focus_id: "", number: r.number,
+             logistics: { search: r.number } };
+  }
   if ((r.owner_roles || []).some((x) => x === "warehouse_admin" || x === "warehouse")) {
     return { view: "wms-outbound", nav_id: "wms-operations", focus_type: "sales_order", focus_id: r.id, number: r.number };
   }

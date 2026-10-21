@@ -598,6 +598,9 @@ async def transition(delivery_id: str, payload: Dict[str, Any], actor_name: str)
     if to in ("delivered", "failed"):
         await _notify_sales(doc, to, note, actor_name)
     if to in ("delivered", "completed"):
+        # F-06 (keputusan owner Q-01a) — semua SJ SO ber-POD → SO otomatis Terkirim (aktor = petugas POD).
+        from services import so_delivery_service as _sod
+        await _sod.on_pod(order_ids_of(doc), actor_name)
         for oid in order_ids_of(doc):
             try:
                 from services import special_order_phase2 as _p2
@@ -633,6 +636,8 @@ async def pickup_handover(delivery_id: str, payload: Dict[str, Any], actor_name:
                                      from_status="prepared", to_status="delivered")}})
     await db.shipments.update_many({"id": {"$in": doc.get("shipment_ids") or []}}, {"$set": {"logistics_status": "delivered"}})
     await _notify_sales(doc, "delivered", f"diambil oleh {picker}", actor_name)
+    from services import so_delivery_service as _sod   # F-06 — serah terima = POD
+    await _sod.on_pod(order_ids_of(doc), actor_name)
     if doc.get("order_id"):  # CX-12 — pickup memakai kebijakan fulfillment yang sama
         try:
             from services import special_order_phase2 as _p2

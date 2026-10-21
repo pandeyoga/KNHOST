@@ -16,6 +16,7 @@ import { openLogistics } from "../logistics/logisticsDeepLink";
 import { STATUS_LABEL as LG_LABEL, STATUS_PILL as LG_PILL } from "../logistics/logisticsApi";
 import SoPaymentPanel from "../finance/payments/SoPaymentPanel";
 import DispatchPaymentGatePanel from "./DispatchPaymentGatePanel";
+import PodProgressNote from "./PodProgressNote";
 import SoApprovalsPanel from "./SoApprovalsPanel";
 import OrderFulfillmentBadges from "./OrderFulfillmentBadges";
 // FASE E-9 (E9.2 · US23/US24) — pita "diambil dari PT lain lewat KSC/IC-000xx".
@@ -563,6 +564,9 @@ export function OrderDetailPanel({
         )}
 
         <OrderFulfillmentBadges order={sel} />
+
+        {/* F-06 — SO Dikirim: progres bukti terima (POD) per Surat Jalan; tertutup otomatis saat lengkap */}
+        {sel.status === "shipped" && <PodProgressNote key={sel.id} orderId={sel.id} />}
 
         {/* FASE G-1 — Koreksi & Amandemen: tidak ada perubahan angka secara diam-diam. */}
         <AmendmentTrailPanel order={sel} currentUser={user} onRefresh={onRefresh} />

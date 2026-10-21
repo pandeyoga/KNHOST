@@ -51,8 +51,9 @@ def next_step(o: Dict[str, Any], hold: Optional[Dict[str, Any]] = None) -> Dict[
         return {"step": "Kirim sisa barang", "roles": ["warehouse_admin", "warehouse"], "action": "Buka tugas gudang"}
     if outstanding > 0.009:
         return {"step": "Ditagih & dilunasi", "roles": ["finance"], "action": "Tagih"}
-    return {"step": "Dikonfirmasi diterima pelanggan", "roles": ["logistics", "warehouse_admin"],
-            "action": "Konfirmasi diterima"}
+    # F-06 — POD semua Surat Jalan menutup SO otomatis; yang ditunggu = bukti terima di Logistik.
+    return {"step": "Bukti terima (POD) semua Surat Jalan — SO tertutup otomatis", "roles": ["logistics", "warehouse_admin"],
+            "action": "Catat POD"}
 
 
 def _age(ts: str, now: datetime) -> int:
