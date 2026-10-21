@@ -11,20 +11,23 @@ SUKACITA = "pilih **Kerja di: Sukacita** di banner atas bila masuk sebagai *Semu
 
 
 def pos_order(term="Kredit NET 30 Hari", qc="Tanpa QC", fulfil="kirim", product="CERUTY PREMIUM", tax=False,
-              extra_step2="", extra_review="", review_hint="", ui="S1", customer="Toko Kain Sejahtera · CUST-0001"):
+              extra_step2="", extra_review="", review_hint="", ui="HP", customer="Toko Kain Sejahtera"):
+    """Sales membuat pesanan di aplikasi HP (tampil otomatis di layar HP). Checkout = layar yang sama dengan desktop."""
+    ui = "HP" if ui else ""
     rows = [
-        ("Sales", "`Penjualan › POS` → bar **PELANGGAN**",
-         f"Pilih pelanggan *{customer}*.",
-         "Pelanggan terisi + keterangan sumber harga (mis. *belum punya harga langganan — memakai harga PT/umum*).", ui),
-        ("Sales", "`POS` → kolom cari → kartu produk → [[Pilih Varian & Detail]]",
-         f"Cari *{product}*. Di dialog: pilih warna, **Jenis pesanan: Pesanan Biasa (PO)**, **Per yard** (atau *Beli per Roll*), "
-         "isi QTY → [[Tambah ke Keranjang]].",
-         "Bila qty tidak pas roll muncul dialog **Genapkan ke Roll Utuh**.", ui),
+        ("Sales", "HP: tab **Katalog** → kolom *Cari produk, SKU, warna…* → kartu produk → [[Pilih]]",
+         f"Cari *{product}* (hasil tampil di bawah *Produk Terlaris*).",
+         "Lembar produk: harga/yard, stok, pilihan **Warna**, *Order biasa / Order sample*, *Per yard / Per Roll*, QTY.", ui),
+        ("Sales", "lembar produk → [[Tambah … yard · Rp …]]",
+         "Pilih warna, **Order biasa**, **Per yard**, isi QTY.",
+         "Bila qty tidak pas roll muncul **Genapkan ke Roll Utuh** (ke atas / ke bawah / potong).", ui),
         ("Sales", "dialog **Genapkan ke Roll Utuh** → [[Pakai Opsi Ini]]",
-         "Tanyakan pelanggan lalu pilih: *Genapkan ke atas* / *Genapkan ke bawah* / *Potong roll (pas)*.",
-         "Lencana keranjang bertambah; banner *Keranjang: ORDER BIASA (PO)*.", ui),
-        ("Sales", "klik **Keranjang** → Checkout langkah 1 *Pelanggan & Alamat* → [[Lanjut]]",
-         "Periksa pelanggan & alamat kirim (*Toko Utama · Pak Hendra*).", "Langkah 2 *Termin & Lot* terbuka.", ui),
+         "Tanyakan pelanggan lalu pilih *Genapkan ke atas* atau *Genapkan ke bawah*. *Potong roll (pas)* terkunci untuk Sales "
+         "(hanya peran berizin potong, mis. Admin Sales).",
+         "Tab **Keranjang** berlencana jumlah baris; isi keranjang: produk, *1 roll dipilih*, nilai.", ui),
+        ("Sales", "tab **Keranjang** → [[Lanjut ke Checkout]] → langkah 1 → [[Lanjut]]",
+         f"Pilih pelanggan *{customer}* & alamat kirim (*Toko Utama · Pak Hendra*).",
+         "Item, nomor roll & qty (mis. 50,95 yard) tampil; langkah 2 terbuka.", ui),
         ("Sales", "Checkout langkah 2 *Termin & Lot* → [[Lanjut]]",
          f"**TERMIN PEMBAYARAN**: *{term}*. **REQUEST QC SEBELUM KIRIM**: *{qc}*." + (f" {extra_step2}" if extra_step2 else ""),
          "Jumlah roll tersedia tampil per item; termin & QC terpilih.", ui),
@@ -37,7 +40,7 @@ def pos_order(term="Kredit NET 30 Hari", qc="Tanpa QC", fulfil="kirim", product=
                  meth + (" Nyalakan **Minta Faktur Pajak** (pelanggan minta faktur)." if tax else "") +
                  (f" {extra_review}" if extra_review else ""),
                  (f"{review_hint} " if review_hint else "") +
-                 "Pesan *KSC/SO-xxxxx dibuat (reserved) … Grand total Rp …*; pindah ke daftar Pesanan. **Catat nomor SO.**", ui))
+                 "Pesan *KSC/SO-xxxxx dibuat (reserved) … Grand total Rp …*; pindah ke tab **Pesanan**. **Catat nomor SO.**", ui))
     return rows
 
 
@@ -133,12 +136,23 @@ def pay(ui="S1", method="Transfer Bank", queue="Uang masuk perlu dicatat & dialo
              "*Pembayaran KSC/AR-xxxxx (Rp …) dicatat untuk …* Baris hilang dari antrean.", ui)]
 
 
-def journey(ui="S1", extra=""):
-    return [("Sales", "`Penjualan › Pesanan` → cari nomor SO → [[Perjalanan Pesanan]]",
-             "Periksa seluruh tahap dari pesanan sampai dibayar.",
-             "**9/9 tahap**, *Tahap sekarang: Selesai*; Nilai = Sudah dibayar, **Sisa tagihan Rp 0**; Dipesan · Diverifikasi · "
-             "Disetujui · Dikonfirmasi · Disiapkan · Dikirim (SJ) · Diterima · Ditagih (Faktur Komersial) · Dibayar *Lunas*."
-             + (f" {extra}" if extra else ""), ui)]
+def journey(ui="HP", extra=""):
+    return [("Sales", "HP: tab **Pesanan** → kolom cari nomor SO → ketuk kartu SO",
+             "Periksa kartu SO: item, total, termin, dan **PERJALANAN PESANAN**.",
+             "Perjalanan **100%**: Dipesan · Diverifikasi Admin Sales · Disetujui · Dikonfirmasi · Disiapkan gudang · Dikirim (SJ) · "
+             "Diterima pelanggan · Ditagih (Faktur Komersial) · Dibayar *Lunas*; **Sisa tagihan Rp 0**; status kartu *Lunas*."
+             + (f" {extra}" if extra else ""), "HP" if ui else "")]
+
+
+def sales_so_approval(kind="harga", ui="HP", price="Rp 17.500"):
+    """Sales di HP: pengajuan per SO (menahan SO sampai diputus)."""
+    if kind == "harga":
+        return [("Sales", "HP: tab **Pesanan** → ketuk SO → kotak **Persetujuan** → [[Ajukan Harga Khusus]] → [[Ajukan]]",
+                 f"Isi harga yang diminta pelanggan ({price}), lampirkan bukti chat/penawaran (**wajib**), [[Atur lebih lanjut]] → alasan.",
+                 "Entri *Persetujuan Harga Khusus · Rp 20.000 → … · MENUNGGU*; kartu SO *Menunggu approval harga khusus*.", ui)]
+    return [("Sales", "HP: tab **Pesanan** → ketuk SO → kotak **Persetujuan** → [[Minta Persetujuan Kredit]]",
+             "Isi alasan (mis. *pelanggan lama, pembayaran lancar*) → kirim.",
+             "Entri *Persetujuan Kredit (Melebihi Batas) · MENUNGGU*; SO *Menunggu approval kredit*.", ui)]
 
 
 def deliver_and_pay(mode="ekspedisi", ui="S1", tax=False, pay_ui=None):

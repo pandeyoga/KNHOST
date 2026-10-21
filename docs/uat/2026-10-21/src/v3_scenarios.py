@@ -54,37 +54,35 @@ def _s3():
              ("Admin Gudang", "detail pengiriman → [[Verifikasi & serahkan]]",
               "Pelanggan datang: ketik **kode pickup** + nama & nomor identitas pengambil.",
               "Kode salah → *KODE PICKUP SALAH — barang tidak boleh diserahkan*. Benar → *Diserahkan*; SO *Selesai*.", "")] +
-            s.pay(method="Tunai") + s.journey())
+            s.pay(method="Tunai") + s.journey(""))
 
 
 def _s4():
-    return (s.pos_order(ui="", extra_step2="Di kartu item → [[Minta Harga Khusus]]: isi harga per yard yang diminta pelanggan, "
-                                            "**alasan (wajib)**, lampirkan bukti (chat pelanggan) → kirim.",
-                        review_hint="Grand total masih memakai harga normal sampai harga khusus disetujui.") +
+    return (s.pos_order() + s.sales_so_approval("harga", price="Rp 17.500") +
             s.verify() +
             s.submit(gate_note="SO *Menunggu persetujuan* (*Menunggu approval harga khusus*); pindah ke antrean **Menunggu keputusan manajer**.") +
             [("Manajer", "`Meja Saya` → **Permintaan harga khusus** → [[Putuskan]] (atau `Pusat Persetujuan › Inbox Persetujuan`)",
-              "Bandingkan harga normal vs diminta, margin, alasan & bukti → [[Tolak]] + catatan (mis. *margin terlalu tipis*).",
-              "Entri *ditolak* + pemutus & catatan. Sales mendapat notifikasi.", ""),
-             ("Sales", "`Penjualan › Pesanan` → detail SO → bagian **Persetujuan** → ajukan harga khusus lagi",
-              "Nego ulang dengan pelanggan → ajukan harga baru + alasan.",
-              "Entri lama tetap *ditolak* (riwayat); entri baru *pending*. SO **tidak terkunci** (F-09 diperbaiki).", ""),
+              "Bandingkan harga normal vs diminta, alasan & bukti → [[Tolak]] + catatan (mis. *margin terlalu tipis*).",
+              "Entri *ditolak* + pemutus & catatan.", ""),
+             ("Sales", "HP: tab **Pesanan** → ketuk SO → kotak **Persetujuan** → [[Ajukan Harga Khusus]] → [[Ajukan]]",
+              "Baca entri **DITOLAK** + *Catatan pemutus*. Nego ulang dengan pelanggan → ajukan harga baru (mis. Rp 19.000) + bukti.",
+              "Entri lama *Digantikan pengajuan baru*; entri baru *MENUNGGU*. SO tidak terkunci (F-09).", "HP"),
              ("Manajer", "`Meja Saya` → **Permintaan harga khusus** → [[Putuskan]] → [[Setujui]]",
               "Setujui harga baru + catatan.",
-              "Harga baris diganti harga khusus; subtotal, PPN, grand total dihitung ulang; **SO otomatis Disetujui**.", "")] +
+              "Harga baris = harga khusus; subtotal, PPN, grand total dihitung ulang; **SO otomatis Disetujui**.", "")] +
             s.confirm() + s.pick() + s.dispatch() + s.logistics("ekspedisi") +
             s.pay() + s.journey("", "Langkah *Disetujui* mencatat manajer pemutus harga khusus."))
 
 
 def _s5():
-    return ([(KANDA_SALES, "`Penjualan › POS` (badan usaha **Kanda Fabric**) → bar **PELANGGAN**",
-              "Pilih *CV Garmen Soreang Jaya* (limit kredit **Rp25 jt**).", "Pelanggan terisi.", ""),
-             (KANDA_SALES, "cari *LYFLEX ACTIVE BEIGE A* → [[Pilih Varian & Detail]] → qty kg → [[Tambah ke Keranjang]] → Checkout",
-              "Isi qty sehingga nilai melewati limit (mis. ±700 kg × Rp41 rb ≈ Rp28,7 jt). Termin *Kredit NET 30 Hari*.",
-              "Langkah 3 *Review*: kotak kredit **Peringatan / Terblokir kredit** dengan alasan, AR vs limit, proyeksi.", ""),
-             (KANDA_SALES, "Checkout langkah 3 → [[Buat Sales Order]] (bila terblokir: ajukan persetujuan kredit + alasan)",
-              "Buat SO; isi alasan permintaan kredit (mis. *pelanggan lama, pembayaran lancar*).",
-              "SO sub-status *Menunggu approval kredit*; entri **Approval Kredit (Over-limit)** dibuat.", "")] +
+    return ([(KANDA_SALES, "HP: tab **Katalog** → cari *LYFLEX ACTIVE BEIGE A* → [[Pilih]] → qty kg → [[Tambah …]] → tab **Keranjang** → [[Lanjut ke Checkout]]",
+              "Langkah 1: pelanggan *CV Garmen Soreang Jaya* (limit kredit **Rp25 jt**). Qty sampai nilai melewati limit "
+              "(mis. ±700 kg × Rp41 rb ≈ Rp28,7 jt). Langkah 2: termin *Kredit NET 30 Hari*.",
+              "Langkah 3 *Review*: kotak kredit **Peringatan / Terblokir kredit** + alasan, AR vs limit, proyeksi.", ""),
+             (KANDA_SALES, "Checkout langkah 3 → [[Buat Sales Order]]", "Buat SO.", "SO terbentuk; kartu SO menandai masalah kredit.", ""),
+             (KANDA_SALES, "HP: tab **Pesanan** → ketuk SO → kotak **Persetujuan** → [[Minta Persetujuan Kredit]]",
+              "Isi alasan (mis. *pelanggan lama, pembayaran lancar*) → kirim.",
+              "Entri *Persetujuan Kredit (Melebihi Batas) · MENUNGGU*; SO *Menunggu approval kredit*.", "")] +
             s.verify("", KANDA_ADM) +
             s.submit("", KANDA_ADM, gate_note="SO *Menunggu persetujuan* (kredit). Approve langsung oleh Admin Sales ditolak.") +
             [("Manajer", "`Pusat Persetujuan › Inbox Persetujuan` (atau `Meja Saya`) → entri kredit → [[Putuskan]] → [[Setujui]]",
@@ -109,12 +107,12 @@ def _s6():
              ("Admin Gudang", "SPK → [[Keputusan]] → lulus / tolak per roll → tutup SPK",
               "Satu keputusan SPK. Roll tidak lulus → Admin Sales **Ganti Roll** lalu QC ulang roll pengganti.",
               "SPK *Selesai*; pesan tahan QC hilang dari panel kirim.", "")] +
-            s.dispatch() + s.logistics("ekspedisi") + s.pay() + s.journey())
+            s.dispatch() + s.logistics("ekspedisi") + s.pay() + s.journey(""))
 
 
 def _s7():
-    return ([("Sales", "`Penjualan › POS` → pelanggan *Toko Kain Sejahtera* → cari *ALICE KNIT (94139-45) 14 A* → qty **100 kg** → Checkout",
-              "Langkah 2: aktifkan **backorder** untuk baris yang kurang stok. Langkah 3 → [[Buat Sales Order]].",
+    return ([("Sales", "HP: tab **Katalog** → cari *ALICE KNIT (94139-45) 14 A* → [[Pilih]] → qty **100 kg** → tab **Keranjang** → [[Lanjut ke Checkout]]",
+              "Langkah 1: pelanggan *Toko Kain Sejahtera*. Langkah 2: aktifkan **backorder** untuk baris yang kurang stok. Langkah 3 → [[Buat Sales Order]].",
               "Tanpa backorder → ditolak *Stok milik entitas tidak mencukupi … Aktifkan backorder*. Dengan backorder → SO "
               "**Menunggu stok**; *Sebagian via backorder (disetujui)*.", "")] +
             s.verify() +
@@ -134,7 +132,7 @@ def _s7():
 
 
 def _s8():
-    return ([("Sales", "`Penjualan › POS` → *ALICE KNIT 14 A* **100 kg** + backorder → [[Buat Sales Order]]",
+    return ([("Sales", "HP: tab **Katalog** → *ALICE KNIT 14 A* **100 kg** → Checkout + backorder → [[Buat Sales Order]]",
               "Sama dengan S7 langkah 1.", "SO **Menunggu stok**.", "")] +
             s.verify("") +
             [("Admin Sales", "`Meja Admin Sales` → **Perlu dipenuhi (kurang stok)** → [[Putuskan pemenuhan]]",
@@ -170,7 +168,7 @@ def _s8():
 
 
 def _s9():
-    return ([("Sales", "`Penjualan › POS` → artikel hasil proses (mis. printing dari greige) + backorder → [[Buat Sales Order]]",
+    return ([("Sales", "HP: tab **Katalog** → artikel hasil proses (mis. printing dari greige) → Checkout + backorder → [[Buat Sales Order]]",
               "Pesan qty yang belum ada stok jadinya.", "SO **Menunggu stok**.", "")] +
             s.verify("") +
             [("Admin Sales", "**Perlu dipenuhi (kurang stok)** → [[Putuskan pemenuhan]] → *PO ke supplier* (jalur dipilih Pembelian)",
@@ -191,7 +189,7 @@ def _s9():
 
 
 def _s10():
-    return ([("Sales", "`Penjualan › POS` → SO berisi produk woven + knit + printing yang stoknya di **Rancamalang** → [[Buat Sales Order]]",
+    return ([("Sales", "HP: tab **Katalog** → produk woven + knit + printing yang stoknya di **Rancamalang** → Checkout → [[Buat Sales Order]]",
               "Pengiriman ke pelanggan Jakarta.", "SO *Dicadangkan*.", "")] +
             s.admin_sales("") +
             [(WH_RCM, "`Meja Saya` → **Tugas gudang** → satu tugas **per gudang** (Woven / Knitting / Printing) → [[Kerjakan]] → [[Ambil]] → [[Kirim Pengambilan]]",
@@ -208,11 +206,11 @@ def _s10():
 
 
 def _sample(paid):
-    rows = [("Sales", "`Penjualan › POS` → kartu produk → [[Pilih Varian & Detail]] → **Jenis pesanan: Pesanan Sample**",
+    rows = [("Sales", "HP: tab **Katalog** → kartu produk → [[Pilih]] → **Order sample**",
              "Pilih jenis **Standar** (woven ≤ 5 yd, knit ≤ 2 kg) / **Hanger** (≤ 0,5 yd) / **Catalogue**; qty → [[Tambah ke Keranjang]]. "
              "Sample tidak bisa dicampur baris biasa.",
              "Keranjang *ORDER SAMPLE*; melebihi batas → ditolak (*jual sebagai ECER berbayar*).", ""),
-            ("Sales", "Checkout → pilih **" + ("Berbayar" if paid else "Gratis") + "** → langkah 3: *Disesuaikan Admin Sample* / *Pilih tanggal* → [[Buat]]",
+            ("Sales", "tab **Keranjang** → [[Lanjut ke Checkout]] → pilih **" + ("Berbayar" if paid else "Gratis") + "** → langkah 3: *Disesuaikan Admin Sample* / *Pilih tanggal* → [[Buat]]",
              "Tanggal kirim sample boleh diserahkan ke Admin Sample.",
              "Nomor **KSC/SOS-xxxxx** (terpisah dari SO); harga " + ("dari master harga sample." if paid else "tampil *Free*."), "")]
     if paid:
@@ -236,19 +234,20 @@ def _sample(paid):
     if paid:
         rows += [("Finance", "`Meja Finance` → **Uang masuk** → [[Catat kwitansi]] atas nilai **aktual**",
                   "Catat pembayaran sample.", "SOS lunas.", "")]
-    rows += [("Sales", "`Penjualan › Pesanan Sample` → buka SOS", "Periksa status akhir.",
+    rows += [("Sales", "HP: tab **Lainnya** › **Pesanan Sample** → ketuk SOS", "Periksa status akhir.",
               "SOS *Selesai*" + (" & lunas." if paid else " (tanpa tagihan)."), "")]
     return rows
 
 
 def _s13():
     return [
-        ("Sales", "`Penjualan › Pesanan Khusus` → [[Buat Pesanan Khusus]]",
-         "Isi pelanggan, judul, kebutuhan umum, tanggal target, catatan.", "Draf **SORD-yymmdd-xxxx**.", ""),
-        ("Sales", "form OD → bagian Item → tambah **A 100 yd** (custom warna dari induk) & **B 200 yd** (desain pelanggan, printing); unggah referensi",
-         "Per item: sumber, jenis permintaan (printing / labdip / handfeel / proofing), spesifikasi, qty + unit.",
-         "Dua item tersimpan terpisah; referensi terkait item.", ""),
-        ("Sales", "detail OD → [[Simpan pesanan khusus]] → **Ajukan**", "Ajukan OD.", "*Menunggu persetujuan*.", ""),
+        ("Sales", "HP: tab **Lainnya** › **Pesanan Khusus (OD)** → [[Ajukan pesanan khusus]]",
+         "Bagian 1: pelanggan, judul permintaan. Bagian 2: **Item 1** = A 100 yd (sumber *Induk produk (custom warna)*), "
+         "[[Tambah item]] **Item 2** = B 200 yd (sumber *Referensi / desain pelanggan*); jenis uji Printing / Labdip / Handfeel; satuan.",
+         "Formulir 6 bagian; pesan *Belum lengkap: …* menyebut isian yang kurang.", ""),
+        ("Sales", "formulir OD → bagian 3–6 → centang *Langsung ajukan untuk persetujuan Manajer* → [[Simpan pesanan khusus]]",
+         "Referensi pelanggan, warna target, foto swatch (opsional), **tenggat kirim**, catatan.",
+         "**SORD-yymmdd-xxxx** *Menunggu persetujuan*.", ""),
         ("Manajer", "`Pusat Persetujuan` / detail OD → [[Setujui]]", "Rantai persetujuan berjenjang.",
          "OD *Disetujui* → otomatis **Permintaan Desain (DSR)** untuk printing & **Permintaan Sample R&D** untuk labdip/handfeel.", ""),
         ("MD", "`Desainer › Permintaan Desain` → [[Tugaskan]]", "Pilih desainer & tenggat.", "DSR *Ditugaskan*.", ""),
@@ -261,7 +260,7 @@ def _s13():
          "Periksa spesifikasi (diwarisi OD), pilih supplier peserta & jenis uji wajib lini.", "Permintaan *Terkirim*.", ""),
         ("R&D", "Permintaan Sample → [[Catat Pengiriman Sample]] → [[Nilai]] → [[Pilih supplier pemenang]] → [[Tandai Sample Jadi]]",
          "Catat sample datang, nilai per jenis, pilih pemenang.", "OD fase *Sample siap*.", ""),
-        ("Sales", "detail OD → [[Kirim ke Pelanggan]]", "Kirim sample fisik ke pelanggan.", "OD *Menunggu ACC pelanggan*.", ""),
+        ("Sales", "HP: tab **Lainnya** › **Pesanan Khusus (OD)** → ketuk OD → [[Kirim ke Pelanggan]]", "Kirim sample fisik ke pelanggan.", "OD *Menunggu ACC pelanggan*.", ""),
         ("Admin Sales", "`Meja Admin Sales` → **Pesanan khusus — menunggu ACC pelanggan** → [[Catat ACC]]",
          "Catat keputusan pelanggan **ACC** + tanggal, catatan, bukti (foto/WA).", "OD lanjut ke kunci harga.", ""),
         ("Admin Sales", "`Meja Admin Sales` → **Pesanan khusus — perlu kunci harga** → [[Kunci harga]]",
@@ -277,7 +276,7 @@ def _s13():
 
 def _retur_front():
     return [
-        ("Sales", "`Retur › Retur Pelanggan` → [[Buat Retur]] → pilih SO yang sudah Selesai (mis. SO dari S1)",
+        ("Sales", "HP: tab **Pesanan** → ketuk SO yang sudah Selesai (mis. dari S1) → [[Ajukan retur]] (atau **Lainnya** › **Retur Penjualan** → [[Buat retur jual]])",
          "Daftar roll yang benar-benar terkirim tampil otomatis. Pilih roll & qty klaim, kondisi, **sebab keluhan**, catatan, foto → ajukan.",
          "**SRET-xxxxx** *Menunggu persetujuan*. Klaim > 21 hari dari SJ → ditolak / [[Ajukan pengecualian]].", ""),
         ("Manajer", "`Meja Saya` → **Retur menunggu ACC** → [[Putuskan]] → [[Setujui]]",

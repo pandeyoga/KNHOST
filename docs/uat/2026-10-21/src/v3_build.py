@@ -18,6 +18,7 @@ import page  # noqa: E402
 from page import head, fmt, role_cell  # noqa: E402
 import sched  # noqa: E402
 import v3_scenarios as V  # noqa: E402
+import v3_visual as VIS  # noqa: E402
 
 OUT_DIR = os.path.abspath(os.path.join(HERE, ".."))
 NAME = "Panduan_UAT_E2E_ERP_Kain_Nusantara_v3.0"
@@ -33,16 +34,19 @@ table.v3 tr:nth-child(even) td { background:#F8FAFC; }
 .res { font-size:6.9pt; color:#334155; line-height:1.6; } .res .ln { display:inline-block; border-bottom:1px solid #94A3B8; width:20mm; }
 .grp1 { background:#EFF6FF; } .grp2 { background:#FFF7ED; }
 .big { font-size:9.2pt; } .big li { margin-bottom:1.1mm; }
-"""
+.dev { display:inline-block; border-radius:2mm; padding:0 1.2mm; font-size:6.2pt; font-weight:700; color:#FFF; margin-top:.4mm; }
+""" + VIS.CSS
 GROUP = {1: "Kelompok 1 · Penjualan & Retur", 2: "Kelompok 2 · Hulu, Pengadaan & Sample"}
 UI_FULL = {"full": ("g", "Cek UI: seluruh langkah sudah dijalankan di layar"),
-           "partial": ("a", "Cek UI: sebagian (langkah bersama S1)"),
+           "partial": ("a", "Cek UI: sebagian langkah"),
            "none": ("r", "Cek UI: belum dijalankan di layar")}
 
 
 def ui_cell(u):
     if u in ("S1", "S2"):
         return f'<span class="t-ok">✓ dicek di layar ({u})</span>'
+    if u == "HP":
+        return '<span class="t-ok">✓ dicek di layar HP</span>'
     return '<span class="t-na">○ belum dicek di layar</span>'
 
 
@@ -61,7 +65,8 @@ def steps_table(code, rows):
         acct = None
         if isinstance(role, tuple):
             role, acct = role
-        out.append(f'<tr><td class="no">{code}-{i:02d}</td><td>{role_cell(role, acct)}</td><td>{fmt(nav)}</td>'
+        dev = '<span class="dev" style="background:#2563EB">HP</span>' if role == "Sales" else '<span class="dev" style="background:#64748B">Desktop</span>'
+        out.append(f'<tr><td class="no">{code}-{i:02d}</td><td>{role_cell(role, acct)}{dev}</td><td>{fmt(nav)}</td>'
                    f"<td>{fmt(act)}</td><td>{fmt(exp)}</td><td>{ui_cell(ui)}</td><td>{res_cell()}</td></tr>")
     out.append("</tbody></table>")
     return "\n".join(out)
@@ -92,7 +97,7 @@ def how_to():
 <div class="strip c2">
 <div class="box"><b class="t">Langkah kerja penguji</b><ol class="big" style="margin:0;padding-left:4mm">
 <li>Buka halaman alur kelompok Anda (lihat <b>Jadwal</b>). Kerjakan baris <b>dari atas ke bawah</b>.</li>
-<li>Kolom <b>Peran · akun</b> menunjukkan siapa yang mengerjakan baris itu. Ganti pengguna = <b>Keluar</b> lalu masuk dengan akun peran tersebut.</li>
+<li>Kolom <b>Peran · akun</b> menunjukkan siapa yang mengerjakan baris itu dan perangkatnya: <b>Sales memakai HP</b> (aplikasi HP tampil otomatis di layar HP); peran lain memakai <b>desktop</b>. Ganti pengguna = <b>Keluar</b> lalu masuk dengan akun peran tersebut.</li>
 <li>Kolom <b>Buka</b> menulis jalurnya: <span class="nav">menu › antrean</span> lalu tombol <span class="btn">Tombol</span> yang diklik.</li>
 <li>Bandingkan layar dengan kolom <b>Hasil yang harus terlihat</b>. Sama → centang <b>Lulus</b>; berbeda / tombol tidak ada → <b>Gagal</b> + catat di lembar temuan.</li>
 <li>Tulis nomor dokumen yang muncul (SO, SJ, LG, AR, …) di kolom <b>No. dok</b> — langkah berikutnya mencari dokumen itu.</li>
@@ -100,7 +105,8 @@ def how_to():
 <div class="box a"><b class="t">Tips layar yang sering ditanyakan</b><ul class="big">
 <li>Akun Finance / Admin Gudang / Admin masuk sebagai <b>Semua Entitas</b> (hanya melihat). Sebelum membuat dokumen klik <b>Kerja di: Sukacita</b> (atau PT yang dipakai alur) di banner atas.</li>
 <li>Mencari dokumen di antrean meja: ketik nomor SO/SJ di <b>kolom cari</b> di atas antrean.</li>
-<li>Gudang tanpa handheld RFID: kirim ditolak <i>roll belum bertag RFID aktif</i> → Admin Gudang memberi <span class="btn">Override</span> dengan alasan (lihat S1).</li>
+<li>Gudang tanpa tag RFID: ambil roll tetap bisa (scan/ketik nomor roll atau <span class="btn">Ambil</span>). Saat <b>kirim</b> ditolak <i>roll belum bertag RFID aktif</i> → Admin Gudang mengisi alasan lalu <span class="btn">Override</span> di <i>Pemeriksaan Muat Akhir</i>, kirim lanjut.</li>
+<li>Roll hasil potong: potong & verifikasi label di <span class="nav">Lokasi Rak › Antrean Potong</span> (scan/ketik nomor label roll anak) — tidak perlu RFID.</li>
 <li>Sandi akun demo dibagikan fasilitator; semua akun peran memakai sandi yang sama.</li>
 </ul></div></div>
 <div class="strip c3">
@@ -118,7 +124,7 @@ def overview(pages):
         n = len(fn())
         k, label = UI_FULL[ui]
         pg = pages.get(f"{code} — {title}", "")
-        mark = {"full": '<span class="t-ok">✓ semua langkah</span>', "partial": '<span class="t-warn">◐ langkah bersama S1</span>',
+        mark = {"full": '<span class="t-ok">✓ semua langkah</span>', "partial": '<span class="t-warn">◐ sebagian</span>',
                 "none": '<span class="t-na">○ belum</span>'}[ui]
         rows.append(f'<tr class="grp{grp}"><td class="no">{code}</td><td><b>{escape(title)}</b> — <span class="small">{escape(when)}</span></td>'
                     f"<td>K{grp} · <b>{start}–{_end(start, mins)}</b></td><td class='small'>{escape(roles)}</td>"
@@ -143,7 +149,7 @@ def schedule():
         rows.append(("16.30", "17.00", "Rekap: hitung Lulus/Gagal/Terblokir, bacakan temuan, putuskan tindak lanjut", "Fasilitator · pemilik proses · IT"))
         rows.sort(key=lambda r: r[0])
         body = "".join(f"<tr><td class='time'>{a}–{b}</td><td>{c}</td><td class='small'>{d}</td></tr>" for a, b, c, d in rows)
-        return (f'<h3>{GROUP[grp]}</h3><table class="grid sched"><colgroup><col style="width:13%"><col style="width:55%"><col style="width:32%"></colgroup>'
+        return (f'<h3>{GROUP[grp]}</h3><table class="grid sched compact"><colgroup><col style="width:13%"><col style="width:55%"><col style="width:32%"></colgroup>'
                 f"<thead><tr><th>Jam</th><th>Alur</th><th>Peran</th></tr></thead><tbody>{body}</tbody></table>")
     return f"""<section class="sec">{head("Jadwal", "Jadwal 1 hari — mulai 09.00 WIB, dua kelompok berjalan bersamaan", ["09.00–17.00 WIB", "Persiapan tim IT selesai sebelum 09.00"])}
 <div class="strip c2" style="align-items:start"><div>{table(1)}</div><div>{table(2)}</div></div>
@@ -163,7 +169,7 @@ def scenario_page(sc):
         chips.append(("a", "Perbaikan: " + fixes))
     lead = (f"<p class='lead'><b>Kapan:</b> {fmt(when)}<br><b>Peran:</b> {escape(roles)} · <b>Data:</b> {escape(data)}</p>")
     return "\n".join(['<section class="sec">', head(f"Alur {code} · {len(rows)} langkah", f"{code} — {title}", chips), lead,
-                      steps_table(code, rows), "</section>"])
+                      VIS.flow_strip(code, rows), steps_table(code, rows), "</section>"])
 
 
 def data_page():
@@ -201,7 +207,8 @@ def closing():
 
 
 def all_sections(pages):
-    return [cover(), how_to(), overview(pages), schedule()] + [scenario_page(sc) for sc in V.SCENARIOS] + [data_page(), closing()]
+    menus = VIS.menu_page(V.SCENARIOS, head("Peta menu", "Menu yang dipakai tiap peran", ["Sales: HP", "Peran lain: desktop"]))
+    return [cover(), how_to(), overview(pages), schedule(), menus] + [scenario_page(sc) for sc in V.SCENARIOS] + [data_page(), closing()]
 
 
 def build_html(pages):
