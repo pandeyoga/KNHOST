@@ -231,10 +231,15 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
         _step("diterima", "Diterima pelanggan", status == "done",
               order.get("delivered_at") or order.get("dispatched_at", ""), order.get("delivered_by", ""),
               "Pesanan selesai" if status == "done" else ""),
-        _step("ditagih", "Ditagih (Faktur Pajak)", bool(faktur_aktif),
-              (faktur_aktif[0].get("faktur_date", "") if faktur_aktif else ""), "",
-              (" · ".join(f.get("number", "") for f in faktur_aktif[:3]) if faktur_aktif
-               else "Belum ada faktur pajak — wewenang Finance")),
+        # F-08 (uji pra-UAT 2026-10-21) — dokumen tagihan resmi = FAKTUR KOMERSIAL (PDF dari SO, tersedia sejak barang
+        # dikirim — pendapatan & piutang diakui per Surat Jalan). Faktur Pajak hanya pelengkap PKP (wewenang Finance),
+        # bukan syarat "ditagih". Dulu langkah ini = ada Faktur Pajak, sehingga pesanan lunas pun tampil "belum ditagih".
+        _step("ditagih", "Ditagih (Faktur Komersial)", bool(terkirim) and not dibatalkan,
+              (min(s.get("created_at", "") for s in terkirim) if terkirim else ""), "",
+              ((f"Faktur Komersial {order.get('number') or order.get('order_number') or ''} — PDF di detail pesanan"
+                if terkirim else "Faktur Komersial terbit saat barang dikirim (Surat Jalan pertama)")
+               + (" · Faktur Pajak " + " · ".join(f.get("number", "") for f in faktur_aktif[:3]) if faktur_aktif
+                  else (" · Faktur Pajak: belum (wewenang Finance)" if order.get("tax_mode") == "ppn" else "")))),
         _step("dibayar", "Dibayar", not dibatalkan and sisa <= 0.009 and grand > 0,
               (kwitansi[-1].get("receipt_date", "") if kwitansi else ""), "",
               ("Pesanan dibatalkan — tidak ada tagihan" if dibatalkan
@@ -279,6 +284,9 @@ async def journey(order: Dict[str, Any]) -> Dict[str, Any]:
         "shipments": kirim,
         "logistics": await _logistics(oid),   # FB-02 — pelacakan pengiriman
         "tax_invoices": faktur,
+        # F-08 — Faktur Komersial (dokumen tagihan resmi, PDF jenis `invoice` dari SO ini)
+        "commercial_invoice": {"doc_type": "invoice", "available": bool(terkirim) and not dibatalkan,
+                               "number": order.get("number") or order.get("order_number") or ""},
         "receipts": kwitansi,
     }
 

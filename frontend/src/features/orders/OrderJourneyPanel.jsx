@@ -20,6 +20,7 @@ import { formatCurrency, formatQty } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import { orderJourney } from "../sales_admin/workDeskApi";
 import { openLogistics } from "../logistics/logisticsDeepLink";
+import DocumentActionsBar from "../documents/DocumentActionsBar";
 
 const STATE_STYLE = {
   done: { icon: CheckCircle2, color: "#1B7F4B", line: "#BFE6CE" },
@@ -167,6 +168,19 @@ export default function OrderJourneyPanel({ orderId, orderNumber }) {
             {steps.map((s, i) => (
               <StepRow key={s.key} step={s} last={i === steps.length - 1} />
             ))}
+          </div>
+
+          {/* F-08 — dokumen tagihan resmi: Faktur Komersial (PDF dari SO), tersedia sejak Surat Jalan pertama */}
+          <div className="mx-3 my-2 rounded-lg border border-[#EFF0F2] px-3 py-2" data-testid="journey-commercial-invoice">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-[#8E8E93]">Tagihan — Faktur Komersial</p>
+            {data.commercial_invoice?.available ? (
+              <DocumentActionsBar docType="invoice" sourceId={orderId} number={data.commercial_invoice.number || orderNumber}
+                                  label="Faktur Komersial" compact autoCheckSignature={false} />
+            ) : (
+              <p className="text-[11px] text-[#6B6B73]" data-testid="journey-commercial-invoice-pending">
+                Faktur Komersial terbit saat barang dikirim (Surat Jalan pertama).
+              </p>
+            )}
           </div>
 
           {/* Progres gudang — TANPA memberi akses layar gudang */}

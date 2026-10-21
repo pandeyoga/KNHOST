@@ -51,7 +51,8 @@ def _product():
                             "length_reserved": {"$not": {"$gt": 0}}}},
                 {"$group": {"_id": "$product_id", "n": {"$sum": 1}}}, {"$match": {"n": {"$gte": 3}}}, {"$limit": 200}]
     for g in DB.inventory_rolls.aggregate(pipeline):
-        p = DB.products.find_one({"id": g["_id"], "is_active": {"$ne": False}, "base_unit": "yard"}, {"_id": 0, "id": 1})
+        p = DB.products.find_one({"id": g["_id"], "is_active": {"$ne": False}, "base_unit": "yard",
+                                  "stage": {"$in": ["finished", None]}}, {"_id": 0, "id": 1})   # barang jual, bukan bahan grey
         if p:
             return p["id"]
     pytest.skip("stok roll uji tidak cukup — jalankan restore data acuan")
