@@ -33,6 +33,7 @@ const STATUS_OPTIONS = [
   ["refund_settled", "Hasil · Refund"], ["credit_settled", "Hasil · Store Credit"], ["nego_settled", "Hasil · Nego"],
   ["rejected", "Hasil · Ditolak"], ["cancelled", "Hasil · Dibatalkan"],
 ];
+const OPERATOR_STATUSES = ["all", "approved", "inspecting"];   // F-11-layar — tahap kerja Gudang/QC
 const TYPE_OPTIONS = [
   ["all", "Semua tipe"], ["retur", "Retur"], ["bs", "Barang Sisa (BS)"],
   ["penggantian", "Penggantian"], ["komplain", "Komplain"], ["garansi", "Garansi"],
@@ -111,11 +112,27 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
 
   // FE-04 — ACC/settle/pembalikan retur → sales_return.approve (izin efektif server).
   const canApprove = can(currentUser?.permissions, "sales_return", "approve");
+  const canCreate = can(currentUser?.permissions, "sales_return", "create");
+  // F-11-layar — Gudang/QC (wms.scan/qc.inspect tanpa sales_return.view): server hanya mengirim
+  // retur approved/inspecting tanpa field uang; layar ikut tanpa kolom & kartu uang.
+  const operator = !can(currentUser?.permissions, "sales_return", "view");
   const cnt = (s) => Number(counts[s] || 0);
   const rTotal = Number(counts.all || 0);
   const scopeParts = [returnType !== "all" && `Tipe: ${TYPE_OPTIONS.find(([v]) => v === returnType)?.[1]}`,
     lineFilter && `Lini: ${lineFilter}`, search && `Cari: "${search}"`].filter(Boolean);
-  const scopeLabel = scopeParts.length ? `Cakupan: ${scopeParts.join(" · ")}` : "Cakupan: semua retur yang boleh Anda lihat";
+  const scopeLabel = scopeParts.length ? `Cakupan: ${scopeParts.join(" · ")}`
+    : operator ? "Cakupan: retur yang menunggu terima barang atau sedang QC" : "Cakupan: semua retur yang boleh Anda lihat";
+  const statusOptions = operator ? STATUS_OPTIONS.filter(([v]) => OPERATOR_STATUSES.includes(v)) : STATUS_OPTIONS;
+  const statCards = operator ? [
+    { k: "total", label: "Retur untuk Gudang/QC", value: rTotal, icon: RotateCcw, hint: "status 3 + 4" },
+    { k: "receive", label: "Menunggu Terima / QC", value: cnt("approved"), icon: AlertCircle, hint: "status 3 · scan terima lalu mulai QC" },
+    { k: "process", label: "Sedang QC", value: cnt("inspecting"), icon: CheckCircle2, hint: "status 4 · kirim/tiba lalu selesaikan QC" },
+  ] : [
+    { k: "total", label: "Total Retur", value: rTotal, icon: RotateCcw, hint: "semua status dalam cakupan" },
+    { k: "pending", label: "Menunggu Persetujuan", value: cnt("pending_approval"), icon: AlertCircle, hint: "status 2" },
+    { k: "process", label: "Diproses", value: cnt("approved") + cnt("inspecting") + cnt("inspected"), icon: CheckCircle2, hint: "status 3 + 4 + 5" },
+    { k: "done", label: "Selesai", value: cnt("refund_settled") + cnt("credit_settled") + cnt("nego_settled"), icon: CheckCircle2, hint: "refund + store credit + nego (tanpa ditolak/batal)" },
+  ];
 
   // ─── lifecycle actions (R1 state machine) ─────────────────────────────────
   // FE-07 — satu pintu aksi: error tampil di layar AKTIF (detail/modal, bukan state induk yang tak terlihat),
@@ -270,25 +287,24 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
       <div className="view-header">
         <div>
           <h1 className="view-title flex items-center gap-2"><RotateCcw size={20} /> Retur & Barang Sisa</h1>
-          <p className="view-subtitle">Kelola retur, barang sisa (BS), penggantian, komplain & garansi (aftersales) + Nota Kredit</p>
+          <p className="view-subtitle">{operator
+            ? "Retur pelanggan yang menunggu scan terima/kirim/tiba dan pemeriksaan QC"
+            : "Kelola retur, barang sisa (BS), penggantian, komplain & garansi (aftersales) + Nota Kredit"}</p>
         </div>
-        <button
-          data-testid="create-return-btn"
-          className="primary-button"
-          onClick={() => setShowCreate(true)}
-        >
-          <Plus size={14} /> Buat Retur
-        </button>
+        {canCreate && (
+          <button
+            data-testid="create-return-btn"
+            className="primary-button"
+            onClick={() => setShowCreate(true)}
+          >
+            <Plus size={14} /> Buat Retur
+          </button>
+        )}
       </div>
 
       {/* Ringkasan */}
       <div data-testid="return-stats" className="grid grid-cols-2 gap-2 sm:grid-cols-4" style={{ marginBottom: 16 }}>
-        {[
-          { k: "total", label: "Total Retur", value: rTotal, icon: RotateCcw, hint: "semua status dalam cakupan" },
-          { k: "pending", label: "Menunggu Persetujuan", value: cnt("pending_approval"), icon: AlertCircle, hint: "status 2" },
-          { k: "process", label: "Diproses", value: cnt("approved") + cnt("inspecting") + cnt("inspected"), icon: CheckCircle2, hint: "status 3 + 4 + 5" },
-          { k: "done", label: "Selesai", value: cnt("refund_settled") + cnt("credit_settled") + cnt("nego_settled"), icon: CheckCircle2, hint: "refund + store credit + nego (tanpa ditolak/batal)" },
-        ].map(({ k, label, value, icon: Icon, hint }) => (
+        {statCards.map(({ k, label, value, icon: Icon, hint }) => (
           <div key={label} className="metric-card" data-testid={`return-stat-${k}`}>
             <div className="metric-icon"><Icon size={16} /></div>
             <div className="metric-body">
@@ -317,14 +333,14 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
       {/* PETA RETUR (anti-dualisme, 2026-06) — di sistem ini ada TIGA jalur retur
           yang berbeda dokumen & muaranya; layar ini KHUSUS retur jual. Disebut
           eksplisit beserta jalannya supaya orang tidak mencatat retur beli di sini. */}
-      <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-[#E4E9F2] bg-[#F8FAFD] px-3 py-2 text-[11.5px] text-[#3A3A3C]"
+      {!operator && <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-[#E4E9F2] bg-[#F8FAFD] px-3 py-2 text-[11.5px] text-[#3A3A3C]"
         data-testid="return-map-strip">
         <Map size={13} className="shrink-0 text-[#0058CC]" />
         <span><b>Layar ini = Retur JUAL</b> (barang kembali dari pelanggan → muaranya Nota Kredit).</span>
         <MapLink view="purchase-returns" label="Retur Pembelian ke Pemasok" role={currentUser?.role} onNavigate={onNavigate} />
         <MapLink view="interco-transactions" label="Retur antar-PT" role={currentUser?.role} onNavigate={onNavigate} />
         <MapLink view="return-policies" label="Kebijakan / jendela retur" role={currentUser?.role} onNavigate={onNavigate} />
-      </div>
+      </div>}
 
       {/* Filters */}
       <div className="filter-bar" style={{ marginBottom: 12 }}>
@@ -345,7 +361,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
         <div style={{ minWidth: 230 }}>
           <label className="form-label">Status</label>
           <KNSelect data-testid="return-status-filter" className="form-select" value={filterStatus} onValueChange={setFilterStatus}
-            options={STATUS_OPTIONS.map(([v, l]) => ({ value: v, label: `${l} (${v === "all" ? rTotal : cnt(v)})` }))} />
+            options={statusOptions.map(([v, l]) => ({ value: v, label: `${l} (${v === "all" ? rTotal : cnt(v)})` }))} />
         </div>
         <div style={{ minWidth: 200 }}>
           <label className="form-label">Kategori / tipe</label>
@@ -367,9 +383,11 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
           <p className="text-sm text-muted" style={{ maxWidth: 460, margin: "4px auto 0" }}>
             Kelola retur barang, barang sisa (BS), penggantian, komplain & garansi dari pesanan yang sudah dikirim. Setiap retur melewati alur <b>persetujuan → inspeksi → penyelesaian</b> (refund / store credit / nego / tolak).
           </p>
-          <button className="primary-button" style={{ marginTop: 12 }} onClick={() => setShowCreate(true)}>
-            <Plus size={13} /> Buat Retur Pertama
-          </button>
+          {canCreate && (
+            <button className="primary-button" style={{ marginTop: 12 }} onClick={() => setShowCreate(true)}>
+              <Plus size={13} /> Buat Retur Pertama
+            </button>
+          )}
         </div>
       ) : (
         <div className="table-wrap" data-testid="returns-table">
@@ -382,8 +400,8 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
                 <th>Tipe</th>
                 <th>Status</th>
                 <th className="text-right">Item</th>
-                <th className="text-right">Nilai (CN)</th>
-                <th>Nota Kredit</th>
+                {!operator && <th className="text-right">Nilai (CN)</th>}
+                {!operator && <th>Nota Kredit</th>}
                 <th>Umur</th>
                 <th>Dibuat</th>
                 <th></th>
@@ -399,20 +417,22 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
                   <td><ReturnTypeBadge type={r.return_type} /></td>
                   <td><ReturnStatusPill status={r.status} /></td>
                   <td className="text-right tabular-nums">{r.items?.length || 0} item</td>
-                  <td className="text-right tabular-nums">
-                    {r.credit_note_amount
-                      ? <strong>{formatCurrency(r.credit_note_amount)}</strong>
-                      : <span className="text-muted text-sm" title="Nilai resmi terbit bersama Nota Kredit saat retur diselesaikan">—</span>}
-                  </td>
-                  <td>
-                    {r.credit_note_number ? (
-                      <span className="feature-badge badge-green" data-testid={`return-cn-${r.id}`}>
-                        {r.credit_note_number}
-                      </span>
-                    ) : (
-                      <span className="text-muted text-sm">—</span>
-                    )}
-                  </td>
+                  {!operator && <>
+                    <td className="text-right tabular-nums">
+                      {r.credit_note_amount
+                        ? <strong>{formatCurrency(r.credit_note_amount)}</strong>
+                        : <span className="text-muted text-sm" title="Nilai resmi terbit bersama Nota Kredit saat retur diselesaikan">—</span>}
+                    </td>
+                    <td>
+                      {r.credit_note_number ? (
+                        <span className="feature-badge badge-green" data-testid={`return-cn-${r.id}`}>
+                          {r.credit_note_number}
+                        </span>
+                      ) : (
+                        <span className="text-muted text-sm">—</span>
+                      )}
+                    </td>
+                  </>}
                   <td><AgeCell r={r} /></td>
                   <td className="text-muted">{fmtDate(r.created_at)}</td>
                   <td>
@@ -435,7 +455,7 @@ export default function SalesReturns({ currentUser, onNavigate, focusDoc, onClea
             hasMore={paged.hasMore} loading={paged.loading}
             onPrev={paged.prev} onNext={paged.next} onPageSize={paged.setPageSize}
             testId="returns-pager" label="retur"
-            exportConfig={{ columns: CSV_COLUMNS, rows: filtered,
+            exportConfig={{ columns: operator ? CSV_COLUMNS.filter((c) => c.key !== "credit_note_number") : CSV_COLUMNS, rows: filtered,
               fetchAll: paged.fetchAll, filename: "retur-jual" }}
           />
         </div>

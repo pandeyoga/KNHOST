@@ -54,6 +54,14 @@ export default function ReturnDetail({
   const canReject = ["pending_approval", "approved", "inspecting", "inspected"].includes(ret.status)
     && can(currentUser?.permissions, "sales_return", "reject");
   const isSettled = ["refund_settled", "credit_settled", "nego_settled"].includes(ret.status);
+  // F-11-layar (keputusan pemilik 2026-10-21) — Gudang/QC membuka retur lewat `wms.scan`/`qc.inspect`
+  // tanpa `sales_return.view`: server membuang field uang; layar menyembunyikan panel uang/keputusan
+  // dan tiap tombol mengikuti izin endpoint-nya (FE-04).
+  const perms = currentUser?.permissions;
+  const fullView = can(perms, "sales_return", "view");
+  const canUpdate = can(perms, "sales_return", "update");
+  const canScan = canUpdate || can(perms, "wms", "scan");
+  const canInspect = canUpdate || can(perms, "qc", "inspect");
 
   // F3 — ambil detail Nota Kredit bila retur sudah menghasilkan credit note.
   useEffect(() => {
@@ -73,7 +81,7 @@ export default function ReturnDetail({
   useEffect(() => {
     let active = true;
     async function loadCN() {
-      if (!ret?.credit_note_id && !ret?.credit_note_number) { setCreditNote(null); return; }
+      if (!fullView || (!ret?.credit_note_id && !ret?.credit_note_number)) { setCreditNote(null); return; }
       try {
         const res = await axios.get(`${API}/credit-notes`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -85,7 +93,7 @@ export default function ReturnDetail({
     }
     loadCN();
     return () => { active = false; };
-  }, [ret?.id, ret?.credit_note_id, ret?.credit_note_number, token]);
+  }, [ret?.id, ret?.credit_note_id, ret?.credit_note_number, token, fullView]);
 
   async function uploadFile(file) {
     setUploading(true);
@@ -164,7 +172,7 @@ export default function ReturnDetail({
           {" "}· Dibuat: {fmtDate(ret.created_at)} oleh {ret.created_by || "-"}
         </>}
         actions={<>
-          <AskKnButton type="sales_return" id={ret.id} label={ret.number} />
+          {fullView && <AskKnButton type="sales_return" id={ret.id} label={ret.number} />}
           {ret.status === "draft" && (
             <button data-testid="submit-return-btn" className="secondary-button" disabled={!!busyAction} onClick={() => onSubmit(ret)}>
               <FileText size={13} /> Kirim untuk Persetujuan
@@ -229,39 +237,44 @@ export default function ReturnDetail({
           )}
         </>} />
 
-      <DocumentActionsBar docType="sales_return" sourceId={ret.id} entityId={ret.entity_id}
-        number={ret.number} label="Nota Retur Jual" esignable={false} currentUser={currentUser}
-        className="mb-3 rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2" />
+      {fullView && (
+        <DocumentActionsBar docType="sales_return" sourceId={ret.id} entityId={ret.entity_id}
+          number={ret.number} label="Nota Retur Jual" esignable={false} currentUser={currentUser}
+          className="mb-3 rounded-lg border border-[#EDEEF1] bg-[#FAFBFC] px-2.5 py-2" />
+      )}
 
       {/* UI/UX 2026-06 — SEDANG DI MANA dokumen ini & APA langkah berikutnya. */}
       <ReturnStepper status={ret.status} draftDiscarded={ret.status === "cancelled" && !ret.reversed} />
 
       {/* Kelayakan kebijakan retur — tampil sebelum keputusan diambil. */}
-      <ReturnEligibilityPanel ret={ret} />
-      <ReturnExceptionsPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
-      <ReturnCompensationPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
-      <ReturnReplacementPanel ret={ret} onChanged={refetchReturn} onNavigate={onNavigate} />
-      <ReturnLogisticsPanel key={`${ret.id}-${ret.status}`} ret={ret} onChanged={refetchReturn} />
+      {fullView && <>
+        <ReturnEligibilityPanel ret={ret} />
+        <ReturnExceptionsPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
+        <ReturnCompensationPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
+        <ReturnReplacementPanel ret={ret} onChanged={refetchReturn} onNavigate={onNavigate} />
+        <ReturnLogisticsPanel key={`${ret.id}-${ret.status}`} ret={ret} onChanged={refetchReturn} />
+      </>}
 
       {/* FASE I.F — sebab keluhan (master) + perjalanan retur (lembar pemilik).
           Ditaruh SEBELUM panel inspeksi 4-point karena itulah urutan kerjanya:
           keluhan dicatat → barang berjalan → baru diperiksa. */}
-      <ReturnJourneyPanel ret={ret} canEdit={ret.status !== "cancelled" && (!isTerminal || canApprove)}
+      <ReturnJourneyPanel ret={ret} canEdit={canUpdate && ret.status !== "cancelled" && (!isTerminal || canApprove)}
         onChanged={(fresh) => onReturnChanged?.(fresh)} />
 
-      <ReturnTimelinePanel ret={ret} canEdit={!isTerminal} onChanged={refetchReturn} />
+      <ReturnTimelinePanel ret={ret} canEdit={canScan && !isTerminal} onChanged={refetchReturn} />
 
       <EvidenceBanner ev={enriched?.evidence} hasFiles={attachments.length > 0} />
 
       {/* R2 — Inspeksi 4-point (approved → inspecting → inspected) */}
-      {canSeeGrade(currentUser) && <ReturnInspectPanel ret={ret} onStartInspect={onStartInspect} onCompleteInspect={onCompleteInspect} />}
+      {canSeeGrade(currentUser) && canInspect && <ReturnInspectPanel ret={ret} onStartInspect={onStartInspect} onCompleteInspect={onCompleteInspect} />}
 
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Panel icon={Package} title={`Item yang diretur · ${(ret.items || []).length}`} testId="return-items-panel">
           <div className="overflow-x-auto">
           <table className="data-table" style={{ minWidth: 720 }}>
             <thead>
-              <tr><th>Produk</th><th>Qty</th><th>Sat.</th><th>Kondisi</th><th>Alasan</th><th className="text-right">Harga</th><th className="text-right">Nilai</th></tr>
+              <tr><th>Produk</th><th>Qty</th><th>Sat.</th><th>Kondisi</th><th>Alasan</th>
+                {fullView && <><th className="text-right">Harga</th><th className="text-right">Nilai</th></>}</tr>
             </thead>
             <tbody>
               {((enriched?.items?.length ? enriched.items : ret.items) || []).map((item, i) => (
@@ -278,16 +291,18 @@ export default function ReturnDetail({
                     </span>
                   </td>
                   <td className="text-muted text-sm">{item.reason || "-"}</td>
-                  <td className="text-right tabular-nums whitespace-nowrap">
-                    {item.unit_price_est != null ? `Rp ${fmtNum(item.unit_price_est, 0)}` : "—"}
-                  </td>
-                  <td className="text-right tabular-nums font-semibold whitespace-nowrap">
-                    {item.line_total_est != null ? `Rp ${fmtNum(item.line_total_est, 0)}` : "—"}
-                  </td>
+                  {fullView && <>
+                    <td className="text-right tabular-nums whitespace-nowrap">
+                      {item.unit_price_est != null ? `Rp ${fmtNum(item.unit_price_est, 0)}` : "—"}
+                    </td>
+                    <td className="text-right tabular-nums font-semibold whitespace-nowrap">
+                      {item.line_total_est != null ? `Rp ${fmtNum(item.line_total_est, 0)}` : "—"}
+                    </td>
+                  </>}
                 </tr>
               ))}
             </tbody>
-            {enriched?.estimated_value != null && (
+            {fullView && enriched?.estimated_value != null && (
               <tfoot>
                 <tr data-testid="return-estimated-value">
                   <td colSpan={6} className="text-right text-sm font-semibold">Estimasi nilai retur</td>
@@ -297,14 +312,16 @@ export default function ReturnDetail({
             )}
           </table>
           </div>
-          <div className="section-notes text-muted">
-            Harga diambil dari SO sumber — <b>estimasi</b>; angka resmi mengikuti Nota Kredit saat retur diselesaikan.
-          </div>
+          {fullView && (
+            <div className="section-notes text-muted">
+              Harga diambil dari SO sumber — <b>estimasi</b>; angka resmi mengikuti Nota Kredit saat retur diselesaikan.
+            </div>
+          )}
           {ret.notes && <div className="section-notes"><strong>Catatan:</strong> {ret.notes}</div>}
         </Panel>
 
         <Panel icon={Paperclip} title="Lampiran bukti" testId="return-attachments-panel"
-          right={!isTerminal && (
+          right={canUpdate && !isTerminal && (
             <button data-testid="upload-attachment-btn" className="link-button"
               onClick={() => fileRef.current?.click()} disabled={uploading}>
               {uploading ? <Loader2 size={12} className="spin" /> : <Upload size={12} />} Unggah
@@ -317,7 +334,7 @@ export default function ReturnDetail({
             <div className="empty-state small">
               <Paperclip size={18} style={{ opacity: 0.3 }} />
               <p>Belum ada lampiran.</p>
-              {!isTerminal && (
+              {canUpdate && !isTerminal && (
                 <button className="link-button" onClick={() => fileRef.current?.click()}>+ Unggah foto / dokumen</button>
               )}
             </div>
@@ -326,8 +343,10 @@ export default function ReturnDetail({
               {attachments.map(att => (
                 <div key={att.id} className="attachment-chip" data-testid={`attachment-${att.id}`}>
                   <Paperclip size={11} />
-                  <a href={`${API}/sales-returns/${ret.id}/attachments/${att.id}/download`}
-                    target="_blank" rel="noreferrer" className="link-button">{att.filename}</a>
+                  {fullView ? (
+                    <a href={`${API}/sales-returns/${ret.id}/attachments/${att.id}/download`}
+                      target="_blank" rel="noreferrer" className="link-button">{att.filename}</a>
+                  ) : <span>{att.filename}</span>}
                   <span className="text-muted text-xs">{(att.size / 1024).toFixed(0)} KB</span>
                 </div>
               ))}
@@ -337,7 +356,7 @@ export default function ReturnDetail({
       </div>
 
       {/* F3 — Nota Kredit (Credit Note) hasil retur yang sudah di-approve */}
-      {(creditNote || ret.credit_note_number) && (
+      {fullView && (creditNote || ret.credit_note_number) && (
         <Panel icon={Receipt} title="Nota kredit" testId="return-credit-note-section">
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             <Cell label="Nomor CN"><span className="font-mono" data-testid="credit-note-number">{creditNote?.number || ret.credit_note_number}</span></Cell>
@@ -363,14 +382,16 @@ export default function ReturnDetail({
 
       <ReturnTimeline ret={ret} variant="sales" />
 
-      {/* R2 — Karantina roll retur (release ke stok / scrap) */}
-      <ReturnQuarantinePanel ret={ret} canApprove={canApprove} onReleased={refetchReturn}
-        onNavigate={onNavigate} />
+      {fullView && <>
+        {/* R2 — Karantina roll retur (release ke stok / scrap) */}
+        <ReturnQuarantinePanel ret={ret} canApprove={canApprove} onReleased={refetchReturn}
+          onNavigate={onNavigate} />
 
-      {/* FASE E-9 (E9.6 · US29) — rantai retur utuh: pelanggan → antar-PT → beli/simpan */}
-      <ReturnChainPanel docId={ret.id} />
-      {canSeeGrade(currentUser) && <ReturnGradeLossPanel ret={ret} />}
-      <ReturnDispositionPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
+        {/* FASE E-9 (E9.6 · US29) — rantai retur utuh: pelanggan → antar-PT → beli/simpan */}
+        <ReturnChainPanel docId={ret.id} />
+        {canSeeGrade(currentUser) && <ReturnGradeLossPanel ret={ret} />}
+        <ReturnDispositionPanel ret={ret} canApprove={canApprove} onChanged={refetchReturn} />
+      </>}
 
       <ReturnSettleModal ret={ret} open={showSettleModal}
         onClose={() => setShowSettleModal(false)} onSettle={onSettle} />

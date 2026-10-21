@@ -76,7 +76,9 @@ export const HUB_TABS = {
   ],
   // L08 LN-080 — menu Retur terpadu: semua arah retur di satu tempat (tiap tab = layar aslinya).
   "returns-hub": [
-    { view: "returns",           label: "Retur Pelanggan",       roles: ["admin", "sales", "manager"] },
+    // F-11-layar (keputusan pemilik 2026-10-21) — Gudang menscan terima/kirim/tiba & QC memeriksa:
+    // server memberi mereka daftar approved/inspecting tanpa field uang (bukan `sales_return.view`).
+    { view: "returns",           label: "Retur Pelanggan",       roles: ["admin", "sales", "manager", "warehouse", "qc"] },
     { view: "interco-returns",   label: "Retur Antar-PT",        roles: ["admin", "manager", "warehouse", "finance", "sales_admin"] },
     { view: "purchase-returns",  label: "Retur ke Supplier (Nota Debit)", roles: ["admin", "manager", "warehouse"] },
     { view: "return-policies",   label: "Kebijakan Retur",       roles: ["admin", "manager"] },

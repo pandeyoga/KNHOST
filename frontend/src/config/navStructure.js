@@ -188,7 +188,7 @@ export const NAV_STRUCTURE = [
     id:    "returns-hub",
     label: "Retur",
     icon:  RotateCcw,
-    roles: ["admin", "manager", "sales", "sales_admin", "warehouse", "finance"],
+    roles: ["admin", "manager", "sales", "sales_admin", "warehouse", "finance", "qc"],   // qc: F-11-layar
     hub:   "returns-hub",
   },
 

@@ -77,7 +77,9 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      # FE-03 — tab Barang Masuk/Keluar & hub RFID ikut modul ini (dulu `rfid` = ID tak dikenal menu).
      "nav": ["gudang", "wms-operations", "operations", "goods-receipts", "wms-outbound", "qc-inspection",
              "wms-locations", "md-warehouses", "production", "escalations", "rfid-hub", "cs-rfid-lokasi",
-             "cs-rfid-tags", "cs-rfid-devices", "cs-rfid-gate"]},
+             "cs-rfid-tags", "cs-rfid-devices", "cs-rfid-gate",
+             # F-11-layar — retur pelanggan yang menunggu scan terima/kirim/tiba (tampilan tanpa uang)
+             "returns-hub", "returns"]},
     {"id": "inventory", "group": "Gudang", "label": "Stok & Persediaan",
      "description": "Status stok & ATP, lot & silsilah, stock opname, transfer antar gudang/entitas.",
      "resources": ["inventory", "transfer"],
@@ -94,7 +96,8 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
     {"id": "qc", "group": "Gudang", "label": "QC (4-point & random check)",
      "description": "Cacat 4-point & grade per roll, random check roll di stok.",
      "resources": ["qc"],
-     "nav": ["gudang", "wms-operations", "qc-inspection", "inspections"]},   # FE-03: tab tampak dari alias inspections
+     # F-11-layar — retur pelanggan yang menunggu/menjalani QC (tampilan tanpa uang)
+     "nav": ["gudang", "wms-operations", "qc-inspection", "inspections", "returns-hub", "returns"]},   # FE-03: tab tampak dari alias inspections
     {"id": "logistics", "group": "Gudang", "label": "Pengiriman & Kendaraan",
      "description": "Pengiriman (ekspedisi/armada), foto muat & POD, log kendaraan.",
      "resources": ["logistics", "vehicle_log"],
