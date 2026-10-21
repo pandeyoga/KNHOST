@@ -82,6 +82,27 @@
   (3). Regresi 13 berkas (FE-01, matriks izin, amandemen, Meja Finance, KEB-PDPT, RBAC persetujuan, override SO):
   himpunan gagal **sama dengan HEAD** kecuali tes aturan lama tadi.
 
+## Cek antarmuka putaran 3–4 (browser, 2026-10-21)
+Lingkungan terisolasi (frontend :3062 → backend :8062, DB `kn_verify_owner3` hasil seed data acuan), akun demo per
+peran, klik sungguhan di layar — bukan hanya API.
+
+| Fitur | Akun | Yang dicek di layar | Hasil |
+|---|---|---|---|
+| Baris dihapus → harga khusus batal (P4 #1) | Finance | Detail KSC/SO-00135 → panel **Persetujuan Harga Khusus**: lencana **Dibatalkan — baris dihapus** + alasan override | ✅ |
+| Lintas PT dapat diatur (P4 #2) | Admin | Badan Usaha & Akses → **Peran & Hak Akses**: lencana **Semua PT** (Admin, Manajer); buka Finance → centang **Akses semua badan usaha (lintas PT)** → Simpan → konfirmasi "mati → aktif" → **Ya, simpan** → lencana Semua PT muncul di Finance (lalu dikembalikan ke bawaan) | ✅ |
+| Nota kredit batal item OD (P4 #3) | Finance | Meja Finance → antrean **Nota kredit batal item menunggu Finance** → **Tinjau** → detail SO → **Koreksi & Amandemen → Nota Koreksi**: status Menunggu Finance, kelebihan bayar; **Koreksi nilai** (Rp 3.463 → Rp 3.000 + alasan, jejak koreksi tampil) → **Terbitkan** → status Terbit, tombol hilang | ✅ sesudah perbaikan di bawah |
+| Antrean retur terima/QC (P3) | Gudang (`warehouse@`) | Meja Saya → **Retur menunggu terima / QC** (3 dokumen) → **Terima** → detail SRET-00046 | ✅ |
+| Antrean retur terima/QC (P3) | Admin Gudang | Meja Gudang → antrean yang sama → **Terima** → detail retur | ✅ |
+| Gudang unduh foto bukti (P3) | Gudang | Detail retur: `bukti-cacat.png` berupa tautan unduh (HTTP 200, image/png); `surat-pelanggan.pdf` tanpa tautan, unduh langsung ditolak 403 | ✅ |
+
+**Bug ditemukan saat cek UI & sudah diperbaiki:** tombol **Tinjau** di antrean nota kredit Meja Finance membuka
+Pesanan Penjualan dengan saringan nomor nota (`KSC/CN-00016`) → daftar kosong, Finance tidak bisa sampai ke tombol
+Terbitkan. Perbaikan: baris antrean membawa `order_number` (`work_desk_service.finance_desk`) dan target
+`nota_batal_item` menyaring dengan nomor SO (`number_key: "order_number"` di `workDeskApi.js`). Tes:
+`test_fe01_cancel_issued_credit_note.py` (baris antrean wajib memuat `order_number`) dan Jest
+`odCancelCreditNote.test.js` (rowLink memakai nomor SO). **Merah dulu** dengan kode lama: backend 1 gagal, Jest 1
+gagal; **sesudah: 3/3 dan 4/4**; guardrail `verify_desk_targets` 30 target, 0 temuan.
+
 ## Keputusan owner Q-01..Q-06 (rencana perbaikan UAT) — dicatat 2026-10-21
 | Kode | Temuan | Jawaban owner |
 |---|---|---|

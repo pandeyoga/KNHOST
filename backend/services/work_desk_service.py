@@ -472,7 +472,8 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                                               (f"kelebihan bayar {rupiah(n['excess_payment'])}" if n.get("excess_payment") else "")] if x),
               value=float(n.get("gross_amount") or 0), age_days=_age_days(n.get("created_at")),
               badge="menunggu Finance", action="Tinjau", action_kind="open",
-              extra={"order_id": n["order_id"], "credit_note_id": n["id"]}) for n in pend],
+              extra={"order_id": n["order_id"], "order_number": n.get("order_number", ""),
+                     "credit_note_id": n["id"]}) for n in pend],
         action_label="Tinjau", owner="finance"))
 
     return {"desk": "finance", "desk_label": "Meja Finance",

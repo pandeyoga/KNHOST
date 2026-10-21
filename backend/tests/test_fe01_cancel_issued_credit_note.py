@@ -60,7 +60,9 @@ def test_batal_item_so_terbit_nota_kredit_menunggu_finance_koreksi_terbit_batal(
     sales = fe.m._login("sales@kainnusantara.id")
     desk = requests.get(f"{BASE}/finance/desk", headers=fin).json()                         # antrean Meja Finance
     q = next(x for x in desk["queues"] if x["id"] == "nota_batal_item")
-    assert any(r.get("credit_note_id") == cn["id"] and r["order_id"] == so["id"] for r in q["rows"])
+    # order_number dipakai tombol "Tinjau" untuk menyaring daftar pesanan (cek UI: nomor CN tidak ada di daftar SO)
+    assert any(r.get("credit_note_id") == cn["id"] and r["order_id"] == so["id"]
+               and r.get("order_number") == so["number"] for r in q["rows"])
     assert _review(sales, cn["id"], {"action": "issue"}).status_code == 403                 # bukan Finance
     assert _review(fin, cn["id"], {"action": "adjust", "gross_amount": doc["gross_amount"] - 1000,
                                    "note": "x"}).status_code == 400                          # alasan wajib

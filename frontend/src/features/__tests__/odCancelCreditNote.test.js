@@ -4,6 +4,7 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import OdCancelNoteActions, { OdCancelNoteInfo } from "../finance/amendments/OdCancelNoteActions";
+import { rowLink } from "../sales_admin/workDeskApi";
 
 jest.mock("../finance/amendments/amendmentApi", () => ({ reviewCreditNote: jest.fn(), errText: (e, d) => d }));
 const api = require("../finance/amendments/amendmentApi");
@@ -58,4 +59,10 @@ test("tanpa izin atau nota sudah terbit → tidak ada tombol", async () => {
   m = await mount(<OdCancelNoteActions note={{ ...NOTE, status: "issued" }} currentUser={FIN} />);
   expect(q(m.host, "od-note-actions-cn1")).toBeNull();
   await act(async () => { m.root.unmount(); });
+});
+
+test("Meja Finance → Tinjau menyaring daftar pesanan dengan nomor SO, bukan nomor nota (cek UI 2026-10-21)", () => {
+  const row = { ref_type: "sales_order", ref_id: "so1", number: "KSC/CN-00016", order_id: "so1", order_number: "KSC/SO-00136" };
+  const link = rowLink(row, "nota_batal_item", "finance");
+  expect(link).toMatchObject({ view: "orders", focus_type: "sales_order", focus_id: "so1", number: "KSC/SO-00136" });
 });
