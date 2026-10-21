@@ -60,6 +60,7 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 | F-11 | Gudang & QC tidak bisa memproses perjalanan & QC retur (403 `sales_return.update`) | P1 | implemented_pending_review | ya — direproduksi runtime di `193c048` | `6e1112b` | [F-11-F-12](../uat/2026-10-21/hasil/F-11-F-12.md) |
 | F-12 | QC retur bisa dimulai & diselesaikan tanpa barang diterima | P1 | implemented_pending_review | ya — direproduksi runtime di `193c048` | `6e1112b` | [F-11-F-12](../uat/2026-10-21/hasil/F-11-F-12.md) |
 | F-11-layar | Gudang & QC tidak bisa membuka layar retur (daftar/detail/timeline 403, tab & menu tersembunyi) — keputusan owner opsi (b) terbatas | P1 | implemented_pending_review | ya — direproduksi runtime di `68e4449` | `a7c08c3` | [F-11-layar](../uat/2026-10-21/hasil/F-11-layar.md) |
+| F-09 | Entri persetujuan yang ditolak mengunci SO selamanya (harga khusus & kredit) | P1 | implemented_pending_review | ya — direproduksi runtime (SO-00039, SO-00083) | `627a4c1` | [F-09](../uat/2026-10-21/hasil/F-09.md) |
 
 ## Temuan tambahan dari implementer (menunggu konfirmasi reviewer)
 
@@ -78,6 +79,8 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 | FE-01 SO terbit | Batal item OD pada SO yang sudah dibayar/berfaktur: jalur nota kredit otomatis, atau tetap ditolak (koreksi manual Finance)? | 2026-10-21 |
 | F-11-layar antrean | Perlu antrean "Retur menunggu terima/QC" (status approved/inspecting) di Meja Operator Gudang? (langkah opsional, belum dikerjakan) | 2026-10-21 |
 | F-11-layar foto | QC/Gudang boleh mengunduh foto bukti keluhan retur? Sekarang hanya nama berkas (unduh tetap `sales_return.view`). | 2026-10-21 |
+| F-09 baris dihapus | Harga khusus yang ditolak untuk produk yang kemudian dihapus dari pesanan tetap memblokir (tidak bisa diajukan ulang). Saat baris dihapus, entrinya ikut digantikan/dibatalkan? | 2026-10-21 |
+| F-09 data lama | Jalankan `backend/scripts/repair_f09_superseded_rejections.py --apply` di produksi untuk SO yang terlanjur terkunci? (dry-run lokal: SO-00039, SO-00083) | 2026-10-21 |
 
 ## Riwayat perubahan tracker
 
@@ -86,6 +89,7 @@ Sumber: `docs/uat/2026-10-21/RENCANA_PERBAIKAN_TEMUAN_UAT.md` (17 temuan F-01..F
 | 2026-10-21 | Claude Code | F-11-layar implemented_pending_review (`a7c08c3`, [F-11-layar](../uat/2026-10-21/hasil/F-11-layar.md)): keputusan owner opsi (b) — Gudang/QC (`wms.scan`/`qc.inspect` tanpa `sales_return.view`) membuka daftar approved/inspecting, detail/timeline tanpa field uang, tab & menu Retur; matriks izin tidak diubah; 2 pertanyaan owner baru |
 | 2026-10-21 | Claude Code | F-11/F-12 implemented_pending_review (`6e1112b`, [F-11-F-12](../uat/2026-10-21/hasil/F-11-F-12.md)): scan perjalanan retur menerima `wms.scan`, QC retur menerima `qc.inspect`; QC hanya sesudah semua roll klaim diterima/tiba (baris tanpa roll: tonggak Barang sampai); diskon foto KLR-06 tetap. Catatan: Gudang/QC belum punya akses layar retur (`sales_return.view`) |
 | 2026-10-21 | Claude Code | 11 temuan AUD backend implemented_pending_review sesuai urutan paket ([BE-AUD](2026-10-20/hasil/BE-AUD.md)): RND-01/02 `c56a988`, EXP-01 `db25c74`, SO-01 `193c048`, WMS-01 `6974dd9`, MKL-01/02 `ae4e1b3`, EXP-02 `1e275ca`, MIG-01/02 `8d6df8f`, RET-01 `28d53c7`; guardrail INV-ATOMIC-01 kembali ke baseline `8dab383` (`1dcd37e`) |
+| 2026-10-21 | Claude Code | Uji pra-UAT F-09 implemented_pending_review (`627a4c1`, [F-09](../uat/2026-10-21/hasil/F-09.md)): pengajuan ulang harga khusus/kredit menggantikan penolakan lama, submit ulang diarahkan ke Pusat Persetujuan, skrip perbaikan data lama; 2 pertanyaan baru |
 | 2026-10-21 | Claude Code | Jawaban owner putaran 2 ([laporan](2026-10-20/hasil/KEPUTUSAN-2026-10-21.md#bagian-2--jawaban-owner-putaran-kedua-2026-10-21)): kontrak kedaluwarsa/batal (`1ad79cb`), batal item sesudah SO + notifikasi MD (`a3f7936`), backend role_in (`b69fe0d`), sisir lanjutan FE (`fc477ce`); 3 pertanyaan lama terjawab, 2 baru |
 | 2026-10-21 | Claude Code | FE-10..13 implemented_pending_review (`85ddd1c`, [UI-05](2026-10-20/hasil/UI-05.md)): satuan sumber antrean QC, status muat penerimaan transfer, neraca belum diketahui netral, tanda saldo kumulatif |
 | 2026-10-21 | Claude Code | FE-06..09 implemented_pending_review (`c5fd627`, [UI-04](2026-10-20/hasil/UI-04.md)): target antrean harga khusus + fokus dokumen + guardrail desk_targets, error aksi retur di layar aktif, form retur aman balapan, pemilih SO retur server-side |

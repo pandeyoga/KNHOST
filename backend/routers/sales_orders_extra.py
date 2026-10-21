@@ -393,6 +393,25 @@ async def submit_for_approval(order_id: str, request: Request) -> Dict[str, Any]
     if not order:
         raise HTTPException(status_code=404, detail="Order tidak ditemukan")
     assert_entity_access(order, "sales_orders", await entity_ctx(request))  # S#074 IDOR
+    if order.get("status") == "waiting_approval":
+        # F-09 — dulu jatuh ke 409 INVALID_TRANSITION ("tahap Reserved ... order_submitted") SESUDAH
+        # pending_approvals ditulis. Tolak lebih dulu dan tunjukkan langkah yang benar.
+        s0 = so_approvals.summarize(order)
+        if s0["has_pending"]:
+            labels = ", ".join(sorted({so_approvals.TYPE_LABELS.get(t, t) for t in s0["pending_types"]}))
+            msg = (f"Pesanan {order.get('number')} sudah diajukan dan menunggu keputusan ({labels}). "
+                   "Putuskan di Pusat Persetujuan — tidak perlu mengajukan ulang.")
+        elif s0["has_rejected"]:
+            msg = (f"Pesanan {order.get('number')} sudah diajukan, tetapi ada persetujuan yang DITOLAK. "
+                   "Ajukan ulang harga khusus/kredit dari detail pesanan (pengajuan baru menggantikan yang "
+                   "ditolak), lalu putuskan di Pusat Persetujuan.")
+        else:
+            # Tanpa entri menunggu, baris Pusat Persetujuan tidak punya tombol keputusan.
+            msg = (f"Pesanan {order.get('number')} sudah diajukan dan semua persetujuan sudah diputus. "
+                   "Manajer tinggal menyetujui pesanan dari detail pesanan — tidak perlu mengajukan ulang.")
+        raise HTTPException(status_code=409, detail={
+            "code": "ALREADY_WAITING_APPROVAL", "message": msg,
+            "pending_types": s0["pending_types"], "rejected_count": s0["rejected_count"]})
     # Fase 1B — re-evaluasi kebutuhan approval dari matriks (configurable) basis grand_total
     amount = float(order.get("grand_total", order.get("total_amount", 0)) or 0)
     appr = await evaluate_approval("sales_order", amount, order.get("entity_id"))
@@ -474,7 +493,8 @@ async def approve_order(order_id: str, request: Request) -> Dict[str, Any]:
         raise HTTPException(status_code=409, detail={
             "code": "APPROVAL_REJECTED",
             "message": "Ada permintaan persetujuan yang DITOLAK pada pesanan ini — pesanan tidak bisa "
-                       "disetujui. Ubah pesanan (harga/limit) lalu ajukan ulang."})
+                       "disetujui. Ajukan ulang harga khusus/kredit dari detail pesanan; pengajuan baru "
+                       "menggantikan yang ditolak."})
     pa = list(order.get("pending_approvals") or [])
     for p in pa:
         if p.get("type") == "nilai" and p.get("status") == "pending":

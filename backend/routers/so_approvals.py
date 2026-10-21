@@ -155,7 +155,8 @@ async def request_special_price(order_id: str, payload: SoSpecialPriceRequest, r
 async def attach_order_price(order_id: str, pra: Dict[str, Any], actor: Dict[str, Any]) -> Dict[str, Any]:
     """L02 LN-022 — SATU pintu: pengajuan harga lingkup pesanan (dari detail SO maupun form
     bukti /price-approvals) menjadi entri approval SO dengan versi alokasi; pengajuan pending
-    lama untuk produk yang sama digantikan."""
+    lama untuk produk yang sama digantikan — begitu juga penolakan sebelumnya (F-09), supaya
+    nego ulang tidak mengunci pesanan selamanya."""
     from services import atomic_claim as _saga
     order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     if not order:
@@ -188,6 +189,7 @@ async def attach_order_price(order_id: str, pra: Dict[str, Any], actor: Dict[str
             await db.price_approvals.update_many(
                 {"id": {"$in": [p.get("ref_id") for p in stale]}, "status": "pending"},
                 {"$set": {"status": "superseded", "superseded_by": pra["id"], "updated_at": now_iso()}})
+        so_approvals.supersede_rejected(pa, entry)   # dokumen price_approvals tetap 'rejected' (riwayat)
         result = await _persist_pending(order_id, pa + [entry])
     finally:
         await _saga.release("sales_orders", order_id, ((claimed or {}).get(_saga.LOCK) or {}).get("token", ""))
@@ -222,12 +224,15 @@ async def request_credit_approval(order_id: str, payload: SoCreditApprovalReques
         "status": "pending", "requested_by": actor["name"], "requested_by_id": actor["id"],
         "created_at": now_iso(),
     })
-    pa.append(so_approvals.make_approval(
+    entry = so_approvals.make_approval(
         "kredit", required_role="manager", reason=(payload.reason or "").strip() or "Over-limit kredit.",
-        requested_by=actor["name"], requested_by_id=actor["id"], ref_id=cro_id, amount=amount))
-    result = await _persist_pending(order_id, pa)
+        requested_by=actor["name"], requested_by_id=actor["id"], ref_id=cro_id, amount=amount)
+    # F-09 — pengajuan ulang menggantikan penolakan kredit sebelumnya (credit_overrides lama tetap 'rejected').
+    replaced = so_approvals.supersede_rejected(pa, entry)
+    await _persist_pending(order_id, pa + [entry])
     await db.sales_orders.update_one({"id": order_id}, _saga.finish_set({"credit_hold": True}))
-    await audit(actor["name"], "so_credit_approval_requested", "sales_order", order_id, {"amount": amount})
+    await audit(actor["name"], "so_credit_approval_requested", "sales_order", order_id,
+                {"amount": amount, "replaces": [p["id"] for p in replaced]})
     return safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
 
 
