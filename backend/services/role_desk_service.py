@@ -124,7 +124,42 @@ async def warehouse_queues(scope, ids) -> List[Dict[str, Any]]:
                [_row(ref_type="wms_task", ref_id=t["id"], number=t.get("order_number", ""), title=t.get("customer_name", "—"), subtitle=t.get("product_name", ""),
                      age_days=_age_days(t.get("created_at")), badge=t.get("status", ""), action="Potong") for t in samples],
                action_label="Potong", owner="warehouse", value_kind="count", value_label="Item"),
+        await return_receipt_qc_queue(scope),
     ]
+
+
+def _return_step(r: Dict[str, Any]) -> tuple:
+    """(keterangan langkah, label tombol) untuk satu retur di antrean terima/QC — tanpa nilai uang."""
+    from services.return_journey_service import receipt_progress
+    if r.get("status") == "inspecting":
+        return "Sedang diperiksa QC", "Buka"
+    p = receipt_progress(r)
+    if p["ready_for_qc"]:
+        return "Barang sudah di gudang — menunggu QC", "Buka"
+    if p["in_transit"]:
+        return f"{p['in_transit']} roll dalam perjalanan ke gudang tujuan — scan tiba", "Scan tiba"
+    if p["rolls"] and p["at_warehouse"] < p["rolls"]:
+        return f"Menunggu scan terima · {p['at_warehouse']}/{p['rolls']} roll diterima", "Terima"
+    return "Menunggu barang sampai (baris tanpa roll)", "Terima"
+
+
+async def return_receipt_qc_queue(scope, owner: str = "warehouse") -> Dict[str, Any]:
+    """Keputusan owner 2026-10-21 — antrean "Retur menunggu terima / QC" di meja Gudang: retur pelanggan
+    yang sudah disetujui (`approved`) atau sedang QC (`inspecting`) — himpunan yang SAMA dengan daftar
+    retur Gudang/QC (F-11-layar). Tanpa nilai uang; terlama di atas."""
+    from services.return_operator_view import LIST_STATES
+    docs = await _find("sales_returns", {**_scope_q(scope, []), "status": {"$in": list(LIST_STATES)}})
+    rows = []
+    for r in docs:
+        step, act = _return_step(r)
+        rows.append(_row(ref_type="sales_return", ref_id=r["id"], number=r.get("number") or r.get("return_number") or r["id"],
+                         title=r.get("customer_name") or "—", subtitle=step, value=0,
+                         age_days=_age_days(r.get("approved_at") or r.get("updated_at") or r.get("created_at")),
+                         badge=r.get("status", ""), action=act))
+    rows.sort(key=lambda x: -x["age_days"])
+    return _queue("retur_terima_qc", "Retur menunggu terima / QC",
+                  "Retur pelanggan yang sudah disetujui: scan terima barang (atau tiba di gudang tujuan), lalu QC memeriksa.",
+                  rows, action_label="Buka", owner=owner, value_kind="count", value_label="Retur")
 
 
 async def designer_queues(actor, scope, ids) -> List[Dict[str, Any]]:

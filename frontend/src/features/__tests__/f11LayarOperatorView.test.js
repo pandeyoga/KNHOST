@@ -32,7 +32,8 @@ jest.mock("../../components/AskKnButton", () => ({ AskKnButton: () => <div data-
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const RET = { id: "sret_1", number: "SRET-1", status: "approved", return_type: "retur", order_number: "SO-1",
-  customer_name: "Toko A", created_at: "2026-10-20T00:00:00", attachments: [{ id: "a1", filename: "noda.jpg", size: 2048 }],
+  customer_name: "Toko A", created_at: "2026-10-20T00:00:00", attachments: [{ id: "a1", filename: "noda.jpg", size: 2048, content_type: "image/jpeg" },
+                { id: "a2", filename: "surat.pdf", size: 4096, content_type: "application/pdf" }],
   items: [{ product_id: "p1", product_name: "Kain A", quantity_returned: 5, unit: "yard", roll_ids: ["r1"], roll_qtys: { r1: 5 },
             unit_price_est: 44000, line_total_est: 220000 }], estimated_value: 220000 };
 const GRADE = { field_visibility: ["grade", "lot", "origin"] };
@@ -84,7 +85,9 @@ test.each([["warehouse", warehouse, true], ["qc", qc, false]])(
     expect(q(host, "m-timeline").dataset.canedit).toBe(String(canScan));     // form scan = wms.scan
     expect(q(host, "start-inspect-btn")).not.toBeNull();                    // QC = qc.inspect
     expect(q(host, "upload-attachment-btn")).toBeNull();                    // unggah = sales_return.update
-    expect(q(host, "attachment-a1").querySelector("a")).toBeNull();          // unduh = sales_return.view
+    // Keputusan owner 2026-10-21 — foto/video bukti keluhan boleh diunduh Gudang/QC; lampiran lain tidak.
+    expect(q(host, "attachment-a1").querySelector("a").getAttribute("href")).toBe("/api/sales-returns/sret_1/attachments/a1/download");
+    expect(q(host, "attachment-a2").querySelector("a")).toBeNull();
     expect(axios.get).not.toHaveBeenCalledWith("/api/credit-notes", expect.anything());
     await act(async () => { root.unmount(); });
   });
@@ -99,6 +102,8 @@ test("detail Sales (sales_return.view): harga, nilai & panel tetap seperti sebel
   expect(q(host, "m-timeline").dataset.canedit).toBe("true");
   expect(q(host, "m-journey").dataset.canedit).toBe("true");
   expect(q(host, "upload-attachment-btn")).not.toBeNull();
+  expect(q(host, "attachment-a1").querySelector("a")).not.toBeNull();   // Sales: semua lampiran tetap bisa diunduh
+  expect(q(host, "attachment-a2").querySelector("a")).not.toBeNull();
   await act(async () => { root.unmount(); });
 });
 

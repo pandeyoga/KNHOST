@@ -832,13 +832,22 @@ async def upload_attachment(
 
 @router.get("/sales-returns/{return_id}/attachments/{att_id}/download")
 async def download_attachment(return_id: str, att_id: str, request: Request):
-    await require_permission(request, "sales_return", "view")
+    # Keputusan owner 2026-10-21 — Gudang/QC (operator F-11-layar) boleh mengunduh FOTO/VIDEO bukti keluhan
+    # selama retur di tahap kerja mereka; pagar badan usaha sama dengan detail retur.
+    _user, operator = await opv.reader(request)
+    ctx = await entity_ctx(request)
     doc = await db.sales_returns.find_one({"id": return_id})
     if not doc:
         raise HTTPException(status_code=404, detail="Return tidak ditemukan")
+    doc.pop("_id", None)
+    assert_entity_access(doc, "sales_returns", ctx)
+    if operator:
+        opv.assert_open_for_operator(doc)
     att = next((a for a in (doc.get("attachments") or []) if a.get("id") == att_id and not a.get("is_deleted")), None)
     if not att:
         raise HTTPException(status_code=404, detail="Lampiran tidak ditemukan")
+    if operator:
+        opv.assert_operator_download(att)
     from fastapi.responses import Response
     data, _ = await storage.get_object(att["path"])
     return Response(

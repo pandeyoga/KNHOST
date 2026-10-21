@@ -143,6 +143,24 @@ def assert_ready_for_qc(ret: Dict[str, Any]) -> None:
                          "Tandai SJ Kirim Toko lalu Barang sampai sebelum QC.")
 
 
+def receipt_progress(ret: Dict[str, Any]) -> Dict[str, Any]:
+    """Keputusan owner 2026-10-21 (antrean meja Gudang) — ringkasan penerimaan fisik satu retur, tanpa uang:
+    berapa roll klaim sudah di gudang / masih dalam perjalanan, dan apakah QC sudah boleh dimulai
+    (gerbang yang SAMA dengan `assert_ready_for_qc`)."""
+    locs = ret.get("roll_locations") or {}
+    claimed = list(dict.fromkeys(_claimed_rolls(ret)))
+    try:
+        assert_ready_for_qc(ret)
+        ready = True
+    except ValueError:
+        ready = False
+    return {"rolls": len(claimed),
+            "at_warehouse": sum(1 for r in claimed if (locs.get(r) or {}).get("stage") in ("received", "arrived")),
+            "in_transit": sum(1 for r in claimed if (locs.get(r) or {}).get("stage") == "in_transit"),
+            "rollless": any(not (it.get("roll_ids") or []) for it in ret.get("items") or []),
+            "goods_arrived": bool(ret.get("goods_arrived_at")), "ready_for_qc": ready}
+
+
 def physical_warehouse(ret: Dict[str, Any], roll_id: str) -> str:
     loc = (ret.get("roll_locations") or {}).get(roll_id) or {}
     return loc.get("warehouse_id", "") if loc.get("stage") in ("received", "arrived") else ""

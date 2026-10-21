@@ -8,7 +8,8 @@ bukan dokumen ber-uang:
 * detail & timeline hanya selama tahap itu, plus `inspected` supaya hasil QC yang baru disimpan
   tetap terbaca (status lain → 403);
 * semua field uang dibuang (harga, nilai, kompensasi, nota kredit, ongkir, refund, …) dan jalur
-  "Penyelesaian uang" timeline tidak dikirim.
+  "Penyelesaian uang" timeline tidak dikirim;
+* keputusan owner 2026-10-21: foto/video bukti keluhan boleh DIUNDUH (lampiran lain, mis. PDF, tidak).
 
 Pemegang `sales_return.view` tidak tersentuh modul ini sama sekali.
 """
@@ -66,6 +67,15 @@ def assert_open_for_operator(doc: Dict[str, Any]) -> None:
     if doc.get("status") not in DETAIL_STATES:
         raise HTTPException(status_code=403, detail=(
             "Gudang/QC hanya membuka retur yang sedang menunggu terima barang atau diperiksa QC."))
+
+
+MEDIA_PREFIXES = ("image/", "video/")
+
+
+def assert_operator_download(att: Dict[str, Any]) -> None:
+    if not str(att.get("content_type") or "").startswith(MEDIA_PREFIXES):
+        raise HTTPException(status_code=403, detail=(
+            "Gudang/QC hanya boleh mengunduh foto/video bukti keluhan — lampiran lain dibuka Sales/Admin."))
 
 
 def operator_timeline(tl: Dict[str, Any]) -> Dict[str, Any]:

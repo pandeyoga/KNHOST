@@ -654,6 +654,10 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               extra={"order_id": t.get("order_id"), "unit": t.get("unit") or "yard"}) for t in tasks],
         action_label="Buka WMS", owner="warehouse_admin", value_kind="qty", value_label="Qty"))
 
+    # 2b — keputusan owner 2026-10-21: retur pelanggan menunggu terima / QC (tanpa nilai uang)
+    from services.role_desk_service import return_receipt_qc_queue
+    queues.append(await return_receipt_qc_queue(scope, owner="warehouse_admin"))
+
     # 3 — PO menunggu penerimaan barang
     pos = await db.purchase_orders.find(
         {**eq, "status": {"$in": ["pending", "receiving"]}}, {"_id": 0}).to_list(200)

@@ -21,7 +21,8 @@ PWD = "demo12345"
 ENT = "ent_ksc"
 
 MD_QUEUES = ["desain", "sample", "pr", "acuan"]
-WH_QUEUES = ["sj_belum_diangkut", "outbound", "inbound", "spk", "persetujuan_gudang", "logistik"]
+# keputusan owner 2026-10-21 — antrean retur menunggu terima/QC (tanpa nilai uang) sesudah outbound
+WH_QUEUES = ["sj_belum_diangkut", "outbound", "retur_terima_qc", "inbound", "spk", "persetujuan_gudang", "logistik"]
 
 
 def _hdr(email):

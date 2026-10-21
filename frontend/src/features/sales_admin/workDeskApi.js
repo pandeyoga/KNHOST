@@ -217,6 +217,9 @@ export const ROLE_DESK_TARGET = {
   // FE-06 — layar yang dirender = `price-approvals` (tab hub Persetujuan); `approvals` tidak punya renderer.
   price_approval:     { view: "price-approvals",       nav_id: "approval-inbox", focus_type: "price_approval" },
   purchase_return:    { view: "purchase-returns",      nav_id: "purchase-returns", focus_type: "purchase_return" },
+  // Keputusan owner 2026-10-21 — antrean retur terima/QC di meja Gudang: menu "Retur" (returns-hub) yang juga
+  // dimiliki Gudang/QC sejak F-11-layar (menu Penjualan `sales-orders` tidak dimiliki mereka).
+  sales_return:       { view: "returns",               nav_id: "returns-hub",    focus_type: "sales_return" },
   md_sample:          { view: "rnd-samples",           nav_id: "rnd-hub",        focus_type: "md_sample" },
   purchase_requisition: { view: "purchase-requisitions", nav_id: "sourcing",     focus_type: "purchase_requisition" },
   inspection:         { view: "inspections",           nav_id: "wms-operations", focus_type: "inspection" },

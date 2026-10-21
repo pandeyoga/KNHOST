@@ -294,6 +294,25 @@ async def apply_entity_rebrand_2026_09() -> None:
 
 
 
+async def apply_f09_superseded_rejections_2026_10_21() -> None:
+    """F-09 (keputusan owner 2026-10-21: jalankan di produksi) — sekali jalan (ditandai di `migrations`):
+    SO terbuka yang terkunci penolakan harga khusus/kredit yang SUDAH diajukan ulang → entri lama
+    `superseded`. Sama dengan `scripts/repair_f09_superseded_rejections.py --apply`; idempoten,
+    keputusan lama tetap tersimpan, SO tidak dinaikkan otomatis (Manajer tetap menekan Setujui)."""
+    flag = "f09_superseded_rejections_2026_10_21"
+    if await db.migrations.find_one({"id": flag}):
+        return
+    from services.so_approvals import backfill_resubmitted_rejections
+    res = await backfill_resubmitted_rejections(db, apply=True)
+    await db.migrations.insert_one({"id": flag, "applied_at": now_iso(),
+                                    "orders": [o["number"] for o in res["orders"]],
+                                    "superseded": sum(o["superseded"] for o in res["orders"])})
+    if res["orders"]:
+        import logging
+        logging.getLogger("bootstrap").info("[F-09] %d SO dibuka dari penolakan yang sudah diajukan ulang: %s", len(res["orders"]),
+                    ", ".join(str(o["number"]) for o in res["orders"]))
+
+
 async def seed_entities() -> None:
     """Seed entitas legal grup Kain Nusantara (idempotent)."""
     if await db.business_entities.count_documents({}) == 0:
@@ -1570,6 +1589,11 @@ async def run_bootstrap() -> None:
     await ensure_entity_defaults()
     await ensure_user_entities()
     # K-8 (2026-09) — ganti nama Sukacita Textile / Kanda Fabric + CV Cipta Sandang Textile (sekali jalan).
+    try:
+        await apply_f09_superseded_rejections_2026_10_21()
+    except Exception as exc:  # noqa: BLE001 — jangan gagalkan startup
+        import logging
+        logging.getLogger("bootstrap").warning("[F-09] perbaikan penolakan yang diajukan ulang gagal: %s", exc)
     try:
         await apply_entity_rebrand_2026_09()
     except Exception as exc:  # noqa: BLE001 — jangan gagalkan startup

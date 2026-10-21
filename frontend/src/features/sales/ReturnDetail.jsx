@@ -343,7 +343,8 @@ export default function ReturnDetail({
               {attachments.map(att => (
                 <div key={att.id} className="attachment-chip" data-testid={`attachment-${att.id}`}>
                   <Paperclip size={11} />
-                  {fullView ? (
+                  {/* Keputusan owner 2026-10-21 — Gudang/QC boleh mengunduh FOTO/VIDEO bukti keluhan (server: sama). */}
+                  {fullView || /^(image|video)\//.test(att.content_type || "") ? (
                     <a href={`${API}/sales-returns/${ret.id}/attachments/${att.id}/download`}
                       target="_blank" rel="noreferrer" className="link-button">{att.filename}</a>
                   ) : <span>{att.filename}</span>}
