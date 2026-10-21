@@ -30,7 +30,7 @@ from typing import Any, Dict, List, Optional
 from db import db
 from core_utils import now_iso, safe_doc
 
-ROW_LIMIT = 60
+ROW_LIMIT = 200   # cek UI UAT v3: dulu 60 & count ikut terpotong → dokumen terbaru tak terlihat, angka menyesatkan
 
 # ── Status pesanan per tahap alur ────────────────────────────────────────────
 STATUS_BARU = ("reserved", "waiting_stock")
@@ -106,13 +106,17 @@ def _queue(qid: str, label: str, hint: str, rows: List[Dict[str, Any]], *,
     penanda ini layar akan menuliskan `Rp 200` untuk 200 yard — angka yang salah
     arti, dan jenis kekeliruan yang membuat pengguna berhenti percaya pada ringkasan.
     """
+    total = len(rows)
+    total_value = round(sum(r["value"] for r in rows), 2)
+    oldest = max([r["age_days"] for r in rows], default=0)
     rows = rows[:ROW_LIMIT]
     return {
         "id": qid, "label": label, "hint": hint, "owner": owner,
-        "count": len(rows),
-        "total_value": round(sum(r["value"] for r in rows), 2),
+        # `count`/`total_value` = SELURUH antrean; `shown` = baris yang dikirim (dibatasi ROW_LIMIT, tertua dulu).
+        "count": total, "shown": len(rows),
+        "total_value": total_value,
         "value_kind": value_kind, "value_label": value_label,
-        "oldest_age_days": max([r["age_days"] for r in rows], default=0),
+        "oldest_age_days": oldest,
         "action_label": action_label,
         "rows": rows,
     }
@@ -157,6 +161,22 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
               age_days=_age_days(o.get("created_at")), badge=o.get("stage") or o.get("status"),
               action="Verifikasi", action_kind="verify") for o in belum],
         action_label="Verifikasi"))
+
+    # 1b — terverifikasi, belum diajukan (cek UI UAT v3, 2026-10-21): dulu SO yang sudah diverifikasi tetapi masih
+    # "Dicadangkan" hilang dari SEMUA antrean meja (Siap dikonfirmasi hanya memuat "Disetujui") — langkah "Ajukan
+    # persetujuan" hanya ada di detail SO. Kini tampil di sini dengan aksinya langsung.
+    sudah = [o for o in await _orders(scope, ("reserved",), verified=True) if not o.get("has_backorder")]
+    queues.append(_queue(
+        "terverifikasi_ajukan", "Terverifikasi — ajukan persetujuan",
+        "Sistem memeriksa gerbang (nilai · kredit · harga khusus): tanpa gerbang → otomatis Disetujui dan pindah ke "
+        "Siap dikonfirmasi; ada gerbang → Menunggu keputusan manajer.",
+        [_row(ref_type="sales_order", ref_id=o["id"], number=o["number"],
+              title=o.get("customer_name", "—"),
+              subtitle=f"Terverifikasi · {o.get('sales_name') or '—'}",
+              value=o.get("grand_total") or o.get("total_amount") or 0,
+              age_days=_age_days(o.get("created_at")), badge=o.get("stage") or o.get("status"),
+              action="Ajukan persetujuan", action_kind="submit") for o in sudah],
+        action_label="Ajukan persetujuan"))
 
     # 2 — siap dikonfirmasi: sudah disetujui → tekan konfirmasi, tugas gudang lahir
     approved = await _orders(scope, STATUS_SIAP_KONFIRMASI)
@@ -668,15 +688,22 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     # 1 — SJ sudah dispatch gudang tetapi BELUM diangkut logistik (jembatan WMS→Logistik)
     sj = await db.shipments.find(
         {**eq, "status": "dispatched", "$or": [{"logistics_id": {"$exists": False}}, {"logistics_id": {"$in": [None, ""]}}]},
-        {"_id": 0}).sort("created_at", 1).to_list(200)
+        {"_id": 0, "rolls": 0}).sort("created_at", 1).to_list(200)
+    # Cek UI UAT v3 — dokumen SJ menyimpan qty di `qty` (bukan `quantity`) dan tidak menyimpan nama pelanggan:
+    # dulu baris bernilai 0 dan berjudul nomor SO. Nama pelanggan diambil dari SO-nya.
+    sj_cust = {o["id"]: o.get("customer_name", "") for o in await db.sales_orders.find(
+        {"id": {"$in": list({s.get("order_id") for s in sj if s.get("order_id")})}},
+        {"_id": 0, "id": 1, "customer_name": 1}).to_list(400)}
     queues.append(_queue(
         "sj_belum_diangkut", "Surat Jalan belum diangkut logistik",
         "Barang sudah keluar gudang tetapi belum ada pengiriman — buat pengiriman (armada/ekspedisi).",
         [_row(ref_type="shipment", ref_id=s["id"], number=s.get("shipment_no", ""),
-              title=s.get("customer_name") or s.get("order_number") or "—",
+              title=s.get("customer_name") or sj_cust.get(s.get("order_id"), "") or s.get("order_number") or "—",
               subtitle=f"{s.get('order_number', '')} · {s.get('product_name', '')}"[:80],
-              value=float(s.get("quantity") or 0), age_days=_age_days(s.get("created_at") or s.get("dispatched_at")),
-              badge="dispatched", action="Buat pengiriman", action_kind="create_delivery") for s in sj],
+              value=float(s.get("qty") or s.get("quantity") or 0),
+              age_days=_age_days(s.get("created_at") or s.get("dispatched_at")),
+              badge="dispatched", action="Buat pengiriman", action_kind="create_delivery",
+              extra={"unit": s.get("unit") or ""}) for s in sj],
         action_label="Buat pengiriman", owner="warehouse_admin", value_kind="qty", value_label="Qty"))
 
     # 2 — tugas outbound belum tuntas

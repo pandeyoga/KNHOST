@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import DispatchPaymentGatePanel from "../orders/DispatchPaymentGatePanel";
+import PickListPanel from "./PickListPanel";
 import { dualLen } from "../../components/RollPicker";
 import {
   Scan, Truck, CheckCircle, AlertTriangle,
@@ -351,6 +352,8 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
               {!['dispatched', 'escalated', 'scheduled'].includes(selectedTask.status) && !(selectedTask.task_subtype === "sample_cut" && Number(selectedTask.picked_qty || 0) <= 0) && (
                 <>
                   {selectedTask.task_subtype !== "sample_cut" && (<>
+                  {/* Cek UI UAT v3 — roll yang harus diambil langsung di panel (dulu harus cetak picking list di layar lain) */}
+                  <PickListPanel task={selectedTask} onPick={(no) => { setRollCode(no); resolveRoll(no); }} />
                   <div className="flex items-center gap-2">
                     <button onClick={cameraActive ? stopCamera : startCamera}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium ${cameraActive ? 'bg-red-500 text-white' : 'bg-[#FFF8EE] text-[#FF9500] border border-[#FF9500]/30'}`}>

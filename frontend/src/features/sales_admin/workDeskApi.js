@@ -38,6 +38,10 @@ export const verifyOrder = (orderId, note = "") =>
 export const confirmOrder = (orderId) =>
   axios.post(`${API}/sales-orders/${orderId}/confirm`).then((r) => r.data);
 
+/** Ajukan SO terverifikasi ke gerbang persetujuan (tanpa gerbang → otomatis Disetujui). */
+export const submitOrderForApproval = (orderId) =>
+  axios.post(`${API}/sales-orders/${orderId}/submit-for-approval`).then((r) => r.data);
+
 export const fulfillmentOptions = (orderId) =>
   axios.get(`${API}/sales-admin/orders/${orderId}/fulfillment`).then((r) => r.data);
 
@@ -120,6 +124,9 @@ const BADGE_LABEL = {
   delivered: "Terkirim", failed: "Gagal", terkirim: "Terkirim", gagal: "Gagal", opname: "Opname",
   transfer: "Transfer", receiving: "Penerimaan", assigned: "Ditugaskan", in_progress: "Berjalan",
   kewajiban: "Kewajiban", "diakui (historis)": "Diakui (historis)",
+  // Cek UI UAT v3 — status tugas gudang yang dulu tampil mentah ("created") di Meja Saya Gudang
+  created: "Siap diambil", staging: "Siap muat", escalated: "Dieskalasi", qc_pending: "Menunggu QC",
+  completed: "Selesai", qc_check: "Pemeriksaan QC", put_away: "Penyimpanan",
 };
 
 const BADGE_TONE = {

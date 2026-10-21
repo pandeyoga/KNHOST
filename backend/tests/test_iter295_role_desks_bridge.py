@@ -61,7 +61,7 @@ class TestMdDesk:
         for q in d["queues"]:
             for key in ("id", "label", "count", "rows", "action_label"):
                 assert key in q, f"{q.get('id')} missing {key}"
-            assert q["count"] == len(q["rows"])
+            assert q.get("shown", len(q["rows"])) == len(q["rows"]) and q["count"] >= len(q["rows"])
             for row in q["rows"]:
                 assert row["ref_id"] and row["action_kind"]
         print("md queues:", {q["id"]: q["count"] for q in d["queues"]})
@@ -102,7 +102,7 @@ class TestWarehouseAdminDesk:
         d = r.json()
         assert d["desk"] == "warehouse_admin"
         assert [q["id"] for q in d["queues"]] == WH_QUEUES
-        assert all(q["count"] == len(q["rows"]) for q in d["queues"])
+        assert all(q.get("shown", len(q["rows"])) == len(q["rows"]) and q["count"] >= len(q["rows"]) for q in d["queues"])
         print("wh queues:", {q["id"]: q["count"] for q in d["queues"]})
 
     def test_wh_forbidden_on_md_desk(self, wh_hdr):

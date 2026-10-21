@@ -19,6 +19,7 @@
 import { useState } from "react";
 import { ChevronDown, Inbox } from "lucide-react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
+import { formatUnitTotals } from "../../utils/qtyByUnit";
 import { RevisionBadge } from "../../components/RevisionProgress";
 import { ageTone, badgeClass, badgeLabel, queueMeta, fmtWhen, sinceFromAge } from "./workDeskApi";
 import Collapse from "../../components/Collapse";
@@ -40,9 +41,13 @@ export default function DeskQueueCard({
   const visible = pg.pageRows;
   const oldest = ageTone(queue?.oldest_age_days);
 
-  // Ringkasan: qty → angka + satuan; count → jumlah dokumen; selain itu SELALU rupiah.
+  // Ringkasan: qty → angka PER SATUAN (yard dan kg tidak dijumlahkan — kelas F-04); count → jumlah dokumen;
+  // selain itu SELALU rupiah.
+  const unitTotals = isQty
+    ? rows.reduce((m, r) => { const u = r.unit || ""; m[u] = (m[u] || 0) + (Number(r.value) || 0); return m; }, {})
+    : null;
   const totalText = isQty
-    ? `${formatQty(queue?.total_value)} ${rows[0]?.unit || ""}`.trim()
+    ? (rows.length ? formatUnitTotals(unitTotals, queue?.total_value) : `${formatQty(queue?.total_value)}`)
     : queue?.value_kind === "count"
       ? `${rows.length} dokumen`
       : formatCurrency(Number(queue?.total_value) || 0);
@@ -132,6 +137,12 @@ export default function DeskQueueCard({
           )}
 
           {rows.length > PAGE_ROWS && <div className="border-t border-[#EFF0F2] px-3 py-1.5">{pg.pager}</div>}
+          {/* Cek UI UAT v3 — antrean sangat panjang: server mengirim baris tertua dulu (maks. 200) */}
+          {(queue?.count || 0) > rows.length && (
+            <p className="border-t border-[#EFF0F2] px-3 py-1.5 text-[10.5px] text-[#8C4A00]" data-testid={`${testPrefix}-truncated-${queue?.id}`}>
+              Menampilkan {rows.length} tertua dari {queue.count} — selesaikan yang tertua dulu, atau buka layar daftarnya untuk mencari dokumen tertentu.
+            </p>
+          )}
         </div>
       </Collapse>
     </section>

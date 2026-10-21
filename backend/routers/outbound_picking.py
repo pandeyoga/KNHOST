@@ -47,7 +47,9 @@ async def list_outbound_tasks(request: Request, status: str = None, warehouse_id
     
     # Enrich with SO info
     so_ids = list(set(t.get("order_id") for t in tasks if t.get("order_id")))
-    orders = {o["id"]: o for o in await db.sales_orders.find({"id": {"$in": so_ids}}, {"_id": 0}).to_list(100)}
+    # Cek UI UAT v3 — dulu to_list(100) memotong pesanan bila tugas > 100 SO → nama pelanggan kosong di panel.
+    orders = {o["id"]: o for o in await db.sales_orders.find(
+        {"id": {"$in": so_ids}}, {"_id": 0, "id": 1, "customer_name": 1, "total_amount": 1}).to_list(len(so_ids) or 1)}
     
     # F-10 — status termin CBD/DP per SO: alasan tahan tampil di daftar & panel kirim (bukan baru ketahuan saat klik).
     from services import dispatch_payment_gate as _gate
@@ -61,6 +63,31 @@ async def list_outbound_tasks(request: Request, status: str = None, warehouse_id
             task["payment_hold"] = hold if hold and hold["applies"] else None
     
     return tasks
+
+
+@router.get("/outbound/tasks/{task_id}/pick-list")
+async def task_pick_list(task_id: str, request: Request) -> Dict[str, Any]:
+    """Cek UI UAT v3 (2026-10-21) — roll yang HARUS diambil untuk tugas ini (dulu layar Barang Keluar hanya punya kolom
+    scan, sehingga staf harus mencetak Surat Pengambilan Barang di layar lain untuk tahu roll mana): roll teralokasi SO
+    ini di gudang & produk tugas (nomor, LOT, lokasi, panjang, sudah diambil/belum) + reservasi potong yang belum
+    dipotong."""
+    await require_permission(request, "wms", "view")
+    task = safe_doc(await db.wms_tasks.find_one({"id": task_id}, {"_id": 0}))
+    if not task:
+        raise HTTPException(status_code=404, detail="Outbound task tidak ditemukan")
+    assert_entity_access(task, "wms_tasks", await entity_ctx(request))
+    picked = {e.get("roll_id") for e in task.get("scan_log") or [] if e.get("scan_type") in ("pick", "cut") and e.get("roll_id")}
+    rolls = await db.inventory_rolls.find(
+        {"reserved_ref.id": task.get("order_id"), "product_id": task.get("product_id"),
+         "warehouse_id": task.get("warehouse_id"), "status": {"$nin": ["delivered", "in_transit_sales", "cancelled"]}},
+        {"_id": 0, "id": 1, "roll_no": 1, "lot": 1, "bin_id": 1, "bin_code": 1, "location_code": 1, "length_remaining": 1,
+         "unit": 1, "status": 1}).sort("roll_no", 1).to_list(500)
+    from services.roll_service import pending_cuts
+    cuts = [c for c in await pending_cuts(task.get("order_id"))
+            if c["product_id"] == task.get("product_id") and c["warehouse_id"] == task.get("warehouse_id")]
+    return {"task_id": task_id, "order_id": task.get("order_id"), "unit": task.get("unit") or "",
+            "rolls": [{**r, "picked": r["id"] in picked} for r in rolls],
+            "pending_cuts": [{"roll_no": c["roll_no"], "lot": c.get("lot", ""), "qty": c["qty"]} for c in cuts]}
 
 
 @router.post("/outbound/tasks/{task_id}/release")

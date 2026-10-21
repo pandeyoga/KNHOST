@@ -20,7 +20,7 @@ import VerifyOrderDialog from "./VerifyOrderDialog";
 import FulfillmentDecisionDialog from "./FulfillmentDecisionDialog";
 import KeepPendingPanel from "./KeepPendingPanel";
 import CustomerGradeRulesCard from "./CustomerGradeRulesCard";
-import { confirmOrder, rowLink, salesAdminDesk, soTrackerLink } from "./workDeskApi";
+import { confirmOrder, rowLink, salesAdminDesk, soTrackerLink, submitOrderForApproval } from "./workDeskApi";
 import { apiErrorText } from "../../utils/apiError";
 
 export default function SalesAdminDesk({ currentUser, selectedEntity = "all", onOpenDocument }) {
@@ -67,6 +67,21 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
     } finally { setBusyRef(""); }
   }
 
+  // Cek UI UAT v3 — SO terverifikasi diajukan dari meja (dulu hanya dari detail SO; SO "hilang" dari meja).
+  async function doSubmit(row) {
+    setBusyRef(row.ref_id); setError(""); setErrorAction(null);
+    try {
+      const res = await submitOrderForApproval(row.ref_id);
+      const no = res?.number || res?.order_number || row.number;
+      flash(res?.status === "approved"
+        ? `${no} disetujui otomatis (tanpa gerbang) — lanjut di antrean Siap dikonfirmasi.`
+        : `${no} diajukan — menunggu keputusan ${res?.required_approval_role || "manajer"}.`);
+      await load();
+    } catch (e) {
+      setError(apiErrorText(e, "Gagal mengajukan persetujuan."));
+    } finally { setBusyRef(""); }
+  }
+
   function openFull(row) {
     setVerifyRow(null); setFulfillRow(null);
     onOpenDocument?.(rowLink(row, null, "sales_admin"));
@@ -76,6 +91,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
     if (row.action_kind === "verify") { setVerifyRow(row); return; }
     if (row.action_kind === "fulfill") { setFulfillRow(row); return; }
     if (row.action_kind === "confirm") { doConfirm(row); return; }
+    if (row.action_kind === "submit") { doSubmit(row); return; }
     onOpenDocument?.(rowLink(row, queue?.id, "sales_admin"));
   }
 

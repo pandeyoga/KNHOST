@@ -42,8 +42,10 @@ export default function VerifyOrderDialog({
     try {
       const res = await verifyOrder(orderId, note);
       const by = res?.verification?.by || "";
+      // Cek UI UAT v3 — langkah berikutnya sesuai status: Dicadangkan → ajukan persetujuan; Disetujui → konfirmasi.
       onVerified?.(`${res?.order_number || orderNumber} terverifikasi oleh ${by} — `
-        + "siap dikonfirmasi.");
+        + (res?.status === "approved" ? "siap dikonfirmasi."
+          : "lanjut [Ajukan persetujuan] di antrean Terverifikasi — ajukan persetujuan."));
     } catch (e) {
       setError(apiErrorText(e, "Gagal memverifikasi pesanan."));
       load();

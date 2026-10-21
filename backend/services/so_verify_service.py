@@ -288,6 +288,7 @@ async def verify(order: Dict[str, Any], actor: Dict[str, Any], note: str = "") -
                                       "timestamp": rec["at"], "user": rec["by"],
                                       "note": "Kelengkapan administratif diverifikasi"}}})
     return {"order_id": order["id"], "order_number": order.get("number"),
+            "status": order.get("status"),   # layar memilih langkah berikutnya (ajukan / konfirmasi)
             "verification": rec, **ringkas}
 
 
