@@ -289,4 +289,9 @@ async def compute_frequent_products(customer_id: str, limit: int, actor: Dict[st
             "reorder_total_qty": round(s["total_qty"], 2),
             "reorder_last_unit": s["last_unit"],
         })
+    # F-02 (uji pra-UAT 2026-10-21) — stok kartu "Sering dibeli" = helper yang SAMA dengan katalog Kasir
+    # (stok global: tersedia, roll, dipesan, incoming). Dulu dokumen produk mentah tanpa `roll_count`
+    # → kartu checkout menulis "0 roll tersedia" padahal stoknya ada.
+    from services import sales_stock_service
+    await sales_stock_service.apply_global(out)
     return strip_cost_fields([safe_doc(x) for x in out], (actor or {}).get("role"))
