@@ -110,7 +110,7 @@ async def dashboard(request: Request, entity_id: str = None) -> Dict[str, Any]:
     available_by_unit: Dict[str, float] = {}
     reserved_by_unit: Dict[str, float] = {}
     for pid, d in per_prod.items():
-        unit = unit_of.get(pid) or "lainnya"
+        unit = unit_of.get(pid) or "tanpa satuan"   # produk lama tanpa base_unit — tetap terlihat, tidak dicampur
         free = max(d["available_qty"] - mk.get(pid, 0.0), 0.0)
         available_by_unit[unit] = round(available_by_unit.get(unit, 0.0) + free, 2)
         reserved_by_unit[unit] = round(reserved_by_unit.get(unit, 0.0) + d["reserved_qty"], 2)
