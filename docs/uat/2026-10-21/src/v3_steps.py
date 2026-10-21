@@ -1,7 +1,8 @@
 """UAT v3.0 — potongan langkah yang dipakai bersama oleh beberapa alur lurus.
 
 Setiap langkah: (peran, navigasi, yang dilakukan / diisi, hasil yang harus terlihat, cek_ui)
-cek_ui: "S1" / "S2" = langkah ini sudah dijalankan di layar pada skenario itu (21–22 Okt 2026);
+cek_ui: "S1"…"S16" = langkah ini sudah dijalankan di layar pada skenario itu (21–22 Okt 2026);
+        "=S8" = langkah yang sama persis sudah dijalankan di layar pada skenario S8;
         "" = belum dijalankan di layar — bila tombol/menu tidak ada, catat sebagai temuan.
 Setiap fungsi menerima `ui` supaya alur yang memakai potongan sama dengan konteks berbeda (PT lain, gudang lain)
 tidak ikut bertanda sudah dicek.
@@ -15,7 +16,7 @@ def pos_order(term="Kredit NET 30 Hari", qc="Tanpa QC", fulfil="kirim", product=
     """Sales membuat pesanan di aplikasi HP (tampil otomatis di layar HP). Checkout = layar yang sama dengan desktop."""
     ui = "HP" if ui else ""
     rows = [
-        ("Sales", "HP: tab **Katalog** → kolom *Cari produk, SKU, warna…* → kartu produk → [[Pilih]]",
+        ("Sales", "HP: tab **Katalog** → kolom *Cari produk, SKU, warna…* → kartu produk → [[Tambah]]",
          f"Cari *{product}* (hasil tampil di bawah *Produk Terlaris*).",
          "Lembar produk: harga/yard, stok, pilihan **Warna**, *Order biasa / Order sample*, *Per yard / Per Roll*, QTY.", ui),
         ("Sales", "lembar produk → [[Tambah … yard · Rp …]]",
@@ -88,10 +89,12 @@ def dispatch(ui="S1", entity="Sukacita", gate=""):
         ("Admin Gudang", f"`Meja Gudang` (pilih **Kerja di: {entity}**) → antrean **Tugas outbound berjalan** → [[Buka WMS]]",
          "Buka tugas SO yang sudah diambil (status *Pengemasan*, diambil x/x).", "Barang Keluar dengan tugas terpilih." +
          (f" {gate}" if gate else ""), ui),
-        ("Admin Gudang", "**Pemeriksaan Muat Akhir** → [[Mulai Loading Check]] — tanpa handheld RFID: isi *Alasan override* → [[Override]]",
-         "Scan seluruh roll yang naik kendaraan. Bila belum ada handheld/tag, beri pengecualian berizin dengan alasan.",
-         "*OVERRIDE oleh … — berlaku untuk n roll saat ini* (tombol Override nonaktif sampai alasan diisi). "
-         "Staf Gudang yang menekan Kirim tanpa ini ditolak: *roll belum bertag RFID aktif*.", ui),
+        ("Admin Gudang", "**Pemeriksaan Muat Akhir** → (bila ada *roll belum bertag*) [[Buat tag simulasi]] → [[Mulai Loading Check]] "
+         "→ [[Simulasi scan semua (mode UAT)]] → [[Selesaikan]]",
+         "UAT tanpa handheld/tag RFID: **Mode simulasi RFID** (disiapkan IT) membuat tag & scan simulasi yang dianggap sah. "
+         "Staf Gudang boleh menjalankannya. Tanpa mode simulasi: isi *Alasan override* → [[Override]] (Admin Gudang).",
+         "*SIMULASI (mode UAT) — n/n cocok; dianggap sah, dispatch dibuka.* Riwayat scan bertanda *SIMULASI (sah di mode "
+         "simulasi UAT)*. Roll di luar SO / kurang → tidak cocok dan kirim tertahan.", "S3" if ui else ""),
         ("Admin Gudang", "panel **Siap dikirim** → [[Kirim Semua]] → [[Kirim Sekarang]]",
          "Kirim seluruh qty yang sudah diambil (atau [[Kirim Sebagian]] + qty).",
          "*Terkirim Penuh! … · KSC/SJ-xxxxx* + tombol [[Surat Jalan]] [[Buat Pengiriman]]. **Catat nomor SJ.**", ui),

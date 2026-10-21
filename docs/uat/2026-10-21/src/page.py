@@ -31,6 +31,7 @@ p { margin: 0 0 1.6mm 0; }
 .flow { display:block; width:100%; height:auto; border:1px solid #E2E8F0; border-radius:4px; }
 .strip { display:grid; grid-template-columns: repeat(4, 1fr); gap:2mm; margin:2.2mm 0 2.2mm 0; }
 .strip.c3 { grid-template-columns: repeat(3, 1fr); }
+.strip.c4 { grid-template-columns: repeat(4, 1fr); }
 .strip.c2 { grid-template-columns: repeat(2, 1fr); }
 .box { border:1px solid #E2E8F0; border-left:3px solid #1D4ED8; border-radius:4px; padding:1.6mm 2.2mm; background:#FFFFFF; font-size:7.8pt; }
 .box b.t { display:block; font-size:7.4pt; letter-spacing:.6px; text-transform:uppercase; color:#1E3A8A; margin-bottom:.6mm; }

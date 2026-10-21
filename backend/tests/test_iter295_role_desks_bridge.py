@@ -22,7 +22,8 @@ ENT = "ent_ksc"
 
 MD_QUEUES = ["desain", "sample", "pr", "acuan"]
 # keputusan owner 2026-10-21 — antrean retur menunggu terima/QC (tanpa nilai uang) sesudah outbound
-WH_QUEUES = ["sj_belum_diangkut", "outbound", "retur_terima_qc", "inbound", "spk", "persetujuan_gudang", "logistik"]
+# Cek UI UAT v3 (S6) — antrean "Pesanan minta QC — SPK belum dibuat" (qc_pesanan) ditambahkan sebelum SPK.
+WH_QUEUES = ["sj_belum_diangkut", "outbound", "retur_terima_qc", "inbound", "qc_pesanan", "spk", "persetujuan_gudang", "logistik"]
 
 
 def _hdr(email):

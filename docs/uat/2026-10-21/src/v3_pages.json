@@ -9,10 +9,10 @@
  "S14 — Retur → kompensasi (refund / saldo / nego)": 32,
  "S15 — Retur → barang pengganti": 35,
  "S8 — Stok kurang → PO supplier → kedatangan → SPK → kirim": 39,
- "S9 — Stok kurang → makloon (proses di mitra)": 44,
- "S10 — Multi-gudang Rancamalang → transit → Jakarta → pelanggan": 48,
- "S11 — Sample gratis": 51,
- "S12 — Sample berbayar": 53,
- "S13 — Pesanan Khusus (desain/warna baru) → SO → lunas": 56,
- "S16 — Pembelian stok (restock) → hutang supplier lunas": 61
+ "S9 — Stok kurang → makloon (proses di mitra)": 45,
+ "S10 — Multi-gudang Rancamalang → transit → pelanggan Jakarta": 49,
+ "S11 — Sample gratis": 53,
+ "S12 — Sample berbayar": 55,
+ "S13 — Pesanan Khusus (desain/warna baru) → SO → lunas": 58,
+ "S16 — Pembelian stok (restock) → hutang supplier lunas": 63
 }

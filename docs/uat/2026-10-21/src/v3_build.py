@@ -48,6 +48,10 @@ def ui_cell(u):
         return f'<span class="t-ok">✓ dicek di layar ({u})</span>'
     if u == "HP":
         return '<span class="t-ok">✓ dicek di layar HP</span>'
+    if u and u.startswith("="):
+        return f'<span class="t-ok">✓ langkah sama dicek di {u[1:]}</span>'
+    if u and re.fullmatch(r"S\d+", u):
+        return f'<span class="t-ok">✓ dicek di layar ({u})</span>'
     return '<span class="t-na">○ belum dicek di layar</span>'
 
 
@@ -154,9 +158,10 @@ def schedule():
                 f"<thead><tr><th>Jam</th><th>Alur</th><th>Peran</th></tr></thead><tbody>{body}</tbody></table>")
     return f"""<section class="sec">{head("Jadwal", "Jadwal 1 hari — mulai 09.00 WIB, dua kelompok berjalan bersamaan", ["09.00–17.00 WIB", "Persiapan tim IT selesai sebelum 09.00"])}
 <div class="strip c2" style="align-items:start"><div>{table(1)}</div><div>{table(2)}</div></div>
-<div class="strip c3">
+<div class="strip c4">
 <div class="box"><b class="t">Pembagian kelompok</b><ul><li>Kelompok 1: penjualan & retur.</li><li>Kelompok 2: pembelian, makloon, multi-gudang, sample & Pesanan Khusus.</li></ul></div>
 <div class="box a"><b class="t">Peran yang dipakai dua kelompok</b><ul><li>Admin Gudang, Gudang, Finance, Manajer, QC dipakai keduanya: siapkan satu orang per kelompok, atau satu orang bergantian dengan dua perangkat.</li><li>Bila peserta tidak cukup: kerjakan Kelompok 1 lebih dulu, alur Kelompok 2 yang belum selesai dijadwalkan ulang.</li></ul></div>
+<div class="box r"><b class="t">Persiapan IT sebelum 09.00</b><ul><li><code>update.sh</code> di VPS → commit terbaru.</li><li>Admin: <b>Pusat Pengaturan › Stok & Satuan › Mode simulasi RFID</b> = Ya untuk Sukacita, Kanda Fabric, Cipta Sandang (UAT tanpa handheld/tag). Matikan lagi setelah UAT.</li><li>S9: <b>Pembelian › Master Pembelian › Resep Proses</b> untuk artikel makloon contoh (RIVERA RIB) bila belum ada.</li><li>Semua akun demo: sandi sama (lihat lembar akun).</li></ul></div>
 <div class="box g"><b class="t">Ketergantungan</b><ul><li>S14 & S15 (retur) memakai SO dari S1 yang sudah <i>Selesai</i>.</li><li>S8, S9, S16 menunggu barang supplier/mitra “di luar sistem” — fasilitator memerankan supplier (SJ contoh).</li></ul></div>
 </div></section>"""
 

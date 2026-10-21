@@ -11,14 +11,16 @@ WH_RCM = ("Gudang", "warehouse.rancamalang@kainnusantara.id")
 CST_ADM = ("CST", "salesadmin.cst@kainnusantara.id")
 
 
-def AP_STEPS(note):
-    """Hutang supplier: tagihan & kontrabon = Manajer/Pembelian (menu Hutang Pemasok); pembayaran = Finance (Meja Finance)."""
-    return [("Pembelian", "`Pembelian › Hutang Pemasok › Tagihan Supplier` → catat tagihan dari penerimaan (GR) → "
-             "`Pembelian › Hutang Pemasok › Kontrabon (Tukar Faktur)` → setujui",
-             f"Cocokkan tagihan supplier dengan penerimaan. {note}", "Tagihan & kontrabon *disetujui*; hutang siap dibayar.", ""),
-            ("Finance", "`Meja Finance` → antrean **Hutang supplier jatuh tempo** → [[Bayar]]",
-             "Bayar sesuai termin (Finance tidak punya menu Hutang Pemasok — pembayaran lewat Meja Finance).",
-             "Hutang PO lunas; jurnal terposting.", "")]
+def AP_STEPS(note, ui=""):
+    """Hutang supplier: tagihan, kontrabon & PEMBAYARAN = Manajer/Admin (izin vendor_bill.pay); Finance tidak berwenang."""
+    return [("Pembelian", "`Pembelian › Hutang Pemasok › Tagihan Supplier` → [[Buat Tagihan]] → pilih PO → No. faktur supplier → "
+             "[[Submit & Posting]]",
+             f"Tagihan dicocokkan PO ↔ penerimaan ↔ bill (3-way). {note}",
+             "*Vendor Bill VB-xxxxx dibuat — langsung di-posting (match bersih)*; total + PPN masukan; status *Terposting*.", ui),
+            ("Pembelian", "Tagihan Supplier → baris VB → [[Bayar]] (nominal terisi sisa hutang) → [[Catat Pembayaran]]",
+             "Pembayaran hutang = Manajer/Admin (keputusan pemilik: Finance tidak memegang sisi hutang). "
+             "Kontrabon (Tukar Faktur) opsional bila supplier menagih lewat tukar faktur.",
+             "VB *Lunas*; *Sudah dibayar* = total; jurnal terposting.", ui)]
 
 
 def _s1():
@@ -51,214 +53,226 @@ def _s2():
 
 
 def _s3():
-    return (s.pos_order(term="Tunai / POS", fulfil="ambil", ui="",
-                        review_hint="Ringkasan *Diambil oleh … · Ambil di gudang · tanggal*.") +
-            s.admin_sales() +
-            [("Gudang", "`Operasi Gudang › Barang Keluar` → filter **Terjadwal (Ambil)** → tugas SO",
-              "Tugas ditahan sampai tanggal ambil. Bila pelanggan datang lebih awal → [[Rilis ke Antrean]] → [[Rilis ke Antrean]] (konfirmasi).",
-              "Kotak ungu *Barang baru disiapkan pada/setelah tanggal ambil*; setelah rilis tugas masuk antrean pengambilan.", "")] +
-            s.pick() + s.dispatch() +
-            [("Admin Gudang", "`Gudang & Logistik › Pengiriman` → [[Buat Pengiriman]] → Jenis **Diambil pelanggan**",
-              "Pilih SJ pesanan ini; simpan. Sales memberi **kode pickup** ke pelanggan.",
-              "Pengiriman *Menunggu diambil*.", ""),
+    return (s.pos_order(term="Tunai / POS", fulfil="ambil", ui="S3",
+                        review_hint="Ringkasan *Diambil oleh … · Ambil di gudang · tanggal* (tanggal tidak boleh lampau).") +
+            s.admin_sales("=S1") +
+            [("Gudang", "`Meja Saya` → **Tugas gudang** → baris SO → [[Kerjakan]] (tugas *Terjadwal*) → [[Rilis ke Antrean]]",
+              "Tugas ditahan sampai tanggal ambil; [[Kerjakan]] langsung membuka tugas terjadwalnya. Pelanggan datang lebih awal → rilis.",
+              "Kotak ungu *Barang baru disiapkan pada/setelah tanggal ambil*; setelah rilis tugas masuk antrean pengambilan.", "S3")] +
+            s.pick("=S1") + s.dispatch("S3") +
+            [("Admin Gudang", "`Gudang & Logistik › Pengiriman` → [[Buat Pengiriman]] (SJ tadi) → jenis **Diambil pelanggan** (otomatis)",
+              "Pesanan *Ambil di gudang* otomatis memakai mode pickup; simpan. Sales memberi **kode pickup** (tampil di kartu HP).",
+              "Pengiriman *Menunggu diambil*; HP: kartu SO menampilkan *Diambil di gudang · tanggal* & kode pickup.", "S3"),
              ("Admin Gudang", "detail pengiriman → [[Verifikasi & serahkan]]",
               "Pelanggan datang: ketik **kode pickup** + nama & nomor identitas pengambil.",
-              "Kode salah → *KODE PICKUP SALAH — barang tidak boleh diserahkan*. Benar → *Diserahkan*; SO *Selesai*.", "")] +
-            s.pay(method="Tunai") + s.journey(""))
+              "Kode salah → *KODE PICKUP SALAH — barang tidak boleh diserahkan*. Benar → *Diserahkan*; SO *Selesai*.", "S3")] +
+            s.pay(ui="S3", method="Tunai") + s.journey("S3", "Perjalanan pesanan 100% · kode pickup tampil."))
 
 
 def _s4():
-    return (s.pos_order() + s.sales_so_approval("harga", price="Rp 17.500") +
-            s.verify() +
+    return (s.pos_order(ui="=S1") + s.sales_so_approval("harga", price="Rp 17.500") +
+            s.verify("=S1") +
             s.submit(gate_note="SO *Menunggu persetujuan* (*Menunggu approval harga khusus*); pindah ke antrean **Menunggu keputusan manajer**.") +
             [("Manajer", "`Meja Saya` → **Permintaan harga khusus** → [[Putuskan]] (atau `Pusat Persetujuan › Inbox Persetujuan`)",
               "Bandingkan harga normal vs diminta, alasan & bukti → [[Tolak]] + catatan (mis. *margin terlalu tipis*).",
-              "Entri *ditolak* + pemutus & catatan.", ""),
+              "Entri *ditolak* + pemutus & catatan.", "S4"),
              ("Sales", "HP: tab **Pesanan** → ketuk SO → kotak **Persetujuan** → [[Ajukan Harga Khusus]] → [[Ajukan]]",
               "Baca entri **DITOLAK** + *Catatan pemutus*. Nego ulang dengan pelanggan → ajukan harga baru (mis. Rp 19.000) + bukti.",
               "Entri lama *Digantikan pengajuan baru*; entri baru *MENUNGGU*. SO tidak terkunci (F-09).", "HP"),
              ("Manajer", "`Meja Saya` → **Permintaan harga khusus** → [[Putuskan]] → [[Setujui]]",
               "Setujui harga baru + catatan.",
-              "Harga baris = harga khusus; subtotal, PPN, grand total dihitung ulang; **SO otomatis Disetujui**.", "")] +
-            s.confirm() + s.pick() + s.dispatch() + s.logistics("ekspedisi") +
-            s.pay() + s.journey("", "Langkah *Disetujui* mencatat manajer pemutus harga khusus."))
+              "Harga baris = harga khusus; subtotal, PPN, grand total dihitung ulang; **SO otomatis Disetujui**.", "S4")] +
+            s.confirm("=S1") + s.pick("=S1") + s.dispatch("=S3") + s.logistics("ekspedisi", "=S1") +
+            s.pay("=S1") + s.journey("S4", "Langkah *Disetujui* mencatat manajer pemutus harga khusus."))
 
 
 def _s5():
-    return ([(KANDA_SALES, "HP: tab **Katalog** → cari *LYFLEX ACTIVE BEIGE A* → [[Pilih]] → qty kg → [[Tambah …]] → tab **Keranjang** → [[Lanjut ke Checkout]]",
+    return ([(KANDA_SALES, "HP: tab **Katalog** → cari *LYFLEX ACTIVE BEIGE A* → [[Tambah]] → qty kg → [[Tambah …]] → tab **Keranjang** → [[Lanjut ke Checkout]]",
               "Langkah 1: pelanggan *CV Garmen Soreang Jaya* (limit kredit **Rp25 jt**). Qty sampai nilai melewati limit "
               "(mis. ±700 kg × Rp41 rb ≈ Rp28,7 jt). Langkah 2: termin *Kredit NET 30 Hari*.",
-              "Langkah 3 *Review*: kotak kredit **Peringatan / Terblokir kredit** + alasan, AR vs limit, proyeksi.", ""),
-             (KANDA_SALES, "Checkout langkah 3 → [[Buat Sales Order]]", "Buat SO.", "SO terbentuk; kartu SO menandai masalah kredit.", ""),
-             (KANDA_SALES, "HP: tab **Pesanan** → ketuk SO → kotak **Persetujuan** → [[Minta Persetujuan Kredit]]",
-              "Isi alasan (mis. *pelanggan lama, pembayaran lancar*) → kirim.",
-              "Entri *Persetujuan Kredit (Melebihi Batas) · MENUNGGU*; SO *Menunggu approval kredit*.", "")] +
-            s.verify("", KANDA_ADM) +
-            s.submit("", KANDA_ADM, gate_note="SO *Menunggu persetujuan* (kredit). Approve langsung oleh Admin Sales ditolak.") +
-            [("Manajer", "`Pusat Persetujuan › Inbox Persetujuan` (atau `Meja Saya`) → entri kredit → [[Putuskan]] → [[Setujui]]",
-              "Tinjau limit, eksposur, umur piutang; isi catatan (mis. *ACC direksi via WA*).",
-              "*Credit hold* dilepas, override tercatat terpakai, **SO otomatis Disetujui**.", "")] +
-            s.confirm("", KANDA_ADM) +
-            s.pick("", account="warehouse.soreang@kainnusantara.id", wh="Soreang · Gudang Kanda") +
-            s.dispatch("", entity="Kanda Fabric") + s.logistics("armada", "") +
-            s.pay("", entity="Kanda Fabric") + s.journey(""))
+              "Langkah 3 *Review*: kotak kredit **Terblokir kredit** + alasan, AR vs limit, proyeksi; [[Buat Sales Order]] terkunci.", "S5"),
+             (KANDA_SALES, "Review checkout → [[Ajukan Override Kredit]] → alasan → [[Kirim pengajuan]]",
+              "Isi alasan (mis. *pelanggan lama, pembayaran lancar*).",
+              "*Pengajuan override kredit terkirim — menunggu Manajer*.", "S5"),
+             ("Manajer", "`Pusat Persetujuan › Inbox Persetujuan` → entri **Override kredit** → [[Tinjau & Putuskan]] → [[Setujui]]",
+              "Tinjau limit, eksposur, umur piutang; catatan (mis. *ACC direksi via WA*).", "Override *disetujui*.", "S5"),
+             (KANDA_SALES, "HP: Keranjang → [[Lanjut ke Checkout]] → langkah 3 → [[Buat Sales Order]]",
+              "Checkout ulang: kotak kredit kini *override disetujui*.", "SO **KANDA/SO-xxxxx** dibuat.", "S5")] +
+            s.verify("S5", KANDA_ADM) + s.submit("S5", KANDA_ADM) + s.confirm("S5", KANDA_ADM) +
+            s.pick("S5", account="warehouse.soreang@kainnusantara.id", wh="Soreang · Gudang Kanda") +
+            s.dispatch("S5", entity="Kanda Fabric") + s.logistics("armada", "=S2") +
+            s.pay("=S1", entity="Kanda Fabric") + s.journey("=S1"))
 
 
 def _s6():
-    return (s.pos_order(qc="QC seluruh roll", ui="") + s.admin_sales() + s.pick() +
-            [("Gudang", "`Barang Keluar` → panel **Siap dikirim** → [[Kirim Semua]]",
-              "Coba kirim sebelum QC.",
-              "Ditolak: *SO meminta QC … kirim menunggu SPK QC selesai*.", ""),
-             ("Admin Gudang", "`Meja Gudang` → antrean **SPK inspeksi belum ditugaskan** → [[Tugaskan]]",
-              "Pilih petugas QC, tanggal SPK → simpan.", "SPK *Ditugaskan*; muncul di antrean QC.", ""),
-             ("QC", "`Operasi Gudang › QC & Inspeksi` → SPK QC pesanan → [[Mulai diperiksa]]",
-              "Per roll: panjang diinspeksi (**yard**) & cacat per interval 15 yd (4-point) → [[Simpan hasil]].",
-              "Hasil per roll + grade saran tersimpan.", ""),
-             ("Admin Gudang", "SPK → [[Keputusan]] → lulus / tolak per roll → tutup SPK",
+    return (s.pos_order(qc="QC seluruh roll", ui="S6") + s.admin_sales("=S1") +
+            [("Gudang", "`Gudang & Logistik › Lokasi Rak` → **Antrean Potong** → [[Konfirmasi potong]] → scan/ketik label roll anak → [[Verifikasi]]",
+              "Bila daftar roll menulis *Potong dulu*: potong, cetak label roll anak, verifikasi label (tanpa RFID).",
+              "Roll anak *terverifikasi*; muncul di daftar ambil.", "S6")] +
+            s.pick("S6") +
+            [("Gudang", "`Barang Keluar` → panel **Siap dikirim** → [[Kirim Semua]]", "Coba kirim sebelum QC.",
+              "Ditolak: *SO meminta QC … kirim menunggu SPK QC selesai*.", "S6"),
+             ("Admin Gudang", "`Meja Gudang` → antrean **Pesanan minta QC — SPK belum dibuat** → [[Buka]] → `QC & Inspeksi` → [[Buat SPK Inspeksi]]",
+              "Jenis **QC Permintaan Pesanan (SO)** → pilih SO → simpan → [[Tugaskan]] petugas QC.",
+              "SPK *Ditugaskan*; muncul di antrean QC.", "S6"),
+             ("QC", "`Operasi Gudang › QC & Inspeksi` → Dokumen Inspeksi → SPK → [[Mulai periksa]] → baris roll [[QC 4-point]] → [[Simpan hasil]]",
+              "Per roll: panjang diinspeksi (**yard**) & cacat per nilai poin 1–4.", "Hasil per roll + grade saran tersimpan.", "S6"),
+             ("Admin Gudang", "SPK → **Keputusan akhir** (Diterima seluruhnya / sebagian / turun grade / Ditolak) → [[Tutup SPK]]",
               "Satu keputusan SPK. Roll tidak lulus → Admin Sales **Ganti Roll** lalu QC ulang roll pengganti.",
-              "SPK *Selesai*; pesan tahan QC hilang dari panel kirim.", "")] +
-            s.dispatch() + s.logistics("ekspedisi") + s.pay() + s.journey(""))
+              "SPK *Selesai*; pesan tahan QC hilang dari panel kirim.", "S6")] +
+            s.dispatch("S6") + s.logistics("ekspedisi", "=S1") + s.pay("=S1") + s.journey("=S1"))
 
 
 def _s7():
-    return ([("Sales", "HP: tab **Katalog** → cari *ALICE KNIT (94139-45) 14 A* → [[Pilih]] → qty **100 kg** → tab **Keranjang** → [[Lanjut ke Checkout]]",
-              "Langkah 1: pelanggan *Toko Kain Sejahtera*. Langkah 2: aktifkan **backorder** untuk baris yang kurang stok. Langkah 3 → [[Buat Sales Order]].",
-              "Tanpa backorder → ditolak *Stok milik entitas tidak mencukupi … Aktifkan backorder*. Dengan backorder → SO "
-              "**Menunggu stok**; *Sebagian via backorder (disetujui)*.", "")] +
-            s.verify() +
+    return ([("Sales", "HP: tab **Katalog** → cari *ALICE KNIT (94139-45) 14 A* → [[Tambah]] → qty **100 kg** → pilih **Pesan dengan backorder** → tab **Keranjang** → [[Lanjut ke Checkout]]",
+              "Langkah 1: pelanggan *Toko Kain Sejahtera*. Langkah 3: ringkasan menyebut qty backorder (termasuk dari PT lain) → [[Buat Sales Order]].",
+              "SO **Menunggu stok**; *Sebagian via backorder*.", "S7")] +
+            s.verify("=S1") +
             [("Admin Sales", "`Meja Admin Sales` → antrean **Perlu dipenuhi (kurang stok)** → [[Putuskan pemenuhan]]",
-              "Panel menampilkan stok sendiri per gudang, stok di PT lain (+ kesiapan harga internal), PO berjalan, sisa kebutuhan. "
-              "Isi **transfer dari PT lain**: *Cipta Sandang* 100 kg → simpan.",
-              "Total rencana > kekurangan → ditolak. Tersimpan: *Keputusan pemenuhan*; **Permintaan Internal (PIN)** → "
-              "**Transaksi Antar-PT KSC/IC-xxxxx** terbentuk & tertaut ke SO.", ""),
-             (CST_ADM, "`Akuntansi & Pajak › Antar Entitas (Grup)` (Kerja di: Cipta Sandang) → transaksi IC → setujui & serahkan",
-              "PT pemasok menyerahkan barang lewat dokumen resmi (pemilik roll berpindah ke Sukacita).",
-              "Pemilik roll = Sukacita; lokasi fisik masih *Rancamalang · Gudang Knitting*.", ""),
-             ("Sistem", "otomatis", "Roll yang sudah milik Sukacita dicadangkan ke SO backorder.",
-              "SO kembali **Dicadangkan** untuk qty yang tersedia; antrean *Perlu dipenuhi* berkurang.", "")] +
-            s.submit("") + s.confirm("") +
-            s.pick("", account=WH_RCM[1], wh="Rancamalang · Gudang Knitting") +
-            s.dispatch("") + s.logistics("armada", "") + s.pay("") + s.journey(""))
+              "Dialog **Rencana pemenuhan**: stok sendiri, **Transfer dari Cipta Sandang** (stok & harga internal), PO ke supplier, tunggu barang. "
+              "Isi transfer 100 kg → [[Jalankan rencana]].",
+              "**Transaksi Antar-PT KSC/IC-xxxxx** terbentuk & tertaut ke SO.", "S7"),
+             (WH_RCM, "`Akuntansi & Pajak › Antar Entitas (Grup)` (Kerja di: Cipta Sandang) → transaksi IC → [[Buat Tugas Gudang]]",
+              "Gudang PT pemasok menyiapkan barang (izin langkah mengikuti peran: Gudang boleh membuat tugas gudang).",
+              "Tugas gudang IC lahir; transfer gudang *Menunggu persetujuan*.", "S7"),
+             (("Admin Gudang CST", "whadmin@kainnusantara.id"), "`Operasi Gudang › Stok, Transfer & Opname › Transfer` → transfer → [[Setujui]]",
+              "Admin Gudang yang memegang PT Cipta Sandang menyetujui transfer.",
+              "Transfer *Disetujui → Selesai*; pemilik roll = Sukacita; **SO Dicadangkan** untuk qty yang tersedia.", "S7")] +
+            s.submit("=S1") + s.confirm("=S1") +
+            s.pick("=S1", account=WH_RCM[1], wh="Rancamalang · Gudang Knitting") +
+            s.dispatch("=S3") + s.logistics("armada", "=S2") + s.pay("=S1") + s.journey("=S1"))
 
 
 def _s8():
     return ([("Sales", "HP: tab **Katalog** → *ALICE KNIT 14 A* **100 kg** → Checkout + backorder → [[Buat Sales Order]]",
-              "Sama dengan S7 langkah 1.", "SO **Menunggu stok**.", "")] +
-            s.verify("") +
+              "Sama dengan S7 langkah 1.", "SO **Menunggu stok**.", "=S7")] +
+            s.verify("S8") +
             [("Admin Sales", "`Meja Admin Sales` → **Perlu dipenuhi (kurang stok)** → [[Putuskan pemenuhan]]",
-              "Isi **PO ke supplier** 100 kg → simpan. Jalankan ulang tidak menggandakan PR.",
-              "**Permintaan Pembelian PR-xxxxx** lahir & merujuk SO.", ""),
-             ("Pembelian", "`Pembelian › Pengadaan › Permintaan Pembelian` → PR → **Sourcing** → *beli ke supplier* → [[Realisasi]]",
-              "Pilih supplier (mis. *PT Kimia Warna Prima*), gudang penerimaan, tanggal kirim.",
-              "**PO KSC/PO-xxxxx** + tugas inbound *menunggu barang*; qty PO = *incoming* (bukan stok). PR ≥ Rp50 jt / "
-              "PO ≥ Rp100 jt → ACC manajer dulu (`Pusat Persetujuan`).", ""),
+              "**PO ke supplier (lewat PR)** → [[maks]] → [[Jalankan rencana]]. Artikel wajib punya *Sumber restock* (contoh: ALICE KNIT = supplier); "
+              "artikel tanpa sumber restock ditolak dengan pesan *minta MD mengisi Master Produk › Sumber Restock*.",
+              "*Penuh — … PO ke supplier (PR-xxxxx)*; PR merujuk SO.", "S8"),
+             ("Pembelian", "`Pembelian › Pengadaan › Permintaan Pembelian` → PR → [[Realisasi ke PO]] → pilih supplier (mis. *PT Kimia Warna Prima*) → [[Buat PO]]",
+              "Harga otomatis (kontrak → estimasi PR → barang supplier → price-list → master). PR ≥ Rp50 jt / PO ≥ Rp100 jt → ACC dulu "
+              "(oleh akun lain — pemisahan tugas).",
+              "**PO KSC/PO-xxxxx**; PR *Terealisasi Penuh*; qty PO = *incoming*.", "S8"),
              ("Supplier", "di luar sistem", "Supplier mengirim barang + Surat Jalan bernomor PO.", "—", ""),
-             ("Admin Gudang", "`Operasi Gudang › Barang Masuk` → [[Buat kedatangan]]",
-              "Pilih supplier, gudang penerimaan, PO yang datang. Unggah foto SJ (dibaca otomatis) atau isi manual: nomor & "
-              "tanggal SJ, baris barang (qty & unit menurut SJ, jumlah roll) → pilih target PO.",
-              "**KSC/GRN-xxxxx** *Draf → Review → Hitung*.", ""),
-             ("Gudang", "kedatangan → [[Hitung fisik]] → scan label supplier / [[Cetak label KN roll ini]]",
-              "Per roll catat berat (kg) / panjang **fisik**, LOT supplier; tempel label.", "Roll lahir status *receiving*.", ""),
-             ("Admin Gudang", "kedatangan → [[Rekonsiliasi]] → [[Tutup Penerimaan]]",
-              "Putuskan tiap selisih vs SJ: [[Terima dengan catatan]] / klaim supplier / [[Tolak barang]] + alasan.",
-              "Stok bertambah sebesar fisik; PO *Sebagian/Penuh diterima*; roll **karantina**; **SPK inspeksi (INS)** otomatis.", ""),
-             ("Admin Gudang", "`Meja Gudang` → **SPK inspeksi belum ditugaskan** → [[Tugaskan]]",
-              "Pilih petugas QC & tanggal.", "SPK *Ditugaskan*. MD Quality baru bisa mengisi sesudah ini (F-13).", ""),
-             ("MD Quality", "`Operasi Gudang › QC & Inspeksi` → Dokumen Inspeksi → baris roll → **MD Quality**",
-              "Bandingkan dengan sample ACC: warna (sesuai / beda shade / tolak), handfeel (skor 1–5); potongan uji dicatat.",
-              "Dua indikator tersimpan terpisah.", ""),
-             ("QC", "SPK → [[Mulai diperiksa]] → QC 4-point → [[Simpan hasil]]",
-              "Panjang inspeksi (yard) & cacat per 15 yd.", "Hasil per roll + grade saran.", ""),
-             ("Admin Gudang", "SPK → [[Keputusan]] → terima / terima sebagian / turun grade / tolak",
-              "**Satu keputusan** (F-14): roll diterima langsung lepas karantina; roll ditolak → disposisi (rusak / retur ke supplier → Nota Debit).",
-              "SPK *Selesai*; roll **tersedia**; sistem mencadangkan ke SO backorder → SO **Dicadangkan**.", "")] +
-            s.submit("") + s.confirm("") + s.pick("") + s.dispatch("") + s.logistics("ekspedisi", "") + s.pay("") + s.journey("") +
-            AP_STEPS("Tagihan = qty diterima, bukan qty SJ."))
+             ("Admin Gudang", "`Operasi Gudang › Barang Masuk` → [[Kedatangan baru]] → **Supplier (PO)** → mitra → [[Lanjut]] → [[Buat kedatangan]] → [[Isi manual]]",
+              "Kepala SJ (nomor, tanggal, nama pengirim, nomor PO) → [[Simpan kepala SJ]]; baris: qty & satuan SJ, jumlah roll, LOT, "
+              "**Target** = baris PO → [[Baris]]. (Foto SJ boleh menyusul; OCR bila aktif.)",
+              "**KSC/GRN-xxxxx** *Draf → Tinjau SJ*; baris *Siap*.", "S8"),
+             ("Gudang", "kedatangan → [[Mulai hitung fisik]] → per roll isi panjang/berat & LOT → [[Roll manual]] (atau scan label supplier) → [[Selesai hitung]]",
+              "Per roll catat fisik; nomor roll KN lahir otomatis.", "Roll lahir status *receiving*; tab **Rekonsiliasi** terbuka.", "S8"),
+             ("Admin Gudang", "**Rekonsiliasi** → (selisih di luar toleransi: [[Terima dengan catatan]] + alasan / [[Klaim ke supplier]]) → [[Tutup Penerimaan]]",
+              "Selisih dalam toleransi → *Cocok*. Di luar toleransi = pemblokir sampai diputuskan.",
+              "GRN *Ditutup*, baris *Terposting*; stok bertambah sebesar fisik; roll **karantina**; **SPK inspeksi (INS)** otomatis.", "S8"),
+             ("Admin Gudang", "`Meja Gudang` → **SPK inspeksi belum ditugaskan** → cari nomor PO → [[Tugaskan]] → pilih petugas (*Mulyadi · QC*) → [[Tugaskan]]",
+              "Pilih petugas & bagian.", "SPK *Ditugaskan*. MD Quality baru bisa mengisi sesudah ini (F-13).", "S8"),
+             ("MD Quality", "halaman awal **Dokumen Inspeksi (INS)** (Kerja di: Sukacita) → SPK → baris roll [[MD Quality]]",
+              "Hasil banding warna & handfeel (sesuai / beda / tidak bisa diterima), skor handfeel 1–5, potong uji (opsional) → [[Simpan hasil]].",
+              "Kolom WARNA/HANDFEEL per roll terisi; *MDQ: nama*.", "S8"),
+             ("QC", "SPK → [[Mulai periksa]] → baris roll [[QC 4-point]] → panjang diinspeksi + cacat per poin → [[Simpan hasil]]",
+              "Panjang inspeksi (yard) & cacat 1–4 poin.", "Poin & grade saran per roll; *QC: nama*.", "S8"),
+             ("Admin Gudang", "SPK → **Keputusan akhir** → *Diterima seluruhnya* / sebagian / turun grade / ditolak → [[Tutup SPK]]",
+              "**Satu keputusan** (F-14): diterima langsung lepas karantina; ditolak → disposisi (rusak / retur ke supplier → Nota Debit).",
+              "SPK *Selesai*; roll **tersedia**; sistem mencadangkan ke SO backorder → SO **Dicadangkan** (sisa SJ kurang tetap backorder).", "S8")] +
+            s.submit("=S1") + s.confirm("=S1") + s.pick("=S1") + s.dispatch("=S3") + s.logistics("ekspedisi", "=S1") + s.pay("=S1") +
+            s.journey("=S1") + AP_STEPS("Tagihan = qty **diterima**, bukan qty SJ.", ui="S8"))
 
 
 def _s9():
-    return ([("Sales", "HP: tab **Katalog** → artikel hasil proses (mis. printing dari greige) → Checkout + backorder → [[Buat Sales Order]]",
-              "Pesan qty yang belum ada stok jadinya.", "SO **Menunggu stok**.", "")] +
-            s.verify("") +
-            [("Admin Sales", "**Perlu dipenuhi (kurang stok)** → [[Putuskan pemenuhan]] → *PO ke supplier* (jalur dipilih Pembelian)",
-              "Simpan rencana.", "PR lahir & merujuk SO.", ""),
-             ("Pembelian", "`Permintaan Pembelian` → PR → **Sourcing** → *makloon* → Wizard Makloon",
-              "Pilih mitra makloon, resep proses, output & unit, bahan/greige yang dipakai. Cetak **SPK Makloon**.",
-              "**Order Makloon MKO-xxxxx** (`Pesanan Pembelian › Order Makloon`); bahan *dipesan* (reservasi ≠ pengeluaran).", ""),
-             ("Gudang", "`Pembelian › Pesanan Pembelian › Order Makloon` → buka MKO → keluarkan bahan",
-              "Pilih gudang asal, keluarkan bahan/greige ke mitra sesuai dokumen (sekali).", "Stok bahan keluar tepat sekali; MKO *Diproses mitra*.", ""),
-             ("Mitra", "di luar sistem", "Mitra memproses & mengirim hasil + SJ.", "Hasil aktual boleh ≠ rencana (mis. 192 dari 200 yd).", ""),
-             ("Admin Gudang", "`Barang Masuk` → [[Buat kedatangan]] (mitra makloon) → SJ → [[Hitung fisik]] → [[Rekonsiliasi]] → [[Tutup Penerimaan]]",
-              "Sama dengan S8 langkah kedatangan; target = MKO.",
-              "Roll hasil karantina + SPK inspeksi; susut & klaim mitra terlihat di `Rekap Susut & Klaim Mitra`.", ""),
-             ("Admin Gudang · QC · MD Quality", "`Meja Gudang` → [[Tugaskan]] SPK → MDQ & QC → [[Keputusan]]",
-              "Sama dengan S8 (tugaskan → MD Quality → QC 4-point → satu keputusan).",
-              "Roll tersedia & dicadangkan ke SO.", "")] +
-            s.submit("") + s.confirm("") + s.pick("") + s.dispatch("") + s.logistics("ekspedisi", "") + s.pay("") + s.journey(""))
+    return ([("Sales", "HP: tab **Katalog** → artikel makloon contoh (*RIVERA RIB BW A*) → Checkout + backorder → [[Buat Sales Order]]",
+              "Pesan melebihi stok jadi (sisa jadi backorder).", "SO **Dicadangkan** sebagian + backorder.", "=S7")] +
+            s.verify("=S8") +
+            [("Admin Sales", "**Perlu dipenuhi (kurang stok)** → [[Putuskan pemenuhan]] → *PO ke supplier (lewat PR)* → [[Jalankan rencana]]",
+              "Jalur PR mengikuti sumber restock artikel (RIVERA RIB = makloon).", "PR lahir dengan baris *Makloon*.", "S9"),
+             ("Pembelian", "`Permintaan Pembelian` → PR → baris *Makloon* → [[Buat Order Makloon]] (Wizard)",
+              "Wizard terisi dari **Resep Proses** (bahan, mitra, yield, kontrak): langkah 1 bahan & gudang (qty bahan dihitung dari resep), "
+              "langkah 2 rantai proses (tarif kontrak), langkah 3 ringkasan → [[Simpan Order Makloon]]. "
+              "Tanpa resep → pesan *Buat resep dulu (Pembelian → Master Pembelian → Resep Proses)*.",
+              "**MKO-xxxxx** (`Pesanan Pembelian › Order Makloon`) *Draf*; bahan *dicadangkan* (fisik belum berkurang).", "S9"),
+             ("Gudang", "`Pembelian › Pesanan Pembelian › Order Makloon` → MKO → [[Detail →]] → langkah 1 [[Issue ke Makloon]] → [[Issue Sekarang]]",
+              "Gudang sumber dipilih otomatis yang stoknya cukup.", "Stok bahan keluar **tepat sekali** (fisik berkurang); MKO *Diproses*.", "S9"),
+             ("Mitra", "di luar sistem", "Mitra memproses & mengirim hasil + SJ.", "Hasil aktual boleh ≠ rencana.", ""),
+             ("Admin Gudang", "`Barang Masuk` → [[Kedatangan baru]] → **Makloon (MKO)** → mitra → SJ manual → Target = *MKO langkah 1* → "
+              "[[Mulai hitung fisik]] → [[Selesai hitung]] → [[Tutup Penerimaan]]",
+              "Sama dengan S8; bisa *Terima sebagian* bila hasil dikirim bertahap.",
+              "GRN *Ditutup*; MKO *Selesai*; roll hasil **tersedia** & **SO backorder otomatis dicadangkan**; sisa cadangan bahan dilepas. "
+              "QC hasil makloon (opsional): `QC & Inspeksi` → [[Buat SPK Inspeksi]] jenis *Hasil Makloon*.", "S9")] +
+            s.submit("=S1") + s.confirm("=S1") + s.pick("=S1") + s.dispatch("=S3") + s.logistics("ekspedisi", "=S1") + s.pay("=S1") + s.journey("=S1"))
 
 
 def _s10():
-    return ([("Sales", "HP: tab **Katalog** → produk woven + knit + printing yang stoknya di **Rancamalang** → Checkout → [[Buat Sales Order]]",
-              "Pengiriman ke pelanggan Jakarta.", "SO *Dicadangkan*.", "")] +
-            s.admin_sales("") +
-            [(WH_RCM, "`Meja Saya` → **Tugas gudang** → satu tugas **per gudang** (Woven / Knitting / Printing) → [[Kerjakan]] → [[Ambil]] → [[Kirim Pengambilan]]",
-              "Pick tiap gudang terpisah. Roll gudang lain tidak bisa dipindai ke tugas ini.",
-              "Semua tugas *diambil penuh*.", ""),
-             (WH_RCM, "`Operasi Gudang › Stok, Transfer & Opname › Transfer` → tujuan **Rancamalang · Gudang Transit**",
-              "Transfer internal (pemilik & reservasi tetap); scan serah terima per roll.", "Lokasi fisik pindah ke transit.", ""),
-             ("Admin Gudang", "`Gudang & Logistik › Pengiriman` → [[Buat Pengiriman]] (Rancamalang → Jakarta) → Dimuat → Berangkat",
-              "Perjalanan internal antargudang, **bukan** pengiriman pelanggan.", "Barang *dalam perjalanan internal*.", ""),
-             ("Gudang", "Jakarta: `Barang Masuk` / transfer → terima → scan roll yang turun",
-              "Cocokkan dengan yang diberangkatkan; selisih dicatat per roll.", "Roll tiba di Jakarta; reservasi SO tetap.", "")] +
-            s.dispatch("") + s.logistics("armada", "") + s.pay("") +
-            s.journey("", "Rantai: SO → pick per gudang → transit → terima Jakarta → SJ pelanggan → POD."))
+    return ([(("Sales CST", "sales.cst@kainnusantara.id"), "HP: tab **Katalog** → woven (*SHAKILA LAK*) + knit (*ALICE KNIT 8 A*) yang stoknya di Rancamalang → Checkout → [[Buat Sales Order]]",
+              "PT **Cipta Sandang** (pemilik stok Rancamalang); pelanggan Jakarta (*PT Fashion Ibukota*).",
+              "SO *Dicadangkan*; alokasi per gudang (Woven / Knitting).", "=S1")] +
+            s.admin_sales("=S1", account="salesadmin.cst@kainnusantara.id") +
+            [(WH_RCM, "`Gudang & Logistik › Lokasi Rak` → **Antrean Potong** (bila ada baris *Potong dulu*)",
+              "Potong & verifikasi label roll anak.", "Roll anak terverifikasi & berkomitmen ke SO.", "=S6"),
+             (WH_RCM, "`Operasi Gudang › Stok, Transfer & Opname › Transfer` → [[Buat Transfer]] → asal *Rancamalang · Gudang Woven* → "
+              "tujuan *Rancamalang · Gudang Transit* → **Untuk memenuhi SO** = SO ini → centang roll → [[Tambahkan roll SO terpilih]] → [[Buat Transfer]]",
+              "Lakukan **sebelum** barang diambil. Ulangi untuk *Gudang Knitting → Transit*. SO yang sudah mulai diambil tidak ditawarkan.",
+              "**CST/TRF-xxxxx** *Menunggu Persetujuan*; roll tetap terkunci untuk SO.", "S10"),
+             (("Admin Gudang CST", "whadmin@kainnusantara.id"), "Transfer → [[Setujui]] → Pengambilan → Staging → Dalam Perjalanan → terima di Transit (scan roll)",
+              "Perjalanan internal antargudang (bukan pengiriman pelanggan).",
+              "Transfer *Selesai*; roll di Transit tetap *berkomitmen* ke SO; **tugas pengambilan pindah ke Gudang Transit**.", "S10")] +
+            s.pick("S10", account=WH_RCM[1], wh="Rancamalang · Gudang Transit") +
+            [(WH_RCM, "`Barang Keluar` → tugas lain SO yang sama", "Scan roll milik tugas lain / gudang lain.",
+              "Ditolak: *Roll … tidak ditemukan untuk produk tugas ini*.", "S10")] +
+            s.dispatch("=S3", entity="Cipta Sandang") + s.logistics("armada", "=S2") + s.pay("=S1", entity="Cipta Sandang") +
+            s.journey("=S1", "Rantai: SO → transfer ke Transit → ambil di Transit → SJ pelanggan → POD."))
 
 
 def _sample(paid):
-    rows = [("Sales", "HP: tab **Katalog** → kartu produk → [[Pilih]] → **Order sample**",
-             "Pilih jenis **Standar** (woven ≤ 5 yd, knit ≤ 2 kg) / **Hanger** (≤ 0,5 yd) / **Catalogue**; qty → [[Tambah ke Keranjang]]. "
+    ui = "S12" if paid else "S11"
+    rows = [("Sales", "HP: tab **Katalog** → kartu produk → [[Tambah]] → **Order sample**",
+             "Pilih jenis **Standar** (woven ≤ 5 yd, knit ≤ 2 kg) / **Hanger** (≤ 0,5 yd) / **Catalogue**; qty → [[Tambah Sample (… yard)]]. "
              "Sample tidak bisa dicampur baris biasa.",
-             "Keranjang *ORDER SAMPLE*; melebihi batas → ditolak (*jual sebagai ECER berbayar*).", ""),
-            ("Sales", "tab **Keranjang** → [[Lanjut ke Checkout]] → pilih **" + ("Berbayar" if paid else "Gratis") + "** → langkah 3: *Disesuaikan Admin Sample* / *Pilih tanggal* → [[Buat]]",
+             "Keranjang **Sample**; melebihi batas → ditolak (*jual sebagai ECER berbayar*).", ui),
+            ("Sales", "tab **Keranjang** → [[Lanjut ke Checkout]] → pelanggan → [[Lanjut]] → skema **" + ("Sample Berbayar" if paid else "Sample Gratis") +
+             "** → [[Lanjut]] → tanggal: *Disesuaikan Admin Sample* → [[Buat Pesanan Sample (" + ("Berbayar" if paid else "Gratis") + ")]]",
              "Tanggal kirim sample boleh diserahkan ke Admin Sample.",
-             "Nomor **KSC/SOS-xxxxx** (terpisah dari SO); harga " + ("dari master harga sample." if paid else "tampil *Free*."), "")]
+             "**KSC/SOS-xxxxx** (terpisah dari SO); " + ("harga × panjang + PPN; *Menunggu persetujuan bayar sample*." if paid else "kartu HP *Gratis* tanpa tombol bayar."), ui)]
     if paid:
-        rows.append(("Finance", "`Penjualan › Pesanan Sample` / `Meja Sample` → **Sample berbayar — menunggu persetujuan pembayaran** → [[Setujui Bayar]]",
-                     "Pastikan pembayaran / kesepakatan bayar ada; catatan → setujui (Admin Sample juga berwenang).",
-                     "SOS *Disetujui*. Sales → tidak punya tombol; teruskan sebelum disetujui → ditolak.", ""))
+        rows.append(("Finance", "`Meja Finance` → **Sample berbayar — menunggu ACC bayar** → [[Tinjau]] → [[Setujui Pembayaran]] "
+                     "(atau `Penjualan › Pesanan Sample` filter *Menunggu ACC bayar*)",
+                     "Pastikan pembayaran / kesepakatan bayar ada (Admin Sample juga berwenang).",
+                     "SOS *Disetujui*. Sales tidak punya tombol; teruskan sebelum disetujui → ditolak.", ui))
     rows += [("Admin Sample", "`Meja Sample` → **Siap diteruskan ke gudang** → [[Teruskan ke Gudang]]",
-              "Teruskan; catalogue boleh ganti warna *soft* (berjejak).", "Tugas potong sample lahir di gudang.", ""),
-             ("Gudang", "`Meja Saya` → **Sample untuk dipotong** → [[Kerjakan]] → `Barang Keluar` → panel potong sample",
-              "Scan roll induk, potong, catat **panjang aktual**.",
-              "Roll anak tertaut induk; nilai SOS mengikuti panjang aktual. Roll produk lain → ditolak.", "")]
+              "Teruskan; catalogue boleh ganti warna *soft* (berjejak).", "SOS pindah ke *Sedang dipotong / disiapkan gudang*.", ui),
+             ("Gudang", "`Meja Saya` → **Sample untuk dipotong** → [[Potong]] → panel potong sample → panjang aktual → [[Potong roll saran (RL-…)]]",
+              "Atau ketik roll lain + alasan → [[Potong roll ini]].",
+              "*Sample dipotong — RL-… → RL-…-n · panjang*; nilai SOS mengikuti panjang aktual.", ui)]
     if paid:
-        rows.append(("Admin Sample", "`Meja Sample` → antrean bayar sample (bila nilai aktual berubah > ±5%)",
-                     "Selisih ≤ ±5% → tagihan menyesuaikan otomatis. Di atas 5% → **persetujuan ulang** pembayaran (F-15).",
-                     "Status persetujuan ulang tampil; kirim tertahan sampai disetujui.", ""))
-    rows += [("Admin Sample", "`Meja Sample` → terima hasil potong (serah terima Admin Cutting)",
-              "Terima potongan dari gudang.", "Kirim sebelum diterima → ditolak *belum diterima Admin Cutting*.", ""),
-             ("Gudang", "`Barang Keluar` → tugas sample → [[Kirim Semua]] → [[Kirim Sekarang]]",
-              "Kirim sample (Admin Gudang override cek muat bila tanpa RFID — seperti S1).", "SJ sample terbit; SOS *Dikirim*.", "")]
-    rows += s.logistics("ekspedisi", "")
+        rows.append(("Finance", "`Meja Finance` → **Sample berbayar — menunggu ACC bayar** (lencana *ACC ulang*) → [[Tinjau]] → [[Setujui Ulang Pembayaran (Rp …)]]",
+                     "Selisih ≤ ±5% → tagihan menyesuaikan otomatis. Di atas 5% (mis. 3 → 3,5 yd) → **persetujuan ulang** (F-15).",
+                     "*Pembayaran disetujui*; kirim tertahan sampai disetujui ulang.", ui))
+    rows += [("Admin Sample", "`Penjualan › Pesanan Sample` → tab **Meja Cutting** → [[Terima hasil potong]]",
+              "Terima potongan dari gudang (Admin Cutting).",
+              "Pindah ke *Diterima Admin Cutting — siap kirim/ambil*. Kirim sebelum diterima → ditolak *belum diterima Admin Cutting*.", ui),
+             ("Gudang", "`Barang Keluar` → tugas **SAMPEL** → cek muat simulasi (lihat S1) → [[Kirim Semua]] → [[Kirim Sekarang]]",
+              "Kirim sample.", "*Barang terkirim — No. Surat Jalan KSC/SJ-xxxxx*; SOS *Dikirim*.", ui)]
+    rows += s.logistics("ekspedisi", "=S1")
     if paid:
-        rows += [("Finance", "`Meja Finance` → **Uang masuk** → [[Catat kwitansi]] atas nilai **aktual**",
-                  "Catat pembayaran sample.", "SOS lunas.", "")]
-    rows += [("Sales", "HP: tab **Lainnya** › **Pesanan Sample** → ketuk SOS", "Periksa status akhir.",
-              "SOS *Selesai*" + (" & lunas." if paid else " (tanpa tagihan)."), "")]
+        rows += [("Finance", "`Meja Finance` → **Uang masuk** → [[Catat kwitansi]] → SOS dengan nilai **aktual**",
+                  "Catat pembayaran sample.", "SOS lunas.", "=S1")]
+    rows += [("Sales", "HP: tab **Pesanan** → kartu SOS", "Periksa status akhir.",
+              "SOS *Dikirim/Selesai*" + (" & lunas." if paid else " · *Gratis*."), ui)]
     return rows
 
 
 def _s13():
     return [
         ("Sales", "HP: tab **Lainnya** › **Pesanan Khusus (OD)** → [[Ajukan pesanan khusus]]",
-         "Bagian 1: pelanggan, judul permintaan. Bagian 2: **Item 1** = A 100 yd (sumber *Induk produk (custom warna)*), "
-         "[[Tambah item]] **Item 2** = B 200 yd (sumber *Referensi / desain pelanggan*); jenis uji Printing / Labdip / Handfeel; satuan.",
-         "Formulir 6 bagian; pesan *Belum lengkap: …* menyebut isian yang kurang.", ""),
-        ("Sales", "formulir OD → bagian 3–6 → centang *Langsung ajukan untuk persetujuan Manajer* → [[Simpan pesanan khusus]]",
+         "Bagian 1: pelanggan, judul permintaan. Bagian 2: **Item 1** = A 100 yd (jenis uji *Printing*), "
+         "[[Tambah item]] **Item 2** = B 200 yd (jenis uji *Labdip*); sumber desain; satuan.",
+         "Formulir 6 bagian; pesan *Belum lengkap: …* menyebut isian yang kurang.", "S13"),
+        ("Sales", "formulir OD → bagian 3–6 → **Tenggat kirim** → centang *Langsung ajukan untuk persetujuan Manajer* → [[Simpan pesanan khusus]]",
          "Referensi pelanggan, warna target, foto swatch (opsional), **tenggat kirim**, catatan.",
-         "**SORD-yymmdd-xxxx** *Menunggu persetujuan*.", ""),
-        ("Manajer", "`Pusat Persetujuan` / detail OD → [[Setujui]]", "Rantai persetujuan berjenjang.",
-         "OD *Disetujui* → otomatis **Permintaan Desain (DSR)** untuk printing & **Permintaan Sample R&D** untuk labdip/handfeel.", ""),
+         "**SORD-yymmdd-xxxx** *Menunggu persetujuan*.", "S13"),
+        ("Manajer", "`Penjualan › Pesanan Khusus` → baris OD → [[Detail →]] → [[Setujui]] (Inbox Persetujuan: [[Buka layarnya]])",
+         "Rantai persetujuan berjenjang.",
+         "OD disetujui → otomatis **Permintaan Desain (DSR)** untuk printing & **Sample R&D (SMP)** untuk labdip/handfeel; "
+         "tampil di **Rantai dokumen** detail OD.", "S13"),
         ("MD", "`Desainer › Permintaan Desain` → [[Tugaskan]]", "Pilih desainer & tenggat.", "DSR *Ditugaskan*.", ""),
         ("Desainer", "`Meja Saya › Desain yang saya kerjakan` → [[Kerjakan]] → unggah artwork → centang **Print paper** → [[Ajukan untuk review]]",
          "Kerjakan artwork ronde ini.", "*Menunggu keputusan*; versi & checklist per ronde.", ""),
@@ -283,71 +297,78 @@ def _s13():
         s.journey("", "OD ikut *Dikirim* lalu *Selesai*.")
 
 
-def _retur_front():
+def _retur_front(ui="S14"):
     return [
         ("Sales", "HP: tab **Pesanan** → ketuk SO yang sudah Selesai (mis. dari S1) → [[Ajukan retur]] (atau **Lainnya** › **Retur Penjualan** → [[Buat retur jual]])",
-         "Daftar roll yang benar-benar terkirim tampil otomatis. Pilih roll & qty klaim, kondisi, **sebab keluhan**, catatan, foto → ajukan.",
-         "**SRET-xxxxx** *Menunggu persetujuan*. Klaim > 21 hari dari SJ → ditolak / [[Ajukan pengecualian]].", ""),
-        ("Manajer", "`Meja Saya` → **Retur menunggu ACC** → [[Putuskan]] → [[Setujui]]",
-         "Setujui barang kembali untuk diperiksa (bukan keputusan refund/tukar).", "Retur *Disetujui*.", ""),
-        ("Gudang", "detail retur → **Perjalanan Retur** → [[Terima di gudang]] → pilih *Jakarta* → scan → [[Catat scan]]",
-         "Terima roll retur di Jakarta.", "Posisi fisik per roll tercatat; belum jadi stok jual. (F-11: Gudang kini bisa membuka & memproses.)", ""),
-        ("Gudang", "Perjalanan Retur → [[Kirim ke gudang lain (dalam perjalanan)]] → tujuan *Rancamalang · Gudang Transit*",
-         "Pilih kurir/armada.", "Status *dalam perjalanan*.", ""),
-        (WH_RCM, "Perjalanan Retur → [[Tiba di gudang tujuan]] → scan", "Cocokkan roll.", "Roll di area transit menunggu QC.", ""),
-        ("QC", "detail retur → panel **Inspeksi** → mulai → isi hasil → [[Selesai Inspeksi]]",
-         "Per roll: qty aktual, kondisi, cacat 4-point, grade.",
-         "Retur *Selesai inspeksi*. QC sebelum barang diterima → ditolak (F-12).", ""),
+         "SO terisi otomatis; roll yang benar-benar terkirim tampil. Pilih **Tipe Return**, centang roll (qty terisi), alasan per item, "
+         "**Sebab keluhan**, catatan, foto (bila kebijakan wajib) → [[Buat Return]].",
+         "**SRET-xxxxx** *Menunggu persetujuan*. Klaim > 21 hari dari SJ → ditolak / [[Ajukan pengecualian]].", ui),
+        ("Manajer", "`Meja Saya` → **Retur menunggu ACC** → [[Putuskan]] (membuka Inbox Persetujuan) → kartu retur [[Tinjau & Putuskan]] → [[Setujui]]",
+         "Estimasi nilai dari harga SO; setujui barang kembali untuk diperiksa (bukan keputusan refund/tukar).", "Retur *Disetujui*.", ui),
+        ("Gudang", "`Retur` → baris retur [[Detail →]] → **Perjalanan Retur** → tahap *Terima di gudang* → gudang *Jakarta* → ketik nomor roll → [[Catat scan]]",
+         "Terima roll retur di Jakarta (scan barcode atau ketik nomor roll — tanpa RFID).",
+         "Lokasi fisik roll: *Jakarta · Gudang Sukacita · SRET-…/TRM-1*; belum jadi stok jual.", ui),
+        ("Gudang", "Perjalanan Retur → tahap **Kirim ke gudang lain (dalam perjalanan)** → tujuan *Rancamalang · Gudang Transit* → roll → ekspedisi/sopir → [[Catat scan]]",
+         "Gudang asal tidak ada di daftar tujuan.", "Status *Dalam perjalanan Jakarta → Rancamalang · Gudang Transit*.", ui),
+        (WH_RCM, "detail retur → Perjalanan Retur (tahap *Tiba di gudang tujuan* & gudang Transit terisi otomatis) → ketik roll → [[Catat scan]]",
+         "Cocokkan roll.", "Roll di *Rancamalang · Gudang Transit* menunggu QC.", ui),
+        ("QC", "detail retur → panel **Inspeksi** → [[Mulai Inspeksi]] → cacat per poin, qty aktual per roll (nomor roll tampil) → [[Selesaikan Inspeksi]]",
+         "Per roll: qty aktual, cacat 4-point, kondisi.",
+         "Retur *Selesai Inspeksi*; tonggak *Inspeksi selesai · inspeksi 4-point di retur*. QC sebelum barang diterima → ditolak (F-12).", ui),
     ]
 
 
 def _s14():
-    return _retur_front() + [
-        ("MD Quality", "detail retur → panel **Cutloss** (opsional)",
+    return _retur_front("S14") + [
+        ("MD Quality", "detail retur → panel **Cutloss & diskon** → catat cutloss (opsional)",
          "Catat qty cacat (yard) + posisi; pecah roll: potongan baik dikirim kembali, potongan cacat → BS / dibuang.",
          "Roll anak berurutan; potongan BS tercatat.", ""),
-        ("Finance", "detail retur → panel **Kompensasi** → nilai → **Catatan keputusan Finance (wajib)** → [[Selesaikan]]",
-         "Nilai = harga transaksi awal × qty disetujui; diskon = nominal per item untuk qty cacat.", "Kompensasi *diputus*; dasar hitung terlihat.", ""),
-        ("Manajer", "detail retur → [[Selesaikan]] → outcome **Refund** / **Store credit** / **Nego**",
-         "Isi bukti keputusan (mis. *ACC Pak Budi via WA*) + lampiran; pilih gudang retur.",
-         "Retur *refund_settled / credit_settled / nego_settled*. Admin Sales tidak bisa (403).", ""),
-        ("Finance", "`Keuangan › Saldo Kredit` / `Kas & Bank` / `Meja Finance`",
-         "SO asal belum lunas → potong tagihan dulu; sudah lunas → refund atau saldo sesuai pilihan pelanggan.",
+        ("Finance", "`Meja Finance` → **Retur selesai QC — putuskan nilai** → [[Putuskan]] → panel **Cutloss & diskon** → qty cacat "
+         "(nominal terisi = harga transaksi × qty, bisa diubah) → **Catatan keputusan Finance (wajib)** → [[Putuskan nilai]]",
+         "Harga transaksi per item tampil di panel.", "*Diputus Finance: Rp … · nama*; dasar hitung terlihat.", "S14"),
+        ("Manajer", "detail retur → [[Selesaikan (Pilih Outcome)]] → **Nego (Diskon)** → kompensasi: *Jadi saldo* / *Refund tunai* / *Kurangi piutang SO asal* → bukti keputusan → [[Selesaikan (Nego (Diskon))]]",
+         "Isi bukti keputusan (mis. *ACC Pak Budi via WA*). Pengembalian Dana / Store Credit dipakai bila barang kembali jadi stok.",
+         "Retur *Nego*; **Nota Kredit CN-xxxxx** (diskon + PPN); saldo pelanggan bertambah. Admin Sales tidak bisa (403).", "S14"),
+        ("Finance", "`Keuangan › Saldo Kredit` / `Meja Finance`",
+         "SO asal belum lunas → potong tagihan dulu; sudah lunas → saldo / refund sesuai pilihan pelanggan.",
          "Saldo pelanggan & piutang benar; satu posting.", ""),
-        ("Admin Sales", "detail retur → **Tujuan barang retur** → per roll [[Simpan sebagai stok]] / kembalikan ke PT pemasok",
-         "Putuskan nasib roll hasil QC.", "Roll tersimpan dengan grade/hold hasil QC (bukan otomatis tersedia).", ""),
+        ("Admin Sales", "detail retur (outcome Pengembalian Dana / Store Credit) → **Tujuan barang retur** → per roll [[Simpan sebagai stok]] / kembalikan ke PT pemasok",
+         "Putuskan nasib roll hasil QC (outcome Nego: barang tetap milik pelanggan, tidak ada tujuan stok).",
+         "Roll tersimpan dengan grade/hold hasil QC (bukan otomatis tersedia).", ""),
     ]
 
 
 def _s15():
-    return _retur_front() + [
-        ("Manajer", "detail retur → [[Selesaikan]] → outcome **Tukar**", "Isi bukti keputusan.", "Retur menunggu pesanan pengganti.", ""),
-        ("Admin Sales", "detail retur → **Pesanan pengganti** → [[Buat pesanan pengganti]]",
-         "Artikel/warna/grade sama; qty = yard aktual hasil QC. Selisih lebih → dibayar pelanggan; kurang → refund/saldo.",
-         "**SO pengganti** tertaut retur; roll yang diretur tidak boleh dikirim lagi ke pelanggan asal.", ""),
-    ] + s.verify("") + s.submit("") + s.confirm("") + s.pick("") + s.dispatch("") + s.logistics("ekspedisi", "") + \
-        s.journey("", "SO pengganti selesai; selisih nilai (bila ada) tertagih / dikembalikan.")
+    return _retur_front("=S14") + [
+        ("Manajer", "detail retur → [[Selesaikan (Pilih Outcome)]] → **Store Credit** (terpilih otomatis untuk tipe *Penggantian*) → bukti keputusan → [[Selesaikan (Store Credit)]]",
+         "Petunjuk: nilai retur jadi saldo untuk pesanan pengganti.", "Retur *Store Credit*; roll retur *karantina*.", "S15"),
+        ("Admin Sales", "`Meja Admin Sales` → **Retur tukar — buat pesanan pengganti** → [[Buat pengganti]] → panel **Pesanan pengganti** → [[Buat pesanan pengganti]]",
+         "Artikel/warna/grade sama; qty = yard aktual hasil QC; harga transaksi asal. SO asal tunai → pengganti termin **CBD** "
+         "(saldo retur melunasi di muka); SO asal ambil sendiri → tanggal ambil besok.",
+         "**SO pengganti** tertaut retur: *saldo retur dipakai Rp … · ditagih Rp 0*; roll yang diretur tidak dialokasikan lagi.", "S15"),
+    ] + s.verify("S15") + s.submit("S15") + s.confirm("S15") + s.pick("=S6") + s.dispatch("=S3") + s.logistics("ekspedisi", "=S1") + \
+        s.journey("=S1", "SO pengganti selesai; selisih nilai (bila ada) tertagih / dikembalikan.")
 
 
 def _s16():
     return [
-        ("Pembelian", "`Pembelian › Pengadaan › Saran Reorder` → pilih artikel → buat **Permintaan Pembelian**",
-         "Restock artikel yang di bawah titik pesan ulang.", "PR-xxxxx (≥ Rp50 jt → ACC manajer).", ""),
-        ("Manajer", "`Pusat Persetujuan › Inbox Persetujuan` → PR → [[Setujui]] (bila di atas ambang)", "ACC PR.", "PR *Disetujui*.", ""),
-        ("Pembelian", "PR → **Sourcing** → *beli ke supplier* → [[Realisasi]]",
-         "Supplier, gudang penerimaan, tanggal kirim.", "**PO KSC/PO-xxxxx** (≥ Rp100 jt → ACC manajer).", ""),
+        ("Pembelian", "`Pembelian › Pengadaan › Saran Reorder` → centang artikel → isi **Saran Qty** → [[Buat PR dari Pilihan]]",
+         "Restock artikel di bawah titik pesan ulang. Produk lama tanpa template artikel → PR tetap dibuat dengan peringatan.",
+         "*PR-xxxxx dibuat … Lihat di tab Permintaan Pembelian* (≥ Rp50 jt → *Menunggu Persetujuan*).", "S16"),
+        (("Admin", "admin@kainnusantara.id"), "`Pembelian › Pengadaan › Permintaan Pembelian` → PR → [[Setujui]] (bila di atas ambang)",
+         "**Pemisahan tugas**: pembuat PR (Manajer) tidak boleh menyetujui PR-nya sendiri → ACC oleh Admin.", "PR *Disetujui*.", "S16"),
+        ("Pembelian", "PR → [[Realisasi ke PO]] → supplier, gudang → [[Buat PO]]",
+         "Supplier, gudang penerimaan, tanggal kirim.", "**PO KSC/PO-xxxxx** (≥ Rp100 jt → ACC Admin dulu).", "=S8"),
         ("Supplier", "di luar sistem", "Barang + SJ supplier (mis. 10 roll, SJ 1.000 yd, fisik 960 yd).", "—", ""),
-        ("Admin Gudang", "`Operasi Gudang › Barang Masuk` → [[Buat kedatangan]] → foto/entri SJ",
-         "Isi kepala SJ & baris; target PO.", "GRN *Draf → Review → Hitung*.", ""),
-        ("Gudang", "[[Hitung fisik]] per roll → label", "Catat fisik (960 yd).", "Roll *receiving*.", ""),
-        ("Admin Gudang", "[[Rekonsiliasi]] → putuskan selisih 40 yd → [[Tutup Penerimaan]]",
-         "[[Terima dengan catatan]] atau klaim supplier.", "Stok +960 yd; PO *Sebagian diterima* (sisa incoming); roll karantina + SPK.", ""),
-        ("Admin Gudang · MD Quality · QC", "`Meja Gudang` → [[Tugaskan]] SPK → MD Quality → QC 4-point → [[Keputusan]]",
-         "Sama dengan S8.", "Roll **tersedia** sekali keputusan.", ""),
-        ("Gudang", "`Operasi Gudang › Stok, Transfer & Opname` / `Lokasi Rak` → putaway", "Simpan roll ke rak/bin.",
-         "Saldo per gudang/bin benar; roll muncul di katalog POS.", ""),
-    ] + AP_STEPS("Tagihan = qty diterima (960 yd), bukan qty SJ.") + [
-    ]
+        ("Admin Gudang", "`Operasi Gudang › Barang Masuk` → [[Kedatangan baru]] → SJ manual → target PO",
+         "Isi kepala SJ & baris (1.000 yd, 10 roll).", "GRN *Draf → Tinjau SJ*.", "=S8"),
+        ("Gudang", "[[Mulai hitung fisik]] per roll → [[Selesai hitung]]", "Catat fisik (10 × 96 = 960 yd).", "Roll *receiving*.", "=S8"),
+        ("Admin Gudang", "**Rekonsiliasi** → selisih −40 yd (*Kurang dari SJ · pemblokir*) → [[Terima dengan catatan]] + alasan → [[Tutup Penerimaan]]",
+         "Atau [[Klaim ke supplier]].",
+         "Stok +960 yd; *tugas sisa 40 dibuat* (PO tetap *incoming* 40); roll karantina + SPK.", "S16"),
+        ("Admin Gudang · MD Quality · QC", "`Meja Gudang` → [[Tugaskan]] SPK → MD Quality → QC 4-point → [[Tutup SPK]]",
+         "Sama dengan S8.", "Roll tersedia.", "=S8"),
+    ] + AP_STEPS("Selisih SJ vs fisik: tagihan = 960 yd.", ui="=S8")
 
 
 # kode, judul, kapan terjadi, kelompok, mulai, menit, peran, data, perbaikan, status cek UI, langkah
@@ -363,55 +384,55 @@ SCENARIOS = [
     ("S3", "Ambil sendiri di gudang · bayar tunai",
      "Pelanggan mengambil barang sendiri pada tanggal ambil; serah terima memakai kode pickup.",
      1, "10.35", 30, "Sales · Admin Sales · Gudang · Admin Gudang · Finance", "Toko Kain Sejahtera · termin Tunai",
-     "—", "partial", _s3),
+     "—", "full", _s3),
     ("S4", "Harga khusus ditolak → diajukan ulang → disetujui",
      "Pelanggan menawar di bawah harga. Manajer menolak pengajuan pertama, Sales nego ulang, pengajuan kedua disetujui.",
      1, "11.05", 40, "Sales · Admin Sales · Manajer · Gudang · Admin Gudang · Finance", "Toko Kain Sejahtera",
-     "F-09", "partial", _s4),
+     "F-09", "full", _s4),
     ("S5", "Kredit melewati limit → disetujui manajer",
      "Nilai pesanan membuat piutang pelanggan melewati limit kredit; pesanan baru jalan setelah manajer setuju.",
      1, "11.45", 35, "Sales (Kanda) · Admin Sales (Kanda) · Manajer · Gudang Soreang · Admin Gudang · Finance",
-     "CV Garmen Soreang Jaya (limit Rp25 jt) · LYFLEX ACTIVE BEIGE (kg)", "F-09", "none", _s5),
+     "CV Garmen Soreang Jaya (limit Rp25 jt) · LYFLEX ACTIVE BEIGE (kg)", "F-09", "full", _s5),
     ("S6", "Pelanggan minta QC sebelum kirim",
      "Barang wajib lulus QC per roll sebelum boleh dikirim.",
      1, "13.20", 40, "Sales · Admin Sales · Gudang · Admin Gudang · QC · Finance", "Toko Kain Sejahtera",
-     "F-14", "partial", _s6),
+     "F-14", "full", _s6),
     ("S7", "Stok kurang → dipenuhi dari PT lain (antar-PT)",
      "Stok Sukacita tidak cukup; kekurangan diambil dari Cipta Sandang lewat transaksi antar-PT.",
      1, "14.00", 50, "Sales · Admin Sales · CST · Gudang Rancamalang · Admin Gudang · Finance", "ALICE KNIT 14 A (kg, stok CST)",
-     "F-05", "none", _s7),
+     "F-05", "full", _s7),
     ("S14", "Retur → kompensasi (refund / saldo / nego)",
      "Pelanggan komplain barang; setelah diterima & di-QC, diselesaikan dengan uang kembali, saldo, atau diskon.",
      1, "15.05", 45, "Sales · Manajer · Gudang Jakarta & Rancamalang · QC · MD Quality · Finance · Admin Sales", "SO dari S1 (sudah Selesai)",
-     "F-11 F-12 F-17", "none", _s14),
+     "F-11 F-12 F-17", "full", _s14),
     ("S15", "Retur → barang pengganti",
      "Komplain diselesaikan dengan mengirim barang pengganti sampai diterima.",
      1, "15.50", 40, "Sales · Manajer · Gudang · QC · Admin Sales · Admin Gudang", "SO dari S1",
-     "F-11 F-12", "none", _s15),
+     "F-11 F-12", "full", _s15),
     ("S8", "Stok kurang → PO supplier → kedatangan → SPK → kirim",
      "Kekurangan dibeli dari supplier; barang datang, dihitung, diinspeksi, lalu otomatis dicadangkan ke SO.",
      2, "09.15", 75, "Sales · Admin Sales · Pembelian · Admin Gudang · Gudang · MD Quality · QC · Finance", "ALICE KNIT 14 A · supplier dari master",
-     "F-13 F-14", "none", _s8),
+     "F-13 F-14", "full", _s8),
     ("S9", "Stok kurang → makloon (proses di mitra)",
      "Barang jadi dibuat dari bahan sendiri oleh mitra makloon, lalu diterima & dikirim ke pelanggan.",
-     2, "10.30", 60, "Sales · Admin Sales · Pembelian · Gudang · Admin Gudang · QC · Finance", "artikel printing · mitra makloon dari master",
-     "F-13 F-14", "none", _s9),
-    ("S10", "Multi-gudang Rancamalang → transit → Jakarta → pelanggan",
-     "Satu pesanan diambil dari beberapa gudang Rancamalang, dikumpulkan di transit, dibawa ke Jakarta, lalu dikirim ke pelanggan.",
-     2, "11.30", 40, "Sales · Admin Sales · Gudang Rancamalang & Jakarta · Admin Gudang · Finance", "produk woven + knit + printing Rancamalang",
-     "F-05", "none", _s10),
+     2, "10.30", 60, "Sales · Admin Sales · Pembelian · Gudang · Admin Gudang · QC · Finance", "RIVERA RIB BW A · resep celup · PT Celup Warna Dayeuhkolot",
+     "F-13 F-14", "full", _s9),
+    ("S10", "Multi-gudang Rancamalang → transit → pelanggan Jakarta",
+     "Satu pesanan PT Cipta Sandang dari beberapa gudang Rancamalang dikumpulkan di Gudang Transit lewat transfer pemenuhan SO, lalu dikirim ke pelanggan di Jakarta.",
+     2, "11.30", 40, "Sales CST · Admin Sales CST · Gudang Rancamalang · Admin Gudang CST · Finance", "SHAKILA LAK (Woven) + ALICE KNIT 8 A (Knitting) · CST",
+     "F-05", "partial", _s10),
     ("S11", "Sample gratis",
      "Pelanggan minta potongan contoh tanpa biaya.",
-     2, "13.20", 25, "Sales · Admin Sample · Gudang · Admin Gudang", "Toko Kain Sejahtera", "F-03", "none", lambda: _sample(False)),
+     2, "13.20", 25, "Sales · Admin Sample · Gudang · Admin Gudang", "Toko Kain Sejahtera", "F-03", "full", lambda: _sample(False)),
     ("S12", "Sample berbayar",
      "Potongan contoh dibayar pelanggan; harga mengikuti panjang aktual (persetujuan ulang bila berubah > ±5%).",
-     2, "13.45", 35, "Sales · Finance · Admin Sample · Gudang · Admin Gudang", "Toko Kain Sejahtera", "F-15", "none", lambda: _sample(True)),
+     2, "13.45", 35, "Sales · Finance · Admin Sample · Gudang · Admin Gudang", "Toko Kain Sejahtera", "F-15", "full", lambda: _sample(True)),
     ("S13", "Pesanan Khusus (desain/warna baru) → SO → lunas",
      "Produk belum ada: desain, sample R&D, ACC pelanggan, kunci harga, pengadaan, lalu menjadi SO biasa sampai lunas.",
      2, "14.20", 75, "Sales · Manajer · MD · Desainer · PIC · R&D · Admin Sales · Pembelian · Gudang · Finance", "OD 2 item (A 100 yd, B 200 yd)",
-     "—", "none", _s13),
+     "—", "partial", _s13),
     ("S16", "Pembelian stok (restock) → hutang supplier lunas",
      "Restock rutin dari saran reorder sampai tagihan supplier dibayar; selisih SJ vs fisik diputuskan.",
-     2, "15.35", 45, "Pembelian · Manajer · Admin Gudang · Gudang · MD Quality · QC · Finance", "supplier · SJ 1.000 yd vs fisik 960 yd",
-     "F-14", "none", _s16),
+     2, "15.35", 45, "Pembelian (Manajer) · Admin · Admin Gudang · Gudang · MD Quality · QC", "Saran Reorder · SJ 1.000 yd vs fisik 960 yd",
+     "F-14", "full", _s16),
 ]

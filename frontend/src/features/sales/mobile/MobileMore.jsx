@@ -87,7 +87,7 @@ const FULL_VIEWS = [
   { nav: "sales-orders", view: "return-policies", label: "Kebijakan Retur", desc: "Aturan retur per jenis keluhan", icon: ScrollText, roles: ["sales_admin"] },
 ];
 
-const TITLES = { tanya: "Tanya KN", amendments: "Koreksi & Amandemen", leads: "Prospek (Lead)", crm: "Pelanggan (CRM)", returns: "Retur Penjualan", special: "Special Order", pricelist: "Daftar Harga",
+const TITLES = { tanya: "Tanya KN", amendments: "Koreksi & Amandemen", leads: "Prospek (Lead)", crm: "Pelanggan (CRM)", returns: "Retur Penjualan", special: "Pesanan Khusus (OD)", pricelist: "Daftar Harga",
   "special-price": "Minta Harga Khusus", visits: "Kunjungan Sales", stock: "Stok & ATP", collection: "Penagihan & Target", "order-dashboard": "Dasbor Pesanan", internal: "Permintaan Internal", "price-status": "Harga Khusus Saya",
   "sample-orders": "Pesanan Sample", approvals: "Pantau Persetujuan" };
 
