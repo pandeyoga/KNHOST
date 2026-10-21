@@ -209,6 +209,8 @@ export default function MobileQuickView({ group, specialMap = {}, onAdd, onClose
         onConfirm={(rollLines, totalQty, snapshot, choice) => {
           if (blocked) return;
           setShowReconcile(false);
+          // Cek UI UAT v3 (S7) — stok kurang: qty penuh (bukan hanya roll yang ada; 0 roll dulu = keranjang kosong).
+          if (choice === "take_all") { onAdd(selected, qty, unit); onClose(); return; }
           onAdd(selected, totalQty, baseUnit, { purchase_mode: "roll", roll_lines: rollLines, rolls_snapshot: snapshot, rounding_choice: choice, target_quantity: Math.round((Number(qty) || 0) * factor * 100) / 100 });
           onClose();
         }}

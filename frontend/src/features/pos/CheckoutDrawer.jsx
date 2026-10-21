@@ -166,7 +166,9 @@ export default function CheckoutDrawer({
     return () => { active = false; clearTimeout(t); };
   }, [open, selectedCustomer, p.grand, cart.length]); // eslint-disable-line
 
-  const backorderQtyTotal = Object.values(allocation.map || {}).reduce((s, l) => s + (Number(l?.breakdown?.backorder) || 0), 0);
+  // Cek UI UAT v3 (S7) — kekurangan yang bisa dipenuhi PT lain (`inter_company`) juga butuh izin backorder di server
+  // ("Stok milik entitas tidak mencukupi … Aktifkan backorder"); dulu kartu backorder tidak muncul → SO ditolak tanpa jalan.
+  const backorderQtyTotal = Object.values(allocation.map || {}).reduce((s, l) => s + (Number(l?.breakdown?.backorder) || 0) + (Number(l?.breakdown?.inter_company) || 0), 0);
   const hasBackorderLine = backorderQtyTotal > 0;
   // Stok sales = global: kekurangan di entitas penjual otomatis diteruskan ke admin (transfer/PO).
   useEffect(() => { if (hasBackorderLine) setAllowBackorder(true); }, [hasBackorderLine]);

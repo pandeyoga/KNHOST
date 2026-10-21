@@ -310,6 +310,9 @@ export default function ProductQuickView({ open, group, specialMap = {}, onAdd, 
           onConfirm={(rollLines, totalQty, snapshot, choice) => {
             if (blocked) return;
             setShowReconcile(false);
+            // Cek UI UAT v3 (S7) — stok PT sendiri kurang: dulu baris berisi roll yang ada saja (0 roll → keranjang kosong).
+            // Kini qty penuh; stok yang ada dialokasikan server, kekurangannya backorder (diaktifkan di checkout langkah 2).
+            if (choice === "take_all") { onAdd(selected, qty, baseUnit); onClose(); return; }
             onAdd(selected, totalQty, baseUnit, { purchase_mode: "roll", roll_lines: rollLines, rolls_snapshot: snapshot, rounding_choice: choice, target_quantity: Number(qty) });
             onClose();
           }}

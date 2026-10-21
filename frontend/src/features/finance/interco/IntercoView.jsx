@@ -86,6 +86,10 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
   // padahal server mengizinkan — pengguna menyangka dirinya tidak berwenang.
   const perms = currentUser?.permissions || {};
   const canWrite = can(perms, "interco", "create");
+  // Cek UI UAT v3 (S7) — tombol langkah mengikuti izin AKSI-nya di server (confirm=approve, tugas gudang=ship,
+  // faktur=invoice). Dulu [Buat Tugas Gudang] tampil untuk Admin Sales (ditolak interco.ship) & tersembunyi bagi Gudang.
+  const STEP_PERM = { confirm: "approve", "warehouse-task": "ship", invoice: "invoice" };
+  const canStep = (step) => (step?.action ? can(perms, "interco", STEP_PERM[step.action] || "create") : canWrite);
   // Sisi UANG antar-PT (saldo pasangan PT, settlement/netting, pinjaman, rapor margin)
   // dipagari izin TERSENDIRI `interco_finance` sejak E-0/E0.8f. Tanpa penyaringan tab
   // di bawah, peran yang hanya mengurus BARANG (Admin Sales, gudang) akan membuka tab
@@ -275,6 +279,7 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
           onCancel={(r) => setCancelDoc(r)}
           onTax={(r) => setTaxDoc(r)} onReturn={(r) => setReturnDoc(r)}
           canWrite={canWrite}
+          canStep={canStep}
         />
       )}
       {tab === "balances" && (

@@ -21,7 +21,7 @@ import {
 
 export function TransactionsPanel({
   rows, fStatus, fRole, setFStatus, setFRole, onAdvance, onView, onCancel,
-  onTax, onReturn, canWrite,
+  onTax, onReturn, canWrite, canStep,
 }) {
   const srch = useListSearch(rows, null, { testId: "interco-tx", placeholder: "Cari nomor / PT / barang…" });
   return (
@@ -140,7 +140,7 @@ export function TransactionsPanel({
                                 className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md text-[#3C3C43] hover:bg-[#F2F2F5]">
                           <Eye size={13} />
                         </button>
-                        {canWrite && step && (
+                        {(canStep ? canStep(step) : canWrite) && step && (
                           <button onClick={() => step.action && onAdvance(r, step.action)}
                                   disabled={!step.action || step.disabled}
                                   title={step.hint || step.label}
