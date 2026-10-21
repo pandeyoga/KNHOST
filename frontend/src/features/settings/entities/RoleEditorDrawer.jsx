@@ -41,6 +41,12 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   const hiddenChanged = [...new Set([...hidden, ...originalHidden])].filter((v) => hidden.has(v) !== originalHidden.has(v));
   const toggleView = (id) => setHidden((h) => { const n = new Set(h); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const setViews = (ids, show) => setHidden((h) => { const n = new Set(h); ids.forEach((id) => (show ? n.delete(id) : n.add(id))); return n; });
+  // Keputusan owner 2026-10-21 — akses SEMUA badan usaha dapat diatur per peran (bawaan & kustom); peran baru
+  // mengikuti peran acuannya sampai admin mengubahnya.
+  const initCross = Boolean(role ? role.cross_entity : template?.cross_entity);
+  const [cross, setCross] = useState(initCross);
+  const [crossTouched, setCrossTouched] = useState(false);
+  const crossChanged = cross !== initCross;
   const [advanced, setAdvanced] = useState({});   // moduleId → true (panel lanjutan terbuka)
   const [confirm, setConfirm] = useState(false);
   const [danger, setDanger] = useState(null);   // null | "delete" | "reset"
@@ -65,9 +71,9 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
   const counts = LEVELS.map((l) => ({ ...l, n: modules.filter((m) => levels[m.id] === l.id).length }));
   const nameError = custom && label.trim().length < 2 ? "Nama peran minimal 2 karakter." : "";
   const nothingOn = modules.every((m) => levels[m.id] === "none");
-  const canSave = !locked && !nameError && (changes.length > 0 || hiddenChanged.length > 0 || (!editing) || label !== role?.label || description !== (role?.description || ""));
+  const canSave = !locked && !nameError && (changes.length > 0 || hiddenChanged.length > 0 || crossChanged || (!editing) || label !== role?.label || description !== (role?.description || ""));
 
-  const dirty = !locked && (changes.length > 0 || hiddenChanged.length > 0 || label !== initLabel || description !== initDesc);
+  const dirty = !locked && (changes.length > 0 || hiddenChanged.length > 0 || crossChanged || label !== initLabel || description !== initDesc);
   const requestClose = () => { if (busy) return; if (dirty) setDiscard(true); else onClose?.(); };
   useEffect(() => {
     const onKey = (e) => {
@@ -83,6 +89,7 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
     if (!src) return;
     setBaseRole(editing ? baseRole : rid);
     setPerms(permsOf(src));
+    if (!editing && !crossTouched) setCross(Boolean(src.cross_entity));   // ikut peran acuan
   };
   const setAll = (lvl) => setPerms((p) => modules.reduce((acc, m) => applyLevel(acc, m, lvl), p));
   const setModuleLevel = (m, lvl) => setPerms((p) => applyLevel(p, m, lvl));
@@ -97,10 +104,12 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
         res = await patchAccessRole(role.id, {
           ...(custom ? { label: label.trim(), description: description.trim() } : {}),
           permissions: perms, hidden_views: [...hidden], expected_version: role.version,
+          ...(crossChanged ? { cross_entity: cross } : {}),
         });
         onSaved?.(`Hak akses peran “${res.label}” disimpan. ${res.users} akun terpengaruh — berlaku otomatis dalam ≤1 menit.`);
       } else {
-        res = await createAccessRole({ label: label.trim(), description: description.trim(), base_role: baseRole, permissions: perms });
+        res = await createAccessRole({ label: label.trim(), description: description.trim(), base_role: baseRole, permissions: perms,
+          ...(crossTouched ? { cross_entity: cross } : {}) });
         if (hidden.size) res = await patchAccessRole(res.id, { hidden_views: [...hidden] });
         onSaved?.(`Peran “${res.label}” dibuat. Berikan ke akun lewat tab Akun & Akses.`);
       }
@@ -222,6 +231,21 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
                   </span>
                 ))}
               </div>
+              <label className={`mt-2 flex items-start gap-2 rounded-md border p-2 ${cross ? "border-[#C9DBF7] bg-[#F2F7FF]" : "border-[#EFF0F2] bg-[#FAFBFC]"}`}
+                     data-testid="role-editor-cross-entity">
+                <input type="checkbox" className="mt-0.5" checked={cross} disabled={locked || busy} data-testid="role-editor-cross-entity-toggle"
+                       onChange={(e) => { setCross(e.target.checked); setCrossTouched(true); }} />
+                <span className="text-[10.5px] text-[#3C3C43]">
+                  <b>Akses semua badan usaha (lintas PT)</b><br />
+                  {cross ? "Akun peran ini membuka SEMUA badan usaha aktif, termasuk yang baru dibuat."
+                         : "Akun peran ini hanya membuka badan usaha yang ditugaskan per akun (tab Akun & Akses)."}
+                  {editing && !locked && role.cross_entity_default !== undefined && (
+                    <span className="block text-[#8E8E93]" data-testid="role-editor-cross-entity-default">
+                      Bawaan: {role.cross_entity_default ? "aktif" : "mati"}{role.custom ? " (mengikuti peran acuan)" : ""}.
+                    </span>
+                  )}
+                </span>
+              </label>
               {editing && <RoleAccountsList role={role} roles={roles} canMove={!locked} onMoved={onRefresh} onError={onError} />}
               {!locked && (
                 <RoleNotifPreview roleId={editing ? role.id : ""} baseRole={baseRole} permissions={perms} saved={(editing ? role.turn_alerts : template?.turn_alerts) || []} />
@@ -291,7 +315,12 @@ export default function RoleEditorDrawer({ role, template, roles, modules, label
                 </p>
               </div>
               <div className="max-h-64 overflow-auto p-4">
-                {editing && changes.length === 0 && hiddenChanged.length === 0 && <p className="text-[11px] text-[#6B6B73]">Hanya nama/keterangan yang berubah.</p>}
+                {editing && changes.length === 0 && hiddenChanged.length === 0 && !crossChanged && <p className="text-[11px] text-[#6B6B73]">Hanya nama/keterangan yang berubah.</p>}
+                {crossChanged && (
+                  <p className="mb-1 text-[11px]" data-testid="role-editor-confirm-cross">
+                    Akses semua badan usaha: {initCross ? "aktif" : "mati"} → <b>{cross ? "aktif" : "mati"}</b>
+                  </p>
+                )}
                 {hiddenChanged.length > 0 && (
                   <p className="mb-1 text-[11px]" data-testid="role-editor-confirm-tabs">Menu/tab: {hiddenChanged.map((v) => `${titleOf(v)} → ${hidden.has(v) ? "disembunyikan" : "ditampilkan"}`).join(" · ")}</p>
                 )}

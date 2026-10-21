@@ -43,6 +43,7 @@ function RoleCard({ role, onOpen, onDuplicate }) {
         <span className="rounded-full bg-[#F2F2F7] px-2 py-0.5 font-semibold text-[#6B6B73]">{n("none")} tidak ada</span>
         {role.locked && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FCEBEA] px-2 py-0.5 font-semibold text-[#A8221A]"><Lock size={9} /> dikunci</span>}
         {role.modified && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#FEF7EC] px-2 py-0.5 font-semibold text-[#8C4A00]" data-testid={`role-card-modified-${role.id}`}><Pencil size={9} /> diubah dari bawaan</span>}
+        {role.cross_entity && <span className="inline-flex items-center gap-0.5 rounded-full bg-[#F2F7FF] px-2 py-0.5 font-semibold text-[#0058CC]" data-testid={`role-card-cross-${role.id}`}>Semua PT</span>}
         {role.base_role_label && <span className="text-[#8E8E93]">acuan: {role.base_role_label}</span>}
       </div>
     </div>

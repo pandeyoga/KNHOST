@@ -18,6 +18,7 @@ class RoleCreate(BaseModel):
     base_role: str = ""
     levels: Dict[str, str] = {}
     permissions: Optional[Dict[str, List[str]]] = None
+    cross_entity: Optional[bool] = None   # keputusan owner 2026-10-21 — None = ikut peran acuan
 
 
 class RolePatch(BaseModel):
@@ -26,6 +27,7 @@ class RolePatch(BaseModel):
     levels: Optional[Dict[str, str]] = None
     permissions: Optional[Dict[str, List[str]]] = None
     hidden_views: Optional[List[str]] = None
+    cross_entity: Optional[bool] = None   # keputusan owner 2026-10-21 — akses SEMUA badan usaha aktif
     expected_version: Optional[str] = None
 
 

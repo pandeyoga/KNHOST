@@ -27,6 +27,17 @@ async def list_custom() -> List[Dict[str, Any]]:
 
 async def sync_registry() -> None:
     reg.register_custom_roles(await list_custom())
+    rec = await db.permission_settings.find_one({"id": "default"}, {"_id": 0, "cross_entity": 1}) or {}
+    reg.apply_cross_entity(rec.get("cross_entity") or {})
+
+
+async def _set_cross_entity(rid: str, value: Optional[bool]) -> None:
+    """Simpan (bool) atau hapus (None = kembali ke bawaan) pengaturan lintas badan usaha satu peran."""
+    if value is None:
+        await db.permission_settings.update_one({"id": "default"}, {"$unset": {f"cross_entity.{rid}": ""}})
+    else:
+        await db.permission_settings.update_one({"id": "default"}, {"$set": {f"cross_entity.{rid}": bool(value)}},
+                                                upsert=True)
 
 
 async def _matrix() -> Dict[str, Dict[str, List[str]]]:
@@ -83,10 +94,10 @@ async def _assert_label_unique(label: str, exclude_id: str = "") -> None:
                                 detail=f"Nama peran “{label}” sudah dipakai. Pilih nama lain.")
 
 
-def _version(perms: Dict[str, Any], hidden: List[str], doc: Dict[str, Any]) -> str:
+def _version(perms: Dict[str, Any], hidden: List[str], doc: Dict[str, Any], cross: bool = False) -> str:
     """LN-015 — sidik isi peran untuk deteksi konflik simpan antar-admin."""
     raw = json.dumps([{k: sorted(v or []) for k, v in sorted(perms.items())}, sorted(hidden),
-                      doc.get("label", ""), doc.get("description", "")], sort_keys=True)
+                      doc.get("label", ""), doc.get("description", ""), bool(cross)], sort_keys=True)
     return hashlib.sha1(raw.encode()).hexdigest()[:12]
 
 
@@ -107,6 +118,10 @@ def _role_view(rid: str, matrix: Dict[str, Any], users: Dict[str, int],
         "base_role_label": reg.role_label(doc.get("base_role", "")) if custom and doc.get("base_role") else "",
         "rank": entry.get("rank", 0),
         "cross_entity": entry.get("cross_entity", False),
+        # Keputusan owner 2026-10-21 — dapat diatur per peran; bawaan: peran bawaan → sistem, kustom → acuannya.
+        "cross_entity_default": reg.cross_entity_default(rid),
+        "cross_entity_overridden": entry.get("cross_entity", False) != reg.cross_entity_default(rid),
+        "cross_entity_locked": rid in LOCKED_ROLES,
         "home_view": entry.get("home_view", ""),
         "users": users.get(rid, 0),
         "locked": rid in LOCKED_ROLES,
@@ -117,7 +132,7 @@ def _role_view(rid: str, matrix: Dict[str, Any], users: Dict[str, int],
         "turn_alerts": _turn_alerts(perms),
         "updated_at": doc.get("updated_at", ""),
         "hidden_views": sorted(_HIDDEN.get(rid, [])),
-        "version": _version(perms, _HIDDEN.get(rid, []), doc),
+        "version": _version(perms, _HIDDEN.get(rid, []), doc, entry.get("cross_entity", False)),
     }
 
 
@@ -209,6 +224,8 @@ async def create_custom(payload: Dict[str, Any]) -> Dict[str, Any]:
            "created_at": now_iso(), "updated_at": now_iso()}
     await db.custom_roles.insert_one(dict(doc))
     await _save_matrix(matrix)
+    if payload.get("cross_entity") is not None:   # tanpa nilai → mengikuti peran acuan
+        await _set_cross_entity(rid, bool(payload["cross_entity"]))
     await sync_registry()
     return await get_role(rid)
 
@@ -244,6 +261,11 @@ async def update_role(rid: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             raise HTTPException(status_code=400, detail=f"Menu/tab tidak dikenal: {', '.join(map(str, bad))}")
         await db.permission_settings.update_one({"id": "default"}, {"$set": {f"hidden_views.{rid}": hv}})
         changes["hidden_views"] = hv
+    if payload.get("cross_entity") is not None:
+        want = bool(payload["cross_entity"])
+        # sama dengan bawaan → simpan sebagai "ikut bawaan" supaya perubahan bawaan/peran acuan tetap mengalir
+        await _set_cross_entity(rid, None if want == reg.cross_entity_default(rid) else want)
+        changes["cross_entity"] = want
     if payload.get("permissions") is not None:
         before = matrix.get(rid) or DEFAULT_PERMISSIONS.get(rid, {})
         matrix[rid] = _clean_perms(payload["permissions"])
@@ -279,6 +301,8 @@ async def reset_builtin(rid: str) -> Dict[str, Any]:
     matrix = await _matrix()
     matrix[rid] = deepcopy(DEFAULT_PERMISSIONS[rid])
     await _save_matrix(matrix)
+    await _set_cross_entity(rid, None)   # lintas badan usaha ikut kembali ke bawaan
+    await sync_registry()
     return await get_role(rid)
 
 
@@ -297,7 +321,8 @@ async def delete_custom(rid: str) -> Dict[str, Any]:
     matrix = await _matrix()
     matrix.pop(rid, None)
     await _save_matrix(matrix)
-    await db.permission_settings.update_one({"id": "default"}, {"$unset": {f"hidden_views.{rid}": ""}})
+    await db.permission_settings.update_one({"id": "default"}, {"$unset": {f"hidden_views.{rid}": "",
+                                                                         f"cross_entity.{rid}": ""}})
     await db.custom_roles.delete_one({"id": rid})
     await sync_registry()
     return {"id": rid, "deleted": True}

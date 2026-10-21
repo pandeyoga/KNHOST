@@ -240,6 +240,9 @@ ROLE_RANK: Dict[Any, int] = {"": 0, None: 0, **{rid: r["rank"] for rid, r in ROL
 #: Peran KUSTOM (dibuat admin dari layar "Peran & Hak Akses"; tersimpan di `custom_roles`).
 CUSTOM_ROLE_IDS: set = set()
 
+#: Nilai BAWAAN sistem "lintas badan usaha" per peran bawaan (sebelum pengaturan admin).
+BUILTIN_CROSS_ENTITY: Dict[str, bool] = {rid: bool(r["cross_entity"]) for rid, r in ROLES.items()}
+
 
 def register_custom_roles(rows: List[Dict[str, Any]]) -> None:
     """Muat ulang peran kustom ke registry (dipanggil saat start & setiap perubahan)."""
@@ -272,8 +275,40 @@ def register_custom_roles(rows: List[Dict[str, Any]]) -> None:
         ROLE_RANK[rid] = ROLES[rid]["rank"]
         CUSTOM_ROLE_IDS.add(rid)
 
-#: Peran yang boleh mengoperasikan SEMUA badan usaha (oversight lintas-PT).
+#: Peran yang boleh mengoperasikan SEMUA badan usaha (oversight lintas-PT). Himpunan ini DIUBAH DI TEMPAT
+#: oleh `apply_cross_entity` (pengaturan admin) supaya semua modul yang mengimpornya ikut berubah.
 CROSS_ENTITY_ROLES = {rid for rid, r in ROLES.items() if r["cross_entity"]}
+
+
+def cross_entity_default(rid: str) -> bool:
+    """Nilai bawaan tanpa pengaturan admin: peran bawaan → registry; peran kustom → peran acuannya."""
+    if rid == "admin":
+        return True
+    if rid in BUILTIN_CROSS_ENTITY:
+        return BUILTIN_CROSS_ENTITY[rid]
+    return BUILTIN_CROSS_ENTITY.get((ROLES.get(rid) or {}).get("base_role") or "", False)
+
+
+def apply_cross_entity(overrides: Optional[Dict[str, Any]]) -> None:
+    """Keputusan owner 2026-10-21 — akses lintas badan usaha DAPAT DIKONFIGURASI per peran (bawaan & kustom).
+    `overrides` = {peran: bool} dari `permission_settings.cross_entity`; tanpa nilai → `cross_entity_default`
+    (peran kustom mengikuti nilai EFEKTIF peran acuannya). Admin selalu lintas badan usaha."""
+    ov = {k: bool(v) for k, v in (overrides or {}).items() if v is not None}
+
+    def eff(rid: str) -> bool:
+        if rid == "admin":
+            return True
+        if rid in ov:
+            return ov[rid]
+        if rid in BUILTIN_CROSS_ENTITY:
+            return BUILTIN_CROSS_ENTITY[rid]
+        base = (ROLES.get(rid) or {}).get("base_role") or ""
+        return eff(base) if base and base != rid and base in ROLES else False
+
+    for rid in ROLES:
+        ROLES[rid]["cross_entity"] = eff(rid)
+    CROSS_ENTITY_ROLES.clear()
+    CROSS_ENTITY_ROLES.update(rid for rid, r in ROLES.items() if r["cross_entity"])
 
 #: Peringkat yang dipakai bila `required_role` diisi nilai yang tidak dikenal.
 #: Sengaja = peringkat manajer (perilaku lama), supaya konfigurasi persetujuan yang
@@ -408,8 +443,9 @@ def _self_test() -> int:
         rank_of("sales_admin") > rank_of("sales") and rank_of("finance") > rank_of("warehouse"))
     chk("sales_admin & finance DI BAWAH manajer (bukan penyetuju nilai)",
         rank_of("sales_admin") < rank_of("manager") and rank_of("finance") < rank_of("manager"))
-    chk("lintas badan usaha HANYA admin & manager",
-        CROSS_ENTITY_ROLES == {"admin", "manager"}, str(sorted(CROSS_ENTITY_ROLES)))
+    chk("BAWAAN lintas badan usaha hanya admin & manager (selebihnya diatur admin per peran)",
+        {r for r, v in BUILTIN_CROSS_ENTITY.items() if v} == {"admin", "manager"},
+        str(sorted(r for r, v in BUILTIN_CROSS_ENTITY.items() if v)))
     chk("aturan 'manager' tidak bisa dipenuhi Admin Sales",
         not role_satisfies("sales_admin", "manager"))
     chk("aturan 'manager' dipenuhi manajer & admin",
