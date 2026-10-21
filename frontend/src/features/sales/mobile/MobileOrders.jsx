@@ -2,6 +2,7 @@ import MobilePendingQueue from "./MobilePendingQueue";
 import MobileAmendSheet from "./MobileAmendSheet";
 import MobileOrderJourney from "./MobileOrderJourney";
 import MobileArReceipt from "./MobileArReceipt";
+import SoApprovalsPanel from "../../orders/SoApprovalsPanel";
 import VerifyOrderDialog from "../../sales_admin/VerifyOrderDialog";
 import FulfillmentDecisionDialog from "../../sales_admin/FulfillmentDecisionDialog";
 import { confirmOrder } from "../../sales_admin/workDeskApi";
@@ -24,7 +25,7 @@ const ACTIVE = ["reserved", "waiting_approval", "approved", "confirmed", "partia
 const PRE_CONFIRM = ["reserved", "waiting_approval", "approved", "waiting_stock"];
 const SHIPPED = ["shipped", "partially_shipped", "dispatched", "delivered", "done"];
 
-export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh, role, focusId, onReturn, onDashboard }) {
+export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh, role, user, focusId, onReturn, onDashboard }) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
   const [open, setOpen] = useState(focusId || null);
@@ -153,6 +154,14 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                         </button>
                       )}
                     </div>
+                    {/* Cek UI UAT v3 (2026-10-22) — sama dengan detail SO desktop: status persetujuan (harga khusus /
+                        kredit / nilai) + [Ajukan Harga Khusus] per SO + [Minta Persetujuan Kredit]. Dulu HP sales tidak
+                        punya jalur ini, sehingga harga khusus yang ditolak tidak bisa diajukan ulang dari HP. */}
+                    {user && (
+                      <div className="mt-2" data-testid={`mobile-order-approvals-${o.id}`}>
+                        <SoApprovalsPanel order={o} user={user} onRefresh={onRefresh} />
+                      </div>
+                    )}
                     <MobileOrderJourney orderId={o.id} />
                   </div>
                 )}

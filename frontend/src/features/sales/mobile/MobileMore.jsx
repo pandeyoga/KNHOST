@@ -55,8 +55,13 @@ const GROUPS = [
 ];
 // Hanya menu yang memang ada di sidebar desktop peran ini (roles + peran custom + menu tersembunyi).
 const navIdsFor = (role) => new Set(buildNavigation(role).filter((e) => !e.comingSoon).map((e) => e.id));
+// Menu & grup layar HP sales (MENU/GROUPS) tidak punya `nav` — cukup cek peran. Dulu ikut disaring `allowed`
+// (yang mewajibkan `nav` di sidebar) sehingga SEMUA menu HP sales hilang (Retur, Pesanan Sample, Pesanan Khusus,
+// Minta Harga Khusus, …) — cek UI UAT v3 (2026-10-22).
+const roleOk = (item, role) => !item.roles || item.roles.includes(role);
+// Fitur tampilan penuh (FULL_VIEWS) — hanya yang memang ada di sidebar desktop peran ini.
 const allowed = (item, role) => {
-  if (item.roles && !item.roles.includes(role)) return false;
+  if (!roleOk(item, role)) return false;
   if (!navIdsFor(role).has(item.nav)) return false;
   const tabs = hubTabsForRole(item.nav, role);   // view tab hub (mis. Kebijakan Retur) juga harus terlihat untuk peran ini
   return !tabs.length || item.view === item.nav || tabs.some((t) => t.view === item.view) || !HUB_VIEWS.has(item.view);
@@ -192,9 +197,9 @@ export default function MobileMore({ onOpenOrder, user, token, selectedEntity, e
         </div>
       )}
 
-      {GROUPS.filter((g) => allowed(g, role)).map((g) => {
+      {GROUPS.filter((g) => roleOk(g, role)).map((g) => {
         // Satu menu hanya tampil sekali (grup pertama yang memuatnya) — testid tetap unik.
-        const items = g.items.map((id) => MENU.find((m) => m.id === id)).filter((m) => m && allowed(m, role) && !shownIds.has(m.id));
+        const items = g.items.map((id) => MENU.find((m) => m.id === id)).filter((m) => m && roleOk(m, role) && !shownIds.has(m.id));
         items.forEach((m) => shownIds.add(m.id));
         if (!items.length) return null;
         return (

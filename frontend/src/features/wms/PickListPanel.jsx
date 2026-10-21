@@ -32,7 +32,8 @@ export default function PickListPanel({ task, onPick }) {
       </div>
       {cuts.length > 0 && (
         <p className="mb-1 flex items-center gap-1 rounded bg-[#FFF7EC] px-2 py-1 text-[10.5px] text-[#8C4A00]" data-testid="outbound-pick-cuts">
-          <Scissors size={11} /> Potong dulu: {cuts.map((c) => `${c.roll_no} (${formatQty(c.qty)} ${data.unit})`).join(", ")}
+          <Scissors size={11} /> Potong dulu: {cuts.map((c) => `${c.roll_no} (${formatQty(c.qty)} ${data.unit})`).join(", ")} —
+          di <b>Lokasi Rak › Antrean Potong</b>: potong, cetak label roll anak, lalu scan/ketik label untuk verifikasi (tanpa RFID).
         </p>
       )}
       {rolls.length === 0 ? (

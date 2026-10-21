@@ -4,13 +4,24 @@ import CreateSpecialOrderForm from "../CreateSpecialOrderForm";
 import { useEffect, useMemo, useState } from "react";
 import { Search, ChevronRight, ArrowLeft, Plus } from "lucide-react";
 import axios, { API } from "../../../services/apiClient";
-import { formatCurrency } from "../../../utils/formatters";
+import { formatCurrency, formatQty } from "../../../utils/formatters";
 import KNSelect from "../../../components/KNSelect";
 import { MobileReturnActions, MobileSpecialOrderDetail, OdStatus } from "./MobileSalesFlows";
 
 const fmtDate = (s) => (s ? new Date(s).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }) : "-");
 
 /** Retur jual versi HP: daftar kartu + buat retur dari pesanan pelanggan (alasan + baris). */
+// Cek UI UAT v3 (2026-10-22) — dokumen retur tidak menyimpan total rupiah (nilai diputus Finance saat kompensasi);
+// dulu daftar HP menulis "Rp 0". Kini: nilai bila ada, selain itu qty klaim per satuan.
+export const returnValueText = (r) => {
+  const amt = Number(r.total_amount || r.grand_total || 0);
+  if (amt > 0) return formatCurrency(amt);
+  const by = {};
+  (r.items || []).forEach((it) => { const u = it.unit || ""; by[u] = (by[u] || 0) + Number(it.quantity_returned || it.quantity || 0); });
+  const parts = Object.entries(by).filter(([, q]) => q > 0).map(([u, q]) => `${formatQty(q)} ${u}`.trim());
+  return parts.length ? `klaim ${parts.join(" · ")}` : "—";
+};
+
 export function MobileReturns({ user, initialOrder = null, focusId = null }) {
   const [rows, setRows] = useState(null);
   const [create, setCreate] = useState(!!initialOrder);
@@ -34,7 +45,7 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
         <p className="m-muted">Alasan: {sel.reason || sel.complaint_reason || sel.complaint_note || sel.notes || "-"}</p>
         {sel.order_number && <p className="m-muted">Atas pesanan {sel.order_number}</p>}
         {(sel.items || []).map((it, i) => <div key={i} className="flex justify-between border-t border-[#EFF0F2] pt-1"><span>{it.product_name}</span><span className="tabular-nums">{it.quantity_returned ?? it.quantity} {it.unit}{it.reason ? ` · ${it.reason}` : ""}</span></div>)}
-        <div className="flex justify-between border-t border-[#EFF0F2] pt-1 font-bold"><span>Total</span><span className="tabular-nums">{formatCurrency(sel.total_amount || sel.grand_total || 0)}</span></div>
+        <div className="flex justify-between border-t border-[#EFF0F2] pt-1 font-bold"><span>Total</span><span className="tabular-nums">{returnValueText(sel)}</span></div>
       </div>
       <MobileReturnActions ret={sel} onChanged={load} />
     </div>);
@@ -45,7 +56,7 @@ export function MobileReturns({ user, initialOrder = null, focusId = null }) {
       {rows && rows.length === 0 && <p className="text-xs m-muted" data-testid="m-returns-empty">Belum ada retur.</p>}
       {(rows || []).map((r) => (
         <button key={r.id} className="m-card m-press w-full p-3 text-left" onClick={() => setSel(r)} data-testid={`m-return-${r.id}`}>
-          <div className="flex items-center gap-2"><div className="min-w-0 flex-1"><p className="text-[13px] font-bold">{r.number} <span className="ml-1 inline-block align-middle"><ReturnStatusPill status={r.status} /></span></p><p className="truncate text-[11px] m-muted">{r.customer_name} · {fmtDate(r.created_at)} · {formatCurrency(r.total_amount || r.grand_total || 0)}</p></div><ChevronRight size={16} className="text-[#C7C7CC]" /></div>
+          <div className="flex items-center gap-2"><div className="min-w-0 flex-1"><p className="text-[13px] font-bold">{r.number} <span className="ml-1 inline-block align-middle"><ReturnStatusPill status={r.status} /></span></p><p className="truncate text-[11px] m-muted">{r.customer_name} · {fmtDate(r.created_at)} · {returnValueText(r)}</p></div><ChevronRight size={16} className="text-[#C7C7CC]" /></div>
         </button>
       ))}
     </div>

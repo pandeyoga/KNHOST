@@ -130,6 +130,12 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
                 Diminta oleh {entry.requested_by || "-"} · butuh peran <b className="uppercase">{entry.required_role}</b>
                 {entry.decided_by && ` · diputuskan ${entry.decided_by}`}
               </p>
+              {/* Cek UI UAT v3 — alasan pemutus (mis. kenapa harga ditolak) dulu tidak terlihat oleh sales. */}
+              {entry.decision_notes && (
+                <p className="mt-0.5 text-[10.5px] text-[#3C3C43]" data-testid={`so-appr-decision-notes-${entry.id}`}>
+                  Catatan pemutus: “{entry.decision_notes}”
+                </p>
+              )}
               {entry.status === "cancelled" && entry.cancel_reason && (
                 <p className="mt-0.5 text-[9.5px] text-[#8E8E93]" data-testid={`so-appr-cancel-reason-${entry.id}`}>
                   {entry.cancel_reason}{entry.cancelled_by ? ` · ${entry.cancelled_by}` : ""}

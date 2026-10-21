@@ -125,7 +125,7 @@ export default function MobileSalesApp(props) {
             entityId={selectedEntity} onBrowse={goCatalog} onDone={() => setTab("orders")} />
         )}
         {tab === "orders" && <MobileOrders orders={data?.orders || []} loading={loading} onBrowse={goCatalog} onRefresh={onRefresh}
-          role={user?.role} focusId={orderFocus} onReturn={(o) => openSubWith("returns", { order: o })} onDashboard={() => openSub("order-dashboard")} />}
+          role={user?.role} user={user} focusId={orderFocus} onReturn={(o) => openSubWith("returns", { order: o })} onDashboard={() => openSub("order-dashboard")} />}
         {tab === "more" && (
           <MobileMore onOpenOrder={(id) => { setOrderFocus(id); setTab("orders"); }} user={user} token={token} selectedEntity={selectedEntity} entities={entities} orders={data?.orders || []} onRefresh={onRefresh}
             onLogout={onLogout} onForceDesktop={onForceDesktop} sub={moreSub} setSub={(s) => { setSubParam(null); setMoreSub(s); }} onOpenFull={onOpenFull}
