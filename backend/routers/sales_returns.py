@@ -22,6 +22,7 @@ from services import return_evidence_service as evidence      # L08 LN-080-T03
 from services import return_journey_service as journey        # L08 LN-081
 from services import line_scope                # FASE L — pagar & penyaring lini produk
 from services import return_state as st
+from services import return_operator_view as opv   # F-11-layar — Gudang/QC membuka retur tanpa uang
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope
 logger = logging.getLogger(__name__)
 
@@ -40,10 +41,11 @@ async def list_returns(
     return_type: Optional[str] = Query(None),
     line: str = Query("", description="FASE L — penyaring lini (koma untuk multi)"),
 ) -> Dict[str, Any]:
-    user = await require_permission(request, "sales_return", "view")
+    user, operator = await opv.reader(request)
     ctx = await entity_ctx(request)
     q: Dict = {}
     if status:      q["status"]      = status
+    if operator:    q["status"]      = opv.list_status(status or "")   # F-11-layar — tahap terima/QC saja
     if order_id:    q["order_id"]    = order_id
     if return_type: q["return_type"] = return_type
     q = resolve_list_scope("sales_returns", q, ctx, entity_id)
@@ -53,7 +55,7 @@ async def list_returns(
         for d in docs:
             d.pop("_id", None)
             d["attachments"] = [a for a in (d.get("attachments") or []) if not a.get("is_deleted")]
-        return docs
+        return [opv.strip_money(d) for d in docs] if operator else docs
 
     if is_paged(request):
         page, page_size, qs, _sort = get_page_params(request)
@@ -62,8 +64,7 @@ async def list_returns(
         items, total = await fetch_page(db.sales_returns, q, page, page_size, sort_field="created_at", sort_dir=-1)
         return envelope(_clean(items), total, page, page_size)
 
-    docs = await db.sales_returns.find(q, sort=[("created_at", -1)]).to_list(500)
-    _clean(docs)
+    docs = _clean(await db.sales_returns.find(q, sort=[("created_at", -1)]).to_list(500))
     return {"items": docs, "total": len(docs)}
 
 
@@ -79,11 +80,13 @@ async def sales_return_status_counts(request: Request,
     ada di peramban. Begitu daftarnya dipaginasi, angka lencana akan diam-diam mengikuti
     isi HALAMAN, bukan isi sebenarnya — kelas bug "kartu bilang 12, daftar berisi 3".
     """
-    user = await require_permission(request, "sales_return", "view")
+    user, operator = await opv.reader(request)
     ctx = await entity_ctx(request)
     # L08 LN-080-T04 — hitungan memakai saringan yang SAMA dengan daftar (tipe, lini, cari),
     # supaya kartu total tidak berbeda dari isi daftar tanpa label cakupan.
     base: Dict[str, Any] = {"return_type": return_type} if return_type else {}
+    if operator:
+        base["status"] = opv.list_status("")   # F-11-layar — sama dengan daftar operator
     base = resolve_list_scope("sales_returns", base, ctx, entity_id)
     base = line_scope.narrow(base, user, line, field=line_scope.LINES_FIELD)
     if q:
@@ -233,13 +236,15 @@ async def eligible_orders(request: Request, entity_id: Optional[str] = None) -> 
 
 @router.get("/sales-returns/{return_id}")
 async def get_return(return_id: str, request: Request) -> Dict[str, Any]:
-    user = await require_permission(request, "sales_return", "view")
+    user, operator = await opv.reader(request)
     ctx = await entity_ctx(request)
     doc = await db.sales_returns.find_one({"id": return_id})
     if not doc:
         raise HTTPException(status_code=404, detail="Return tidak ditemukan")
     doc.pop("_id", None)
     assert_entity_access(doc, "sales_returns", ctx)
+    if operator:
+        opv.assert_open_for_operator(doc)
     doc["attachments"] = [a for a in (doc.get("attachments") or []) if not a.get("is_deleted")]
     doc["evidence"] = await evidence.describe(doc)   # L08 LN-080-T03
     _rids = [r for it in doc.get("items", []) for r in (it.get("roll_ids") or [])]
@@ -248,6 +253,8 @@ async def get_return(return_id: str, request: Request) -> Dict[str, Any]:
             {"id": {"$in": _rids}}, {"_id": 0, "id": 1, "roll_no": 1})}
         for it in doc.get("items", []):
             it["roll_nos"] = {r: _nos.get(r, "") for r in (it.get("roll_ids") or [])}
+    if operator:   # F-11-layar — tanpa estimasi nilai & tanpa field uang tersimpan
+        return opv.strip_money(doc)
     # UI/UX 2026-06 — NILAI per item untuk layar detail: harga diambil dari SO sumber.
     # SETELAH settle angka resminya adalah Nota Kredit; sebelum itu ini ESTIMASI
     # (dan diberi label demikian di layar) supaya pemutus tahu berapa rupiah yang
@@ -333,9 +340,14 @@ async def approve_return(
 
 # ─── INSPECT (WAJIB) : approved → inspecting → inspected ─────────────────────
 
+# F-11 (uji pra-UAT 2026-10-21) — QC retur dikerjakan petugas QC (`qc.inspect`), bukan hanya
+# pemegang `sales_return.update`; keputusan uang tetap `sales_return.approve` di /settle.
+QC_RETURN_PERMS = [("sales_return", "update"), ("qc", "inspect")]
+
+
 @router.post("/sales-returns/{return_id}/inspect/start")
 async def start_inspection(return_id: str, request: Request) -> Dict[str, Any]:
-    user = await require_permission(request, "sales_return", "update")
+    user = await require_any_permission(request, QC_RETURN_PERMS)
     ctx = await entity_ctx(request)
     existing = await db.sales_returns.find_one({"id": return_id})
     if not existing:
@@ -347,14 +359,14 @@ async def start_inspection(return_id: str, request: Request) -> Dict[str, Any]:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     await audit(user.get("name", ""), "sales_return_inspect_started", "sales_return", return_id, {})
-    return doc
+    return opv.strip_money(doc) if await opv.is_operator(user) else doc
 
 
 @router.post("/sales-returns/{return_id}/inspect/complete")
 async def complete_inspection(
     return_id: str, request: Request, payload: ReturnInspectComplete = ReturnInspectComplete(),
 ) -> Dict[str, Any]:
-    user = await require_permission(request, "sales_return", "update")
+    user = await require_any_permission(request, QC_RETURN_PERMS)
     ctx = await entity_ctx(request)
     existing = await db.sales_returns.find_one({"id": return_id})
     if not existing:
@@ -362,11 +374,7 @@ async def complete_inspection(
     existing.pop("_id", None)
     assert_entity_access(existing, "sales_returns", ctx)
     await _need_evidence(existing, "inspect")
-    try:
-        journey.assert_ready_for_qc(existing)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    try:
+    try:   # F-12 — gerbang penerimaan barang dijaga di service (mulai & selesai QC)
         doc = await return_service.complete_inspection(
             return_id, user.get("name", user.get("email", "")),
             inspections=[i.dict() for i in payload.inspections], notes=payload.notes)
@@ -374,7 +382,7 @@ async def complete_inspection(
         raise HTTPException(status_code=400, detail=str(e))
     await audit(user.get("name", ""), "sales_return_inspected", "sales_return", return_id,
                 {"items": len(payload.inspections)})
-    return doc
+    return opv.strip_money(doc) if await opv.is_operator(user) else doc
 
 
 # ─── FASE I — MILESTONE PERJALANAN RETUR (lembar pemilik) ───────────────────
@@ -445,7 +453,7 @@ async def _need_evidence(doc: Dict[str, Any], stage: str) -> None:
 @router.get("/sales-returns/meta/evidence-policy")
 async def evidence_policy(request: Request) -> Dict[str, Any]:
     """L08 LN-080-T03 — tahap yang mewajibkan bukti untuk badan usaha aktif."""
-    await require_permission(request, "sales_return", "view")
+    await require_any_permission(request, opv.READ_PERMS)   # F-11-layar — juga dibaca layar Gudang/QC
     ctx = await entity_ctx(request)
     return {"required": await evidence.policy(ctx.active_entity_id), "stages": evidence.STAGES}
 
@@ -457,7 +465,7 @@ async def return_complaint_reasons(request: Request) -> Dict[str, Any]:
     Layar tidak boleh menyusun daftarnya sendiri: kode keluhan bisa ditambah pemilik
     lewat Master Data, dan daftar hardcode di layar akan menampilkan kode mentah.
     """
-    await require_permission(request, "sales_return", "view")
+    await require_any_permission(request, opv.READ_PERMS)   # F-11-layar — juga dibaca layar Gudang/QC
     ctx = await entity_ctx(request)
     from services import master_registry as mr
     return {"items": await mr.complaint_reason_options(ctx.active_entity_id or ""),
@@ -879,8 +887,11 @@ class JourneyScanPayload(BaseModel):
 
 @router.post("/sales-returns/{return_id}/journey/scan")
 async def scan_return_journey(return_id: str, payload: JourneyScanPayload, request: Request) -> Dict[str, Any]:
-    """L08 LN-081-T01 — lokasi fisik roll retur berubah hanya lewat scan berdokumen."""
-    user = await require_permission(request, "sales_return", "update")
+    """L08 LN-081-T01 — lokasi fisik roll retur berubah hanya lewat scan berdokumen.
+
+    F-11 — yang menscan terima/kirim/tiba adalah petugas gudang (`wms.scan`); pagar gudang per
+    badan usaha di bawah tetap berlaku untuk siapa pun yang menscan."""
+    user = await require_any_permission(request, [("sales_return", "update"), ("wms", "scan")])
     ctx = await entity_ctx(request)
     ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
     if not ret:
@@ -910,14 +921,17 @@ async def scan_return_journey(return_id: str, payload: JourneyScanPayload, reque
 @router.get("/sales-returns/{return_id}/timeline")
 async def return_timeline(return_id: str, request: Request) -> Dict[str, Any]:
     """L08 LN-081 — satu timeline, jalur terpisah (izin · masuk · QC · disposisi · uang · pengganti)."""
-    await require_permission(request, "sales_return", "view")
+    _user, operator = await opv.reader(request)
     ctx = await entity_ctx(request)
     ret = await db.sales_returns.find_one({"id": return_id}, {"_id": 0})
     if not ret:
         raise HTTPException(status_code=404, detail="Retur tidak ditemukan")
     assert_entity_access(ret, "sales_returns", ctx)
+    if operator:
+        opv.assert_open_for_operator(ret)
     from services import return_timeline_service as tl
-    return await tl.timeline(ret)
+    out = await tl.timeline(ret)
+    return opv.operator_timeline(out) if operator else out   # F-11-layar — tanpa jalur uang
 
 
 @router.post("/sales-returns/{return_id}/relocate")

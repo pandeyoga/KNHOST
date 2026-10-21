@@ -113,7 +113,9 @@ def test_t04_counts_follow_list_filters(h, rtype):
 
 # ── LN-082 ────────────────────────────────────────────────────────────────────
 def _drive_to_settled(h, rid, roll_id, grade, actual):
-    for path, body in (("approve", {"notes": ""}), ("inspect/start", {}),
+    # F-12 — QC hanya sesudah barang diterima: scan terima di gudang asal SJ (wh_jakarta) dulu.
+    scan = {"stage": "received", "codes": [roll_id], "warehouse_id": "wh_jakarta"}
+    for path, body in (("approve", {"notes": ""}), ("journey/scan", scan), ("inspect/start", {}),
                        ("inspect/complete", {"inspections": [{"index": 0, "grade": grade, "condition": "ok",
                                                               "roll_actuals": {roll_id: actual}}]}),
                        ("settle", {"outcome": "refund"})):

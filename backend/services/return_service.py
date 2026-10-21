@@ -18,6 +18,7 @@ from services import gl_service
 from services import costing_service
 from services import return_policy_service as rps
 from services import return_state as st
+from services import return_journey_service as _journey   # L08 LN-081 / F-12 — gerbang penerimaan QC
 from services import qc_inspection_service as qc
 from services import grade_service   # Fase A · PS-09 — SSOT perubahan grade roll
 from services import movement_label_service as _mlabel   # E5.3/E-9 — nama singkat badan usaha
@@ -721,6 +722,7 @@ async def start_inspection(return_id: str, actor: str) -> Dict[str, Any]:
     if not ret:
         raise ValueError(f"Return {return_id} tidak ditemukan")
     st.assert_transition(ret["status"], st.INSPECTING)
+    _journey.assert_ready_for_qc(ret)          # F-12 — QC tidak mendahului penerimaan barang
     now = now_iso()
     await db.sales_returns.update_one(
         {"id": return_id},
@@ -743,6 +745,7 @@ async def complete_inspection(return_id: str, actor: str,
     if not ret:
         raise ValueError(f"Return {return_id} tidak ditemukan")
     st.assert_transition(ret["status"], st.INSPECTED)
+    _journey.assert_ready_for_qc(ret)          # F-12 — roll dikirim ulang di tengah QC ditolak juga
     inspections = inspections or []
     th = await qc.grade_thresholds(ret.get("entity_id"))
     by_idx: Dict[int, Dict] = {}
