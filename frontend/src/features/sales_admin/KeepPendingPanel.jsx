@@ -5,6 +5,10 @@ import { apiErrorText } from "../../utils/apiError";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 import { soTrackerLink } from "./workDeskApi";
 import PendingProductRow from "./PendingProductRow";
+import { deriveStageSub, stageMeta } from "../../utils/soStatus";
+
+// Trial 22 Okt — baris Keep dulu menampilkan kode mentah ("status waiting_approval").
+const statusText = (status) => stageMeta(deriveStageSub({ status })[0]).label;
 
 const TABS = [
   { id: "keep", label: "Keep", icon: Hourglass },
@@ -89,7 +93,7 @@ function KeepList({ rows, limit, overdue, onOpen, tp }) {
                 className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[#FAFBFC]">
                 <div className="min-w-0 flex-1">
                   <p className="text-[12px] font-semibold">{r.number} <span className="font-normal text-[#6B6B73]">· {r.customer_name}</span></p>
-                  <p className="text-[10.5px] text-[#8E8E93]">{r.items_count} baris · {r.sales_name || "—"} · status {r.status}</p>
+                  <p className="text-[10.5px] text-[#8E8E93]">{r.items_count} baris · {r.sales_name || "—"} · {statusText(r.status)}</p>
                 </div>
                 {r.also_pending && <span className="rounded-full bg-[#FFF3E0] px-2 py-0.5 text-[9.5px] font-bold text-[#9A5B00]" data-testid={`${tp}-keep-also-pending-${r.order_id}`}>juga Pending</span>}
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums ${r.overdue ? "bg-[#FDECEA] text-[#C0392B]" : "bg-[#F2F3F5] text-[#3C3C43]"}`} data-testid={`${tp}-keep-age-${r.order_id}`}>

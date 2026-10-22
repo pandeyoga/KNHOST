@@ -105,7 +105,7 @@ export default function MobileSalesApp(props) {
       <main className={`m-main ${tab === "catalog" ? "m-flush" : ""}`} data-testid={`mobile-view-${tab}`}>
         <OfflineBanner />
         {notice && !/^(Sistem siap|Login berhasil)/.test(notice) && <div data-testid="mobile-sales-notice" className="mb-2 rounded-lg border border-[#CBDFFF] bg-[#F2F7FF] px-3 py-2 text-[11.5px] text-[#31465F]">{notice}</div>}
-        {tab === "home" && !isAdmin && <MobileSalesHome token={token} user={user} onNewOrder={goCatalog} onOpenTab={setTab} onAskKn={() => openSub("tanya")} onOpenSub={openSub} onOpenFull={onOpenFull} />}
+        {tab === "home" && !isAdmin && <MobileSalesHome token={token} user={user} onNewOrder={goCatalog} onOpenTab={setTab} onAskKn={() => openSub("tanya")} onOpenSub={openSub} onOpenFull={onOpenFull} onOpenOrder={openOrder} selectedEntity={selectedEntity} />}
         {tab === "home" && isAdmin && (
           <MobileSalesAdminDesk selectedEntity={selectedEntity} onOpenOrder={openOrder}
             onOpenSub={(s, id) => openSubWith(s, { id })} onOpenFull={onOpenFull} />

@@ -162,7 +162,10 @@ async def keep_pending(scope: Dict[str, Any], entity_id: str) -> Dict[str, Any]:
             qty = round(float(b.get("backorder_qty") or 0), 2)
             p["short_qty"] = round(p["short_qty"] + qty, 2)
             p["orders"].append({**_so_row(o), "short_qty": qty, "supply": await _supply_refs(o, b.get("product_id"))})
-        verified = (o.get("verification") or {}).get("status") == "verified"
+        # Trial 22 Okt — pesanan sample (alur Admin Sample) & SO hasil Pesanan Khusus yang dikonfirmasi otomatis
+        # tidak melewati verifikasi Admin Sales → dulu ikut terhitung "Keep" selamanya.
+        verified = ((o.get("verification") or {}).get("status") == "verified" or bool(o.get("admin_verified"))
+                    or o.get("order_type") == "sample")
         if not verified and o.get("status") in KEEP_STATUSES:
             row = _so_row(o)
             row.update(also_pending=bool(bos), overdue=bool(limit and row["age_days"] > limit),

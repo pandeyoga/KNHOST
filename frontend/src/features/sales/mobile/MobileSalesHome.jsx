@@ -10,6 +10,7 @@ import { boardLook, selectWaitingBoards } from "../../../config/waitingBoards";
 import ErrorNotice from "../../../components/ErrorNotice";
 import { formatCurrency } from "../../../utils/formatters";
 import { getStage, stageMeta } from "../../../utils/soStatus";
+import KeepPendingPanel from "../../sales_admin/KeepPendingPanel";
 
 function MiniKpi({ icon: Icon, label, value, sub, color = "#007AFF", loading }) {
   return (
@@ -34,7 +35,7 @@ function MiniKpi({ icon: Icon, label, value, sub, color = "#007AFF", loading }) 
 const BOARD_SUB = { "price-approvals": "price-status", "special-orders": "special", "internal-requests": "internal", returns: "returns", amendments: "amendments", "customers-crm": "crm" };
 const CREDIT_TONE = { ok: ["Aman", "#1B7F4B", "#E6F6EC"], warning: ["Waspada", "#8A5300", "#FFF4E5"], blocked: ["Blokir", "#C0392B", "#FDEDE7"] };
 
-export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, onAskKn, onOpenSub, onOpenFull }) {
+export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, onAskKn, onOpenSub, onOpenFull, onOpenOrder, selectedEntity = "all" }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
@@ -197,6 +198,10 @@ export default function MobileSalesHome({ token, user, onNewOrder, onOpenTab, on
           ))}
         </div>
       </div>
+
+      {/* Trial 22 Okt — "sales keep, sales pending": dulu hanya di beranda Sales desktop; Sales memakai HP.
+          Data dibatasi ke pesanan milik sales ini (server: sales_ownership). */}
+      <KeepPendingPanel selectedEntity={selectedEntity} testPrefix="m-sales-kp" onOpenDocument={(l) => onOpenOrder?.(l.focus_id)} />
 
       {/* Overdue collections */}
       {collections.length > 0 && (

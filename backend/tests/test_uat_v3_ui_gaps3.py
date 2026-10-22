@@ -15,6 +15,7 @@
 10. Isyarat harga khusus tidak lagi menyebut Admin Sales sebagai penyetuju (semua harga khusus diputus Manajer/Admin).
 11. Pengajuan harga khusus tanpa SO = harga langganan (dulu lingkup "pesanan" tanpa SO: disetujui pun tak terpakai);
     layar HP Minta Harga Khusus memuat semua pelanggan PT (dulu kosong bila pelanggan belum punya sales).
+12. Trial 22 Okt — Keep tidak memuat pesanan sample / SO Pesanan Khusus yang dikonfirmasi otomatis.
 Jalankan: cd /app/backend && python -m pytest tests/test_uat_v3_ui_gaps3.py -p no:randomly -n 0 -q
 """
 import asyncio
@@ -237,3 +238,20 @@ def test_daftar_pelanggan_untuk_harga_khusus_hp_memuat_pelanggan_tanpa_sales():
     if unassigned:
         names = {r["name"] for r in rows}
         assert any(n in names for n in DB.customers.distinct("name", {"entity_id": base.ENT, "assigned_sales_id": {"$in": [None, ""]}}))
+
+
+def test_keep_tidak_memuat_sample_dan_so_od_terkonfirmasi_otomatis():
+    from services import sales_p04_service as p04
+    ent = f"ent_uji_{uuid.uuid4().hex[:6]}"
+    base_so = {"entity_id": ent, "customer_name": "Uji", "created_at": "2026-10-22T01:00:00+00:00", "items": []}
+    DB.sales_orders.insert_many([
+        {**base_so, "id": f"so_k_{ent}", "number": "KEEP-BIASA", "status": "reserved"},
+        {**base_so, "id": f"so_s_{ent}", "number": "KEEP-SAMPLE", "status": "confirmed", "order_type": "sample"},
+        {**base_so, "id": f"so_o_{ent}", "number": "KEEP-OD", "status": "confirmed", "admin_verified": True}])
+    try:
+        async def go(_db):
+            return await p04.keep_pending({"entity_id": ent}, ent)
+        out = _run(["services.sales_p04_service"], go)
+        assert [k["number"] for k in out["keep"]] == ["KEEP-BIASA"], out["keep"]
+    finally:
+        DB.sales_orders.delete_many({"entity_id": ent})
