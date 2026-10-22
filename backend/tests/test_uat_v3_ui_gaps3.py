@@ -16,6 +16,8 @@
 11. Pengajuan harga khusus tanpa SO = harga langganan (dulu lingkup "pesanan" tanpa SO: disetujui pun tak terpakai);
     layar HP Minta Harga Khusus memuat semua pelanggan PT (dulu kosong bila pelanggan belum punya sales).
 12. Trial 22 Okt — Keep tidak memuat pesanan sample / SO Pesanan Khusus yang dikonfirmasi otomatis.
+13. Trial 22 Okt — backorder terisi dari gudang lain SESUDAH SO terkonfirmasi → dapat tugas ambil sendiri;
+    SO tidak lagi "Dikirim" penuh hanya karena tugas lama terkirim.
 Jalankan: cd /app/backend && python -m pytest tests/test_uat_v3_ui_gaps3.py -p no:randomly -n 0 -q
 """
 import asyncio
@@ -255,3 +257,27 @@ def test_keep_tidak_memuat_sample_dan_so_od_terkonfirmasi_otomatis():
         assert [k["number"] for k in out["keep"]] == ["KEEP-BIASA"], out["keep"]
     finally:
         DB.sales_orders.delete_many({"entity_id": ent})
+
+
+def test_alokasi_backorder_di_gudang_lain_setelah_konfirmasi_dapat_tugas_ambil():
+    from services import fulfillment_status as fs
+    tag = uuid.uuid4().hex[:6]
+    so_id = f"so_uji_{tag}"
+    allocs = [{"id": f"al_j_{tag}", "product_id": f"p_{tag}", "warehouse_id": "wh_jakarta", "quantity": 800},
+              {"id": f"al_r_{tag}", "product_id": f"p_{tag}", "warehouse_id": "wh_rcm_uji", "quantity": 200}]
+    DB.sales_orders.insert_one({"id": so_id, "number": f"UJI/SO-{tag}", "entity_id": base.ENT, "status": "confirmed",
+                                "items": [{"product_id": f"p_{tag}", "unit": "yard"}], "allocations": allocs})
+    DB.wms_tasks.insert_one({"id": f"wms_j_{tag}", "order_id": so_id, "flow_type": "outbound", "product_id": f"p_{tag}",
+                             "allocation_id": f"al_j_{tag}", "quantity": 800, "shipped_qty": 800, "status": "dispatched"})
+    try:
+        async def go(_db):
+            new = await fs.create_outbound_tasks_for_order(so_id, "Uji", only_alloc_ids={f"al_r_{tag}"})
+            await fs.recompute_so_status(so_id)
+            return new
+        new = _run(["services.fulfillment_status"], go)
+        assert [(t["warehouse_id"], t["quantity"]) for t in new] == [("wh_rcm_uji", 200.0)]
+        assert DB.sales_orders.find_one({"id": so_id})["status"] == "partially_shipped"    # dulu "shipped" (800/800)
+    finally:
+        DB.sales_orders.delete_one({"id": so_id})
+        DB.wms_tasks.delete_many({"order_id": so_id})
+        DB.doc_refs.delete_many({"$or": [{"source_id": so_id}, {"target_id": so_id}]})

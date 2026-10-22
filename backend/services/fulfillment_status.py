@@ -65,7 +65,8 @@ async def recompute_so_status(order_id: str) -> str:
 
 
 async def create_outbound_tasks_for_order(order_id: str, actor_name: str,
-                                          only_products: Optional[Set[str]] = None) -> List[Dict[str, Any]]:
+                                          only_products: Optional[Set[str]] = None,
+                                          only_alloc_ids: Optional[Set[str]] = None) -> List[Dict[str, Any]]:
     """Buat task outbound dari allocations order (idempotent: skip bila sudah ada).
 
     `only_products` — hanya alokasi produk ini, walau order sudah punya tugas lain (OD multi-item: PO item
@@ -74,7 +75,7 @@ async def create_outbound_tasks_for_order(order_id: str, actor_name: str,
     if not order:
         return []
     existing = await db.wms_tasks.count_documents({"order_id": order_id, "flow_type": "outbound"})
-    if existing > 0 and not only_products:
+    if existing > 0 and not (only_products or only_alloc_ids):
         return []
     products = {p["id"]: p for p in await db.products.find({}, {"_id": 0}).to_list(2000)}
     warehouses = {w["id"]: w for w in await db.warehouses.find({}, {"_id": 0}).to_list(100)}
@@ -93,6 +94,8 @@ async def create_outbound_tasks_for_order(order_id: str, actor_name: str,
     created: List[Dict[str, Any]] = []
     for alloc in order.get("allocations", []):
         if only_products and alloc["product_id"] not in only_products:
+            continue
+        if only_alloc_ids and alloc.get("id") not in only_alloc_ids:
             continue
         product = products.get(alloc["product_id"], {})
         warehouse = warehouses.get(alloc["warehouse_id"], {})

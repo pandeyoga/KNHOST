@@ -102,6 +102,13 @@ async def _fill_order_locked(order: Dict[str, Any], product_id: str, owner_entit
     if new_status in ("approved", "confirmed"):
         from services.roll_service import set_order_rolls_status
         await set_order_rolls_status(order["id"], "committed")
+        # Trial 22 Okt — SO yang SUDAH punya tugas ambil: alokasi baru (mis. barang PO tiba di gudang lain) dulu
+        # berkomitmen tanpa tugas ambil, lalu SO dianggap "Dikirim" penuh setelah tugas lama terkirim.
+        if new_allocs and await db.wms_tasks.count_documents({"order_id": order["id"], "flow_type": "outbound"}):
+            from services.fulfillment_status import create_outbound_tasks_for_order, recompute_so_status
+            await create_outbound_tasks_for_order(order["id"], actor_name,
+                                                  only_alloc_ids={a["id"] for a in new_allocs if a.get("id")})
+            await recompute_so_status(order["id"])
     from dependencies import audit
     await audit(actor_name, "backorder_auto_fulfilled", "sales_order", order["id"], {
         "product_id": product_id, "qty_fulfilled": round(order_got, 2),
