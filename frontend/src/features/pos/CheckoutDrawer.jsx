@@ -13,7 +13,7 @@ import { MixedLotConfirmModal } from "../../components/MixedLotConfirmModal";
 import KNSelect from "../../components/KNSelect";
 import StoreCreditBadge from "../../components/StoreCreditBadge";
 import CreateCustomerModal from "./CreateCustomerModal";
-import RequestSpecialPriceModal from "./RequestSpecialPriceModal";
+import OrderPriceRequestModal from "./OrderPriceRequestModal";
 import { CheckoutItemCard, Row } from "./CheckoutItemCard";
 import { MixedCartNotice } from "./MixedCartNotice";
 import CheckoutStep3 from "./CheckoutStep3";
@@ -53,8 +53,9 @@ export default function CheckoutDrawer({
   const [deliveryDate, setDeliveryDate] = useState("");   // F-SHIP — request tgl pengiriman (opsional, metode kirim)
   const [salesTeam, setSalesTeam] = useState([]);         // F-4c REVISI — tim sales PER ORDER (prefill dari customer)
   const [spModalItem, setSpModalItem] = useState(null);  // item yg sedang diajukan harga khusus
-  const [spNotice, setSpNotice] = useState({});          // {productId: {message, applied}}
-  const [spRefresh, setSpRefresh] = useState(0);         // trigger re-load harga khusus efektif
+  // Trial 22 Okt (E10) — permintaan harga khusus UNTUK PESANAN INI: {productId: {price, reason}} → ikut baris SO.
+  const [spReq, setSpReq] = useState({});
+  const [spRefresh] = useState(0);                       // (harga khusus efektif dimuat sekali per checkout)
   // REVISI SAMPEL — keranjang satu jenis; mode sample punya pilihan Gratis/Berbayar (wajib) & tanpa lot/backorder.
   const sampleMode = isSampleCart(cart);
   const mixedCart = cart.some((it) => it.is_sample) && cart.some((it) => !it.is_sample);
@@ -62,7 +63,7 @@ export default function CheckoutDrawer({
 
   const defaultTerm = settings?.finance?.default_payment_term_code || "";
   useEffect(() => { if (!paymentTerm && defaultTerm) setPaymentTerm(defaultTerm); }, [defaultTerm]); // eslint-disable-line
-  useEffect(() => { if (open) { setStep(1); setSpNotice({}); setSampleBilling(""); setQcReq({ mode: "none", pct: 10 }); } }, [open]);
+  useEffect(() => { if (open) { setStep(1); setSpReq({}); setSampleBilling(""); setQcReq({ mode: "none", pct: 10 }); } }, [open]);
   // F-4c REVISI — prefill tim sales dari default customer saat customer dipilih (boleh di-override per order).
   useEffect(() => { setSalesTeam(customerDefaultTeam(selectedCustomer)); }, [selectedCustomer?.id]); // eslint-disable-line
 
@@ -153,6 +154,11 @@ export default function CheckoutDrawer({
     return { ...item, product: { ...item.product, price } };
   });
   const p = useMemo(() => computeOrderPreview(cartPriced, orderDiscount, settings), [cartPriced, orderDiscount, settings]);
+  // Total BILA harga khusus disetujui (dua total berlabel — tidak ada satu angka yang bisa disangka final).
+  const reqLines = cartPriced.filter((it) => !it.is_sample && spReq[it.product.id]);
+  const pReq = useMemo(() => (reqLines.length ? computeOrderPreview(cartPriced.map((it) => (spReq[it.product.id] && !it.is_sample
+    ? { ...it, product: { ...it.product, price: Number(spReq[it.product.id].price) } } : it)), orderDiscount, settings) : null),
+  [cartPriced, spReq, orderDiscount, settings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gate kredit live.
   useEffect(() => {
@@ -193,7 +199,7 @@ export default function CheckoutDrawer({
   const doSubmit = (confirmMixed) => {
     onSubmitOrder({
       order_discount_percent: 0, payment_term_code: paymentTerm,
-      allow_backorder: allowBackorder, special_prices: linePrices, confirm_mixed_lot: !!confirmMixed, ...qcPayload(qcReq),
+      allow_backorder: allowBackorder, special_prices: linePrices, special_requests: spReq, confirm_mixed_lot: !!confirmMixed, ...qcPayload(qcReq),
       needs_tax_invoice: p.isPkp !== false ? needsTaxInvoice : false,
       fulfillment_method: fulfillmentMethod,
       pickup_date: fulfillmentMethod === "ambil" ? pickupDate : "",
@@ -382,7 +388,8 @@ export default function CheckoutDrawer({
                   key={item.product.id}
                   item={item}
                   sp={linePrices[item.product.id]}
-                  notice={spNotice[item.product.id]}
+                  notice={spReq[item.product.id] ? { applied: false, onEdit: () => setSpModalItem(item),
+                    message: `Diminta ${formatCurrency(spReq[item.product.id].price)} untuk pesanan ini · diputus Manajer — ubah` } : null}
                   allowItemDiscount={allowItemDiscount}
                   selectedCustomer={selectedCustomer}
                   onRemove={remove}
@@ -413,7 +420,7 @@ export default function CheckoutDrawer({
                     </div>
                   )}
                   <p data-testid="sales-discount-note" className="rounded-md bg-[#FFF7EC] px-2 py-1.5 text-[10px] text-[#9A5B00]">
-                    Potongan harga hanya via <b>Harga Khusus</b>. Klik <b>"Minta Harga Khusus"</b> di tiap item untuk mengajukan langsung dari sini (disetujui manager/admin).
+                    Potongan harga hanya via <b>Harga Khusus</b>. Klik <b>"Minta Harga Khusus"</b> di tiap item — berlaku <b>hanya untuk pesanan ini</b>, diputus Manajer sesudah pesanan dibuat.
                   </p>
                 </div>
               )}
@@ -473,6 +480,7 @@ export default function CheckoutDrawer({
               credit={credit} creditBlocked={creditBlocked}
               hasBackorderLine={hasBackorderLine} allowBackorder={allowBackorder}
               requiresLotConfirmation={requiresLotConfirmation} mixedLotLines={mixedLotLines}
+              spReq={spReq} requestedGrand={pReq?.grand ?? null}
               sampleCount={sampleCount} sampleMode={sampleMode} sampleBilling={sampleBilling}
               termInfo={paymentTerms.find((t) => t.code === paymentTerm) || null}
             />
@@ -505,17 +513,14 @@ export default function CheckoutDrawer({
       </div>
 
       <CreateCustomerModal open={showCreateCustomer} onClose={() => setShowCreateCustomer(false)} onCreateCustomer={onCreateCustomer} user={user} />
-      <RequestSpecialPriceModal
+      <OrderPriceRequestModal
         open={!!spModalItem}
+        item={spModalItem}
+        normalPrice={Number(cartPriced.find((it) => it.product.id === spModalItem?.product?.id)?.product?.price || 0)}
+        value={spModalItem ? spReq[spModalItem.product.id] : null}
         onClose={() => setSpModalItem(null)}
-        product={spModalItem?.product}
-        customer={selectedCustomer}
-        entityId={entityFor}
-        defaultQty={spModalItem?.quantity || 0}
-        onSubmitted={({ productId, applied, message }) => {
-          setSpNotice((prev) => ({ ...prev, [productId]: { applied, message } }));
-          if (applied) setSpRefresh((x) => x + 1);  // muat ulang harga khusus efektif → badge terpasang
-        }}
+        onSave={(v) => { setSpReq((r) => ({ ...r, [spModalItem.product.id]: v })); setSpModalItem(null); }}
+        onClear={() => { setSpReq((r) => { const n = { ...r }; delete n[spModalItem.product.id]; return n; }); setSpModalItem(null); }}
       />
       <MixedLotConfirmModal open={showMixedConfirm} lines={mixedLotLines} policy={lotPlan?.policy || {}} onCancel={() => setShowMixedConfirm(false)} onConfirm={() => { setShowMixedConfirm(false); doSubmit(true); }} />
     </div>

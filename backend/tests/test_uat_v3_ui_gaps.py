@@ -1,7 +1,7 @@
 """Cek UI UAT v3 (2026-10-21) — celah antarmuka yang ditemukan saat menjalankan skenario S1 di browser.
 
-1. SO terverifikasi tetapi masih "Dicadangkan" hilang dari semua antrean Meja Admin Sales → antrean baru
-   `terverifikasi_ajukan` (aksi "Ajukan persetujuan"); respons verifikasi membawa status untuk pesan langkah berikutnya.
+1. SO terverifikasi tetapi masih "Dicadangkan" hilang dari semua antrean Meja Admin Sales → (Trial 22 Okt, E8) satu
+   langkah "Periksa & lepas" di antrean `perlu_verifikasi`; antrean `terverifikasi_ajukan` dihapus.
 2. Barang Keluar tidak menunjukkan roll yang harus diambil → `GET /outbound/tasks/{id}/pick-list`.
 3. Antrean "Surat Jalan belum diangkut logistik" bernilai 0 & berjudul nomor SO → qty SJ + nama pelanggan + satuan.
 4. Antrean meja dipotong 60 baris & `count` ikut terpotong → `count` = total sebenarnya, `shown` = baris terkirim.
@@ -34,21 +34,22 @@ def _queue(desk, qid):
     return next(q for q in desk["queues"] if q["id"] == qid)
 
 
-def test_so_terverifikasi_muncul_di_antrean_ajukan_lalu_disetujui(u):
+def test_so_baru_di_antrean_periksa_lalu_lepas_satu_langkah(u):
+    """Trial 22 Okt (E8) — antrean `terverifikasi_ajukan` DIHAPUS: SO baru ada di `perlu_verifikasi`
+    ("Perlu diperiksa & dilepas") dan satu tombol Periksa & lepas langsung melepasnya ke gudang."""
     c, so = u["sales"].call("POST", "/sales-orders", {
         "customer_id": base.CUST, "shipping_address_id": "", "entity_id": base.ENT, "payment_term_code": "NET30",
         "items": [{"product_id": base._product(), "quantity": 12.5, "unit": "yard"}], "confirm_mixed_lot": True,
         "fulfillment_method": "kirim", "qc_request": "none"})
     assert c == 200, so
-    c, v = u["sadm"].call("POST", f"/sales-orders/{so['id']}/verify", {"note": "cek UI v3"})
-    assert c == 200 and v["status"] == "reserved", v                      # status untuk pesan langkah berikutnya
     c, desk = u["sadm"].call("GET", "/sales-admin/desk")
-    row = next(r for r in _queue(desk, "terverifikasi_ajukan")["rows"] if r["ref_id"] == so["id"])   # dulu: tak ada
-    assert row["action_kind"] == "submit" and row["action"] == "Ajukan persetujuan", row
-    c, b = u["sadm"].call("POST", f"/sales-orders/{so['id']}/submit-for-approval")
-    assert c == 200 and b["status"] in ("approved", "waiting_approval"), b
+    assert not any(q["id"] == "terverifikasi_ajukan" for q in desk["queues"])
+    row = next(r for r in _queue(desk, "perlu_verifikasi")["rows"] if r["ref_id"] == so["id"])
+    assert row["action_kind"] == "verify" and row["action"] == "Periksa & lepas", row
+    c, b = u["sadm"].call("POST", f"/sales-orders/{so['id']}/review-release", {"note": "cek UI v3"})
+    assert c == 200 and b["released"] and b["order"]["status"] == "confirmed", b
     c, desk = u["sadm"].call("GET", "/sales-admin/desk")
-    assert not any(r["ref_id"] == so["id"] for r in _queue(desk, "terverifikasi_ajukan")["rows"])
+    assert not any(r["ref_id"] == so["id"] for r in _queue(desk, "perlu_verifikasi")["rows"])
 
 
 def test_pick_list_dan_antrean_sj_bernilai_qty_dan_nama_pelanggan(u):

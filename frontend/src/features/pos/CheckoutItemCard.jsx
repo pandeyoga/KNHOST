@@ -78,8 +78,8 @@ export function CheckoutItemCard({
       {!isSample && (notice || !isSpecial) && (
         <div className="mt-2">
           {notice ? (
-            <p data-testid={`cart-item-sp-notice-${pid}`}
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold ${notice.applied ? "bg-[#E7F7EC] text-[#1B7E3B]" : "bg-[#FFF3D6] text-[#9A5B00]"}`}>
+            <p data-testid={`cart-item-sp-notice-${pid}`} role={notice.onEdit ? "button" : undefined} onClick={notice.onEdit}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-bold ${notice.onEdit ? "cursor-pointer" : ""} ${notice.applied ? "bg-[#E7F7EC] text-[#1B7E3B]" : "bg-[#FFF3D6] text-[#9A5B00]"}`}>
               {notice.message}
             </p>
           ) : (

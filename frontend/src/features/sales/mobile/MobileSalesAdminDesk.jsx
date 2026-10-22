@@ -14,7 +14,7 @@ import { apiErrorText } from "../../../utils/apiError";
 import VerifyOrderDialog from "../../sales_admin/VerifyOrderDialog";
 import FulfillmentDecisionDialog from "../../sales_admin/FulfillmentDecisionDialog";
 import KeepPendingPanel from "../../sales_admin/KeepPendingPanel";
-import { ageTone, badgeClass, badgeLabel, confirmOrder, queueMeta, rowLink, salesAdminDesk } from "../../sales_admin/workDeskApi";
+import { ageTone, badgeClass, badgeLabel, queueMeta, releaseMessage, releaseOrder, rowLink, salesAdminDesk } from "../../sales_admin/workDeskApi";
 
 const PREVIEW = 5;
 // ref_type → sub-halaman HP (menu Lainnya) atau tab Pesanan.
@@ -36,7 +36,7 @@ function DeskRow({ row, queue, busy, onAction }) {
         {row.subtitle && <p className="truncate text-[10.5px] m-muted">{row.subtitle}</p>}
         {value && <p className="text-[11.5px] font-bold tabular-nums text-[#1C1C1E]">{value}</p>}
       </div>
-      <button type="button" className={`${["verify", "confirm", "fulfill"].includes(row.action_kind) ? "primary-button" : "secondary-button"} m-press shrink-0 px-3 py-2 text-[11.5px]`}
+      <button type="button" className={`${["verify", "release", "fulfill"].includes(row.action_kind) ? "primary-button" : "secondary-button"} m-press shrink-0 px-3 py-2 text-[11.5px]`}
         disabled={busy} onClick={() => onAction(row, queue)} data-testid={`m-desk-action-${queue.id}-${row.row_key || row.ref_id}`}>
         {busy ? "Memproses…" : (row.action || queue.action_label || "Buka")}
       </button>
@@ -112,17 +112,14 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
 
   const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 5000); };
 
-  async function doConfirm(row) {
+  // Trial 22 Okt (E8) — antrean "Ditahan": lepas ke gudang.
+  async function doRelease(row) {
     setBusyRef(row.ref_id); setError(""); setErrorAction(null);
     try {
-      const res = await confirmOrder(row.ref_id);
-      flash(`${res?.number || row.number} dikonfirmasi — tugas gudang lahir.`);
+      flash(releaseMessage(await releaseOrder(row.ref_id), row.number));
       await load();
-    } catch (e) {
-      const msg = apiErrorText(e, "Gagal mengonfirmasi pesanan.");
-      setError(msg);
-      if (/verifikasi/i.test(msg)) setErrorAction({ label: "Verifikasi sekarang", run: () => setVerifyRow(row) });
-    } finally { setBusyRef(""); }
+    } catch (e) { setError(apiErrorText(e, "Gagal melepas pesanan ke gudang.")); }
+    finally { setBusyRef(""); }
   }
 
   function openRow(row, queue) {
@@ -136,7 +133,7 @@ export default function MobileSalesAdminDesk({ selectedEntity, onOpenOrder, onOp
   function handleAction(row, queue) {
     if (row.action_kind === "verify") return setVerifyRow(row);
     if (row.action_kind === "fulfill") return setFulfillRow(row);
-    if (row.action_kind === "confirm") return doConfirm(row);
+    if (row.action_kind === "release") return doRelease(row);
     return openRow(row, queue);
   }
 

@@ -487,6 +487,10 @@ class SalesOrderItemIn(BaseModel):
     base_quantity: float = Field(0, ge=0)             # Sub-fase 1.8/1.13 — qty dlm base unit (forward-compat)
     discount_percent: float = Field(0, ge=0, le=100)          # Fase 1B — diskon per item (0–100%)
     price_approval_id: str = ""          # Sub-fase 1.7 — harga khusus disetujui (override harga)
+    # Trial 22 Okt (E10) — "Minta harga khusus untuk pesanan ini" dari checkout: SO dibuat dengan harga normal dan
+    # pengajuan langsung terikat ke SO (ACC menulis harga baris; ditolak → sales ajukan lagi/lanjut normal/batal).
+    requested_price: Optional[float] = Field(None, gt=0)
+    special_price_reason: str = ""
     special_order_item_id: str = ""      # FE-01 — baris SO dari item Pesanan Khusus multi-item (harga terkunci per item)
     # SALES REVAMP V2 — Beli per Roll / rekonsiliasi roll
     purchase_mode: str = "qty"           # "qty" (per yard, FEFO auto) | "roll" (pilih roll eksplisit)

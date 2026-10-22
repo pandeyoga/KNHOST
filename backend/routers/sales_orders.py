@@ -347,12 +347,22 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     # Fase 1B — kebutuhan approval dinamis dari approval_rules (basis grand_total)
     appr = await evaluate_approval("sales_order", pricing["grand_total"], entity_id)
     credit_gate = await evaluate_credit_gate(customer, pricing["grand_total"])
-    credit_needs_approval = bool(credit_gate["blocked"] and not credit_gate["override"])
     if is_sample_order:
         # Sample: bukan persetujuan nilai/kredit manajer — gerbangnya PEMBAYARAN (bila berbayar),
         # diputus Finance/Admin Sample, lalu Admin Sample meneruskan ke gudang.
         appr = {"requires_approval": False, "required_role": ""}
-        credit_needs_approval = False
+    elif credit_gate["blocked"] and not credit_gate["override"]:
+        # Trial 22 Okt (E3, keputusan pemilik "Blokir, kecuali ACC Manajer") — pelanggan lewat batas / diblokir karena
+        # belum bayar TIDAK bisa membeli. Dulu SO tetap lahir dengan entri ACC kredit menunggu; kini ditolak, dan jalan
+        # keluarnya izin kredit yang disetujui Manajer SEBELUM checkout (Ajukan izin kredit di checkout).
+        raise HTTPException(status_code=409, detail={
+            "code": "CREDIT_BLOCKED", "reasons": credit_gate.get("reasons") or [],
+            "message": (f"Kredit {customer.get('name', 'pelanggan')} terblokir — pesanan tidak bisa dibuat. Ajukan izin "
+                        "kredit ke Manajer dulu; setelah disetujui, ulangi checkout.")})
+    # Trial 22 Okt (E10) — harga khusus per baris dari checkout wajib beralasan (diputus Manajer).
+    for _it in payload.items:
+        if _it.requested_price and not _it.is_sample and not (_it.special_price_reason or "").strip():
+            raise HTTPException(status_code=400, detail="Alasan wajib diisi untuk setiap permintaan harga khusus.")
     order_id = new_id("so")
     # Sub-fase 1.7 — resolve allocation policy (system→customer→order override)
     alloc_policy = await get_allocation_policy(entity_id, customer)
@@ -556,15 +566,6 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
                 for it in makloon_overlaps),
             requested_by=actor["name"], requested_by_id=actor["id"], amount=pricing["grand_total"],
         ))
-    credit_override_doc_id = ""
-    if credit_needs_approval:
-        credit_override_doc_id = new_id("cro")
-        pending_approvals.append(so_approvals.make_approval(
-            "kredit", required_role="manager",
-            reason="; ".join(credit_gate.get("reasons", []) or []) or "Melebihi limit kredit pelanggan.",
-            requested_by=actor["name"], requested_by_id=actor["id"], ref_id=credit_override_doc_id,
-            amount=pricing["grand_total"],
-        ))
     _afields = so_approvals.approval_fields(
         {"pending_approvals": pending_approvals, "required_approval_role": appr["required_role"]},
         require_validation=require_val,
@@ -603,7 +604,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         # KN_17 — snapshot kredit saat order + flag warning + override yang dipakai
         "credit_status_at_order": credit_gate["credit"]["status"],
         "credit_warning": credit_gate["level"] == "warning",
-        "credit_hold": credit_needs_approval,
+        "credit_hold": False,   # Trial 22 Okt (E3) — kredit terblokir kini ditolak sebelum SO lahir
         "credit_override_id": (credit_gate["override"] or {}).get("id", ""),
         # F5 — Unified Approval SSOT (nilai | kredit | special_price)
         "pending_approvals": pending_approvals,
@@ -678,25 +679,17 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         await _refs.safe_link(("sales_order", order_id),
                               ("special_order", order["source_special_order_id"]),
                               "parent", note="berasal dari Special Order")
-    # F5 — buat dokumen detail credit_overrides (pending) yang ditautkan ke entri kredit di SSOT.
-    if credit_needs_approval and credit_override_doc_id:
-        await db.credit_overrides.insert_one({
-            "id": credit_override_doc_id,
-            "customer_id": customer["id"], "customer_name": customer["name"],
-            "order_id": order_id, "order_number": number,
-            "amount": pricing["grand_total"],
-            "reason": "; ".join(credit_gate.get("reasons", []) or []) or "Over-limit saat pembuatan SO.",
-            "evidence_url": "", "credit_snapshot": credit_gate["credit"],
-            "entity_id": entity_id, "status": "pending",
-            "requested_by": actor["name"], "requested_by_id": actor["id"],
-            "created_at": now_iso(),
-        })
     # Konsumsi override kredit bila dipakai untuk melewati blokir (sekali pakai)
     if credit_gate["override"]:
         await db.credit_overrides.update_one(
             {"id": credit_gate["override"]["id"]},
             {"$set": {"consumed": True, "consumed_order_id": order_id, "consumed_at": now_iso()}},
         )
+    # Trial 22 Okt (E10) — harga khusus dari checkout = lingkup PESANAN INI: terikat SO sejak lahir.
+    sp_lines = [it for it in payload.items if it.requested_price and not it.is_sample]
+    if sp_lines:
+        from services import so_special_price_service as _sps
+        order = await _sps.attach_checkout_requests(order_id, sp_lines, actor) or order
     await audit(actor["name"], "order_created", "sales_order", order["id"], {
         "number": order["number"], "customer": customer["name"], "total_amount": total_amount,
         "grand_total": pricing["grand_total"], "ppn_amount": pricing["ppn_amount"],

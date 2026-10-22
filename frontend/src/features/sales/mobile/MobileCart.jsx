@@ -6,6 +6,7 @@ import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { onImageError, productImage } from "../../../utils/productImage";
 import { useEffectivePrices, pickPrice, sourceMeta } from "../../../hooks/useEffectivePrices";
 import { clampSampleQty, isSampleCart } from "../../../utils/sampleOrder";
+import MobileCustomerBar, { useCreditStatus } from "./MobileCustomerBar";
 
 /** Keranjang HP — checkout memakai CheckoutDrawer desktop (3 langkah: pelanggan & alamat → termin & lot → review)
  * supaya HP setara desktop: kirim/ambil sendiri, faktur pajak, gate kredit, lot campur, sample gratis/berbayar, minta harga khusus per baris. */
@@ -31,6 +32,11 @@ export default function MobileCart({
     ? { ...x, quantity: x.is_sample ? (clampSampleQty(x.product, qv, x.sample_kind) || 0.5) : Math.max(1, qv) } : x));
   const removeItem = (pid) => setCart((cur) => cur.filter((it) => it.product.id !== pid));
   const submit = async (opts) => { const ok = await onSubmitOrder(opts); if (ok) onDone?.(); };
+  // Trial 22 Okt (E3) — pelanggan terblokir kredit (tanpa izin disetujui Manajer) TIDAK bisa membeli: checkout dikunci
+  // sejak keranjang, bukan baru ketahuan di langkah akhir. Sample bukan transaksi kredit.
+  const credit = useCreditStatus(sampleCart ? "" : selectedCustomer?.id, subtotal);
+  const creditBlocked = !!credit?.blocked && !credit?.has_approved_override;
+  const selectCustomer = (c) => { setSelectedCustomer?.(c); setSelectedAddress?.(c?.addresses?.[0]?.id || ""); };
 
   if (cart.length === 0) {
     return (
@@ -90,13 +96,16 @@ export default function MobileCart({
         <PosFBT productId={cart[0].product.id} entityId={entityId} onAdd={onAdd} excludeIds={cart.map((it) => it.product.id)} />
       )}
 
+      {!sampleCart && <MobileCustomerBar customers={data?.customers || []} selectedCustomer={selectedCustomer} onSelect={selectCustomer} amount={subtotal} />}
+
       <div className="m-cta-bar">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-[12px] m-muted">{sampleCart ? "Sample" : "Estimasi subtotal"}</span>
           <span data-testid="mobile-cart-subtotal" className="text-[16px] font-bold tabular-nums">{sampleCart ? `${cart.length} item` : formatCurrency(subtotal)}</span>
         </div>
-        <button data-testid="mobile-checkout-btn" className={`primary-button w-full justify-center py-3 ${sampleCart ? "!bg-[#9A5B00]" : ""}`} onClick={() => setCheckout(true)}>
-          Lanjut ke Checkout
+        <button data-testid="mobile-checkout-btn" className={`primary-button w-full justify-center py-3 ${sampleCart ? "!bg-[#9A5B00]" : ""}`}
+          disabled={creditBlocked} onClick={() => setCheckout(true)}>
+          {creditBlocked ? "Kredit terblokir — tidak bisa checkout" : "Lanjut ke Checkout"}
         </button>
       </div>
 

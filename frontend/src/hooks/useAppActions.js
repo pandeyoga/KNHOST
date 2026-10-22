@@ -359,10 +359,12 @@ export function useAppActions(state) {
         sample_billing: extra.sample_billing || "",
         items: cart.map((item) => {
           const sp = (extra.special_prices || {})[item.product.id];
+          const req = (extra.special_requests || {})[item.product.id];   // Trial 22 Okt (E10) — untuk pesanan ini
           const base = {
             product_id: item.product.id, quantity: item.quantity, unit: item.unit,
             discount_percent: 0,
             price_approval_id: sp && sp.has_special ? (sp.price_approval_id || "") : "",
+            ...(req && !item.is_sample ? { requested_price: Number(req.price), special_price_reason: req.reason } : {}),
           };
           // §3-C — baris sample: harga master sample / manual, dipenuhi lewat permintaan potong gudang.
           if (item.is_sample) {
@@ -391,7 +393,10 @@ export function useAppActions(state) {
       const isSmp = o.order_type === "sample";
       setNotice(isSmp
         ? `${o.number} (Pesanan Sample ${o.sample_billing === "free" ? "GRATIS" : "BERBAYAR"}) dibuat — ${o.sample_billing === "paid" ? "menunggu persetujuan pembayaran Finance/Admin Sample." : "langsung masuk meja Admin Sample."}`
-        : `${o.number} dibuat (${soStatusText(o)})${tail}. Grand total Rp ${formatQty(o.grand_total)}.`);
+        : `${o.number} dibuat (${soStatusText(o)})${tail}. Grand total Rp ${formatQty(o.grand_total)}`
+          + ((o.pending_approvals || []).some((x) => x.type === "special_price" && x.status === "pending")
+            ? " (harga normal) — harga khusus diminta untuk pesanan ini; belum masuk gudang sampai Manajer memutuskan."
+            : "."));
       setCart([]);
       setActiveView(isSmp ? "sample-orders" : "orders");
       await loadAll();

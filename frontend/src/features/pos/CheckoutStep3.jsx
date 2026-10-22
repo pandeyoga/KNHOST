@@ -11,7 +11,7 @@ export default function CheckoutStep3({
   fulfillmentMethod, setFulfillmentMethod, pickupDate, setPickupDate,
   deliveryDate, setDeliveryDate,
   selectedCustomer, addresses, selectedAddress, p, cart, pricedCart, paymentTerm,
-  needsTaxInvoice, setNeedsTaxInvoice, credit, creditBlocked,
+  needsTaxInvoice, setNeedsTaxInvoice, credit, creditBlocked, spReq = {}, requestedGrand = null,
   hasBackorderLine, allowBackorder, requiresLotConfirmation, mixedLotLines, sampleCount = 0,
   sampleMode = false, sampleBilling = "", termInfo = null,
 }) {
@@ -120,6 +120,25 @@ export default function CheckoutStep3({
           <p data-testid="cart-grand-total" className="text-[18px] font-bold">{money(p.grand)}</p>
         </div>
       </div>
+
+      {/* Trial 22 Okt (E10) — harga khusus untuk pesanan ini: pasangan normal → diminta + dua total berlabel. */}
+      {Object.keys(spReq).length > 0 && (
+        <div data-testid="checkout-special-requests" className="rounded-md border border-[#FFE2B8] bg-[#FFFBF3] p-2.5 text-[11.5px]">
+          <p className="mb-1 text-[10.5px] font-bold uppercase tracking-wide text-[#9A5B00]">Harga khusus diminta (pesanan ini)</p>
+          {(pricedCart || cart).filter((it) => spReq[it.product?.id] && !it.is_sample).map((it) => (
+            <p key={it.product.id} className="flex flex-wrap justify-between gap-1 tabular-nums" data-testid={`checkout-special-request-${it.product.id}`}>
+              <span className="min-w-0 truncate">{it.product.name} · {it.quantity} {it.unit || it.product.base_unit}</span>
+              <span>Normal {formatCurrency(it.product.price)} → diminta <b className="text-[#9A5B00]">{formatCurrency(spReq[it.product.id].price)}</b></span>
+            </p>
+          ))}
+          <div className="mt-1.5 space-y-0.5 border-t border-[#F3E2C0] pt-1.5">
+            <p className="flex justify-between"><span>Total harga normal</span><b className="tabular-nums" data-testid="checkout-total-normal">{formatCurrency(p.grand)}</b></p>
+            {requestedGrand != null && <p className="flex justify-between"><span>Total bila disetujui</span><b className="tabular-nums text-[#9A5B00]" data-testid="checkout-total-requested">{formatCurrency(requestedGrand)}</b></p>}
+          </div>
+          <p className="mt-1.5 text-[10.5px] text-[#6B6B73]">Pesanan dibuat dan stok dibooking. <b>Belum masuk gudang dan belum dikabarkan ke pelanggan</b> sampai
+            Manajer memutuskan harga. Bila ditolak, Anda bisa ajukan harga lain, lanjut harga normal, atau batalkan.</p>
+        </div>
+      )}
 
       {/* F6 — Faktur Pajak per-order: hanya relevan bila entitas PKP (kena PPN) */}
       {p.isPkp !== false ? (

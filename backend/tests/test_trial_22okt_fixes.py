@@ -206,3 +206,13 @@ def test_e4_so_dengan_sisa_backorder_tidak_dikirim_penuh():
     finally:
         DB.sales_orders.delete_one({"id": so_id})
         DB.wms_tasks.delete_many({"order_id": so_id})
+
+
+def test_e10_cetak_so_harga_khusus_belum_final_bercap():
+    from services import pdf_resolvers as pr
+    base_doc = {"number": "UJI/SO", "items": [{"product_name": "Batik", "quantity": 5, "unit": "yard", "price": 1000}],
+                "grand_total": 5000}
+    menunggu = {**base_doc, "pending_approvals": [{"type": "special_price", "status": "pending"}]}
+    beres = {**base_doc, "pending_approvals": [{"type": "special_price", "status": "approved"}]}
+    assert _run([], lambda: pr.resolve_sales_order(menunggu, None))["watermark"] == "HARGA BELUM FINAL"
+    assert _run([], lambda: pr.resolve_sales_order(beres, None))["watermark"] is None

@@ -326,6 +326,12 @@ async def _apply_decision(order_id, order, pa, entry, approval_id, new_status, p
             await set_order_rolls_status(order_id, "committed")
     await audit(actor["name"], f"so_approval_{new_status}", "sales_order", order_id,
                 {"type": atype, "approval_id": approval_id, "notes": (payload.notes or "").strip()})
+    if new_status == "approved":
+        # Trial 22 Okt (E8) — pesanan yang sudah diperiksa Admin Sales dilepas ke gudang otomatis sesudah ACC terakhir.
+        # Dipanggil SESUDAH klaim keputusan dilepas pemanggil? Tidak — klaim milik entri approval ini; konfirmasi
+        # memakai CAS status sendiri, jadi aman dijalankan di sini.
+        from services import so_release_service as _rel
+        await _rel.auto_release(order_id, actor)
     return safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
 
 

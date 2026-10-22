@@ -66,8 +66,9 @@ REVIEWED: dict[tuple[str, str], tuple[str, str]] = {
     ("purchase_orders_extra.py", "/purchase-orders/{po_id}/cancel"): ("cas", "find_one_and_update induk berprasyarat status; wms_tasks update_many idempoten"),
     ("vendor_bills.py", "/vendor-bills/{bill_id}/pay"): ("cas", "find_one_and_update vendor_bills berprasyarat status posted + $inc amount_paid atomik (pra-eksisting)"),
     ("sales_orders_extra.py", "/sales-orders/{order_id}/approve"): ("cas", "so_transition CAS status $in expected_from; set_order_rolls_status idempoten"),
-    ("sales_orders_extra.py", "/sales-orders/{order_id}/submit-for-approval"): ("cas", "so_transition CAS status $in expected_from; set_order_rolls_status idempoten"),
-    ("sales_orders_extra.py", "/sales-orders/{order_id}/confirm"): ("cas", "so_transition CAS; create_outbound_tasks_for_order dedupe per order+product"),
+    # Trial 22 Okt (E8) — inti dipindah ke layanan supaya "Periksa & lepas ke gudang" memakai logika yang sama.
+    ("sales_orders_extra.py", "/sales-orders/{order_id}/submit-for-approval"): ("service_cas", "so_transition CAS status $in expected_from; set_order_rolls_status idempoten", "so_lifecycle_service.submit_core"),
+    ("sales_orders_extra.py", "/sales-orders/{order_id}/confirm"): ("service_cas", "so_transition CAS; create_outbound_tasks_for_order dedupe per order+product", "so_lifecycle_service.confirm_core"),
     ("sales_orders_extra.py", "/sales-orders/{order_id}/release-reservation"): ("claim", "klaim sales_orders sebelum roll dilepas; tulisan akhir finish_set (draft)"),
     ("sales_orders_extra.py", "/sales-orders/{order_id}/items/{product_id}/reallocate"): ("claim", "klaim sales_orders sesudah validasi, sebelum roll baru direservasi/roll lama dilepas; release bila reserve gagal; finish_set"),
     ("sales_orders_extra.py", "/sales-orders/{order_id}/items/{product_id}/release-rolls"): ("claim", "klaim sales_orders sebelum roll dilepas + mutasi ditulis; tulisan akhir finish_set (+$push reservation_releases)"),

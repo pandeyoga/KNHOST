@@ -5,7 +5,7 @@ import MobileArReceipt from "./MobileArReceipt";
 import SoApprovalsPanel from "../../orders/SoApprovalsPanel";
 import VerifyOrderDialog from "../../sales_admin/VerifyOrderDialog";
 import FulfillmentDecisionDialog from "../../sales_admin/FulfillmentDecisionDialog";
-import { confirmOrder } from "../../sales_admin/workDeskApi";
+import { releaseMessage, releaseOrder } from "../../sales_admin/workDeskApi";
 import { apiErrorText } from "../../../utils/apiError";
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardList, Search, PackageX, ChevronDown, FileEdit, ClipboardCheck, CheckCircle2, PackageSearch, Wallet, RotateCcw } from "lucide-react";
@@ -45,10 +45,11 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
     setTimeout(() => document.querySelector(`[data-testid="mobile-order-${focusId}"]`)?.scrollIntoView({ block: "center" }), 250);
   }, [focusId]);
   const flash = (ok, text) => { setMsg({ ok, text }); if (ok) onRefresh?.(); };
-  const doConfirm = async (o) => {
+  // Trial 22 Okt (E8) — pesanan yang ditahan Admin Sales dilepas ke gudang.
+  const doRelease = async (o) => {
     setBusy(o.id); setMsg(null);
-    try { const r = await confirmOrder(o.id); flash(true, `${r?.number || o.number} dikonfirmasi — tugas gudang lahir.`); }
-    catch (e) { flash(false, apiErrorText(e, "Gagal mengonfirmasi pesanan.")); } finally { setBusy(""); }
+    try { flash(true, releaseMessage(await releaseOrder(o.id), o.number)); }
+    catch (e) { flash(false, apiErrorText(e, "Gagal melepas pesanan ke gudang.")); } finally { setBusy(""); }
   };
 
   const list = useMemo(() => {
@@ -135,8 +136,12 @@ export default function MobileOrders({ orders = [], loading, onBrowse, onRefresh
                     {o.payment_term_name && <p className="text-[11px] m-muted">Termin: {o.payment_term_name}</p>}
                     {isAdmin && PRE_CONFIRM.includes(o.status) && (
                       <div className="mt-2 grid grid-cols-2 gap-2" data-testid={`mobile-order-admin-actions-${o.id}`}>
-                        <button className="secondary-button flex items-center justify-center gap-1 py-2.5 text-[12px]" onClick={() => setVerify(o)} data-testid={`mobile-order-verify-${o.id}`}><ClipboardCheck size={14} /> Verifikasi</button>
-                        <button className="primary-button flex items-center justify-center gap-1 py-2.5 text-[12px]" disabled={busy === o.id} onClick={() => doConfirm(o)} data-testid={`mobile-order-confirm-${o.id}`}><CheckCircle2 size={14} /> {busy === o.id ? "Memproses…" : "Konfirmasi"}</button>
+                        {!o.release?.requested && (
+                          <button className="primary-button col-span-2 flex items-center justify-center gap-1 py-2.5 text-[12px]" onClick={() => setVerify(o)} data-testid={`mobile-order-verify-${o.id}`}><ClipboardCheck size={14} /> Periksa & lepas ke gudang</button>
+                        )}
+                        {o.release?.requested && o.release?.hold && (
+                          <button className="primary-button col-span-2 flex items-center justify-center gap-1 py-2.5 text-[12px]" disabled={busy === o.id} onClick={() => doRelease(o)} data-testid={`mobile-order-release-${o.id}`}><CheckCircle2 size={14} /> {busy === o.id ? "Memproses…" : "Lepas ke gudang"}</button>
+                        )}
                         {(o.has_backorder || o.status === "waiting_stock") && (
                           <button className="secondary-button col-span-2 flex items-center justify-center gap-1 py-2.5 text-[12px]" onClick={() => setFulfill(o)} data-testid={`mobile-order-fulfill-${o.id}`}><PackageSearch size={14} /> Keputusan pemenuhan</button>
                         )}

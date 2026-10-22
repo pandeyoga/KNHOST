@@ -20,7 +20,7 @@ import VerifyOrderDialog from "./VerifyOrderDialog";
 import FulfillmentDecisionDialog from "./FulfillmentDecisionDialog";
 import KeepPendingPanel from "./KeepPendingPanel";
 import CustomerGradeRulesCard from "./CustomerGradeRulesCard";
-import { confirmOrder, rowLink, salesAdminDesk, soTrackerLink, submitOrderForApproval } from "./workDeskApi";
+import { releaseMessage, releaseOrder, rowLink, salesAdminDesk, soTrackerLink } from "./workDeskApi";
 import { apiErrorText } from "../../utils/apiError";
 
 export default function SalesAdminDesk({ currentUser, selectedEntity = "all", onOpenDocument }) {
@@ -49,36 +49,14 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
 
   function flash(msg) { setToast(msg); setTimeout(() => setToast(""), 5000); }
 
-  async function doConfirm(row) {
+  // Trial 22 Okt (E8) — antrean "Ditahan": lepas ke gudang pesanan yang sudah diperiksa tetapi ditahan.
+  async function doRelease(row) {
     setBusyRef(row.ref_id); setError(""); setErrorAction(null);
     try {
-      const res = await confirmOrder(row.ref_id);
-      flash(`${res?.number || row.number} dikonfirmasi — tugas gudang lahir.`);
+      flash(releaseMessage(await releaseOrder(row.ref_id), row.number));
       await load();
     } catch (e) {
-      const msg = apiErrorText(e, "Gagal mengonfirmasi pesanan.");
-      setError(msg);
-      // E8.13 — bila gerbang "verifikasi dulu" menahan, penolakannya MENUNTUN dan
-      // tombolnya disediakan langsung di bilah galat. Penolakan lain (T1: belum
-      // disetujui manajer) TIDAK diberi tombol verifikasi — itu bukan obatnya.
-      if (/verifikasi/i.test(msg)) {
-        setErrorAction({ label: "Verifikasi sekarang", run: () => setVerifyRow(row) });
-      }
-    } finally { setBusyRef(""); }
-  }
-
-  // Cek UI UAT v3 — SO terverifikasi diajukan dari meja (dulu hanya dari detail SO; SO "hilang" dari meja).
-  async function doSubmit(row) {
-    setBusyRef(row.ref_id); setError(""); setErrorAction(null);
-    try {
-      const res = await submitOrderForApproval(row.ref_id);
-      const no = res?.number || res?.order_number || row.number;
-      flash(res?.status === "approved"
-        ? `${no} disetujui otomatis (tanpa gerbang) — lanjut di antrean Siap dikonfirmasi.`
-        : `${no} diajukan — menunggu keputusan ${res?.required_approval_role || "manajer"}.`);
-      await load();
-    } catch (e) {
-      setError(apiErrorText(e, "Gagal mengajukan persetujuan."));
+      setError(apiErrorText(e, "Gagal melepas pesanan ke gudang."));
     } finally { setBusyRef(""); }
   }
 
@@ -90,8 +68,7 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
   function handleAction(row, queue) {
     if (row.action_kind === "verify") { setVerifyRow(row); return; }
     if (row.action_kind === "fulfill") { setFulfillRow(row); return; }
-    if (row.action_kind === "confirm") { doConfirm(row); return; }
-    if (row.action_kind === "submit") { doSubmit(row); return; }
+    if (row.action_kind === "release") { doRelease(row); return; }
     onOpenDocument?.(rowLink(row, queue?.id, "sales_admin"));
   }
 

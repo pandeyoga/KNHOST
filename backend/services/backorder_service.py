@@ -98,6 +98,10 @@ async def _fill_order_locked(order: Dict[str, Any], product_id: str, owner_entit
     await db.sales_orders.update_one(
         {"id": order["id"]},
         {"$set": _bo_set, "$push": {"allocations": {"$each": new_allocs}}})
+    if prev_status == "waiting_stock" and new_status == "reserved":
+        # Trial 22 Okt (E8) — SO backorder murni yang sudah diperiksa Admin Sales dilepas otomatis saat stok tiba.
+        from services import so_release_service as _rel
+        await _rel.auto_release(order["id"], {"name": actor_name}, why="stok masuk")
     # Auto-commit (4a): order sudah approved/confirmed → roll baru langsung di-commit.
     if new_status in ("approved", "confirmed"):
         from services.roll_service import set_order_rolls_status

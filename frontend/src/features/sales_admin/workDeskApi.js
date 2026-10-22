@@ -38,6 +38,32 @@ export const verifyOrder = (orderId, note = "") =>
 export const confirmOrder = (orderId) =>
   axios.post(`${API}/sales-orders/${orderId}/confirm`).then((r) => r.data);
 
+/** Trial 22 Okt (E8) — SATU langkah Admin Sales: periksa → ajukan → lepas ke gudang (menunggu ACC → otomatis
+ *  dilepas sesudah ACC; `hold` = tahan dulu). Respons: { order, released, release_state }. */
+export const reviewRelease = (orderId, note = "", hold = false) =>
+  axios.post(`${API}/sales-orders/${orderId}/review-release`, { note, hold }).then((r) => r.data);
+
+/** Lepas ke gudang pesanan yang sebelumnya ditahan Admin Sales. */
+export const releaseOrder = (orderId) =>
+  axios.post(`${API}/sales-orders/${orderId}/release`).then((r) => r.data);
+
+/** Trial 22 Okt (E10) — harga khusus DITOLAK → sales lanjut dengan harga normal. */
+export const continueNormalPrice = (orderId, approvalId) =>
+  axios.post(`${API}/sales-orders/${orderId}/approvals/${approvalId}/continue-normal-price`).then((r) => r.data);
+
+/** Pesan satu kalimat sesudah Periksa & lepas / Lepas — apa yang terjadi dan langkah berikutnya. */
+export function releaseMessage(res, fallbackNumber = "") {
+  const o = res?.order || {};
+  const n = o.number || fallbackNumber;
+  const st = res?.release_state || {};
+  if (res?.released || ["confirmed", "partially_picked", "picked"].includes(o.status)) return `${n} diperiksa & dilepas ke gudang — tugas ambil sudah lahir.`;
+  if (st.hold) return `${n} diperiksa & DITAHAN — tekan [Lepas ke gudang] di antrean "Ditahan" bila sudah boleh.`;
+  if (st.waiting === "acc") return `${n} diperiksa — menunggu ACC Manajer; dilepas ke gudang otomatis sesudah ACC.`;
+  if (st.waiting === "ditolak") return `${n} diperiksa — harga khusus DITOLAK, menunggu sales (ajukan harga lain · lanjut harga normal · batalkan).`;
+  if (st.waiting === "stok") return `${n} diperiksa — kurang stok: lanjut [Putuskan pemenuhan]; dilepas otomatis saat stok tersedia.`;
+  return `${n} diperiksa.`;
+}
+
 /** Ajukan SO terverifikasi ke gerbang persetujuan (tanpa gerbang → otomatis Disetujui). */
 export const submitOrderForApproval = (orderId) =>
   axios.post(`${API}/sales-orders/${orderId}/submit-for-approval`).then((r) => r.data);
@@ -72,6 +98,7 @@ export const QUEUE_META = {
   perlu_verifikasi:    { icon: ClipboardCheck, tone: "#8A5300", bg: "rgba(255,149,0,.16)" },
   siap_dikonfirmasi:   { icon: CheckCircle2,   tone: "#1B7F4B", bg: "rgba(52,199,89,.16)" },
   menunggu_manajer:    { icon: ShieldQuestion, tone: "#6B219A", bg: "rgba(107,33,154,.12)" },
+  harga_ditolak:       { icon: AlertTriangle,  tone: "#C0392B", bg: "rgba(255,59,48,.14)" },
   siap_cetak_dokumen:  { icon: Printer,        tone: "#0058CC", bg: "rgba(0,122,255,.12)" },
   perlu_dipenuhi:      { icon: PackageSearch,  tone: "#B23B14", bg: "rgba(255,89,48,.14)" },
   jatuh_tempo:         { icon: CalendarClock,  tone: "#C0392B", bg: "rgba(255,59,48,.14)" },
@@ -107,6 +134,7 @@ const BADGE_LABEL = {
   done: "Selesai",
   cancelled: "Dibatalkan",
   menunggu: "Menunggu manajer",
+  "menunggu acc": "Menunggu ACC", ditahan: "Ditahan", ditolak: "Harga ditolak",
   covered: "Barang masuk menutup",
   partial: "Tertutup sebagian",
   uncovered: "Belum ada penutup",
@@ -138,8 +166,8 @@ const BADGE_TONE = {
 };
 
 const BADGE_GROUP = {
-  danger: ["lewat", "uncovered", "cancelled", "quarantine", "failed", "gagal", "diakui (historis)"],
-  warn: ["segera", "partial", "menunggu", "waiting_approval", "waiting_stock",
+  danger: ["lewat", "uncovered", "cancelled", "quarantine", "failed", "gagal", "diakui (historis)", "ditolak"],
+  warn: ["segera", "partial", "menunggu", "menunggu acc", "ditahan", "waiting_approval", "waiting_stock",
          "pending_approval", "pending_process", "pending", "draft"],
   ok: ["approved", "confirmed", "picked", "shipped", "dispatched", "done", "covered", "delivered", "terkirim", "packed", "loaded"],
   info: ["reserved", "submitted", "open", "partially_picked", "partially_shipped", "picking", "packing", "loading",

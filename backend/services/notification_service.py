@@ -220,16 +220,28 @@ async def generate_system_notifications() -> int:
         {"status": {"$in": ["reserved", "waiting_approval", "approved", "waiting_stock"]},
          "reservation_expires_at": {"$lte": soon}}, {"_id": 0}
     ).to_list(200)
+    from services.analytics_time import WIB
+
+    def _wib(iso: Any) -> str:
+        try:
+            return datetime.fromisoformat(str(iso).replace("Z", "+00:00")).astimezone(WIB).strftime("%d/%m %H:%M WIB")
+        except (TypeError, ValueError):
+            return ""
     for order in orders:
-        notes = await create_addressed(
-            permission=("order", "confirm"),
-            also_users=(order.get("assigned_sales_id") or "",),
-            notif_type="reservation_expiring", ref=f"resv:{order['id']}",
-            title=f"Reservasi akan kedaluwarsa: {order.get('number', '')}",
-            body=(f"Order {order.get('number', '')} ({order.get('customer_name', '')}) "
-                  f"reservasinya mendekati batas 3 hari. Segera approve/konfirmasi."),
-            severity="warning", link="orders", entity_id=order.get("entity_id"),
-        )
+        # Trial 22 Okt (E10) — pengingat H-1 juga ke sales pemilik (dulu `assigned_sales_id` yang tak pernah diisi) dan,
+        # bila masih ada keputusan Manajer yang ditunggu, ke pemegang `order.approve`: merekalah yang menahan pesanan.
+        waiting_mgr = any(p.get("status") == "pending" for p in order.get("pending_approvals") or [])
+        nasib = ("menunggu keputusan Manajer" if waiting_mgr else "belum diperiksa & dilepas Admin Sales")
+        kw = dict(notif_type="reservation_expiring", ref=f"resv:{order['id']}",
+                  title=f"Booking stok segera habis: {order.get('number', '')}",
+                  body=(f"{order.get('number', '')} ({order.get('customer_name', '')}) {nasib}. Booking stok berakhir "
+                        f"{_wib(order.get('reservation_expires_at')) or '≤ 24 jam'} — lewat batas, pesanan gugur "
+                        f"dan stok dilepas."),
+                  severity="warning", link="orders", entity_id=order.get("entity_id"))
+        sales_user = order.get("sales_id") or order.get("assigned_sales_id") or ""
+        notes = await create_addressed(permission=("order", "confirm"), also_users=(sales_user,), **kw)
+        if waiting_mgr:
+            notes += await create_addressed(permission=("order", "approve"), **kw)
         created += len(notes)
 
     # 3) Order menunggu persetujuan (actionable, dari sales_orders)

@@ -114,7 +114,8 @@ export default function MobileSalesApp(props) {
           <MobileCatalog data={data} loading={loading} onAdd={onAdd} onInspect={onInspect}
             entityId={selectedEntity} cart={cart} onOpenCart={() => setTab("cart")}
             allowRollPick={allowRollPick}
-            selectedCustomer={selectedCustomer} />
+            selectedCustomer={selectedCustomer}
+            onSelectCustomer={(c) => { setSelectedCustomer?.(c); setSelectedAddress?.(c?.addresses?.[0]?.id || ""); }} />
         )}
         {tab === "cart" && (
           <MobileCart cart={cart} setCart={setCart} data={data}

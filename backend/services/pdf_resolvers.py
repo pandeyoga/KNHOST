@@ -135,6 +135,10 @@ async def resolve_sales_order(doc, db):
                        {"label": "Disetujui", "role": "Manager", "name": doc.get("approved_by")},
                        {"label": "Diterima", "role": "Customer", "name": ""}],
         "_amount": doc.get("grand_total", doc.get("total_amount")),
+        # Trial 22 Okt (E10) — harga khusus masih menunggu/ditolak → cetakan bukan harga final.
+        "watermark": ("HARGA BELUM FINAL" if any(
+            p.get("type") == "special_price" and p.get("status") in ("pending", "rejected")
+            for p in doc.get("pending_approvals") or []) else None),
     }
 
 

@@ -8,6 +8,8 @@ import { formatCurrency } from "../../utils/formatters";
 import KNSelect from "../../components/KNSelect";
 import SpecialPriceRequestForm from "../pricing/SpecialPriceRequestForm";
 import { can, roleIs } from "../../config/roles";
+import OrderReleaseSummary from "./OrderReleaseSummary";
+import { continueNormalPrice } from "../sales_admin/workDeskApi";
 
 const TYPE_META = {
   nilai: { label: "Persetujuan Nilai Pesanan", icon: ShieldCheck, color: "#5856D6" },
@@ -35,6 +37,8 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
   const [spItem, setSpItem] = useState(0);
   const [creditOpen, setCreditOpen] = useState(false);
   const [creditReason, setCreditReason] = useState("");
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const fileRefs = useRef({});
 
   const pa = order.pending_approvals || [];
@@ -76,9 +80,21 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
     e.target.value = "";
   };
 
-  if (!pa.length && !canRequest) return null;
+  // Trial 22 Okt (E10) — harga khusus DITOLAK: sales memilih ajukan harga lain · lanjut harga normal · batalkan.
+  const askAgain = (entry) => {
+    const idx = items.findIndex((it) => it.product_id === entry.product_id);
+    setSpItem(idx >= 0 ? idx : 0); setSpOpen(true); setCreditOpen(false); setCancelOpen(false);
+  };
+  const keepNormal = (entry) => run(() => continueNormalPrice(order.id, entry.id),
+    "Lanjut dengan harga normal — pesanan lanjut (dilepas ke gudang otomatis bila sudah diperiksa Admin Sales).");
+  const cancelOrder = () => run(() => axios.post(`${API}/sales-orders/${order.id}/cancel`, { reason: cancelReason.trim() }),
+    "Pesanan dibatalkan, booking stok dilepas.", () => { setCancelOpen(false); setCancelReason(""); });
+
+  if (!pa.length && !canRequest) return <OrderReleaseSummary order={order} />;
 
   return (
+    <>
+    <OrderReleaseSummary order={order} />
     <div data-testid="so-approvals-panel" className="rounded-lg border border-[#EFF0F2] bg-white p-3">
       <div className="mb-2 flex items-center gap-2">
         <FileCheck2 size={14} className="text-[#0058CC]" />
@@ -154,6 +170,23 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
                 </div>
               )}
 
+              {entry.status === "rejected" && entry.type === "special_price" && canRequest && (isSales || isApprover) && (
+                <div data-testid={`so-appr-rejected-actions-${entry.id}`} className="mt-2 grid gap-1.5 sm:grid-cols-3">
+                  <button data-testid={`so-appr-ask-again-${entry.id}`} disabled={busy} onClick={() => askAgain(entry)}
+                    className="rounded-md border border-[#FFE2B8] bg-[#FFF7EC] px-2.5 py-1.5 text-[11px] font-semibold text-[#9A5B00]">
+                    Ajukan harga lain
+                  </button>
+                  <button data-testid={`so-appr-keep-normal-${entry.id}`} disabled={busy} onClick={() => keepNormal(entry)}
+                    className="rounded-md border border-[#CBDFFF] bg-[#F2F7FF] px-2.5 py-1.5 text-[11px] font-semibold text-[#0058CC]">
+                    Lanjut harga normal ({formatCurrency(entry.normal_price)})
+                  </button>
+                  <button data-testid={`so-appr-cancel-order-${entry.id}`} disabled={busy}
+                    onClick={() => { setCancelOpen((v) => !v); setSpOpen(false); }}
+                    className="rounded-md border border-[#F5C2C2] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#9B1C1C]">
+                    Batalkan pesanan
+                  </button>
+                </div>
+              )}
               {/* Aksi per entri */}
               {entry.status === "pending" && (
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -216,6 +249,17 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
             </div>
           )}
 
+          {cancelOpen && (
+            <div data-testid="so-appr-cancel-form" className="mt-2 space-y-2 rounded-lg border border-[#F5C2C2] bg-[#FFF7F7] p-2.5">
+              <textarea data-testid="so-appr-cancel-reason" rows={2} value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Alasan pembatalan (wajib, mis. pelanggan tidak setuju harga normal)" className="w-full rounded-md border border-[#E5E5EA] bg-white px-2 py-1.5 text-[11px]" />
+              <button data-testid="so-appr-cancel-submit" disabled={busy || cancelReason.trim().length < 5} onClick={cancelOrder}
+                className="w-full rounded-md bg-[#9B1C1C] py-1.5 text-[11px] font-semibold text-white disabled:opacity-50">
+                Batalkan pesanan & lepas booking stok
+              </button>
+            </div>
+          )}
+
           {creditOpen && (
             <div data-testid="so-appr-credit-form" className="mt-2 space-y-2 rounded-lg border border-[#EFF0F2] bg-[#FAFBFC] p-2.5">
               <textarea data-testid="so-appr-credit-reason" rows={2} value={creditReason} onChange={(e) => setCreditReason(e.target.value)}
@@ -229,5 +273,6 @@ export default function SoApprovalsPanel({ order, user, onRefresh }) {
         </div>
       )}
     </div>
+    </>
   );
 }

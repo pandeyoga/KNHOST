@@ -33,9 +33,6 @@ from core_utils import now_iso, safe_doc
 ROW_LIMIT = 200   # cek UI UAT v3: dulu 60 & count ikut terpotong → dokumen terbaru tak terlihat, angka menyesatkan
 
 # ── Status pesanan per tahap alur ────────────────────────────────────────────
-STATUS_BARU = ("reserved", "waiting_stock")
-STATUS_SIAP_KONFIRMASI = ("approved",)
-STATUS_MENUNGGU_MANAJER = ("waiting_approval",)
 STATUS_DOKUMEN = ("confirmed", "partially_picked", "picked", "partially_shipped", "shipped")
 STATUS_PAJAK_LAYAK = ("confirmed", "partially_picked", "picked", "partially_shipped",
                       "shipped", "done")
@@ -130,6 +127,7 @@ async def _orders(scope: Dict[str, Any], statuses, *, verified: Optional[bool] =
         "grand_total": 1, "total_amount": 1, "created_at": 1, "status": 1, "stage": 1,
         "sales_name": 1, "verification": 1, "entity_id": 1, "is_pkp": 1, "ppn_amount": 1,
         "payment_status": 1, "pending_approvals": 1, "required_approval_role": 1,
+        "release": 1, "has_backorder": 1, "reservation_expires_at": 1,
     }).sort("created_at", 1).to_list(500)
     out = []
     for o in rows:
@@ -149,60 +147,60 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                            entity_ids: List[str]) -> Dict[str, Any]:
     queues: List[Dict[str, Any]] = []
 
-    # 1 — perlu diverifikasi (E8.13): pesanan baru dari sales, belum diperiksa
-    belum = await _orders(scope, STATUS_BARU, verified=False)
+    # Trial 22 Okt (E8, keputusan pemilik) — SATU langkah Admin Sales: "Periksa & lepas ke gudang". Dulu tiga antrean
+    # beruntun (Perlu diverifikasi → Terverifikasi-ajukan → Siap dikonfirmasi) untuk pesanan yang sama. Id antrean lama
+    # dipertahankan supaya pemanggil (HP, POC) tidak putus; isinya mengikuti alur baru (`so_release_service`).
+    from services import so_release_service as _rel
+    terbuka = await _orders(scope, ("reserved", "waiting_stock", "approved", "waiting_approval"))
+    belum = [o for o in terbuka if not (o.get("release") or {}).get("requested")]
+    sudah = [o for o in terbuka if (o.get("release") or {}).get("requested")]
+
+    def _ket(o: Dict[str, Any]) -> str:
+        w = _rel.release_state(o)["waiting"]
+        if not w and o.get("has_backorder"):
+            return "siap dilepas · sebagian backorder (sisa menyusul saat stok tiba)"
+        return {"acc": "menunggu ACC Manajer", "ditolak": "harga khusus DITOLAK — menunggu sales",
+                "stok": "kurang stok — putuskan pemenuhan"}.get(w, "siap dilepas")
+
+    # 1 — perlu diperiksa & dilepas
     queues.append(_queue(
-        "perlu_verifikasi", "Perlu diverifikasi",
-        "Periksa kelengkapan: alamat & penerima · syarat bayar · PPN · NPWP bila minta faktur.",
+        "perlu_verifikasi", "Perlu diperiksa & dilepas ke gudang",
+        "Satu langkah: periksa kelengkapan (alamat · syarat bayar · PPN · NPWP) lalu lepas ke gudang. Yang masih "
+        "menunggu ACC Manajer dilepas otomatis sesudah ACC.",
         [_row(ref_type="sales_order", ref_id=o["id"], number=o["number"],
               title=o.get("customer_name", "—"),
-              subtitle=f"{o.get('customer_city') or '—'} · dibuat {o.get('sales_name') or '—'}",
+              subtitle=f"{o.get('customer_city') or '—'} · {o.get('sales_name') or '—'} · {_ket(o)}",
               value=o.get("grand_total") or o.get("total_amount") or 0,
               age_days=_age_days(o.get("created_at")), badge=o.get("stage") or o.get("status"),
-              action="Verifikasi", action_kind="verify") for o in belum],
-        action_label="Verifikasi"))
+              action="Periksa & lepas", action_kind="verify",
+              extra={"booking_until": o.get("reservation_expires_at", "")}) for o in belum],
+        action_label="Periksa & lepas"))
 
-    # 1b — terverifikasi, belum diajukan (cek UI UAT v3, 2026-10-21): dulu SO yang sudah diverifikasi tetapi masih
-    # "Dicadangkan" hilang dari SEMUA antrean meja (Siap dikonfirmasi hanya memuat "Disetujui") — langkah "Ajukan
-    # persetujuan" hanya ada di detail SO. Kini tampil di sini dengan aksinya langsung.
-    sudah = [o for o in await _orders(scope, ("reserved",), verified=True) if not o.get("has_backorder")]
+    # 2 — ditahan Admin Sales ("Tahan dulu") → tombol Lepas ke gudang
+    tahan = [o for o in sudah if (o.get("release") or {}).get("hold")]
     queues.append(_queue(
-        "terverifikasi_ajukan", "Terverifikasi — ajukan persetujuan",
-        "Sistem memeriksa gerbang (nilai · kredit · harga khusus): tanpa gerbang → otomatis Disetujui dan pindah ke "
-        "Siap dikonfirmasi; ada gerbang → Menunggu keputusan manajer.",
+        "siap_dikonfirmasi", "Ditahan — siap dilepas",
+        "Sudah diperiksa tetapi ditahan Admin Sales (mis. pelanggan minta tunda). Tekan Lepas ke gudang bila sudah boleh.",
         [_row(ref_type="sales_order", ref_id=o["id"], number=o["number"],
-              title=o.get("customer_name", "—"),
-              subtitle=f"Terverifikasi · {o.get('sales_name') or '—'}",
+              title=o.get("customer_name", "—"), subtitle=f"Ditahan {(o.get('release') or {}).get('by') or ''} · {_ket(o)}",
               value=o.get("grand_total") or o.get("total_amount") or 0,
-              age_days=_age_days(o.get("created_at")), badge=o.get("stage") or o.get("status"),
-              action="Ajukan persetujuan", action_kind="submit") for o in sudah],
-        action_label="Ajukan persetujuan"))
+              age_days=_age_days(o.get("created_at")), badge="ditahan",
+              action="Lepas ke gudang", action_kind="release") for o in tahan],
+        action_label="Lepas ke gudang"))
 
-    # 2 — siap dikonfirmasi: sudah disetujui → tekan konfirmasi, tugas gudang lahir
-    approved = await _orders(scope, STATUS_SIAP_KONFIRMASI)
-    queues.append(_queue(
-        "siap_dikonfirmasi", "Siap dikonfirmasi",
-        "Konfirmasi memicu tugas gudang. Wewenang Anda — tidak perlu menunggu manajer.",
-        [_row(ref_type="sales_order", ref_id=o["id"], number=o["number"],
-              title=o.get("customer_name", "—"),
-              subtitle=("Terverifikasi" if (o.get("verification") or {}).get("status") == "verified"
-                        else "Belum diverifikasi"),
-              value=o.get("grand_total") or o.get("total_amount") or 0,
-              age_days=_age_days(o.get("created_at")), badge=o.get("stage") or o.get("status"),
-              action="Konfirmasi", action_kind="confirm") for o in approved],
-        action_label="Konfirmasi"))
-
-    # 3 — menunggu keputusan manajer (harga khusus/kredit/nilai) → hanya memantau
-    tunggu = await _orders(scope, STATUS_MENUNGGU_MANAJER)
+    # 3 — sudah diperiksa, menunggu keputusan manajer → dilepas otomatis sesudah ACC (memantau)
+    tunggu = [o for o in sudah if not (o.get("release") or {}).get("hold")
+              and _rel.release_state(o)["waiting"] == "acc"]
     queues.append(_queue(
         "menunggu_manajer", "Menunggu keputusan manajer",
-        "Nilai · kredit · harga khusus adalah keputusan manajer. Anda memantau, bukan menyetujui.",
+        "Sudah diperiksa. Nilai · harga khusus diputus manajer; pesanan dilepas ke gudang OTOMATIS sesudah ACC.",
         [_row(ref_type="sales_order", ref_id=o["id"], number=o["number"],
               title=o.get("customer_name", "—"),
-              subtitle="Butuh peran " + str(o.get("required_approval_role") or "manager"),
+              subtitle="Sudah diperiksa · dilepas otomatis sesudah ACC",
               value=o.get("grand_total") or o.get("total_amount") or 0,
-              age_days=_age_days(o.get("created_at")), badge="menunggu",
-              action="Lihat", action_kind="open") for o in tunggu],
+              age_days=_age_days(o.get("created_at")), badge="menunggu ACC",
+              action="Lihat", action_kind="open",
+              extra={"booking_until": o.get("reservation_expires_at", "")}) for o in tunggu],
         action_label="Lihat"))
 
     # 4 — siap cetak Surat Jalan / Invoice
@@ -349,6 +347,18 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
                   subtitle=o.get("shipping_error") or "SO belum dikonversi", value=o.get("total_amount") or 0,
                   age_days=_age_days(o.get("updated_at")), badge="Siap kirim", action="Siapkan", action_kind="open") for o in od_rows["siap_kirim"]],
             action_label="Siapkan"))
+
+    # Trial 22 Okt (E10) — harga khusus DITOLAK pada pesanan yang sudah diperiksa: keputusan di tangan sales (ajukan
+    # harga lain · lanjut harga normal · batalkan). Admin Sales memantau; pesanan dilepas otomatis begitu beres.
+    tolak = [o for o in sudah if _rel.release_state(o)["waiting"] == "ditolak"]
+    queues.append(_queue(
+        "harga_ditolak", "Harga khusus ditolak — menunggu sales",
+        "Sales memilih: ajukan harga lain · lanjut harga normal · batalkan. Sesudah itu pesanan lanjut otomatis.",
+        [_row(ref_type="sales_order", ref_id=o["id"], number=o["number"], title=o.get("customer_name", "—"),
+              subtitle=f"Sales {o.get('sales_name') or '—'}", value=o.get("grand_total") or o.get("total_amount") or 0,
+              age_days=_age_days(o.get("created_at")), badge="ditolak", action="Lihat", action_kind="open",
+              extra={"booking_until": o.get("reservation_expires_at", "")}) for o in tolak],
+        action_label="Lihat"))
 
     return {"desk": "sales_admin", "desk_label": "Meja Admin Sales",
             "generated_at": now_iso(), "entity_ids": entity_ids,

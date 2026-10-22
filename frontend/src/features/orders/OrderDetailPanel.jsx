@@ -32,6 +32,8 @@ import ReleaseRollsModal from "./ReleaseRollsModal";
 import SalesOrderOverrideDialog from "./SalesOrderOverrideDialog";
 import CancelOrderDialog from "./CancelOrderDialog";
 import OrderFeedbackPanel from "./OrderFeedbackPanel";   // feedback/komplain pelanggan per SO
+import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
+import { releaseMessage, releaseOrder } from "../sales_admin/workDeskApi";
 // F1b — arti `price_source` yang di-snapshot pada baris SO (dari resolver harga).
 const PRICE_SOURCE_BADGE = {
   special_approval: { label: "Harga khusus", fg: "#6B219A", bg: "#F3E9FA" },
@@ -64,6 +66,7 @@ export function OrderDetailPanel({
   const [showOverride, setShowOverride] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
   const [flash, setFlash] = useState("");
+  const [reviewOpen, setReviewOpen] = useState(false);   // Trial 22 Okt (E8) — Periksa & lepas ke gudang
   const FULFILL_STATUSES = ["partially_picked", "picked", "partially_shipped", "shipped", "done"];
   const TAX_ELIGIBLE = ["confirmed", "partially_picked", "picked", "partially_shipped", "shipped", "done"];
   const taxEligible = sel?.is_pkp !== false && Number(sel?.ppn_amount) > 0 && TAX_ELIGIBLE.includes(sel?.status);
@@ -78,6 +81,10 @@ export function OrderDetailPanel({
   const canConfirm = can(perms, "order", "confirm");     // rutin → + Admin Sales
   const canDeliver = can(perms, "order", "deliver");     // gudang & Admin Sales
   const canIssueTax = can(perms, "tax_invoice", "create");   // Finance
+  const doRelease = async () => {
+    try { setFlash(releaseMessage(await releaseOrder(sel.id), sel.number)); onRefresh?.(); }
+    catch (e) { setFlash(e.response?.data?.detail?.message || e.response?.data?.detail || "Gagal melepas pesanan ke gudang."); }
+  };
   // AUDIT SALES vs ADMIN SALES (2026-08-15) — `GET /shipments` menuntut `wms.view`,
   // izin yang SENGAJA dicabut dari sales di E8.3. Dulu panggilannya tetap jalan dan
   // 403-nya diserap `.catch` → seksi Surat Jalan berbunyi "Belum ada pengiriman
@@ -583,19 +590,20 @@ export function OrderDetailPanel({
               <PencilLine size={13} /> Edit / Override SO
             </button>
           )}
-          {sel.status === "reserved" && onSubmitForApproval && (
-            <button data-testid={`submit-approval-button-${sel.id}`} className="primary-button" onClick={() => onSubmitForApproval(sel.id)}>
-              <Send size={13} /> Ajukan untuk Persetujuan
+          {/* Trial 22 Okt (E8) — satu langkah Admin Sales menggantikan Ajukan + Confirm. */}
+          {canConfirm && sel.order_type !== "sample" && ["reserved", "waiting_stock", "waiting_approval", "approved"].includes(sel.status) && !sel.release?.requested && (
+            <button data-testid={`review-release-button-${sel.id}`} className="primary-button" onClick={() => setReviewOpen(true)}>
+              <Send size={13} /> Periksa & lepas ke gudang
+            </button>
+          )}
+          {canConfirm && sel.release?.requested && sel.release?.hold && ["reserved", "waiting_approval", "approved"].includes(sel.status) && (
+            <button data-testid={`release-order-button-${sel.id}`} className="primary-button" onClick={doRelease}>
+              <Send size={13} /> Lepas ke gudang
             </button>
           )}
           {sel.status === "waiting_approval" && canApprove && (
             <button data-testid={`approve-order-button-${sel.id}`} className="primary-button" onClick={() => onApprove(sel.id)}>
               <FileText size={13} /> Setujui{sel.required_approval_role ? ` (${sel.required_approval_role})` : ""}
-            </button>
-          )}
-          {sel.status === "approved" && canConfirm && (
-            <button data-testid={`confirm-order-button-${sel.id}`} className="primary-button" onClick={() => onConfirm(sel.id)}>
-              <FileText size={13} /> Confirm
             </button>
           )}
           {sel.status === "confirmed" && sel.payment_status !== "paid" && canTakeMoney && (
@@ -647,6 +655,11 @@ export function OrderDetailPanel({
       {showCancel && (
         <CancelOrderDialog order={sel} onClose={() => setShowCancel(false)}
           onDone={(msg) => { setShowCancel(false); setFlash(msg); onRefresh?.(); }} />
+      )}
+      {reviewOpen && (
+        <VerifyOrderDialog orderId={sel.id} orderNumber={sel.number} customerName={sel.customer_name}
+          onClose={() => setReviewOpen(false)}
+          onVerified={(msg) => { setReviewOpen(false); setFlash(msg); onRefresh?.(); }} />
       )}
     </aside>
   );

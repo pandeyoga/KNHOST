@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from pymongo import ReturnDocument
 from db import db
 from dependencies import require_permission, audit
-from core_utils import now_iso, new_id, safe_doc, DEFAULT_ENTITY_ID, strip_cost_fields, rupiah
+from core_utils import now_iso, new_id, safe_doc, DEFAULT_ENTITY_ID, strip_cost_fields
 from schemas import (AllocationPreviewIn, RollReconcilePreviewIn, RepeatRestockIn, SoReallocateIn,
                      SoReleaseRollsIn, SoCancelIn)
 from services import restock_service        # PS-21 — repeat/restock SO → PR
@@ -28,12 +28,9 @@ from services.roll_service import (
     reserve_specific_rolls, allocations_from_reserved_rolls,
     record_reservation_movements, rebuild_balance,
 )
-from services.config_service import (
-    evaluate_approval, role_satisfies, get_allocation_policy, get_effective_settings,
-)
+from services.config_service import role_satisfies, get_allocation_policy
 from services import so_approvals
 from services.fulfillment_service import classify_lines
-from services.fulfillment_status import recompute_so_status, create_outbound_tasks_for_order
 from services.so_status import stage_fields
 from services.uom_service import to_base, load_fixed_factors
 from entity_scope import (entity_ctx, resolve_list_scope, assert_entity_access,
@@ -413,42 +410,10 @@ async def submit_for_approval(order_id: str, request: Request) -> Dict[str, Any]
         raise HTTPException(status_code=409, detail={
             "code": "ALREADY_WAITING_APPROVAL", "message": msg,
             "pending_types": s0["pending_types"], "rejected_count": s0["rejected_count"]})
-    # Fase 1B — re-evaluasi kebutuhan approval dari matriks (configurable) basis grand_total
-    amount = float(order.get("grand_total", order.get("total_amount", 0)) or 0)
-    appr = await evaluate_approval("sales_order", amount, order.get("entity_id"))
-    settings_eff = await get_effective_settings(order.get("entity_id"))
-    require_val = so_approvals.require_validation_default(settings_eff)
-    summ = so_approvals.summarize(order)
-    # F5/RBAC — SO WAJIB divalidasi admin/manager (default). Tidak ada auto-approve oleh sales.
-    needs = bool(appr["requires_approval"] or summ["has_pending"] or require_val)
-    req_role = appr["required_role"] or summ["required_role"] or ("manager" if require_val else "")
-    # Pastikan ada entri 'nilai' sebagai penanda validasi bila belum ada approval spesifik.
-    pa = list(order.get("pending_approvals") or [])
-    if needs and not any(p.get("type") == "nilai" and p.get("status") == "pending" for p in pa) \
-            and not any(p.get("type") in ("kredit", "special_price", "makloon") and p.get("status") == "pending" for p in pa):
-        pa.append(so_approvals.make_approval(
-            "nilai", required_role=req_role or "manager",
-            reason="Validasi admin atas pesanan." if not appr["requires_approval"]
-                   else f"Nilai order {rupiah(amount)} memerlukan persetujuan.",
-            requested_by=actor["name"], requested_by_id=actor["id"], amount=amount,
-        ))
-    await db.sales_orders.update_one({"id": order_id}, {"$set": {
-        "pending_approvals": pa,
-        "approval_required": needs,
-        "required_approval_role": req_role,
-        "approval_amount": amount, "updated_at": now_iso(),
-    }})
-    if needs:
-        return strip_cost_fields(
-            await _transition(order_id, ["reserved", "waiting_stock"], "waiting_approval", actor["name"],
-                              "order_submitted", {"required_approval_role": req_role}),
-            actor.get("role"))
-    # Validasi nonaktif & di bawah ambang → auto-approve + hard-commit roll
-    result = await _transition(order_id, ["reserved"], "approved", actor["name"],
-                               "order_auto_approved",
-                               {"approval_note": "Auto-approve (validasi nonaktif, di bawah threshold)"})
-    await set_order_rolls_status(order_id, "committed")
-    return strip_cost_fields(result, actor.get("role"))
+    from services.so_lifecycle_service import submit_core
+    return await submit_core(order, actor)
+
+
 
 
 async def advance_so_if_all_approved(order_id: str, actor_name: str) -> Optional[Dict[str, Any]]:
@@ -520,50 +485,23 @@ async def approve_order(order_id: str, request: Request) -> Dict[str, Any]:
                                  order.get("entity_id"), actor["name"])
     except Exception as exc:  # noqa: BLE001
         logger.warning("[approve_order] efek samping gagal diabaikan: %s", exc)  # KN-C10
+    # Trial 22 Okt (E8) — sudah diperiksa Admin Sales → langsung dilepas ke gudang sesudah ACC terakhir.
+    from services import so_release_service as _rel
+    if await _rel.auto_release(order_id, actor):
+        return strip_cost_fields(safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0})), actor.get("role"))
     return result
 
 
 @router.post("/sales-orders/{order_id}/confirm")
 async def confirm_order(order_id: str, request: Request) -> Dict[str, Any]:
     actor = await require_permission(request, "order", "confirm")
-    # FASE E-8 (E8.13) — gerbang VERIFIKASI ADMINISTRATIF (bawaan HIDUP sejak T1 2026-06).
-    # Sengaja diperiksa SEBELUM transisi: kalau pesanan sudah jadi `confirmed`,
-    # tugas gudang lahir dan penolakan sesudahnya tidak lagi menolong siapa pun.
     _pre = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
     if _pre:
         assert_entity_access(_pre, "sales_orders", await entity_ctx(request))  # IDOR
-        # Urutan mengikuti dokumen training: verifikasi Admin Sales dulu (E8.13),
-        # baru persetujuan manajer, baru konfirmasi.
-        from services import so_verify_service as _verify
-        await _verify.assert_ready_to_confirm(_pre)
-        # T1 (audit training 2026-06) — persetujuan manajer TIDAK boleh dilompati:
-        # pesanan yang masih menunggu keputusan (nilai/kredit/validasi) tidak boleh
-        # langsung `confirmed` dari `reserved`/`waiting_approval`.
-        if _pre.get("status") != "approved" and (
-                _pre.get("approval_required") or not so_approvals.all_approved(_pre)):
-            raise HTTPException(
-                status_code=409,
-                detail=(f"Pesanan {_pre.get('number')} belum disetujui manajer "
-                        f"(status: {_pre.get('status')}). Ajukan/tunggu persetujuan "
-                        "nilai & kredit dulu — konfirmasi hanya untuk pesanan berstatus "
-                        "Disetujui."))
-    result = await _transition(order_id, ["approved", "waiting_approval", "reserved"], "confirmed",
-                               actor["name"], "order_confirmed")
-    # Sub-fase 1.8 — otomatis buat task outbound saat confirmed (idempotent)
-    tasks = await create_outbound_tasks_for_order(order_id, actor["name"])
-    if tasks:
-        await audit(actor["name"], "outbound_tasks_auto_created", "sales_order", order_id,
-                    {"tasks_count": len(tasks)})
-    await recompute_so_status(order_id)
-    _final = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
-    # Fase 5 — auto-kirim WhatsApp bila ada aturan aktif (best-effort, non-blocking).
-    try:
-        from services import delivery_service as _ds
-        await _ds.dispatch_event("sales_order", order_id, "confirmed",
-                                 (_final or {}).get("entity_id"), actor["name"])
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("[confirm_order] efek samping gagal diabaikan: %s", exc)  # KN-C10
-    return _final
+    from services.so_lifecycle_service import confirm_core
+    return await confirm_core(order_id, actor)
+
+
 
 
 @router.post("/sales-orders/{order_id}/mark-delivered")

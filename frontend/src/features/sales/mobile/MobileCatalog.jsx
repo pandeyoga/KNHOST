@@ -6,9 +6,10 @@ import { groupByTemplate } from "../../../utils/variants";
 import MobileQuickView from "./MobileQuickView";
 import { formatCurrency } from "../../../utils/formatters";
 import { useEffectivePrices, pickPrice } from "../../../hooks/useEffectivePrices";
+import MobileCustomerBar from "./MobileCustomerBar";
 
 export default function MobileCatalog({ data, loading, onAdd, onInspect, entityId, cart, onOpenCart,
-  selectedCustomer = null, allowRollPick = true }) {
+  selectedCustomer = null, allowRollPick = true, onSelectCustomer }) {
   const [search, setSearch] = useState("");
   const [cat, setCat] = useState("all");
   const [activeGroup, setActiveGroup] = useState(null);
@@ -54,6 +55,10 @@ export default function MobileCatalog({ data, loading, onAdd, onInspect, entityI
             placeholder="Cari produk, SKU, warna…"
             className="w-full bg-transparent text-[13px] text-[#1C1C1E] outline-none placeholder:text-[#8E8E93]" />
         </div>
+        {onSelectCustomer && (
+          <MobileCustomerBar customers={data?.customers || []} selectedCustomer={selectedCustomer}
+            onSelect={onSelectCustomer} amount={cartSubtotal} />
+        )}
         <div className="no-scrollbar mt-2 flex gap-2 overflow-x-auto">
           {categories.map((c) => (
             <button key={c} data-testid={`mobile-cat-${c}`} onClick={() => setCat(c)}

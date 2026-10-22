@@ -125,13 +125,27 @@ function DetailBody({ item, doc }) {
           <Info label="Status SO">{doc?.status}</Info>
           <Info label="Pembayaran">{doc?.payment_terms || doc?.payment_status || "—"}</Info>
         </div>
-        {entry.type === "special_price" && (
-          <div className="rounded-lg border border-[#F5E0C3] bg-[#FDF6EC] px-3 py-2 text-[12px]">
-            <b>{entry.product_name || "Item"}</b> · harga normal{" "}
-            <b>{formatCurrency(entry.normal_price)}</b> → diminta{" "}
-            <b className="text-[#B45309]">{formatCurrency(entry.requested_price ?? entry.amount)}</b>
-          </div>
-        )}
+        {entry.type === "special_price" && (() => {
+          // Trial 22 Okt (E10) — kartu Manajer: qty, % dari normal, selisih total, batas booking, dan akibat keputusan.
+          const line = (doc?.items || []).find((it) => it.product_id === entry.product_id) || {};
+          const nq = Number(line.quantity || 0);
+          const np = Number(entry.normal_price || 0); const rp = Number(entry.requested_price ?? entry.amount ?? 0);
+          const pct = np > 0 ? Math.round(((rp - np) / np) * 1000) / 10 : null;
+          const exp = doc?.reservation_expires_at ? new Date(doc.reservation_expires_at) : null;
+          return (
+            <div data-testid="decision-special-price" className="rounded-lg border border-[#F5E0C3] bg-[#FDF6EC] px-3 py-2 text-[12px]">
+              <b>{entry.product_name || "Item"}</b>{nq ? ` · ${fmtN(nq)} ${line.unit || ""}` : ""} · harga normal{" "}
+              <b>{formatCurrency(np)}</b> → diminta <b className="text-[#B45309]">{formatCurrency(rp)}</b>
+              {pct != null && <> ({pct > 0 ? "+" : ""}{pct}%)</>}
+              {nq > 0 && <p className="mt-0.5">Selisih total: <b>{formatCurrency((rp - np) * nq)}</b> (sebelum PPN)</p>}
+              {exp && !Number.isNaN(exp.getTime()) && (
+                <p className="mt-0.5 text-[#9A5B00]">Booking stok berakhir {exp.toLocaleString("id-ID", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
+              )}
+              <p className="mt-0.5 text-[11px] text-[#6B6B73]">Setujui → harga baris berubah; bila Admin Sales sudah memeriksa, pesanan langsung dilepas ke gudang.
+                Tolak → sales memilih ajukan harga lain, lanjut harga normal, atau batalkan.</p>
+            </div>
+          );
+        })()}
         {entry.reason && (
           <p className="text-[12px] text-[#3C3C43]"><b>Alasan pengajuan:</b> {entry.reason}</p>
         )}

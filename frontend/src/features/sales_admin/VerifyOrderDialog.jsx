@@ -1,6 +1,10 @@
 /**
  * VerifyOrderDialog — FASE E-8 (E8.13 · US17) · **VERIFIKASI ADMINISTRATIF**.
  *
+ * Trial 22 Okt (E8, keputusan pemilik) — dialog ini kini **Periksa & lepas ke gudang** dalam satu tombol: kelengkapan
+ * diverifikasi, gerbang persetujuan diajukan, dan pesanan dilepas ke gudang (yang masih menunggu ACC Manajer dilepas
+ * otomatis sesudah ACC). "Tahan dulu" = diperiksa tetapi belum dilepas.
+ *
  * Verifikasi bukan sekadar checklist: Admin harus MELIHAT data yang diperiksanya.
  * Karena itu dialog ini dua kolom di layar besar — kiri DATA PESANAN (pelanggan,
  * alamat, termin, baris barang + kondisi stok, total), kanan DAFTAR PERIKSA.
@@ -16,7 +20,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { useEscapeClose } from "../../utils/escapeLayers";
 import OrderPreviewCard from "./OrderPreviewCard";
-import { verificationPreview, verifyOrder } from "./workDeskApi";
+import { releaseMessage, reviewRelease, verificationPreview } from "./workDeskApi";
 
 export default function VerifyOrderDialog({
   orderId, orderNumber, customerName, onClose, onVerified, onOpenFull,
@@ -26,6 +30,7 @@ export default function VerifyOrderDialog({
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [hold, setHold] = useState(false);
   useEscapeClose(true, onClose);
 
   const load = useCallback(async () => {
@@ -40,16 +45,10 @@ export default function VerifyOrderDialog({
   async function submit() {
     setBusy(true); setError("");
     try {
-      const res = await verifyOrder(orderId, note);
-      const by = res?.verification?.by || "";
-      // Cek UI UAT v3 — langkah berikutnya sesuai status: Dicadangkan → ajukan persetujuan; Disetujui → konfirmasi.
-      onVerified?.(`${res?.order_number || orderNumber} terverifikasi oleh ${by} — `
-        + (res?.status === "approved" ? "siap dikonfirmasi."
-          // Trial 22 Okt — SO backorder tidak masuk antrean "Terverifikasi"; langkahnya keputusan pemenuhan.
-          : res?.status === "waiting_stock" ? "lanjut [Putuskan pemenuhan] di antrean Perlu dipenuhi (kurang stok)."
-          : "lanjut [Ajukan persetujuan] di antrean Terverifikasi — ajukan persetujuan."));
+      const res = await reviewRelease(orderId, note, hold);
+      onVerified?.(releaseMessage(res, orderNumber), res);
     } catch (e) {
-      setError(apiErrorText(e, "Gagal memverifikasi pesanan."));
+      setError(apiErrorText(e, "Gagal memeriksa & melepas pesanan."));
       load();
     } finally { setBusy(false); }
   }
@@ -58,7 +57,8 @@ export default function VerifyOrderDialog({
   const gaps = Array.isArray(data?.blocking_gaps) ? data.blocking_gaps : [];
   const warnings = Array.isArray(data?.warnings) ? data.warnings : [];
   const sudah = data?.verification?.status === "verified";
-  const bisa = !!data?.verifiable && !!data?.ready && !sudah;
+  // Sudah diverifikasi (mis. data lama) tetap boleh dilepas lewat tombol yang sama.
+  const bisa = !!data?.verifiable && !!data?.ready;
 
   return (
     <div className="modal-overlay" data-testid="verify-dialog"
@@ -70,11 +70,11 @@ export default function VerifyOrderDialog({
             <ClipboardCheck size={17} className="mt-0.5 shrink-0 text-[#0058CC]" />
             <div className="min-w-0">
               <p className="modal-title" data-testid="verify-dialog-title">
-                Verifikasi {orderNumber}
+                Periksa & lepas ke gudang · {orderNumber}
               </p>
               <p className="modal-subtitle">
-                {customerName} · cocokkan data pesanan (kiri) dengan daftar periksa (kanan).
-                Ini <b>bukan</b> persetujuan nilai/kredit — itu tetap wewenang manajer.
+                {customerName} · cocokkan data pesanan (kiri) dengan daftar periksa (kanan). Harga khusus & nilai
+                tetap diputus manajer — bila masih menunggu, pesanan dilepas <b>otomatis</b> sesudah ACC.
               </p>
             </div>
           </div>
@@ -155,7 +155,14 @@ export default function VerifyOrderDialog({
               {!sudah && (
                 <textarea data-testid="verify-note" className="field" rows={2}
                   value={note} onChange={(e) => setNote(e.target.value)}
-                  placeholder="Catatan verifikasi (opsional) — mis. alamat dikonfirmasi lewat telepon" />
+                  placeholder="Catatan pemeriksaan (opsional) — mis. alamat dikonfirmasi lewat telepon" />
+              )}
+              {bisa && (
+                <label data-testid="verify-hold" className="flex items-start gap-2 rounded-lg border border-[#EFF0F2] px-3 py-2 text-[11.5px]">
+                  <input type="checkbox" className="mt-0.5" checked={hold} onChange={(e) => setHold(e.target.checked)} />
+                  <span><b>Tahan dulu</b> — sudah diperiksa, tetapi jangan dilepas ke gudang sekarang (mis. pelanggan minta
+                    kirim ditunda). Lepas nanti dari antrean "Ditahan".</span>
+                </label>
               )}
             </div>
           </div>
@@ -163,18 +170,18 @@ export default function VerifyOrderDialog({
 
         <div className="modal-actions">
           <button className="btn-secondary" data-testid="verify-cancel" onClick={onClose}>
-            {sudah ? "Tutup" : "Batal"}
+            {bisa ? "Batal" : "Tutup"}
           </button>
-          {!sudah && (
+          {(bisa || !sudah) && (
             <button data-testid="verify-submit" className="btn-primary"
                     disabled={busy || loading || !bisa}
                     title={!data?.verifiable
-                      ? "Pesanan ini sudah melewati tahap verifikasi."
+                      ? "Pesanan ini sudah dilepas ke gudang / ditutup."
                       : gaps.length > 0
                         ? `Lengkapi dulu: ${gaps.join(" · ")}`
                         : ""}
                     onClick={submit}>
-              {busy ? "Memproses…" : "Verifikasi Kelengkapan"}
+              {busy ? "Memproses…" : hold ? "Periksa & tahan" : "Periksa & lepas ke gudang"}
             </button>
           )}
         </div>
