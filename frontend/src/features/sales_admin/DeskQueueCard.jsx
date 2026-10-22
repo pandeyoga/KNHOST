@@ -24,6 +24,14 @@ import { RevisionBadge } from "../../components/RevisionProgress";
 import { ageTone, badgeClass, badgeLabel, queueMeta, fmtWhen, sinceFromAge } from "./workDeskApi";
 import Collapse from "../../components/Collapse";
 import usePagedRows from "@/hooks/usePagedRows";
+import TableFilterBar, { useTableFilter } from "../../components/TableFilter";
+
+// Trial 22 Okt (E7) — urutan antrean: bawaan server (paling mendesak/tertua dulu), terbaru, nilai terbesar.
+const QUEUE_SORTS = {
+  server: { label: "Tertua dulu" },
+  newest: { label: "Terbaru dulu", cmp: (a, b) => Number(a.age_days || 0) - Number(b.age_days || 0) },
+  value: { label: "Nilai terbesar", cmp: (a, b) => Number(b.value || 0) - Number(a.value || 0) },
+};
 
 // Permintaan pemilik 2026-10: tiap kartu = 5 baris per halaman + paginasi DI kartu (tanpa pop-up).
 const PAGE_ROWS = 5;
@@ -38,12 +46,13 @@ export default function DeskQueueCard({
   const isQty = queue?.value_kind === "qty";
   const rows = Array.isArray(queue?.rows) ? queue.rows : [];
   // Cek UI UAT v3 (S2) — antrean panjang urut tertua dulu: dokumen baru ada di halaman terakhir (mis. hlm 14).
-  // Kolom cari (nomor / pelanggan / keterangan) muncul bila baris > 1 halaman.
-  const [term, setTerm] = useState("");
-  const needle = term.trim().toLowerCase();
-  const shownRows = needle
-    ? rows.filter((r) => `${r.number || ""} ${r.title || ""} ${r.subtitle || ""}`.toLowerCase().includes(needle))
-    : rows;
+  // Trial 22 Okt (E7) — cari (nomor / pelanggan / keterangan / status) + filter status + urutan di SEMUA antrean meja.
+  const f = useTableFilter(rows, {
+    text: (r) => `${r.number || ""} ${r.title || ""} ${r.subtitle || ""} ${badgeLabel(r.badge || "")}`,
+    status: (r) => r.badge || "", statusLabel: badgeLabel, sorts: QUEUE_SORTS,
+  });
+  const needle = f.active;
+  const shownRows = f.shown;
   const pg = usePagedRows(shownRows, { pageSize: PAGE_ROWS, testId: `${testPrefix}-pager-${queue?.id}` });
   const visible = pg.pageRows;
   const oldest = ageTone(queue?.oldest_age_days);
@@ -132,13 +141,12 @@ export default function DeskQueueCard({
               Antrean ini bersih — tidak ada yang perlu ditindak.
             </div>
           ) : (<>
-            {rows.length > PAGE_ROWS && (
-              <div className="border-t border-[#EFF0F2] px-3 py-1.5">
-                <input className="field w-full !py-1 text-[11px]" value={term} data-testid={`${testPrefix}-search-${queue?.id}`}
-                       onChange={(e) => { setTerm(e.target.value); pg.setPage(1); }}
-                       placeholder="Cari nomor dokumen / pelanggan di antrean ini…" />
+            {rows.length > 1 && (
+              <div className="border-t border-[#EFF0F2]">
+                <TableFilterBar f={f} testId={`${testPrefix}-q-${queue?.id}`} searchTestId={`${testPrefix}-search-${queue?.id}`} onChange={() => pg.setPage(1)}
+                  placeholder="Cari nomor dokumen / pelanggan / keterangan…" />
                 {needle && shownRows.length === 0 && (
-                  <p className="mt-1 text-[10.5px] text-[#8E8E93]" data-testid={`${testPrefix}-search-empty-${queue?.id}`}>Tidak ada baris yang cocok.</p>
+                  <p className="px-3 pb-1.5 text-[10.5px] text-[#8E8E93]" data-testid={`${testPrefix}-search-empty-${queue?.id}`}>Tidak ada baris yang cocok.</p>
                 )}
               </div>
             )}

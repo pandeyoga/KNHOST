@@ -22,6 +22,10 @@ export default function KeepPendingPanel({ selectedEntity = "all", onOpenDocumen
   const [tab, setTab] = useState("keep");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  // Trial 22 Okt (E7) — cari di tab aktif (no. SO, pelanggan, produk, sales …).
+  const [q, setQ] = useState("");
+  const term = q.trim().toLowerCase();
+  const hit = (row) => !term || JSON.stringify(row || {}).toLowerCase().includes(term);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,13 +65,17 @@ export default function KeepPendingPanel({ selectedEntity = "all", onOpenDocumen
         ))}
       </div>
       {error && <p className="mx-3 mt-2 rounded-md bg-[#FDECEA] px-2 py-1.5 text-[11px] text-[#C0392B]" data-testid={`${testPrefix}-error`}>{error}</p>}
+      <div className="px-3 pt-2">
+        <input data-testid={`${testPrefix}-search`} value={q} onChange={(e) => setQ(e.target.value)}
+          className="w-full rounded-lg border border-[#E5E5EA] bg-white px-2.5 py-1.5 text-[11.5px]" placeholder="Cari no. SO, pelanggan, produk, sales…" />
+      </div>
       <div className="p-3">
-        {tab === "keep" && <KeepList rows={data?.keep || []} limit={data?.keep_limit_days || 0} overdue={c.keep_overdue || 0} onOpen={open} tp={testPrefix} />}
+        {tab === "keep" && <KeepList rows={(data?.keep || []).filter(hit)} limit={data?.keep_limit_days || 0} overdue={c.keep_overdue || 0} onOpen={open} tp={testPrefix} />}
         {tab === "pending" && (
-          (data?.pending || []).length === 0 ? <Empty tp={testPrefix} text="Tidak ada kebutuhan barang yang menunggu pemenuhan." />
-            : <ul className="grid gap-2">{data.pending.map((p) => <PendingProductRow key={`${p.product_id}-${p.unit}`} p={p} onOpen={open} tp={testPrefix} />)}</ul>
+          (data?.pending || []).filter(hit).length === 0 ? <Empty tp={testPrefix} text={term ? "Tidak ada yang cocok dengan pencarian." : "Tidak ada kebutuhan barang yang menunggu pemenuhan."} />
+            : <ul className="grid gap-2">{data.pending.filter(hit).map((p) => <PendingProductRow key={`${p.product_id}-${p.unit}`} p={p} onOpen={open} tp={testPrefix} />)}</ul>
         )}
-        {tab === "in_transit" && <TransitList rows={data?.in_transit || []} onOpen={open} tp={testPrefix} />}
+        {tab === "in_transit" && <TransitList rows={(data?.in_transit || []).filter(hit)} onOpen={open} tp={testPrefix} />}
       </div>
     </section>
   );

@@ -2,6 +2,7 @@
 // D2: hitung fisik GRN — panjang boleh diketik dalam satuan SJ/PO atau satuan dasar produk; satuan yang dipilih
 //     ikut dikirim (server mengonversi ke satuan dasar). Dulu label "Panjang (meter)" tetapi angka disimpan sebagai yard.
 // A2/F1: tab Cutting — pesanan catalogue tampil SATU paket (bukan 9 tugas), "Potong semua" = satu panggilan batch.
+// E7: tabel meja — cari + filter status + urutan.
 // F5: Lembar Inspect menyerupai kertas "DATA HASIL INSPECT" (sel KODE+POIN per 15 yard, STDRT, yard per grade).
 // E8/E10: alur pesanan baru — ringkasan "Sebelum masuk gudang" (normal → diminta + dua total + batas booking),
 //     harga ditolak → tiga pilihan sales, dialog Admin Sales "Periksa & lepas ke gudang" (+ tahan dulu).
@@ -13,6 +14,7 @@ import SoApprovalsPanel from "../orders/SoApprovalsPanel";
 import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
 import { releaseMessage } from "../sales_admin/workDeskApi";
 import CuttingOpsView from "../wms/CuttingOpsView";
+import DeskQueueCard from "../sales_admin/DeskQueueCard";
 import InspectSheetGrid, { parseCell, stdrt } from "../inspections/InspectSheetGrid";
 
 const posted = [];
@@ -193,5 +195,24 @@ test("F5: Lembar Inspect menyimpan baris via bagian QC (interval, lebar inci→c
   const call = apiCalls.find(([m, url]) => m === "post" && url === "/api/inspections/ins1/lines/l1/inspect");
   expect(call[2]).toMatchObject({ part: "qc", inspect_length_yard: 100, width_actual: 147.3, decision: "tolak",
     defects: [{ code: "CG", point_value: 2, interval: 0, count: 1, note: "" }, { code: "KO", point_value: 4, interval: 2, count: 1, note: "" }] });
+  act(() => root.unmount());
+});
+
+
+test("E7: antrean meja — chip filter status & urutan terbaru", async () => {
+  const rows = [
+    { ref_type: "sales_order", ref_id: "a", number: "SO-A", title: "Toko A", badge: "reserved", value: 10, age_days: 5 },
+    { ref_type: "sales_order", ref_id: "b", number: "SO-B", title: "Toko B", badge: "waiting_stock", value: 30, age_days: 1 },
+    { ref_type: "sales_order", ref_id: "c", number: "SO-C", title: "Toko C", badge: "reserved", value: 20, age_days: 3 },
+  ];
+  const root = await mount(<DeskQueueCard queue={{ id: "perlu_verifikasi", label: "Uji", count: 3, rows }} testPrefix="t" defaultOpen />);
+  const nums = () => [...document.body.querySelectorAll('[data-testid^="t-number-"]')].map((e) => e.textContent);
+  expect(nums()).toEqual(["SO-A", "SO-B", "SO-C"]);
+  await act(async () => { q("t-q-perlu_verifikasi-status-waiting_stock").click(); });
+  expect(nums()).toEqual(["SO-B"]);
+  await act(async () => { q("t-q-perlu_verifikasi-status-all").click(); });
+  const sel = q("t-q-perlu_verifikasi-sort");
+  await act(async () => { Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(sel, "newest"); sel.dispatchEvent(new Event("change", { bubbles: true })); });
+  expect(nums()).toEqual(["SO-B", "SO-C", "SO-A"]);
   act(() => root.unmount());
 });

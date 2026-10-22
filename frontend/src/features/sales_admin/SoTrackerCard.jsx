@@ -10,6 +10,15 @@ import usePagedRows from "@/hooks/usePagedRows";
 import { formatCurrency } from "../../utils/formatters";
 import { apiErrorText } from "../../utils/apiError";
 import { fmtWhen, ageTone } from "./workDeskApi";
+import TableFilterBar, { useTableFilter } from "../../components/TableFilter";
+
+// Trial 22 Okt (E7) — Pelacak SO: cari + filter status + urutan.
+const TRACKER_SORTS = {
+  server: { label: "Bawaan" },
+  idle: { label: "Paling lama diam", cmp: (a, b) => Number(b.idle_days || 0) - Number(a.idle_days || 0) },
+  newest: { label: "Terbaru dibuat", cmp: (a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")) },
+  value: { label: "Nilai terbesar", cmp: (a, b) => Number(b.grand_total || 0) - Number(a.grand_total || 0) },
+};
 
 export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onOpen, testPrefix = "desk" }) {
   const [data, setData] = useState(null);
@@ -25,7 +34,13 @@ export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onO
     finally { setLoading(false); }
   }, [desk, selectedEntity]);
   useEffect(() => { load(); }, [load]);
-  const rows = data?.rows || [];
+  const all = data?.rows || [];
+  const f = useTableFilter(all, {
+    text: (r) => `${r.number || ""} ${r.customer_name || ""} ${r.sales_name || ""} ${r.next_step || ""} ${r.status_label || ""}`,
+    status: (r) => (r.can_act ? "aksi" : r.status_label || ""),
+    statusLabel: (s) => (s === "aksi" ? "Aksi di meja ini" : s), sorts: TRACKER_SORTS,
+  });
+  const rows = f.shown;
   const pg = usePagedRows(rows, { pageSize: 5, testId: `${testPrefix}-so-tracker-pager` });
   const p = `${testPrefix}-so-tracker`;
   return (
@@ -43,6 +58,7 @@ export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onO
       </div>
       <p className="px-3 pt-1.5 text-[10.5px] text-[#6B6B73]">SO baru muncul otomatis dan hilang setelah selesai/batal. Tombol aksi hanya muncul bila tahap berikutnya wewenang meja ini.</p>
       {error && <p className="px-3 py-2 text-[11.5px] text-[#C0392B]" data-testid={`${p}-error`}>{error}</p>}
+      {all.length > 1 && <TableFilterBar f={f} testId={p} onChange={() => pg.setPage?.(1)} placeholder="Cari no. SO, pelanggan, sales, tahap…" />}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-[11.5px]">
           <thead><tr className="border-b border-[#EFF0F2] text-left text-[9.5px] font-bold uppercase tracking-wide text-[#8E8E93]">
@@ -51,7 +67,7 @@ export default function SoTrackerCard({ desk = "me", selectedEntity = "all", onO
           </tr></thead>
           <tbody className="divide-y divide-[#F4F5F7]">
             {loading && !data && <tr><td colSpan={6} className="px-3 py-6 text-center text-[#6B6B73]">Memuat…</td></tr>}
-            {data && rows.length === 0 && <tr><td colSpan={6} className="px-3 py-6 text-center text-[#6B6B73]" data-testid={`${p}-empty`}>Tidak ada SO aktif.</td></tr>}
+            {data && rows.length === 0 && <tr><td colSpan={6} className="px-3 py-6 text-center text-[#6B6B73]" data-testid={`${p}-empty`}>{f.active ? "Tidak ada SO yang cocok dengan filter." : "Tidak ada SO aktif."}</td></tr>}
             {pg.pageRows.map((r) => <TrackerRow key={r.id} r={r} p={p} onOpen={onOpen} />)}
           </tbody>
         </table>
