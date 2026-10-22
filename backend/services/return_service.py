@@ -932,6 +932,8 @@ async def _restock_returned_items(ret: Dict[str, Any], items: List[Dict], now: s
         # E9.5 — jejak asal barang diwariskan dari roll yang DULU dikirim ke pelanggan.
         prov = await _source_roll_provenance(ret.get("order_id", ""), product_id)
         product_doc = await db.products.find_one({"id": product_id}, {"_id": 0}) or {}
+        # Trial 22 Okt (D8) — qty retur = panjang roll terkirim (SATUAN DASAR, lihat `returnable`) → roll pun satuan dasar.
+        base_unit = product_doc.get("base_unit") or "meter"
         # INV-ROLL-01 — nama kanonik nomor roll adalah `roll_no` (dipakai SEMUA layar,
         # CSV, pencarian, label, dan 6 pembuat roll lainnya). Baris ini dulu menulis
         # `roll_number` — nama yang hanya hidup di sini — sehingga roll hasil retur
@@ -946,7 +948,7 @@ async def _restock_returned_items(ret: Dict[str, Any], items: List[Dict], now: s
             "owner_entity_id": owner_entity_id,
             "roll_no": await next_doc_number("inventory_rolls", "roll_no", "RTN-",
                                              scheme="shared"),
-            "unit": item.get("unit") or product_doc.get("base_unit") or "meter",
+            "unit": base_unit,
             "length": round(qty, 2), "length_initial": round(qty, 2), "length_remaining": round(qty, 2),
             "status": "quarantine", "qc_status": "pending_release",
             "origin_type": "return", "origin_ref": ret["id"], "return_id": ret["id"],
@@ -981,7 +983,7 @@ async def _restock_returned_items(ret: Dict[str, Any], items: List[Dict], now: s
             # jenis mutasi ikut pecah. `type` dipertahankan demi data lama.
             "type": "return_quarantine_in", "movement_type": "return_quarantine_in",
             "direction": "in",
-            "quantity": round(qty, 2), "unit": item.get("unit", "meter"), "roll_id": roll["id"],
+            "quantity": round(qty, 2), "unit": roll.get("unit") or base_unit, "roll_id": roll["id"],
  # FASE U — satu baris mutasi menunjuk SATU roll fisik.
  "qty_rolls": (1 if roll["id"] else None),
             "ref_type": "sales_return", "ref_id": ret["id"],
@@ -1577,7 +1579,7 @@ async def reverse_settlement(return_id: str, actor: str, reason: str = "") -> Di
             "type": "return_reversal_out", "movement_type": "return_reversal_out",
             "direction": "out",
             "quantity": round(float(r.get("length_remaining", r.get("length", 0)) or 0), 2),
-            "unit": "meter", "roll_id": r["id"],
+            "unit": r.get("unit") or "meter", "roll_id": r["id"],
  # FASE U — satu baris mutasi menunjuk SATU roll fisik.
  "qty_rolls": (1 if r["id"] else None), "ref_type": "sales_return", "ref_id": return_id,
             "notes": f"Reversal retur {ret.get('number', return_id)} — roll {r.get('roll_number') or r['id']} dibatalkan",

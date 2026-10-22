@@ -44,7 +44,10 @@ async def returnable(order_id: str, exclude_id: str = "") -> Dict[str, Any]:
         for r in s.get("rolls") or []:
             rows.append({"roll_id": r["roll_id"], "shipment_id": s["id"], "shipment_no": s.get("shipment_no", ""),
                          "product_id": s["product_id"], "lot": r.get("lot", ""),
-                         "shipped_qty": round(float(r.get("length") or 0), 2), "unit": r.get("unit") or s.get("unit")})
+                         # Trial 22 Okt (D8) — panjang roll = SATUAN DASAR produk; dulu label jatuh ke satuan SJ (= satuan
+                         # baris SO pada data lama) → "Qty aktual per roll (meter)" padahal angkanya yard.
+                         "shipped_qty": round(float(r.get("length") or 0), 2),
+                         "unit": (prods.get(s["product_id"]) or {}).get("base_unit") or r.get("unit") or s.get("unit")})
     rnos = {x["id"]: x.get("roll_no", "") async for x in db.inventory_rolls.find(
         {"id": {"$in": [r["roll_id"] for r in rows]}}, {"_id": 0, "id": 1, "roll_no": 1})}
     shipped_len = {r["roll_id"]: r["shipped_qty"] for r in rows}

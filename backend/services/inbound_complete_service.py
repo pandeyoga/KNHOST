@@ -153,7 +153,7 @@ async def complete_task(task_id: str, payload: Optional[GRCompletePayload], acto
                 raise HTTPException(
                     status_code=400,
                     detail=(f"Total roll ({total_task:g} {gr_task_unit}) tidak cocok dengan qty diterima "
-                            f"({final_qty:g} {gr_task_unit}, toleransi ±{tol_line:g})."))
+                            f"({final_qty:g} {gr_task_unit}, toleransi ±{tol_line:g} {gr_task_unit} · aturan {_tol_pct:g}%, min 0,5)."))
             for r, m in zip(payload.rolls, measures):
                 roll_specs.append({
                     "length_base": m["length_base"],

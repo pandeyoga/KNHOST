@@ -75,9 +75,9 @@ async def compute_recon(grn: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], List
             cls.append(("not_arrived", f"Surat jalan {decl:g} {unit}, tidak ada roll yang dihitung."))
         elif cnt < decl - tol:
             cls.append(("short_vs_dn", f"Dihitung {cnt:g} {unit}, surat jalan {decl:g} {unit} "
-                                       f"(kurang {decl - cnt:g}, toleransi ±{tol:g})."))
+                                       f"(kurang {decl - cnt:g} {unit}, toleransi ±{tol:g} {unit} · aturan {pct:g}%, min 0,5)."))   # D5 — satuan & persen
         elif cnt > decl + tol:
-            cls.append(("over_vs_dn", f"Dihitung {cnt:g} {unit}, surat jalan {decl:g} {unit} (lebih {cnt - decl:g})."))
+            cls.append(("over_vs_dn", f"Dihitung {cnt:g} {unit}, surat jalan {decl:g} {unit} (lebih {cnt - decl:g} {unit}, toleransi ±{tol:g} {unit})."))
         d_rolls = (ln.get("declared") or {}).get("rolls")
         if d_rolls not in (None, 0) and cnt > 0 and int(d_rolls) != int(c.get("rolls") or 0):
             cls.append(("rolls_mismatch", f"Roll dihitung {c.get('rolls') or 0}, surat jalan {d_rolls}."))

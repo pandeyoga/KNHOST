@@ -332,9 +332,12 @@ async def resolve_target(grn: Dict[str, Any], t: Any) -> Dict[str, Any]:
             raise HTTPException(status_code=409, detail={
                 "code": "TASK_IN_OTHER_GRN",
                 "message": f"Tugas ini sedang dihitung di kedatangan {task.get('grn_active_number')}."})
+        prod = await db.products.find_one({"id": task["product_id"]}, {"_id": 0, "base_unit": 1}) or {}
         return {"type": "po_task", "po_id": task.get("po_id", ""), "po_number": task.get("po_number", ""),
                 "task_id": task["id"], "product_id": task["product_id"], "product_name": task.get("product_name", ""),
-                "sku": task.get("sku", ""), "unit": task.get("unit") or "meter", "mko_id": "", "step_seq": None}
+                "sku": task.get("sku", ""), "unit": task.get("unit") or "meter",
+                "base_unit": prod.get("base_unit") or task.get("unit") or "meter",   # D2 — pilihan satuan hitung
+                "mko_id": "", "step_seq": None}
     if grn["partner_type"] != "makloon":
         raise HTTPException(status_code=400, detail="Mitra supplier memakai target tugas PO, bukan langkah MKO.")
     order = await db.makloon_orders.find_one({"id": t.mko_id}, {"_id": 0})
@@ -820,7 +823,8 @@ async def add_counted_roll(grn_id: str, line_no: int, body: Any, actor: Dict[str
     product = safe_doc(await db.products.find_one({"id": task["product_id"]}, {"_id": 0})) or {}
     res = await create_counted_roll(
         task=task, product=product, owner_entity_id=po.get("entity_id") or task.get("entity_id"), actor=actor,
-        length=body.length, weight_kg=body.weight_kg, lot=body.lot.strip(), grade=grade,
+        length=body.length, length_unit=(body.length_unit or "").strip() or task.get("unit") or "",
+        weight_kg=body.weight_kg, lot=body.lot.strip(), grade=grade,
         supplier_id=po.get("supplier_id", ""), supplier_name=po.get("supplier_name", ""),
         extra={"grn_id": grn_id, "grn_line_no": line_no, "grn_expected_seq": body.expected_seq})
     try:

@@ -268,16 +268,20 @@ async def _create_label_roll_claimed(*, task, decoded, sitem, product, po, sup, 
 async def create_counted_roll(*, task: Dict[str, Any], product: Dict[str, Any], owner_entity_id: str,
                               actor: Dict[str, Any], length: float = 0.0, weight_kg: float = 0.0,
                               lot: str = "", grade: str = "A", supplier_id: str = "", supplier_name: str = "",
-                              extra: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """Masukan HITUNG MANUAL: panjang (base unit) / berat AKTUAL dari gudang, deklarasi kosong.
+                              extra: Optional[Dict[str, Any]] = None, length_unit: str = "") -> Dict[str, Any]:
+    """Masukan HITUNG MANUAL: panjang / berat AKTUAL dari gudang, deklarasi kosong. Return {roll, task}.
 
-    Belum dipanggil jalur mana pun (disiapkan untuk layar Hitung GRN, Fase 2). Return {roll, task}.
+    Trial 22 Okt (D2) — `length` dalam `length_unit` (kosong = satuan dasar produk). Dulu angka yang diketik di
+    kolom "Panjang (meter)" (satuan SJ/PO) disimpan mentah sebagai satuan dasar (yard) → selisih palsu ±8,6%.
     """
     from services.uom_service import kg_per_base_unit, load_fixed_factors
     base_unit = product.get("base_unit") or "meter"
     task_unit = task.get("unit") or base_unit
     kgpb = kg_per_base_unit(product, await load_fixed_factors())
-    length_base = round(float(length or 0), 2)
+    lu = (length_unit or "").strip() or base_unit
+    if lu.lower() == "kg":
+        raise HTTPException(status_code=400, detail="Berat diisi di kolom Kg, bukan di kolom panjang.")
+    length_base = round(conv_qty(product, float(length or 0), lu, base_unit, await uom_engine()), 2) if length else 0.0
     if length_base <= 0 and weight_kg > 0 and kgpb > 0:
         length_base = round(weight_kg / kgpb, 2)
     if length_base <= 0 and weight_kg <= 0:

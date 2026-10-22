@@ -306,17 +306,41 @@ async def resolve_line_sourcing(*, supplier_id: str, product_id: str, qty: float
     if out["price"] <= 0:
         from services.supplier_service import resolve_price
         resolved = await resolve_price(supplier_id, product_id, qty)
-        if float(resolved.get("price", 0) or 0) > 0:
+        # Hanya entri price-list sungguhan; fallback master produk di resolve_price ditangani langkah berikut (berkonversi).
+        if resolved.get("found") and float(resolved.get("price", 0) or 0) > 0:
             out.update({"price": round(float(resolved["price"]), 2), "source": "price_list"})
             if resolved.get("unit"):
                 out["unit"] = resolved["unit"]
             explain.append(f"Harga dari price-list supplier: {rupiah(out['price'])}")
     if out["price"] <= 0:
-        prod = await db.products.find_one({"id": product_id}, {"_id": 0, "price": 1, "harga_pokok": 1})
-        fallback = float((prod or {}).get("harga_pokok") or 0) or float((prod or {}).get("price") or 0)
+        prod = await db.products.find_one({"id": product_id}, {"_id": 0}) or {}
+        fallback = float(prod.get("harga_pokok") or 0) or float(prod.get("price") or 0)
+        base_unit = prod.get("base_unit") or "meter"
+        # Trial 22 Okt (D3) — harga master = per SATUAN DASAR; baris PO memakai satuan dokumen → konversi.
+        if fallback > 0 and out["unit"] and out["unit"] != base_unit:
+            from services import uom_rules_service as _uomr
+            try:
+                f = float((await _uomr.convert_with_trail(prod, 1, out["unit"], base_unit))["factor"])
+                explain.append(f"Harga master {rupiah(fallback)}/{base_unit} → {rupiah(fallback * f)}/{out['unit']}")
+                fallback = fallback * f
+            except _uomr.UomRuleError:
+                out["unit"] = base_unit   # tanpa faktor: biarkan per satuan dasar (pemanggil mengonversi qty)
         out.update({"price": round(fallback, 2), "source": "product_master"})
-        explain.append(f"Harga dari master produk: {rupiah(fallback)}")
+        explain.append(f"Harga dari master produk: {rupiah(fallback)} / {out['unit'] or base_unit}")
     return out
+
+
+async def price_in_unit(prod: Dict[str, Any], price: float, price_unit: str, doc_unit: str,
+                        explain: Optional[List[str]] = None) -> float:
+    """Trial 22 Okt (D3) — harga per `price_unit` → harga per `doc_unit` (satuan baris PO). 400-style error via
+    UomRuleError bila tak ada faktor; pemanggil memutuskan pesan."""
+    if price <= 0 or not price_unit or not doc_unit or price_unit == doc_unit:
+        return price
+    from services import uom_rules_service as _uomr
+    f = float((await _uomr.convert_with_trail(prod, 1, doc_unit, price_unit))["factor"])
+    if explain is not None:
+        explain.append(f"Harga {rupiah(price)}/{price_unit} → {rupiah(price * f)}/{doc_unit}")
+    return round(price * f, 2)
 
 
 async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
@@ -380,13 +404,25 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
         if not prod:
             raise SourcingError(f"Produk {it['product_id']} tidak ditemukan.")
         qty = round(float(it["quantity"]) - float(it.get("realized_qty") or 0), 3)
+        base_unit = prod.get("base_unit") or "meter"
+        doc_unit = it.get("unit") or base_unit
         src = await resolve_line_sourcing(
             supplier_id=supplier_id, product_id=prod["id"], qty=qty, entity_id=entity_id,
-            est_price=float(it.get("est_price") or 0), unit=it.get("unit") or prod.get("base_unit", "meter"))
+            est_price=float(it.get("est_price") or 0), unit=doc_unit)
+        # Trial 22 Okt (D1/D4) — baris PO tetap dalam SATUAN PR (dulu label satuan ikut sumber harga, mis. satuan
+        # supplier, sementara angkanya masih qty PR → 1.000 yard berlabel meter). Harga per satuan sumber dikonversi
+        # ke satuan baris; satuan & qty dasar + jejak konversi disimpan seperti PO manual.
+        from services import uom_rules_service as _uomr
+        try:
+            price = await price_in_unit(prod, float(src["price"] or 0), src["unit"] or doc_unit, doc_unit, src["explain"])
+            trail = await _uomr.convert_with_trail(prod, qty, doc_unit, base_unit, context="purchase_order")
+        except _uomr.UomRuleError as exc:
+            raise SourcingError(f"{prod.get('sku', '')}: {exc}") from exc
         row = {
             "product_id": prod["id"], "sku": prod["sku"], "product_name": prod["name"],
-            "quantity": qty, "unit": src["unit"] or it.get("unit") or "meter",
-            "price": src["price"], "discount_percent": 0, "received_qty": 0.0,
+            "quantity": qty, "unit": doc_unit,
+            "base_unit": base_unit, "quantity_base": trail["base_qty"], "uom_trail": trail,
+            "price": price, "discount_percent": 0, "received_qty": 0.0,
             # FASE E — jejak sourcing pada baris PO
             "contract_id": src["contract_id"], "contract_number": src["contract_number"],
             "supplier_item_id": src["supplier_item_id"], "supplier_sku": src["supplier_sku"],
@@ -403,7 +439,7 @@ async def realize_to_po(pr_id: str, *, supplier_id: str, actor: Dict[str, Any],
         if src["contract_id"]:
             used_contracts.add(src["contract_id"])
         if src["supplier_item_id"]:
-            used_items.append((src["supplier_item_id"], src["price"]))
+            used_items.append((src["supplier_item_id"], src["price"]))   # harga per satuan barang supplier
 
     from services.po_line_guard import duplicate_line_message
     _dup_msg = duplicate_line_message([r["product_id"] for r in raw_items])  # KN-B15 jalur PR→PO

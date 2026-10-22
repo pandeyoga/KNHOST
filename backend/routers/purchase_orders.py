@@ -464,7 +464,16 @@ async def _create_po_core(payload: PurchaseOrderCreate, actor: Dict[str, Any], *
                 _sourcing_explain.append(f"Harga diisi manual: {rupiah(price)}")
                 _price_source = "manual"
         else:
-            price = float(_src.get("price") or 0)
+            # Trial 22 Okt (D3) — harga sumber (kontrak/barang supplier/price-list/master) per satuannya sendiri →
+            # dikonversi ke satuan baris PO (dulu Rp/yard dipakai mentah sebagai Rp/meter).
+            from services.pr_sourcing_service import price_in_unit as _price_in_unit
+            from services import uom_rules_service as _uomr0
+            try:
+                price = await _price_in_unit(product, float(_src.get("price") or 0),
+                                             _src.get("unit") or "", item_in.unit or product.get("base_unit", "meter"),
+                                             _sourcing_explain)
+            except _uomr0.UomRuleError as exc:
+                raise HTTPException(status_code=400, detail=f"Item {product.get('sku', '')}: {exc}") from exc
         if price <= 0:
             price = float(product.get("price", 0) or 0)
             if not _price_source:

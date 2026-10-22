@@ -109,7 +109,9 @@ async def create_outbound_tasks_for_order(order_id: str, actor_name: str,
             "product_id": alloc["product_id"], "product_name": product.get("name", ""),
             "sku": product.get("sku", ""), "quantity": round(float(alloc["quantity"]), 2),
             "picked_qty": 0.0, "shipped_qty": 0.0,
-            "unit": item.get("unit", product.get("base_unit", "meter")),
+            # Trial 22 Okt (D6) — qty alokasi = SATUAN DASAR produk → label pun satuan dasar (dulu satuan baris SO:
+            # SO "100 meter" utk produk yard tampil "109,36 meter" di gudang & Surat Jalan).
+            "unit": product.get("base_unit") or item.get("base_unit") or item.get("unit") or "meter",
             "warehouse_id": alloc["warehouse_id"], "warehouse_name": warehouse.get("name", ""),
             "warehouse_city": warehouse.get("city", ""),
             "bin_id": "", "batch": "", "lot": "", "roll_id": "",

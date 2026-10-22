@@ -12,13 +12,16 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
   const [m, setM] = useState({ length: "", weight_kg: "", lot: "", grade: "A" });
   const [seq, setSeq] = useState(null);
   const t = ln.target || {};
+  // Trial 22 Okt (D2) — panjang boleh diketik dalam satuan SJ/PO atau satuan dasar produk; server mengonversi.
+  const unitChoices = [...new Set([t.unit, t.base_unit].filter(Boolean))];
+  const [lenUnit, setLenUnit] = useState(t.unit || t.base_unit || "");
   const intent = useIntentKey(`grn-${grn.id}-${ln.line_no}`);
   const scan = async () => {
     const body = { raw: raw.trim() };
     if (body.raw && await run(() => intent.send({ scan: body }, (k) => grnApi.post(grn.id, `lines/${ln.line_no}/scan-label`, body, k)))) setRaw("");
   };
   const add = async () => {
-    const body = { length: Number(m.length || 0), weight_kg: Number(m.weight_kg || 0), lot: m.lot, grade: m.grade, expected_seq: seq };
+    const body = { length: Number(m.length || 0), length_unit: sisa ? "" : lenUnit, weight_kg: Number(m.weight_kg || 0), lot: m.lot, grade: m.grade, expected_seq: seq };
     const ok = await run(() => intent.send({ roll: body }, (k) => grnApi.post(grn.id, `lines/${ln.line_no}/rolls`, body, k)));
     if (ok) { setM((x) => ({ ...x, length: "", weight_kg: "" })); setSeq(null); }
   };
@@ -48,8 +51,12 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
             <button data-testid={`grn-count-scan-btn-${ln.line_no}`} className="primary-button" onClick={scan}><ScanLine size={13} /></button>
           </div>
         )}
-        <div className="grid grid-cols-5 gap-2">
-          <input data-testid={`grn-count-length-${ln.line_no}`} type="number" className={inputCls} placeholder={sisa ? "Qty sisa (mis. kg)" : `Panjang (${t.unit})`} value={m.length} onChange={(e) => setM({ ...m, length: e.target.value })} />
+        <div className={`grid gap-2 ${!sisa && unitChoices.length > 1 ? "grid-cols-6" : "grid-cols-5"}`}>
+          <input data-testid={`grn-count-length-${ln.line_no}`} type="number" className={inputCls} placeholder={sisa ? "Qty sisa (mis. kg)" : `Panjang (${lenUnit})`} value={m.length} onChange={(e) => setM({ ...m, length: e.target.value })} />
+          {!sisa && unitChoices.length > 1 && (
+            <KNSelect data-testid={`grn-count-unit-${ln.line_no}`} value={lenUnit} onValueChange={setLenUnit} searchable={false}
+              options={unitChoices.map((u) => ({ value: u, label: u === t.unit ? `${u} (SJ/PO)` : `${u} (stok)` }))} />
+          )}
           <input data-testid={`grn-count-kg-${ln.line_no}`} type="number" className={inputCls} placeholder="Kg" value={m.weight_kg} onChange={(e) => setM({ ...m, weight_kg: e.target.value })} />
           <input data-testid={`grn-count-lot-${ln.line_no}`} className={inputCls} placeholder={sisa ? "Lot (opsional)" : "Lot"} value={m.lot} onChange={(e) => setM({ ...m, lot: e.target.value })} />
           <KNSelect data-testid={`grn-count-grade-${ln.line_no}`} value={m.grade} onValueChange={(v) => setM({ ...m, grade: v })} options={gradeOptions} searchable={false} />
@@ -60,7 +67,7 @@ function CountLine({ grn, ln, rolls, gradeOptions, run, canCount }) {
         {rolls.map((r) => (
           <li key={r.id} data-testid={`grn-count-roll-${r.id}`} className="flex items-center gap-2 py-1">
             <span className="w-20 font-mono font-semibold">{r.roll_no || "makloon"}</span>
-            <span className="flex-1 tabular-nums">{r.length_initial} {r.unit}{r.weight_kg ? ` · ${r.weight_kg} kg` : ""} · lot {r.lot || "-"} · {r.grade}</span>
+            <span className="flex-1 tabular-nums">{r.length_initial} {r.unit}{r.actual_task_qty != null && t.unit && r.unit && t.unit !== r.unit ? ` (= ${r.actual_task_qty} ${t.unit})` : ""}{r.weight_kg ? ` · ${r.weight_kg} kg` : ""} · lot {r.lot || "-"} · {r.grade}</span>
             <span className="text-[10px] text-[#6B6B73]">{r.scan_source === "count" ? "hitung" : "label"}</span>
             {editable && ["receiving", "makloon"].includes(r.status) && (
               <button data-testid={`grn-count-undo-${r.id}`} aria-label="Batalkan roll" onClick={() => run(() => grnApi.del(grn.id, `rolls/${r.id}`))}><Undo2 size={13} className="text-[#B4231F]" /></button>

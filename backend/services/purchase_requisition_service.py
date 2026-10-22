@@ -68,8 +68,23 @@ async def _enrich_items(raw_items: List[Any]) -> (List[Dict[str, Any]], float):
                 raise ValueError(f"Produk {pid} tidak ditemukan")
             sku = prod.get("sku", "")
             name = name or prod.get("name", "")
-            if est_price <= 0:
-                est_price = float(prod.get("harga_pokok", 0) or prod.get("price", 0) or 0)
+        # Trial 22 Okt (D1) — satuan kosong = satuan dasar produk (dulu "meter" paten: kebutuhan yard berlabel meter).
+        unit = (getattr(it, "unit", "") or "").strip() or (prod or {}).get("base_unit") or "meter"
+        est_source = "input" if est_price > 0 else ""
+        if prod and est_price <= 0:
+            # Trial 22 Okt (D3) — harga master = per SATUAN DASAR; dikonversi ke satuan baris PR (dulu Rp/yard dipakai
+            # mentah sebagai Rp/meter). Sumber estimasi dicatat supaya harga jual tidak terbaca sebagai harga beli.
+            base_price = float(prod.get("harga_pokok", 0) or 0)
+            est_source = "harga_pokok" if base_price > 0 else ""
+            if base_price <= 0 and float(prod.get("price", 0) or 0) > 0:
+                base_price, est_source = float(prod.get("price")), "harga_jual"
+            if base_price > 0:
+                try:
+                    per_unit = await uomr.convert_with_trail(prod, 1, unit, prod.get("base_unit", "meter"),
+                                                             engine=engine, context="purchase_requisition")
+                    est_price = round(base_price * float(per_unit["factor"]), 2)
+                except uomr.UomRuleError:
+                    est_source = ""   # faktor per dokumen (mis. panel) → estimasi diisi manual; qty dicek di bawah
         if not name:
             raise ValueError("Deskripsi item wajib diisi untuk item non-katalog")
         # FASE E — routing pemenuhan per baris (purchase | makloon).
@@ -79,13 +94,12 @@ async def _enrich_items(raw_items: List[Any]) -> (List[Dict[str, Any]], float):
                              "(output makloon harus SKU KN yang jelas).")
         subtotal = round(est_price * qty, 2)
         total += subtotal
-        unit = getattr(it, "unit", "meter") or "meter"
         row = {
             "line_no": idx,
             "product_id": pid, "sku": sku, "product_name": name,
             "description": name, "quantity": qty,
             "unit": unit,
-            "est_price": est_price, "subtotal": subtotal,
+            "est_price": est_price, "est_price_source": est_source, "subtotal": subtotal,
             "note": getattr(it, "note", "") or "",
             "fulfillment_mode": mode,
             # FASE L — snapshot lini kerja MD. Baris non-katalog tidak punya lini

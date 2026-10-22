@@ -112,6 +112,9 @@ class GRNScanIn(BaseModel):
 
 class GRNCountRollIn(BaseModel):
     length: float = Field(0, ge=0)
+    # Trial 22 Okt (D2) — satuan angka `length` yang diketik (satuan SJ/PO atau satuan dasar produk).
+    # Kosong = satuan baris (seperti label layar); server mengonversi ke satuan dasar produk.
+    length_unit: str = ""
     weight_kg: float = Field(0, ge=0)
     lot: str = ""
     grade: str = "A"

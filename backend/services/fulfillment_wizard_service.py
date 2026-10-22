@@ -134,17 +134,36 @@ async def create_interco_draft(so_id: str, seller_entity_id: str,
     return safe_doc(doc)
 
 
+async def _pr_warehouse_for_so(so: Dict[str, Any]) -> str:
+    """Trial 22 Okt (B4) — gudang tujuan PR dari SO: gudang alokasi SO → gudang PT di kota kirim → gudang bawaan PT.
+    Dulu kosong → form realisasi PO tanpa bawaan dan barang pesanan Jakarta bisa terpilih ke gudang kota lain."""
+    wid = next((a.get("warehouse_id") for a in so.get("allocations") or [] if a.get("warehouse_id")), "")
+    if wid:
+        return wid
+    from services import warehouse_scope_service as whs
+    city = (so.get("shipping_city") or so.get("customer_city") or "").strip().lower()
+    if city:
+        rows = await whs.list_for_entity(so.get("entity_id", ""), only_active=True)
+        own = sorted(rows, key=lambda w: so.get("entity_id") not in (w.get("entity_ids") or []))
+        wid = next((w["id"] for w in own if (w.get("city") or "").strip().lower() == city), "")
+        if wid:
+            return wid
+    from services.special_order_phase2 import default_warehouse_id
+    return await default_warehouse_id(so.get("entity_id", ""))
+
+
 async def create_pr_draft(so_id: str, items: List[Dict[str, Any]], scope_ids: List[str],
                           actor: Dict[str, Any]) -> Dict[str, Any]:
     from services import purchase_requisition_service as prs
-    so = await db.sales_orders.find_one({"id": so_id}, {"_id": 0, "entity_id": 1, "number": 1})
+    so = await db.sales_orders.find_one({"id": so_id}, {"_id": 0, "entity_id": 1, "number": 1, "allocations": 1,
+                                                       "shipping_city": 1, "customer_city": 1})
     if not so:
         raise HTTPException(status_code=404, detail="SO tidak ditemukan")
     if so.get("entity_id") not in scope_ids:
         raise HTTPException(status_code=403, detail="SO di luar entitas Anda")
     from types import SimpleNamespace
     payload = SimpleNamespace(
-        entity_id=so["entity_id"], warehouse_id="",
+        entity_id=so["entity_id"], warehouse_id=await _pr_warehouse_for_so(so),
         items=[SimpleNamespace(product_id=i["product_id"], quantity=float(i["quantity"]),
                                est_price=0, unit="", notes="")
                for i in items],

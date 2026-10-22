@@ -254,6 +254,17 @@ async def create_sample_cut_tasks(order: Dict[str, Any], actor_name: str, init_s
         wid = item.get("suggested_warehouse_id") or await _fallback_warehouse(item["product_id"], order.get("entity_id", ""))
         wh = warehouses.get(wid, {})
         now = now_iso()
+        # Trial 22 Okt (D7) — tugas potong = SATUAN DASAR produk (panjang potong dikurangkan langsung dari roll).
+        # Baris lama tanpa base_unit/base_quantity dikonversi dari satuan barisnya (dulu dipakai mentah).
+        cut_unit = item.get("base_unit")
+        cut_qty = float(item.get("base_quantity") or 0)
+        if not cut_unit or cut_qty <= 0:
+            prod = await db.products.find_one({"id": item["product_id"]}, {"_id": 0}) or {}
+            cut_unit = prod.get("base_unit") or item.get("unit") or "meter"
+            cut_qty = float(item.get("quantity") or 0)
+            if (item.get("unit") or cut_unit) != cut_unit:
+                from services import uom_rules_service as _uomr
+                cut_qty = (await _uomr.convert_with_trail(prod, cut_qty, item.get("unit"), cut_unit))["base_qty"]
         task = {
             "id": new_id("wms"), "entity_id": order.get("entity_id"),
             "flow_type": "outbound", "source_type": "sales_order", "task_subtype": "sample_cut",
@@ -261,8 +272,8 @@ async def create_sample_cut_tasks(order: Dict[str, Any], actor_name: str, init_s
             "order_id": order["id"], "order_number": order["number"], "customer_name": order.get("customer_name"),
             "allocation_id": None, "line_product_id": item["product_id"],
             "product_id": item["product_id"], "product_name": item.get("product_name", ""), "sku": item.get("sku", ""),
-            "quantity": round(float(item.get("base_quantity") or item.get("quantity") or 0), 2),
-            "picked_qty": 0.0, "shipped_qty": 0.0, "unit": item.get("base_unit") or item.get("unit") or "meter",
+            "quantity": round(float(cut_qty), 2),
+            "picked_qty": 0.0, "shipped_qty": 0.0, "unit": cut_unit,
             "warehouse_id": wid, "warehouse_name": wh.get("name", ""), "warehouse_city": wh.get("city", ""),
             "suggested_roll_id": item.get("suggested_roll_id"), "suggested_roll_no": item.get("suggested_roll_no"),
             "bin_id": "", "batch": "", "lot": "", "roll_id": "",
