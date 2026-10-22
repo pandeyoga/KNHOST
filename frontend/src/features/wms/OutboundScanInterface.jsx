@@ -282,6 +282,11 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                         TERTAHAN BAYAR · {task.payment_hold.term_code}
                       </span>
                     )}
+                    {Number(task.so_backorder_qty || 0) > 0 && (
+                      <span data-testid={`outbound-task-backorder-${task.id}`} className="mb-0.5 inline-block rounded-full bg-[#EEF4FF] px-1.5 py-0.5 text-[9px] font-bold text-[#0058CC]">
+                        SO MASIH KURANG {formatQty(task.so_backorder_qty)} {task.unit} · BACKORDER
+                      </span>
+                    )}
                     <p className="text-[11px] text-[#3C3C43] truncate">{task.sku}</p>
                     <p className="text-[10px] text-[#8E8E93] truncate">{task.warehouse_name}</p>
                     <div className="mt-1.5">
@@ -423,6 +428,12 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                     </p>
                   )}
 
+                  {Number(selectedTask.so_backorder_qty || 0) > 0 && (
+                    <p data-testid={`outbound-backorder-info-${selectedTask.id}`} className="rounded-lg border border-[#CBDFFF] bg-[#F2F7FF] p-2 text-[11px] text-[#31465F]">
+                      Tugas ini hanya bagian yang sudah ada stoknya. SO {selectedTask.order_number} masih kurang <b>{formatQty(selectedTask.so_backorder_qty)} {selectedTask.unit}</b> (backorder
+                      menunggu barang masuk) — sisa itu muncul sebagai tugas ambil baru setelah stok tiba, jadi pesanan belum selesai walau tugas ini terkirim penuh.
+                    </p>
+                  )}
                   {/* Sub-fase 1.8 — Dispatch (mendukung pengiriman PARSIAL) */}
                   {(() => {
                     const picked = Number(selectedTask.picked_qty || 0);

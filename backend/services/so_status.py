@@ -71,14 +71,16 @@ def derive_stage_substatus(order: Dict[str, Any]) -> Tuple[str, List[str]]:
         # Status warisan pra-F4 — dokumen lama yang memakainya sudah DIKIRIM;
         # tanpa pemetaan ini ia jatuh ke fallback Reserved dan pill-nya berbohong.
         return STAGE_SHIPPED, []
+    # Trial 22 Okt (E4) — SO yang sudah jalan di gudang tetapi masih punya sisa backorder: tandai "menunggu stok".
+    bo_sub = ["menunggu_stok"] if has_bo else []
     if status == "partially_shipped":
-        return STAGE_SHIPPED, ["sebagian_dikirim"]
+        return STAGE_SHIPPED, ["sebagian_dikirim", *bo_sub]
     if status == "picked":
         return STAGE_PICKED, ["siap_kirim"]
     if status == "partially_picked":
-        return STAGE_PICKED, ["sebagian_dipick"]
+        return STAGE_PICKED, ["sebagian_dipick", *bo_sub]
     if status == "confirmed":
-        return STAGE_CONFIRMED, ["siap_pick"]
+        return STAGE_CONFIRMED, ["siap_pick", *bo_sub]
     if status == "approved":
         # Backorder yang sudah di-approve BERHENTI di Approved (menunggu_stok).
         return (STAGE_APPROVED, ["menunggu_stok"]) if has_bo else (STAGE_APPROVED, ["siap_confirm"])

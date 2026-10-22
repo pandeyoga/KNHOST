@@ -178,3 +178,31 @@ def test_d8_barang_retur_berlabel_satuan_dasar(yard_product):
         assert [(p["unit"], p["shipped_qty"]) for p in out["products"]] == [("yard", 10.94)]
     finally:
         DB.shipments.delete_one({"id": f"shp_uji_{tag}"})
+
+
+# ─── E4 — status SO memperhitungkan sisa backorder ─────────────────────────────────────────────────────────
+def test_e4_so_dengan_sisa_backorder_tidak_dikirim_penuh():
+    from services import fulfillment_status as fs
+    tag = uuid.uuid4().hex[:6]
+    so_id = f"so_uji_e4_{tag}"
+    DB.sales_orders.insert_one({"id": so_id, "number": f"UJI/SO-E4-{tag}", "entity_id": base.ENT, "status": "confirmed",
+                                "items": [{"product_id": f"p_{tag}", "unit": "yard", "quantity": 1000}],
+                                "backorders": [{"id": f"bo_{tag}", "product_id": f"p_{tag}", "backorder_qty": 200,
+                                                "status": "waiting_stock"},
+                                               {"id": f"bo2_{tag}", "product_id": f"p_{tag}", "backorder_qty": 0,
+                                                "status": "fulfilled"}],
+                                "has_backorder": True})
+    DB.wms_tasks.insert_one({"id": f"wms_e4_{tag}", "order_id": so_id, "flow_type": "outbound", "product_id": f"p_{tag}",
+                             "quantity": 800, "picked_qty": 800, "shipped_qty": 800, "status": "dispatched"})
+    try:
+        assert _run([], lambda: fs.recompute_so_status(so_id)) == "partially_shipped"      # dulu "shipped" 800/800
+        so = DB.sales_orders.find_one({"id": so_id})
+        assert so["fulfillment"] == {"total_qty": 1000, "picked_qty": 800, "shipped_qty": 800, "backorder_qty": 200,
+                                     "remaining_qty": 200}
+        assert so["sub_status"] == ["sebagian_dikirim", "menunggu_stok"]
+        DB.sales_orders.update_one({"id": so_id}, {"$set": {"backorders.0.backorder_qty": 0, "backorders.0.status": "fulfilled",
+                                                            "has_backorder": False}})
+        assert _run([], lambda: fs.recompute_so_status(so_id)) == "shipped"
+    finally:
+        DB.sales_orders.delete_one({"id": so_id})
+        DB.wms_tasks.delete_many({"order_id": so_id})

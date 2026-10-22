@@ -49,7 +49,8 @@ async def list_outbound_tasks(request: Request, status: str = None, warehouse_id
     so_ids = list(set(t.get("order_id") for t in tasks if t.get("order_id")))
     # Cek UI UAT v3 — dulu to_list(100) memotong pesanan bila tugas > 100 SO → nama pelanggan kosong di panel.
     orders = {o["id"]: o for o in await db.sales_orders.find(
-        {"id": {"$in": so_ids}}, {"_id": 0, "id": 1, "customer_name": 1, "total_amount": 1}).to_list(len(so_ids) or 1)}
+        {"id": {"$in": so_ids}}, {"_id": 0, "id": 1, "customer_name": 1, "total_amount": 1, "backorders": 1}).to_list(len(so_ids) or 1)}
+    from services.fulfillment_status import open_backorder_qty
     
     # F-10 — status termin CBD/DP per SO: alasan tahan tampil di daftar & panel kirim (bukan baru ketahuan saat klik).
     from services import dispatch_payment_gate as _gate
@@ -59,6 +60,8 @@ async def list_outbound_tasks(request: Request, status: str = None, warehouse_id
             order = orders.get(task["order_id"], {})
             task["customer_name"] = order.get("customer_name", "")
             task["order_total"] = order.get("total_amount", 0)
+            # Trial 22 Okt (E4) — sisa backorder SO untuk produk tugas ini: tugas 800/800 terkirim ≠ pesanan selesai.
+            task["so_backorder_qty"] = open_backorder_qty(order, task.get("product_id", ""))
             hold = holds.get(task["order_id"])
             task["payment_hold"] = hold if hold and hold["applies"] else None
     

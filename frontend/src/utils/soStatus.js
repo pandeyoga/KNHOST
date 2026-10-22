@@ -79,7 +79,10 @@ function approvalSubs(order) {
 export function deriveStageSub(order) {
   const o = order || {};
   const status = o.status || "reserved";
-  const hasBo = Boolean(o.has_backorder) || Boolean((o.backorders || []).length);
+  // KN-D14 (mirror BE) — baris backorder `fulfilled` tetap di daftar: hitung yang sisa qty-nya > 0.
+  const hasBo = Boolean(o.has_backorder)
+    || (o.backorders || []).some((b) => Number(b.backorder_qty || 0) > 0.001 && b.status !== "fulfilled");
+  const bo = hasBo ? ["menunggu_stok"] : [];   // Trial 22 Okt (E4) — sisa backorder SO yang sudah jalan di gudang
   const apprReq = Boolean(o.approval_required);
   switch (status) {
     case "cancelled": return ["Cancelled", ["dibatalkan"]];
@@ -88,10 +91,10 @@ export function deriveStageSub(order) {
     case "delivered": return ["Delivered", []];
     case "shipped":
     case "dispatched": return ["Shipped", []];
-    case "partially_shipped": return ["Shipped", ["sebagian_dikirim"]];
+    case "partially_shipped": return ["Shipped", ["sebagian_dikirim", ...bo]];
     case "picked": return ["Picked", ["siap_kirim"]];
-    case "partially_picked": return ["Picked", ["sebagian_dipick"]];
-    case "confirmed": return ["Confirmed", ["siap_pick"]];
+    case "partially_picked": return ["Picked", ["sebagian_dipick", ...bo]];
+    case "confirmed": return ["Confirmed", ["siap_pick", ...bo]];
     case "approved": return hasBo ? ["Approved", ["menunggu_stok"]] : ["Approved", ["siap_confirm"]];
     case "waiting_approval": return ["Reserved", approvalSubs(o)];
     case "waiting_stock": return ["Reserved", ["menunggu_stok"]];

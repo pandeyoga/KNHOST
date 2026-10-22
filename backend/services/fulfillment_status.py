@@ -21,6 +21,12 @@ def _task_picked(t: Dict[str, Any]) -> float:
     return min(float(t.get("picked_qty", 0) or 0), float(t.get("quantity", 0) or 0))
 
 
+def open_backorder_qty(order: Dict[str, Any], product_id: str = "") -> float:
+    """Trial 22 Okt (E4) — sisa backorder (satuan dasar) yang belum teralokasi; `product_id` kosong = semua produk."""
+    return round(sum(float(b.get("backorder_qty", 0) or 0) for b in order.get("backorders") or []
+                     if b.get("status") != "fulfilled" and (not product_id or b.get("product_id") == product_id)), 2)
+
+
 async def recompute_so_status(order_id: str) -> str:
     """Hitung ulang status SO dari task outbound. Return status final (atau lama bila tak berubah)."""
     order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0}))
@@ -35,9 +41,13 @@ async def recompute_so_status(order_id: str) -> str:
     ).to_list(500)
     # abaikan task dibatalkan
     tasks = [t for t in tasks if t.get("status") != "cancelled"]
-    total = round(sum(float(t.get("quantity", 0) or 0) for t in tasks), 2)
+    task_total = round(sum(float(t.get("quantity", 0) or 0) for t in tasks), 2)
     picked = round(sum(_task_picked(t) for t in tasks), 2)
     shipped = round(sum(float(t.get("shipped_qty", 0) or 0) for t in tasks), 2)
+    # Trial 22 Okt (E4) — sisa backorder ikut dihitung: SO 1.000 (800 teralokasi + 200 backorder) yang 800-nya terkirim
+    # = "Dikirim sebagian", bukan "Dikirim" 800/800 seolah selesai.
+    backorder = open_backorder_qty(order)
+    total = round(task_total + backorder, 2)
 
     if total <= 0:
         new_status = "confirmed"
@@ -53,7 +63,7 @@ async def recompute_so_status(order_id: str) -> str:
         new_status = "confirmed"
 
     fulfillment = {"total_qty": total, "picked_qty": picked, "shipped_qty": shipped,
-                   "remaining_qty": round(max(total - shipped, 0), 2)}
+                   "backorder_qty": backorder, "remaining_qty": round(max(total - shipped, 0), 2)}
     set_doc = {"fulfillment": fulfillment, "updated_at": now_iso()}
     if new_status != cur:
         set_doc["status"] = new_status
