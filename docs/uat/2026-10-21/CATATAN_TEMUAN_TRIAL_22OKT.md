@@ -35,7 +35,20 @@ dipulihkan 22 Okt ±11.15 WIB). Status setiap butir: **terbuka** sampai diperbai
 | D7 | Potong sample: tugas memakai `base_quantity`/`base_unit` baris → **aman** bila baris punya satuan dasar; hanya baris lama tanpa `base_unit` yang memakai satuan pesanan mentah (`cut_sample_task`) | Risiko kecil (data lama) | diperbaiki — baris tanpa satuan dasar dikonversi |
 | D8 | QC retur "Qty aktual per roll (satuan baris)": **dicek ulang** — angka retur = panjang roll terkirim (satuan dasar), yang salah hanya **label** (ikut satuan SJ = satuan baris SO data lama) | Label menyesatkan | diperbaiki — barang retur berlabel satuan dasar; mutasi retur & pembatalannya memakai satuan roll (dulu `meter` paten) |
 
-Data lokal yang terlanjur salah (PR-00007/PO-00002/GRN-00001, roll RL-46522..46531 = 100 yd padahal diketik 100 m) **belum dikoreksi** — perlu izin. Titik konversi yang belum diaudit: checkout & alokasi SO (yard↔meter↔kg), potong sample, pengambilan per roll, transfer, retur & QC, tagihan supplier (qty diterima × harga), faktur & PPN.
+Data lokal yang salah satuan **dihapus** (izin pemilik, 22 Okt malam, backup dulu): PR-00007, PO-00002, GRN-00001, 2 tugas kedatangan, tugas selisih PO, SPK INS-00001, tagihan VB-00002 + pembayaran CASH-00010 + 3 jurnal (masing-masing seimbang), 8 roll yang masih di gudang (+ tag & mutasi), profil SJ supplier dari GRN uji. **Dipertahankan**: KSC/SO-00005 & pengirimannya (bukti B1/E4; 6 roll stok lama ikut terkirim) dan 2 roll Lurik yang sudah dikirim (RL-46522/23 — jejak inspeksi yatimnya dilepas, grade tetap A). Pemeriksa integritas: tetap 14 FAIL lama; peringatan selisih persediaan GL bertambah Rp 17,37 jt (nilai 2 roll terkirim yang jurnal penerimaannya ikut terhapus).
+
+## G. Audit pola satuan Lurik di retur & pesanan khusus (22 Okt malam)
+Pola: angka dalam satuan dasar (yard/kg) dikali harga / diberi label satuan dokumen (meter) tanpa konversi, atau sebaliknya.
+| # | Temuan | Akibat | Status |
+|---|---|---|---|
+| G1 | Detail retur penjualan: **estimasi nilai** = qty retur (satuan dasar) × harga baris SO apa adanya (per satuan pesanan) | SO "100 meter" produk yard: estimasi salah ±9%; nilai ini juga jadi **saran nominal diskon Finance** (`ReturnCompensationPanel`) | diperbaiki — harga transaksi per satuan dasar (`_net_unit_price`, sama dengan Nota Kredit) |
+| G2 | Mutasi lepas/buang karantina retur & batal write-off berlabel **"meter" paten** | Kartu stok produk yard/kg menulis meter | diperbaiki — satuan roll |
+| G3 | Retur pembelian: qty diminta (bisa satuan PO) dibandingkan langsung dengan panjang roll (satuan dasar); tanpa pilih roll qty disimpan mentah berlabel satuan dasar | 100 meter tercatat 100 yard (persis D2) | diperbaiki — qty dikonversi ke satuan dasar; input asli disimpan (`quantity_input`/`unit_input`) |
+| G4 | Retur pembelian: harga cadangan = harga PO per satuan PO dipakai untuk qty satuan dasar; layar mengisi harga dari PO apa adanya | Nota Debit salah (persis D3) | diperbaiki — harga PO per satuan dasar (jejak `quantity_base` / master UoM), layar menulis "Qty (satuan stok)" & "Harga / satuan stok" |
+| G5 | Pesanan khusus: `_fix_po_price` menimpa harga PO dengan harga kontrak **per satuan dasar** untuk baris PO bersatuan item OD; estimasi PR OD sama | Item OD 100 m untuk produk yard: PO per meter = harga per yard (persis D3) | diperbaiki — harga kontrak dikonversi ke satuan baris PR/PO |
+| G6 | QC retur masih mengisi grade **otomatis** dari poin | Bertentangan dengan keputusan F5 | diperbaiki — grade dipilih petugas (kecuali `qc.grade_from_points` hidup) |
+| G7 | Retur antar-PT: qty & harga dalam satuan dokumen IC, stok gudang dalam satuan dasar | Aman selama IC dibuat dalam satuan dasar (jalur pemenuhan & checkout sudah begitu) | dicatat, belum diubah |
+Yang sudah benar: Nota Kredit retur (harga neto per satuan dasar), kompensasi cutloss, SO pengganti, penguncian harga OD (harga kontrak × faktor satuan), konversi OD → SO (lewat `create_order`).
 
 ## E. Hasil cek permintaan 22 Okt sore (belum diperbaiki)
 | # | Temuan | Bukti | Status |

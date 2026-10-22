@@ -4,6 +4,7 @@ import axios, { API } from "../../services/apiClient";
 import { RotateCcw, Plus, X, CheckCircle, XCircle, Send, FileText, Layers, Trash2, Clock, Loader2 } from "lucide-react";
 import { PageHeader, MetricRow, SearchBox, StatusTabs } from "../../components/ListPageParts";
 import { formatCurrency, formatQty } from "../../utils/formatters";
+import { convFactor } from "../../utils/uom";
 import KNSelect from "../../components/KNSelect";
 import ErrorNotice from "../../components/ErrorNotice";
 import LineFilter from "../../components/LineFilter";   // FASE L
@@ -157,13 +158,24 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
   function updateItemProduct(i, productId) {
     setForm((f) => ({ ...f, items: f.items.map((it, idx) => idx === i ? { ...it, product_id: productId, roll_ids: [], rolls: [] } : it) }));
   }
+  // Audit pola Lurik (22 Okt) — qty retur dikirim dalam SATUAN DASAR produk, jadi harga baris PO (per satuan PO, mis.
+  // per meter) dikonversi ke per satuan dasar (mis. per yard). Dulu harga per meter dipakai untuk qty yard.
+  const poPriceBase = (it) => {
+    const p = Number(it.price || 0);
+    if (!p) return "";
+    const q = Number(it.quantity || 0), qb = Number(it.quantity_base || 0);
+    if (q > 0 && qb > 0) return String(Math.round((p * q / qb) * 100) / 100);
+    const prod = products.find((x) => x.id === it.product_id);
+    const f = prod && it.unit ? Number(convFactor(prod, it.unit)) || 1 : 1;
+    return String(Math.round((p / f) * 100) / 100);
+  };
   function onSelectPO(poId) {
     const po = pos.find((p) => p.id === poId);
     if (po) {
       setForm((f) => ({
         ...f, po_id: poId, warehouse_id: po.warehouse_id || f.warehouse_id,
         supplier_id: po.supplier_id || f.supplier_id,
-        items: (po.items || []).map((it) => ({ product_id: it.product_id, quantity: "", price: String(it.price || ""), reason: "cacat", condition: "damaged", roll_ids: [], rolls: [] })) || [blankItem],
+        items: (po.items || []).map((it) => ({ product_id: it.product_id, quantity: "", price: poPriceBase(it), reason: "cacat", condition: "damaged", roll_ids: [], rolls: [] })) || [blankItem],
       }));
     } else {
       setForm((f) => ({ ...f, po_id: "" }));
@@ -339,7 +351,7 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
             {/* Items */}
             <div className="rounded-md border border-[#EFF0F2] overflow-hidden">
               <div className="grid grid-cols-[1.6fr_80px_110px_1fr_110px_36px] px-2.5 py-1.5 bg-[#FAFBFC] text-[10px] font-bold uppercase text-[#6B6B73] border-b border-[#EFF0F2]">
-                <span>Produk</span><span>Qty</span><span>Harga</span><span>Alasan</span><span>Kondisi</span><span></span>
+                <span>Produk</span><span>Qty (satuan stok)</span><span>Harga / satuan stok</span><span>Alasan</span><span>Kondisi</span><span></span>
               </div>
               {form.items.map((it, i) => {
                 const picked = it.roll_ids?.length || 0;
@@ -350,7 +362,8 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
                         options={products.map((p) => ({ value: p.id, label: `${p.sku} · ${p.name}` }))} />
                       <input data-testid={`return-item-qty-${i}`} type="number" value={it.quantity} onChange={(e) => updateItem(i, { quantity: e.target.value })}
                         disabled={picked > 0} title={picked > 0 ? "Qty otomatis dari roll terpilih" : ""}
-                        className={`field !py-1 ${picked > 0 ? "opacity-70 cursor-not-allowed" : ""}`} placeholder="0" />
+                        className={`field !py-1 ${picked > 0 ? "opacity-70 cursor-not-allowed" : ""}`}
+                        placeholder={products.find((p) => p.id === it.product_id)?.base_unit || "0"} />
                       <MoneyInput testId={`return-item-price-${i}`} value={it.price} onChange={(v) => updateItem(i, { price: v })}
                         disabled={picked > 0} title={picked > 0 ? "Harga otomatis dari roll terpilih" : ""}
                         className={`field !py-1 ${picked > 0 ? "opacity-70 cursor-not-allowed" : ""}`} placeholder="harga" />

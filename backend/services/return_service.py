@@ -266,7 +266,7 @@ async def _create_credit_note_and_post_gl(
         if post_stock and item.get("condition", "ok") != "damaged":
             cogs += qty * unit_cost
         lines.append({"product_id": pid, "product_name": item.get("product_name", ""),
-                      "quantity": round(qty, 2), "unit": item.get("unit", "meter"),
+                      "quantity": round(qty, 2), "unit": item.get("unit") or "",   # satuan dasar (dinormalisasi)
                       "unit_price": unit_price, "line_total": line_net,
                       "reason": item.get("reason", ""), "condition": item.get("condition", "ok")})
 
@@ -770,12 +770,18 @@ async def complete_inspection(return_id: str, actor: str,
                          "count": int(d.get("count", 0) or 0), "note": d.get("note", "")}
                         for d in defects if int(d.get("point_value", 0) or 0) in qc.VALID_POINTS
                         and int(d.get("count", 0) or 0) > 0]
-        if norm_defects:
-            points = qc.compute_points(norm_defects)
-            grade = qc.grade_from_points(points, th)
+        points = qc.compute_points(norm_defects) if norm_defects else 0.0
+        # Trial 22 Okt (F5, keputusan pemilik) — grade diisi petugas QC dari total poin; sistem hanya mengisi bila
+        # `qc.grade_from_points` dinyalakan. Dulu grade selalu dihitung otomatis dari poin.
+        user_grade = str(insp.get("grade") or "").strip()
+        if user_grade:
+            from services import grade_service as _gs
+            grade = _gs.normalize_or_raise(user_grade, "Grade QC retur")
+        elif await qc.grade_auto(ret.get("entity_id")):
+            grade = qc.grade_from_points(points, th) if norm_defects else "A"
         else:
-            points = 0.0
-            grade = insp.get("grade") or "A"
+            raise ValueError(f"Pilih grade untuk {it.get('product_name') or it.get('product_id')} — grade ditentukan "
+                             f"petugas QC dari total poin ({points:g} poin); sistem tidak mengisi grade otomatis.")
         condition = insp.get("condition", it.get("condition", "ok"))
         rec = insp.get("recommended_outcome") or _recommend_outcome(grade, condition)
         it["condition"] = condition
@@ -1132,7 +1138,7 @@ async def release_quarantine(return_id: str, actor: str,
             "movement_type": ("quarantine_release" if new_status == "available"
                               else "quarantine_scrap"),
             "direction": "internal", "quantity": round(float(r.get("length_remaining", r.get("length", 0)) or 0), 2),
-            "unit": "meter", "roll_id": r["id"],
+            "unit": r.get("unit") or "", "roll_id": r["id"],   # audit pola Lurik — satuan roll, bukan "meter" paten
  # FASE U — satu baris mutasi menunjuk SATU roll fisik.
  "qty_rolls": (1 if r["id"] else None), "ref_type": "sales_return", "ref_id": return_id,
             "notes": f"Release karantina retur → {new_status} (grade {grade}){regrade_note}{wo_note}",
@@ -1681,7 +1687,7 @@ async def reverse_writeoff(return_id: str, actor: str, roll_ids: List[str] = Non
             "id": new_id("mov"), "product_id": r.get("product_id"),
             "warehouse_id": r.get("warehouse_id"), "owner_entity_id": r.get("owner_entity_id"),
             "type": "writeoff_reversal", "movement_type": "writeoff_reversal", "direction": "in",
-            "quantity": qty, "unit": "meter", "roll_id": rid,
+            "quantity": qty, "unit": r.get("unit") or "", "roll_id": rid,   # audit pola Lurik — satuan roll
  # FASE U — satu baris mutasi menunjuk SATU roll fisik.
  "qty_rolls": (1 if rid else None),
             "ref_type": "sales_return", "ref_id": return_id, "source_document": return_id,

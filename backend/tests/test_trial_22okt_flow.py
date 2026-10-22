@@ -297,3 +297,25 @@ def test_b3_grn_dari_po_nomor_po_terisi_target_berisi_versi_supplier(g):
     finally:
         g["whadm"].call("POST", f"/goods-receipts/{grn['id']}/cancel",
                         {"expected_version": grn["version"], "reason": "uji trial 22 okt B3"})
+
+
+# ─── Audit pola Lurik — retur pembelian: qty & harga satuan PO dikonversi ke satuan dasar ─────────────────────
+def test_audit_retur_pembelian_satuan_po_dikonversi_ke_satuan_dasar():
+    """Retur 100 meter @ Rp 95.000/meter untuk produk bersatuan dasar yard → tersimpan 109,36 yard @ Rp 86.868/yard
+    (subtotal sama). Dulu 100 tersimpan sebagai 100 yard dan harga per meter dipakai per yard."""
+    adm = base.Api("admin@kainnusantara.id")
+    prod = DB.products.find_one({"base_unit": "yard", "is_active": {"$ne": False}}, {"_id": 0, "id": 1})
+    sup = DB.suppliers.find_one({"entity_id": {"$in": [base.ENT, "", None]}}, {"_id": 0, "id": 1}) or DB.suppliers.find_one({}, {"_id": 0, "id": 1})
+    wh = DB.warehouses.find_one({"owner_entity_id": base.ENT}, {"_id": 0, "id": 1}) or DB.warehouses.find_one({}, {"_id": 0, "id": 1})
+    if not (prod and sup and wh):
+        pytest.skip("produk yard / supplier / gudang tidak ada di salinan data")
+    c, b = adm.call("POST", "/purchase-returns", {"supplier_id": sup["id"], "warehouse_id": wh["id"], "entity_id": base.ENT,
+                                                  "reason": "uji audit satuan", "items": [
+                                                      {"product_id": prod["id"], "quantity": 100, "unit": "meter",
+                                                       "price": 95000, "reason": "cacat", "condition": "damaged"}]})
+    assert c == 200, b
+    it = b["items"][0]
+    assert it["unit"] == "yard" and it["quantity"] == pytest.approx(100 / 0.9144, abs=0.01)
+    assert it["price"] == pytest.approx(95000 * 0.9144, rel=1e-3)
+    assert it["subtotal"] == pytest.approx(9500000, rel=1e-3)
+    assert it["quantity_input"] == 100 and it["unit_input"] == "meter"

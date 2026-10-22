@@ -216,3 +216,65 @@ def test_e10_cetak_so_harga_khusus_belum_final_bercap():
     beres = {**base_doc, "pending_approvals": [{"type": "special_price", "status": "approved"}]}
     assert _run([], lambda: pr.resolve_sales_order(menunggu, None))["watermark"] == "HARGA BELUM FINAL"
     assert _run([], lambda: pr.resolve_sales_order(beres, None))["watermark"] is None
+
+
+# ─── Audit pola Lurik di retur & pesanan khusus (22 Okt malam) ────────────────────────────────────────────────
+# Pola: angka dalam satuan dasar (yard) dikali/diberi label satuan dokumen (meter) tanpa konversi, atau sebaliknya.
+def test_audit_estimasi_nilai_retur_per_satuan_dasar(yard_product):
+    """Detail retur: estimasi & saran nominal diskon Finance = harga transaksi PER SATUAN DASAR (dulu harga per meter
+    dikali qty yard)."""
+    admin = base.Api("admin@kainnusantara.id")
+    tag = uuid.uuid4().hex[:6]
+    so_id, ret_id = f"so_uji_aud_{tag}", f"sret_uji_aud_{tag}"
+    DB.sales_orders.insert_one({"id": so_id, "number": f"UJI/SO-{tag}", "entity_id": base.ENT, "status": "done",
+                                "items": [{"product_id": yard_product["id"], "quantity": 100, "unit": "meter",
+                                           "base_quantity": round(100 / M_PER_YD, 2), "price": 10000, "line_total": 1000000}]})
+    DB.sales_returns.insert_one({"id": ret_id, "number": f"UJI/SRET-{tag}", "entity_id": base.ENT, "order_id": so_id,
+                                 "status": "pending", "customer_id": base.CUST,
+                                 "items": [{"product_id": yard_product["id"], "quantity_returned": 10, "unit": "yard"}]})
+    try:
+        c, b = admin.call("GET", f"/sales-returns/{ret_id}")
+        assert c == 200, b
+        it = b["items"][0]
+        assert it["unit_price_est"] == pytest.approx(10000 * M_PER_YD, rel=1e-3)   # Rp/meter → Rp/yard
+        assert it["line_total_est"] == pytest.approx(10 * 10000 * M_PER_YD, rel=1e-3)
+    finally:
+        DB.sales_returns.delete_one({"id": ret_id})
+        DB.sales_orders.delete_one({"id": so_id})
+
+
+def test_audit_harga_po_retur_pembelian_per_satuan_dasar(yard_product):
+    from services import purchase_return_service as prs
+    p = yard_product
+    po_jejak = {"items": [{"product_id": p["id"], "quantity": 1000, "unit": "meter", "price": 95000,
+                           "quantity_base": round(1000 / M_PER_YD, 2)}]}
+    po_lama = {"items": [{"product_id": p["id"], "quantity": 1000, "unit": "meter", "price": 95000}]}
+    a = _run([], lambda: prs._po_item_price(po_jejak, p))
+    b = _run([], lambda: prs._po_item_price(po_lama, p))
+    assert a == pytest.approx(95000 * M_PER_YD, rel=1e-3) and b == pytest.approx(95000 * M_PER_YD, rel=1e-3)
+
+
+def test_audit_harga_kontrak_od_ke_satuan_baris(yard_product):
+    """Harga kontrak pemenang (per satuan dasar yard) → per meter untuk PR/PO item OD bersatuan meter."""
+    from services import special_order_fulfillment as ful
+    n = {"cost_price": 86868, "product_id": yard_product["id"]}
+    assert _run([], lambda: ful._cost_in_unit(n, "meter")) == pytest.approx(86868 / M_PER_YD, rel=1e-3)
+    assert _run([], lambda: ful._cost_in_unit(n, "yard")) == 86868
+
+
+def test_f5_qc_retur_grade_wajib_diisi_petugas(yard_product):
+    """Keputusan pemilik F5 — QC retur tidak lagi mengisi grade otomatis dari poin; tanpa grade ditolak sebelum ditulis."""
+    from services import return_service as rs
+    tag = uuid.uuid4().hex[:6]
+    ret_id = f"sret_uji_f5_{tag}"
+    DB.sales_returns.insert_one({"id": ret_id, "number": f"UJI/SRET-{tag}", "entity_id": base.ENT, "order_id": "",
+                                 "status": "inspecting", "goods_arrived_at": "2026-10-22T10:00:00+00:00",
+                                 "items": [{"product_id": yard_product["id"], "product_name": "Kain uji", "quantity_returned": 5,
+                                            "unit": "yard"}]})
+    try:
+        with pytest.raises(ValueError, match="Pilih grade"):
+            _run([], lambda: rs.complete_inspection(ret_id, "uji", inspections=[
+                {"index": 0, "defects": [{"point_value": 2, "count": 1}], "condition": "ok"}]))
+        assert DB.sales_returns.find_one({"id": ret_id})["status"] == "inspecting"
+    finally:
+        DB.sales_returns.delete_one({"id": ret_id})

@@ -348,9 +348,11 @@ async def ensure_pr(od: Dict[str, Any], n: Dict[str, Any], route: str, actor: Di
     from services import purchase_requisition_service as pr_svc
     from schemas import PurchaseRequisitionCreate, PurchaseRequisitionItem
     reason = n["state"].get("reason") or ""
+    # Audit pola Lurik (22 Okt) — harga kontrak pemenang = per SATUAN DASAR produk; estimasi PR per SATUAN ITEM OD.
+    est = float(est_price or 0) or await _cost_in_unit(n, n["unit"])
     pr = await pr_svc.create_requisition(PurchaseRequisitionCreate(
         items=[PurchaseRequisitionItem(product_id=n["product_id"], description=n["description"], quantity=n["quantity"],
-                                       unit=n["unit"], est_price=float(est_price or n["cost_price"] or 0), fulfillment_mode=route,
+                                       unit=n["unit"], est_price=est, fulfillment_mode=route,
                                        note=f"Kontrak {n['contract_number'] or '-'} · sample {n['sample_number'] or '-'}")],
         warehouse_id=warehouse_id, entity_id=od.get("entity_id", ""), route_reason=reason,
         reason=f"Pemenuhan {_label(od)} item {n['line_no']} — {ROUTE_LABEL[route]}",
@@ -464,15 +466,31 @@ async def _realize_po(od, n, pr_id, wh, actor) -> Dict[str, Any]:
             "quantity": n["quantity"], "unit": n["unit"], "created_at": now_iso()}
 
 
+async def _cost_in_unit(n: Dict[str, Any], unit: str) -> float:
+    """Harga kontrak pemenang (per satuan dasar produk) → per `unit` baris dokumen. Audit pola Lurik (22 Okt): dulu
+    harga per yard dipakai sebagai harga per meter bila satuan item OD ≠ satuan dasar produk."""
+    cost = float(n.get("cost_price") or 0)
+    if cost <= 0 or not n.get("product_id"):
+        return cost
+    prod = await db.products.find_one({"id": n["product_id"]}, {"_id": 0}) or {}
+    base = prod.get("base_unit") or ""
+    if not base or not unit or base.lower() == unit.lower():
+        return cost
+    from services.pr_sourcing_service import price_in_unit
+    return await price_in_unit(prod, cost, base, unit)
+
+
 async def _fix_po_price(po_id: str, n: Dict[str, Any], od: Dict[str, Any]) -> None:
-    """Harga PO = harga kontrak pemenang yang dikunci (bukan kontrak lain supplier yang sama)."""
-    cost = float(n["cost_price"] or 0)
+    """Harga PO = harga kontrak pemenang yang dikunci (bukan kontrak lain supplier yang sama), dalam satuan baris PO."""
     po_doc = await db.purchase_orders.find_one({"id": po_id}, {"_id": 0, "items": 1}) or {}
-    if cost <= 0 or not po_doc.get("items"):
+    if float(n["cost_price"] or 0) <= 0 or not po_doc.get("items"):
         return
     items, changed = po_doc["items"], False
     for it in items:
-        if it.get("product_id") == n["product_id"] and abs(float(it.get("price") or it.get("unit_price") or 0) - cost) > 0.009:
+        if it.get("product_id") != n["product_id"]:
+            continue
+        cost = await _cost_in_unit(n, it.get("unit") or n["unit"])
+        if abs(float(it.get("price") or it.get("unit_price") or 0) - cost) > 0.009:
             q = float(it.get("quantity") or 0)
             it.update({"price": cost, "unit_price": cost, "subtotal": round(cost * q, 2),
                        "contract_number": n["contract_number"] or it.get("contract_number", ""), "price_source": "special_order_contract"})

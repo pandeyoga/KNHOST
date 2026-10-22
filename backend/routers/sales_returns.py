@@ -262,10 +262,12 @@ async def get_return(return_id: str, request: Request) -> Dict[str, Any]:
     try:
         order = await db.sales_orders.find_one(
             {"id": doc.get("order_id")},
-            {"_id": 0, "items": 1, "grand_total": 1, "status": 1})
-        price_by = {}
-        for it in (order or {}).get("items", []):
-            price_by[it.get("product_id")] = float(it.get("price", it.get("unit_price", 0)) or 0)
+            {"_id": 0, "items": 1, "grand_total": 1, "status": 1, "order_discount_percent": 1})
+        # Audit pola Lurik (22 Okt) — qty retur dalam SATUAN DASAR (yard/kg); dulu dikali harga baris SO apa adanya
+        # (per satuan pesanan, mis. meter) → estimasi & saran nominal diskon Finance salah bila satuannya beda.
+        from services.return_compensation_service import _net_unit_price
+        price_by = {pid: await _net_unit_price(order or {}, pid)
+                    for pid in {it.get("product_id") for it in doc.get("items", [])} if pid}
         est = 0.0
         for it in doc.get("items", []):
             up = price_by.get(it.get("product_id"), 0.0)

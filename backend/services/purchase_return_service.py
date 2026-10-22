@@ -98,8 +98,15 @@ async def create_purchase_return(payload, created_by: str) -> Dict[str, Any]:
         unit = prod.get("base_unit") or (it.unit if it.unit else "") or "meter"
         roll_ids = list(getattr(it, "roll_ids", []) or [])
         roll_meta: List[Dict[str, Any]] = []
-        qty = float(it.quantity or 0)
+        # Audit pola Lurik (22 Okt) — qty & harga yang dikirim dalam satuan lain (mis. satuan PO "meter") DIKONVERSI ke
+        # satuan dasar; dulu angkanya dipakai mentah lalu diberi label satuan dasar (100 meter tercatat 100 yard).
+        from services.roll_service import to_base_qty
+        in_unit = (getattr(it, "unit", "") or "").strip() or unit
+        qty_in = float(it.quantity or 0)
+        qty = round(await to_base_qty(prod, qty_in, in_unit), 2) if qty_in > 0 else 0.0
         price = it.price if it.price > 0 else 0.0
+        if price > 0 and qty_in > 0 and qty > 0 and abs(qty - qty_in) > 1e-6:
+            price = round(price * qty_in / qty, 2)        # harga per satuan kirim → per satuan dasar
         if roll_ids:
             # Retur PRESISI: qty, lot & harga diturunkan dari roll asal yang dipilih.
             sel = await db.inventory_rolls.find(
@@ -108,12 +115,10 @@ async def create_purchase_return(payload, created_by: str) -> Dict[str, Any]:
                 raise ValueError(f"Roll asal untuk {prod.get('sku')} tidak ditemukan.")
             roll_qty = round(sum(float(r.get("length_remaining", 0) or 0) for r in sel), 2)
             if qty > 0:   # P18 PRET-05 — jangan diam-diam memotong qty yang diminta ke panjang roll
-                from services.roll_service import to_base_qty
-                req_base = round(await to_base_qty(prod, qty, getattr(it, "unit", "") or prod.get("base_unit")), 2)
-                if req_base > roll_qty + 0.01:
-                    raise ValueError(f"Qty retur {prod.get('sku') or it.product_id} ({qty:g} {it.unit}) melebihi sisa roll "
+                if qty > roll_qty + 0.01:
+                    raise ValueError(f"Qty retur {prod.get('sku') or it.product_id} ({qty_in:g} {in_unit}) melebihi sisa roll "
                                      f"yang dipilih ({roll_qty:g} {prod.get('base_unit', '')}). Kurangi qty atau pilih roll lain.")
-            qty = roll_qty if qty <= 0 else min(qty, roll_qty)
+            qty = roll_qty if qty <= 0 else min(qty, roll_qty)   # keduanya satuan dasar
             if price <= 0:
                 # KN-B24 — rata-rata BERBOBOT panjang (sama dengan nilai persediaan yang
                 # dikonsumsi), bukan rata-rata polos unit_cost roll.
@@ -122,19 +127,20 @@ async def create_purchase_return(payload, created_by: str) -> Dict[str, Any]:
                 _pairs = [(c, w) for c, w in _pairs if c > 0 and w > 0]
                 _tw = sum(w for _, w in _pairs)
                 price = round(sum(c * w for c, w in _pairs) / _tw, 2) if _tw > 0 else (
-                    _po_item_price(po, it.product_id) or float(prod.get("price", 0)))
+                    await _po_item_price(po, prod) or float(prod.get("price", 0)))
             roll_meta = [{"roll_id": r["id"], "roll_no": r.get("roll_no", ""), "lot": r.get("lot", ""),
                           "length_remaining": float(r.get("length_remaining", 0) or 0),
                           "supplier_invoice_no": r.get("supplier_invoice_no", ""),
                           "po_number": r.get("po_number", "")} for r in sel]
         if price <= 0:
-            price = _po_item_price(po, it.product_id) or float(prod.get("price", 0))
+            price = await _po_item_price(po, prod) or float(prod.get("price", 0))
         subtotal = round(price * qty, 2)
         total += subtotal
         items.append({
             "product_id": it.product_id, "sku": prod.get("sku", ""),
             "product_name": prod.get("name", ""), "quantity": float(qty),
             "unit": unit, "price": price, "subtotal": subtotal,
+            **({"quantity_input": qty_in, "unit_input": in_unit} if in_unit != unit and qty_in > 0 else {}),
             "reason": it.reason, "condition": it.condition,
             "roll_ids": roll_ids, "rolls": roll_meta,
             "lots": sorted({m["lot"] for m in roll_meta if m.get("lot")}),
@@ -808,12 +814,26 @@ async def _undo_return_effects(effects: List[Dict[str, Any]], ret: Dict[str, Any
         await rebuild_balance(seg[0], seg[1], ret.get("entity_id", ""))
 
 
-def _po_item_price(po, product_id) -> float:
+async def _po_item_price(po, prod) -> float:
+    """Harga baris PO per SATUAN DASAR produk (audit pola Lurik — harga PO per satuan PO, mis. per meter, dulu dipakai
+    untuk qty satuan dasar/yard). Pakai jejak `quantity_base` baris PO bila ada; selain itu konversi master UoM."""
     if not po:
         return 0.0
+    base = prod.get("base_unit") or ""
     for it in po.get("items", []):
-        if it.get("product_id") == product_id:
-            return float(it.get("price", 0) or 0)
+        if it.get("product_id") != prod.get("id"):
+            continue
+        price = float(it.get("price", 0) or 0)
+        q, qb = float(it.get("quantity", 0) or 0), float(it.get("quantity_base", 0) or 0)
+        if price <= 0:
+            return 0.0
+        if q > 0 and qb > 0:
+            return round(price * q / qb, 2)
+        line_unit = it.get("unit") or base
+        if base and line_unit and line_unit.lower() != base.lower():
+            from services.pr_sourcing_service import price_in_unit
+            return await price_in_unit(prod, price, line_unit, base)
+        return price
     return 0.0
 
 

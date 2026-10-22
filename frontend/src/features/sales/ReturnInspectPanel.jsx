@@ -1,7 +1,10 @@
 /** R2 — Panel inspeksi retur (4-point). approved → inspecting → inspected.
- *  Entry defect 4-point (P1..P4) → poin & grade (A/B/C) + rekomendasi outcome. */
-import { useState } from "react";
+ *  Entry defect 4-point (P1..P4) → poin & grade + rekomendasi outcome.
+ *  Trial 22 Okt (F5, keputusan pemilik) — grade DIPILIH petugas QC dari total poin; sistem tidak mengisi otomatis
+ *  (kecuali `qc.grade_from_points` dinyalakan → kosong = saran sistem). */
+import { useEffect, useState } from "react";
 import { ClipboardCheck, Loader2, Play } from "lucide-react";
+import axios, { API } from "../../services/apiClient";
 import KNSelect from "../../components/KNSelect";
 import { fmtNum } from "./ReturnShared";
 
@@ -18,9 +21,18 @@ const OUT_LABEL = { refund: "Refund", store_credit: "Store Credit", nego: "Nego"
 
 export default function ReturnInspectPanel({ ret, onStartInspect, onCompleteInspect }) {
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [grades, setGrades] = useState([]);
+  const [gradeAuto, setGradeAuto] = useState(false);
+  useEffect(() => {
+    axios.get(`${API}/master/grades`).then((r) => setGrades((r.data || []).filter((g) => g.active !== false))).catch(() => setGrades([]));
+    axios.get(`${API}/qc/grade-thresholds`, { params: ret.entity_id ? { entity_id: ret.entity_id } : {} })
+      .then((r) => setGradeAuto(Boolean(r.data?.grade_auto))).catch(() => setGradeAuto(false));
+  }, [ret.entity_id]);
   const [rows, setRows] = useState(() =>
     (ret.items || []).map((it) => ({
       p: { 1: 0, 2: 0, 3: 0, 4: 0 },
+      grade: "",
       condition: it.condition || "ok",
       accepted_qty: it.quantity_returned ?? 0,
       // L08 LN-082 — qty aktual hasil ukur per roll (default = klaim per roll).
@@ -33,10 +45,14 @@ export default function ReturnInspectPanel({ ret, onStartInspect, onCompleteInsp
 
   async function start() { setBusy(true); try { await onStartInspect(ret); } finally { setBusy(false); } }
   async function complete() {
+    const noGrade = gradeAuto ? [] : rows.map((r, i) => (r.grade ? null : (ret.items?.[i]?.product_name || `baris ${i + 1}`))).filter(Boolean);
+    if (noGrade.length) { setErr(`Pilih grade: ${noGrade.join(", ")} — grade ditentukan petugas QC dari total poin.`); return; }
+    setErr("");
     setBusy(true);
     try {
       const inspections = rows.map((r, i) => ({
         index: i,
+        grade: r.grade || "",
         defects: PTS.map((pv) => ({ point_value: pv, count: r.p[pv] || 0 })).filter((d) => d.count > 0),
         condition: r.condition,
         accepted_qty: parseFloat(r.accepted_qty) || 0,
@@ -73,7 +89,7 @@ export default function ReturnInspectPanel({ ret, onStartInspect, onCompleteInsp
           </thead>
           <tbody>
             {(ret.items || []).map((it, i) => {
-              const pts = points(rows[i]); const g = previewGrade(pts);
+              const pts = points(rows[i]); const g = rows[i].grade || (gradeAuto ? previewGrade(pts) : "");
               return (
                 <tr key={i} data-testid={`inspect-row-${i}`}>
                   <td className="max-w-[140px] truncate">{it.product_name || it.product_id}</td>
@@ -85,8 +101,12 @@ export default function ReturnInspectPanel({ ret, onStartInspect, onCompleteInsp
                     </td>
                   ))}
                   <td className="font-mono font-semibold tabular-nums" data-testid={`inspect-points-${i}`}>{pts}</td>
-                  <td><span className={`status-pill ${g === "A" ? "pill-success" : g === "B" ? "pill-warning" : "pill-danger"}`} data-testid={`inspect-grade-${i}`}>{g}</span></td>
-                  <td className="text-[10.5px]" data-testid={`inspect-rec-${i}`}>{OUT_LABEL[recFromGrade(g, rows[i].condition)]}</td>
+                  <td style={{ minWidth: 92 }}>
+                    <KNSelect data-testid={`inspect-grade-${i}`} value={rows[i].grade} className="field" searchable={false}
+                      placeholder={gradeAuto ? `saran ${previewGrade(pts)}` : "Pilih"} onValueChange={(v) => upd(i, { grade: v })}
+                      options={grades.map((gr) => ({ value: gr.code, label: gr.code }))} />
+                  </td>
+                  <td className="text-[10.5px]" data-testid={`inspect-rec-${i}`}>{g ? OUT_LABEL[recFromGrade(g, rows[i].condition)] : "—"}</td>
                   <td style={{ minWidth: 110 }}>
                     <KNSelect data-testid={`inspect-condition-${i}`} value={rows[i].condition} className="field"
                       onValueChange={(v) => upd(i, { condition: v })} options={CONDITIONS} />
@@ -117,6 +137,7 @@ export default function ReturnInspectPanel({ ret, onStartInspect, onCompleteInsp
           </tbody>
         </table>
       </div>
+      {err && <p data-testid="inspect-error" className="mt-2 rounded bg-[#FDECEC] px-2 py-1 text-[11px] font-semibold text-[#9B1C1C]">{err}</p>}
       <button data-testid="complete-inspect-btn" className="primary-button mt-2" onClick={complete} disabled={busy}>
         {busy ? <Loader2 size={13} className="spin" /> : <ClipboardCheck size={13} />} Selesaikan Inspeksi
       </button>

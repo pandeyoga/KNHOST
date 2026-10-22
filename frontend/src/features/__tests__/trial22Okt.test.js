@@ -14,6 +14,7 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import GrnCountPanel from "../wms/grn/GrnCountPanel";
 import GrnReviewPanel from "../wms/grn/GrnReviewPanel";
+import ReturnInspectPanel from "../sales/ReturnInspectPanel";
 import OrderReleaseSummary from "../orders/OrderReleaseSummary";
 import SoApprovalsPanel from "../orders/SoApprovalsPanel";
 import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
@@ -50,6 +51,7 @@ jest.mock("../../services/apiClient", () => ({
       if (url.endsWith("/outbound/tasks")) return Promise.resolve({ data: global.__outboundTasks || [] });
       if (url.endsWith("/warehouses")) return Promise.resolve({ data: [{ id: "wh_j", name: "Jakarta · Sukacita" }] });
       if (url.endsWith("/master/grades")) return Promise.resolve({ data: [{ code: "A", name: "A" }, { code: "B", name: "B" }] });
+      if (url.endsWith("/qc/grade-thresholds")) return Promise.resolve({ data: { a_max: 20, b_max: 40, grade_auto: false } });
       if (url.includes("pending-cuts")) return Promise.resolve({ data: { items: [] } });
       return Promise.resolve({ data: { verifiable: true, ready: true, checks: [], blocking_gaps: [], warnings: [],
         order_preview: { customer_name: "Toko Uji", items: [], totals: {} } } });
@@ -312,4 +314,16 @@ test("B3: form baris manual — ketik kode supplier → saran target → isian t
     .toEqual(["sup-77", "Lurik Solo Motif A", "meter", "KSC/PO-00002"]);
   act(() => root.unmount());
   global.__grnTargets = [];
+});
+
+test("F5: QC retur — grade dipilih petugas; tanpa grade tidak dikirim (sistem tidak mengisi otomatis)", async () => {
+  const sent = [];
+  const ret = { id: "r1", status: "inspecting", entity_id: "ent_ksc",
+    items: [{ product_id: "p1", product_name: "Batik", quantity_returned: 10, unit: "yard", condition: "ok" }] };
+  const root = await mount(<ReturnInspectPanel ret={ret} onStartInspect={() => {}} onCompleteInspect={(...a) => { sent.push(a); }} />);
+  expect(q("inspect-rec-0").textContent).toBe("—");               // belum ada grade → belum ada rekomendasi
+  await act(async () => { q("complete-inspect-btn").click(); });
+  expect(q("inspect-error").textContent).toMatch(/Pilih grade: Batik/);
+  expect(sent).toHaveLength(0);
+  act(() => root.unmount());
 });
