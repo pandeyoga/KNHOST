@@ -278,3 +278,16 @@ def test_f5_qc_retur_grade_wajib_diisi_petugas(yard_product):
         assert DB.sales_returns.find_one({"id": ret_id})["status"] == "inspecting"
     finally:
         DB.sales_returns.delete_one({"id": ret_id})
+
+
+# ─── Audit dual name (22 Okt malam) ──────────────────────────────────────────────────────────────────────────
+def test_dn2_kolom_asal_sama_dengan_nama_kn_bukan_versi_supplier():
+    from services.supplier_item_service import supplier_alias
+    kn = {"name": "ALICE KNIT (94139 - 45) 10 A", "color": "10", "source_name": "ALICE KNIT (94139 - 45)", "source_color": "10",
+          "supplier_codes": []}
+    assert supplier_alias(kn) == {"name": "", "color": "", "supplier_name": ""}          # dulu: nama KN tampil sebagai "SUP"
+    beda = {**kn, "source_name": "Cotton Jersey 30s Combed", "source_color": "Merah Cabe"}
+    assert supplier_alias(beda)["name"] == "Cotton Jersey 30s Combed" and supplier_alias(beda)["color"] == "Merah Cabe"
+    sup = {**kn, "supplier_codes": [{"supplier_item_name": "Twill Cotton 40s Combed", "supplier_color": "Dark Navy",
+                                     "supplier_name": "PT Kain Jadi Nusantara"}]}
+    assert supplier_alias(sup) == {"name": "Twill Cotton 40s Combed", "color": "Dark Navy", "supplier_name": "PT Kain Jadi Nusantara"}

@@ -50,6 +50,29 @@ Pola: angka dalam satuan dasar (yard/kg) dikali harga / diberi label satuan doku
 | G7 | Retur antar-PT: qty & harga dalam satuan dokumen IC, stok gudang dalam satuan dasar | Aman selama IC dibuat dalam satuan dasar (jalur pemenuhan & checkout sudah begitu) | dicatat, belum diubah |
 Yang sudah benar: Nota Kredit retur (harga neto per satuan dasar), kompensasi cutloss, SO pengganti, penguncian harga OD (harga kontrak × faktor satuan), konversi OD → SO (lewat `create_order`).
 
+## H. Dual name KN ↔ supplier (nama, kode, warna, lot) — audit 22 Okt malam
+Rancangan: KN_18 PS-07, KN_25 E-05, memo meeting M-02/D-03, IMP-13 — SSOT `supplier_items` (supplier ↔ SKU KN: kode & nama
+barang versi supplier, kode/nama warna supplier, satuan supplier + konversi, harga), tampil berdampingan dengan nama KN di master,
+PO, penerimaan & dokumen; lot supplier dibedakan dari LOT KN.
+
+**Sebab tidak terlihat saat trial = DATA, bukan fitur hilang**: data acuan hanya punya **3** pemetaan Barang Supplier (semuanya ALICE
+KNIT dari PT grup sendiri, nama generik "Kain versi CV Cipta Sandang Textile"), **0** baris PO berkode supplier, lot supplier hanya di
+2 roll; dan cadangan "nama versi supplier" (kolom asal Excel) isinya sama dengan nama KN sehingga baris "SUP" tampak duplikat.
+
+Bukti implementasi (produk demo **DEMO-DN-TWL40-NVY-A** "KATUN TWILL 40S NAVY A (DEMO DUAL NAME)", dibuat lewat API di DB UAT: 2 pemasok —
+PT Kain Jadi Nusantara `KJN-TW40-077` "Twill Cotton 40s Combed" warna "Dark Navy" (DN-077), satuan meter→yard, Rp 30.000/m; CV Cipta
+Sandang `CST-TWL-40-NV` "TWILL 40 NAVY ECO" warna "NV-Eco"; sumber restock supplier). Ditelusuri di DB salinan:
+katalog (`supplier_codes`, alias) ✓ · cari SKU KN dari kode supplier ✓ · baris PO (kode, nama, warna versi supplier, satuan supplier &
+faktor, harga dari Barang Supplier) ✓ · tugas kedatangan ✓ · kepala SJ & target GRN berkode supplier ✓ · hitung 100 m → 109,36 yd ✓ ·
+roll: LOT KN `KSC/LOT-…` ≠ lot supplier `KJN-LOT-…` ✓.
+| # | Celah | Status |
+|---|---|---|
+| DN-1 | Roll hasil penerimaan tidak menyimpan kode/nama/warna barang versi supplier (label roll hanya menulis kode supplier bila label supplier dipindai) | diperbaiki — roll membawa `supplier_sku`, `supplier_item_name`, `supplier_color`; label roll baris "Versi supplier: kode · nama · warna" |
+| DN-2 | Kolom asal Excel (`source_name/source_color`) yang SAMA dengan nama/warna KN dipakai sebagai "versi supplier" | diperbaiki — tidak dipakai bila sama; layar menulis "nama versi supplier belum diisi" (data asli supplier perlu diisi di Barang Supplier) |
+| DN-3 | Faktor konversi Barang Supplier dibulatkan 3 desimal (1,0936 → 1,094) | dicatat — qty PO tetap dari master UoM (546,81 yd), faktor hanya tampilan |
+Tes lama yang gagal karena data acuan tidak punya pemetaan `CBN-MEGA-PREM` (test_grn_phase2/7, test_inbound_complete_characterization) dan
+produk uji lama (iter105) — gagal juga pada kode & data sebelum hari ini; bukan regresi.
+
 ## E. Hasil cek permintaan 22 Okt sore (belum diperbaiki)
 | # | Temuan | Bukti | Status |
 |---|---|---|---|

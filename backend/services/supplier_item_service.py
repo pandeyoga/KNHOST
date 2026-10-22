@@ -122,7 +122,8 @@ async def attach_line_aliases(items: List[Dict[str, Any]], supplier_id: str = ""
     if not pids:
         return
     prods = {p["id"]: p for p in await db.products.find({"id": {"$in": pids}}, {"_id": 0, "id": 1, "source_name": 1,
-             "source_color": 1, "supplier_colors": 1, "color_name": 1, "color": 1}).to_list(len(pids))}
+             "source_color": 1, "supplier_colors": 1, "color_name": 1, "color": 1, "color_code": 1, "name": 1,
+             "template_name": 1}).to_list(len(pids))}
     await attach_supplier_codes(list(prods.values()))
     for it in items:
         p = prods.get(it.get("product_id"))
@@ -139,12 +140,24 @@ async def attach_line_aliases(items: List[Dict[str, Any]], supplier_id: str = ""
 
 
 def supplier_alias(p: Dict[str, Any]) -> Dict[str, str]:
-    """Nama & warna VERSI SUPPLIER (dualisme KN ↔ supplier): Barang Supplier dulu, cadangan kolom asal Excel/master."""
+    """Nama & warna VERSI SUPPLIER (dualisme KN ↔ supplier): Barang Supplier dulu, cadangan kolom asal Excel/master.
+
+    Audit dual name (22 Okt) — kolom asal yang isinya SAMA dengan nama/warna KN (mis. "ALICE KNIT (94139 - 45)" untuk
+    SKU "ALICE KNIT (94139 - 45) 10 A") bukan versi supplier; dulu tampil sebagai baris "SUP" sehingga dual name
+    terlihat seperti nama KN dua kali. Kini dikosongkan → layar menulis "nama versi supplier belum diisi"."""
     first = next((c for c in p.get("supplier_codes") or [] if c.get("supplier_item_name") or c.get("supplier_color")), {})
     sc = next(iter(p.get("supplier_colors") or []), {}) or {}
-    return {"name": first.get("supplier_item_name") or p.get("source_name") or "",
+    kn_name = " ".join(str(p.get(k) or "") for k in ("name", "template_name")).strip().lower()
+    kn_colors = {str(p.get(k) or "").strip().lower() for k in ("color", "color_code", "color_name")} - {""}
+    src_name = str(p.get("source_name") or "").strip()
+    src_color = str(p.get("source_color") or "").strip()
+    if src_name and src_name.lower() in kn_name:
+        src_name = ""
+    if src_color and src_color.lower() in kn_colors:
+        src_color = ""
+    return {"name": first.get("supplier_item_name") or src_name,
             "color": first.get("supplier_color") or sc.get("supplier_color_name") or sc.get("supplier_color_code")
-            or p.get("source_color") or "",
+            or src_color,
             "supplier_name": first.get("supplier_name") or sc.get("supplier_name") or ""}
 
 

@@ -61,8 +61,10 @@ class TestProductsSupplierAlias:
         items = r.json() if isinstance(r.json(), list) else r.json().get("items", [])
         p = next((x for x in items if x.get("sku") == "KNKNT0005-I-10XX-XA-XX-XX"), None)
         assert p, "KNKNT0005-I-10 sample product not found"
-        assert p["supplier_alias"]["name"] == "ALICE KNIT (94139 - 45)"
-        assert p["supplier_alias"]["color"] == "10"
+        # Audit dual name (22 Okt) — kolom asal yang sama dengan nama/warna KN BUKAN versi supplier; alias datang dari
+        # Barang Supplier bila ada, selain itu kosong ("nama versi supplier belum diisi").
+        assert "ALICE KNIT (94139 - 45)" != p["supplier_alias"]["name"]
+        assert p["supplier_alias"]["color"] != "10"
 
     def test_supplier_codes_carry_supplier_id_and_color(self, client):
         r = client.get(f"{BASE}/products")

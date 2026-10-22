@@ -319,3 +319,44 @@ def test_audit_retur_pembelian_satuan_po_dikonversi_ke_satuan_dasar():
     assert it["price"] == pytest.approx(95000 * 0.9144, rel=1e-3)
     assert it["subtotal"] == pytest.approx(9500000, rel=1e-3)
     assert it["quantity_input"] == 100 and it["unit_input"] == "meter"
+
+
+# ─── Audit dual name — roll hasil penerimaan membawa identitas barang VERSI SUPPLIER + lot supplier ≠ LOT KN ──
+def test_dn1_roll_penerimaan_membawa_kode_nama_warna_versi_supplier():
+    prod = DB.products.find_one({"sku": "DEMO-DN-TWL40-NVY-A"}, {"_id": 0, "id": 1})
+    si = DB.supplier_items.find_one({"product_id": (prod or {}).get("id"), "supplier_sku": "KJN-TW40-077"}, {"_id": 0})
+    if not (prod and si):
+        pytest.skip("produk demo dual name (DEMO-DN-TWL40-NVY-A) belum ada di salinan data")
+    adm, wh = base.Api("admin@kainnusantara.id"), base.Api("wh.admin@kainnusantara.id")
+    c, po = adm.call("POST", "/purchase-orders", {"supplier_id": si["supplier_id"], "warehouse_id": "wh_jakarta", "entity_id": base.ENT,
+                                                 "items": [{"product_id": prod["id"], "quantity": 100, "unit": "meter",
+                                                            "expected_grade": "A"}]})
+    assert c == 200, po
+    ln = po["items"][0]
+    assert (ln["supplier_sku"], ln["supplier_item_name"], ln["price_source"]) == ("KJN-TW40-077", si["supplier_item_name"], "supplier_item")
+
+    def ok(r):
+        assert r[0] == 200, r[1]
+        return r[1].get("grn") or r[1]
+    g = ok(wh.call("POST", "/goods-receipts", {"partner_type": "supplier", "partner_id": si["supplier_id"], "warehouse_id": "wh_jakarta",
+                                              "po_ids": [po["id"]]}))
+    g = ok(wh.call("POST", f"/goods-receipts/{g['id']}/manual-entry", {"expected_version": g["version"]}))
+    g = ok(wh.call("PATCH", f"/goods-receipts/{g['id']}/dn", {"expected_version": g["version"], "number": f"SJ-DN-{uuid.uuid4().hex[:5]}",
+                                                             "po_refs": [po["po_number"]]}))
+    c, tg = wh.call("GET", f"/goods-receipts/{g['id']}/targets")
+    t = next(x for x in tg if x.get("po_id") == po["id"])
+    assert t["supplier_sku"] == "KJN-TW40-077"
+    g = ok(wh.call("POST", f"/goods-receipts/{g['id']}/lines", {"expected_version": g["version"], "item_code": "KJN-TW40-077",
+                   "description": "Twill Cotton 40s Combed", "po_ref": po["po_number"], "role": "output",
+                   "target": {"type": "po_task", "task_id": t["task_id"]},
+                   "declared": {"qty": 100, "unit": "meter", "rolls": 1, "grade": "A", "lot": "KJN-LOT-UJI"}}))
+    g = ok(wh.call("POST", f"/goods-receipts/{g['id']}/start-count", {"expected_version": g["version"]}))
+    g = ok(wh.call("POST", f"/goods-receipts/{g['id']}/lines/1/rolls", {"length": 100, "length_unit": "meter", "lot": "KJN-LOT-UJI",
+                                                                      "grade": "A", "expected_version": g["version"]}))
+    g = ok(wh.call("POST", f"/goods-receipts/{g['id']}/finish-count", {"expected_version": g["version"]}))
+    g = ok(wh.call("POST", f"/goods-receipts/{g['id']}/close", {"expected_version": g["version"]}))
+    roll = DB.inventory_rolls.find_one({"grn_id": g["id"]}, {"_id": 0}) or DB.inventory_rolls.find_one({"po_id": po["id"]}, {"_id": 0})
+    assert roll["supplier_lot"] == "KJN-LOT-UJI" and roll["lot"] != "KJN-LOT-UJI"           # lot supplier ≠ LOT KN
+    assert (roll["supplier_sku"], roll["supplier_item_name"], roll["supplier_color"]) == (
+        "KJN-TW40-077", si["supplier_item_name"], si["supplier_color"])
+    assert roll["unit"] == "yard" and roll["length_initial"] == pytest.approx(100 / 0.9144, abs=0.01)

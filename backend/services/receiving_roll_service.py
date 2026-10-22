@@ -61,6 +61,15 @@ async def build_receiving_roll(task: Dict[str, Any], product: Dict[str, Any], ow
     from services.roll_service import next_roll_no
     task_id = task["id"]
     base_unit = product.get("base_unit") or "meter"
+    # Audit dual name (22 Okt) — kode/nama/warna barang VERSI SUPPLIER ikut ke roll (label, stok, retur ke supplier).
+    # Dulu hanya lot supplier & nama pemasok; kode barang supplier baru ada bila label supplier dipindai.
+    sup_ident = {"supplier_sku": task.get("supplier_sku") or "", "supplier_item_name": task.get("supplier_item_name") or "",
+                 "supplier_color": task.get("supplier_color") or ""}
+    if supplier_id and not all(sup_ident.values()):
+        si = await db.supplier_items.find_one({"supplier_id": supplier_id, "product_id": task["product_id"],
+                                               "status": {"$ne": "inactive"}},
+                                              {"_id": 0, "supplier_sku": 1, "supplier_item_name": 1, "supplier_color": 1}) or {}
+        sup_ident = {k: v or si.get(k, "") for k, v in sup_ident.items()}
     roll_doc = {
         "id": new_id("roll"), "roll_no": await next_roll_no(),
         "product_id": task["product_id"], "owner_entity_id": owner_entity_id,
@@ -78,7 +87,7 @@ async def build_receiving_roll(task: Dict[str, Any], product: Dict[str, Any], ow
         "earmarked_for": None, "location_type": "warehouse_bin", "reserved_ref": None,
         "unit_cost": None, "base_unit_cost": None, "landed_cost_total": 0.0, "landed_cost_refs": [],
         "acquired": {"via": "inbound", "ref_id": task.get("po_id") or task_id, "date": now_iso()},
-        "supplier_id": supplier_id, "supplier_name": supplier_name,
+        "supplier_id": supplier_id, "supplier_name": supplier_name, **sup_ident,
         "po_id": task.get("po_id") or "", "po_number": task.get("po_number", ""),
         "grn_task_id": task_id, "received_date": now_iso(),
         "vendor_bill_id": "", "supplier_invoice_no": "", "rfid_tag_id": None, "is_remnant": False,
