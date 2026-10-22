@@ -78,7 +78,8 @@ export const LoadingCheckPanel = ({ orderId, soNumber, warehouseId }) => {
       </p>
       {byWarehouse.length > 1 && (
         <p data-testid="lc-by-warehouse" className="text-[10.5px] text-[#6B6B73]">
-          Progres per pengiriman: {byWarehouse.filter((w) => ["clean", "override"].includes(w.result)).length}/{byWarehouse.length} gudang lolos check
+          {/* Trial 22 Okt (B5) — hasil simulasi sah selama mode simulasi aktif (sama dengan gerbang kirim di server). */}
+          Progres per pengiriman: {byWarehouse.filter((w) => ["clean", "override", ...(simMode ? ["simulated"] : [])].includes(w.result)).length}/{byWarehouse.length} gudang lolos check
         </p>
       )}
       {error && <p data-testid="lc-error" className="rounded bg-[#FBE9E7] px-2 py-1 text-[11px] font-semibold text-[#C0341D]">{error}</p>}
