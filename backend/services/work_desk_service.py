@@ -228,6 +228,8 @@ async def sales_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
         cur["lines"].append(b)
         if b.get("coverage") != "covered":
             cur["coverage"] = b.get("coverage") or "partial"
+    for oid in await _fully_decided(list(per_order)):
+        per_order.pop(oid, None)
     queues.append(_queue(
         "perlu_dipenuhi", "Perlu dipenuhi (kurang stok)",
         "Pilih SATU: ambil dari PT lain · reorder ke supplier · tahan untuk barang masuk.",
@@ -622,6 +624,32 @@ async def finance_desk(actor: Dict[str, Any], scope: Dict[str, Any],
             "not_my_desk": ["Membuat / mengonfirmasi pesanan",
                             "Keputusan pemenuhan (ambil dari PT lain · reorder)",
                             "Sisi hutang lainnya: tagihan supplier · kontrabon · landed cost"]}
+
+
+async def _fully_decided(order_ids: List[str]) -> List[str]:
+    """Trial 22 Okt — SO yang SELURUH kekurangannya sudah diputus (PR ke supplier / ambil PT lain / tunggu barang)
+    dan dokumen pemenuhannya masih hidup: tidak ada lagi yang perlu diputus di meja ini. Dulu tetap tampil
+    "Belum ada penutup" karena PR belum dihitung sebagai pasokan → Admin Sales mengira belum ditindak.
+    Pemantauannya di panel Pending (PR/PO + ETA). PR yang dibatalkan/ditolak → kembali ke antrean."""
+    if not order_ids:
+        return []
+    out = []
+    async for o in db.sales_orders.find({"id": {"$in": order_ids}}, {"_id": 0, "id": 1, "fulfillment_decision": 1}):
+        dec = o.get("fulfillment_decision") or {}
+        rem = dec.get("remaining") or {}
+        if not dec.get("parts") or not rem or any(float(v or 0) > 0.01 for v in rem.values()):
+            continue
+        alive = True
+        for part in dec["parts"]:
+            if part.get("ref_type") in ("purchase_requisition", "pr") and part.get("ref_id"):
+                pr = await db.purchase_requisitions.find_one({"id": part["ref_id"]}, {"_id": 0, "status": 1})
+                alive = alive and bool(pr) and pr.get("status") not in ("cancelled", "rejected")
+            elif part.get("ref_type") in ("interco_transaction", "interco") and part.get("ref_id"):
+                ic = await db.interco_transactions.find_one({"id": part["ref_id"]}, {"_id": 0, "status": 1})
+                alive = alive and bool(ic) and ic.get("status") not in ("cancelled", "rejected", "void")
+        if alive:
+            out.append(o["id"])
+    return out
 
 
 # ═══════════════════════════════════════════════════════════════════════════
