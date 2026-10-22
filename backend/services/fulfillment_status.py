@@ -85,9 +85,10 @@ async def create_outbound_tasks_for_order(order_id: str, actor_name: str,
     pickup_date = (order.get("pickup_date") or "").strip()
     hold = False
     if method == "ambil" and pickup_date:
-        from datetime import datetime, timezone
+        from datetime import datetime
+        from services.analytics_time import now_wib
         try:
-            hold = datetime.fromisoformat(pickup_date).date() > datetime.now(timezone.utc).date()
+            hold = datetime.fromisoformat(pickup_date).date() > now_wib().date()   # tanggal WIB, bukan UTC
         except Exception:  # noqa: BLE001
             hold = False
     init_status = "scheduled" if hold else "created"

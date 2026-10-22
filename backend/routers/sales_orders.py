@@ -112,6 +112,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
     )
     # S-3 (Gelombang 2) — validasi Order Pengambilan di API (bukan hanya FE):
     # method 'ambil' WAJIB punya pickup_date valid (ISO, tidak di masa lalu).
+    from services.analytics_time import now_wib
     fulfillment_method = (getattr(payload, "fulfillment_method", "kirim") or "kirim").strip().lower()
     if fulfillment_method == "ambil":
         pd = (getattr(payload, "pickup_date", "") or "").strip()
@@ -123,7 +124,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         except ValueError:
             raise HTTPException(status_code=400,
                                 detail="Format tanggal ambil tidak valid (gunakan YYYY-MM-DD).")
-        if pickup_dt < datetime.now(timezone.utc).date():
+        if pickup_dt < now_wib().date():   # Trial 22 Okt (E1) — "hari ini" = tanggal WIB, bukan UTC
             raise HTTPException(status_code=400, detail="Tanggal ambil tidak boleh di masa lalu.")
     # F-SHIP (Gelombang 2+) — metode 'kirim' boleh punya request tanggal pengiriman OPSIONAL.
     # Bila diisi: format ISO valid & tidak di masa lalu (hanya hari ini ke depan).
@@ -134,7 +135,7 @@ async def create_order(payload: SalesOrderCreate, request: Request) -> Dict[str,
         except ValueError:
             raise HTTPException(status_code=400,
                                 detail="Format tanggal pengiriman tidak valid (gunakan YYYY-MM-DD).")
-        if delivery_dt < datetime.now(timezone.utc).date():
+        if delivery_dt < now_wib().date():
             raise HTTPException(status_code=400, detail="Tanggal pengiriman tidak boleh di masa lalu.")
     # L06 LN-060 — catalogue: baris disusun SERVER dari komponen (1 yd/warna tersedia + 2 yd soft).
     catalogue_doc = None

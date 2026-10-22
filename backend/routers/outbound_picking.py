@@ -15,8 +15,8 @@ router = APIRouter(prefix="/api")
 async def _auto_release_due_scheduled() -> int:
     """Order Pengambilan — rilis otomatis task picking terjadwal yang tanggal ambilnya
     sudah tiba (hold_until <= hari ini) → 'created' (masuk antrean aktif gudang)."""
-    from datetime import datetime, timezone
-    today = datetime.now(timezone.utc).date().isoformat()
+    from services.analytics_time import now_wib
+    today = now_wib().date().isoformat()   # Trial 22 Okt (E1) — tanggal ambil = tanggal WIB
     res = await db.wms_tasks.update_many(
         {"flow_type": "outbound", "status": "scheduled", "hold_until": {"$lte": today, "$ne": ""}},
         {"$set": {"status": "created", "updated_at": now_iso()}})

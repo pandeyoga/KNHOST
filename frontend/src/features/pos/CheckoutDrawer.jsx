@@ -228,7 +228,9 @@ export default function CheckoutDrawer({
   const billingInvalid = sampleMode && !sampleBilling;
   const pickupInvalid = fulfillmentMethod === "ambil" && !pickupDate;
   const teamInvalid = !!salesTeamError(salesTeam);
-  const deliveryInvalid = fulfillmentMethod === "kirim" && !!deliveryDate && deliveryDate < new Date().toISOString().slice(0, 10);
+  // Trial 22 Okt (E1) — banding dengan tanggal LOKAL (WIB); toISOString() = UTC → pagi hari "hari ini" dianggap lampau/kemarin.
+  const todayLocal = (() => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); })();
+  const deliveryInvalid = fulfillmentMethod === "kirim" && !!deliveryDate && deliveryDate < todayLocal;
 
   return (
     <div className="fixed inset-0 z-[110] flex justify-end bg-black/40" data-testid="checkout-drawer">
@@ -464,6 +466,7 @@ export default function CheckoutDrawer({
             <CheckoutStep3
               fulfillmentMethod={fulfillmentMethod} setFulfillmentMethod={setFulfillmentMethod}
               pickupDate={pickupDate} setPickupDate={setPickupDate}
+              deliveryDate={deliveryDate} setDeliveryDate={setDeliveryDate}
               selectedCustomer={selectedCustomer} addresses={addresses} selectedAddress={selectedAddress}
               p={p} cart={cart} pricedCart={cartPriced} paymentTerm={paymentTerm}
               needsTaxInvoice={needsTaxInvoice} setNeedsTaxInvoice={setNeedsTaxInvoice}
