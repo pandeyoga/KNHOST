@@ -121,12 +121,12 @@ def role_menus(scenarios):
 
 PHONE = [
     ("Beranda", ["[Buat Pesanan Baru]", "Tanya KN", "Pesanan menunggu ACC", "Performa Saya (komisi, penjualan, tertagih)"]),
-    ("Katalog", ["Cari produk, SKU, warna", "kartu produk → [Pilih]", "Order biasa / Order sample · Per yard / Per Roll",
+    ("Katalog", ["bilah Pelanggan (harga & kredit)", "Cari produk, SKU, warna", "kartu produk: stok PT · grup → [Tambah]/[Pilih]", "Order biasa / Order sample · Per yard / Per Roll",
                  "Genapkan ke Roll Utuh"]),
-    ("Keranjang", ["[Lanjut ke Checkout]", "1 Pelanggan & Alamat", "2 Termin & Lot · Minta Harga Khusus · Request QC",
+    ("Keranjang", ["[Lanjut ke Checkout]", "1 Pelanggan & Alamat", "2 Termin & Lot · [Minta Harga Khusus] per item (pesanan ini) · Request QC",
                    "3 Review · Kirim / Ambil · Faktur Pajak → [Buat Sales Order]"]),
-    ("Pesanan", ["cari nomor / pelanggan · Semua / Aktif / Selesai / Batal", "kartu SO: Persetujuan ([Ajukan Harga Khusus], "
-                 "[Minta Persetujuan Kredit])", "[Ajukan koreksi] · [Catat bayar] · [Ajukan retur]", "Perjalanan Pesanan"]),
+    ("Pesanan", ["cari nomor / pelanggan · Semua / Aktif / Selesai / Batal", "kartu SO: Sebelum masuk gudang · Persetujuan (ditolak: [Ajukan harga lain] "
+                 "[Lanjut harga normal] [Batalkan pesanan])", "[Ajukan koreksi] · [Catat bayar] · [Ajukan retur]", "Perjalanan Pesanan"]),
     ("Lainnya", ["Pesanan & harga: Koreksi & Amandemen · Pesanan Khusus (OD) · Pesanan Sample · Retur Penjualan · "
                  "Minta Harga Khusus · Harga Khusus Saya · Daftar Harga",
                  "Pelanggan & lapangan: Dasbor Pesanan · Pelanggan (CRM) · Penagihan & Target · Prospek · Kunjungan Sales",

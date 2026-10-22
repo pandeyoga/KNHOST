@@ -26,7 +26,7 @@ NAME = "Panduan_UAT_E2E_ERP_Kain_Nusantara_v3.0"
 DOC_ID = "KN-UAT-E2E-003"
 DATE = "22 Oktober 2026"
 PAGES_JSON = os.path.join(HERE, "v3_pages.json")
-CSS = page.CSS.replace("Panduan UAT End-to-End v2.0 · KN-UAT-E2E-002", f"Panduan UAT End-to-End v3.0 · {DOC_ID}") + """
+CSS = page.CSS.replace("Panduan UAT End-to-End v2.0 · KN-UAT-E2E-002", f"Panduan UAT End-to-End v3.1 · {DOC_ID}") + """
 table.v3 { font-size:7.5pt; table-layout:fixed; }
 table.v3 th { background:#0F172A; color:#FFF; font-weight:600; text-align:left; padding:1.1mm 1.4mm; font-size:7.1pt; }
 table.v3 td { border-bottom:1px solid #E2E8F0; padding:1.05mm 1.4mm; vertical-align:top; }
@@ -85,14 +85,14 @@ def _end(start, minutes):
 
 def cover():
     return f"""<section class="cover"><div class="band"></div>
-<div class="kicker" style="color:#93C5FD">{DOC_ID} · versi 3.0 · {DATE}</div>
+<div class="kicker" style="color:#93C5FD">{DOC_ID} · versi 3.1 (alur hasil trial 22 Okt) · {DATE}</div>
 <h1>Panduan UAT End-to-End<br>ERP Kain Nusantara</h1>
 <p class="sub">16 alur uji · 1 hari · 09.00–17.00 WIB</p>
 <div class="lanes">{"".join(f'<div style="background:{c};color:#fff">{escape(t)}</div>' for c, t in (("#1D4ED8", "16 alur uji"), ("#0E7490", "1 hari · mulai 09.00 WIB"), ("#B45309", "2 kelompok paralel")))}</div>
 <div class="meta">
 <div><span class="lbl">Pelaksanaan</span>1 hari · <b>09.00–17.00 WIB</b><br>Kelompok 1: Penjualan & Retur<br>Kelompok 2: Hulu, Pengadaan & Sample</div>
-<div><span class="lbl">Kandidat uji</span>VPS UAT setelah <b>update.sh</b><br>kode <b>main</b> terbaru (≥ c8f7f30)</div>
-<div><span class="lbl">Dokumen</span>{DOC_ID} · versi 3.0<br>{DATE}</div>
+<div><span class="lbl">Kandidat uji</span>VPS UAT setelah <b>update.sh</b><br>kode <b>main</b> terbaru (≥ b1488a4)</div>
+<div><span class="lbl">Dokumen</span>{DOC_ID} · versi 3.1<br>{DATE}</div>
 <div><span class="lbl">Disusun</span>Production IT</div>
 </div></section>"""
 
@@ -111,13 +111,21 @@ def how_to():
 <li>Akun Finance / Admin Gudang / Admin masuk sebagai <b>Semua Entitas</b> (hanya melihat). Sebelum membuat dokumen klik <b>Kerja di: Sukacita</b> (atau PT yang dipakai alur) di banner atas.</li>
 <li>Mencari dokumen di antrean meja: ketik nomor SO/SJ di <b>kolom cari</b> di atas antrean.</li>
 <li>Gudang tanpa tag RFID: ambil roll tetap bisa (scan/ketik nomor roll atau <span class="btn">Ambil</span>). Saat <b>kirim</b> ditolak <i>roll belum bertag RFID aktif</i> → Admin Gudang mengisi alasan lalu <span class="btn">Override</span> di <i>Pemeriksaan Muat Akhir</i>, kirim lanjut.</li>
-<li>Roll hasil potong: potong & verifikasi label di <span class="nav">Lokasi Rak › Antrean Potong</span> (scan/ketik nomor label roll anak) — tidak perlu RFID.</li>
+<li>Roll hasil potong: potong & verifikasi label di <span class="nav">Operasi Gudang › Cutting</span> (atau <span class="nav">Lokasi Rak › Antrean Potong</span>; scan/ketik nomor label roll anak) — tidak perlu RFID.</li>
+<li>Mode simulasi RFID aktif untuk Sukacita, Kanda, dan Cipta Sandang: pakai <span class="btn">Buat tag simulasi</span> & <span class="btn">Simulasi scan semua (mode UAT)</span>.</li>
 <li>Sandi akun demo dibagikan fasilitator; semua akun peran memakai sandi yang sama.</li>
 </ul></div></div>
 <div class="strip c3">
 <div class="box g"><b class="t">Arti kolom “Cek UI”</b><ul><li><span class="t-ok">✓ dicek di layar (S1/S2)</span> — tim IT sudah menjalankan langkah ini di layar dengan akun peran yang sama (21–22 Okt 2026) dan tombolnya ada.</li>
-<li><span class="t-na">○ belum dicek di layar</span> — sudah diuji di sisi sistem, tetapi belum dijalankan lewat layar. Perhatikan khusus: bila tombol/menu tidak ada, itu temuan.</li></ul></div>
+<li><span class="t-na">○ belum dicek di layar</span> — sudah diuji di sisi sistem, tetapi belum dijalankan lewat layar. Perhatikan khusus: bila tombol/menu tidak ada, itu temuan. Semua langkah yang berubah di versi 3.1 bertanda ini.</li></ul></div>
 <div class="box"><b class="t">Status hasil</b><ul><li><b>Lulus</b> — hasil sama dengan kolom “harus terlihat”.</li><li><b>Gagal</b> — berbeda, error, atau tombol tidak ada.</li><li><b>Terblokir</b> — tidak bisa dicoba karena langkah sebelumnya gagal / data tidak ada.</li></ul></div>
+<div class="box a" style="grid-column:1/-1"><b class="t">Yang berubah di versi 3.1 (hasil trial 22 Okt)</b><ul>
+<li><b>Admin Sales satu langkah</b>: antrean <i>Perlu diperiksa &amp; dilepas ke gudang</i> → <span class="btn">Periksa &amp; lepas</span> menggantikan Verifikasi → Ajukan persetujuan → Konfirmasi. Yang menunggu ACC Manajer atau stok dilepas ke gudang <b>otomatis</b> sesudahnya.</li>
+<li><b>HP Sales</b>: pilih pelanggan di bilah <i>Pelanggan</i> atas katalog; kartu produk menulis stok PT penjual lalu stok grup; tanggal kirim bisa dipilih; <b>harga khusus diminta di checkout</b> (hanya untuk pesanan ini) — ditolak Manajer → <i>Ajukan harga lain / Lanjut harga normal / Batalkan pesanan</i>.</li>
+<li><b>Kredit terblokir</b>: checkout terkunci (SO tidak lahir) sampai izin kredit yang diajukan dari bilah Pelanggan disetujui Manajer.</li>
+<li><b>Gudang</b>: tab <i>Cutting</i> (paket potong per pesanan, <span class="btn">Potong semua</span>), Admin Sample <span class="btn">Terima semua potongan</span>, kirim semua tugas pesanan dengan <b>satu Surat Jalan</b>; Barang Masuk: Target mengisi baris, hitung fisik dengan pilihan satuan.</li>
+<li><b>Inspeksi</b>: SPK kedatangan = MD Quality saja; QC 4-point lewat <span class="btn">Buat SPK QC 4-point</span> (Lembar Inspect) — <b>grade roll dipilih petugas QC</b>, sistem tidak mengisi otomatis.</li>
+</ul></div>
 <div class="box r"><b class="t">Jangan</b><ul><li>Memakai akun Admin untuk menjalankan langkah peran lain.</li><li>Melompati baris — tiap baris menyiapkan baris berikutnya.</li><li>Menganggap lulus tanpa melihat hasil di layar.</li></ul></div>
 </div></section>"""
 
@@ -222,7 +230,7 @@ def all_sections(pages):
 
 
 def build_html(pages):
-    return (f'<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Panduan UAT End-to-End — ERP Kain Nusantara v3.0</title>'
+    return (f'<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Panduan UAT End-to-End — ERP Kain Nusantara v3.1</title>'
             f'<style>{CSS}</style></head><body>{"".join(all_sections(pages))}</body></html>')
 
 
@@ -253,7 +261,7 @@ def result_sheet():
     def plain(x):
         x = re.sub(r"\[\[([^\]]+)\]\]", r"[\1]", x)
         return x.replace("**", "").replace("`", "").replace("*", "").replace("|", "/")
-    md = ["# Lembar hasil UAT — ERP Kain Nusantara (KN-UAT-E2E-003 v3.0)", "",
+    md = ["# Lembar hasil UAT — ERP Kain Nusantara (KN-UAT-E2E-003 v3.1)", "",
           "**Tanggal:** ______ (09.00–17.00 WIB)  **Kandidat:** VPS setelah update.sh · commit ______  **Fasilitator:** ______  **Pencatat:** ______", "",
           "Status: `L` Lulus · `G` Gagal · `T` Terblokir. Isi nomor dokumen sistem & ID temuan.", ""]
     for code, title, when, grp, start, mins, roles, data, fixes, ui, fn in V.SCENARIOS:

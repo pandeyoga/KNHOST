@@ -73,14 +73,16 @@ HOME_LABEL = {"sales-admin-desk": "Meja Admin Sales", "manager-home": "Beranda M
               "md-desk": "Meja MD", "design-requests": "Permintaan Desain", "sample-admin-desk": "Meja Sample"}
 
 SALES_TASKS = [
-    ("Membuat pesanan", "tab **Katalog** → cari → kartu produk [[Tambah]] (artikel bervarian: [[Pilih]]) → warna, *Order biasa*, qty → [[Tambah …]] → Genapkan → tab **Keranjang** → "
+    ("Membuat pesanan", "tab **Katalog** → bilah **Pelanggan** (atas) → pilih pelanggan → cari → kartu produk (stok PT penjual · grup) [[Tambah]] (artikel bervarian: [[Pilih]]) → warna, *Order biasa*, qty → [[Tambah …]] → Genapkan → tab **Keranjang** → "
                         "[[Lanjut ke Checkout]] → 3 langkah → [[Buat Sales Order]]"),
     ("Melihat status & perjalanan pesanan", "tab **Pesanan** → cari nomor / pelanggan → ketuk kartu SO → bagian *Perjalanan Pesanan*"),
-    ("Minta harga khusus untuk SO ini", "tab **Pesanan** → ketuk SO → kotak *Persetujuan* → [[Ajukan Harga Khusus]] (harga + bukti wajib) → [[Ajukan]]; "
-     "SO menunggu ACC Manajer, lalu otomatis *Disetujui* dengan harga baru"),
+    ("Minta harga khusus untuk pesanan ini", "Checkout langkah 2 → kartu item [[Minta Harga Khusus]] → harga + alasan → [[Simpan]]; SO lahir "
+     "harga normal, ACC Manajer → harga baru & dilepas ke gudang otomatis. Ditolak → tab **Pesanan** → ketuk SO → kotak *Persetujuan*: "
+     "[[Ajukan harga lain]] / [[Lanjut harga normal]] / [[Batalkan pesanan]]"),
     ("Harga langganan (pesanan berikutnya)", "**Lainnya** › *Minta Harga Khusus* → pelanggan, produk, harga + bukti → [[Ajukan]] (opsional *Berlaku sampai*); "
      "setelah ACC Manajer harga otomatis muncul di katalog, keranjang & checkout (*Harga khusus*)"),
-    ("Minta persetujuan kredit", "tab **Pesanan** → ketuk SO → kotak *Persetujuan* → [[Minta Persetujuan Kredit]] + alasan"),
+    ("Izin kredit (pelanggan terblokir)", "bilah **Pelanggan** → kotak merah *Pelanggan ini tidak bisa membeli* → "
+     "[[Ajukan Override Kredit (Rp …)]] + alasan → [[Ajukan]]; checkout terbuka lagi sesudah ACC Manajer"),
     ("Koreksi qty / harga", "tab **Pesanan** → ketuk SO → [[Ajukan koreksi]] (atau **Lainnya** › *Koreksi & Amandemen*)"),
     ("Catat pembayaran di lapangan", "tab **Pesanan** → ketuk SO → [[Catat bayar]]"),
     ("Pesanan sample", "tab **Katalog** → kartu produk [[Tambah]] (artikel bervarian: [[Pilih]]) → *Order sample* → Keranjang → Checkout (Gratis / Berbayar); status di **Lainnya** › *Pesanan Sample*"),
@@ -162,7 +164,7 @@ def nav_pages(scenarios, head_sales, head_desk):
           '<li><b>Cari menu… (Ctrl+K)</b>: ketik nama menu untuk langsung membuka.</li></ul></div>'
           '<div class="box a"><b class="t">Kartu antrean di Meja</b><ul><li>Judul antrean · jumlah · umur tertua · nilai.</li>'
           '<li>Ketik nomor SO/SJ di <b>kolom cari</b>, atau <span class="btn">Sebelumnya</span> / <span class="btn">Berikutnya</span>.</li>'
-          '<li>Tiap baris punya satu tombol aksi (mis. <span class="btn">Verifikasi</span>, <span class="btn">Catat kwitansi</span>).</li></ul></div>'
+          '<li>Tiap baris punya satu tombol aksi (mis. <span class="btn">Periksa &amp; lepas</span>, <span class="btn">Catat kwitansi</span>).</li></ul></div>'
           '<div class="box g"><b class="t">Ganti peran</b><ul><li>Klik <b>Keluar</b> (kiri bawah) → masuk dengan akun peran berikutnya.</li>'
           '<li>Akun Finance / Admin Gudang mulai di <i>Semua Entitas</i>: klik <b>Kerja di: Sukacita</b> sebelum membuat dokumen.</li></ul></div></div>'
           '<table class="grid compact"><colgroup><col style="width:15%"><col style="width:13%"><col style="width:72%"></colgroup>'

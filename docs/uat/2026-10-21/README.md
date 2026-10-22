@@ -2,6 +2,13 @@
 
 **Pakai v3.0 untuk pelaksanaan UAT** (22 Okt 2026): 1 hari, mulai **09.00 WIB**, dua kelompok paralel.
 
+> **Revisi 3.1 (22 Okt 2026 malam)** — isi panduan diperbarui ke alur hasil trial 22 Okt (nama berkas tetap `…v3.0`):
+> Admin Sales satu langkah *Periksa & lepas ke gudang* (dilepas otomatis sesudah ACC/stok), pelanggan dipilih di bilah atas
+> katalog HP, stok PT penjual vs grup, harga khusus diminta di checkout (ditolak → ajukan harga lain / lanjut harga normal /
+> batalkan), kredit terblokir = checkout terkunci sampai izin kredit Manajer, tab Cutting & kirim satu Surat Jalan, Barang
+> Masuk dibantu Target, SPK kedatangan MD Quality saja + SPK QC 4-point (grade dipilih petugas). **291 langkah**; langkah yang
+> berubah bertanda *belum dicek di layar*. Rincian temuan & perbaikan: `CATATAN_TEMUAN_TRIAL_22OKT.md`.
+
 | Berkas v3.0 | Isi |
 |---|---|
 | `Panduan_UAT_E2E_ERP_Kain_Nusantara_v3.0.pdf` | Panduan utama, A4 lanskap, 46 halaman: cara pakai, daftar alur, jadwal 1 hari (2 kelompok), 16 alur uji (305 langkah: peran·akun, navigasi menu › antrean › tombol, yang diisi, hasil yang harus terlihat, status cek di layar, kolom Lulus/Gagal), data & akun, rekap, form temuan, tanda tangan |
