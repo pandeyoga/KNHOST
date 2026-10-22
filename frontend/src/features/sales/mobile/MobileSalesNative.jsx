@@ -114,7 +114,8 @@ export function MobilePricelist({ selectedEntity }) {
   const [q, setQ] = useState("");
   const [grid, setGrid] = useState(null);
   const [err, setErr] = useState("");
-  useEffect(() => { axios.get(`${API}/customers`).then((r) => setCustomers(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => {}); }, []);
+  // Cek UI UAT v3 — sama dengan Minta Harga Khusus: semua pelanggan PT (daftar untuk pesanan), bukan hanya yang ditugaskan.
+  useEffect(() => { axios.get(`${API}/customers`, { params: { for_order: true, with_credit: false } }).then((r) => setCustomers(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => {}); }, []);
   const cust = customers.find((c) => c.id === cid);
   useEffect(() => {
     if (!cid) { setGrid(null); return; }

@@ -76,7 +76,10 @@ SALES_TASKS = [
     ("Membuat pesanan", "tab **Katalog** → cari → kartu produk [[Tambah]] → warna, *Order biasa*, qty → [[Tambah …]] → Genapkan → tab **Keranjang** → "
                         "[[Lanjut ke Checkout]] → 3 langkah → [[Buat Sales Order]]"),
     ("Melihat status & perjalanan pesanan", "tab **Pesanan** → cari nomor / pelanggan → ketuk kartu SO → bagian *Perjalanan Pesanan*"),
-    ("Minta harga khusus untuk SO ini", "tab **Pesanan** → ketuk SO → kotak *Persetujuan* → [[Ajukan Harga Khusus]] (harga + bukti wajib) → [[Ajukan]]"),
+    ("Minta harga khusus untuk SO ini", "tab **Pesanan** → ketuk SO → kotak *Persetujuan* → [[Ajukan Harga Khusus]] (harga + bukti wajib) → [[Ajukan]]; "
+     "SO menunggu ACC Manajer, lalu otomatis *Disetujui* dengan harga baru"),
+    ("Harga langganan (pesanan berikutnya)", "**Lainnya** › *Minta Harga Khusus* → pelanggan, produk, harga + bukti → [[Ajukan]] (opsional *Berlaku sampai*); "
+     "setelah ACC Manajer harga otomatis muncul di katalog, keranjang & checkout (*Harga khusus*)"),
     ("Minta persetujuan kredit", "tab **Pesanan** → ketuk SO → kotak *Persetujuan* → [[Minta Persetujuan Kredit]] + alasan"),
     ("Koreksi qty / harga", "tab **Pesanan** → ketuk SO → [[Ajukan koreksi]] (atau **Lainnya** › *Koreksi & Amandemen*)"),
     ("Catat pembayaran di lapangan", "tab **Pesanan** → ketuk SO → [[Catat bayar]]"),

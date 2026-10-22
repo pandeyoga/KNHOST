@@ -12,6 +12,9 @@
 7. Gudang bawaan penerimaan OD = gudang khusus PT itu (dulu gudang bersama PT lain karena urut kode).
 8. OD multi-item: PO item kedua tiba setelah tugas ambil item pertama lahir → item kedua tetap dapat tugas ambil.
 9. Keputusan pemilik: pemenang sample (tahap ACC Sample) boleh diputus Manajer ATAU MD.
+10. Isyarat harga khusus tidak lagi menyebut Admin Sales sebagai penyetuju (semua harga khusus diputus Manajer/Admin).
+11. Pengajuan harga khusus tanpa SO = harga langganan (dulu lingkup "pesanan" tanpa SO: disetujui pun tak terpakai);
+    layar HP Minta Harga Khusus memuat semua pelanggan PT (dulu kosong bila pelanggan belum punya sales).
 Jalankan: cd /app/backend && python -m pytest tests/test_uat_v3_ui_gaps3.py -p no:randomly -n 0 -q
 """
 import asyncio
@@ -199,3 +202,38 @@ def test_pemenang_sample_boleh_diputus_md_tetapi_desain_tetap_manajer():
     assert amx.evaluate("sample_acc", md, doc, cfg)["allowed"] is True                 # keputusan pemilik 22 Okt
     assert amx.evaluate("sample_acc", {"role": "sales", "name": "S"}, doc, cfg)["allowed"] is False
     assert amx.evaluate("design_acc", md, doc, cfg)["allowed"] is False                # ACC desain/spesifikasi tidak berubah
+
+
+def test_isyarat_harga_khusus_selalu_menyebut_manajer_sebagai_penyetuju():
+    sales = base.Api("sales@kainnusantara.id")
+    prod = DB.products.find_one({"price": {"$gt": 1000}, "entity_id": base.ENT}, {"_id": 0, "id": 1, "price": 1}) \
+        or DB.products.find_one({"price": {"$gt": 1000}}, {"_id": 0, "id": 1, "price": 1})
+    for price in (prod["price"] * 0.99, prod["price"] * 0.3):          # dalam batas & jauh di bawah batas
+        c, h = sales.call("GET", f"/price-approvals/hint?product_id={prod['id']}&price={price:.0f}")
+        assert c == 200, h
+        assert h["approver_roles"] == ["manager", "admin"] and h["approver_label"] == "Manajer / Admin", h
+        assert "admin_sales" not in str(h)                             # dulu: "penyetuju: admin_sales/manager/admin"
+
+
+def test_pengajuan_harga_khusus_tanpa_so_jadi_harga_langganan():
+    sales = base.Api("sales@kainnusantara.id")
+    cust = DB.customers.find_one({"entity_id": base.ENT}, {"_id": 0, "id": 1})
+    prod = DB.products.find_one({"price": {"$gt": 1000}}, {"_id": 0, "id": 1, "price": 1})
+    c, d = sales.call("POST", "/price-approvals", {"customer_id": cust["id"], "product_id": prod["id"],
+                                                   "requested_price": round(prod["price"] * 0.9), "submit_now": False,
+                                                   "entity_id": base.ENT, "scope": "order", "so_id": ""})
+    try:
+        assert c == 200, d
+        assert d["scope"] == "standing", d          # dulu "order" tanpa SO → disetujui pun tak pernah terpakai
+    finally:
+        DB.price_approvals.delete_one({"id": (d or {}).get("id")})
+
+
+def test_daftar_pelanggan_untuk_harga_khusus_hp_memuat_pelanggan_tanpa_sales():
+    sales = base.Api("sales@kainnusantara.id")
+    c, rows = sales.call("GET", "/customers?for_order=true&with_credit=false")
+    assert c == 200, rows
+    unassigned = DB.customers.count_documents({"entity_id": base.ENT, "assigned_sales_id": {"$in": [None, ""]}})
+    if unassigned:
+        names = {r["name"] for r in rows}
+        assert any(n in names for n in DB.customers.distinct("name", {"entity_id": base.ENT, "assigned_sales_id": {"$in": [None, ""]}}))

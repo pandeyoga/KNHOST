@@ -50,10 +50,12 @@ async def price_hint(request: Request, product_id: str = Query(...), price: floa
     list_price = float(product.get("price") or 0)
     gap_pct = round((1 - float(price) / list_price) * 100, 1) if list_price > 0 and price > 0 else 0.0
     needs = bool(verdict.get("below_floor") or verdict.get("needs_approval"))
+    # Cek UI UAT v3 (S4) — dulu "penyetuju: admin_sales/…" untuk harga dalam batas, padahal Admin Sales tidak punya
+    # price_approval.approve dan entri harga SO butuh peran manager: SEMUA harga khusus diputus Manajer/Admin.
     return {"list_price": list_price, "gap_pct": gap_pct, "needs_manager": needs,
-            "verdict": ("Di bawah batas — perlu persetujuan manajer" if needs
-                        else "Dalam batas — biasanya disetujui"),
-            "approver_roles": ["manager", "admin"] if needs else ["admin_sales", "manager", "admin"]}
+            "verdict": ("di bawah batas harga · diputus Manajer" if needs
+                        else "masih dalam batas harga · diputus Manajer"),
+            "approver_roles": ["manager", "admin"], "approver_label": "Manajer / Admin"}
 
 EDITABLE_STATUSES = pas.EDITABLE_STATUSES
 DECIDABLE_STATUSES = pas.DECIDABLE_STATUSES
@@ -255,7 +257,10 @@ async def create_price_approval(payload: PriceApprovalCreate, request: Request) 
         requested_price=req_price, requester=user,
         min_quantity=payload.min_quantity or 0, reason=payload.reason or "",
         valid_until=payload.valid_until or "", status=status,
-        scope=payload.scope or pas.SCOPE_STANDING, so_id=payload.so_id or "",
+        # Cek UI UAT v3 (S4) — lingkup "pesanan" tanpa SO tidak pernah bisa dipakai (SO lain menolaknya), jadi
+        # pengajuan sebelum SO ada = harga langganan. Harga untuk satu pesanan diajukan dari SO-nya.
+        scope=(payload.scope or pas.SCOPE_STANDING) if (payload.so_id or "").strip() else pas.SCOPE_STANDING,
+        so_id=payload.so_id or "",
         override=bool(payload.override), source=pas.SOURCE_SALES,
         extra={"guard": {k: verdict.get(k) for k in
                          ("floor", "floor_from", "threshold", "basis", "basis_label",

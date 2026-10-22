@@ -8,6 +8,10 @@ import { blocksOrder, isOrderable, notOrderableReason } from "../utils/lifecycle
 import { sampleLimit, clampSampleQty, SAMPLE_KINDS } from "../utils/sampleOrder";
 import { sirenOnNewAlarms } from "../utils/sirenAlarm";
 import { askConfirm } from "@/services/confirmService";
+import { getStage, getSubStatus, stageMeta, subStatusLabel } from "../utils/soStatus";
+
+// Cek UI UAT v3 — notifikasi SO baru dulu menampilkan kode mentah ("waiting stock"); kini "Dipesan · Menunggu stok (backorder)".
+const soStatusText = (o) => [stageMeta(getStage(o))?.label, ...(getSubStatus(o) || []).map(subStatusLabel)].filter(Boolean).join(" · ");
 
 /**
  * Business logic / async action hook for the App shell.
@@ -387,7 +391,7 @@ export function useAppActions(state) {
       const isSmp = o.order_type === "sample";
       setNotice(isSmp
         ? `${o.number} (Pesanan Sample ${o.sample_billing === "free" ? "GRATIS" : "BERBAYAR"}) dibuat — ${o.sample_billing === "paid" ? "menunggu persetujuan pembayaran Finance/Admin Sample." : "langsung masuk meja Admin Sample."}`
-        : `${o.number} dibuat (${o.status.replaceAll("_", " ")})${tail}. Grand total Rp ${formatQty(o.grand_total)}.`);
+        : `${o.number} dibuat (${soStatusText(o)})${tail}. Grand total Rp ${formatQty(o.grand_total)}.`);
       setCart([]);
       setActiveView(isSmp ? "sample-orders" : "orders");
       await loadAll();

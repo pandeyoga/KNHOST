@@ -18,7 +18,8 @@ export default function SpecialPriceRequestForm({ product, customer, entityId = 
   const [more, setMore] = useState(false);
   const [minQty, setMinQty] = useState(defaultQty ? String(Math.round(defaultQty)) : "");
   const [validUntil, setValidUntil] = useState("");
-  const [standing, setStanding] = useState(false);
+  // Cek UI UAT v3 (S4) — tanpa SO, lingkup "pesanan ini saja" tidak punya pesanan untuk ditempeli: harga langganan.
+  const [standing, setStanding] = useState(!soId);
   const [reason, setReason] = useState("");
   const [hint, setHint] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -64,8 +65,8 @@ export default function SpecialPriceRequestForm({ product, customer, entityId = 
   if (done) {
     return (
       <div className="notice-bar success" data-testid="spr-submitted">
-        <b>Terkirim — menunggu persetujuan.</b> {done.number || done.id} · {formatCurrency(done.requested_price)} ·
-        {done.scope === "standing" ? " harga langganan" : " untuk pesanan ini saja"} · penyetuju: {(hint?.approver_roles || ["manager", "admin"]).join("/")} · diajukan baru saja.
+        <b>Terkirim — menunggu persetujuan.</b> {done.number ? `${done.number} · ` : ""}{formatCurrency(done.requested_price)} ·
+        {done.scope === "standing" ? " harga langganan" : " untuk pesanan ini saja"} · penyetuju: {hint?.approver_label || "Manajer / Admin"} · diajukan baru saja.
       </div>
     );
   }
@@ -87,6 +88,10 @@ export default function SpecialPriceRequestForm({ product, customer, entityId = 
           <Paperclip size={14} /> {file ? file.name : "Lampirkan bukti chat / penawaran (wajib)"}
         </button>
       </div>
+      {!soId && (
+        <p className="text-[11px] text-[#6B6B73]" data-testid="spr-standing-note">Belum ada pesanan → harga ini menjadi <b>harga langganan</b> pelanggan
+          (otomatis dipakai di pesanan berikutnya; atur <i>Berlaku sampai</i> di bawah). Untuk satu pesanan saja: buat SO dulu, lalu ajukan dari kotak Persetujuan di SO.</p>
+      )}
       <button type="button" className="text-xs text-[#0058CC] flex items-center gap-1" onClick={() => setMore((m) => !m)} data-testid="spr-more-toggle">
         {more ? <ChevronUp size={12} /> : <ChevronDown size={12} />} Atur lebih lanjut
       </button>
@@ -94,8 +99,10 @@ export default function SpecialPriceRequestForm({ product, customer, entityId = 
         <div className="space-y-2 rounded-md border border-[#E5E5EA] p-2">
           <label className="field"><span>Catatan / alasan</span><input value={reason} onChange={(e) => setReason(e.target.value)} data-testid="spr-reason-input" /></label>
           <label className="field"><span>Jumlah minimum</span><input type="number" value={minQty} onChange={(e) => setMinQty(e.target.value)} data-testid="spr-minqty-input" /></label>
-          <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={standing} onChange={(e) => setStanding(e.target.checked)} data-testid="spr-standing-toggle" />
-            Jadikan harga langganan pelanggan ini (berlaku untuk pesanan berikutnya)</label>
+          {soId && (
+            <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={standing} onChange={(e) => setStanding(e.target.checked)} data-testid="spr-standing-toggle" />
+              Jadikan harga langganan pelanggan ini (berlaku untuk pesanan berikutnya)</label>
+          )}
           {standing && <label className="field"><span>Berlaku sampai</span><KNDatePicker value={validUntil} onChange={setValidUntil} testId="spr-valid-until" /></label>}
         </div>
       )}

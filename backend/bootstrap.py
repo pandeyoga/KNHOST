@@ -313,6 +313,21 @@ async def apply_f09_superseded_rejections_2026_10_21() -> None:
                     ", ".join(str(o["number"]) for o in res["orders"]))
 
 
+async def apply_orphan_order_special_price_2026_10_22() -> None:
+    """Cek UI UAT v3 (S4, 22 Okt 2026) — sekali jalan (ditandai di `migrations`): pengajuan harga khusus dari
+    "Minta Harga Khusus" tanpa SO tersimpan lingkup "pesanan" TANPA pesanan → walau di-ACC tidak pernah dipakai
+    checkout/SO. Jadikan harga langganan (perilaku baru untuk pengajuan tanpa SO). Keputusan & jejak tetap."""
+    flag = "orphan_order_special_price_2026_10_22"
+    if await db.migrations.find_one({"id": flag}):
+        return
+    q = {"scope": "order", "so_id": {"$in": ["", None]}, "status": {"$in": ["draft", "pending", "approved"]}}
+    ids = [d["id"] for d in await db.price_approvals.find(q, {"_id": 0, "id": 1}).to_list(5000)]
+    if ids:
+        await db.price_approvals.update_many({"id": {"$in": ids}}, {"$set": {
+            "scope": "standing", "scope_fixed_from": "order_tanpa_so", "updated_at": now_iso()}})
+    await db.migrations.insert_one({"id": flag, "applied_at": now_iso(), "price_approvals": ids})
+
+
 async def seed_entities() -> None:
     """Seed entitas legal grup Kain Nusantara (idempotent)."""
     if await db.business_entities.count_documents({}) == 0:
@@ -1594,6 +1609,11 @@ async def run_bootstrap() -> None:
     except Exception as exc:  # noqa: BLE001 — jangan gagalkan startup
         import logging
         logging.getLogger("bootstrap").warning("[F-09] perbaikan penolakan yang diajukan ulang gagal: %s", exc)
+    try:
+        await apply_orphan_order_special_price_2026_10_22()
+    except Exception as exc:  # noqa: BLE001 — jangan gagalkan startup
+        import logging
+        logging.getLogger("bootstrap").warning("[UAT v3] harga khusus tanpa SO → langganan gagal: %s", exc)
     try:
         await apply_entity_rebrand_2026_09()
     except Exception as exc:  # noqa: BLE001 — jangan gagalkan startup

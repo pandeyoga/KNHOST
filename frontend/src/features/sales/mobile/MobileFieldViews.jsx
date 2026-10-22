@@ -10,7 +10,9 @@ export function MobileSpecialPrice({ selectedEntity }) {
   const [custs, setCusts] = useState([]); const [prods, setProds] = useState([]);
   const [cid, setCid] = useState(""); const [pid, setPid] = useState("");
   useEffect(() => {
-    axios.get(`${API}/customers`).then((r) => setCusts(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => {});
+    // Cek UI UAT v3 (S4) — tanpa for_order, Sales hanya melihat pelanggan yang DITUGASKAN kepadanya; pelanggan tanpa
+    // sales penanggung jawab (data acuan: Toko Kain Sejahtera) tidak muncul. Sama dengan daftar pelanggan untuk pesanan.
+    axios.get(`${API}/customers`, { params: { for_order: true, with_credit: false } }).then((r) => setCusts(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => {});
     axios.get(`${API}/products`).then((r) => setProds(Array.isArray(r.data) ? r.data : r.data.items || [])).catch(() => {});
   }, []);
   return (
