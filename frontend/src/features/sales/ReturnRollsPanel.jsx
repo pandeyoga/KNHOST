@@ -1,7 +1,8 @@
 /** Item & roll yang diretur (permintaan pemilik 23 Okt) — detail PER ROLL: qty, kondisi, alasan, checklist (hangtag
- *  hilang / sudah dipotong) & foto; keputusan Terima/Tolak per roll sebelum ACC oleh pemegang izin
- *  `sales_return.decide_rolls` (bawaan Manajer & Admin Sales — dapat diatur di matriks akses). Roll ditolak tetap
- *  milik pelanggan: keluar dari scan, QC dan nilai uang. */
+ *  hilang / sudah dipotong) & foto; keputusan Terima/Tolak per roll sebelum ACC oleh pemegang izin `decide_rolls`
+ *  modul retur itu (dapat diatur di matriks akses). Roll ditolak keluar dari retur (scan, QC, nilai uang).
+ *  Satu panel untuk retur pelanggan, retur ke supplier & retur antar-PT: pemanggil memetakan barisnya ke bentuk
+ *  retur pelanggan (`quantity_returned`, `unit_price_est`, `line_total_est`, `roll_nos`) dan memberi URL-nya. */
 import { useMemo, useState } from "react";
 import { Check, Loader2, Package, X } from "lucide-react";
 import axios, { API } from "../../services/apiClient";
@@ -16,7 +17,7 @@ const Badge = ({ tone, children, testId }) => {
 };
 
 /** Kolom Kondisi · Alasan · Checklist · Foto satu roll — sama untuk roll aktif maupun yang ditolak. */
-function RollInfoCells({ d, cond, reason, photos, retId }) {
+function RollInfoCells({ d, cond, reason, photos, href }) {
   return (
     <>
       <td><Badge tone={cond === "damaged" ? "warn" : "ok"}>{cond === "damaged" ? "Rusak" : "Baik"}</Badge></td>
@@ -29,7 +30,7 @@ function RollInfoCells({ d, cond, reason, photos, retId }) {
       <td className="text-[11px]">
         {photos.length
           ? photos.map((a, k) => (
-            <a key={a.id} href={`${API}/sales-returns/${retId}/attachments/${a.id}/download`} target="_blank" rel="noreferrer"
+            <a key={a.id} href={href(a)} target="_blank" rel="noreferrer"
               className="mr-1 font-semibold text-[#0058CC] underline">Foto {k + 1}</a>))
           : <span className="text-[#9A9BA3]">—</span>}
       </td>
@@ -37,7 +38,10 @@ function RollInfoCells({ d, cond, reason, photos, retId }) {
   );
 }
 
-export default function ReturnRollsPanel({ ret, items, fullView, canDecide, estimatedValue, onChanged }) {
+export default function ReturnRollsPanel({ ret, items, fullView, canDecide, estimatedValue, onChanged,
+  decideUrl, attachmentHref, canReject = true, title = "Item & roll yang diretur", hint, testId = "return-items-panel",
+  valueLabel = "Estimasi nilai retur (harga transaksi SO per satuan dasar; angka resmi = Nota Kredit)" }) {
+  const href = attachmentHref || ((a) => `${API}/sales-returns/${ret.id}/attachments/${a.id}/download`);
   const [draft, setDraft] = useState({});   // { roll_id: { decision, reason } }
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -53,7 +57,7 @@ export default function ReturnRollsPanel({ ret, items, fullView, canDecide, esti
     if (bad.length) { setErr("Isi alasan tolak (min. 5 huruf) untuk setiap roll yang ditolak."); return; }
     setBusy(true); setErr("");
     try {
-      await axios.post(`${API}/sales-returns/${ret.id}/roll-decisions`,
+      await axios.post(decideUrl || `${API}/sales-returns/${ret.id}/roll-decisions`,
         { decisions: pending.map(([roll_id, d]) => ({ roll_id, decision: d.decision, reason: (d.reason || "").trim() })) });
       setDraft({});
       onChanged?.();
@@ -63,7 +67,7 @@ export default function ReturnRollsPanel({ ret, items, fullView, canDecide, esti
   }
 
   return (
-    <Panel icon={Package} title={`Item & roll yang diretur · ${items.length} produk`} testId="return-items-panel">
+    <Panel icon={Package} title={`${title} · ${items.length} produk`} testId={testId}>
       <div className="space-y-3">
         {items.map((item, i) => {
           const rolls = item.roll_ids || [];
@@ -101,7 +105,7 @@ export default function ReturnRollsPanel({ ret, items, fullView, canDecide, esti
                         <tr key={rid} data-testid={`return-roll-${rid}`}>
                           <td className="font-mono text-[11.5px] font-semibold">{nos[rid] || rid}</td>
                           <td className="text-right tabular-nums">{formatQty((item.roll_qtys || {})[rid])} {item.unit}</td>
-                          <RollInfoCells d={d} cond={cond} reason={d.reason || item.reason} photos={photos[rid] || []} retId={ret.id} />
+                          <RollInfoCells d={d} cond={cond} reason={d.reason || item.reason} photos={photos[rid] || []} href={href} />
                           <td className="min-w-[220px]">
                             {canDecide ? (
                               <div className="space-y-1">
@@ -109,9 +113,9 @@ export default function ReturnRollsPanel({ ret, items, fullView, canDecide, esti
                                   <button type="button" data-testid={`roll-accept-${rid}`}
                                     className={`inline-flex items-center gap-1 px-2 py-1 ${(dr.decision || d.decision) === "accept" ? "bg-[#E7F6EC] text-[#126E2C]" : "bg-white text-[#3C3C43]"}`}
                                     onClick={() => setDraft((x) => ({ ...x, [rid]: { decision: "accept", reason: "" } }))}><Check size={11} /> Terima</button>
-                                  <button type="button" data-testid={`roll-reject-${rid}`}
+                                  {canReject && <button type="button" data-testid={`roll-reject-${rid}`}
                                     className={`inline-flex items-center gap-1 border-l border-[#E5E5EA] px-2 py-1 ${dr.decision === "reject" ? "bg-[#FDECEC] text-[#A8221A]" : "bg-white text-[#3C3C43]"}`}
-                                    onClick={() => setDraft((x) => ({ ...x, [rid]: { decision: "reject", reason: x[rid]?.reason || "" } }))}><X size={11} /> Tolak</button>
+                                    onClick={() => setDraft((x) => ({ ...x, [rid]: { decision: "reject", reason: x[rid]?.reason || "" } }))}><X size={11} /> Tolak</button>}
                                 </div>
                                 {dr.decision === "reject" && (
                                   <input className="form-input !py-1 text-[11.5px]" placeholder="Alasan tolak (mis. kain sudah dipotong)"
@@ -130,8 +134,8 @@ export default function ReturnRollsPanel({ ret, items, fullView, canDecide, esti
                         <tr key={`rej-${r.roll_id}`} className="bg-[#FFF8F8]" data-testid={`return-roll-rejected-${r.roll_id}`}>
                           <td className="font-mono text-[11.5px] font-semibold text-[#6B6B73] line-through">{r.roll_no}</td>
                           <td className="text-right tabular-nums text-[#6B6B73] line-through">{formatQty(r.qty)} {r.unit}</td>
-                          <RollInfoCells d={d} cond={d.condition || item.condition} reason={d.reason} photos={photos[r.roll_id] || []} retId={ret.id} />
-                          <td className="text-[11px]"><Badge tone="bad">Ditolak</Badge>
+                          <RollInfoCells d={d} cond={d.condition || item.condition} reason={d.reason} photos={photos[r.roll_id] || []} href={href} />
+                          <td className="text-[11px]"><Badge tone="bad">{r.by_supplier ? "Ditolak supplier" : "Ditolak"}</Badge>
                             <span className="block text-[#6B6B73]">{r.reason} · {r.by}</span></td>
                         </tr>
                       );
@@ -145,13 +149,13 @@ export default function ReturnRollsPanel({ ret, items, fullView, canDecide, esti
       </div>
       {fullView && estimatedValue != null && (
         <div className="mt-2 flex items-center justify-between rounded-md bg-[#FAFBFC] px-3 py-2 text-[12px]" data-testid="return-estimated-value">
-          <span className="text-[#6B6B73]">Estimasi nilai retur (harga transaksi SO per satuan dasar; angka resmi = Nota Kredit)</span>
+          <span className="text-[#6B6B73]">{valueLabel}</span>
           <b className="tabular-nums">{formatCurrency(estimatedValue)}</b>
         </div>
       )}
       {canDecide && (
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-[#EFF0F2] pt-2">
-          <p className="text-[11.5px] text-[#6B6B73]">Roll yang ditolak keluar dari retur (tetap di pelanggan). Roll tanpa keputusan ikut disetujui saat ACC.</p>
+          <p className="text-[11.5px] text-[#6B6B73]">{hint || "Roll yang ditolak keluar dari retur (tetap di pelanggan). Roll tanpa keputusan ikut disetujui saat ACC."}</p>
           {err && <p className="w-full text-[11.5px] font-semibold text-[#A8221A]" data-testid="roll-decisions-error">{err}</p>}
           <button type="button" className="primary-button" disabled={busy || !pending.length} onClick={save} data-testid="roll-decisions-save">
             {busy ? <Loader2 size={13} className="spin" /> : <Check size={13} />} Simpan keputusan roll ({pending.length})

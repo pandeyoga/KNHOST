@@ -6,11 +6,12 @@ Antar entitas = **jual-beli** (bukan pindah gudang). Setiap transaksi lahir seba
 
 Semua nominal memakai `MoneyDecimal` (PS-15): menerima "1.000,50" maupun "1000.5".
 """
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 from core_utils import MoneyDecimal, QtyDecimal
+from schemas_return_rolls import ReturnRollDetail  # 23 Okt — retur per roll
 
 
 class IntercoLineIn(BaseModel):
@@ -88,6 +89,8 @@ class IntercoReturnLineIn(BaseModel):
     # supaya roll bagus tidak terkirim balik sementara roll cacat tinggal.
     roll_ids: List[str] = Field(default_factory=list)
     notes: str = ""
+    # 23 Okt — alasan, kondisi & checklist PER ROLL (sama dengan retur pelanggan & supplier).
+    roll_details: Dict[str, ReturnRollDetail] = Field(default_factory=dict)
 
 
 class IntercoReturnCreate(BaseModel):

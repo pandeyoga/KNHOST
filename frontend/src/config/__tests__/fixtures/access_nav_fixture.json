@@ -167,6 +167,7 @@
     "tax-invoices",
     "vehicle-logs",
     "vendor-bills",
+    "wms-cutting",
     "wms-locations",
     "wms-operations",
     "wms-outbound"
@@ -341,6 +342,7 @@
     "tax-invoices",
     "vehicle-logs",
     "vendor-bills",
+    "wms-cutting",
     "wms-locations",
     "wms-operations",
     "wms-outbound"
@@ -369,6 +371,7 @@
     "returns",
     "returns-hub",
     "rfid-hub",
+    "wms-cutting",
     "wms-locations",
     "wms-operations",
     "wms-outbound"
@@ -690,6 +693,7 @@
     "tax-invoices",
     "vehicle-logs",
     "vendor-bills",
+    "wms-cutting",
     "wms-locations",
     "wms-outbound"
    ]
@@ -847,6 +851,7 @@
     "tax-invoices",
     "vehicle-logs",
     "vendor-bills",
+    "wms-cutting",
     "wms-locations",
     "wms-operations",
     "wms-outbound"

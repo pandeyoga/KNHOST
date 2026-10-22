@@ -37,6 +37,8 @@ import ConfirmModal from "../../components/ConfirmModal";
 import ReturnDetailPanel from "./ReturnDetailPanel";
 import RollPickerModal from "./RollPickerModal";
 import { can } from "../../config/roles";
+// 23 Okt — alasan, kondisi, checklist & foto PER ROLL (bentuk sama dengan retur pelanggan).
+import { PickedRollClaims, claimDetails, emptyClaim, pickedClaimErrors } from "../sales/ReturnRollClaims";
 
 /**
  * PurchaseReturns (Depth #1B) — Retur Beli / Nota Debit.
@@ -94,13 +96,14 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
   // diam-diam menyusut mengikuti halaman yang sedang dibuka.
   const [statusCounts, setStatusCounts] = useState({});
 
-  const blankItem = { product_id: "", quantity: "", price: "", reason: "cacat", condition: "damaged", roll_ids: [], rolls: [] };
+  const blankItem = { product_id: "", quantity: "", price: "", reason: "cacat", condition: "damaged", roll_ids: [], rolls: [], claims: {} };
   const [form, setForm] = useState({ supplier_id: "", po_id: "", warehouse_id: "", reason: "", notes: "", items: [blankItem], submit_now: true });
 
   // Sisir gerbang peran (2026-10-20): ACC = purchase_return.approve, tolak = purchase_return.reject, hapus draf = purchase_return.update.
   const canApprove = can(currentUser?.permissions, "purchase_return", "approve");
   const canReject = can(currentUser?.permissions, "purchase_return", "reject");
   const canDelete = can(currentUser?.permissions, "purchase_return", "update");
+  const canDecideRolls = can(currentUser?.permissions, "purchase_return", "decide_rolls");
 
   // P2 — daftar retur beli dipaginasi di server (?page/?page_size/?q/?status).
   const [lineFilter, setLineFilter] = useState("");   // FASE L
@@ -156,7 +159,7 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
   }
   // Ganti produk → reset pilihan roll (roll lama tak valid untuk produk berbeda).
   function updateItemProduct(i, productId) {
-    setForm((f) => ({ ...f, items: f.items.map((it, idx) => idx === i ? { ...it, product_id: productId, roll_ids: [], rolls: [] } : it) }));
+    setForm((f) => ({ ...f, items: f.items.map((it, idx) => idx === i ? { ...it, product_id: productId, roll_ids: [], rolls: [], claims: {} } : it) }));
   }
   // Audit pola Lurik (22 Okt) — qty retur dikirim dalam SATUAN DASAR produk, jadi harga baris PO (per satuan PO, mis.
   // per meter) dikonversi ke per satuan dasar (mis. per yard). Dulu harga per meter dipakai untuk qty yard.
@@ -175,7 +178,7 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
       setForm((f) => ({
         ...f, po_id: poId, warehouse_id: po.warehouse_id || f.warehouse_id,
         supplier_id: po.supplier_id || f.supplier_id,
-        items: (po.items || []).map((it) => ({ product_id: it.product_id, quantity: "", price: poPriceBase(it), reason: "cacat", condition: "damaged", roll_ids: [], rolls: [] })) || [blankItem],
+        items: (po.items || []).map((it) => ({ product_id: it.product_id, quantity: "", price: poPriceBase(it), reason: "cacat", condition: "damaged", roll_ids: [], rolls: [], claims: {} })) || [blankItem],
       }));
     } else {
       setForm((f) => ({ ...f, po_id: "" }));
@@ -196,6 +199,9 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
         ...it,
         roll_ids,
         rolls: selectedRolls.map((r) => ({ roll_id: r.roll_id, roll_no: r.roll_no, lot: r.lot, qty_remaining: r.qty_remaining, unit_cost: r.unit_cost })),
+        // Isian per roll yang sudah diketik dipertahankan untuk roll yang tetap dipilih.
+        claims: Object.fromEntries(selectedRolls.map((r) => [r.roll_id, (it.claims || {})[r.roll_id]
+          || { ...emptyClaim({ remaining: r.qty_remaining }), condition: it.condition === "damaged" ? "damaged" : "ok" }])),
         quantity: roll_ids.length ? String(totalQty) : it.quantity,
         price: (roll_ids.length && avgCost != null) ? String(avgCost) : it.price,
       } : it),
@@ -203,21 +209,34 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
     setRollPicker(null);
   }
   function clearRolls(i) {
-    setForm((f) => ({ ...f, items: f.items.map((it, idx) => idx === i ? { ...it, roll_ids: [], rolls: [] } : it) }));
+    setForm((f) => ({ ...f, items: f.items.map((it, idx) => idx === i ? { ...it, roll_ids: [], rolls: [], claims: {} } : it) }));
   }
+  const unitOf = (pid) => products.find((p) => p.id === pid)?.base_unit || "";
+  const pickedRolls = (it) => (it.rolls || []).map((r) => ({ roll_id: r.roll_id, roll_no: r.roll_no, lot: r.lot,
+    remaining: Number(r.qty_remaining || 0), unit: unitOf(it.product_id) }));
 
   async function handleSubmit() {
     const items = form.items.filter((it) => it.product_id && Number(it.quantity) > 0)
       .map((it) => {
         const prod = products.find((p) => p.id === it.product_id);
         const unit = prod?.base_unit || "meter";
-        return { product_id: it.product_id, quantity: Number(it.quantity), unit, price: Number(it.price || 0), reason: it.reason, condition: it.condition, roll_ids: it.roll_ids || [] };
+        return { product_id: it.product_id, quantity: Number(it.quantity), unit, price: Number(it.price || 0), reason: it.reason, condition: it.condition,
+          roll_ids: it.roll_ids || [], roll_details: claimDetails(it.claims) };
       });
     if (!form.supplier_id) { setError("Supplier wajib dipilih."); return; }
     if (items.length === 0) { setError("Minimal satu item dengan qty > 0."); return; }
+    const rollErrs = form.items.filter((it) => (it.roll_ids || []).length).flatMap((it) => pickedClaimErrors(pickedRolls(it), it.claims || {}));
+    if (rollErrs.length) { setError(`Periksa isian roll: ${rollErrs.join("; ")}`); return; }
     try {
       const res = await axios.post(`${API}/purchase-returns`, { ...form, items });
-      setNotice(`Retur ${res.data.number} dibuat (${res.data.status === "pending_approval" ? "menunggu approval" : "draft"}).`);
+      // Foto bukti per roll diunggah sesudah dokumen ada (membawa roll_id).
+      const uploads = form.items.flatMap((it) => Object.entries(it.claims || {}).flatMap(([rid, c]) => (c.files || []).map((f) => [f, rid])));
+      for (const [f, rid] of uploads) {
+        const fd = new FormData(); fd.append("file", f); fd.append("roll_id", rid);
+        await axios.post(`${API}/purchase-returns/${res.data.id}/attachments`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      }
+      setError("");   // galat validasi form tadi jangan tertinggal sebagai galat halaman
+      setNotice(`Retur ${res.data.number} dibuat (${res.data.status === "pending_approval" ? "menunggu persetujuan" : "draf"})${uploads.length ? ` · ${uploads.length} foto roll` : ""}.`);
       setShowForm(false);
       setForm({ supplier_id: "", po_id: "", warehouse_id: "", reason: "", notes: "", items: [blankItem], submit_now: true });
       await loadAll();
@@ -262,10 +281,12 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
         accept: `${API}/purchase-returns/${ret.id}/supplier-accept`,
         supplier_reject: `${API}/purchase-returns/${ret.id}/supplier-reject`,
         goods_back: `${API}/purchase-returns/${ret.id}/goods-back`,
+        partial_goods_back: `${API}/purchase-returns/${ret.id}/supplier-rejected-goods-back`,
       };
       const labels = {
         ship: "dikirim ke supplier", accept: "diterima supplier",
         supplier_reject: "ditolak supplier", goods_back: "barang dikembalikan ke gudang",
+        partial_goods_back: "— roll tolakan supplier kembali ke gudang",
       };
       const res = await axios.post(urls[action], body || {});
       setNotice(`Retur ${res.data.number} ${labels[action]}.${res.data.debit_note_number && action === "accept" ? ` Nota debit: ${res.data.debit_note_number}` : ""}`);
@@ -302,7 +323,7 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
 
       <PageHeader icon={RotateCcw} title={<span data-testid="purchase-returns-title">Retur Pembelian (Nota Debit)</span>}
         subtitle="Kembalikan barang ke pemasok — setelah disetujui terbit Nota Debit yang memotong tagihan pemasok."
-        actions={<button data-testid="create-return-button" onClick={() => setShowForm(!showForm)} className="primary-button"><Plus size={14} /> Buat Retur</button>} />
+        actions={<button data-testid="create-return-button" onClick={() => { setError(""); setShowForm(!showForm); }} className="primary-button"><Plus size={14} /> Buat Retur</button>} />
       <MetricRow testId="pret-stats" items={[
         { label: "Total retur beli", value: counts.all ?? 0, icon: RotateCcw, hint: "semua status" },
         { label: "Draf", value: counts.draft ?? 0, icon: FileText },
@@ -368,8 +389,12 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
                         disabled={picked > 0} title={picked > 0 ? "Harga otomatis dari roll terpilih" : ""}
                         className={`field !py-1 ${picked > 0 ? "opacity-70 cursor-not-allowed" : ""}`} placeholder="harga" />
                       <KNSelect value={it.reason} onValueChange={(v) => updateItem(i, { reason: v })} className="field !py-1" options={REASONS} />
-                      <KNSelect value={it.condition} onValueChange={(v) => updateItem(i, { condition: v })} className="field !py-1"
-                        options={[{ value: "damaged", label: "Rusak" }, { value: "ok", label: "Baik" }]} />
+                      {picked > 0 ? (
+                        <span className="text-[10.5px] text-[#6B6B73]" title="Kondisi diisi per roll di bawah">per roll ↓</span>
+                      ) : (
+                        <KNSelect value={it.condition} onValueChange={(v) => updateItem(i, { condition: v })} className="field !py-1"
+                          options={[{ value: "damaged", label: "Rusak" }, { value: "ok", label: "Baik" }]} />
+                      )}
                       <button className="icon-button text-red-400" onClick={() => setForm((f) => ({ ...f, items: f.items.filter((_, idx) => idx !== i) }))}><X size={13} /></button>
                     </div>
 
@@ -400,6 +425,12 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
                         </>
                       )}
                     </div>
+                    {picked > 0 && (
+                      <div className="px-2.5 pb-2">
+                        <PickedRollClaims rolls={pickedRolls(it)} claims={it.claims || {}} testId={`return-item-${i}-claims`}
+                          onChange={(claims) => updateItem(i, { claims })} />
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -508,13 +539,19 @@ export default function PurchaseReturns({ currentUser, selectedEntity }) {
         supName={supName}
         canApprove={canApprove}
         canDelete={canDelete}
+        canDecideRolls={canDecideRolls}
+        onChanged={async () => {
+          try { const r = await axios.get(`${API}/purchase-returns/${detail.id}`); setDetail(r.data); } catch { /* panel tetap */ }
+          loadAll();
+        }}
         onClose={() => setDetail(null)}
         onSubmit={(r) => act(r.id, "submit")}
         onApprove={(r) => act(r.id, "approve", { notes: "" })}
         onReject={(r) => { setDetail(null); setRejectTarget(r); }}
         onDelete={(r) => { setDetail(null); setDeleteTarget(r); }}
         onShip={(r) => lifecycleAct(r, "ship", {})}
-        onSupplierAccept={(r, outcome, refundAccount) => lifecycleAct(r, "accept", { outcome, refund_account_code: refundAccount || "" })}
+        onSupplierAccept={(r, outcome, refundAccount, rejectedRolls) => lifecycleAct(r, "accept", { outcome, refund_account_code: refundAccount || "", rejected_rolls: rejectedRolls || [] })}
+        onPartialGoodsBack={(r, regrade) => lifecycleAct(r, "partial_goods_back", { regrade })}
         onSupplierReject={(r, reason) => lifecycleAct(r, "supplier_reject", { reason })}
         onGoodsBack={(r, regrade) => lifecycleAct(r, "goods_back", { regrade })}
         onReverse={onReversed}

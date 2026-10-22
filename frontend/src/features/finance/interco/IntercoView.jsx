@@ -294,6 +294,8 @@ export default function IntercoView({ currentUser, selectedEntity, entities = []
       {tab === "returns" && (
         <IntercoReturnsPanel
           rows={returns} canWrite={canWrite}
+          canDecideRolls={can(perms, "interco", "decide_rolls")} activeEntityId={entityId}
+          onChanged={refresh}
           onApprove={(r) => retAct(r, "approve", { note: "" },
             `Retur ${r.number} disetujui — jurnal pembalik terbit di kedua buku PT`)}
           onTask={(r) => retAct(r, "warehouse-task", { note: "" })}

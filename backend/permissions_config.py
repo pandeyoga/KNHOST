@@ -648,6 +648,11 @@ for _role in ("admin", "manager", "md", "md_quality"):
 for _role in ("admin", "manager", "sales_admin"):
     _cur = DEFAULT_PERMISSIONS[_role].setdefault("sales_return", ["view"])
     DEFAULT_PERMISSIONS[_role]["sales_return"] = list(_cur) + [x for x in ["decide_rolls"] if x not in _cur]
+# … diteruskan ke retur ke SUPPLIER & retur ANTAR-PT: bawaan pemegang ACC-nya (Admin & Manajer), dapat diatur.
+for _role in ("admin", "manager"):
+    for _mod in ("purchase_return", "interco"):
+        _cur = DEFAULT_PERMISSIONS[_role].setdefault(_mod, ["view"])
+        DEFAULT_PERMISSIONS[_role][_mod] = list(_cur) + [x for x in ["decide_rolls"] if x not in _cur]
 EXTRA_ACTIONS = {"sales_pov": ["commercial"]}
 # Keputusan owner 2026-10-21 — nota kredit otomatis dari batal item Pesanan Khusus pada SO terbit: ditinjau
 # (dikoreksi / diterbitkan / dibatalkan) pemegang izin ini; bawaan Finance, Manager, Admin — dapat diatur di matriks.

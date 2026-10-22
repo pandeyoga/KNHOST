@@ -222,6 +222,12 @@ async def create(payload: Dict[str, Any], actor: str = "") -> Dict[str, Any]:
             raise IntercoReturnError(
                 f"{src['sku'] or pid}: jumlah retur {qty} melebihi yang masih bisa "
                 f"diretur ({src['qty_returnable']} {src['unit']}).")
+        picked = [str(x) for x in (row.get("roll_ids") or []) if x]
+        cand = {r["roll_id"]: r for r in src.get("rolls") or []}
+        bad = [rid for rid in picked if rid not in cand]
+        if bad:
+            raise IntercoReturnError(f"{src['sku'] or pid}: roll terpilih tidak tersedia di gudang PT pembeli "
+                                     f"({', '.join(bad)}).")
         items.append({
             "product_id": pid,
             "sku": src["sku"],
@@ -232,11 +238,17 @@ async def create(payload: Dict[str, Any], actor: str = "") -> Dict[str, Any]:
             "line_subtotal": round(qty * src["unit_price"], 2),
             # E9.4 — roll yang DIPILIH untuk dikirim balik (kalau kosong: mesin
             # mengutamakan roll hasil retur pelanggan, bukan FEFO acak).
-            "roll_ids": [str(x) for x in (row.get("roll_ids") or []) if x],
+            "roll_ids": picked,
+            # 23 Okt — qty, nomor & detail (alasan, kondisi, checklist) PER ROLL — bentuk sama dengan retur pelanggan.
+            "roll_qtys": {rid: cand[rid]["qty"] for rid in picked},
+            "roll_nos": {rid: cand[rid].get("roll_no", "") for rid in picked},
+            "roll_details": {k: dict(v or {}) for k, v in (row.get("roll_details") or {}).items()},
             "notes": (row.get("notes") or "").strip(),
             # FASE U — jumlah roll retur antar-PT = roll yang benar-benar dipilih.
             "qty_rolls": await _dual.rolls_of_ids(row.get("roll_ids")),
         })
+        from services.return_rolls_service import normalize_roll_details
+        normalize_roll_details(items[-1])
     if not items:
         raise IntercoReturnError("Minimal satu baris barang harus diretur.")
 
@@ -832,6 +844,51 @@ async def _post_goods_gl(return_pair_id: str, actor: str, cost_back: float,
 # ═══════════════════════════════════════════════════════════════════════════
 # BATAL (hanya draf — sesudah disetujui jurnalnya sudah hidup)
 # ═══════════════════════════════════════════════════════════════════════════
+async def decide_rolls(ret_id: str, decisions: List[Dict[str, Any]], actor: Dict[str, Any],
+                       can_reject: bool = True) -> Dict[str, Any]:
+    """23 Okt — Terima/Tolak per roll SEBELUM retur antar-PT disetujui (izin `interco.decide_rolls`). Roll ditolak
+    keluar dari kedua dokumen kembar (qty, nilai, PPN) dan tetap di gudang PT pembeli; semua ditolak → batal.
+    `can_reject=False` untuk PT penjual pada retur WAJIB TERIMA (R-10): ia hanya boleh menerima."""
+    from services import return_rolls_service as rrs
+    doc = await db[COLL].find_one({"id": ret_id}, {"_id": 0})
+    if not doc:
+        raise IntercoReturnError("Dokumen retur tidak ditemukan.")
+    if doc["status"] != "draft":
+        raise IntercoReturnError("Keputusan per roll hanya selama retur masih draf (sebelum disetujui).")
+    if not can_reject and any(str(d.get("decision") or "").lower() == "reject" for d in decisions or []):
+        raise IntercoReturnError("Retur internal ini WAJIB DITERIMA PT pemasok (R-10) — roll tidak bisa ditolak "
+                                 "dari sisi penjual; minta PT pengembali mengeluarkan roll itu.")
+    returner, _receiver = await _pair_docs(doc["return_pair_id"])
+    items = [dict(it) for it in returner.get("items") or []]
+    try:
+        want, nos = await rrs.prepare_roll_decisions(items, decisions, "retur antar-PT")
+        now, who = now_iso(), actor.get("name", "")
+        log = rrs.apply_roll_decisions(items, want, nos, who, now, qty_key="quantity")
+    except ValueError as exc:
+        raise IntercoReturnError(str(exc)) from exc
+    for it in items:
+        it["line_subtotal"] = round(float(it.get("quantity") or 0) * float(it.get("unit_price") or 0), 2)
+    subtotal = round(sum(i["line_subtotal"] for i in items), 2)
+    tax = round(subtotal * float(returner.get("tax_rate") or 0) / 100.0, 2) if returner.get("tax_apply") else 0.0
+    upd: Dict[str, Any] = {"items": items, "subtotal": subtotal, "tax_amount": tax,
+                           "grand_total": round(subtotal + tax, 2),
+                           "qty_total": round(sum(float(i.get("quantity") or 0) for i in items), 4),
+                           "roll_decision_log": rrs.decision_log_entry(returner.get("roll_decision_log"), actor, now, log),
+                           "updated_at": now, "updated_by": who}
+    note = rrs.rejected_summary(log)
+    if not any(float(i.get("quantity") or 0) > 0 for i in items):
+        upd.update({"status": "cancelled", "cancel_reason": f"Semua roll retur ditolak: {note}",
+                    "cancelled_by": who, "cancelled_at": now})
+    res = await db[COLL].update_many(
+        {"return_pair_id": doc["return_pair_id"], "status": "draft"},
+        {"$set": upd, "$push": {"timeline": timeline_entry(
+            "roll_decisions", "Keputusan per roll", who,
+            note or f"{len(log)} roll diterima")}})
+    if res.matched_count != 2:
+        raise IntercoReturnError("Retur baru saja berubah oleh pengguna lain — muat ulang lalu ulangi keputusan.")
+    return await get_pair(doc["return_pair_id"])
+
+
 async def cancel(ret_id: str, actor: str, reason: str = "") -> Dict[str, Any]:
     doc = await db[COLL].find_one({"id": ret_id}, {"_id": 0})
     if not doc:

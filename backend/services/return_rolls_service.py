@@ -1,7 +1,7 @@
 """L08 LN-080 — retur hanya dari barang yang BENAR-BENAR terkirim (roll per SJ) + batas kumulatif atomik per SO."""
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from pymongo.errors import DuplicateKeyError
 
@@ -133,21 +133,26 @@ async def assert_shipped_items(order_id: str, items: List[Dict[str, Any]]) -> No
 ROLL_FLAGS = ("hangtag_missing", "cut_by_customer")
 
 
-def normalize_roll_details(item: Dict[str, Any]) -> None:
-    """Rapikan `roll_details` baris retur (hanya roll yang diklaim) + ringkasan baris (kondisi & alasan)."""
+def normalize_roll_details(item: Dict[str, Any], summarize_reason: bool = True,
+                           default_condition: str = "ok") -> None:
+    """Rapikan `roll_details` baris retur (hanya roll yang diklaim) + ringkasan baris (kondisi & alasan).
+
+    `summarize_reason=False` untuk retur supplier: `reason` baris di sana adalah KODE (cacat/salah_kirim/…),
+    bukan kalimat — tidak boleh ditimpa gabungan alasan roll. `default_condition` dipakai bila roll tidak
+    dikirim detailnya sama sekali (retur supplier lama: kondisi baris)."""
     raw = item.get("roll_details") or {}
     out: Dict[str, Dict[str, Any]] = {}
     for rid in list(item.get("roll_ids") or []):
         d = raw.get(rid) or {}
+        cond = d.get("condition") or default_condition
         out[rid] = {"reason": str(d.get("reason") or "").strip()[:300],
-                    "condition": "damaged" if d.get("condition") == "damaged" else "ok",
+                    "condition": "damaged" if cond == "damaged" else "ok",
                     "hangtag_missing": bool(d.get("hangtag_missing")), "cut_by_customer": bool(d.get("cut_by_customer")),
                     "note": str(d.get("note") or "").strip()[:300], "decision": "", "decision_reason": ""}
     item["roll_details"] = out
     if out and raw:
-        if any(v["condition"] == "damaged" for v in out.values()):
-            item["condition"] = "damaged"
-        if not str(item.get("reason") or "").strip():
+        item["condition"] = "damaged" if any(v["condition"] == "damaged" for v in out.values()) else "ok"
+        if summarize_reason and not str(item.get("reason") or "").strip():
             item["reason"] = "; ".join(dict.fromkeys(v["reason"] for v in out.values() if v["reason"]))
 
 
@@ -162,23 +167,29 @@ def condition_flags_of(items: List[Dict[str, Any]], base: Dict[str, Any]) -> Dic
     return out
 
 
-async def decide_rolls(ret: Dict[str, Any], decisions: List[Dict[str, Any]], actor: Dict[str, Any]) -> Dict[str, Any]:
-    """Terima / tolak roll klaim. Roll DITOLAK keluar dari retur (tetap milik pelanggan): tidak discan, tidak di-QC,
-    tidak dihitung uang; klaim rollnya kembali bebas. Semua roll ditolak → retur ditolak."""
-    from services import return_state as st
-    if ret.get("status") not in ("draft", "pending_approval"):
-        raise ValueError("Keputusan per roll hanya sebelum retur disetujui (draf / menunggu persetujuan).")
+async def prepare_roll_decisions(items: List[Dict[str, Any]], decisions: List[Dict[str, Any]],
+                                 what: str = "retur") -> Tuple[Dict[str, Dict[str, Any]], Dict[str, str]]:
+    """Validasi keputusan (roll harus termasuk klaim) + nomor roll untuk pesan & jejak."""
     want = {str(d.get("roll_id")): d for d in decisions or [] if d.get("roll_id")}
     if not want:
         raise ValueError("Tidak ada keputusan roll yang dikirim.")
-    items = [dict(it) for it in ret.get("items") or []]
     known = {rid for it in items for rid in (it.get("roll_ids") or [])}
     unknown = [rid for rid in want if rid not in known]
     if unknown:
-        raise ValueError("Roll tidak termasuk klaim retur ini (atau sudah ditolak): " + ", ".join(unknown))
+        raise ValueError(f"Roll tidak termasuk klaim {what} ini (atau sudah ditolak): " + ", ".join(unknown))
     nos = {r["id"]: r.get("roll_no") or r["id"] async for r in db.inventory_rolls.find(
         {"id": {"$in": list(want)}}, {"_id": 0, "id": 1, "roll_no": 1})}
-    now, who = now_iso(), actor.get("name", "")
+    return want, nos
+
+
+def apply_roll_decisions(items: List[Dict[str, Any]], want: Dict[str, Dict[str, Any]], nos: Dict[str, str],
+                         who: str, now: str, qty_key: str = "quantity_returned",
+                         summarize_reason: bool = True) -> List[Dict[str, Any]]:
+    """Terapkan Terima/Tolak per roll pada `items` (diubah di tempat). Roll DITOLAK keluar dari baris: roll_ids,
+    roll_qtys, `rolls` (meta retur supplier) & qty baris; jejaknya di `rejected_rolls`. Return: log keputusan.
+
+    Qty baris sesudah tolak = min(qty lama, total qty roll yang tersisa) bila semua qty roll diketahui — retur supplier
+    boleh mengambil SEBAGIAN dari roll terpilih, jadi qty baris tidak selalu sama dengan jumlah panjang roll."""
     log: List[Dict[str, Any]] = []
     for it in items:
         details = dict(it.get("roll_details") or {})
@@ -194,37 +205,67 @@ async def decide_rolls(ret: Dict[str, Any], decisions: List[Dict[str, Any]], act
             elif dec == "reject":
                 if len(reason) < 5:
                     raise ValueError(f"Alasan tolak roll {nos.get(rid, rid)} wajib diisi (min. 5 huruf).")
-                qty = float((it.get("roll_qtys") or {}).get(rid) or 0)
+                qtys = it.get("roll_qtys") or {}
+                qty = float(qtys.get(rid) or 0)
                 it["roll_ids"] = [x for x in it["roll_ids"] if x != rid]
-                it["roll_qtys"] = {k: v for k, v in (it.get("roll_qtys") or {}).items() if k != rid}
-                it["quantity_returned"] = round(max(float(it.get("quantity_returned") or 0) - qty, 0.0), 2)
-                it.pop("quantity_returned_input", None)
-                it.pop("unit_input", None)
+                it["roll_qtys"] = {k: v for k, v in qtys.items() if k != rid}
+                if it.get("rolls"):
+                    it["rolls"] = [r for r in it["rolls"] if r.get("roll_id") != rid]
+                    it["lots"] = sorted({r.get("lot") for r in it["rolls"] if r.get("lot")})
+                left = round(max(float(it.get(qty_key) or 0) - qty, 0.0), 2)
+                if it["roll_ids"] and all(r in it["roll_qtys"] for r in it["roll_ids"]):
+                    left = round(min(float(it.get(qty_key) or 0),
+                                     sum(float(it["roll_qtys"][r] or 0) for r in it["roll_ids"])), 2)
+                it[qty_key] = left if it["roll_ids"] else 0.0
+                for k in ("quantity_returned_input", "quantity_input", "unit_input"):
+                    it.pop(k, None)
                 it["qty_rolls"] = len(it["roll_ids"]) or None
                 it.setdefault("rejected_rolls", []).append({"roll_id": rid, "roll_no": nos.get(rid, rid), "qty": qty,
                                                            "unit": it.get("unit", ""), "reason": reason, "by": who,
                                                            "at": now})
                 info.update(decision="reject", decision_reason=reason, decided_by=who, decided_at=now)
-                if not it["roll_ids"] and it["quantity_returned"] <= 0:
-                    it["settle_outcome"] = "reject"
             else:
                 raise ValueError(f"Keputusan roll {nos.get(rid, rid)} harus 'accept' atau 'reject'.")
             details[rid] = info
             log.append({"roll_id": rid, "roll_no": nos.get(rid, rid), "decision": dec, "reason": reason})
         it["roll_details"] = details
         kept = [details[r] for r in it.get("roll_ids") or [] if r in details]
-        if kept and all(v.get("reason") for v in kept):   # ringkasan baris mengikuti roll yang masih diklaim
-            it["reason"] = "; ".join(dict.fromkeys(v["reason"] for v in kept))
+        if kept and any(v.get("reason") or v.get("decision") for v in kept):   # ringkasan = roll yang masih diklaim
             it["condition"] = "damaged" if any(v.get("condition") == "damaged" for v in kept) else "ok"
+            if summarize_reason and all(v.get("reason") for v in kept):
+                it["reason"] = "; ".join(dict.fromkeys(v["reason"] for v in kept))
+    return log
+
+
+def rejected_summary(log: List[Dict[str, Any]]) -> str:
+    return "; ".join(f"{x['roll_no']} — {x['reason']}" for x in log if x["decision"] == "reject")
+
+
+def decision_log_entry(prev: List[Dict[str, Any]], actor: Dict[str, Any], now: str,
+                       log: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    return list(prev or []) + [{"by": actor.get("name", ""), "role": actor.get("role", ""), "at": now, "rolls": log}]
+
+
+async def decide_rolls(ret: Dict[str, Any], decisions: List[Dict[str, Any]], actor: Dict[str, Any]) -> Dict[str, Any]:
+    """RETUR PELANGGAN — terima / tolak roll klaim. Roll DITOLAK keluar dari retur (tetap milik pelanggan): tidak
+    discan, tidak di-QC, tidak dihitung uang; klaim rollnya kembali bebas. Semua roll ditolak → retur ditolak."""
+    from services import return_state as st
+    if ret.get("status") not in ("draft", "pending_approval"):
+        raise ValueError("Keputusan per roll hanya sebelum retur disetujui (draf / menunggu persetujuan).")
+    items = [dict(it) for it in ret.get("items") or []]
+    want, nos = await prepare_roll_decisions(items, decisions)
+    now, who = now_iso(), actor.get("name", "")
+    log = apply_roll_decisions(items, want, nos, who, now)
+    for it in items:
+        if it.get("rejected_rolls") and not it.get("roll_ids") and float(it.get("quantity_returned") or 0) <= 0:
+            it["settle_outcome"] = "reject"
     base = {"replacement_proof": (ret.get("condition_flags") or {}).get("replacement_proof")}
     upd: Dict[str, Any] = {"items": items, "updated_at": now, "condition_flags": condition_flags_of(items, base),
-                           "roll_decision_log": list(ret.get("roll_decision_log") or [])
-                           + [{"by": who, "role": actor.get("role", ""), "at": now, "rolls": log}]}
+                           "roll_decision_log": decision_log_entry(ret.get("roll_decision_log"), actor, now, log)}
     if not any(float(it.get("quantity_returned") or 0) > 0 for it in items):
         st.assert_transition(ret["status"], st.REJECTED)
-        rejected = "; ".join(f"{x['roll_no']} — {x['reason']}" for x in log if x["decision"] == "reject")
         upd.update({"status": st.REJECTED, "rejected_by": who, "rejected_at": now,
-                    "reject_reason": f"Semua roll klaim ditolak: {rejected}"})
+                    "reject_reason": f"Semua roll klaim ditolak: {rejected_summary(log)}"})
     res = await db.sales_returns.update_one({"id": ret["id"], "status": ret["status"]}, {"$set": upd})
     if not res.matched_count:
         raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang lalu ulangi keputusan.")

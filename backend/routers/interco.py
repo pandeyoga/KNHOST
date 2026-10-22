@@ -8,7 +8,7 @@ dipakai ulang untuk settlement (netting) via `/interco/settlements`.
 """
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 
 from dependencies import audit, require_any_permission, require_permission
 from entity_scope import entity_ctx, resolve_scope_ids
@@ -16,6 +16,7 @@ from schemas_interco import (
     IntercoActionIn, IntercoCreate, IntercoReasonIn, IntercoReturnCreate,
     IntercoSettlementCreate, IntercoTaxIssueIn,
 )
+from schemas_return_rolls import ReturnRollDecisionsIn
 from services import interco_margin as icmargin
 from services import interco_reminder as icrem
 from services import interco_return_service as icret
@@ -44,7 +45,10 @@ async def _guard_party(request: Request, doc: Optional[Dict[str, Any]], label: s
     if not doc:
         raise HTTPException(status_code=404, detail=f"{label} tidak ditemukan.")
     ctx = await entity_ctx(request)
-    parties = {doc.get(f) for f in _PARTY_FIELDS if doc.get(f)}
+    # Retur antar-PT dikirim sebagai PASANGAN {returner, receiver} — pihak-pihaknya ada di dokumen kembarnya.
+    # Dulu pasangan dibaca langsung: tak satu pun kolom pihak ditemukan, jadi pagar ini selalu lolos.
+    src = doc.get("returner") or doc
+    parties = {src.get(f) for f in _PARTY_FIELDS if src.get(f)}
     if parties and not (parties & set(ctx.allowed_entity_ids)):
         raise HTTPException(status_code=404, detail="Data tidak ditemukan untuk entitas ini")
     return doc
@@ -452,6 +456,56 @@ async def return_warehouse_task(ret_id: str, payload: IntercoActionIn,
                 "warehouse_transfer", res.get("id", ""),
                 {"code": res.get("code"), "return_id": ret_id, "note": payload.note})
     return res
+
+
+@router.post("/interco/returns/{ret_id}/roll-decisions")
+async def interco_return_roll_decisions(ret_id: str, payload: ReturnRollDecisionsIn,
+                                        request: Request) -> Dict[str, Any]:
+    """23 Okt — Terima/Tolak per roll sebelum retur antar-PT disetujui (izin `interco.decide_rolls`)."""
+    actor = await require_permission(request, "interco", "decide_rolls")
+    pair = await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    head = pair.get("returner") or pair
+    ctx = await entity_ctx(request)
+    seller_side = ctx.active_entity_id == head.get("seller_entity_id")
+    try:
+        res = await icret.decide_rolls(ret_id, [d.dict() for d in payload.decisions], actor,
+                                       can_reject=not (head.get("mandatory_accept") and seller_side))
+    except icret.IntercoReturnError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    await audit(actor.get("name", ""), "interco_return_roll_decisions", "interco_return", ret_id,
+                {"rolls": [d.dict() for d in payload.decisions]})
+    return res
+
+
+@router.post("/interco/returns/{ret_id}/attachments")
+async def interco_return_attachment(ret_id: str, request: Request, file: UploadFile = File(...),
+                                    roll_id: str = Form("")) -> Dict[str, Any]:
+    """23 Okt — foto bukti retur antar-PT (per roll bila `roll_id` diisi); tersimpan di KEDUA dokumen kembar."""
+    actor = await require_permission(request, "interco", "return")
+    pair = await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    head = pair.get("returner") or pair
+    if head.get("status") == "cancelled":
+        raise HTTPException(status_code=400, detail="Retur sudah dibatalkan — tidak bisa tambah lampiran.")
+    from services import return_attachment_service as ras
+    try:
+        att = await ras.store("interco_returns", head, file, roll_id, actor.get("name", ""),
+                              match={"return_pair_id": head.get("return_pair_id")})
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    await audit(actor.get("name", ""), "interco_return_attachment_added", "interco_return", ret_id,
+                {"filename": file.filename, "roll_id": roll_id})
+    return att
+
+
+@router.get("/interco/returns/{ret_id}/attachments/{att_id}/download")
+async def interco_return_attachment_download(ret_id: str, att_id: str, request: Request):
+    await require_permission(request, "interco", "view")
+    pair = await _guard_party(request, await icret.get_one(ret_id), "Retur antar-PT")
+    from services import return_attachment_service as ras
+    try:
+        return await ras.download(pair.get("returner") or pair, att_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.post("/interco/returns/{ret_id}/cancel")

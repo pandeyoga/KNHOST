@@ -1,18 +1,18 @@
 import { AskKnButton } from "../../components/AskKnButton";
 import { useState, useEffect } from "react";
 import { X, FileText, Send, CheckCircle2, XCircle, ReceiptText, RotateCcw, Trash2,
-         Truck, PackageCheck, Undo2, Link2, Coins, Loader2, AlertTriangle, Package, Clock } from "lucide-react";
-import { formatCurrency } from "../../utils/formatters";
+         Truck, PackageCheck, Undo2, Link2, Coins, Loader2, AlertTriangle, Clock } from "lucide-react";
+import { formatCurrency, formatQty } from "../../utils/formatters";
 import axios, { API } from "../../services/apiClient";
 import DocumentActionsBar from "../documents/DocumentActionsBar";
 import { Panel, Cell } from "../../components/DetailParts";
 import ReturnChainPanel from "../sales/ReturnChainPanel";
 import KNSelect from "../../components/KNSelect";
-import QtyDual from "../../components/QtyDual";      // FASE U — dua satuan
+import ReturnRollsPanel from "../sales/ReturnRollsPanel";   // 23 Okt — detail & keputusan PER ROLL (sama dgn retur jual)
 
 const STATUS_PILL = {
-  draft: ["pill-muted", "Draft"],
-  pending_approval: ["pill-warning", "Menunggu Approval"],
+  draft: ["pill-muted", "Draf"],
+  pending_approval: ["pill-warning", "Menunggu Persetujuan"],
   approved: ["pill-success", "Disetujui"],
   rejected: ["pill-danger", "Ditolak"],
   cancelled: ["pill-danger", "Dibatalkan (Reversal)"],
@@ -28,8 +28,15 @@ const SUP_PILL = {
 };
 const GRADES = ["A", "B", "C"];
 
-const CONDITION_LABEL = { damaged: "Rusak", ok: "Baik", good: "Baik", baik: "Baik", wrong_item: "Salah Kirim", excess: "Kelebihan", other: "Lainnya" };
 const REASON_LABEL = { cacat: "Barang Cacat", salah_kirim: "Salah Kirim", kelebihan: "Kelebihan Kirim", lain: "Lain-lain" };
+
+/** Baris retur supplier → bentuk baris panel roll (sama dengan retur pelanggan). */
+const toPanelItems = (ret) => (ret.items || []).map((it) => ({
+  ...it, quantity_returned: it.quantity, unit_price_est: it.price, line_total_est: it.subtotal,
+  roll_nos: Object.fromEntries((it.rolls || []).map((r) => [r.roll_id, r.roll_no || r.roll_id])),
+  roll_qtys: it.roll_qtys || Object.fromEntries((it.rolls || []).map((r) => [r.roll_id, r.length_remaining])),
+  reason: REASON_LABEL[it.reason] || it.reason,
+}));
 
 function fmtDateTime(iso) {
   if (!iso) return "";
@@ -55,6 +62,8 @@ function buildTimeline(r) {
   if (r.supplier_status === "accepted_supplier" && r.accepted_at) out.push({ icon: PackageCheck, tone: "#15803D", bg: "#E9F7EF", label: `Supplier terima (${r.supplier_outcome === "refund" ? "refund" : "potong hutang"})`, actor: r.accepted_by || "", at: r.accepted_at, note: r.debit_note_number ? `Nota debit ${r.debit_note_number}` : "" });
   if (r.supplier_status === "rejected_supplier" || r.supplier_rejected_at) out.push({ icon: XCircle, tone: "#B91C1C", bg: "#FEF3F2", label: "Supplier tolak retur", actor: r.supplier_rejected_by || "", at: r.supplier_rejected_at, note: r.supplier_reject_reason || "" });
   if (r.goods_back_at) out.push({ icon: Undo2, tone: "#6B219A", bg: "#FBF5FF", label: "Barang kembali ke gudang", actor: r.goods_back_by || "", at: r.goods_back_at, note: r.goods_back_regraded ? `${r.goods_back_regraded} roll di-regrade` : "" });
+  if (r.supplier_partial) out.push({ icon: XCircle, tone: "#9A5B00", bg: "#FFF7EC", label: `Supplier menolak ${(r.supplier_rejected_rolls || []).length} roll (terima sebagian)`, actor: r.accepted_by || "", at: r.accepted_at, note: (r.supplier_rejected_rolls || []).map((x) => `${x.roll_no}: ${x.reason}`).join("; ") });
+  if (r.partial_goods_back_at) out.push({ icon: Undo2, tone: "#6B219A", bg: "#FBF5FF", label: "Roll tolakan supplier kembali ke gudang", actor: r.partial_goods_back_by || "", at: r.partial_goods_back_at, note: r.partial_goods_back_notes || "" });
   if (r.status === "approved" && r.debit_note_number && !r.supplier_flow) {
     out.push({ icon: ReceiptText, tone: "#15803D", bg: "#E9F7EF", label: `Nota debit diterbitkan (${r.debit_note_number})`, actor: "Sistem", at: r.approved_at, note: "Stok roll dikurangi & AP berkurang" });
   }
@@ -64,10 +73,13 @@ function buildTimeline(r) {
   return out;
 }
 
-export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete, onClose,
+export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete, canDecideRolls, onClose, onChanged,
   onSubmit, onApprove, onReject, onDelete,
-  onShip, onSupplierAccept, onSupplierReject, onGoodsBack, onReverse }) {
+  onShip, onSupplierAccept, onSupplierReject, onGoodsBack, onPartialGoodsBack, onReverse }) {
   const [outcome, setOutcome] = useState("ap_credit");
+  // 23 Okt — supplier menerima SEBAGIAN: roll yang ia tolak (+ alasan) tidak ikut Nota Debit.
+  const [supRejected, setSupRejected] = useState({});   // roll_id -> alasan
+  useEffect(() => { setSupRejected({}); }, [ret?.id]);
   const [rejectReason, setRejectReason] = useState("");
   const [regradeMap, setRegradeMap] = useState({});   // roll_id -> grade
   const [cashAccounts, setCashAccounts] = useState([]);
@@ -110,6 +122,9 @@ export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete,
   const sup = ret.supplier_flow ? (SUP_PILL[ret.supplier_status] || ["pill-muted", ret.supplier_status || "—"]) : null;
   const ss = ret.supplier_status;
   const allRolls = (ret.items || []).flatMap((it) => (it.rolls || []).map((r) => ({ ...r, unit: it.unit })));
+  const pendingBack = (ret.supplier_rejected_rolls || []).filter((r) => !r.goods_back_at);
+  const supRejList = Object.entries(supRejected).map(([roll_id, reason]) => ({ roll_id, reason: (reason || "").trim() }));
+  const supRejBad = supRejList.some((r) => r.reason.length < 5) || (allRolls.length > 0 && supRejList.length >= allRolls.length);
   // R5.4b — kelayakan reversal
   const isReversed = ret.reversed === true || ret.status === "cancelled";
   const isFinalized = ret.stock_adjusted && ret.supplier_status === "accepted_supplier";
@@ -117,7 +132,7 @@ export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete,
 
   return (
     <div className="modal-overlay" data-testid="return-detail-panel" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal-card" style={{ maxWidth: 560, width: "92vw", maxHeight: "88vh", overflowY: "auto" }}>
+      <div className="modal-card" style={{ maxWidth: 880, width: "94vw", maxHeight: "90vh", overflowY: "auto" }}>
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-2 min-w-0">
             <RotateCcw size={16} className="text-[#0058CC]" />
@@ -160,40 +175,17 @@ export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete,
           number={ret.number} label="Nota Retur Beli" esignable={false}
           className="mb-2.5 rounded-md border border-[#EFF0F2] bg-[#FAFBFC] px-2.5 py-2" />
 
-        {/* Items */}
-        <Panel icon={Package} title={`Item retur · ${ret.items?.length || 0}`} className="mb-2.5">
-          {(ret.items || []).map((it, i) => {
-            const rolls = it.rolls || [];
-            const lots = it.lots || [];
-            return (
-              <div key={i} data-testid={`return-detail-item-${i}`} className="border-b border-[#EFF0F2] last:border-0 text-[11px]">
-                <div className="grid grid-cols-[1fr_90px_120px] gap-2 py-1.5">
-                  <div className="min-w-0">
-                    <p className="font-semibold truncate">{it.sku || it.product_name}</p>
-                    <p className="text-[10px] text-[#6B6B73] truncate">{CONDITION_LABEL[it.condition] || it.condition} · {REASON_LABEL[it.reason] || it.reason}</p>
-                  </div>
-                  <span className="tabular-nums text-right self-center text-[#3C3C43]"><QtyDual rolls={it.qty_rolls} measure={it.quantity} unit={it.unit} /></span>
-                  <span className="tabular-nums text-right self-center font-semibold">{formatCurrency(it.subtotal || (it.quantity || 0) * (it.price || 0))}</span>
-                </div>
-                {(rolls.length > 0 || lots.length > 0) && (
-                  <div className="pb-1.5 flex flex-wrap items-center gap-1" data-testid={`return-detail-rolls-${i}`}>
-                    <span className="text-[9px] font-bold uppercase text-[#8E8E93] mr-0.5">Roll/Lot diretur</span>
-                    {rolls.length > 0 ? rolls.map((r) => (
-                      <span key={r.roll_id} className="inline-flex items-center gap-1 rounded border border-[#E4D4F0] bg-[#FBF5FF] px-1.5 py-0.5 text-[10px]">
-                        <span className="font-mono text-[#6B219A]">{r.roll_no || r.roll_id}</span>
-                        {r.lot ? <span className="text-[#8E8E93]">· {r.lot}</span> : null}
-                        {r.length_remaining != null ? <span className="text-[#8E8E93]">· {r.length_remaining}{it.unit ? ` ${it.unit}` : ""}</span> : null}
-                        {r.po_number ? <span className="text-[#8E8E93]">· {r.po_number}</span> : null}
-                      </span>
-                    )) : lots.map((l) => (
-                      <span key={l} className="inline-flex items-center rounded border border-[#EFF0F2] bg-white px-1.5 py-0.5 text-[10px] font-mono text-[#6B219A]">{l}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </Panel>
+        {/* Items — 23 Okt: detail & keputusan PER ROLL (panel yang sama dengan retur pelanggan) */}
+        <div className="mb-2.5">
+          <ReturnRollsPanel ret={ret} items={toPanelItems(ret)} fullView title="Item & roll retur" testId="return-detail-items"
+            estimatedValue={ret.total_amount}
+            canDecide={["draft", "pending_approval"].includes(ret.status) && !!canDecideRolls}
+            decideUrl={`${API}/purchase-returns/${ret.id}/roll-decisions`}
+            attachmentHref={(a) => `${API}/purchase-returns/${ret.id}/attachments/${a.id}/download`}
+            hint="Roll yang ditolak keluar dari retur (tetap stok KN). Roll tanpa keputusan ikut disetujui."
+            valueLabel="Nilai retur sebelum PPN (harga per satuan stok; angka resmi = Nota Debit)"
+            onChanged={onChanged} />
+        </div>
 
         {/* R5.5 — basis nilai retur = WAC landed-inclusive (khusus barang impor) */}
         <p className="mb-2.5 text-[10.5px] text-[#5B6472] flex items-start gap-1" data-testid="pr-cost-basis-note">
@@ -267,9 +259,34 @@ export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete,
                     <p className="text-[10px] text-[#5B6472] mt-1">Pengembalian Dana → <b>Dr Kas/Bank / Cr Persediaan</b> + tercatat kas masuk. AP tidak berubah.</p>
                   </div>
                 )}
+                {allRolls.length > 1 && (
+                  <div className="rounded-md border border-[#EFF0F2] bg-white p-2" data-testid="rma-partial-box">
+                    <p className="text-[10.5px] font-semibold text-[#3C3C43] mb-1">Supplier menerima sebagian? Centang roll yang DITOLAK supplier:</p>
+                    {allRolls.map((r) => {
+                      const on = r.roll_id in supRejected;
+                      return (
+                        <div key={r.roll_id} className="flex flex-wrap items-center gap-2 py-0.5 text-[11px]">
+                          <label className="inline-flex items-center gap-1.5">
+                            <input type="checkbox" checked={on} data-testid={`rma-partial-${r.roll_id}`}
+                              onChange={() => setSupRejected((m) => { const n = { ...m }; if (on) delete n[r.roll_id]; else n[r.roll_id] = ""; return n; })} />
+                            <span className="font-mono text-[#6B219A]">{r.roll_no || r.roll_id}</span>
+                            <span className="text-[#8E8E93]">· {formatQty(r.length_remaining)}{r.unit ? ` ${r.unit}` : ""}</span>
+                          </label>
+                          {on && <input className="field flex-1 !py-0.5 text-[11px]" placeholder="Alasan supplier menolak roll ini (min. 5 huruf)"
+                            data-testid={`rma-partial-reason-${r.roll_id}`} value={supRejected[r.roll_id]}
+                            onChange={(e) => setSupRejected((m) => ({ ...m, [r.roll_id]: e.target.value }))} />}
+                        </div>
+                      );
+                    })}
+                    {supRejList.length > 0 && allRolls.length > 0 && supRejList.length >= allRolls.length && (
+                      <p className="mt-1 text-[10.5px] text-[#A8221A]">Semua roll ditolak — pakai tombol "Supplier Tolak".</p>
+                    )}
+                  </div>
+                )}
                 <div className="flex gap-2">
-                  <button data-testid="rma-accept-btn" className="primary-button flex-1 justify-center" onClick={() => onSupplierAccept && onSupplierAccept(ret, outcome, refundAccount)}>
-                    <PackageCheck size={13} /> Supplier Terima → Terbitkan Nota Debit
+                  <button data-testid="rma-accept-btn" className="primary-button flex-1 justify-center" disabled={supRejBad}
+                    onClick={() => onSupplierAccept && onSupplierAccept(ret, outcome, refundAccount, supRejList)}>
+                    <PackageCheck size={13} /> {supRejList.length ? `Supplier Terima Sebagian (${allRolls.length - supRejList.length} roll) → Nota Debit` : "Supplier Terima → Terbitkan Nota Debit"}
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
@@ -286,7 +303,7 @@ export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete,
                 <p className="text-[11px] text-[#3C3C43]">Supplier menolak — kembalikan barang ke gudang & tentukan grade final (regrade):</p>
                 {allRolls.map((r) => (
                   <div key={r.roll_id} className="flex items-center justify-between gap-2 text-[11px]">
-                    <span className="font-mono text-[#6B219A]">{r.roll_no || r.roll_id} <span className="text-[#8E8E93]">· {r.length_remaining}{r.unit ? ` ${r.unit}` : ""}</span></span>
+                    <span className="font-mono text-[#6B219A]">{r.roll_no || r.roll_id} <span className="text-[#8E8E93]">· {formatQty(r.length_remaining)}{r.unit ? ` ${r.unit}` : ""}</span></span>
                     <KNSelect data-testid={`goods-back-grade-${r.roll_id}`}
                       className="field !py-1 min-w-[64px]"
                       value={regradeMap[r.roll_id] || "B"}
@@ -301,6 +318,26 @@ export default function ReturnDetailPanel({ ret, supName, canApprove, canDelete,
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* 23 Okt — roll yang ditolak supplier pada penerimaan sebagian: menunggu kembali ke gudang KN */}
+        {canApprove && pendingBack.length > 0 && (
+          <div className="rounded-md border border-[#E4D4F0] bg-[#FBF5FF] p-2.5 mt-2 space-y-2" data-testid="partial-goods-back-block">
+            <p className="text-[11px] text-[#3C3C43]">{pendingBack.length} roll ditolak supplier — catat saat barangnya kembali & tentukan grade:</p>
+            {pendingBack.map((r) => (
+              <div key={r.roll_id} className="flex items-center justify-between gap-2 text-[11px]">
+                <span className="min-w-0"><span className="font-mono text-[#6B219A]">{r.roll_no || r.roll_id}</span>
+                  <span className="text-[#8E8E93]"> · {formatQty(r.qty)}{r.unit ? ` ${r.unit}` : ""} · {r.reason}</span></span>
+                <KNSelect data-testid={`partial-back-grade-${r.roll_id}`} className="field !py-1 min-w-[64px]"
+                  value={regradeMap[r.roll_id] || "B"} onValueChange={(v) => setRegradeMap((m) => ({ ...m, [r.roll_id]: v }))}
+                  aria-label={`Grade roll ${r.roll_no || r.roll_id}`} options={GRADES.map((g) => ({ value: g, label: `Grade ${g}` }))} />
+              </div>
+            ))}
+            <button data-testid="partial-goods-back-btn" className="primary-button w-full justify-center"
+              onClick={() => onPartialGoodsBack && onPartialGoodsBack(ret, pendingBack.map((r) => ({ roll_id: r.roll_id, grade: regradeMap[r.roll_id] || "B" })))}>
+              <Undo2 size={13} /> Roll Tolakan Supplier Kembali ke Gudang
+            </button>
           </div>
         )}
 

@@ -4,17 +4,30 @@
  * Siklus yang terlihat di layar: Draf → Disetujui (jurnal pembalik terbit di dua
  * buku) → Barang Sudah Kembali (tugas gudang arah balik selesai; roll dinilai ulang
  * ke harga perolehan asli penjual).
+ *
+ * 23 Okt — "Rincian roll": alasan, kondisi, checklist & foto PER ROLL + Terima/Tolak per roll selama draf (izin
+ * `interco.decide_rolls`; PT penjual tidak bisa menolak retur WAJIB TERIMA, R-10). Batal draf memakai ConfirmModal
+ * standar (dulu overlay buatan sendiri yang tertutup bila diklik di luar kartu).
  */
 import { useState } from "react";
-import { CheckCircle2, Truck, Undo2, Ban, Route } from "lucide-react";
+import { CheckCircle2, Truck, Undo2, Ban, Route, ListChecks } from "lucide-react";
+import { API } from "../../../services/apiClient";
 import { formatCurrency, formatQty } from "../../../utils/formatters";
 import { fmtDate, RETURN_STATUS_CLASS, RETURN_STATUS_LABEL } from "./intercoApi";
 import ReturnChainPanel from "../../sales/ReturnChainPanel";
+import ReturnRollsPanel from "../../sales/ReturnRollsPanel";
+import ConfirmModal from "../../../components/ConfirmModal";
 
-export default function IntercoReturnsPanel({ rows, canWrite, onApprove, onTask, onCancel }) {
+/** Baris retur antar-PT → bentuk baris panel roll (sama dengan retur pelanggan). */
+const toPanelItems = (r) => (r.items || []).map((it) => ({
+  ...it, quantity_returned: it.quantity, unit_price_est: it.unit_price, line_total_est: it.line_subtotal,
+}));
+
+export default function IntercoReturnsPanel({ rows, canWrite, canDecideRolls, activeEntityId, onApprove, onTask, onCancel, onChanged }) {
   const [chainFor, setChainFor] = useState("");
+  const [rollsFor, setRollsFor] = useState("");
   const [askCancel, setAskCancel] = useState(null);
-  const [reason, setReason] = useState("");
+  const rollsRow = rows.find((x) => x.id === rollsFor);
 
   return (
     <div className="space-y-3">
@@ -70,11 +83,18 @@ export default function IntercoReturnsPanel({ rows, canWrite, onApprove, onTask,
                         dari retur pelanggan {r.source_sales_return_number}
                       </div>
                     )}
-                    <button data-testid={`interco-ret-chain-${r.id}`}
-                            onClick={() => setChainFor(chainFor === r.id ? "" : r.id)}
-                            className="mt-1 inline-flex items-center gap-1 text-[10.5px] text-[#0058CC] hover:underline">
-                      <Route size={11} /> {chainFor === r.id ? "Sembunyikan" : "Jejak Retur"}
-                    </button>
+                    <div className="mt-1 flex flex-wrap gap-x-3">
+                      <button data-testid={`interco-ret-chain-${r.id}`}
+                              onClick={() => { setChainFor(chainFor === r.id ? "" : r.id); setRollsFor(""); }}
+                              className="inline-flex items-center gap-1 text-[10.5px] text-[#0058CC] hover:underline">
+                        <Route size={11} /> {chainFor === r.id ? "Sembunyikan" : "Jejak Retur"}
+                      </button>
+                      <button data-testid={`interco-ret-rolls-${r.id}`}
+                              onClick={() => { setRollsFor(rollsFor === r.id ? "" : r.id); setChainFor(""); }}
+                              className="inline-flex items-center gap-1 text-[10.5px] text-[#0058CC] hover:underline">
+                        <ListChecks size={11} /> {rollsFor === r.id ? "Tutup rincian" : "Rincian roll"}
+                      </button>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     {(r.items || []).map((it) => (
@@ -136,7 +156,7 @@ export default function IntercoReturnsPanel({ rows, canWrite, onApprove, onTask,
                                   className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-md border border-[#0058CC] text-[#0058CC] bg-white hover:bg-[#EAF2FF]">
                             <CheckCircle2 size={12} /> Setujui
                           </button>
-                          <button onClick={() => { setAskCancel(r); setReason(""); }}
+                          <button onClick={() => setAskCancel(r)}
                                   data-testid={`interco-ret-cancel-${r.id}`}
                                   title="Batalkan draf retur"
                                   className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md text-[#C0392B] hover:bg-[#FDEDE7]">
@@ -177,46 +197,41 @@ export default function IntercoReturnsPanel({ rows, canWrite, onApprove, onTask,
                   </td>
                 </tr>
               )}
+              {rollsRow && (
+                <tr data-testid={`interco-ret-rolls-row-${rollsRow.id}`}>
+                  <td colSpan={8} className="px-4 py-3 bg-[#FAFAFB]">
+                    <ReturnRollsPanel ret={rollsRow} items={toPanelItems(rollsRow)} fullView
+                      title={`Roll retur ${rollsRow.number}`} testId={`interco-ret-rolls-panel-${rollsRow.id}`}
+                      estimatedValue={rollsRow.subtotal}
+                      canDecide={rollsRow.status === "draft" && !!canDecideRolls}
+                      canReject={!(rollsRow.mandatory_accept && activeEntityId === rollsRow.seller_entity_id)}
+                      decideUrl={`${API}/interco/returns/${rollsRow.id}/roll-decisions`}
+                      attachmentHref={(a) => `${API}/interco/returns/${rollsRow.id}/attachments/${a.id}/download`}
+                      hint="Roll yang ditolak keluar dari kedua dokumen kembar & tetap di gudang PT pembeli. Roll tanpa keputusan ikut disetujui."
+                      valueLabel="Nilai retur sebelum PPN (harga internal antar-PT)"
+                      onChanged={onChanged} />
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {askCancel && (
-        <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.45)] flex items-center justify-center p-4"
-             data-testid="interco-ret-cancel-modal"
-             onClick={(e) => { if (e.target === e.currentTarget) setAskCancel(null); }}>
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl p-6 space-y-3">
-            <h3 className="text-base font-semibold text-[#1D1D1F]">
-              Batalkan draf retur {askCancel.number}
-            </h3>
-            <p className="text-[13px] text-[#6E6E73]">
-              Hanya draf yang bisa dibatalkan — retur yang sudah disetujui jurnalnya sudah
-              hidup di dua buku.
-            </p>
-            <textarea
-              rows={2} value={reason} onChange={(e) => setReason(e.target.value)}
-              data-testid="interco-ret-cancel-reason"
-              placeholder="Alasan pembatalan (minimal 5 huruf)"
-              className="w-full rounded-lg border border-[#E5E5EA] bg-white px-3 py-2 text-sm text-[#1D1D1F]"
-            />
-            <div className="flex items-center justify-end gap-2">
-              <button onClick={() => setAskCancel(null)}
-                      data-testid="interco-ret-cancel-close"
-                      className="px-3.5 py-2 text-sm rounded-lg border border-[#E5E5EA] bg-white text-[#3C3C43] hover:bg-[#F2F2F5]">
-                Tutup
-              </button>
-              <button
-                onClick={() => { onCancel?.(askCancel, reason.trim()); setAskCancel(null); }}
-                disabled={reason.trim().length < 5}
-                data-testid="interco-ret-cancel-confirm"
-                className="px-3.5 py-2 text-sm rounded-lg bg-[#C0392B] text-white hover:bg-[#A93226] disabled:opacity-40">
-                Batalkan Retur
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!askCancel}
+        title={`Batalkan draf retur ${askCancel?.number || ""}`}
+        message="Hanya draf yang bisa dibatalkan — retur yang sudah disetujui jurnalnya sudah hidup di dua buku."
+        confirmLabel="Batalkan Retur"
+        danger
+        withReason
+        reasonMinLength={5}
+        reasonLabel="Alasan pembatalan"
+        reasonPlaceholder="Alasan pembatalan (minimal 5 huruf)"
+        onConfirm={async (reason) => { await onCancel?.(askCancel, (reason || "").trim()); setAskCancel(null); }}
+        onCancel={() => setAskCancel(null)}
+        testId="interco-ret-cancel-modal"
+      />
     </div>
   );
 }

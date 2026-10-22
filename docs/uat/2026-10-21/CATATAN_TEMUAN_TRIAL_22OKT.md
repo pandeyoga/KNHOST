@@ -86,6 +86,24 @@ stepper; fase 4 = rapikan UI retur sesuai `design_guidelines.md` & `docs/KN_08_U
 | R3 | Pemutus bawaan Manajer & Admin Sales, bisa diberikan ke peran kustom | Izin baru `sales_return.decide_rolls` ("Terima / tolak per roll retur") — bawaan Admin, Manajer, Admin Sales; tampil di matriks akses. ACC retur tetap izin `approve` (Manajer). Menu Retur Admin Sales kini memuat tab **Retur Pelanggan** (dulu hanya Antar-PT) |
 | G8 | Nilai antrean "Retur menunggu ACC" ≠ estimasi di detail (Rp 229.659 vs 209.990) | diperbaiki — antrean memakai harga transaksi per satuan dasar yang sama dengan detail & Nota Kredit |
 
+**Diteruskan ke retur ke SUPPLIER & retur ANTAR-PT** (permintaan pemilik 23 Okt siang — keputusan desain diambil
+implementer karena pemilik AFK):
+| # | Retur supplier (`purchase_returns`) | Retur antar-PT (`interco_returns`) |
+|---|---|---|
+| Isian per roll | Roll terpilih (Pilih Roll) → kondisi, alasan wajib, checklist (hangtag hilang / roll sudah dipotong), foto | Sama, pada roll yang dikirim balik; pop-up kini `FormModal` standar |
+| Keputusan per roll | Sebelum ACC, izin `purchase_return.decide_rolls` (bawaan Admin & Manajer). Roll ditolak tetap stok KN; qty, nilai & PPN dihitung ulang; semua ditolak → retur ditolak | Selama draf, izin `interco.decide_rolls` (bawaan Admin & Manajer). Kedua dokumen kembar ikut (qty, subtotal, PPN, total); semua ditolak → batal. **R-10**: PT penjual tidak bisa menolak roll pada retur WAJIB TERIMA |
+| Supplier terima SEBAGIAN (RMA) | "Supplier Terima Sebagian": roll yang ditolak supplier (+alasan) tidak ikut Nota Debit/GL; menunggu "Roll tolakan supplier kembali ke gudang" (karantina → tersedia + regrade) | — |
+| Foto bukti | `POST /purchase-returns/{id}/attachments` (+`roll_id`) | `POST /interco/returns/{id}/attachments` — tersimpan di kedua dokumen kembar |
+| Satu kontrak | `schemas_return_rolls.py`, `return_rolls_service.apply_roll_decisions`, `return_attachment_service`, komponen `RollClaimFields`/`PickedRollClaims` & `ReturnRollsPanel` dipakai ketiga jenis retur | |
+
+Temuan sampingan yang ikut diperbaiki: (1) pagar pihak `_guard_party` aksi retur antar-PT membaca objek PASANGAN
+`{returner, receiver}` sehingga tak pernah memeriksa badan usaha (akun PT lain bisa menyetujui/membatalkan); (2) galat
+validasi form retur supplier tertinggal sebagai galat halaman sesudah retur berhasil dibuat; (3) label status retur
+supplier "Draft/Menunggu Approval" → "Draf/Menunggu Persetujuan"; angka roll di blok RMA kini berformat Indonesia.
+Uji layar (stack uji): PRET-00035 3 roll → tolak 1 → ACC: 2 roll keluar stok, roll ditolak tetap tersedia, DN-00001;
+PRET-00036 RMA → supplier terima 1 dari 2 roll (DN-00002 Rp 744.480) → roll tolakan kembali, regrade A→B;
+KSC/ICR-00016 2 roll + foto → tolak 1 → kedua dokumen kembar 42,46 yd · Rp 593.845,56.
+
 Uji layar (stack uji terpisah, salinan data acuan): Sales mengajukan SRET-00005 dari SO-00016 dengan 3 roll (hangtag hilang /
 sudah dipotong + foto / qty sebagian 20 yd) → Admin Sales menolak RL-31984 "sudah dipotong" dan menerima RL-31983 → klaim
 138,45 → 81,03 yd, estimasi Rp 3.322.763 → Rp 1.944.699, sama dengan antrean Manajer → Manajer menyetujui → RL-31984 muncul lagi

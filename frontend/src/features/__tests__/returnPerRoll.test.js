@@ -127,3 +127,39 @@ test("panel: pemegang decide_rolls menolak roll dengan alasan → POST roll-deci
   expect(q(m.host, "return-roll-rejected-r3").textContent).toContain("Ditolak");
   await act(async () => { m.root.unmount(); });
 });
+
+// ─── Diteruskan ke retur supplier & antar-PT (23 Okt) ──────────────────────────────────────────────────────────
+test("roll terpilih (supplier/antar-PT): isian per roll tanpa qty, alasan wajib, detail API tanpa berkas", async () => {
+  const { PickedRollClaims, pickedClaimErrors, claimDetails } = require("../sales/ReturnRollClaims");
+  const rolls = [{ roll_id: "r1", roll_no: "RL-1", lot: "L1", remaining: 10, unit: "kg" }];
+  let claims = {};
+  const onChange = (c) => { claims = c; };
+  const { host, root } = await mount(<PickedRollClaims rolls={rolls} claims={claims} onChange={onChange} testId="pk" />);
+  expect(q(host, "pk-roll-r1-qty")).toBeNull();                       // roll utuh — qty tidak diketik
+  expect(q(host, "pk-roll-r1-cut").parentElement.textContent).toContain("Roll sudah dipotong");
+  await setValue(q(host, "pk-roll-r1-reason"), "Belang");
+  expect(claims.r1.reason).toBe("Belang");
+  expect(pickedClaimErrors(rolls, {})).toEqual(["RL-1: isi alasan roll ini"]);
+  expect(pickedClaimErrors(rolls, { r1: { reason: "Belang" } })).toEqual([]);
+  expect(claimDetails({ r1: { qty: "10", files: [{}], reason: "Belang", condition: "damaged" } })).toEqual({ r1: { reason: "Belang", condition: "damaged" } });
+  await act(async () => { root.unmount(); });
+});
+
+test("panel roll generik: URL keputusan & foto milik modul pemanggil; canReject=false (R-10) tanpa tombol Tolak", async () => {
+  axios.post.mockResolvedValue({ data: {} });
+  const ret = { id: "icr_1", status: "draft", attachments: [{ id: "a9", roll_id: "r1" }] };
+  const item = { product_id: "p1", product_name: "Kain", unit: "yard", quantity_returned: 10, roll_ids: ["r1"],
+    roll_qtys: { r1: 10 }, roll_nos: { r1: "RL-1" }, roll_details: { r1: { reason: "warna" } } };
+  const { host, root } = await mount(<ReturnRollsPanel ret={ret} items={[item]} canDecide canReject={false}
+    decideUrl="/api/interco/returns/icr_1/roll-decisions" valueLabel="Nilai retur antar-PT" fullView estimatedValue={100}
+    attachmentHref={(a) => `/api/interco/returns/icr_1/attachments/${a.id}/download`} />);
+  expect(q(host, "roll-reject-r1")).toBeNull();
+  expect(q(host, "return-roll-r1").querySelector("a").getAttribute("href")).toBe("/api/interco/returns/icr_1/attachments/a9/download");
+  expect(q(host, "return-estimated-value").textContent).toContain("Nilai retur antar-PT");
+  await act(async () => { q(host, "roll-accept-r1").click(); });
+  await act(async () => { q(host, "roll-decisions-save").click(); });
+  await flush();
+  expect(axios.post).toHaveBeenCalledWith("/api/interco/returns/icr_1/roll-decisions",
+    { decisions: [{ roll_id: "r1", decision: "accept", reason: "" }] });
+  await act(async () => { root.unmount(); });
+});

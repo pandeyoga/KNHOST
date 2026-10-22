@@ -143,6 +143,10 @@ async def create_purchase_return(payload, created_by: str) -> Dict[str, Any]:
             **({"quantity_input": qty_in, "unit_input": in_unit} if in_unit != unit and qty_in > 0 else {}),
             "reason": it.reason, "condition": it.condition,
             "roll_ids": roll_ids, "rolls": roll_meta,
+            # 23 Okt — qty & detail (alasan, kondisi, checklist) PER ROLL, bentuk sama dengan retur pelanggan.
+            "roll_qtys": {m["roll_id"]: round(m["length_remaining"], 2) for m in roll_meta},
+            "roll_details": {k: (v.dict() if hasattr(v, "dict") else dict(v or {}))
+                             for k, v in (getattr(it, "roll_details", None) or {}).items()},
             "lots": sorted({m["lot"] for m in roll_meta if m.get("lot")}),
             # FASE L — snapshot lini kerja MD (retur beli masuk papan lini yang sama
             # dengan pembeliannya).
@@ -152,6 +156,8 @@ async def create_purchase_return(payload, created_by: str) -> Dict[str, Any]:
             # sebagai satuan kedua di layar, PDF, dan CSV.
             "qty_rolls": (len(roll_meta) if roll_meta else None),
         })
+        from services.return_rolls_service import normalize_roll_details
+        normalize_roll_details(items[-1], summarize_reason=False, default_condition=it.condition)
 
     number = await next_return_number()
     now = now_iso()
@@ -465,8 +471,13 @@ async def ship_to_supplier(return_id: str, actor: str, notes: str = "",
 
 
 async def supplier_accept(return_id: str, actor: str, outcome: str = prs.OUTCOME_AP_CREDIT,
-                          notes: str = "", refund_account_code: str = "") -> Dict[str, Any]:
-    """shipped_supplier → accepted_supplier. Supplier terima retur → finalisasi (stok + DN + AP + GL)."""
+                          notes: str = "", refund_account_code: str = "",
+                          rejected_rolls: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """shipped_supplier → accepted_supplier. Supplier terima retur → finalisasi (stok + DN + AP + GL).
+
+    23 Okt — supplier boleh menerima SEBAGIAN: `rejected_rolls` [{roll_id, reason}] keluar dari retur SEBELUM
+    finalisasi (tidak dikonsumsi, tidak masuk Nota Debit/GL) dan menunggu "barang kembali" per roll
+    (`supplier_rejected_goods_back`). Roll itu tetap milik KN (karantina) selama berada di supplier."""
     ret = await db.purchase_returns.find_one({"id": return_id}, {"_id": 0})
     if not ret:
         raise ValueError("Retur tidak ditemukan")
@@ -475,8 +486,141 @@ async def supplier_accept(return_id: str, actor: str, outcome: str = prs.OUTCOME
     if outcome not in prs.SUPPLIER_OUTCOMES:
         raise ValueError(f"Outcome supplier tidak valid: '{outcome}'. Pilihan: {', '.join(sorted(prs.SUPPLIER_OUTCOMES))}.")
     prs.assert_transition(ret.get("supplier_status"), prs.ACCEPTED)
+    rej = [r for r in (rejected_rolls or []) if (r or {}).get("roll_id")]
+    if rej:
+        ret = await _apply_supplier_rejections(ret, rej, actor)
     return await _finalize_supplier_return_financials(
         ret, actor=actor, notes=notes, outcome=outcome, refund_account_code=refund_account_code)
+
+
+def _retotal(ret: Dict[str, Any], items: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Nilai baris & dokumen dihitung ulang sesudah roll keluar dari retur (PPN mengikuti tarif PO asal)."""
+    total = 0.0
+    for it in items:
+        it["subtotal"] = round(float(it.get("price") or 0) * float(it.get("quantity") or 0), 2)
+        total += it["subtotal"]
+    rate = float(ret.get("ppn_rate") or 0)
+    ppn = round(total * rate / 100.0, 2)
+    return {"items": items, "total_amount": round(total, 2), "ppn_amount": ppn,
+            "grand_total": round(total + ppn, 2), "line_codes": _lines.codes_from_items(items)}
+
+
+async def decide_rolls(return_id: str, decisions: List[Dict[str, Any]], actor: Dict[str, Any]) -> Dict[str, Any]:
+    """23 Okt — Terima/Tolak per roll SEBELUM retur supplier disetujui (izin `purchase_return.decide_rolls`).
+    Roll ditolak keluar dari retur (tetap stok KN); semua roll ditolak → retur ditolak."""
+    from services import return_rolls_service as rrs
+    ret = await db.purchase_returns.find_one({"id": return_id}, {"_id": 0})
+    if not ret:
+        raise ValueError("Retur tidak ditemukan")
+    if ret.get("status") not in ("draft", "pending_approval"):
+        raise ValueError("Keputusan per roll hanya sebelum retur disetujui (draf / menunggu persetujuan).")
+    items = [dict(it) for it in ret.get("items") or []]
+    want, nos = await rrs.prepare_roll_decisions(items, decisions, "retur supplier")
+    now, who = now_iso(), actor.get("name", "")
+    log = rrs.apply_roll_decisions(items, want, nos, who, now, qty_key="quantity", summarize_reason=False)
+    upd: Dict[str, Any] = {**_retotal(ret, items), "updated_at": now,
+                           "roll_decision_log": rrs.decision_log_entry(ret.get("roll_decision_log"), actor, now, log)}
+    if not any(float(it.get("quantity") or 0) > 0 for it in items):
+        upd.update({"status": "rejected", "rejected_by": who, "rejected_at": now,
+                    "reject_reason": f"Semua roll retur ditolak: {rrs.rejected_summary(log)}"})
+    res = await db.purchase_returns.update_one({"id": return_id, "status": ret["status"]}, {"$set": upd})
+    if not res.matched_count:
+        raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang lalu ulangi keputusan.")
+    return safe_doc(await db.purchase_returns.find_one({"id": return_id}, {"_id": 0}))
+
+
+async def _apply_supplier_rejections(ret: Dict[str, Any], rejected: List[Dict[str, Any]],
+                                     actor: str) -> Dict[str, Any]:
+    from services import return_rolls_service as rrs
+    items = [dict(it) for it in ret.get("items") or []]
+    decisions = [{"roll_id": r["roll_id"], "decision": "reject", "reason": r.get("reason", "")} for r in rejected]
+    want, nos = await rrs.prepare_roll_decisions(items, decisions, "retur supplier")
+    now = now_iso()
+    log = rrs.apply_roll_decisions(items, want, nos, actor, now, qty_key="quantity", summarize_reason=False)
+    for it in items:
+        for e in it.get("rejected_rolls") or []:
+            if e.get("roll_id") in want and e.get("at") == now:
+                e["by_supplier"] = True
+    if not any(float(it.get("quantity") or 0) > 0 for it in items):
+        raise ValueError("Supplier menolak SEMUA roll — pakai aksi 'Supplier tolak' lalu 'Barang kembali'.")
+    qty_of = {e["roll_id"]: e for it in items for e in (it.get("rejected_rolls") or []) if e.get("roll_id") in want}
+    pending = list(ret.get("supplier_rejected_rolls") or []) + [
+        {"roll_id": x["roll_id"], "roll_no": x["roll_no"], "qty": qty_of.get(x["roll_id"], {}).get("qty", 0),
+         "unit": qty_of.get(x["roll_id"], {}).get("unit", ""), "reason": x["reason"], "by": actor, "at": now,
+         "goods_back_at": "", "goods_back_by": ""} for x in log]
+    upd = {**_retotal(ret, items), "supplier_rejected_rolls": pending, "supplier_partial": True, "updated_at": now,
+           "roll_decision_log": rrs.decision_log_entry(ret.get("roll_decision_log"), {"name": actor, "role": "supplier"},
+                                                       now, log)}
+    res = await db.purchase_returns.update_one({"id": ret["id"], "supplier_status": prs.SHIPPED}, {"$set": upd})
+    if not res.matched_count:
+        raise ValueError("Retur baru saja berubah oleh pengguna lain — muat ulang lalu ulangi.")
+    return await db.purchase_returns.find_one({"id": ret["id"]}, {"_id": 0})
+
+
+async def supplier_rejected_goods_back(return_id: str, actor: str, regrade: List[Dict[str, Any]] = None,
+                                       warehouse_id: str = "", notes: str = "") -> Dict[str, Any]:
+    """23 Okt — roll yang DITOLAK supplier pada penerimaan sebagian kembali ke gudang KN (karantina → tersedia,
+    + regrade). Tanpa jurnal: roll tidak pernah keluar subledger (sama dengan `goods_back`)."""
+    ret = await db.purchase_returns.find_one({"id": return_id}, {"_id": 0})
+    if not ret:
+        raise ValueError("Retur tidak ditemukan")
+    pending = [e for e in ret.get("supplier_rejected_rolls") or [] if not e.get("goods_back_at")]
+    if not pending:
+        raise ValueError("Tidak ada roll tolakan supplier yang menunggu barang kembali.")
+    from services import atomic_claim as _saga
+    await _saga.claim("purchase_returns", return_id, "purchase_return_partial_goods_back",
+                      precondition={"supplier_rejected_rolls": {"$elemMatch": {"goods_back_at": ""}}}, actor=actor)
+    now = now_iso()
+    grade_by_roll = {g.get("roll_id"): (g.get("grade") or "").upper() for g in (regrade or []) if g.get("roll_id")}
+    segments: set = set()
+    regraded = 0
+    for e in pending:
+        regraded += await _roll_back_to_stock(ret, e["roll_id"], warehouse_id, grade_by_roll.get(e["roll_id"]),
+                                              now, segments, label="Barang kembali (ditolak supplier sebagian)")
+    for (pid, wid, eid) in segments:
+        if pid and wid and eid:
+            await rebuild_balance(pid, wid, eid)
+    done = {e["roll_id"] for e in pending}
+    rows = [{**e, "goods_back_at": now, "goods_back_by": actor} if e.get("roll_id") in done else e
+            for e in ret.get("supplier_rejected_rolls") or []]
+    await db.purchase_returns.update_one({"id": return_id}, _saga.finish_set({
+        "supplier_rejected_rolls": rows, "partial_goods_back_at": now, "partial_goods_back_by": actor,
+        "partial_goods_back_notes": notes,
+        "goods_back_regraded": int(ret.get("goods_back_regraded") or 0) + regraded, "updated_at": now}))
+    return safe_doc(await db.purchase_returns.find_one({"id": return_id}, {"_id": 0}))
+
+
+async def _roll_back_to_stock(ret: Dict[str, Any], rid: str, warehouse_id: str, new_grade: Optional[str],
+                              now: str, segments: set, label: str = "Barang kembali (supplier tolak)") -> int:
+    """Satu roll retur supplier kembali tersedia di gudang KN (+regrade) + mutasi masuk. Return 1 bila di-regrade."""
+    roll = await db.inventory_rolls.find_one({"id": rid}, {"_id": 0})
+    if not roll:
+        return 0
+    dest_wh = warehouse_id or roll.get("warehouse_id")
+    upd = {"status": "available", "warehouse_id": dest_wh, "supplier_return_ref": None, "updated_at": now}
+    regraded = 0
+    if new_grade and new_grade != (roll.get("grade") or "A"):
+        upd["grade"] = new_grade
+        upd["regraded_from"] = roll.get("grade") or "A"
+        regraded = 1
+    await db.inventory_rolls.update_one({"id": rid}, {"$set": upd})
+    await db.inventory_movements.insert_one({
+        "id": new_id("mov"), "product_id": roll.get("product_id", ""),
+        "warehouse_id": dest_wh, "owner_entity_id": roll.get("owner_entity_id", ""),
+        "type": "goods_back", "movement_type": "goods_back", "direction": "in",
+        "quantity": float(roll.get("length_remaining", 0) or 0), "unit": roll.get("unit", "meter"),
+        "roll_id": rid,
+        # FASE U — satu baris mutasi menunjuk SATU roll fisik.
+        "qty_rolls": 1, "ref_type": "purchase_return", "ref_id": ret["id"],
+        "source_document": ret["number"],
+        "notes": f"{label} {ret['number']}" + (f" · regrade {upd.get('regraded_from')}→{new_grade}" if regraded else ""),
+        "timestamp": now})
+    segments.add((roll.get("product_id"), dest_wh, roll.get("owner_entity_id")))
+    # KN-B13 — gudang ASAL juga di-rebuild; dulu hanya tujuan → kuantitas karantina
+    # hantu tertinggal selamanya di gudang asal.
+    if roll.get("warehouse_id") and roll.get("warehouse_id") != dest_wh:
+        segments.add((roll.get("product_id"), roll.get("warehouse_id"), roll.get("owner_entity_id")))
+    return regraded
 
 
 async def supplier_reject(return_id: str, actor: str, reason: str = "") -> Dict[str, Any]:
@@ -517,35 +661,7 @@ async def goods_back(return_id: str, actor: str, regrade: List[Dict[str, Any]] =
     regraded = 0
     for item in ret.get("items", []):
         for rid in (item.get("roll_ids") or []):
-            roll = await db.inventory_rolls.find_one({"id": rid}, {"_id": 0})
-            if not roll:
-                continue
-            dest_wh = warehouse_id or roll.get("warehouse_id")
-            upd = {"status": "available", "warehouse_id": dest_wh,
-                   "supplier_return_ref": None, "updated_at": now}
-            new_grade = grade_by_roll.get(rid)
-            if new_grade and new_grade != (roll.get("grade") or "A"):
-                upd["grade"] = new_grade
-                upd["regraded_from"] = roll.get("grade") or "A"
-                regraded += 1
-            await db.inventory_rolls.update_one({"id": rid}, {"$set": upd})
-            await db.inventory_movements.insert_one({
-                "id": new_id("mov"), "product_id": roll.get("product_id", ""),
-                "warehouse_id": dest_wh, "owner_entity_id": roll.get("owner_entity_id", ""),
-                "type": "goods_back", "movement_type": "goods_back", "direction": "in",
-                "quantity": float(roll.get("length_remaining", 0) or 0), "unit": roll.get("unit", "meter"),
-                "roll_id": rid,
-                # FASE U — satu baris mutasi menunjuk SATU roll fisik.
-                "qty_rolls": (1 if rid else None), "ref_type": "purchase_return", "ref_id": return_id,
-                "source_document": ret["number"],
-                "notes": f"Barang kembali (supplier tolak) {ret['number']}"
-                         + (f" · regrade {upd.get('regraded_from')}→{new_grade}" if new_grade else ""),
-                "timestamp": now})
-            segments.add((roll.get("product_id"), dest_wh, roll.get("owner_entity_id")))
-            # KN-B13 — gudang ASAL juga di-rebuild; dulu hanya tujuan → kuantitas karantina
-            # hantu tertinggal selamanya di gudang asal.
-            if roll.get("warehouse_id") and roll.get("warehouse_id") != dest_wh:
-                segments.add((roll.get("product_id"), roll.get("warehouse_id"), roll.get("owner_entity_id")))
+            regraded += await _roll_back_to_stock(ret, rid, warehouse_id, grade_by_roll.get(rid), now, segments)
     for (pid, wid, eid) in segments:
         if pid and wid and eid:
             await rebuild_balance(pid, wid, eid)

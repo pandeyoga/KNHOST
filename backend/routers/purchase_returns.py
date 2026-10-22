@@ -1,12 +1,13 @@
 """Depth #1 — Retur Beli (Purchase Return / Nota Debit) router."""
 from typing import Any, Dict, Optional
-from fastapi import APIRouter, Depends, Request, HTTPException, Query
+from fastapi import APIRouter, Depends, File, Form, Request, HTTPException, Query, UploadFile
 from db import db
 from dependencies import require_permission, audit
 from core_utils import safe_doc
 from entity_scope import EntityContext, entity_ctx, resolve_list_scope, guard_doc
 from schemas import (PurchaseReturnCreate, PurchaseReturnDecision,
                      SupplierShipInput, SupplierAcceptInput, SupplierRejectInput, GoodsBackInput)
+from schemas_return_rolls import ReturnRollDecisionsIn
 from services import purchase_return_service as svc
 from services import line_scope                 # FASE L — pagar & penyaring lini produk
 from pagination import is_paged, get_page_params, build_search, merge_query, fetch_page, envelope
@@ -176,12 +177,79 @@ async def supplier_accept_purchase_return(return_id: str, request: Request,
     try:
         doc = await svc.supplier_accept(return_id, actor=user.get("name", "Admin"),
                                         outcome=payload.outcome, notes=payload.notes,
-                                        refund_account_code=getattr(payload, "refund_account_code", ""))
+                                        refund_account_code=getattr(payload, "refund_account_code", ""),
+                                        rejected_rolls=[r.dict() for r in (payload.rejected_rolls or [])])
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     await audit(user.get("name", ""), "purchase_return_supplier_accepted", "purchase_return", return_id,
-                {"outcome": payload.outcome, "debit_note": doc.get("debit_note_number")})
+                {"outcome": payload.outcome, "debit_note": doc.get("debit_note_number"),
+                 "supplier_rejected_rolls": [r.roll_id for r in (payload.rejected_rolls or [])]})
     return doc
+
+
+@router.post("/purchase-returns/{return_id}/roll-decisions")
+async def purchase_return_roll_decisions(return_id: str, payload: ReturnRollDecisionsIn,
+                                         request: Request) -> Dict[str, Any]:
+    """23 Okt — Terima/Tolak per roll sebelum retur supplier disetujui (izin `purchase_return.decide_rolls`)."""
+    user = await require_permission(request, "purchase_return", "decide_rolls")
+    await _guard(return_id, request)
+    try:
+        doc = await svc.decide_rolls(return_id, [d.dict() for d in payload.decisions], user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await audit(user.get("name", ""), "purchase_return_roll_decisions", "purchase_return", return_id,
+                {"rolls": [d.dict() for d in payload.decisions]})
+    return doc
+
+
+@router.post("/purchase-returns/{return_id}/supplier-rejected-goods-back")
+async def purchase_return_partial_goods_back(return_id: str, request: Request,
+                                             payload: GoodsBackInput = GoodsBackInput()) -> Dict[str, Any]:
+    """23 Okt — roll yang ditolak supplier (penerimaan sebagian) kembali ke gudang KN."""
+    user = await require_permission(request, "purchase_return", "approve")
+    await _guard(return_id, request)
+    if payload.warehouse_id:
+        from services import warehouse_scope_service as whscope
+        await whscope.assert_usable(payload.warehouse_id, (await entity_ctx(request)).active_entity_id,
+                                   action="menerima barang kembali di sini")
+    try:
+        doc = await svc.supplier_rejected_goods_back(
+            return_id, actor=user.get("name", "Admin"),
+            regrade=[{"roll_id": g.roll_id, "grade": g.grade} for g in (payload.regrade or [])],
+            warehouse_id=payload.warehouse_id, notes=payload.notes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await audit(user.get("name", ""), "purchase_return_partial_goods_back", "purchase_return", return_id, {})
+    return doc
+
+
+@router.post("/purchase-returns/{return_id}/attachments")
+async def purchase_return_attachment(return_id: str, request: Request, file: UploadFile = File(...),
+                                     roll_id: str = Form("")) -> Dict[str, Any]:
+    """23 Okt — foto bukti retur supplier (per roll bila `roll_id` diisi)."""
+    user = await require_permission(request, "purchase_return", "create")
+    doc = await _guard(return_id, request)
+    if doc.get("status") in ("rejected", "cancelled"):
+        raise HTTPException(status_code=400, detail="Retur sudah ditolak/batal — tidak bisa tambah lampiran.")
+    from services import return_attachment_service as ras
+    try:
+        att = await ras.store("purchase_returns", doc, file, roll_id, user.get("name", ""))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    await audit(user.get("name", ""), "purchase_return_attachment_added", "purchase_return", return_id,
+                {"filename": file.filename, "roll_id": roll_id})
+    return att
+
+
+@router.get("/purchase-returns/{return_id}/attachments/{att_id}/download")
+async def purchase_return_attachment_download(return_id: str, att_id: str, request: Request):
+    await require_permission(request, "purchase_return", "view")
+    doc = await _guard(return_id, request)
+    from services import return_attachment_service as ras
+    try:
+        return await ras.download(doc, att_id)
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.post("/purchase-returns/{return_id}/supplier-reject")

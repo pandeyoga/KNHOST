@@ -9,6 +9,7 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from services.text_normalize import PhoneStr
 from core_utils import MoneyDecimal, OptQtyDecimal, QtyDecimal
+from schemas_return_rolls import ReturnRollDetail, SupplierRollRejectIn  # 23 Okt — retur per roll
 
 
 # ─── R0 — Return Policy Engine (per-supplier, extensible) ────────────────────
@@ -426,6 +427,8 @@ class PurchaseReturnItem(BaseModel):
     reason: str = ""                  # cacat | salah_kirim | kelebihan | lain
     condition: str = "damaged"        # damaged | ok
     roll_ids: List[str] = []          # S#2026-07-21 — retur PRESISI per roll/lot (opsional)
+    # 23 Okt — alasan, kondisi & checklist PER ROLL (sama dengan retur pelanggan).
+    roll_details: Dict[str, ReturnRollDetail] = {}
     # FASE U — DUA SATUAN: jumlah gulungan (roll) di samping ukuran (`quantity`+`unit`).
     # `None` = dokumen/baris ini tidak menyebut jumlah roll (dokumen LAMA tampil "—",
     # BUKAN "0 roll" yang menyesatkan). Diisi manual saat memesan (rencana), atau
@@ -466,6 +469,8 @@ class SupplierAcceptInput(BaseModel):
     notes: str = ""
     # R5.3 — akun Kas/Bank untuk outcome 'refund' (supplier kembalikan dana tunai). Default 1-1100.
     refund_account_code: str = ""
+    # 23 Okt — supplier menerima SEBAGIAN: roll yang ia tolak tidak ikut Nota Debit dan menunggu "barang kembali".
+    rejected_rolls: List[SupplierRollRejectIn] = []
 
 
 class SupplierRejectInput(BaseModel):

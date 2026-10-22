@@ -1,7 +1,8 @@
 /** Klaim retur PER ROLL (permintaan pemilik 23 Okt): tiap roll punya qty, kondisi, alasan, checklist
- *  (hangtag hilang / sudah dipotong pelanggan) dan foto bukti sendiri — satu SKU bisa berisi roll yang sudah
- *  dipotong dan yang masih utuh, sehingga Manajer/Admin Sales bisa menolak roll tertentu saja.
- *  Dipakai form retur desktop & HP (CreateReturnForm). */
+ *  (hangtag hilang / sudah dipotong) dan foto bukti sendiri — satu SKU bisa berisi roll yang sudah
+ *  dipotong dan yang masih utuh, sehingga pemutus bisa menolak roll tertentu saja.
+ *  Dipakai form retur pelanggan desktop & HP (CreateReturnForm), retur ke supplier (PurchaseReturns) dan
+ *  retur antar-PT (IntercoReturnModal) — satu bentuk isian untuk ketiga jenis retur. */
 import { Camera, Paperclip, X } from "lucide-react";
 import KNSelect from "../../components/KNSelect";
 import { formatQty } from "../../utils/formatters";
@@ -37,6 +38,79 @@ export function PhotoPicker({ files = [], onChange, testId, compact = false }) {
   );
 }
 
+/** Isian satu roll: (qty) · kondisi · alasan wajib · checklist · foto. `qtyEditable=false` = qty roll utuh
+ *  (retur supplier & antar-PT mengirim balik roll yang dipilih). */
+export function RollClaimFields({ claim: c, onChange, testId: rt, unit, remaining, qtyEditable = true, cutLabel = "Sudah dipotong pelanggan" }) {
+  const over = qtyEditable && (parseFloat(c.qty) || 0) > remaining + 0.001;
+  return (
+    <div className="mt-2 space-y-2 pl-5">
+      <div className={`grid gap-2 ${qtyEditable ? "sm:grid-cols-[120px_130px_minmax(0,1fr)]" : "sm:grid-cols-[130px_minmax(0,1fr)]"}`}>
+        {qtyEditable && (
+          <label className="text-[10.5px] font-semibold uppercase tracking-wide text-[#6B6B73]">Qty ({unit})
+            <input type="number" min="0.01" step="0.01" max={remaining} value={c.qty} data-testid={`${rt}-qty`}
+              onChange={(e) => onChange({ qty: e.target.value })}
+              className={`form-input mt-1 text-right tabular-nums ${over ? "!border-[#A8221A]" : ""}`} />
+          </label>
+        )}
+        <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#6B6B73]">Kondisi
+          <KNSelect className="form-select mt-1" value={c.condition} searchable={false} data-testid={`${rt}-condition`}
+            onValueChange={(v) => onChange({ condition: v })} options={CONDITION_OPTIONS} />
+        </div>
+        <label className="text-[10.5px] font-semibold uppercase tracking-wide text-[#6B6B73]">Alasan roll ini *
+          <input value={c.reason} placeholder="mis. noda di 10 yard awal" data-testid={`${rt}-reason`}
+            onChange={(e) => onChange({ reason: e.target.value })} className="form-input mt-1" />
+        </label>
+      </div>
+      {over && <p className="text-[11px] font-semibold text-[#A8221A]">Melebihi sisa roll ({formatQty(remaining)} {unit}).</p>}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-[#3C3C43]">
+        <label className="inline-flex items-center gap-1.5">
+          <input type="checkbox" checked={c.hangtag_missing} data-testid={`${rt}-hangtag`}
+            onChange={(e) => onChange({ hangtag_missing: e.target.checked })} /> Hangtag hilang
+        </label>
+        <label className="inline-flex items-center gap-1.5">
+          <input type="checkbox" checked={c.cut_by_customer} data-testid={`${rt}-cut`}
+            onChange={(e) => onChange({ cut_by_customer: e.target.checked })} /> {cutLabel}
+        </label>
+        <PhotoPicker compact files={c.files} onChange={(files) => onChange({ files })} testId={`${rt}-photo`} />
+      </div>
+    </div>
+  );
+}
+
+/** Roll yang SUDAH dipilih (lewat pemilih roll lain) → isian per roll tanpa centang & tanpa qty (roll utuh). */
+export function PickedRollClaims({ rolls, claims, onChange, testId, cutLabel = "Roll sudah dipotong" }) {
+  if (!rolls.length) return null;
+  return (
+    <div className="divide-y divide-[#F2F3F5] rounded-md border border-[#EFF0F2] bg-[#FAFBFC]" data-testid={testId}>
+      {rolls.map((r) => {
+        const rt = `${testId}-roll-${r.roll_id}`;
+        const c = claims[r.roll_id] || emptyClaim(r);
+        return (
+          <div key={r.roll_id} className="px-3 py-2" data-testid={rt}>
+            <p className="flex flex-wrap items-center gap-x-2 text-[12px]">
+              <span className="font-mono font-semibold text-[#1C1C1E]">{r.roll_no || r.roll_id}</span>
+              <span className="text-[11px] text-[#6B6B73]">{[r.lot, `${formatQty(r.remaining)} ${r.unit || ""}`].filter(Boolean).join(" · ")}</span>
+            </p>
+            <RollClaimFields claim={c} testId={rt} unit={r.unit} remaining={r.remaining} qtyEditable={false} cutLabel={cutLabel}
+              onChange={(patch) => onChange({ ...claims, [r.roll_id]: { ...c, ...patch } })} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Detail per roll untuk API (tanpa qty & berkas). */
+export const claimDetails = (claims) => Object.fromEntries(Object.entries(claims || {}).map(([rid, c]) => {
+  const { qty, files, ...d } = c;
+  return [rid, d];
+}));
+
+/** Alasan per roll wajib (retur supplier & antar-PT) — pesan salah, kosong = valid. */
+export const pickedClaimErrors = (rolls, claims) => rolls
+  .filter((r) => ((claims[r.roll_id] || {}).reason || "").trim().length < 3)
+  .map((r) => `${r.roll_no || r.roll_id}: isi alasan roll ini`);
+
 /** Satu produk: daftar roll terkirim; roll dicentang → isian per roll muncul di bawahnya. */
 export default function ReturnRollClaims({ product, rolls, claims, onChange, testId }) {
   const set = (rid, patch) => onChange({ ...claims, [rid]: { ...claims[rid], ...patch } });
@@ -64,7 +138,6 @@ export default function ReturnRollClaims({ product, rolls, claims, onChange, tes
         {rolls.map((r) => {
           const c = claims[r.roll_id];
           const rt = `${testId}-roll-${r.roll_id}`;
-          const over = c && (parseFloat(c.qty) || 0) > r.remaining + 0.001;
           return (
             <div key={r.roll_id} className={`px-3 py-2 ${c ? "bg-[#F7FAFF]" : ""}`} data-testid={rt}>
               <label className="flex cursor-pointer flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px]">
@@ -72,37 +145,8 @@ export default function ReturnRollClaims({ product, rolls, claims, onChange, tes
                 <span className="font-mono font-semibold text-[#1C1C1E]">{r.roll_no || r.roll_id}</span>
                 <span className="text-[11px] text-[#6B6B73]">{r.shipment_no} · sisa {formatQty(r.remaining)} {r.unit}</span>
               </label>
-              {c && (
-                <div className="mt-2 space-y-2 pl-5">
-                  <div className="grid gap-2 sm:grid-cols-[120px_130px_minmax(0,1fr)]">
-                    <label className="text-[10.5px] font-semibold uppercase tracking-wide text-[#6B6B73]">Qty ({r.unit})
-                      <input type="number" min="0.01" step="0.01" max={r.remaining} value={c.qty} data-testid={`${rt}-qty`}
-                        onChange={(e) => set(r.roll_id, { qty: e.target.value })}
-                        className={`form-input mt-1 text-right tabular-nums ${over ? "!border-[#A8221A]" : ""}`} />
-                    </label>
-                    <div className="text-[10.5px] font-semibold uppercase tracking-wide text-[#6B6B73]">Kondisi
-                      <KNSelect className="form-select mt-1" value={c.condition} searchable={false} data-testid={`${rt}-condition`}
-                        onValueChange={(v) => set(r.roll_id, { condition: v })} options={CONDITION_OPTIONS} />
-                    </div>
-                    <label className="text-[10.5px] font-semibold uppercase tracking-wide text-[#6B6B73]">Alasan roll ini *
-                      <input value={c.reason} placeholder="mis. noda di 10 yard awal" data-testid={`${rt}-reason`}
-                        onChange={(e) => set(r.roll_id, { reason: e.target.value })} className="form-input mt-1" />
-                    </label>
-                  </div>
-                  {over && <p className="text-[11px] font-semibold text-[#A8221A]">Melebihi sisa roll ({formatQty(r.remaining)} {r.unit}).</p>}
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-[#3C3C43]">
-                    <label className="inline-flex items-center gap-1.5">
-                      <input type="checkbox" checked={c.hangtag_missing} data-testid={`${rt}-hangtag`}
-                        onChange={(e) => set(r.roll_id, { hangtag_missing: e.target.checked })} /> Hangtag hilang
-                    </label>
-                    <label className="inline-flex items-center gap-1.5">
-                      <input type="checkbox" checked={c.cut_by_customer} data-testid={`${rt}-cut`}
-                        onChange={(e) => set(r.roll_id, { cut_by_customer: e.target.checked })} /> Sudah dipotong pelanggan
-                    </label>
-                    <PhotoPicker compact files={c.files} onChange={(files) => set(r.roll_id, { files })} testId={`${rt}-photo`} />
-                  </div>
-                </div>
-              )}
+              {c && <RollClaimFields claim={c} testId={rt} unit={r.unit} remaining={r.remaining}
+                onChange={(patch) => set(r.roll_id, patch)} />}
             </div>
           );
         })}
@@ -115,10 +159,7 @@ export default function ReturnRollClaims({ product, rolls, claims, onChange, tes
 export function claimsToItem(product, claims) {
   const ids = Object.keys(claims);
   const roll_qtys = Object.fromEntries(ids.map((rid) => [rid, Math.round((parseFloat(claims[rid].qty) || 0) * 100) / 100]));
-  const roll_details = Object.fromEntries(ids.map((rid) => {
-    const { qty, files, ...d } = claims[rid];
-    return [rid, d];
-  }));
+  const roll_details = claimDetails(claims);
   return {
     product_id: product.product_id, product_name: product.product_name, unit: product.unit,
     quantity_returned: Math.round(Object.values(roll_qtys).reduce((a, q) => a + q, 0) * 100) / 100,
