@@ -29,6 +29,21 @@ export async function printSampleLabel(r) {
 <script>window.onload=function(){window.print();}</script></body></html>`);
 }
 
+/** Trial 22 Okt (A2) — label SEMUA potongan satu paket potong (catalogue) dalam SATU dokumen cetak (dulu satu jendela
+ *  cetak per potongan). */
+export async function printSampleLabels(list) {
+  const rows = (list || []).filter((r) => r && r.child_roll_no);
+  if (!rows.length) return;
+  const qrs = await Promise.all(rows.map((r) => qrFor(r.child_roll_no)));
+  const body = rows.map((r, i) => `<section>${qrs[i] ? `<img class="qr" src="${qrs[i]}" alt="QR ${esc(r.child_roll_no)}">` : ""}<div class="txt"><div class="no">${esc(r.child_roll_no)}</div>
+<div class="row b">${esc(r.customer_name)}</div>
+<div class="row">${esc(r.product_name)} · ${esc(r.sku)}</div>
+<div class="row"><span class="b">${esc(r.length)} ${esc(r.unit)}</span> · dari ${esc(r.cut_roll_no)}</div>
+<div class="small">${esc(r.sales_order_number || "")} · ${new Date().toLocaleDateString("id-ID")}</div></div></section>`).join("");
+  openPrint(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Label potongan (${rows.length})</title><style>${LABEL_CSS}</style></head>
+<body>${body}<script>window.onload=function(){window.print();}</script></body></html>`);
+}
+
 /** Label roll (58×40 mm per roll): QR nomor roll, produk, panjang, grade, lot. Dipakai inbound & cetak ulang.
  *  `opts.barcode` → tambah barcode Code128 nomor roll; `r.note` → baris keterangan (mis. asal potong). */
 export async function printInboundRollLabels(task, rolls, opts = {}) {

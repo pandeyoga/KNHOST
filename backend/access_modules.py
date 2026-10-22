@@ -75,7 +75,7 @@ MODULE_CATALOG: List[Dict[str, Any]] = [
      "description": "Barang masuk/keluar, lokasi rak, data gudang, label, produksi in-house, RFID.",
      "resources": ["wms", "goods_receipt", "warehouse", "label", "production"],
      # FE-03 — tab Barang Masuk/Keluar & hub RFID ikut modul ini (dulu `rfid` = ID tak dikenal menu).
-     "nav": ["gudang", "wms-operations", "operations", "goods-receipts", "wms-outbound", "qc-inspection",
+     "nav": ["gudang", "wms-operations", "operations", "goods-receipts", "wms-outbound", "wms-cutting", "qc-inspection",
              "wms-locations", "md-warehouses", "production", "escalations", "rfid-hub", "cs-rfid-lokasi",
              "cs-rfid-tags", "cs-rfid-devices", "cs-rfid-gate",
              # F-11-layar — retur pelanggan yang menunggu scan terima/kirim/tiba (tampilan tanpa uang)

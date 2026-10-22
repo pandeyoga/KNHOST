@@ -118,6 +118,8 @@ export const HUB_TABS = {
     // 2026-10 — Barang Masuk & Barang Keluar SATU LEVEL (dulu Barang Keluar tab di dalam Operasi WMS).
     { view: "goods-receipts",    label: "Barang Masuk",          roles: ["admin", "warehouse", "manager", "warehouse_admin", "finance"] },
     { view: "wms-outbound",      label: "Barang Keluar",         roles: ["admin", "warehouse", "manager", "sales"] },
+    // Trial 22 Okt (F1) — operasi potong (sample/catalogue + potong roll SO) DIPISAH dari Barang Keluar (order biasa).
+    { view: "wms-cutting",       label: "Cutting",               roles: ["admin", "warehouse", "manager", "warehouse_admin"] },
     { view: "qc-inspection",     label: "QC & Inspeksi",         roles: ["admin", "warehouse", "manager"] },
     // 2026-10 (T5.3) — Dokumen Inspeksi digabung ke tab "QC & Inspeksi" (sub-tab). Entri `hidden`
     // tetap ada agar deep-link `inspections` menyorot hub ini.

@@ -4,7 +4,7 @@ import ErrorNotice from "../../components/ErrorNotice";
 import { apiErrorText } from "../../utils/apiError";
 import { formatQty } from "../../utils/formatters";
 import { KNSelect } from "../../components/KNSelect";
-import { cuttingDesk, cuttingLocations, receiveCut } from "./sampleApi";
+import { cuttingDesk, cuttingLocations, receiveCut, receiveOrderCuts } from "./sampleApi";
 
 // Hanya gudang yang boleh dipakai pemilik roll (bersama, atau khusus untuk PT itu).
 const destFor = (locs, owner) => locs.filter((l) => !owner || l.sharing_mode !== "dedicated" || (l.entity_ids || []).includes(owner));
@@ -50,6 +50,16 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
     try { await receiveCut(r.task_id, dest[r.task_id] || r.warehouse_id); await load(); }
     catch (e) { setError(apiErrorText(e, "Gagal menerima hasil potong.")); } finally { setBusy(""); }
   };
+  // Trial 22 Okt (A2) — satu pesanan (mis. catalogue 9 warna) diterima sekaligus.
+  const receiveAll = async (r) => {
+    setBusy(`order:${r.order_id}`);
+    try {
+      const res = await receiveOrderCuts(r.order_id, dest[r.task_id] || r.warehouse_id);
+      if ((res.failed || []).length) setError(`${res.received} diterima; gagal: ${res.failed.map((f) => `${f.product_name} (${f.error})`).join("; ")}`);
+      await load();
+    } catch (e) { setError(apiErrorText(e, "Gagal menerima hasil potong pesanan ini.")); } finally { setBusy(""); }
+  };
+  const perOrder = (rows) => rows.reduce((m, r) => ({ ...m, [r.order_id]: (m[r.order_id] || 0) + 1 }), {});
   return (
     <section data-testid="cutting-desk" className="grid gap-3">
       <ErrorNotice message={error} onRetry={load} onDismiss={() => setError("")} testId="cutting-desk-error" />
@@ -68,8 +78,14 @@ export default function CuttingDesk({ selectedEntity = "all", canReceive }) {
               {q.label}<span data-testid={`cutting-queue-count-${q.key}`} className="rounded-full bg-[#F2F2F7] px-2 py-0.5 text-[10px]">{q.rows.length}</span></p>
             {q.rows.length === 0 ? <p className="p-4 text-center text-[11.5px] text-[#8E8E93]">Kosong.</p> : (
               <ul className="divide-y divide-[#F2F3F5] text-[12px]">
-                {q.rows.map((r) => (
+                {q.rows.map((r, i) => (
                   <li key={r.task_id} data-testid={`cutting-row-${r.task_id}`} className="px-3 py-2">
+                    {q.key === "to_receive" && canReceive && perOrder(q.rows)[r.order_id] > 1
+                      && q.rows.findIndex((x) => x.order_id === r.order_id) === i && (
+                      <button data-testid={`cutting-receive-order-${r.order_id}`} className="primary-button mb-1.5 w-full justify-center !h-8"
+                        disabled={busy === `order:${r.order_id}`} onClick={() => receiveAll(r)}>
+                        <PackageCheck size={13} /> Terima semua potongan {r.order_number} ({perOrder(q.rows)[r.order_id]} baris)</button>
+                    )}
                     <p className="flex flex-wrap items-center gap-1.5 font-semibold">{r.order_number} · {r.product_name} <span className="rounded bg-[#FFF3D6] px-1.5 text-[10px] text-[#9A5B00]">{KIND[r.sample_kind] || r.sample_kind}</span>
                       {data.wait_thresholds && <WaitBadge row={r} th={data.wait_thresholds} done={q.key === "ready"} />}</p>
                     <p className="text-[11px] text-[#6B6B73]">{formatQty(r.quantity)} {r.unit} · {r.warehouse_name || r.warehouse_id}

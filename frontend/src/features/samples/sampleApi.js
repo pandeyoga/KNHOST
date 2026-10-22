@@ -12,6 +12,8 @@ export const catalogueTemplates = (params = {}) => axios.get(`${API}/sample-orde
 export const changeCatalogueSoft = (id, product_id) => axios.post(`${API}/sample-orders/${id}/catalogue/soft`, { product_id }).then((r) => r.data);
 export const cuttingDesk = (params = {}) => axios.get(`${API}/cutting/desk`, { params }).then((r) => r.data);
 export const receiveCut = (taskId, to_warehouse_id = "") => axios.post(`${API}/cutting/tasks/${taskId}/receive`, { to_warehouse_id }).then((r) => r.data);
+// Trial 22 Okt (A2) — terima SEMUA hasil potong satu pesanan sekaligus (catalogue 9 warna = 1 klik).
+export const receiveOrderCuts = (orderId, to_warehouse_id = "") => axios.post(`${API}/cutting/orders/${orderId}/receive`, { to_warehouse_id }).then((r) => r.data);
 export const cuttingLocations = () => axios.get(`${API}/cutting/locations`).then((r) => r.data);
 export const setCuttingCaps = (wid, caps) => axios.put(`${API}/cutting/locations/${wid}`, { caps }).then((r) => r.data);
 export const createCatalogueOrder = (payload) => axios.post(`${API}/sales-orders`, payload).then((r) => r.data);

@@ -514,6 +514,24 @@ async def dispatch_outbound(task_id: str, request: Request, ship_qty: float = No
     return {"task": updated_task, "shipment": shipment}
 
 
+@router.post("/outbound/so/{order_id}/dispatch-batch")
+async def dispatch_order_batch(order_id: str, request: Request, warehouse_id: str) -> Dict[str, Any]:
+    """Trial 22 Okt (A2) — kirim semua tugas pesanan ini di satu gudang yang siap kirim dengan SATU nomor Surat Jalan
+    (dulu tiap baris satu SJ). Gerbang yang sama dengan kirim per tugas (bayar, QC, serah potong, cek muat)."""
+    actor = await require_permission(request, "wms", "update")
+    order = safe_doc(await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "entity_id": 1, "number": 1}))
+    if not order:
+        raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan")
+    assert_entity_access(order, "sales_orders", await entity_ctx(request))
+    from services import loading_check_service as lc
+    await lc.dispatch_guard(order_id, warehouse_id)
+    from services.shipment_service import dispatch_order_batch as _batch
+    out = await _batch(order_id, warehouse_id, actor["name"])
+    await audit(actor["name"], "outbound_dispatched_batch", "sales_order", order_id,
+                {"shipment_no": out["shipment_no"], "lines": out["lines"], "qty": out["qty"]})
+    return out
+
+
 # ─── FASE R4 — Final Loading Check (handheld vs manifest SO sebelum naik mobil) ──
 from entity_scope import resolve_scope_ids as _resolve_scope_ids
 from services import loading_check_service as _lc

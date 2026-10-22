@@ -26,7 +26,8 @@ export default function DeliveryCreateModal({ params, onClose, onCreated, presel
     unassignedShipments(params).then((rows) => {
       setShips(rows);
       const pre = rows.find((r) => r.id === preselectShipmentId);
-      if (pre) { setPicked([pre.id]); applyShipment(pre, rows); }
+      // Trial 22 Okt (A2) — satu SJ bisa berisi beberapa baris (catatan per produk bernomor sama): pilih semuanya.
+      if (pre) { setPicked(rows.filter((r) => r.id === pre.id || (pre.shipment_no && r.shipment_no === pre.shipment_no)).map((r) => r.id)); applyShipment(pre, rows); }
     }).catch((e) => setErr(e.response?.data?.detail || "Gagal memuat Surat Jalan.")).finally(() => setLoadingShips(false));
     fleetAvailability(params).then(setFleet).catch(() => setFleet({ vehicles: [], drivers: [] }));
   }, []); // eslint-disable-line

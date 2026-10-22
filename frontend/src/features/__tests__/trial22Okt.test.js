@@ -1,6 +1,7 @@
 // Trial 22 Okt 2026 — perbaikan temuan (docs/uat/2026-10-21/CATATAN_TEMUAN_TRIAL_22OKT.md).
 // D2: hitung fisik GRN — panjang boleh diketik dalam satuan SJ/PO atau satuan dasar produk; satuan yang dipilih
 //     ikut dikirim (server mengonversi ke satuan dasar). Dulu label "Panjang (meter)" tetapi angka disimpan sebagai yard.
+// A2/F1: tab Cutting — pesanan catalogue tampil SATU paket (bukan 9 tugas), "Potong semua" = satu panggilan batch.
 // E8/E10: alur pesanan baru — ringkasan "Sebelum masuk gudang" (normal → diminta + dua total + batas booking),
 //     harga ditolak → tiga pilihan sales, dialog Admin Sales "Periksa & lepas ke gudang" (+ tahan dulu).
 import React, { act } from "react";
@@ -10,6 +11,7 @@ import OrderReleaseSummary from "../orders/OrderReleaseSummary";
 import SoApprovalsPanel from "../orders/SoApprovalsPanel";
 import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
 import { releaseMessage } from "../sales_admin/workDeskApi";
+import CuttingOpsView from "../wms/CuttingOpsView";
 
 const posted = [];
 jest.mock("../wms/grn/grnApi", () => ({
@@ -29,17 +31,22 @@ jest.mock("../../services/apiClient", () => ({
     defaults: { headers: { common: {} } },
     get: (url) => {
       apiCalls.push(["get", url]);
+      if (url.endsWith("/outbound/tasks")) return Promise.resolve({ data: global.__outboundTasks || [] });
+      if (url.endsWith("/warehouses")) return Promise.resolve({ data: [{ id: "wh_j", name: "Jakarta · Sukacita" }] });
+      if (url.includes("pending-cuts")) return Promise.resolve({ data: { items: [] } });
       return Promise.resolve({ data: { verifiable: true, ready: true, checks: [], blocking_gaps: [], warnings: [],
         order_preview: { customer_name: "Toko Uji", items: [], totals: {} } } });
     },
     post: (url, body) => {
       apiCalls.push(["post", url, body]);
+      if (url.endsWith("/cut-samples")) return Promise.resolve({ data: { cut: [], failed: [] } });
       return Promise.resolve({ data: { order: { number: "SO-UJI", status: "waiting_approval" }, released: false,
         release_state: { waiting: "acc", hold: false } } });
     },
   },
 }));
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
 const q = (id) => document.body.querySelector(`[data-testid="${id}"]`);
 const tick = () => act(async () => { await new Promise((r) => setTimeout(r, 0)); });
 
@@ -135,4 +142,24 @@ test("E8: pesan sesudah periksa sesuai keadaan", () => {
   expect(releaseMessage({ released: true, order: { number: "SO-1", status: "confirmed" } })).toMatch(/dilepas ke gudang/);
   expect(releaseMessage({ order: { number: "SO-1", status: "approved" }, release_state: { hold: true } })).toMatch(/DITAHAN/);
   expect(releaseMessage({ order: { number: "SO-1", status: "waiting_approval" }, release_state: { waiting: "ditolak" } })).toMatch(/DITOLAK/);
+});
+
+
+test("A2/F1: tab Cutting — 9 baris catalogue jadi satu paket; Potong semua memanggil API batch", async () => {
+  apiCalls.length = 0;
+  global.__outboundTasks = Array.from({ length: 9 }, (_, i) => ({
+    id: `t${i}`, task_subtype: "sample_cut", status: "created", picked_qty: 0, order_id: "so5", order_number: "KSC/SOS-00005",
+    customer_name: "Toko Kain Sejahtera", warehouse_id: "wh_j", warehouse_name: "Jakarta · Sukacita",
+    product_name: `CLOVERTEA ${i}`, quantity: 1, unit: "yard", suggested_roll_no: `RL-${i}`, suggested_roll_id: `r${i}`,
+  })).concat([{ id: "so-pick", task_subtype: undefined, status: "created", order_id: "x", order_number: "KSC/SO-1" }]);
+  const root = await mount(<CuttingOpsView />);
+  await tick();
+  const pkgs = [...document.body.querySelectorAll('[data-testid^="cutting-pkg-"]')].filter((e) => !e.dataset.testid.startsWith("cutting-pkg-cut-all"));
+  expect(pkgs.map((e) => e.dataset.testid)).toEqual(["cutting-pkg-so5"]);   // satu paket; tugas SO biasa tidak ikut
+  expect(q("cutting-pkg-so5").textContent).toMatch(/9 baris · dipotong 0\/9/);
+  expect(q("cutting-pkg-cut-all-so5").textContent).toMatch(/Potong semua \(9\)/);
+  await act(async () => { q("cutting-pkg-cut-all-so5").click(); });
+  await tick();
+  expect(apiCalls.filter(([m, url]) => m === "post" && url === "/api/outbound/so/so5/cut-samples")).toHaveLength(1);
+  act(() => root.unmount());
 });

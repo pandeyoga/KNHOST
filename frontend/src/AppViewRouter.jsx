@@ -155,6 +155,7 @@ const ExportCenterView = lazy(() => import("./features/export/ExportCenterView")
 const LocationPutawayView = lazy(() => import("./features/wms/LocationPutawayView"));
 const GoodsReceiptsView = lazy(() => import("./features/wms/grn/GoodsReceiptsView"));
 const OutboundView = lazy(() => import("./features/wms/OutboundView"));
+const CuttingOpsView = lazy(() => import("./features/wms/CuttingOpsView"));
 const ReceivingOcrSettings = lazy(() => import("./features/settings/ReceivingOcrSettings"));
 const RfidTagsView = lazy(() => import("./features/rfid/RfidTagsView"));
 const RfidDevicesView = lazy(() => import("./features/rfid/RfidDevicesView"));
@@ -486,6 +487,7 @@ export default function AppViewRouter(props) {
       {activeView === "export-center" && <ExportCenterView selectedEntity={selectedEntity} />}
       {activeView === "goods-receipts" && <GoodsReceiptsView currentUser={user} selectedEntity={selectedEntity} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} onOpenPO={(poId) => openDocument({ view: "purchasing", nav_id: "purchase-orders", focus_type: "purchase_order", focus_id: poId })} />}
       {activeView === "wms-outbound" && <OutboundView user={user} focusDoc={focusDoc} onClearFocus={() => setFocusDoc(null)} />}
+      {activeView === "wms-cutting" && <CuttingOpsView />}
       {activeView === "settings-receiving-ocr" && <ReceivingOcrSettings currentUser={user} />}
       {activeView === "wms-locations" && <LocationPutawayView currentUser={user} selectedEntity={selectedEntity} />}
       {activeView === "cs-rfid-tags" && <RfidTagsView currentUser={user} selectedEntity={selectedEntity} />}

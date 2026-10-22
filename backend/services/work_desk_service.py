@@ -858,6 +858,17 @@ async def warehouse_admin_desk(actor: Dict[str, Any], scope: Dict[str, Any],
     sj_cust = {o["id"]: o.get("customer_name", "") for o in await db.sales_orders.find(
         {"id": {"$in": list({s.get("order_id") for s in sj if s.get("order_id")})}},
         {"_id": 0, "id": 1, "customer_name": 1}).to_list(400)}
+    # Trial 22 Okt (A2) — satu SJ (nomor sama) bisa terdiri dari beberapa catatan per produk → satu baris antrean.
+    by_no: Dict[str, Dict[str, Any]] = {}
+    for s_ in sj:
+        k = s_.get("shipment_no") or s_["id"]
+        if k in by_no:
+            by_no[k]["qty"] = float(by_no[k].get("qty") or 0) + float(s_.get("qty") or s_.get("quantity") or 0)
+            by_no[k]["product_name"] = f"{by_no[k].get('_n', 1) + 1} baris"
+            by_no[k]["_n"] = by_no[k].get("_n", 1) + 1
+        else:
+            by_no[k] = dict(s_)
+    sj = list(by_no.values())
     queues.append(_queue(
         "sj_belum_diangkut", "Surat Jalan belum diangkut logistik",
         "Barang sudah keluar gudang tetapi belum ada pengiriman — buat pengiriman (armada/ekspedisi).",

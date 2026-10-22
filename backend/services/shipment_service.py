@@ -40,7 +40,8 @@ def picked_roll_ids(task: Dict[str, Any]) -> List[str]:
 
 
 async def dispatch_task(
-    task: Dict[str, Any], ship_qty: Optional[float], actor_name: str
+    task: Dict[str, Any], ship_qty: Optional[float], actor_name: str,
+    shipment_no: Optional[str] = None, batch_id: str = "",
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """Dispatch (kirim) task outbound, mendukung pengiriman parsial. Return (task, shipment)."""
     if task.get("flow_type") != "outbound":
@@ -92,7 +93,9 @@ async def dispatch_task(
     # tengah → kunci saga dibiarkan + ditandai gagal (terlihat di Kunci Saga), bukan task palsu.
     try:
         shipment = {
-            "id": new_id("shp"), "shipment_no": await _next_shipment_no(task.get("entity_id")),
+            "id": new_id("shp"), "shipment_no": shipment_no or await _next_shipment_no(task.get("entity_id")),
+            # Trial 22 Okt (A2) — satu keberangkatan (pesanan × gudang) = SATU nomor SJ walau beberapa baris/produk.
+            "batch_id": batch_id,
             "entity_id": task.get("entity_id"),
             "order_id": task["order_id"], "order_number": task.get("order_number", ""),
             "task_id": task["id"], "allocation_id": task.get("allocation_id"),
@@ -153,3 +156,25 @@ async def dispatch_task(
             "gl_status": "failed", "gl_error": str(exc)[:300]}})
         shipment["gl_status"] = "failed"
     return safe_doc(updated), safe_doc(shipment)
+
+
+async def dispatch_order_batch(order_id: str, warehouse_id: str, actor_name: str) -> Dict[str, Any]:
+    """Trial 22 Okt (A2) — kirim SEMUA tugas pesanan ini di satu gudang yang siap kirim dengan SATU nomor Surat Jalan.
+    Dulu tiap baris = satu tugas = satu SJ (pesanan catalogue 9 warna → 9 SJ). Catatan `shipments` tetap per produk
+    (GL, retur, dan pelacakan roll bergantung padanya), tetapi berbagi `shipment_no` + `batch_id`."""
+    tasks = await db.wms_tasks.find(
+        {"order_id": order_id, "warehouse_id": warehouse_id, "flow_type": "outbound",
+         "status": {"$nin": list(NON_DISPATCHABLE)}}, {"_id": 0}).to_list(200)
+    ready = [t for t in tasks if round(min(float(t.get("quantity") or 0), float(t.get("picked_qty") or 0))
+                                       - float(t.get("shipped_qty") or 0), 2) > EPS]
+    if not ready:
+        raise HTTPException(status_code=400, detail="Tidak ada tugas pesanan ini di gudang ini yang siap dikirim.")
+    number = await _next_shipment_no(ready[0].get("entity_id"))
+    batch_id = new_id("shb")
+    out = []
+    for t in ready:
+        _, shp = await dispatch_task(t, None, actor_name, shipment_no=number, batch_id=batch_id)
+        out.append(shp)
+    return {"shipment_no": number, "batch_id": batch_id, "lines": len(out),
+            "qty": round(sum(float(x.get("qty") or 0) for x in out), 2), "unit": (out[0] or {}).get("unit", ""),
+            "shipments": out}

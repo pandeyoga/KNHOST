@@ -48,3 +48,13 @@ async def receive(task_id: str, payload: ReceiveIn, request: Request) -> Dict[st
     out = await cs.receive(task_id, payload.to_warehouse_id, actor, list(ctx.allowed_entity_ids or []))
     await audit(actor["name"], "cutting_handoff", "wms_task", task_id, out.get("cutting_handoff") or {})
     return out
+
+
+@router.post("/orders/{order_id}/receive")
+async def receive_order(order_id: str, payload: ReceiveIn, request: Request) -> Dict[str, Any]:
+    """Trial 22 Okt (A2) — terima SEMUA hasil potong satu pesanan sekaligus."""
+    actor = await require_permission(request, "sample_order", "cutting_receive")
+    ctx = await entity_ctx(request)
+    out = await cs.receive_order(order_id, payload.to_warehouse_id, actor, list(ctx.allowed_entity_ids or []))
+    await audit(actor["name"], "cutting_handoff_batch", "sales_order", order_id, {"received": out["received"]})
+    return out

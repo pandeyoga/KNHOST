@@ -29,6 +29,12 @@ class SampleCutIn(BaseModel):
     reason: str = ""
 
 
+class OrderCutIn(BaseModel):
+    """Trial 22 Okt (A2) — paket potong satu pesanan. `lines` kosong = semua baris yang belum dipotong."""
+    warehouse_id: str = ""
+    lines: List[Dict[str, Any]] = []
+
+
 @router.get("/sample-prices")
 async def list_sample_prices(request: Request) -> List[Dict[str, Any]]:
     await require_permission(request, "product", "view")
@@ -79,4 +85,18 @@ async def cut_sample(task_id: str, payload: SampleCutIn, request: Request) -> Di
     await audit(actor.get("name", ""), "sample_cut", "wms_task", task_id,
                 {"roll": res["cut"].get("cut_roll_no"), "child": res["cut"].get("child_roll_no"),
                  "length": res["cut"].get("length"), "so": res["cut"].get("sales_order_number")})
+    return res
+
+
+@router.post("/outbound/so/{order_id}/cut-samples")
+async def cut_order_samples(order_id: str, payload: OrderCutIn, request: Request) -> Dict[str, Any]:
+    """Trial 22 Okt (A2) — gudang memotong SEMUA baris sample/catalogue satu pesanan sekaligus (roll saran FIFO)."""
+    actor = await require_permission(request, "wms", "scan")
+    order = await db.sales_orders.find_one({"id": order_id}, {"_id": 0, "entity_id": 1, "number": 1})
+    if not order:
+        raise HTTPException(status_code=404, detail="Pesanan tidak ditemukan")
+    assert_entity_access(order, "sales_orders", await entity_ctx(request))
+    res = await svc.cut_order_samples(order_id, payload.warehouse_id, payload.lines, actor)
+    await audit(actor.get("name", ""), "sample_cut_batch", "sales_order", order_id,
+                {"cut": len(res["cut"]), "failed": len(res["failed"]), "so": order.get("number")})
     return res

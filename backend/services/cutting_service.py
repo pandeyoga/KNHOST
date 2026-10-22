@@ -200,3 +200,24 @@ async def change_catalogue_soft(order: Dict[str, Any], soft_product_id: str, act
         "$push": {"timeline": {"event": "catalogue_soft_changed", "label": "Warna soft catalogue diganti",
                                "actor": actor.get("name", ""), "at": now_iso(), "note": f"{old} → {fresh['soft']['color']}"}}})
     return safe_doc(await db.sales_orders.find_one({"id": order["id"]}, {"_id": 0}))
+
+
+async def receive_order(order_id: str, to_warehouse_id: str, actor: Dict[str, Any],
+                        scope_entities: List[str]) -> Dict[str, Any]:
+    """Trial 22 Okt (A2) — Admin Cutting menerima SEMUA hasil potong satu pesanan sekaligus (dulu per tugas: catalogue
+    9 warna = 9× "Terima hasil potong")."""
+    tasks = await db.wms_tasks.find(
+        {"order_id": order_id, "task_subtype": "sample_cut", "status": {"$nin": ["cancelled"]},
+         "roll_id": {"$nin": [None, ""]}, "cutting_handoff.received_at": {"$exists": False}},
+        {"_id": 0, "id": 1, "product_name": 1}).to_list(200)
+    if not tasks:
+        raise HTTPException(status_code=409, detail="Tidak ada hasil potong pesanan ini yang menunggu diterima.")
+    ok, failed = [], []
+    for t in tasks:
+        try:
+            ok.append(await receive(t["id"], to_warehouse_id, actor, scope_entities))
+        except HTTPException as exc:
+            d = exc.detail
+            failed.append({"task_id": t["id"], "product_name": t.get("product_name", ""),
+                           "error": d.get("message") if isinstance(d, dict) else str(d)})
+    return {"received": len(ok), "failed": failed}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DispatchPaymentGatePanel from "../orders/DispatchPaymentGatePanel";
 import PickListPanel from "./PickListPanel";
 import { dualLen } from "../../components/RollPicker";
@@ -25,6 +25,10 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
   const [error, setError] = useState("");
   const [selectedTask, setSelectedTask] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
+  // Trial 22 Okt (F2) — pencarian & filter (dulu hanya chip status): no. pesanan, pelanggan, produk/SKU, gudang, jenis.
+  const [q, setQ] = useState("");
+  const [kind, setKind] = useState("all");
+  const [whFilter, setWhFilter] = useState("");
 
   const [cameraActive, setCameraActive] = useState(false);
   const [scanValue, setScanValue] = useState("");
@@ -179,6 +183,46 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
     finally { setSubmitting(false); }
   };
 
+  // Trial 22 Okt (F1) — potong sample/catalogue dikerjakan di tab Cutting; paket sample baru tampil di sini setelah
+  // hasil potong DITERIMA Admin Cutting (siap kirim). Dulu tugas potong bercampur dengan tugas ambil SO.
+  const readyToShip = (t) => Math.round((Math.min(Number(t.picked_qty || 0), Number(t.quantity || 0)) - Number(t.shipped_qty || 0)) * 100) / 100 > 0;
+  const visibleTasks = useMemo(() => {
+    const term = q.toLowerCase().trim();
+    return (tasks || []).filter((t) => {
+      const smp = t.task_subtype === "sample_cut";
+      if (smp && !(Number(t.picked_qty || 0) > 0 && t.cutting_handoff?.received_at)) return false;
+      if (kind === "so" && smp) return false;
+      if (kind === "sample" && !smp) return false;
+      if (whFilter && t.warehouse_id !== whFilter) return false;
+      if (!term) return true;
+      return [t.order_number, t.customer_name, t.product_name, t.sku, t.warehouse_name].filter(Boolean).join(" ").toLowerCase().includes(term);
+    });
+  }, [tasks, q, kind, whFilter]);
+  const warehousesInList = useMemo(() => {
+    const m = {}; (tasks || []).forEach((t) => { if (t.warehouse_id) m[t.warehouse_id] = t.warehouse_name || t.warehouse_id; });
+    return Object.entries(m).map(([value, label]) => ({ value, label }));
+  }, [tasks]);
+  // Trial 22 Okt (A2) — semua tugas pesanan ini di gudang ini yang siap kirim → SATU Surat Jalan.
+  const siblingsReady = selectedTask ? (tasks || []).filter((t) => t.order_id === selectedTask.order_id
+    && t.warehouse_id === selectedTask.warehouse_id && !["dispatched", "cancelled", "escalated"].includes(t.status) && readyToShip(t)) : [];
+  const handleDispatchBatch = async () => {
+    const ok = await askConfirm({
+      title: `Kirim ${siblingsReady.length} baris ${selectedTask.order_number} sekaligus?`,
+      message: `Semua tugas pesanan ini di ${selectedTask.warehouse_name || "gudang ini"} yang siap kirim keluar bersama dengan SATU nomor Surat Jalan.`,
+      confirmLabel: "Kirim Sekarang", testId: "outbound-dispatch-batch-confirm",
+    });
+    if (!ok) return;
+    setSubmitting(true);
+    try {
+      const { data } = await axios.post(`${API}/outbound/so/${selectedTask.order_id}/dispatch-batch`, null, { params: { warehouse_id: selectedTask.warehouse_id } });
+      setLastShipment((data.shipments || [])[0] || null);
+      await fetchTasks();
+      setError("");
+      notifySuccess("Barang terkirim", `No. Surat Jalan: ${data.shipment_no} · ${data.lines} baris · ${formatQty(data.qty)} ${data.unit || ""}`);
+    } catch (e) { setError(apiErrorText(e, "Gagal mengirim barang.")); }
+    finally { setSubmitting(false); }
+  };
+
   const handleRelease = async () => {
     if (!selectedTask) return;
     const ok = await askConfirm({
@@ -242,8 +286,23 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
             {FILTER_LABELS[s]}
           </button>
         ))}
-        <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap">{tasks.length} tugas</span>
+        <span className="ml-auto text-[11px] text-[#6B6B73] whitespace-nowrap" data-testid="outbound-task-count">{visibleTasks.length} tugas</span>
       </div>
+      <div className="grid gap-2 md:grid-cols-[1fr_auto_200px]">
+        <input data-testid="outbound-search" value={q} onChange={(e) => setQ(e.target.value)}
+          className="rounded-lg border border-[#E5E5EA] bg-white px-3 py-1.5 text-[12px]" placeholder="Cari no. pesanan, pelanggan, produk, SKU…" />
+        <div className="flex gap-1">
+          {[["all", "Semua"], ["so", "Pesanan (SO)"], ["sample", "Sample"]].map(([k, l]) => (
+            <button key={k} data-testid={`outbound-kind-${k}`} onClick={() => setKind(k)}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${kind === k ? "bg-[#0058CC] text-white" : "border border-[#E5E5EA] bg-white text-[#6B6B73]"}`}>{l}</button>
+          ))}
+        </div>
+        <select data-testid="outbound-wh" value={whFilter} onChange={(e) => setWhFilter(e.target.value)} className="rounded-lg border border-[#E5E5EA] bg-white px-2 py-1.5 text-[12px]">
+          <option value="">Semua gudang</option>
+          {warehousesInList.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
+        </select>
+      </div>
+      <p className="text-[10.5px] text-[#8E8E93]">Potong sample/catalogue & potong roll ada di tab <b>Cutting</b>; paket sample muncul di sini setelah diterima Admin Cutting.</p>
 
       {/* 2-panel layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-3">
@@ -255,14 +314,14 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
           </div>
           {loading ? (
             <div className="py-8 text-center text-[12px] text-[#6B6B73]">Memuat…</div>
-          ) : tasks.length === 0 ? (
+          ) : visibleTasks.length === 0 ? (
             <div className="py-8 text-center text-[12px] text-[#6B6B73]">
               <Truck size={28} className="mx-auto mb-2 text-gray-300" />
               <p>Tidak ada tugas barang keluar</p>
             </div>
           ) : (
             <div className="divide-y divide-[#EFF0F2] overflow-y-auto max-h-[520px]">
-              {tasks.map(task => {
+              {visibleTasks.map(task => {
                 const pct = task.quantity ? Math.min((task.picked_qty || 0) / task.quantity * 100, 100) : 0;
                 const isSelected = selectedTask?.id === task.id;
                 return (
@@ -424,7 +483,10 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                   </>)}
                   {selectedTask.task_subtype === "sample_cut" && (
                     <p data-testid={`outbound-sample-cut-info-${selectedTask.id}`} className="rounded-lg border border-[#BFE6CC] bg-[#F1FBF4] p-2 text-[11px] text-[#126E2C]">
-                      Sample sudah dipotong dari <b>{selectedTask.parent_roll_no}</b> → <b>{selectedTask.child_roll_no}</b> ({formatQty(selectedTask.picked_qty)} {selectedTask.unit}). Serahkan potongan ke Admin Sample untuk diterima (Pesanan Sample › Meja Cutting), lalu kirim di bawah.
+                      Sample sudah dipotong dari <b>{selectedTask.parent_roll_no}</b> → <b>{selectedTask.child_roll_no}</b> ({formatQty(selectedTask.picked_qty)} {selectedTask.unit}).{" "}
+                      {selectedTask.cutting_handoff?.received_at
+                        ? <>Diterima Admin Cutting ({selectedTask.cutting_handoff.received_by}) — siap dikirim di bawah.</>
+                        : <b className="text-[#9A5B00]">Belum diterima Admin Cutting — kirim akan ditolak; serahkan dulu (Pesanan Sample › Meja Cutting).</b>}
                     </p>
                   )}
 
@@ -474,6 +536,12 @@ export default function OutboundScanInterface({ user, focusTaskId = "", onFocusC
                             <Send size={12} /> Kirim Semua ({formatQty(maxShip)})
                           </button>
                         </div>
+                        {siblingsReady.length > 1 && (
+                          <button onClick={handleDispatchBatch} disabled={submitting || held} data-testid={`dispatch-batch-${selectedTask.id}`}
+                            className="mt-2 w-full rounded-lg border border-[#34C759] bg-white px-3 py-1.5 text-[11.5px] font-semibold text-[#1C7A3E] disabled:opacity-50">
+                            <Send size={12} className="mr-1 inline" /> Kirim semua tugas {selectedTask.order_number} di gudang ini — 1 Surat Jalan ({siblingsReady.length} baris)
+                          </button>
+                        )}
                       </div>
                       </>
                     );

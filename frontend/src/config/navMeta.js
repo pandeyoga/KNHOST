@@ -130,6 +130,7 @@ export const PAGE_META = {
   "export-center":        { kicker: "Laporan",        title: "Pusat Export" },
   "goods-receipts":       { kicker: "Operasi Gudang", title: "Barang Masuk · Surat Jalan, OCR & Hitung Fisik" },
   "wms-outbound":         { kicker: "Operasi Gudang", title: "Barang Keluar · Ambil & Kirim Pesanan" },
+  "wms-cutting":          { kicker: "Operasi Gudang", title: "Cutting · Potong Sample & Potong Roll" },
   "settings-receiving-ocr": { kicker: "Pengaturan › Gudang", title: "Penerimaan & OCR" },
   "wms-locations":        { kicker: "Gudang",         title: "Lokasi Gudang & Penempatan Rak" },
   "production":           { kicker: "Gudang",         title: "Produksi In-House \u00b7 BOM & Work Order" },

@@ -482,3 +482,46 @@ async def cut_sample_task(task_id: str, payload: Dict[str, Any], actor: Dict[str
         "length": take, "unit": unit, "requested_length": requested, "customer_name": order.get("customer_name"),
         "product_name": task.get("product_name"), "sku": task.get("sku"), "sales_order_number": order.get("number"),
         "parent_remaining": rem}, "payment_adjustment": payment_adj}
+
+
+async def cut_order_samples(order_id: str, warehouse_id: str, lines: List[Dict[str, Any]],
+                            actor: Dict[str, Any]) -> Dict[str, Any]:
+    """Trial 22 Okt (A2) — paket potong: potong SEMUA baris sample satu pesanan di satu gudang sekaligus (roll saran FIFO,
+    panjang = diminta kecuali diisi). Dulu catalogue 9 warna = 9 tugas yang dipotong satu per satu. Tiap baris tetap
+    berjejak sendiri (roll induk → roll anak); kegagalan satu baris tidak membatalkan baris lain."""
+    flt: Dict[str, Any] = {"order_id": order_id, "task_subtype": "sample_cut", "status": {"$in": ["created", "picking"]},
+                           "picked_qty": {"$in": [0, 0.0, None]}}
+    if warehouse_id:
+        flt["warehouse_id"] = warehouse_id
+    tasks = await db.wms_tasks.find(flt, {"_id": 0}).to_list(200)
+    want = {str(x.get("task_id")): x for x in lines or [] if x.get("task_id")}
+    done, failed = [], []
+    for t in tasks:
+        if want and t["id"] not in want:
+            continue
+        body = {"roll_id": t.get("suggested_roll_id"),
+                "actual_length": float((want.get(t["id"]) or {}).get("actual_length") or 0) or None}
+        # Roll saran dicatat saat pesanan dibuat; bila kini sudah terikat pesanan lain / habis, pilih ulang FIFO di gudang
+        # yang sama (alasan tercatat otomatis) — dulu baris itu gagal dan harus dipotong manual.
+        cur = await db.inventory_rolls.find_one({"id": body["roll_id"]}, {"_id": 0, "status": 1, "length_remaining": 1})             if body["roll_id"] else None
+        need = float(body["actual_length"] or t.get("quantity") or 0)
+        if not cur or cur.get("status") != "available" or float(cur.get("length_remaining") or 0) < need:
+            alt = await suggest_roll(t["product_id"], need, [t.get("entity_id")] if t.get("entity_id") else [],
+                                     [t["warehouse_id"]] if t.get("warehouse_id") else None)
+            if alt:
+                body.update({"roll_id": alt["id"], "reason": f"Roll saran {t.get('suggested_roll_no') or '-'} sudah tidak "
+                                                              f"tersedia — dipilih ulang FIFO ({alt.get('roll_no')})"})
+            else:
+                body["roll_id"] = ""
+        if not body["roll_id"]:
+            failed.append({"task_id": t["id"], "product_name": t.get("product_name", ""),
+                           "error": "Tidak ada roll tersedia yang cukup panjang di gudang ini — potong manual (pindai roll)."})
+            continue
+        try:
+            res = await cut_sample_task(t["id"], body, actor)
+            done.append(res["cut"])
+        except HTTPException as exc:
+            d = exc.detail
+            failed.append({"task_id": t["id"], "product_name": t.get("product_name", ""),
+                           "error": d.get("message") if isinstance(d, dict) else str(d)})
+    return {"cut": done, "failed": failed}

@@ -126,3 +126,47 @@ def test_e10_harga_khusus_tanpa_alasan_ditolak(u):
         "customer_id": base.CUST, "shipping_address_id": "", "entity_id": base.ENT, "confirm_mixed_lot": True,
         "items": [{"product_id": base._product(), "quantity": 5, "unit": "yard", "requested_price": 1000}]})
     assert c == 400 and "Alasan" in str(b), b
+
+
+# ─── A2/F1 — paket potong sample/catalogue: potong semua → terima semua → kirim SATU Surat Jalan ─────────────
+@pytest.fixture(scope="module")
+def g():
+    return {k: base.Api(e) for k, e in (("wh", "warehouse@kainnusantara.id"), ("smp", "sampleadmin@kainnusantara.id"),
+                                       ("whadm", "wh.admin@kainnusantara.id"))}
+
+
+def test_a2_potong_semua_lalu_terima_semua_satu_klik(g):
+    so = DB.sales_orders.find_one({"number": "KSC/SOS-00002"}, {"_id": 0, "id": 1, "status": 1})
+    if not so:
+        pytest.skip("SOS-00002 tidak ada di salinan data acuan")
+    if so["status"] == "approved":
+        c, b = g["smp"].call("POST", f"/sample-orders/{so['id']}/confirm")
+        assert c == 200, b
+    tasks = list(DB.wms_tasks.find({"order_id": so["id"], "task_subtype": "sample_cut"}, {"_id": 0}))
+    assert tasks, "tugas potong tidak lahir"
+    tasks = [t for t in tasks if not float(t.get("picked_qty") or 0)]
+    if not tasks:
+        pytest.skip("SOS-00002 sudah dipotong oleh run sebelumnya — salin ulang DB uji untuk mengulang")
+    c, r = g["wh"].call("POST", f"/outbound/so/{so['id']}/cut-samples", {"warehouse_id": tasks[0]["warehouse_id"]})
+    assert c == 200, r
+    assert len(r["cut"]) + len(r["failed"]) == len(tasks) and r["cut"], r
+    c, r = g["smp"].call("POST", f"/cutting/orders/{so['id']}/receive", {})
+    assert c == 200 and r["received"] == len([t for t in r.get("failed", [])]) + r["received"], r
+    left = DB.wms_tasks.count_documents({"order_id": so["id"], "roll_id": {"$nin": [None, ""]},
+                                         "cutting_handoff.received_at": {"$exists": False}})
+    assert left == 0
+
+
+def test_a2_kirim_semua_tugas_pesanan_satu_nomor_sj(g):
+    so = DB.sales_orders.find_one({"number": "KSC/SOS-00005"}, {"_id": 0, "id": 1})
+    tasks = list(DB.wms_tasks.find({"order_id": so["id"], "flow_type": "outbound"}, {"_id": 0}))
+    ready = [t for t in tasks if t.get("status") != "dispatched" and (t.get("cutting_handoff") or {}).get("received_at")]
+    if len(ready) < 2:
+        pytest.skip("SOS-00005 di salinan data tidak lagi punya ≥2 baris siap kirim")
+    wh = ready[0]["warehouse_id"]
+    g["whadm"].call("POST", f"/outbound/so/{so['id']}/loading-check/override",
+                    {"reason": "uji trial 22 okt — tanpa perangkat RFID, validasi manual"})
+    c, r = g["wh"].call("POST", f"/outbound/so/{so['id']}/dispatch-batch", params={"warehouse_id": wh})
+    assert c == 200, r
+    nums = {s["shipment_no"] for s in DB.shipments.find({"batch_id": r["batch_id"]}, {"_id": 0, "shipment_no": 1})}
+    assert nums == {r["shipment_no"]} and r["lines"] == len([t for t in ready if t["warehouse_id"] == wh])
