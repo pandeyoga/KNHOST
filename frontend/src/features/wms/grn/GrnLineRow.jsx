@@ -3,6 +3,7 @@ import { BookPlus, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { KNSelect } from "../../../components/KNSelect";
 import { LineDoubtRow, writtenQty } from "./GrnOcrBits";
 import { grnApi } from "./grnApi";
+import { targetLabel } from "./grnTargets";
 
 export const tgtKey = (t) => (t ? (t.type === "po_task" ? `po_task:${t.task_id}` : `mko_step:${t.mko_id}:${t.step_seq}`) : "");
 export const tgtBody = (k) => {
@@ -163,7 +164,7 @@ export default function GrnLineRow({ grn, ln, targets, gradeOptions, run }) {
       <td className="px-2">{d.lot}</td>
       <td className="px-2">
         <KNSelect data-testid={`grn-line-target-${n}`} value={tgtKey(ln.target)} onValueChange={(v) => patch({ target: tgtBody(v) })}
-          options={targets.map((t) => ({ value: tgtKey(t), label: t.type === "po_task" ? `${t.po_number} · ${t.product_name}` : `${t.mko_number}/${t.step_seq} · ${t.product_name}` }))} placeholder="-" />
+          options={targets.map((t) => ({ value: tgtKey(t), label: targetLabel(t) }))} placeholder="-" />
         {isMko && !ln.is_non_stock && (
           <div className={`mt-1 rounded ${ln.role === "" ? "ring-1 ring-[#E5B34A]" : ""}`}>
             <KNSelect data-testid={`grn-line-role-${n}`} value={ln.role || ""} onValueChange={(v) => patch({ role: v })} options={ROLE_OPTIONS} placeholder="Output atau barang sisa?" searchable={false} />

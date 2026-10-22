@@ -9,6 +9,7 @@ import GrnLineCard from "./GrnLineCard";
 import GrnLineRow, { ROLE_OPTIONS, VerifySummary, tgtBody, tgtKey } from "./GrnLineRow";
 import { GrnDraftActions, GrnExtractionNotice } from "./GrnOcrBits";
 import { errText, grnApi } from "./grnApi";
+import { fillFromTarget, suggestTargets, targetLabel } from "./grnTargets";
 
 const EMPTY = { item_code: "", description: "", po_ref: "", qty: "", unit: "", rolls: "", weight_kg: "", weight_basis: "", grade: "", lot: "", target: "", is_non_stock: false, role: "output" };
 const num = (v) => (v === "" || v == null ? null : Number(v));
@@ -52,7 +53,13 @@ function LineForm({ grn, targets, gradeOptions, run }) {
     setF(EMPTY);
     return r;
   });
-  const opts = targets.map((t) => ({ value: tgtKey(t), label: t.type === "po_task" ? `${t.po_number} · ${t.product_name} (${t.unit})` : `${t.mko_number} langkah ${t.step_seq} · ${t.product_name}` }));
+  const opts = targets.map((t) => ({ value: tgtKey(t), label: targetLabel(t) }));
+  // Trial 22 Okt (B3) — pilih Target → kode/deskripsi/satuan/PO yang masih kosong terisi; saran target dari kode/nama.
+  const pickTarget = (k) => {
+    const t = targets.find((x) => tgtKey(x) === k);
+    setF((x) => ({ ...x, target: k, ...(t ? fillFromTarget(x, t) : {}) }));
+  };
+  const hints = !f.target && !f.is_non_stock ? suggestTargets(targets, f.item_code, f.description) : [];
   return (
     <div data-testid="grn-line-form" className="grid grid-cols-2 gap-2 sm:grid-cols-6 rounded-xl border border-dashed border-[#CFE0FF] bg-[#F9FBFF] p-3">
       <Field label="Kode"><input data-testid="grn-line-code" className={inputCls} value={f.item_code} onChange={set("item_code")} /></Field>
@@ -71,8 +78,17 @@ function LineForm({ grn, targets, gradeOptions, run }) {
       <label className="flex items-end gap-1 pb-2 text-[11px] font-semibold"><input data-testid="grn-line-nonstock" type="checkbox" checked={f.is_non_stock} onChange={set("is_non_stock")} /> Non-stok</label>
       {grn.partner_type === "makloon" && <Field label="Peran"><KNSelect data-testid="grn-line-role" value={f.role} onValueChange={set("role")} options={ROLE_OPTIONS} searchable={false} /></Field>}
       <div className={`col-span-2 ${grn.partner_type === "makloon" ? "sm:col-span-4" : "sm:col-span-5"}`}><Field label="Target (tugas PO / langkah MKO)">
-        <KNSelect data-testid="grn-line-target" value={f.target} onValueChange={set("target")} options={opts} placeholder={f.is_non_stock ? "Tidak perlu target" : "Pilih target…"} disabled={f.is_non_stock} />
+        <KNSelect data-testid="grn-line-target" value={f.target} onValueChange={pickTarget} options={opts} placeholder={f.is_non_stock ? "Tidak perlu target" : "Pilih target… (cari PO, nama, atau kode supplier)"} disabled={f.is_non_stock} />
       </Field></div>
+      {hints.length > 0 && (
+        <div data-testid="grn-line-target-hints" className="col-span-full flex flex-wrap items-center gap-1.5 text-[10.5px]">
+          <span className="font-semibold text-[#6B6B73]">Saran target:</span>
+          {hints.map(({ t, why }) => (
+            <button key={tgtKey(t)} type="button" data-testid={`grn-line-target-hint-${tgtKey(t)}`} onClick={() => pickTarget(tgtKey(t))}
+              className="rounded-full border border-[#CFE0FF] bg-white px-2 py-0.5 font-semibold text-[#0058CC]">{targetLabel(t)} · {why}</button>
+          ))}
+        </div>
+      )}
       <div className="col-span-2 flex items-end sm:col-span-1"><button data-testid="grn-line-add" className="primary-button w-full justify-center" onClick={add}><Plus size={13} /> Baris</button></div>
     </div>
   );

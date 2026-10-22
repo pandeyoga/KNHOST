@@ -6,11 +6,13 @@
 // E7: tabel meja — cari + filter status + urutan.
 // F5: Lembar Inspect menyerupai kertas "DATA HASIL INSPECT" (sel KODE+POIN per 15 yard, STDRT, yard per grade).
 // B6: stok di katalog/checkout HP — stok PT penjual dipisah dari stok grup; kekurangan bersatuan (kg), bukan "unit".
+// B3: Barang Masuk isi manual — pilih Target mengisi kode/deskripsi/satuan/PO yang kosong; saran target dari kode/nama.
 // E8/E10: alur pesanan baru — ringkasan "Sebelum masuk gudang" (normal → diminta + dua total + batas booking),
 //     harga ditolak → tiga pilihan sales, dialog Admin Sales "Periksa & lepas ke gudang" (+ tahan dulu).
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import GrnCountPanel from "../wms/grn/GrnCountPanel";
+import GrnReviewPanel from "../wms/grn/GrnReviewPanel";
 import OrderReleaseSummary from "../orders/OrderReleaseSummary";
 import SoApprovalsPanel from "../orders/SoApprovalsPanel";
 import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
@@ -22,6 +24,7 @@ import InspectSheetGrid, { parseCell, stdrt } from "../inspections/InspectSheetG
 import { MobileProductCard } from "../pos/mobile/MobileProductCard";
 import { CheckoutItemCard } from "../pos/CheckoutItemCard";
 import { groupByTemplate } from "../../utils/variants";
+import { fillFromTarget, suggestTargets, targetLabel } from "../wms/grn/grnTargets";
 
 const posted = [];
 jest.mock("../wms/grn/grnApi", () => ({
@@ -30,6 +33,8 @@ jest.mock("../wms/grn/grnApi", () => ({
       actual_task_qty: 100, lot: "L1", grade: "A", status: "receiving", scan_source: "count" }]),
     post: (...a) => { posted.push(a); return Promise.resolve({ grn: null }); },
     del: () => Promise.resolve({}),
+    targets: () => Promise.resolve(global.__grnTargets || []),
+    fileBlob: () => Promise.reject(new Error("tanpa foto")),
   },
   errText: () => "gagal",
 }));   // bukan jest.fn: resetMocks CRA
@@ -265,4 +270,37 @@ test("B6: checkout — baris stok memakai stok PT penjual + kurangnya; tanpa pra
   await act(async () => { root.render(<CheckoutItemCard item={item} onRemove={() => {}} onUpdateQty={() => {}} onUpdateDiscount={() => {}} />); });
   expect(q("cart-item-rolls-p1").textContent).toMatch(/^465 roll di grup/);
   act(() => root.unmount());
+});
+
+test("B3: target GRN — isian otomatis hanya kolom kosong, saran dari kode/nama versi supplier, label bisa dicari", () => {
+  const t = { type: "po_task", task_id: "t1", po_number: "KSC/PO-00002", product_name: "Lurik Klasik Solo", sku: "LRK-01",
+    supplier_sku: "SUP-77", supplier_item_name: "Lurik Solo Motif A", unit: "meter" };
+  const other = { ...t, task_id: "t2", po_number: "KSC/PO-00003", product_name: "Batik Mega", sku: "BTK", supplier_sku: "", supplier_item_name: "" };
+  expect(fillFromTarget({ item_code: "", description: "", unit: "", po_ref: "" }, t))
+    .toEqual({ item_code: "SUP-77", description: "Lurik Solo Motif A", unit: "meter", po_ref: "KSC/PO-00002" });
+  expect(fillFromTarget({ item_code: "X1", description: "tertulis di SJ", unit: "yd", po_ref: "" }, t))
+    .toEqual({ item_code: "X1", description: "tertulis di SJ", unit: "yd", po_ref: "KSC/PO-00002" });   // ketikan SJ tidak ditimpa
+  expect(suggestTargets([t, other], "sup-77", "").map((h) => [h.t.task_id, h.why])).toEqual([["t1", "kode cocok"]]);
+  expect(suggestTargets([t, other], "", "lurik solo").map((h) => h.t.task_id)).toEqual(["t1"]);
+  expect(suggestTargets([t, other], "", "ab")).toEqual([]);
+  expect(targetLabel(t)).toBe("KSC/PO-00002 · Lurik Klasik Solo (meter) · supplier: SUP-77 Lurik Solo Motif A");
+});
+
+test("B3: form baris manual — ketik kode supplier → saran target → isian terisi dari target", async () => {
+  global.__grnTargets = [{ type: "po_task", task_id: "t1", po_number: "KSC/PO-00002", product_name: "Lurik Klasik Solo",
+    sku: "LRK-01", supplier_sku: "SUP-77", supplier_item_name: "Lurik Solo Motif A", unit: "meter" }];
+  const root = await mount(<GrnReviewPanel grn={{ id: "g1", status: "review", version: 2, partner_type: "supplier", files: [], lines: [], dn: {} }}
+    onChange={() => {}} canReview />);
+  const code = q("grn-line-code");
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(code, "sup-77");
+    code.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  expect(q("grn-line-target-hints").textContent).toMatch(/KSC\/PO-00002 · Lurik Klasik Solo .* kode cocok/);
+  await act(async () => { q("grn-line-target-hint-po_task:t1").click(); });
+  expect(q("grn-line-target-hints")).toBeNull();
+  expect([q("grn-line-code").value, q("grn-line-desc").value, q("grn-line-unit").value, q("grn-line-po-ref").value])
+    .toEqual(["sup-77", "Lurik Solo Motif A", "meter", "KSC/PO-00002"]);
+  act(() => root.unmount());
+  global.__grnTargets = [];
 });

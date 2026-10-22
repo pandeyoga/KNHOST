@@ -4,6 +4,7 @@ import { KNSelect } from "../../../components/KNSelect";
 import { LineDoubtBody, writtenQty } from "./GrnOcrBits";
 import { LineEditForm, MappingCaption, PoValue, ROLE_OPTIONS, lineState, tgtBody, tgtKey } from "./GrnLineRow";
 import { grnApi } from "./grnApi";
+import { targetLabel } from "./grnTargets";
 
 /** Baris SJ versi HP: satu kartu per baris — angka besar, tombol besar, edit di tempat. */
 export default function GrnLineCard({ grn, ln, targets, gradeOptions, run }) {
@@ -34,7 +35,7 @@ export default function GrnLineCard({ grn, ln, targets, gradeOptions, run }) {
         {ocr && <p className="text-[10.5px] text-[#6B6B73]">Tertulis di SJ: <span className="font-mono">{writtenQty(ln) || "-"}</span>{d.lot ? ` · lot ${d.lot}` : ""}{d.grade ? ` · grade ${d.grade}` : ""}</p>}
         <LineDoubtBody ln={ln} onPick={(declared) => patch({ declared })} />
         <KNSelect data-testid={`grn-line-card-target-${n}`} value={tgtKey(ln.target)} onValueChange={(v) => patch({ target: tgtBody(v) })}
-          options={targets.map((t) => ({ value: tgtKey(t), label: t.type === "po_task" ? `${t.po_number} · ${t.product_name}` : `${t.mko_number}/${t.step_seq} · ${t.product_name}` }))} placeholder="Pilih target PO…" />
+          options={targets.map((t) => ({ value: tgtKey(t), label: targetLabel(t) }))} placeholder="Pilih target PO…" />
         {ln.target?.type === "mko_step" && !ln.is_non_stock && (
           <KNSelect data-testid={`grn-line-card-role-${n}`} value={ln.role || ""} onValueChange={(v) => patch({ role: v })} options={ROLE_OPTIONS} placeholder="Output atau barang sisa?" searchable={false} />
         )}

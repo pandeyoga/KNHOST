@@ -179,7 +179,9 @@ async def create_grn(body: Any, actor: Dict[str, Any], ctx: EntityContext) -> Di
         "source": {"opened_from": ("po" if body.po_ids else "mko" if body.mko_ids else "list"),
                    "po_ids": list(body.po_ids), "mko_ids": list(body.mko_ids)},
         "dn": {"number": "", "number_norm": "", "date": "", "date_text": "", "supplier_name_printed": "",
-               "recipient_name": "", "po_refs": [], "other_refs": [], "vehicle_plate": "", "annotations": [],
+               # Trial 22 Okt (B3) — dibuka dari PO → nomor PO itu langsung tercatat di kepala SJ.
+               "recipient_name": "", "po_refs": [d.get("po_number") for d in docs if d["id"] in set(body.po_ids) and d.get("po_number")],
+               "other_refs": [], "vehicle_plate": "", "annotations": [],
                "source": "manual", "edited_fields": []},
         "files": [], "extraction": {"read_failed": False, "error_code": "", "text_layer_used": False, "runs": []},
         "lines": [], "discrepancies": [],
@@ -522,10 +524,19 @@ async def list_targets(grn_id: str, ctx: EntityContext) -> List[Dict[str, Any]]:
         tasks = await db.wms_tasks.find(
             {"po_id": {"$in": [p["id"] for p in pos]}, "flow_type": "inbound", "status": {"$in": ACTIVE_TASK}},
             {"_id": 0}).to_list(500)
+        # Trial 22 Okt (B3) — kode/nama VERSI SUPPLIER ini ikut, supaya baris SJ (isi manual) bisa dicari/disarankan.
+        from services.supplier_item_service import COLL as _SI
+        sup: Dict[str, Dict[str, Any]] = {}
+        async for si in db[_SI].find({"supplier_id": grn["partner_id"], "status": {"$ne": "inactive"},
+                                      "product_id": {"$in": list({t["product_id"] for t in tasks})}},
+                                     {"_id": 0, "product_id": 1, "supplier_sku": 1, "supplier_item_name": 1}):
+            sup.setdefault(si["product_id"], si)
         for t in tasks:
+            si = sup.get(t["product_id"]) or {}
             out.append({"type": "po_task", "task_id": t["id"], "po_id": t.get("po_id"), "po_number": t.get("po_number"),
                         "product_id": t["product_id"], "product_name": t.get("product_name", ""),
-                        "sku": t.get("sku", ""), "supplier_sku": t.get("supplier_sku", ""),
+                        "sku": t.get("sku", ""), "supplier_sku": t.get("supplier_sku") or si.get("supplier_sku", ""),
+                        "supplier_item_name": si.get("supplier_item_name", ""),
                         "unit": t.get("unit"), "expected_qty": t.get("expected_qty"),
                         "received_qty": t.get("received_qty"), "status": t.get("status"),
                         "grn_active_number": t.get("grn_active_number", "")})

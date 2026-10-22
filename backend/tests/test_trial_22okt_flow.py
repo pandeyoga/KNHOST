@@ -261,3 +261,31 @@ def test_e5_pemenuhan_stok_sendiri_memakai_roll_pilihan():
     roll = DB.inventory_rolls.find_one({"id": pick[0]["id"]}, {"_id": 0, "status": 1, "reserved_ref": 1, "length_reserved": 1})
     child = DB.inventory_rolls.find_one({"parent_roll_id": pick[0]["id"], "reserved_ref.id": so_id}, {"_id": 0, "id": 1})
     assert (roll.get("reserved_ref") or {}).get("id") == so_id or child or float(roll.get("length_reserved") or 0) > 0, roll
+
+
+# ─── B3 — Barang Masuk isi manual: dibuka dari PO → nomor PO di kepala SJ; target membawa kode/nama versi supplier ──
+def test_b3_grn_dari_po_nomor_po_terisi_target_berisi_versi_supplier(g):
+    t = DB.wms_tasks.find_one({"entity_id": base.ENT, "flow_type": "inbound", "po_id": {"$gt": ""},
+                               "status": {"$in": ["waiting_goods", "receiving"]},
+                               "grn_active_id": {"$in": [None, ""]}}, {"_id": 0})
+    if not t:
+        pytest.skip("tidak ada tugas kedatangan PO terbuka di salinan data")
+    po = DB.purchase_orders.find_one({"id": t["po_id"]}, {"_id": 0, "supplier_id": 1, "po_number": 1})
+    DB.supplier_items.update_one({"supplier_id": po["supplier_id"], "product_id": t["product_id"]},
+                                 {"$setOnInsert": {"id": f"sit_uji_{uuid.uuid4().hex[:6]}", "status": "active",
+                                                   "supplier_sku": "SUP-UJI-1", "supplier_item_name": "Kain Uji Versi Supplier"}},
+                                 upsert=True)
+    si = DB.supplier_items.find_one({"supplier_id": po["supplier_id"], "product_id": t["product_id"]}, {"_id": 0})
+    c, grn = g["whadm"].call("POST", "/goods-receipts", {"partner_type": "supplier", "partner_id": po["supplier_id"],
+                                                        "warehouse_id": t["warehouse_id"], "po_ids": [t["po_id"]]})
+    assert c == 200, grn
+    try:
+        assert grn["dn"]["po_refs"] == [po["po_number"]]                       # dulu kosong walau dibuka dari PO
+        c, targets = g["whadm"].call("GET", f"/goods-receipts/{grn['id']}/targets")
+        assert c == 200, targets
+        tg = next(x for x in targets if x.get("task_id") == t["id"])
+        assert tg["supplier_item_name"] == si.get("supplier_item_name", "")
+        assert tg["supplier_sku"] == (t.get("supplier_sku") or si.get("supplier_sku", ""))
+    finally:
+        g["whadm"].call("POST", f"/goods-receipts/{grn['id']}/cancel",
+                        {"expected_version": grn["version"], "reason": "uji trial 22 okt B3"})
