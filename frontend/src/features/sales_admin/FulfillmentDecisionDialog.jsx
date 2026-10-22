@@ -17,7 +17,7 @@ const initLine = (ln) => {
   const ic = {};
   const ready = new Set((ln.other_entities || []).filter((o) => o.price_ready !== false).map((o) => o.entity_id));
   (ln.proposal || []).forEach((p) => { if (ready.has(p.entity_id)) ic[p.entity_id] = Math.min(p.qty, ln.backorder_qty); });
-  return { stock: 0, reorder: 0, wait: 0, ic };
+  return { stock: 0, reorder: 0, wait: 0, ic, stockRolls: [], icRolls: {} };
 };
 
 export default function FulfillmentDecisionDialog({ orderId, orderNumber, customerName, onClose, onDecided, onOpenFull }) {
@@ -71,8 +71,10 @@ export default function FulfillmentDecisionDialog({ orderId, orderNumber, custom
         note,
         lines: lines.map((ln) => {
           const p = plan[ln.product_id];
+          // Trial 22 Okt (E5) — roll pilihan ikut terkirim (stok sendiri: dicadangkan persis; PT lain: roll pilihan untuk gudang penjual).
           return { product_id: ln.product_id, stock_qty: p.stock, reorder_qty: p.reorder, wait_qty: p.wait,
-            interco: Object.entries(p.ic).filter(([, q]) => q > 0).map(([entity_id, qty]) => ({ entity_id, qty })) };
+            stock_roll_ids: p.stock > 0 ? (p.stockRolls || []) : [],
+            interco: Object.entries(p.ic).filter(([, q]) => q > 0).map(([entity_id, qty]) => ({ entity_id, qty, roll_ids: (p.icRolls || {})[entity_id] || [] })) };
         }),
       };
       const res = await fulfillmentPlanDecide(orderId, body);

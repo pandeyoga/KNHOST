@@ -207,6 +207,14 @@ async def decide(order_id: str, mode: str, actor: Dict[str, Any], *,
             "decision": decision, "decisions": decision_history(order) + [decision], **hasil}
 
 
+async def _roll_note(roll_ids) -> str:
+    if not roll_ids:
+        return ""
+    nos = [r.get("roll_no") or r["id"] async for r in db.inventory_rolls.find({"id": {"$in": list(roll_ids)}},
+                                                                            {"_id": 0, "id": 1, "roll_no": 1})]
+    return f" · roll pilihan: {', '.join(nos)}"
+
+
 async def _take_from_other_entity(order, kurang, actor, source_entity_id, note):
     """PIN → transaksi antar-PT, bertaut pesanan (E8.12: `source_order_id`)."""
     from services import internal_request_service as irs
@@ -216,7 +224,9 @@ async def _take_from_other_entity(order, kurang, actor, source_entity_id, note):
             "harga internalnya ada di panel pemenuhan.")
     payload = {
         "items": [{"product_id": b["product_id"], "quantity": b["backorder_qty"],
-                   "notes": f"kekurangan {order.get('number')}"} for b in kurang],
+                   # Trial 22 Okt (E5) — roll yang dipilih Admin Sales di PT sumber (dipakai gudang penjual).
+                   "preferred_roll_ids": b.get("roll_ids") or [],
+                   "notes": f"kekurangan {order.get('number')}" + (await _roll_note(b.get("roll_ids")))} for b in kurang],
         "reason": (note or f"Memenuhi kekurangan pesanan {order.get('number')} "
                            f"({order.get('customer_name')})")[:400],
         "notes": note or "",

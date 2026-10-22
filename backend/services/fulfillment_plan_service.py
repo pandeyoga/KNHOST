@@ -29,6 +29,18 @@ async def _own_by_warehouse(product_id: str, entity_id: str) -> List[Dict[str, A
     return out
 
 
+async def _rolls_for(product_id: str, entity_id: str, limit: int = 60) -> List[Dict[str, Any]]:
+    """Trial 22 Okt (E5) — roll TERSEDIA per sumber untuk dipilih (seperti pilih roll di pesanan), FIFO."""
+    names = {w["id"]: w.get("name", w["id"]) async for w in db.warehouses.find({}, {"_id": 0, "id": 1, "name": 1})}
+    rows = await db.inventory_rolls.find(
+        {"product_id": product_id, "owner_entity_id": entity_id, "status": "available",
+         "earmarked_for": {"$in": [None, ""]}, "length_remaining": {"$gt": EPS}},
+        {"_id": 0, "id": 1, "roll_no": 1, "lot": 1, "grade": 1, "length_remaining": 1, "warehouse_id": 1, "unit": 1},
+    ).sort("created_at", 1).to_list(limit)
+    return [{**r, "length_remaining": round(float(r.get("length_remaining") or 0), 2),
+             "warehouse_name": names.get(r.get("warehouse_id"), r.get("warehouse_id"))} for r in rows]
+
+
 def _planned(order: Dict[str, Any]) -> Dict[str, float]:
     """Kumulatif qty yang SUDAH direncanakan (transfer/PR/tunggu) per produk — untuk panduan."""
     out: Dict[str, float] = {}
@@ -55,6 +67,7 @@ async def plan_options(order: Dict[str, Any]) -> Dict[str, Any]:
                          for e, q in by.items() if e and e != buyer and q > EPS], key=lambda r: -r["available"])
         for o in others:
             o.update(await ips.price_status(o["entity_id"], buyer, pid))
+            o["rolls"] = await _rolls_for(pid, o["entity_id"])
         lines.append({
             "product_id": pid, "product_name": b.get("product_name"), "sku": b.get("sku"),
             "unit": b.get("unit", "meter"), "backorder_qty": b["backorder_qty"],
@@ -64,6 +77,7 @@ async def plan_options(order: Dict[str, Any]) -> Dict[str, Any]:
             "promise_date": b.get("promise_date") or "", "coverage": b.get("coverage", ""),
             "own_available": round(float(by.get(buyer, 0.0)), 2),
             "own_by_warehouse": await _own_by_warehouse(pid, buyer),
+            "own_rolls": await _rolls_for(pid, buyer),
             "other_entities": others,
             "proposal": (items.get(pid) or {}).get("fulfillment_proposal") or [],
             "planned_qty": planned.get(pid, 0.0),
@@ -92,12 +106,27 @@ def _validate(lines_in: List[Dict[str, Any]], opts: Dict[str, Any]) -> List[Dict
         reorder = round(float(raw.get("reorder_qty") or 0), 2)
         wait = round(float(raw.get("wait_qty") or 0), 2)
         ic_sum: Dict[str, float] = {}
+        ic_rolls: Dict[str, List[str]] = {}
         for x in raw.get("interco") or []:
             if float(x.get("qty") or 0) < 0:
                 raise FulfillmentError(f"{nm}: qty tidak boleh negatif.")
             if float(x.get("qty") or 0) > EPS:
                 ic_sum[x.get("entity_id")] = round(ic_sum.get(x.get("entity_id"), 0.0) + float(x["qty"]), 2)
-        ic = [{"entity_id": e, "qty": q} for e, q in ic_sum.items()]
+                ic_rolls.setdefault(x.get("entity_id"), []).extend(str(r) for r in x.get("roll_ids") or [] if r)
+        ic = [{"entity_id": e, "qty": q, "roll_ids": ic_rolls.get(e, [])} for e, q in ic_sum.items()]
+        # Trial 22 Okt (E5) — roll pilihan wajib roll tersedia dari sumber itu dan cukup untuk qty-nya.
+        stock_rolls = [str(r) for r in raw.get("stock_roll_ids") or [] if r]
+        own = {r["id"]: r for r in ln.get("own_rolls") or []}
+        if stock_rolls:
+            if any(r not in own for r in stock_rolls):
+                raise FulfillmentError(f"{nm}: roll pilihan stok sendiri sudah tidak tersedia — muat ulang.")
+            if sum(own[r]["length_remaining"] for r in stock_rolls) + EPS < stock:
+                raise FulfillmentError(f"{nm}: roll yang dipilih ({sum(own[r]['length_remaining'] for r in stock_rolls):g}) "
+                                       f"kurang dari qty stok sendiri {stock:g}.")
+        for x in ic:
+            src = {r["id"]: r for o in ln["other_entities"] if o["entity_id"] == x["entity_id"] for r in o.get("rolls") or []}
+            if x["roll_ids"] and any(r not in src for r in x["roll_ids"]):
+                raise FulfillmentError(f"{nm}: roll pilihan di PT sumber sudah tidak tersedia — muat ulang.")
         if min(stock, reorder, wait) < 0:
             raise FulfillmentError(f"{nm}: qty tidak boleh negatif.")
         total = stock + reorder + wait + sum(x["qty"] for x in ic)
@@ -105,7 +134,7 @@ def _validate(lines_in: List[Dict[str, Any]], opts: Dict[str, Any]) -> List[Dict
             continue
         if total > ln["backorder_qty"] + EPS:
             raise FulfillmentError(f"{nm}: total rencana {total:g} melebihi kekurangan {ln['backorder_qty']:g}.")
-        if stock > ln["own_available"] + EPS:
+        if stock > ln["own_available"] + EPS and not raw.get("stock_roll_ids"):
             raise FulfillmentError(f"{nm}: stok sendiri hanya {ln['own_available']:g}.")
         if wait > ln["incoming_total"] + EPS:
             raise FulfillmentError(f"{nm}: perkiraan sisa barang datang untuk SO ini hanya {ln['incoming_total']:g} "
@@ -114,7 +143,7 @@ def _validate(lines_in: List[Dict[str, Any]], opts: Dict[str, Any]) -> List[Dict
         for x in ic:
             if x["qty"] > avail.get(x["entity_id"], 0.0) + EPS:
                 raise FulfillmentError(f"{nm}: stok di PT sumber hanya {avail.get(x['entity_id'], 0.0):g}.")
-        plan.append({**ln, "stock": stock, "reorder": reorder, "wait": wait, "interco": ic})
+        plan.append({**ln, "stock": stock, "reorder": reorder, "wait": wait, "interco": ic, "stock_roll_ids": stock_rolls})
     if not plan:
         raise FulfillmentError("Isi minimal satu qty pemenuhan.")
     return plan
@@ -144,13 +173,14 @@ async def _execute(order, plan, actor, note, done: List[Dict[str, Any]]) -> None
     from services import backorder_service
     for ln in plan:
         if ln["stock"] > EPS:
-            got = await backorder_service.fulfill_from_stock(order["id"], ln["product_id"], ln["stock"], actor.get("name", ""))
+            got = await backorder_service.fulfill_from_stock(order["id"], ln["product_id"], ln["stock"], actor.get("name", ""),
+                                                             roll_ids=ln.get("stock_roll_ids") or None)
             done.append({"mode": "stock", "product_id": ln["product_id"], "qty": got, "requested": ln["stock"],
                          "summary": f"{ln['product_name']}: {got:g} dari stok sendiri"})
     by_ent: Dict[str, List[Dict[str, Any]]] = {}
     for ln in plan:
         for x in ln["interco"]:
-            by_ent.setdefault(x["entity_id"], []).append(_row(ln, x["qty"]))
+            by_ent.setdefault(x["entity_id"], []).append({**_row(ln, x["qty"]), "roll_ids": x.get("roll_ids") or []})
     for ent, rows in by_ent.items():
         res = await fds._take_from_other_entity(order, rows, actor, ent, note)
         for r in rows:

@@ -15,6 +15,7 @@ Tes ini MEMBUAT pesanan, jadi WAJIB dijalankan terhadap DB salinan, bukan DB dat
 """
 import os
 import sys
+import uuid
 
 import pytest
 
@@ -215,3 +216,48 @@ def test_e9_spk_penerimaan_baru_md_quality_saja():
     assert c == 400 and "SPK QC 4-point" in str(b), b
     c, b = u["qc"].call("POST", f"/inspections/{spk['id']}/finish", {"decision": "terima", "remark": "MD lulus"})
     assert c == 200 and (b.get("quarantine_result") or {}).get("accepted_qty", 0) > 0, b
+
+
+# ─── E5 — rencana pemenuhan memakai ROLL PILIHAN (seperti di pesanan), bukan jumlah ketik bebas ──────────
+def test_e5_pemenuhan_stok_sendiri_memakai_roll_pilihan():
+    sadm = base.Api("salesadmin@kainnusantara.id")
+    cand = None
+    for so in DB.sales_orders.find({"entity_id": base.ENT, "status": {"$in": ["reserved", "waiting_stock", "approved"]},
+                                    "has_backorder": True}, {"_id": 0, "id": 1}):
+        c, opts = sadm.call("GET", f"/sales-admin/orders/{so['id']}/fulfillment-plan")
+        if c != 200:
+            continue
+        ln = next((x for x in opts.get("lines") or [] if x.get("own_rolls")), None)
+        if ln:
+            cand = (so["id"], ln)
+            break
+    if not cand:
+        # Data acuan: SO backorder memang tanpa stok sendiri → tambahkan DUA roll tersedia (salinan) di DB uji.
+        so = DB.sales_orders.find_one({"entity_id": base.ENT, "has_backorder": True,
+                                       "status": {"$in": ["reserved", "waiting_stock", "approved"]}}, {"_id": 0})
+        if not so:
+            pytest.skip("tidak ada SO backorder di salinan data")
+        bo = next(b for b in so["backorders"] if float(b.get("backorder_qty") or 0) > 0)
+        tpl = DB.inventory_rolls.find_one({"product_id": bo["product_id"]}, {"_id": 0})
+        if not tpl:
+            pytest.skip("tidak ada roll contoh untuk produk backorder")
+        for i in range(2):
+            DB.inventory_rolls.insert_one({**tpl, "id": f"roll_uji_e5_{uuid.uuid4().hex[:8]}", "roll_no": f"UJI-E5-{uuid.uuid4().hex[:5]}",
+                                           "owner_entity_id": base.ENT, "status": "available", "length_remaining": 40.0,
+                                           "length_initial": 40.0, "length_reserved": 0, "reserved_ref": None,
+                                           "earmarked_for": None, "created_at": f"2026-10-2{i}T00:00:00+00:00"})
+        c, opts = sadm.call("GET", f"/sales-admin/orders/{so['id']}/fulfillment-plan")
+        assert c == 200, opts
+        ln = next((x for x in opts.get("lines") or [] if x.get("own_rolls")), None)
+        assert ln, opts
+        cand = (so["id"], ln)
+    so_id, ln = cand
+    pick = [r for r in ln["own_rolls"][::-1]][:1]          # sengaja roll TERAKHIR (bukan FIFO)
+    qty = min(pick[0]["length_remaining"], ln["backorder_qty"])
+    c, b = sadm.call("POST", f"/sales-admin/orders/{so_id}/fulfillment-plan", {
+        "note": "uji E5", "lines": [{"product_id": ln["product_id"], "stock_qty": qty,
+                                     "stock_roll_ids": [pick[0]["id"]]}]})
+    assert c == 200, b
+    roll = DB.inventory_rolls.find_one({"id": pick[0]["id"]}, {"_id": 0, "status": 1, "reserved_ref": 1, "length_reserved": 1})
+    child = DB.inventory_rolls.find_one({"parent_roll_id": pick[0]["id"], "reserved_ref.id": so_id}, {"_id": 0, "id": 1})
+    assert (roll.get("reserved_ref") or {}).get("id") == so_id or child or float(roll.get("length_reserved") or 0) > 0, roll

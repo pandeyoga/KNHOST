@@ -2,6 +2,7 @@
 // D2: hitung fisik GRN — panjang boleh diketik dalam satuan SJ/PO atau satuan dasar produk; satuan yang dipilih
 //     ikut dikirim (server mengonversi ke satuan dasar). Dulu label "Panjang (meter)" tetapi angka disimpan sebagai yard.
 // A2/F1: tab Cutting — pesanan catalogue tampil SATU paket (bukan 9 tugas), "Potong semua" = satu panggilan batch.
+// E5: rencana pemenuhan — pilih roll (qty = jumlah panjang roll terpilih), bukan ketik bebas.
 // E7: tabel meja — cari + filter status + urutan.
 // F5: Lembar Inspect menyerupai kertas "DATA HASIL INSPECT" (sel KODE+POIN per 15 yard, STDRT, yard per grade).
 // E8/E10: alur pesanan baru — ringkasan "Sebelum masuk gudang" (normal → diminta + dua total + batas booking),
@@ -15,6 +16,7 @@ import VerifyOrderDialog from "../sales_admin/VerifyOrderDialog";
 import { releaseMessage } from "../sales_admin/workDeskApi";
 import CuttingOpsView from "../wms/CuttingOpsView";
 import DeskQueueCard from "../sales_admin/DeskQueueCard";
+import FulfillmentLineCard from "../sales_admin/FulfillmentLineCard";
 import InspectSheetGrid, { parseCell, stdrt } from "../inspections/InspectSheetGrid";
 
 const posted = [];
@@ -214,5 +216,28 @@ test("E7: antrean meja — chip filter status & urutan terbaru", async () => {
   const sel = q("t-q-perlu_verifikasi-sort");
   await act(async () => { Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(sel, "newest"); sel.dispatchEvent(new Event("change", { bubbles: true })); });
   expect(nums()).toEqual(["SO-B", "SO-C", "SO-A"]);
+  act(() => root.unmount());
+});
+
+
+test("E5: pilih roll stok sendiri → qty otomatis = panjang roll terpilih (dibatasi kekurangan)", async () => {
+  let value = { stock: 0, reorder: 0, wait: 0, ic: {}, stockRolls: [], icRolls: {} };
+  const line = { product_id: "p1", product_name: "Batik", sku: "BTK", unit: "yard", backorder_qty: 60, planned_qty: 0,
+    own_available: 100, own_by_warehouse: [{ warehouse_id: "w", warehouse_name: "Jakarta", available_qty: 100 }],
+    own_rolls: [{ id: "r1", roll_no: "RL-1", length_remaining: 40, warehouse_name: "Jakarta" },
+                { id: "r2", roll_no: "RL-2", length_remaining: 40, warehouse_name: "Jakarta" }],
+    other_entities: [], incoming_total: 0, incoming_claimed_by_older: 0 };
+  const host = document.createElement("div"); document.body.appendChild(host);
+  const root = createRoot(host);
+  const render = () => root.render(<FulfillmentLineCard line={line} value={value} onChange={(v) => { value = v; }} />);
+  await act(async () => { render(); });
+  await act(async () => { q("fulfill-stock-pick-p1-toggle").click(); });
+  await act(async () => { q("fulfill-stock-pick-p1-roll-r2").click(); });
+  expect(value.stockRolls).toEqual(["r2"]);
+  expect(value.stock).toBe(40);
+  await act(async () => { render(); });
+  await act(async () => { q("fulfill-stock-pick-p1-roll-r1").click(); });
+  expect(value.stockRolls).toEqual(["r2", "r1"]);
+  expect(value.stock).toBe(60);                                          // dibatasi kekurangan 60
   act(() => root.unmount());
 });

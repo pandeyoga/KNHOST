@@ -38,11 +38,13 @@ class FulfillmentIn(BaseModel):
 class PlanIntercoIn(BaseModel):
     entity_id: str
     qty: float = 0
+    roll_ids: List[str] = []            # Trial 22 Okt (E5) — roll pilihan di PT sumber
 
 
 class PlanLineIn(BaseModel):
     product_id: str
     stock_qty: float = 0
+    stock_roll_ids: List[str] = []      # Trial 22 Okt (E5) — roll stok sendiri yang DIPILIH (kosong = FIFO)
     interco: List[PlanIntercoIn] = []
     reorder_qty: float = 0
     wait_qty: float = 0

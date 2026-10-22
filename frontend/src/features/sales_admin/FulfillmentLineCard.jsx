@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { formatCurrency, formatQty } from "../../utils/formatters";
 
 const num = (v) => Math.max(0, Number(String(v).replace(",", ".")) || 0);
@@ -15,6 +16,32 @@ function QtyRow({ label, hint, max, value, onChange, testId }) {
         <button type="button" data-testid={`${testId}-max`} disabled={max <= 0} onClick={() => onChange(max)}
           className="rounded-full border border-[#E5E5EA] px-2 py-0.5 text-[10px] font-bold text-[#0058CC] disabled:opacity-40">maks</button>
       </div>
+    </div>
+  );
+}
+
+/** Trial 22 Okt (E5, keputusan pemilik) — PILIH ROLL seperti di halaman pesanan (dulu jumlah diketik bebas).
+ *  Qty = jumlah panjang roll terpilih (dibatasi sisa kekurangan; roll terakhir dipotong saat dicadangkan). */
+function RollPick({ rolls = [], picked = [], onChange, testId, unit }) {
+  const [open, setOpen] = useState(picked.length > 0);
+  if (!rolls.length) return null;
+  const toggle = (id) => onChange(picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id]);
+  return (
+    <div className="-mt-0.5 mb-1">
+      <button type="button" data-testid={`${testId}-toggle`} onClick={() => setOpen((o) => !o)}
+        className="text-[10.5px] font-bold text-[#0058CC]">{open ? "Sembunyikan roll" : `Pilih roll (${rolls.length} tersedia)`}{picked.length ? ` · ${picked.length} dipilih` : ""}</button>
+      {open && (
+        <div data-testid={`${testId}-list`} className="mt-1 max-h-[180px] overflow-y-auto rounded-lg border border-[#EFF0F2]">
+          {rolls.map((r) => (
+            <label key={r.id} className="flex cursor-pointer items-center gap-2 border-b border-[#F6F6F8] px-2 py-1 text-[11px] last:border-0">
+              <input type="checkbox" data-testid={`${testId}-roll-${r.id}`} checked={picked.includes(r.id)} onChange={() => toggle(r.id)} />
+              <span className="font-mono font-semibold">{r.roll_no}</span>
+              <span className="tabular-nums">{formatQty(r.length_remaining)} {r.unit || unit}</span>
+              <span className="text-[#8E8E93]">lot {r.lot || "—"}{r.grade ? ` · grade ${r.grade}` : ""} · {r.warehouse_name}</span>
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -40,7 +67,8 @@ function PriceState({ line, o, canSet, onPrice, requested }) {
 
 /** Satu baris kekurangan: qty dari stok · per PT lain · PO supplier · tunggu barang datang. */
 export default function FulfillmentLineCard({ line, value, onChange, canSetPrice, onPrice, requested = {} }) {
-  const v = value || { stock: 0, reorder: 0, wait: 0, ic: {} };
+  const v = value || { stock: 0, reorder: 0, wait: 0, ic: {}, stockRolls: [], icRolls: {} };
+  const sumOf = (rolls, ids) => Math.round(rolls.filter((r) => ids.includes(r.id)).reduce((s, r) => s + Number(r.length_remaining || 0), 0) * 100) / 100;
   const used = v.stock + v.reorder + v.wait + Object.values(v.ic).reduce((s, q) => s + q, 0);
   const left = Math.round((line.backorder_qty - used) * 100) / 100;
   const room = (cur) => Math.max(0, Math.round((left + cur) * 100) / 100);
@@ -56,6 +84,8 @@ export default function FulfillmentLineCard({ line, value, onChange, canSetPrice
       <QtyRow label="Ambil dari stok sendiri" testId={`fulfill-stock-${pid}`} value={v.stock}
         max={Math.min(line.own_available, room(v.stock))} onChange={(q) => onChange({ ...v, stock: q })}
         hint={line.own_by_warehouse.length ? line.own_by_warehouse.map((w) => `${w.warehouse_name} ${formatQty(w.available_qty)}`).join(" · ") : "Tidak ada stok tersedia di entitas penjual."} />
+      <RollPick rolls={line.own_rolls} picked={v.stockRolls || []} unit={line.unit} testId={`fulfill-stock-pick-${pid}`}
+        onChange={(ids) => onChange({ ...v, stockRolls: ids, stock: ids.length ? Math.min(sumOf(line.own_rolls || [], ids), room(v.stock)) : 0 })} />
       {line.other_entities.map((o) => (
         <div key={o.entity_id}>
           <QtyRow label={`Transfer dari ${o.entity_name}`} testId={`fulfill-ic-${pid}-${o.entity_id}`}
@@ -64,6 +94,11 @@ export default function FulfillmentLineCard({ line, value, onChange, canSetPrice
             onChange={(q) => onChange({ ...v, ic: { ...v.ic, [o.entity_id]: q } })} />
           <PriceState line={line} o={o} canSet={canSetPrice} onPrice={(kind, ent) => onPrice?.(kind, line, ent)}
             requested={!!requested[`${pid}-${o.entity_id}`]} />
+          {o.price_ready !== false && (
+            <RollPick rolls={o.rolls} picked={(v.icRolls || {})[o.entity_id] || []} unit={line.unit} testId={`fulfill-ic-pick-${pid}-${o.entity_id}`}
+              onChange={(ids) => onChange({ ...v, icRolls: { ...(v.icRolls || {}), [o.entity_id]: ids },
+                ic: { ...v.ic, [o.entity_id]: ids.length ? Math.min(sumOf(o.rolls || [], ids), room(v.ic[o.entity_id] || 0)) : 0 } })} />
+          )}
         </div>
       ))}
       <QtyRow label="PO ke supplier (lewat PR)" testId={`fulfill-reorder-${pid}`} value={v.reorder}

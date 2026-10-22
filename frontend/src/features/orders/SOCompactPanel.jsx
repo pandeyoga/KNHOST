@@ -13,7 +13,7 @@ import { StagePill, SubStatusChips } from "../../components/SoStatusBadges";
 import PaymentBadge from "../../components/PaymentBadge";
 import EntityBadge from "../../components/EntityBadge";
 import { QcStatusBadge, soQcStatus } from "../../components/QcStatusBadge";
-import FulfillmentWizard from "./FulfillmentWizard";
+import FulfillmentDecisionDialog from "../sales_admin/FulfillmentDecisionDialog";
 import { formatQtyByUnit } from "../../utils/qtyByUnit";
 
 export default function SOCompactPanel({ order, onClose, onOpenFull }) {
@@ -94,16 +94,22 @@ export default function SOCompactPanel({ order, onClose, onOpenFull }) {
           </p>
         )}
 
-        <button type="button" data-testid="so-open-wizard" onClick={() => setShowWizard(true)}
-          className="flex w-full items-center justify-center gap-1 rounded-lg border border-[#D9C2EC] bg-[#FBF7FE] px-3 py-2 text-[12px] font-semibold text-[#6B219A] hover:bg-[#F3E9FA]">
-          <Wand2 size={13} /> Wizard Pemenuhan
-        </button>
+        {/* Trial 22 Okt (E5) — SATU mekanisme pemenuhan dengan Meja Admin Sales (pilih roll, keputusan tercatat di SO);
+            dulu Wizard terpisah yang tidak mencatat keputusan sehingga meja tetap menganggap belum diputus. */}
+        {(order.has_backorder || order.status === "waiting_stock") && (
+          <button type="button" data-testid="so-open-wizard" onClick={() => setShowWizard(true)}
+            className="flex w-full items-center justify-center gap-1 rounded-lg border border-[#D9C2EC] bg-[#FBF7FE] px-3 py-2 text-[12px] font-semibold text-[#6B219A] hover:bg-[#F3E9FA]">
+            <Wand2 size={13} /> Rencana pemenuhan (pilih roll)
+          </button>
+        )}
         <button type="button" data-testid="so-open-full-detail" onClick={onOpenFull}
           className="secondary-button w-full justify-center">
           <Maximize2 size={13} /> Lihat detail &amp; aksi
         </button>
       </div>
-      {showWizard && <FulfillmentWizard orderId={order.id} onClose={() => setShowWizard(false)} />}
+      {showWizard && <FulfillmentDecisionDialog orderId={order.id} orderNumber={order.number} customerName={order.customer_name}
+        onClose={() => setShowWizard(false)}
+        onDecided={(msg) => { setShowWizard(false); toast({ title: "Rencana pemenuhan", description: msg }); }} />}
     </div>
   );
 }

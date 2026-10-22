@@ -174,6 +174,8 @@ async def create(payload: Dict[str, Any], actor: Dict[str, Any],
             # kalau tidak, permintaan itu tidak muncul di chip lini mana pun.
             "line_code": str(prod.get("line_code") or "").strip().lower(),
             "notes": (row.get("notes") or "").strip(),
+            # Trial 22 Okt (E5) — roll di PT sumber yang dipilih Admin Sales saat memutus pemenuhan.
+            "preferred_roll_ids": [str(r) for r in row.get("preferred_roll_ids") or [] if r],
             # FASE U — dua satuan (jumlah roll yang diminta dari PT sebelah).
             **(await _dual.stamp({"unit": prod.get("base_unit", ""), **row})),
         })
