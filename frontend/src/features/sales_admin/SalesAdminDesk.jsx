@@ -133,7 +133,14 @@ export default function SalesAdminDesk({ currentUser, selectedEntity = "all", on
         )}
       </section>
 
-      <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix="desk" onOpen={(r) => onOpenDocument?.(soTrackerLink(r))} />
+      {/* Trial 22 Okt (B9) — aksi Pelacak SO dikerjakan DI MEJA (dulu [Atur pemenuhan] hanya membuka daftar pesanan). */}
+      <SoTrackerCard desk="sales_admin" selectedEntity={selectedEntity} testPrefix="desk" onOpen={(r) => {
+        const row = { ref_id: r.id, number: r.number, title: r.customer_name, ref_type: "sales_order" };
+        if (r.action === "Atur pemenuhan") return setFulfillRow(row);
+        if (r.action === "Periksa & lepas") return setVerifyRow(row);
+        if (r.action === "Lepas ke gudang") return doRelease(row);
+        return onOpenDocument?.(soTrackerLink(r));
+      }} />
 
       <div className="grid gap-3 xl:grid-cols-[2fr_1fr]">
         <KeepPendingPanel selectedEntity={selectedEntity} onOpenDocument={onOpenDocument} />

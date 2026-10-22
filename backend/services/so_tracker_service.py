@@ -32,14 +32,23 @@ def next_step(o: Dict[str, Any], hold: Optional[Dict[str, Any]] = None) -> Dict[
     outstanding = float(o.get("grand_total") or o.get("total_amount") or 0) - float(o.get("paid_total") or 0)
     if st in ("draft", "pending", ""):
         return {"step": "Dilengkapi & diajukan", "roles": ["sales"], "action": "Buka SO"}
+    # Trial 22 Okt (E8/E10) — tahap mengikuti alur "Periksa & lepas ke gudang".
+    rel = o.get("release") or {}
+    pa = o.get("pending_approvals") or []
+    if any(p.get("type") == "special_price" and p.get("status") == "rejected" for p in pa):
+        return {"step": "Harga khusus ditolak — ajukan harga lain / lanjut harga normal / batalkan",
+                "roles": ["sales"], "action": "Buka SO"}
     if st == "waiting_approval":
         r = o.get("required_approval_role") or "manager"
-        return {"step": "Diputuskan (setuju/tolak)", "roles": [r], "action": "Putuskan"}
-    if st == "waiting_stock" or o.get("has_backorder"):
+        return {"step": "Diputuskan Manajer" + (" — dilepas otomatis sesudah ACC" if rel.get("requested") else ""),
+                "roles": [r], "action": "Putuskan"}
+    if st == "waiting_stock" or (o.get("has_backorder") and st in ("approved", "reserved")):
         return {"step": "Keputusan pemenuhan stok", "roles": ["sales_admin"], "action": "Atur pemenuhan"}
     if st in ("approved", "reserved"):
-        return {"step": "Dikonfirmasi" if verified else "Diverifikasi & dikonfirmasi",
-                "roles": ["sales_admin"], "action": "Verifikasi" if not verified else "Konfirmasi"}
+        if rel.get("requested") and rel.get("hold"):
+            return {"step": "Ditahan Admin Sales — lepas ke gudang bila sudah boleh", "roles": ["sales_admin"],
+                    "action": "Lepas ke gudang"}
+        return {"step": "Diperiksa & dilepas ke gudang", "roles": ["sales_admin"], "action": "Periksa & lepas"}
     if st in SHIP_STAGES and hold and hold.get("blocked"):
         # F-10 — termin CBD/DP belum terbayar: gudang tidak bisa kirim; bolanya di Finance (catat bayar / pengecualian).
         return {"step": f"Dibayar sesuai termin {hold.get('term_code') or ''} sebelum kirim".replace("  ", " "),
@@ -70,7 +79,7 @@ async def so_tracker(desk: str, actor: Dict[str, Any], scope: Dict[str, Any]) ->
     now = datetime.now(timezone.utc)
     q = {**scope, "status": {"$nin": CLOSED}, "is_sample": {"$ne": True}}
     proj = {"_id": 0, "id": 1, "order_number": 1, "number": 1, "customer_name": 1, "sales_name": 1,
-            "status": 1, "verification": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1,
+            "status": 1, "verification": 1, "release": 1, "pending_approvals": 1, "grand_total": 1, "total_amount": 1, "paid_total": 1,
             "required_approval_role": 1, "has_backorder": 1, "created_at": 1, "updated_at": 1, "entity_id": 1}
     rows: List[Dict[str, Any]] = []
     orders = await db.sales_orders.find(q, proj).to_list(5000)

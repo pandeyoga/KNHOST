@@ -20,7 +20,7 @@ dipulihkan 22 Okt ±11.15 WIB). Status setiap butir: **terbuka** sampai diperbai
 | B6 | Katalog/quickview HP menampilkan stok grup (mis. ALICE KNIT 9.285 kg) padahal stok Sukacita 0; checkout langkah 2 menulis *"465 roll tersedia"* dan *"100 unit belum tersedia"* (seharusnya kg) | Sales salah mengira stok ada | terbuka |
 | B7 | Kartu katalog HP artikel bervarian memakai tombol **[Pilih]**, dokumen UAT menulis **[Tambah]** | Panduan tidak cocok untuk artikel bervarian | perbaiki dokumen |
 | B8 | Mode simulasi RFID untuk **Cipta Sandang** gagal diaktifkan lewat akun admin (403 *Tidak berwenang atas entitas ini*) | Cek muat CST bisa tertahan saat UAT | terbuka |
-| B9 | Pelacak SO di Meja Admin Sales: tombol **[Atur pemenuhan]** hanya membuka daftar pesanan, bukan dialog *Rencana pemenuhan* | Admin Sales mengira tombol rusak | terbuka |
+| B9 | Pelacak SO di Meja Admin Sales: tombol **[Atur pemenuhan]** hanya membuka daftar pesanan, bukan dialog *Rencana pemenuhan* | Admin Sales mengira tombol rusak | diperbaiki — aksi Pelacak SO dikerjakan di meja: *Atur pemenuhan* membuka dialog Rencana pemenuhan, *Periksa & lepas* membuka dialog periksa, *Lepas ke gudang* langsung; teks tahap mengikuti alur baru (harga ditolak → sales, ditahan, dilepas otomatis sesudah ACC) |
 
 ## D. Satuan & konversi (kasus PR-00007 → PO-00002 → GRN-00001, Lurik Klasik Solo, master = **yard**)
 | # | Temuan (terbukti dari data) | Akibat | Status |
