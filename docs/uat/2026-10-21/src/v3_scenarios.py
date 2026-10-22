@@ -292,8 +292,9 @@ def _s13():
          "Spesifikasi *Draf* dengan gramasi & lebar terisi.", "S13"),
         ("R&D (MD)", "SMP → [[Kirim ke supplier]] (pilih supplier peserta) → per supplier unggah bukti → [[Setor hasil]] → [[Nilai hasil]] (ACC/revisi/tolak)",
          "Hasil ukur per jenis uji (ΔE, tahan cuci/gosok; proofing), skor.", "Supplier yang lolos tertanda *ACC*.", "S13"),
-        ("Manajer", "SMP → [[Pilih pemenang]] → supplier, **alasan keputusan**, **harga kesepakatan**, kode/nama/warna versi supplier → [[ACC & bentuk master data]] → [[Sample jadi]]",
-         "Tombol nonaktif menyebut isian yang kurang (*Lengkapi: …*). Keputusan pemenang = Manajer (matriks persetujuan).",
+        ("Manajer / MD", "SMP → [[Pilih pemenang]] → supplier, **alasan keputusan**, **harga kesepakatan**, kode/nama/warna versi supplier → [[ACC & bentuk master data]] → [[Sample jadi]]",
+         "Tombol nonaktif menyebut isian yang kurang (*Lengkapi: …*). Pemenang boleh diputus **Manajer atau MD** (matriks *ACC Sample*); "
+         "biarkan centang *ACC spesifikasi* agar SKU langsung lahir.",
          "Kontrak harga **KSC/SCT-…** + **SKU eksklusif pelanggan** lahir; artikel baru bersumber restock *Supplier*. "
          "Spesifikasi belum lengkap → peringatan merah; MD lengkapi lalu Manajer [[ACC spesifikasi → lahirkan SKU produk]].", "S13"),
         ("Sales", "HP: **Lainnya** › **Pesanan Khusus (OD)** → ketuk OD → **Persetujuan pelanggan atas sample** → [[ACC]] → kontak, catatan, foto bukti → [[Simpan keputusan]]",

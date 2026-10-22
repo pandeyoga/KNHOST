@@ -11,6 +11,7 @@
 6. OD terstruktur tidak bisa "Mulai Produksi" sebelum harga final dikunci.
 7. Gudang bawaan penerimaan OD = gudang khusus PT itu (dulu gudang bersama PT lain karena urut kode).
 8. OD multi-item: PO item kedua tiba setelah tugas ambil item pertama lahir → item kedua tetap dapat tugas ambil.
+9. Keputusan pemilik: pemenang sample (tahap ACC Sample) boleh diputus Manajer ATAU MD.
 Jalankan: cd /app/backend && python -m pytest tests/test_uat_v3_ui_gaps3.py -p no:randomly -n 0 -q
 """
 import asyncio
@@ -188,3 +189,13 @@ def test_od_multi_item_item_kedua_tiba_belakangan_dapat_tugas_ambil():
         DB.sales_orders.delete_one({"id": so_id})
         DB.wms_tasks.delete_many({"order_id": so_id})
         DB.doc_refs.delete_many({"$or": [{"source_id": so_id}, {"target_id": so_id}]})
+
+
+def test_pemenang_sample_boleh_diputus_md_tetapi_desain_tetap_manajer():
+    from services import approval_matrix_service as amx
+    cfg = {"mode": "enforce", "scope": "all_pending", "sod": True}
+    doc = {"number": "SMP-UJI", "created_by": "Ayu Marketing"}
+    md = {"role": "md", "name": "Rina Merchandiser"}
+    assert amx.evaluate("sample_acc", md, doc, cfg)["allowed"] is True                 # keputusan pemilik 22 Okt
+    assert amx.evaluate("sample_acc", {"role": "sales", "name": "S"}, doc, cfg)["allowed"] is False
+    assert amx.evaluate("design_acc", md, doc, cfg)["allowed"] is False                # ACC desain/spesifikasi tidak berubah

@@ -358,7 +358,7 @@ Status: `L` Lulus · `G` Gagal · `T` Terblokir. Isi nomor dokumen sistem & ID t
 | S13-06 | Manajer | DSR Disetujui (ACC); sample proofing item A siap dikirim ke supplier. | ✓ S13 |  |  |  |
 | S13-07 | MD | Spesifikasi Draf dengan gramasi & lebar terisi. | ✓ S13 |  |  |  |
 | S13-08 | R&D (MD) | Supplier yang lolos tertanda ACC. | ✓ S13 |  |  |  |
-| S13-09 | Manajer | Kontrak harga KSC/SCT-… + SKU eksklusif pelanggan lahir; artikel baru bersumber restock Supplier. Spesifikasi belum lengkap → peringatan merah; MD len… | ✓ S13 |  |  |  |
+| S13-09 | Manajer / MD | Kontrak harga KSC/SCT-… + SKU eksklusif pelanggan lahir; artikel baru bersumber restock Supplier. Spesifikasi belum lengkap → peringatan merah; MD len… | ✓ S13 |  |  |  |
 | S13-10 | Sales | Keputusan pelanggan tersimpan; riwayat ACC + bukti; OD masuk antrean kunci harga. | ✓ S13 |  |  |  |
 | S13-11 | Admin Sales | Dikunci …; total OD = jumlah per item (contoh Rp 19.500.000 + PPN). | ✓ S13 |  |  |  |
 | S13-12 | MD | Item Siap direalisasi. | ✓ S13 |  |  |  |
